@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
 	"github.com/go-kratos/kratos/v3/log"
 	"github.com/go-kratos/kratos/v3/middleware/logging"
@@ -45,6 +46,7 @@ func NewHTTPServer(
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
 	supplySvc *supply.SupplyService,
+	enq queue.Enqueuer,
 ) *khttp.Server {
 	var opts = []khttp.ServerOption{
 		khttp.Middleware(
@@ -87,7 +89,7 @@ func NewHTTPServer(
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
-	registerHealth(srv, d)
+	registerHealth(srv, d, enq)
 	registerPaymentCallback(srv)
 
 	// TODO(M1b)：go:embed SPA（fullstack build tag；index.html 永不缓存，铁律 8）
@@ -95,8 +97,8 @@ func NewHTTPServer(
 	return srv
 }
 
-// registerHealth 健康检查（DB 连通 + 版本；/metrics Prometheus M1 接入内网口）。
-func registerHealth(srv *khttp.Server, d *data.Data) {
+// registerHealth 健康检查（DB 连通 + 队列模式 + 版本；/metrics Prometheus M1 接入内网口）。
+func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 	srv.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := contextWithTimeout(r)
 		defer cancel()
@@ -105,6 +107,7 @@ func registerHealth(srv *khttp.Server, d *data.Data) {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status":  map[string]bool{"server": true, "database": dbOK},
+			"queue":   map[string]any{"enabled": enq.Enabled()},
 			"version": Version,
 			"dialect": string(d.Dialect),
 		})

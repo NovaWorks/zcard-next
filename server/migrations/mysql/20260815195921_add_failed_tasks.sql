@@ -1,0 +1,2 @@
+-- Create "failed_tasks" table
+CREATE TABLE `failed_tasks` (`id` bigint unsigned NOT NULL AUTO_INCREMENT, `task_type` varchar(128) NOT NULL, `payload` blob NULL, `error` longtext NULL, `retry_count` int NOT NULL DEFAULT 0, `status` enum('pending','done') NOT NULL DEFAULT "pending", `created_at` datetime(3) NOT NULL, PRIMARY KEY (`id`), INDEX `failedtask_status_created_at` (`status`, `created_at`), INDEX `failedtask_task_type` (`task_type`)) CHARSET utf8mb4 COLLATE utf8mb4_bin;

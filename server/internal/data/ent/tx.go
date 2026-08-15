@@ -20,6 +20,8 @@ type Tx struct {
 	Card *CardClient
 	// Currency is the client for interacting with the Currency builders.
 	Currency *CurrencyClient
+	// FailedTask is the client for interacting with the FailedTask builders.
+	FailedTask *FailedTaskClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// OrderAmountLine is the client for interacting with the OrderAmountLine builders.
@@ -189,6 +191,7 @@ func (tx *Tx) init() {
 	tx.AdminUser = NewAdminUserClient(tx.config)
 	tx.Card = NewCardClient(tx.config)
 	tx.Currency = NewCurrencyClient(tx.config)
+	tx.FailedTask = NewFailedTaskClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.OrderAmountLine = NewOrderAmountLineClient(tx.config)
 	tx.OrderDelivery = NewOrderDeliveryClient(tx.config)

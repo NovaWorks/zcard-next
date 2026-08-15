@@ -18,6 +18,9 @@ type Card func(*sql.Selector)
 // Currency is the predicate function for currency builders.
 type Currency func(*sql.Selector)
 
+// FailedTask is the predicate function for failedtask builders.
+type FailedTask func(*sql.Selector)
+
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
 

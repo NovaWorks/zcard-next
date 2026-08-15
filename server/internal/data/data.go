@@ -33,7 +33,7 @@ func init() {
 }
 
 // ProviderSet data providers（wire）。
-var ProviderSet = wire.NewSet(NewData)
+var ProviderSet = wire.NewSet(NewData, NewOutboxWriter, NewFailedTaskWriter)
 
 // Data 数据句柄（业务模块 repo 经构造函数持有；禁止绕过 data.Client 持有全局单例，
 // 未来 per-tenant client 由 TenantStore 注入，铁律 14）。

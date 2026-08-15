@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminuser"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/failedtask"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
@@ -51,6 +52,8 @@ type Client struct {
 	Card *CardClient
 	// Currency is the client for interacting with the Currency builders.
 	Currency *CurrencyClient
+	// FailedTask is the client for interacting with the FailedTask builders.
+	FailedTask *FailedTaskClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// OrderAmountLine is the client for interacting with the OrderAmountLine builders.
@@ -100,6 +103,7 @@ func (c *Client) init() {
 	c.AdminUser = NewAdminUserClient(c.config)
 	c.Card = NewCardClient(c.config)
 	c.Currency = NewCurrencyClient(c.config)
+	c.FailedTask = NewFailedTaskClient(c.config)
 	c.Order = NewOrderClient(c.config)
 	c.OrderAmountLine = NewOrderAmountLineClient(c.config)
 	c.OrderDelivery = NewOrderDeliveryClient(c.config)
@@ -213,6 +217,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AdminUser:         NewAdminUserClient(cfg),
 		Card:              NewCardClient(cfg),
 		Currency:          NewCurrencyClient(cfg),
+		FailedTask:        NewFailedTaskClient(cfg),
 		Order:             NewOrderClient(cfg),
 		OrderAmountLine:   NewOrderAmountLineClient(cfg),
 		OrderDelivery:     NewOrderDeliveryClient(cfg),
@@ -253,6 +258,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AdminUser:         NewAdminUserClient(cfg),
 		Card:              NewCardClient(cfg),
 		Currency:          NewCurrencyClient(cfg),
+		FailedTask:        NewFailedTaskClient(cfg),
 		Order:             NewOrderClient(cfg),
 		OrderAmountLine:   NewOrderAmountLineClient(cfg),
 		OrderDelivery:     NewOrderDeliveryClient(cfg),
@@ -299,10 +305,11 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.AdminRole, c.AdminUser, c.Card, c.Currency, c.Order, c.OrderAmountLine,
-		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.Payment,
-		c.PaymentChannel, c.ProcessedEvent, c.Product, c.ProductSku, c.RefundOrder,
-		c.RolePermission, c.Setting, c.User, c.WalletAccount, c.WalletTransaction,
+		c.AdminRole, c.AdminUser, c.Card, c.Currency, c.FailedTask, c.Order,
+		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
+		c.OutboxEvent, c.Payment, c.PaymentChannel, c.ProcessedEvent, c.Product,
+		c.ProductSku, c.RefundOrder, c.RolePermission, c.Setting, c.User,
+		c.WalletAccount, c.WalletTransaction,
 	} {
 		n.Use(hooks...)
 	}
@@ -312,10 +319,11 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.AdminRole, c.AdminUser, c.Card, c.Currency, c.Order, c.OrderAmountLine,
-		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.Payment,
-		c.PaymentChannel, c.ProcessedEvent, c.Product, c.ProductSku, c.RefundOrder,
-		c.RolePermission, c.Setting, c.User, c.WalletAccount, c.WalletTransaction,
+		c.AdminRole, c.AdminUser, c.Card, c.Currency, c.FailedTask, c.Order,
+		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
+		c.OutboxEvent, c.Payment, c.PaymentChannel, c.ProcessedEvent, c.Product,
+		c.ProductSku, c.RefundOrder, c.RolePermission, c.Setting, c.User,
+		c.WalletAccount, c.WalletTransaction,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -332,6 +340,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Card.mutate(ctx, m)
 	case *CurrencyMutation:
 		return c.Currency.mutate(ctx, m)
+	case *FailedTaskMutation:
+		return c.FailedTask.mutate(ctx, m)
 	case *OrderMutation:
 		return c.Order.mutate(ctx, m)
 	case *OrderAmountLineMutation:
@@ -916,6 +926,139 @@ func (c *CurrencyClient) mutate(ctx context.Context, m *CurrencyMutation) (Value
 		return (&CurrencyDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Currency mutation op: %q", m.Op())
+	}
+}
+
+// FailedTaskClient is a client for the FailedTask schema.
+type FailedTaskClient struct {
+	config
+}
+
+// NewFailedTaskClient returns a client for the FailedTask from the given config.
+func NewFailedTaskClient(c config) *FailedTaskClient {
+	return &FailedTaskClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `failedtask.Hooks(f(g(h())))`.
+func (c *FailedTaskClient) Use(hooks ...Hook) {
+	c.hooks.FailedTask = append(c.hooks.FailedTask, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `failedtask.Intercept(f(g(h())))`.
+func (c *FailedTaskClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FailedTask = append(c.inters.FailedTask, interceptors...)
+}
+
+// Create returns a builder for creating a FailedTask entity.
+func (c *FailedTaskClient) Create() *FailedTaskCreate {
+	mutation := newFailedTaskMutation(c.config, OpCreate)
+	return &FailedTaskCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FailedTask entities.
+func (c *FailedTaskClient) CreateBulk(builders ...*FailedTaskCreate) *FailedTaskCreateBulk {
+	return &FailedTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FailedTaskClient) MapCreateBulk(slice any, setFunc func(*FailedTaskCreate, int)) *FailedTaskCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FailedTaskCreateBulk{err: fmt.Errorf("calling to FailedTaskClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FailedTaskCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FailedTaskCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FailedTask.
+func (c *FailedTaskClient) Update() *FailedTaskUpdate {
+	mutation := newFailedTaskMutation(c.config, OpUpdate)
+	return &FailedTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FailedTaskClient) UpdateOne(_m *FailedTask) *FailedTaskUpdateOne {
+	mutation := newFailedTaskMutation(c.config, OpUpdateOne, withFailedTask(_m))
+	return &FailedTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FailedTaskClient) UpdateOneID(id uint64) *FailedTaskUpdateOne {
+	mutation := newFailedTaskMutation(c.config, OpUpdateOne, withFailedTaskID(id))
+	return &FailedTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FailedTask.
+func (c *FailedTaskClient) Delete() *FailedTaskDelete {
+	mutation := newFailedTaskMutation(c.config, OpDelete)
+	return &FailedTaskDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FailedTaskClient) DeleteOne(_m *FailedTask) *FailedTaskDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FailedTaskClient) DeleteOneID(id uint64) *FailedTaskDeleteOne {
+	builder := c.Delete().Where(failedtask.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FailedTaskDeleteOne{builder}
+}
+
+// Query returns a query builder for FailedTask.
+func (c *FailedTaskClient) Query() *FailedTaskQuery {
+	return &FailedTaskQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFailedTask},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FailedTask entity by its id.
+func (c *FailedTaskClient) Get(ctx context.Context, id uint64) (*FailedTask, error) {
+	return c.Query().Where(failedtask.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FailedTaskClient) GetX(ctx context.Context, id uint64) *FailedTask {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *FailedTaskClient) Hooks() []Hook {
+	return c.hooks.FailedTask
+}
+
+// Interceptors returns the client interceptors.
+func (c *FailedTaskClient) Interceptors() []Interceptor {
+	return c.inters.FailedTask
+}
+
+func (c *FailedTaskClient) mutate(ctx context.Context, m *FailedTaskMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FailedTaskCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FailedTaskUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FailedTaskUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FailedTaskDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown FailedTask mutation op: %q", m.Op())
 	}
 }
 
@@ -3423,15 +3566,16 @@ func (c *WalletTransactionClient) mutate(ctx context.Context, m *WalletTransacti
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		AdminRole, AdminUser, Card, Currency, Order, OrderAmountLine, OrderDelivery,
-		OrderItem, OrderStatusEvent, OutboxEvent, Payment, PaymentChannel,
-		ProcessedEvent, Product, ProductSku, RefundOrder, RolePermission, Setting,
-		User, WalletAccount, WalletTransaction []ent.Hook
+		AdminRole, AdminUser, Card, Currency, FailedTask, Order, OrderAmountLine,
+		OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent, Payment,
+		PaymentChannel, ProcessedEvent, Product, ProductSku, RefundOrder,
+		RolePermission, Setting, User, WalletAccount, WalletTransaction []ent.Hook
 	}
 	inters struct {
-		AdminRole, AdminUser, Card, Currency, Order, OrderAmountLine, OrderDelivery,
-		OrderItem, OrderStatusEvent, OutboxEvent, Payment, PaymentChannel,
-		ProcessedEvent, Product, ProductSku, RefundOrder, RolePermission, Setting,
-		User, WalletAccount, WalletTransaction []ent.Interceptor
+		AdminRole, AdminUser, Card, Currency, FailedTask, Order, OrderAmountLine,
+		OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent, Payment,
+		PaymentChannel, ProcessedEvent, Product, ProductSku, RefundOrder,
+		RolePermission, Setting, User, WalletAccount,
+		WalletTransaction []ent.Interceptor
 	}
 )

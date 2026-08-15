@@ -24,11 +24,13 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	"github.com/NovaWorks/zcard-next/server/internal/server"
 
 	"github.com/go-kratos/kratos/v3"
 	"github.com/go-kratos/kratos/v3/config"
 	"github.com/go-kratos/kratos/v3/config/file"
 	"github.com/go-kratos/kratos/v3/log"
+	"github.com/go-kratos/kratos/v3/transport"
 	kgrpc "github.com/go-kratos/kratos/v3/transport/grpc"
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -42,7 +44,13 @@ var (
 	Version string
 
 	id, _ = os.Hostname()
+
+	// appMode 运行模式（runServe 解析 -mode 后赋值，wire 经 provideRunMode 消费）
+	appMode = string(server.ModeAll)
 )
+
+// provideRunMode wire provider（server 装配按模式分流）。
+func provideRunMode() server.RunMode { return server.RunMode(appMode) }
 
 func main() {
 	// 容器 CPU 限额感知（GOMAXPROCS 修正）
@@ -172,7 +180,13 @@ func runServe(args []string) error {
 	if err := applyMigrationsIfEnabled(context.Background(), bc); err != nil {
 		return err
 	}
-	logger.Info("zcard.starting", "mode", *mode, "version", Version)
+	switch *mode {
+	case string(server.ModeAll), string(server.ModeAPI), string(server.ModeWorker):
+		appMode = *mode
+	default:
+		return fmt.Errorf("未知运行模式 %q（all|api|worker）", *mode)
+	}
+	logger.Info("zcard.starting", "mode", appMode, "version", Version)
 
 	supply.ServerVersion = orDev(Version)
 	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Security, logger)
@@ -206,15 +220,28 @@ func runInstall(args []string) error {
 	return fmt.Errorf("install 子命令 M1 交付（当前请用 zcard admin create 初始化管理员）")
 }
 
-// newApp kratos.App 装配（worker 模式 M1 起挂 asynq 消费者容器）。
-func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server) *kratos.App {
+// newApp kratos.App 装配：按模式选择 server 组合（规划 §4.2 单进程多角色）。
+//
+//	all    = HTTP + gRPC + worker + 后台（默认，单机形态）
+//	api    = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
+//	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
+func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer) *kratos.App {
+	var servers []transport.Server
+	switch server.RunMode(appMode) {
+	case server.ModeAPI:
+		servers = []transport.Server{hs, gs, bs}
+	case server.ModeWorker:
+		servers = []transport.Server{ws, bs}
+	default:
+		servers = []transport.Server{hs, gs, ws, bs}
+	}
 	return kratos.New(
 		kratos.ID(id),
 		kratos.Name(Name),
 		kratos.Version(Version),
 		kratos.Metadata(map[string]string{}),
 		kratos.Logger(logger),
-		kratos.Server(hs, gs),
+		kratos.Server(servers...),
 	)
 }
 

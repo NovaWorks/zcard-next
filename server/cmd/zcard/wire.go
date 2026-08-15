@@ -23,5 +23,5 @@ func wireApp(
 	securityConf *conf.Security,
 	logger *slog.Logger,
 ) (*kratos.App, func(), error) {
-	panic(wire.Build(bootstrap.ProviderSet, server.ProviderSet, newApp))
+	panic(wire.Build(bootstrap.ProviderSet, server.ProviderSet, provideRunMode, newApp))
 }

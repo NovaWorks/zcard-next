@@ -7,7 +7,7 @@
 //   - sql/upsert：跨方言 upsert（settings 等幂等写入）
 //
 // 注意：MySQL 时间列统一 datetime(3) 由 schema 包的 timeCol() 助手在字段声明处落地
-//（《数据库架构设计.md》§0 类型映射钉死 MySQL `DATETIME(3)`；ent 对 MySQL 的默认
+// （《数据库架构设计.md》§0 类型映射钉死 MySQL `DATETIME(3)`；ent 对 MySQL 的默认
 // time 类型是 `timestamp`——秒精度且有 2038 上限，与文档偏差，故所有 time 字段必须
 // 经 timeCol() 声明，架构上以「新增 time 字段必须用 timeCol」为 code review 检查项）。
 package main
@@ -26,6 +26,7 @@ func main() {
 		Features: []gen.Feature{
 			gen.FeatureVersionedMigration,
 			gen.FeatureUpsert,
+			gen.FeatureLock, // 查询级行锁（outbox relay FOR UPDATE SKIP LOCKED 等）
 		},
 	}
 	if err := entc.Generate("./schema", cfg); err != nil {

@@ -57,6 +57,18 @@ func (f CurrencyFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CurrencyMutation", m)
 }
 
+// The FailedTaskFunc type is an adapter to allow the use of ordinary
+// function as FailedTask mutator.
+type FailedTaskFunc func(context.Context, *ent.FailedTaskMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FailedTaskFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.FailedTaskMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.FailedTaskMutation", m)
+}
+
 // The OrderFunc type is an adapter to allow the use of ordinary
 // function as Order mutator.
 type OrderFunc func(context.Context, *ent.OrderMutation) (ent.Value, error)

@@ -9,6 +9,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminuser"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/failedtask"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
@@ -201,6 +202,20 @@ func init() {
 	currencyDescSort := currencyFields[7].Descriptor()
 	// currency.DefaultSort holds the default value on creation for the sort field.
 	currency.DefaultSort = currencyDescSort.Default.(int32)
+	failedtaskFields := schema.FailedTask{}.Fields()
+	_ = failedtaskFields
+	// failedtaskDescTaskType is the schema descriptor for task_type field.
+	failedtaskDescTaskType := failedtaskFields[1].Descriptor()
+	// failedtask.TaskTypeValidator is a validator for the "task_type" field. It is called by the builders before save.
+	failedtask.TaskTypeValidator = failedtaskDescTaskType.Validators[0].(func(string) error)
+	// failedtaskDescRetryCount is the schema descriptor for retry_count field.
+	failedtaskDescRetryCount := failedtaskFields[4].Descriptor()
+	// failedtask.DefaultRetryCount holds the default value on creation for the retry_count field.
+	failedtask.DefaultRetryCount = failedtaskDescRetryCount.Default.(int32)
+	// failedtaskDescCreatedAt is the schema descriptor for created_at field.
+	failedtaskDescCreatedAt := failedtaskFields[6].Descriptor()
+	// failedtask.DefaultCreatedAt holds the default value on creation for the created_at field.
+	failedtask.DefaultCreatedAt = failedtaskDescCreatedAt.Default.(func() time.Time)
 	orderMixin := schema.Order{}.Mixin()
 	orderMixinFields0 := orderMixin[0].Fields()
 	_ = orderMixinFields0

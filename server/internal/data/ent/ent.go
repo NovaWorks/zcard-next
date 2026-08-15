@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminuser"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/failedtask"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
@@ -97,6 +98,7 @@ func checkColumn(t, c string) error {
 			adminuser.Table:         adminuser.ValidColumn,
 			card.Table:              card.ValidColumn,
 			currency.Table:          currency.ValidColumn,
+			failedtask.Table:        failedtask.ValidColumn,
 			order.Table:             order.ValidColumn,
 			orderamountline.Table:   orderamountline.ValidColumn,
 			orderdelivery.Table:     orderdelivery.ValidColumn,

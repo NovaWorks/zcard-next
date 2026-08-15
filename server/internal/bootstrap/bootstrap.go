@@ -24,7 +24,8 @@ import (
 // 里程碑推进时在此追加模块（procurement/supplier/...），模块间窄接口绑定也在此登记。
 var ProviderSet = wire.NewSet(
 	data.ProviderSet,
-	securityProviderSet, // 密钥解析（env 优先 → conf 兜底 → dev 随机告警）
+	securityProviderSet,
+	queueProviderSet, // 密钥解析（env 优先 → conf 兜底 → dev 随机告警）
 	identity.ProviderSet,
 	authz.ProviderSet,
 	settings.ProviderSet,

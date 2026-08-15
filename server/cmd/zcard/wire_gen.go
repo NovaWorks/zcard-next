@@ -45,10 +45,23 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	catalogUsecase := catalog.NewCatalogUsecase(productRepoImpl)
 	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase)
 	supplyService := supply.NewSupplyService()
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService)
+	dispatcher := bootstrap.NewDispatcher(dataData, logger)
+	failedTaskWriter := data.NewFailedTaskWriter(dataData)
+	enqueuer, cleanup2, err := bootstrap.NewEnqueuer(dataConf, dispatcher, failedTaskWriter, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, enqueuer)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService)
-	app := newApp(logger, httpServer, grpcServer)
+	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher)
+	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
+	cron := bootstrap.NewCron()
+	runMode := provideRunMode()
+	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer)
 	return app, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

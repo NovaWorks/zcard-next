@@ -14,19 +14,19 @@ jobs:
       - name: 分支名检查（local/* 与含 saas 的分支禁止出现在远端）
         if: ${{ startsWith(github.ref, 'refs/heads/local/') || contains(github.ref, 'saas') }}
         run: |
-          echo "::error::SaaS 功能分支（${GITHUB_REF#refs/heads/}）禁止推送到 GitHub——SaaS 开发只存在于本地分支 local/saas*，见 plan/P4/P4-00 §0 分支纪律"
+          echo "::error::SaaS 功能分支（${GITHUB_REF#refs/heads/}）禁止推送到 GitHub——SaaS 开发只存在于本地分支 local/saas*，见 doc/plan/P4/P4-00 §0 分支纪律"
           exit 1
       - name: 禁路径扫描（商业版目录与商业表 schema）
         run: |
           set -e
           # 禁路径：商业版代码目录 / SaaS 目录
           if git ls-files | grep -qE '(^|/)internal/commercial/|(^|/)saas/'; then
-            echo "::error::检出商业版/SaaS 代码路径（internal/commercial/** 或 saas/**）——开源仓库禁止，见 plan/P4/P4-00"
+            echo "::error::检出商业版/SaaS 代码路径（internal/commercial/** 或 saas/**）——开源仓库禁止，见 doc/plan/P4/P4-00"
             exit 1
           fi
           # 禁文件：商业版 12 张表的 ent schema（《商业版数据模型.md》）
           if git ls-files 'server/internal/data/ent/schema/*' | grep -qE '(tenants|escrow|subscription|license|api_key|api_scope|installed_plugin|plugin_manifest|market_supplier|supplier_rating)s?\.go$'; then
-            echo "::error::检出商业版数据表 schema（tenants/escrow/subscription/licenses/api_keys/插件市场等）——开源仓库禁止，见 plan/P4/P4-00"
+            echo "::error::检出商业版数据表 schema（tenants/escrow/subscription/licenses/api_keys/插件市场等）——开源仓库禁止，见 doc/plan/P4/P4-00"
             exit 1
           fi
           echo "开源红线检查通过 ✓"

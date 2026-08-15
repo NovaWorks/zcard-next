@@ -1,16 +1,14 @@
 // Package queue 任务队列抽象（ADR-D6：asynq 可选依赖）。
 //
-// 有 Redis：asynq 三队列隔离（critical=交付/采购/补单 6 : default=邮件/通知 3 : low=同步/报表 1），
+// 有 Redis：asynq 三队列隔离（critical=交付/采购/补班 6 : default=邮件/通知 3 : low=同步/报表 1），
 // 修复友商单队列互相阻塞问题；无 Redis：同步降级执行 + 失败落 failed_tasks 表供手动重放，
 // 周期任务由进程内 cron 兜底（多实例部署时要求单 worker 模式）。
-//
-// M0 定义契约；asynq 适配器与进程内 cron M1 随交易闭环交付。
 package queue
 
 import (
 	"context"
-	"errors"
 	"log/slog"
+	"time"
 )
 
 // 队列分级（asynq weighted priority 6:3:1）。
@@ -26,9 +24,9 @@ type Task struct {
 	Type string
 	// Payload 任务载荷
 	Payload []byte
-	// Queue 目标队列（默认 default）
+	// Queue 目标队列（空 = default）
 	Queue string
-	// DedupeKey 幂等键（可选；asynq TaskID 语义）
+	// DedupeKey 幂等键（asynq TaskID 语义：同 key 重复入队直接成功）
 	DedupeKey string
 }
 
@@ -39,26 +37,30 @@ type Enqueuer interface {
 	Enabled() bool
 }
 
-// ErrQueueDisabled 队列不可用（降级信号，非错误）。
-var ErrQueueDisabled = errors.New("queue: 已禁用（无 Redis，走同步降级）")
+// FailedTaskWriter 死信落库端口（无 Redis 降级模式使用）。
+// 实现位于 internal/data（failed_tasks 表）；platform 不 import ent。
+type FailedTaskWriter interface {
+	SaveFailedTask(ctx context.Context, taskType string, payload []byte, errMsg string) error
+}
 
 // SyncQueue 无 Redis 时的同步降级实现：任务在独立 goroutine 顺序执行（fire-and-forget），
-// 失败仅记日志——M1 起失败落 failed_tasks 表供重放。
+// 失败落 failed_tasks（经 FailedTaskWriter；writer 缺失时仅记日志）。
 type SyncQueue struct {
-	Log    *slog.Logger
-	Handle func(ctx context.Context, task Task) error
+	Log     *slog.Logger
+	Handler func(ctx context.Context, task Task) error
+	Dead    FailedTaskWriter
 }
 
 // Enqueue 同步降级入队。
 func (q *SyncQueue) Enqueue(ctx context.Context, task Task) error {
-	if q.Handle == nil {
+	if q.Handler == nil {
 		return nil
 	}
 	go func() {
-		if err := q.Handle(context.WithoutCancel(ctx), task); err != nil {
-			if q.Log != nil {
-				q.Log.Error("queue.sync.execute_failed", "type", task.Type, "err", err)
-			}
+		runCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
+		defer cancel()
+		if err := q.Handler(runCtx, task); err != nil {
+			q.recordDead(runCtx, task, err)
 		}
 	}()
 	return nil
@@ -66,3 +68,15 @@ func (q *SyncQueue) Enqueue(ctx context.Context, task Task) error {
 
 // Enabled 恒 false：降级模式标识。
 func (*SyncQueue) Enabled() bool { return false }
+
+func (q *SyncQueue) recordDead(ctx context.Context, task Task, cause error) {
+	if q.Dead != nil {
+		if err := q.Dead.SaveFailedTask(ctx, task.Type, task.Payload, cause.Error()); err == nil {
+			return
+		}
+		// 落库失败继续走日志（不死循环）
+	}
+	if q.Log != nil {
+		q.Log.Error("queue.sync.execute_failed", "type", task.Type, "err", cause)
+	}
+}

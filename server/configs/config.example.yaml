@@ -22,6 +22,8 @@ data:
     #   mysql    自托管标准（分站 Row 行级隔离主力）
     #   postgres 平台/多租户（Schema 隔离/RLS，商业版）
     driver: sqlite
+    # 注意：SQLite 文件路径不要落在 -conf 配置目录内（config watcher 会把
+    # 二进制库文件当配置解析刷错误日志）；默认落在工作目录 data/ 下即可
     source: file:data/zcard.db
     # MySQL 示例（parseTime/loc 未配置时启动会自动补齐，推荐显式写出）：
     # driver: mysql

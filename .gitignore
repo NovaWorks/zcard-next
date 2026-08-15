@@ -3,6 +3,7 @@
 
 # 设计文档目录与全部 Markdown 文档（按约定不入库）
 doc/
+plan/
 *.md
 
 # Go
