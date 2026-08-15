@@ -25,8 +25,8 @@ func (OutboxEvent) Fields() []ent.Field {
 		field.JSON("payload", json.RawMessage{}).Optional().Comment("事件载荷（proto schema，只加字段不改语义）"),
 		field.String("dedupe_key").MaxLen(120).Unique().Comment("防重复发布幂等键（order:123:paid）"),
 		field.Enum("status").Values("publishing", "published", "failed").Default("publishing"),
-		field.Time("published_at").Optional(),
-		field.Time("created_at").Immutable().Default(nowUTC),
+		field.Time("published_at").SchemaType(mysqlTime).Optional(),
+		field.Time("created_at").SchemaType(mysqlTime).Immutable().Default(nowUTC),
 	}
 }
 
@@ -47,7 +47,7 @@ func (ProcessedEvent) Fields() []ent.Field {
 		field.Uint64("id"),
 		field.Uint64("event_id").Comment("outbox_events.id"),
 		field.String("consumer").MaxLen(64).Comment("消费者标识（模块.处理器名）"),
-		field.Time("processed_at").Default(nowUTC),
+		field.Time("processed_at").SchemaType(mysqlTime).Default(nowUTC),
 	}
 }
 

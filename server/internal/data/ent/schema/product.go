@@ -39,7 +39,7 @@ func (Product) Fields() []ent.Field {
 		field.Int8("status").Default(1).Comment("1=上架 0=下架 2=隐藏（游客不可见会员可见）"),
 		field.Uint64("upstream_source_id").Optional().Comment("货源连接（NULL=自营；M2）"),
 		field.String("upstream_product_code").MaxLen(128).Optional().Comment("上游商品标识（M2）"),
-		field.Time("upstream_synced_at").Optional(),
+		field.Time("upstream_synced_at").SchemaType(mysqlTime).Optional(),
 	}
 }
 

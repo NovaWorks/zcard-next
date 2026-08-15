@@ -24,7 +24,7 @@ func (WalletAccount) Fields() []ent.Field {
 		field.Int64("available").Default(0).Comment("可用余额（分）"),
 		field.Int64("locked").Default(0).Comment("冻结余额（分）：提现冻结/佣金冻结期"),
 		field.Int32("version").Default(0).Comment("乐观锁（并发扣款/冻结，与行锁双保险）"),
-		field.Time("updated_at").Default(nowUTC).UpdateDefault(nowUTC),
+		field.Time("updated_at").SchemaType(mysqlTime).Default(nowUTC).UpdateDefault(nowUTC),
 	}
 }
 
@@ -50,7 +50,7 @@ func (WalletTransaction) Fields() []ent.Field {
 		field.Uint64("order_id").Optional(),
 		field.Uint64("operator_id").Optional().Comment("手动调账操作管理员"),
 		field.String("remark").MaxLen(255).Optional(),
-		field.Time("created_at").Immutable().Default(nowUTC),
+		field.Time("created_at").SchemaType(mysqlTime).Immutable().Default(nowUTC),
 	}
 }
 

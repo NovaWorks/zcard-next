@@ -18,11 +18,17 @@ server:
 data:
   database:
     # 三档形态一套代码（运行时检测方言，同一二进制）：
-    #   sqlite   最小化单体（默认，零依赖起步：file:data/zcard.db）
+    #   sqlite   最小化单体（默认，零依赖起步）
     #   mysql    自托管标准（分站 Row 行级隔离主力）
     #   postgres 平台/多租户（Schema 隔离/RLS，商业版）
     driver: sqlite
     source: file:data/zcard.db
+    # MySQL 示例（parseTime/loc 未配置时启动会自动补齐，推荐显式写出）：
+    # driver: mysql
+    # source: zcard:密码@tcp(127.0.0.1:3306)/zcard?parseTime=True&loc=UTC
+    # PostgreSQL 示例：
+    # driver: postgres
+    # source: postgres://zcard:密码@127.0.0.1:5432/zcard?sslmode=disable
     max_open_conns: 20
     max_idle_conns: 5
   redis:

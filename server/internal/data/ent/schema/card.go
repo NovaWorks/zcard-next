@@ -42,8 +42,8 @@ func (Card) Fields() []ent.Field {
 		field.Int64("draft_premium").Default(0).Comment("预选加价（分）"),
 		field.Int64("draft_cost").Default(0).Comment("预选成本（分）"),
 		field.Int64("price").Optional().Comment("靓号自选价（分，NULL=商品价）"),
-		field.Time("locked_at").Optional().Comment("锁定时间（TTL 释放）"),
-		field.Time("used_at").Optional().Comment("售出时间"),
+		field.Time("locked_at").SchemaType(mysqlTime).Optional().Comment("锁定时间（TTL 释放）"),
+		field.Time("used_at").SchemaType(mysqlTime).Optional().Comment("售出时间"),
 	}
 }
 

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 	atlasmigrate "ariga.io/atlas/sql/migrate"
 	atlasmysql "ariga.io/atlas/sql/mysql"
 	atlaspostgres "ariga.io/atlas/sql/postgres"
+	"ariga.io/atlas/sql/sqlclient"
 	atlassqlite "ariga.io/atlas/sql/sqlite"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
@@ -29,7 +31,9 @@ const revisionTable = "atlas_schema_revisions"
 
 // ApplyMigrations 应用内嵌迁移：加锁 → 执行 pending 文件 → 记录版本。
 // 幂等：已应用文件跳过（atlas_schema_revisions 版本比对）。
-func ApplyMigrations(ctx context.Context, handle *sql.DB, d db.Dialect) error {
+// dsn 用于 PG：经 sqlclient.OpenURL 打开（URL 注入 search_path 绑定 schema，
+// 否则 atlas 的 CheckClean 会因 realm 含 public schema 误报 not clean）。
+func ApplyMigrations(ctx context.Context, handle *sql.DB, d db.Dialect, dsn string) error {
 	dirFS, err := migrations.FS(string(d))
 	if err != nil {
 		return err
@@ -45,11 +49,42 @@ func ApplyMigrations(ctx context.Context, handle *sql.DB, d db.Dialect) error {
 	}
 	defer unlock()
 
-	drv, err := atlasDriver(handle, d)
-	if err != nil {
-		return err
+	// PG 经 sqlclient.OpenURL 打开（atlas 需从 URL search_path 绑定 schema）；
+	// MySQL/SQLite 直接复用主连接句柄
+	var (
+		drv     atlasmigrate.Driver
+		revConn *sql.DB = handle
+		closer  func()
+	)
+	if d == db.Postgres {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			return fmt.Errorf("migrate: 解析 PG DSN 失败: %w", err)
+		}
+		q := u.Query()
+		if q.Get("search_path") == "" {
+			q.Set("search_path", "public")
+			u.RawQuery = q.Encode()
+		}
+		client, err := sqlclient.OpenURL(ctx, u)
+		if err != nil {
+			return fmt.Errorf("migrate: 打开 PG 连接失败: %w", err)
+		}
+		closer = func() { _ = client.Close() }
+		drv = client
+		revConn = client.DB
+	} else {
+		drv, err = atlasDriver(handle, d)
+		if err != nil {
+			return err
+		}
 	}
-	rrw, err := newRevisionReadWriter(handle, d)
+	defer func() {
+		if closer != nil {
+			closer()
+		}
+	}()
+	rrw, err := newRevisionReadWriter(revConn, d)
 	if err != nil {
 		return err
 	}
@@ -149,9 +184,11 @@ type revisionReadWriter struct {
 }
 
 func newRevisionReadWriter(handle *sql.DB, d db.Dialect) (*revisionReadWriter, error) {
-	// 跨方言通用 DDL（text/int/timestamp/bigint）
+	// 跨方言通用 DDL：version 用 VARCHAR(191) 作主键（MySQL 不允许 TEXT 主键，
+	// 与 atlas CLI 版本表口径一致；191 为 utf8mb4 索引安全长度）；operator_version
+	// 用 varchar——MySQL 8 严格模式禁止 TEXT 列带字面量默认值（Error 1101/1170）
 	const ddl = `CREATE TABLE IF NOT EXISTS ` + revisionTable + ` (
-		version            TEXT NOT NULL PRIMARY KEY,
+		version            VARCHAR(191) NOT NULL PRIMARY KEY,
 		description        TEXT NOT NULL,
 		type               INTEGER NOT NULL DEFAULT 1,
 		applied            INTEGER NOT NULL DEFAULT 0,
@@ -162,7 +199,7 @@ func newRevisionReadWriter(handle *sql.DB, d db.Dialect) (*revisionReadWriter, e
 		error_stmt         TEXT,
 		hash               TEXT NOT NULL,
 		partial_hashes     TEXT,
-		operator_version   TEXT NOT NULL DEFAULT ''
+		operator_version   VARCHAR(64) NOT NULL DEFAULT ''
 	)`
 	if _, err := handle.Exec(ddl); err != nil {
 		return nil, fmt.Errorf("migrate: 创建版本表失败: %w", err)

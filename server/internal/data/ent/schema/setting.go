@@ -3,10 +3,10 @@ package schema
 // 所有权：mods/settings（M0）
 
 import (
+	"encoding/json"
 	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
-	"encoding/json"
 )
 
 // Setting 运行时业务开关的真理源（铁律 7：后台可改；env/config 只作首次部署兜底）。

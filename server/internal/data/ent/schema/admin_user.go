@@ -30,7 +30,7 @@ func (AdminUser) Fields() []ent.Field {
 		field.Bool("enabled").Default(true),
 		field.String("remark").MaxLen(255).Optional(),
 		field.String("last_login_ip").MaxLen(64).Optional(),
-		field.Time("last_login_at").Optional(),
+		field.Time("last_login_at").SchemaType(mysqlTime).Optional(),
 	}
 }
 

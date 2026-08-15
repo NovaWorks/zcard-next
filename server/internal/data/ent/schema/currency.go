@@ -28,9 +28,9 @@ func (Currency) Fields() []ent.Field {
 		field.Float("rate").
 			Default(1).
 			SchemaType(map[string]string{
-				dialect.MySQL:     "decimal(20,8)",
-				dialect.Postgres:  "numeric(20,8)",
-				dialect.SQLite:    "real",
+				dialect.MySQL:    "decimal(20,8)",
+				dialect.Postgres: "numeric(20,8)",
+				dialect.SQLite:   "real",
 			}).
 			Comment("对基础货币汇率（手动 + 可选定时拉取，M3 插件）"),
 		field.Bool("enabled").Default(true),

@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -17,11 +18,19 @@ import (
 	// 三方言驱动注册（同一二进制，运行时按 DSN 切换，ADR-D20）：
 	// 纯 Go 无 CGO（SQLite 用 modernc，保单二进制交叉编译，ADR-D19）
 	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/stdlib"
 	_ "modernc.org/sqlite"
 
 	"github.com/google/wire"
 )
+
+// atlas 的 sqlclient 按驱动名 "postgres" 打开连接（迁移执行器 PG 路径）；
+// pgx stdlib 注册名是 "pgx"，此处注册别名（幂等）。
+func init() {
+	if !slices.Contains(sql.Drivers(), "postgres") {
+		sql.Register("postgres", stdlib.GetDefaultDriver())
+	}
+}
 
 // ProviderSet data providers（wire）。
 var ProviderSet = wire.NewSet(NewData)

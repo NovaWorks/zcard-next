@@ -1,0 +1,14 @@
+#!/bin/sh
+# 开源红线本地防线：禁止把 local/* 或含 saas 的分支推送到任何远端
+# （plan/P4-00 §0 分支纪律；pushRemote=no-push 只挡无参 push，显式 remote 由本钩子拦截）
+while read local_ref local_sha remote_ref remote_sha; do
+  branch=${remote_ref#refs/heads/}
+  case "$branch" in
+    local/*|*saas*|*SAAS*)
+      echo "✗ 开源红线：分支 '$branch' 禁止推送到 GitHub（SaaS 开发仅限本地分支 local/saas*）" >&2
+      echo "  规则见 plan/P4/P4-00-overview.md §0；如需同步 main，请在 main 上修复后单向同步到 local/saas" >&2
+      exit 1
+      ;;
+  esac
+done
+exit 0

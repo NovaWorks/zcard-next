@@ -58,7 +58,7 @@ func (Payment) Fields() []ent.Field {
 		field.Int64("charged_amount").Default(0).Comment("实收（分，回调核对；金额核对永远对基础货币）"),
 		field.Int64("fee").Default(0).Comment("手续费（分）"),
 		field.Enum("status").Values("pending", "success", "failed").Default("pending"),
-		field.Time("paid_at").Optional(),
+		field.Time("paid_at").SchemaType(mysqlTime).Optional(),
 		field.JSON("raw", json.RawMessage{}).Optional().Comment("回调原文（审计；不含敏感凭据）"),
 		field.String("idempotency_key").MaxLen(64).Optional().Comment("业务幂等键（写接口 Idempotency-Key 头）"),
 	}

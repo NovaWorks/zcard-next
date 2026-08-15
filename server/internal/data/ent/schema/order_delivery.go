@@ -31,7 +31,7 @@ func (OrderDelivery) Fields() []ent.Field {
 		field.Uint64("delivered_by").Default(0).Comment("人工发货管理员（auto 为 0）"),
 		field.JSON("logistics", map[string]any{}).Optional().Comment("结构化交付信息（物流单号/追踪链接）"),
 		field.Int32("fetch_count").Default(0).Comment("已取货次数（默认 1 次后掩码）"),
-		field.Time("delivered_at").Optional(),
+		field.Time("delivered_at").SchemaType(mysqlTime).Optional(),
 		field.String("fetched_ip").MaxLen(64).Optional().Comment("取货 IP（审计，不含明文）"),
 	}
 }

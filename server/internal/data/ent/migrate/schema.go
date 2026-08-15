@@ -11,8 +11,8 @@ var (
 	// AdminRolesColumns holds the columns for the "admin_roles" table.
 	AdminRolesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "name", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "code", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 255},
@@ -27,8 +27,8 @@ var (
 	// AdminUsersColumns holds the columns for the "admin_users" table.
 	AdminUsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "password_hash", Type: field.TypeString, Size: 255},
 		{Name: "nickname", Type: field.TypeString, Nullable: true, Size: 60},
@@ -38,7 +38,7 @@ var (
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "remark", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "last_login_ip", Type: field.TypeString, Nullable: true, Size: 64},
-		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_login_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// AdminUsersTable holds the schema information for the "admin_users" table.
 	AdminUsersTable = &schema.Table{
@@ -56,8 +56,8 @@ var (
 	// CardsColumns holds the columns for the "cards" table.
 	CardsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "version", Type: field.TypeInt32, Default: 0},
 		{Name: "content", Type: field.TypeBytes},
@@ -73,8 +73,8 @@ var (
 		{Name: "draft_premium", Type: field.TypeInt64, Default: 0},
 		{Name: "draft_cost", Type: field.TypeInt64, Default: 0},
 		{Name: "price", Type: field.TypeInt64, Nullable: true},
-		{Name: "locked_at", Type: field.TypeTime, Nullable: true},
-		{Name: "used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "locked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "used_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "product_id", Type: field.TypeUint64},
 	}
 	// CardsTable holds the schema information for the "cards" table.
@@ -121,8 +121,8 @@ var (
 	// CurrenciesColumns holds the columns for the "currencies" table.
 	CurrenciesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "code", Type: field.TypeString, Unique: true, Size: 3},
 		{Name: "symbol", Type: field.TypeString, Size: 10},
 		{Name: "position", Type: field.TypeEnum, Enums: []string{"prefix", "suffix"}, Default: "prefix"},
@@ -147,8 +147,8 @@ var (
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "version", Type: field.TypeInt32, Default: 0},
 		{Name: "order_no", Type: field.TypeString, Unique: true, Size: 40},
@@ -176,9 +176,9 @@ var (
 		{Name: "invite_l2", Type: field.TypeUint64, Nullable: true},
 		{Name: "invite_l3", Type: field.TypeUint64, Nullable: true},
 		{Name: "extra", Type: field.TypeJSON, Nullable: true},
-		{Name: "paid_at", Type: field.TypeTime, Nullable: true},
-		{Name: "closed_at", Type: field.TypeTime, Nullable: true},
-		{Name: "expired_at", Type: field.TypeTime, Nullable: true},
+		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "closed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "expired_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{
@@ -233,7 +233,7 @@ var (
 		{Name: "source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "seq", Type: field.TypeInt32, Default: 0},
 		{Name: "meta", Type: field.TypeJSON, Nullable: true},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "order_id", Type: field.TypeUint64},
 	}
 	// OrderAmountLinesTable holds the schema information for the "order_amount_lines" table.
@@ -265,8 +265,8 @@ var (
 	// OrderDeliveriesColumns holds the columns for the "order_deliveries" table.
 	OrderDeliveriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "item_id", Type: field.TypeUint64},
 		{Name: "card_id", Type: field.TypeUint64},
 		{Name: "delivery_token_hash", Type: field.TypeString, Size: 64},
@@ -274,7 +274,7 @@ var (
 		{Name: "delivered_by", Type: field.TypeUint64, Default: 0},
 		{Name: "logistics", Type: field.TypeJSON, Nullable: true},
 		{Name: "fetch_count", Type: field.TypeInt32, Default: 0},
-		{Name: "delivered_at", Type: field.TypeTime, Nullable: true},
+		{Name: "delivered_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "fetched_ip", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "order_id", Type: field.TypeUint64},
 	}
@@ -307,8 +307,8 @@ var (
 	// OrderItemsColumns holds the columns for the "order_items" table.
 	OrderItemsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "sku_id", Type: field.TypeUint64, Nullable: true},
@@ -359,7 +359,7 @@ var (
 		{Name: "operator_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "client_ip", Type: field.TypeString, Nullable: true, Size: 64},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "order_id", Type: field.TypeUint64},
 	}
 	// OrderStatusEventsTable holds the schema information for the "order_status_events" table.
@@ -397,8 +397,8 @@ var (
 		{Name: "payload", Type: field.TypeJSON, Nullable: true},
 		{Name: "dedupe_key", Type: field.TypeString, Unique: true, Size: 120},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"publishing", "published", "failed"}, Default: "publishing"},
-		{Name: "published_at", Type: field.TypeTime, Nullable: true},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "published_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// OutboxEventsTable holds the schema information for the "outbox_events" table.
 	OutboxEventsTable = &schema.Table{
@@ -416,8 +416,8 @@ var (
 	// PaymentsColumns holds the columns for the "payments" table.
 	PaymentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "channel", Type: field.TypeString, Size: 50},
 		{Name: "channel_order_no", Type: field.TypeString, Nullable: true, Size: 80},
@@ -425,7 +425,7 @@ var (
 		{Name: "charged_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "fee", Type: field.TypeInt64, Default: 0},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "success", "failed"}, Default: "pending"},
-		{Name: "paid_at", Type: field.TypeTime, Nullable: true},
+		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "raw", Type: field.TypeJSON, Nullable: true},
 		{Name: "idempotency_key", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "order_id", Type: field.TypeUint64},
@@ -464,8 +464,8 @@ var (
 	// PaymentChannelsColumns holds the columns for the "payment_channels" table.
 	PaymentChannelsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "name", Type: field.TypeString, Size: 60},
 		{Name: "code", Type: field.TypeString, Size: 30},
@@ -495,7 +495,7 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "event_id", Type: field.TypeUint64},
 		{Name: "consumer", Type: field.TypeString, Size: 64},
-		{Name: "processed_at", Type: field.TypeTime},
+		{Name: "processed_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// ProcessedEventsTable holds the schema information for the "processed_events" table.
 	ProcessedEventsTable = &schema.Table{
@@ -513,8 +513,8 @@ var (
 	// ProductsColumns holds the columns for the "products" table.
 	ProductsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "category_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "name", Type: field.TypeString, Size: 150},
@@ -535,7 +535,7 @@ var (
 		{Name: "status", Type: field.TypeInt8, Default: 1},
 		{Name: "upstream_source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "upstream_product_code", Type: field.TypeString, Nullable: true, Size: 128},
-		{Name: "upstream_synced_at", Type: field.TypeTime, Nullable: true},
+		{Name: "upstream_synced_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// ProductsTable holds the schema information for the "products" table.
 	ProductsTable = &schema.Table{
@@ -568,8 +568,8 @@ var (
 	// ProductSkusColumns holds the columns for the "product_skus" table.
 	ProductSkusColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "name", Type: field.TypeString, Size: 100},
 		{Name: "spec_values", Type: field.TypeJSON},
@@ -608,8 +608,8 @@ var (
 	// RefundOrdersColumns holds the columns for the "refund_orders" table.
 	RefundOrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"gateway", "wallet", "upstream"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"created", "processing", "succeeded", "failed"}, Default: "created"},
@@ -647,8 +647,8 @@ var (
 	// RolePermissionsColumns holds the columns for the "role_permissions" table.
 	RolePermissionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "role_id", Type: field.TypeUint64},
 		{Name: "permission_code", Type: field.TypeString, Size: 100},
 	}
@@ -668,8 +668,8 @@ var (
 	// SettingsColumns holds the columns for the "settings" table.
 	SettingsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "group", Type: field.TypeString, Size: 50},
 		{Name: "key", Type: field.TypeString, Size: 100},
 		{Name: "value", Type: field.TypeJSON},
@@ -690,13 +690,13 @@ var (
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 255},
 		{Name: "password_hash", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted"}, Default: "active"},
-		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
+		{Name: "last_login_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "invite_l1", Type: field.TypeUint64, Nullable: true},
 		{Name: "invite_l2", Type: field.TypeUint64, Nullable: true},
 		{Name: "invite_l3", Type: field.TypeUint64, Nullable: true},
@@ -722,7 +722,7 @@ var (
 		{Name: "available", Type: field.TypeInt64, Default: 0},
 		{Name: "locked", Type: field.TypeInt64, Default: 0},
 		{Name: "version", Type: field.TypeInt32, Default: 0},
-		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// WalletAccountsTable holds the schema information for the "wallet_accounts" table.
 	WalletAccountsTable = &schema.Table{
@@ -744,7 +744,7 @@ var (
 		{Name: "order_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "operator_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "remark", Type: field.TypeString, Nullable: true, Size: 255},
-		{Name: "created_at", Type: field.TypeTime},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// WalletTransactionsTable holds the schema information for the "wallet_transactions" table.
 	WalletTransactionsTable = &schema.Table{

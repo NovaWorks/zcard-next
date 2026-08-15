@@ -57,19 +57,37 @@ func (d Dialect) DriverName() string {
 }
 
 // Open 按 DSN 打开连接池（统一入口：驱动选择收口在本包，mods 禁 import 驱动包）。
-// SQLite 自动启用 WAL + busy_timeout（ADR-D19 技术要点 2），并确保父目录存在。
+// SQLite 自动启用 WAL + busy_timeout（ADR-D19 技术要点 2），并确保父目录存在；
+// MySQL 自动补 parseTime/loc（驱动返回 time.Time 的必要参数，漏配是常见接入错误）。
 func (d Dialect) Open(dsn string) (*sql.DB, error) {
-	if d == SQLite {
+	switch d {
+	case SQLite:
 		dsn = ensureSQLitePragmas(dsn)
 		if err := ensureSQLiteDir(dsn); err != nil {
 			return nil, err
 		}
+	case MySQL:
+		dsn = ensureMySQLParams(dsn)
 	}
 	handle, err := sql.Open(d.DriverName(), dsn)
 	if err != nil {
 		return nil, fmt.Errorf("db: open %s: %w", d, err)
 	}
 	return handle, nil
+}
+
+// ensureMySQLParams 补齐驱动必需参数：parseTime=True（扫描 time 列）与 loc=UTC
+// （统一 UTC，§3.4）；用户已配置则不覆盖（如自定义 loc 的多租户场景）。
+func ensureMySQLParams(dsn string) string {
+	// DSN 形如 user:pass@tcp(host:port)/db?params
+	if !strings.Contains(dsn, "parseTime=") {
+		sep := "?"
+		if strings.Contains(dsn, "?") {
+			sep = "&"
+		}
+		dsn += sep + "parseTime=True&loc=UTC"
+	}
+	return dsn
 }
 
 func ensureSQLitePragmas(dsn string) string {

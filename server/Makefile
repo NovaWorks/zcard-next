@@ -130,3 +130,10 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 .DEFAULT_GOAL := help
+
+.PHONY: git-hooks
+# 启用仓库管理的 git 钩子（新机器克隆后执行一次）
+# pre-push：开源红线——禁止 local/* 与含 saas 的分支推送远端（plan/P4-00 §0）
+git-hooks:
+	git config core.hooksPath ../.githooks
+	@echo "git 钩子已启用（core.hooksPath=.githooks）"

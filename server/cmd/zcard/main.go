@@ -148,7 +148,7 @@ func applyMigrationsIfEnabled(ctx context.Context, bc *conf.Bootstrap) error {
 		return err
 	}
 	defer cleanup()
-	if err := data.ApplyMigrations(ctx, d.DB, d.Dialect); err != nil {
+	if err := data.ApplyMigrations(ctx, d.DB, d.Dialect, bc.Data.Database.Source); err != nil {
 		return fmt.Errorf("启动迁移失败（拒绝启动，规划 §10.4）: %w", err)
 	}
 	return nil

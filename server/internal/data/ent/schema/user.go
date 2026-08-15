@@ -23,7 +23,7 @@ func (User) Fields() []ent.Field {
 		// bcrypt；与查询密码（orders.query_password_hash）相互独立
 		field.String("password_hash").MaxLen(255).Optional().Comment("第三方登录用户可无密码"),
 		field.Enum("status").Values("active", "banned", "deleted").Default("active"),
-		field.Time("last_login_at").Optional(),
+		field.Time("last_login_at").SchemaType(mysqlTime).Optional(),
 		// 三级分销归因链快照（注册/下单时绑定上级，供 affiliate 结算）
 		field.Uint64("invite_l1").Optional(),
 		field.Uint64("invite_l2").Optional(),

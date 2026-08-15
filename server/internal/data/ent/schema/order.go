@@ -66,9 +66,9 @@ func (Order) Fields() []ent.Field {
 		field.Uint64("invite_l2").Optional(),
 		field.Uint64("invite_l3").Optional(),
 		field.JSON("extra", map[string]any{}).Optional().Comment("扩展预留（控件答案等，加字段先进 extra）"),
-		field.Time("paid_at").Optional(),
-		field.Time("closed_at").Optional(),
-		field.Time("expired_at").Optional().Comment("超时取消扫描（INDEX(status, expired_at)）"),
+		field.Time("paid_at").SchemaType(mysqlTime).Optional(),
+		field.Time("closed_at").SchemaType(mysqlTime).Optional(),
+		field.Time("expired_at").SchemaType(mysqlTime).Optional().Comment("超时取消扫描（INDEX(status, expired_at)）"),
 	}
 }
 
@@ -164,7 +164,7 @@ func (OrderAmountLine) Fields() []ent.Field {
 		field.Uint64("source_id").Optional().Comment("来源 ID（优惠券/会员等级/秒杀）"),
 		field.Int32("seq").Default(0).Comment("管线顺序（PriceCalculator 步骤序，可重放）"),
 		field.JSON("meta", map[string]any{}).Optional().Comment("快照（费率/汇率/取整规则）"),
-		field.Time("created_at").Immutable().Default(nowUTC),
+		field.Time("created_at").SchemaType(mysqlTime).Immutable().Default(nowUTC),
 	}
 }
 
@@ -202,7 +202,7 @@ func (OrderStatusEvent) Fields() []ent.Field {
 		field.Uint64("operator_id").Optional(),
 		field.String("reason").MaxLen(255).Optional(),
 		field.String("client_ip").MaxLen(64).Optional(),
-		field.Time("created_at").Immutable().Default(nowUTC),
+		field.Time("created_at").SchemaType(mysqlTime).Immutable().Default(nowUTC),
 	}
 }
 
