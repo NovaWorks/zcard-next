@@ -14,9 +14,30 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminrole"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminuser"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/auditlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/banner"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cardimport"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cartitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/coupon"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/dailystat"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/downstreamcallback"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/emailverification"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/externalidentity"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/failedtask"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberproductgroup"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
@@ -25,15 +46,52 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/outboxevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointtransaction"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/postcategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/processedevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/reconciliationitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/reconciliationjob"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerbalanceaccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerledgerentry"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerpricing"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerprofile"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerrelatedaccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellersite"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/review"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/risklockkey"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rolepermission"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/session"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplynonce"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticket"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticketmessage"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usergroup"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/v1idmap"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/virtualreview"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/visitlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/walletaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -94,28 +152,86 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			adminrole.Table:         adminrole.ValidColumn,
-			adminuser.Table:         adminuser.ValidColumn,
-			card.Table:              card.ValidColumn,
-			currency.Table:          currency.ValidColumn,
-			failedtask.Table:        failedtask.ValidColumn,
-			order.Table:             order.ValidColumn,
-			orderamountline.Table:   orderamountline.ValidColumn,
-			orderdelivery.Table:     orderdelivery.ValidColumn,
-			orderitem.Table:         orderitem.ValidColumn,
-			orderstatusevent.Table:  orderstatusevent.ValidColumn,
-			outboxevent.Table:       outboxevent.ValidColumn,
-			payment.Table:           payment.ValidColumn,
-			paymentchannel.Table:    paymentchannel.ValidColumn,
-			processedevent.Table:    processedevent.ValidColumn,
-			product.Table:           product.ValidColumn,
-			productsku.Table:        productsku.ValidColumn,
-			refundorder.Table:       refundorder.ValidColumn,
-			rolepermission.Table:    rolepermission.ValidColumn,
-			setting.Table:           setting.ValidColumn,
-			user.Table:              user.ValidColumn,
-			walletaccount.Table:     walletaccount.ValidColumn,
-			wallettransaction.Table: wallettransaction.ValidColumn,
+			adminrole.Table:              adminrole.ValidColumn,
+			adminuser.Table:              adminuser.ValidColumn,
+			affiliatecommission.Table:    affiliatecommission.ValidColumn,
+			auditlog.Table:               auditlog.ValidColumn,
+			banner.Table:                 banner.ValidColumn,
+			card.Table:                   card.ValidColumn,
+			cardimport.Table:             cardimport.ValidColumn,
+			cartitem.Table:               cartitem.ValidColumn,
+			category.Table:               category.ValidColumn,
+			coupon.Table:                 coupon.ValidColumn,
+			currency.Table:               currency.ValidColumn,
+			dailystat.Table:              dailystat.ValidColumn,
+			downstreamcallback.Table:     downstreamcallback.ValidColumn,
+			emailverification.Table:      emailverification.ValidColumn,
+			externalidentity.Table:       externalidentity.ValidColumn,
+			failedtask.Table:             failedtask.ValidColumn,
+			flashsale.Table:              flashsale.ValidColumn,
+			giftcard.Table:               giftcard.ValidColumn,
+			giftcardbatch.Table:          giftcardbatch.ValidColumn,
+			media.Table:                  media.ValidColumn,
+			mediacategory.Table:          mediacategory.ValidColumn,
+			memberlevel.Table:            memberlevel.ValidColumn,
+			memberproductgroup.Table:     memberproductgroup.ValidColumn,
+			notification.Table:           notification.ValidColumn,
+			notificationlog.Table:        notificationlog.ValidColumn,
+			notifytemplate.Table:         notifytemplate.ValidColumn,
+			order.Table:                  order.ValidColumn,
+			orderamountline.Table:        orderamountline.ValidColumn,
+			orderdelivery.Table:          orderdelivery.ValidColumn,
+			orderitem.Table:              orderitem.ValidColumn,
+			orderstatusevent.Table:       orderstatusevent.ValidColumn,
+			outboxevent.Table:            outboxevent.ValidColumn,
+			payment.Table:                payment.ValidColumn,
+			paymentchannel.Table:         paymentchannel.ValidColumn,
+			pointaccount.Table:           pointaccount.ValidColumn,
+			pointtransaction.Table:       pointtransaction.ValidColumn,
+			post.Table:                   post.ValidColumn,
+			postcategory.Table:           postcategory.ValidColumn,
+			processedevent.Table:         processedevent.ValidColumn,
+			procurementitem.Table:        procurementitem.ValidColumn,
+			procurementorder.Table:       procurementorder.ValidColumn,
+			product.Table:                product.ValidColumn,
+			productcontrol.Table:         productcontrol.ValidColumn,
+			productsku.Table:             productsku.ValidColumn,
+			promotion.Table:              promotion.ValidColumn,
+			rechargeorder.Table:          rechargeorder.ValidColumn,
+			reconciliationitem.Table:     reconciliationitem.ValidColumn,
+			reconciliationjob.Table:      reconciliationjob.ValidColumn,
+			refundorder.Table:            refundorder.ValidColumn,
+			resellerbalanceaccount.Table: resellerbalanceaccount.ValidColumn,
+			resellerledgerentry.Table:    resellerledgerentry.ValidColumn,
+			resellerpricing.Table:        resellerpricing.ValidColumn,
+			resellerprofile.Table:        resellerprofile.ValidColumn,
+			resellerrelatedaccount.Table: resellerrelatedaccount.ValidColumn,
+			resellersite.Table:           resellersite.ValidColumn,
+			review.Table:                 review.ValidColumn,
+			risklockkey.Table:            risklockkey.ValidColumn,
+			rolepermission.Table:         rolepermission.ValidColumn,
+			securityauditlog.Table:       securityauditlog.ValidColumn,
+			session.Table:                session.ValidColumn,
+			setting.Table:                setting.ValidColumn,
+			supplieraccount.Table:        supplieraccount.ValidColumn,
+			supplierledgerentry.Table:    supplierledgerentry.ValidColumn,
+			supplierproductprice.Table:   supplierproductprice.ValidColumn,
+			supplyconnection.Table:       supplyconnection.ValidColumn,
+			supplymapping.Table:          supplymapping.ValidColumn,
+			supplynonce.Table:            supplynonce.ValidColumn,
+			supplyorder.Table:            supplyorder.ValidColumn,
+			supplysynctask.Table:         supplysynctask.ValidColumn,
+			tag.Table:                    tag.ValidColumn,
+			ticket.Table:                 ticket.ValidColumn,
+			ticketmessage.Table:          ticketmessage.ValidColumn,
+			user.Table:                   user.ValidColumn,
+			usergroup.Table:              usergroup.ValidColumn,
+			v1idmap.Table:                v1idmap.ValidColumn,
+			virtualreview.Table:          virtualreview.ValidColumn,
+			visitlog.Table:               visitlog.ValidColumn,
+			walletaccount.Table:          walletaccount.ValidColumn,
+			wallettransaction.Table:      wallettransaction.ValidColumn,
+			withdrawal.Table:             withdrawal.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

@@ -12,14 +12,77 @@ type AdminRole func(*sql.Selector)
 // AdminUser is the predicate function for adminuser builders.
 type AdminUser func(*sql.Selector)
 
+// AffiliateCommission is the predicate function for affiliatecommission builders.
+type AffiliateCommission func(*sql.Selector)
+
+// AuditLog is the predicate function for auditlog builders.
+type AuditLog func(*sql.Selector)
+
+// Banner is the predicate function for banner builders.
+type Banner func(*sql.Selector)
+
 // Card is the predicate function for card builders.
 type Card func(*sql.Selector)
+
+// CardImport is the predicate function for cardimport builders.
+type CardImport func(*sql.Selector)
+
+// CartItem is the predicate function for cartitem builders.
+type CartItem func(*sql.Selector)
+
+// Category is the predicate function for category builders.
+type Category func(*sql.Selector)
+
+// Coupon is the predicate function for coupon builders.
+type Coupon func(*sql.Selector)
 
 // Currency is the predicate function for currency builders.
 type Currency func(*sql.Selector)
 
+// DailyStat is the predicate function for dailystat builders.
+type DailyStat func(*sql.Selector)
+
+// DownstreamCallback is the predicate function for downstreamcallback builders.
+type DownstreamCallback func(*sql.Selector)
+
+// EmailVerification is the predicate function for emailverification builders.
+type EmailVerification func(*sql.Selector)
+
+// ExternalIdentity is the predicate function for externalidentity builders.
+type ExternalIdentity func(*sql.Selector)
+
 // FailedTask is the predicate function for failedtask builders.
 type FailedTask func(*sql.Selector)
+
+// FlashSale is the predicate function for flashsale builders.
+type FlashSale func(*sql.Selector)
+
+// Giftcard is the predicate function for giftcard builders.
+type Giftcard func(*sql.Selector)
+
+// GiftcardBatch is the predicate function for giftcardbatch builders.
+type GiftcardBatch func(*sql.Selector)
+
+// Media is the predicate function for media builders.
+type Media func(*sql.Selector)
+
+// MediaCategory is the predicate function for mediacategory builders.
+type MediaCategory func(*sql.Selector)
+
+// MemberLevel is the predicate function for memberlevel builders.
+type MemberLevel func(*sql.Selector)
+
+// MemberProductGroup is the predicate function for memberproductgroup builders.
+type MemberProductGroup func(*sql.Selector)
+
+// Notification is the predicate function for notification builders.
+type Notification func(*sql.Selector)
+
+// NotificationLog is the predicate function for notificationlog builders.
+type NotificationLog func(*sql.Selector)
+
+// NotifyTemplate is the predicate function for notifytemplate builders.
+type NotifyTemplate func(*sql.Selector)
 
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
@@ -45,29 +108,140 @@ type Payment func(*sql.Selector)
 // PaymentChannel is the predicate function for paymentchannel builders.
 type PaymentChannel func(*sql.Selector)
 
+// PointAccount is the predicate function for pointaccount builders.
+type PointAccount func(*sql.Selector)
+
+// PointTransaction is the predicate function for pointtransaction builders.
+type PointTransaction func(*sql.Selector)
+
+// Post is the predicate function for post builders.
+type Post func(*sql.Selector)
+
+// PostCategory is the predicate function for postcategory builders.
+type PostCategory func(*sql.Selector)
+
 // ProcessedEvent is the predicate function for processedevent builders.
 type ProcessedEvent func(*sql.Selector)
+
+// ProcurementItem is the predicate function for procurementitem builders.
+type ProcurementItem func(*sql.Selector)
+
+// ProcurementOrder is the predicate function for procurementorder builders.
+type ProcurementOrder func(*sql.Selector)
 
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)
 
+// ProductControl is the predicate function for productcontrol builders.
+type ProductControl func(*sql.Selector)
+
 // ProductSku is the predicate function for productsku builders.
 type ProductSku func(*sql.Selector)
+
+// Promotion is the predicate function for promotion builders.
+type Promotion func(*sql.Selector)
+
+// RechargeOrder is the predicate function for rechargeorder builders.
+type RechargeOrder func(*sql.Selector)
+
+// ReconciliationItem is the predicate function for reconciliationitem builders.
+type ReconciliationItem func(*sql.Selector)
+
+// ReconciliationJob is the predicate function for reconciliationjob builders.
+type ReconciliationJob func(*sql.Selector)
 
 // RefundOrder is the predicate function for refundorder builders.
 type RefundOrder func(*sql.Selector)
 
+// ResellerBalanceAccount is the predicate function for resellerbalanceaccount builders.
+type ResellerBalanceAccount func(*sql.Selector)
+
+// ResellerLedgerEntry is the predicate function for resellerledgerentry builders.
+type ResellerLedgerEntry func(*sql.Selector)
+
+// ResellerPricing is the predicate function for resellerpricing builders.
+type ResellerPricing func(*sql.Selector)
+
+// ResellerProfile is the predicate function for resellerprofile builders.
+type ResellerProfile func(*sql.Selector)
+
+// ResellerRelatedAccount is the predicate function for resellerrelatedaccount builders.
+type ResellerRelatedAccount func(*sql.Selector)
+
+// ResellerSite is the predicate function for resellersite builders.
+type ResellerSite func(*sql.Selector)
+
+// Review is the predicate function for review builders.
+type Review func(*sql.Selector)
+
+// RiskLockKey is the predicate function for risklockkey builders.
+type RiskLockKey func(*sql.Selector)
+
 // RolePermission is the predicate function for rolepermission builders.
 type RolePermission func(*sql.Selector)
+
+// SecurityAuditLog is the predicate function for securityauditlog builders.
+type SecurityAuditLog func(*sql.Selector)
+
+// Session is the predicate function for session builders.
+type Session func(*sql.Selector)
 
 // Setting is the predicate function for setting builders.
 type Setting func(*sql.Selector)
 
+// SupplierAccount is the predicate function for supplieraccount builders.
+type SupplierAccount func(*sql.Selector)
+
+// SupplierLedgerEntry is the predicate function for supplierledgerentry builders.
+type SupplierLedgerEntry func(*sql.Selector)
+
+// SupplierProductPrice is the predicate function for supplierproductprice builders.
+type SupplierProductPrice func(*sql.Selector)
+
+// SupplyConnection is the predicate function for supplyconnection builders.
+type SupplyConnection func(*sql.Selector)
+
+// SupplyMapping is the predicate function for supplymapping builders.
+type SupplyMapping func(*sql.Selector)
+
+// SupplyNonce is the predicate function for supplynonce builders.
+type SupplyNonce func(*sql.Selector)
+
+// SupplyOrder is the predicate function for supplyorder builders.
+type SupplyOrder func(*sql.Selector)
+
+// SupplySyncTask is the predicate function for supplysynctask builders.
+type SupplySyncTask func(*sql.Selector)
+
+// Tag is the predicate function for tag builders.
+type Tag func(*sql.Selector)
+
+// Ticket is the predicate function for ticket builders.
+type Ticket func(*sql.Selector)
+
+// TicketMessage is the predicate function for ticketmessage builders.
+type TicketMessage func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
+
+// UserGroup is the predicate function for usergroup builders.
+type UserGroup func(*sql.Selector)
+
+// V1IDMap is the predicate function for v1idmap builders.
+type V1IDMap func(*sql.Selector)
+
+// VirtualReview is the predicate function for virtualreview builders.
+type VirtualReview func(*sql.Selector)
+
+// VisitLog is the predicate function for visitlog builders.
+type VisitLog func(*sql.Selector)
 
 // WalletAccount is the predicate function for walletaccount builders.
 type WalletAccount func(*sql.Selector)
 
 // WalletTransaction is the predicate function for wallettransaction builders.
 type WalletTransaction func(*sql.Selector)
+
+// Withdrawal is the predicate function for withdrawal builders.
+type Withdrawal func(*sql.Selector)

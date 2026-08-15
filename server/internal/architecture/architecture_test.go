@@ -199,7 +199,7 @@ func TestRule4MoneyDiscipline(t *testing.T) {
 			ast.Inspect(f, func(n ast.Node) bool {
 				// 字段声明：type T struct { XxxPrice float64 }
 				if field, ok := n.(*ast.Field); ok {
-					if isFloatType(field.Type) && len(field.Names) > 0 && moneyishName(field.Names[0].Name) {
+					if isFloatType(field.Type) && len(field.Names) > 0 && moneyishName(field.Names[0].Name) && !floatFieldAllowlist[field.Names[0].Name] {
 						bad = append(bad, file+": 浮点字段 "+field.Names[0].Name)
 					}
 				}
@@ -210,6 +210,14 @@ func TestRule4MoneyDiscipline(t *testing.T) {
 	for _, b := range bad {
 		t.Errorf("金额纪律违规（%s）：金额一律 int64 分（money.Cents）", b)
 	}
+}
+
+// floatFieldAllowlist 费率/汇率类浮点豁免（显式登记制）：这些是「率」不是「金额」，
+// 数据库架构 §7.2 允许 decimal 存储；新增豁免必须在 CR 说明理由。
+var floatFieldAllowlist = map[string]bool{
+	"PriceMarkupPercent": true,  // 上游加价百分比（百分比，非金额）
+	"ExchangeRate":       true, // 汇率快照
+	"Rate":               true, // 费率快照（佣金）
 }
 
 func isFloatType(expr ast.Expr) bool {

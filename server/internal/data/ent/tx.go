@@ -16,12 +16,54 @@ type Tx struct {
 	AdminRole *AdminRoleClient
 	// AdminUser is the client for interacting with the AdminUser builders.
 	AdminUser *AdminUserClient
+	// AffiliateCommission is the client for interacting with the AffiliateCommission builders.
+	AffiliateCommission *AffiliateCommissionClient
+	// AuditLog is the client for interacting with the AuditLog builders.
+	AuditLog *AuditLogClient
+	// Banner is the client for interacting with the Banner builders.
+	Banner *BannerClient
 	// Card is the client for interacting with the Card builders.
 	Card *CardClient
+	// CardImport is the client for interacting with the CardImport builders.
+	CardImport *CardImportClient
+	// CartItem is the client for interacting with the CartItem builders.
+	CartItem *CartItemClient
+	// Category is the client for interacting with the Category builders.
+	Category *CategoryClient
+	// Coupon is the client for interacting with the Coupon builders.
+	Coupon *CouponClient
 	// Currency is the client for interacting with the Currency builders.
 	Currency *CurrencyClient
+	// DailyStat is the client for interacting with the DailyStat builders.
+	DailyStat *DailyStatClient
+	// DownstreamCallback is the client for interacting with the DownstreamCallback builders.
+	DownstreamCallback *DownstreamCallbackClient
+	// EmailVerification is the client for interacting with the EmailVerification builders.
+	EmailVerification *EmailVerificationClient
+	// ExternalIdentity is the client for interacting with the ExternalIdentity builders.
+	ExternalIdentity *ExternalIdentityClient
 	// FailedTask is the client for interacting with the FailedTask builders.
 	FailedTask *FailedTaskClient
+	// FlashSale is the client for interacting with the FlashSale builders.
+	FlashSale *FlashSaleClient
+	// Giftcard is the client for interacting with the Giftcard builders.
+	Giftcard *GiftcardClient
+	// GiftcardBatch is the client for interacting with the GiftcardBatch builders.
+	GiftcardBatch *GiftcardBatchClient
+	// Media is the client for interacting with the Media builders.
+	Media *MediaClient
+	// MediaCategory is the client for interacting with the MediaCategory builders.
+	MediaCategory *MediaCategoryClient
+	// MemberLevel is the client for interacting with the MemberLevel builders.
+	MemberLevel *MemberLevelClient
+	// MemberProductGroup is the client for interacting with the MemberProductGroup builders.
+	MemberProductGroup *MemberProductGroupClient
+	// Notification is the client for interacting with the Notification builders.
+	Notification *NotificationClient
+	// NotificationLog is the client for interacting with the NotificationLog builders.
+	NotificationLog *NotificationLogClient
+	// NotifyTemplate is the client for interacting with the NotifyTemplate builders.
+	NotifyTemplate *NotifyTemplateClient
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
 	// OrderAmountLine is the client for interacting with the OrderAmountLine builders.
@@ -38,24 +80,98 @@ type Tx struct {
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
 	PaymentChannel *PaymentChannelClient
+	// PointAccount is the client for interacting with the PointAccount builders.
+	PointAccount *PointAccountClient
+	// PointTransaction is the client for interacting with the PointTransaction builders.
+	PointTransaction *PointTransactionClient
+	// Post is the client for interacting with the Post builders.
+	Post *PostClient
+	// PostCategory is the client for interacting with the PostCategory builders.
+	PostCategory *PostCategoryClient
 	// ProcessedEvent is the client for interacting with the ProcessedEvent builders.
 	ProcessedEvent *ProcessedEventClient
+	// ProcurementItem is the client for interacting with the ProcurementItem builders.
+	ProcurementItem *ProcurementItemClient
+	// ProcurementOrder is the client for interacting with the ProcurementOrder builders.
+	ProcurementOrder *ProcurementOrderClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// ProductControl is the client for interacting with the ProductControl builders.
+	ProductControl *ProductControlClient
 	// ProductSku is the client for interacting with the ProductSku builders.
 	ProductSku *ProductSkuClient
+	// Promotion is the client for interacting with the Promotion builders.
+	Promotion *PromotionClient
+	// RechargeOrder is the client for interacting with the RechargeOrder builders.
+	RechargeOrder *RechargeOrderClient
+	// ReconciliationItem is the client for interacting with the ReconciliationItem builders.
+	ReconciliationItem *ReconciliationItemClient
+	// ReconciliationJob is the client for interacting with the ReconciliationJob builders.
+	ReconciliationJob *ReconciliationJobClient
 	// RefundOrder is the client for interacting with the RefundOrder builders.
 	RefundOrder *RefundOrderClient
+	// ResellerBalanceAccount is the client for interacting with the ResellerBalanceAccount builders.
+	ResellerBalanceAccount *ResellerBalanceAccountClient
+	// ResellerLedgerEntry is the client for interacting with the ResellerLedgerEntry builders.
+	ResellerLedgerEntry *ResellerLedgerEntryClient
+	// ResellerPricing is the client for interacting with the ResellerPricing builders.
+	ResellerPricing *ResellerPricingClient
+	// ResellerProfile is the client for interacting with the ResellerProfile builders.
+	ResellerProfile *ResellerProfileClient
+	// ResellerRelatedAccount is the client for interacting with the ResellerRelatedAccount builders.
+	ResellerRelatedAccount *ResellerRelatedAccountClient
+	// ResellerSite is the client for interacting with the ResellerSite builders.
+	ResellerSite *ResellerSiteClient
+	// Review is the client for interacting with the Review builders.
+	Review *ReviewClient
+	// RiskLockKey is the client for interacting with the RiskLockKey builders.
+	RiskLockKey *RiskLockKeyClient
 	// RolePermission is the client for interacting with the RolePermission builders.
 	RolePermission *RolePermissionClient
+	// SecurityAuditLog is the client for interacting with the SecurityAuditLog builders.
+	SecurityAuditLog *SecurityAuditLogClient
+	// Session is the client for interacting with the Session builders.
+	Session *SessionClient
 	// Setting is the client for interacting with the Setting builders.
 	Setting *SettingClient
+	// SupplierAccount is the client for interacting with the SupplierAccount builders.
+	SupplierAccount *SupplierAccountClient
+	// SupplierLedgerEntry is the client for interacting with the SupplierLedgerEntry builders.
+	SupplierLedgerEntry *SupplierLedgerEntryClient
+	// SupplierProductPrice is the client for interacting with the SupplierProductPrice builders.
+	SupplierProductPrice *SupplierProductPriceClient
+	// SupplyConnection is the client for interacting with the SupplyConnection builders.
+	SupplyConnection *SupplyConnectionClient
+	// SupplyMapping is the client for interacting with the SupplyMapping builders.
+	SupplyMapping *SupplyMappingClient
+	// SupplyNonce is the client for interacting with the SupplyNonce builders.
+	SupplyNonce *SupplyNonceClient
+	// SupplyOrder is the client for interacting with the SupplyOrder builders.
+	SupplyOrder *SupplyOrderClient
+	// SupplySyncTask is the client for interacting with the SupplySyncTask builders.
+	SupplySyncTask *SupplySyncTaskClient
+	// Tag is the client for interacting with the Tag builders.
+	Tag *TagClient
+	// Ticket is the client for interacting with the Ticket builders.
+	Ticket *TicketClient
+	// TicketMessage is the client for interacting with the TicketMessage builders.
+	TicketMessage *TicketMessageClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// UserGroup is the client for interacting with the UserGroup builders.
+	UserGroup *UserGroupClient
+	// V1IDMap is the client for interacting with the V1IDMap builders.
+	V1IDMap *V1IDMapClient
+	// VirtualReview is the client for interacting with the VirtualReview builders.
+	VirtualReview *VirtualReviewClient
+	// VisitLog is the client for interacting with the VisitLog builders.
+	VisitLog *VisitLogClient
 	// WalletAccount is the client for interacting with the WalletAccount builders.
 	WalletAccount *WalletAccountClient
 	// WalletTransaction is the client for interacting with the WalletTransaction builders.
 	WalletTransaction *WalletTransactionClient
+	// Withdrawal is the client for interacting with the Withdrawal builders.
+	Withdrawal *WithdrawalClient
 
 	// lazily loaded.
 	client     *Client
@@ -189,9 +305,30 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.AdminRole = NewAdminRoleClient(tx.config)
 	tx.AdminUser = NewAdminUserClient(tx.config)
+	tx.AffiliateCommission = NewAffiliateCommissionClient(tx.config)
+	tx.AuditLog = NewAuditLogClient(tx.config)
+	tx.Banner = NewBannerClient(tx.config)
 	tx.Card = NewCardClient(tx.config)
+	tx.CardImport = NewCardImportClient(tx.config)
+	tx.CartItem = NewCartItemClient(tx.config)
+	tx.Category = NewCategoryClient(tx.config)
+	tx.Coupon = NewCouponClient(tx.config)
 	tx.Currency = NewCurrencyClient(tx.config)
+	tx.DailyStat = NewDailyStatClient(tx.config)
+	tx.DownstreamCallback = NewDownstreamCallbackClient(tx.config)
+	tx.EmailVerification = NewEmailVerificationClient(tx.config)
+	tx.ExternalIdentity = NewExternalIdentityClient(tx.config)
 	tx.FailedTask = NewFailedTaskClient(tx.config)
+	tx.FlashSale = NewFlashSaleClient(tx.config)
+	tx.Giftcard = NewGiftcardClient(tx.config)
+	tx.GiftcardBatch = NewGiftcardBatchClient(tx.config)
+	tx.Media = NewMediaClient(tx.config)
+	tx.MediaCategory = NewMediaCategoryClient(tx.config)
+	tx.MemberLevel = NewMemberLevelClient(tx.config)
+	tx.MemberProductGroup = NewMemberProductGroupClient(tx.config)
+	tx.Notification = NewNotificationClient(tx.config)
+	tx.NotificationLog = NewNotificationLogClient(tx.config)
+	tx.NotifyTemplate = NewNotifyTemplateClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.OrderAmountLine = NewOrderAmountLineClient(tx.config)
 	tx.OrderDelivery = NewOrderDeliveryClient(tx.config)
@@ -200,15 +337,52 @@ func (tx *Tx) init() {
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
 	tx.Payment = NewPaymentClient(tx.config)
 	tx.PaymentChannel = NewPaymentChannelClient(tx.config)
+	tx.PointAccount = NewPointAccountClient(tx.config)
+	tx.PointTransaction = NewPointTransactionClient(tx.config)
+	tx.Post = NewPostClient(tx.config)
+	tx.PostCategory = NewPostCategoryClient(tx.config)
 	tx.ProcessedEvent = NewProcessedEventClient(tx.config)
+	tx.ProcurementItem = NewProcurementItemClient(tx.config)
+	tx.ProcurementOrder = NewProcurementOrderClient(tx.config)
 	tx.Product = NewProductClient(tx.config)
+	tx.ProductControl = NewProductControlClient(tx.config)
 	tx.ProductSku = NewProductSkuClient(tx.config)
+	tx.Promotion = NewPromotionClient(tx.config)
+	tx.RechargeOrder = NewRechargeOrderClient(tx.config)
+	tx.ReconciliationItem = NewReconciliationItemClient(tx.config)
+	tx.ReconciliationJob = NewReconciliationJobClient(tx.config)
 	tx.RefundOrder = NewRefundOrderClient(tx.config)
+	tx.ResellerBalanceAccount = NewResellerBalanceAccountClient(tx.config)
+	tx.ResellerLedgerEntry = NewResellerLedgerEntryClient(tx.config)
+	tx.ResellerPricing = NewResellerPricingClient(tx.config)
+	tx.ResellerProfile = NewResellerProfileClient(tx.config)
+	tx.ResellerRelatedAccount = NewResellerRelatedAccountClient(tx.config)
+	tx.ResellerSite = NewResellerSiteClient(tx.config)
+	tx.Review = NewReviewClient(tx.config)
+	tx.RiskLockKey = NewRiskLockKeyClient(tx.config)
 	tx.RolePermission = NewRolePermissionClient(tx.config)
+	tx.SecurityAuditLog = NewSecurityAuditLogClient(tx.config)
+	tx.Session = NewSessionClient(tx.config)
 	tx.Setting = NewSettingClient(tx.config)
+	tx.SupplierAccount = NewSupplierAccountClient(tx.config)
+	tx.SupplierLedgerEntry = NewSupplierLedgerEntryClient(tx.config)
+	tx.SupplierProductPrice = NewSupplierProductPriceClient(tx.config)
+	tx.SupplyConnection = NewSupplyConnectionClient(tx.config)
+	tx.SupplyMapping = NewSupplyMappingClient(tx.config)
+	tx.SupplyNonce = NewSupplyNonceClient(tx.config)
+	tx.SupplyOrder = NewSupplyOrderClient(tx.config)
+	tx.SupplySyncTask = NewSupplySyncTaskClient(tx.config)
+	tx.Tag = NewTagClient(tx.config)
+	tx.Ticket = NewTicketClient(tx.config)
+	tx.TicketMessage = NewTicketMessageClient(tx.config)
 	tx.User = NewUserClient(tx.config)
+	tx.UserGroup = NewUserGroupClient(tx.config)
+	tx.V1IDMap = NewV1IDMapClient(tx.config)
+	tx.VirtualReview = NewVirtualReviewClient(tx.config)
+	tx.VisitLog = NewVisitLogClient(tx.config)
 	tx.WalletAccount = NewWalletAccountClient(tx.config)
 	tx.WalletTransaction = NewWalletTransactionClient(tx.config)
+	tx.Withdrawal = NewWithdrawalClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.
