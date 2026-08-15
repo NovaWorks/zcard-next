@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
+// 里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+service AdminSettingsService {
+  // ListSettings 按分组列出设置项。
+  rpc ListSettings(ListSettingsRequest) returns (ListSettingsReply) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/settings"
+    };
+  }
+  // GetSetting 读取单个设置项。
+  rpc GetSetting(GetSettingRequest) returns (Setting) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/settings/{group}/{key}"
+    };
+  }
+  // UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
+  rpc UpdateSetting(UpdateSettingRequest) returns (Setting) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/settings/{group}/{key}"
+      body: "*"
+    };
+  }
+}
+
+message ListSettingsRequest {
+  // 可选分组过滤（site/template/trade/security/ops/notify/...）
+  string group = 1;
+}
+
+message ListSettingsReply {
+  repeated Setting items = 1;
+}
+
+message GetSettingRequest {
+  string group = 1 [(google.api.field_behavior) = REQUIRED];
+  string key = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateSettingRequest {
+  string group = 1 [(google.api.field_behavior) = REQUIRED];
+  string key = 2 [(google.api.field_behavior) = REQUIRED];
+  // 任意 JSON 文档（对象/数组/标量均可），服务端原样存储
+  string value_json = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Setting 设置项（value_json 为 JSON 文档字符串）。
+message Setting {
+  string group = 1;
+  string key = 2;
+  string value_json = 3;
+}

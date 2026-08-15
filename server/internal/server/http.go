@@ -1,0 +1,130 @@
+package server
+
+// HTTP Server：单进程承载 admin/storefront/supply 三面 API + 回调 + 健康检查。
+// 中间件栈：recovery → logging → validate → tenant（全局）+ adminAuth（selector：
+// 仅 /api/v1/admin/* 前缀；回调与供货路由绝不挂 JWT，架构测试规则 9）。
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"time"
+
+	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/conf"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
+
+	"github.com/go-kratos/kratos/v3/log"
+	"github.com/go-kratos/kratos/v3/middleware/logging"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/middleware/selector"
+	"github.com/go-kratos/kratos/v3/middleware/validate"
+	khttp "github.com/go-kratos/kratos/v3/transport/http"
+	"go.einride.tech/aip/fieldbehavior"
+	"google.golang.org/protobuf/proto"
+)
+
+// Version 构建注入（-ldflags -X），health/ping 下发。
+var Version = "dev"
+
+// NewHTTPServer 构造 HTTP server（wire provider）。
+func NewHTTPServer(
+	c *conf.Server,
+	d *data.Data,
+	signer *authn.Signer,
+	az port.Authorizer,
+	authSvc *identity.AdminAuthService,
+	settingsSvc *settings.AdminSettingsService,
+	catalogSvc *catalog.StoreCatalogService,
+	supplySvc *supply.SupplyService,
+) *khttp.Server {
+	var opts = []khttp.ServerOption{
+		khttp.Middleware(
+			recovery.Recovery(),
+			logging.Server(log.Default()),
+			validate.Validator(func(req any) error {
+				if msg, ok := req.(proto.Message); ok {
+					return fieldbehavior.ValidateRequiredFields(msg)
+				}
+				return nil
+			}),
+			tenantMiddleware(tenancyMainDomain(c)),
+			// admin realm 鉴权仅挂管理面 operation（proto 方法全名前缀 zcard.api.admin.v1.），
+			// 登录路由豁免；storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
+			selector.Server(adminAuthMiddleware(signer, az)).
+				Match(func(_ context.Context, operation string) bool {
+					return isAdminOperation(operation)
+				}).
+				Build(),
+		),
+		khttp.Timeout(30 * time.Second),
+	}
+	if c != nil && c.Http != nil {
+		if c.Http.Network != "" {
+			opts = append(opts, khttp.Network(c.Http.Network))
+		}
+		if c.Http.Addr != "" {
+			opts = append(opts, khttp.Address(c.Http.Addr))
+		}
+		if c.Http.Timeout != nil {
+			opts = append(opts, khttp.Timeout(c.Http.Timeout.AsDuration()))
+		}
+	}
+	srv := khttp.NewServer(opts...)
+
+	// 业务路由（proto 注解生成；静态路由先于参数路由由注册顺序保证，铁律 4）
+	adminv1.RegisterAdminAuthServiceHTTPServer(srv, authSvc)
+	adminv1.RegisterAdminSettingsServiceHTTPServer(srv, settingsSvc)
+	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
+	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
+
+	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
+	registerHealth(srv, d)
+	registerPaymentCallback(srv)
+
+	// TODO(M1b)：go:embed SPA（fullstack build tag；index.html 永不缓存，铁律 8）
+	// TODO(M1)：/install 安装向导（EnsureInstalled 中间件先于业务路由）
+	return srv
+}
+
+// registerHealth 健康检查（DB 连通 + 版本；/metrics Prometheus M1 接入内网口）。
+func registerHealth(srv *khttp.Server, d *data.Data) {
+	srv.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := contextWithTimeout(r)
+		defer cancel()
+		dbOK := d.Ping(ctx) == nil
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"status":  map[string]bool{"server": true, "database": dbOK},
+			"version": Version,
+			"dialect": string(d.Dialect),
+		})
+	})
+}
+
+// registerPaymentCallback 支付回调占位（§5.5.3 统一入口；M1a 交付管线：
+// 读 raw body（1MB 上限）→ 验签 → 事务内四重校验 → outbox）。
+// 注意：不挂任何鉴权中间件（回调鉴权由渠道验签完成，架构测试规则 9）。
+func registerPaymentCallback(srv *khttp.Server) {
+	srv.Route("/payments").POST("/callback/{provider}", func(ctx khttp.Context) error {
+		return ctx.JSON(http.StatusNotImplemented, map[string]string{
+			"reason":  "payment.CALLBACK_NOT_IMPLEMENTED",
+			"message": "支付回调管线 M1a 交付",
+		})
+	})
+}
+
+func tenancyMainDomain(c *conf.Server) string { return "" } // 由 bootstrap 注入 Tenancy 配置后补齐
+
+func contextWithTimeout(r *http.Request) (ctx context.Context, cancel context.CancelFunc) {
+	return context.WithTimeout(r.Context(), 3*time.Second)
+}

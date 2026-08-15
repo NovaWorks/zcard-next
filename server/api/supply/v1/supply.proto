@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package zcard.api.supply.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/supply/v1;supplyv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
+// 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
+// ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
+// M0 骨架仅提供 Ping 连通性端点，鉴权中间件挂载点已预留在 server/http.go。
+service SupplyService {
+  // Ping 连通性与协议版本探测（下游对接第一步）。
+  rpc Ping(google.protobuf.Empty) returns (PingReply) {
+    option (google.api.http) = {
+      get: "/api/v1/supply/ping"
+    };
+  }
+}
+
+message PingReply {
+  string protocol = 1;   // 固定 "zcard-supply-v2"
+  string version = 2;    // 服务端版本
+  int64 server_time = 3; // unix 秒
+}

@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package zcard.conf;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/internal/conf;conf";
+
+import "google/protobuf/duration.proto";
+
+// Bootstrap 为进程启动配置（config.yaml 反序列化目标）。
+// 运行时业务开关的真理源在 settings 表（铁律 7），本文件只承载部署期配置。
+message Bootstrap {
+  Server server = 1;
+  Data data = 2;
+  Security security = 3;
+  Tenancy tenancy = 4;
+  Log log = 5;
+}
+
+message Server {
+  message HTTP {
+    string network = 1;  // tcp / unix
+    string addr = 2;     // 0.0.0.0:8000
+    google.protobuf.Duration timeout = 3;
+  }
+  message GRPC {
+    string network = 1;
+    string addr = 2;     // 0.0.0.0:9000
+    google.protobuf.Duration timeout = 3;
+  }
+  HTTP http = 1;
+  GRPC grpc = 2;
+  // 启动时自动应用待执行迁移（加锁串行，失败拒绝启动，规划 §10.4）。
+  bool migrate_on_start = 3;
+  // 后台安全入口路径（可配，规划 §7.3；空 = /admin）
+  string admin_base_path = 4;
+}
+
+message Data {
+  message Database {
+    // sqlite | mysql | postgres（运行时检测方言，同一二进制三方言，ADR-D20）
+    string driver = 1;
+    // DSN。SQLite 为文件路径（自动启用 WAL + busy_timeout）
+    string source = 2;
+    int32 max_open_conns = 3;
+    int32 max_idle_conns = 4;
+    // 迁移目录（默认内嵌；指向磁盘便于开发期调试）
+    string migrations_dir = 5;
+  }
+  message Redis {
+    string addr = 1;
+    string password = 2;
+    int32 db = 3;
+    google.protobuf.Duration read_timeout = 4;
+    google.protobuf.Duration write_timeout = 5;
+  }
+  Database database = 1;
+  // Redis 可选：缺失时队列同步降级 + 进程内缓存（ADR-D6）
+  Redis redis = 2;
+  // 工作进程模式（worker）独立队列并发度
+  int32 worker_concurrency = 3;
+}
+
+// 四把钥匙解耦（铁律 §4.11.6）：env 注入优先，此处仅作兜底。
+// 密钥永不进 DB/日志/git；生产环境必须经环境变量（ZCARD_*_KEY）注入。
+message Security {
+  // admin realm JWT 签名密钥（>= 32 字节）
+  string jwt_admin_key = 1;
+  // user realm JWT 签名密钥（与 admin 独立，防提权串用）
+  string jwt_user_key = 2;
+  // 卡密加密密钥（32 字节 hex；AES-256-GCM，与业务数据密钥分离）
+  string card_key = 3;
+  // 业务数据加密密钥（32 字节 hex；凭据列）
+  string data_key = 4;
+}
+
+// 多租户（开源版仅启用 Row 行级隔离；Schema/Database 属商业版，ADR-D15）
+message Tenancy {
+  // row（开源版唯一取值；schema/database 为商业版预留）
+  string mode = 1;
+  // 主站域名（Host 匹配；分站域名走 reseller_sites 验证，M3）
+  string main_domain = 2;
+}
+
+message Log {
+  // debug | info | warn | error
+  string level = 1;
+  // text | json
+  string format = 2;
+}

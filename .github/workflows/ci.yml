@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  server:
+    name: server（生成物校验 + 测试）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: 安装工具
+        run: make init
+      - name: 生成物无 diff 校验（离线可构建）
+        run: |
+          make generate
+          git diff --exit-code -- . ':(exclude)go.sum' || (echo "::error::生成物与提交内容不一致，请运行 make generate 并提交"; exit 1)
+      - name: Lint
+        run: make lint
+      - name: 架构守护测试 + 单元测试（SQLite 线）
+        run: make test
+
+  server-integration:
+    name: server 集成（MySQL/PG 线，M1 起启用）
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_DATABASE: zcard_test
+          MYSQL_ROOT_PASSWORD: root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd "mysqladmin ping -proot" --health-interval 5s
+          --health-timeout 3s --health-retries 10
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: zcard_test
+          POSTGRES_PASSWORD: pass
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s
+          --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+      - name: 集成测试（占位：M1 交付并发防超卖双路径用例）
+        run: echo "M1 起启用：go test -tags=integration ./..."

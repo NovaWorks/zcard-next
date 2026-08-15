@@ -1,0 +1,54 @@
+# ZCard 标准部署（规划 §10.2）：zcard + mysql，--profile redis 可选
+# 最小化单体（SQLite 起步）不需要本文件：单二进制 + 单 .db 文件。
+services:
+  zcard:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"   # HTTP（API + SPA）
+      - "9000:9000"   # gRPC（可选暴露）
+    environment:
+      # 密钥经环境注入，绝不进镜像/git（铁律：四把钥匙解耦）
+      ZCARD_JWT_ADMIN_KEY: ${ZCARD_JWT_ADMIN_KEY:?请在 .env 设置}
+      ZCARD_JWT_USER_KEY: ${ZCARD_JWT_USER_KEY:?请在 .env 设置}
+      ZCARD_CARD_KEY: ${ZCARD_CARD_KEY:?请在 .env 设置}
+      ZCARD_DATA_KEY: ${ZCARD_DATA_KEY:?请在 .env 设置}
+    volumes:
+      - app-data:/data
+      - ./config.compose.yaml:/etc/zcard/config.yaml:ro
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+        required: false
+
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: zcard
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env 设置}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    profiles: ["redis"]   # docker compose --profile redis up -d
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  app-data:
+  mysql-data:

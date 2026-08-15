@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "common/v1/common.proto";
+
+// StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
+// 里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
+service StoreCatalogService {
+  // ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+  rpc ListProducts(ListProductsRequest) returns (ListProductsReply) {
+    option (google.api.http) = {
+      get: "/api/v1/storefront/products"
+    };
+  }
+  // GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
+  rpc GetProduct(GetProductRequest) returns (Product) {
+    option (google.api.http) = {
+      get: "/api/v1/storefront/products/{id}"
+    };
+  }
+}
+
+message ListProductsRequest {
+  // 分类过滤（可选）
+  uint64 category_id = 1;
+  // 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
+  string keyword = 2;
+  zcard.api.common.v1.PageReq page = 3;
+}
+
+message ListProductsReply {
+  repeated Product items = 1;
+  zcard.api.common.v1.PageResp page = 2;
+}
+
+message GetProductRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Product 顾客视角商品（管理字段与成本价绝不下发）。
+message Product {
+  uint64 id = 1;
+  string name = 2;
+  string slug = 3;
+  string description = 4;   // 已 sanitize 的 Markdown/HTML
+  string cover = 5;
+  // 售价（分，基础货币）
+  int64 price_cents = 6;
+  // 库存类型 card/url/code
+  string stock_type = 7;
+  // 库存显示开关开启时为真实值，否则不下发（0）
+  int64 stock = 8;
+  // 库存是否对外可见
+  bool stock_visible = 9;
+  uint64 category_id = 10;
+  // 展示销量 = 真实 + 虚拟
+  int64 sales_count = 11;
+}

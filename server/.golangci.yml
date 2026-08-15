@@ -1,0 +1,35 @@
+# golangci-lint 配置（CI M1 起接入 make lint；当前以 gofmt + go vet 起步）
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+formatters:
+  enable:
+    - gofmt
+  exclusions:
+    generated: lax
+
+linters:
+  default: standard
+  enable:
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - misspell
+    - errorlint
+    - unconvert
+  exclusions:
+    rules:
+      # 生成物豁免（ent/pb/wire_gen）
+      - path: internal/data/ent/.*
+        linters: [all]
+      - path: (\.pb\.go|_http\.pb\.go|_grpc\.pb\.go)$
+        linters: [all]
+      - path: wire_gen\.go
+        linters: [all]
+      # 测试允许 magic number 与非恒定 errcheck
+      - path: _test\.go
+        linters: [goconst, errcheck]

@@ -1,0 +1,65 @@
+package server
+
+// gRPC Server（规划 D2：HTTP/gRPC 双协议免费获得；M4 聚合平台阶段某些模块
+// 直接以 gRPC 互联，无需重写接口）。当前注册与 HTTP 相同的服务面。
+
+import (
+	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/conf"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+
+	"github.com/go-kratos/kratos/v3/log"
+	"github.com/go-kratos/kratos/v3/middleware/logging"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/middleware/validate"
+	kgrpc "github.com/go-kratos/kratos/v3/transport/grpc"
+	"go.einride.tech/aip/fieldbehavior"
+	"google.golang.org/protobuf/proto"
+)
+
+// NewGRPCServer 构造 gRPC server（wire provider）。
+func NewGRPCServer(
+	c *conf.Server,
+	authSvc *identity.AdminAuthService,
+	settingsSvc *settings.AdminSettingsService,
+	catalogSvc *catalog.StoreCatalogService,
+	supplySvc *supply.SupplyService,
+) *kgrpc.Server {
+	var opts = []kgrpc.ServerOption{
+		kgrpc.Middleware(
+			recovery.Recovery(),
+			logging.Server(log.Default()),
+			validate.Validator(func(req any) error {
+				if msg, ok := req.(proto.Message); ok {
+					return fieldbehavior.ValidateRequiredFields(msg)
+				}
+				return nil
+			}),
+			// gRPC 侧 admin 鉴权 M1 接 metadata（当前管理面以 HTTP 为主）
+		),
+	}
+	if c != nil && c.Grpc != nil {
+		if c.Grpc.Network != "" {
+			opts = append(opts, kgrpc.Network(c.Grpc.Network))
+		}
+		if c.Grpc.Addr != "" {
+			opts = append(opts, kgrpc.Address(c.Grpc.Addr))
+		}
+		if c.Grpc.Timeout != nil {
+			opts = append(opts, kgrpc.Timeout(c.Grpc.Timeout.AsDuration()))
+		}
+	}
+	srv := kgrpc.NewServer(opts...)
+
+	adminv1.RegisterAdminAuthServiceServer(srv, authSvc)
+	adminv1.RegisterAdminSettingsServiceServer(srv, settingsSvc)
+	storefrontv1.RegisterStoreCatalogServiceServer(srv, catalogSvc)
+	supplyv1.RegisterSupplyServiceServer(srv, supplySvc)
+	// reflection 已由 kratos v3 grpc server 内置（手动注册会 duplicate panic）
+	return srv
+}

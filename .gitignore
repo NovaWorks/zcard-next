@@ -1,0 +1,37 @@
+# 系统文件
+.DS_Store
+
+# 设计文档目录与全部 Markdown 文档（按约定不入库）
+doc/
+*.md
+
+# Go
+*.exe
+*.test
+*.out
+bin/
+dist/
+coverage.out
+
+# 本地配置与数据（含密钥，绝不提交）
+server/configs/config.yaml
+server/configs/*.local.yaml
+*.db
+*.db-shm
+*.db-wal
+server/data/
+
+# 前端
+node_modules/
+admin/dist/
+storefront/dist/
+.pnpm-store/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# 环境变量
+.env
+.env.local

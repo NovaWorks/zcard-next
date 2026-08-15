@@ -1,0 +1,13 @@
+{
+  "common.ok": "OK",
+  "common.bad_request": "Invalid request",
+  "common.unauthorized": "Unauthorized or token expired",
+  "common.forbidden": "Permission denied",
+  "common.not_found": "Resource not found",
+  "common.internal": "Internal server error",
+  "identity.login_failed": "Invalid username or password",
+  "identity.admin_disabled": "Account disabled",
+  "identity.totp_required": "TOTP code required",
+  "authz.permission_denied": "Permission denied: {permission}",
+  "settings.not_found": "Setting not found"
+}

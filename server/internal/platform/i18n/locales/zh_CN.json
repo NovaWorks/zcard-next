@@ -1,0 +1,13 @@
+{
+  "common.ok": "成功",
+  "common.bad_request": "请求参数错误",
+  "common.unauthorized": "未登录或令牌已过期",
+  "common.forbidden": "没有权限执行此操作",
+  "common.not_found": "资源不存在",
+  "common.internal": "服务器内部错误",
+  "identity.login_failed": "账号或密码错误",
+  "identity.admin_disabled": "账号已禁用",
+  "identity.totp_required": "需要两步验证码",
+  "authz.permission_denied": "权限不足：{permission}",
+  "settings.not_found": "设置项不存在"
+}

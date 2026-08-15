@@ -1,0 +1,52 @@
+# ZCard 2.0 配置样例（复制为 config.yaml 使用；config.yaml 不提交仓库）
+#
+# 铁律 7：运行时业务开关的真理源在 settings 表（后台可改）；
+# 本文件只承载部署期配置。密钥生产环境必须经环境变量注入（ZCARD_*_KEY）。
+
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 30s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 30s
+  # 启动时自动应用待执行迁移（加锁串行，失败拒绝启动，§10.4）
+  migrate_on_start: true
+  # 后台安全入口路径（可配，§7.3；空 = 默认）
+  admin_base_path: ""
+
+data:
+  database:
+    # 三档形态一套代码（运行时检测方言，同一二进制）：
+    #   sqlite   最小化单体（默认，零依赖起步：file:data/zcard.db）
+    #   mysql    自托管标准（分站 Row 行级隔离主力）
+    #   postgres 平台/多租户（Schema 隔离/RLS，商业版）
+    driver: sqlite
+    source: file:data/zcard.db
+    max_open_conns: 20
+    max_idle_conns: 5
+  redis:
+    # 可选：缺失时队列同步降级 + 进程内缓存（ADR-D6）
+    addr: 127.0.0.1:6379
+    read_timeout: 0.2s
+    write_timeout: 0.2s
+  worker_concurrency: 5
+
+security:
+  # 四把钥匙解耦（§4.11.6）：生产经 env 注入（ZCARD_JWT_ADMIN_KEY / ZCARD_JWT_USER_KEY
+  # / ZCARD_CARD_KEY / ZCARD_DATA_KEY），此处仅作兜底；密钥永不进 DB/日志/git。
+  # card_key / data_key 为 32 字节 hex（64 个字符）。
+  jwt_admin_key: ""
+  jwt_user_key: ""
+  card_key: ""
+  data_key: ""
+
+tenancy:
+  # 开源版唯一取值 row（subsite_id 行级隔离；schema/database 属商业版，ADR-D15）
+  mode: row
+  # 主站域名（Host 匹配；分站域名 M3 走 reseller_sites 验证）
+  main_domain: ""
+
+log:
+  level: info   # debug | info | warn | error
+  format: text  # text | json

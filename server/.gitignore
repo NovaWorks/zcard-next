@@ -1,0 +1,7 @@
+# 锚定 server 根（无前导斜杠会误伤 internal/data/ 等任意层级同名目录）
+/bin/
+/data/
+*.db
+*.db-shm
+*.db-wal
+/configs/config.yaml

@@ -1,0 +1,364 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: ""
+    version: 0.0.1
+paths:
+    /api/v1/admin/auth/login:
+        post:
+            tags:
+                - AdminAuthService
+            description: Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
+            operationId: AdminAuthService_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LoginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LoginReply'
+    /api/v1/admin/auth/logout:
+        post:
+            tags:
+                - AdminAuthService
+            description: Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+            operationId: AdminAuthService_Logout
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/auth/profile:
+        get:
+            tags:
+                - AdminAuthService
+            description: GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+            operationId: AdminAuthService_GetProfile
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GetProfileReply'
+    /api/v1/admin/settings:
+        get:
+            tags:
+                - AdminSettingsService
+            description: ListSettings 按分组列出设置项。
+            operationId: AdminSettingsService_ListSettings
+            parameters:
+                - name: group
+                  in: query
+                  description: 可选分组过滤（site/template/trade/security/ops/notify/...）
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSettingsReply'
+    /api/v1/admin/settings/{group}/{key}:
+        get:
+            tags:
+                - AdminSettingsService
+            description: GetSetting 读取单个设置项。
+            operationId: AdminSettingsService_GetSetting
+            parameters:
+                - name: group
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: key
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+        put:
+            tags:
+                - AdminSettingsService
+            description: UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
+            operationId: AdminSettingsService_UpdateSetting
+            parameters:
+                - name: group
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: key
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateSettingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+    /api/v1/storefront/products:
+        get:
+            tags:
+                - StoreCatalogService
+            description: ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+            operationId: StoreCatalogService_ListProducts
+            parameters:
+                - name: categoryId
+                  in: query
+                  description: 分类过滤（可选）
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  description: 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
+                  schema:
+                    type: string
+                - name: page.page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page.pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListProductsReply'
+    /api/v1/storefront/products/{id}:
+        get:
+            tags:
+                - StoreCatalogService
+            description: GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
+            operationId: StoreCatalogService_GetProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+    /api/v1/supply/ping:
+        get:
+            tags:
+                - SupplyService
+            description: Ping 连通性与协议版本探测（下游对接第一步）。
+            operationId: SupplyService_Ping
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.PingReply'
+components:
+    schemas:
+        zcard.api.admin.v1.AdminProfile:
+            type: object
+            properties:
+                id:
+                    type: string
+                username:
+                    type: string
+                nickname:
+                    type: string
+                avatar:
+                    type: string
+                roleId:
+                    type: string
+                roleName:
+                    type: string
+                totpEnabled:
+                    type: boolean
+                lastLoginAt:
+                    type: string
+                    format: date-time
+                lastLoginIp:
+                    type: string
+        zcard.api.admin.v1.GetProfileReply:
+            type: object
+            properties:
+                admin:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.AdminProfile'
+                permissions:
+                    type: array
+                    items:
+                        type: string
+                    description: 权限点清单（如 order:list / card:view_content），前端据此生成菜单与按钮
+        zcard.api.admin.v1.ListSettingsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+        zcard.api.admin.v1.LoginReply:
+            type: object
+            properties:
+                accessToken:
+                    type: string
+                    description: admin realm 访问令牌（2h）
+                tokenType:
+                    type: string
+                    description: 令牌类型，固定 Bearer
+                expiresAt:
+                    type: string
+                    description: 过期时间（unix 秒）
+                admin:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.AdminProfile'
+        zcard.api.admin.v1.LoginRequest:
+            required:
+                - username
+                - password
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                totpCode:
+                    type: string
+                    description: TOTP 六位动态码（员工开启二步验证时必填）
+        zcard.api.admin.v1.Setting:
+            type: object
+            properties:
+                group:
+                    type: string
+                key:
+                    type: string
+                valueJson:
+                    type: string
+            description: Setting 设置项（value_json 为 JSON 文档字符串）。
+        zcard.api.admin.v1.UpdateSettingRequest:
+            required:
+                - group
+                - key
+                - valueJson
+            type: object
+            properties:
+                group:
+                    type: string
+                key:
+                    type: string
+                valueJson:
+                    type: string
+                    description: 任意 JSON 文档（对象/数组/标量均可），服务端原样存储
+        zcard.api.common.v1.PageResp:
+            type: object
+            properties:
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+            description: PageResp 分页响应。
+        zcard.api.storefront.v1.ListProductsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+                page:
+                    $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+        zcard.api.storefront.v1.Product:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                cover:
+                    type: string
+                priceCents:
+                    type: string
+                    description: 售价（分，基础货币）
+                stockType:
+                    type: string
+                    description: 库存类型 card/url/code
+                stock:
+                    type: string
+                    description: 库存显示开关开启时为真实值，否则不下发（0）
+                stockVisible:
+                    type: boolean
+                    description: 库存是否对外可见
+                categoryId:
+                    type: string
+                salesCount:
+                    type: string
+                    description: 展示销量 = 真实 + 虚拟
+            description: Product 顾客视角商品（管理字段与成本价绝不下发）。
+        zcard.api.supply.v1.PingReply:
+            type: object
+            properties:
+                protocol:
+                    type: string
+                version:
+                    type: string
+                serverTime:
+                    type: string
+tags:
+    - name: AdminAuthService
+      description: |-
+        AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
+         里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+    - name: AdminSettingsService
+      description: |-
+        AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
+         里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+    - name: StoreCatalogService
+      description: |-
+        StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
+         里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
+    - name: SupplyService
+      description: |-
+        SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
+         里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
+         ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
+         M0 骨架仅提供 Ping 连通性端点，鉴权中间件挂载点已预留在 server/http.go。
