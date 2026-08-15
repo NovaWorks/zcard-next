@@ -6,6 +6,87 @@ info:
     title: ""
     version: 0.0.1
 paths:
+    /api/v1/admin/admins:
+        get:
+            tags:
+                - AdminUserService
+            description: ListAdmins 员工列表。
+            operationId: AdminUserService_ListAdmins
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListAdminsReply'
+        post:
+            tags:
+                - AdminUserService
+            description: CreateAdmin 创建员工（密码 bcrypt）。
+            operationId: AdminUserService_CreateAdmin
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateAdminRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+    /api/v1/admin/admins/{id}:
+        put:
+            tags:
+                - AdminUserService
+            description: UpdateAdmin 修改员工（昵称/头像/角色）。
+            operationId: AdminUserService_UpdateAdmin
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateAdminRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+    /api/v1/admin/admins/{id}/toggle:
+        put:
+            tags:
+                - AdminUserService
+            description: ToggleAdmin 启用/禁用员工。
+            operationId: AdminUserService_ToggleAdmin
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ToggleAdminRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
     /api/v1/admin/auth/login:
         post:
             tags:
@@ -52,6 +133,133 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.GetProfileReply'
+    /api/v1/admin/authz/permissions:
+        get:
+            tags:
+                - RoleService
+            description: GetPermissionTree 权限目录树（域分组 + 中文描述；前端勾选与菜单数据源）。
+            operationId: RoleService_GetPermissionTree
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PermissionTree'
+    /api/v1/admin/authz/roles:
+        get:
+            tags:
+                - RoleService
+            description: ListRoles 角色列表（含权限点数量）。
+            operationId: RoleService_ListRoles
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListRolesReply'
+        post:
+            tags:
+                - RoleService
+            description: CreateRole 创建角色。
+            operationId: RoleService_CreateRole
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateRoleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Role'
+    /api/v1/admin/authz/roles/{id}:
+        get:
+            tags:
+                - RoleService
+            description: GetRole 角色详情（含权限点清单）。
+            operationId: RoleService_GetRole
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Role'
+        put:
+            tags:
+                - RoleService
+            description: UpdateRole 修改角色（名称/描述；内置角色 code 不可改）。
+            operationId: RoleService_UpdateRole
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateRoleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Role'
+        delete:
+            tags:
+                - RoleService
+            description: DeleteRole 删除角色（内置角色拒绝；仍有员工挂载拒绝）。
+            operationId: RoleService_DeleteRole
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/authz/roles/{id}/permissions:
+        put:
+            tags:
+                - RoleService
+            description: UpdateRolePermissions 全量替换角色权限点集（变更实时生效）。
+            operationId: RoleService_UpdateRolePermissions
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateRolePermissionsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Role'
     /api/v1/admin/settings:
         get:
             tags:
@@ -192,6 +400,28 @@ paths:
                                 $ref: '#/components/schemas/zcard.api.supply.v1.PingReply'
 components:
     schemas:
+        zcard.api.admin.v1.Admin:
+            type: object
+            properties:
+                id:
+                    type: string
+                username:
+                    type: string
+                nickname:
+                    type: string
+                avatar:
+                    type: string
+                roleId:
+                    type: string
+                roleName:
+                    type: string
+                enabled:
+                    type: boolean
+                totpEnabled:
+                    type: boolean
+                remark:
+                    type: string
+            description: Admin 员工（不含密码哈希等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
             properties:
@@ -214,6 +444,39 @@ components:
                     format: date-time
                 lastLoginIp:
                     type: string
+        zcard.api.admin.v1.CreateAdminRequest:
+            required:
+                - username
+                - password
+                - roleId
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                nickname:
+                    type: string
+                roleId:
+                    type: string
+                remark:
+                    type: string
+        zcard.api.admin.v1.CreateRoleRequest:
+            required:
+                - name
+                - code
+            type: object
+            properties:
+                name:
+                    type: string
+                code:
+                    type: string
+                description:
+                    type: string
+                permissions:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.GetProfileReply:
             type: object
             properties:
@@ -224,6 +487,32 @@ components:
                     items:
                         type: string
                     description: 权限点清单（如 order:list / card:view_content），前端据此生成菜单与按钮
+        zcard.api.admin.v1.Group:
+            type: object
+            properties:
+                domain:
+                    type: string
+                label:
+                    type: string
+                perms:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Perm'
+            description: Group 域分组。
+        zcard.api.admin.v1.ListAdminsReply:
+            type: object
+            properties:
+                admins:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+        zcard.api.admin.v1.ListRolesReply:
+            type: object
+            properties:
+                roles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Role'
         zcard.api.admin.v1.ListSettingsReply:
             type: object
             properties:
@@ -258,6 +547,44 @@ components:
                 totpCode:
                     type: string
                     description: TOTP 六位动态码（员工开启二步验证时必填）
+        zcard.api.admin.v1.Perm:
+            type: object
+            properties:
+                code:
+                    type: string
+                desc:
+                    type: string
+                adminOnly:
+                    type: boolean
+                public:
+                    type: boolean
+            description: Perm 权限点。
+        zcard.api.admin.v1.PermissionTree:
+            type: object
+            properties:
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Group'
+            description: PermissionTree 权限目录树。
+        zcard.api.admin.v1.Role:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                code:
+                    type: string
+                description:
+                    type: string
+                isBuiltin:
+                    type: boolean
+                permissions:
+                    type: array
+                    items:
+                        type: string
+            description: Role 角色详情。
         zcard.api.admin.v1.Setting:
             type: object
             properties:
@@ -268,6 +595,54 @@ components:
                 valueJson:
                     type: string
             description: Setting 设置项（value_json 为 JSON 文档字符串）。
+        zcard.api.admin.v1.ToggleAdminRequest:
+            required:
+                - id
+                - enabled
+            type: object
+            properties:
+                id:
+                    type: string
+                enabled:
+                    type: boolean
+        zcard.api.admin.v1.UpdateAdminRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                nickname:
+                    type: string
+                avatar:
+                    type: string
+                roleId:
+                    type: string
+                remark:
+                    type: string
+        zcard.api.admin.v1.UpdateRolePermissionsRequest:
+            required:
+                - id
+                - permissions
+            type: object
+            properties:
+                id:
+                    type: string
+                permissions:
+                    type: array
+                    items:
+                        type: string
+        zcard.api.admin.v1.UpdateRoleRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
         zcard.api.admin.v1.UpdateSettingRequest:
             required:
                 - group
@@ -352,6 +727,12 @@ tags:
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
          里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+    - name: AdminUserService
+      description: AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+    - name: RoleService
+      description: |-
+        RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
+         权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
     - name: StoreCatalogService
       description: |-
         StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。

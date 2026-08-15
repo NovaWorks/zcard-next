@@ -1,0 +1,178 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
+// 权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
+service RoleService {
+  // ListRoles 角色列表（含权限点数量）。
+  rpc ListRoles(google.protobuf.Empty) returns (ListRolesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/authz/roles" };
+  }
+  // GetRole 角色详情（含权限点清单）。
+  rpc GetRole(GetRoleRequest) returns (Role) {
+    option (google.api.http) = { get: "/api/v1/admin/authz/roles/{id}" };
+  }
+  // CreateRole 创建角色。
+  rpc CreateRole(CreateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/authz/roles"
+      body: "*"
+    };
+  }
+  // UpdateRole 修改角色（名称/描述；内置角色 code 不可改）。
+  rpc UpdateRole(UpdateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/authz/roles/{id}"
+      body: "*"
+    };
+  }
+  // DeleteRole 删除角色（内置角色拒绝；仍有员工挂载拒绝）。
+  rpc DeleteRole(DeleteRoleRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/authz/roles/{id}" };
+  }
+  // UpdateRolePermissions 全量替换角色权限点集（变更实时生效）。
+  rpc UpdateRolePermissions(UpdateRolePermissionsRequest) returns (Role) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/authz/roles/{id}/permissions"
+      body: "*"
+    };
+  }
+  // GetPermissionTree 权限目录树（域分组 + 中文描述；前端勾选与菜单数据源）。
+  rpc GetPermissionTree(google.protobuf.Empty) returns (PermissionTree) {
+    option (google.api.http) = { get: "/api/v1/admin/authz/permissions" };
+  }
+}
+
+// AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+service AdminUserService {
+  // ListAdmins 员工列表。
+  rpc ListAdmins(google.protobuf.Empty) returns (ListAdminsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/admins" };
+  }
+  // CreateAdmin 创建员工（密码 bcrypt）。
+  rpc CreateAdmin(CreateAdminRequest) returns (Admin) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/admins"
+      body: "*"
+    };
+  }
+  // UpdateAdmin 修改员工（昵称/头像/角色）。
+  rpc UpdateAdmin(UpdateAdminRequest) returns (Admin) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/admins/{id}"
+      body: "*"
+    };
+  }
+  // ToggleAdmin 启用/禁用员工。
+  rpc ToggleAdmin(ToggleAdminRequest) returns (Admin) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/admins/{id}/toggle"
+      body: "*"
+    };
+  }
+}
+
+message ListRolesReply {
+  repeated Role roles = 1;
+}
+
+message GetRoleRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreateRoleRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string code = 2 [(google.api.field_behavior) = REQUIRED];
+  string description = 3;
+  repeated string permissions = 4;
+}
+
+message UpdateRoleRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  string description = 3;
+}
+
+message DeleteRoleRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateRolePermissionsRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string permissions = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Role 角色详情。
+message Role {
+  uint64 id = 1;
+  string name = 2;
+  string code = 3;
+  string description = 4;
+  bool is_builtin = 5;
+  repeated string permissions = 6;
+}
+
+// PermissionTree 权限目录树。
+message PermissionTree {
+  repeated Group groups = 1;
+}
+
+// Group 域分组。
+message Group {
+  string domain = 1;
+  string label = 2;
+  repeated Perm perms = 3;
+}
+
+// Perm 权限点。
+message Perm {
+  string code = 1;
+  string desc = 2;
+  bool admin_only = 3;
+  bool public = 4;
+}
+
+message ListAdminsReply {
+  repeated Admin admins = 1;
+}
+
+// Admin 员工（不含密码哈希等敏感字段）。
+message Admin {
+  uint64 id = 1;
+  string username = 2;
+  string nickname = 3;
+  string avatar = 4;
+  uint64 role_id = 5;
+  string role_name = 6;
+  bool enabled = 7;
+  bool totp_enabled = 8;
+  string remark = 9;
+}
+
+message CreateAdminRequest {
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+  string nickname = 3;
+  uint64 role_id = 4 [(google.api.field_behavior) = REQUIRED];
+  string remark = 5;
+}
+
+message UpdateAdminRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string nickname = 2;
+  string avatar = 3;
+  uint64 role_id = 4;
+  string remark = 5;
+}
+
+message ToggleAdminRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool enabled = 2 [(google.api.field_behavior) = REQUIRED];
+}

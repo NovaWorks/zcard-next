@@ -215,7 +215,7 @@ func TestRule4MoneyDiscipline(t *testing.T) {
 // floatFieldAllowlist 费率/汇率类浮点豁免（显式登记制）：这些是「率」不是「金额」，
 // 数据库架构 §7.2 允许 decimal 存储；新增豁免必须在 CR 说明理由。
 var floatFieldAllowlist = map[string]bool{
-	"PriceMarkupPercent": true,  // 上游加价百分比（百分比，非金额）
+	"PriceMarkupPercent": true, // 上游加价百分比（百分比，非金额）
 	"ExchangeRate":       true, // 汇率快照
 	"Rate":               true, // 费率快照（佣金）
 }

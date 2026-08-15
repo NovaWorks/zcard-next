@@ -10,12 +10,20 @@ import (
 	"time"
 )
 
-// RoleRepo 角色仓储（模块内端口，实现于 data.go）。
+// RoleRepo 角色仓储（模块内端口，实现于 data.go；管理方法仅供 service 层消费）。
 type RoleRepo interface {
 	// PermissionCodes 返回角色的全部权限点编码。
 	PermissionCodes(ctx context.Context, roleID uint64) ([]string, error)
 	// Role 角色名（不存在返回空串）。
 	Role(ctx context.Context, roleID uint64) (name string, err error)
+
+	// ── 管理面（RoleService 消费）──
+	Roles(ctx context.Context) ([]*RoleDetail, error)
+	RoleByID(ctx context.Context, id uint64) (*RoleDetail, error)
+	CreateRole(ctx context.Context, name, code, desc string, perms []string) (*RoleDetail, error)
+	UpdateRole(ctx context.Context, id uint64, name, desc string) (*RoleDetail, error)
+	DeleteRole(ctx context.Context, id uint64) error
+	SetPermissions(ctx context.Context, id uint64, perms []string) (*RoleDetail, error)
 }
 
 // RbacUsecase 鉴权用例：权限点进程内缓存（30s TTL，角色变更后自然过期；
@@ -87,6 +95,13 @@ func (uc *RbacUsecase) codes(ctx context.Context, roleID uint64) []string {
 	name, _ = uc.repo.Role(ctx, roleID)
 	uc.store(roleID, codes, name)
 	return codes
+}
+
+// Invalidate 失效角色缓存（权限变更后实时生效，P0-03 T2）。
+func (uc *RbacUsecase) Invalidate(roleID uint64) {
+	uc.mu.Lock()
+	defer uc.mu.Unlock()
+	delete(uc.cache, roleID)
 }
 
 func (uc *RbacUsecase) store(roleID uint64, codes []string, name string) {

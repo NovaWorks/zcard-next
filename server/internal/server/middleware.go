@@ -2,21 +2,26 @@ package server
 
 // 中间件：租户解析（Host → tenancy.Context）与 admin realm JWT 鉴权（双 realm 防串用）。
 //
+// 权限判定经 authz.Directory（模块声明式目录，P0-03 T1）——本文件不再手工维护映射；
+// 目录 miss = fail-closed：403 + 错误日志（新增路由漏声明会在启动对账时直接失败，
+// 运行时 miss 属异常路径，绝不默认放行）。
+//
 // operation 形态（Kratos v3）：
-//   - HTTP：路径模板（如 /api/v1/admin/settings/{group}/{key}）
-//   - gRPC：proto 方法全名（如 zcard.api.admin.v1.AdminAuthService/Login）
+//   - HTTP：生成的 pb 路由 operation = proto 方法全名（带前导斜杠）
+//   - gRPC：同构
 
 import (
 	"context"
 	"strings"
 
+	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
+	"github.com/go-kratos/kratos/v3/log"
 	"github.com/go-kratos/kratos/v3/middleware"
 	"github.com/go-kratos/kratos/v3/transport"
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
@@ -51,53 +56,25 @@ func hostOf(tr transport.Transporter) string {
 }
 
 const (
-	// 手工注册路由的路径前缀（如 M1 支付回调白名单管理）
 	adminPathPrefix = "/api/v1/admin/"
-	// 生成的 pb 路由 operation = proto 方法全名（带前导斜杠），HTTP 与 gRPC 同构
-	adminOpPrefix = "/zcard.api.admin.v1."
-	adminLoginOp  = "/zcard.api.admin.v1.AdminAuthService/Login"
+	adminOpPrefix   = "/zcard.api.admin.v1."
 )
 
-// isAdminOperation 是否管理面操作（admin realm 鉴权目标；登录路由豁免）。
+// isAdminOperation 是否管理面操作（admin realm 鉴权目标；Public 声明的登录路由豁免）。
 // storefront/supply/回调路由一律不挂 JWT（架构测试规则 9）。
-func isAdminOperation(operation string) bool {
+func isAdminOperation(operation string, dir *authz.Directory) bool {
 	if strings.HasPrefix(operation, adminOpPrefix) {
-		return operation != adminLoginOp
-	}
-	return strings.HasPrefix(operation, adminPathPrefix) && operation != "/api/v1/admin/auth/login"
-}
-
-// 权限映射（M1 起由启动时从 Kratos 路由表自动生成权限目录，§5.14；
-// 当前手工维护规则，rbac_coverage_test M1 门禁）。
-var permissionRules = []struct {
-	prefix string // operation 前缀（proto 服务全名）
-	method string // 具体方法（空 = 该服务全部）
-	perm   string // 所需权限点
-}{
-	{prefix: adminOpPrefix + "AdminAuthService/", method: "GetProfile", perm: "auth:profile"},
-	{prefix: adminOpPrefix + "AdminSettingsService/", method: "GetSetting", perm: settings.PermRead},
-	{prefix: adminOpPrefix + "AdminSettingsService/", method: "ListSettings", perm: settings.PermRead},
-	{prefix: adminOpPrefix + "AdminSettingsService/", method: "UpdateSetting", perm: settings.PermUpdate},
-}
-
-// permissionFor 按 operation（proto 方法全名）推导权限点。
-func permissionFor(operation string) string {
-	svc, method, ok := strings.Cut(operation, "/")
-	if !ok {
-		return ""
-	}
-	for _, r := range permissionRules {
-		if strings.HasPrefix(operation, r.prefix) && (r.method == "" || r.method == method) {
-			return r.perm
+		if _, public, ok := dir.PermissionForOp(operation); ok && public {
+			return false
 		}
+		return true
 	}
-	_ = svc
-	return ""
+	return strings.HasPrefix(operation, adminPathPrefix)
 }
 
 // adminAuthMiddleware admin realm 鉴权：JWT 校验 → 权限点校验（RBAC）→ 注入 claims。
 // 超管角色（*）通配放行（authz 模块）。
-func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer) middleware.Middleware {
+func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Directory) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {
 			tr, ok := transport.FromServerContext(ctx)
@@ -112,7 +89,7 @@ func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer) middleware.Mi
 			if err != nil {
 				return nil, errors.Unauthorized("identity.UNAUTHORIZED", "令牌无效或已过期")
 			}
-			if perm := permissionFor(tr.Operation()); perm != "" && !az.Allowed(ctx, claims.RoleID, perm) {
+			if perm, _, ok := dir.PermissionForOp(tr.Operation()); ok && !az.Allowed(ctx, claims.RoleID, perm) {
 				return nil, errors.Forbidden("authz.PERMISSION_DENIED", "权限不足")
 			}
 			return handler(identity.WithClaims(ctx, claims), req)
@@ -125,4 +102,21 @@ func bearerToken(header string) string {
 		return strings.TrimSpace(v)
 	}
 	return ""
+}
+
+// reconcileRoutes 启动对账（P0-03 fail-fast）：真实路由表逐条核对 admin 前缀必须已声明权限点。
+func reconcileRoutes(srv *khttp.Server, dir *authz.Directory) error {
+	var routes []authz.RouteInfo
+	err := srv.WalkRoute(func(ri khttp.RouteInfo) error {
+		routes = append(routes, authz.RouteInfo{Method: ri.Method, Path: ri.Path})
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if err := dir.Reconcile(routes, adminPathPrefix); err != nil {
+		return err
+	}
+	log.Default().Info("authz.reconciled", "routes", len(routes), "perms", len(dir.Codes()))
+	return nil
 }

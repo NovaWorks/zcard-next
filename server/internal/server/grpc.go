@@ -8,6 +8,7 @@ import (
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
@@ -29,6 +30,8 @@ func NewGRPCServer(
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
 	supplySvc *supply.SupplyService,
+	roleSvc *authz.RoleService,
+	adminSvc *authz.AdminUserService,
 ) *kgrpc.Server {
 	var opts = []kgrpc.ServerOption{
 		kgrpc.Middleware(
@@ -58,6 +61,8 @@ func NewGRPCServer(
 
 	adminv1.RegisterAdminAuthServiceServer(srv, authSvc)
 	adminv1.RegisterAdminSettingsServiceServer(srv, settingsSvc)
+	adminv1.RegisterRoleServiceServer(srv, roleSvc)
+	adminv1.RegisterAdminUserServiceServer(srv, adminSvc)
 	storefrontv1.RegisterStoreCatalogServiceServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceServer(srv, supplySvc)
 	// reflection 已由 kratos v3 grpc server 内置（手动注册会 duplicate panic）

@@ -12,6 +12,12 @@ import (
 var ProviderSet = wire.NewSet(
 	NewRbacUsecase,
 	NewRoleRepoImpl,
+	NewDirectory,
+	NewRoleService,
+	NewAdminUserService,
 	wire.Bind(new(RoleRepo), new(*RoleRepoImpl)),
 	wire.Bind(new(port.Authorizer), new(*RbacUsecase)),
 )
+
+// NewDirectory 权限目录（声明表构建；单例语义——声明在 init 期完成）。
+func NewDirectory() *Directory { return BuildDirectory() }

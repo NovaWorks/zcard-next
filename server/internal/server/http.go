@@ -15,6 +15,7 @@ import (
 	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
@@ -46,7 +47,10 @@ func NewHTTPServer(
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
 	supplySvc *supply.SupplyService,
+	roleSvc *authz.RoleService,
+	adminSvc *authz.AdminUserService,
 	enq queue.Enqueuer,
+	dir *authz.Directory,
 ) *khttp.Server {
 	var opts = []khttp.ServerOption{
 		khttp.Middleware(
@@ -59,11 +63,11 @@ func NewHTTPServer(
 				return nil
 			}),
 			tenantMiddleware(tenancyMainDomain(c)),
-			// admin realm 鉴权仅挂管理面 operation（proto 方法全名前缀 zcard.api.admin.v1.），
-			// 登录路由豁免；storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
-			selector.Server(adminAuthMiddleware(signer, az)).
+			// admin realm 鉴权仅挂管理面 operation；Public 声明（登录）经目录豁免；
+			// storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
+			selector.Server(adminAuthMiddleware(signer, az, dir)).
 				Match(func(_ context.Context, operation string) bool {
-					return isAdminOperation(operation)
+					return isAdminOperation(operation, dir)
 				}).
 				Build(),
 		),
@@ -85,11 +89,18 @@ func NewHTTPServer(
 	// 业务路由（proto 注解生成；静态路由先于参数路由由注册顺序保证，铁律 4）
 	adminv1.RegisterAdminAuthServiceHTTPServer(srv, authSvc)
 	adminv1.RegisterAdminSettingsServiceHTTPServer(srv, settingsSvc)
+	adminv1.RegisterRoleServiceHTTPServer(srv, roleSvc)
+	adminv1.RegisterAdminUserServiceHTTPServer(srv, adminSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)
+
+	// 启动对账（P0-03 fail-fast）：管理路由未声明权限点 → 拒绝启动
+	if err := reconcileRoutes(srv, dir); err != nil {
+		panic(err)
+	}
 	registerPaymentCallback(srv)
 
 	// TODO(M1b)：go:embed SPA（fullstack build tag；index.html 永不缓存，铁律 8）

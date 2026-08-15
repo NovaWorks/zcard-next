@@ -45,6 +45,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	catalogUsecase := catalog.NewCatalogUsecase(productRepoImpl)
 	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase)
 	supplyService := supply.NewSupplyService()
+	directory := authz.NewDirectory()
+	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
+	adminUserService := authz.NewAdminUserService(adminUserRepoImpl, directory, roleRepoImpl)
 	dispatcher := bootstrap.NewDispatcher(dataData, logger)
 	failedTaskWriter := data.NewFailedTaskWriter(dataData)
 	enqueuer, cleanup2, err := bootstrap.NewEnqueuer(dataConf, dispatcher, failedTaskWriter, logger)
@@ -52,8 +55,8 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, enqueuer)
-	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, enqueuer, directory)
+	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
 	cron := bootstrap.NewCron()

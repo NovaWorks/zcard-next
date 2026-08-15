@@ -21,3 +21,23 @@ type AdminAccount struct {
 type AdminReader interface {
 	Admin(ctx context.Context, id uint64) (*AdminAccount, error)
 }
+
+// AdminInput 创建/更新员工参数。
+type AdminInput struct {
+	Username string
+	Password string // 仅创建
+	Nickname string
+	Avatar   string
+	RoleID   uint64
+	Remark   string
+	Enabled  *bool // 仅更新（Toggle）
+}
+
+// AdminMutator 员工管理窄接口（authz API 面消费，数据层在 identity 模块；P0-03 T2）。
+type AdminMutator interface {
+	List(ctx context.Context) ([]AdminAccount, error)
+	Create(ctx context.Context, in AdminInput) (*AdminAccount, error)
+	Update(ctx context.Context, id uint64, in AdminInput) (*AdminAccount, error)
+	// ExistsRoleInUse 角色是否仍有员工挂载（删除角色前置校验）。
+	RoleInUse(ctx context.Context, roleID uint64) (bool, error)
+}
