@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
@@ -57,6 +58,9 @@ func NewHTTPServer(
 	invSvc *inventory.AdminInventoryService,
 	orderAdminSvc *order.AdminOrderService,
 	orderStoreSvc *order.StoreOrderService,
+	payAdminSvc *payment.AdminPaymentService,
+	payStoreSvc *payment.StorePaymentService,
+	payRepo *payment.PaymentRepoImpl,
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 ) *khttp.Server {
@@ -106,7 +110,9 @@ func NewHTTPServer(
 	adminv1.RegisterAdminCatalogServiceHTTPServer(srv, catalogAdminSvc)
 	adminv1.RegisterAdminInventoryServiceHTTPServer(srv, invSvc)
 	adminv1.RegisterAdminOrderServiceHTTPServer(srv, orderAdminSvc)
+	adminv1.RegisterAdminPaymentServiceHTTPServer(srv, payAdminSvc)
 	storefrontv1.RegisterStoreOrderServiceHTTPServer(srv, orderStoreSvc)
+	storefrontv1.RegisterStorePaymentServiceHTTPServer(srv, payStoreSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 
@@ -117,7 +123,7 @@ func NewHTTPServer(
 	if err := reconcileRoutes(srv, dir); err != nil {
 		panic(err)
 	}
-	registerPaymentCallback(srv)
+	registerPaymentCallback(srv, payRepo, d)
 
 	// TODO(M1b)：go:embed SPA（fullstack build tag；index.html 永不缓存，铁律 8）
 	// TODO(M1)：/install 安装向导（EnsureInstalled 中间件先于业务路由）
@@ -141,16 +147,10 @@ func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 	})
 }
 
-// registerPaymentCallback 支付回调占位（§5.5.3 统一入口；M1a 交付管线：
-// 读 raw body（1MB 上限）→ 验签 → 事务内四重校验 → outbox）。
-// 注意：不挂任何鉴权中间件（回调鉴权由渠道验签完成，架构测试规则 9）。
-func registerPaymentCallback(srv *khttp.Server) {
-	srv.Route("/payments").POST("/callback/{provider}", func(ctx khttp.Context) error {
-		return ctx.JSON(http.StatusNotImplemented, map[string]string{
-			"reason":  "payment.CALLBACK_NOT_IMPLEMENTED",
-			"message": "支付回调管线 M1a 交付",
-		})
-	})
+// registerPaymentCallback 支付回调（§5.5.3 统一入口——四重校验+幂等+markPaid）。
+// 不挂 JWT（架构测试规则 9）；验签由渠道适配器完成（M1b 接真实渠道）。
+func registerPaymentCallback(srv *khttp.Server, payRepo *payment.PaymentRepoImpl, d *data.Data) {
+	payment.RegisterPaymentCallback(srv, payRepo, d)
 }
 
 func tenancyMainDomain(c *conf.Server) string { return "" } // 由 bootstrap 注入 Tenancy 配置后补齐

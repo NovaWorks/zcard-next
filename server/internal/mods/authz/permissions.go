@@ -105,6 +105,26 @@ func init() {
 		Perm{Code: "order:cancel", Desc: "取消订单（超管）", Domain: "order", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminOrderService/CancelOrder", Method: "POST", Path: "/api/v1/admin/orders/{order_no}/cancel"},
 
+		// ── 支付（payment，P1-04）─────────────────────
+		Perm{Code: "payment:read", Desc: "查看渠道", Domain: "payment",
+			Op: "zcard.api.admin.v1.AdminPaymentService/ListChannels", Method: "GET", Path: "/api/v1/admin/payment/channels"},
+		Perm{Code: "payment:write", Desc: "创建渠道（超管）", Domain: "payment", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminPaymentService/CreateChannel", Method: "POST", Path: "/api/v1/admin/payment/channels"},
+		Perm{Code: "payment:write", Desc: "修改渠道（超管）", Domain: "payment", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminPaymentService/UpdateChannel", Method: "PUT", Path: "/api/v1/admin/payment/channels/{id}"},
+		Perm{Code: "payment:delete", Desc: "删除渠道", Domain: "payment", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminPaymentService/DeleteChannel", Method: "DELETE", Path: "/api/v1/admin/payment/channels/{id}"},
+		Perm{Code: "payment:read_detail", Desc: "查看支付单", Domain: "payment",
+			Op: "zcard.api.admin.v1.AdminPaymentService/ListPayments", Method: "GET", Path: "/api/v1/admin/payments"},
+		Perm{Code: "payment:read_detail", Desc: "查看支付单详情", Domain: "payment",
+			Op: "zcard.api.admin.v1.AdminPaymentService/GetPayment", Method: "GET", Path: "/api/v1/admin/payments/{id}"},
+		Perm{Code: "payment:capture", Desc: "补单（超管）", Domain: "payment", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminPaymentService/CapturePayment", Method: "POST", Path: "/api/v1/admin/payments/{id}/capture"},
+		Perm{Code: "order:refund", Desc: "创建退款", Domain: "payment", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminPaymentService/CreateRefund", Method: "POST", Path: "/api/v1/admin/refunds"},
+		Perm{Code: "order:refund", Desc: "查看退款", Domain: "payment",
+			Op: "zcard.api.admin.v1.AdminPaymentService/ListRefunds", Method: "GET", Path: "/api/v1/admin/refunds"},
+
 		// ── 货币管理（settings，P0-04 T3）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},

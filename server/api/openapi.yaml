@@ -688,6 +688,148 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/payment/channels:
+        get:
+            tags:
+                - AdminPaymentService
+            description: ── 渠道管理 ──
+            operationId: AdminPaymentService_ListChannels
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ChannelList'
+        post:
+            tags:
+                - AdminPaymentService
+            operationId: AdminPaymentService_CreateChannel
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateChannelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Channel'
+    /api/v1/admin/payment/channels/{id}:
+        put:
+            tags:
+                - AdminPaymentService
+            operationId: AdminPaymentService_UpdateChannel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateChannelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Channel'
+        delete:
+            tags:
+                - AdminPaymentService
+            operationId: AdminPaymentService_DeleteChannel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/payments:
+        get:
+            tags:
+                - AdminPaymentService
+            description: ── 支付单 ──
+            operationId: AdminPaymentService_ListPayments
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: orderNo
+                  in: query
+                  schema:
+                    type: string
+                - name: cursor
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListPaymentsReply'
+    /api/v1/admin/payments/{id}:
+        get:
+            tags:
+                - AdminPaymentService
+            operationId: AdminPaymentService_GetPayment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Payment'
+    /api/v1/admin/payments/{id}/capture:
+        post:
+            tags:
+                - AdminPaymentService
+            description: CapturePayment 补单（主动拉网关状态复走回调管线）。
+            operationId: AdminPaymentService_CapturePayment
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CapturePaymentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Payment'
     /api/v1/admin/products:
         get:
             tags:
@@ -797,6 +939,41 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/refunds:
+        get:
+            tags:
+                - AdminPaymentService
+            operationId: AdminPaymentService_ListRefunds
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListRefundsReply'
+        post:
+            tags:
+                - AdminPaymentService
+            description: ── 退款 ──
+            operationId: AdminPaymentService_CreateRefund
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateRefundRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.RefundOrder'
     /api/v1/admin/settings:
         get:
             tags:
@@ -982,6 +1159,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.GetOrderReply'
+    /api/v1/storefront/payments:
+        post:
+            tags:
+                - StorePaymentService
+            description: CreatePayment 创建支付（返回收银台/二维码跳转信息）。
+            operationId: StorePaymentService_CreatePayment
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CreatePaymentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CreatePaymentReply'
     /api/v1/storefront/products:
         get:
             tags:
@@ -1231,6 +1427,13 @@ components:
                     type: string
                 reason:
                     type: string
+        zcard.api.admin.v1.CapturePaymentRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.admin.v1.CardInfo:
             type: object
             properties:
@@ -1279,6 +1482,36 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+        zcard.api.admin.v1.Channel:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                code:
+                    type: string
+                driver:
+                    type: string
+                configJson:
+                    type: string
+                fee:
+                    type: string
+                feeType:
+                    type: string
+                enabled:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+            description: Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
+        zcard.api.admin.v1.ChannelList:
+            type: object
+            properties:
+                channels:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Channel'
         zcard.api.admin.v1.ConfirmTOTPRequest:
             required:
                 - code
@@ -1314,6 +1547,31 @@ components:
                     type: string
                 icon:
                     type: string
+                sort:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.CreateChannelRequest:
+            required:
+                - name
+                - code
+                - driver
+                - configJson
+            type: object
+            properties:
+                name:
+                    type: string
+                code:
+                    type: string
+                driver:
+                    type: string
+                configJson:
+                    type: string
+                fee:
+                    type: string
+                feeType:
+                    type: string
+                enabled:
+                    type: boolean
                 sort:
                     type: integer
                     format: int32
@@ -1372,6 +1630,21 @@ components:
                 status:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.CreateRefundRequest:
+            required:
+                - orderNo
+                - amountCents
+                - channel
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                amountCents:
+                    type: string
+                channel:
+                    type: string
+                reason:
+                    type: string
         zcard.api.admin.v1.CreateRoleRequest:
             required:
                 - name
@@ -1576,6 +1849,15 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.AdminOrder'
                 nextCursor:
                     type: string
+        zcard.api.admin.v1.ListPaymentsReply:
+            type: object
+            properties:
+                payments:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Payment'
+                nextCursor:
+                    type: string
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -1585,6 +1867,13 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
                 page:
                     $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+        zcard.api.admin.v1.ListRefundsReply:
+            type: object
+            properties:
+                refunds:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.RefundOrder'
         zcard.api.admin.v1.ListRolesReply:
             type: object
             properties:
@@ -1634,6 +1923,32 @@ components:
             properties:
                 refreshToken:
                     type: string
+        zcard.api.admin.v1.Payment:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderId:
+                    type: string
+                orderNo:
+                    type: string
+                channel:
+                    type: string
+                channelOrderNo:
+                    type: string
+                amountCents:
+                    type: string
+                chargedCents:
+                    type: string
+                feeCents:
+                    type: string
+                status:
+                    type: string
+                paidAt:
+                    type: string
+                createdAt:
+                    type: string
+            description: Payment 支付单。
         zcard.api.admin.v1.Perm:
             type: object
             properties:
@@ -1661,6 +1976,28 @@ components:
             properties:
                 refreshToken:
                     type: string
+        zcard.api.admin.v1.RefundOrder:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderId:
+                    type: string
+                orderNo:
+                    type: string
+                amountCents:
+                    type: string
+                channel:
+                    type: string
+                status:
+                    type: string
+                reason:
+                    type: string
+                upstreamRefundId:
+                    type: string
+                createdAt:
+                    type: string
+            description: RefundOrder 退款单。
         zcard.api.admin.v1.Role:
             type: object
             properties:
@@ -1775,6 +2112,24 @@ components:
                 icon:
                     type: string
                 hide:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.UpdateChannelRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                configJson:
+                    type: string
+                fee:
+                    type: string
+                enabled:
                     type: boolean
                 sort:
                     type: integer
@@ -1905,6 +2260,25 @@ components:
                 queryPassword:
                     type: string
                 contact:
+                    type: string
+        zcard.api.storefront.v1.CreatePaymentReply:
+            type: object
+            properties:
+                paymentId:
+                    type: string
+                type:
+                    type: string
+                payload:
+                    type: string
+        zcard.api.storefront.v1.CreatePaymentRequest:
+            required:
+                - orderNo
+                - channel
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                channel:
                     type: string
         zcard.api.storefront.v1.Currencies:
             type: object
@@ -2047,6 +2421,8 @@ tags:
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
     - name: AdminOrderService
       description: AdminOrderService 订单管理（P1-03 T7）。
+    - name: AdminPaymentService
+      description: AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
@@ -2063,6 +2439,8 @@ tags:
          里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
     - name: StoreOrderService
       description: StoreOrderService 顾客下单（P1-03 T2）。
+    - name: StorePaymentService
+      description: StorePaymentService 顾客支付（P1-04 T2）。
     - name: StorefrontConfigService
       description: |-
         StorefrontConfigService 前台公开配置（P0-04 T3）。

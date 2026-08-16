@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// StorePaymentService 顾客支付（P1-04 T2）。
+service StorePaymentService {
+  // CreatePayment 创建支付（返回收银台/二维码跳转信息）。
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/payments"
+      body: "*"
+    };
+  }
+}
+
+message CreatePaymentRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string channel = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreatePaymentReply {
+  uint64 payment_id = 1;
+  string type = 2;    // redirect | qrcode | params
+  string payload = 3; // URL / 二维码内容 / 参数 JSON
+}

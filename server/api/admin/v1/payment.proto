@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
+service AdminPaymentService {
+  // ── 渠道管理 ──
+  rpc ListChannels(google.protobuf.Empty) returns (ChannelList) {
+    option (google.api.http) = { get: "/api/v1/admin/payment/channels" };
+  }
+  rpc CreateChannel(CreateChannelRequest) returns (Channel) {
+    option (google.api.http) = { post: "/api/v1/admin/payment/channels" body: "*" };
+  }
+  rpc UpdateChannel(UpdateChannelRequest) returns (Channel) {
+    option (google.api.http) = { put: "/api/v1/admin/payment/channels/{id}" body: "*" };
+  }
+  rpc DeleteChannel(DeleteChannelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/payment/channels/{id}" };
+  }
+
+  // ── 支付单 ──
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/payments" };
+  }
+  rpc GetPayment(GetPaymentRequest) returns (Payment) {
+    option (google.api.http) = { get: "/api/v1/admin/payments/{id}" };
+  }
+  // CapturePayment 补单（主动拉网关状态复走回调管线）。
+  rpc CapturePayment(CapturePaymentRequest) returns (Payment) {
+    option (google.api.http) = { post: "/api/v1/admin/payments/{id}/capture" body: "*" };
+  }
+
+  // ── 退款 ──
+  rpc CreateRefund(CreateRefundRequest) returns (RefundOrder) {
+    option (google.api.http) = { post: "/api/v1/admin/refunds" body: "*" };
+  }
+  rpc ListRefunds(ListRefundsRequest) returns (ListRefundsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/refunds" };
+  }
+}
+
+message ChannelList {
+  repeated Channel channels = 1;
+}
+
+// Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
+message Channel {
+  uint64 id = 1;
+  string name = 2;
+  string code = 3;
+  string driver = 4;
+  string config_json = 5; // 脱敏后
+  int64 fee = 6;
+  string fee_type = 7;
+  bool enabled = 8;
+  int32 sort = 9;
+}
+
+message CreateChannelRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string code = 2 [(google.api.field_behavior) = REQUIRED];
+  string driver = 3 [(google.api.field_behavior) = REQUIRED];
+  string config_json = 4 [(google.api.field_behavior) = REQUIRED]; // 凭据 JSON 明文（入库前加密）
+  int64 fee = 5;
+  string fee_type = 6;
+  bool enabled = 7;
+  int32 sort = 8;
+}
+
+message UpdateChannelRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  string config_json = 3; // **** = 未修改
+  int64 fee = 4;
+  bool enabled = 5;
+  int32 sort = 6;
+}
+
+message DeleteChannelRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListPaymentsRequest {
+  string status = 1;
+  string order_no = 2;
+  uint64 cursor = 3;
+  int32 limit = 4;
+}
+
+message ListPaymentsReply {
+  repeated Payment payments = 1;
+  uint64 next_cursor = 2;
+}
+
+message GetPaymentRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CapturePaymentRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Payment 支付单。
+message Payment {
+  uint64 id = 1;
+  uint64 order_id = 2;
+  string order_no = 3;
+  string channel = 4;
+  string channel_order_no = 5;
+  int64 amount_cents = 6;
+  int64 charged_cents = 7;
+  int64 fee_cents = 8;
+  string status = 9;
+  int64 paid_at = 10;
+  int64 created_at = 11;
+}
+
+message CreateRefundRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED];
+  string channel = 3 [(google.api.field_behavior) = REQUIRED]; // wallet | gateway | upstream
+  string reason = 4;
+}
+
+message ListRefundsRequest {
+  string status = 1;
+}
+
+message ListRefundsReply {
+  repeated RefundOrder refunds = 1;
+}
+
+// RefundOrder 退款单。
+message RefundOrder {
+  uint64 id = 1;
+  uint64 order_id = 2;
+  string order_no = 3;
+  int64 amount_cents = 4;
+  string channel = 5;
+  string status = 6;
+  string reason = 7;
+  string upstream_refund_id = 8;
+  int64 created_at = 9;
+}
