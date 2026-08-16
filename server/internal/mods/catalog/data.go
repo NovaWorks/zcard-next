@@ -4,6 +4,8 @@ package catalog
 // 本处显式条件作为双保险保留——interceptor 负责注入，业务不依赖「忘了写」）。
 
 import (
+	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
+
 	"context"
 	"errors"
 
@@ -21,11 +23,15 @@ var ErrProductNotFound = errors.New("catalog.PRODUCT_NOT_FOUND")
 
 // ProductRepoImpl 商品仓储实现。
 type ProductRepoImpl struct {
-	data *data.Data
+	data     *data.Data
+	mediaRef mediaport.Referencer // 封面/图集引用计数（nil 跳过）
 }
 
-// NewProductRepoImpl 构造。
-func NewProductRepoImpl(d *data.Data) *ProductRepoImpl { return &ProductRepoImpl{data: d} }
+// NewProductRepoImpl 构造（mediaRef 素材引用计数，P3-06）。
+func NewProductRepoImpl(d *data.Data, mediaRef mediaport.Referencer) *ProductRepoImpl {
+	return &ProductRepoImpl{data: d, mediaRef: mediaRef}
+}
+
 
 // ListVisible 上架商品分页（INDEX(subsite_id, status) 命中；只取列表所需列避免回表）。
 func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter) ([]port.Product, int64, error) {

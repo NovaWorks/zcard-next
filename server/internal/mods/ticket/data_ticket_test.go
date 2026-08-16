@@ -32,7 +32,7 @@ func newTicketData(t *testing.T) (*TicketRepo, *data.Data) {
 		t.Fatal(err)
 	}
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
-	return NewTicketRepo(d), d
+	return NewTicketRepo(d, nil), d
 }
 
 func seedTicket(t *testing.T, r *TicketRepo, no string, userID uint64, guest string) *ent.Ticket {

@@ -12,6 +12,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticket"
+	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticketmessage"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 )
@@ -34,11 +35,14 @@ var allowedTicketTransitions = map[string]map[string]bool{
 
 // TicketRepo 工单仓储。
 type TicketRepo struct {
-	data *data.Data
+	data     *data.Data
+	mediaRef mediaport.Referencer // 附件引用计数（nil 跳过）
 }
 
-// NewTicketRepo 构造。
-func NewTicketRepo(d *data.Data) *TicketRepo { return &TicketRepo{data: d} }
+// NewTicketRepo 构造（mediaRef 素材引用计数，P3-06）。
+func NewTicketRepo(d *data.Data, mediaRef mediaport.Referencer) *TicketRepo {
+	return &TicketRepo{data: d, mediaRef: mediaRef}
+}
 
 // CreateInput 创建入参。
 type CreateInput struct {
@@ -92,7 +96,7 @@ func (r *TicketRepo) CreateMessage(ctx context.Context, ticketID uint64, senderT
 	if attachments == nil {
 		attachments = []uint64{}
 	}
-	return data.Client(ctx, r.data).TicketMessage.Create().
+	m, err := data.Client(ctx, r.data).TicketMessage.Create().
 		SetTicketID(ticketID).
 		SetSenderType(ticketmessage.SenderType(senderType)).
 		SetNillableSenderID(nilOrZeroU64(senderID)).
@@ -100,6 +104,10 @@ func (r *TicketRepo) CreateMessage(ctx context.Context, ticketID uint64, senderT
 		SetAttachments(attachments).
 		SetIsInternal(isInternal).
 		Save(ctx)
+	if err == nil && r.mediaRef != nil && len(attachments) > 0 {
+		_ = r.mediaRef.AddRefs(ctx, attachments) // 附件引用 +1（防误删门禁）
+	}
+	return m, err
 }
 
 // Transition 状态机 CAS（非法迁移拒绝）。

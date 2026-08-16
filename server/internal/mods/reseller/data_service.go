@@ -1,0 +1,153 @@
+package reseller
+
+// 管理面 API（P3-04 主站面）。
+
+import (
+	"context"
+
+	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerledgerentry"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+
+	"github.com/go-kratos/kratos/v3/errors"
+	"google.golang.org/protobuf/types/known/emptypb"
+)
+
+// AdminResellerService 主站分站管理。
+type AdminResellerService struct {
+	adminv1.UnimplementedAdminResellerServiceServer
+	repo *ResellerRepo
+}
+
+// NewAdminResellerService 构造。
+func NewAdminResellerService(repo *ResellerRepo) *AdminResellerService {
+	return &AdminResellerService{repo: repo}
+}
+
+// ReviewApply 审核。
+func (s *AdminResellerService) ReviewApply(ctx context.Context, req *adminv1.ReviewApplyRequest) (*adminv1.ResellerProfile, error) {
+	p, err := s.repo.Review(ctx, req.GetId(), req.GetApprove(), req.GetReason(),
+		adminUID(ctx), req.GetDefaultMarkupPercent(), req.GetMaxMarkupPercent(), req.GetConfirmDays())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return toProfilePB(p), nil
+}
+
+// ListProfiles 列表。
+func (s *AdminResellerService) ListProfiles(ctx context.Context, req *adminv1.ListProfilesRequest) (*adminv1.ListProfilesReply, error) {
+	page, size := pageParams(req.GetPage(), req.GetPageSize())
+	rows, total, err := s.repo.ListProfiles(ctx, req.GetStatus(), page, size)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	reply := &adminv1.ListProfilesReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
+	for _, p := range rows {
+		reply.Profiles = append(reply.Profiles, toProfilePB(p))
+	}
+	return reply, nil
+}
+
+// UpsertPricing 定价规则。
+func (s *AdminResellerService) UpsertPricing(ctx context.Context, req *adminv1.UpsertPricingRequest) (*emptypb.Empty, error) {
+	// 上限取分站 profile.max_markup_percent（subsite_id = profile 主键）
+	max := 0.0
+	if p, err := s.repo.GetProfile(ctx, req.GetSubsiteId()); err == nil {
+		max = p.MaxMarkupPercent
+	}
+	if _, err := s.repo.UpsertPricing(ctx, req.GetSubsiteId(), req.GetProductId(), req.GetSkuId(), req.GetMode(), req.GetValue(), max); err != nil {
+		return nil, mapErr(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// Ledger 账本流水。
+func (s *AdminResellerService) Ledger(ctx context.Context, req *adminv1.LedgerRequest) (*adminv1.LedgerReply, error) {
+	page, size := pageParams(req.GetPage(), req.GetPageSize())
+	rows, total, err := s.repo.Ledger(ctx, req.GetSubsiteId(), req.GetStatus(), page, size)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	reply := &adminv1.LedgerReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
+	for _, e := range rows {
+		item := &adminv1.LedgerEntry{
+			Id: e.ID, OrderId: e.OrderID, Type: string(e.Type), Amount: e.Amount,
+			Status: string(e.Status), IdempotencyKey: e.IdempotencyKey,
+			CreatedAt: e.CreatedAt.Unix(),
+		}
+		if !e.AvailableAt.IsZero() {
+			item.AvailableAt = e.AvailableAt.Unix()
+		}
+		reply.Entries = append(reply.Entries, item)
+	}
+	return reply, nil
+}
+
+// Balance 余额（缓存 + 重算对账）。
+func (s *AdminResellerService) Balance(ctx context.Context, req *adminv1.BalanceRequest) (*adminv1.BalanceReply, error) {
+	acc, err := s.repo.GetBalance(ctx, req.GetSubsiteId())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	ra, rl, rn, err := s.repo.RecomputeBalance(ctx, req.GetSubsiteId())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &adminv1.BalanceReply{
+		Available: acc.Available, Locked: acc.Locked, Negative: acc.Negative,
+		RecomputedAvailable: ra, RecomputedLocked: rl, RecomputedNegative: rn,
+	}, nil
+}
+
+func toProfilePB(p *ent.ResellerProfile) *adminv1.ResellerProfile {
+	out := &adminv1.ResellerProfile{
+		Id: p.ID, UserId: p.UserID, Status: string(p.Status),
+		ApplyReason: p.ApplyReason, RejectReason: p.RejectReason,
+		Level: int32(p.Level),
+		DefaultMarkupPercent: p.DefaultMarkupPercent,
+		MaxMarkupPercent:     p.MaxMarkupPercent,
+		ConfirmDays:          p.ConfirmDays,
+		CreatedAt:            p.CreatedAt.Unix(),
+	}
+	if !p.ReviewedAt.IsZero() {
+		out.ReviewedAt = p.ReviewedAt.Unix()
+	}
+	return out
+}
+
+func mapErr(err error) error {
+	switch err {
+	case ErrNotFound:
+		return errors.NotFound("reseller.NOT_FOUND", "记录不存在")
+	case ErrMarkupExceed:
+		return errors.BadRequest("reseller.MARKUP_EXCEED", "超过分站加价率上限")
+	case ErrBelowBase:
+		return errors.BadRequest("reseller.BELOW_BASE", "分站价不得低于主站基础价")
+	}
+	return errors.InternalServer("reseller.ERROR", err.Error())
+}
+
+func adminUID(ctx context.Context) uint64 {
+	if claims := identity.ClaimsFromContext(ctx); claims != nil {
+		return claims.Subject
+	}
+	return 0
+}
+
+func pageParams(page, pageSize int32) (int, int) {
+	p := int(page)
+	if p < 1 {
+		p = 1
+	}
+	ps := int(pageSize)
+	if ps < 1 {
+		ps = 20
+	}
+	if ps > 100 {
+		ps = 100
+	}
+	return p, ps
+}
+
+var _ = resellerledgerentry.FieldID

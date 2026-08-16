@@ -1504,6 +1504,230 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewReply'
+    /api/v1/admin/media:
+        get:
+            tags:
+                - AdminMediaService
+            description: ListMedia 素材列表。
+            operationId: AdminMediaService_ListMedia
+            parameters:
+                - name: categoryId
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListMediaReply'
+    /api/v1/admin/media/categories:
+        get:
+            tags:
+                - AdminMediaService
+            description: ListCategories 分类列表。
+            operationId: AdminMediaService_ListCategories
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListMediaCategoriesReply'
+        post:
+            tags:
+                - AdminMediaService
+            description: CreateCategory 创建分类。
+            operationId: AdminMediaService_CreateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateMediaCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MediaCategory'
+    /api/v1/admin/media/categories/{id}:
+        delete:
+            tags:
+                - AdminMediaService
+            description: DeleteCategory 删除分类（有内容拒绝）。
+            operationId: AdminMediaService_DeleteCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/media/categories/{id}/move:
+        post:
+            tags:
+                - AdminMediaService
+            description: MoveCategory 分类移动。
+            operationId: AdminMediaService_MoveCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.MoveMediaCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/media/categories/{id}/rename:
+        post:
+            tags:
+                - AdminMediaService
+            description: RenameCategory 分类改名。
+            operationId: AdminMediaService_RenameCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RenameMediaCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MediaCategory'
+    /api/v1/admin/media/delete:
+        post:
+            tags:
+                - AdminMediaService
+            description: DeleteMedia 批量删除（被引用未 confirm → 409 + 引用清单）。
+            operationId: AdminMediaService_DeleteMedia
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.DeleteMediaRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DeleteMediaReply'
+    /api/v1/admin/media/import:
+        post:
+            tags:
+                - AdminMediaService
+            description: ImportFromURL 外链导入（httpx SSRF 防护 + 同三件套）。
+            operationId: AdminMediaService_ImportFromURL
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ImportMediaRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MediaItem'
+    /api/v1/admin/media/move:
+        post:
+            tags:
+                - AdminMediaService
+            description: MoveMedia 素材批量移动。
+            operationId: AdminMediaService_MoveMedia
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.MoveMediaRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/media/upload:
+        post:
+            tags:
+                - AdminMediaService
+            description: Upload 上传（安全三件套：三重校验+重编码+10MB）。
+            operationId: AdminMediaService_Upload
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UploadMediaRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MediaItem'
+    /api/v1/admin/media/{id}/rename:
+        post:
+            tags:
+                - AdminMediaService
+            description: RenameMedia 素材改名。
+            operationId: AdminMediaService_RenameMedia
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RenameMediaRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MediaItem'
     /api/v1/admin/member-groups:
         get:
             tags:
@@ -2406,6 +2630,125 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.RefundOrder'
+    /api/v1/admin/reseller/apply/{id}/review:
+        post:
+            tags:
+                - AdminResellerService
+            description: ReviewApply 审核申请（通过设加价率区间与冻结天数）。
+            operationId: AdminResellerService_ReviewApply
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ReviewApplyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ResellerProfile'
+    /api/v1/admin/reseller/balance:
+        get:
+            tags:
+                - AdminResellerService
+            description: Balance 分站余额（缓存 + 重算对账）。
+            operationId: AdminResellerService_Balance
+            parameters:
+                - name: subsiteId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BalanceReply'
+    /api/v1/admin/reseller/ledger:
+        get:
+            tags:
+                - AdminResellerService
+            description: Ledger 分站账本流水。
+            operationId: AdminResellerService_Ledger
+            parameters:
+                - name: subsiteId
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LedgerReply'
+    /api/v1/admin/reseller/pricing:
+        post:
+            tags:
+                - AdminResellerService
+            description: UpsertPricing 分站定价规则（SKU>商品>默认）。
+            operationId: AdminResellerService_UpsertPricing
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpsertPricingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/reseller/profiles:
+        get:
+            tags:
+                - AdminResellerService
+            description: ListProfiles 申请/分站列表。
+            operationId: AdminResellerService_ListProfiles
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListProfilesReply'
     /api/v1/admin/reviews:
         get:
             tags:
@@ -4313,6 +4656,21 @@ components:
                     type: string
                 totalCents:
                     type: string
+        zcard.api.admin.v1.BalanceReply:
+            type: object
+            properties:
+                available:
+                    type: string
+                locked:
+                    type: string
+                negative:
+                    type: string
+                recomputedAvailable:
+                    type: string
+                recomputedLocked:
+                    type: string
+                recomputedNegative:
+                    type: string
         zcard.api.admin.v1.Banner:
             type: object
             properties:
@@ -4770,6 +5128,18 @@ components:
                     type: integer
                     format: int32
             description: CreateFlashSale 创建秒杀（限量与卡密同锁）。
+        zcard.api.admin.v1.CreateMediaCategoryRequest:
+            required:
+                - name
+            type: object
+            properties:
+                name:
+                    type: string
+                parentId:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.CreateMemberGroupRequest:
             required:
                 - name
@@ -5073,6 +5443,29 @@ components:
                     type: string
                 revenue:
                     type: string
+        zcard.api.admin.v1.DeleteMediaReply:
+            type: object
+            properties:
+                deleted:
+                    type: integer
+                    format: int32
+                referenced:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.MediaItem'
+                needConfirm:
+                    type: boolean
+        zcard.api.admin.v1.DeleteMediaRequest:
+            required:
+                - ids
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                confirm:
+                    type: boolean
         zcard.api.admin.v1.DeliveryRecord:
             type: object
             properties:
@@ -5287,6 +5680,15 @@ components:
                         type: string
                 dedup:
                     type: boolean
+        zcard.api.admin.v1.ImportMediaRequest:
+            required:
+                - url
+            type: object
+            properties:
+                url:
+                    type: string
+                categoryId:
+                    type: string
         zcard.api.admin.v1.ImportPreviewReply:
             type: object
             properties:
@@ -5322,6 +5724,40 @@ components:
                         type: string
                 dedup:
                     type: boolean
+        zcard.api.admin.v1.LedgerEntry:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderId:
+                    type: string
+                type:
+                    type: string
+                amount:
+                    type: string
+                status:
+                    type: string
+                availableAt:
+                    type: string
+                idempotencyKey:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.LedgerReply:
+            type: object
+            properties:
+                entries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.LedgerEntry'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListAdminsReply:
             type: object
             properties:
@@ -5449,6 +5885,28 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListMediaCategoriesReply:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.MediaCategory'
+        zcard.api.admin.v1.ListMediaReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.MediaItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListNotifyLogsReply:
             type: object
             properties:
@@ -5564,6 +6022,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListProfilesReply:
+            type: object
+            properties:
+                profiles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ResellerProfile'
                 total:
                     type: string
                 page:
@@ -5788,6 +6261,44 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.MediaCategory:
+            type: object
+            properties:
+                id:
+                    type: string
+                parentId:
+                    type: string
+                name:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.MediaItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                categoryId:
+                    type: string
+                name:
+                    type: string
+                url:
+                    type: string
+                mime:
+                    type: string
+                size:
+                    type: string
+                width:
+                    type: integer
+                    format: int32
+                height:
+                    type: integer
+                    format: int32
+                refCount:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
         zcard.api.admin.v1.MemberGroup:
             type: object
             properties:
@@ -5844,6 +6355,26 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevel'
+        zcard.api.admin.v1.MoveMediaCategoryRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                parentId:
+                    type: string
+        zcard.api.admin.v1.MoveMediaRequest:
+            required:
+                - ids
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                categoryId:
+                    type: string
         zcard.api.admin.v1.NotifyLog:
             type: object
             properties:
@@ -6210,6 +6741,55 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.RenameMediaCategoryRequest:
+            required:
+                - id
+                - name
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+        zcard.api.admin.v1.RenameMediaRequest:
+            required:
+                - id
+                - name
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+        zcard.api.admin.v1.ResellerProfile:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                status:
+                    type: string
+                applyReason:
+                    type: string
+                rejectReason:
+                    type: string
+                level:
+                    type: integer
+                    format: int32
+                defaultMarkupPercent:
+                    type: number
+                    format: double
+                maxMarkupPercent:
+                    type: number
+                    format: double
+                confirmDays:
+                    type: integer
+                    format: int32
+                reviewedAt:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.admin.v1.ResendNotifyLogRequest:
             required:
                 - id
@@ -6246,6 +6826,26 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.ReviewApplyRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                approve:
+                    type: boolean
+                reason:
+                    type: string
+                defaultMarkupPercent:
+                    type: number
+                    format: double
+                maxMarkupPercent:
+                    type: number
+                    format: double
+                confirmDays:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ReviewItem:
             type: object
             properties:
@@ -6947,6 +7547,20 @@ components:
                     format: int32
                 upstreamSkuId:
                     type: string
+        zcard.api.admin.v1.UploadMediaRequest:
+            required:
+                - name
+                - dataBase64
+            type: object
+            properties:
+                name:
+                    type: string
+                contentType:
+                    type: string
+                dataBase64:
+                    type: string
+                categoryId:
+                    type: string
         zcard.api.admin.v1.UpsertMappingRequest:
             required:
                 - connectionId
@@ -6988,6 +7602,24 @@ components:
                     type: string
                 enabled:
                     type: boolean
+        zcard.api.admin.v1.UpsertPricingRequest:
+            required:
+                - subsiteId
+                - productId
+                - mode
+                - value
+            type: object
+            properties:
+                subsiteId:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                mode:
+                    type: string
+                value:
+                    type: string
         zcard.api.admin.v1.UpsertPromotionRequest:
             required:
                 - name
@@ -8021,6 +8653,11 @@ tags:
       description: AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
     - name: AdminInventoryService
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+    - name: AdminMediaService
+      description: |-
+        AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除
+         （ref_count>0 需 confirm）/外链导入/复制链接。
+         上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
     - name: AdminMemberLevelService
       description: AdminMemberLevelService 会员等级管理（P3-01 M1b 基础版）。
     - name: AdminNotifyService
@@ -8031,6 +8668,10 @@ tags:
       description: AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
     - name: AdminProcurementService
       description: AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+    - name: AdminResellerService
+      description: |-
+        AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
+         域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。

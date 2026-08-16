@@ -26,12 +26,14 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/dashboard"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/ticket"
@@ -75,6 +77,8 @@ func NewHTTPServer(
 	ticketStoreSvc *ticket.StoreTicketService,
 	ticketAdminSvc *ticket.AdminTicketService,
 	affiliateStoreSvc *affiliate.StoreAffiliateService,
+	mediaAdminSvc *media.AdminMediaService,
+	resellerAdminSvc *reseller.AdminResellerService,
 	auditAdminSvc *audit.AdminAuditService,
 	auditRepo *audit.AuditRepo,
 	roleSvc *authz.RoleService,
@@ -181,6 +185,10 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreTicketServiceHTTPServer(srv, ticketStoreSvc)
 	adminv1.RegisterAdminTicketServiceHTTPServer(srv, ticketAdminSvc)
 	storefrontv1.RegisterStoreAffiliateServiceHTTPServer(srv, affiliateStoreSvc)
+	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
+	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)
+	// P3-06：素材静态服务（ETag + 白名单扩展；目录列表禁用）
+	media.RegisterStatic(srv)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

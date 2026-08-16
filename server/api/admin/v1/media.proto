@@ -1,0 +1,176 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除
+// （ref_count>0 需 confirm）/外链导入/复制链接。
+// 上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
+service AdminMediaService {
+  // CreateCategory 创建分类。
+  rpc CreateCategory(CreateMediaCategoryRequest) returns (MediaCategory) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/categories"
+      body: "*"
+    };
+  }
+  // RenameCategory 分类改名。
+  rpc RenameCategory(RenameMediaCategoryRequest) returns (MediaCategory) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/categories/{id}/rename"
+      body: "*"
+    };
+  }
+  // MoveCategory 分类移动。
+  rpc MoveCategory(MoveMediaCategoryRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/categories/{id}/move"
+      body: "*"
+    };
+  }
+  // DeleteCategory 删除分类（有内容拒绝）。
+  rpc DeleteCategory(DeleteMediaCategoryRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/media/categories/{id}"
+    };
+  }
+  // ListCategories 分类列表。
+  rpc ListCategories(google.protobuf.Empty) returns (ListMediaCategoriesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/media/categories" };
+  }
+  // Upload 上传（安全三件套：三重校验+重编码+10MB）。
+  rpc Upload(UploadMediaRequest) returns (MediaItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/upload"
+      body: "*"
+    };
+  }
+  // ImportFromURL 外链导入（httpx SSRF 防护 + 同三件套）。
+  rpc ImportFromURL(ImportMediaRequest) returns (MediaItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/import"
+      body: "*"
+    };
+  }
+  // ListMedia 素材列表。
+  rpc ListMedia(ListMediaRequest) returns (ListMediaReply) {
+    option (google.api.http) = { get: "/api/v1/admin/media" };
+  }
+  // RenameMedia 素材改名。
+  rpc RenameMedia(RenameMediaRequest) returns (MediaItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/{id}/rename"
+      body: "*"
+    };
+  }
+  // MoveMedia 素材批量移动。
+  rpc MoveMedia(MoveMediaRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/move"
+      body: "*"
+    };
+  }
+  // DeleteMedia 批量删除（被引用未 confirm → 409 + 引用清单）。
+  rpc DeleteMedia(DeleteMediaRequest) returns (DeleteMediaReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/media/delete"
+      body: "*"
+    };
+  }
+}
+
+message MediaCategory {
+  uint64 id = 1;
+  uint64 parent_id = 2;
+  string name = 3;
+  int32 sort = 4;
+}
+
+message CreateMediaCategoryRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 parent_id = 2;
+  int32 sort = 3;
+}
+
+message RenameMediaCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message MoveMediaCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 parent_id = 2; // 0 = 移到根
+}
+
+message DeleteMediaCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListMediaCategoriesReply {
+  repeated MediaCategory categories = 1;
+}
+
+message UploadMediaRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED]; // 原始文件名（含扩展名）
+  string content_type = 2;  // 声明 MIME（可空——魔数兜底）
+  string data_base64 = 3 [(google.api.field_behavior) = REQUIRED];
+  uint64 category_id = 4;
+}
+
+message ImportMediaRequest {
+  string url = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 category_id = 2;
+}
+
+message MediaItem {
+  uint64 id = 1;
+  uint64 category_id = 2;
+  string name = 3;
+  string url = 4;        // /uploads/<path>
+  string mime = 5;
+  int64 size = 6;
+  int32 width = 7;
+  int32 height = 8;
+  int32 ref_count = 9;
+  int64 created_at = 10;
+}
+
+message ListMediaRequest {
+  uint64 category_id = 1;
+  string keyword = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListMediaReply {
+  repeated MediaItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message RenameMediaRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message MoveMediaRequest {
+  repeated uint64 ids = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 category_id = 2; // 0 = 未分类
+}
+
+message DeleteMediaRequest {
+  repeated uint64 ids = 1 [(google.api.field_behavior) = REQUIRED];
+  bool confirm = 2; // ref_count>0 时必须 true
+}
+
+message DeleteMediaReply {
+  int32 deleted = 1;
+  repeated MediaItem referenced = 2; // 被 confirm=false 拒绝时返回引用清单
+  bool need_confirm = 3;
+}

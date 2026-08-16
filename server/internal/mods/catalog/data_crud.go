@@ -4,6 +4,7 @@ package catalog
 // sanitize 在 service 层调用后传入；slug 唯一校验在 biz。
 
 import (
+	"strings"
 	"context"
 	"fmt"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -462,4 +464,40 @@ func toSupplierProduct(row *ent.Product) port.SupplierProduct {
 		Cover:        row.Cover,
 		Status:       row.Status,
 	}
+}
+
+// AdjustCoverRefs 封面/图集引用调整（旧集合释放 + 新集合引用；id 从 media URL 解析）。
+// 旧 catalog 字段存的是 URL（/uploads/<path>）或外链——本方法只对 /uploads/media/<id> 形态计数；
+// 简化口径：调用方传新旧 URL 列表，本方法解析出 media id 做增减。
+func (r *ProductRepoImpl) AdjustCoverRefs(ctx context.Context, oldURLs, newURLs []string) {
+	if r.mediaRef == nil {
+		return
+	}
+	var oldIDs, newIDs []uint64
+	for _, u := range oldURLs {
+		if id := r.mediaIDFromPath(ctx, u); id > 0 {
+			oldIDs = append(oldIDs, id)
+		}
+	}
+	for _, u := range newURLs {
+		if id := r.mediaIDFromPath(ctx, u); id > 0 {
+			newIDs = append(newIDs, id)
+		}
+	}
+	_ = r.mediaRef.ReleaseRefs(ctx, oldIDs)
+	_ = r.mediaRef.AddRefs(ctx, newIDs)
+}
+
+// mediaIDFromURL 由素材 URL 反查 id：需要查库（path → media.id）。
+// URL 形态 /uploads/YYYY/MM/name.ext —— media 表按 path 索引查。
+func (r *ProductRepoImpl) mediaIDFromPath(ctx context.Context, url string) uint64 {
+	trimmed := strings.TrimPrefix(url, "/uploads/")
+	if trimmed == url {
+		return 0 // 外链/非素材库路径不计
+	}
+	m, err := data.Client(ctx, r.data).Media.Query().Where(media.PathEQ(trimmed)).Only(ctx)
+	if err != nil {
+		return 0
+	}
+	return m.ID
 }

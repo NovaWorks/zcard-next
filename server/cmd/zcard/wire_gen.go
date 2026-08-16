@@ -20,11 +20,13 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
@@ -61,7 +63,8 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	repoImpl := settings.NewRepoImpl(dataData)
 	settingsUsecase := settings.NewSettingsUsecase(repoImpl)
 	adminSettingsService := settings.NewAdminSettingsService(settingsUsecase)
-	productRepoImpl := catalog.NewProductRepoImpl(dataData)
+	mediaRepo := media.NewMediaRepo(dataData)
+	productRepoImpl := catalog.NewProductRepoImpl(dataData, mediaRepo)
 	catalogUsecase := catalog.NewCatalogUsecase(productRepoImpl)
 	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase)
 	supplyRepoImpl := supply.NewSupplyRepoImpl(dataData, box)
@@ -103,7 +106,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	}
 	supplyAPIService := supplier.NewSupplyAPIService(supplierRepoImpl, productRepoImpl, cardRepoImpl, cardRepoImpl, enqueuer, generator, logger)
 	adminSupplierService := supplier.NewAdminSupplierService(supplierRepoImpl, supplyAPIService)
-	contentRepo := content.NewContentRepo(dataData)
+	contentRepo := content.NewContentRepo(dataData, mediaRepo)
 	adminContentService := content.NewAdminContentService(contentRepo)
 	storeContentService := content.NewStoreContentService(contentRepo)
 	broadcastService := notify.NewBroadcastService(notifyRepo, notifyDispatcher, enqueuer)
@@ -111,7 +114,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	storeNotificationService := notify.NewStoreNotificationService(notifyRepo)
 	couponRepoImpl := coupon.NewCouponRepoImpl(dataData)
 	storeCouponService := coupon.NewStoreCouponService(couponRepoImpl)
-	ticketRepo := ticket.NewTicketRepo(dataData)
+	ticketRepo := ticket.NewTicketRepo(dataData, mediaRepo)
 	walletRepoImpl := wallet.NewWalletRepoImpl(dataData)
 	portWallet := wallet.ProvidePortWallet(walletRepoImpl)
 	settingsReader := notify.ProvideSettingsReader(repoImpl)
@@ -119,6 +122,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminTicketService := ticket.NewAdminTicketService(ticketRepo, outboxWriter)
 	commissionRepo := affiliate.NewCommissionRepo(dataData)
 	storeAffiliateService := affiliate.NewStoreAffiliateService(commissionRepo)
+	adminMediaService := media.NewAdminMediaService(mediaRepo)
+	resellerRepo := reseller.NewResellerRepo(dataData)
+	adminResellerService := reseller.NewAdminResellerService(resellerRepo)
 	adminAuditService := audit.NewAdminAuditService(auditRepo)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
@@ -141,7 +147,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminWalletService := wallet.NewAdminWalletService(walletRepoImpl, dataData)
 	storeDeliveryService := fulfillment.NewStoreDeliveryService(deliveryRepoImpl)
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminMediaService, adminResellerService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService, procureService, supplyAPIService, broadcastService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)

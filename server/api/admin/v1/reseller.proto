@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
+// 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
+service AdminResellerService {
+  // ReviewApply 审核申请（通过设加价率区间与冻结天数）。
+  rpc ReviewApply(ReviewApplyRequest) returns (ResellerProfile) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/reseller/apply/{id}/review"
+      body: "*"
+    };
+  }
+  // ListProfiles 申请/分站列表。
+  rpc ListProfiles(ListProfilesRequest) returns (ListProfilesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/reseller/profiles" };
+  }
+  // UpsertPricing 分站定价规则（SKU>商品>默认）。
+  rpc UpsertPricing(UpsertPricingRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/reseller/pricing"
+      body: "*"
+    };
+  }
+  // Ledger 分站账本流水。
+  rpc Ledger(LedgerRequest) returns (LedgerReply) {
+    option (google.api.http) = { get: "/api/v1/admin/reseller/ledger" };
+  }
+  // Balance 分站余额（缓存 + 重算对账）。
+  rpc Balance(BalanceRequest) returns (BalanceReply) {
+    option (google.api.http) = { get: "/api/v1/admin/reseller/balance" };
+  }
+}
+
+message ResellerProfile {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  string status = 3; // applying | approved | rejected
+  string apply_reason = 4;
+  string reject_reason = 5;
+  int32 level = 6;
+  double default_markup_percent = 7;
+  double max_markup_percent = 8;
+  int32 confirm_days = 9;
+  int64 reviewed_at = 10;
+  int64 created_at = 11;
+}
+
+message ReviewApplyRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool approve = 2;
+  string reason = 3;
+  double default_markup_percent = 4; // 审核通过时设定
+  double max_markup_percent = 5;
+  int32 confirm_days = 6;
+}
+
+message ListProfilesRequest {
+  string status = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListProfilesReply {
+  repeated ResellerProfile profiles = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpsertPricingRequest {
+  uint64 subsite_id = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 product_id = 2 [(google.api.field_behavior) = REQUIRED];
+  uint64 sku_id = 3;
+  string mode = 4 [(google.api.field_behavior) = REQUIRED]; // inherit | markup_percent | fixed_markup | fixed_price
+  int64 value = 5 [(google.api.field_behavior) = REQUIRED]; // markup=万分比；fixed=分
+}
+
+message LedgerRequest {
+  uint64 subsite_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string status = 2; // pending | available | locked | withdrawn
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message LedgerEntry {
+  uint64 id = 1;
+  uint64 order_id = 2;
+  string type = 3;
+  int64 amount = 4;
+  string status = 5;
+  int64 available_at = 6;
+  string idempotency_key = 7;
+  int64 created_at = 8;
+}
+
+message LedgerReply {
+  repeated LedgerEntry entries = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message BalanceRequest {
+  uint64 subsite_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message BalanceReply {
+  int64 available = 1;   // 缓存（含冻结正数）
+  int64 locked = 2;
+  int64 negative = 3;
+  int64 recomputed_available = 4; // 流水重算（对账口径）
+  int64 recomputed_locked = 5;
+  int64 recomputed_negative = 6;
+}

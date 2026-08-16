@@ -4,6 +4,7 @@ package content
 // sanitize 纪律：content_json（HTML）入库前经 platform/sanitize.HTML。
 
 import (
+	"strings"
 	"context"
 	"encoding/json"
 	"errors"
@@ -15,6 +16,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/banner"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/postcategory"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
+	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 )
 
@@ -27,11 +30,23 @@ var (
 
 // ContentRepo 内容仓储。
 type ContentRepo struct {
-	data *data.Data
+	data     *data.Data
+	mediaRef mediaport.Referencer // 横幅/文章配图引用（nil 跳过）
 }
 
-// NewContentRepo 构造。
-func NewContentRepo(d *data.Data) *ContentRepo { return &ContentRepo{data: d} }
+// NewContentRepo 构造（mediaRef 素材引用计数，P3-06）。
+func NewContentRepo(d *data.Data, mediaRef mediaport.Referencer) *ContentRepo {
+	return &ContentRepo{data: d, mediaRef: mediaRef}
+}
+
+// adjustBannerRefs 横幅配图引用（旧释放新引用：image + mobile_image）。
+func (r *ContentRepo) adjustBannerRefs(ctx context.Context, oldImage, oldMobile, newImage, newMobile string) {
+	if r.mediaRef == nil {
+		return
+	}
+	_ = r.mediaRef.ReleaseRefs(ctx, mediaIDsOf(ctx, r.data, oldImage, oldMobile))
+	_ = r.mediaRef.AddRefs(ctx, mediaIDsOf(ctx, r.data, newImage, newMobile))
+}
 
 // ── Banner ────────────────────────────────────────────────
 
@@ -76,7 +91,11 @@ func (r *ContentRepo) CreateBanner(ctx context.Context, in BannerInput) (*ent.Ba
 	if !in.EndAt.IsZero() {
 		create.SetEndAt(in.EndAt)
 	}
-	return create.Save(ctx)
+	b, err := create.Save(ctx)
+	if err == nil {
+		r.adjustBannerRefs(ctx, "", "", in.Image, in.MobileImage)
+	}
+	return b, err
 }
 
 // UpdateBanner 更新（零值字段不动）。
@@ -121,8 +140,11 @@ func (r *ContentRepo) UpdateBanner(ctx context.Context, id uint64, in BannerInpu
 	if !in.EndAt.IsZero() {
 		upd.SetEndAt(in.EndAt)
 	}
-	_ = existing
-	return upd.Save(ctx)
+	b, err := upd.Save(ctx)
+	if err == nil && existing != nil {
+		r.adjustBannerRefs(ctx, existing.Image, existing.MobileImage, in.Image, in.MobileImage)
+	}
+	return b, err
 }
 
 // DeleteBanner 删除。
@@ -461,4 +483,19 @@ func LangContent(contentJSON, locale string) string {
 		return contentJSON // 非结构化（防御）：原样返回
 	}
 	return LangValue(m, locale)
+}
+
+// mediaIDsOf URL 列表 → 素材 id（/uploads/ 前缀才计）。
+func mediaIDsOf(ctx context.Context, d *data.Data, urls ...string) []uint64 {
+	var ids []uint64
+	for _, u := range urls {
+		p := strings.TrimPrefix(u, "/uploads/")
+		if p == u || p == "" {
+			continue
+		}
+		if m, err := data.Client(ctx, d).Media.Query().Where(media.PathEQ(p)).Only(ctx); err == nil {
+			ids = append(ids, m.ID)
+		}
+	}
+	return ids
 }

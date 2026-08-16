@@ -20,7 +20,7 @@ import (
 
 func newContentRepo(t *testing.T) *ContentRepo {
 	t.Helper()
-	return NewContentRepo(newTestData(t))
+	return NewContentRepo(newTestData(t), nil)
 }
 
 func TestBannerTimeWindow(t *testing.T) {
