@@ -71,6 +71,7 @@ func NewHTTPServer(
 	dir *authz.Directory,
 ) *khttp.Server {
 	var opts = []khttp.ServerOption{
+		khttp.Filter(corsFilter),
 		khttp.Middleware(
 			recovery.Recovery(),
 			logging.Server(log.Default()),
@@ -167,4 +168,19 @@ func tenancyMainDomain(c *conf.Server) string { return "" } // 由 bootstrap 注
 
 func contextWithTimeout(r *http.Request) (ctx context.Context, cancel context.CancelFunc) {
 	return context.WithTimeout(r.Context(), 3*time.Second)
+}
+
+// corsFilter CORS 过滤器（开发阶段前后端联调；生产同源部署无此问题——M1b 按环境开关化）。
+func corsFilter(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Requested-With")
+		w.Header().Set("Access-Control-Max-Age", "86400")
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
