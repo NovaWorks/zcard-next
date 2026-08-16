@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+service AdminInventoryService {
+  // ImportPreview 上传预览（去重统计 + 样本预览）。
+  rpc ImportPreview(ImportPreviewRequest) returns (ImportPreviewReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/inventory/preview"
+      body: "*"
+    };
+  }
+  // ImportConfirm 确认导入（分片写入 + 批次追踪）。
+  rpc ImportConfirm(ImportConfirmRequest) returns (ImportBatch) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/inventory/import"
+      body: "*"
+    };
+  }
+  // ListImports 导入批次列表。
+  rpc ListImports(ListImportsRequest) returns (ListImportsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/inventory/imports" };
+  }
+  // CancelImport 撤销批次（删除本批 available 卡）。
+  rpc CancelImport(CancelImportRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/inventory/imports/{id}/cancel"
+      body: "*"
+    };
+  }
+  // ListCards 卡密列表（掩码默认；card:view_content 权限才可见完整内容）。
+  rpc ListCards(ListCardsRequest) returns (ListCardsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/inventory/cards" };
+  }
+  // ExportCards 导出卡密（card:export 权限 + 审计 + 限流 + CsvSafe）。
+  rpc ExportCards(ExportCardsRequest) returns (ExportCardsReply) {
+    option (google.api.http) = { post: "/api/v1/admin/inventory/export" body: "*" };
+  }
+  // ToggleCard 禁用/启用单张卡。
+  rpc ToggleCard(ToggleCardRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/inventory/cards/{id}/toggle"
+      body: "*"
+    };
+  }
+}
+
+message ImportPreviewRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string lines = 2 [(google.api.field_behavior) = REQUIRED];
+  bool dedup = 3;
+}
+
+message ImportPreviewReply {
+  int32 total = 1;
+  int32 dup_in_file = 2;
+  int32 dup_in_db = 3;
+  int32 invalid = 4;
+  repeated string sample = 5;
+  bool is_premium = 6;
+}
+
+message ImportConfirmRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string lines = 2 [(google.api.field_behavior) = REQUIRED];
+  bool dedup = 3;
+}
+
+message ImportBatch {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  int32 total = 3;
+  int32 imported = 4;
+  int32 skipped = 5;
+  int32 failed = 6;
+  string status = 7;
+}
+
+message ListImportsRequest {
+  uint64 product_id = 1;
+}
+
+message ListImportsReply {
+  repeated ImportBatch batches = 1;
+}
+
+message CancelImportRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListCardsRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string status = 2; // available | reserved | used | disabled
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListCardsReply {
+  repeated CardInfo cards = 1;
+  int64 total = 2;
+}
+
+// CardInfo 卡密信息（内容默认掩码 ****尾4位）。
+message CardInfo {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  string status = 3;
+  string masked_content = 4; // ****abcd
+  string note = 5;
+  int64 created_at = 6;
+  int64 used_at = 7;
+}
+
+message ExportCardsRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ExportCardsReply {
+  repeated string lines = 1; // CsvSafe 处理后的卡密行
+}
+
+message ToggleCardRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool enable = 2 [(google.api.field_behavior) = REQUIRED];
+}

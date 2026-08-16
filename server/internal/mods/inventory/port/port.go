@@ -35,7 +35,7 @@ type Reservation struct {
 type Inventory interface {
 	Reserve(ctx context.Context, subsiteID uint64, items []ReserveItem) (*Reservation, error)
 	// Release 释放预留（订单取消/超时，TTL 兜底由周期任务二次释放）。
-	Release(ctx context.Context, reservationID string) error
+	Release(ctx context.Context, orderID uint64) error
 	// MarkUsed 售出标记（校验 affected rows 防并发重发，友商纪律）。
 	MarkUsed(ctx context.Context, cardIDs []uint64, orderID uint64) error
 	// Stock 可用库存数（-1 = 无限，链接类商品）。

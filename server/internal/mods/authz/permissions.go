@@ -81,6 +81,20 @@ func init() {
 		Perm{Code: "catalog:tag_delete", Desc: "删除标签（超管）", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteTag", Method: "DELETE", Path: "/api/v1/admin/tags/{id}"},
 
+		// ── 卡密库存（inventory，P1-02）────────────────
+		Perm{Code: "inventory:read", Desc: "查看卡密", Domain: "inventory",
+			Op: "zcard.api.admin.v1.AdminInventoryService/ListCards", Method: "GET", Path: "/api/v1/admin/inventory/cards"},
+		Perm{Code: "inventory:import", Desc: "导入预览（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/ImportPreview", Method: "POST", Path: "/api/v1/admin/inventory/preview"},
+		Perm{Code: "inventory:import", Desc: "确认导入（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/ImportConfirm", Method: "POST", Path: "/api/v1/admin/inventory/import"},
+		Perm{Code: "inventory:read", Desc: "导入批次", Domain: "inventory",
+			Op: "zcard.api.admin.v1.AdminInventoryService/ListImports", Method: "GET", Path: "/api/v1/admin/inventory/imports"},
+		Perm{Code: "inventory:import", Desc: "撤销批次（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/CancelImport", Method: "POST", Path: "/api/v1/admin/inventory/imports/{id}/cancel"},
+		Perm{Code: "inventory:write", Desc: "禁用/启用卡（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/ToggleCard", Method: "PUT", Path: "/api/v1/admin/inventory/cards/{id}/toggle"},
+
 		// ── 货币管理（settings，P0-04 T3）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},

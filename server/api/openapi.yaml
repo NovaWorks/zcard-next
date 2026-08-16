@@ -469,6 +469,157 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/inventory/cards:
+        get:
+            tags:
+                - AdminInventoryService
+            description: ListCards 卡密列表（掩码默认；card:view_content 权限才可见完整内容）。
+            operationId: AdminInventoryService_ListCards
+            parameters:
+                - name: productId
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListCardsReply'
+    /api/v1/admin/inventory/cards/{id}/toggle:
+        put:
+            tags:
+                - AdminInventoryService
+            description: ToggleCard 禁用/启用单张卡。
+            operationId: AdminInventoryService_ToggleCard
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ToggleCardRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/inventory/export:
+        post:
+            tags:
+                - AdminInventoryService
+            description: ExportCards 导出卡密（card:export 权限 + 审计 + 限流 + CsvSafe）。
+            operationId: AdminInventoryService_ExportCards
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ExportCardsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ExportCardsReply'
+    /api/v1/admin/inventory/import:
+        post:
+            tags:
+                - AdminInventoryService
+            description: ImportConfirm 确认导入（分片写入 + 批次追踪）。
+            operationId: AdminInventoryService_ImportConfirm
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ImportConfirmRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ImportBatch'
+    /api/v1/admin/inventory/imports:
+        get:
+            tags:
+                - AdminInventoryService
+            description: ListImports 导入批次列表。
+            operationId: AdminInventoryService_ListImports
+            parameters:
+                - name: productId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListImportsReply'
+    /api/v1/admin/inventory/imports/{id}/cancel:
+        post:
+            tags:
+                - AdminInventoryService
+            description: CancelImport 撤销批次（删除本批 available 卡）。
+            operationId: AdminInventoryService_CancelImport
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CancelImportRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/inventory/preview:
+        post:
+            tags:
+                - AdminInventoryService
+            description: ImportPreview 上传预览（去重统计 + 样本预览）。
+            operationId: AdminInventoryService_ImportPreview
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewReply'
     /api/v1/admin/products:
         get:
             tags:
@@ -881,6 +1032,31 @@ components:
                     format: date-time
                 lastLoginIp:
                     type: string
+        zcard.api.admin.v1.CancelImportRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.admin.v1.CardInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                status:
+                    type: string
+                maskedContent:
+                    type: string
+                note:
+                    type: string
+                createdAt:
+                    type: string
+                usedAt:
+                    type: string
+            description: CardInfo 卡密信息（内容默认掩码 ****尾4位）。
         zcard.api.admin.v1.Category:
             type: object
             properties:
@@ -1070,6 +1246,20 @@ components:
                     type: string
                 otpauthUrl:
                     type: string
+        zcard.api.admin.v1.ExportCardsReply:
+            type: object
+            properties:
+                lines:
+                    type: array
+                    items:
+                        type: string
+        zcard.api.admin.v1.ExportCardsRequest:
+            required:
+                - productId
+            type: object
+            properties:
+                productId:
+                    type: string
         zcard.api.admin.v1.GetProfileReply:
             type: object
             properties:
@@ -1092,6 +1282,76 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Perm'
             description: Group 域分组。
+        zcard.api.admin.v1.ImportBatch:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                total:
+                    type: integer
+                    format: int32
+                imported:
+                    type: integer
+                    format: int32
+                skipped:
+                    type: integer
+                    format: int32
+                failed:
+                    type: integer
+                    format: int32
+                status:
+                    type: string
+        zcard.api.admin.v1.ImportConfirmRequest:
+            required:
+                - productId
+                - lines
+            type: object
+            properties:
+                productId:
+                    type: string
+                lines:
+                    type: array
+                    items:
+                        type: string
+                dedup:
+                    type: boolean
+        zcard.api.admin.v1.ImportPreviewReply:
+            type: object
+            properties:
+                total:
+                    type: integer
+                    format: int32
+                dupInFile:
+                    type: integer
+                    format: int32
+                dupInDb:
+                    type: integer
+                    format: int32
+                invalid:
+                    type: integer
+                    format: int32
+                sample:
+                    type: array
+                    items:
+                        type: string
+                isPremium:
+                    type: boolean
+        zcard.api.admin.v1.ImportPreviewRequest:
+            required:
+                - productId
+                - lines
+            type: object
+            properties:
+                productId:
+                    type: string
+                lines:
+                    type: array
+                    items:
+                        type: string
+                dedup:
+                    type: boolean
         zcard.api.admin.v1.ListAdminsReply:
             type: object
             properties:
@@ -1099,6 +1359,22 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+        zcard.api.admin.v1.ListCardsReply:
+            type: object
+            properties:
+                cards:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.CardInfo'
+                total:
+                    type: string
+        zcard.api.admin.v1.ListImportsReply:
+            type: object
+            properties:
+                batches:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ImportBatch'
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -1245,6 +1521,16 @@ components:
                 id:
                     type: string
                 enabled:
+                    type: boolean
+        zcard.api.admin.v1.ToggleCardRequest:
+            required:
+                - id
+                - enable
+            type: object
+            properties:
+                id:
+                    type: string
+                enable:
                     type: boolean
         zcard.api.admin.v1.UpdateAdminRequest:
             required:
@@ -1477,6 +1763,8 @@ tags:
       description: AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
     - name: AdminCurrencyService
       description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+    - name: AdminInventoryService
+      description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。

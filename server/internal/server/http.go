@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
@@ -52,6 +53,7 @@ func NewHTTPServer(
 	confSvc *settings.StorefrontConfigService,
 	currencySvc *settings.AdminCurrencyService,
 	catalogAdminSvc *catalog.AdminCatalogService,
+	invSvc *inventory.AdminInventoryService,
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 ) *khttp.Server {
@@ -99,6 +101,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminCurrencyServiceHTTPServer(srv, currencySvc)
 	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)
 	adminv1.RegisterAdminCatalogServiceHTTPServer(srv, catalogAdminSvc)
+	adminv1.RegisterAdminInventoryServiceHTTPServer(srv, invSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 

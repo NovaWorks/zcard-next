@@ -25,16 +25,17 @@ var operatorSeed = map[string]bool{
 	"identity:admin_read": true,
 	"catalog:read":        true, "catalog:read_detail": true,
 	"catalog:category_read": true, "catalog:tag_read": true,
+	"inventory:read": true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。
 var adminOnlyAllowlist = map[string]bool{
 	// 敏感权限点（§5.20.4 防偷卡五项）
-	"card:view_content":   true,
-	"card:export":         true,
 	"order:view_delivery": true,
 	"order:refund":        true,
 	"system:update":       true,
+	"card:view_content":   true,
+	"card:export":         true,
 	// 权限与人事高危操作（超管专属）
 	"authz:role_write":         true,
 	"authz:role_grant":         true,
@@ -50,6 +51,9 @@ var adminOnlyAllowlist = map[string]bool{
 	"catalog:category_delete": true,
 	"catalog:tag_write":       true,
 	"catalog:tag_delete":      true,
+	// 库存写操作（超管专属）
+	"inventory:import": true,
+	"inventory:write":  true,
 }
 
 func TestRule8RBACCoverage(t *testing.T) {

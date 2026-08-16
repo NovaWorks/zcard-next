@@ -94,7 +94,7 @@ func (uc *InventoryUsecase) Reserve(ctx context.Context, subsiteID uint64, items
 	return uc.repo.Reserve(ctx, subsiteID, items)
 }
 
-// Release 释放预留。
-func (uc *InventoryUsecase) Release(ctx context.Context, reservationID string) error {
-	return uc.repo.Release(ctx, reservationID)
+// Release 释放预留（按订单）。
+func (uc *InventoryUsecase) Release(ctx context.Context, orderID uint64) error {
+	return uc.repo.Release(ctx, orderID)
 }

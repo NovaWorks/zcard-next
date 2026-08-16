@@ -9,4 +9,5 @@ var ProviderSet = wire.NewSet(
 	NewInventoryUsecase,
 	NewCardRepoImpl,
 	wire.Bind(new(CardRepo), new(*CardRepoImpl)),
+	NewAdminInventoryService,
 )
