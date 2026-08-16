@@ -316,6 +316,14 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminNotifyService/PreviewTemplate", Method: "POST", Path: "/api/v1/admin/notify/templates/preview"},
 		Perm{Code: "notify:write", Desc: "重发日志（超管）", Domain: "notify", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminNotifyService/ResendLog", Method: "POST", Path: "/api/v1/admin/notify/logs/{id}/resend"},
+		Perm{Code: "notify:write", Desc: "群发预估/创建/列表/取消（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/EstimateBroadcast", Method: "POST", Path: "/api/v1/admin/notify/broadcasts/estimate"},
+		Perm{Code: "notify:write", Desc: "创建群发（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/CreateBroadcast", Method: "POST", Path: "/api/v1/admin/notify/broadcasts"},
+		Perm{Code: "notify:write", Desc: "群发列表（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/ListBroadcasts", Method: "GET", Path: "/api/v1/admin/notify/broadcasts"},
+		Perm{Code: "notify:write", Desc: "取消群发（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/CancelBroadcast", Method: "POST", Path: "/api/v1/admin/notify/broadcasts/{id}/cancel"},
 
 		// ── 审计与风控（audit，P2-06）───────────────
 		Perm{Code: "audit:read", Desc: "操作审计", Domain: "audit",

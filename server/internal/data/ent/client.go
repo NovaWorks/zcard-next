@@ -40,6 +40,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberproductgroup"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifybroadcast"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
@@ -152,6 +153,8 @@ type Client struct {
 	Notification *NotificationClient
 	// NotificationLog is the client for interacting with the NotificationLog builders.
 	NotificationLog *NotificationLogClient
+	// NotifyBroadcast is the client for interacting with the NotifyBroadcast builders.
+	NotifyBroadcast *NotifyBroadcastClient
 	// NotifyTemplate is the client for interacting with the NotifyTemplate builders.
 	NotifyTemplate *NotifyTemplateClient
 	// Order is the client for interacting with the Order builders.
@@ -298,6 +301,7 @@ func (c *Client) init() {
 	c.MemberProductGroup = NewMemberProductGroupClient(c.config)
 	c.Notification = NewNotificationClient(c.config)
 	c.NotificationLog = NewNotificationLogClient(c.config)
+	c.NotifyBroadcast = NewNotifyBroadcastClient(c.config)
 	c.NotifyTemplate = NewNotifyTemplateClient(c.config)
 	c.Order = NewOrderClient(c.config)
 	c.OrderAmountLine = NewOrderAmountLineClient(c.config)
@@ -470,6 +474,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		MemberProductGroup:     NewMemberProductGroupClient(cfg),
 		Notification:           NewNotificationClient(cfg),
 		NotificationLog:        NewNotificationLogClient(cfg),
+		NotifyBroadcast:        NewNotifyBroadcastClient(cfg),
 		NotifyTemplate:         NewNotifyTemplateClient(cfg),
 		Order:                  NewOrderClient(cfg),
 		OrderAmountLine:        NewOrderAmountLineClient(cfg),
@@ -569,6 +574,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		MemberProductGroup:     NewMemberProductGroupClient(cfg),
 		Notification:           NewNotificationClient(cfg),
 		NotificationLog:        NewNotificationLogClient(cfg),
+		NotifyBroadcast:        NewNotifyBroadcastClient(cfg),
 		NotifyTemplate:         NewNotifyTemplateClient(cfg),
 		Order:                  NewOrderClient(cfg),
 		OrderAmountLine:        NewOrderAmountLineClient(cfg),
@@ -658,19 +664,20 @@ func (c *Client) Use(hooks ...Hook) {
 		c.DownstreamCallback, c.EmailVerification, c.ExternalIdentity, c.FailedTask,
 		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.Media, c.MediaCategory,
 		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
-		c.NotifyTemplate, c.Order, c.OrderAmountLine, c.OrderDelivery, c.OrderItem,
-		c.OrderStatusEvent, c.OutboxEvent, c.Payment, c.PaymentChannel, c.PointAccount,
-		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
-		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductControl,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.V1IDMap, c.VirtualReview,
-		c.VisitLog, c.WalletAccount, c.WalletTransaction, c.Withdrawal,
+		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
+		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.Payment,
+		c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post, c.PostCategory,
+		c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder, c.Product,
+		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
+		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
+		c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -685,19 +692,20 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.DownstreamCallback, c.EmailVerification, c.ExternalIdentity, c.FailedTask,
 		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.Media, c.MediaCategory,
 		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
-		c.NotifyTemplate, c.Order, c.OrderAmountLine, c.OrderDelivery, c.OrderItem,
-		c.OrderStatusEvent, c.OutboxEvent, c.Payment, c.PaymentChannel, c.PointAccount,
-		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
-		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductControl,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.V1IDMap, c.VirtualReview,
-		c.VisitLog, c.WalletAccount, c.WalletTransaction, c.Withdrawal,
+		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
+		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.Payment,
+		c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post, c.PostCategory,
+		c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder, c.Product,
+		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
+		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
+		c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -756,6 +764,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Notification.mutate(ctx, m)
 	case *NotificationLogMutation:
 		return c.NotificationLog.mutate(ctx, m)
+	case *NotifyBroadcastMutation:
+		return c.NotifyBroadcast.mutate(ctx, m)
 	case *NotifyTemplateMutation:
 		return c.NotifyTemplate.mutate(ctx, m)
 	case *OrderMutation:
@@ -4209,6 +4219,139 @@ func (c *NotificationLogClient) mutate(ctx context.Context, m *NotificationLogMu
 		return (&NotificationLogDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown NotificationLog mutation op: %q", m.Op())
+	}
+}
+
+// NotifyBroadcastClient is a client for the NotifyBroadcast schema.
+type NotifyBroadcastClient struct {
+	config
+}
+
+// NewNotifyBroadcastClient returns a client for the NotifyBroadcast from the given config.
+func NewNotifyBroadcastClient(c config) *NotifyBroadcastClient {
+	return &NotifyBroadcastClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `notifybroadcast.Hooks(f(g(h())))`.
+func (c *NotifyBroadcastClient) Use(hooks ...Hook) {
+	c.hooks.NotifyBroadcast = append(c.hooks.NotifyBroadcast, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `notifybroadcast.Intercept(f(g(h())))`.
+func (c *NotifyBroadcastClient) Intercept(interceptors ...Interceptor) {
+	c.inters.NotifyBroadcast = append(c.inters.NotifyBroadcast, interceptors...)
+}
+
+// Create returns a builder for creating a NotifyBroadcast entity.
+func (c *NotifyBroadcastClient) Create() *NotifyBroadcastCreate {
+	mutation := newNotifyBroadcastMutation(c.config, OpCreate)
+	return &NotifyBroadcastCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of NotifyBroadcast entities.
+func (c *NotifyBroadcastClient) CreateBulk(builders ...*NotifyBroadcastCreate) *NotifyBroadcastCreateBulk {
+	return &NotifyBroadcastCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *NotifyBroadcastClient) MapCreateBulk(slice any, setFunc func(*NotifyBroadcastCreate, int)) *NotifyBroadcastCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &NotifyBroadcastCreateBulk{err: fmt.Errorf("calling to NotifyBroadcastClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*NotifyBroadcastCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &NotifyBroadcastCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for NotifyBroadcast.
+func (c *NotifyBroadcastClient) Update() *NotifyBroadcastUpdate {
+	mutation := newNotifyBroadcastMutation(c.config, OpUpdate)
+	return &NotifyBroadcastUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NotifyBroadcastClient) UpdateOne(_m *NotifyBroadcast) *NotifyBroadcastUpdateOne {
+	mutation := newNotifyBroadcastMutation(c.config, OpUpdateOne, withNotifyBroadcast(_m))
+	return &NotifyBroadcastUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NotifyBroadcastClient) UpdateOneID(id uint64) *NotifyBroadcastUpdateOne {
+	mutation := newNotifyBroadcastMutation(c.config, OpUpdateOne, withNotifyBroadcastID(id))
+	return &NotifyBroadcastUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for NotifyBroadcast.
+func (c *NotifyBroadcastClient) Delete() *NotifyBroadcastDelete {
+	mutation := newNotifyBroadcastMutation(c.config, OpDelete)
+	return &NotifyBroadcastDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NotifyBroadcastClient) DeleteOne(_m *NotifyBroadcast) *NotifyBroadcastDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NotifyBroadcastClient) DeleteOneID(id uint64) *NotifyBroadcastDeleteOne {
+	builder := c.Delete().Where(notifybroadcast.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NotifyBroadcastDeleteOne{builder}
+}
+
+// Query returns a query builder for NotifyBroadcast.
+func (c *NotifyBroadcastClient) Query() *NotifyBroadcastQuery {
+	return &NotifyBroadcastQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNotifyBroadcast},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a NotifyBroadcast entity by its id.
+func (c *NotifyBroadcastClient) Get(ctx context.Context, id uint64) (*NotifyBroadcast, error) {
+	return c.Query().Where(notifybroadcast.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NotifyBroadcastClient) GetX(ctx context.Context, id uint64) *NotifyBroadcast {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *NotifyBroadcastClient) Hooks() []Hook {
+	return c.hooks.NotifyBroadcast
+}
+
+// Interceptors returns the client interceptors.
+func (c *NotifyBroadcastClient) Interceptors() []Interceptor {
+	return c.inters.NotifyBroadcast
+}
+
+func (c *NotifyBroadcastClient) mutate(ctx context.Context, m *NotifyBroadcastMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NotifyBroadcastCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NotifyBroadcastUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NotifyBroadcastUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NotifyBroadcastDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown NotifyBroadcast mutation op: %q", m.Op())
 	}
 }
 
@@ -11774,9 +11917,9 @@ type (
 		CartItem, Category, Coupon, Currency, DailyStat, DownstreamCallback,
 		EmailVerification, ExternalIdentity, FailedTask, FlashSale, Giftcard,
 		GiftcardBatch, Media, MediaCategory, MemberLevel, MemberProductGroup,
-		Notification, NotificationLog, NotifyTemplate, Order, OrderAmountLine,
-		OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent, Payment,
-		PaymentChannel, PointAccount, PointTransaction, Post, PostCategory,
+		Notification, NotificationLog, NotifyBroadcast, NotifyTemplate, Order,
+		OrderAmountLine, OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent,
+		Payment, PaymentChannel, PointAccount, PointTransaction, Post, PostCategory,
 		ProcessedEvent, ProcurementItem, ProcurementOrder, Product, ProductControl,
 		ProductSku, Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob,
 		RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing,
@@ -11792,9 +11935,9 @@ type (
 		CartItem, Category, Coupon, Currency, DailyStat, DownstreamCallback,
 		EmailVerification, ExternalIdentity, FailedTask, FlashSale, Giftcard,
 		GiftcardBatch, Media, MediaCategory, MemberLevel, MemberProductGroup,
-		Notification, NotificationLog, NotifyTemplate, Order, OrderAmountLine,
-		OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent, Payment,
-		PaymentChannel, PointAccount, PointTransaction, Post, PostCategory,
+		Notification, NotificationLog, NotifyBroadcast, NotifyTemplate, Order,
+		OrderAmountLine, OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent,
+		Payment, PaymentChannel, PointAccount, PointTransaction, Post, PostCategory,
 		ProcessedEvent, ProcurementItem, ProcurementOrder, Product, ProductControl,
 		ProductSku, Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob,
 		RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing,

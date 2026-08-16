@@ -37,6 +37,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberproductgroup"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifybroadcast"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
@@ -177,6 +178,7 @@ func checkColumn(t, c string) error {
 			memberproductgroup.Table:     memberproductgroup.ValidColumn,
 			notification.Table:           notification.ValidColumn,
 			notificationlog.Table:        notificationlog.ValidColumn,
+			notifybroadcast.Table:        notifybroadcast.ValidColumn,
 			notifytemplate.Table:         notifytemplate.ValidColumn,
 			order.Table:                  order.ValidColumn,
 			orderamountline.Table:        orderamountline.ValidColumn,

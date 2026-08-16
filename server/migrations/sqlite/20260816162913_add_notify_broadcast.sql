@@ -1,0 +1,4 @@
+-- Create "notify_broadcasts" table
+CREATE TABLE `notify_broadcasts` (`id` integer NOT NULL PRIMARY KEY AUTOINCREMENT, `created_at` datetime NOT NULL, `updated_at` datetime NOT NULL, `title` text NOT NULL, `content` text NOT NULL, `channels` json NOT NULL, `target_type` text NOT NULL DEFAULT ('all'), `target_ids` json NULL, `scheduled_at` datetime NULL, `status` text NOT NULL DEFAULT ('pending'), `created_by` integer NOT NULL, `audience` integer NOT NULL DEFAULT (0), `sent_count` integer NOT NULL DEFAULT (0), `failed_count` integer NOT NULL DEFAULT (0), `started_at` datetime NULL, `finished_at` datetime NULL);
+-- Create index "notifybroadcast_status_scheduled_at" to table: "notify_broadcasts"
+CREATE INDEX `notifybroadcast_status_scheduled_at` ON `notify_broadcasts` (`status`, `scheduled_at`);

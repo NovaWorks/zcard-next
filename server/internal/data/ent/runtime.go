@@ -30,6 +30,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberproductgroup"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifybroadcast"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
@@ -877,6 +878,37 @@ func init() {
 	notificationlogDescCreatedAt := notificationlogFields[12].Descriptor()
 	// notificationlog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	notificationlog.DefaultCreatedAt = notificationlogDescCreatedAt.Default.(func() time.Time)
+	notifybroadcastMixin := schema.NotifyBroadcast{}.Mixin()
+	notifybroadcastMixinFields0 := notifybroadcastMixin[0].Fields()
+	_ = notifybroadcastMixinFields0
+	notifybroadcastFields := schema.NotifyBroadcast{}.Fields()
+	_ = notifybroadcastFields
+	// notifybroadcastDescCreatedAt is the schema descriptor for created_at field.
+	notifybroadcastDescCreatedAt := notifybroadcastMixinFields0[0].Descriptor()
+	// notifybroadcast.DefaultCreatedAt holds the default value on creation for the created_at field.
+	notifybroadcast.DefaultCreatedAt = notifybroadcastDescCreatedAt.Default.(func() time.Time)
+	// notifybroadcastDescUpdatedAt is the schema descriptor for updated_at field.
+	notifybroadcastDescUpdatedAt := notifybroadcastMixinFields0[1].Descriptor()
+	// notifybroadcast.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	notifybroadcast.DefaultUpdatedAt = notifybroadcastDescUpdatedAt.Default.(func() time.Time)
+	// notifybroadcast.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	notifybroadcast.UpdateDefaultUpdatedAt = notifybroadcastDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// notifybroadcastDescTitle is the schema descriptor for title field.
+	notifybroadcastDescTitle := notifybroadcastFields[1].Descriptor()
+	// notifybroadcast.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	notifybroadcast.TitleValidator = notifybroadcastDescTitle.Validators[0].(func(string) error)
+	// notifybroadcastDescAudience is the schema descriptor for audience field.
+	notifybroadcastDescAudience := notifybroadcastFields[9].Descriptor()
+	// notifybroadcast.DefaultAudience holds the default value on creation for the audience field.
+	notifybroadcast.DefaultAudience = notifybroadcastDescAudience.Default.(int64)
+	// notifybroadcastDescSentCount is the schema descriptor for sent_count field.
+	notifybroadcastDescSentCount := notifybroadcastFields[10].Descriptor()
+	// notifybroadcast.DefaultSentCount holds the default value on creation for the sent_count field.
+	notifybroadcast.DefaultSentCount = notifybroadcastDescSentCount.Default.(int64)
+	// notifybroadcastDescFailedCount is the schema descriptor for failed_count field.
+	notifybroadcastDescFailedCount := notifybroadcastFields[11].Descriptor()
+	// notifybroadcast.DefaultFailedCount holds the default value on creation for the failed_count field.
+	notifybroadcast.DefaultFailedCount = notifybroadcastDescFailedCount.Default.(int64)
 	notifytemplateMixin := schema.NotifyTemplate{}.Mixin()
 	notifytemplateMixinFields0 := notifytemplateMixin[0].Fields()
 	_ = notifytemplateMixinFields0

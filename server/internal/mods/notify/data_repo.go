@@ -12,6 +12,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifybroadcast"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
 )
 
@@ -207,3 +209,137 @@ func (r *NotifyRepo) ListLogs(ctx context.Context, status, eventType string, pag
 
 // jsonUnmarshal 防御性解析（channel.go 使用）。
 func jsonUnmarshal(raw []byte, v any) error { return json.Unmarshal(raw, v) }
+
+// ── 群发任务（T4）─────────────────────────────────────────
+
+// CreateBroadcast 创建群发任务（pending；audience 预估回填）。
+func (r *NotifyRepo) CreateBroadcast(ctx context.Context, in BroadcastInput, audience int64) (*ent.NotifyBroadcast, error) {
+	channels := in.Channels
+	if channels == nil {
+		channels = []string{}
+	}
+	targets := in.TargetIDs
+	if targets == nil {
+		targets = []uint64{}
+	}
+	create := data.Client(ctx, r.data).NotifyBroadcast.Create().
+		SetTitle(in.Title).
+		SetContent(in.Content).
+		SetChannels(channels).
+		SetTargetType(notifybroadcast.TargetType(in.TargetType)).
+		SetTargetIds(targets).
+		SetStatus(notifybroadcast.StatusPending).
+		SetCreatedBy(in.CreatedBy).
+		SetAudience(audience)
+	if !in.ScheduledAt.IsZero() {
+		create.SetScheduledAt(in.ScheduledAt)
+	}
+	return create.Save(ctx)
+}
+
+// GetBroadcast 群发详情。
+func (r *NotifyRepo) GetBroadcast(ctx context.Context, id uint64) (*ent.NotifyBroadcast, error) {
+	b, err := data.Client(ctx, r.data).NotifyBroadcast.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ErrBroadcastNotFound
+		}
+		return nil, err
+	}
+	return b, nil
+}
+
+// ListBroadcasts 群发列表。
+func (r *NotifyRepo) ListBroadcasts(ctx context.Context, page, size int) ([]*ent.NotifyBroadcast, int, error) {
+	q := data.Client(ctx, r.data).NotifyBroadcast.Query().Order(ent.Desc(notifybroadcast.FieldID))
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := q.Offset((page - 1) * size).Limit(size).All(ctx)
+	return rows, total, err
+}
+
+// SetBroadcastStatus 状态迁移（startedAt 非空时回填）。
+func (r *NotifyRepo) SetBroadcastStatus(ctx context.Context, id uint64, status string, startedAt time.Time) (*ent.NotifyBroadcast, error) {
+	upd := data.Client(ctx, r.data).NotifyBroadcast.UpdateOneID(id).
+		SetStatus(notifybroadcast.Status(status))
+	if !startedAt.IsZero() {
+		upd.SetStartedAt(startedAt)
+	}
+	return upd.Save(ctx)
+}
+
+// UpdateBroadcastProgress 进度回填（发送中可观测）。
+func (r *NotifyRepo) UpdateBroadcastProgress(ctx context.Context, id uint64, sent, failed int64) error {
+	_, err := data.Client(ctx, r.data).NotifyBroadcast.UpdateOneID(id).
+		SetSentCount(sent).
+		SetFailedCount(failed).
+		Save(ctx)
+	return err
+}
+
+// FinishBroadcast 终态（done + finished_at）。
+func (r *NotifyRepo) FinishBroadcast(ctx context.Context, id uint64, sent, failed int64) (*ent.NotifyBroadcast, error) {
+	return data.Client(ctx, r.data).NotifyBroadcast.UpdateOneID(id).
+		SetStatus(notifybroadcast.StatusDone).
+		SetSentCount(sent).
+		SetFailedCount(failed).
+		SetFinishedAt(time.Now().UTC()).
+		Save(ctx)
+}
+
+// CountBroadcastTargets 目标计数（all=全部用户；active=正常状态；specified=ID 集合）。
+func (r *NotifyRepo) CountBroadcastTargets(ctx context.Context, targetType string, targetIDs []uint64) (int64, error) {
+	q := data.Client(ctx, r.data).User.Query()
+	switch targetType {
+	case "active":
+		q = q.Where(user.StatusEQ(user.StatusActive))
+	case "specified":
+		if len(targetIDs) == 0 {
+			return 0, nil
+		}
+		q = q.Where(user.IDIn(targetIDs...))
+	}
+	n, err := q.Count(ctx)
+	return int64(n), err
+}
+
+// BroadcastTargets 目标分页（afterID 游标分批）。
+func (r *NotifyRepo) BroadcastTargets(ctx context.Context, targetType string, targetIDs []uint64, afterID uint64, limit int) ([]*ent.User, error) {
+	q := data.Client(ctx, r.data).User.Query().
+		Where(user.IDGT(afterID)).
+		Order(ent.Asc(user.FieldID)).
+		Limit(limit)
+	switch targetType {
+	case "active":
+		q = q.Where(user.StatusEQ(user.StatusActive))
+	case "specified":
+		if len(targetIDs) == 0 {
+			return nil, nil
+		}
+		q = q.Where(user.IDIn(targetIDs...))
+	}
+	return q.All(ctx)
+}
+
+// ListDueBroadcasts 到期待发（定时群发 cron 扫描；scheduled_at 为空视为立即）。
+func (r *NotifyRepo) ListDueBroadcasts(ctx context.Context, now time.Time) ([]uint64, error) {
+	rows, err := data.Client(ctx, r.data).NotifyBroadcast.Query().
+		Where(
+			notifybroadcast.StatusEQ(notifybroadcast.StatusPending),
+			notifybroadcast.Or(
+				notifybroadcast.ScheduledAtIsNil(),
+				notifybroadcast.ScheduledAtLTE(now),
+			),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]uint64, 0, len(rows))
+	for _, b := range rows {
+		ids = append(ids, b.ID)
+	}
+	return ids, nil
+}

@@ -62,6 +62,8 @@ type Tx struct {
 	Notification *NotificationClient
 	// NotificationLog is the client for interacting with the NotificationLog builders.
 	NotificationLog *NotificationLogClient
+	// NotifyBroadcast is the client for interacting with the NotifyBroadcast builders.
+	NotifyBroadcast *NotifyBroadcastClient
 	// NotifyTemplate is the client for interacting with the NotifyTemplate builders.
 	NotifyTemplate *NotifyTemplateClient
 	// Order is the client for interacting with the Order builders.
@@ -328,6 +330,7 @@ func (tx *Tx) init() {
 	tx.MemberProductGroup = NewMemberProductGroupClient(tx.config)
 	tx.Notification = NewNotificationClient(tx.config)
 	tx.NotificationLog = NewNotificationLogClient(tx.config)
+	tx.NotifyBroadcast = NewNotifyBroadcastClient(tx.config)
 	tx.NotifyTemplate = NewNotifyTemplateClient(tx.config)
 	tx.Order = NewOrderClient(tx.config)
 	tx.OrderAmountLine = NewOrderAmountLineClient(tx.config)

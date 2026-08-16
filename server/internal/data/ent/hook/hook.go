@@ -309,6 +309,18 @@ func (f NotificationLogFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotificationLogMutation", m)
 }
 
+// The NotifyBroadcastFunc type is an adapter to allow the use of ordinary
+// function as NotifyBroadcast mutator.
+type NotifyBroadcastFunc func(context.Context, *ent.NotifyBroadcastMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NotifyBroadcastFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NotifyBroadcastMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NotifyBroadcastMutation", m)
+}
+
 // The NotifyTemplateFunc type is an adapter to allow the use of ordinary
 // function as NotifyTemplate mutator.
 type NotifyTemplateFunc func(context.Context, *ent.NotifyTemplateMutation) (ent.Value, error)

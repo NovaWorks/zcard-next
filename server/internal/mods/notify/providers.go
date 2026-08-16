@@ -9,6 +9,7 @@ package notify
 import (
 	"context"
 
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 
 	"github.com/google/wire"
@@ -30,14 +31,19 @@ var ProviderSet = wire.NewSet(
 	NewNotifyRepo,
 	ProvideChannels,
 	NewDispatcher,
+	wire.Bind(new(notifyport.Sender), new(*Dispatcher)), // audit Alerter 消费（通道 A）
+	NewBroadcastService,
 	NewAdminNotifyService,
 	NewStoreNotificationService,
 )
 
-// provideChannels 通道装配（Email + Inbox；SMS/Telegram M3）。
+// ProvideChannels 通道装配（四通道：Email/Inbox/SMS/Telegram）。
 func ProvideChannels(repo *NotifyRepo, settingsRepo *settings.RepoImpl) []Channel {
+	reader := settingsReaderAdapter{repo: settingsRepo}
 	return []Channel{
-		NewEmailChannel(settingsReaderAdapter{repo: settingsRepo}),
+		NewEmailChannel(reader),
 		NewInboxChannel(repo),
+		NewSMSChannel(reader),
+		NewTelegramChannel(reader),
 	}
 }

@@ -1516,6 +1516,92 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/notify/broadcasts:
+        get:
+            tags:
+                - AdminNotifyService
+            description: ListBroadcasts 群发任务列表。
+            operationId: AdminNotifyService_ListBroadcasts
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListBroadcastsReply'
+        post:
+            tags:
+                - AdminNotifyService
+            description: CreateBroadcast 创建群发任务。
+            operationId: AdminNotifyService_CreateBroadcast
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateBroadcastRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Broadcast'
+    /api/v1/admin/notify/broadcasts/estimate:
+        post:
+            tags:
+                - AdminNotifyService
+            description: EstimateBroadcast 覆盖人数预估。
+            operationId: AdminNotifyService_EstimateBroadcast
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.EstimateBroadcastRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.EstimateBroadcastReply'
+    /api/v1/admin/notify/broadcasts/{id}/cancel:
+        post:
+            tags:
+                - AdminNotifyService
+            description: CancelBroadcast 取消群发（仅 pending）。
+            operationId: AdminNotifyService_CancelBroadcast
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CancelBroadcastRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Broadcast'
     /api/v1/admin/notify/logs:
         get:
             tags:
@@ -3642,6 +3728,50 @@ components:
                     type: string
                 updatedAt:
                     type: string
+        zcard.api.admin.v1.Broadcast:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                channels:
+                    type: array
+                    items:
+                        type: string
+                targetType:
+                    type: string
+                targetIds:
+                    type: array
+                    items:
+                        type: string
+                scheduledAt:
+                    type: string
+                status:
+                    type: string
+                createdBy:
+                    type: string
+                audience:
+                    type: string
+                sentCount:
+                    type: string
+                failedCount:
+                    type: string
+                startedAt:
+                    type: string
+                finishedAt:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.CancelBroadcastRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.admin.v1.CancelImportRequest:
             required:
                 - id
@@ -3836,6 +3966,31 @@ components:
                 sort:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.CreateBroadcastRequest:
+            required:
+                - title
+                - content
+                - channels
+                - targetType
+            type: object
+            properties:
+                title:
+                    type: string
+                content:
+                    type: string
+                channels:
+                    type: array
+                    items:
+                        type: string
+                targetType:
+                    type: string
+                targetIds:
+                    type: array
+                    items:
+                        type: string
+                scheduledAt:
+                    type: string
+            description: CreateBroadcast 创建群发（定时 scheduled_at；空 = 立即）。
         zcard.api.admin.v1.CreateCategoryRequest:
             required:
                 - name
@@ -4310,6 +4465,23 @@ components:
                     type: string
                 otpauthUrl:
                     type: string
+        zcard.api.admin.v1.EstimateBroadcastReply:
+            type: object
+            properties:
+                audience:
+                    type: string
+        zcard.api.admin.v1.EstimateBroadcastRequest:
+            required:
+                - targetType
+            type: object
+            properties:
+                targetType:
+                    type: string
+                targetIds:
+                    type: array
+                    items:
+                        type: string
+            description: EstimateBroadcast 覆盖人数预估（创建前预览）。
         zcard.api.admin.v1.ExportCardsReply:
             type: object
             properties:
@@ -4462,6 +4634,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Banner'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListBroadcastsReply:
+            type: object
+            properties:
+                broadcasts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Broadcast'
                 total:
                     type: string
                 page:

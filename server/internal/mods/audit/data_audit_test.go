@@ -17,6 +17,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	_ "modernc.org/sqlite"
 )
@@ -200,3 +201,53 @@ func TestVisitCounter(t *testing.T) {
 
 // testLogger 静默测试日志。
 func testLogger() *slog.Logger { return slog.New(slog.DiscardHandler) }
+
+// TestAlerterThresholdDedup 告警阈值 + 去重窗口。
+func TestAlerterThresholdDedup(t *testing.T) {
+	var sent []notifyport.Message
+	sender := &fakeSender{onSend: func(m notifyport.Message) error { sent = append(sent, m); return nil }}
+	// 阈值 3（fetch 维度）
+	al := NewAlerter(fakeAlertSettings{raw: []byte(`{"enabled":true,"fetch_fail_per_ip":3,"channel":"telegram"}`)}, sender)
+
+	ctx := context.Background()
+	// 2 次：不告警
+	al.Count(ctx, "delivery.fetch_failed", "1.2.3.4", "s", "b")
+	al.Count(ctx, "delivery.fetch_failed", "1.2.3.4", "s", "b")
+	if len(sent) != 0 {
+		t.Fatalf("未达阈值不应告警: %d", len(sent))
+	}
+	// 第 3 次：告警恰一次
+	al.Count(ctx, "delivery.fetch_failed", "1.2.3.4", "s", "b")
+	if len(sent) != 1 {
+		t.Fatalf("达阈值应告警一次: %d", len(sent))
+	}
+	// 去重窗口内继续计数：不再告警（计数已重置，需再满 3 次且过窗口）
+	al.Count(ctx, "delivery.fetch_failed", "1.2.3.4", "s", "b")
+	al.Count(ctx, "delivery.fetch_failed", "1.2.3.4", "s", "b")
+	al.Count(ctx, "delivery.fetch_failed", "1.2.3.4", "s", "b")
+	if len(sent) != 1 {
+		t.Fatalf("去重窗口内不应重复告警: %d", len(sent))
+	}
+	// 不同 IP 独立计数
+	al.Count(ctx, "delivery.fetch_failed", "5.6.7.8", "s", "b")
+	if len(sent) != 1 {
+		t.Fatalf("其他 IP 未达阈值: %d", len(sent))
+	}
+	// 未配置阈值的维度不计数不告警
+	al.Count(ctx, "unknown.action", "1.2.3.4", "s", "b")
+	if len(sent) != 1 {
+		t.Fatalf("未覆盖维度不应告警: %d", len(sent))
+	}
+}
+
+// fakeSender 记录告警发送。
+type fakeSender struct{ onSend func(notifyport.Message) error }
+
+func (f *fakeSender) Send(_ context.Context, m notifyport.Message) error {
+	return f.onSend(m)
+}
+
+// fakeAlertSettings 告警配置桩。
+type fakeAlertSettings struct{ raw []byte }
+
+func (f fakeAlertSettings) GetJSON(_ context.Context, _, _ string) ([]byte, error) { return f.raw, nil }

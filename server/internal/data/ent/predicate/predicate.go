@@ -81,6 +81,9 @@ type Notification func(*sql.Selector)
 // NotificationLog is the predicate function for notificationlog builders.
 type NotificationLog func(*sql.Selector)
 
+// NotifyBroadcast is the predicate function for notifybroadcast builders.
+type NotifyBroadcast func(*sql.Selector)
+
 // NotifyTemplate is the predicate function for notifytemplate builders.
 type NotifyTemplate func(*sql.Selector)
 

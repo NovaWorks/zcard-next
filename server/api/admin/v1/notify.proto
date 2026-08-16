@@ -39,6 +39,31 @@ service AdminNotifyService {
       body: "*"
     };
   }
+  // EstimateBroadcast 覆盖人数预估。
+  rpc EstimateBroadcast(EstimateBroadcastRequest) returns (EstimateBroadcastReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/notify/broadcasts/estimate"
+      body: "*"
+    };
+  }
+  // CreateBroadcast 创建群发任务。
+  rpc CreateBroadcast(CreateBroadcastRequest) returns (Broadcast) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/notify/broadcasts"
+      body: "*"
+    };
+  }
+  // ListBroadcasts 群发任务列表。
+  rpc ListBroadcasts(ListBroadcastsRequest) returns (ListBroadcastsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/notify/broadcasts" };
+  }
+  // CancelBroadcast 取消群发（仅 pending）。
+  rpc CancelBroadcast(CancelBroadcastRequest) returns (Broadcast) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/notify/broadcasts/{id}/cancel"
+      body: "*"
+    };
+  }
 }
 
 message NotifyTemplate {
@@ -106,5 +131,61 @@ message ListNotifyLogsReply {
 }
 
 message ResendNotifyLogRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ── 群发任务（T4）─────────────────────────────────────────
+
+// EstimateBroadcast 覆盖人数预估（创建前预览）。
+message EstimateBroadcastRequest {
+  string target_type = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated uint64 target_ids = 2;
+}
+
+message EstimateBroadcastReply {
+  int64 audience = 1;
+}
+
+// CreateBroadcast 创建群发（定时 scheduled_at；空 = 立即）。
+message CreateBroadcastRequest {
+  string title = 1 [(google.api.field_behavior) = REQUIRED];
+  string content = 2 [(google.api.field_behavior) = REQUIRED];
+  repeated string channels = 3 [(google.api.field_behavior) = REQUIRED];
+  string target_type = 4 [(google.api.field_behavior) = REQUIRED]; // all | active | specified
+  repeated uint64 target_ids = 5;
+  int64 scheduled_at = 6; // unix 秒；0 = 立即
+}
+
+message Broadcast {
+  uint64 id = 1;
+  string title = 2;
+  string content = 3;
+  repeated string channels = 4;
+  string target_type = 5;
+  repeated uint64 target_ids = 6;
+  int64 scheduled_at = 7;
+  string status = 8; // pending | sending | done | canceled
+  uint64 created_by = 9;
+  int64 audience = 10;
+  int64 sent_count = 11;
+  int64 failed_count = 12;
+  int64 started_at = 13;
+  int64 finished_at = 14;
+  int64 created_at = 15;
+}
+
+message ListBroadcastsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListBroadcastsReply {
+  repeated Broadcast broadcasts = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message CancelBroadcastRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }

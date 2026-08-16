@@ -20,11 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminNotifyService_UpsertTemplate_FullMethodName  = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
-	AdminNotifyService_ListTemplates_FullMethodName   = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
-	AdminNotifyService_PreviewTemplate_FullMethodName = "/zcard.api.admin.v1.AdminNotifyService/PreviewTemplate"
-	AdminNotifyService_ListLogs_FullMethodName        = "/zcard.api.admin.v1.AdminNotifyService/ListLogs"
-	AdminNotifyService_ResendLog_FullMethodName       = "/zcard.api.admin.v1.AdminNotifyService/ResendLog"
+	AdminNotifyService_UpsertTemplate_FullMethodName    = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
+	AdminNotifyService_ListTemplates_FullMethodName     = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
+	AdminNotifyService_PreviewTemplate_FullMethodName   = "/zcard.api.admin.v1.AdminNotifyService/PreviewTemplate"
+	AdminNotifyService_ListLogs_FullMethodName          = "/zcard.api.admin.v1.AdminNotifyService/ListLogs"
+	AdminNotifyService_ResendLog_FullMethodName         = "/zcard.api.admin.v1.AdminNotifyService/ResendLog"
+	AdminNotifyService_EstimateBroadcast_FullMethodName = "/zcard.api.admin.v1.AdminNotifyService/EstimateBroadcast"
+	AdminNotifyService_CreateBroadcast_FullMethodName   = "/zcard.api.admin.v1.AdminNotifyService/CreateBroadcast"
+	AdminNotifyService_ListBroadcasts_FullMethodName    = "/zcard.api.admin.v1.AdminNotifyService/ListBroadcasts"
+	AdminNotifyService_CancelBroadcast_FullMethodName   = "/zcard.api.admin.v1.AdminNotifyService/CancelBroadcast"
 )
 
 // AdminNotifyServiceClient is the client API for AdminNotifyService service.
@@ -43,6 +47,14 @@ type AdminNotifyServiceClient interface {
 	ListLogs(ctx context.Context, in *ListNotifyLogsRequest, opts ...grpc.CallOption) (*ListNotifyLogsReply, error)
 	// ResendLog 重发失败日志（原变量重投）。
 	ResendLog(ctx context.Context, in *ResendNotifyLogRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// EstimateBroadcast 覆盖人数预估。
+	EstimateBroadcast(ctx context.Context, in *EstimateBroadcastRequest, opts ...grpc.CallOption) (*EstimateBroadcastReply, error)
+	// CreateBroadcast 创建群发任务。
+	CreateBroadcast(ctx context.Context, in *CreateBroadcastRequest, opts ...grpc.CallOption) (*Broadcast, error)
+	// ListBroadcasts 群发任务列表。
+	ListBroadcasts(ctx context.Context, in *ListBroadcastsRequest, opts ...grpc.CallOption) (*ListBroadcastsReply, error)
+	// CancelBroadcast 取消群发（仅 pending）。
+	CancelBroadcast(ctx context.Context, in *CancelBroadcastRequest, opts ...grpc.CallOption) (*Broadcast, error)
 }
 
 type adminNotifyServiceClient struct {
@@ -103,6 +115,46 @@ func (c *adminNotifyServiceClient) ResendLog(ctx context.Context, in *ResendNoti
 	return out, nil
 }
 
+func (c *adminNotifyServiceClient) EstimateBroadcast(ctx context.Context, in *EstimateBroadcastRequest, opts ...grpc.CallOption) (*EstimateBroadcastReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EstimateBroadcastReply)
+	err := c.cc.Invoke(ctx, AdminNotifyService_EstimateBroadcast_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminNotifyServiceClient) CreateBroadcast(ctx context.Context, in *CreateBroadcastRequest, opts ...grpc.CallOption) (*Broadcast, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Broadcast)
+	err := c.cc.Invoke(ctx, AdminNotifyService_CreateBroadcast_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminNotifyServiceClient) ListBroadcasts(ctx context.Context, in *ListBroadcastsRequest, opts ...grpc.CallOption) (*ListBroadcastsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBroadcastsReply)
+	err := c.cc.Invoke(ctx, AdminNotifyService_ListBroadcasts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminNotifyServiceClient) CancelBroadcast(ctx context.Context, in *CancelBroadcastRequest, opts ...grpc.CallOption) (*Broadcast, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Broadcast)
+	err := c.cc.Invoke(ctx, AdminNotifyService_CancelBroadcast_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminNotifyServiceServer is the server API for AdminNotifyService service.
 // All implementations must embed UnimplementedAdminNotifyServiceServer
 // for forward compatibility.
@@ -119,6 +171,14 @@ type AdminNotifyServiceServer interface {
 	ListLogs(context.Context, *ListNotifyLogsRequest) (*ListNotifyLogsReply, error)
 	// ResendLog 重发失败日志（原变量重投）。
 	ResendLog(context.Context, *ResendNotifyLogRequest) (*emptypb.Empty, error)
+	// EstimateBroadcast 覆盖人数预估。
+	EstimateBroadcast(context.Context, *EstimateBroadcastRequest) (*EstimateBroadcastReply, error)
+	// CreateBroadcast 创建群发任务。
+	CreateBroadcast(context.Context, *CreateBroadcastRequest) (*Broadcast, error)
+	// ListBroadcasts 群发任务列表。
+	ListBroadcasts(context.Context, *ListBroadcastsRequest) (*ListBroadcastsReply, error)
+	// CancelBroadcast 取消群发（仅 pending）。
+	CancelBroadcast(context.Context, *CancelBroadcastRequest) (*Broadcast, error)
 	mustEmbedUnimplementedAdminNotifyServiceServer()
 }
 
@@ -143,6 +203,18 @@ func (UnimplementedAdminNotifyServiceServer) ListLogs(context.Context, *ListNoti
 }
 func (UnimplementedAdminNotifyServiceServer) ResendLog(context.Context, *ResendNotifyLogRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResendLog not implemented")
+}
+func (UnimplementedAdminNotifyServiceServer) EstimateBroadcast(context.Context, *EstimateBroadcastRequest) (*EstimateBroadcastReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method EstimateBroadcast not implemented")
+}
+func (UnimplementedAdminNotifyServiceServer) CreateBroadcast(context.Context, *CreateBroadcastRequest) (*Broadcast, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateBroadcast not implemented")
+}
+func (UnimplementedAdminNotifyServiceServer) ListBroadcasts(context.Context, *ListBroadcastsRequest) (*ListBroadcastsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBroadcasts not implemented")
+}
+func (UnimplementedAdminNotifyServiceServer) CancelBroadcast(context.Context, *CancelBroadcastRequest) (*Broadcast, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelBroadcast not implemented")
 }
 func (UnimplementedAdminNotifyServiceServer) mustEmbedUnimplementedAdminNotifyServiceServer() {}
 func (UnimplementedAdminNotifyServiceServer) testEmbeddedByValue()                            {}
@@ -255,6 +327,78 @@ func _AdminNotifyService_ResendLog_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminNotifyService_EstimateBroadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EstimateBroadcastRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminNotifyServiceServer).EstimateBroadcast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminNotifyService_EstimateBroadcast_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminNotifyServiceServer).EstimateBroadcast(ctx, req.(*EstimateBroadcastRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminNotifyService_CreateBroadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateBroadcastRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminNotifyServiceServer).CreateBroadcast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminNotifyService_CreateBroadcast_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminNotifyServiceServer).CreateBroadcast(ctx, req.(*CreateBroadcastRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminNotifyService_ListBroadcasts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBroadcastsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminNotifyServiceServer).ListBroadcasts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminNotifyService_ListBroadcasts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminNotifyServiceServer).ListBroadcasts(ctx, req.(*ListBroadcastsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminNotifyService_CancelBroadcast_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelBroadcastRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminNotifyServiceServer).CancelBroadcast(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminNotifyService_CancelBroadcast_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminNotifyServiceServer).CancelBroadcast(ctx, req.(*CancelBroadcastRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminNotifyService_ServiceDesc is the grpc.ServiceDesc for AdminNotifyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -281,6 +425,22 @@ var AdminNotifyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResendLog",
 			Handler:    _AdminNotifyService_ResendLog_Handler,
+		},
+		{
+			MethodName: "EstimateBroadcast",
+			Handler:    _AdminNotifyService_EstimateBroadcast_Handler,
+		},
+		{
+			MethodName: "CreateBroadcast",
+			Handler:    _AdminNotifyService_CreateBroadcast_Handler,
+		},
+		{
+			MethodName: "ListBroadcasts",
+			Handler:    _AdminNotifyService_ListBroadcasts_Handler,
+		},
+		{
+			MethodName: "CancelBroadcast",
+			Handler:    _AdminNotifyService_CancelBroadcast_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -726,6 +726,38 @@ var (
 			},
 		},
 	}
+	// NotifyBroadcastsColumns holds the columns for the "notify_broadcasts" table.
+	NotifyBroadcastsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "title", Type: field.TypeString, Size: 200},
+		{Name: "content", Type: field.TypeString, Size: 2147483647},
+		{Name: "channels", Type: field.TypeJSON},
+		{Name: "target_type", Type: field.TypeEnum, Enums: []string{"all", "active", "specified"}, Default: "all"},
+		{Name: "target_ids", Type: field.TypeJSON, Nullable: true},
+		{Name: "scheduled_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "sending", "done", "canceled"}, Default: "pending"},
+		{Name: "created_by", Type: field.TypeUint64},
+		{Name: "audience", Type: field.TypeInt64, Default: 0},
+		{Name: "sent_count", Type: field.TypeInt64, Default: 0},
+		{Name: "failed_count", Type: field.TypeInt64, Default: 0},
+		{Name: "started_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "finished_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+	}
+	// NotifyBroadcastsTable holds the schema information for the "notify_broadcasts" table.
+	NotifyBroadcastsTable = &schema.Table{
+		Name:       "notify_broadcasts",
+		Columns:    NotifyBroadcastsColumns,
+		PrimaryKey: []*schema.Column{NotifyBroadcastsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "notifybroadcast_status_scheduled_at",
+				Unique:  false,
+				Columns: []*schema.Column{NotifyBroadcastsColumns[9], NotifyBroadcastsColumns[8]},
+			},
+		},
+	}
 	// NotifyTemplatesColumns holds the columns for the "notify_templates" table.
 	NotifyTemplatesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -2385,6 +2417,7 @@ var (
 		MemberProductGroupsTable,
 		NotificationsTable,
 		NotificationLogsTable,
+		NotifyBroadcastsTable,
 		NotifyTemplatesTable,
 		OrdersTable,
 		OrderAmountLinesTable,

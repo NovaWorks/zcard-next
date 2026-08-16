@@ -5,13 +5,16 @@ package notify
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
@@ -178,4 +181,123 @@ func TestSMTPSkippedLogs(t *testing.T) {
 // testEnvelope 测试事件信封。
 func testEnvelope(typ string, payload []byte) events.Envelope {
 	return events.Envelope{EventID: 1, Type: typ, Payload: payload}
+}
+
+// TestAliyunSignGolden SMS 签名 golden vector（Python 独立计算固化）。
+func TestAliyunSignGolden(t *testing.T) {
+	params := map[string]string{
+		"AccessKeyId":      "test-key-id",
+		"Action":           "SendSms",
+		"Format":           "JSON",
+		"PhoneNumbers":     "13800138000",
+		"RegionId":         "cn-hangzhou",
+		"SignName":         "测试签名",
+		"SignatureMethod":  "HMAC-SHA1",
+		"SignatureNonce":   "nonce-001",
+		"SignatureVersion": "1.0",
+		"TemplateCode":     "SMS_123456",
+		"TemplateParam":    `{"code":"123456"}`,
+		"Timestamp":        "2026-08-16T12:00:00Z",
+		"Version":          "2017-05-25",
+	}
+	got := aliyunSign(params, "test-access-secret")
+	want := "sGWPinO1Gft8eYT+wF5h1lA8Fps="
+	if got != want {
+		t.Fatalf("阿里云签名向量漂移: got %s want %s", got, want)
+	}
+}
+
+// TestSMSChannelSkipped SMS 未配置 → skipped。
+func TestSMSChannelSkipped(t *testing.T) {
+	ch := NewSMSChannel(fakeSettings{})
+	if err := ch.Deliver(context.Background(), notifyport.Message{Recipient: "13800138000"}); err != ErrSkipped {
+		t.Fatalf("未配置应 skipped: %v", err)
+	}
+}
+
+// TestTelegramSkipped Telegram 未配置 → skipped。
+func TestTelegramSkipped(t *testing.T) {
+	ch := NewTelegramChannel(fakeSettings{})
+	if err := ch.Deliver(context.Background(), notifyport.Message{Recipient: "12345"}); err != ErrSkipped {
+		t.Fatalf("未配置应 skipped: %v", err)
+	}
+	// 无 chat_ids 同样 skipped
+	ch2 := NewTelegramChannel(fakeSettings{raw: []byte(`{"enabled":true,"bot_token":"tok"}`)})
+	if err := ch2.Deliver(context.Background(), notifyport.Message{}); err != ErrSkipped {
+		t.Fatalf("无目标应 skipped: %v", err)
+	}
+}
+
+// TestBroadcastFlow 群发：创建（预估）→ 执行（inbox 投递+统计）→ 取消保护。
+func TestBroadcastFlow(t *testing.T) {
+	r := newNotifyRepo(t)
+	ctx := context.Background()
+
+	// 三个用户（两个 active 一个 banned）
+	d := r.data
+	for i, status := range []string{"active", "active", "banned"} {
+		if _, err := d.Client.User.Create().
+			SetUsername(fmt.Sprintf("u%d", i)).
+			SetEmail(fmt.Sprintf("u%d@x.com", i)).
+			SetStatus(user.Status(status)).
+			Save(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+	inbox := NewInboxChannel(r)
+	disp := NewDispatcher(r, inbox)
+	svc := NewBroadcastService(r, disp, nil) // enq=nil → 降级直接执行
+
+	// 预估：active 筛选 = 2
+	n, err := svc.EstimateAudience(ctx, "active", nil)
+	if err != nil || n != 2 {
+		t.Fatalf("预估错误: %d %v", n, err)
+	}
+
+	// 创建 + 立即执行（inbox 通道）
+	b, err := svc.Create(ctx, BroadcastInput{
+		Title: "促销", Content: "<p>全场 9 折</p>",
+		Channels: []string{"inbox"}, TargetType: "active",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Audience != 2 {
+		t.Fatalf("覆盖人数回填错误: %d", b.Audience)
+	}
+	if err := svc.Execute(ctx, b.ID); err != nil {
+		t.Fatal(err)
+	}
+	fin, _ := r.GetBroadcast(ctx, b.ID)
+	if string(fin.Status) != "done" || fin.SentCount != 2 || fin.FailedCount != 0 {
+		t.Fatalf("群发统计错误: %+v", fin)
+	}
+	// 每用户一条站内信
+	for _, uid := range []uint64{1, 2} {
+		if c, _ := r.UnreadCount(ctx, uid); c != 1 {
+			t.Fatalf("用户 %d 站内信数错误: %d", uid, c)
+		}
+	}
+	// banned 用户无
+	if c, _ := r.UnreadCount(ctx, 3); c != 0 {
+		t.Fatalf("banned 用户不应收到: %d", c)
+	}
+
+	// 已终态不可取消
+	if _, err := svc.Cancel(ctx, b.ID); err != ErrBroadcastStarted {
+		t.Fatalf("终态取消应拒绝: %v", err)
+	}
+
+	// 指定会员 + 取消（pending 可取消）
+	b2, err := svc.Create(ctx, BroadcastInput{
+		Title: "定向", Content: "x", Channels: []string{"inbox"},
+		TargetType: "specified", TargetIDs: []uint64{1},
+		ScheduledAt: time.Now().Add(time.Hour), // 定时（cron 触发前不执行）
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b2, err = svc.Cancel(ctx, b2.ID); err != nil || string(b2.Status) != "canceled" {
+		t.Fatalf("pending 取消失败: %v", err)
+	}
 }

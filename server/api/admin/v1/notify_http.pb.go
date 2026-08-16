@@ -18,6 +18,10 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminNotifyServiceCancelBroadcast = "/zcard.api.admin.v1.AdminNotifyService/CancelBroadcast"
+const OperationAdminNotifyServiceCreateBroadcast = "/zcard.api.admin.v1.AdminNotifyService/CreateBroadcast"
+const OperationAdminNotifyServiceEstimateBroadcast = "/zcard.api.admin.v1.AdminNotifyService/EstimateBroadcast"
+const OperationAdminNotifyServiceListBroadcasts = "/zcard.api.admin.v1.AdminNotifyService/ListBroadcasts"
 const OperationAdminNotifyServiceListLogs = "/zcard.api.admin.v1.AdminNotifyService/ListLogs"
 const OperationAdminNotifyServiceListTemplates = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
 const OperationAdminNotifyServicePreviewTemplate = "/zcard.api.admin.v1.AdminNotifyService/PreviewTemplate"
@@ -25,6 +29,14 @@ const OperationAdminNotifyServiceResendLog = "/zcard.api.admin.v1.AdminNotifySer
 const OperationAdminNotifyServiceUpsertTemplate = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
 
 type AdminNotifyServiceHTTPServer interface {
+	// CancelBroadcast CancelBroadcast 取消群发（仅 pending）。
+	CancelBroadcast(context.Context, *CancelBroadcastRequest) (*Broadcast, error)
+	// CreateBroadcast CreateBroadcast 创建群发任务。
+	CreateBroadcast(context.Context, *CreateBroadcastRequest) (*Broadcast, error)
+	// EstimateBroadcast EstimateBroadcast 覆盖人数预估。
+	EstimateBroadcast(context.Context, *EstimateBroadcastRequest) (*EstimateBroadcastReply, error)
+	// ListBroadcasts ListBroadcasts 群发任务列表。
+	ListBroadcasts(context.Context, *ListBroadcastsRequest) (*ListBroadcastsReply, error)
 	// ListLogs ListLogs 发送日志（按状态/事件筛选）。
 	ListLogs(context.Context, *ListNotifyLogsRequest) (*ListNotifyLogsReply, error)
 	// ListTemplates ListTemplates 模板列表。
@@ -44,6 +56,10 @@ func RegisterAdminNotifyServiceHTTPServer(s *http.Server, srv AdminNotifyService
 	r.Handle("POST", "/api/v1/admin/notify/templates/preview", _AdminNotifyService_PreviewTemplate0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/notify/logs", _AdminNotifyService_ListLogs0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/logs/{id}/resend", _AdminNotifyService_ResendLog0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/notify/broadcasts/estimate", _AdminNotifyService_EstimateBroadcast0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/notify/broadcasts", _AdminNotifyService_CreateBroadcast0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/notify/broadcasts", _AdminNotifyService_ListBroadcasts0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/notify/broadcasts/{id}/cancel", _AdminNotifyService_CancelBroadcast0_HTTP_Handler(srv))
 }
 
 func _AdminNotifyService_UpsertTemplate0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
@@ -144,7 +160,94 @@ func _AdminNotifyService_ResendLog0_HTTP_Handler(srv AdminNotifyServiceHTTPServe
 	}
 }
 
+func _AdminNotifyService_EstimateBroadcast0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in EstimateBroadcastRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminNotifyServiceEstimateBroadcast)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.EstimateBroadcast(ctx, req.(*EstimateBroadcastRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*EstimateBroadcastReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminNotifyService_CreateBroadcast0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateBroadcastRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminNotifyServiceCreateBroadcast)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateBroadcast(ctx, req.(*CreateBroadcastRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Broadcast)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminNotifyService_ListBroadcasts0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListBroadcastsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminNotifyServiceListBroadcasts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListBroadcasts(ctx, req.(*ListBroadcastsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListBroadcastsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminNotifyService_CancelBroadcast0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CancelBroadcastRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminNotifyServiceCancelBroadcast)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CancelBroadcast(ctx, req.(*CancelBroadcastRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Broadcast)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminNotifyServiceHTTPClient interface {
+	// CancelBroadcast CancelBroadcast 取消群发（仅 pending）。
+	CancelBroadcast(ctx context.Context, req *CancelBroadcastRequest, opts ...http.CallOption) (rsp *Broadcast, err error)
+	// CreateBroadcast CreateBroadcast 创建群发任务。
+	CreateBroadcast(ctx context.Context, req *CreateBroadcastRequest, opts ...http.CallOption) (rsp *Broadcast, err error)
+	// EstimateBroadcast EstimateBroadcast 覆盖人数预估。
+	EstimateBroadcast(ctx context.Context, req *EstimateBroadcastRequest, opts ...http.CallOption) (rsp *EstimateBroadcastReply, err error)
+	// ListBroadcasts ListBroadcasts 群发任务列表。
+	ListBroadcasts(ctx context.Context, req *ListBroadcastsRequest, opts ...http.CallOption) (rsp *ListBroadcastsReply, err error)
 	// ListLogs ListLogs 发送日志（按状态/事件筛选）。
 	ListLogs(ctx context.Context, req *ListNotifyLogsRequest, opts ...http.CallOption) (rsp *ListNotifyLogsReply, err error)
 	// ListTemplates ListTemplates 模板列表。
@@ -163,6 +266,77 @@ type AdminNotifyServiceHTTPClientImpl struct {
 
 func NewAdminNotifyServiceHTTPClient(client *http.Client) AdminNotifyServiceHTTPClient {
 	return &AdminNotifyServiceHTTPClientImpl{client}
+}
+
+// CancelBroadcast CancelBroadcast 取消群发（仅 pending）。
+func (c *AdminNotifyServiceHTTPClientImpl) CancelBroadcast(ctx context.Context, in *CancelBroadcastRequest, opts ...http.CallOption) (*Broadcast, error) {
+	var out Broadcast
+	pattern := "/api/v1/admin/notify/broadcasts/{id}/cancel"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminNotifyServiceCancelBroadcast),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateBroadcast CreateBroadcast 创建群发任务。
+func (c *AdminNotifyServiceHTTPClientImpl) CreateBroadcast(ctx context.Context, in *CreateBroadcastRequest, opts ...http.CallOption) (*Broadcast, error) {
+	var out Broadcast
+	pattern := "/api/v1/admin/notify/broadcasts"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminNotifyServiceCreateBroadcast),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// EstimateBroadcast EstimateBroadcast 覆盖人数预估。
+func (c *AdminNotifyServiceHTTPClientImpl) EstimateBroadcast(ctx context.Context, in *EstimateBroadcastRequest, opts ...http.CallOption) (*EstimateBroadcastReply, error) {
+	var out EstimateBroadcastReply
+	pattern := "/api/v1/admin/notify/broadcasts/estimate"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminNotifyServiceEstimateBroadcast),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListBroadcasts ListBroadcasts 群发任务列表。
+func (c *AdminNotifyServiceHTTPClientImpl) ListBroadcasts(ctx context.Context, in *ListBroadcastsRequest, opts ...http.CallOption) (*ListBroadcastsReply, error) {
+	var out ListBroadcastsReply
+	pattern := "/api/v1/admin/notify/broadcasts"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminNotifyServiceListBroadcasts),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // ListLogs ListLogs 发送日志（按状态/事件筛选）。

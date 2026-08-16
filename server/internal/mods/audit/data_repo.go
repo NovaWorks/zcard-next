@@ -43,6 +43,7 @@ var (
 type AuditRepo struct {
 	data *data.Data
 	log  *slog.Logger
+	alerter *Alerter // T5 告警（nil = 未装配跳过）
 
 	// 黑名单进程内缓存（admin 变更失效；解析失败用空名单 fail-open）
 	blacklistMu  sync.RWMutex
@@ -138,7 +139,16 @@ func (r *AuditRepo) Security(ctx context.Context, e port.SecurityEntry) {
 	if _, err := create.Save(ctx); err != nil {
 		r.log.Warn("audit.security_write_failed", "action", e.Action, "err", err)
 	}
+	// T5 告警阈值计数（达到阈值经 notify 管理员通道告警；去重窗口防护）
+	if r.alerter != nil {
+		r.alerter.Count(ctx, e.Action, e.IP,
+			"[ZCard 安全告警] "+e.Action,
+			"动作: "+e.Action+"\n来源 IP: "+e.IP+"\n10 分钟窗口内达到阈值，请关注。")
+	}
 }
+
+// SetAlerter 注入告警器（wire 装配后调用）。
+func (r *AuditRepo) SetAlerter(a *Alerter) { r.alerter = a }
 
 // ListSecurityLogs 安全审计查询。
 func (r *AuditRepo) ListSecurityLogs(ctx context.Context, action string, page, size int) ([]*ent.SecurityAuditLog, int, error) {

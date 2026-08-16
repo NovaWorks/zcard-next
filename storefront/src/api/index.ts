@@ -122,3 +122,37 @@ export function fetchDelivery(order_no: string, query_password: string) {
 export function getBalance() {
   return api.get<BalanceReply>('/wallet');
 }
+
+// ── 内容（P2-04）──
+
+export interface Banner {
+  id: number;
+  title: string;
+  image: string;
+  mobile_image: string;
+  link_type: string;
+  link_value: string;
+}
+
+export interface StorePost {
+  id: number;
+  slug: string;
+  type: string;
+  title: string;
+  summary?: string;
+  thumbnail?: string;
+  category_id?: number;
+  published_at?: number;
+}
+
+export function listBanners(position?: string, locale?: string) {
+  return api.get<{ banners: Banner[] }>('/banners', { position, locale });
+}
+
+export function listPosts(type?: string, page = 1, pageSize = 20, locale?: string) {
+  return api.get<{ posts: StorePost[]; total: number; page: number; page_size: number }>('/posts', { type, page, page_size: pageSize, locale });
+}
+
+export function getPost(slug: string, locale?: string) {
+  return api.get<{ post: StorePost; content: string }>(`/posts/${slug}`, { locale });
+}

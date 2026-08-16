@@ -37,6 +37,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberproductgroup"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifybroadcast"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
@@ -129,6 +130,7 @@ const (
 	TypeMemberProductGroup     = "MemberProductGroup"
 	TypeNotification           = "Notification"
 	TypeNotificationLog        = "NotificationLog"
+	TypeNotifyBroadcast        = "NotifyBroadcast"
 	TypeNotifyTemplate         = "NotifyTemplate"
 	TypeOrder                  = "Order"
 	TypeOrderAmountLine        = "OrderAmountLine"
@@ -24845,6 +24847,1341 @@ func (m *NotificationLogMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *NotificationLogMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown NotificationLog edge %s", name)
+}
+
+// NotifyBroadcastMutation represents an operation that mutates the NotifyBroadcast nodes in the graph.
+type NotifyBroadcastMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uint64
+	created_at       *time.Time
+	updated_at       *time.Time
+	title            *string
+	content          *string
+	channels         *[]string
+	appendchannels   []string
+	target_type      *notifybroadcast.TargetType
+	target_ids       *[]uint64
+	appendtarget_ids []uint64
+	scheduled_at     *time.Time
+	status           *notifybroadcast.Status
+	created_by       *uint64
+	addcreated_by    *int64
+	audience         *int64
+	addaudience      *int64
+	sent_count       *int64
+	addsent_count    *int64
+	failed_count     *int64
+	addfailed_count  *int64
+	started_at       *time.Time
+	finished_at      *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*NotifyBroadcast, error)
+	predicates       []predicate.NotifyBroadcast
+}
+
+var _ ent.Mutation = (*NotifyBroadcastMutation)(nil)
+
+// notifybroadcastOption allows management of the mutation configuration using functional options.
+type notifybroadcastOption func(*NotifyBroadcastMutation)
+
+// newNotifyBroadcastMutation creates new mutation for the NotifyBroadcast entity.
+func newNotifyBroadcastMutation(c config, op Op, opts ...notifybroadcastOption) *NotifyBroadcastMutation {
+	m := &NotifyBroadcastMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNotifyBroadcast,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNotifyBroadcastID sets the ID field of the mutation.
+func withNotifyBroadcastID(id uint64) notifybroadcastOption {
+	return func(m *NotifyBroadcastMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *NotifyBroadcast
+		)
+		m.oldValue = func(ctx context.Context) (*NotifyBroadcast, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().NotifyBroadcast.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNotifyBroadcast sets the old NotifyBroadcast of the mutation.
+func withNotifyBroadcast(node *NotifyBroadcast) notifybroadcastOption {
+	return func(m *NotifyBroadcastMutation) {
+		m.oldValue = func(context.Context) (*NotifyBroadcast, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NotifyBroadcastMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NotifyBroadcastMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of NotifyBroadcast entities.
+func (m *NotifyBroadcastMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NotifyBroadcastMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NotifyBroadcastMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().NotifyBroadcast.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *NotifyBroadcastMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *NotifyBroadcastMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *NotifyBroadcastMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *NotifyBroadcastMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *NotifyBroadcastMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *NotifyBroadcastMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *NotifyBroadcastMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *NotifyBroadcastMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *NotifyBroadcastMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetContent sets the "content" field.
+func (m *NotifyBroadcastMutation) SetContent(s string) {
+	m.content = &s
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *NotifyBroadcastMutation) Content() (r string, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldContent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *NotifyBroadcastMutation) ResetContent() {
+	m.content = nil
+}
+
+// SetChannels sets the "channels" field.
+func (m *NotifyBroadcastMutation) SetChannels(s []string) {
+	m.channels = &s
+	m.appendchannels = nil
+}
+
+// Channels returns the value of the "channels" field in the mutation.
+func (m *NotifyBroadcastMutation) Channels() (r []string, exists bool) {
+	v := m.channels
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannels returns the old "channels" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldChannels(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannels is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannels requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannels: %w", err)
+	}
+	return oldValue.Channels, nil
+}
+
+// AppendChannels adds s to the "channels" field.
+func (m *NotifyBroadcastMutation) AppendChannels(s []string) {
+	m.appendchannels = append(m.appendchannels, s...)
+}
+
+// AppendedChannels returns the list of values that were appended to the "channels" field in this mutation.
+func (m *NotifyBroadcastMutation) AppendedChannels() ([]string, bool) {
+	if len(m.appendchannels) == 0 {
+		return nil, false
+	}
+	return m.appendchannels, true
+}
+
+// ResetChannels resets all changes to the "channels" field.
+func (m *NotifyBroadcastMutation) ResetChannels() {
+	m.channels = nil
+	m.appendchannels = nil
+}
+
+// SetTargetType sets the "target_type" field.
+func (m *NotifyBroadcastMutation) SetTargetType(nt notifybroadcast.TargetType) {
+	m.target_type = &nt
+}
+
+// TargetType returns the value of the "target_type" field in the mutation.
+func (m *NotifyBroadcastMutation) TargetType() (r notifybroadcast.TargetType, exists bool) {
+	v := m.target_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetType returns the old "target_type" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldTargetType(ctx context.Context) (v notifybroadcast.TargetType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetType: %w", err)
+	}
+	return oldValue.TargetType, nil
+}
+
+// ResetTargetType resets all changes to the "target_type" field.
+func (m *NotifyBroadcastMutation) ResetTargetType() {
+	m.target_type = nil
+}
+
+// SetTargetIds sets the "target_ids" field.
+func (m *NotifyBroadcastMutation) SetTargetIds(u []uint64) {
+	m.target_ids = &u
+	m.appendtarget_ids = nil
+}
+
+// TargetIds returns the value of the "target_ids" field in the mutation.
+func (m *NotifyBroadcastMutation) TargetIds() (r []uint64, exists bool) {
+	v := m.target_ids
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTargetIds returns the old "target_ids" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldTargetIds(ctx context.Context) (v []uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTargetIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTargetIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTargetIds: %w", err)
+	}
+	return oldValue.TargetIds, nil
+}
+
+// AppendTargetIds adds u to the "target_ids" field.
+func (m *NotifyBroadcastMutation) AppendTargetIds(u []uint64) {
+	m.appendtarget_ids = append(m.appendtarget_ids, u...)
+}
+
+// AppendedTargetIds returns the list of values that were appended to the "target_ids" field in this mutation.
+func (m *NotifyBroadcastMutation) AppendedTargetIds() ([]uint64, bool) {
+	if len(m.appendtarget_ids) == 0 {
+		return nil, false
+	}
+	return m.appendtarget_ids, true
+}
+
+// ClearTargetIds clears the value of the "target_ids" field.
+func (m *NotifyBroadcastMutation) ClearTargetIds() {
+	m.target_ids = nil
+	m.appendtarget_ids = nil
+	m.clearedFields[notifybroadcast.FieldTargetIds] = struct{}{}
+}
+
+// TargetIdsCleared returns if the "target_ids" field was cleared in this mutation.
+func (m *NotifyBroadcastMutation) TargetIdsCleared() bool {
+	_, ok := m.clearedFields[notifybroadcast.FieldTargetIds]
+	return ok
+}
+
+// ResetTargetIds resets all changes to the "target_ids" field.
+func (m *NotifyBroadcastMutation) ResetTargetIds() {
+	m.target_ids = nil
+	m.appendtarget_ids = nil
+	delete(m.clearedFields, notifybroadcast.FieldTargetIds)
+}
+
+// SetScheduledAt sets the "scheduled_at" field.
+func (m *NotifyBroadcastMutation) SetScheduledAt(t time.Time) {
+	m.scheduled_at = &t
+}
+
+// ScheduledAt returns the value of the "scheduled_at" field in the mutation.
+func (m *NotifyBroadcastMutation) ScheduledAt() (r time.Time, exists bool) {
+	v := m.scheduled_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScheduledAt returns the old "scheduled_at" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldScheduledAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScheduledAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScheduledAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScheduledAt: %w", err)
+	}
+	return oldValue.ScheduledAt, nil
+}
+
+// ClearScheduledAt clears the value of the "scheduled_at" field.
+func (m *NotifyBroadcastMutation) ClearScheduledAt() {
+	m.scheduled_at = nil
+	m.clearedFields[notifybroadcast.FieldScheduledAt] = struct{}{}
+}
+
+// ScheduledAtCleared returns if the "scheduled_at" field was cleared in this mutation.
+func (m *NotifyBroadcastMutation) ScheduledAtCleared() bool {
+	_, ok := m.clearedFields[notifybroadcast.FieldScheduledAt]
+	return ok
+}
+
+// ResetScheduledAt resets all changes to the "scheduled_at" field.
+func (m *NotifyBroadcastMutation) ResetScheduledAt() {
+	m.scheduled_at = nil
+	delete(m.clearedFields, notifybroadcast.FieldScheduledAt)
+}
+
+// SetStatus sets the "status" field.
+func (m *NotifyBroadcastMutation) SetStatus(n notifybroadcast.Status) {
+	m.status = &n
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *NotifyBroadcastMutation) Status() (r notifybroadcast.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldStatus(ctx context.Context) (v notifybroadcast.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *NotifyBroadcastMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetCreatedBy sets the "created_by" field.
+func (m *NotifyBroadcastMutation) SetCreatedBy(u uint64) {
+	m.created_by = &u
+	m.addcreated_by = nil
+}
+
+// CreatedBy returns the value of the "created_by" field in the mutation.
+func (m *NotifyBroadcastMutation) CreatedBy() (r uint64, exists bool) {
+	v := m.created_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "created_by" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldCreatedBy(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// AddCreatedBy adds u to the "created_by" field.
+func (m *NotifyBroadcastMutation) AddCreatedBy(u int64) {
+	if m.addcreated_by != nil {
+		*m.addcreated_by += u
+	} else {
+		m.addcreated_by = &u
+	}
+}
+
+// AddedCreatedBy returns the value that was added to the "created_by" field in this mutation.
+func (m *NotifyBroadcastMutation) AddedCreatedBy() (r int64, exists bool) {
+	v := m.addcreated_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCreatedBy resets all changes to the "created_by" field.
+func (m *NotifyBroadcastMutation) ResetCreatedBy() {
+	m.created_by = nil
+	m.addcreated_by = nil
+}
+
+// SetAudience sets the "audience" field.
+func (m *NotifyBroadcastMutation) SetAudience(i int64) {
+	m.audience = &i
+	m.addaudience = nil
+}
+
+// Audience returns the value of the "audience" field in the mutation.
+func (m *NotifyBroadcastMutation) Audience() (r int64, exists bool) {
+	v := m.audience
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAudience returns the old "audience" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldAudience(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAudience is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAudience requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAudience: %w", err)
+	}
+	return oldValue.Audience, nil
+}
+
+// AddAudience adds i to the "audience" field.
+func (m *NotifyBroadcastMutation) AddAudience(i int64) {
+	if m.addaudience != nil {
+		*m.addaudience += i
+	} else {
+		m.addaudience = &i
+	}
+}
+
+// AddedAudience returns the value that was added to the "audience" field in this mutation.
+func (m *NotifyBroadcastMutation) AddedAudience() (r int64, exists bool) {
+	v := m.addaudience
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAudience resets all changes to the "audience" field.
+func (m *NotifyBroadcastMutation) ResetAudience() {
+	m.audience = nil
+	m.addaudience = nil
+}
+
+// SetSentCount sets the "sent_count" field.
+func (m *NotifyBroadcastMutation) SetSentCount(i int64) {
+	m.sent_count = &i
+	m.addsent_count = nil
+}
+
+// SentCount returns the value of the "sent_count" field in the mutation.
+func (m *NotifyBroadcastMutation) SentCount() (r int64, exists bool) {
+	v := m.sent_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSentCount returns the old "sent_count" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldSentCount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSentCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSentCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSentCount: %w", err)
+	}
+	return oldValue.SentCount, nil
+}
+
+// AddSentCount adds i to the "sent_count" field.
+func (m *NotifyBroadcastMutation) AddSentCount(i int64) {
+	if m.addsent_count != nil {
+		*m.addsent_count += i
+	} else {
+		m.addsent_count = &i
+	}
+}
+
+// AddedSentCount returns the value that was added to the "sent_count" field in this mutation.
+func (m *NotifyBroadcastMutation) AddedSentCount() (r int64, exists bool) {
+	v := m.addsent_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSentCount resets all changes to the "sent_count" field.
+func (m *NotifyBroadcastMutation) ResetSentCount() {
+	m.sent_count = nil
+	m.addsent_count = nil
+}
+
+// SetFailedCount sets the "failed_count" field.
+func (m *NotifyBroadcastMutation) SetFailedCount(i int64) {
+	m.failed_count = &i
+	m.addfailed_count = nil
+}
+
+// FailedCount returns the value of the "failed_count" field in the mutation.
+func (m *NotifyBroadcastMutation) FailedCount() (r int64, exists bool) {
+	v := m.failed_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFailedCount returns the old "failed_count" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldFailedCount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFailedCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFailedCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFailedCount: %w", err)
+	}
+	return oldValue.FailedCount, nil
+}
+
+// AddFailedCount adds i to the "failed_count" field.
+func (m *NotifyBroadcastMutation) AddFailedCount(i int64) {
+	if m.addfailed_count != nil {
+		*m.addfailed_count += i
+	} else {
+		m.addfailed_count = &i
+	}
+}
+
+// AddedFailedCount returns the value that was added to the "failed_count" field in this mutation.
+func (m *NotifyBroadcastMutation) AddedFailedCount() (r int64, exists bool) {
+	v := m.addfailed_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFailedCount resets all changes to the "failed_count" field.
+func (m *NotifyBroadcastMutation) ResetFailedCount() {
+	m.failed_count = nil
+	m.addfailed_count = nil
+}
+
+// SetStartedAt sets the "started_at" field.
+func (m *NotifyBroadcastMutation) SetStartedAt(t time.Time) {
+	m.started_at = &t
+}
+
+// StartedAt returns the value of the "started_at" field in the mutation.
+func (m *NotifyBroadcastMutation) StartedAt() (r time.Time, exists bool) {
+	v := m.started_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStartedAt returns the old "started_at" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldStartedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStartedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStartedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStartedAt: %w", err)
+	}
+	return oldValue.StartedAt, nil
+}
+
+// ClearStartedAt clears the value of the "started_at" field.
+func (m *NotifyBroadcastMutation) ClearStartedAt() {
+	m.started_at = nil
+	m.clearedFields[notifybroadcast.FieldStartedAt] = struct{}{}
+}
+
+// StartedAtCleared returns if the "started_at" field was cleared in this mutation.
+func (m *NotifyBroadcastMutation) StartedAtCleared() bool {
+	_, ok := m.clearedFields[notifybroadcast.FieldStartedAt]
+	return ok
+}
+
+// ResetStartedAt resets all changes to the "started_at" field.
+func (m *NotifyBroadcastMutation) ResetStartedAt() {
+	m.started_at = nil
+	delete(m.clearedFields, notifybroadcast.FieldStartedAt)
+}
+
+// SetFinishedAt sets the "finished_at" field.
+func (m *NotifyBroadcastMutation) SetFinishedAt(t time.Time) {
+	m.finished_at = &t
+}
+
+// FinishedAt returns the value of the "finished_at" field in the mutation.
+func (m *NotifyBroadcastMutation) FinishedAt() (r time.Time, exists bool) {
+	v := m.finished_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFinishedAt returns the old "finished_at" field's value of the NotifyBroadcast entity.
+// If the NotifyBroadcast object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotifyBroadcastMutation) OldFinishedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFinishedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFinishedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFinishedAt: %w", err)
+	}
+	return oldValue.FinishedAt, nil
+}
+
+// ClearFinishedAt clears the value of the "finished_at" field.
+func (m *NotifyBroadcastMutation) ClearFinishedAt() {
+	m.finished_at = nil
+	m.clearedFields[notifybroadcast.FieldFinishedAt] = struct{}{}
+}
+
+// FinishedAtCleared returns if the "finished_at" field was cleared in this mutation.
+func (m *NotifyBroadcastMutation) FinishedAtCleared() bool {
+	_, ok := m.clearedFields[notifybroadcast.FieldFinishedAt]
+	return ok
+}
+
+// ResetFinishedAt resets all changes to the "finished_at" field.
+func (m *NotifyBroadcastMutation) ResetFinishedAt() {
+	m.finished_at = nil
+	delete(m.clearedFields, notifybroadcast.FieldFinishedAt)
+}
+
+// Where appends a list predicates to the NotifyBroadcastMutation builder.
+func (m *NotifyBroadcastMutation) Where(ps ...predicate.NotifyBroadcast) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NotifyBroadcastMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NotifyBroadcastMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.NotifyBroadcast, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NotifyBroadcastMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NotifyBroadcastMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (NotifyBroadcast).
+func (m *NotifyBroadcastMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NotifyBroadcastMutation) Fields() []string {
+	fields := make([]string, 0, 15)
+	if m.created_at != nil {
+		fields = append(fields, notifybroadcast.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, notifybroadcast.FieldUpdatedAt)
+	}
+	if m.title != nil {
+		fields = append(fields, notifybroadcast.FieldTitle)
+	}
+	if m.content != nil {
+		fields = append(fields, notifybroadcast.FieldContent)
+	}
+	if m.channels != nil {
+		fields = append(fields, notifybroadcast.FieldChannels)
+	}
+	if m.target_type != nil {
+		fields = append(fields, notifybroadcast.FieldTargetType)
+	}
+	if m.target_ids != nil {
+		fields = append(fields, notifybroadcast.FieldTargetIds)
+	}
+	if m.scheduled_at != nil {
+		fields = append(fields, notifybroadcast.FieldScheduledAt)
+	}
+	if m.status != nil {
+		fields = append(fields, notifybroadcast.FieldStatus)
+	}
+	if m.created_by != nil {
+		fields = append(fields, notifybroadcast.FieldCreatedBy)
+	}
+	if m.audience != nil {
+		fields = append(fields, notifybroadcast.FieldAudience)
+	}
+	if m.sent_count != nil {
+		fields = append(fields, notifybroadcast.FieldSentCount)
+	}
+	if m.failed_count != nil {
+		fields = append(fields, notifybroadcast.FieldFailedCount)
+	}
+	if m.started_at != nil {
+		fields = append(fields, notifybroadcast.FieldStartedAt)
+	}
+	if m.finished_at != nil {
+		fields = append(fields, notifybroadcast.FieldFinishedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NotifyBroadcastMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case notifybroadcast.FieldCreatedAt:
+		return m.CreatedAt()
+	case notifybroadcast.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case notifybroadcast.FieldTitle:
+		return m.Title()
+	case notifybroadcast.FieldContent:
+		return m.Content()
+	case notifybroadcast.FieldChannels:
+		return m.Channels()
+	case notifybroadcast.FieldTargetType:
+		return m.TargetType()
+	case notifybroadcast.FieldTargetIds:
+		return m.TargetIds()
+	case notifybroadcast.FieldScheduledAt:
+		return m.ScheduledAt()
+	case notifybroadcast.FieldStatus:
+		return m.Status()
+	case notifybroadcast.FieldCreatedBy:
+		return m.CreatedBy()
+	case notifybroadcast.FieldAudience:
+		return m.Audience()
+	case notifybroadcast.FieldSentCount:
+		return m.SentCount()
+	case notifybroadcast.FieldFailedCount:
+		return m.FailedCount()
+	case notifybroadcast.FieldStartedAt:
+		return m.StartedAt()
+	case notifybroadcast.FieldFinishedAt:
+		return m.FinishedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NotifyBroadcastMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case notifybroadcast.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case notifybroadcast.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case notifybroadcast.FieldTitle:
+		return m.OldTitle(ctx)
+	case notifybroadcast.FieldContent:
+		return m.OldContent(ctx)
+	case notifybroadcast.FieldChannels:
+		return m.OldChannels(ctx)
+	case notifybroadcast.FieldTargetType:
+		return m.OldTargetType(ctx)
+	case notifybroadcast.FieldTargetIds:
+		return m.OldTargetIds(ctx)
+	case notifybroadcast.FieldScheduledAt:
+		return m.OldScheduledAt(ctx)
+	case notifybroadcast.FieldStatus:
+		return m.OldStatus(ctx)
+	case notifybroadcast.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case notifybroadcast.FieldAudience:
+		return m.OldAudience(ctx)
+	case notifybroadcast.FieldSentCount:
+		return m.OldSentCount(ctx)
+	case notifybroadcast.FieldFailedCount:
+		return m.OldFailedCount(ctx)
+	case notifybroadcast.FieldStartedAt:
+		return m.OldStartedAt(ctx)
+	case notifybroadcast.FieldFinishedAt:
+		return m.OldFinishedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown NotifyBroadcast field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NotifyBroadcastMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case notifybroadcast.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case notifybroadcast.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case notifybroadcast.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case notifybroadcast.FieldContent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	case notifybroadcast.FieldChannels:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannels(v)
+		return nil
+	case notifybroadcast.FieldTargetType:
+		v, ok := value.(notifybroadcast.TargetType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetType(v)
+		return nil
+	case notifybroadcast.FieldTargetIds:
+		v, ok := value.([]uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTargetIds(v)
+		return nil
+	case notifybroadcast.FieldScheduledAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScheduledAt(v)
+		return nil
+	case notifybroadcast.FieldStatus:
+		v, ok := value.(notifybroadcast.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case notifybroadcast.FieldCreatedBy:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case notifybroadcast.FieldAudience:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAudience(v)
+		return nil
+	case notifybroadcast.FieldSentCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSentCount(v)
+		return nil
+	case notifybroadcast.FieldFailedCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFailedCount(v)
+		return nil
+	case notifybroadcast.FieldStartedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStartedAt(v)
+		return nil
+	case notifybroadcast.FieldFinishedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFinishedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NotifyBroadcast field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NotifyBroadcastMutation) AddedFields() []string {
+	var fields []string
+	if m.addcreated_by != nil {
+		fields = append(fields, notifybroadcast.FieldCreatedBy)
+	}
+	if m.addaudience != nil {
+		fields = append(fields, notifybroadcast.FieldAudience)
+	}
+	if m.addsent_count != nil {
+		fields = append(fields, notifybroadcast.FieldSentCount)
+	}
+	if m.addfailed_count != nil {
+		fields = append(fields, notifybroadcast.FieldFailedCount)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NotifyBroadcastMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case notifybroadcast.FieldCreatedBy:
+		return m.AddedCreatedBy()
+	case notifybroadcast.FieldAudience:
+		return m.AddedAudience()
+	case notifybroadcast.FieldSentCount:
+		return m.AddedSentCount()
+	case notifybroadcast.FieldFailedCount:
+		return m.AddedFailedCount()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NotifyBroadcastMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case notifybroadcast.FieldCreatedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCreatedBy(v)
+		return nil
+	case notifybroadcast.FieldAudience:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAudience(v)
+		return nil
+	case notifybroadcast.FieldSentCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSentCount(v)
+		return nil
+	case notifybroadcast.FieldFailedCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFailedCount(v)
+		return nil
+	}
+	return fmt.Errorf("unknown NotifyBroadcast numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NotifyBroadcastMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(notifybroadcast.FieldTargetIds) {
+		fields = append(fields, notifybroadcast.FieldTargetIds)
+	}
+	if m.FieldCleared(notifybroadcast.FieldScheduledAt) {
+		fields = append(fields, notifybroadcast.FieldScheduledAt)
+	}
+	if m.FieldCleared(notifybroadcast.FieldStartedAt) {
+		fields = append(fields, notifybroadcast.FieldStartedAt)
+	}
+	if m.FieldCleared(notifybroadcast.FieldFinishedAt) {
+		fields = append(fields, notifybroadcast.FieldFinishedAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NotifyBroadcastMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NotifyBroadcastMutation) ClearField(name string) error {
+	switch name {
+	case notifybroadcast.FieldTargetIds:
+		m.ClearTargetIds()
+		return nil
+	case notifybroadcast.FieldScheduledAt:
+		m.ClearScheduledAt()
+		return nil
+	case notifybroadcast.FieldStartedAt:
+		m.ClearStartedAt()
+		return nil
+	case notifybroadcast.FieldFinishedAt:
+		m.ClearFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown NotifyBroadcast nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NotifyBroadcastMutation) ResetField(name string) error {
+	switch name {
+	case notifybroadcast.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case notifybroadcast.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case notifybroadcast.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case notifybroadcast.FieldContent:
+		m.ResetContent()
+		return nil
+	case notifybroadcast.FieldChannels:
+		m.ResetChannels()
+		return nil
+	case notifybroadcast.FieldTargetType:
+		m.ResetTargetType()
+		return nil
+	case notifybroadcast.FieldTargetIds:
+		m.ResetTargetIds()
+		return nil
+	case notifybroadcast.FieldScheduledAt:
+		m.ResetScheduledAt()
+		return nil
+	case notifybroadcast.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case notifybroadcast.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case notifybroadcast.FieldAudience:
+		m.ResetAudience()
+		return nil
+	case notifybroadcast.FieldSentCount:
+		m.ResetSentCount()
+		return nil
+	case notifybroadcast.FieldFailedCount:
+		m.ResetFailedCount()
+		return nil
+	case notifybroadcast.FieldStartedAt:
+		m.ResetStartedAt()
+		return nil
+	case notifybroadcast.FieldFinishedAt:
+		m.ResetFinishedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown NotifyBroadcast field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NotifyBroadcastMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NotifyBroadcastMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NotifyBroadcastMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NotifyBroadcastMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NotifyBroadcastMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NotifyBroadcastMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NotifyBroadcastMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown NotifyBroadcast unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NotifyBroadcastMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown NotifyBroadcast edge %s", name)
 }
 
 // NotifyTemplateMutation represents an operation that mutates the NotifyTemplate nodes in the graph.

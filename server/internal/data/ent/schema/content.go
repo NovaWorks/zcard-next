@@ -254,3 +254,35 @@ func (V1IDMap) Indexes() []ent.Index {
 		index.Fields("table_name", "old_id").Unique(),
 	}
 }
+
+// NotifyBroadcast 群发任务（P2-05 T4：目标筛选/定时/取消/统计）。
+type NotifyBroadcast struct {
+	ent.Schema
+}
+
+func (NotifyBroadcast) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}} }
+
+func (NotifyBroadcast) Fields() []ent.Field {
+	return []ent.Field{
+		field.Uint64("id"),
+		field.String("title").MaxLen(200),
+		field.Text("content").Comment("正文（群发渠道适配：inbox 原文/email HTML）"),
+		field.JSON("channels", []string{}).Comment("投放通道集合（inbox/email/sms/telegram）"),
+		field.Enum("target_type").Values("all", "active", "specified").Default("all").Comment("目标筛选"),
+		field.JSON("target_ids", []uint64{}).Optional().Comment("specified 时的用户 ID 集合"),
+		field.Time("scheduled_at").SchemaType(mysqlTime).Optional().Comment("定时发送（空=立即）"),
+		field.Enum("status").Values("pending", "sending", "done", "canceled").Default("pending"),
+		field.Uint64("created_by").Comment("创建管理员"),
+		field.Int64("audience").Default(0).Comment("覆盖人数（发送时预估回填）"),
+		field.Int64("sent_count").Default(0),
+		field.Int64("failed_count").Default(0),
+		field.Time("started_at").SchemaType(mysqlTime).Optional(),
+		field.Time("finished_at").SchemaType(mysqlTime).Optional(),
+	}
+}
+
+func (NotifyBroadcast) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("status", "scheduled_at"),
+	}
+}

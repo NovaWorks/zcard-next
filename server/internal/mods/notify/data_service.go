@@ -4,6 +4,7 @@ package notify
 
 import (
 	"context"
+	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -16,13 +17,14 @@ import (
 // AdminNotifyService 管理面通知服务。
 type AdminNotifyService struct {
 	adminv1.UnimplementedAdminNotifyServiceServer
-	repo *NotifyRepo
-	disp *Dispatcher
+	repo      *NotifyRepo
+	disp      *Dispatcher
+	broadcast *BroadcastService
 }
 
 // NewAdminNotifyService 构造。
-func NewAdminNotifyService(repo *NotifyRepo, disp *Dispatcher) *AdminNotifyService {
-	return &AdminNotifyService{repo: repo, disp: disp}
+func NewAdminNotifyService(repo *NotifyRepo, disp *Dispatcher, broadcast *BroadcastService) *AdminNotifyService {
+	return &AdminNotifyService{repo: repo, disp: disp, broadcast: broadcast}
 }
 
 // UpsertTemplate 创建/更新模板。
@@ -202,4 +204,77 @@ func identityClaimsUserID(ctx context.Context) uint64 {
 		return claims.Subject
 	}
 	return 0
+}
+
+// ── 群发任务（T4）─────────────────────────────────────────
+
+// EstimateBroadcast 覆盖人数预估。
+func (s *AdminNotifyService) EstimateBroadcast(ctx context.Context, req *adminv1.EstimateBroadcastRequest) (*adminv1.EstimateBroadcastReply, error) {
+	n, err := s.broadcast.EstimateAudience(ctx, req.GetTargetType(), req.GetTargetIds())
+	if err != nil {
+		return nil, err
+	}
+	return &adminv1.EstimateBroadcastReply{Audience: n}, nil
+}
+
+// CreateBroadcast 创建群发。
+func (s *AdminNotifyService) CreateBroadcast(ctx context.Context, req *adminv1.CreateBroadcastRequest) (*adminv1.Broadcast, error) {
+	b, err := s.broadcast.Create(ctx, BroadcastInput{
+		Title: req.GetTitle(), Content: req.GetContent(),
+		Channels: req.GetChannels(), TargetType: req.GetTargetType(),
+		TargetIDs: req.GetTargetIds(),
+		ScheduledAt: func() time.Time {
+			if req.GetScheduledAt() <= 0 {
+				return time.Time{}
+			}
+			return time.Unix(req.GetScheduledAt(), 0).UTC()
+		}(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return toBroadcastPB(b), nil
+}
+
+// ListBroadcasts 群发列表。
+func (s *AdminNotifyService) ListBroadcasts(ctx context.Context, req *adminv1.ListBroadcastsRequest) (*adminv1.ListBroadcastsReply, error) {
+	page, size := notifyPageParams(req.GetPage(), req.GetPageSize())
+	rows, total, err := s.broadcast.repo.ListBroadcasts(ctx, page, size)
+	if err != nil {
+		return nil, err
+	}
+	reply := &adminv1.ListBroadcastsReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
+	for _, b := range rows {
+		reply.Broadcasts = append(reply.Broadcasts, toBroadcastPB(b))
+	}
+	return reply, nil
+}
+
+// CancelBroadcast 取消群发。
+func (s *AdminNotifyService) CancelBroadcast(ctx context.Context, req *adminv1.CancelBroadcastRequest) (*adminv1.Broadcast, error) {
+	b, err := s.broadcast.Cancel(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return toBroadcastPB(b), nil
+}
+
+func toBroadcastPB(b *ent.NotifyBroadcast) *adminv1.Broadcast {
+	p := &adminv1.Broadcast{
+		Id: b.ID, Title: b.Title, Content: b.Content, Channels: b.Channels,
+		TargetType: string(b.TargetType), TargetIds: b.TargetIds,
+		Status: string(b.Status), CreatedBy: b.CreatedBy,
+		Audience: b.Audience, SentCount: b.SentCount, FailedCount: b.FailedCount,
+		CreatedAt: b.CreatedAt.Unix(),
+	}
+	if !b.ScheduledAt.IsZero() {
+		p.ScheduledAt = b.ScheduledAt.Unix()
+	}
+	if !b.StartedAt.IsZero() {
+		p.StartedAt = b.StartedAt.Unix()
+	}
+	if !b.FinishedAt.IsZero() {
+		p.FinishedAt = b.FinishedAt.Unix()
+	}
+	return p
 }

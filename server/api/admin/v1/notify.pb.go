@@ -675,6 +675,508 @@ func (x *ResendNotifyLogRequest) GetId() uint64 {
 	return 0
 }
 
+// EstimateBroadcast 覆盖人数预估（创建前预览）。
+type EstimateBroadcastRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TargetType    string                 `protobuf:"bytes,1,opt,name=target_type,json=targetType,proto3" json:"target_type,omitempty"`
+	TargetIds     []uint64               `protobuf:"varint,2,rep,packed,name=target_ids,json=targetIds,proto3" json:"target_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EstimateBroadcastRequest) Reset() {
+	*x = EstimateBroadcastRequest{}
+	mi := &file_admin_v1_notify_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EstimateBroadcastRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EstimateBroadcastRequest) ProtoMessage() {}
+
+func (x *EstimateBroadcastRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EstimateBroadcastRequest.ProtoReflect.Descriptor instead.
+func (*EstimateBroadcastRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *EstimateBroadcastRequest) GetTargetType() string {
+	if x != nil {
+		return x.TargetType
+	}
+	return ""
+}
+
+func (x *EstimateBroadcastRequest) GetTargetIds() []uint64 {
+	if x != nil {
+		return x.TargetIds
+	}
+	return nil
+}
+
+type EstimateBroadcastReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Audience      int64                  `protobuf:"varint,1,opt,name=audience,proto3" json:"audience,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EstimateBroadcastReply) Reset() {
+	*x = EstimateBroadcastReply{}
+	mi := &file_admin_v1_notify_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EstimateBroadcastReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EstimateBroadcastReply) ProtoMessage() {}
+
+func (x *EstimateBroadcastReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EstimateBroadcastReply.ProtoReflect.Descriptor instead.
+func (*EstimateBroadcastReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *EstimateBroadcastReply) GetAudience() int64 {
+	if x != nil {
+		return x.Audience
+	}
+	return 0
+}
+
+// CreateBroadcast 创建群发（定时 scheduled_at；空 = 立即）。
+type CreateBroadcastRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
+	Channels      []string               `protobuf:"bytes,3,rep,name=channels,proto3" json:"channels,omitempty"`
+	TargetType    string                 `protobuf:"bytes,4,opt,name=target_type,json=targetType,proto3" json:"target_type,omitempty"` // all | active | specified
+	TargetIds     []uint64               `protobuf:"varint,5,rep,packed,name=target_ids,json=targetIds,proto3" json:"target_ids,omitempty"`
+	ScheduledAt   int64                  `protobuf:"varint,6,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"` // unix 秒；0 = 立即
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBroadcastRequest) Reset() {
+	*x = CreateBroadcastRequest{}
+	mi := &file_admin_v1_notify_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBroadcastRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBroadcastRequest) ProtoMessage() {}
+
+func (x *CreateBroadcastRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBroadcastRequest.ProtoReflect.Descriptor instead.
+func (*CreateBroadcastRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateBroadcastRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateBroadcastRequest) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *CreateBroadcastRequest) GetChannels() []string {
+	if x != nil {
+		return x.Channels
+	}
+	return nil
+}
+
+func (x *CreateBroadcastRequest) GetTargetType() string {
+	if x != nil {
+		return x.TargetType
+	}
+	return ""
+}
+
+func (x *CreateBroadcastRequest) GetTargetIds() []uint64 {
+	if x != nil {
+		return x.TargetIds
+	}
+	return nil
+}
+
+func (x *CreateBroadcastRequest) GetScheduledAt() int64 {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return 0
+}
+
+type Broadcast struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	Channels      []string               `protobuf:"bytes,4,rep,name=channels,proto3" json:"channels,omitempty"`
+	TargetType    string                 `protobuf:"bytes,5,opt,name=target_type,json=targetType,proto3" json:"target_type,omitempty"`
+	TargetIds     []uint64               `protobuf:"varint,6,rep,packed,name=target_ids,json=targetIds,proto3" json:"target_ids,omitempty"`
+	ScheduledAt   int64                  `protobuf:"varint,7,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
+	Status        string                 `protobuf:"bytes,8,opt,name=status,proto3" json:"status,omitempty"` // pending | sending | done | canceled
+	CreatedBy     uint64                 `protobuf:"varint,9,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
+	Audience      int64                  `protobuf:"varint,10,opt,name=audience,proto3" json:"audience,omitempty"`
+	SentCount     int64                  `protobuf:"varint,11,opt,name=sent_count,json=sentCount,proto3" json:"sent_count,omitempty"`
+	FailedCount   int64                  `protobuf:"varint,12,opt,name=failed_count,json=failedCount,proto3" json:"failed_count,omitempty"`
+	StartedAt     int64                  `protobuf:"varint,13,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	FinishedAt    int64                  `protobuf:"varint,14,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Broadcast) Reset() {
+	*x = Broadcast{}
+	mi := &file_admin_v1_notify_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Broadcast) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Broadcast) ProtoMessage() {}
+
+func (x *Broadcast) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Broadcast.ProtoReflect.Descriptor instead.
+func (*Broadcast) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *Broadcast) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Broadcast) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *Broadcast) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *Broadcast) GetChannels() []string {
+	if x != nil {
+		return x.Channels
+	}
+	return nil
+}
+
+func (x *Broadcast) GetTargetType() string {
+	if x != nil {
+		return x.TargetType
+	}
+	return ""
+}
+
+func (x *Broadcast) GetTargetIds() []uint64 {
+	if x != nil {
+		return x.TargetIds
+	}
+	return nil
+}
+
+func (x *Broadcast) GetScheduledAt() int64 {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return 0
+}
+
+func (x *Broadcast) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Broadcast) GetCreatedBy() uint64 {
+	if x != nil {
+		return x.CreatedBy
+	}
+	return 0
+}
+
+func (x *Broadcast) GetAudience() int64 {
+	if x != nil {
+		return x.Audience
+	}
+	return 0
+}
+
+func (x *Broadcast) GetSentCount() int64 {
+	if x != nil {
+		return x.SentCount
+	}
+	return 0
+}
+
+func (x *Broadcast) GetFailedCount() int64 {
+	if x != nil {
+		return x.FailedCount
+	}
+	return 0
+}
+
+func (x *Broadcast) GetStartedAt() int64 {
+	if x != nil {
+		return x.StartedAt
+	}
+	return 0
+}
+
+func (x *Broadcast) GetFinishedAt() int64 {
+	if x != nil {
+		return x.FinishedAt
+	}
+	return 0
+}
+
+func (x *Broadcast) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type ListBroadcastsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBroadcastsRequest) Reset() {
+	*x = ListBroadcastsRequest{}
+	mi := &file_admin_v1_notify_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBroadcastsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBroadcastsRequest) ProtoMessage() {}
+
+func (x *ListBroadcastsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBroadcastsRequest.ProtoReflect.Descriptor instead.
+func (*ListBroadcastsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListBroadcastsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListBroadcastsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListBroadcastsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Broadcasts    []*Broadcast           `protobuf:"bytes,1,rep,name=broadcasts,proto3" json:"broadcasts,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBroadcastsReply) Reset() {
+	*x = ListBroadcastsReply{}
+	mi := &file_admin_v1_notify_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBroadcastsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBroadcastsReply) ProtoMessage() {}
+
+func (x *ListBroadcastsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBroadcastsReply.ProtoReflect.Descriptor instead.
+func (*ListBroadcastsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListBroadcastsReply) GetBroadcasts() []*Broadcast {
+	if x != nil {
+		return x.Broadcasts
+	}
+	return nil
+}
+
+func (x *ListBroadcastsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListBroadcastsReply) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListBroadcastsReply) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type CancelBroadcastRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelBroadcastRequest) Reset() {
+	*x = CancelBroadcastRequest{}
+	mi := &file_admin_v1_notify_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelBroadcastRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelBroadcastRequest) ProtoMessage() {}
+
+func (x *CancelBroadcastRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_notify_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelBroadcastRequest.ProtoReflect.Descriptor instead.
+func (*CancelBroadcastRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_notify_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CancelBroadcastRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_admin_v1_notify_proto protoreflect.FileDescriptor
 
 const file_admin_v1_notify_proto_rawDesc = "" +
@@ -739,13 +1241,70 @@ const file_admin_v1_notify_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"-\n" +
 	"\x16ResendNotifyLogRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xcb\x05\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"_\n" +
+	"\x18EstimateBroadcastRequest\x12$\n" +
+	"\vtarget_type\x18\x01 \x01(\tB\x03\xe0A\x02R\n" +
+	"targetType\x12\x1d\n" +
+	"\n" +
+	"target_ids\x18\x02 \x03(\x04R\ttargetIds\"4\n" +
+	"\x16EstimateBroadcastReply\x12\x1a\n" +
+	"\baudience\x18\x01 \x01(\x03R\baudience\"\xdb\x01\n" +
+	"\x16CreateBroadcastRequest\x12\x19\n" +
+	"\x05title\x18\x01 \x01(\tB\x03\xe0A\x02R\x05title\x12\x1d\n" +
+	"\acontent\x18\x02 \x01(\tB\x03\xe0A\x02R\acontent\x12\x1f\n" +
+	"\bchannels\x18\x03 \x03(\tB\x03\xe0A\x02R\bchannels\x12$\n" +
+	"\vtarget_type\x18\x04 \x01(\tB\x03\xe0A\x02R\n" +
+	"targetType\x12\x1d\n" +
+	"\n" +
+	"target_ids\x18\x05 \x03(\x04R\ttargetIds\x12!\n" +
+	"\fscheduled_at\x18\x06 \x01(\x03R\vscheduledAt\"\xbe\x03\n" +
+	"\tBroadcast\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\tR\acontent\x12\x1a\n" +
+	"\bchannels\x18\x04 \x03(\tR\bchannels\x12\x1f\n" +
+	"\vtarget_type\x18\x05 \x01(\tR\n" +
+	"targetType\x12\x1d\n" +
+	"\n" +
+	"target_ids\x18\x06 \x03(\x04R\ttargetIds\x12!\n" +
+	"\fscheduled_at\x18\a \x01(\x03R\vscheduledAt\x12\x16\n" +
+	"\x06status\x18\b \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_by\x18\t \x01(\x04R\tcreatedBy\x12\x1a\n" +
+	"\baudience\x18\n" +
+	" \x01(\x03R\baudience\x12\x1d\n" +
+	"\n" +
+	"sent_count\x18\v \x01(\x03R\tsentCount\x12!\n" +
+	"\ffailed_count\x18\f \x01(\x03R\vfailedCount\x12\x1d\n" +
+	"\n" +
+	"started_at\x18\r \x01(\x03R\tstartedAt\x12\x1f\n" +
+	"\vfinished_at\x18\x0e \x01(\x03R\n" +
+	"finishedAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x0f \x01(\x03R\tcreatedAt\"H\n" +
+	"\x15ListBroadcastsRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\x9b\x01\n" +
+	"\x13ListBroadcastsReply\x12=\n" +
+	"\n" +
+	"broadcasts\x18\x01 \x03(\v2\x1d.zcard.api.admin.v1.BroadcastR\n" +
+	"broadcasts\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"-\n" +
+	"\x16CancelBroadcastRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xa2\n" +
+	"\n" +
 	"\x12AdminNotifyService\x12\x90\x01\n" +
 	"\x0eUpsertTemplate\x12/.zcard.api.admin.v1.UpsertNotifyTemplateRequest\x1a\".zcard.api.admin.v1.NotifyTemplate\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/notify/templates\x12}\n" +
 	"\rListTemplates\x12\x16.google.protobuf.Empty\x1a,.zcard.api.admin.v1.ListNotifyTemplatesReply\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/notify/templates\x12\x9a\x01\n" +
 	"\x0fPreviewTemplate\x12*.zcard.api.admin.v1.PreviewTemplateRequest\x1a(.zcard.api.admin.v1.PreviewTemplateReply\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/v1/admin/notify/templates/preview\x12\x81\x01\n" +
 	"\bListLogs\x12).zcard.api.admin.v1.ListNotifyLogsRequest\x1a'.zcard.api.admin.v1.ListNotifyLogsReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/notify/logs\x12\x81\x01\n" +
-	"\tResendLog\x12*.zcard.api.admin.v1.ResendNotifyLogRequest\x1a\x16.google.protobuf.Empty\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/notify/logs/{id}/resendB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\tResendLog\x12*.zcard.api.admin.v1.ResendNotifyLogRequest\x1a\x16.google.protobuf.Empty\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/notify/logs/{id}/resend\x12\xa2\x01\n" +
+	"\x11EstimateBroadcast\x12,.zcard.api.admin.v1.EstimateBroadcastRequest\x1a*.zcard.api.admin.v1.EstimateBroadcastReply\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/admin/notify/broadcasts/estimate\x12\x88\x01\n" +
+	"\x0fCreateBroadcast\x12*.zcard.api.admin.v1.CreateBroadcastRequest\x1a\x1d.zcard.api.admin.v1.Broadcast\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/notify/broadcasts\x12\x8d\x01\n" +
+	"\x0eListBroadcasts\x12).zcard.api.admin.v1.ListBroadcastsRequest\x1a'.zcard.api.admin.v1.ListBroadcastsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/notify/broadcasts\x12\x94\x01\n" +
+	"\x0fCancelBroadcast\x12*.zcard.api.admin.v1.CancelBroadcastRequest\x1a\x1d.zcard.api.admin.v1.Broadcast\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/notify/broadcasts/{id}/cancelB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_notify_proto_rawDescOnce sync.Once
@@ -759,7 +1318,7 @@ func file_admin_v1_notify_proto_rawDescGZIP() []byte {
 	return file_admin_v1_notify_proto_rawDescData
 }
 
-var file_admin_v1_notify_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_admin_v1_notify_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_admin_v1_notify_proto_goTypes = []any{
 	(*NotifyTemplate)(nil),              // 0: zcard.api.admin.v1.NotifyTemplate
 	(*UpsertNotifyTemplateRequest)(nil), // 1: zcard.api.admin.v1.UpsertNotifyTemplateRequest
@@ -770,26 +1329,42 @@ var file_admin_v1_notify_proto_goTypes = []any{
 	(*NotifyLog)(nil),                   // 6: zcard.api.admin.v1.NotifyLog
 	(*ListNotifyLogsReply)(nil),         // 7: zcard.api.admin.v1.ListNotifyLogsReply
 	(*ResendNotifyLogRequest)(nil),      // 8: zcard.api.admin.v1.ResendNotifyLogRequest
-	(*emptypb.Empty)(nil),               // 9: google.protobuf.Empty
+	(*EstimateBroadcastRequest)(nil),    // 9: zcard.api.admin.v1.EstimateBroadcastRequest
+	(*EstimateBroadcastReply)(nil),      // 10: zcard.api.admin.v1.EstimateBroadcastReply
+	(*CreateBroadcastRequest)(nil),      // 11: zcard.api.admin.v1.CreateBroadcastRequest
+	(*Broadcast)(nil),                   // 12: zcard.api.admin.v1.Broadcast
+	(*ListBroadcastsRequest)(nil),       // 13: zcard.api.admin.v1.ListBroadcastsRequest
+	(*ListBroadcastsReply)(nil),         // 14: zcard.api.admin.v1.ListBroadcastsReply
+	(*CancelBroadcastRequest)(nil),      // 15: zcard.api.admin.v1.CancelBroadcastRequest
+	(*emptypb.Empty)(nil),               // 16: google.protobuf.Empty
 }
 var file_admin_v1_notify_proto_depIdxs = []int32{
-	0, // 0: zcard.api.admin.v1.ListNotifyTemplatesReply.templates:type_name -> zcard.api.admin.v1.NotifyTemplate
-	6, // 1: zcard.api.admin.v1.ListNotifyLogsReply.logs:type_name -> zcard.api.admin.v1.NotifyLog
-	1, // 2: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:input_type -> zcard.api.admin.v1.UpsertNotifyTemplateRequest
-	9, // 3: zcard.api.admin.v1.AdminNotifyService.ListTemplates:input_type -> google.protobuf.Empty
-	3, // 4: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:input_type -> zcard.api.admin.v1.PreviewTemplateRequest
-	5, // 5: zcard.api.admin.v1.AdminNotifyService.ListLogs:input_type -> zcard.api.admin.v1.ListNotifyLogsRequest
-	8, // 6: zcard.api.admin.v1.AdminNotifyService.ResendLog:input_type -> zcard.api.admin.v1.ResendNotifyLogRequest
-	0, // 7: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:output_type -> zcard.api.admin.v1.NotifyTemplate
-	2, // 8: zcard.api.admin.v1.AdminNotifyService.ListTemplates:output_type -> zcard.api.admin.v1.ListNotifyTemplatesReply
-	4, // 9: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:output_type -> zcard.api.admin.v1.PreviewTemplateReply
-	7, // 10: zcard.api.admin.v1.AdminNotifyService.ListLogs:output_type -> zcard.api.admin.v1.ListNotifyLogsReply
-	9, // 11: zcard.api.admin.v1.AdminNotifyService.ResendLog:output_type -> google.protobuf.Empty
-	7, // [7:12] is the sub-list for method output_type
-	2, // [2:7] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: zcard.api.admin.v1.ListNotifyTemplatesReply.templates:type_name -> zcard.api.admin.v1.NotifyTemplate
+	6,  // 1: zcard.api.admin.v1.ListNotifyLogsReply.logs:type_name -> zcard.api.admin.v1.NotifyLog
+	12, // 2: zcard.api.admin.v1.ListBroadcastsReply.broadcasts:type_name -> zcard.api.admin.v1.Broadcast
+	1,  // 3: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:input_type -> zcard.api.admin.v1.UpsertNotifyTemplateRequest
+	16, // 4: zcard.api.admin.v1.AdminNotifyService.ListTemplates:input_type -> google.protobuf.Empty
+	3,  // 5: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:input_type -> zcard.api.admin.v1.PreviewTemplateRequest
+	5,  // 6: zcard.api.admin.v1.AdminNotifyService.ListLogs:input_type -> zcard.api.admin.v1.ListNotifyLogsRequest
+	8,  // 7: zcard.api.admin.v1.AdminNotifyService.ResendLog:input_type -> zcard.api.admin.v1.ResendNotifyLogRequest
+	9,  // 8: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:input_type -> zcard.api.admin.v1.EstimateBroadcastRequest
+	11, // 9: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:input_type -> zcard.api.admin.v1.CreateBroadcastRequest
+	13, // 10: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:input_type -> zcard.api.admin.v1.ListBroadcastsRequest
+	15, // 11: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:input_type -> zcard.api.admin.v1.CancelBroadcastRequest
+	0,  // 12: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:output_type -> zcard.api.admin.v1.NotifyTemplate
+	2,  // 13: zcard.api.admin.v1.AdminNotifyService.ListTemplates:output_type -> zcard.api.admin.v1.ListNotifyTemplatesReply
+	4,  // 14: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:output_type -> zcard.api.admin.v1.PreviewTemplateReply
+	7,  // 15: zcard.api.admin.v1.AdminNotifyService.ListLogs:output_type -> zcard.api.admin.v1.ListNotifyLogsReply
+	16, // 16: zcard.api.admin.v1.AdminNotifyService.ResendLog:output_type -> google.protobuf.Empty
+	10, // 17: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:output_type -> zcard.api.admin.v1.EstimateBroadcastReply
+	12, // 18: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:output_type -> zcard.api.admin.v1.Broadcast
+	14, // 19: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:output_type -> zcard.api.admin.v1.ListBroadcastsReply
+	12, // 20: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:output_type -> zcard.api.admin.v1.Broadcast
+	12, // [12:21] is the sub-list for method output_type
+	3,  // [3:12] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_notify_proto_init() }
@@ -803,7 +1378,7 @@ func file_admin_v1_notify_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_notify_proto_rawDesc), len(file_admin_v1_notify_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
