@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/ticket"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
@@ -64,7 +65,7 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, broadcastSvc *notify.BroadcastService) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService) *queue.Cron {
 	c := queue.NewCron()
 	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
@@ -85,5 +86,7 @@ func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService
 	})
 	// M3：定时群发扫描（到期 pending → 入队）
 	c.AddEvery("notify.broadcast_scan", time.Minute, broadcastSvc.ScanDue)
+	// M3：工单 resolved 超 7 天自动关闭
+	c.AddEvery("ticket.autoclose", time.Hour, ticketAdmin.AutoCloseResolved)
 	return c
 }

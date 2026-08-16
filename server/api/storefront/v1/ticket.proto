@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
+// 游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
+service StoreTicketService {
+  // CreateTicket 创建工单（登录用户或游客）。
+  rpc CreateTicket(CreateTicketRequest) returns (Ticket) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/tickets"
+      body: "*"
+    };
+  }
+  // ListMyTickets 我的工单列表。
+  rpc ListMyTickets(ListMyTicketsRequest) returns (ListMyTicketsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/tickets" };
+  }
+  // GetTicket 工单详情（消息流；内部备注过滤）。
+  rpc GetTicket(GetTicketRequest) returns (GetTicketReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/tickets/{ticket_no}" };
+  }
+  // ReplyTicket 追加回复。
+  rpc ReplyTicket(ReplyTicketRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/tickets/{ticket_no}/reply"
+      body: "*"
+    };
+  }
+  // RateTicket 评价（resolved 后 1-5）。
+  rpc RateTicket(RateTicketRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/tickets/{ticket_no}/rate"
+      body: "*"
+    };
+  }
+  // PayUrgent 付费加急（余额支付 urgent_fee；成功即 priority=urgent_paid）。
+  rpc PayUrgent(PayUrgentRequest) returns (PayUrgentReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/tickets/{ticket_no}/urgent"
+      body: "*"
+    };
+  }
+}
+
+message CreateTicketRequest {
+  string type = 1 [(google.api.field_behavior) = REQUIRED]; // presale | aftersale
+  string content = 2 [(google.api.field_behavior) = REQUIRED];
+  string guest_contact = 3;  // 游客必填（联系方式）
+  uint64 order_id = 4;       // 可选关联
+  uint64 product_id = 5;
+  repeated uint64 attachment_media_ids = 6;
+}
+
+message Ticket {
+  uint64 id = 1;
+  string ticket_no = 2;
+  string type = 3;
+  string priority = 4;
+  string status = 5;
+  uint64 order_id = 6;
+  uint64 product_id = 7;
+  int64 first_reply_at = 8;
+  int64 sla_due_at = 9;
+  int32 satisfaction = 10;
+  int64 created_at = 11;
+}
+
+message ListMyTicketsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListMyTicketsReply {
+  repeated Ticket tickets = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetTicketRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message TicketMessage {
+  uint64 id = 1;
+  string sender_type = 2; // user | admin | system（内部备注已过滤）
+  string content = 3;
+  repeated uint64 attachments = 4;
+  int64 created_at = 5;
+}
+
+message GetTicketReply {
+  Ticket ticket = 1;
+  repeated TicketMessage messages = 2;
+}
+
+message ReplyTicketRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string content = 2 [(google.api.field_behavior) = REQUIRED];
+  repeated uint64 attachment_media_ids = 3;
+}
+
+message RateTicketRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 rating = 2 [(google.api.field_behavior) = REQUIRED]; // 1-5
+}
+
+message PayUrgentRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message PayUrgentReply {
+  bool paid = 1;
+  int64 fee_cents = 2;  // 实扣（分）
+  string error = 3;     // 余额不足等
+}

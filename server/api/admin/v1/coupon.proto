@@ -5,10 +5,46 @@ package zcard.api.admin.v1;
 option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
 
 import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
 // AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
 service AdminCouponService {
+  // GrantCoupon 批次赠送指定用户。
+  rpc GrantCoupon(GrantCouponRequest) returns (GrantCouponReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/coupons/grant"
+      body: "*"
+    };
+  }
+  // CreateFlashSale 创建秒杀。
+  rpc CreateFlashSale(CreateFlashSaleRequest) returns (FlashSaleItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/flash-sales"
+      body: "*"
+    };
+  }
+  // ListFlashSales 秒杀列表。
+  rpc ListFlashSales(ListFlashSalesRequest) returns (ListFlashSalesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/flash-sales" };
+  }
+  // DeleteFlashSale 删除秒杀。
+  rpc DeleteFlashSale(DeleteFlashSaleRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/flash-sales/{id}"
+    };
+  }
+  // UpsertPromotion 创建/更新促销。
+  rpc UpsertPromotion(UpsertPromotionRequest) returns (PromotionItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/promotions"
+      body: "*"
+    };
+  }
+  // ListPromotions 促销列表。
+  rpc ListPromotions(ListPromotionsRequest) returns (ListPromotionsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/promotions" };
+  }
   rpc ListCoupons(ListCouponsRequest) returns (CouponList) {
     option (google.api.http) = { get: "/api/v1/admin/coupons" };
   }
@@ -52,4 +88,95 @@ message CreateCouponBatchReply {
 
 message DisableCouponRequest {
   string batch_id = 1;
+}
+
+// ── M3 扩展：领取/秒杀/促销 ───────────────────────────────
+
+// GrantCoupon 批次赠送指定用户（领取）。
+message GrantCouponRequest {
+  string batch_id = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 user_id = 2 [(google.api.field_behavior) = REQUIRED];
+  int32 count = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message GrantCouponReply {
+  int32 granted = 1;
+}
+
+// CreateFlashSale 创建秒杀（限量与卡密同锁）。
+message CreateFlashSaleRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 sku_id = 2;
+  int64 flash_price = 3 [(google.api.field_behavior) = REQUIRED];
+  int64 start_at = 4 [(google.api.field_behavior) = REQUIRED];
+  int64 end_at = 5 [(google.api.field_behavior) = REQUIRED];
+  int32 limit_qty = 6 [(google.api.field_behavior) = REQUIRED];
+  int32 per_user_limit = 7;
+}
+
+message FlashSaleItem {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  uint64 sku_id = 3;
+  int64 flash_price = 4;
+  int64 start_at = 5;
+  int64 end_at = 6;
+  int32 limit_qty = 7;
+  int32 sold_qty = 8;
+  int32 per_user_limit = 9;
+}
+
+message ListFlashSalesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListFlashSalesReply {
+  repeated FlashSaleItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message DeleteFlashSaleRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// UpsertPromotion 创建/更新促销。
+message UpsertPromotionRequest {
+  uint64 id = 1; // 0=创建
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+  string scope_json = 3; // {"product_ids":[1,2]} / {"category_ids":[3]} / 空=全场
+  string type = 4 [(google.api.field_behavior) = REQUIRED]; // fixed | percent | special_price
+  int64 threshold = 5;  // 满 X（分）
+  int64 discount = 6;   // fixed=分；percent=万分比
+  int64 special_price = 7; // special_price=分
+  int64 start_at = 8 [(google.api.field_behavior) = REQUIRED];
+  int64 end_at = 9 [(google.api.field_behavior) = REQUIRED];
+  bool enabled = 10;
+}
+
+message PromotionItem {
+  uint64 id = 1;
+  string name = 2;
+  string scope_json = 3;
+  string type = 4;
+  int64 threshold = 5;
+  int64 discount = 6;
+  int64 special_price = 7;
+  int64 start_at = 8;
+  int64 end_at = 9;
+  bool enabled = 10;
+}
+
+message ListPromotionsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListPromotionsReply {
+  repeated PromotionItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
 }

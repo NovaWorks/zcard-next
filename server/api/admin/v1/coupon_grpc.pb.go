@@ -20,6 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminCouponService_GrantCoupon_FullMethodName       = "/zcard.api.admin.v1.AdminCouponService/GrantCoupon"
+	AdminCouponService_CreateFlashSale_FullMethodName   = "/zcard.api.admin.v1.AdminCouponService/CreateFlashSale"
+	AdminCouponService_ListFlashSales_FullMethodName    = "/zcard.api.admin.v1.AdminCouponService/ListFlashSales"
+	AdminCouponService_DeleteFlashSale_FullMethodName   = "/zcard.api.admin.v1.AdminCouponService/DeleteFlashSale"
+	AdminCouponService_UpsertPromotion_FullMethodName   = "/zcard.api.admin.v1.AdminCouponService/UpsertPromotion"
+	AdminCouponService_ListPromotions_FullMethodName    = "/zcard.api.admin.v1.AdminCouponService/ListPromotions"
 	AdminCouponService_ListCoupons_FullMethodName       = "/zcard.api.admin.v1.AdminCouponService/ListCoupons"
 	AdminCouponService_CreateCouponBatch_FullMethodName = "/zcard.api.admin.v1.AdminCouponService/CreateCouponBatch"
 	AdminCouponService_DisableCoupon_FullMethodName     = "/zcard.api.admin.v1.AdminCouponService/DisableCoupon"
@@ -31,6 +37,18 @@ const (
 //
 // AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
 type AdminCouponServiceClient interface {
+	// GrantCoupon 批次赠送指定用户。
+	GrantCoupon(ctx context.Context, in *GrantCouponRequest, opts ...grpc.CallOption) (*GrantCouponReply, error)
+	// CreateFlashSale 创建秒杀。
+	CreateFlashSale(ctx context.Context, in *CreateFlashSaleRequest, opts ...grpc.CallOption) (*FlashSaleItem, error)
+	// ListFlashSales 秒杀列表。
+	ListFlashSales(ctx context.Context, in *ListFlashSalesRequest, opts ...grpc.CallOption) (*ListFlashSalesReply, error)
+	// DeleteFlashSale 删除秒杀。
+	DeleteFlashSale(ctx context.Context, in *DeleteFlashSaleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// UpsertPromotion 创建/更新促销。
+	UpsertPromotion(ctx context.Context, in *UpsertPromotionRequest, opts ...grpc.CallOption) (*PromotionItem, error)
+	// ListPromotions 促销列表。
+	ListPromotions(ctx context.Context, in *ListPromotionsRequest, opts ...grpc.CallOption) (*ListPromotionsReply, error)
 	ListCoupons(ctx context.Context, in *ListCouponsRequest, opts ...grpc.CallOption) (*CouponList, error)
 	CreateCouponBatch(ctx context.Context, in *CreateCouponBatchRequest, opts ...grpc.CallOption) (*CreateCouponBatchReply, error)
 	DisableCoupon(ctx context.Context, in *DisableCouponRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -42,6 +60,66 @@ type adminCouponServiceClient struct {
 
 func NewAdminCouponServiceClient(cc grpc.ClientConnInterface) AdminCouponServiceClient {
 	return &adminCouponServiceClient{cc}
+}
+
+func (c *adminCouponServiceClient) GrantCoupon(ctx context.Context, in *GrantCouponRequest, opts ...grpc.CallOption) (*GrantCouponReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GrantCouponReply)
+	err := c.cc.Invoke(ctx, AdminCouponService_GrantCoupon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCouponServiceClient) CreateFlashSale(ctx context.Context, in *CreateFlashSaleRequest, opts ...grpc.CallOption) (*FlashSaleItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FlashSaleItem)
+	err := c.cc.Invoke(ctx, AdminCouponService_CreateFlashSale_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCouponServiceClient) ListFlashSales(ctx context.Context, in *ListFlashSalesRequest, opts ...grpc.CallOption) (*ListFlashSalesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListFlashSalesReply)
+	err := c.cc.Invoke(ctx, AdminCouponService_ListFlashSales_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCouponServiceClient) DeleteFlashSale(ctx context.Context, in *DeleteFlashSaleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminCouponService_DeleteFlashSale_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCouponServiceClient) UpsertPromotion(ctx context.Context, in *UpsertPromotionRequest, opts ...grpc.CallOption) (*PromotionItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PromotionItem)
+	err := c.cc.Invoke(ctx, AdminCouponService_UpsertPromotion_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCouponServiceClient) ListPromotions(ctx context.Context, in *ListPromotionsRequest, opts ...grpc.CallOption) (*ListPromotionsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPromotionsReply)
+	err := c.cc.Invoke(ctx, AdminCouponService_ListPromotions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminCouponServiceClient) ListCoupons(ctx context.Context, in *ListCouponsRequest, opts ...grpc.CallOption) (*CouponList, error) {
@@ -80,6 +158,18 @@ func (c *adminCouponServiceClient) DisableCoupon(ctx context.Context, in *Disabl
 //
 // AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
 type AdminCouponServiceServer interface {
+	// GrantCoupon 批次赠送指定用户。
+	GrantCoupon(context.Context, *GrantCouponRequest) (*GrantCouponReply, error)
+	// CreateFlashSale 创建秒杀。
+	CreateFlashSale(context.Context, *CreateFlashSaleRequest) (*FlashSaleItem, error)
+	// ListFlashSales 秒杀列表。
+	ListFlashSales(context.Context, *ListFlashSalesRequest) (*ListFlashSalesReply, error)
+	// DeleteFlashSale 删除秒杀。
+	DeleteFlashSale(context.Context, *DeleteFlashSaleRequest) (*emptypb.Empty, error)
+	// UpsertPromotion 创建/更新促销。
+	UpsertPromotion(context.Context, *UpsertPromotionRequest) (*PromotionItem, error)
+	// ListPromotions 促销列表。
+	ListPromotions(context.Context, *ListPromotionsRequest) (*ListPromotionsReply, error)
 	ListCoupons(context.Context, *ListCouponsRequest) (*CouponList, error)
 	CreateCouponBatch(context.Context, *CreateCouponBatchRequest) (*CreateCouponBatchReply, error)
 	DisableCoupon(context.Context, *DisableCouponRequest) (*emptypb.Empty, error)
@@ -93,6 +183,24 @@ type AdminCouponServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminCouponServiceServer struct{}
 
+func (UnimplementedAdminCouponServiceServer) GrantCoupon(context.Context, *GrantCouponRequest) (*GrantCouponReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GrantCoupon not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) CreateFlashSale(context.Context, *CreateFlashSaleRequest) (*FlashSaleItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateFlashSale not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) ListFlashSales(context.Context, *ListFlashSalesRequest) (*ListFlashSalesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListFlashSales not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) DeleteFlashSale(context.Context, *DeleteFlashSaleRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteFlashSale not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) UpsertPromotion(context.Context, *UpsertPromotionRequest) (*PromotionItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpsertPromotion not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) ListPromotions(context.Context, *ListPromotionsRequest) (*ListPromotionsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPromotions not implemented")
+}
 func (UnimplementedAdminCouponServiceServer) ListCoupons(context.Context, *ListCouponsRequest) (*CouponList, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCoupons not implemented")
 }
@@ -121,6 +229,114 @@ func RegisterAdminCouponServiceServer(s grpc.ServiceRegistrar, srv AdminCouponSe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminCouponService_ServiceDesc, srv)
+}
+
+func _AdminCouponService_GrantCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GrantCouponRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).GrantCoupon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_GrantCoupon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).GrantCoupon(ctx, req.(*GrantCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCouponService_CreateFlashSale_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFlashSaleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).CreateFlashSale(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_CreateFlashSale_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).CreateFlashSale(ctx, req.(*CreateFlashSaleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCouponService_ListFlashSales_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListFlashSalesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).ListFlashSales(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_ListFlashSales_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).ListFlashSales(ctx, req.(*ListFlashSalesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCouponService_DeleteFlashSale_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteFlashSaleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).DeleteFlashSale(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_DeleteFlashSale_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).DeleteFlashSale(ctx, req.(*DeleteFlashSaleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCouponService_UpsertPromotion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertPromotionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).UpsertPromotion(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_UpsertPromotion_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).UpsertPromotion(ctx, req.(*UpsertPromotionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCouponService_ListPromotions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPromotionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).ListPromotions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_ListPromotions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).ListPromotions(ctx, req.(*ListPromotionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminCouponService_ListCoupons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -184,6 +400,30 @@ var AdminCouponService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminCouponService",
 	HandlerType: (*AdminCouponServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GrantCoupon",
+			Handler:    _AdminCouponService_GrantCoupon_Handler,
+		},
+		{
+			MethodName: "CreateFlashSale",
+			Handler:    _AdminCouponService_CreateFlashSale_Handler,
+		},
+		{
+			MethodName: "ListFlashSales",
+			Handler:    _AdminCouponService_ListFlashSales_Handler,
+		},
+		{
+			MethodName: "DeleteFlashSale",
+			Handler:    _AdminCouponService_DeleteFlashSale_Handler,
+		},
+		{
+			MethodName: "UpsertPromotion",
+			Handler:    _AdminCouponService_UpsertPromotion_Handler,
+		},
+		{
+			MethodName: "ListPromotions",
+			Handler:    _AdminCouponService_ListPromotions_Handler,
+		},
 		{
 			MethodName: "ListCoupons",
 			Handler:    _AdminCouponService_ListCoupons_Handler,

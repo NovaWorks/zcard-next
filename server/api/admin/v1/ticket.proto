@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
+// 认领/回复/内部备注/解决/关闭、筛选。
+service AdminTicketService {
+  // ListTickets 工作台列表（urgent_paid 置顶 → 高 → 中 → 低；状态/类型/订单筛选）。
+  rpc ListTickets(ListTicketsRequest) returns (ListTicketsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/tickets" };
+  }
+  // GetTicket 详情（含内部备注——客服侧全量）。
+  rpc GetTicket(GetTicketRequest) returns (GetTicketReply) {
+    option (google.api.http) = { get: "/api/v1/admin/tickets/{ticket_no}" };
+  }
+  // ReplyTicket 客服回复（可内部备注）。
+  rpc ReplyTicket(AdminReplyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/tickets/{ticket_no}/reply"
+      body: "*"
+    };
+  }
+  // ResolveTicket 解决。
+  rpc ResolveTicket(TicketNoRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/tickets/{ticket_no}/resolve"
+      body: "*"
+    };
+  }
+  // CloseTicket 关闭。
+  rpc CloseTicket(TicketNoRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/tickets/{ticket_no}/close"
+      body: "*"
+    };
+  }
+}
+
+message ListTicketsRequest {
+  string status = 1;   // open | processing | resolved | closed；空=未关闭（open+processing）
+  string type = 2;     // presale | aftersale
+  string order_no = 3; // 关联订单号（精确）
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message AdminTicket {
+  uint64 id = 1;
+  string ticket_no = 2;
+  uint64 user_id = 3;
+  string guest_contact = 4;
+  string type = 5;
+  string priority = 6;
+  string status = 7;
+  uint64 order_id = 8;
+  uint64 product_id = 9;
+  int64 first_reply_at = 10;
+  int64 sla_due_at = 11;
+  int32 satisfaction = 12;
+  int64 created_at = 13;
+}
+
+message ListTicketsReply {
+  repeated AdminTicket tickets = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetTicketRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message AdminTicketMessage {
+  uint64 id = 1;
+  string sender_type = 2;
+  uint64 sender_id = 3;
+  string content = 4;
+  repeated uint64 attachments = 5;
+  bool is_internal = 6;
+  int64 created_at = 7;
+}
+
+message GetTicketReply {
+  AdminTicket ticket = 1;
+  repeated AdminTicketMessage messages = 2; // 含内部备注
+}
+
+message AdminReplyRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string content = 2 [(google.api.field_behavior) = REQUIRED];
+  bool is_internal = 3; // 内部备注（用户不可见）
+}
+
+message TicketNoRequest {
+  string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+}

@@ -229,6 +229,8 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		"content:read",
 		"notify:read",
 		"audit:read",
+		"ticket:read",
+		"ticket:write",
 	}
 	for _, b := range builtin {
 		role, err := client.AdminRole.Query().Where(adminrole.Code(b.code)).Only(ctx)

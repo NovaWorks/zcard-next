@@ -30,12 +30,18 @@ func (a settingsReaderAdapter) GetJSON(ctx context.Context, group, key string) (
 var ProviderSet = wire.NewSet(
 	NewNotifyRepo,
 	ProvideChannels,
+	ProvideSettingsReader, // notifyport.SettingsReader 绑定（order 互斥开关等消费）
 	NewDispatcher,
 	wire.Bind(new(notifyport.Sender), new(*Dispatcher)), // audit Alerter 消费（通道 A）
 	NewBroadcastService,
 	NewAdminNotifyService,
 	NewStoreNotificationService,
 )
+
+// ProvideSettingsReader settings 适配为通用端口（跨模块共享，通道 A）。
+func ProvideSettingsReader(repo *settings.RepoImpl) notifyport.SettingsReader {
+	return settingsReaderAdapter{repo: repo}
+}
 
 // ProvideChannels 通道装配（四通道：Email/Inbox/SMS/Telegram）。
 func ProvideChannels(repo *NotifyRepo, settingsRepo *settings.RepoImpl) []Channel {

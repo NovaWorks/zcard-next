@@ -29,6 +29,8 @@ type PriceInput struct {
 	MemberRate    int32       // 会员折扣（万分比；0=不折扣）
 	GroupRate     int32       // 商品组折扣（万分比）
 	FlashPrice    money.Cents // 秒杀价（0=无秒杀）
+	PromoDiscount money.Cents // 促销折让（分；0=无促销——会员折扣后、券前）
+	PromoName     string      // 促销名（金额行 meta）
 	CouponValue   money.Cents // 优惠券面额（分；0=无券）
 	PointsValue   money.Cents // 积分抵扣额（分）
 	SubsiteMarkup money.Cents // 分站加价（分）
@@ -83,6 +85,17 @@ func PriceCalculator(in PriceInput) PriceResult {
 			Seq: seq, Meta: map[string]any{"flash_price": int64(in.FlashPrice)},
 		})
 		current = in.FlashPrice
+		seq++
+	}
+
+	// 4.5) 通用促销（会员折扣后、券前；多促最优已由解析器裁定；
+	// 秒杀互斥：flash 生效时调用方不填 PromoDiscount——口径写死并测试）
+	if in.PromoDiscount > 0 && in.PromoDiscount < current {
+		lines = append(lines, AmountLine{
+			Type: "promo_discount", Amount: -int64(in.PromoDiscount), SourceType: "promotion",
+			Seq: seq, Meta: map[string]any{"name": in.PromoName},
+		})
+		current -= in.PromoDiscount
 		seq++
 	}
 

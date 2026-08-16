@@ -221,3 +221,69 @@ func (r *WalletRepoImpl) RebuildBalance(ctx context.Context, userID uint64) (int
 	}
 	return balance, nil
 }
+
+// Lock 冻结（available → locked；availableAt 到期时间戳——佣金/分站利润冻结期）。
+// 幂等口径：金额校验 available >= amount，乐观锁 CAS。
+func (r *WalletRepoImpl) Lock(ctx context.Context, userID uint64, amount int64, availableAt int64) error {
+	if amount <= 0 {
+		return fmt.Errorf("wallet: 冻结金额必须为正")
+	}
+	client := data.Client(ctx, r.data)
+	acc, err := client.WalletAccount.Query().
+		Where(walletaccount.UserID(userID)).Only(ctx)
+	if err != nil {
+		return err
+	}
+	if acc.Available < amount {
+		return fmt.Errorf("wallet.BALANCE_INSUFFICIENT")
+	}
+	affected, err := client.WalletAccount.Update().
+		Where(walletaccount.ID(acc.ID), walletaccount.Available(acc.Available)).
+		SetAvailable(acc.Available - amount).
+		SetLocked(acc.Locked + amount).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("wallet.CONCURRENT_UPDATE")
+	}
+	// 冻结流水（reference 幂等由调用方保证）
+	_, _ = client.WalletTransaction.Create().
+		SetUserID(userID).
+		SetDirection("out").
+		SetType("lock").
+		SetAmount(amount).
+		SetReference(fmt.Sprintf("lock:%d:%d", userID, availableAt)).
+		SetRemark("冻结").
+		Save(ctx)
+	return nil
+}
+
+// Unlock 解冻（locked → available；提现拒绝/佣金退回）。
+func (r *WalletRepoImpl) Unlock(ctx context.Context, userID uint64, amount int64) error {
+	if amount <= 0 {
+		return fmt.Errorf("wallet: 解冻金额必须为正")
+	}
+	client := data.Client(ctx, r.data)
+	acc, err := client.WalletAccount.Query().
+		Where(walletaccount.UserID(userID)).Only(ctx)
+	if err != nil {
+		return err
+	}
+	if acc.Locked < amount {
+		return fmt.Errorf("wallet.INSUFFICIENT_LOCKED")
+	}
+	affected, err := client.WalletAccount.Update().
+		Where(walletaccount.ID(acc.ID), walletaccount.Locked(acc.Locked)).
+		SetLocked(acc.Locked - amount).
+		SetAvailable(acc.Available + amount).
+		Save(ctx)
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return fmt.Errorf("wallet.CONCURRENT_UPDATE")
+	}
+	return nil
+}

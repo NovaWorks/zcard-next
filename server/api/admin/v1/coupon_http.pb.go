@@ -19,20 +19,161 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminCouponServiceCreateCouponBatch = "/zcard.api.admin.v1.AdminCouponService/CreateCouponBatch"
+const OperationAdminCouponServiceCreateFlashSale = "/zcard.api.admin.v1.AdminCouponService/CreateFlashSale"
+const OperationAdminCouponServiceDeleteFlashSale = "/zcard.api.admin.v1.AdminCouponService/DeleteFlashSale"
 const OperationAdminCouponServiceDisableCoupon = "/zcard.api.admin.v1.AdminCouponService/DisableCoupon"
+const OperationAdminCouponServiceGrantCoupon = "/zcard.api.admin.v1.AdminCouponService/GrantCoupon"
 const OperationAdminCouponServiceListCoupons = "/zcard.api.admin.v1.AdminCouponService/ListCoupons"
+const OperationAdminCouponServiceListFlashSales = "/zcard.api.admin.v1.AdminCouponService/ListFlashSales"
+const OperationAdminCouponServiceListPromotions = "/zcard.api.admin.v1.AdminCouponService/ListPromotions"
+const OperationAdminCouponServiceUpsertPromotion = "/zcard.api.admin.v1.AdminCouponService/UpsertPromotion"
 
 type AdminCouponServiceHTTPServer interface {
 	CreateCouponBatch(context.Context, *CreateCouponBatchRequest) (*CreateCouponBatchReply, error)
+	// CreateFlashSale CreateFlashSale 创建秒杀。
+	CreateFlashSale(context.Context, *CreateFlashSaleRequest) (*FlashSaleItem, error)
+	// DeleteFlashSale DeleteFlashSale 删除秒杀。
+	DeleteFlashSale(context.Context, *DeleteFlashSaleRequest) (*emptypb.Empty, error)
 	DisableCoupon(context.Context, *DisableCouponRequest) (*emptypb.Empty, error)
+	// GrantCoupon GrantCoupon 批次赠送指定用户。
+	GrantCoupon(context.Context, *GrantCouponRequest) (*GrantCouponReply, error)
 	ListCoupons(context.Context, *ListCouponsRequest) (*CouponList, error)
+	// ListFlashSales ListFlashSales 秒杀列表。
+	ListFlashSales(context.Context, *ListFlashSalesRequest) (*ListFlashSalesReply, error)
+	// ListPromotions ListPromotions 促销列表。
+	ListPromotions(context.Context, *ListPromotionsRequest) (*ListPromotionsReply, error)
+	// UpsertPromotion UpsertPromotion 创建/更新促销。
+	UpsertPromotion(context.Context, *UpsertPromotionRequest) (*PromotionItem, error)
 }
 
 func RegisterAdminCouponServiceHTTPServer(s *http.Server, srv AdminCouponServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("POST", "/api/v1/admin/coupons/grant", _AdminCouponService_GrantCoupon0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/flash-sales", _AdminCouponService_CreateFlashSale0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/flash-sales", _AdminCouponService_ListFlashSales0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/flash-sales/{id}", _AdminCouponService_DeleteFlashSale0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/promotions", _AdminCouponService_UpsertPromotion0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/promotions", _AdminCouponService_ListPromotions0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/coupons", _AdminCouponService_ListCoupons0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/coupons/batch", _AdminCouponService_CreateCouponBatch0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/coupons/disable", _AdminCouponService_DisableCoupon0_HTTP_Handler(srv))
+}
+
+func _AdminCouponService_GrantCoupon0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GrantCouponRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceGrantCoupon)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GrantCoupon(ctx, req.(*GrantCouponRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GrantCouponReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCouponService_CreateFlashSale0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateFlashSaleRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceCreateFlashSale)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateFlashSale(ctx, req.(*CreateFlashSaleRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*FlashSaleItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCouponService_ListFlashSales0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListFlashSalesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceListFlashSales)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListFlashSales(ctx, req.(*ListFlashSalesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListFlashSalesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCouponService_DeleteFlashSale0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteFlashSaleRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceDeleteFlashSale)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteFlashSale(ctx, req.(*DeleteFlashSaleRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCouponService_UpsertPromotion0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpsertPromotionRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceUpsertPromotion)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpsertPromotion(ctx, req.(*UpsertPromotionRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*PromotionItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCouponService_ListPromotions0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListPromotionsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceListPromotions)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListPromotions(ctx, req.(*ListPromotionsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListPromotionsReply)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminCouponService_ListCoupons0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
@@ -94,8 +235,20 @@ func _AdminCouponService_DisableCoupon0_HTTP_Handler(srv AdminCouponServiceHTTPS
 
 type AdminCouponServiceHTTPClient interface {
 	CreateCouponBatch(ctx context.Context, req *CreateCouponBatchRequest, opts ...http.CallOption) (rsp *CreateCouponBatchReply, err error)
+	// CreateFlashSale CreateFlashSale 创建秒杀。
+	CreateFlashSale(ctx context.Context, req *CreateFlashSaleRequest, opts ...http.CallOption) (rsp *FlashSaleItem, err error)
+	// DeleteFlashSale DeleteFlashSale 删除秒杀。
+	DeleteFlashSale(ctx context.Context, req *DeleteFlashSaleRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DisableCoupon(ctx context.Context, req *DisableCouponRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// GrantCoupon GrantCoupon 批次赠送指定用户。
+	GrantCoupon(ctx context.Context, req *GrantCouponRequest, opts ...http.CallOption) (rsp *GrantCouponReply, err error)
 	ListCoupons(ctx context.Context, req *ListCouponsRequest, opts ...http.CallOption) (rsp *CouponList, err error)
+	// ListFlashSales ListFlashSales 秒杀列表。
+	ListFlashSales(ctx context.Context, req *ListFlashSalesRequest, opts ...http.CallOption) (rsp *ListFlashSalesReply, err error)
+	// ListPromotions ListPromotions 促销列表。
+	ListPromotions(ctx context.Context, req *ListPromotionsRequest, opts ...http.CallOption) (rsp *ListPromotionsReply, err error)
+	// UpsertPromotion UpsertPromotion 创建/更新促销。
+	UpsertPromotion(ctx context.Context, req *UpsertPromotionRequest, opts ...http.CallOption) (rsp *PromotionItem, err error)
 }
 
 type AdminCouponServiceHTTPClientImpl struct {
@@ -123,6 +276,41 @@ func (c *AdminCouponServiceHTTPClientImpl) CreateCouponBatch(ctx context.Context
 	return &out, nil
 }
 
+// CreateFlashSale CreateFlashSale 创建秒杀。
+func (c *AdminCouponServiceHTTPClientImpl) CreateFlashSale(ctx context.Context, in *CreateFlashSaleRequest, opts ...http.CallOption) (*FlashSaleItem, error) {
+	var out FlashSaleItem
+	pattern := "/api/v1/admin/flash-sales"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCouponServiceCreateFlashSale),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteFlashSale DeleteFlashSale 删除秒杀。
+func (c *AdminCouponServiceHTTPClientImpl) DeleteFlashSale(ctx context.Context, in *DeleteFlashSaleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/flash-sales/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCouponServiceDeleteFlashSale),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCouponServiceHTTPClientImpl) DisableCoupon(ctx context.Context, in *DisableCouponRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
 	pattern := "/api/v1/admin/coupons/disable"
@@ -131,6 +319,24 @@ func (c *AdminCouponServiceHTTPClientImpl) DisableCoupon(ctx context.Context, in
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCouponServiceDisableCoupon),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GrantCoupon GrantCoupon 批次赠送指定用户。
+func (c *AdminCouponServiceHTTPClientImpl) GrantCoupon(ctx context.Context, in *GrantCouponRequest, opts ...http.CallOption) (*GrantCouponReply, error) {
+	var out GrantCouponReply
+	pattern := "/api/v1/admin/coupons/grant"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCouponServiceGrantCoupon),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
@@ -150,6 +356,58 @@ func (c *AdminCouponServiceHTTPClientImpl) ListCoupons(ctx context.Context, in *
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListFlashSales ListFlashSales 秒杀列表。
+func (c *AdminCouponServiceHTTPClientImpl) ListFlashSales(ctx context.Context, in *ListFlashSalesRequest, opts ...http.CallOption) (*ListFlashSalesReply, error) {
+	var out ListFlashSalesReply
+	pattern := "/api/v1/admin/flash-sales"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCouponServiceListFlashSales),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListPromotions ListPromotions 促销列表。
+func (c *AdminCouponServiceHTTPClientImpl) ListPromotions(ctx context.Context, in *ListPromotionsRequest, opts ...http.CallOption) (*ListPromotionsReply, error) {
+	var out ListPromotionsReply
+	pattern := "/api/v1/admin/promotions"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCouponServiceListPromotions),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpsertPromotion UpsertPromotion 创建/更新促销。
+func (c *AdminCouponServiceHTTPClientImpl) UpsertPromotion(ctx context.Context, in *UpsertPromotionRequest, opts ...http.CallOption) (*PromotionItem, error) {
+	var out PromotionItem
+	pattern := "/api/v1/admin/promotions"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCouponServiceUpsertPromotion),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

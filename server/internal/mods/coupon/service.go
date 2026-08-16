@@ -4,6 +4,8 @@ package coupon
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -62,4 +64,113 @@ func (s *AdminCouponService) DisableCoupon(ctx context.Context, req *adminv1.Dis
 		return nil, errors.InternalServer("coupon.DISABLE_FAILED", "作废失败")
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// ── M3 扩展 ────────────────────────────────────────────────
+
+// GrantCoupon 批次赠送。
+func (s *AdminCouponService) GrantCoupon(ctx context.Context, req *adminv1.GrantCouponRequest) (*adminv1.GrantCouponReply, error) {
+	if req.GetCount() <= 0 || req.GetCount() > 1000 {
+		return nil, fmt.Errorf("coupon.COUNT_INVALID: 1-1000")
+	}
+	n, err := s.repo.GrantToUser(ctx, req.GetBatchId(), req.GetUserId(), req.GetCount())
+	if err != nil {
+		return nil, err
+	}
+	return &adminv1.GrantCouponReply{Granted: n}, nil
+}
+
+// CreateFlashSale 创建秒杀。
+func (s *AdminCouponService) CreateFlashSale(ctx context.Context, req *adminv1.CreateFlashSaleRequest) (*adminv1.FlashSaleItem, error) {
+	if req.GetFlashPrice() <= 0 || req.GetLimitQty() <= 0 || req.GetEndAt() <= req.GetStartAt() {
+		return nil, fmt.Errorf("coupon.FLASH_PARAMS_INVALID")
+	}
+	fs, err := s.repo.CreateFlash(ctx,
+		req.GetProductId(), req.GetSkuId(), req.GetFlashPrice(),
+		time.Unix(req.GetStartAt(), 0).UTC(), time.Unix(req.GetEndAt(), 0).UTC(),
+		req.GetLimitQty(), orDefaultI32(req.GetPerUserLimit(), 1))
+	if err != nil {
+		return nil, err
+	}
+	return toFlashPB(fs), nil
+}
+
+// ListFlashSales 秒杀列表。
+func (s *AdminCouponService) ListFlashSales(ctx context.Context, req *adminv1.ListFlashSalesRequest) (*adminv1.ListFlashSalesReply, error) {
+	page, size := couponPageParams(req.GetPage(), req.GetPageSize())
+	rows, total, err := s.repo.ListFlashAll(ctx, page, size)
+	if err != nil {
+		return nil, err
+	}
+	reply := &adminv1.ListFlashSalesReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
+	for _, fs := range rows {
+		reply.Items = append(reply.Items, toFlashPB(fs))
+	}
+	return reply, nil
+}
+
+// DeleteFlashSale 删除秒杀。
+func (s *AdminCouponService) DeleteFlashSale(ctx context.Context, req *adminv1.DeleteFlashSaleRequest) (*emptypb.Empty, error) {
+	if err := s.repo.DeleteFlash(ctx, req.GetId()); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// UpsertPromotion 创建/更新促销。
+func (s *AdminCouponService) UpsertPromotion(ctx context.Context, req *adminv1.UpsertPromotionRequest) (*adminv1.PromotionItem, error) {
+	if req.GetEndAt() <= req.GetStartAt() {
+		return nil, fmt.Errorf("coupon.PROMO_WINDOW_INVALID")
+	}
+	scope := map[string]any{}
+	if req.GetScopeJson() != "" {
+		if err := json.Unmarshal([]byte(req.GetScopeJson()), &scope); err != nil {
+			return nil, fmt.Errorf("coupon.SCOPE_JSON_INVALID: %w", err)
+		}
+	}
+	p, err := s.repo.UpsertPromotion(ctx, req.GetId(), req.GetName(), scope, req.GetType(),
+		req.GetThreshold(), req.GetDiscount(), req.GetSpecialPrice(),
+		time.Unix(req.GetStartAt(), 0).UTC(), time.Unix(req.GetEndAt(), 0).UTC(), req.GetEnabled())
+	if err != nil {
+		return nil, err
+	}
+	return toPromoPB(p), nil
+}
+
+// ListPromotions 促销列表。
+func (s *AdminCouponService) ListPromotions(ctx context.Context, req *adminv1.ListPromotionsRequest) (*adminv1.ListPromotionsReply, error) {
+	page, size := couponPageParams(req.GetPage(), req.GetPageSize())
+	rows, total, err := s.repo.ListPromotions(ctx, page, size)
+	if err != nil {
+		return nil, err
+	}
+	reply := &adminv1.ListPromotionsReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
+	for _, p := range rows {
+		reply.Items = append(reply.Items, toPromoPB(p))
+	}
+	return reply, nil
+}
+
+
+
+func couponPageParams(page, pageSize int32) (int, int) {
+	p := int(page)
+	if p < 1 {
+		p = 1
+	}
+	ps := int(pageSize)
+	if ps < 1 {
+		ps = 20
+	}
+	if ps > 100 {
+		ps = 100
+	}
+	return p, ps
+}
+
+func orDefaultI32(v, def int32) int32 {
+	if v <= 0 {
+		return def
+	}
+	return v
 }

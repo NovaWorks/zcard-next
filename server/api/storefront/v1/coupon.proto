@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
+service StoreCouponService {
+  // ListMyCoupons 我的可用券（登录用户）。
+  rpc ListMyCoupons(google.protobuf.Empty) returns (ListMyCouponsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/coupons/mine" };
+  }
+  // RedeemCoupon 兑换码领券。
+  rpc RedeemCoupon(RedeemCouponRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/coupons/redeem"
+      body: "*"
+    };
+  }
+  // ListFlashSales 秒杀列表（upcoming=false 进行中 / true 即将开始）。
+  rpc ListFlashSales(ListFlashSalesRequest) returns (ListFlashSalesReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/flash-sales" };
+  }
+}
+
+import "google/protobuf/empty.proto";
+
+message MyCoupon {
+  uint64 id = 1;
+  string name = 2;
+  string type = 3;    // fixed | percent
+  int64 value = 4;    // fixed=分；percent=万分比
+  string code = 5;
+  string scope_json = 6;
+  int64 expire_at = 7;
+}
+
+message ListMyCouponsReply {
+  repeated MyCoupon coupons = 1;
+}
+
+message RedeemCouponRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListFlashSalesRequest {
+  bool upcoming = 1; // true = 即将开始；false = 进行中
+}
+
+message StoreFlashSale {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  int64 flash_price = 3; // 分
+  int64 start_at = 4;
+  int64 end_at = 5;
+  int32 remaining = 6;  // 剩余量（limit - sold；-1 未提供）
+}
+
+message ListFlashSalesReply {
+  repeated StoreFlashSale items = 1;
+}

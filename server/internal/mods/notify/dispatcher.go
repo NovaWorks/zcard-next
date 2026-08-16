@@ -45,6 +45,9 @@ var defaultChannels = map[string][]string{
 	"payment.failed":     {"inbox"},
 	"recharge.succeeded": {"email", "inbox"},
 	"user.registered":    {"email", "inbox"},
+	// P3-05：工单通知（用户侧新回复；客服侧新工单经 telegram 管理员通道）
+	"ticket.created": {"inbox"},
+	"ticket.replied": {"email", "inbox"},
 }
 
 // HandleEvent outbox 消费入口（Dispatcher Register）。

@@ -26,6 +26,7 @@ import (
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
@@ -47,11 +48,14 @@ type OrderUsecase struct {
 	Catalog    catalogport.PricingResolver
 	Outbox     events.Writer // order.* 事件发布（M2：procurement 订阅 order.paid）
 	Gate       auditport.RiskGate // P2-06 下单风控闸门（nil = 未装配跳过）
+	Flash      couponport.FlashResolver     // M3：秒杀（nil 跳过）
+	Promos     couponport.PromotionResolver // M3：促销（nil 跳过）
+	Settings   settingsport.SettingsReader  // M3：互斥开关读取（nil 默认互斥）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate}
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings}
 }
 
 // CreateOrderInput 下单输入。
@@ -127,9 +131,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 		// 3) 会员折扣（万分比，按用户累计消费匹配；解析失败降级为 0 不阻断下单）
 		var memberRate int32
+		var memberLevelID uint64
 		if uc.MemberRate != nil && in.UserID > 0 {
-			if r, _, err := uc.MemberRate.EffectiveRate(txCtx, in.UserID); err == nil {
+			if r, lvl, err := uc.MemberRate.EffectiveRate(txCtx, in.UserID); err == nil {
 				memberRate = r
+				memberLevelID = lvl
 			}
 		}
 
@@ -142,6 +148,8 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		var results []itemResult
 		var totalCents int64
+		var cartItems []couponport.CartItem // 券范围判定输入
+		flashApplied := false                // 券×秒杀互斥判据
 
 		for _, item := range in.Items {
 			p, err := client.Product.Query().
@@ -172,24 +180,62 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 			}
 
+			// M3 步骤 4：秒杀（窗口判定 + 限购 + 同锁扣减——Reserve 已成功，同事务）
+			var flashPrice money.Cents
+			if uc.Flash != nil {
+				if fs, err := uc.Flash.Active(txCtx, item.ProductID, item.SkuID); err == nil && fs != nil {
+					// 限购：窗口内 paid+pending 累计
+					if fs.PerUserLimit > 0 && in.UserID > 0 {
+						if bought, err := uc.Flash.UserPurchasedCount(txCtx, item.ProductID, in.UserID, fs.StartAt); err == nil &&
+							bought+item.Quantity > fs.PerUserLimit {
+							return couponport.ErrFlashUserLimit
+						}
+					}
+					// 同锁扣减（CAS 防超卖；失败回滚整个下单事务）
+					if err := uc.Flash.Consume(txCtx, fs.ID, item.Quantity); err != nil {
+						return err
+					}
+					flashPrice = fs.FlashPrice
+					flashApplied = true
+				}
+			}
+
+			// M3 步骤 4.5：促销（会员折扣后、券前；与秒杀互斥——flash 生效时跳过）
+			var promoDiscount money.Cents
+			var promoName string
+			if uc.Promos != nil && flashPrice == 0 {
+				if pi, err := uc.Promos.BestFor(txCtx, item.ProductID, p.CategoryID, basePrice); err == nil && pi != nil {
+					if d := pi.DiscountFor(basePrice); d > 0 {
+						promoDiscount, promoName = d, pi.Name
+					}
+				}
+			}
+
 			pr := PriceCalculator(PriceInput{
 				BasePrice:  basePrice,
 				Quantity:   item.Quantity,
 				MemberRate: memberRate,
 				GroupRate:  groupRate,
+				FlashPrice: flashPrice,
+				PromoDiscount: promoDiscount,
+				PromoName:     promoName,
 			})
 			results = append(results, itemResult{
 				input: item, res: pr, cost: int64(p.FactoryPrice),
 				productName: p.Name,
 			})
 			totalCents += int64(pr.Total)
+			cartItems = append(cartItems, couponport.CartItem{
+				ProductID: item.ProductID, CategoryID: p.CategoryID,
+				Quantity: item.Quantity, UnitPrice: basePrice,
+			})
 		}
 
-		// 4.5) 优惠券（整单一次性；percent 按会员折后应付额折算，不找零）
+		// 4.6) 优惠券（整单一次性；范围矩阵 + 每人限用；券×秒杀互斥默认开）
 		var couponValue int64
 		var couponID uint64
-		if uc.Coupon != nil && in.CouponCode != "" {
-			v, cid, err := uc.Coupon.Resolve(txCtx, in.CouponCode, in.UserID, money.Cents(totalCents))
+		if uc.Coupon != nil && in.CouponCode != "" && !uc.flashCouponExclusive(txCtx, flashApplied) {
+			v, cid, err := uc.Coupon.ResolveScoped(txCtx, in.CouponCode, in.UserID, memberLevelID, cartItems)
 			if err != nil {
 				return fmt.Errorf("order.COUPON_INVALID: %w", err)
 			}
@@ -436,7 +482,14 @@ func (uc *OrderUsecase) CancelOrder(ctx context.Context, orderNo, reason, operat
 		SetReason(reason).
 		Save(ctx)
 	// 释放锁卡
-	return uc.Inv.Release(ctx, o.ID)
+	if err := uc.Inv.Release(ctx, o.ID); err != nil {
+		return err
+	}
+	// 券返还（取消恢复可用；过期不返由 coupon 侧口径保证）
+	if uc.Coupon != nil {
+		_ = uc.Coupon.ReturnByOrder(ctx, o.ID)
+	}
+	return nil
 }
 
 // ExpireOrder 超时取消（TTL 到期）。
@@ -493,3 +546,25 @@ func nilOrZero(v uint64) *uint64 {
 }
 
 var _ = decimal.NewFromInt // 保持 decimal 引用（rounding M1 接入）
+
+// flashCouponExclusive 券×秒杀互斥判定（settings.trade.flash_coupon_exclusive；
+// 读取失败/未配置默认互斥——保守口径）。
+func (uc *OrderUsecase) flashCouponExclusive(ctx context.Context, flashApplied bool) bool {
+	if !flashApplied {
+		return false
+	}
+	if uc.Settings == nil {
+		return true
+	}
+	raw, err := uc.Settings.GetJSON(ctx, "trade", "flash_coupon_exclusive")
+	if err != nil || len(raw) == 0 {
+		return true
+	}
+	var v struct {
+		Exclusive *bool `json:"flash_coupon_exclusive"`
+	}
+	if json.Unmarshal(raw, &v) != nil || v.Exclusive == nil {
+		return true
+	}
+	return *v.Exclusive
+}

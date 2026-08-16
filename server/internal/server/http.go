@@ -33,6 +33,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/ticket"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
@@ -69,6 +70,9 @@ func NewHTTPServer(
 	contentStoreSvc *content.StoreContentService,
 	notifyAdminSvc *notify.AdminNotifyService,
 	notifyStoreSvc *notify.StoreNotificationService,
+	couponStoreSvc *coupon.StoreCouponService,
+	ticketStoreSvc *ticket.StoreTicketService,
+	ticketAdminSvc *ticket.AdminTicketService,
 	auditAdminSvc *audit.AdminAuditService,
 	auditRepo *audit.AuditRepo,
 	roleSvc *authz.RoleService,
@@ -171,6 +175,9 @@ func NewHTTPServer(
 	adminv1.RegisterAdminNotifyServiceHTTPServer(srv, notifyAdminSvc)
 	storefrontv1.RegisterStoreNotificationServiceHTTPServer(srv, notifyStoreSvc)
 	adminv1.RegisterAdminAuditServiceHTTPServer(srv, auditAdminSvc)
+	storefrontv1.RegisterStoreCouponServiceHTTPServer(srv, couponStoreSvc)
+	storefrontv1.RegisterStoreTicketServiceHTTPServer(srv, ticketStoreSvc)
+	adminv1.RegisterAdminTicketServiceHTTPServer(srv, ticketAdminSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

@@ -1036,6 +1036,25 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/coupons/grant:
+        post:
+            tags:
+                - AdminCouponService
+            description: GrantCoupon 批次赠送指定用户。
+            operationId: AdminCouponService_GrantCoupon
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.GrantCouponRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GrantCouponReply'
     /api/v1/admin/currencies:
         get:
             tags:
@@ -1119,6 +1138,64 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.DashboardReply'
+    /api/v1/admin/flash-sales:
+        get:
+            tags:
+                - AdminCouponService
+            description: ListFlashSales 秒杀列表。
+            operationId: AdminCouponService_ListFlashSales
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListFlashSalesReply'
+        post:
+            tags:
+                - AdminCouponService
+            description: CreateFlashSale 创建秒杀。
+            operationId: AdminCouponService_CreateFlashSale
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateFlashSaleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.FlashSaleItem'
+    /api/v1/admin/flash-sales/{id}:
+        delete:
+            tags:
+                - AdminCouponService
+            description: DeleteFlashSale 删除秒杀。
+            operationId: AdminCouponService_DeleteFlashSale
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/fulfillment:
         get:
             tags:
@@ -2206,6 +2283,48 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Sku'
+    /api/v1/admin/promotions:
+        get:
+            tags:
+                - AdminCouponService
+            description: ListPromotions 促销列表。
+            operationId: AdminCouponService_ListPromotions
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListPromotionsReply'
+        post:
+            tags:
+                - AdminCouponService
+            description: UpsertPromotion 创建/更新促销。
+            operationId: AdminCouponService_UpsertPromotion
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpsertPromotionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PromotionItem'
     /api/v1/admin/refunds:
         get:
             tags:
@@ -3002,6 +3121,127 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/tickets:
+        get:
+            tags:
+                - AdminTicketService
+            description: ListTickets 工作台列表（urgent_paid 置顶 → 高 → 中 → 低；状态/类型/订单筛选）。
+            operationId: AdminTicketService_ListTickets
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: type
+                  in: query
+                  schema:
+                    type: string
+                - name: orderNo
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListTicketsReply'
+    /api/v1/admin/tickets/{ticketNo}:
+        get:
+            tags:
+                - AdminTicketService
+            description: GetTicket 详情（含内部备注——客服侧全量）。
+            operationId: AdminTicketService_GetTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GetTicketReply'
+    /api/v1/admin/tickets/{ticketNo}/close:
+        post:
+            tags:
+                - AdminTicketService
+            description: CloseTicket 关闭。
+            operationId: AdminTicketService_CloseTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.TicketNoRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/tickets/{ticketNo}/reply:
+        post:
+            tags:
+                - AdminTicketService
+            description: ReplyTicket 客服回复（可内部备注）。
+            operationId: AdminTicketService_ReplyTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AdminReplyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/tickets/{ticketNo}/resolve:
+        post:
+            tags:
+                - AdminTicketService
+            description: ResolveTicket 解决。
+            operationId: AdminTicketService_ResolveTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.TicketNoRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/virtual-reviews:
         post:
             tags:
@@ -3128,6 +3368,35 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.PublicConfig'
+    /api/v1/storefront/coupons/mine:
+        get:
+            tags:
+                - StoreCouponService
+            description: ListMyCoupons 我的可用券（登录用户）。
+            operationId: StoreCouponService_ListMyCoupons
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListMyCouponsReply'
+    /api/v1/storefront/coupons/redeem:
+        post:
+            tags:
+                - StoreCouponService
+            description: RedeemCoupon 兑换码领券。
+            operationId: StoreCouponService_RedeemCoupon
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.RedeemCouponRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/storefront/currencies:
         get:
             tags:
@@ -3184,6 +3453,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.FetchDeliveryReply'
+    /api/v1/storefront/flash-sales:
+        get:
+            tags:
+                - StoreCouponService
+            description: ListFlashSales 秒杀列表（upcoming=false 进行中 / true 即将开始）。
+            operationId: StoreCouponService_ListFlashSales
+            parameters:
+                - name: upcoming
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListFlashSalesReply'
     /api/v1/storefront/notifications:
         get:
             tags:
@@ -3423,6 +3710,136 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+    /api/v1/storefront/tickets:
+        get:
+            tags:
+                - StoreTicketService
+            description: ListMyTickets 我的工单列表。
+            operationId: StoreTicketService_ListMyTickets
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListMyTicketsReply'
+        post:
+            tags:
+                - StoreTicketService
+            description: CreateTicket 创建工单（登录用户或游客）。
+            operationId: StoreTicketService_CreateTicket
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CreateTicketRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.Ticket'
+    /api/v1/storefront/tickets/{ticketNo}:
+        get:
+            tags:
+                - StoreTicketService
+            description: GetTicket 工单详情（消息流；内部备注过滤）。
+            operationId: StoreTicketService_GetTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.GetTicketReply'
+    /api/v1/storefront/tickets/{ticketNo}/rate:
+        post:
+            tags:
+                - StoreTicketService
+            description: RateTicket 评价（resolved 后 1-5）。
+            operationId: StoreTicketService_RateTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.RateTicketRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/storefront/tickets/{ticketNo}/reply:
+        post:
+            tags:
+                - StoreTicketService
+            description: ReplyTicket 追加回复。
+            operationId: StoreTicketService_ReplyTicket
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.ReplyTicketRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/storefront/tickets/{ticketNo}/urgent:
+        post:
+            tags:
+                - StoreTicketService
+            description: PayUrgent 付费加急（余额支付 urgent_fee；成功即 priority=urgent_paid）。
+            operationId: StoreTicketService_PayUrgent
+            parameters:
+                - name: ticketNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.PayUrgentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.PayUrgentReply'
     /api/v1/storefront/wallet:
         get:
             tags:
@@ -3663,6 +4080,67 @@ components:
                     type: string
                     format: date-time
                 lastLoginIp:
+                    type: string
+        zcard.api.admin.v1.AdminReplyRequest:
+            required:
+                - ticketNo
+                - content
+            type: object
+            properties:
+                ticketNo:
+                    type: string
+                content:
+                    type: string
+                isInternal:
+                    type: boolean
+        zcard.api.admin.v1.AdminTicket:
+            type: object
+            properties:
+                id:
+                    type: string
+                ticketNo:
+                    type: string
+                userId:
+                    type: string
+                guestContact:
+                    type: string
+                type:
+                    type: string
+                priority:
+                    type: string
+                status:
+                    type: string
+                orderId:
+                    type: string
+                productId:
+                    type: string
+                firstReplyAt:
+                    type: string
+                slaDueAt:
+                    type: string
+                satisfaction:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.AdminTicketMessage:
+            type: object
+            properties:
+                id:
+                    type: string
+                senderType:
+                    type: string
+                senderId:
+                    type: string
+                content:
+                    type: string
+                attachments:
+                    type: array
+                    items:
+                        type: string
+                isInternal:
+                    type: boolean
+                createdAt:
                     type: string
         zcard.api.admin.v1.AmountLine:
             type: object
@@ -4127,6 +4605,32 @@ components:
                     format: int32
                 rateJson:
                     type: string
+        zcard.api.admin.v1.CreateFlashSaleRequest:
+            required:
+                - productId
+                - flashPrice
+                - startAt
+                - endAt
+                - limitQty
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                flashPrice:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                limitQty:
+                    type: integer
+                    format: int32
+                perUserLimit:
+                    type: integer
+                    format: int32
+            description: CreateFlashSale 创建秒杀（限量与卡密同锁）。
         zcard.api.admin.v1.CreateMemberGroupRequest:
             required:
                 - name
@@ -4496,6 +5000,30 @@ components:
             properties:
                 productId:
                     type: string
+        zcard.api.admin.v1.FlashSaleItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                flashPrice:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                limitQty:
+                    type: integer
+                    format: int32
+                soldQty:
+                    type: integer
+                    format: int32
+                perUserLimit:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.GetBlacklistReply:
             type: object
             properties:
@@ -4513,6 +5041,36 @@ components:
                     items:
                         type: string
                     description: 权限点清单（如 order:list / card:view_content），前端据此生成菜单与按钮
+        zcard.api.admin.v1.GetTicketReply:
+            type: object
+            properties:
+                ticket:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.AdminTicket'
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminTicketMessage'
+        zcard.api.admin.v1.GrantCouponReply:
+            type: object
+            properties:
+                granted:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.GrantCouponRequest:
+            required:
+                - batchId
+                - userId
+                - count
+            type: object
+            properties:
+                batchId:
+                    type: string
+                userId:
+                    type: string
+                count:
+                    type: integer
+                    format: int32
+            description: GrantCoupon 批次赠送指定用户（领取）。
         zcard.api.admin.v1.Group:
             type: object
             properties:
@@ -4688,6 +5246,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.DeliveryRecord'
+        zcard.api.admin.v1.ListFlashSalesReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.FlashSaleItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListHealthReply:
             type: object
             properties:
@@ -4840,6 +5413,21 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListPromotionsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PromotionItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListRefundsReply:
             type: object
             properties:
@@ -4937,6 +5525,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListTicketsReply:
+            type: object
+            properties:
+                tickets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminTicket'
                 total:
                     type: string
                 page:
@@ -5351,6 +5954,29 @@ components:
                     type: string
                 updatedAt:
                     type: string
+        zcard.api.admin.v1.PromotionItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                scopeJson:
+                    type: string
+                type:
+                    type: string
+                threshold:
+                    type: string
+                discount:
+                    type: string
+                specialPrice:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                enabled:
+                    type: boolean
         zcard.api.admin.v1.PublishPostRequest:
             required:
                 - id
@@ -5797,6 +6423,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Tag'
+        zcard.api.admin.v1.TicketNoRequest:
+            required:
+                - ticketNo
+            type: object
+            properties:
+                ticketNo:
+                    type: string
         zcard.api.admin.v1.ToggleAdminRequest:
             required:
                 - id
@@ -6179,6 +6812,35 @@ components:
                     type: string
                 enabled:
                     type: boolean
+        zcard.api.admin.v1.UpsertPromotionRequest:
+            required:
+                - name
+                - type
+                - startAt
+                - endAt
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                scopeJson:
+                    type: string
+                type:
+                    type: string
+                threshold:
+                    type: string
+                discount:
+                    type: string
+                specialPrice:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                enabled:
+                    type: boolean
+            description: UpsertPromotion 创建/更新促销。
         zcard.api.admin.v1.UpsertSupplierPriceRequest:
             required:
                 - accountId
@@ -6346,6 +7008,26 @@ components:
                     type: string
                 channel:
                     type: string
+        zcard.api.storefront.v1.CreateTicketRequest:
+            required:
+                - type
+                - content
+            type: object
+            properties:
+                type:
+                    type: string
+                content:
+                    type: string
+                guestContact:
+                    type: string
+                orderId:
+                    type: string
+                productId:
+                    type: string
+                attachmentMediaIds:
+                    type: array
+                    items:
+                        type: string
         zcard.api.storefront.v1.Currencies:
             type: object
             properties:
@@ -6425,6 +7107,15 @@ components:
                     $ref: '#/components/schemas/zcard.api.storefront.v1.StorePost'
                 content:
                     type: string
+        zcard.api.storefront.v1.GetTicketReply:
+            type: object
+            properties:
+                ticket:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.Ticket'
+                messages:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.TicketMessage'
         zcard.api.storefront.v1.ListBannersReply:
             type: object
             properties:
@@ -6432,6 +7123,35 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.StoreBanner'
+        zcard.api.storefront.v1.ListFlashSalesReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.StoreFlashSale'
+        zcard.api.storefront.v1.ListMyCouponsReply:
+            type: object
+            properties:
+                coupons:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.MyCoupon'
+        zcard.api.storefront.v1.ListMyTicketsReply:
+            type: object
+            properties:
+                tickets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.Ticket'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.ListNotificationsReply:
             type: object
             properties:
@@ -6509,6 +7229,23 @@ components:
                 fetchCount:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.MyCoupon:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                value:
+                    type: string
+                code:
+                    type: string
+                scopeJson:
+                    type: string
+                expireAt:
+                    type: string
         zcard.api.storefront.v1.NotificationItem:
             type: object
             properties:
@@ -6552,6 +7289,22 @@ components:
                     type: integer
                     format: int32
                 unitPriceCents:
+                    type: string
+        zcard.api.storefront.v1.PayUrgentReply:
+            type: object
+            properties:
+                paid:
+                    type: boolean
+                feeCents:
+                    type: string
+                error:
+                    type: string
+        zcard.api.storefront.v1.PayUrgentRequest:
+            required:
+                - ticketNo
+            type: object
+            properties:
+                ticketNo:
                     type: string
         zcard.api.storefront.v1.Product:
             type: object
@@ -6634,6 +7387,38 @@ components:
                 valueJson:
                     type: string
             description: PublicConfigEntry 单键（key 形如 "site.name"；value 为 JSON 文档字符串）。
+        zcard.api.storefront.v1.RateTicketRequest:
+            required:
+                - ticketNo
+                - rating
+            type: object
+            properties:
+                ticketNo:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+        zcard.api.storefront.v1.RedeemCouponRequest:
+            required:
+                - code
+            type: object
+            properties:
+                code:
+                    type: string
+        zcard.api.storefront.v1.ReplyTicketRequest:
+            required:
+                - ticketNo
+                - content
+            type: object
+            properties:
+                ticketNo:
+                    type: string
+                content:
+                    type: string
+                attachmentMediaIds:
+                    type: array
+                    items:
+                        type: string
         zcard.api.storefront.v1.ReviewItem:
             type: object
             properties:
@@ -6676,6 +7461,22 @@ components:
                     type: string
                 linkValue:
                     type: string
+        zcard.api.storefront.v1.StoreFlashSale:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                flashPrice:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                remaining:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.StorePost:
             type: object
             properties:
@@ -6703,6 +7504,47 @@ components:
                 name:
                     type: string
                 slug:
+                    type: string
+        zcard.api.storefront.v1.Ticket:
+            type: object
+            properties:
+                id:
+                    type: string
+                ticketNo:
+                    type: string
+                type:
+                    type: string
+                priority:
+                    type: string
+                status:
+                    type: string
+                orderId:
+                    type: string
+                productId:
+                    type: string
+                firstReplyAt:
+                    type: string
+                slaDueAt:
+                    type: string
+                satisfaction:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+        zcard.api.storefront.v1.TicketMessage:
+            type: object
+            properties:
+                id:
+                    type: string
+                senderType:
+                    type: string
+                content:
+                    type: string
+                attachments:
+                    type: array
+                    items:
+                        type: string
+                createdAt:
                     type: string
         zcard.api.storefront.v1.Tx:
             type: object
@@ -6942,6 +7784,10 @@ tags:
          商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
          凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
          （列表/详情只给 credentials_set 布尔，铁律 11）。
+    - name: AdminTicketService
+      description: |-
+        AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
+         认领/回复/内部备注/解决/关闭、筛选。
     - name: AdminUserService
       description: AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
     - name: AdminWalletService
@@ -6958,6 +7804,8 @@ tags:
       description: |-
         StoreContentService 前台内容（P2-04）：横幅（生效时间窗）、文章（公告/博客）、分类。
          多语言字段按请求语言回落（zh_CN 默认）。
+    - name: StoreCouponService
+      description: StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
     - name: StoreDeliveryService
       description: StoreDeliveryService 顾客取货（P1-06 T2 三重门：单号+密码+限流）。
     - name: StoreNotificationService
@@ -6966,6 +7814,10 @@ tags:
       description: StoreOrderService 顾客下单（P1-03 T2）。
     - name: StorePaymentService
       description: StorePaymentService 顾客支付（P1-04 T2）。
+    - name: StoreTicketService
+      description: |-
+        StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
+         游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
     - name: StoreWalletService
       description: StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
     - name: StorefrontConfigService

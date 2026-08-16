@@ -305,6 +305,32 @@ func init() {
 		Perm{Code: "content:write", Desc: "删除分类（超管）", Domain: "content", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminContentService/DeleteCategory", Method: "DELETE", Path: "/api/v1/admin/content/categories/{id}"},
 
+		// ── 营销（coupon，P3-02 M3）──────────────────
+		Perm{Code: "coupon:write", Desc: "赠送券（超管）", Domain: "coupon", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCouponService/GrantCoupon", Method: "POST", Path: "/api/v1/admin/coupons/grant"},
+		Perm{Code: "coupon:write", Desc: "创建秒杀（超管）", Domain: "coupon", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCouponService/CreateFlashSale", Method: "POST", Path: "/api/v1/admin/flash-sales"},
+		Perm{Code: "coupon:read", Desc: "秒杀列表", Domain: "coupon",
+			Op: "zcard.api.admin.v1.AdminCouponService/ListFlashSales", Method: "GET", Path: "/api/v1/admin/flash-sales"},
+		Perm{Code: "coupon:write", Desc: "删除秒杀（超管）", Domain: "coupon", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCouponService/DeleteFlashSale", Method: "DELETE", Path: "/api/v1/admin/flash-sales/{id}"},
+		Perm{Code: "coupon:write", Desc: "促销创建/更新（超管）", Domain: "coupon", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCouponService/UpsertPromotion", Method: "POST", Path: "/api/v1/admin/promotions"},
+		Perm{Code: "coupon:read", Desc: "促销列表", Domain: "coupon",
+			Op: "zcard.api.admin.v1.AdminCouponService/ListPromotions", Method: "GET", Path: "/api/v1/admin/promotions"},
+
+		// ── 工单（ticket，P3-05）────────────────────
+		Perm{Code: "ticket:read", Desc: "工单工作台", Domain: "ticket",
+			Op: "zcard.api.admin.v1.AdminTicketService/ListTickets", Method: "GET", Path: "/api/v1/admin/tickets"},
+		Perm{Code: "ticket:read", Desc: "工单详情（含内部备注）", Domain: "ticket",
+			Op: "zcard.api.admin.v1.AdminTicketService/GetTicket", Method: "GET", Path: "/api/v1/admin/tickets/{ticket_no}"},
+		Perm{Code: "ticket:write", Desc: "回复/内部备注", Domain: "ticket",
+			Op: "zcard.api.admin.v1.AdminTicketService/ReplyTicket", Method: "POST", Path: "/api/v1/admin/tickets/{ticket_no}/reply"},
+		Perm{Code: "ticket:write", Desc: "解决工单", Domain: "ticket",
+			Op: "zcard.api.admin.v1.AdminTicketService/ResolveTicket", Method: "POST", Path: "/api/v1/admin/tickets/{ticket_no}/resolve"},
+		Perm{Code: "ticket:write", Desc: "关闭工单", Domain: "ticket",
+			Op: "zcard.api.admin.v1.AdminTicketService/CloseTicket", Method: "POST", Path: "/api/v1/admin/tickets/{ticket_no}/close"},
+
 		// ── 通知（notify，P2-05）────────────────────
 		Perm{Code: "notify:read", Desc: "通知模板列表", Domain: "notify",
 			Op: "zcard.api.admin.v1.AdminNotifyService/ListTemplates", Method: "GET", Path: "/api/v1/admin/notify/templates"},

@@ -367,11 +367,834 @@ func (x *DisableCouponRequest) GetBatchId() string {
 	return ""
 }
 
+// GrantCoupon 批次赠送指定用户（领取）。
+type GrantCouponRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	BatchId       string                 `protobuf:"bytes,1,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Count         int32                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GrantCouponRequest) Reset() {
+	*x = GrantCouponRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GrantCouponRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrantCouponRequest) ProtoMessage() {}
+
+func (x *GrantCouponRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrantCouponRequest.ProtoReflect.Descriptor instead.
+func (*GrantCouponRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GrantCouponRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+func (x *GrantCouponRequest) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GrantCouponRequest) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type GrantCouponReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Granted       int32                  `protobuf:"varint,1,opt,name=granted,proto3" json:"granted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GrantCouponReply) Reset() {
+	*x = GrantCouponReply{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GrantCouponReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GrantCouponReply) ProtoMessage() {}
+
+func (x *GrantCouponReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GrantCouponReply.ProtoReflect.Descriptor instead.
+func (*GrantCouponReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GrantCouponReply) GetGranted() int32 {
+	if x != nil {
+		return x.Granted
+	}
+	return 0
+}
+
+// CreateFlashSale 创建秒杀（限量与卡密同锁）。
+type CreateFlashSaleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	FlashPrice    int64                  `protobuf:"varint,3,opt,name=flash_price,json=flashPrice,proto3" json:"flash_price,omitempty"`
+	StartAt       int64                  `protobuf:"varint,4,opt,name=start_at,json=startAt,proto3" json:"start_at,omitempty"`
+	EndAt         int64                  `protobuf:"varint,5,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
+	LimitQty      int32                  `protobuf:"varint,6,opt,name=limit_qty,json=limitQty,proto3" json:"limit_qty,omitempty"`
+	PerUserLimit  int32                  `protobuf:"varint,7,opt,name=per_user_limit,json=perUserLimit,proto3" json:"per_user_limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateFlashSaleRequest) Reset() {
+	*x = CreateFlashSaleRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateFlashSaleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateFlashSaleRequest) ProtoMessage() {}
+
+func (x *CreateFlashSaleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateFlashSaleRequest.ProtoReflect.Descriptor instead.
+func (*CreateFlashSaleRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CreateFlashSaleRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *CreateFlashSaleRequest) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *CreateFlashSaleRequest) GetFlashPrice() int64 {
+	if x != nil {
+		return x.FlashPrice
+	}
+	return 0
+}
+
+func (x *CreateFlashSaleRequest) GetStartAt() int64 {
+	if x != nil {
+		return x.StartAt
+	}
+	return 0
+}
+
+func (x *CreateFlashSaleRequest) GetEndAt() int64 {
+	if x != nil {
+		return x.EndAt
+	}
+	return 0
+}
+
+func (x *CreateFlashSaleRequest) GetLimitQty() int32 {
+	if x != nil {
+		return x.LimitQty
+	}
+	return 0
+}
+
+func (x *CreateFlashSaleRequest) GetPerUserLimit() int32 {
+	if x != nil {
+		return x.PerUserLimit
+	}
+	return 0
+}
+
+type FlashSaleItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	FlashPrice    int64                  `protobuf:"varint,4,opt,name=flash_price,json=flashPrice,proto3" json:"flash_price,omitempty"`
+	StartAt       int64                  `protobuf:"varint,5,opt,name=start_at,json=startAt,proto3" json:"start_at,omitempty"`
+	EndAt         int64                  `protobuf:"varint,6,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
+	LimitQty      int32                  `protobuf:"varint,7,opt,name=limit_qty,json=limitQty,proto3" json:"limit_qty,omitempty"`
+	SoldQty       int32                  `protobuf:"varint,8,opt,name=sold_qty,json=soldQty,proto3" json:"sold_qty,omitempty"`
+	PerUserLimit  int32                  `protobuf:"varint,9,opt,name=per_user_limit,json=perUserLimit,proto3" json:"per_user_limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlashSaleItem) Reset() {
+	*x = FlashSaleItem{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlashSaleItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlashSaleItem) ProtoMessage() {}
+
+func (x *FlashSaleItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlashSaleItem.ProtoReflect.Descriptor instead.
+func (*FlashSaleItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *FlashSaleItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetFlashPrice() int64 {
+	if x != nil {
+		return x.FlashPrice
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetStartAt() int64 {
+	if x != nil {
+		return x.StartAt
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetEndAt() int64 {
+	if x != nil {
+		return x.EndAt
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetLimitQty() int32 {
+	if x != nil {
+		return x.LimitQty
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetSoldQty() int32 {
+	if x != nil {
+		return x.SoldQty
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetPerUserLimit() int32 {
+	if x != nil {
+		return x.PerUserLimit
+	}
+	return 0
+}
+
+type ListFlashSalesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFlashSalesRequest) Reset() {
+	*x = ListFlashSalesRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFlashSalesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFlashSalesRequest) ProtoMessage() {}
+
+func (x *ListFlashSalesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFlashSalesRequest.ProtoReflect.Descriptor instead.
+func (*ListFlashSalesRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ListFlashSalesRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListFlashSalesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListFlashSalesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*FlashSaleItem       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListFlashSalesReply) Reset() {
+	*x = ListFlashSalesReply{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListFlashSalesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListFlashSalesReply) ProtoMessage() {}
+
+func (x *ListFlashSalesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListFlashSalesReply.ProtoReflect.Descriptor instead.
+func (*ListFlashSalesReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListFlashSalesReply) GetItems() []*FlashSaleItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListFlashSalesReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListFlashSalesReply) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListFlashSalesReply) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type DeleteFlashSaleRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteFlashSaleRequest) Reset() {
+	*x = DeleteFlashSaleRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteFlashSaleRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteFlashSaleRequest) ProtoMessage() {}
+
+func (x *DeleteFlashSaleRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteFlashSaleRequest.ProtoReflect.Descriptor instead.
+func (*DeleteFlashSaleRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *DeleteFlashSaleRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+// UpsertPromotion 创建/更新促销。
+type UpsertPromotionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"` // 0=创建
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ScopeJson     string                 `protobuf:"bytes,3,opt,name=scope_json,json=scopeJson,proto3" json:"scope_json,omitempty"`           // {"product_ids":[1,2]} / {"category_ids":[3]} / 空=全场
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`                                      // fixed | percent | special_price
+	Threshold     int64                  `protobuf:"varint,5,opt,name=threshold,proto3" json:"threshold,omitempty"`                           // 满 X（分）
+	Discount      int64                  `protobuf:"varint,6,opt,name=discount,proto3" json:"discount,omitempty"`                             // fixed=分；percent=万分比
+	SpecialPrice  int64                  `protobuf:"varint,7,opt,name=special_price,json=specialPrice,proto3" json:"special_price,omitempty"` // special_price=分
+	StartAt       int64                  `protobuf:"varint,8,opt,name=start_at,json=startAt,proto3" json:"start_at,omitempty"`
+	EndAt         int64                  `protobuf:"varint,9,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
+	Enabled       bool                   `protobuf:"varint,10,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpsertPromotionRequest) Reset() {
+	*x = UpsertPromotionRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpsertPromotionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpsertPromotionRequest) ProtoMessage() {}
+
+func (x *UpsertPromotionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpsertPromotionRequest.ProtoReflect.Descriptor instead.
+func (*UpsertPromotionRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *UpsertPromotionRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpsertPromotionRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpsertPromotionRequest) GetScopeJson() string {
+	if x != nil {
+		return x.ScopeJson
+	}
+	return ""
+}
+
+func (x *UpsertPromotionRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *UpsertPromotionRequest) GetThreshold() int64 {
+	if x != nil {
+		return x.Threshold
+	}
+	return 0
+}
+
+func (x *UpsertPromotionRequest) GetDiscount() int64 {
+	if x != nil {
+		return x.Discount
+	}
+	return 0
+}
+
+func (x *UpsertPromotionRequest) GetSpecialPrice() int64 {
+	if x != nil {
+		return x.SpecialPrice
+	}
+	return 0
+}
+
+func (x *UpsertPromotionRequest) GetStartAt() int64 {
+	if x != nil {
+		return x.StartAt
+	}
+	return 0
+}
+
+func (x *UpsertPromotionRequest) GetEndAt() int64 {
+	if x != nil {
+		return x.EndAt
+	}
+	return 0
+}
+
+func (x *UpsertPromotionRequest) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type PromotionItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ScopeJson     string                 `protobuf:"bytes,3,opt,name=scope_json,json=scopeJson,proto3" json:"scope_json,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Threshold     int64                  `protobuf:"varint,5,opt,name=threshold,proto3" json:"threshold,omitempty"`
+	Discount      int64                  `protobuf:"varint,6,opt,name=discount,proto3" json:"discount,omitempty"`
+	SpecialPrice  int64                  `protobuf:"varint,7,opt,name=special_price,json=specialPrice,proto3" json:"special_price,omitempty"`
+	StartAt       int64                  `protobuf:"varint,8,opt,name=start_at,json=startAt,proto3" json:"start_at,omitempty"`
+	EndAt         int64                  `protobuf:"varint,9,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
+	Enabled       bool                   `protobuf:"varint,10,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PromotionItem) Reset() {
+	*x = PromotionItem{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PromotionItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PromotionItem) ProtoMessage() {}
+
+func (x *PromotionItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PromotionItem.ProtoReflect.Descriptor instead.
+func (*PromotionItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *PromotionItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *PromotionItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PromotionItem) GetScopeJson() string {
+	if x != nil {
+		return x.ScopeJson
+	}
+	return ""
+}
+
+func (x *PromotionItem) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *PromotionItem) GetThreshold() int64 {
+	if x != nil {
+		return x.Threshold
+	}
+	return 0
+}
+
+func (x *PromotionItem) GetDiscount() int64 {
+	if x != nil {
+		return x.Discount
+	}
+	return 0
+}
+
+func (x *PromotionItem) GetSpecialPrice() int64 {
+	if x != nil {
+		return x.SpecialPrice
+	}
+	return 0
+}
+
+func (x *PromotionItem) GetStartAt() int64 {
+	if x != nil {
+		return x.StartAt
+	}
+	return 0
+}
+
+func (x *PromotionItem) GetEndAt() int64 {
+	if x != nil {
+		return x.EndAt
+	}
+	return 0
+}
+
+func (x *PromotionItem) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+type ListPromotionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPromotionsRequest) Reset() {
+	*x = ListPromotionsRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPromotionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPromotionsRequest) ProtoMessage() {}
+
+func (x *ListPromotionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPromotionsRequest.ProtoReflect.Descriptor instead.
+func (*ListPromotionsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListPromotionsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListPromotionsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListPromotionsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*PromotionItem       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPromotionsReply) Reset() {
+	*x = ListPromotionsReply{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPromotionsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPromotionsReply) ProtoMessage() {}
+
+func (x *ListPromotionsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPromotionsReply.ProtoReflect.Descriptor instead.
+func (*ListPromotionsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListPromotionsReply) GetItems() []*PromotionItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListPromotionsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListPromotionsReply) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListPromotionsReply) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
 var File_admin_v1_coupon_proto protoreflect.FileDescriptor
 
 const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/coupon.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x9d\x01\n" +
+	"\x15admin/v1/coupon.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x9d\x01\n" +
 	"\x06Coupon\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\bbatch_id\x18\x02 \x01(\tR\abatchId\x12\x12\n" +
@@ -394,8 +1217,86 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\x16CreateCouponBatchReply\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"1\n" +
 	"\x14DisableCouponRequest\x12\x19\n" +
-	"\bbatch_id\x18\x01 \x01(\tR\abatchId2\x9f\x03\n" +
-	"\x12AdminCouponService\x12t\n" +
+	"\bbatch_id\x18\x01 \x01(\tR\abatchId\"m\n" +
+	"\x12GrantCouponRequest\x12\x1e\n" +
+	"\bbatch_id\x18\x01 \x01(\tB\x03\xe0A\x02R\abatchId\x12\x1c\n" +
+	"\auser_id\x18\x02 \x01(\x04B\x03\xe0A\x02R\x06userId\x12\x19\n" +
+	"\x05count\x18\x03 \x01(\x05B\x03\xe0A\x02R\x05count\",\n" +
+	"\x10GrantCouponReply\x12\x18\n" +
+	"\agranted\x18\x01 \x01(\x05R\agranted\"\xfd\x01\n" +
+	"\x16CreateFlashSaleRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x02 \x01(\x04R\x05skuId\x12$\n" +
+	"\vflash_price\x18\x03 \x01(\x03B\x03\xe0A\x02R\n" +
+	"flashPrice\x12\x1e\n" +
+	"\bstart_at\x18\x04 \x01(\x03B\x03\xe0A\x02R\astartAt\x12\x1a\n" +
+	"\x06end_at\x18\x05 \x01(\x03B\x03\xe0A\x02R\x05endAt\x12 \n" +
+	"\tlimit_qty\x18\x06 \x01(\x05B\x03\xe0A\x02R\blimitQty\x12$\n" +
+	"\x0eper_user_limit\x18\a \x01(\x05R\fperUserLimit\"\x86\x02\n" +
+	"\rFlashSaleItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x03 \x01(\x04R\x05skuId\x12\x1f\n" +
+	"\vflash_price\x18\x04 \x01(\x03R\n" +
+	"flashPrice\x12\x19\n" +
+	"\bstart_at\x18\x05 \x01(\x03R\astartAt\x12\x15\n" +
+	"\x06end_at\x18\x06 \x01(\x03R\x05endAt\x12\x1b\n" +
+	"\tlimit_qty\x18\a \x01(\x05R\blimitQty\x12\x19\n" +
+	"\bsold_qty\x18\b \x01(\x05R\asoldQty\x12$\n" +
+	"\x0eper_user_limit\x18\t \x01(\x05R\fperUserLimit\"H\n" +
+	"\x15ListFlashSalesRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\x95\x01\n" +
+	"\x13ListFlashSalesReply\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.zcard.api.admin.v1.FlashSaleItemR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"-\n" +
+	"\x16DeleteFlashSaleRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xae\x02\n" +
+	"\x16UpsertPromotionRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x17\n" +
+	"\x04name\x18\x02 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1d\n" +
+	"\n" +
+	"scope_json\x18\x03 \x01(\tR\tscopeJson\x12\x17\n" +
+	"\x04type\x18\x04 \x01(\tB\x03\xe0A\x02R\x04type\x12\x1c\n" +
+	"\tthreshold\x18\x05 \x01(\x03R\tthreshold\x12\x1a\n" +
+	"\bdiscount\x18\x06 \x01(\x03R\bdiscount\x12#\n" +
+	"\rspecial_price\x18\a \x01(\x03R\fspecialPrice\x12\x1e\n" +
+	"\bstart_at\x18\b \x01(\x03B\x03\xe0A\x02R\astartAt\x12\x1a\n" +
+	"\x06end_at\x18\t \x01(\x03B\x03\xe0A\x02R\x05endAt\x12\x18\n" +
+	"\aenabled\x18\n" +
+	" \x01(\bR\aenabled\"\x91\x02\n" +
+	"\rPromotionItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"scope_json\x18\x03 \x01(\tR\tscopeJson\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1c\n" +
+	"\tthreshold\x18\x05 \x01(\x03R\tthreshold\x12\x1a\n" +
+	"\bdiscount\x18\x06 \x01(\x03R\bdiscount\x12#\n" +
+	"\rspecial_price\x18\a \x01(\x03R\fspecialPrice\x12\x19\n" +
+	"\bstart_at\x18\b \x01(\x03R\astartAt\x12\x15\n" +
+	"\x06end_at\x18\t \x01(\x03R\x05endAt\x12\x18\n" +
+	"\aenabled\x18\n" +
+	" \x01(\bR\aenabled\"H\n" +
+	"\x15ListPromotionsRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\x95\x01\n" +
+	"\x13ListPromotionsReply\x127\n" +
+	"\x05items\x18\x01 \x03(\v2!.zcard.api.admin.v1.PromotionItemR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize2\xc8\t\n" +
+	"\x12AdminCouponService\x12\x83\x01\n" +
+	"\vGrantCoupon\x12&.zcard.api.admin.v1.GrantCouponRequest\x1a$.zcard.api.admin.v1.GrantCouponReply\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/coupons/grant\x12\x86\x01\n" +
+	"\x0fCreateFlashSale\x12*.zcard.api.admin.v1.CreateFlashSaleRequest\x1a!.zcard.api.admin.v1.FlashSaleItem\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/flash-sales\x12\x87\x01\n" +
+	"\x0eListFlashSales\x12).zcard.api.admin.v1.ListFlashSalesRequest\x1a'.zcard.api.admin.v1.ListFlashSalesReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/flash-sales\x12}\n" +
+	"\x0fDeleteFlashSale\x12*.zcard.api.admin.v1.DeleteFlashSaleRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/api/v1/admin/flash-sales/{id}\x12\x85\x01\n" +
+	"\x0fUpsertPromotion\x12*.zcard.api.admin.v1.UpsertPromotionRequest\x1a!.zcard.api.admin.v1.PromotionItem\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/promotions\x12\x86\x01\n" +
+	"\x0eListPromotions\x12).zcard.api.admin.v1.ListPromotionsRequest\x1a'.zcard.api.admin.v1.ListPromotionsReply\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/promotions\x12t\n" +
 	"\vListCoupons\x12&.zcard.api.admin.v1.ListCouponsRequest\x1a\x1e.zcard.api.admin.v1.CouponList\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/admin/coupons\x12\x95\x01\n" +
 	"\x11CreateCouponBatch\x12,.zcard.api.admin.v1.CreateCouponBatchRequest\x1a*.zcard.api.admin.v1.CreateCouponBatchReply\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/coupons/batch\x12{\n" +
 	"\rDisableCoupon\x12(.zcard.api.admin.v1.DisableCouponRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/coupons/disableB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
@@ -412,7 +1313,7 @@ func file_admin_v1_coupon_proto_rawDescGZIP() []byte {
 	return file_admin_v1_coupon_proto_rawDescData
 }
 
-var file_admin_v1_coupon_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_admin_v1_coupon_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_admin_v1_coupon_proto_goTypes = []any{
 	(*Coupon)(nil),                   // 0: zcard.api.admin.v1.Coupon
 	(*CouponList)(nil),               // 1: zcard.api.admin.v1.CouponList
@@ -420,21 +1321,46 @@ var file_admin_v1_coupon_proto_goTypes = []any{
 	(*CreateCouponBatchRequest)(nil), // 3: zcard.api.admin.v1.CreateCouponBatchRequest
 	(*CreateCouponBatchReply)(nil),   // 4: zcard.api.admin.v1.CreateCouponBatchReply
 	(*DisableCouponRequest)(nil),     // 5: zcard.api.admin.v1.DisableCouponRequest
-	(*emptypb.Empty)(nil),            // 6: google.protobuf.Empty
+	(*GrantCouponRequest)(nil),       // 6: zcard.api.admin.v1.GrantCouponRequest
+	(*GrantCouponReply)(nil),         // 7: zcard.api.admin.v1.GrantCouponReply
+	(*CreateFlashSaleRequest)(nil),   // 8: zcard.api.admin.v1.CreateFlashSaleRequest
+	(*FlashSaleItem)(nil),            // 9: zcard.api.admin.v1.FlashSaleItem
+	(*ListFlashSalesRequest)(nil),    // 10: zcard.api.admin.v1.ListFlashSalesRequest
+	(*ListFlashSalesReply)(nil),      // 11: zcard.api.admin.v1.ListFlashSalesReply
+	(*DeleteFlashSaleRequest)(nil),   // 12: zcard.api.admin.v1.DeleteFlashSaleRequest
+	(*UpsertPromotionRequest)(nil),   // 13: zcard.api.admin.v1.UpsertPromotionRequest
+	(*PromotionItem)(nil),            // 14: zcard.api.admin.v1.PromotionItem
+	(*ListPromotionsRequest)(nil),    // 15: zcard.api.admin.v1.ListPromotionsRequest
+	(*ListPromotionsReply)(nil),      // 16: zcard.api.admin.v1.ListPromotionsReply
+	(*emptypb.Empty)(nil),            // 17: google.protobuf.Empty
 }
 var file_admin_v1_coupon_proto_depIdxs = []int32{
-	0, // 0: zcard.api.admin.v1.CouponList.coupons:type_name -> zcard.api.admin.v1.Coupon
-	2, // 1: zcard.api.admin.v1.AdminCouponService.ListCoupons:input_type -> zcard.api.admin.v1.ListCouponsRequest
-	3, // 2: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:input_type -> zcard.api.admin.v1.CreateCouponBatchRequest
-	5, // 3: zcard.api.admin.v1.AdminCouponService.DisableCoupon:input_type -> zcard.api.admin.v1.DisableCouponRequest
-	1, // 4: zcard.api.admin.v1.AdminCouponService.ListCoupons:output_type -> zcard.api.admin.v1.CouponList
-	4, // 5: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:output_type -> zcard.api.admin.v1.CreateCouponBatchReply
-	6, // 6: zcard.api.admin.v1.AdminCouponService.DisableCoupon:output_type -> google.protobuf.Empty
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0,  // 0: zcard.api.admin.v1.CouponList.coupons:type_name -> zcard.api.admin.v1.Coupon
+	9,  // 1: zcard.api.admin.v1.ListFlashSalesReply.items:type_name -> zcard.api.admin.v1.FlashSaleItem
+	14, // 2: zcard.api.admin.v1.ListPromotionsReply.items:type_name -> zcard.api.admin.v1.PromotionItem
+	6,  // 3: zcard.api.admin.v1.AdminCouponService.GrantCoupon:input_type -> zcard.api.admin.v1.GrantCouponRequest
+	8,  // 4: zcard.api.admin.v1.AdminCouponService.CreateFlashSale:input_type -> zcard.api.admin.v1.CreateFlashSaleRequest
+	10, // 5: zcard.api.admin.v1.AdminCouponService.ListFlashSales:input_type -> zcard.api.admin.v1.ListFlashSalesRequest
+	12, // 6: zcard.api.admin.v1.AdminCouponService.DeleteFlashSale:input_type -> zcard.api.admin.v1.DeleteFlashSaleRequest
+	13, // 7: zcard.api.admin.v1.AdminCouponService.UpsertPromotion:input_type -> zcard.api.admin.v1.UpsertPromotionRequest
+	15, // 8: zcard.api.admin.v1.AdminCouponService.ListPromotions:input_type -> zcard.api.admin.v1.ListPromotionsRequest
+	2,  // 9: zcard.api.admin.v1.AdminCouponService.ListCoupons:input_type -> zcard.api.admin.v1.ListCouponsRequest
+	3,  // 10: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:input_type -> zcard.api.admin.v1.CreateCouponBatchRequest
+	5,  // 11: zcard.api.admin.v1.AdminCouponService.DisableCoupon:input_type -> zcard.api.admin.v1.DisableCouponRequest
+	7,  // 12: zcard.api.admin.v1.AdminCouponService.GrantCoupon:output_type -> zcard.api.admin.v1.GrantCouponReply
+	9,  // 13: zcard.api.admin.v1.AdminCouponService.CreateFlashSale:output_type -> zcard.api.admin.v1.FlashSaleItem
+	11, // 14: zcard.api.admin.v1.AdminCouponService.ListFlashSales:output_type -> zcard.api.admin.v1.ListFlashSalesReply
+	17, // 15: zcard.api.admin.v1.AdminCouponService.DeleteFlashSale:output_type -> google.protobuf.Empty
+	14, // 16: zcard.api.admin.v1.AdminCouponService.UpsertPromotion:output_type -> zcard.api.admin.v1.PromotionItem
+	16, // 17: zcard.api.admin.v1.AdminCouponService.ListPromotions:output_type -> zcard.api.admin.v1.ListPromotionsReply
+	1,  // 18: zcard.api.admin.v1.AdminCouponService.ListCoupons:output_type -> zcard.api.admin.v1.CouponList
+	4,  // 19: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:output_type -> zcard.api.admin.v1.CreateCouponBatchReply
+	17, // 20: zcard.api.admin.v1.AdminCouponService.DisableCoupon:output_type -> google.protobuf.Empty
+	12, // [12:21] is the sub-list for method output_type
+	3,  // [3:12] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_coupon_proto_init() }
@@ -448,7 +1374,7 @@ func file_admin_v1_coupon_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_coupon_proto_rawDesc), len(file_admin_v1_coupon_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
