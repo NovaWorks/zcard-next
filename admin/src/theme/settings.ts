@@ -1,45 +1,45 @@
 /** Default theme settings */
 export const themeSettings: App.Theme.ThemeSetting = {
-  themeScheme: 'light',
+  themeScheme: "light",
   grayscale: false,
   colourWeakness: false,
   recommendColor: false,
-  themeColor: '#646cff',
+  themeColor: "#646cff",
   themeRadius: 6,
   otherColor: {
-    info: '#2080f0',
-    success: '#52c41a',
-    warning: '#faad14',
-    error: '#f5222d'
+    info: "#2080f0",
+    success: "#52c41a",
+    warning: "#faad14",
+    error: "#f5222d",
   },
   isInfoFollowPrimary: true,
   layout: {
-    mode: 'vertical',
-    scrollMode: 'content'
+    mode: "vertical",
+    scrollMode: "content",
   },
   page: {
     animate: true,
-    animateMode: 'fade-slide'
+    animateMode: "fade-slide",
   },
   header: {
     height: 56,
     breadcrumb: {
       visible: true,
-      showIcon: true
+      showIcon: true,
     },
     multilingual: {
-      visible: true
+      visible: true,
     },
     globalSearch: {
-      visible: true
-    }
+      visible: true,
+    },
   },
   tab: {
     visible: true,
     cache: true,
     height: 44,
-    mode: 'chrome',
-    closeTabByMiddleClick: false
+    mode: "chrome",
+    closeTabByMiddleClick: false,
   },
   fixedHeaderAndTab: true,
   sider: {
@@ -49,43 +49,43 @@ export const themeSettings: App.Theme.ThemeSetting = {
     mixWidth: 90,
     mixCollapsedWidth: 64,
     mixChildMenuWidth: 200,
-    autoSelectFirstMenu: false
+    autoSelectFirstMenu: false,
   },
   footer: {
     visible: true,
     fixed: false,
     height: 48,
-    right: true
+    right: true,
   },
   watermark: {
     visible: false,
-    text: 'SoybeanAdmin',
+    text: "ZCard Admin",
     enableUserName: false,
     enableTime: false,
-    timeFormat: 'YYYY-MM-DD HH:mm'
+    timeFormat: "YYYY-MM-DD HH:mm",
   },
   tokens: {
     light: {
       colors: {
-        container: 'rgb(255, 255, 255)',
-        layout: 'rgb(247, 250, 252)',
-        inverted: 'rgb(0, 20, 40)',
-        'base-text': 'rgb(31, 31, 31)'
+        container: "rgb(255, 255, 255)",
+        layout: "rgb(247, 250, 252)",
+        inverted: "rgb(0, 20, 40)",
+        "base-text": "rgb(31, 31, 31)",
       },
       boxShadow: {
-        header: '0 1px 2px rgb(0, 21, 41, 0.08)',
-        sider: '2px 0 8px 0 rgb(29, 35, 41, 0.05)',
-        tab: '0 1px 2px rgb(0, 21, 41, 0.08)'
-      }
+        header: "0 1px 2px rgb(0, 21, 41, 0.08)",
+        sider: "2px 0 8px 0 rgb(29, 35, 41, 0.05)",
+        tab: "0 1px 2px rgb(0, 21, 41, 0.08)",
+      },
     },
     dark: {
       colors: {
-        container: 'rgb(28, 28, 28)',
-        layout: 'rgb(18, 18, 18)',
-        'base-text': 'rgb(224, 224, 224)'
-      }
-    }
-  }
+        container: "rgb(28, 28, 28)",
+        layout: "rgb(18, 18, 18)",
+        "base-text": "rgb(224, 224, 224)",
+      },
+    },
+  },
 };
 
 /**

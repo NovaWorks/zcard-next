@@ -22,8 +22,13 @@ declare namespace Api {
 
     /** Kratos profile 响应 */
     interface UserInfo {
-      admin: AdminProfile;
+      admin?: AdminProfile;
       permissions?: string[];
+      /** 运行时会话字段（login 后填充） */
+      userId: string;
+      userName: string;
+      roles: string[];
+      buttons: string[];
     }
   }
 }

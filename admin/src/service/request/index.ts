@@ -1,12 +1,11 @@
-import type { AxiosResponse } from 'axios';
-import { createFlatRequest } from '@sa/axios';
-import { useAuthStore } from '@/store/modules/auth';
-import { localStg } from '@/utils/storage';
-import { getServiceBaseURL } from '@/utils/service';
-import { getAuthorization, handleExpiredRequest, showErrorMsg } from './shared';
-import type { RequestInstanceState } from './type';
+import type { AxiosResponse } from "axios";
+import { createFlatRequest } from "@sa/axios";
+import { useAuthStore } from "@/store/modules/auth";
+import { getServiceBaseURL } from "@/utils/service";
+import { getAuthorization, handleExpiredRequest, showErrorMsg } from "./shared";
+import type { RequestInstanceState } from "./type";
 
-const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === 'Y';
+const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === "Y";
 const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
 
 /**
@@ -15,15 +14,15 @@ const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
  * - 失败：HTTP 4xx/5xx，响应体 { code, reason, message }
  * - 401：尝试 refresh，失败则登出
  */
-export const request = createFlatRequest<App.Service.Response<any>>(
+export const request = createFlatRequest<App.Service.Response<any>, any, RequestInstanceState>(
   {
     baseURL,
-    headers: { 'Content-Type': 'application/json' }
+    headers: { "Content-Type": "application/json" },
   },
   {
     defaultState: {
       errMsgStack: [],
-      refreshTokenPromise: null
+      refreshTokenPromise: null,
     } as RequestInstanceState,
     transform(response: AxiosResponse) {
       return response.data as any;
@@ -46,13 +45,13 @@ export const request = createFlatRequest<App.Service.Response<any>>(
       }
 
       if (response.status === 401) {
-        const success = await handleExpiredRequest(request.state);
+        const success = await handleExpiredRequest(request.state as RequestInstanceState);
         if (success) {
           const Authorization = getAuthorization();
           if (Authorization) {
             return instance.request({
               ...response.config,
-              headers: { ...response.config.headers, Authorization }
+              headers: { ...response.config.headers, Authorization },
             });
           }
         }
@@ -61,12 +60,12 @@ export const request = createFlatRequest<App.Service.Response<any>>(
       }
 
       const errMsg = response.data?.message || `请求失败 (${response.status})`;
-      showErrorMsg(request.state, errMsg);
+      showErrorMsg(request.state as RequestInstanceState, errMsg);
       return null;
     },
     onError(err: any) {
-      const msg = err.response?.data?.message || err.message || '网络异常';
-      showErrorMsg(request.state, msg);
-    }
-  }
+      const msg = err.response?.data?.message || err.message || "网络异常";
+      showErrorMsg(request.state as RequestInstanceState, msg);
+    },
+  },
 );

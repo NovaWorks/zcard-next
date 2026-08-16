@@ -2,7 +2,8 @@
 body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f2329; background: #f5f6f7; }
 .app { min-height: 100vh; }
 .topbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e5e6e8; position: sticky; top: 0; }
-.topbar .logo { font-size: 18px; font-weight: 600; color: #2563eb; text-decoration: none; }
+.topbar .logo { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 600; color: #2563eb; text-decoration: none; }
+.topbar .logo-img { height: 32px; width: auto; }
 .topbar nav { display: flex; gap: 16px; }
 .topbar nav a { color: #4b5563; text-decoration: none; font-size: 14px; }
 .main { max-width: 1080px; margin: 0 auto; padding: 24px 16px; }

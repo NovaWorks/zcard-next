@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'Soybean 管理系统',
+    title: 'ZCard 管理系统',
     updateTitle: '系统版本更新通知',
     updateContent: '检测到系统有新版本发布，是否立即刷新页面？',
     updateConfirm: '立即刷新',
@@ -95,7 +95,7 @@ const local: App.I18n.Schema = {
         applySuccess: '预设应用成功',
         default: {
           name: '默认预设',
-          desc: 'Soybean 默认主题预设'
+          desc: 'ZCard 默认主题预设'
         },
         dark: {
           name: '暗色预设',
@@ -303,11 +303,11 @@ const local: App.I18n.Schema = {
       projectNews: {
         title: '项目动态',
         moreNews: '更多动态',
-        desc1: 'Soybean 在2021年5月28日创建了开源项目 soybean-admin!',
-        desc2: 'Yanbowe 向 soybean-admin 提交了一个bug，多标签栏不会自适应。',
-        desc3: 'Soybean 准备为 soybean-admin 的发布做充分的准备工作!',
-        desc4: 'Soybean 正在忙于为soybean-admin写项目说明文档！',
-        desc5: 'Soybean 刚才把工作台页面随便写了一些，凑合能看了！'
+        desc1: 'ZCard 2.0 正式立项，基于 Kratos + Ent 全面重构！',
+        desc2: '开源版 80 张数据表一次到位，MySQL/PG/SQLite 三方言实测通过。',
+        desc3: '交易主链路闭环：下单 → 支付 → 自动交付 → 取货。',
+        desc4: '管理后台与经典前台 SPA 双双落地，品牌切换为 ZCard。',
+        desc5: '下一步推进 M2 供应链：货源连接 / 采购 / 供货商。'
       },
       creativity: '创意'
     }

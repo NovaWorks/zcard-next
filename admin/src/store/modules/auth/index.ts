@@ -1,15 +1,15 @@
-import { computed, reactive, ref } from 'vue';
-import { useRoute } from 'vue-router';
-import { defineStore } from 'pinia';
-import { useLoading } from '@sa/hooks';
-import { fetchGetUserInfo, fetchLogin } from '@/service/api';
-import { useRouterPush } from '@/hooks/common/router';
-import { localStg } from '@/utils/storage';
-import { SetupStoreId } from '@/enum';
-import { $t } from '@/locales';
-import { useRouteStore } from '../route';
-import { useTabStore } from '../tab';
-import { clearAuthStorage, getToken } from './shared';
+import { computed, reactive, ref } from "vue";
+import { useRoute } from "vue-router";
+import { defineStore } from "pinia";
+import { useLoading } from "@sa/hooks";
+import { fetchGetUserInfo, fetchLogin } from "@/service/api";
+import { useRouterPush } from "@/hooks/common/router";
+import { localStg } from "@/utils/storage";
+import { SetupStoreId } from "@/enum";
+import { $t } from "@/locales";
+import { useRouteStore } from "../route";
+import { useTabStore } from "../tab";
+import { clearAuthStorage, getToken } from "./shared";
 
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const route = useRoute();
@@ -19,20 +19,20 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   const { toLogin, redirectFromLogin } = useRouterPush(false);
   const { loading: loginLoading, startLoading, endLoading } = useLoading();
 
-  const token = ref('');
+  const token = ref("");
 
   const userInfo: Api.Auth.UserInfo = reactive({
-    userId: '',
-    userName: '',
+    userId: "",
+    userName: "",
     roles: [],
-    buttons: []
+    buttons: [],
   });
 
   /** is super role in static route */
   const isStaticSuper = computed(() => {
     const { VITE_AUTH_ROUTE_MODE, VITE_STATIC_SUPER_ROLE } = import.meta.env;
 
-    return VITE_AUTH_ROUTE_MODE === 'static' && userInfo.roles.includes(VITE_STATIC_SUPER_ROLE);
+    return VITE_AUTH_ROUTE_MODE === "static" && userInfo.roles.includes(VITE_STATIC_SUPER_ROLE);
   });
 
   /** Is login */
@@ -61,7 +61,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
 
     // Store current user ID locally for next login comparison
-    localStg.set('lastLoginUserId', userInfo.userId);
+    localStg.set("lastLoginUserId", userInfo.userId);
   }
 
   /**
@@ -74,18 +74,18 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       return false;
     }
 
-    const lastLoginUserId = localStg.get('lastLoginUserId');
+    const lastLoginUserId = localStg.get("lastLoginUserId");
 
     // Clear all tabs if current user is different from previous user
     if (!lastLoginUserId || lastLoginUserId !== userInfo.userId) {
-      localStg.remove('globalTabs');
+      localStg.remove("globalTabs");
       tabStore.clearTabs();
 
-      localStg.remove('lastLoginUserId');
+      localStg.remove("lastLoginUserId");
       return true;
     }
 
-    localStg.remove('lastLoginUserId');
+    localStg.remove("lastLoginUserId");
     return false;
   }
 
@@ -116,9 +116,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         await redirectFromLogin(needRedirect);
 
         window.$notification?.success({
-          title: $t('page.login.common.loginSuccess'),
-          content: $t('page.login.common.welcomeBack', { userName: userInfo.userName }),
-          duration: 4500
+          title: $t("page.login.common.loginSuccess"),
+          content: $t("page.login.common.welcomeBack", { userName: userInfo.userName }),
+          duration: 4500,
         });
       }
     } else {
@@ -130,12 +130,12 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
   async function loginByToken(loginToken: Api.Auth.LoginToken) {
     // Kratos 返回 snake_case：access_token / refresh_token
-    const accessToken = (loginToken as any).access_token || loginToken.token;
-    const refreshToken = (loginToken as any).refresh_token || loginToken.refreshToken;
+    const accessToken = loginToken.access_token;
+    const refreshToken = loginToken.refresh_token;
 
     // 1. stored in the localStorage, the later requests need it in headers
-    localStg.set('token', accessToken);
-    localStg.set('refreshToken', refreshToken);
+    localStg.set("token", accessToken);
+    localStg.set("refreshToken", refreshToken);
 
     // 2. get user info
     const pass = await getUserInfo();
@@ -154,9 +154,9 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     if (!error) {
       // Kratos 返回 { admin: { id, username, nickname, roles... } }
       const admin = (data as any)?.admin || data;
-      userInfo.userId = String(admin?.id || admin?.user_id || '');
-      userInfo.userName = admin?.username || admin?.userName || '';
-      userInfo.roles = ['R_super']; // M1b：从权限目录动态获取
+      userInfo.userId = String(admin?.id || admin?.user_id || "");
+      userInfo.userName = admin?.username || admin?.userName || "";
+      userInfo.roles = ["R_super"]; // M1b：从权限目录动态获取
       userInfo.buttons = [];
       return true;
     }
@@ -185,6 +185,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     loginLoading,
     resetStore,
     login,
-    initUserInfo
+    initUserInfo,
   };
 });

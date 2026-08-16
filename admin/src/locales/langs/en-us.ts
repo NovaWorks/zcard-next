@@ -1,6 +1,6 @@
 const local: App.I18n.Schema = {
   system: {
-    title: 'SoybeanAdmin',
+    title: 'ZCard Admin',
     updateTitle: 'System Version Update Notification',
     updateContent: 'A new version of the system has been detected. Do you want to refresh the page immediately?',
     updateConfirm: 'Refresh immediately',
@@ -307,11 +307,11 @@ const local: App.I18n.Schema = {
       projectNews: {
         title: 'Project News',
         moreNews: 'More News',
-        desc1: 'Soybean created the open source project soybean-admin on May 28, 2021!',
-        desc2: 'Yanbowe submitted a bug to soybean-admin, the multi-tab bar will not adapt.',
-        desc3: 'Soybean is ready to do sufficient preparation for the release of soybean-admin!',
-        desc4: 'Soybean is busy writing project documentation for soybean-admin!',
-        desc5: 'Soybean just wrote some of the workbench pages casually, and it was enough to see!'
+        desc1: 'ZCard 2.0 kicked off, fully rebuilt with Kratos + Ent!',
+        desc2: '80 open-source tables in one pass, tested on MySQL/PG/SQLite.',
+        desc3: 'Core trading loop closed: order → payment → auto fulfillment → pick up.',
+        desc4: 'Admin console and classic storefront SPA both live under the ZCard brand.',
+        desc5: 'Next up: M2 supply chain — connections / procurement / suppliers.'
       },
       creativity: 'Creativity'
     }
