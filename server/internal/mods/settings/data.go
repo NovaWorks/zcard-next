@@ -5,6 +5,7 @@ package settings
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -61,4 +62,29 @@ func (r *RepoImpl) Put(ctx context.Context, group, key string, value json.RawMes
 		OnConflict().
 		UpdateValue().
 		Exec(ctx)
+}
+
+// ── port.Provider 实现（跨模块读取入口，P0-04）─────────────────────
+
+// GetDefault 读取单项，不存在返回 def。
+func (r *RepoImpl) GetDefault(ctx context.Context, group, key string, def json.RawMessage) (json.RawMessage, error) {
+	v, err := Get(ctx, r.data, group, key)
+	if ent.IsNotFound(err) {
+		return def, nil
+	}
+	return v, err
+}
+
+// Get 直查（包内工具，install/前台复用）。
+func Get(ctx context.Context, d *data.Data, group, key string) (json.RawMessage, error) {
+	row, err := data.Client(ctx, d).Setting.Query().
+		Where(setting.Group(group), setting.Key(key)).
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, errors.New("settings.NOT_FOUND")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(row.Value), nil
 }

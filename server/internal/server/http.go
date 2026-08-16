@@ -49,6 +49,8 @@ func NewHTTPServer(
 	supplySvc *supply.SupplyService,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
+	confSvc *settings.StorefrontConfigService,
+	currencySvc *settings.AdminCurrencyService,
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 ) *khttp.Server {
@@ -62,6 +64,8 @@ func NewHTTPServer(
 				}
 				return nil
 			}),
+			i18nMiddleware("zh_CN"),
+			ensureInstalled(func() bool { return settings.Installed(context.Background(), d) }),
 			tenantMiddleware(tenancyMainDomain(c)),
 			// admin realm 鉴权仅挂管理面 operation；Public 声明（登录）经目录豁免；
 			// storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
@@ -91,6 +95,8 @@ func NewHTTPServer(
 	adminv1.RegisterAdminSettingsServiceHTTPServer(srv, settingsSvc)
 	adminv1.RegisterRoleServiceHTTPServer(srv, roleSvc)
 	adminv1.RegisterAdminUserServiceHTTPServer(srv, adminSvc)
+	adminv1.RegisterAdminCurrencyServiceHTTPServer(srv, currencySvc)
+	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 

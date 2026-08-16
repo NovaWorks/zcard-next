@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+service AdminCurrencyService {
+  // ListCurrencies 全部货币（含停用）。
+  rpc ListCurrencies(google.protobuf.Empty) returns (CurrencyList) {
+    option (google.api.http) = { get: "/api/v1/admin/currencies" };
+  }
+  // CreateCurrency 新增货币（code 唯一）。
+  rpc CreateCurrency(CreateCurrencyRequest) returns (Currency) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/currencies"
+      body: "*"
+    };
+  }
+  // UpdateCurrency 修改货币（rate/precision/symbol/启停）。
+  rpc UpdateCurrency(UpdateCurrencyRequest) returns (Currency) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/currencies/{code}"
+      body: "*"
+    };
+  }
+  // DeleteCurrency 删除货币（无引用时）。
+  rpc DeleteCurrency(DeleteCurrencyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/currencies/{code}" };
+  }
+}
+
+message CurrencyList {
+  repeated Currency currencies = 1;
+}
+
+// Currency 货币（rate 为 decimal 字符串）。
+message Currency {
+  string code = 1;
+  string symbol = 2;
+  string position = 3;
+  int32 precision = 4;
+  string rate_json = 5;
+  bool enabled = 6;
+  int32 sort = 7;
+}
+
+message CreateCurrencyRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED];
+  string symbol = 2 [(google.api.field_behavior) = REQUIRED];
+  string position = 3;
+  int32 precision = 4;
+  string rate_json = 5 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateCurrencyRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED];
+  string symbol = 2;
+  string position = 3;
+  int32 precision = 4;
+  string rate_json = 5;
+  bool enabled = 6;
+  int32 sort = 7;
+}
+
+message DeleteCurrencyRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED];
+}

@@ -32,6 +32,8 @@ func NewGRPCServer(
 	supplySvc *supply.SupplyService,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
+	confSvc *settings.StorefrontConfigService,
+	currencySvc *settings.AdminCurrencyService,
 ) *kgrpc.Server {
 	var opts = []kgrpc.ServerOption{
 		kgrpc.Middleware(
@@ -63,6 +65,8 @@ func NewGRPCServer(
 	adminv1.RegisterAdminSettingsServiceServer(srv, settingsSvc)
 	adminv1.RegisterRoleServiceServer(srv, roleSvc)
 	adminv1.RegisterAdminUserServiceServer(srv, adminSvc)
+	adminv1.RegisterAdminCurrencyServiceServer(srv, currencySvc)
+	storefrontv1.RegisterStorefrontConfigServiceServer(srv, confSvc)
 	storefrontv1.RegisterStoreCatalogServiceServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceServer(srv, supplySvc)
 	// reflection 已由 kratos v3 grpc server 内置（手动注册会 duplicate panic）

@@ -260,6 +260,77 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Role'
+    /api/v1/admin/currencies:
+        get:
+            tags:
+                - AdminCurrencyService
+            description: ListCurrencies 全部货币（含停用）。
+            operationId: AdminCurrencyService_ListCurrencies
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CurrencyList'
+        post:
+            tags:
+                - AdminCurrencyService
+            description: CreateCurrency 新增货币（code 唯一）。
+            operationId: AdminCurrencyService_CreateCurrency
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateCurrencyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
+    /api/v1/admin/currencies/{code}:
+        put:
+            tags:
+                - AdminCurrencyService
+            description: UpdateCurrency 修改货币（rate/precision/symbol/启停）。
+            operationId: AdminCurrencyService_UpdateCurrency
+            parameters:
+                - name: code
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateCurrencyRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
+        delete:
+            tags:
+                - AdminCurrencyService
+            description: DeleteCurrency 删除货币（无引用时）。
+            operationId: AdminCurrencyService_DeleteCurrency
+            parameters:
+                - name: code
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/settings:
         get:
             tags:
@@ -332,6 +403,32 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+    /api/v1/storefront/config:
+        get:
+            tags:
+                - StorefrontConfigService
+            description: GetPublicConfig 前台公开配置（全部分组白名单键合并下发，稳定排序）。
+            operationId: StorefrontConfigService_GetPublicConfig
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.PublicConfig'
+    /api/v1/storefront/currencies:
+        get:
+            tags:
+                - StorefrontConfigService
+            description: ListCurrencies 启用货币列表（展示换算用）。
+            operationId: StorefrontConfigService_ListCurrencies
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.Currencies'
     /api/v1/storefront/products:
         get:
             tags:
@@ -461,6 +558,24 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.CreateCurrencyRequest:
+            required:
+                - code
+                - symbol
+                - rateJson
+            type: object
+            properties:
+                code:
+                    type: string
+                symbol:
+                    type: string
+                position:
+                    type: string
+                precision:
+                    type: integer
+                    format: int32
+                rateJson:
+                    type: string
         zcard.api.admin.v1.CreateRoleRequest:
             required:
                 - name
@@ -477,6 +592,33 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.admin.v1.Currency:
+            type: object
+            properties:
+                code:
+                    type: string
+                symbol:
+                    type: string
+                position:
+                    type: string
+                precision:
+                    type: integer
+                    format: int32
+                rateJson:
+                    type: string
+                enabled:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+            description: Currency 货币（rate 为 decimal 字符串）。
+        zcard.api.admin.v1.CurrencyList:
+            type: object
+            properties:
+                currencies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
         zcard.api.admin.v1.GetProfileReply:
             type: object
             properties:
@@ -620,6 +762,27 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.UpdateCurrencyRequest:
+            required:
+                - code
+            type: object
+            properties:
+                code:
+                    type: string
+                symbol:
+                    type: string
+                position:
+                    type: string
+                precision:
+                    type: integer
+                    format: int32
+                rateJson:
+                    type: string
+                enabled:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.UpdateRolePermissionsRequest:
             required:
                 - id
@@ -669,6 +832,29 @@ components:
                     type: integer
                     format: int32
             description: PageResp 分页响应。
+        zcard.api.storefront.v1.Currencies:
+            type: object
+            properties:
+                currencies:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.Currency'
+            description: Currencies 货币列表。
+        zcard.api.storefront.v1.Currency:
+            type: object
+            properties:
+                code:
+                    type: string
+                symbol:
+                    type: string
+                position:
+                    type: string
+                precision:
+                    type: integer
+                    format: int32
+                rateJson:
+                    type: string
+            description: Currency 货币（rate 为 decimal 字符串——前端 decimal 换算，杜绝浮点误差入口）。
         zcard.api.storefront.v1.ListProductsReply:
             type: object
             properties:
@@ -709,6 +895,22 @@ components:
                     type: string
                     description: 展示销量 = 真实 + 虚拟
             description: Product 顾客视角商品（管理字段与成本价绝不下发）。
+        zcard.api.storefront.v1.PublicConfig:
+            type: object
+            properties:
+                entries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.PublicConfigEntry'
+            description: PublicConfig 公开配置条目列表。
+        zcard.api.storefront.v1.PublicConfigEntry:
+            type: object
+            properties:
+                key:
+                    type: string
+                valueJson:
+                    type: string
+            description: PublicConfigEntry 单键（key 形如 "site.name"；value 为 JSON 文档字符串）。
         zcard.api.supply.v1.PingReply:
             type: object
             properties:
@@ -723,6 +925,8 @@ tags:
       description: |-
         AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
          里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+    - name: AdminCurrencyService
+      description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
@@ -737,6 +941,11 @@ tags:
       description: |-
         StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
          里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
+    - name: StorefrontConfigService
+      description: |-
+        StorefrontConfigService 前台公开配置（P0-04 T3）。
+         输出经 PUBLIC_KEYS 白名单过滤（SECRET 键绝不外泄——快照测试守护）；
+         storefront 前端模板参数、交易开关、启用语言/货币由此驱动。
     - name: SupplyService
       description: |-
         SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。

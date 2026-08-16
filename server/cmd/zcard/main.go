@@ -23,6 +23,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/admincmd"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
 
@@ -215,9 +216,23 @@ func runMigrate(args []string) error {
 	return nil
 }
 
-// runInstall 安装向导（M1：复用 1.x 交互流，状态落 settings）。
+// runInstall 安装向导（P0-04：CLI 交互式；Web /install M1b 前端补齐）。
 func runInstall(args []string) error {
-	return fmt.Errorf("install 子命令 M1 交付（当前请用 zcard admin create 初始化管理员）")
+	fs := flag.NewFlagSet("install", flag.ExitOnError)
+	confDir := fs.String("conf", "configs", "配置目录")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	bc, err := loadBootstrap(*confDir)
+	if err != nil {
+		return err
+	}
+	d, cleanup, err := data.NewData(bc.Data)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	return settings.RunInstallCLI(context.Background(), d)
 }
 
 // newApp kratos.App 装配：按模式选择 server 组合（规划 §4.2 单进程多角色）。

@@ -47,6 +47,16 @@ func init() {
 		Perm{Code: "identity:admin_toggle", Desc: "启停员工（超管专属）", Domain: "identity", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUserService/ToggleAdmin", Method: "PUT", Path: "/api/v1/admin/admins/{id}/toggle"},
 
+		// ── 货币管理（settings，P0-04 T3）──────────────
+		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
+			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},
+		Perm{Code: "settings:currency_write", Desc: "新增货币", Domain: "settings",
+			Op: "zcard.api.admin.v1.AdminCurrencyService/CreateCurrency", Method: "POST", Path: "/api/v1/admin/currencies"},
+		Perm{Code: "settings:currency_write", Desc: "修改货币", Domain: "settings",
+			Op: "zcard.api.admin.v1.AdminCurrencyService/UpdateCurrency", Method: "PUT", Path: "/api/v1/admin/currencies/{code}"},
+		Perm{Code: "settings:currency_delete", Desc: "删除货币", Domain: "settings", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCurrencyService/DeleteCurrency", Method: "DELETE", Path: "/api/v1/admin/currencies/{code}"},
+
 		// ── 敏感权限点预登记（§5.20.4 防内部偷卡；路由 M1 落地）──
 		Perm{Code: "card:view_content", Desc: "查看完整卡密（需二次确认+审计）", Domain: "inventory", AdminOnly: true},
 		Perm{Code: "card:export", Desc: "导出卡密（审批+审计+限流）", Domain: "inventory", AdminOnly: true},

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// StorefrontConfigService 前台公开配置（P0-04 T3）。
+// 输出经 PUBLIC_KEYS 白名单过滤（SECRET 键绝不外泄——快照测试守护）；
+// storefront 前端模板参数、交易开关、启用语言/货币由此驱动。
+service StorefrontConfigService {
+  // GetPublicConfig 前台公开配置（全部分组白名单键合并下发，稳定排序）。
+  rpc GetPublicConfig(google.protobuf.Empty) returns (PublicConfig) {
+    option (google.api.http) = { get: "/api/v1/storefront/config" };
+  }
+  // ListCurrencies 启用货币列表（展示换算用）。
+  rpc ListCurrencies(google.protobuf.Empty) returns (Currencies) {
+    option (google.api.http) = { get: "/api/v1/storefront/currencies" };
+  }
+}
+
+// PublicConfig 公开配置条目列表。
+message PublicConfig {
+  repeated PublicConfigEntry entries = 1;
+}
+
+// PublicConfigEntry 单键（key 形如 "site.name"；value 为 JSON 文档字符串）。
+message PublicConfigEntry {
+  string key = 1;
+  string value_json = 2;
+}
+
+// Currencies 货币列表。
+message Currencies {
+  repeated Currency currencies = 1;
+}
+
+// Currency 货币（rate 为 decimal 字符串——前端 decimal 换算，杜绝浮点误差入口）。
+message Currency {
+  string code = 1;
+  string symbol = 2;
+  string position = 3;
+  int32 precision = 4;
+  string rate_json = 5;
+}

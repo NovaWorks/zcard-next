@@ -29,12 +29,13 @@ func NewAdminSettingsService(uc *SettingsUsecase) *AdminSettingsService {
 	return &AdminSettingsService{uc: uc}
 }
 
-// ListSettings 按分组列出。
+// ListSettings 按分组列出（SECRET 键脱敏 ****）。
 func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.ListSettingsRequest) (*adminv1.ListSettingsReply, error) {
 	items, err := s.uc.List(ctx, req.GetGroup())
 	if err != nil {
 		return nil, errors.InternalServer("settings.LIST_FAILED", "读取设置失败")
 	}
+	items = SanitizeGroup(items)
 	reply := &adminv1.ListSettingsReply{Items: make([]*adminv1.Setting, 0, len(items))}
 	for _, it := range items {
 		reply.Items = append(reply.Items, &adminv1.Setting{Group: it.Group, Key: it.Key, ValueJson: string(it.Value)})
@@ -42,13 +43,20 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 	return reply, nil
 }
 
-// GetSetting 读取单项。
+// GetSetting 读取单项（SECRET 键脱敏）。
 func (s *AdminSettingsService) GetSetting(ctx context.Context, req *adminv1.GetSettingRequest) (*adminv1.Setting, error) {
+	if err := ValidateKey(req.GetGroup(), req.GetKey()); err != nil {
+		return nil, errors.NotFound("settings.NOT_FOUND", "设置项不存在或不在目录内")
+	}
 	v, err := s.uc.Get(ctx, req.GetGroup(), req.GetKey())
 	if err != nil {
 		return nil, errors.NotFound("settings.NOT_FOUND", "设置项不存在")
 	}
-	return &adminv1.Setting{Group: req.GetGroup(), Key: req.GetKey(), ValueJson: string(v)}, nil
+	val := string(v)
+	if IsSecret(req.GetGroup(), req.GetKey()) {
+		val = `"****"`
+	}
+	return &adminv1.Setting{Group: req.GetGroup(), Key: req.GetKey(), ValueJson: val}, nil
 }
 
 // UpdateSetting 更新单项。
