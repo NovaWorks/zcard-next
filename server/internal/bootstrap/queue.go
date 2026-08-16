@@ -12,6 +12,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
@@ -55,7 +56,7 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter) *queue.Cron {
 	c := queue.NewCron()
 	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
@@ -66,6 +67,13 @@ func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService
 	// M2：供货 nonce 过期清理（每小时）
 	c.AddEvery("supplier.nonce_cleanup", time.Hour, func(ctx context.Context) {
 		_ = supplierRepo.CleanupExpiredNonces(ctx)
+	})
+	// M2：风控锁过期清理（每 5 分钟）+ 访问统计批量落库（每分钟）
+	c.AddEvery("audit.lock_cleanup", 5*time.Minute, func(ctx context.Context) {
+		_ = auditRepo.CleanupExpiredLocks(ctx)
+	})
+	c.AddEvery("audit.visit_flush", time.Minute, func(ctx context.Context) {
+		visitCounter.Flush()
 	})
 	return c
 }

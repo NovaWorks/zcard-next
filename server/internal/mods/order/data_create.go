@@ -23,6 +23,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
@@ -45,11 +46,12 @@ type OrderUsecase struct {
 	Coupon     couponport.CouponResolver
 	Catalog    catalogport.PricingResolver
 	Outbox     events.Writer // order.* 事件发布（M2：procurement 订阅 order.paid）
+	Gate       auditport.RiskGate // P2-06 下单风控闸门（nil = 未装配跳过）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox}
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate}
 }
 
 // CreateOrderInput 下单输入。
@@ -84,6 +86,13 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	tc := tenancy.FromContext(ctx)
 	if in.SubsiteID == 0 {
 		in.SubsiteID = tc.SubsiteID
+	}
+
+	// P2-06 下单风控闸门（事务前快速失败；事务内 pending 计数复查见 Gate 实现说明）
+	if uc.Gate != nil && in.ClientIP != "" {
+		if err := uc.Gate.Check(ctx, auditport.GateInput{RiskIP: in.ClientIP, UserID: in.UserID}); err != nil {
+			return nil, err
+		}
 	}
 
 	var result *CreateOrderResult
@@ -222,6 +231,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetBaseCurrency("CNY").
 			SetContact(in.Contact).
 			SetClientIP(in.ClientIP).
+			SetRiskIP(auditport.NormalizeIP(in.ClientIP)).
 			SetExpiredAt(exp).
 			SetVersion(0).
 			SetExtra(extra).

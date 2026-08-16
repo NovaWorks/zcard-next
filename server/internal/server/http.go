@@ -15,6 +15,7 @@ import (
 	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
@@ -67,6 +68,8 @@ func NewHTTPServer(
 	contentStoreSvc *content.StoreContentService,
 	notifyAdminSvc *notify.AdminNotifyService,
 	notifyStoreSvc *notify.StoreNotificationService,
+	auditAdminSvc *audit.AdminAuditService,
+	auditRepo *audit.AuditRepo,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
@@ -112,6 +115,11 @@ func NewHTTPServer(
 					return isAdminOperation(operation, dir)
 				}).
 				Build(),
+			// P2-06：变更类 admin 操作审计（POST/PUT/DELETE；写失败不阻断）
+			audit.OpAuditMiddleware(auditRepo, func(op string) (string, bool) {
+				code, _, ok := dir.PermissionForOp(op)
+				return code, ok
+			}),
 		),
 		khttp.Timeout(30 * time.Second),
 	}
@@ -157,6 +165,7 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreContentServiceHTTPServer(srv, contentStoreSvc)
 	adminv1.RegisterAdminNotifyServiceHTTPServer(srv, notifyAdminSvc)
 	storefrontv1.RegisterStoreNotificationServiceHTTPServer(srv, notifyStoreSvc)
+	adminv1.RegisterAdminAuditServiceHTTPServer(srv, auditAdminSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

@@ -40,6 +40,7 @@ var operatorSeed = map[string]bool{
 	"supplier:read":     true,
 	"content:read":      true,
 	"notify:read":       true,
+	"audit:read":        true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。

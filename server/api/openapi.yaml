@@ -257,6 +257,118 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+    /api/v1/admin/audit/blacklist:
+        get:
+            tags:
+                - AdminAuditService
+            description: GetBlacklist IP 黑名单。
+            operationId: AdminAuditService_GetBlacklist
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GetBlacklistReply'
+        put:
+            tags:
+                - AdminAuditService
+            description: SetBlacklist 设置黑名单（精确 IP 或 CIDR 段，逗号分隔）。
+            operationId: AdminAuditService_SetBlacklist
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetBlacklistRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/audit/op-logs:
+        get:
+            tags:
+                - AdminAuditService
+            description: ListOpLogs 操作审计。
+            operationId: AdminAuditService_ListOpLogs
+            parameters:
+                - name: operatorId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListOpLogsReply'
+    /api/v1/admin/audit/security-logs:
+        get:
+            tags:
+                - AdminAuditService
+            description: ListSecurityLogs 安全审计。
+            operationId: AdminAuditService_ListSecurityLogs
+            parameters:
+                - name: action
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSecurityLogsReply'
+    /api/v1/admin/audit/visit-stats:
+        get:
+            tags:
+                - AdminAuditService
+            description: ListVisitStats 访问统计。
+            operationId: AdminAuditService_ListVisitStats
+            parameters:
+                - name: statDate
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListVisitStatsReply'
     /api/v1/admin/auth/login:
         post:
             tags:
@@ -4212,6 +4324,13 @@ components:
             properties:
                 productId:
                     type: string
+        zcard.api.admin.v1.GetBlacklistReply:
+            type: object
+            properties:
+                entries:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.GetProfileReply:
             type: object
             properties:
@@ -4433,6 +4552,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.NotifyTemplate'
+        zcard.api.admin.v1.ListOpLogsReply:
+            type: object
+            properties:
+                logs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.OpLogItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListOrdersReply:
             type: object
             properties:
@@ -4542,6 +4676,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Role'
+        zcard.api.admin.v1.ListSecurityLogsReply:
+            type: object
+            properties:
+                logs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SecurityLogItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListSettingsReply:
             type: object
             properties:
@@ -4601,6 +4750,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListVisitStatsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.VisitStatItem'
                 total:
                     type: string
                 page:
@@ -4774,6 +4938,29 @@ components:
                 enabled:
                     type: boolean
                 updatedAt:
+                    type: string
+        zcard.api.admin.v1.OpLogItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                operatorType:
+                    type: string
+                operatorId:
+                    type: string
+                permissionPoint:
+                    type: string
+                action:
+                    type: string
+                route:
+                    type: string
+                beforeJson:
+                    type: string
+                afterJson:
+                    type: string
+                ip:
+                    type: string
+                createdAt:
                     type: string
         zcard.api.admin.v1.Payment:
             type: object
@@ -5118,6 +5305,30 @@ components:
                     items:
                         type: string
             description: Role 角色详情。
+        zcard.api.admin.v1.SecurityLogItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                actorType:
+                    type: string
+                actorId:
+                    type: string
+                action:
+                    type: string
+                ip:
+                    type: string
+                metadataJson:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.SetBlacklistRequest:
+            required:
+                - entries
+            type: object
+            properties:
+                entries:
+                    type: string
         zcard.api.admin.v1.SetSupplierNotifyURLRequest:
             required:
                 - id
@@ -5823,6 +6034,20 @@ components:
                 createdAt:
                     type: string
             description: VirtualReviewItem 虚拟评价（与真实 approved 合并展示）。
+        zcard.api.admin.v1.VisitStatItem:
+            type: object
+            properties:
+                statDate:
+                    type: string
+                statHour:
+                    type: integer
+                    format: int32
+                path:
+                    type: string
+                pv:
+                    type: string
+                uv:
+                    type: string
         zcard.api.admin.v1.WalletTx:
             type: object
             properties:
@@ -6484,6 +6709,8 @@ components:
                 isActive:
                     type: boolean
 tags:
+    - name: AdminAuditService
+      description: AdminAuditService 审计与风控管理（P2-06）：三类日志查询、黑名单管理。
     - name: AdminAuthService
       description: |-
         AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。

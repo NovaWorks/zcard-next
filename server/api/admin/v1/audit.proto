@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminAuditService 审计与风控管理（P2-06）：三类日志查询、黑名单管理。
+service AdminAuditService {
+  // ListOpLogs 操作审计。
+  rpc ListOpLogs(ListOpLogsRequest) returns (ListOpLogsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/audit/op-logs" };
+  }
+  // ListSecurityLogs 安全审计。
+  rpc ListSecurityLogs(ListSecurityLogsRequest) returns (ListSecurityLogsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/audit/security-logs" };
+  }
+  // ListVisitStats 访问统计。
+  rpc ListVisitStats(ListVisitStatsRequest) returns (ListVisitStatsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/audit/visit-stats" };
+  }
+  // GetBlacklist IP 黑名单。
+  rpc GetBlacklist(google.protobuf.Empty) returns (GetBlacklistReply) {
+    option (google.api.http) = { get: "/api/v1/admin/audit/blacklist" };
+  }
+  // SetBlacklist 设置黑名单（精确 IP 或 CIDR 段，逗号分隔）。
+  rpc SetBlacklist(SetBlacklistRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/audit/blacklist"
+      body: "*"
+    };
+  }
+}
+
+message ListOpLogsRequest {
+  uint64 operator_id = 1; // 0 = 全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message OpLogItem {
+  uint64 id = 1;
+  string operator_type = 2;
+  uint64 operator_id = 3;
+  string permission_point = 4;
+  string action = 5;
+  string route = 6;
+  string before_json = 7;
+  string after_json = 8;
+  string ip = 9;
+  int64 created_at = 10;
+}
+
+message ListOpLogsReply {
+  repeated OpLogItem logs = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListSecurityLogsRequest {
+  string action = 1; // 模糊匹配；空 = 全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message SecurityLogItem {
+  uint64 id = 1;
+  string actor_type = 2;
+  uint64 actor_id = 3;
+  string action = 4;
+  string ip = 5;
+  string metadata_json = 6;
+  int64 created_at = 7;
+}
+
+message ListSecurityLogsReply {
+  repeated SecurityLogItem logs = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListVisitStatsRequest {
+  string stat_date = 1; // yyyymmdd；空 = 最新
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message VisitStatItem {
+  string stat_date = 1;
+  int32 stat_hour = 2;
+  string path = 3;
+  int64 pv = 4;
+  int64 uv = 5;
+}
+
+message ListVisitStatsReply {
+  repeated VisitStatItem items = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetBlacklistReply {
+  repeated string entries = 1;
+}
+
+message SetBlacklistRequest {
+  string entries = 1 [(google.api.field_behavior) = REQUIRED]; // 逗号分隔
+}

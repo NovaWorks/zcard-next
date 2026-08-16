@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
@@ -31,11 +32,21 @@ type DeliveryRepoImpl struct {
 	data   *data.Data
 	cipher *inventory.CardCipher
 	inv    inventory.CardRepo
+	gate   auditport.RiskGate // P2-06 取货失败锁定（nil = 未装配跳过）
+	auditor auditport.Auditor // P2-06 取货安全审计（nil = 未装配跳过）
+}
+
+// actorTypeOf 订单归属（游客 user_id=0 → guest）。
+func actorTypeOf(o *ent.Order) string {
+	if o.UserID == 0 {
+		return "guest"
+	}
+	return "user"
 }
 
 // NewDeliveryRepoImpl 构造。
-func NewDeliveryRepoImpl(d *data.Data, cipher *inventory.CardCipher) *DeliveryRepoImpl {
-	return &DeliveryRepoImpl{data: d, cipher: cipher}
+func NewDeliveryRepoImpl(d *data.Data, cipher *inventory.CardCipher, gate auditport.RiskGate, auditor auditport.Auditor) *DeliveryRepoImpl {
+	return &DeliveryRepoImpl{data: d, cipher: cipher, gate: gate, auditor: auditor}
 }
 
 // ── T1 自动交付管线 ─────────────────────────────────────────
@@ -176,9 +187,21 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	if err != nil {
 		return nil, err
 	}
+	// P2-06 取货锁定检查（连续失败 N 次锁 IP+订单组合；锁定期内正确密码也拒绝）
+	if r.gate != nil {
+		lockKey := "fetch:" + auditport.NormalizeIP(clientIP) + ":" + orderNo
+		if locked, _ := r.gate.IsLocked(ctx, lockKey); locked {
+			return nil, fmt.Errorf("delivery.LOCKED: 取货失败次数过多，请稍后再试")
+		}
+	}
+
 	// 密码校验（constant-time；密码错与单号错对外表现一致）
 	if o.QueryPasswordHash != "" {
 		if !crypto.VerifyPassword(o.QueryPasswordHash, queryPassword) {
+			// P2-06 失败计数锁定（达到阈值即锁）
+			if r.gate != nil {
+				_ = r.gate.LockFetchFailure(ctx, "fetch:"+auditport.NormalizeIP(clientIP)+":"+orderNo)
+			}
 			return nil, fmt.Errorf("order.NOT_FOUND")
 		}
 	}
@@ -196,6 +219,14 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 		OrderNo:  o.OrderNo,
 		Status:   string(o.Status),
 		FetchCnt: 0,
+	}
+	// 取货审计（P2-06 T3：谁/何时/IP/订单——不含明文卡密）
+	if r.auditor != nil {
+		r.auditor.Security(ctx, auditport.SecurityEntry{
+			ActorType: actorTypeOf(o), ActorID: o.UserID,
+			Action: "delivery.fetch", IP: clientIP,
+			Metadata: map[string]any{"order_no": orderNo, "order_id": o.ID},
+		})
 	}
 
 	isFirstFetch := true

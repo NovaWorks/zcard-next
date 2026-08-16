@@ -316,5 +316,17 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminNotifyService/PreviewTemplate", Method: "POST", Path: "/api/v1/admin/notify/templates/preview"},
 		Perm{Code: "notify:write", Desc: "重发日志（超管）", Domain: "notify", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminNotifyService/ResendLog", Method: "POST", Path: "/api/v1/admin/notify/logs/{id}/resend"},
+
+		// ── 审计与风控（audit，P2-06）───────────────
+		Perm{Code: "audit:read", Desc: "操作审计", Domain: "audit",
+			Op: "zcard.api.admin.v1.AdminAuditService/ListOpLogs", Method: "GET", Path: "/api/v1/admin/audit/op-logs"},
+		Perm{Code: "audit:read", Desc: "安全审计", Domain: "audit",
+			Op: "zcard.api.admin.v1.AdminAuditService/ListSecurityLogs", Method: "GET", Path: "/api/v1/admin/audit/security-logs"},
+		Perm{Code: "audit:read", Desc: "访问统计", Domain: "audit",
+			Op: "zcard.api.admin.v1.AdminAuditService/ListVisitStats", Method: "GET", Path: "/api/v1/admin/audit/visit-stats"},
+		Perm{Code: "audit:read", Desc: "黑名单查看", Domain: "audit",
+			Op: "zcard.api.admin.v1.AdminAuditService/GetBlacklist", Method: "GET", Path: "/api/v1/admin/audit/blacklist"},
+		Perm{Code: "audit:write", Desc: "黑名单管理（超管）", Domain: "audit", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminAuditService/SetBlacklist", Method: "PUT", Path: "/api/v1/admin/audit/blacklist"},
 	)
 }
