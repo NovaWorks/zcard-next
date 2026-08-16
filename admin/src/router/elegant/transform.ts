@@ -171,7 +171,11 @@ const routeMap: RouteMap = {
   "inventory": "/inventory",
   "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?",
   "order": "/order",
-  "product": "/product"
+  "payment-channel": "/payment-channel",
+  "product": "/product",
+  "role": "/role",
+  "settings": "/settings",
+  "staff": "/staff"
 };
 
 /**

@@ -25,7 +25,11 @@ declare module "@elegant-router/types" {
     "inventory": "/inventory";
     "login": "/login/:module(pwd-login|code-login|register|reset-pwd|bind-wechat)?";
     "order": "/order";
+    "payment-channel": "/payment-channel";
     "product": "/product";
+    "role": "/role";
+    "settings": "/settings";
+    "staff": "/staff";
   };
 
   /**
@@ -65,7 +69,11 @@ declare module "@elegant-router/types" {
     | "inventory"
     | "login"
     | "order"
+    | "payment-channel"
     | "product"
+    | "role"
+    | "settings"
+    | "staff"
   >;
 
   /**
@@ -90,7 +98,11 @@ declare module "@elegant-router/types" {
     | "home"
     | "inventory"
     | "order"
+    | "payment-channel"
     | "product"
+    | "role"
+    | "settings"
+    | "staff"
   >;
 
   /**

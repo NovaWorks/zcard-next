@@ -228,7 +228,11 @@ const local: App.I18n.Schema = {
     home: '首页',
     product: '商品管理',
     inventory: '卡密库存',
-    order: '订单管理'
+    order: '订单管理',
+    'payment-channel': '支付渠道',
+    staff: '员工管理',
+    role: '角色权限',
+    settings: '系统设置'
   },
   page: {
     login: {

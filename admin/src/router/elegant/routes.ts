@@ -98,6 +98,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'payment-channel',
+    path: '/payment-channel',
+    component: 'layout.base$view.payment-channel',
+    meta: {
+      title: '支付渠道',
+      i18nKey: 'route.payment-channel',
+      icon: 'mdi:credit-card-outline',
+      order: 5
+    }
+  },
+  {
     name: 'product',
     path: '/product',
     component: 'layout.base$view.product',
@@ -106,6 +117,39 @@ export const generatedRoutes: GeneratedRoute[] = [
       i18nKey: 'route.product',
       icon: 'mdi:shopping-outline',
       order: 2
+    }
+  },
+  {
+    name: 'role',
+    path: '/role',
+    component: 'layout.base$view.role',
+    meta: {
+      title: '角色权限',
+      i18nKey: 'route.role',
+      icon: 'mdi:shield-account-outline',
+      order: 7
+    }
+  },
+  {
+    name: 'settings',
+    path: '/settings',
+    component: 'layout.base$view.settings',
+    meta: {
+      title: '系统设置',
+      i18nKey: 'route.settings',
+      icon: 'mdi:cog-outline',
+      order: 8
+    }
+  },
+  {
+    name: 'staff',
+    path: '/staff',
+    component: 'layout.base$view.staff',
+    meta: {
+      title: '员工管理',
+      i18nKey: 'route.staff',
+      icon: 'mdi:account-group-outline',
+      order: 6
     }
   }
 ];
