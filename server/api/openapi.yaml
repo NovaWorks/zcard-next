@@ -330,6 +330,74 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Role'
+    /api/v1/admin/categories:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── 分类 ──
+            operationId: AdminCatalogService_ListCategories
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CategoryList'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+    /api/v1/admin/categories/{id}:
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_UpdateCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+        delete:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_DeleteCategory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/currencies:
         get:
             tags:
@@ -393,6 +461,115 @@ paths:
             operationId: AdminCurrencyService_DeleteCurrency
             parameters:
                 - name: code
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/products:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── 商品 ──
+            operationId: AdminCatalogService_ListProducts
+            parameters:
+                - name: categoryId
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page.page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page.pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListProductsReply'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateProduct
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateProductRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+    /api/v1/admin/products/{id}:
+        get:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_GetProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_UpdateProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateProductRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+        delete:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_DeleteProduct
+            parameters:
+                - name: id
                   in: path
                   required: true
                   schema:
@@ -473,6 +650,51 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+    /api/v1/admin/tags:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── 标签 ──
+            operationId: AdminCatalogService_ListTags
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.TagList'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateTag
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateTagRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Tag'
+    /api/v1/admin/tags/{id}:
+        delete:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_DeleteTag
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/storefront/config:
         get:
             tags:
@@ -589,6 +811,54 @@ components:
                 remark:
                     type: string
             description: Admin 员工（不含密码哈希等敏感字段）。
+        zcard.api.admin.v1.AdminProduct:
+            type: object
+            properties:
+                id:
+                    type: string
+                categoryId:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                description:
+                    type: string
+                cover:
+                    type: string
+                images:
+                    type: array
+                    items:
+                        type: string
+                priceCents:
+                    type: string
+                factoryPriceCents:
+                    type: string
+                stockType:
+                    type: string
+                stockVisible:
+                    type: boolean
+                deliveryMode:
+                    type: string
+                dedup:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                status:
+                    type: integer
+                    format: int32
+                stock:
+                    type: string
+                upstreamSourceId:
+                    type: string
+                upstreamProductCode:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+            description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
             properties:
@@ -611,6 +881,36 @@ components:
                     format: date-time
                 lastLoginIp:
                     type: string
+        zcard.api.admin.v1.Category:
+            type: object
+            properties:
+                id:
+                    type: string
+                parentId:
+                    type: string
+                name:
+                    type: string
+                icon:
+                    type: string
+                hide:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                productCount:
+                    type: string
+                children:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+            description: Category 分类（树形，含子分类计数）。
+        zcard.api.admin.v1.CategoryList:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Category'
         zcard.api.admin.v1.ConfirmTOTPRequest:
             required:
                 - code
@@ -635,6 +935,20 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.CreateCategoryRequest:
+            required:
+                - name
+            type: object
+            properties:
+                name:
+                    type: string
+                parentId:
+                    type: string
+                icon:
+                    type: string
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.CreateCurrencyRequest:
             required:
                 - code
@@ -653,6 +967,43 @@ components:
                     format: int32
                 rateJson:
                     type: string
+        zcard.api.admin.v1.CreateProductRequest:
+            required:
+                - name
+                - priceCents
+                - stockType
+            type: object
+            properties:
+                name:
+                    type: string
+                categoryId:
+                    type: string
+                description:
+                    type: string
+                cover:
+                    type: string
+                images:
+                    type: array
+                    items:
+                        type: string
+                priceCents:
+                    type: string
+                factoryPriceCents:
+                    type: string
+                stockType:
+                    type: string
+                deliveryMode:
+                    type: string
+                stockVisible:
+                    type: boolean
+                dedup:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                status:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.CreateRoleRequest:
             required:
                 - name
@@ -669,6 +1020,22 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.admin.v1.CreateTagRequest:
+            required:
+                - name
+                - slug
+            type: object
+            properties:
+                name:
+                    type: string
+                slug:
+                    type: string
+                icon:
+                    type: string
+                color:
+                    type: string
+                position:
+                    type: string
         zcard.api.admin.v1.Currency:
             type: object
             properties:
@@ -732,6 +1099,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+        zcard.api.admin.v1.ListProductsReply:
+            type: object
+            properties:
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+                page:
+                    $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
         zcard.api.admin.v1.ListRolesReply:
             type: object
             properties:
@@ -836,6 +1212,30 @@ components:
                 valueJson:
                     type: string
             description: Setting 设置项（value_json 为 JSON 文档字符串）。
+        zcard.api.admin.v1.Tag:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                icon:
+                    type: string
+                color:
+                    type: string
+                position:
+                    type: string
+                hide:
+                    type: boolean
+        zcard.api.admin.v1.TagList:
+            type: object
+            properties:
+                tags:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Tag'
         zcard.api.admin.v1.ToggleAdminRequest:
             required:
                 - id
@@ -861,6 +1261,22 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.UpdateCategoryRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                icon:
+                    type: string
+                hide:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.UpdateCurrencyRequest:
             required:
                 - code
@@ -880,6 +1296,39 @@ components:
                 enabled:
                     type: boolean
                 sort:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.UpdateProductRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                categoryId:
+                    type: string
+                description:
+                    type: string
+                cover:
+                    type: string
+                images:
+                    type: array
+                    items:
+                        type: string
+                priceCents:
+                    type: string
+                factoryPriceCents:
+                    type: string
+                deliveryMode:
+                    type: string
+                stockVisible:
+                    type: boolean
+                sort:
+                    type: integer
+                    format: int32
+                status:
                     type: integer
                     format: int32
         zcard.api.admin.v1.UpdateRolePermissionsRequest:
@@ -1024,6 +1473,8 @@ tags:
       description: |-
         AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
          里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+    - name: AdminCatalogService
+      description: AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
     - name: AdminCurrencyService
       description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
     - name: AdminSettingsService

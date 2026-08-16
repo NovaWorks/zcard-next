@@ -51,6 +51,7 @@ func NewHTTPServer(
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
 	currencySvc *settings.AdminCurrencyService,
+	catalogAdminSvc *catalog.AdminCatalogService,
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 ) *khttp.Server {
@@ -97,6 +98,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminUserServiceHTTPServer(srv, adminSvc)
 	adminv1.RegisterAdminCurrencyServiceHTTPServer(srv, currencySvc)
 	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)
+	adminv1.RegisterAdminCatalogServiceHTTPServer(srv, catalogAdminSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 

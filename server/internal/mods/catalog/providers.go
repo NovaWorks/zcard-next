@@ -10,4 +10,5 @@ var ProviderSet = wire.NewSet(
 	NewProductRepoImpl,
 	wire.Bind(new(ProductRepo), new(*ProductRepoImpl)),
 	NewStoreCatalogService,
+	NewAdminCatalogService,
 )

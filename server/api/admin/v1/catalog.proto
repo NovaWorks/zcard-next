@@ -1,0 +1,197 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+import "common/v1/common.proto";
+
+// AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
+service AdminCatalogService {
+  // ── 商品 ──
+  rpc ListProducts(ListProductsRequest) returns (ListProductsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/products" };
+  }
+  rpc GetProduct(GetProductRequest) returns (AdminProduct) {
+    option (google.api.http) = { get: "/api/v1/admin/products/{id}" };
+  }
+  rpc CreateProduct(CreateProductRequest) returns (AdminProduct) {
+    option (google.api.http) = { post: "/api/v1/admin/products" body: "*" };
+  }
+  rpc UpdateProduct(UpdateProductRequest) returns (AdminProduct) {
+    option (google.api.http) = { put: "/api/v1/admin/products/{id}" body: "*" };
+  }
+  rpc DeleteProduct(DeleteProductRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/products/{id}" };
+  }
+
+  // ── 分类 ──
+  rpc ListCategories(google.protobuf.Empty) returns (CategoryList) {
+    option (google.api.http) = { get: "/api/v1/admin/categories" };
+  }
+  rpc CreateCategory(CreateCategoryRequest) returns (Category) {
+    option (google.api.http) = { post: "/api/v1/admin/categories" body: "*" };
+  }
+  rpc UpdateCategory(UpdateCategoryRequest) returns (Category) {
+    option (google.api.http) = { put: "/api/v1/admin/categories/{id}" body: "*" };
+  }
+  rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/categories/{id}" };
+  }
+
+  // ── 标签 ──
+  rpc ListTags(google.protobuf.Empty) returns (TagList) {
+    option (google.api.http) = { get: "/api/v1/admin/tags" };
+  }
+  rpc CreateTag(CreateTagRequest) returns (Tag) {
+    option (google.api.http) = { post: "/api/v1/admin/tags" body: "*" };
+  }
+  rpc DeleteTag(DeleteTagRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/tags/{id}" };
+  }
+}
+
+// ── 商品消息 ──
+
+message ListProductsRequest {
+  uint64 category_id = 1;
+  string keyword = 2;
+  int32 status = 3; // 0=全部 1=上架 0=下架 2=隐藏
+  zcard.api.common.v1.PageReq page = 4;
+}
+
+message ListProductsReply {
+  repeated AdminProduct products = 1;
+  zcard.api.common.v1.PageResp page = 2;
+}
+
+message GetProductRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// AdminProduct 管理面商品（含成本价等敏感字段）。
+message AdminProduct {
+  uint64 id = 1;
+  uint64 category_id = 2;
+  string name = 3;
+  string slug = 4;
+  string description = 5;   // sanitize 后
+  string cover = 6;
+  repeated string images = 7;
+  int64 price_cents = 8;
+  int64 factory_price_cents = 9;
+  string stock_type = 10;    // card | url | code
+  bool stock_visible = 11;
+  string delivery_mode = 12; // status | delete
+  bool dedup = 13;
+  int32 sort = 14;
+  int32 status = 15;         // 1=上架 0=下架 2=隐藏
+  int64 stock = 16;           // 计算字段（available 数）
+  uint64 upstream_source_id = 17;
+  string upstream_product_code = 18;
+  int64 created_at = 19;
+  int64 updated_at = 20;
+}
+
+message CreateProductRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 category_id = 2;
+  string description = 3;
+  string cover = 4;
+  repeated string images = 5;
+  int64 price_cents = 6 [(google.api.field_behavior) = REQUIRED];
+  int64 factory_price_cents = 7;
+  string stock_type = 8 [(google.api.field_behavior) = REQUIRED];
+  string delivery_mode = 9;
+  bool stock_visible = 10;
+  bool dedup = 11;
+  int32 sort = 12;
+  int32 status = 13;
+}
+
+message UpdateProductRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  uint64 category_id = 3;
+  string description = 4;
+  string cover = 5;
+  repeated string images = 6;
+  int64 price_cents = 7;
+  int64 factory_price_cents = 8;
+  string delivery_mode = 9;
+  bool stock_visible = 10;
+  int32 sort = 11;
+  int32 status = 12;
+}
+
+message DeleteProductRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ── 分类消息 ──
+
+message CategoryList {
+  repeated Category categories = 1;
+}
+
+// Category 分类（树形，含子分类计数）。
+message Category {
+  uint64 id = 1;
+  uint64 parent_id = 2;
+  string name = 3;
+  string icon = 4;
+  bool hide = 5;
+  int32 sort = 6;
+  int64 product_count = 7;
+  repeated Category children = 8;
+}
+
+message CreateCategoryRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 parent_id = 2;
+  string icon = 3;
+  int32 sort = 4;
+}
+
+message UpdateCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  string icon = 3;
+  bool hide = 4;
+  int32 sort = 5;
+}
+
+message DeleteCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ── 标签消息 ──
+
+message TagList {
+  repeated Tag tags = 1;
+}
+
+message Tag {
+  uint64 id = 1;
+  string name = 2;
+  string slug = 3;
+  string icon = 4;
+  string color = 5;
+  string position = 6;
+  bool hide = 7;
+}
+
+message CreateTagRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string slug = 2 [(google.api.field_behavior) = REQUIRED];
+  string icon = 3;
+  string color = 4;
+  string position = 5;
+}
+
+message DeleteTagRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}

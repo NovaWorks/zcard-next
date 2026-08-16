@@ -23,6 +23,8 @@ var operatorSeed = map[string]bool{
 	"settings:currency_read": true,
 	"authz:role_read":        true, "authz:role_read_detail": true, "authz:tree": true,
 	"identity:admin_read": true,
+	"catalog:read":        true, "catalog:read_detail": true,
+	"catalog:category_read": true, "catalog:tag_read": true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。
@@ -34,11 +36,20 @@ var adminOnlyAllowlist = map[string]bool{
 	"order:refund":        true,
 	"system:update":       true,
 	// 权限与人事高危操作（超管专属）
-	"authz:role_write":      true,
-	"authz:role_grant":      true,
-	"authz:role_delete":     true,
-	"identity:admin_write":  true,
-	"identity:admin_toggle": true,
+	"authz:role_write":         true,
+	"authz:role_grant":         true,
+	"authz:role_delete":        true,
+	"identity:admin_write":     true,
+	"identity:admin_toggle":    true,
+	"settings:currency_write":  true,
+	"settings:currency_delete": true,
+	// 商品目录写操作（超管专属，M1 起按角色开放）
+	"catalog:write":           true,
+	"catalog:delete":          true,
+	"catalog:category_write":  true,
+	"catalog:category_delete": true,
+	"catalog:tag_write":       true,
+	"catalog:tag_delete":      true,
 }
 
 func TestRule8RBACCoverage(t *testing.T) {
