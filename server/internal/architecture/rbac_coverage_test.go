@@ -20,7 +20,8 @@ import (
 var operatorSeed = map[string]bool{
 	"auth:profile": true, "auth:logout": true,
 	"settings:read": true, "settings:read_detail": true, "settings:update": true,
-	"authz:role_read": true, "authz:role_read_detail": true, "authz:tree": true,
+	"settings:currency_read": true,
+	"authz:role_read":        true, "authz:role_read_detail": true, "authz:tree": true,
 	"identity:admin_read": true,
 }
 

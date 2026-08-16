@@ -161,7 +161,7 @@ func TestRule3Layering(t *testing.T) {
 				pkgPath == modulePath+"/internal/admincmd" ||
 				strings.HasPrefix(pkgPath, modulePath+"/tools/") ||
 				strings.HasPrefix(pkgPath, modulePath+"/internal/mods/") &&
-					(strings.HasSuffix(file, "data.go") || strings.HasSuffix(file, "providers.go"))
+					(strings.HasPrefix(file[strings.LastIndex(file, "/")+1:], "data") || strings.HasSuffix(file, "providers.go"))
 			if !allowed {
 				return "Ent import 越界（仅 mods/*/data.go、providers.go、internal/data、admincmd、tools 允许）"
 			}

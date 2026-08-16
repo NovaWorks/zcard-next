@@ -50,9 +50,9 @@ func init() {
 		// ── 货币管理（settings，P0-04 T3）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},
-		Perm{Code: "settings:currency_write", Desc: "新增货币", Domain: "settings",
+		Perm{Code: "settings:currency_write", Desc: "新增/修改货币（超管专属）", Domain: "settings", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCurrencyService/CreateCurrency", Method: "POST", Path: "/api/v1/admin/currencies"},
-		Perm{Code: "settings:currency_write", Desc: "修改货币", Domain: "settings",
+		Perm{Code: "settings:currency_write", Desc: "新增/修改货币（超管专属）", Domain: "settings", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCurrencyService/UpdateCurrency", Method: "PUT", Path: "/api/v1/admin/currencies/{code}"},
 		Perm{Code: "settings:currency_delete", Desc: "删除货币", Domain: "settings", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCurrencyService/DeleteCurrency", Method: "DELETE", Path: "/api/v1/admin/currencies/{code}"},
