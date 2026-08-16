@@ -112,3 +112,26 @@ type ProductAdminRepo interface {
 	UpdateProduct(ctx context.Context, id uint64, in ProductInput) (any, error)
 	DeleteProduct(ctx context.Context, id uint64) error
 }
+
+// UpstreamProductInput 货源同步 upsert 输入（P2-01 T3）。
+// Price=-1 表示「不更新价格」（价格保护：auto_sync_price=false 或运营已改价）。
+type UpstreamProductInput struct {
+	ConnectionID        uint64 // products.upstream_source_id
+	UpstreamProductCode string // products.upstream_product_code（UNIQUE 判据）
+	UpstreamSyncedAt    time.Time
+	Name                string
+	Description         string
+	Cover               string
+	CategoryID          uint64 // 0 = 不设置分类
+	Price               int64  // 分；-1 = 保持现有价
+	FactoryPrice        int64  // 分（上游成本快照）
+	Status              int8   // 1=上架 2=隐藏 0=下架
+	AutoOnshelf         bool   // 新建商品时是否上架（settings.auto_onshelf）
+}
+
+// UpstreamProductWriter 货源同步商品 upsert 端口（supply 模块消费，通道 A）。
+// 语义：按 upstream_source_id + upstream_product_code 幂等 upsert；
+// 返回 (productID, created, error)。
+type UpstreamProductWriter interface {
+	UpsertUpstreamProduct(ctx context.Context, in UpstreamProductInput) (productID uint64, created bool, err error)
+}

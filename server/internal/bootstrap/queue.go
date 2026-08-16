@@ -8,9 +8,11 @@ package bootstrap
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
 	"github.com/google/wire"
@@ -52,14 +54,13 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 	return data.NewOutboxRelay(d, q, logger)
 }
 
-// NewCron 进程内周期任务（注册表；M0 无任务）。
-func NewCron() *queue.Cron {
+// NewCron 进程内周期任务（注册表）。
+func NewCron(supplySync *supply.SyncService) *queue.Cron {
 	c := queue.NewCron()
-	// M1 注册（含间隔，规划 §4.8 周期任务清单）：
-	//   c.AddEvery("order.expire_scan", time.Minute, orderExpireScan)
-	//   c.AddEvery("outbox.dead_alert", 5*time.Minute, ...)
-	//   c.AddEvery("commission.confirm", time.Hour, ...)
-	_ = c
-	_ = context.Background()
+	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
+	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
+		supplySync.PingAllActive(ctx)
+	})
+	// M2 预告：procurement 巡检（每 30 分钟拉 polling/submitted 单）+ outbox 死信告警
 	return c
 }

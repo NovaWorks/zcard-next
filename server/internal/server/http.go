@@ -55,6 +55,7 @@ func NewHTTPServer(
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
 	supplySvc *supply.SupplyService,
+	supplyAdminSvc *supply.AdminSupplyService,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
@@ -135,6 +136,7 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreDeliveryServiceHTTPServer(srv, fulfillStoreSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
+	adminv1.RegisterAdminSupplyServiceHTTPServer(srv, supplyAdminSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

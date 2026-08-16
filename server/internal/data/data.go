@@ -14,6 +14,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 
 	// 三方言驱动注册（同一二进制，运行时按 DSN 切换，ADR-D20）：
 	// 纯 Go 无 CGO（SQLite 用 modernc，保单二进制交叉编译，ADR-D19）
@@ -33,7 +34,13 @@ func init() {
 }
 
 // ProviderSet data providers（wire）。
-var ProviderSet = wire.NewSet(NewData, NewOutboxWriter, NewFailedTaskWriter)
+var ProviderSet = wire.NewSet(
+	NewData,
+	NewOutboxWriter,
+	NewFailedTaskWriter,
+	// 接口绑定：OutboxWriter → events.Writer（模块发布事件经接口，通道 A）
+	wire.Bind(new(events.Writer), new(*OutboxWriter)),
+)
 
 // Data 数据句柄（业务模块 repo 经构造函数持有；禁止绕过 data.Client 持有全局单例，
 // 未来 per-tenant client 由 TenantStore 注入，铁律 14）。

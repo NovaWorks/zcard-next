@@ -247,6 +247,44 @@ func reportViolations(t *testing.T, vs []importViolation) {
 	}
 }
 
+// ---------------------------------------------------------------------------
+// 规则 5（M2，P2-01 验收）：货源适配器出站纪律——mods/supply/adapter 禁止直接
+// 构造 http.Client（`&http.Client{` / http.DefaultClient），出站必须经
+// platform/httpx（SSRF 防护唯一入口；凭据零泄漏依赖该收口）。
+// ---------------------------------------------------------------------------
+
+func TestRule5AdapterOutboundDiscipline(t *testing.T) {
+	pkgs := loadPackages(t)
+	bad := []string{}
+	for _, p := range pkgs {
+		if p.PkgPath != modulePath+"/internal/mods/supply/adapter" {
+			continue
+		}
+		for _, f := range p.Syntax {
+			file := relToServer(t, p.Fset.Position(f.Pos()).Filename)
+			ast.Inspect(f, func(n ast.Node) bool {
+				switch x := n.(type) {
+				case *ast.CompositeLit:
+					// &http.Client{...} 直接构造
+					if sel, ok := x.Type.(*ast.SelectorExpr); ok {
+						if pkg, ok := sel.X.(*ast.Ident); ok && pkg.Name == "http" && sel.Sel.Name == "Client" {
+							bad = append(bad, file+": 直接构造 http.Client（必须经 httpx.NewSafeClient）")
+						}
+					}
+				case *ast.SelectorExpr:
+					if pkg, ok := x.X.(*ast.Ident); ok && pkg.Name == "http" && x.Sel.Name == "DefaultClient" {
+						bad = append(bad, file+": 使用 http.DefaultClient（必须经 httpx.NewSafeClient）")
+					}
+				}
+				return true
+			})
+		}
+	}
+	for _, b := range bad {
+		t.Errorf("适配器出站纪律违规（%s）：出站必须经 httpx（P2-01 验收标准）", b)
+	}
+}
+
 // 确认 types 包被使用（violations 结构扩展时保持类型信息需求）。
 var _ = types.Interface{}
 var _ = token.NoPos

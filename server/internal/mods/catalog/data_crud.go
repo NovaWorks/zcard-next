@@ -326,3 +326,95 @@ func nilOrZero(v uint64) *uint64 {
 	}
 	return &v
 }
+
+// UpsertUpstreamProduct 货源同步商品 upsert（P2-01 T3，supply 模块经 port 消费）。
+// 判据：subsite_id + upstream_source_id + upstream_product_code 幂等。
+// Price=-1 保持现有价（价格保护由 supply 侧决策后传入）。
+func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (uint64, bool, error) {
+	tc := tenancy.FromContext(ctx)
+	existing, err := data.Client(ctx, r.data).Product.Query().
+		Where(
+			product.SubsiteID(tc.SubsiteID),
+			product.UpstreamSourceID(in.ConnectionID),
+			product.UpstreamProductCode(in.UpstreamProductCode),
+		).
+		First(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return 0, false, err
+	}
+
+	if ent.IsNotFound(err) {
+		// 新建：slug 用上游标识（稳定、幂等）；状态按 auto_onshelf 开关
+		slug := slugify(in.UpstreamProductCode)
+		if slug == "" {
+			slug = fmt.Sprintf("up-%d-%s", in.ConnectionID, in.UpstreamProductCode)
+		}
+		baseSlug := slug
+		for i := 0; i < 100; i++ {
+			exists, err2 := data.Client(ctx, r.data).Product.Query().
+				Where(product.SubsiteID(tc.SubsiteID), product.Slug(slug)).Exist(ctx)
+			if err2 != nil {
+				return 0, false, err2
+			}
+			if !exists {
+				break
+			}
+			slug = fmt.Sprintf("%s-%d", baseSlug, i+2)
+		}
+		status := int8(0)
+		if in.AutoOnshelf {
+			status = 1
+		}
+		create := data.Client(ctx, r.data).Product.Create().
+			SetSubsiteID(tc.SubsiteID).
+			SetName(in.Name).
+			SetSlug(slug).
+			SetPrice(in.Price).
+			SetFactoryPrice(in.FactoryPrice).
+			SetStockType(product.StockTypeCard).
+			SetStatus(status).
+			SetUpstreamSourceID(in.ConnectionID).
+			SetUpstreamProductCode(in.UpstreamProductCode).
+			SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+		if in.CategoryID > 0 {
+			create.SetCategoryID(in.CategoryID)
+		}
+		if in.Description != "" {
+			create.SetDescription(in.Description)
+		}
+		if in.Cover != "" {
+			create.SetCover(in.Cover)
+		}
+		created, err := create.Save(ctx)
+		if err != nil {
+			return 0, false, err
+		}
+		return created.ID, true, nil
+	}
+
+	// 更新：名称/描述/封面/分类/状态/成本价；价格按保护语义（-1 不动）
+	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).
+		SetName(in.Name).
+		SetFactoryPrice(in.FactoryPrice).
+		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+	if in.Price >= 0 {
+		upd.SetPrice(in.Price)
+	}
+	if in.Status != 0 {
+		upd.SetStatus(in.Status)
+	}
+	if in.CategoryID > 0 {
+		upd.SetCategoryID(in.CategoryID)
+	}
+	if in.Description != "" {
+		upd.SetDescription(in.Description)
+	}
+	if in.Cover != "" {
+		upd.SetCover(in.Cover)
+	}
+	updated, err := upd.Save(ctx)
+	if err != nil {
+		return 0, false, err
+	}
+	return updated.ID, false, nil
+}

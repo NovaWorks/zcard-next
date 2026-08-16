@@ -1590,6 +1590,278 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/supply/connections:
+        get:
+            tags:
+                - AdminSupplyService
+            description: ListConnections 连接列表（凭据零回显）。
+            operationId: AdminSupplyService_ListConnections
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListConnectionsReply'
+        post:
+            tags:
+                - AdminSupplyService
+            description: CreateConnection 创建上游连接（凭据 AES-GCM 加密入库；base_url SSRF 校验）。
+            operationId: AdminSupplyService_CreateConnection
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateConnectionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplyConnection'
+    /api/v1/admin/supply/connections/{id}:
+        put:
+            tags:
+                - AdminSupplyService
+            description: UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
+            operationId: AdminSupplyService_UpdateConnection
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateConnectionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplyConnection'
+        delete:
+            tags:
+                - AdminSupplyService
+            description: DeleteConnection 删除连接（存在映射时拒绝）。
+            operationId: AdminSupplyService_DeleteConnection
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/supply/connections/{id}/ping:
+        post:
+            tags:
+                - AdminSupplyService
+            description: PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
+            operationId: AdminSupplyService_PingConnection
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.PingConnectionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PingConnectionReply'
+    /api/v1/admin/supply/health:
+        get:
+            tags:
+                - AdminSupplyService
+            description: ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+            operationId: AdminSupplyService_ListHealth
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListHealthReply'
+    /api/v1/admin/supply/mappings:
+        get:
+            tags:
+                - AdminSupplyService
+            description: ListMappings 商品映射列表（按连接过滤）。
+            operationId: AdminSupplyService_ListMappings
+            parameters:
+                - name: connectionId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListMappingsReply'
+        post:
+            tags:
+                - AdminSupplyService
+            description: UpsertMapping 创建/更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
+            operationId: AdminSupplyService_UpsertMapping
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpsertMappingRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplyMapping'
+    /api/v1/admin/supply/mappings/{id}:
+        delete:
+            tags:
+                - AdminSupplyService
+            description: DeleteMapping 删除映射。
+            operationId: AdminSupplyService_DeleteMapping
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/supply/sync-tasks:
+        get:
+            tags:
+                - AdminSupplyService
+            description: ListSyncTasks 同步任务列表。
+            operationId: AdminSupplyService_ListSyncTasks
+            parameters:
+                - name: connectionId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSyncTasksReply'
+        post:
+            tags:
+                - AdminSupplyService
+            description: CreateSyncTask 创建同步任务（full=全量 / incremental=增量；low 队列执行）。
+            operationId: AdminSupplyService_CreateSyncTask
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateSyncTaskRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
+    /api/v1/admin/supply/sync-tasks/{id}:
+        get:
+            tags:
+                - AdminSupplyService
+            description: GetSyncTask 任务详情（心跳/统计/错误上下文）。
+            operationId: AdminSupplyService_GetSyncTask
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
+    /api/v1/admin/supply/sync-tasks/{id}/cancel:
+        post:
+            tags:
+                - AdminSupplyService
+            description: CancelSyncTask 请求取消（分批间检查标志）。
+            operationId: AdminSupplyService_CancelSyncTask
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CancelSyncTaskRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
     /api/v1/admin/tags:
         get:
             tags:
@@ -2212,6 +2484,13 @@ components:
                     type: string
                 reason:
                     type: string
+        zcard.api.admin.v1.CancelSyncTaskRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.admin.v1.CapturePaymentRequest:
             required:
                 - id
@@ -2391,6 +2670,43 @@ components:
                 sort:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.CreateConnectionRequest:
+            required:
+                - name
+                - driver
+                - baseUrl
+                - credentials
+            type: object
+            properties:
+                name:
+                    type: string
+                driver:
+                    type: string
+                baseUrl:
+                    type: string
+                credentials:
+                    type: string
+                callbackUrl:
+                    type: string
+                retryMax:
+                    type: integer
+                    format: int32
+                retryIntervals:
+                    type: string
+                exchangeRate:
+                    type: number
+                    format: double
+                priceMarkupPercent:
+                    type: number
+                    format: double
+                priceRoundingMode:
+                    type: string
+                autoSyncPrice:
+                    type: boolean
+                stockMode:
+                    type: string
+                settings:
+                    type: string
         zcard.api.admin.v1.CreateControlRequest:
             required:
                 - productId
@@ -2582,6 +2898,19 @@ components:
                     format: int32
                 upstreamSkuId:
                     type: string
+        zcard.api.admin.v1.CreateSyncTaskRequest:
+            required:
+                - connectionId
+            type: object
+            properties:
+                connectionId:
+                    type: string
+                mode:
+                    type: string
+                scope:
+                    type: string
+                forceReprice:
+                    type: boolean
         zcard.api.admin.v1.CreateTagRequest:
             required:
                 - name
@@ -2760,6 +3089,31 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Perm'
             description: Group 域分组。
+        zcard.api.admin.v1.HealthItem:
+            type: object
+            properties:
+                connectionId:
+                    type: string
+                name:
+                    type: string
+                driver:
+                    type: string
+                status:
+                    type: string
+                lastPingOk:
+                    type: boolean
+                lastPingAt:
+                    type: string
+                lastSyncedAt:
+                    type: string
+                lastError:
+                    type: string
+                balanceCache:
+                    type: string
+                pingSuccessRate:
+                    type: string
+                avgLatencyMs:
+                    type: string
         zcard.api.admin.v1.ImportBatch:
             type: object
             properties:
@@ -2846,6 +3200,21 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.CardInfo'
                 total:
                     type: string
+        zcard.api.admin.v1.ListConnectionsReply:
+            type: object
+            properties:
+                connections:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplyConnection'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListDeliveriesReply:
             type: object
             properties:
@@ -2853,6 +3222,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.DeliveryRecord'
+        zcard.api.admin.v1.ListHealthReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.HealthItem'
         zcard.api.admin.v1.ListImportsReply:
             type: object
             properties:
@@ -2860,6 +3236,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.ImportBatch'
+        zcard.api.admin.v1.ListMappingsReply:
+            type: object
+            properties:
+                mappings:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplyMapping'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListOrdersReply:
             type: object
             properties:
@@ -2939,6 +3330,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+        zcard.api.admin.v1.ListSyncTasksReply:
+            type: object
+            properties:
+                tasks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListWalletTxReply:
             type: object
             properties:
@@ -3112,6 +3518,26 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Group'
             description: PermissionTree 权限目录树。
+        zcard.api.admin.v1.PingConnectionReply:
+            type: object
+            properties:
+                ok:
+                    type: boolean
+                siteName:
+                    type: string
+                balance:
+                    type: string
+                currency:
+                    type: string
+                error:
+                    type: string
+        zcard.api.admin.v1.PingConnectionRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.admin.v1.PremiumCardInfo:
             type: object
             properties:
@@ -3260,6 +3686,132 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.admin.v1.SupplyConnection:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                driver:
+                    type: string
+                baseUrl:
+                    type: string
+                credentialsSet:
+                    type: boolean
+                status:
+                    type: string
+                callbackUrl:
+                    type: string
+                retryMax:
+                    type: integer
+                    format: int32
+                retryIntervals:
+                    type: string
+                exchangeRate:
+                    type: number
+                    format: double
+                priceMarkupPercent:
+                    type: number
+                    format: double
+                priceRoundingMode:
+                    type: string
+                autoSyncPrice:
+                    type: boolean
+                stockMode:
+                    type: string
+                settings:
+                    type: string
+                lastPingAt:
+                    type: string
+                lastPingOk:
+                    type: boolean
+                lastSyncedAt:
+                    type: string
+                lastError:
+                    type: string
+                balanceCache:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        zcard.api.admin.v1.SupplyMapping:
+            type: object
+            properties:
+                id:
+                    type: string
+                connectionId:
+                    type: string
+                upstreamCategory:
+                    type: string
+                localCategoryId:
+                    type: string
+                upstreamProduct:
+                    type: string
+                localProductId:
+                    type: string
+                upstreamSku:
+                    type: string
+                localSkuId:
+                    type: string
+                upStock:
+                    type: integer
+                    format: int32
+                pricingOverride:
+                    type: string
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
+        zcard.api.admin.v1.SupplySyncTask:
+            type: object
+            properties:
+                id:
+                    type: string
+                connectionId:
+                    type: string
+                mode:
+                    type: string
+                scope:
+                    type: string
+                forceReprice:
+                    type: boolean
+                status:
+                    type: string
+                total:
+                    type: string
+                processed:
+                    type: string
+                created:
+                    type: string
+                updated:
+                    type: string
+                priceUpdated:
+                    type: string
+                manualSkipped:
+                    type: string
+                hidden:
+                    type: string
+                deleted:
+                    type: string
+                errorCode:
+                    type: string
+                errorContext:
+                    type: string
+                startedAt:
+                    type: string
+                heartbeatAt:
+                    type: string
+                currentStage:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                cancelRequestedAt:
+                    type: string
+                finishedAt:
+                    type: string
         zcard.api.admin.v1.Tag:
             type: object
             properties:
@@ -3353,6 +3905,40 @@ components:
                 sort:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.UpdateConnectionRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                baseUrl:
+                    type: string
+                credentials:
+                    type: string
+                callbackUrl:
+                    type: string
+                retryMax:
+                    type: integer
+                    format: int32
+                retryIntervals:
+                    type: string
+                exchangeRate:
+                    type: number
+                    format: double
+                priceMarkupPercent:
+                    type: number
+                    format: double
+                priceRoundingMode:
+                    type: string
+                autoSyncPrice:
+                    type: boolean
+                stockMode:
+                    type: string
+                status:
+                    type: string
         zcard.api.admin.v1.UpdateControlRequest:
             required:
                 - id
@@ -3522,6 +4108,28 @@ components:
                     type: integer
                     format: int32
                 upstreamSkuId:
+                    type: string
+        zcard.api.admin.v1.UpsertMappingRequest:
+            required:
+                - connectionId
+                - upstreamProduct
+            type: object
+            properties:
+                connectionId:
+                    type: string
+                upstreamCategory:
+                    type: string
+                localCategoryId:
+                    type: string
+                upstreamProduct:
+                    type: string
+                localProductId:
+                    type: string
+                upstreamSku:
+                    type: string
+                localSkuId:
+                    type: string
+                pricingOverride:
                     type: string
         zcard.api.admin.v1.ViewCardContentReply:
             type: object
@@ -3956,6 +4564,12 @@ tags:
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
          里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+    - name: AdminSupplyService
+      description: |-
+        AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
+         商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
+         凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
+         （列表/详情只给 credentials_set 布尔，铁律 11）。
     - name: AdminUserService
       description: AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
     - name: AdminWalletService

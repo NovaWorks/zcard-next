@@ -58,6 +58,17 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	catalogUsecase := catalog.NewCatalogUsecase(productRepoImpl)
 	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase)
 	supplyService := supply.NewSupplyService()
+	supplyRepoImpl := supply.NewSupplyRepoImpl(dataData, box)
+	dispatcher := bootstrap.NewDispatcher(dataData, logger)
+	failedTaskWriter := data.NewFailedTaskWriter(dataData)
+	enqueuer, cleanup2, err := bootstrap.NewEnqueuer(dataConf, dispatcher, failedTaskWriter, logger)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	outboxWriter := data.NewOutboxWriter(dataData)
+	syncService := supply.NewSyncService(supplyRepoImpl, productRepoImpl, enqueuer, outboxWriter, logger)
+	adminSupplyService := supply.NewAdminSupplyService(supplyRepoImpl, syncService)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
 	adminUserService := authz.NewAdminUserService(adminUserRepoImpl, directory, roleRepoImpl)
@@ -72,6 +83,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminDashboardService := dashboard.NewAdminDashboardService(dashboardRepoImpl)
 	cardCipher, err := bootstrap.NewCardCipher(securityConf)
 	if err != nil {
+		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
@@ -79,6 +91,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminInventoryService := inventory.NewAdminInventoryService(cardRepoImpl, dataData)
 	generator, err := bootstrap.NewIDGenerator()
 	if err != nil {
+		cleanup2()
 		cleanup()
 		return nil, nil, err
 	}
@@ -95,18 +108,11 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	deliveryRepoImpl := fulfillment.NewDeliveryRepoImpl(dataData, cardCipher)
 	storeDeliveryService := fulfillment.NewStoreDeliveryService(deliveryRepoImpl)
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
-	dispatcher := bootstrap.NewDispatcher(dataData, logger)
-	failedTaskWriter := data.NewFailedTaskWriter(dataData)
-	enqueuer, cleanup2, err := bootstrap.NewEnqueuer(dataConf, dispatcher, failedTaskWriter, logger)
-	if err != nil {
-		cleanup()
-		return nil, nil, err
-	}
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, adminSupplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService)
-	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher)
+	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
-	cron := bootstrap.NewCron()
+	cron := bootstrap.NewCron(syncService)
 	runMode := provideRunMode()
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
 	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer)

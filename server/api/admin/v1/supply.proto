@@ -1,0 +1,299 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
+// 商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
+// 凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
+// （列表/详情只给 credentials_set 布尔，铁律 11）。
+service AdminSupplyService {
+  // CreateConnection 创建上游连接（凭据 AES-GCM 加密入库；base_url SSRF 校验）。
+  rpc CreateConnection(CreateConnectionRequest) returns (SupplyConnection) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supply/connections"
+      body: "*"
+    };
+  }
+  // UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
+  rpc UpdateConnection(UpdateConnectionRequest) returns (SupplyConnection) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/supply/connections/{id}"
+      body: "*"
+    };
+  }
+  // DeleteConnection 删除连接（存在映射时拒绝）。
+  rpc DeleteConnection(DeleteConnectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/supply/connections/{id}"
+    };
+  }
+  // ListConnections 连接列表（凭据零回显）。
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supply/connections" };
+  }
+  // PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
+  rpc PingConnection(PingConnectionRequest) returns (PingConnectionReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supply/connections/{id}/ping"
+      body: "*"
+    };
+  }
+  // ListMappings 商品映射列表（按连接过滤）。
+  rpc ListMappings(ListMappingsRequest) returns (ListMappingsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supply/mappings" };
+  }
+  // UpsertMapping 创建/更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
+  rpc UpsertMapping(UpsertMappingRequest) returns (SupplyMapping) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supply/mappings"
+      body: "*"
+    };
+  }
+  // DeleteMapping 删除映射。
+  rpc DeleteMapping(DeleteMappingRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/supply/mappings/{id}"
+    };
+  }
+  // CreateSyncTask 创建同步任务（full=全量 / incremental=增量；low 队列执行）。
+  rpc CreateSyncTask(CreateSyncTaskRequest) returns (SupplySyncTask) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supply/sync-tasks"
+      body: "*"
+    };
+  }
+  // ListSyncTasks 同步任务列表。
+  rpc ListSyncTasks(ListSyncTasksRequest) returns (ListSyncTasksReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supply/sync-tasks" };
+  }
+  // GetSyncTask 任务详情（心跳/统计/错误上下文）。
+  rpc GetSyncTask(GetSyncTaskRequest) returns (SupplySyncTask) {
+    option (google.api.http) = { get: "/api/v1/admin/supply/sync-tasks/{id}" };
+  }
+  // CancelSyncTask 请求取消（分批间检查标志）。
+  rpc CancelSyncTask(CancelSyncTaskRequest) returns (SupplySyncTask) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supply/sync-tasks/{id}/cancel"
+      body: "*"
+    };
+  }
+  // ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+  rpc ListHealth(ListHealthRequest) returns (ListHealthReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supply/health" };
+  }
+}
+
+// ---- 连接 ----
+
+message SupplyConnection {
+  uint64 id = 1;
+  string name = 2;
+  string driver = 3; // zcard | dujiao_next | acg_faka
+  string base_url = 4;
+  bool credentials_set = 5; // 凭据已配置（密文不回显）
+  string status = 6;        // active | disabled
+  string callback_url = 7;
+  int32 retry_max = 8;
+  string retry_intervals = 9; // JSON 数组 [30,60,300]
+  double exchange_rate = 10;
+  double price_markup_percent = 11;
+  string price_rounding_mode = 12; // none | ceil_int | ceil_tenth
+  bool auto_sync_price = 13;
+  string stock_mode = 14; // real | plenty
+  string settings = 15;   // JSON
+  int64 last_ping_at = 16;
+  bool last_ping_ok = 17;
+  int64 last_synced_at = 18;
+  string last_error = 19;
+  int64 balance_cache = 20;
+  int64 created_at = 21;
+  int64 updated_at = 22;
+}
+
+message CreateConnectionRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string driver = 2 [(google.api.field_behavior) = REQUIRED];
+  string base_url = 3 [(google.api.field_behavior) = REQUIRED];
+  string credentials = 4 [(google.api.field_behavior) = REQUIRED]; // 驱动结构 JSON 明文（仅此接口）
+  string callback_url = 5;
+  int32 retry_max = 6;
+  string retry_intervals = 7;
+  double exchange_rate = 8;
+  double price_markup_percent = 9;
+  string price_rounding_mode = 10;
+  bool auto_sync_price = 11;
+  string stock_mode = 12;
+  string settings = 13;
+}
+
+message UpdateConnectionRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  string base_url = 3;
+  string credentials = 4; // 留空 = 不更新
+  string callback_url = 5;
+  int32 retry_max = 6;
+  string retry_intervals = 7;
+  double exchange_rate = 8;
+  double price_markup_percent = 9;
+  string price_rounding_mode = 10;
+  bool auto_sync_price = 11;
+  string stock_mode = 12;
+  string status = 13;
+}
+
+message DeleteConnectionRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListConnectionsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListConnectionsReply {
+  repeated SupplyConnection connections = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message PingConnectionRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message PingConnectionReply {
+  bool ok = 1;
+  string site_name = 2;
+  int64 balance = 3;
+  string currency = 4;
+  string error = 5;
+}
+
+// ---- 映射 ----
+
+message SupplyMapping {
+  uint64 id = 1;
+  uint64 connection_id = 2;
+  string upstream_category = 3;
+  uint64 local_category_id = 4;
+  string upstream_product = 5;
+  uint64 local_product_id = 6;
+  string upstream_sku = 7;
+  uint64 local_sku_id = 8;
+  int32 up_stock = 9; // -1 = 无限
+  string pricing_override = 10; // JSON
+  int64 created_at = 11;
+  int64 updated_at = 12;
+}
+
+message ListMappingsRequest {
+  uint64 connection_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListMappingsReply {
+  repeated SupplyMapping mappings = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpsertMappingRequest {
+  uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string upstream_category = 2;
+  uint64 local_category_id = 3;
+  string upstream_product = 4 [(google.api.field_behavior) = REQUIRED];
+  uint64 local_product_id = 5;
+  string upstream_sku = 6;
+  uint64 local_sku_id = 7;
+  string pricing_override = 8;
+}
+
+message DeleteMappingRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ---- 同步任务 ----
+
+message SupplySyncTask {
+  uint64 id = 1;
+  uint64 connection_id = 2;
+  string mode = 3;   // full | incremental
+  string scope = 4;
+  bool force_reprice = 5;
+  string status = 6; // pending | processing | done | failed | canceled
+  int64 total = 7;
+  int64 processed = 8;
+  int64 created = 9;
+  int64 updated = 10;
+  int64 price_updated = 11;
+  int64 manual_skipped = 12;
+  int64 hidden = 13;
+  int64 deleted = 14;
+  string error_code = 15;
+  string error_context = 16;
+  int64 started_at = 17;
+  int64 heartbeat_at = 18;
+  string current_stage = 19;
+  int32 page = 20;
+  int64 cancel_requested_at = 21;
+  int64 finished_at = 22;
+}
+
+message CreateSyncTaskRequest {
+  uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string mode = 2; // full | incremental（默认 full）
+  string scope = 3;
+  bool force_reprice = 4;
+}
+
+message ListSyncTasksRequest {
+  uint64 connection_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListSyncTasksReply {
+  repeated SupplySyncTask tasks = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetSyncTaskRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CancelSyncTaskRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ---- 健康 ----
+
+message ListHealthRequest {}
+
+message HealthItem {
+  uint64 connection_id = 1;
+  string name = 2;
+  string driver = 3;
+  string status = 4;
+  bool last_ping_ok = 5;
+  int64 last_ping_at = 6;
+  int64 last_synced_at = 7;
+  string last_error = 8;
+  int64 balance_cache = 9;
+  int64 ping_success_rate = 10; // 千分比（0-1000）
+  int64 avg_latency_ms = 11;
+}
+
+message ListHealthReply {
+  repeated HealthItem items = 1;
+}
