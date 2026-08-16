@@ -20,7 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SupplyService_Ping_FullMethodName = "/zcard.api.supply.v1.SupplyService/Ping"
+	SupplyService_Ping_FullMethodName           = "/zcard.api.supply.v1.SupplyService/Ping"
+	SupplyService_ListCategories_FullMethodName = "/zcard.api.supply.v1.SupplyService/ListCategories"
+	SupplyService_ListProducts_FullMethodName   = "/zcard.api.supply.v1.SupplyService/ListProducts"
+	SupplyService_GetProduct_FullMethodName     = "/zcard.api.supply.v1.SupplyService/GetProduct"
+	SupplyService_GetStock_FullMethodName       = "/zcard.api.supply.v1.SupplyService/GetStock"
+	SupplyService_CreateOrder_FullMethodName    = "/zcard.api.supply.v1.SupplyService/CreateOrder"
+	SupplyService_GetOrder_FullMethodName       = "/zcard.api.supply.v1.SupplyService/GetOrder"
+	SupplyService_CancelOrder_FullMethodName    = "/zcard.api.supply.v1.SupplyService/CancelOrder"
+	SupplyService_RefundOrder_FullMethodName    = "/zcard.api.supply.v1.SupplyService/RefundOrder"
 )
 
 // SupplyServiceClient is the client API for SupplyService service.
@@ -30,10 +38,28 @@ const (
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
 // 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
 // ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
-// M0 骨架仅提供 Ping 连通性端点，鉴权中间件挂载点已预留在 server/http.go。
+// Ping 免签名（连通性探测）；其余端点全部需要签名。
+// 金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
 type SupplyServiceClient interface {
-	// Ping 连通性与协议版本探测（下游对接第一步）。
+	// Ping 连通性与协议版本探测（免签名）。
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PingReply, error)
+	// ListCategories 商品分类（下游建目录）。
+	ListCategories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListCategoriesReply, error)
+	// ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error)
+	// GetProduct 商品详情。
+	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*GetProductReply, error)
+	// GetStock 实时库存（-1=无限）。
+	GetStock(ctx context.Context, in *GetStockRequest, opts ...grpc.CallOption) (*GetStockReply, error)
+	// CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+	// 同步交付：响应 fulfillment.delivered + cards）。
+	CreateOrder(ctx context.Context, in *CreateSupplyOrderRequest, opts ...grpc.CallOption) (*CreateSupplyOrderReply, error)
+	// GetOrder 订单查询（轮询/巡检兜底）。
+	GetOrder(ctx context.Context, in *GetSupplyOrderRequest, opts ...grpc.CallOption) (*GetSupplyOrderReply, error)
+	// CancelOrder 取消（未交付订单释放锁卡）。
+	CancelOrder(ctx context.Context, in *CancelSupplyOrderRequest, opts ...grpc.CallOption) (*CancelSupplyOrderReply, error)
+	// RefundOrder 退款（已交付转人工；未交付释放）。
+	RefundOrder(ctx context.Context, in *RefundSupplyOrderRequest, opts ...grpc.CallOption) (*RefundSupplyOrderReply, error)
 }
 
 type supplyServiceClient struct {
@@ -54,6 +80,86 @@ func (c *supplyServiceClient) Ping(ctx context.Context, in *emptypb.Empty, opts 
 	return out, nil
 }
 
+func (c *supplyServiceClient) ListCategories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListCategoriesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCategoriesReply)
+	err := c.cc.Invoke(ctx, SupplyService_ListCategories_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProductsReply)
+	err := c.cc.Invoke(ctx, SupplyService_ListProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*GetProductReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProductReply)
+	err := c.cc.Invoke(ctx, SupplyService_GetProduct_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) GetStock(ctx context.Context, in *GetStockRequest, opts ...grpc.CallOption) (*GetStockReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStockReply)
+	err := c.cc.Invoke(ctx, SupplyService_GetStock_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) CreateOrder(ctx context.Context, in *CreateSupplyOrderRequest, opts ...grpc.CallOption) (*CreateSupplyOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateSupplyOrderReply)
+	err := c.cc.Invoke(ctx, SupplyService_CreateOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) GetOrder(ctx context.Context, in *GetSupplyOrderRequest, opts ...grpc.CallOption) (*GetSupplyOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupplyOrderReply)
+	err := c.cc.Invoke(ctx, SupplyService_GetOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) CancelOrder(ctx context.Context, in *CancelSupplyOrderRequest, opts ...grpc.CallOption) (*CancelSupplyOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CancelSupplyOrderReply)
+	err := c.cc.Invoke(ctx, SupplyService_CancelOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *supplyServiceClient) RefundOrder(ctx context.Context, in *RefundSupplyOrderRequest, opts ...grpc.CallOption) (*RefundSupplyOrderReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RefundSupplyOrderReply)
+	err := c.cc.Invoke(ctx, SupplyService_RefundOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SupplyServiceServer is the server API for SupplyService service.
 // All implementations must embed UnimplementedSupplyServiceServer
 // for forward compatibility.
@@ -61,10 +167,28 @@ func (c *supplyServiceClient) Ping(ctx context.Context, in *emptypb.Empty, opts 
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
 // 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
 // ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
-// M0 骨架仅提供 Ping 连通性端点，鉴权中间件挂载点已预留在 server/http.go。
+// Ping 免签名（连通性探测）；其余端点全部需要签名。
+// 金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
 type SupplyServiceServer interface {
-	// Ping 连通性与协议版本探测（下游对接第一步）。
+	// Ping 连通性与协议版本探测（免签名）。
 	Ping(context.Context, *emptypb.Empty) (*PingReply, error)
+	// ListCategories 商品分类（下游建目录）。
+	ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error)
+	// ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
+	// GetProduct 商品详情。
+	GetProduct(context.Context, *GetProductRequest) (*GetProductReply, error)
+	// GetStock 实时库存（-1=无限）。
+	GetStock(context.Context, *GetStockRequest) (*GetStockReply, error)
+	// CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+	// 同步交付：响应 fulfillment.delivered + cards）。
+	CreateOrder(context.Context, *CreateSupplyOrderRequest) (*CreateSupplyOrderReply, error)
+	// GetOrder 订单查询（轮询/巡检兜底）。
+	GetOrder(context.Context, *GetSupplyOrderRequest) (*GetSupplyOrderReply, error)
+	// CancelOrder 取消（未交付订单释放锁卡）。
+	CancelOrder(context.Context, *CancelSupplyOrderRequest) (*CancelSupplyOrderReply, error)
+	// RefundOrder 退款（已交付转人工；未交付释放）。
+	RefundOrder(context.Context, *RefundSupplyOrderRequest) (*RefundSupplyOrderReply, error)
 	mustEmbedUnimplementedSupplyServiceServer()
 }
 
@@ -77,6 +201,30 @@ type UnimplementedSupplyServiceServer struct{}
 
 func (UnimplementedSupplyServiceServer) Ping(context.Context, *emptypb.Empty) (*PingReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Ping not implemented")
+}
+func (UnimplementedSupplyServiceServer) ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCategories not implemented")
+}
+func (UnimplementedSupplyServiceServer) ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListProducts not implemented")
+}
+func (UnimplementedSupplyServiceServer) GetProduct(context.Context, *GetProductRequest) (*GetProductReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetProduct not implemented")
+}
+func (UnimplementedSupplyServiceServer) GetStock(context.Context, *GetStockRequest) (*GetStockReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStock not implemented")
+}
+func (UnimplementedSupplyServiceServer) CreateOrder(context.Context, *CreateSupplyOrderRequest) (*CreateSupplyOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateOrder not implemented")
+}
+func (UnimplementedSupplyServiceServer) GetOrder(context.Context, *GetSupplyOrderRequest) (*GetSupplyOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetOrder not implemented")
+}
+func (UnimplementedSupplyServiceServer) CancelOrder(context.Context, *CancelSupplyOrderRequest) (*CancelSupplyOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelOrder not implemented")
+}
+func (UnimplementedSupplyServiceServer) RefundOrder(context.Context, *RefundSupplyOrderRequest) (*RefundSupplyOrderReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method RefundOrder not implemented")
 }
 func (UnimplementedSupplyServiceServer) mustEmbedUnimplementedSupplyServiceServer() {}
 func (UnimplementedSupplyServiceServer) testEmbeddedByValue()                       {}
@@ -117,6 +265,150 @@ func _SupplyService_Ping_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SupplyService_ListCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).ListCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_ListCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).ListCategories(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_ListProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).ListProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_ListProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).ListProducts(ctx, req.(*ListProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_GetProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).GetProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_GetProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).GetProduct(ctx, req.(*GetProductRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_GetStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStockRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).GetStock(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_GetStock_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).GetStock(ctx, req.(*GetStockRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSupplyOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).CreateOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_CreateOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).CreateOrder(ctx, req.(*CreateSupplyOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_GetOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplyOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).GetOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_GetOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).GetOrder(ctx, req.(*GetSupplyOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_CancelOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelSupplyOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).CancelOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_CancelOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).CancelOrder(ctx, req.(*CancelSupplyOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SupplyService_RefundOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefundSupplyOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).RefundOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_RefundOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).RefundOrder(ctx, req.(*RefundSupplyOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SupplyService_ServiceDesc is the grpc.ServiceDesc for SupplyService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -127,6 +419,38 @@ var SupplyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _SupplyService_Ping_Handler,
+		},
+		{
+			MethodName: "ListCategories",
+			Handler:    _SupplyService_ListCategories_Handler,
+		},
+		{
+			MethodName: "ListProducts",
+			Handler:    _SupplyService_ListProducts_Handler,
+		},
+		{
+			MethodName: "GetProduct",
+			Handler:    _SupplyService_GetProduct_Handler,
+		},
+		{
+			MethodName: "GetStock",
+			Handler:    _SupplyService_GetStock_Handler,
+		},
+		{
+			MethodName: "CreateOrder",
+			Handler:    _SupplyService_CreateOrder_Handler,
+		},
+		{
+			MethodName: "GetOrder",
+			Handler:    _SupplyService_GetOrder_Handler,
+		},
+		{
+			MethodName: "CancelOrder",
+			Handler:    _SupplyService_CancelOrder_Handler,
+		},
+		{
+			MethodName: "RefundOrder",
+			Handler:    _SupplyService_RefundOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

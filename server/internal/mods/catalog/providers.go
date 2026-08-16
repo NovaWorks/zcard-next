@@ -18,6 +18,8 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(port.UpstreamProductWriter), new(*ProductRepoImpl)),
 	// P2-02：商品读取端口（procurement 消费，通道 A）
 	wire.Bind(new(port.ProductReader), new(*ProductRepoImpl)),
+	// P2-03：供货目录端口（supplier 消费，通道 A）
+	wire.Bind(new(port.SupplierCatalog), new(*ProductRepoImpl)),
 	NewStoreCatalogService,
 	NewAdminCatalogService,
 )

@@ -13,6 +13,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
@@ -54,7 +55,7 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl) *queue.Cron {
 	c := queue.NewCron()
 	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
@@ -62,5 +63,9 @@ func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService
 	})
 	// M2：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
 	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
+	// M2：供货 nonce 过期清理（每小时）
+	c.AddEvery("supplier.nonce_cleanup", time.Hour, func(ctx context.Context) {
+		_ = supplierRepo.CleanupExpiredNonces(ctx)
+	})
 	return c
 }

@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminSupplierService 对外供货管理（P2-03 T6）：下游账户申请/审核/启停/重置密钥、
+// 供货定价 CRUD、账本流水、回调记录查询与手动重发。
+service AdminSupplierService {
+  // CreateAccount 下游申请（secret 明文只在此响应出现一次）。
+  rpc CreateAccount(CreateSupplierAccountRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/accounts"
+      body: "*"
+    };
+  }
+  // ListAccounts 账户列表（secret 零回显）。
+  rpc ListAccounts(ListSupplierAccountsRequest) returns (ListSupplierAccountsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supplier/accounts" };
+  }
+  // ReviewAccount 审核（applying → approved/disabled）。
+  rpc ReviewAccount(ReviewSupplierAccountRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/accounts/{id}/review"
+      body: "*"
+    };
+  }
+  // ToggleAccount 启停。
+  rpc ToggleAccount(ToggleSupplierAccountRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/accounts/{id}/toggle"
+      body: "*"
+    };
+  }
+  // ResetSecret 重置密钥（返回明文一次）。
+  rpc ResetSecret(ResetSupplierSecretRequest) returns (ResetSupplierSecretReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/accounts/{id}/reset-secret"
+      body: "*"
+    };
+  }
+  // SetNotifyURL 配置回调地址。
+  rpc SetNotifyURL(SetSupplierNotifyURLRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/supplier/accounts/{id}/notify-url"
+      body: "*"
+    };
+  }
+  // Recharge 账户充值（账本入账）。
+  rpc Recharge(RechargeSupplierRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/accounts/{id}/recharge"
+      body: "*"
+    };
+  }
+  // ListLedger 账本流水（下游自助对账数据源）。
+  rpc ListLedger(ListSupplierLedgerRequest) returns (ListSupplierLedgerReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supplier/ledger" };
+  }
+  // UpsertPrice 供货定价（覆盖价）。
+  rpc UpsertPrice(UpsertSupplierPriceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/prices"
+      body: "*"
+    };
+  }
+  // ListCallbacks 回调记录（含死信）。
+  rpc ListCallbacks(ListSupplierCallbacksRequest) returns (ListSupplierCallbacksReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supplier/callbacks" };
+  }
+  // ResendCallback 手动重发回调（死信恢复）。
+  rpc ResendCallback(ResendSupplierCallbackRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/supplier/callbacks/{id}/resend"
+      body: "*"
+    };
+  }
+}
+
+message SupplierAccountReply {
+  uint64 id = 1;
+  string name = 2;
+  string api_key = 3;
+  string api_secret = 4; // 仅创建/重置时回显（一次）
+  string contact = 5;
+  string status = 6; // applying | approved | disabled
+  int64 balance_cache = 7;
+  string notify_url = 8;
+  int64 reviewed_at = 9;
+  int64 created_at = 10;
+}
+
+message CreateSupplierAccountRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string api_key = 2 [(google.api.field_behavior) = REQUIRED];
+  string api_secret = 3 [(google.api.field_behavior) = REQUIRED];
+  string contact = 4;
+}
+
+message ListSupplierAccountsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListSupplierAccountsReply {
+  repeated SupplierAccountReply accounts = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ReviewSupplierAccountRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool approve = 2;
+}
+
+message ToggleSupplierAccountRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool enabled = 2;
+}
+
+message ResetSupplierSecretRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string new_secret = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ResetSupplierSecretReply {
+  string api_secret = 1; // 明文只出现这一次
+}
+
+message SetSupplierNotifyURLRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string notify_url = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message RechargeSupplierRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED];
+  string remark = 3;
+}
+
+message ListSupplierLedgerRequest {
+  uint64 account_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message SupplierLedgerEntry {
+  uint64 id = 1;
+  uint64 account_id = 2;
+  uint64 supply_order_id = 3;
+  string type = 4; // recharge | supply_pay | supply_refund | adjust
+  int64 amount = 5; // 有符号分
+  string reference = 6;
+  string remark = 7;
+  int64 created_at = 8;
+}
+
+message ListSupplierLedgerReply {
+  repeated SupplierLedgerEntry entries = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpsertSupplierPriceRequest {
+  uint64 account_id = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 product_id = 2 [(google.api.field_behavior) = REQUIRED];
+  uint64 sku_id = 3;
+  int64 price = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListSupplierCallbacksRequest {
+  string status = 1; // 空 = 全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message SupplierCallback {
+  uint64 id = 1;
+  uint64 supply_order_id = 2;
+  uint64 account_id = 3;
+  string downstream_order_no = 4;
+  string callback_url = 5;
+  string trace_id = 6;
+  string callback_status = 7; // pending | success | failed
+  int32 retry_count = 8;
+  int64 last_callback_at = 9;
+  string last_error = 10;
+}
+
+message ListSupplierCallbacksReply {
+  repeated SupplierCallback callbacks = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ResendSupplierCallbackRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}

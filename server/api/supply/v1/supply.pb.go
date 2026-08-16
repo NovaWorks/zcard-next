@@ -28,6 +28,10 @@ type PingReply struct {
 	Protocol      string                 `protobuf:"bytes,1,opt,name=protocol,proto3" json:"protocol,omitempty"`                        // 固定 "zcard-supply-v2"
 	Version       string                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`                          // 服务端版本
 	ServerTime    int64                  `protobuf:"varint,3,opt,name=server_time,json=serverTime,proto3" json:"server_time,omitempty"` // unix 秒
+	Ok            bool                   `protobuf:"varint,4,opt,name=ok,proto3" json:"ok,omitempty"`
+	Name          string                 `protobuf:"bytes,5,opt,name=name,proto3" json:"name,omitempty"`        // 站点名
+	Balance       int64                  `protobuf:"varint,6,opt,name=balance,proto3" json:"balance,omitempty"` // 下游余额（分，鉴权后）
+	Currency      string                 `protobuf:"bytes,7,opt,name=currency,proto3" json:"currency,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -83,18 +87,1282 @@ func (x *PingReply) GetServerTime() int64 {
 	return 0
 }
 
+func (x *PingReply) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *PingReply) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PingReply) GetBalance() int64 {
+	if x != nil {
+		return x.Balance
+	}
+	return 0
+}
+
+func (x *PingReply) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+type ListCategoriesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Categories    []*SupplyCategory      `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCategoriesReply) Reset() {
+	*x = ListCategoriesReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCategoriesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCategoriesReply) ProtoMessage() {}
+
+func (x *ListCategoriesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCategoriesReply.ProtoReflect.Descriptor instead.
+func (*ListCategoriesReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListCategoriesReply) GetCategories() []*SupplyCategory {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+type SupplyCategory struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ParentId      string                 `protobuf:"bytes,3,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupplyCategory) Reset() {
+	*x = SupplyCategory{}
+	mi := &file_supply_v1_supply_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplyCategory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplyCategory) ProtoMessage() {}
+
+func (x *SupplyCategory) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplyCategory.ProtoReflect.Descriptor instead.
+func (*SupplyCategory) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *SupplyCategory) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SupplyCategory) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SupplyCategory) GetParentId() string {
+	if x != nil {
+		return x.ParentId
+	}
+	return ""
+}
+
+type ListProductsRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Page            int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize        int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	IncludeInactive bool                   `protobuf:"varint,3,opt,name=include_inactive,json=includeInactive,proto3" json:"include_inactive,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListProductsRequest) Reset() {
+	*x = ListProductsRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProductsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProductsRequest) ProtoMessage() {}
+
+func (x *ListProductsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProductsRequest.ProtoReflect.Descriptor instead.
+func (*ListProductsRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ListProductsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListProductsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListProductsRequest) GetIncludeInactive() bool {
+	if x != nil {
+		return x.IncludeInactive
+	}
+	return false
+}
+
+type ListProductsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*SupplyProduct       `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	HasMore       bool                   `protobuf:"varint,4,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListProductsReply) Reset() {
+	*x = ListProductsReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProductsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProductsReply) ProtoMessage() {}
+
+func (x *ListProductsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProductsReply.ProtoReflect.Descriptor instead.
+func (*ListProductsReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListProductsReply) GetItems() []*SupplyProduct {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListProductsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListProductsReply) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListProductsReply) GetHasMore() bool {
+	if x != nil {
+		return x.HasMore
+	}
+	return false
+}
+
+type GetProductRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProductRequest) Reset() {
+	*x = GetProductRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProductRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProductRequest) ProtoMessage() {}
+
+func (x *GetProductRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProductRequest.ProtoReflect.Descriptor instead.
+func (*GetProductRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetProductRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetProductReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Product       *SupplyProduct         `protobuf:"bytes,1,opt,name=product,proto3" json:"product,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProductReply) Reset() {
+	*x = GetProductReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProductReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProductReply) ProtoMessage() {}
+
+func (x *GetProductReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProductReply.ProtoReflect.Descriptor instead.
+func (*GetProductReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetProductReply) GetProduct() *SupplyProduct {
+	if x != nil {
+		return x.Product
+	}
+	return nil
+}
+
+type GetStockRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStockRequest) Reset() {
+	*x = GetStockRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStockRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStockRequest) ProtoMessage() {}
+
+func (x *GetStockRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStockRequest.ProtoReflect.Descriptor instead.
+func (*GetStockRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetStockRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetStockReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stock         int32                  `protobuf:"varint,1,opt,name=stock,proto3" json:"stock,omitempty"` // -1 = 无限
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStockReply) Reset() {
+	*x = GetStockReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStockReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStockReply) ProtoMessage() {}
+
+func (x *GetStockReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStockReply.ProtoReflect.Descriptor instead.
+func (*GetStockReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetStockReply) GetStock() int32 {
+	if x != nil {
+		return x.Stock
+	}
+	return 0
+}
+
+type SupplyProduct struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Price         int64                  `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`                                   // 分（供货价口径：定价覆盖 > 基础价）
+	FactoryPrice  int64                  `protobuf:"varint,4,opt,name=factory_price,json=factoryPrice,proto3" json:"factory_price,omitempty"` // 分（成本快照）
+	CategoryId    string                 `protobuf:"bytes,5,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Description   string                 `protobuf:"bytes,6,opt,name=description,proto3" json:"description,omitempty"`
+	Cover         string                 `protobuf:"bytes,7,opt,name=cover,proto3" json:"cover,omitempty"`
+	IsActive      bool                   `protobuf:"varint,8,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	Stock         int32                  `protobuf:"varint,9,opt,name=stock,proto3" json:"stock,omitempty"` // -1 = 无限
+	Skus          []*SupplySku           `protobuf:"bytes,10,rep,name=skus,proto3" json:"skus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupplyProduct) Reset() {
+	*x = SupplyProduct{}
+	mi := &file_supply_v1_supply_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplyProduct) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplyProduct) ProtoMessage() {}
+
+func (x *SupplyProduct) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplyProduct.ProtoReflect.Descriptor instead.
+func (*SupplyProduct) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *SupplyProduct) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SupplyProduct) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SupplyProduct) GetPrice() int64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *SupplyProduct) GetFactoryPrice() int64 {
+	if x != nil {
+		return x.FactoryPrice
+	}
+	return 0
+}
+
+func (x *SupplyProduct) GetCategoryId() string {
+	if x != nil {
+		return x.CategoryId
+	}
+	return ""
+}
+
+func (x *SupplyProduct) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *SupplyProduct) GetCover() string {
+	if x != nil {
+		return x.Cover
+	}
+	return ""
+}
+
+func (x *SupplyProduct) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *SupplyProduct) GetStock() int32 {
+	if x != nil {
+		return x.Stock
+	}
+	return 0
+}
+
+func (x *SupplyProduct) GetSkus() []*SupplySku {
+	if x != nil {
+		return x.Skus
+	}
+	return nil
+}
+
+type SupplySku struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Code          string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	Price         int64                  `protobuf:"varint,3,opt,name=price,proto3" json:"price,omitempty"`
+	Stock         int32                  `protobuf:"varint,4,opt,name=stock,proto3" json:"stock,omitempty"`
+	IsActive      bool                   `protobuf:"varint,5,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupplySku) Reset() {
+	*x = SupplySku{}
+	mi := &file_supply_v1_supply_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplySku) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplySku) ProtoMessage() {}
+
+func (x *SupplySku) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplySku.ProtoReflect.Descriptor instead.
+func (*SupplySku) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SupplySku) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *SupplySku) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *SupplySku) GetPrice() int64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *SupplySku) GetStock() int32 {
+	if x != nil {
+		return x.Stock
+	}
+	return 0
+}
+
+func (x *SupplySku) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+type CreateSupplyOrderRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ProductId         string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"` // 商品标识（本地商品 id）
+	SkuId             string                 `protobuf:"bytes,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`             // 可选
+	Quantity          int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	DownstreamOrderNo string                 `protobuf:"bytes,4,opt,name=downstream_order_no,json=downstreamOrderNo,proto3" json:"downstream_order_no,omitempty"` // 幂等键（必填）
+	CallbackUrl       string                 `protobuf:"bytes,5,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`                     // 可选（交付完成回调）
+	TraceId           string                 `protobuf:"bytes,6,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CreateSupplyOrderRequest) Reset() {
+	*x = CreateSupplyOrderRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSupplyOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSupplyOrderRequest) ProtoMessage() {}
+
+func (x *CreateSupplyOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSupplyOrderRequest.ProtoReflect.Descriptor instead.
+func (*CreateSupplyOrderRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateSupplyOrderRequest) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderRequest) GetSkuId() string {
+	if x != nil {
+		return x.SkuId
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderRequest) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *CreateSupplyOrderRequest) GetDownstreamOrderNo() string {
+	if x != nil {
+		return x.DownstreamOrderNo
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderRequest) GetCallbackUrl() string {
+	if x != nil {
+		return x.CallbackUrl
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderRequest) GetTraceId() string {
+	if x != nil {
+		return x.TraceId
+	}
+	return ""
+}
+
+type CreateSupplyOrderReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SupplyOrderId string                 `protobuf:"bytes,1,opt,name=supply_order_id,json=supplyOrderId,proto3" json:"supply_order_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`  // pending | fulfilled | rejected
+	Amount        int64                  `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"` // 分
+	Fulfillment   *SupplyFulfillment     `protobuf:"bytes,4,opt,name=fulfillment,proto3" json:"fulfillment,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,5,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,6,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSupplyOrderReply) Reset() {
+	*x = CreateSupplyOrderReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSupplyOrderReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSupplyOrderReply) ProtoMessage() {}
+
+func (x *CreateSupplyOrderReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSupplyOrderReply.ProtoReflect.Descriptor instead.
+func (*CreateSupplyOrderReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *CreateSupplyOrderReply) GetSupplyOrderId() string {
+	if x != nil {
+		return x.SupplyOrderId
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderReply) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderReply) GetAmount() int64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *CreateSupplyOrderReply) GetFulfillment() *SupplyFulfillment {
+	if x != nil {
+		return x.Fulfillment
+	}
+	return nil
+}
+
+func (x *CreateSupplyOrderReply) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *CreateSupplyOrderReply) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type GetSupplyOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupplyOrderRequest) Reset() {
+	*x = GetSupplyOrderRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupplyOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupplyOrderRequest) ProtoMessage() {}
+
+func (x *GetSupplyOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupplyOrderRequest.ProtoReflect.Descriptor instead.
+func (*GetSupplyOrderRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetSupplyOrderRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetSupplyOrderReply struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	SupplyOrderId     string                 `protobuf:"bytes,1,opt,name=supply_order_id,json=supplyOrderId,proto3" json:"supply_order_id,omitempty"`
+	DownstreamOrderNo string                 `protobuf:"bytes,2,opt,name=downstream_order_no,json=downstreamOrderNo,proto3" json:"downstream_order_no,omitempty"`
+	Status            string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Amount            int64                  `protobuf:"varint,4,opt,name=amount,proto3" json:"amount,omitempty"`
+	Fulfillment       *SupplyFulfillment     `protobuf:"bytes,5,opt,name=fulfillment,proto3" json:"fulfillment,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GetSupplyOrderReply) Reset() {
+	*x = GetSupplyOrderReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupplyOrderReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupplyOrderReply) ProtoMessage() {}
+
+func (x *GetSupplyOrderReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupplyOrderReply.ProtoReflect.Descriptor instead.
+func (*GetSupplyOrderReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetSupplyOrderReply) GetSupplyOrderId() string {
+	if x != nil {
+		return x.SupplyOrderId
+	}
+	return ""
+}
+
+func (x *GetSupplyOrderReply) GetDownstreamOrderNo() string {
+	if x != nil {
+		return x.DownstreamOrderNo
+	}
+	return ""
+}
+
+func (x *GetSupplyOrderReply) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *GetSupplyOrderReply) GetAmount() int64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *GetSupplyOrderReply) GetFulfillment() *SupplyFulfillment {
+	if x != nil {
+		return x.Fulfillment
+	}
+	return nil
+}
+
+type CancelSupplyOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelSupplyOrderRequest) Reset() {
+	*x = CancelSupplyOrderRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelSupplyOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelSupplyOrderRequest) ProtoMessage() {}
+
+func (x *CancelSupplyOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelSupplyOrderRequest.ProtoReflect.Descriptor instead.
+func (*CancelSupplyOrderRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CancelSupplyOrderRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type CancelSupplyOrderReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelSupplyOrderReply) Reset() {
+	*x = CancelSupplyOrderReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelSupplyOrderReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelSupplyOrderReply) ProtoMessage() {}
+
+func (x *CancelSupplyOrderReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelSupplyOrderReply.ProtoReflect.Descriptor instead.
+func (*CancelSupplyOrderReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CancelSupplyOrderReply) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+type RefundSupplyOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefundSupplyOrderRequest) Reset() {
+	*x = RefundSupplyOrderRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefundSupplyOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefundSupplyOrderRequest) ProtoMessage() {}
+
+func (x *RefundSupplyOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefundSupplyOrderRequest.ProtoReflect.Descriptor instead.
+func (*RefundSupplyOrderRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *RefundSupplyOrderRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type RefundSupplyOrderReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,2,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	ErrorMessage  string                 `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RefundSupplyOrderReply) Reset() {
+	*x = RefundSupplyOrderReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RefundSupplyOrderReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RefundSupplyOrderReply) ProtoMessage() {}
+
+func (x *RefundSupplyOrderReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RefundSupplyOrderReply.ProtoReflect.Descriptor instead.
+func (*RefundSupplyOrderReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RefundSupplyOrderReply) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *RefundSupplyOrderReply) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *RefundSupplyOrderReply) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type SupplyFulfillment struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // delivered | pending
+	Cards         []string               `protobuf:"bytes,2,rep,name=cards,proto3" json:"cards,omitempty"`   // 已交付卡密（明文，经 TLS 传输）
+	Instructions  string                 `protobuf:"bytes,3,opt,name=instructions,proto3" json:"instructions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupplyFulfillment) Reset() {
+	*x = SupplyFulfillment{}
+	mi := &file_supply_v1_supply_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplyFulfillment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplyFulfillment) ProtoMessage() {}
+
+func (x *SupplyFulfillment) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplyFulfillment.ProtoReflect.Descriptor instead.
+func (*SupplyFulfillment) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *SupplyFulfillment) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *SupplyFulfillment) GetCards() []string {
+	if x != nil {
+		return x.Cards
+	}
+	return nil
+}
+
+func (x *SupplyFulfillment) GetInstructions() string {
+	if x != nil {
+		return x.Instructions
+	}
+	return ""
+}
+
 var File_supply_v1_supply_proto protoreflect.FileDescriptor
 
 const file_supply_v1_supply_proto_rawDesc = "" +
 	"\n" +
-	"\x16supply/v1/supply.proto\x12\x13zcard.api.supply.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"b\n" +
+	"\x16supply/v1/supply.proto\x12\x13zcard.api.supply.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbc\x01\n" +
 	"\tPingReply\x12\x1a\n" +
 	"\bprotocol\x18\x01 \x01(\tR\bprotocol\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\tR\aversion\x12\x1f\n" +
 	"\vserver_time\x18\x03 \x01(\x03R\n" +
-	"serverTime2l\n" +
-	"\rSupplyService\x12[\n" +
-	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.supply.v1.PingReply\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/supply/pingB?Z=github.com/NovaWorks/zcard-next/server/api/supply/v1;supplyv1b\x06proto3"
+	"serverTime\x12\x0e\n" +
+	"\x02ok\x18\x04 \x01(\bR\x02ok\x12\x12\n" +
+	"\x04name\x18\x05 \x01(\tR\x04name\x12\x18\n" +
+	"\abalance\x18\x06 \x01(\x03R\abalance\x12\x1a\n" +
+	"\bcurrency\x18\a \x01(\tR\bcurrency\"Z\n" +
+	"\x13ListCategoriesReply\x12C\n" +
+	"\n" +
+	"categories\x18\x01 \x03(\v2#.zcard.api.supply.v1.SupplyCategoryR\n" +
+	"categories\"Q\n" +
+	"\x0eSupplyCategory\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
+	"\tparent_id\x18\x03 \x01(\tR\bparentId\"q\n" +
+	"\x13ListProductsRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12)\n" +
+	"\x10include_inactive\x18\x03 \x01(\bR\x0fincludeInactive\"\x9b\x01\n" +
+	"\x11ListProductsReply\x128\n" +
+	"\x05items\x18\x01 \x03(\v2\".zcard.api.supply.v1.SupplyProductR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x19\n" +
+	"\bhas_more\x18\x04 \x01(\bR\ahasMore\"#\n" +
+	"\x11GetProductRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"O\n" +
+	"\x0fGetProductReply\x12<\n" +
+	"\aproduct\x18\x01 \x01(\v2\".zcard.api.supply.v1.SupplyProductR\aproduct\"!\n" +
+	"\x0fGetStockRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"%\n" +
+	"\rGetStockReply\x12\x14\n" +
+	"\x05stock\x18\x01 \x01(\x05R\x05stock\"\xae\x02\n" +
+	"\rSupplyProduct\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05price\x18\x03 \x01(\x03R\x05price\x12#\n" +
+	"\rfactory_price\x18\x04 \x01(\x03R\ffactoryPrice\x12\x1f\n" +
+	"\vcategory_id\x18\x05 \x01(\tR\n" +
+	"categoryId\x12 \n" +
+	"\vdescription\x18\x06 \x01(\tR\vdescription\x12\x14\n" +
+	"\x05cover\x18\a \x01(\tR\x05cover\x12\x1b\n" +
+	"\tis_active\x18\b \x01(\bR\bisActive\x12\x14\n" +
+	"\x05stock\x18\t \x01(\x05R\x05stock\x122\n" +
+	"\x04skus\x18\n" +
+	" \x03(\v2\x1e.zcard.api.supply.v1.SupplySkuR\x04skus\"x\n" +
+	"\tSupplySku\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04code\x18\x02 \x01(\tR\x04code\x12\x14\n" +
+	"\x05price\x18\x03 \x01(\x03R\x05price\x12\x14\n" +
+	"\x05stock\x18\x04 \x01(\x05R\x05stock\x12\x1b\n" +
+	"\tis_active\x18\x05 \x01(\bR\bisActive\"\xda\x01\n" +
+	"\x18CreateSupplyOrderRequest\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x02 \x01(\tR\x05skuId\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12.\n" +
+	"\x13downstream_order_no\x18\x04 \x01(\tR\x11downstreamOrderNo\x12!\n" +
+	"\fcallback_url\x18\x05 \x01(\tR\vcallbackUrl\x12\x19\n" +
+	"\btrace_id\x18\x06 \x01(\tR\atraceId\"\xfe\x01\n" +
+	"\x16CreateSupplyOrderReply\x12&\n" +
+	"\x0fsupply_order_id\x18\x01 \x01(\tR\rsupplyOrderId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\x03R\x06amount\x12H\n" +
+	"\vfulfillment\x18\x04 \x01(\v2&.zcard.api.supply.v1.SupplyFulfillmentR\vfulfillment\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x05 \x01(\tR\terrorCode\x12#\n" +
+	"\rerror_message\x18\x06 \x01(\tR\ferrorMessage\"'\n" +
+	"\x15GetSupplyOrderRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xe7\x01\n" +
+	"\x13GetSupplyOrderReply\x12&\n" +
+	"\x0fsupply_order_id\x18\x01 \x01(\tR\rsupplyOrderId\x12.\n" +
+	"\x13downstream_order_no\x18\x02 \x01(\tR\x11downstreamOrderNo\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x16\n" +
+	"\x06amount\x18\x04 \x01(\x03R\x06amount\x12H\n" +
+	"\vfulfillment\x18\x05 \x01(\v2&.zcard.api.supply.v1.SupplyFulfillmentR\vfulfillment\"*\n" +
+	"\x18CancelSupplyOrderRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"(\n" +
+	"\x16CancelSupplyOrderReply\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"*\n" +
+	"\x18RefundSupplyOrderRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"l\n" +
+	"\x16RefundSupplyOrderReply\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x02 \x01(\tR\terrorCode\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"e\n" +
+	"\x11SupplyFulfillment\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x14\n" +
+	"\x05cards\x18\x02 \x03(\tR\x05cards\x12\"\n" +
+	"\finstructions\x18\x03 \x01(\tR\finstructions2\x92\t\n" +
+	"\rSupplyService\x12X\n" +
+	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.supply.v1.PingReply\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/supply/ping\x12r\n" +
+	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a(.zcard.api.supply.v1.ListCategoriesReply\"\x1e\x82\xd3\xe4\x93\x02\x18\"\x16/api/supply/categories\x12~\n" +
+	"\fListProducts\x12(.zcard.api.supply.v1.ListProductsRequest\x1a&.zcard.api.supply.v1.ListProductsReply\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/supply/products\x12}\n" +
+	"\n" +
+	"GetProduct\x12&.zcard.api.supply.v1.GetProductRequest\x1a$.zcard.api.supply.v1.GetProductReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/supply/products/{id}\x12}\n" +
+	"\bGetStock\x12$.zcard.api.supply.v1.GetStockRequest\x1a\".zcard.api.supply.v1.GetStockReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/supply/products/{id}/stock\x12\x88\x01\n" +
+	"\vCreateOrder\x12-.zcard.api.supply.v1.CreateSupplyOrderRequest\x1a+.zcard.api.supply.v1.CreateSupplyOrderReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/supply/orders\x12\x81\x01\n" +
+	"\bGetOrder\x12*.zcard.api.supply.v1.GetSupplyOrderRequest\x1a(.zcard.api.supply.v1.GetSupplyOrderReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/supply/orders/{id}\x12\x91\x01\n" +
+	"\vCancelOrder\x12-.zcard.api.supply.v1.CancelSupplyOrderRequest\x1a+.zcard.api.supply.v1.CancelSupplyOrderReply\"&\x82\xd3\xe4\x93\x02 \"\x1e/api/supply/orders/{id}/cancel\x12\x91\x01\n" +
+	"\vRefundOrder\x12-.zcard.api.supply.v1.RefundSupplyOrderRequest\x1a+.zcard.api.supply.v1.RefundSupplyOrderReply\"&\x82\xd3\xe4\x93\x02 \"\x1e/api/supply/orders/{id}/refundB?Z=github.com/NovaWorks/zcard-next/server/api/supply/v1;supplyv1b\x06proto3"
 
 var (
 	file_supply_v1_supply_proto_rawDescOnce sync.Once
@@ -108,19 +1376,60 @@ func file_supply_v1_supply_proto_rawDescGZIP() []byte {
 	return file_supply_v1_supply_proto_rawDescData
 }
 
-var file_supply_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_supply_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_supply_v1_supply_proto_goTypes = []any{
-	(*PingReply)(nil),     // 0: zcard.api.supply.v1.PingReply
-	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
+	(*PingReply)(nil),                // 0: zcard.api.supply.v1.PingReply
+	(*ListCategoriesReply)(nil),      // 1: zcard.api.supply.v1.ListCategoriesReply
+	(*SupplyCategory)(nil),           // 2: zcard.api.supply.v1.SupplyCategory
+	(*ListProductsRequest)(nil),      // 3: zcard.api.supply.v1.ListProductsRequest
+	(*ListProductsReply)(nil),        // 4: zcard.api.supply.v1.ListProductsReply
+	(*GetProductRequest)(nil),        // 5: zcard.api.supply.v1.GetProductRequest
+	(*GetProductReply)(nil),          // 6: zcard.api.supply.v1.GetProductReply
+	(*GetStockRequest)(nil),          // 7: zcard.api.supply.v1.GetStockRequest
+	(*GetStockReply)(nil),            // 8: zcard.api.supply.v1.GetStockReply
+	(*SupplyProduct)(nil),            // 9: zcard.api.supply.v1.SupplyProduct
+	(*SupplySku)(nil),                // 10: zcard.api.supply.v1.SupplySku
+	(*CreateSupplyOrderRequest)(nil), // 11: zcard.api.supply.v1.CreateSupplyOrderRequest
+	(*CreateSupplyOrderReply)(nil),   // 12: zcard.api.supply.v1.CreateSupplyOrderReply
+	(*GetSupplyOrderRequest)(nil),    // 13: zcard.api.supply.v1.GetSupplyOrderRequest
+	(*GetSupplyOrderReply)(nil),      // 14: zcard.api.supply.v1.GetSupplyOrderReply
+	(*CancelSupplyOrderRequest)(nil), // 15: zcard.api.supply.v1.CancelSupplyOrderRequest
+	(*CancelSupplyOrderReply)(nil),   // 16: zcard.api.supply.v1.CancelSupplyOrderReply
+	(*RefundSupplyOrderRequest)(nil), // 17: zcard.api.supply.v1.RefundSupplyOrderRequest
+	(*RefundSupplyOrderReply)(nil),   // 18: zcard.api.supply.v1.RefundSupplyOrderReply
+	(*SupplyFulfillment)(nil),        // 19: zcard.api.supply.v1.SupplyFulfillment
+	(*emptypb.Empty)(nil),            // 20: google.protobuf.Empty
 }
 var file_supply_v1_supply_proto_depIdxs = []int32{
-	1, // 0: zcard.api.supply.v1.SupplyService.Ping:input_type -> google.protobuf.Empty
-	0, // 1: zcard.api.supply.v1.SupplyService.Ping:output_type -> zcard.api.supply.v1.PingReply
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	2,  // 0: zcard.api.supply.v1.ListCategoriesReply.categories:type_name -> zcard.api.supply.v1.SupplyCategory
+	9,  // 1: zcard.api.supply.v1.ListProductsReply.items:type_name -> zcard.api.supply.v1.SupplyProduct
+	9,  // 2: zcard.api.supply.v1.GetProductReply.product:type_name -> zcard.api.supply.v1.SupplyProduct
+	10, // 3: zcard.api.supply.v1.SupplyProduct.skus:type_name -> zcard.api.supply.v1.SupplySku
+	19, // 4: zcard.api.supply.v1.CreateSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
+	19, // 5: zcard.api.supply.v1.GetSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
+	20, // 6: zcard.api.supply.v1.SupplyService.Ping:input_type -> google.protobuf.Empty
+	20, // 7: zcard.api.supply.v1.SupplyService.ListCategories:input_type -> google.protobuf.Empty
+	3,  // 8: zcard.api.supply.v1.SupplyService.ListProducts:input_type -> zcard.api.supply.v1.ListProductsRequest
+	5,  // 9: zcard.api.supply.v1.SupplyService.GetProduct:input_type -> zcard.api.supply.v1.GetProductRequest
+	7,  // 10: zcard.api.supply.v1.SupplyService.GetStock:input_type -> zcard.api.supply.v1.GetStockRequest
+	11, // 11: zcard.api.supply.v1.SupplyService.CreateOrder:input_type -> zcard.api.supply.v1.CreateSupplyOrderRequest
+	13, // 12: zcard.api.supply.v1.SupplyService.GetOrder:input_type -> zcard.api.supply.v1.GetSupplyOrderRequest
+	15, // 13: zcard.api.supply.v1.SupplyService.CancelOrder:input_type -> zcard.api.supply.v1.CancelSupplyOrderRequest
+	17, // 14: zcard.api.supply.v1.SupplyService.RefundOrder:input_type -> zcard.api.supply.v1.RefundSupplyOrderRequest
+	0,  // 15: zcard.api.supply.v1.SupplyService.Ping:output_type -> zcard.api.supply.v1.PingReply
+	1,  // 16: zcard.api.supply.v1.SupplyService.ListCategories:output_type -> zcard.api.supply.v1.ListCategoriesReply
+	4,  // 17: zcard.api.supply.v1.SupplyService.ListProducts:output_type -> zcard.api.supply.v1.ListProductsReply
+	6,  // 18: zcard.api.supply.v1.SupplyService.GetProduct:output_type -> zcard.api.supply.v1.GetProductReply
+	8,  // 19: zcard.api.supply.v1.SupplyService.GetStock:output_type -> zcard.api.supply.v1.GetStockReply
+	12, // 20: zcard.api.supply.v1.SupplyService.CreateOrder:output_type -> zcard.api.supply.v1.CreateSupplyOrderReply
+	14, // 21: zcard.api.supply.v1.SupplyService.GetOrder:output_type -> zcard.api.supply.v1.GetSupplyOrderReply
+	16, // 22: zcard.api.supply.v1.SupplyService.CancelOrder:output_type -> zcard.api.supply.v1.CancelSupplyOrderReply
+	18, // 23: zcard.api.supply.v1.SupplyService.RefundOrder:output_type -> zcard.api.supply.v1.RefundSupplyOrderReply
+	15, // [15:24] is the sub-list for method output_type
+	6,  // [6:15] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_supply_v1_supply_proto_init() }
@@ -134,7 +1443,7 @@ func file_supply_v1_supply_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_supply_v1_supply_proto_rawDesc), len(file_supply_v1_supply_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

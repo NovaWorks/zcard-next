@@ -6,7 +6,6 @@ package server
 import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
-	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
@@ -16,7 +15,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 
 	"github.com/go-kratos/kratos/v3/log"
@@ -34,7 +32,6 @@ func NewGRPCServer(
 	authSvc *identity.AdminAuthService,
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
-	supplySvc *supply.SupplyService,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
@@ -93,7 +90,6 @@ func NewGRPCServer(
 	adminv1.RegisterAdminFulfillmentServiceServer(srv, fulfillAdminSvc)
 	storefrontv1.RegisterStoreDeliveryServiceServer(srv, fulfillStoreSvc)
 	storefrontv1.RegisterStoreCatalogServiceServer(srv, catalogSvc)
-	supplyv1.RegisterSupplyServiceServer(srv, supplySvc)
 	// reflection 已由 kratos v3 grpc server 内置（手动注册会 duplicate panic）
 	return srv
 }

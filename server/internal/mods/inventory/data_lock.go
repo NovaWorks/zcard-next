@@ -219,3 +219,23 @@ func (r *CardRepoImpl) ListByOrder(ctx context.Context, orderID uint64) ([]*ent.
 // ── 编译期接口断言 ────────────────────────────────────────────
 var _ port.Inventory = (*CardRepoImpl)(nil)
 var _ = db.SQLite // 保持 db 引用
+
+// Contents 交付卡密批量读取解密（P2-03 供货交付出口）。
+// 明文仅内存态返回，调用方负责 TLS 传输与零日志。
+func (r *CardRepoImpl) Contents(ctx context.Context, cardIDs []uint64, productID, subsiteID uint64) ([]string, error) {
+	rows, err := data.Client(ctx, r.data).Card.Query().
+		Where(card.IDIn(cardIDs...)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(rows))
+	for _, c := range rows {
+		plain, err := r.Cipher.Open(c.Content, c.ProductID, c.SubsiteID)
+		if err != nil {
+			return nil, fmt.Errorf("inventory: 卡密 %d 解密失败: %w", c.ID, err)
+		}
+		out = append(out, plain)
+	}
+	return out, nil
+}

@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -28,6 +29,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
@@ -55,9 +57,11 @@ func NewHTTPServer(
 	authSvc *identity.AdminAuthService,
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
-	supplySvc *supply.SupplyService,
 	supplyAdminSvc *supply.AdminSupplyService,
 	procureAdminSvc *procurement.AdminProcurementService,
+	supplyAPISvc *supplier.SupplyAPIService,
+	supplierAdminSvc *supplier.AdminSupplierService,
+	supplierRepo *supplier.SupplierRepoImpl,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
@@ -100,6 +104,13 @@ func NewHTTPServer(
 					return isAdminOperation(operation, dir)
 				}).
 				Build(),
+			// P2-03：对外供货 HMAC 四头鉴权（仅 /api/supply/*；Ping 免签名；
+			// 不挂 JWT——架构测试规则 9）
+			selector.Server(supplier.SupplyAuthware(supplierRepo, 0)).
+				Match(func(_ context.Context, operation string) bool {
+					return isSupplyOperation(operation)
+				}).
+				Build(),
 		),
 		khttp.Timeout(30 * time.Second),
 	}
@@ -137,9 +148,10 @@ func NewHTTPServer(
 	adminv1.RegisterAdminFulfillmentServiceHTTPServer(srv, fulfillAdminSvc)
 	storefrontv1.RegisterStoreDeliveryServiceHTTPServer(srv, fulfillStoreSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
-	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
+	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplyAPISvc)
 	adminv1.RegisterAdminSupplyServiceHTTPServer(srv, supplyAdminSvc)
 	adminv1.RegisterAdminProcurementServiceHTTPServer(srv, procureAdminSvc)
+	adminv1.RegisterAdminSupplierServiceHTTPServer(srv, supplierAdminSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)
@@ -176,6 +188,14 @@ func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 // 不挂 JWT（架构测试规则 9）；验签由渠道适配器完成（M1b 接真实渠道）。
 func registerPaymentCallback(srv *khttp.Server, payRepo *payment.PaymentRepoImpl, d *data.Data) {
 	payment.RegisterPaymentCallback(srv, payRepo, d)
+}
+
+// isSupplyOperation 对外供货路由（HMAC 鉴权目标；Ping 免签名）。
+func isSupplyOperation(operation string) bool {
+	if strings.HasPrefix(operation, "/zcard.api.supply.v1.SupplyService/") {
+		return !strings.HasSuffix(operation, "/Ping")
+	}
+	return false
 }
 
 func tenancyMainDomain(c *conf.Server) string { return "" } // 由 bootstrap 注入 Tenancy 配置后补齐

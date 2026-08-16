@@ -25,7 +25,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
 
@@ -194,7 +194,7 @@ func runServe(args []string) error {
 	}
 	logger.Info("zcard.starting", "mode", appMode, "version", Version)
 
-	supply.ServerVersion = orDev(Version)
+	supplier.ServerVersion = orDev(Version)
 	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Security, logger)
 	if err != nil {
 		return err

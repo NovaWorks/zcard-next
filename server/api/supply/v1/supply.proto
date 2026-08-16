@@ -10,12 +10,63 @@ import "google/protobuf/empty.proto";
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
 // 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
 // ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
-// M0 骨架仅提供 Ping 连通性端点，鉴权中间件挂载点已预留在 server/http.go。
+// Ping 免签名（连通性探测）；其余端点全部需要签名。
+// 金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
 service SupplyService {
-  // Ping 连通性与协议版本探测（下游对接第一步）。
+  // Ping 连通性与协议版本探测（免签名）。
   rpc Ping(google.protobuf.Empty) returns (PingReply) {
     option (google.api.http) = {
-      get: "/api/v1/supply/ping"
+      get: "/api/supply/ping"
+    };
+  }
+  // ListCategories 商品分类（下游建目录）。
+  rpc ListCategories(google.protobuf.Empty) returns (ListCategoriesReply) {
+    option (google.api.http) = {
+      post: "/api/supply/categories"
+    };
+  }
+  // ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+  rpc ListProducts(ListProductsRequest) returns (ListProductsReply) {
+    option (google.api.http) = {
+      get: "/api/supply/products"
+    };
+  }
+  // GetProduct 商品详情。
+  rpc GetProduct(GetProductRequest) returns (GetProductReply) {
+    option (google.api.http) = {
+      get: "/api/supply/products/{id}"
+    };
+  }
+  // GetStock 实时库存（-1=无限）。
+  rpc GetStock(GetStockRequest) returns (GetStockReply) {
+    option (google.api.http) = {
+      get: "/api/supply/products/{id}/stock"
+    };
+  }
+  // CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+  // 同步交付：响应 fulfillment.delivered + cards）。
+  rpc CreateOrder(CreateSupplyOrderRequest) returns (CreateSupplyOrderReply) {
+    option (google.api.http) = {
+      post: "/api/supply/orders"
+      body: "*"
+    };
+  }
+  // GetOrder 订单查询（轮询/巡检兜底）。
+  rpc GetOrder(GetSupplyOrderRequest) returns (GetSupplyOrderReply) {
+    option (google.api.http) = {
+      get: "/api/supply/orders/{id}"
+    };
+  }
+  // CancelOrder 取消（未交付订单释放锁卡）。
+  rpc CancelOrder(CancelSupplyOrderRequest) returns (CancelSupplyOrderReply) {
+    option (google.api.http) = {
+      post: "/api/supply/orders/{id}/cancel"
+    };
+  }
+  // RefundOrder 退款（已交付转人工；未交付释放）。
+  rpc RefundOrder(RefundSupplyOrderRequest) returns (RefundSupplyOrderReply) {
+    option (google.api.http) = {
+      post: "/api/supply/orders/{id}/refund"
     };
   }
 }
@@ -24,4 +75,126 @@ message PingReply {
   string protocol = 1;   // 固定 "zcard-supply-v2"
   string version = 2;    // 服务端版本
   int64 server_time = 3; // unix 秒
+  bool ok = 4;
+  string name = 5;       // 站点名
+  int64 balance = 6;     // 下游余额（分，鉴权后）
+  string currency = 7;
+}
+
+// ---- 目录 ----
+
+message ListCategoriesReply {
+  repeated SupplyCategory categories = 1;
+}
+
+message SupplyCategory {
+  string id = 1;
+  string name = 2;
+  string parent_id = 3;
+}
+
+message ListProductsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  bool include_inactive = 3;
+}
+
+message ListProductsReply {
+  repeated SupplyProduct items = 1;
+  int64 total = 2;
+  int32 page_size = 3;
+  bool has_more = 4;
+}
+
+message GetProductRequest {
+  string id = 1;
+}
+
+message GetProductReply {
+  SupplyProduct product = 1;
+}
+
+message GetStockRequest {
+  string id = 1;
+}
+
+message GetStockReply {
+  int32 stock = 1; // -1 = 无限
+}
+
+message SupplyProduct {
+  string id = 1;
+  string name = 2;
+  int64 price = 3;         // 分（供货价口径：定价覆盖 > 基础价）
+  int64 factory_price = 4; // 分（成本快照）
+  string category_id = 5;
+  string description = 6;
+  string cover = 7;
+  bool is_active = 8;
+  int32 stock = 9; // -1 = 无限
+  repeated SupplySku skus = 10;
+}
+
+message SupplySku {
+  string id = 1;
+  string code = 2;
+  int64 price = 3;
+  int32 stock = 4;
+  bool is_active = 5;
+}
+
+// ---- 订单 ----
+
+message CreateSupplyOrderRequest {
+  string product_id = 1;           // 商品标识（本地商品 id）
+  string sku_id = 2;               // 可选
+  int32 quantity = 3;
+  string downstream_order_no = 4;  // 幂等键（必填）
+  string callback_url = 5;         // 可选（交付完成回调）
+  string trace_id = 6;
+}
+
+message CreateSupplyOrderReply {
+  string supply_order_id = 1;
+  string status = 2; // pending | fulfilled | rejected
+  int64 amount = 3;  // 分
+  SupplyFulfillment fulfillment = 4;
+  string error_code = 5;
+  string error_message = 6;
+}
+
+message GetSupplyOrderRequest {
+  string id = 1;
+}
+
+message GetSupplyOrderReply {
+  string supply_order_id = 1;
+  string downstream_order_no = 2;
+  string status = 3;
+  int64 amount = 4;
+  SupplyFulfillment fulfillment = 5;
+}
+
+message CancelSupplyOrderRequest {
+  string id = 1;
+}
+
+message CancelSupplyOrderReply {
+  bool ok = 1;
+}
+
+message RefundSupplyOrderRequest {
+  string id = 1;
+}
+
+message RefundSupplyOrderReply {
+  bool ok = 1;
+  string error_code = 2;
+  string error_message = 3;
+}
+
+message SupplyFulfillment {
+  string status = 1; // delivered | pending
+  repeated string cards = 2; // 已交付卡密（明文，经 TLS 传输）
+  string instructions = 3;
 }

@@ -138,3 +138,24 @@ type UpstreamProductInput struct {
 type UpstreamProductWriter interface {
 	UpsertUpstreamProduct(ctx context.Context, in UpstreamProductInput) (productID uint64, created bool, err error)
 }
+
+// SupplierProduct 供货目录商品（P2-03 supplier 消费，通道 A）：
+// 管理面语义（含下架/隐藏），仅下发可公开字段。
+type SupplierProduct struct {
+	ID           uint64
+	Name         string
+	Price        int64 // 分（基础价；覆盖价由 supplier 定价表决定）
+	FactoryPrice int64 // 分（成本快照）
+	CategoryID   uint64
+	Description  string
+	Cover        string
+	Status       int8 // 1=上架 0=下架 2=隐藏
+}
+
+// SupplierCatalog 供货目录端口（对外供货 API 消费）。
+type SupplierCatalog interface {
+	// ListForSupply 目录分页（Status=-1 全含）。
+	ListForSupply(ctx context.Context, f AdminFilter) ([]SupplierProduct, int64, error)
+	// GetForSupply 单品（含下架）。
+	GetForSupply(ctx context.Context, productID uint64) (*SupplierProduct, error)
+}

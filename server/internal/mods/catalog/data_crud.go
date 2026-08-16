@@ -418,3 +418,48 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 	return updated.ID, false, nil
 }
+
+// ListForSupply 供货目录分页（P2-03 supplier 消费；管理面语义含下架）。
+func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter) ([]port.SupplierProduct, int64, error) {
+	q := data.Client(ctx, r.data).Product.Query()
+	if f.Status >= 0 {
+		q = q.Where(product.Status(int8(f.Status)))
+	}
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := q.Order(ent.Desc(product.FieldID)).
+		Offset((int(f.Page) - 1) * int(f.PageSize)).Limit(int(f.PageSize)).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]port.SupplierProduct, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, toSupplierProduct(row))
+	}
+	return out, int64(total), nil
+}
+
+// GetForSupply 供货单品（含下架）。
+func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*port.SupplierProduct, error) {
+	row, err := data.Client(ctx, r.data).Product.Get(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
+	p := toSupplierProduct(row)
+	return &p, nil
+}
+
+func toSupplierProduct(row *ent.Product) port.SupplierProduct {
+	return port.SupplierProduct{
+		ID:           row.ID,
+		Name:         row.Name,
+		Price:        row.Price,
+		FactoryPrice: row.FactoryPrice,
+		CategoryID:   row.CategoryID,
+		Description:  row.Description,
+		Cover:        row.Cover,
+		Status:       row.Status,
+	}
+}

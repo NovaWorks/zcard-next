@@ -6,6 +6,176 @@ info:
     title: ""
     version: 0.0.1
 paths:
+    /api/supply/categories:
+        post:
+            tags:
+                - SupplyService
+            description: ListCategories 商品分类（下游建目录）。
+            operationId: SupplyService_ListCategories
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.ListCategoriesReply'
+    /api/supply/orders:
+        post:
+            tags:
+                - SupplyService
+            description: |-
+                CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+                 同步交付：响应 fulfillment.delivered + cards）。
+            operationId: SupplyService_CreateOrder
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.supply.v1.CreateSupplyOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.CreateSupplyOrderReply'
+    /api/supply/orders/{id}:
+        get:
+            tags:
+                - SupplyService
+            description: GetOrder 订单查询（轮询/巡检兜底）。
+            operationId: SupplyService_GetOrder
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.GetSupplyOrderReply'
+    /api/supply/orders/{id}/cancel:
+        post:
+            tags:
+                - SupplyService
+            description: CancelOrder 取消（未交付订单释放锁卡）。
+            operationId: SupplyService_CancelOrder
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.CancelSupplyOrderReply'
+    /api/supply/orders/{id}/refund:
+        post:
+            tags:
+                - SupplyService
+            description: RefundOrder 退款（已交付转人工；未交付释放）。
+            operationId: SupplyService_RefundOrder
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.RefundSupplyOrderReply'
+    /api/supply/ping:
+        get:
+            tags:
+                - SupplyService
+            description: Ping 连通性与协议版本探测（免签名）。
+            operationId: SupplyService_Ping
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.PingReply'
+    /api/supply/products:
+        get:
+            tags:
+                - SupplyService
+            description: ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+            operationId: SupplyService_ListProducts
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: includeInactive
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.ListProductsReply'
+    /api/supply/products/{id}:
+        get:
+            tags:
+                - SupplyService
+            description: GetProduct 商品详情。
+            operationId: SupplyService_GetProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.GetProductReply'
+    /api/supply/products/{id}/stock:
+        get:
+            tags:
+                - SupplyService
+            description: GetStock 实时库存（-1=无限）。
+            operationId: SupplyService_GetStock
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.GetStockReply'
     /api/v1/admin/admins:
         get:
             tags:
@@ -1687,6 +1857,264 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/supplier/accounts:
+        get:
+            tags:
+                - AdminSupplierService
+            description: ListAccounts 账户列表（secret 零回显）。
+            operationId: AdminSupplierService_ListAccounts
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSupplierAccountsReply'
+        post:
+            tags:
+                - AdminSupplierService
+            description: CreateAccount 下游申请（secret 明文只在此响应出现一次）。
+            operationId: AdminSupplierService_CreateAccount
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateSupplierAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
+    /api/v1/admin/supplier/accounts/{id}/notify-url:
+        put:
+            tags:
+                - AdminSupplierService
+            description: SetNotifyURL 配置回调地址。
+            operationId: AdminSupplierService_SetNotifyURL
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetSupplierNotifyURLRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
+    /api/v1/admin/supplier/accounts/{id}/recharge:
+        post:
+            tags:
+                - AdminSupplierService
+            description: Recharge 账户充值（账本入账）。
+            operationId: AdminSupplierService_Recharge
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RechargeSupplierRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/supplier/accounts/{id}/reset-secret:
+        post:
+            tags:
+                - AdminSupplierService
+            description: ResetSecret 重置密钥（返回明文一次）。
+            operationId: AdminSupplierService_ResetSecret
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResetSupplierSecretRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ResetSupplierSecretReply'
+    /api/v1/admin/supplier/accounts/{id}/review:
+        post:
+            tags:
+                - AdminSupplierService
+            description: ReviewAccount 审核（applying → approved/disabled）。
+            operationId: AdminSupplierService_ReviewAccount
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ReviewSupplierAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
+    /api/v1/admin/supplier/accounts/{id}/toggle:
+        post:
+            tags:
+                - AdminSupplierService
+            description: ToggleAccount 启停。
+            operationId: AdminSupplierService_ToggleAccount
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ToggleSupplierAccountRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
+    /api/v1/admin/supplier/callbacks:
+        get:
+            tags:
+                - AdminSupplierService
+            description: ListCallbacks 回调记录（含死信）。
+            operationId: AdminSupplierService_ListCallbacks
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSupplierCallbacksReply'
+    /api/v1/admin/supplier/callbacks/{id}/resend:
+        post:
+            tags:
+                - AdminSupplierService
+            description: ResendCallback 手动重发回调（死信恢复）。
+            operationId: AdminSupplierService_ResendCallback
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResendSupplierCallbackRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/supplier/ledger:
+        get:
+            tags:
+                - AdminSupplierService
+            description: ListLedger 账本流水（下游自助对账数据源）。
+            operationId: AdminSupplierService_ListLedger
+            parameters:
+                - name: accountId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSupplierLedgerReply'
+    /api/v1/admin/supplier/prices:
+        post:
+            tags:
+                - AdminSupplierService
+            description: UpsertPrice 供货定价（覆盖价）。
+            operationId: AdminSupplierService_UpsertPrice
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpsertSupplierPriceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/supply/connections:
         get:
             tags:
@@ -2334,19 +2762,6 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListTxReply'
-    /api/v1/supply/ping:
-        get:
-            tags:
-                - SupplyService
-            description: Ping 连通性与协议版本探测（下游对接第一步）。
-            operationId: SupplyService_Ping
-            responses:
-                "200":
-                    description: OK
-                    content:
-                        application/json:
-                            schema:
-                                $ref: '#/components/schemas/zcard.api.supply.v1.PingReply'
 components:
     schemas:
         zcard.api.admin.v1.AdjustRequest:
@@ -2995,6 +3410,21 @@ components:
                     format: int32
                 upstreamSkuId:
                     type: string
+        zcard.api.admin.v1.CreateSupplierAccountRequest:
+            required:
+                - name
+                - apiKey
+                - apiSecret
+            type: object
+            properties:
+                name:
+                    type: string
+                apiKey:
+                    type: string
+                apiSecret:
+                    type: string
+                contact:
+                    type: string
         zcard.api.admin.v1.CreateSyncTaskRequest:
             required:
                 - connectionId
@@ -3442,6 +3872,51 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+        zcard.api.admin.v1.ListSupplierAccountsReply:
+            type: object
+            properties:
+                accounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListSupplierCallbacksReply:
+            type: object
+            properties:
+                callbacks:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplierCallback'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListSupplierLedgerReply:
+            type: object
+            properties:
+                entries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplierLedgerEntry'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListSyncTasksReply:
             type: object
             properties:
@@ -3719,6 +4194,18 @@ components:
                     type: string
                 updatedAt:
                     type: string
+        zcard.api.admin.v1.RechargeSupplierRequest:
+            required:
+                - id
+                - amountCents
+            type: object
+            properties:
+                id:
+                    type: string
+                amountCents:
+                    type: string
+                remark:
+                    type: string
         zcard.api.admin.v1.RefreshTokenRequest:
             required:
                 - refreshToken
@@ -3755,6 +4242,28 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.ResendSupplierCallbackRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.admin.v1.ResetSupplierSecretReply:
+            type: object
+            properties:
+                apiSecret:
+                    type: string
+        zcard.api.admin.v1.ResetSupplierSecretRequest:
+            required:
+                - id
+                - newSecret
+            type: object
+            properties:
+                id:
+                    type: string
+                newSecret:
+                    type: string
         zcard.api.admin.v1.RetryProcurementRequest:
             required:
                 - id
@@ -3783,6 +4292,15 @@ components:
                 createdAt:
                     type: string
             description: ReviewItem 真实评价（审核流：pending→approved/rejected）。
+        zcard.api.admin.v1.ReviewSupplierAccountRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                approve:
+                    type: boolean
         zcard.api.admin.v1.Role:
             type: object
             properties:
@@ -3801,6 +4319,16 @@ components:
                     items:
                         type: string
             description: Role 角色详情。
+        zcard.api.admin.v1.SetSupplierNotifyURLRequest:
+            required:
+                - id
+                - notifyUrl
+            type: object
+            properties:
+                id:
+                    type: string
+                notifyUrl:
+                    type: string
         zcard.api.admin.v1.Setting:
             type: object
             properties:
@@ -3853,6 +4381,72 @@ components:
                 operator:
                     type: string
                 reason:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.SupplierAccountReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                apiKey:
+                    type: string
+                apiSecret:
+                    type: string
+                contact:
+                    type: string
+                status:
+                    type: string
+                balanceCache:
+                    type: string
+                notifyUrl:
+                    type: string
+                reviewedAt:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.SupplierCallback:
+            type: object
+            properties:
+                id:
+                    type: string
+                supplyOrderId:
+                    type: string
+                accountId:
+                    type: string
+                downstreamOrderNo:
+                    type: string
+                callbackUrl:
+                    type: string
+                traceId:
+                    type: string
+                callbackStatus:
+                    type: string
+                retryCount:
+                    type: integer
+                    format: int32
+                lastCallbackAt:
+                    type: string
+                lastError:
+                    type: string
+        zcard.api.admin.v1.SupplierLedgerEntry:
+            type: object
+            properties:
+                id:
+                    type: string
+                accountId:
+                    type: string
+                supplyOrderId:
+                    type: string
+                type:
+                    type: string
+                amount:
+                    type: string
+                reference:
+                    type: string
+                remark:
                     type: string
                 createdAt:
                     type: string
@@ -4025,6 +4619,15 @@ components:
                 id:
                     type: string
                 enable:
+                    type: boolean
+        zcard.api.admin.v1.ToggleSupplierAccountRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                enabled:
                     type: boolean
         zcard.api.admin.v1.UpdateAdminRequest:
             required:
@@ -4300,6 +4903,21 @@ components:
                 localSkuId:
                     type: string
                 pricingOverride:
+                    type: string
+        zcard.api.admin.v1.UpsertSupplierPriceRequest:
+            required:
+                - accountId
+                - productId
+                - price
+            type: object
+            properties:
+                accountId:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                price:
                     type: string
         zcard.api.admin.v1.ViewCardContentReply:
             type: object
@@ -4698,6 +5316,87 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.supply.v1.CancelSupplyOrderReply:
+            type: object
+            properties:
+                ok:
+                    type: boolean
+        zcard.api.supply.v1.CreateSupplyOrderReply:
+            type: object
+            properties:
+                supplyOrderId:
+                    type: string
+                status:
+                    type: string
+                amount:
+                    type: string
+                fulfillment:
+                    $ref: '#/components/schemas/zcard.api.supply.v1.SupplyFulfillment'
+                errorCode:
+                    type: string
+                errorMessage:
+                    type: string
+        zcard.api.supply.v1.CreateSupplyOrderRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                downstreamOrderNo:
+                    type: string
+                callbackUrl:
+                    type: string
+                traceId:
+                    type: string
+        zcard.api.supply.v1.GetProductReply:
+            type: object
+            properties:
+                product:
+                    $ref: '#/components/schemas/zcard.api.supply.v1.SupplyProduct'
+        zcard.api.supply.v1.GetStockReply:
+            type: object
+            properties:
+                stock:
+                    type: integer
+                    format: int32
+        zcard.api.supply.v1.GetSupplyOrderReply:
+            type: object
+            properties:
+                supplyOrderId:
+                    type: string
+                downstreamOrderNo:
+                    type: string
+                status:
+                    type: string
+                amount:
+                    type: string
+                fulfillment:
+                    $ref: '#/components/schemas/zcard.api.supply.v1.SupplyFulfillment'
+        zcard.api.supply.v1.ListCategoriesReply:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.supply.v1.SupplyCategory'
+        zcard.api.supply.v1.ListProductsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.supply.v1.SupplyProduct'
+                total:
+                    type: string
+                pageSize:
+                    type: integer
+                    format: int32
+                hasMore:
+                    type: boolean
         zcard.api.supply.v1.PingReply:
             type: object
             properties:
@@ -4707,6 +5406,83 @@ components:
                     type: string
                 serverTime:
                     type: string
+                ok:
+                    type: boolean
+                name:
+                    type: string
+                balance:
+                    type: string
+                currency:
+                    type: string
+        zcard.api.supply.v1.RefundSupplyOrderReply:
+            type: object
+            properties:
+                ok:
+                    type: boolean
+                errorCode:
+                    type: string
+                errorMessage:
+                    type: string
+        zcard.api.supply.v1.SupplyCategory:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                parentId:
+                    type: string
+        zcard.api.supply.v1.SupplyFulfillment:
+            type: object
+            properties:
+                status:
+                    type: string
+                cards:
+                    type: array
+                    items:
+                        type: string
+                instructions:
+                    type: string
+        zcard.api.supply.v1.SupplyProduct:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                price:
+                    type: string
+                factoryPrice:
+                    type: string
+                categoryId:
+                    type: string
+                description:
+                    type: string
+                cover:
+                    type: string
+                isActive:
+                    type: boolean
+                stock:
+                    type: integer
+                    format: int32
+                skus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.supply.v1.SupplySku'
+        zcard.api.supply.v1.SupplySku:
+            type: object
+            properties:
+                id:
+                    type: string
+                code:
+                    type: string
+                price:
+                    type: string
+                stock:
+                    type: integer
+                    format: int32
+                isActive:
+                    type: boolean
 tags:
     - name: AdminAuthService
       description: |-
@@ -4736,6 +5512,10 @@ tags:
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
          里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+    - name: AdminSupplierService
+      description: |-
+        AdminSupplierService 对外供货管理（P2-03 T6）：下游账户申请/审核/启停/重置密钥、
+         供货定价 CRUD、账本流水、回调记录查询与手动重发。
     - name: AdminSupplyService
       description: |-
         AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
@@ -4772,4 +5552,5 @@ tags:
         SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
          里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
          ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
-         M0 骨架仅提供 Ping 连通性端点，鉴权中间件挂载点已预留在 server/http.go。
+         Ping 免签名（连通性探测）；其余端点全部需要签名。
+         金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。

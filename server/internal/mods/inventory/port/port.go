@@ -43,3 +43,9 @@ type Inventory interface {
 	// Stock 可用库存数（-1 = 无限，链接类商品）。
 	Stock(ctx context.Context, productID, skuID uint64) (int64, error)
 }
+
+// CardContentReader 交付卡密读取（P2-03 供货交付消费，通道 A）：
+// 按卡 ID 批量读取密文并现场解密返回明文（明文仅内存态，铁律 11 出口约束）。
+type CardContentReader interface {
+	Contents(ctx context.Context, cardIDs []uint64, productID, subsiteID uint64) ([]string, error)
+}

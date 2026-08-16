@@ -19,5 +19,4 @@ var ProviderSet = wire.NewSet(
 	NewAdminSupplyService,
 	NewGateway,
 	wire.Bind(new(port.UpstreamGateway), new(*Gateway)),
-	NewSupplyService, // 对外供货 Ping 骨架（P2-03 完整协议由 supplier 模块接管）
 )

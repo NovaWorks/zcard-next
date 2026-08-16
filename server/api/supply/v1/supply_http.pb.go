@@ -18,16 +18,49 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationSupplyServiceCancelOrder = "/zcard.api.supply.v1.SupplyService/CancelOrder"
+const OperationSupplyServiceCreateOrder = "/zcard.api.supply.v1.SupplyService/CreateOrder"
+const OperationSupplyServiceGetOrder = "/zcard.api.supply.v1.SupplyService/GetOrder"
+const OperationSupplyServiceGetProduct = "/zcard.api.supply.v1.SupplyService/GetProduct"
+const OperationSupplyServiceGetStock = "/zcard.api.supply.v1.SupplyService/GetStock"
+const OperationSupplyServiceListCategories = "/zcard.api.supply.v1.SupplyService/ListCategories"
+const OperationSupplyServiceListProducts = "/zcard.api.supply.v1.SupplyService/ListProducts"
 const OperationSupplyServicePing = "/zcard.api.supply.v1.SupplyService/Ping"
+const OperationSupplyServiceRefundOrder = "/zcard.api.supply.v1.SupplyService/RefundOrder"
 
 type SupplyServiceHTTPServer interface {
-	// Ping Ping 连通性与协议版本探测（下游对接第一步）。
+	// CancelOrder CancelOrder 取消（未交付订单释放锁卡）。
+	CancelOrder(context.Context, *CancelSupplyOrderRequest) (*CancelSupplyOrderReply, error)
+	// CreateOrder CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+	// 同步交付：响应 fulfillment.delivered + cards）。
+	CreateOrder(context.Context, *CreateSupplyOrderRequest) (*CreateSupplyOrderReply, error)
+	// GetOrder GetOrder 订单查询（轮询/巡检兜底）。
+	GetOrder(context.Context, *GetSupplyOrderRequest) (*GetSupplyOrderReply, error)
+	// GetProduct GetProduct 商品详情。
+	GetProduct(context.Context, *GetProductRequest) (*GetProductReply, error)
+	// GetStock GetStock 实时库存（-1=无限）。
+	GetStock(context.Context, *GetStockRequest) (*GetStockReply, error)
+	// ListCategories ListCategories 商品分类（下游建目录）。
+	ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error)
+	// ListProducts ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
+	// Ping Ping 连通性与协议版本探测（免签名）。
 	Ping(context.Context, *emptypb.Empty) (*PingReply, error)
+	// RefundOrder RefundOrder 退款（已交付转人工；未交付释放）。
+	RefundOrder(context.Context, *RefundSupplyOrderRequest) (*RefundSupplyOrderReply, error)
 }
 
 func RegisterSupplyServiceHTTPServer(s *http.Server, srv SupplyServiceHTTPServer) {
 	r := s.Route("/")
-	r.Handle("GET", "/api/v1/supply/ping", _SupplyService_Ping0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/supply/ping", _SupplyService_Ping0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/supply/categories", _SupplyService_ListCategories0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/supply/products", _SupplyService_ListProducts0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/supply/products/{id}", _SupplyService_GetProduct0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/supply/products/{id}/stock", _SupplyService_GetStock0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/supply/orders", _SupplyService_CreateOrder0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/supply/orders/{id}", _SupplyService_GetOrder0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/supply/orders/{id}/cancel", _SupplyService_CancelOrder0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/supply/orders/{id}/refund", _SupplyService_RefundOrder0_HTTP_Handler(srv))
 }
 
 func _SupplyService_Ping0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
@@ -49,9 +82,193 @@ func _SupplyService_Ping0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx htt
 	}
 }
 
+func _SupplyService_ListCategories0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceListCategories)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListCategories(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListCategoriesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_ListProducts0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListProductsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceListProducts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListProducts(ctx, req.(*ListProductsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListProductsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_GetProduct0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetProductRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceGetProduct)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetProduct(ctx, req.(*GetProductRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetProductReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_GetStock0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetStockRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceGetStock)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetStock(ctx, req.(*GetStockRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetStockReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_CreateOrder0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateSupplyOrderRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceCreateOrder)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateOrder(ctx, req.(*CreateSupplyOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CreateSupplyOrderReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_GetOrder0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetSupplyOrderRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceGetOrder)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetOrder(ctx, req.(*GetSupplyOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetSupplyOrderReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_CancelOrder0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CancelSupplyOrderRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceCancelOrder)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CancelOrder(ctx, req.(*CancelSupplyOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CancelSupplyOrderReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _SupplyService_RefundOrder0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RefundSupplyOrderRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceRefundOrder)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RefundOrder(ctx, req.(*RefundSupplyOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RefundSupplyOrderReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type SupplyServiceHTTPClient interface {
-	// Ping Ping 连通性与协议版本探测（下游对接第一步）。
+	// CancelOrder CancelOrder 取消（未交付订单释放锁卡）。
+	CancelOrder(ctx context.Context, req *CancelSupplyOrderRequest, opts ...http.CallOption) (rsp *CancelSupplyOrderReply, err error)
+	// CreateOrder CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+	// 同步交付：响应 fulfillment.delivered + cards）。
+	CreateOrder(ctx context.Context, req *CreateSupplyOrderRequest, opts ...http.CallOption) (rsp *CreateSupplyOrderReply, err error)
+	// GetOrder GetOrder 订单查询（轮询/巡检兜底）。
+	GetOrder(ctx context.Context, req *GetSupplyOrderRequest, opts ...http.CallOption) (rsp *GetSupplyOrderReply, err error)
+	// GetProduct GetProduct 商品详情。
+	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *GetProductReply, err error)
+	// GetStock GetStock 实时库存（-1=无限）。
+	GetStock(ctx context.Context, req *GetStockRequest, opts ...http.CallOption) (rsp *GetStockReply, err error)
+	// ListCategories ListCategories 商品分类（下游建目录）。
+	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListCategoriesReply, err error)
+	// ListProducts ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+	ListProducts(ctx context.Context, req *ListProductsRequest, opts ...http.CallOption) (rsp *ListProductsReply, err error)
+	// Ping Ping 连通性与协议版本探测（免签名）。
 	Ping(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *PingReply, err error)
+	// RefundOrder RefundOrder 退款（已交付转人工；未交付释放）。
+	RefundOrder(ctx context.Context, req *RefundSupplyOrderRequest, opts ...http.CallOption) (rsp *RefundSupplyOrderReply, err error)
 }
 
 type SupplyServiceHTTPClientImpl struct {
@@ -62,10 +279,131 @@ func NewSupplyServiceHTTPClient(client *http.Client) SupplyServiceHTTPClient {
 	return &SupplyServiceHTTPClientImpl{client}
 }
 
-// Ping Ping 连通性与协议版本探测（下游对接第一步）。
+// CancelOrder CancelOrder 取消（未交付订单释放锁卡）。
+func (c *SupplyServiceHTTPClientImpl) CancelOrder(ctx context.Context, in *CancelSupplyOrderRequest, opts ...http.CallOption) (*CancelSupplyOrderReply, error) {
+	var out CancelSupplyOrderReply
+	pattern := "/api/supply/orders/{id}/cancel"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceCancelOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateOrder CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
+// 同步交付：响应 fulfillment.delivered + cards）。
+func (c *SupplyServiceHTTPClientImpl) CreateOrder(ctx context.Context, in *CreateSupplyOrderRequest, opts ...http.CallOption) (*CreateSupplyOrderReply, error) {
+	var out CreateSupplyOrderReply
+	pattern := "/api/supply/orders"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationSupplyServiceCreateOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetOrder GetOrder 订单查询（轮询/巡检兜底）。
+func (c *SupplyServiceHTTPClientImpl) GetOrder(ctx context.Context, in *GetSupplyOrderRequest, opts ...http.CallOption) (*GetSupplyOrderReply, error) {
+	var out GetSupplyOrderReply
+	pattern := "/api/supply/orders/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceGetOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetProduct GetProduct 商品详情。
+func (c *SupplyServiceHTTPClientImpl) GetProduct(ctx context.Context, in *GetProductRequest, opts ...http.CallOption) (*GetProductReply, error) {
+	var out GetProductReply
+	pattern := "/api/supply/products/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceGetProduct),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetStock GetStock 实时库存（-1=无限）。
+func (c *SupplyServiceHTTPClientImpl) GetStock(ctx context.Context, in *GetStockRequest, opts ...http.CallOption) (*GetStockReply, error) {
+	var out GetStockReply
+	pattern := "/api/supply/products/{id}/stock"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceGetStock),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListCategories ListCategories 商品分类（下游建目录）。
+func (c *SupplyServiceHTTPClientImpl) ListCategories(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*ListCategoriesReply, error) {
+	var out ListCategoriesReply
+	pattern := "/api/supply/categories"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceListCategories),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListProducts ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
+func (c *SupplyServiceHTTPClientImpl) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...http.CallOption) (*ListProductsReply, error) {
+	var out ListProductsReply
+	pattern := "/api/supply/products"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceListProducts),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Ping Ping 连通性与协议版本探测（免签名）。
 func (c *SupplyServiceHTTPClientImpl) Ping(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*PingReply, error) {
 	var out PingReply
-	pattern := "/api/v1/supply/ping"
+	pattern := "/api/supply/ping"
 	path := http.BuildPath(pattern, in, http.WithQueryParams())
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
@@ -73,6 +411,23 @@ func (c *SupplyServiceHTTPClientImpl) Ping(ctx context.Context, in *emptypb.Empt
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// RefundOrder RefundOrder 退款（已交付转人工；未交付释放）。
+func (c *SupplyServiceHTTPClientImpl) RefundOrder(ctx context.Context, in *RefundSupplyOrderRequest, opts ...http.CallOption) (*RefundSupplyOrderReply, error) {
+	var out RefundSupplyOrderReply
+	pattern := "/api/supply/orders/{id}/refund"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceRefundOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
