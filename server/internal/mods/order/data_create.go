@@ -22,7 +22,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
+	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -33,25 +36,30 @@ import (
 
 // OrderUsecase 扩展（持有依赖）。
 type OrderUsecase struct {
-	Data *data.Data
-	Inv  port.Inventory
-	Gen  *id.Generator
+	Data       *data.Data
+	Inv        port.Inventory
+	Gen        *id.Generator
+	MemberRate memberlevelport.RateResolver
+	Coupon     couponport.CouponResolver
+	Catalog    catalogport.PricingResolver
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen}
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat}
 }
 
 // CreateOrderInput 下单输入。
 type CreateOrderInput struct {
-	Items         []OrderItemInput
-	UserID        uint64 // 0=游客
-	GuestContact  string
-	QueryPassword string // 明文（bcrypt 哈希后存储）
-	Contact       string
-	ClientIP      string
-	SubsiteID     uint64
+	Items          []OrderItemInput
+	UserID         uint64 // 0=游客
+	GuestContact   string
+	QueryPassword  string // 明文（bcrypt 哈希后存储）
+	Contact        string
+	ClientIP       string
+	SubsiteID      uint64
+	CouponCode     string            // 优惠券码（可选）
+	ControlAnswers map[string]string // 自定义控件答案（key=控件 ID，落 order.extra）
 }
 
 // OrderItemInput 商品行。
@@ -105,7 +113,15 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		orderNo := id.FormatNo("S", snowflakeID)
 
-		// 3) 算价管线（每商品行独立跑管线）
+		// 3) 会员折扣（万分比，按用户累计消费匹配；解析失败降级为 0 不阻断下单）
+		var memberRate int32
+		if uc.MemberRate != nil && in.UserID > 0 {
+			if r, _, err := uc.MemberRate.EffectiveRate(txCtx, in.UserID); err == nil {
+				memberRate = r
+			}
+		}
+
+		// 4) 算价管线（每商品行独立跑管线；会员折扣逐行，优惠券整单后置）
 		type itemResult struct {
 			input       OrderItemInput
 			res         PriceResult
@@ -129,10 +145,26 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				return fmt.Errorf("order.PRODUCT_NOT_AVAILABLE") // 下架/隐藏
 			}
 
-			// M1a 中性管线（member/coupon/points/reseller 均为 0）
+			// SKU 价 > 商品价（订单取价经 catalog port 解析；失败降级商品价）
+			basePrice := money.Cents(p.Price)
+			if item.SkuID > 0 && uc.Catalog != nil {
+				if sp, err := uc.Catalog.ResolvePrice(txCtx, item.ProductID, item.SkuID); err == nil && sp > 0 {
+					basePrice = sp
+				}
+			}
+			// 会员商品组折扣（万分比；不命中/解析失败为 0）
+			var groupRate int32
+			if uc.Catalog != nil {
+				if gr, err := uc.Catalog.ResolveGroupRate(txCtx, item.ProductID); err == nil {
+					groupRate = gr
+				}
+			}
+
 			pr := PriceCalculator(PriceInput{
-				BasePrice: money.Cents(p.Price),
-				Quantity:  item.Quantity,
+				BasePrice:  basePrice,
+				Quantity:   item.Quantity,
+				MemberRate: memberRate,
+				GroupRate:  groupRate,
 			})
 			results = append(results, itemResult{
 				input: item, res: pr, cost: int64(p.FactoryPrice),
@@ -140,6 +172,22 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			})
 			totalCents += int64(pr.Total)
 		}
+
+		// 4.5) 优惠券（整单一次性；percent 按会员折后应付额折算，不找零）
+		var couponValue int64
+		var couponID uint64
+		if uc.Coupon != nil && in.CouponCode != "" {
+			v, cid, err := uc.Coupon.Resolve(txCtx, in.CouponCode, in.UserID, money.Cents(totalCents))
+			if err != nil {
+				return fmt.Errorf("order.COUPON_INVALID: %w", err)
+			}
+			couponValue = int64(v)
+			couponID = cid
+		}
+		if couponValue > totalCents {
+			couponValue = totalCents
+		}
+		totalCents -= couponValue
 
 		// 4) 查询密码哈希
 		var queryPwdHash string
@@ -155,6 +203,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		// 5) 写 orders（父单）
 		ttl := 30 * time.Minute
 		exp := time.Now().Add(ttl).UTC()
+		extra := map[string]any{}
+		if len(in.ControlAnswers) > 0 {
+			extra["control_answers"] = in.ControlAnswers
+		}
 		o, err := client.Order.Create().
 			SetOrderNo(orderNo).
 			SetSubsiteID(in.SubsiteID).
@@ -169,6 +221,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetClientIP(in.ClientIP).
 			SetExpiredAt(exp).
 			SetVersion(0).
+			SetExtra(extra).
 			Save(txCtx)
 		if err != nil {
 			return fmt.Errorf("order.CREATE_FAILED: %w", err)
@@ -211,6 +264,26 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 					Save(txCtx)
 				if err != nil {
 					return fmt.Errorf("order.AMOUNT_LINE_FAILED: %w", err)
+				}
+			}
+		}
+
+		// 7.5) 优惠券金额行 + 核销
+		if couponValue > 0 {
+			_, err := client.OrderAmountLine.Create().
+				SetOrderID(o.ID).
+				SetType(orderamountline.TypeCouponDiscount).
+				SetAmount(-couponValue).
+				SetSourceType("coupon").
+				SetSourceID(couponID).
+				SetSeq(int32(len(results)*4 + 1)).
+				Save(txCtx)
+			if err != nil {
+				return fmt.Errorf("order.COUPON_LINE_FAILED: %w", err)
+			}
+			if uc.Coupon != nil {
+				if err := uc.Coupon.MarkUsed(txCtx, couponID, o.ID); err != nil {
+					return fmt.Errorf("order.COUPON_MARK_FAILED: %w", err)
 				}
 			}
 		}

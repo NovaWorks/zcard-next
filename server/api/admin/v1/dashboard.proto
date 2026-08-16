@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// AdminDashboardService 工作台指标（P3-07 M1b v1）。
+service AdminDashboardService {
+  rpc GetDashboard(google.protobuf.Empty) returns (DashboardReply) {
+    option (google.api.http) = { get: "/api/v1/admin/dashboard" };
+  }
+}
+
+message DashboardStat {
+  int64 orders = 1;
+  int64 revenue = 2;      // 分
+  int64 paid_orders = 3;
+}
+
+message DashboardTrendPoint {
+  string date = 1;
+  int64 orders = 2;
+  int64 revenue = 3;      // 分
+}
+
+message DashboardTopProduct {
+  uint64 product_id = 1;
+  string name = 2;
+  int64 sold_qty = 3;
+  int64 revenue = 4;      // 分
+}
+
+message DashboardReply {
+  DashboardStat today = 1;
+  DashboardStat last7d = 2;
+  DashboardStat last30d = 3;
+  repeated DashboardTrendPoint trend = 4;
+  repeated DashboardTopProduct top_products = 5;
+}

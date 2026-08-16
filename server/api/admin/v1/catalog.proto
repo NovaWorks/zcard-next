@@ -7,7 +7,6 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
-import "common/v1/common.proto";
 
 // AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
 service AdminCatalogService {
@@ -52,6 +51,62 @@ service AdminCatalogService {
   rpc DeleteTag(DeleteTagRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { delete: "/api/v1/admin/tags/{id}" };
   }
+
+  // ── 自定义控件 ──
+  rpc ListControls(ListControlsRequest) returns (ControlList) {
+    option (google.api.http) = { get: "/api/v1/admin/products/{product_id}/controls" };
+  }
+  rpc CreateControl(CreateControlRequest) returns (AdminControl) {
+    option (google.api.http) = { post: "/api/v1/admin/products/{product_id}/controls" body: "*" };
+  }
+  rpc UpdateControl(UpdateControlRequest) returns (AdminControl) {
+    option (google.api.http) = { put: "/api/v1/admin/controls/{id}" body: "*" };
+  }
+  rpc DeleteControl(DeleteControlRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/controls/{id}" };
+  }
+
+  // ── 评价（真实一单一评审核 + 虚拟评价）──
+  rpc ListReviews(ListReviewsRequest) returns (ListReviewsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/reviews" };
+  }
+  rpc ApproveReview(ApproveReviewRequest) returns (ReviewItem) {
+    option (google.api.http) = { post: "/api/v1/admin/reviews/{id}/approve" body: "*" };
+  }
+  rpc RejectReview(RejectReviewRequest) returns (ReviewItem) {
+    option (google.api.http) = { post: "/api/v1/admin/reviews/{id}/reject" body: "*" };
+  }
+  rpc CreateVirtualReview(CreateVirtualReviewRequest) returns (VirtualReviewItem) {
+    option (google.api.http) = { post: "/api/v1/admin/virtual-reviews" body: "*" };
+  }
+
+  // ── SKU 多规格 ──
+  rpc ListSkus(ListSkusRequest) returns (SkuList) {
+    option (google.api.http) = { get: "/api/v1/admin/products/{product_id}/skus" };
+  }
+  rpc CreateSku(CreateSkuRequest) returns (Sku) {
+    option (google.api.http) = { post: "/api/v1/admin/products/{product_id}/skus" body: "*" };
+  }
+  rpc UpdateSku(UpdateSkuRequest) returns (Sku) {
+    option (google.api.http) = { put: "/api/v1/admin/skus/{id}" body: "*" };
+  }
+  rpc DeleteSku(DeleteSkuRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/skus/{id}" };
+  }
+
+  // ── 会员商品组 ──
+  rpc ListMemberGroups(google.protobuf.Empty) returns (MemberGroupList) {
+    option (google.api.http) = { get: "/api/v1/admin/member-groups" };
+  }
+  rpc CreateMemberGroup(CreateMemberGroupRequest) returns (MemberGroup) {
+    option (google.api.http) = { post: "/api/v1/admin/member-groups" body: "*" };
+  }
+  rpc UpdateMemberGroup(UpdateMemberGroupRequest) returns (MemberGroup) {
+    option (google.api.http) = { put: "/api/v1/admin/member-groups/{id}" body: "*" };
+  }
+  rpc DeleteMemberGroup(DeleteMemberGroupRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/member-groups/{id}" };
+  }
 }
 
 // ── 商品消息 ──
@@ -60,12 +115,15 @@ message ListProductsRequest {
   uint64 category_id = 1;
   string keyword = 2;
   int32 status = 3; // 0=全部 1=上架 0=下架 2=隐藏
-  zcard.api.common.v1.PageReq page = 4;
+  int32 page = 4;
+  int32 page_size = 5;
 }
 
 message ListProductsReply {
   repeated AdminProduct products = 1;
-  zcard.api.common.v1.PageResp page = 2;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message GetProductRequest {
@@ -193,5 +251,185 @@ message CreateTagRequest {
 }
 
 message DeleteTagRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ── 自定义控件消息 ──
+
+message ListControlsRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ControlList {
+  repeated AdminControl controls = 1;
+}
+
+message AdminControl {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  string name = 3;
+  string type = 4;    // text | password | select | number | checkbox | radio
+  bool required = 5;
+  repeated string options = 6;
+  int32 sort = 7;
+}
+
+message CreateControlRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+  string type = 3 [(google.api.field_behavior) = REQUIRED];
+  bool required = 4;
+  repeated string options = 5;
+  int32 sort = 6;
+}
+
+message UpdateControlRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  string type = 3;
+  bool required = 4;
+  repeated string options = 5;
+  int32 sort = 6;
+}
+
+message DeleteControlRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ── 评价消息 ──
+
+message ListReviewsRequest {
+  string status = 1; // pending | approved | rejected；空=全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListReviewsReply {
+  repeated ReviewItem reviews = 1;
+  int64 total = 2;
+}
+
+// ReviewItem 真实评价（审核流：pending→approved/rejected）。
+message ReviewItem {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  uint64 user_id = 3;
+  uint64 order_id = 4;
+  int32 rating = 5; // 1-5
+  string content = 6;
+  string status = 7;
+  int64 created_at = 8;
+}
+
+message ApproveReviewRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message RejectReviewRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// VirtualReviewItem 虚拟评价（与真实 approved 合并展示）。
+message VirtualReviewItem {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  string nickname = 3;
+  string content = 4;
+  int32 rating = 5;
+  int32 sort = 6;
+  int64 created_at = 7;
+}
+
+message CreateVirtualReviewRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string nickname = 2;
+  string content = 3 [(google.api.field_behavior) = REQUIRED];
+  int32 rating = 4;
+  int32 sort = 5;
+}
+
+// ── SKU 消息 ──
+
+message ListSkusRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message SkuList {
+  repeated Sku skus = 1;
+}
+
+// Sku 管理面多规格（含成本价）。
+message Sku {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  string name = 3;
+  map<string, string> spec_values = 4;
+  int64 price_cents = 5; // 独立售价（分；0=继承商品价）
+  int64 cost_cents = 6;
+  int32 stock_offset = 7;
+  string upstream_sku_id = 8;
+}
+
+message CreateSkuRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+  map<string, string> spec_values = 3;
+  int64 price_cents = 4;
+  int64 cost_cents = 5;
+  int32 stock_offset = 6;
+  string upstream_sku_id = 7;
+}
+
+message UpdateSkuRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  map<string, string> spec_values = 3;
+  int64 price_cents = 4;
+  int64 cost_cents = 5;
+  int32 stock_offset = 6;
+  string upstream_sku_id = 7;
+}
+
+message DeleteSkuRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// ── 会员商品组消息 ──
+
+message MemberGroupList {
+  repeated MemberGroup groups = 1;
+}
+
+// MemberGroup 会员商品组（命中商品的订单按 discount 万分比打折）。
+message MemberGroup {
+  uint64 id = 1;
+  string name = 2;
+  repeated uint64 product_ids = 3;
+  int32 discount = 4; // 万分比（9500=95 折）
+  bool stack_member = 5;
+  bool stack_coupon = 6;
+  string badge_style = 7;
+}
+
+message CreateMemberGroupRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated uint64 product_ids = 2;
+  int32 discount = 3 [(google.api.field_behavior) = REQUIRED]; // 万分比
+  bool stack_member = 4;
+  bool stack_coupon = 5;
+  string badge_style = 6;
+}
+
+message UpdateMemberGroupRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  repeated uint64 product_ids = 3;
+  int32 discount = 4;
+  bool stack_member = 5;
+  bool stack_coupon = 6;
+  string badge_style = 7;
+}
+
+message DeleteMemberGroupRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }

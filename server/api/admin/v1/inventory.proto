@@ -50,6 +50,14 @@ service AdminInventoryService {
       body: "*"
     };
   }
+  // ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+  rpc ViewCardContent(ViewCardContentRequest) returns (ViewCardContentReply) {
+    option (google.api.http) = { get: "/api/v1/admin/inventory/cards/{id}/content" };
+  }
+  // ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+  rpc ListPremiumCards(ListPremiumCardsRequest) returns (ListPremiumCardsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/inventory/cards/premium" };
+  }
 }
 
 message ImportPreviewRequest {
@@ -129,4 +137,33 @@ message ExportCardsReply {
 message ToggleCardRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   bool enable = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ViewCardContentRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ViewCardContentReply {
+  uint64 id = 1;
+  string content = 2; // 完整明文（一次性下发；Cache-Control: no-store 由 transport 保证）
+}
+
+message ListPremiumCardsRequest {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListPremiumCardsReply {
+  repeated PremiumCardInfo cards = 1;
+  int64 total = 2;
+}
+
+// PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
+message PremiumCardInfo {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  string masked_content = 3; // ****尾4位
+  int64 draft_premium = 4;   // 预选加价（分）
+  int64 draft_cost = 5;      // 预选成本（分）
+  int64 price_cents = 6;     // 靓号自选价（0=商品价+premium）
+  string status = 7;
 }

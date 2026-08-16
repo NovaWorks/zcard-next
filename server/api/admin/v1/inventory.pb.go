@@ -804,6 +804,291 @@ func (x *ToggleCardRequest) GetEnable() bool {
 	return false
 }
 
+type ViewCardContentRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ViewCardContentRequest) Reset() {
+	*x = ViewCardContentRequest{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ViewCardContentRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ViewCardContentRequest) ProtoMessage() {}
+
+func (x *ViewCardContentRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ViewCardContentRequest.ProtoReflect.Descriptor instead.
+func (*ViewCardContentRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ViewCardContentRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type ViewCardContentReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"` // 完整明文（一次性下发；Cache-Control: no-store 由 transport 保证）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ViewCardContentReply) Reset() {
+	*x = ViewCardContentReply{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ViewCardContentReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ViewCardContentReply) ProtoMessage() {}
+
+func (x *ViewCardContentReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ViewCardContentReply.ProtoReflect.Descriptor instead.
+func (*ViewCardContentReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ViewCardContentReply) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ViewCardContentReply) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+type ListPremiumCardsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPremiumCardsRequest) Reset() {
+	*x = ListPremiumCardsRequest{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPremiumCardsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPremiumCardsRequest) ProtoMessage() {}
+
+func (x *ListPremiumCardsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPremiumCardsRequest.ProtoReflect.Descriptor instead.
+func (*ListPremiumCardsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListPremiumCardsRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+type ListPremiumCardsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Cards         []*PremiumCardInfo     `protobuf:"bytes,1,rep,name=cards,proto3" json:"cards,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPremiumCardsReply) Reset() {
+	*x = ListPremiumCardsReply{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPremiumCardsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPremiumCardsReply) ProtoMessage() {}
+
+func (x *ListPremiumCardsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPremiumCardsReply.ProtoReflect.Descriptor instead.
+func (*ListPremiumCardsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListPremiumCardsReply) GetCards() []*PremiumCardInfo {
+	if x != nil {
+		return x.Cards
+	}
+	return nil
+}
+
+func (x *ListPremiumCardsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+// PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
+type PremiumCardInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	MaskedContent string                 `protobuf:"bytes,3,opt,name=masked_content,json=maskedContent,proto3" json:"masked_content,omitempty"` // ****尾4位
+	DraftPremium  int64                  `protobuf:"varint,4,opt,name=draft_premium,json=draftPremium,proto3" json:"draft_premium,omitempty"`   // 预选加价（分）
+	DraftCost     int64                  `protobuf:"varint,5,opt,name=draft_cost,json=draftCost,proto3" json:"draft_cost,omitempty"`            // 预选成本（分）
+	PriceCents    int64                  `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`         // 靓号自选价（0=商品价+premium）
+	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PremiumCardInfo) Reset() {
+	*x = PremiumCardInfo{}
+	mi := &file_admin_v1_inventory_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PremiumCardInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PremiumCardInfo) ProtoMessage() {}
+
+func (x *PremiumCardInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_inventory_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PremiumCardInfo.ProtoReflect.Descriptor instead.
+func (*PremiumCardInfo) Descriptor() ([]byte, []int) {
+	return file_admin_v1_inventory_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *PremiumCardInfo) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *PremiumCardInfo) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *PremiumCardInfo) GetMaskedContent() string {
+	if x != nil {
+		return x.MaskedContent
+	}
+	return ""
+}
+
+func (x *PremiumCardInfo) GetDraftPremium() int64 {
+	if x != nil {
+		return x.DraftPremium
+	}
+	return 0
+}
+
+func (x *PremiumCardInfo) GetDraftCost() int64 {
+	if x != nil {
+		return x.DraftCost
+	}
+	return 0
+}
+
+func (x *PremiumCardInfo) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *PremiumCardInfo) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 var File_admin_v1_inventory_proto protoreflect.FileDescriptor
 
 const file_admin_v1_inventory_proto_rawDesc = "" +
@@ -869,7 +1154,30 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\x05lines\x18\x01 \x03(\tR\x05lines\"E\n" +
 	"\x11ToggleCardRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1b\n" +
-	"\x06enable\x18\x02 \x01(\bB\x03\xe0A\x02R\x06enable2\xcb\a\n" +
+	"\x06enable\x18\x02 \x01(\bB\x03\xe0A\x02R\x06enable\"-\n" +
+	"\x16ViewCardContentRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"@\n" +
+	"\x14ViewCardContentReply\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x18\n" +
+	"\acontent\x18\x02 \x01(\tR\acontent\"=\n" +
+	"\x17ListPremiumCardsRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"h\n" +
+	"\x15ListPremiumCardsReply\x129\n" +
+	"\x05cards\x18\x01 \x03(\v2#.zcard.api.admin.v1.PremiumCardInfoR\x05cards\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xe4\x01\n" +
+	"\x0fPremiumCardInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12%\n" +
+	"\x0emasked_content\x18\x03 \x01(\tR\rmaskedContent\x12#\n" +
+	"\rdraft_premium\x18\x04 \x01(\x03R\fdraftPremium\x12\x1d\n" +
+	"\n" +
+	"draft_cost\x18\x05 \x01(\x03R\tdraftCost\x12\x1f\n" +
+	"\vprice_cents\x18\x06 \x01(\x03R\n" +
+	"priceCents\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status2\x85\n" +
+	"\n" +
 	"\x15AdminInventoryService\x12\x8d\x01\n" +
 	"\rImportPreview\x12(.zcard.api.admin.v1.ImportPreviewRequest\x1a&.zcard.api.admin.v1.ImportPreviewReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/inventory/preview\x12\x85\x01\n" +
 	"\rImportConfirm\x12(.zcard.api.admin.v1.ImportConfirmRequest\x1a\x1f.zcard.api.admin.v1.ImportBatch\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/inventory/import\x12\x84\x01\n" +
@@ -878,7 +1186,9 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\tListCards\x12$.zcard.api.admin.v1.ListCardsRequest\x1a\".zcard.api.admin.v1.ListCardsReply\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/inventory/cards\x12\x86\x01\n" +
 	"\vExportCards\x12&.zcard.api.admin.v1.ExportCardsRequest\x1a$.zcard.api.admin.v1.ExportCardsReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/inventory/export\x12\x81\x01\n" +
 	"\n" +
-	"ToggleCard\x12%.zcard.api.admin.v1.ToggleCardRequest\x1a\x16.google.protobuf.Empty\"4\x82\xd3\xe4\x93\x02.:\x01*\x1a)/api/v1/admin/inventory/cards/{id}/toggleB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"ToggleCard\x12%.zcard.api.admin.v1.ToggleCardRequest\x1a\x16.google.protobuf.Empty\"4\x82\xd3\xe4\x93\x02.:\x01*\x1a)/api/v1/admin/inventory/cards/{id}/toggle\x12\x9b\x01\n" +
+	"\x0fViewCardContent\x12*.zcard.api.admin.v1.ViewCardContentRequest\x1a(.zcard.api.admin.v1.ViewCardContentReply\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/admin/inventory/cards/{id}/content\x12\x99\x01\n" +
+	"\x10ListPremiumCards\x12+.zcard.api.admin.v1.ListPremiumCardsRequest\x1a).zcard.api.admin.v1.ListPremiumCardsReply\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/inventory/cards/premiumB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_inventory_proto_rawDescOnce sync.Once
@@ -892,45 +1202,55 @@ func file_admin_v1_inventory_proto_rawDescGZIP() []byte {
 	return file_admin_v1_inventory_proto_rawDescData
 }
 
-var file_admin_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_admin_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_admin_v1_inventory_proto_goTypes = []any{
-	(*ImportPreviewRequest)(nil), // 0: zcard.api.admin.v1.ImportPreviewRequest
-	(*ImportPreviewReply)(nil),   // 1: zcard.api.admin.v1.ImportPreviewReply
-	(*ImportConfirmRequest)(nil), // 2: zcard.api.admin.v1.ImportConfirmRequest
-	(*ImportBatch)(nil),          // 3: zcard.api.admin.v1.ImportBatch
-	(*ListImportsRequest)(nil),   // 4: zcard.api.admin.v1.ListImportsRequest
-	(*ListImportsReply)(nil),     // 5: zcard.api.admin.v1.ListImportsReply
-	(*CancelImportRequest)(nil),  // 6: zcard.api.admin.v1.CancelImportRequest
-	(*ListCardsRequest)(nil),     // 7: zcard.api.admin.v1.ListCardsRequest
-	(*ListCardsReply)(nil),       // 8: zcard.api.admin.v1.ListCardsReply
-	(*CardInfo)(nil),             // 9: zcard.api.admin.v1.CardInfo
-	(*ExportCardsRequest)(nil),   // 10: zcard.api.admin.v1.ExportCardsRequest
-	(*ExportCardsReply)(nil),     // 11: zcard.api.admin.v1.ExportCardsReply
-	(*ToggleCardRequest)(nil),    // 12: zcard.api.admin.v1.ToggleCardRequest
-	(*emptypb.Empty)(nil),        // 13: google.protobuf.Empty
+	(*ImportPreviewRequest)(nil),    // 0: zcard.api.admin.v1.ImportPreviewRequest
+	(*ImportPreviewReply)(nil),      // 1: zcard.api.admin.v1.ImportPreviewReply
+	(*ImportConfirmRequest)(nil),    // 2: zcard.api.admin.v1.ImportConfirmRequest
+	(*ImportBatch)(nil),             // 3: zcard.api.admin.v1.ImportBatch
+	(*ListImportsRequest)(nil),      // 4: zcard.api.admin.v1.ListImportsRequest
+	(*ListImportsReply)(nil),        // 5: zcard.api.admin.v1.ListImportsReply
+	(*CancelImportRequest)(nil),     // 6: zcard.api.admin.v1.CancelImportRequest
+	(*ListCardsRequest)(nil),        // 7: zcard.api.admin.v1.ListCardsRequest
+	(*ListCardsReply)(nil),          // 8: zcard.api.admin.v1.ListCardsReply
+	(*CardInfo)(nil),                // 9: zcard.api.admin.v1.CardInfo
+	(*ExportCardsRequest)(nil),      // 10: zcard.api.admin.v1.ExportCardsRequest
+	(*ExportCardsReply)(nil),        // 11: zcard.api.admin.v1.ExportCardsReply
+	(*ToggleCardRequest)(nil),       // 12: zcard.api.admin.v1.ToggleCardRequest
+	(*ViewCardContentRequest)(nil),  // 13: zcard.api.admin.v1.ViewCardContentRequest
+	(*ViewCardContentReply)(nil),    // 14: zcard.api.admin.v1.ViewCardContentReply
+	(*ListPremiumCardsRequest)(nil), // 15: zcard.api.admin.v1.ListPremiumCardsRequest
+	(*ListPremiumCardsReply)(nil),   // 16: zcard.api.admin.v1.ListPremiumCardsReply
+	(*PremiumCardInfo)(nil),         // 17: zcard.api.admin.v1.PremiumCardInfo
+	(*emptypb.Empty)(nil),           // 18: google.protobuf.Empty
 }
 var file_admin_v1_inventory_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.admin.v1.ListImportsReply.batches:type_name -> zcard.api.admin.v1.ImportBatch
 	9,  // 1: zcard.api.admin.v1.ListCardsReply.cards:type_name -> zcard.api.admin.v1.CardInfo
-	0,  // 2: zcard.api.admin.v1.AdminInventoryService.ImportPreview:input_type -> zcard.api.admin.v1.ImportPreviewRequest
-	2,  // 3: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:input_type -> zcard.api.admin.v1.ImportConfirmRequest
-	4,  // 4: zcard.api.admin.v1.AdminInventoryService.ListImports:input_type -> zcard.api.admin.v1.ListImportsRequest
-	6,  // 5: zcard.api.admin.v1.AdminInventoryService.CancelImport:input_type -> zcard.api.admin.v1.CancelImportRequest
-	7,  // 6: zcard.api.admin.v1.AdminInventoryService.ListCards:input_type -> zcard.api.admin.v1.ListCardsRequest
-	10, // 7: zcard.api.admin.v1.AdminInventoryService.ExportCards:input_type -> zcard.api.admin.v1.ExportCardsRequest
-	12, // 8: zcard.api.admin.v1.AdminInventoryService.ToggleCard:input_type -> zcard.api.admin.v1.ToggleCardRequest
-	1,  // 9: zcard.api.admin.v1.AdminInventoryService.ImportPreview:output_type -> zcard.api.admin.v1.ImportPreviewReply
-	3,  // 10: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:output_type -> zcard.api.admin.v1.ImportBatch
-	5,  // 11: zcard.api.admin.v1.AdminInventoryService.ListImports:output_type -> zcard.api.admin.v1.ListImportsReply
-	13, // 12: zcard.api.admin.v1.AdminInventoryService.CancelImport:output_type -> google.protobuf.Empty
-	8,  // 13: zcard.api.admin.v1.AdminInventoryService.ListCards:output_type -> zcard.api.admin.v1.ListCardsReply
-	11, // 14: zcard.api.admin.v1.AdminInventoryService.ExportCards:output_type -> zcard.api.admin.v1.ExportCardsReply
-	13, // 15: zcard.api.admin.v1.AdminInventoryService.ToggleCard:output_type -> google.protobuf.Empty
-	9,  // [9:16] is the sub-list for method output_type
-	2,  // [2:9] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	17, // 2: zcard.api.admin.v1.ListPremiumCardsReply.cards:type_name -> zcard.api.admin.v1.PremiumCardInfo
+	0,  // 3: zcard.api.admin.v1.AdminInventoryService.ImportPreview:input_type -> zcard.api.admin.v1.ImportPreviewRequest
+	2,  // 4: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:input_type -> zcard.api.admin.v1.ImportConfirmRequest
+	4,  // 5: zcard.api.admin.v1.AdminInventoryService.ListImports:input_type -> zcard.api.admin.v1.ListImportsRequest
+	6,  // 6: zcard.api.admin.v1.AdminInventoryService.CancelImport:input_type -> zcard.api.admin.v1.CancelImportRequest
+	7,  // 7: zcard.api.admin.v1.AdminInventoryService.ListCards:input_type -> zcard.api.admin.v1.ListCardsRequest
+	10, // 8: zcard.api.admin.v1.AdminInventoryService.ExportCards:input_type -> zcard.api.admin.v1.ExportCardsRequest
+	12, // 9: zcard.api.admin.v1.AdminInventoryService.ToggleCard:input_type -> zcard.api.admin.v1.ToggleCardRequest
+	13, // 10: zcard.api.admin.v1.AdminInventoryService.ViewCardContent:input_type -> zcard.api.admin.v1.ViewCardContentRequest
+	15, // 11: zcard.api.admin.v1.AdminInventoryService.ListPremiumCards:input_type -> zcard.api.admin.v1.ListPremiumCardsRequest
+	1,  // 12: zcard.api.admin.v1.AdminInventoryService.ImportPreview:output_type -> zcard.api.admin.v1.ImportPreviewReply
+	3,  // 13: zcard.api.admin.v1.AdminInventoryService.ImportConfirm:output_type -> zcard.api.admin.v1.ImportBatch
+	5,  // 14: zcard.api.admin.v1.AdminInventoryService.ListImports:output_type -> zcard.api.admin.v1.ListImportsReply
+	18, // 15: zcard.api.admin.v1.AdminInventoryService.CancelImport:output_type -> google.protobuf.Empty
+	8,  // 16: zcard.api.admin.v1.AdminInventoryService.ListCards:output_type -> zcard.api.admin.v1.ListCardsReply
+	11, // 17: zcard.api.admin.v1.AdminInventoryService.ExportCards:output_type -> zcard.api.admin.v1.ExportCardsReply
+	18, // 18: zcard.api.admin.v1.AdminInventoryService.ToggleCard:output_type -> google.protobuf.Empty
+	14, // 19: zcard.api.admin.v1.AdminInventoryService.ViewCardContent:output_type -> zcard.api.admin.v1.ViewCardContentReply
+	16, // 20: zcard.api.admin.v1.AdminInventoryService.ListPremiumCards:output_type -> zcard.api.admin.v1.ListPremiumCardsReply
+	12, // [12:21] is the sub-list for method output_type
+	3,  // [3:12] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_inventory_proto_init() }
@@ -944,7 +1264,7 @@ func file_admin_v1_inventory_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_inventory_proto_rawDesc), len(file_admin_v1_inventory_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

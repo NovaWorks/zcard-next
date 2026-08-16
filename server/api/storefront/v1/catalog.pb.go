@@ -199,7 +199,13 @@ type Product struct {
 	StockVisible bool   `protobuf:"varint,9,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`
 	CategoryId   uint64 `protobuf:"varint,10,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	// 展示销量 = 真实 + 虚拟
-	SalesCount    int64 `protobuf:"varint,11,opt,name=sales_count,json=salesCount,proto3" json:"sales_count,omitempty"`
+	SalesCount int64 `protobuf:"varint,11,opt,name=sales_count,json=salesCount,proto3" json:"sales_count,omitempty"`
+	// 自定义控件（下单收集：文本/密码/下拉/数字/多选/单选）
+	Controls []*ProductControl `protobuf:"bytes,12,rep,name=controls,proto3" json:"controls,omitempty"`
+	// 评价（真实 approved + 虚拟合并，按时间/排序）
+	Reviews []*ReviewItem `protobuf:"bytes,13,rep,name=reviews,proto3" json:"reviews,omitempty"`
+	// 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
+	Skus          []*Sku `protobuf:"bytes,14,rep,name=skus,proto3" json:"skus,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -311,6 +317,258 @@ func (x *Product) GetSalesCount() int64 {
 	return 0
 }
 
+func (x *Product) GetControls() []*ProductControl {
+	if x != nil {
+		return x.Controls
+	}
+	return nil
+}
+
+func (x *Product) GetReviews() []*ReviewItem {
+	if x != nil {
+		return x.Reviews
+	}
+	return nil
+}
+
+func (x *Product) GetSkus() []*Sku {
+	if x != nil {
+		return x.Skus
+	}
+	return nil
+}
+
+// ProductControl 自定义控件定义（下单表单渲染）。
+type ProductControl struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"` // text | password | select | number | checkbox | radio
+	Required      bool                   `protobuf:"varint,4,opt,name=required,proto3" json:"required,omitempty"`
+	Options       []string               `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"` // select/checkbox/radio 的选项
+	Sort          int32                  `protobuf:"varint,6,opt,name=sort,proto3" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductControl) Reset() {
+	*x = ProductControl{}
+	mi := &file_storefront_v1_catalog_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductControl) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductControl) ProtoMessage() {}
+
+func (x *ProductControl) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_catalog_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductControl.ProtoReflect.Descriptor instead.
+func (*ProductControl) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ProductControl) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ProductControl) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ProductControl) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *ProductControl) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *ProductControl) GetOptions() []string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *ProductControl) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+// ReviewItem 顾客视角评价（真实 approved + 虚拟合并）。
+type ReviewItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Nickname      string                 `protobuf:"bytes,2,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	Rating        int32                  `protobuf:"varint,4,opt,name=rating,proto3" json:"rating,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	IsVirtual     bool                   `protobuf:"varint,6,opt,name=is_virtual,json=isVirtual,proto3" json:"is_virtual,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewItem) Reset() {
+	*x = ReviewItem{}
+	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewItem) ProtoMessage() {}
+
+func (x *ReviewItem) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewItem.ProtoReflect.Descriptor instead.
+func (*ReviewItem) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ReviewItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *ReviewItem) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *ReviewItem) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetIsVirtual() bool {
+	if x != nil {
+		return x.IsVirtual
+	}
+	return false
+}
+
+// Sku 顾客视角多规格（只下发 id/名称/价格）。
+type Sku struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	PriceCents    int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Sku) Reset() {
+	*x = Sku{}
+	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Sku) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Sku) ProtoMessage() {}
+
+func (x *Sku) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Sku.ProtoReflect.Descriptor instead.
+func (*Sku) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Sku) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Sku) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Sku) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
 var File_storefront_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_catalog_proto_rawDesc = "" +
@@ -325,7 +583,7 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2 .zcard.api.storefront.v1.ProductR\x05items\x121\n" +
 	"\x04page\x18\x02 \x01(\v2\x1d.zcard.api.common.v1.PageRespR\x04page\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb6\x02\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xec\x03\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -342,7 +600,32 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	" \x01(\x04R\n" +
 	"categoryId\x12\x1f\n" +
 	"\vsales_count\x18\v \x01(\x03R\n" +
-	"salesCount2\xac\x02\n" +
+	"salesCount\x12C\n" +
+	"\bcontrols\x18\f \x03(\v2'.zcard.api.storefront.v1.ProductControlR\bcontrols\x12=\n" +
+	"\areviews\x18\r \x03(\v2#.zcard.api.storefront.v1.ReviewItemR\areviews\x120\n" +
+	"\x04skus\x18\x0e \x03(\v2\x1c.zcard.api.storefront.v1.SkuR\x04skus\"\x92\x01\n" +
+	"\x0eProductControl\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1a\n" +
+	"\brequired\x18\x04 \x01(\bR\brequired\x12\x18\n" +
+	"\aoptions\x18\x05 \x03(\tR\aoptions\x12\x12\n" +
+	"\x04sort\x18\x06 \x01(\x05R\x04sort\"\xa8\x01\n" +
+	"\n" +
+	"ReviewItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
+	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x18\n" +
+	"\acontent\x18\x03 \x01(\tR\acontent\x12\x16\n" +
+	"\x06rating\x18\x04 \x01(\x05R\x06rating\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\x03R\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"is_virtual\x18\x06 \x01(\bR\tisVirtual\"J\n" +
+	"\x03Sku\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
+	"\vprice_cents\x18\x03 \x01(\x03R\n" +
+	"priceCents2\xac\x02\n" +
 	"\x13StoreCatalogService\x12\x8d\x01\n" +
 	"\fListProducts\x12,.zcard.api.storefront.v1.ListProductsRequest\x1a*.zcard.api.storefront.v1.ListProductsReply\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/storefront/products\x12\x84\x01\n" +
 	"\n" +
@@ -360,28 +643,34 @@ func file_storefront_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_catalog_proto_rawDescData
 }
 
-var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_storefront_v1_catalog_proto_goTypes = []any{
 	(*ListProductsRequest)(nil), // 0: zcard.api.storefront.v1.ListProductsRequest
 	(*ListProductsReply)(nil),   // 1: zcard.api.storefront.v1.ListProductsReply
 	(*GetProductRequest)(nil),   // 2: zcard.api.storefront.v1.GetProductRequest
 	(*Product)(nil),             // 3: zcard.api.storefront.v1.Product
-	(*v1.PageReq)(nil),          // 4: zcard.api.common.v1.PageReq
-	(*v1.PageResp)(nil),         // 5: zcard.api.common.v1.PageResp
+	(*ProductControl)(nil),      // 4: zcard.api.storefront.v1.ProductControl
+	(*ReviewItem)(nil),          // 5: zcard.api.storefront.v1.ReviewItem
+	(*Sku)(nil),                 // 6: zcard.api.storefront.v1.Sku
+	(*v1.PageReq)(nil),          // 7: zcard.api.common.v1.PageReq
+	(*v1.PageResp)(nil),         // 8: zcard.api.common.v1.PageResp
 }
 var file_storefront_v1_catalog_proto_depIdxs = []int32{
-	4, // 0: zcard.api.storefront.v1.ListProductsRequest.page:type_name -> zcard.api.common.v1.PageReq
+	7, // 0: zcard.api.storefront.v1.ListProductsRequest.page:type_name -> zcard.api.common.v1.PageReq
 	3, // 1: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
-	5, // 2: zcard.api.storefront.v1.ListProductsReply.page:type_name -> zcard.api.common.v1.PageResp
-	0, // 3: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
-	2, // 4: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
-	1, // 5: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
-	3, // 6: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	8, // 2: zcard.api.storefront.v1.ListProductsReply.page:type_name -> zcard.api.common.v1.PageResp
+	4, // 3: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
+	5, // 4: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
+	6, // 5: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
+	0, // 6: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
+	2, // 7: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
+	1, // 8: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
+	3, // 9: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_catalog_proto_init() }
@@ -395,7 +684,7 @@ func file_storefront_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_catalog_proto_rawDesc), len(file_storefront_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

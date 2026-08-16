@@ -48,6 +48,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 	res, err := s.uc.CreateOrder(ctx, CreateOrderInput{
 		Items: items, GuestContact: req.GetGuestContact(),
 		QueryPassword: req.GetQueryPassword(), Contact: req.GetContact(),
+		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),
 	})
 	if err != nil {
 		return nil, mapOrderErr(err)
@@ -194,6 +195,8 @@ func mapOrderErr(err error) error {
 		return errors.NotFound("order.PRODUCT_NOT_FOUND", "商品不存在或不可购买")
 	case contains(msg, "EMPTY"):
 		return errors.BadRequest("order.EMPTY_ITEMS", "订单项不能为空")
+	case contains(msg, "COUPON"):
+		return errors.BadRequest("order.COUPON_INVALID", "优惠券无效或不可用")
 	case contains(msg, "CANNOT_CANCEL"):
 		return errors.BadRequest("order.CANNOT_CANCEL", "订单当前状态不可取消")
 	case contains(msg, "TRANSITION"):

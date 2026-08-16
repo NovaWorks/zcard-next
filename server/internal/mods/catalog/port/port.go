@@ -3,6 +3,7 @@ package port
 
 import (
 	"context"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
@@ -21,6 +22,35 @@ type Product struct {
 	StockVisible bool
 }
 
+// Control 自定义控件 DTO（下单表单渲染）。
+type Control struct {
+	ID       uint64
+	Name     string
+	Type     string // text | password | select | number | checkbox | radio
+	Required bool
+	Options  []string
+	Sort     int32
+}
+
+// ReviewItem 前台评价条目（真实 approved + 虚拟合并；Nickname 真实评价为空）。
+type ReviewItem struct {
+	ID        uint64
+	Nickname  string
+	Content   string
+	Rating    int32
+	IsVirtual bool
+	Sort      int32
+	CreatedAt time.Time
+}
+
+// Sku 前台多规格 DTO（只下发 id/名称/价格）。
+type Sku struct {
+	ID        uint64
+	Name      string
+	Price     money.Cents // 独立售价（分；0=继承商品价）
+	ProductID uint64
+}
+
 // VisibleFilter 可见商品过滤（storefront 列表 / order 下单校验共用）。
 type VisibleFilter struct {
 	SubsiteID  uint64
@@ -36,6 +66,15 @@ type ProductReader interface {
 	ListVisible(ctx context.Context, f VisibleFilter) (items []Product, total int64, err error)
 	// Get 取单个商品（含下架/隐藏，调用方决定可见性语义）。
 	Get(ctx context.Context, subsiteID, id uint64) (*Product, error)
+}
+
+// PricingResolver 商品定价解析（order 价格管线消费，通道 A）：
+// SKU 价 > 商品价；会员商品组折扣万分比。
+type PricingResolver interface {
+	// ResolvePrice 解析商品/SKU 售价（分）。skuID=0 或 SKU 价为空时回落到商品价。
+	ResolvePrice(ctx context.Context, productID, skuID uint64) (price money.Cents, err error)
+	// ResolveGroupRate 解析命中的会员商品组折扣（万分比；0=不命中）。多组命中取最高折扣。
+	ResolveGroupRate(ctx context.Context, productID uint64) (rate int32, err error)
 }
 
 // AdminFilter 管理面商品过滤（含下架/隐藏；成本价下发）。

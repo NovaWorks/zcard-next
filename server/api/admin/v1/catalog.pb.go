@@ -7,7 +7,6 @@
 package adminv1
 
 import (
-	v1 "github.com/NovaWorks/zcard-next/server/api/common/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -29,7 +28,8 @@ type ListProductsRequest struct {
 	CategoryId    uint64                 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Keyword       string                 `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
 	Status        int32                  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"` // 0=全部 1=上架 0=下架 2=隐藏
-	Page          *v1.PageReq            `protobuf:"bytes,4,opt,name=page,proto3" json:"page,omitempty"`
+	Page          int32                  `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -85,17 +85,26 @@ func (x *ListProductsRequest) GetStatus() int32 {
 	return 0
 }
 
-func (x *ListProductsRequest) GetPage() *v1.PageReq {
+func (x *ListProductsRequest) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
-	return nil
+	return 0
+}
+
+func (x *ListProductsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
 }
 
 type ListProductsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Products      []*AdminProduct        `protobuf:"bytes,1,rep,name=products,proto3" json:"products,omitempty"`
-	Page          *v1.PageResp           `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -137,11 +146,25 @@ func (x *ListProductsReply) GetProducts() []*AdminProduct {
 	return nil
 }
 
-func (x *ListProductsReply) GetPage() *v1.PageResp {
+func (x *ListProductsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListProductsReply) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
-	return nil
+	return 0
+}
+
+func (x *ListProductsReply) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
 }
 
 type GetProductRequest struct {
@@ -1290,20 +1313,1659 @@ func (x *DeleteTagRequest) GetId() uint64 {
 	return 0
 }
 
+type ListControlsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListControlsRequest) Reset() {
+	*x = ListControlsRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListControlsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListControlsRequest) ProtoMessage() {}
+
+func (x *ListControlsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListControlsRequest.ProtoReflect.Descriptor instead.
+func (*ListControlsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListControlsRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+type ControlList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Controls      []*AdminControl        `protobuf:"bytes,1,rep,name=controls,proto3" json:"controls,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ControlList) Reset() {
+	*x = ControlList{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ControlList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ControlList) ProtoMessage() {}
+
+func (x *ControlList) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ControlList.ProtoReflect.Descriptor instead.
+func (*ControlList) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ControlList) GetControls() []*AdminControl {
+	if x != nil {
+		return x.Controls
+	}
+	return nil
+}
+
+type AdminControl struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"` // text | password | select | number | checkbox | radio
+	Required      bool                   `protobuf:"varint,5,opt,name=required,proto3" json:"required,omitempty"`
+	Options       []string               `protobuf:"bytes,6,rep,name=options,proto3" json:"options,omitempty"`
+	Sort          int32                  `protobuf:"varint,7,opt,name=sort,proto3" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdminControl) Reset() {
+	*x = AdminControl{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdminControl) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdminControl) ProtoMessage() {}
+
+func (x *AdminControl) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdminControl.ProtoReflect.Descriptor instead.
+func (*AdminControl) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AdminControl) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AdminControl) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *AdminControl) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AdminControl) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *AdminControl) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *AdminControl) GetOptions() []string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *AdminControl) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+type CreateControlRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Required      bool                   `protobuf:"varint,4,opt,name=required,proto3" json:"required,omitempty"`
+	Options       []string               `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"`
+	Sort          int32                  `protobuf:"varint,6,opt,name=sort,proto3" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateControlRequest) Reset() {
+	*x = CreateControlRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateControlRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateControlRequest) ProtoMessage() {}
+
+func (x *CreateControlRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateControlRequest.ProtoReflect.Descriptor instead.
+func (*CreateControlRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *CreateControlRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *CreateControlRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateControlRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *CreateControlRequest) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *CreateControlRequest) GetOptions() []string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *CreateControlRequest) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+type UpdateControlRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Required      bool                   `protobuf:"varint,4,opt,name=required,proto3" json:"required,omitempty"`
+	Options       []string               `protobuf:"bytes,5,rep,name=options,proto3" json:"options,omitempty"`
+	Sort          int32                  `protobuf:"varint,6,opt,name=sort,proto3" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateControlRequest) Reset() {
+	*x = UpdateControlRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateControlRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateControlRequest) ProtoMessage() {}
+
+func (x *UpdateControlRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateControlRequest.ProtoReflect.Descriptor instead.
+func (*UpdateControlRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *UpdateControlRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpdateControlRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateControlRequest) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *UpdateControlRequest) GetRequired() bool {
+	if x != nil {
+		return x.Required
+	}
+	return false
+}
+
+func (x *UpdateControlRequest) GetOptions() []string {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *UpdateControlRequest) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+type DeleteControlRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteControlRequest) Reset() {
+	*x = DeleteControlRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteControlRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteControlRequest) ProtoMessage() {}
+
+func (x *DeleteControlRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteControlRequest.ProtoReflect.Descriptor instead.
+func (*DeleteControlRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *DeleteControlRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type ListReviewsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // pending | approved | rejected；空=全部
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReviewsRequest) Reset() {
+	*x = ListReviewsRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReviewsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReviewsRequest) ProtoMessage() {}
+
+func (x *ListReviewsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReviewsRequest.ProtoReflect.Descriptor instead.
+func (*ListReviewsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ListReviewsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListReviewsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListReviewsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListReviewsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Reviews       []*ReviewItem          `protobuf:"bytes,1,rep,name=reviews,proto3" json:"reviews,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReviewsReply) Reset() {
+	*x = ListReviewsReply{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReviewsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReviewsReply) ProtoMessage() {}
+
+func (x *ListReviewsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReviewsReply.ProtoReflect.Descriptor instead.
+func (*ListReviewsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ListReviewsReply) GetReviews() []*ReviewItem {
+	if x != nil {
+		return x.Reviews
+	}
+	return nil
+}
+
+func (x *ListReviewsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+// ReviewItem 真实评价（审核流：pending→approved/rejected）。
+type ReviewItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	UserId        uint64                 `protobuf:"varint,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	OrderId       uint64                 `protobuf:"varint,4,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Rating        int32                  `protobuf:"varint,5,opt,name=rating,proto3" json:"rating,omitempty"` // 1-5
+	Content       string                 `protobuf:"bytes,6,opt,name=content,proto3" json:"content,omitempty"`
+	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewItem) Reset() {
+	*x = ReviewItem{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewItem) ProtoMessage() {}
+
+func (x *ReviewItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewItem.ProtoReflect.Descriptor instead.
+func (*ReviewItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ReviewItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetOrderId() uint64 {
+	if x != nil {
+		return x.OrderId
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *ReviewItem) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *ReviewItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ReviewItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type ApproveReviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApproveReviewRequest) Reset() {
+	*x = ApproveReviewRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApproveReviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApproveReviewRequest) ProtoMessage() {}
+
+func (x *ApproveReviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApproveReviewRequest.ProtoReflect.Descriptor instead.
+func (*ApproveReviewRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ApproveReviewRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type RejectReviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RejectReviewRequest) Reset() {
+	*x = RejectReviewRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RejectReviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RejectReviewRequest) ProtoMessage() {}
+
+func (x *RejectReviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RejectReviewRequest.ProtoReflect.Descriptor instead.
+func (*RejectReviewRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *RejectReviewRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+// VirtualReviewItem 虚拟评价（与真实 approved 合并展示）。
+type VirtualReviewItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Nickname      string                 `protobuf:"bytes,3,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Content       string                 `protobuf:"bytes,4,opt,name=content,proto3" json:"content,omitempty"`
+	Rating        int32                  `protobuf:"varint,5,opt,name=rating,proto3" json:"rating,omitempty"`
+	Sort          int32                  `protobuf:"varint,6,opt,name=sort,proto3" json:"sort,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VirtualReviewItem) Reset() {
+	*x = VirtualReviewItem{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VirtualReviewItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VirtualReviewItem) ProtoMessage() {}
+
+func (x *VirtualReviewItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VirtualReviewItem.ProtoReflect.Descriptor instead.
+func (*VirtualReviewItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *VirtualReviewItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *VirtualReviewItem) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *VirtualReviewItem) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *VirtualReviewItem) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *VirtualReviewItem) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *VirtualReviewItem) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+func (x *VirtualReviewItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type CreateVirtualReviewRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Nickname      string                 `protobuf:"bytes,2,opt,name=nickname,proto3" json:"nickname,omitempty"`
+	Content       string                 `protobuf:"bytes,3,opt,name=content,proto3" json:"content,omitempty"`
+	Rating        int32                  `protobuf:"varint,4,opt,name=rating,proto3" json:"rating,omitempty"`
+	Sort          int32                  `protobuf:"varint,5,opt,name=sort,proto3" json:"sort,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVirtualReviewRequest) Reset() {
+	*x = CreateVirtualReviewRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVirtualReviewRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVirtualReviewRequest) ProtoMessage() {}
+
+func (x *CreateVirtualReviewRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVirtualReviewRequest.ProtoReflect.Descriptor instead.
+func (*CreateVirtualReviewRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *CreateVirtualReviewRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *CreateVirtualReviewRequest) GetNickname() string {
+	if x != nil {
+		return x.Nickname
+	}
+	return ""
+}
+
+func (x *CreateVirtualReviewRequest) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
+func (x *CreateVirtualReviewRequest) GetRating() int32 {
+	if x != nil {
+		return x.Rating
+	}
+	return 0
+}
+
+func (x *CreateVirtualReviewRequest) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+type ListSkusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSkusRequest) Reset() {
+	*x = ListSkusRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSkusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSkusRequest) ProtoMessage() {}
+
+func (x *ListSkusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSkusRequest.ProtoReflect.Descriptor instead.
+func (*ListSkusRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ListSkusRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+type SkuList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Skus          []*Sku                 `protobuf:"bytes,1,rep,name=skus,proto3" json:"skus,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SkuList) Reset() {
+	*x = SkuList{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SkuList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SkuList) ProtoMessage() {}
+
+func (x *SkuList) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SkuList.ProtoReflect.Descriptor instead.
+func (*SkuList) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *SkuList) GetSkus() []*Sku {
+	if x != nil {
+		return x.Skus
+	}
+	return nil
+}
+
+// Sku 管理面多规格（含成本价）。
+type Sku struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	SpecValues    map[string]string      `protobuf:"bytes,4,rep,name=spec_values,json=specValues,proto3" json:"spec_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PriceCents    int64                  `protobuf:"varint,5,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"` // 独立售价（分；0=继承商品价）
+	CostCents     int64                  `protobuf:"varint,6,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
+	StockOffset   int32                  `protobuf:"varint,7,opt,name=stock_offset,json=stockOffset,proto3" json:"stock_offset,omitempty"`
+	UpstreamSkuId string                 `protobuf:"bytes,8,opt,name=upstream_sku_id,json=upstreamSkuId,proto3" json:"upstream_sku_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Sku) Reset() {
+	*x = Sku{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Sku) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Sku) ProtoMessage() {}
+
+func (x *Sku) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Sku.ProtoReflect.Descriptor instead.
+func (*Sku) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *Sku) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *Sku) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *Sku) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Sku) GetSpecValues() map[string]string {
+	if x != nil {
+		return x.SpecValues
+	}
+	return nil
+}
+
+func (x *Sku) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *Sku) GetCostCents() int64 {
+	if x != nil {
+		return x.CostCents
+	}
+	return 0
+}
+
+func (x *Sku) GetStockOffset() int32 {
+	if x != nil {
+		return x.StockOffset
+	}
+	return 0
+}
+
+func (x *Sku) GetUpstreamSkuId() string {
+	if x != nil {
+		return x.UpstreamSkuId
+	}
+	return ""
+}
+
+type CreateSkuRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	SpecValues    map[string]string      `protobuf:"bytes,3,rep,name=spec_values,json=specValues,proto3" json:"spec_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PriceCents    int64                  `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	CostCents     int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
+	StockOffset   int32                  `protobuf:"varint,6,opt,name=stock_offset,json=stockOffset,proto3" json:"stock_offset,omitempty"`
+	UpstreamSkuId string                 `protobuf:"bytes,7,opt,name=upstream_sku_id,json=upstreamSkuId,proto3" json:"upstream_sku_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSkuRequest) Reset() {
+	*x = CreateSkuRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSkuRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSkuRequest) ProtoMessage() {}
+
+func (x *CreateSkuRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSkuRequest.ProtoReflect.Descriptor instead.
+func (*CreateSkuRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *CreateSkuRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *CreateSkuRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateSkuRequest) GetSpecValues() map[string]string {
+	if x != nil {
+		return x.SpecValues
+	}
+	return nil
+}
+
+func (x *CreateSkuRequest) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *CreateSkuRequest) GetCostCents() int64 {
+	if x != nil {
+		return x.CostCents
+	}
+	return 0
+}
+
+func (x *CreateSkuRequest) GetStockOffset() int32 {
+	if x != nil {
+		return x.StockOffset
+	}
+	return 0
+}
+
+func (x *CreateSkuRequest) GetUpstreamSkuId() string {
+	if x != nil {
+		return x.UpstreamSkuId
+	}
+	return ""
+}
+
+type UpdateSkuRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	SpecValues    map[string]string      `protobuf:"bytes,3,rep,name=spec_values,json=specValues,proto3" json:"spec_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PriceCents    int64                  `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	CostCents     int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
+	StockOffset   int32                  `protobuf:"varint,6,opt,name=stock_offset,json=stockOffset,proto3" json:"stock_offset,omitempty"`
+	UpstreamSkuId string                 `protobuf:"bytes,7,opt,name=upstream_sku_id,json=upstreamSkuId,proto3" json:"upstream_sku_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSkuRequest) Reset() {
+	*x = UpdateSkuRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSkuRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSkuRequest) ProtoMessage() {}
+
+func (x *UpdateSkuRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSkuRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSkuRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *UpdateSkuRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpdateSkuRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateSkuRequest) GetSpecValues() map[string]string {
+	if x != nil {
+		return x.SpecValues
+	}
+	return nil
+}
+
+func (x *UpdateSkuRequest) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *UpdateSkuRequest) GetCostCents() int64 {
+	if x != nil {
+		return x.CostCents
+	}
+	return 0
+}
+
+func (x *UpdateSkuRequest) GetStockOffset() int32 {
+	if x != nil {
+		return x.StockOffset
+	}
+	return 0
+}
+
+func (x *UpdateSkuRequest) GetUpstreamSkuId() string {
+	if x != nil {
+		return x.UpstreamSkuId
+	}
+	return ""
+}
+
+type DeleteSkuRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSkuRequest) Reset() {
+	*x = DeleteSkuRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSkuRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSkuRequest) ProtoMessage() {}
+
+func (x *DeleteSkuRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSkuRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSkuRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *DeleteSkuRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type MemberGroupList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Groups        []*MemberGroup         `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MemberGroupList) Reset() {
+	*x = MemberGroupList{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MemberGroupList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MemberGroupList) ProtoMessage() {}
+
+func (x *MemberGroupList) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MemberGroupList.ProtoReflect.Descriptor instead.
+func (*MemberGroupList) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *MemberGroupList) GetGroups() []*MemberGroup {
+	if x != nil {
+		return x.Groups
+	}
+	return nil
+}
+
+// MemberGroup 会员商品组（命中商品的订单按 discount 万分比打折）。
+type MemberGroup struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ProductIds    []uint64               `protobuf:"varint,3,rep,packed,name=product_ids,json=productIds,proto3" json:"product_ids,omitempty"`
+	Discount      int32                  `protobuf:"varint,4,opt,name=discount,proto3" json:"discount,omitempty"` // 万分比（9500=95 折）
+	StackMember   bool                   `protobuf:"varint,5,opt,name=stack_member,json=stackMember,proto3" json:"stack_member,omitempty"`
+	StackCoupon   bool                   `protobuf:"varint,6,opt,name=stack_coupon,json=stackCoupon,proto3" json:"stack_coupon,omitempty"`
+	BadgeStyle    string                 `protobuf:"bytes,7,opt,name=badge_style,json=badgeStyle,proto3" json:"badge_style,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MemberGroup) Reset() {
+	*x = MemberGroup{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MemberGroup) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MemberGroup) ProtoMessage() {}
+
+func (x *MemberGroup) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MemberGroup.ProtoReflect.Descriptor instead.
+func (*MemberGroup) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *MemberGroup) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *MemberGroup) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *MemberGroup) GetProductIds() []uint64 {
+	if x != nil {
+		return x.ProductIds
+	}
+	return nil
+}
+
+func (x *MemberGroup) GetDiscount() int32 {
+	if x != nil {
+		return x.Discount
+	}
+	return 0
+}
+
+func (x *MemberGroup) GetStackMember() bool {
+	if x != nil {
+		return x.StackMember
+	}
+	return false
+}
+
+func (x *MemberGroup) GetStackCoupon() bool {
+	if x != nil {
+		return x.StackCoupon
+	}
+	return false
+}
+
+func (x *MemberGroup) GetBadgeStyle() string {
+	if x != nil {
+		return x.BadgeStyle
+	}
+	return ""
+}
+
+type CreateMemberGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ProductIds    []uint64               `protobuf:"varint,2,rep,packed,name=product_ids,json=productIds,proto3" json:"product_ids,omitempty"`
+	Discount      int32                  `protobuf:"varint,3,opt,name=discount,proto3" json:"discount,omitempty"` // 万分比
+	StackMember   bool                   `protobuf:"varint,4,opt,name=stack_member,json=stackMember,proto3" json:"stack_member,omitempty"`
+	StackCoupon   bool                   `protobuf:"varint,5,opt,name=stack_coupon,json=stackCoupon,proto3" json:"stack_coupon,omitempty"`
+	BadgeStyle    string                 `protobuf:"bytes,6,opt,name=badge_style,json=badgeStyle,proto3" json:"badge_style,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateMemberGroupRequest) Reset() {
+	*x = CreateMemberGroupRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateMemberGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateMemberGroupRequest) ProtoMessage() {}
+
+func (x *CreateMemberGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateMemberGroupRequest.ProtoReflect.Descriptor instead.
+func (*CreateMemberGroupRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *CreateMemberGroupRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateMemberGroupRequest) GetProductIds() []uint64 {
+	if x != nil {
+		return x.ProductIds
+	}
+	return nil
+}
+
+func (x *CreateMemberGroupRequest) GetDiscount() int32 {
+	if x != nil {
+		return x.Discount
+	}
+	return 0
+}
+
+func (x *CreateMemberGroupRequest) GetStackMember() bool {
+	if x != nil {
+		return x.StackMember
+	}
+	return false
+}
+
+func (x *CreateMemberGroupRequest) GetStackCoupon() bool {
+	if x != nil {
+		return x.StackCoupon
+	}
+	return false
+}
+
+func (x *CreateMemberGroupRequest) GetBadgeStyle() string {
+	if x != nil {
+		return x.BadgeStyle
+	}
+	return ""
+}
+
+type UpdateMemberGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ProductIds    []uint64               `protobuf:"varint,3,rep,packed,name=product_ids,json=productIds,proto3" json:"product_ids,omitempty"`
+	Discount      int32                  `protobuf:"varint,4,opt,name=discount,proto3" json:"discount,omitempty"`
+	StackMember   bool                   `protobuf:"varint,5,opt,name=stack_member,json=stackMember,proto3" json:"stack_member,omitempty"`
+	StackCoupon   bool                   `protobuf:"varint,6,opt,name=stack_coupon,json=stackCoupon,proto3" json:"stack_coupon,omitempty"`
+	BadgeStyle    string                 `protobuf:"bytes,7,opt,name=badge_style,json=badgeStyle,proto3" json:"badge_style,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateMemberGroupRequest) Reset() {
+	*x = UpdateMemberGroupRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateMemberGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateMemberGroupRequest) ProtoMessage() {}
+
+func (x *UpdateMemberGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateMemberGroupRequest.ProtoReflect.Descriptor instead.
+func (*UpdateMemberGroupRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *UpdateMemberGroupRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UpdateMemberGroupRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateMemberGroupRequest) GetProductIds() []uint64 {
+	if x != nil {
+		return x.ProductIds
+	}
+	return nil
+}
+
+func (x *UpdateMemberGroupRequest) GetDiscount() int32 {
+	if x != nil {
+		return x.Discount
+	}
+	return 0
+}
+
+func (x *UpdateMemberGroupRequest) GetStackMember() bool {
+	if x != nil {
+		return x.StackMember
+	}
+	return false
+}
+
+func (x *UpdateMemberGroupRequest) GetStackCoupon() bool {
+	if x != nil {
+		return x.StackCoupon
+	}
+	return false
+}
+
+func (x *UpdateMemberGroupRequest) GetBadgeStyle() string {
+	if x != nil {
+		return x.BadgeStyle
+	}
+	return ""
+}
+
+type DeleteMemberGroupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteMemberGroupRequest) Reset() {
+	*x = DeleteMemberGroupRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteMemberGroupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteMemberGroupRequest) ProtoMessage() {}
+
+func (x *DeleteMemberGroupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteMemberGroupRequest.ProtoReflect.Descriptor instead.
+func (*DeleteMemberGroupRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *DeleteMemberGroupRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_admin_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x16common/v1/common.proto\"\x9a\x01\n" +
+	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x99\x01\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
 	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\x05R\x06status\x120\n" +
-	"\x04page\x18\x04 \x01(\v2\x1c.zcard.api.common.v1.PageReqR\x04page\"\x84\x01\n" +
+	"\x06status\x18\x03 \x01(\x05R\x06status\x12\x12\n" +
+	"\x04page\x18\x04 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\"\x98\x01\n" +
 	"\x11ListProductsReply\x12<\n" +
-	"\bproducts\x18\x01 \x03(\v2 .zcard.api.admin.v1.AdminProductR\bproducts\x121\n" +
-	"\x04page\x18\x02 \x01(\v2\x1d.zcard.api.common.v1.PageRespR\x04page\"(\n" +
+	"\bproducts\x18\x01 \x03(\v2 .zcard.api.admin.v1.AdminProductR\bproducts\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xe9\x04\n" +
 	"\fAdminProduct\x12\x0e\n" +
@@ -1412,7 +3074,163 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x05color\x18\x04 \x01(\tR\x05color\x12\x1a\n" +
 	"\bposition\x18\x05 \x01(\tR\bposition\"'\n" +
 	"\x10DeleteTagRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xb3\v\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"9\n" +
+	"\x13ListControlsRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"K\n" +
+	"\vControlList\x12<\n" +
+	"\bcontrols\x18\x01 \x03(\v2 .zcard.api.admin.v1.AdminControlR\bcontrols\"\xaf\x01\n" +
+	"\fAdminControl\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1a\n" +
+	"\brequired\x18\x05 \x01(\bR\brequired\x12\x18\n" +
+	"\aoptions\x18\x06 \x03(\tR\aoptions\x12\x12\n" +
+	"\x04sort\x18\a \x01(\x05R\x04sort\"\xb6\x01\n" +
+	"\x14CreateControlRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x17\n" +
+	"\x04name\x18\x02 \x01(\tB\x03\xe0A\x02R\x04name\x12\x17\n" +
+	"\x04type\x18\x03 \x01(\tB\x03\xe0A\x02R\x04type\x12\x1a\n" +
+	"\brequired\x18\x04 \x01(\bR\brequired\x12\x18\n" +
+	"\aoptions\x18\x05 \x03(\tR\aoptions\x12\x12\n" +
+	"\x04sort\x18\x06 \x01(\x05R\x04sort\"\x9d\x01\n" +
+	"\x14UpdateControlRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1a\n" +
+	"\brequired\x18\x04 \x01(\bR\brequired\x12\x18\n" +
+	"\aoptions\x18\x05 \x03(\tR\aoptions\x12\x12\n" +
+	"\x04sort\x18\x06 \x01(\x05R\x04sort\"+\n" +
+	"\x14DeleteControlRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"]\n" +
+	"\x12ListReviewsRequest\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"b\n" +
+	"\x10ListReviewsReply\x128\n" +
+	"\areviews\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.ReviewItemR\areviews\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xd8\x01\n" +
+	"\n" +
+	"ReviewItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\x04R\x06userId\x12\x19\n" +
+	"\border_id\x18\x04 \x01(\x04R\aorderId\x12\x16\n" +
+	"\x06rating\x18\x05 \x01(\x05R\x06rating\x12\x18\n" +
+	"\acontent\x18\x06 \x01(\tR\acontent\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\x03R\tcreatedAt\"+\n" +
+	"\x14ApproveReviewRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"*\n" +
+	"\x13RejectReviewRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xc3\x01\n" +
+	"\x11VirtualReviewItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x1a\n" +
+	"\bnickname\x18\x03 \x01(\tR\bnickname\x12\x18\n" +
+	"\acontent\x18\x04 \x01(\tR\acontent\x12\x16\n" +
+	"\x06rating\x18\x05 \x01(\x05R\x06rating\x12\x12\n" +
+	"\x04sort\x18\x06 \x01(\x05R\x04sort\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\a \x01(\x03R\tcreatedAt\"\xa7\x01\n" +
+	"\x1aCreateVirtualReviewRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x1a\n" +
+	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x1d\n" +
+	"\acontent\x18\x03 \x01(\tB\x03\xe0A\x02R\acontent\x12\x16\n" +
+	"\x06rating\x18\x04 \x01(\x05R\x06rating\x12\x12\n" +
+	"\x04sort\x18\x05 \x01(\x05R\x04sort\"5\n" +
+	"\x0fListSkusRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"6\n" +
+	"\aSkuList\x12+\n" +
+	"\x04skus\x18\x01 \x03(\v2\x17.zcard.api.admin.v1.SkuR\x04skus\"\xdc\x02\n" +
+	"\x03Sku\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12H\n" +
+	"\vspec_values\x18\x04 \x03(\v2'.zcard.api.admin.v1.Sku.SpecValuesEntryR\n" +
+	"specValues\x12\x1f\n" +
+	"\vprice_cents\x18\x05 \x01(\x03R\n" +
+	"priceCents\x12\x1d\n" +
+	"\n" +
+	"cost_cents\x18\x06 \x01(\x03R\tcostCents\x12!\n" +
+	"\fstock_offset\x18\a \x01(\x05R\vstockOffset\x12&\n" +
+	"\x0fupstream_sku_id\x18\b \x01(\tR\rupstreamSkuId\x1a=\n" +
+	"\x0fSpecValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf0\x02\n" +
+	"\x10CreateSkuRequest\x12\"\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x17\n" +
+	"\x04name\x18\x02 \x01(\tB\x03\xe0A\x02R\x04name\x12U\n" +
+	"\vspec_values\x18\x03 \x03(\v24.zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntryR\n" +
+	"specValues\x12\x1f\n" +
+	"\vprice_cents\x18\x04 \x01(\x03R\n" +
+	"priceCents\x12\x1d\n" +
+	"\n" +
+	"cost_cents\x18\x05 \x01(\x03R\tcostCents\x12!\n" +
+	"\fstock_offset\x18\x06 \x01(\x05R\vstockOffset\x12&\n" +
+	"\x0fupstream_sku_id\x18\a \x01(\tR\rupstreamSkuId\x1a=\n" +
+	"\x0fSpecValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdc\x02\n" +
+	"\x10UpdateSkuRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12U\n" +
+	"\vspec_values\x18\x03 \x03(\v24.zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntryR\n" +
+	"specValues\x12\x1f\n" +
+	"\vprice_cents\x18\x04 \x01(\x03R\n" +
+	"priceCents\x12\x1d\n" +
+	"\n" +
+	"cost_cents\x18\x05 \x01(\x03R\tcostCents\x12!\n" +
+	"\fstock_offset\x18\x06 \x01(\x05R\vstockOffset\x12&\n" +
+	"\x0fupstream_sku_id\x18\a \x01(\tR\rupstreamSkuId\x1a=\n" +
+	"\x0fSpecValuesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"'\n" +
+	"\x10DeleteSkuRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"J\n" +
+	"\x0fMemberGroupList\x127\n" +
+	"\x06groups\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.MemberGroupR\x06groups\"\xd5\x01\n" +
+	"\vMemberGroup\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
+	"\vproduct_ids\x18\x03 \x03(\x04R\n" +
+	"productIds\x12\x1a\n" +
+	"\bdiscount\x18\x04 \x01(\x05R\bdiscount\x12!\n" +
+	"\fstack_member\x18\x05 \x01(\bR\vstackMember\x12!\n" +
+	"\fstack_coupon\x18\x06 \x01(\bR\vstackCoupon\x12\x1f\n" +
+	"\vbadge_style\x18\a \x01(\tR\n" +
+	"badgeStyle\"\xdc\x01\n" +
+	"\x18CreateMemberGroupRequest\x12\x17\n" +
+	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1f\n" +
+	"\vproduct_ids\x18\x02 \x03(\x04R\n" +
+	"productIds\x12\x1f\n" +
+	"\bdiscount\x18\x03 \x01(\x05B\x03\xe0A\x02R\bdiscount\x12!\n" +
+	"\fstack_member\x18\x04 \x01(\bR\vstackMember\x12!\n" +
+	"\fstack_coupon\x18\x05 \x01(\bR\vstackCoupon\x12\x1f\n" +
+	"\vbadge_style\x18\x06 \x01(\tR\n" +
+	"badgeStyle\"\xe7\x01\n" +
+	"\x18UpdateMemberGroupRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
+	"\vproduct_ids\x18\x03 \x03(\x04R\n" +
+	"productIds\x12\x1a\n" +
+	"\bdiscount\x18\x04 \x01(\x05R\bdiscount\x12!\n" +
+	"\fstack_member\x18\x05 \x01(\bR\vstackMember\x12!\n" +
+	"\fstack_coupon\x18\x06 \x01(\bR\vstackCoupon\x12\x1f\n" +
+	"\vbadge_style\x18\a \x01(\tR\n" +
+	"badgeStyle\"/\n" +
+	"\x18DeleteMemberGroupRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xf9\x1b\n" +
 	"\x13AdminCatalogService\x12~\n" +
 	"\fListProducts\x12'.zcard.api.admin.v1.ListProductsRequest\x1a%.zcard.api.admin.v1.ListProductsReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/admin/products\x12z\n" +
 	"\n" +
@@ -1426,7 +3244,23 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0eDeleteCategory\x12).zcard.api.admin.v1.DeleteCategoryRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/admin/categories/{id}\x12[\n" +
 	"\bListTags\x12\x16.google.protobuf.Empty\x1a\x1b.zcard.api.admin.v1.TagList\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/admin/tags\x12i\n" +
 	"\tCreateTag\x12$.zcard.api.admin.v1.CreateTagRequest\x1a\x17.zcard.api.admin.v1.Tag\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/admin/tags\x12j\n" +
-	"\tDeleteTag\x12$.zcard.api.admin.v1.DeleteTagRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/admin/tags/{id}B=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\tDeleteTag\x12$.zcard.api.admin.v1.DeleteTagRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/admin/tags/{id}\x12\x8e\x01\n" +
+	"\fListControls\x12'.zcard.api.admin.v1.ListControlsRequest\x1a\x1f.zcard.api.admin.v1.ControlList\"4\x82\xd3\xe4\x93\x02.\x12,/api/v1/admin/products/{product_id}/controls\x12\x94\x01\n" +
+	"\rCreateControl\x12(.zcard.api.admin.v1.CreateControlRequest\x1a .zcard.api.admin.v1.AdminControl\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/products/{product_id}/controls\x12\x83\x01\n" +
+	"\rUpdateControl\x12(.zcard.api.admin.v1.UpdateControlRequest\x1a .zcard.api.admin.v1.AdminControl\"&\x82\xd3\xe4\x93\x02 :\x01*\x1a\x1b/api/v1/admin/controls/{id}\x12v\n" +
+	"\rDeleteControl\x12(.zcard.api.admin.v1.DeleteControlRequest\x1a\x16.google.protobuf.Empty\"#\x82\xd3\xe4\x93\x02\x1d*\x1b/api/v1/admin/controls/{id}\x12z\n" +
+	"\vListReviews\x12&.zcard.api.admin.v1.ListReviewsRequest\x1a$.zcard.api.admin.v1.ListReviewsReply\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/admin/reviews\x12\x88\x01\n" +
+	"\rApproveReview\x12(.zcard.api.admin.v1.ApproveReviewRequest\x1a\x1e.zcard.api.admin.v1.ReviewItem\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/reviews/{id}/approve\x12\x85\x01\n" +
+	"\fRejectReview\x12'.zcard.api.admin.v1.RejectReviewRequest\x1a\x1e.zcard.api.admin.v1.ReviewItem\",\x82\xd3\xe4\x93\x02&:\x01*\"!/api/v1/admin/reviews/{id}/reject\x12\x96\x01\n" +
+	"\x13CreateVirtualReview\x12..zcard.api.admin.v1.CreateVirtualReviewRequest\x1a%.zcard.api.admin.v1.VirtualReviewItem\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/virtual-reviews\x12~\n" +
+	"\bListSkus\x12#.zcard.api.admin.v1.ListSkusRequest\x1a\x1b.zcard.api.admin.v1.SkuList\"0\x82\xd3\xe4\x93\x02*\x12(/api/v1/admin/products/{product_id}/skus\x12\x7f\n" +
+	"\tCreateSku\x12$.zcard.api.admin.v1.CreateSkuRequest\x1a\x17.zcard.api.admin.v1.Sku\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/admin/products/{product_id}/skus\x12n\n" +
+	"\tUpdateSku\x12$.zcard.api.admin.v1.UpdateSkuRequest\x1a\x17.zcard.api.admin.v1.Sku\"\"\x82\xd3\xe4\x93\x02\x1c:\x01*\x1a\x17/api/v1/admin/skus/{id}\x12j\n" +
+	"\tDeleteSku\x12$.zcard.api.admin.v1.DeleteSkuRequest\x1a\x16.google.protobuf.Empty\"\x1f\x82\xd3\xe4\x93\x02\x19*\x17/api/v1/admin/skus/{id}\x12t\n" +
+	"\x10ListMemberGroups\x12\x16.google.protobuf.Empty\x1a#.zcard.api.admin.v1.MemberGroupList\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/admin/member-groups\x12\x8a\x01\n" +
+	"\x11CreateMemberGroup\x12,.zcard.api.admin.v1.CreateMemberGroupRequest\x1a\x1f.zcard.api.admin.v1.MemberGroup\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/member-groups\x12\x8f\x01\n" +
+	"\x11UpdateMemberGroup\x12,.zcard.api.admin.v1.UpdateMemberGroupRequest\x1a\x1f.zcard.api.admin.v1.MemberGroup\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /api/v1/admin/member-groups/{id}\x12\x83\x01\n" +
+	"\x11DeleteMemberGroup\x12,.zcard.api.admin.v1.DeleteMemberGroupRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\"* /api/v1/admin/member-groups/{id}B=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_catalog_proto_rawDescOnce sync.Once
@@ -1440,64 +3274,126 @@ func file_admin_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_admin_v1_catalog_proto_rawDescData
 }
 
-var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_admin_v1_catalog_proto_goTypes = []any{
-	(*ListProductsRequest)(nil),   // 0: zcard.api.admin.v1.ListProductsRequest
-	(*ListProductsReply)(nil),     // 1: zcard.api.admin.v1.ListProductsReply
-	(*GetProductRequest)(nil),     // 2: zcard.api.admin.v1.GetProductRequest
-	(*AdminProduct)(nil),          // 3: zcard.api.admin.v1.AdminProduct
-	(*CreateProductRequest)(nil),  // 4: zcard.api.admin.v1.CreateProductRequest
-	(*UpdateProductRequest)(nil),  // 5: zcard.api.admin.v1.UpdateProductRequest
-	(*DeleteProductRequest)(nil),  // 6: zcard.api.admin.v1.DeleteProductRequest
-	(*CategoryList)(nil),          // 7: zcard.api.admin.v1.CategoryList
-	(*Category)(nil),              // 8: zcard.api.admin.v1.Category
-	(*CreateCategoryRequest)(nil), // 9: zcard.api.admin.v1.CreateCategoryRequest
-	(*UpdateCategoryRequest)(nil), // 10: zcard.api.admin.v1.UpdateCategoryRequest
-	(*DeleteCategoryRequest)(nil), // 11: zcard.api.admin.v1.DeleteCategoryRequest
-	(*TagList)(nil),               // 12: zcard.api.admin.v1.TagList
-	(*Tag)(nil),                   // 13: zcard.api.admin.v1.Tag
-	(*CreateTagRequest)(nil),      // 14: zcard.api.admin.v1.CreateTagRequest
-	(*DeleteTagRequest)(nil),      // 15: zcard.api.admin.v1.DeleteTagRequest
-	(*v1.PageReq)(nil),            // 16: zcard.api.common.v1.PageReq
-	(*v1.PageResp)(nil),           // 17: zcard.api.common.v1.PageResp
-	(*emptypb.Empty)(nil),         // 18: google.protobuf.Empty
+	(*ListProductsRequest)(nil),        // 0: zcard.api.admin.v1.ListProductsRequest
+	(*ListProductsReply)(nil),          // 1: zcard.api.admin.v1.ListProductsReply
+	(*GetProductRequest)(nil),          // 2: zcard.api.admin.v1.GetProductRequest
+	(*AdminProduct)(nil),               // 3: zcard.api.admin.v1.AdminProduct
+	(*CreateProductRequest)(nil),       // 4: zcard.api.admin.v1.CreateProductRequest
+	(*UpdateProductRequest)(nil),       // 5: zcard.api.admin.v1.UpdateProductRequest
+	(*DeleteProductRequest)(nil),       // 6: zcard.api.admin.v1.DeleteProductRequest
+	(*CategoryList)(nil),               // 7: zcard.api.admin.v1.CategoryList
+	(*Category)(nil),                   // 8: zcard.api.admin.v1.Category
+	(*CreateCategoryRequest)(nil),      // 9: zcard.api.admin.v1.CreateCategoryRequest
+	(*UpdateCategoryRequest)(nil),      // 10: zcard.api.admin.v1.UpdateCategoryRequest
+	(*DeleteCategoryRequest)(nil),      // 11: zcard.api.admin.v1.DeleteCategoryRequest
+	(*TagList)(nil),                    // 12: zcard.api.admin.v1.TagList
+	(*Tag)(nil),                        // 13: zcard.api.admin.v1.Tag
+	(*CreateTagRequest)(nil),           // 14: zcard.api.admin.v1.CreateTagRequest
+	(*DeleteTagRequest)(nil),           // 15: zcard.api.admin.v1.DeleteTagRequest
+	(*ListControlsRequest)(nil),        // 16: zcard.api.admin.v1.ListControlsRequest
+	(*ControlList)(nil),                // 17: zcard.api.admin.v1.ControlList
+	(*AdminControl)(nil),               // 18: zcard.api.admin.v1.AdminControl
+	(*CreateControlRequest)(nil),       // 19: zcard.api.admin.v1.CreateControlRequest
+	(*UpdateControlRequest)(nil),       // 20: zcard.api.admin.v1.UpdateControlRequest
+	(*DeleteControlRequest)(nil),       // 21: zcard.api.admin.v1.DeleteControlRequest
+	(*ListReviewsRequest)(nil),         // 22: zcard.api.admin.v1.ListReviewsRequest
+	(*ListReviewsReply)(nil),           // 23: zcard.api.admin.v1.ListReviewsReply
+	(*ReviewItem)(nil),                 // 24: zcard.api.admin.v1.ReviewItem
+	(*ApproveReviewRequest)(nil),       // 25: zcard.api.admin.v1.ApproveReviewRequest
+	(*RejectReviewRequest)(nil),        // 26: zcard.api.admin.v1.RejectReviewRequest
+	(*VirtualReviewItem)(nil),          // 27: zcard.api.admin.v1.VirtualReviewItem
+	(*CreateVirtualReviewRequest)(nil), // 28: zcard.api.admin.v1.CreateVirtualReviewRequest
+	(*ListSkusRequest)(nil),            // 29: zcard.api.admin.v1.ListSkusRequest
+	(*SkuList)(nil),                    // 30: zcard.api.admin.v1.SkuList
+	(*Sku)(nil),                        // 31: zcard.api.admin.v1.Sku
+	(*CreateSkuRequest)(nil),           // 32: zcard.api.admin.v1.CreateSkuRequest
+	(*UpdateSkuRequest)(nil),           // 33: zcard.api.admin.v1.UpdateSkuRequest
+	(*DeleteSkuRequest)(nil),           // 34: zcard.api.admin.v1.DeleteSkuRequest
+	(*MemberGroupList)(nil),            // 35: zcard.api.admin.v1.MemberGroupList
+	(*MemberGroup)(nil),                // 36: zcard.api.admin.v1.MemberGroup
+	(*CreateMemberGroupRequest)(nil),   // 37: zcard.api.admin.v1.CreateMemberGroupRequest
+	(*UpdateMemberGroupRequest)(nil),   // 38: zcard.api.admin.v1.UpdateMemberGroupRequest
+	(*DeleteMemberGroupRequest)(nil),   // 39: zcard.api.admin.v1.DeleteMemberGroupRequest
+	nil,                                // 40: zcard.api.admin.v1.Sku.SpecValuesEntry
+	nil,                                // 41: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	nil,                                // 42: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	(*emptypb.Empty)(nil),              // 43: google.protobuf.Empty
 }
 var file_admin_v1_catalog_proto_depIdxs = []int32{
-	16, // 0: zcard.api.admin.v1.ListProductsRequest.page:type_name -> zcard.api.common.v1.PageReq
-	3,  // 1: zcard.api.admin.v1.ListProductsReply.products:type_name -> zcard.api.admin.v1.AdminProduct
-	17, // 2: zcard.api.admin.v1.ListProductsReply.page:type_name -> zcard.api.common.v1.PageResp
-	8,  // 3: zcard.api.admin.v1.CategoryList.categories:type_name -> zcard.api.admin.v1.Category
-	8,  // 4: zcard.api.admin.v1.Category.children:type_name -> zcard.api.admin.v1.Category
-	13, // 5: zcard.api.admin.v1.TagList.tags:type_name -> zcard.api.admin.v1.Tag
-	0,  // 6: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
-	2,  // 7: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
-	4,  // 8: zcard.api.admin.v1.AdminCatalogService.CreateProduct:input_type -> zcard.api.admin.v1.CreateProductRequest
-	5,  // 9: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
-	6,  // 10: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
-	18, // 11: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
-	9,  // 12: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
-	10, // 13: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
-	11, // 14: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
-	18, // 15: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
-	14, // 16: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
-	15, // 17: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
-	1,  // 18: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
-	3,  // 19: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 20: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 21: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	18, // 22: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
-	7,  // 23: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
-	8,  // 24: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
-	8,  // 25: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
-	18, // 26: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
-	12, // 27: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
-	13, // 28: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
-	18, // 29: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
-	18, // [18:30] is the sub-list for method output_type
-	6,  // [6:18] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	3,  // 0: zcard.api.admin.v1.ListProductsReply.products:type_name -> zcard.api.admin.v1.AdminProduct
+	8,  // 1: zcard.api.admin.v1.CategoryList.categories:type_name -> zcard.api.admin.v1.Category
+	8,  // 2: zcard.api.admin.v1.Category.children:type_name -> zcard.api.admin.v1.Category
+	13, // 3: zcard.api.admin.v1.TagList.tags:type_name -> zcard.api.admin.v1.Tag
+	18, // 4: zcard.api.admin.v1.ControlList.controls:type_name -> zcard.api.admin.v1.AdminControl
+	24, // 5: zcard.api.admin.v1.ListReviewsReply.reviews:type_name -> zcard.api.admin.v1.ReviewItem
+	31, // 6: zcard.api.admin.v1.SkuList.skus:type_name -> zcard.api.admin.v1.Sku
+	40, // 7: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
+	41, // 8: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	42, // 9: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	36, // 10: zcard.api.admin.v1.MemberGroupList.groups:type_name -> zcard.api.admin.v1.MemberGroup
+	0,  // 11: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
+	2,  // 12: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
+	4,  // 13: zcard.api.admin.v1.AdminCatalogService.CreateProduct:input_type -> zcard.api.admin.v1.CreateProductRequest
+	5,  // 14: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
+	6,  // 15: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
+	43, // 16: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	9,  // 17: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
+	10, // 18: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
+	11, // 19: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
+	43, // 20: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
+	14, // 21: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
+	15, // 22: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
+	16, // 23: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
+	19, // 24: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
+	20, // 25: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
+	21, // 26: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
+	22, // 27: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
+	25, // 28: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
+	26, // 29: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
+	28, // 30: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
+	29, // 31: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
+	32, // 32: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
+	33, // 33: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
+	34, // 34: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
+	43, // 35: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
+	37, // 36: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
+	38, // 37: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
+	39, // 38: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
+	1,  // 39: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
+	3,  // 40: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 41: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 42: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	43, // 43: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
+	7,  // 44: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
+	8,  // 45: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
+	8,  // 46: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
+	43, // 47: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
+	12, // 48: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
+	13, // 49: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
+	43, // 50: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
+	17, // 51: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
+	18, // 52: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
+	18, // 53: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
+	43, // 54: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
+	23, // 55: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
+	24, // 56: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
+	24, // 57: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
+	27, // 58: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
+	30, // 59: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
+	31, // 60: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
+	31, // 61: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
+	43, // 62: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
+	35, // 63: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
+	36, // 64: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	36, // 65: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	43, // 66: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
+	39, // [39:67] is the sub-list for method output_type
+	11, // [11:39] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_catalog_proto_init() }
@@ -1511,7 +3407,7 @@ func file_admin_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_catalog_proto_rawDesc), len(file_admin_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

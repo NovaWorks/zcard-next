@@ -398,6 +398,94 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/controls/{id}:
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_UpdateControl
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateControlRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminControl'
+        delete:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_DeleteControl
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/coupons:
+        get:
+            tags:
+                - AdminCouponService
+            operationId: AdminCouponService_ListCoupons
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CouponList'
+    /api/v1/admin/coupons/batch:
+        post:
+            tags:
+                - AdminCouponService
+            operationId: AdminCouponService_CreateCouponBatch
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateCouponBatchRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CreateCouponBatchReply'
+    /api/v1/admin/coupons/disable:
+        post:
+            tags:
+                - AdminCouponService
+            operationId: AdminCouponService_DisableCoupon
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.DisableCouponRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/currencies:
         get:
             tags:
@@ -469,6 +557,18 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/dashboard:
+        get:
+            tags:
+                - AdminDashboardService
+            operationId: AdminDashboardService_GetDashboard
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DashboardReply'
     /api/v1/admin/fulfillment:
         get:
             tags:
@@ -575,6 +675,43 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListCardsReply'
+    /api/v1/admin/inventory/cards/premium:
+        get:
+            tags:
+                - AdminInventoryService
+            description: ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+            operationId: AdminInventoryService_ListPremiumCards
+            parameters:
+                - name: productId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListPremiumCardsReply'
+    /api/v1/admin/inventory/cards/{id}/content:
+        get:
+            tags:
+                - AdminInventoryService
+            description: ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+            operationId: AdminInventoryService_ViewCardContent
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ViewCardContentReply'
     /api/v1/admin/inventory/cards/{id}/toggle:
         put:
             tags:
@@ -694,6 +831,141 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewReply'
+    /api/v1/admin/member-groups:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── 会员商品组 ──
+            operationId: AdminCatalogService_ListMemberGroups
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MemberGroupList'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateMemberGroup
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateMemberGroupRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MemberGroup'
+    /api/v1/admin/member-groups/{id}:
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_UpdateMemberGroup
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateMemberGroupRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MemberGroup'
+        delete:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_DeleteMemberGroup
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/member-levels:
+        get:
+            tags:
+                - AdminMemberLevelService
+            operationId: AdminMemberLevelService_ListMemberLevels
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevelList'
+        post:
+            tags:
+                - AdminMemberLevelService
+            operationId: AdminMemberLevelService_CreateMemberLevel
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateMemberLevelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevel'
+    /api/v1/admin/member-levels/{id}:
+        put:
+            tags:
+                - AdminMemberLevelService
+            operationId: AdminMemberLevelService_UpdateMemberLevel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateMemberLevelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevel'
+        delete:
+            tags:
+                - AdminMemberLevelService
+            operationId: AdminMemberLevelService_DeleteMemberLevel
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/orders:
         get:
             tags:
@@ -924,12 +1196,12 @@ paths:
                   schema:
                     type: integer
                     format: int32
-                - name: page.page
+                - name: page
                   in: query
                   schema:
                     type: integer
                     format: int32
-                - name: page.pageSize
+                - name: pageSize
                   in: query
                   schema:
                     type: integer
@@ -1013,6 +1285,90 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/products/{productId}/controls:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── 自定义控件 ──
+            operationId: AdminCatalogService_ListControls
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ControlList'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateControl
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateControlRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminControl'
+    /api/v1/admin/products/{productId}/skus:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── SKU 多规格 ──
+            operationId: AdminCatalogService_ListSkus
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SkuList'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateSku
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateSkuRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Sku'
     /api/v1/admin/refunds:
         get:
             tags:
@@ -1048,6 +1404,82 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.RefundOrder'
+    /api/v1/admin/reviews:
+        get:
+            tags:
+                - AdminCatalogService
+            description: ── 评价（真实一单一评审核 + 虚拟评价）──
+            operationId: AdminCatalogService_ListReviews
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListReviewsReply'
+    /api/v1/admin/reviews/{id}/approve:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_ApproveReview
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ApproveReviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ReviewItem'
+    /api/v1/admin/reviews/{id}/reject:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_RejectReview
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RejectReviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ReviewItem'
     /api/v1/admin/settings:
         get:
             tags:
@@ -1120,6 +1552,44 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+    /api/v1/admin/skus/{id}:
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_UpdateSku
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateSkuRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Sku'
+        delete:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_DeleteSku
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/tags:
         get:
             tags:
@@ -1165,6 +1635,24 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/virtual-reviews:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_CreateVirtualReview
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateVirtualReviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.VirtualReviewItem'
     /api/v1/admin/wallet/{userId}:
         get:
             tags:
@@ -1527,6 +2015,26 @@ components:
                 remark:
                     type: string
             description: Admin 员工（不含密码哈希等敏感字段）。
+        zcard.api.admin.v1.AdminControl:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                required:
+                    type: boolean
+                options:
+                    type: array
+                    items:
+                        type: string
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.AdminOrder:
             type: object
             properties:
@@ -1669,6 +2177,13 @@ components:
                 seq:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ApproveReviewRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.admin.v1.Balance:
             type: object
             properties:
@@ -1789,6 +2304,37 @@ components:
             properties:
                 code:
                     type: string
+        zcard.api.admin.v1.ControlList:
+            type: object
+            properties:
+                controls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminControl'
+        zcard.api.admin.v1.Coupon:
+            type: object
+            properties:
+                id:
+                    type: string
+                batchId:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                value:
+                    type: string
+                code:
+                    type: string
+                status:
+                    type: string
+        zcard.api.admin.v1.CouponList:
+            type: object
+            properties:
+                coupons:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Coupon'
         zcard.api.admin.v1.CreateAdminRequest:
             required:
                 - username
@@ -1845,6 +2391,48 @@ components:
                 sort:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.CreateControlRequest:
+            required:
+                - productId
+                - name
+                - type
+            type: object
+            properties:
+                productId:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                required:
+                    type: boolean
+                options:
+                    type: array
+                    items:
+                        type: string
+                sort:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.CreateCouponBatchReply:
+            type: object
+            properties:
+                count:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.CreateCouponBatchRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                type:
+                    type: string
+                value:
+                    type: string
+                count:
+                    type: integer
+                    format: int32
+                expireAt:
+                    type: string
         zcard.api.admin.v1.CreateCurrencyRequest:
             required:
                 - code
@@ -1863,6 +2451,46 @@ components:
                     format: int32
                 rateJson:
                     type: string
+        zcard.api.admin.v1.CreateMemberGroupRequest:
+            required:
+                - name
+                - discount
+            type: object
+            properties:
+                name:
+                    type: string
+                productIds:
+                    type: array
+                    items:
+                        type: string
+                discount:
+                    type: integer
+                    format: int32
+                stackMember:
+                    type: boolean
+                stackCoupon:
+                    type: boolean
+                badgeStyle:
+                    type: string
+        zcard.api.admin.v1.CreateMemberLevelRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                thresholdType:
+                    type: string
+                thresholdRecharge:
+                    type: string
+                thresholdConsume:
+                    type: string
+                discount:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                enabled:
+                    type: boolean
         zcard.api.admin.v1.CreateProductRequest:
             required:
                 - name
@@ -1931,6 +2559,29 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.admin.v1.CreateSkuRequest:
+            required:
+                - productId
+                - name
+            type: object
+            properties:
+                productId:
+                    type: string
+                name:
+                    type: string
+                specValues:
+                    type: object
+                    additionalProperties:
+                        type: string
+                priceCents:
+                    type: string
+                costCents:
+                    type: string
+                stockOffset:
+                    type: integer
+                    format: int32
+                upstreamSkuId:
+                    type: string
         zcard.api.admin.v1.CreateTagRequest:
             required:
                 - name
@@ -1947,6 +2598,24 @@ components:
                     type: string
                 position:
                     type: string
+        zcard.api.admin.v1.CreateVirtualReviewRequest:
+            required:
+                - productId
+                - content
+            type: object
+            properties:
+                productId:
+                    type: string
+                nickname:
+                    type: string
+                content:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.Currency:
             type: object
             properties:
@@ -1974,6 +2643,52 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
+        zcard.api.admin.v1.DashboardReply:
+            type: object
+            properties:
+                today:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardStat'
+                last7d:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardStat'
+                last30d:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardStat'
+                trend:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DashboardTrendPoint'
+                topProducts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DashboardTopProduct'
+        zcard.api.admin.v1.DashboardStat:
+            type: object
+            properties:
+                orders:
+                    type: string
+                revenue:
+                    type: string
+                paidOrders:
+                    type: string
+        zcard.api.admin.v1.DashboardTopProduct:
+            type: object
+            properties:
+                productId:
+                    type: string
+                name:
+                    type: string
+                soldQty:
+                    type: string
+                revenue:
+                    type: string
+        zcard.api.admin.v1.DashboardTrendPoint:
+            type: object
+            properties:
+                date:
+                    type: string
+                orders:
+                    type: string
+                revenue:
+                    type: string
         zcard.api.admin.v1.DeliveryRecord:
             type: object
             properties:
@@ -1997,6 +2712,11 @@ components:
                 fetchedIp:
                     type: string
             description: DeliveryRecord 交付记录（掩码默认；card:view_content 权限才可见完整内容）。
+        zcard.api.admin.v1.DisableCouponRequest:
+            type: object
+            properties:
+                batchId:
+                    type: string
         zcard.api.admin.v1.EnableTOTPReply:
             type: object
             properties:
@@ -2165,6 +2885,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.PendingOrder'
+        zcard.api.admin.v1.ListPremiumCardsReply:
+            type: object
+            properties:
+                cards:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PremiumCardInfo'
+                total:
+                    type: string
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -2172,8 +2901,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+                total:
+                    type: string
                 page:
-                    $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListRefundsReply:
             type: object
             properties:
@@ -2181,6 +2916,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.RefundOrder'
+        zcard.api.admin.v1.ListReviewsReply:
+            type: object
+            properties:
+                reviews:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ReviewItem'
+                total:
+                    type: string
         zcard.api.admin.v1.ListRolesReply:
             type: object
             properties:
@@ -2252,6 +2996,62 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.MemberGroup:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                productIds:
+                    type: array
+                    items:
+                        type: string
+                discount:
+                    type: integer
+                    format: int32
+                stackMember:
+                    type: boolean
+                stackCoupon:
+                    type: boolean
+                badgeStyle:
+                    type: string
+            description: MemberGroup 会员商品组（命中商品的订单按 discount 万分比打折）。
+        zcard.api.admin.v1.MemberGroupList:
+            type: object
+            properties:
+                groups:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.MemberGroup'
+        zcard.api.admin.v1.MemberLevel:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                thresholdType:
+                    type: string
+                thresholdRecharge:
+                    type: string
+                thresholdConsume:
+                    type: string
+                discount:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                enabled:
+                    type: boolean
+        zcard.api.admin.v1.MemberLevelList:
+            type: object
+            properties:
+                levels:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevel'
         zcard.api.admin.v1.Payment:
             type: object
             properties:
@@ -2312,6 +3112,24 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Group'
             description: PermissionTree 权限目录树。
+        zcard.api.admin.v1.PremiumCardInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                maskedContent:
+                    type: string
+                draftPremium:
+                    type: string
+                draftCost:
+                    type: string
+                priceCents:
+                    type: string
+                status:
+                    type: string
+            description: PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
         zcard.api.admin.v1.RefreshTokenRequest:
             required:
                 - refreshToken
@@ -2341,6 +3159,34 @@ components:
                 createdAt:
                     type: string
             description: RefundOrder 退款单。
+        zcard.api.admin.v1.RejectReviewRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.admin.v1.ReviewItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                userId:
+                    type: string
+                orderId:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+                content:
+                    type: string
+                status:
+                    type: string
+                createdAt:
+                    type: string
+            description: ReviewItem 真实评价（审核流：pending→approved/rejected）。
         zcard.api.admin.v1.Role:
             type: object
             properties:
@@ -2369,6 +3215,36 @@ components:
                 valueJson:
                     type: string
             description: Setting 设置项（value_json 为 JSON 文档字符串）。
+        zcard.api.admin.v1.Sku:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                name:
+                    type: string
+                specValues:
+                    type: object
+                    additionalProperties:
+                        type: string
+                priceCents:
+                    type: string
+                costCents:
+                    type: string
+                stockOffset:
+                    type: integer
+                    format: int32
+                upstreamSkuId:
+                    type: string
+            description: Sku 管理面多规格（含成本价）。
+        zcard.api.admin.v1.SkuList:
+            type: object
+            properties:
+                skus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Sku'
         zcard.api.admin.v1.StatusEvent:
             type: object
             properties:
@@ -2477,6 +3353,26 @@ components:
                 sort:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.UpdateControlRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                required:
+                    type: boolean
+                options:
+                    type: array
+                    items:
+                        type: string
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.UpdateCurrencyRequest:
             required:
                 - code
@@ -2498,6 +3394,43 @@ components:
                 sort:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.UpdateMemberGroupRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                productIds:
+                    type: array
+                    items:
+                        type: string
+                discount:
+                    type: integer
+                    format: int32
+                stackMember:
+                    type: boolean
+                stackCoupon:
+                    type: boolean
+                badgeStyle:
+                    type: string
+        zcard.api.admin.v1.UpdateMemberLevelRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                discount:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                enabled:
+                    type: boolean
         zcard.api.admin.v1.UpdateProductRequest:
             required:
                 - id
@@ -2568,6 +3501,55 @@ components:
                 valueJson:
                     type: string
                     description: 任意 JSON 文档（对象/数组/标量均可），服务端原样存储
+        zcard.api.admin.v1.UpdateSkuRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                specValues:
+                    type: object
+                    additionalProperties:
+                        type: string
+                priceCents:
+                    type: string
+                costCents:
+                    type: string
+                stockOffset:
+                    type: integer
+                    format: int32
+                upstreamSkuId:
+                    type: string
+        zcard.api.admin.v1.ViewCardContentReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                content:
+                    type: string
+        zcard.api.admin.v1.VirtualReviewItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                nickname:
+                    type: string
+                content:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+            description: VirtualReviewItem 虚拟评价（与真实 approved 合并展示）。
         zcard.api.admin.v1.WalletTx:
             type: object
             properties:
@@ -2636,6 +3618,13 @@ components:
                     type: string
                 contact:
                     type: string
+                couponCode:
+                    type: string
+                controlAnswers:
+                    type: object
+                    additionalProperties:
+                        type: string
+                    description: 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
         zcard.api.storefront.v1.CreatePaymentReply:
             type: object
             properties:
@@ -2834,7 +3823,41 @@ components:
                 salesCount:
                     type: string
                     description: 展示销量 = 真实 + 虚拟
+                controls:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.ProductControl'
+                    description: 自定义控件（下单收集：文本/密码/下拉/数字/多选/单选）
+                reviews:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.ReviewItem'
+                    description: 评价（真实 approved + 虚拟合并，按时间/排序）
+                skus:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.Sku'
+                    description: 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
             description: Product 顾客视角商品（管理字段与成本价绝不下发）。
+        zcard.api.storefront.v1.ProductControl:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                type:
+                    type: string
+                required:
+                    type: boolean
+                options:
+                    type: array
+                    items:
+                        type: string
+                sort:
+                    type: integer
+                    format: int32
+            description: ProductControl 自定义控件定义（下单表单渲染）。
         zcard.api.storefront.v1.PublicConfig:
             type: object
             properties:
@@ -2851,6 +3874,33 @@ components:
                 valueJson:
                     type: string
             description: PublicConfigEntry 单键（key 形如 "site.name"；value 为 JSON 文档字符串）。
+        zcard.api.storefront.v1.ReviewItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                nickname:
+                    type: string
+                content:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                isVirtual:
+                    type: boolean
+            description: ReviewItem 顾客视角评价（真实 approved + 虚拟合并）。
+        zcard.api.storefront.v1.Sku:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                priceCents:
+                    type: string
+            description: Sku 顾客视角多规格（只下发 id/名称/价格）。
         zcard.api.storefront.v1.Tx:
             type: object
             properties:
@@ -2886,12 +3936,18 @@ tags:
          里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
     - name: AdminCatalogService
       description: AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
+    - name: AdminCouponService
+      description: AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
     - name: AdminCurrencyService
       description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+    - name: AdminDashboardService
+      description: AdminDashboardService 工作台指标（P3-07 M1b v1）。
     - name: AdminFulfillmentService
       description: AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
     - name: AdminInventoryService
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+    - name: AdminMemberLevelService
+      description: AdminMemberLevelService 会员等级管理（P3-01 M1b 基础版）。
     - name: AdminOrderService
       description: AdminOrderService 订单管理（P1-03 T7）。
     - name: AdminPaymentService

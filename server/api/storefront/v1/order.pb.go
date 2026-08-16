@@ -28,8 +28,11 @@ type CreateOrderRequest struct {
 	GuestContact  string                 `protobuf:"bytes,2,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
 	QueryPassword string                 `protobuf:"bytes,3,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
 	Contact       string                 `protobuf:"bytes,4,opt,name=contact,proto3" json:"contact,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	CouponCode    string                 `protobuf:"bytes,5,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
+	// 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
+	ControlAnswers map[string]string `protobuf:"bytes,6,rep,name=control_answers,json=controlAnswers,proto3" json:"control_answers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateOrderRequest) Reset() {
@@ -88,6 +91,20 @@ func (x *CreateOrderRequest) GetContact() string {
 		return x.Contact
 	}
 	return ""
+}
+
+func (x *CreateOrderRequest) GetCouponCode() string {
+	if x != nil {
+		return x.CouponCode
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetControlAnswers() map[string]string {
+	if x != nil {
+		return x.ControlAnswers
+	}
+	return nil
 }
 
 type OrderItemInput struct {
@@ -410,12 +427,18 @@ var File_storefront_v1_order_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\xbe\x01\n" +
+	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\x8c\x03\n" +
 	"\x12CreateOrderRequest\x12B\n" +
 	"\x05items\x18\x01 \x03(\v2'.zcard.api.storefront.v1.OrderItemInputB\x03\xe0A\x02R\x05items\x12#\n" +
 	"\rguest_contact\x18\x02 \x01(\tR\fguestContact\x12%\n" +
 	"\x0equery_password\x18\x03 \x01(\tR\rqueryPassword\x12\x18\n" +
-	"\acontact\x18\x04 \x01(\tR\acontact\"l\n" +
+	"\acontact\x18\x04 \x01(\tR\acontact\x12\x1f\n" +
+	"\vcoupon_code\x18\x05 \x01(\tR\n" +
+	"couponCode\x12h\n" +
+	"\x0fcontrol_answers\x18\x06 \x03(\v2?.zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntryR\x0econtrolAnswers\x1aA\n" +
+	"\x13ControlAnswersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"l\n" +
 	"\x0eOrderItemInput\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
@@ -460,7 +483,7 @@ func file_storefront_v1_order_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_order_proto_rawDescData
 }
 
-var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_storefront_v1_order_proto_goTypes = []any{
 	(*CreateOrderRequest)(nil), // 0: zcard.api.storefront.v1.CreateOrderRequest
 	(*OrderItemInput)(nil),     // 1: zcard.api.storefront.v1.OrderItemInput
@@ -468,19 +491,21 @@ var file_storefront_v1_order_proto_goTypes = []any{
 	(*GetOrderRequest)(nil),    // 3: zcard.api.storefront.v1.GetOrderRequest
 	(*GetOrderReply)(nil),      // 4: zcard.api.storefront.v1.GetOrderReply
 	(*OrderItemReply)(nil),     // 5: zcard.api.storefront.v1.OrderItemReply
+	nil,                        // 6: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
 }
 var file_storefront_v1_order_proto_depIdxs = []int32{
 	1, // 0: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
-	5, // 1: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
-	0, // 2: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
-	3, // 3: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
-	2, // 4: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
-	4, // 5: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 1: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	5, // 2: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
+	0, // 3: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	3, // 4: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
+	2, // 5: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	4, // 6: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_order_proto_init() }
@@ -494,7 +519,7 @@ func file_storefront_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_order_proto_rawDesc), len(file_storefront_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

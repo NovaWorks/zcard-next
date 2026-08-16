@@ -10,6 +10,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -88,6 +89,25 @@ func toPortProduct(row *ent.Product) port.Product {
 		Status:       row.Status,
 		StockVisible: row.StockVisible,
 	}
+}
+
+// ListControls 商品自定义控件（按 sort 升序）。
+func (r *ProductRepoImpl) ListControls(ctx context.Context, productID uint64) ([]port.Control, error) {
+	rows, err := data.Client(ctx, r.data).ProductControl.Query().
+		Where(productcontrol.ProductID(productID)).
+		Order(ent.Asc(productcontrol.FieldSort)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]port.Control, 0, len(rows))
+	for _, c := range rows {
+		out = append(out, port.Control{
+			ID: c.ID, Name: c.Name, Type: string(c.Type),
+			Required: c.Required, Options: c.Options, Sort: c.Sort,
+		})
+	}
+	return out, nil
 }
 
 var _ = tenancy.Main // M1 interceptor 接入后移除占位引用

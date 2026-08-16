@@ -18,9 +18,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/dashboard"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
@@ -57,6 +60,9 @@ func NewHTTPServer(
 	confSvc *settings.StorefrontConfigService,
 	currencySvc *settings.AdminCurrencyService,
 	catalogAdminSvc *catalog.AdminCatalogService,
+	memberLevelSvc *memberlevel.AdminMemberLevelService,
+	couponSvc *coupon.AdminCouponService,
+	dashboardSvc *dashboard.AdminDashboardService,
 	invSvc *inventory.AdminInventoryService,
 	orderAdminSvc *order.AdminOrderService,
 	orderStoreSvc *order.StoreOrderService,
@@ -113,6 +119,9 @@ func NewHTTPServer(
 	adminv1.RegisterRoleServiceHTTPServer(srv, roleSvc)
 	adminv1.RegisterAdminUserServiceHTTPServer(srv, adminSvc)
 	adminv1.RegisterAdminCurrencyServiceHTTPServer(srv, currencySvc)
+	adminv1.RegisterAdminMemberLevelServiceHTTPServer(srv, memberLevelSvc)
+	adminv1.RegisterAdminCouponServiceHTTPServer(srv, couponSvc)
+	adminv1.RegisterAdminDashboardServiceHTTPServer(srv, dashboardSvc)
 	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)
 	adminv1.RegisterAdminCatalogServiceHTTPServer(srv, catalogAdminSvc)
 	adminv1.RegisterAdminInventoryServiceHTTPServer(srv, invSvc)

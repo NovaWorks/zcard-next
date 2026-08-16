@@ -20,13 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminInventoryService_ImportPreview_FullMethodName = "/zcard.api.admin.v1.AdminInventoryService/ImportPreview"
-	AdminInventoryService_ImportConfirm_FullMethodName = "/zcard.api.admin.v1.AdminInventoryService/ImportConfirm"
-	AdminInventoryService_ListImports_FullMethodName   = "/zcard.api.admin.v1.AdminInventoryService/ListImports"
-	AdminInventoryService_CancelImport_FullMethodName  = "/zcard.api.admin.v1.AdminInventoryService/CancelImport"
-	AdminInventoryService_ListCards_FullMethodName     = "/zcard.api.admin.v1.AdminInventoryService/ListCards"
-	AdminInventoryService_ExportCards_FullMethodName   = "/zcard.api.admin.v1.AdminInventoryService/ExportCards"
-	AdminInventoryService_ToggleCard_FullMethodName    = "/zcard.api.admin.v1.AdminInventoryService/ToggleCard"
+	AdminInventoryService_ImportPreview_FullMethodName    = "/zcard.api.admin.v1.AdminInventoryService/ImportPreview"
+	AdminInventoryService_ImportConfirm_FullMethodName    = "/zcard.api.admin.v1.AdminInventoryService/ImportConfirm"
+	AdminInventoryService_ListImports_FullMethodName      = "/zcard.api.admin.v1.AdminInventoryService/ListImports"
+	AdminInventoryService_CancelImport_FullMethodName     = "/zcard.api.admin.v1.AdminInventoryService/CancelImport"
+	AdminInventoryService_ListCards_FullMethodName        = "/zcard.api.admin.v1.AdminInventoryService/ListCards"
+	AdminInventoryService_ExportCards_FullMethodName      = "/zcard.api.admin.v1.AdminInventoryService/ExportCards"
+	AdminInventoryService_ToggleCard_FullMethodName       = "/zcard.api.admin.v1.AdminInventoryService/ToggleCard"
+	AdminInventoryService_ViewCardContent_FullMethodName  = "/zcard.api.admin.v1.AdminInventoryService/ViewCardContent"
+	AdminInventoryService_ListPremiumCards_FullMethodName = "/zcard.api.admin.v1.AdminInventoryService/ListPremiumCards"
 )
 
 // AdminInventoryServiceClient is the client API for AdminInventoryService service.
@@ -49,6 +51,10 @@ type AdminInventoryServiceClient interface {
 	ExportCards(ctx context.Context, in *ExportCardsRequest, opts ...grpc.CallOption) (*ExportCardsReply, error)
 	// ToggleCard 禁用/启用单张卡。
 	ToggleCard(ctx context.Context, in *ToggleCardRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+	ViewCardContent(ctx context.Context, in *ViewCardContentRequest, opts ...grpc.CallOption) (*ViewCardContentReply, error)
+	// ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+	ListPremiumCards(ctx context.Context, in *ListPremiumCardsRequest, opts ...grpc.CallOption) (*ListPremiumCardsReply, error)
 }
 
 type adminInventoryServiceClient struct {
@@ -129,6 +135,26 @@ func (c *adminInventoryServiceClient) ToggleCard(ctx context.Context, in *Toggle
 	return out, nil
 }
 
+func (c *adminInventoryServiceClient) ViewCardContent(ctx context.Context, in *ViewCardContentRequest, opts ...grpc.CallOption) (*ViewCardContentReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ViewCardContentReply)
+	err := c.cc.Invoke(ctx, AdminInventoryService_ViewCardContent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminInventoryServiceClient) ListPremiumCards(ctx context.Context, in *ListPremiumCardsRequest, opts ...grpc.CallOption) (*ListPremiumCardsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPremiumCardsReply)
+	err := c.cc.Invoke(ctx, AdminInventoryService_ListPremiumCards_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminInventoryServiceServer is the server API for AdminInventoryService service.
 // All implementations must embed UnimplementedAdminInventoryServiceServer
 // for forward compatibility.
@@ -149,6 +175,10 @@ type AdminInventoryServiceServer interface {
 	ExportCards(context.Context, *ExportCardsRequest) (*ExportCardsReply, error)
 	// ToggleCard 禁用/启用单张卡。
 	ToggleCard(context.Context, *ToggleCardRequest) (*emptypb.Empty, error)
+	// ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+	ViewCardContent(context.Context, *ViewCardContentRequest) (*ViewCardContentReply, error)
+	// ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+	ListPremiumCards(context.Context, *ListPremiumCardsRequest) (*ListPremiumCardsReply, error)
 	mustEmbedUnimplementedAdminInventoryServiceServer()
 }
 
@@ -179,6 +209,12 @@ func (UnimplementedAdminInventoryServiceServer) ExportCards(context.Context, *Ex
 }
 func (UnimplementedAdminInventoryServiceServer) ToggleCard(context.Context, *ToggleCardRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ToggleCard not implemented")
+}
+func (UnimplementedAdminInventoryServiceServer) ViewCardContent(context.Context, *ViewCardContentRequest) (*ViewCardContentReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ViewCardContent not implemented")
+}
+func (UnimplementedAdminInventoryServiceServer) ListPremiumCards(context.Context, *ListPremiumCardsRequest) (*ListPremiumCardsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPremiumCards not implemented")
 }
 func (UnimplementedAdminInventoryServiceServer) mustEmbedUnimplementedAdminInventoryServiceServer() {}
 func (UnimplementedAdminInventoryServiceServer) testEmbeddedByValue()                               {}
@@ -327,6 +363,42 @@ func _AdminInventoryService_ToggleCard_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminInventoryService_ViewCardContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ViewCardContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInventoryServiceServer).ViewCardContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInventoryService_ViewCardContent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInventoryServiceServer).ViewCardContent(ctx, req.(*ViewCardContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminInventoryService_ListPremiumCards_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPremiumCardsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInventoryServiceServer).ListPremiumCards(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInventoryService_ListPremiumCards_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInventoryServiceServer).ListPremiumCards(ctx, req.(*ListPremiumCardsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminInventoryService_ServiceDesc is the grpc.ServiceDesc for AdminInventoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -361,6 +433,14 @@ var AdminInventoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ToggleCard",
 			Handler:    _AdminInventoryService_ToggleCard_Handler,
+		},
+		{
+			MethodName: "ViewCardContent",
+			Handler:    _AdminInventoryService_ViewCardContent_Handler,
+		},
+		{
+			MethodName: "ListPremiumCards",
+			Handler:    _AdminInventoryService_ListPremiumCards_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

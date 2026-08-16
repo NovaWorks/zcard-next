@@ -27,6 +27,9 @@ message CreateOrderRequest {
   string guest_contact = 2;
   string query_password = 3;
   string contact = 4;
+  string coupon_code = 5;
+  // 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
+  map<string, string> control_answers = 6;
 }
 
 message OrderItemInput {

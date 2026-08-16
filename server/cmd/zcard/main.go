@@ -72,6 +72,8 @@ func main() {
 		err = runMigrate(args)
 	case "admin":
 		err = admincmd.Run(args)
+	case "reencrypt-cards":
+		err = admincmd.RunReencrypt(args)
 	case "install":
 		err = runInstall(args)
 	case "version":
@@ -96,6 +98,7 @@ func printUsage() {
   zcard serve  [-conf <dir>] [-mode all|api|worker]   启动服务（默认 all）
   zcard migrate [-conf <dir>]                          应用待执行迁移后退出
   zcard admin  create|list|reset-password              运维子命令
+  zcard reencrypt-cards --new-key <hex>                卡密密钥轮换
   zcard install                                        安装向导（M1 交付）
   zcard version                                        版本信息
 

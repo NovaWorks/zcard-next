@@ -14,6 +14,9 @@ import (
 type ProductRepo interface {
 	ListVisible(ctx context.Context, f port.VisibleFilter) ([]port.Product, int64, error)
 	Get(ctx context.Context, subsiteID, id uint64) (*port.Product, error)
+	ListControls(ctx context.Context, productID uint64) ([]port.Control, error)
+	ListProductReviews(ctx context.Context, productID uint64) ([]port.ReviewItem, error)
+	ListSkus(ctx context.Context, productID uint64) ([]port.Sku, error)
 }
 
 // CatalogUsecase 目录用例。
@@ -46,4 +49,19 @@ func (uc *CatalogUsecase) GetVisible(ctx context.Context, subsiteID, id uint64) 
 		return nil, ErrProductNotFound
 	}
 	return p, nil
+}
+
+// ListControls 商品自定义控件（下单表单渲染）。
+func (uc *CatalogUsecase) ListControls(ctx context.Context, productID uint64) ([]port.Control, error) {
+	return uc.repo.ListControls(ctx, productID)
+}
+
+// ListProductReviews 商品评价（真实 approved + 虚拟合并）。
+func (uc *CatalogUsecase) ListProductReviews(ctx context.Context, productID uint64) ([]port.ReviewItem, error) {
+	return uc.repo.ListProductReviews(ctx, productID)
+}
+
+// ListSkus 商品多规格（前台只下发 id/名称/价格）。
+func (uc *CatalogUsecase) ListSkus(ctx context.Context, productID uint64) ([]port.Sku, error) {
+	return uc.repo.ListSkus(ctx, productID)
 }

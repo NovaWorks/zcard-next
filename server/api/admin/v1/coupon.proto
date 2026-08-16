@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
+service AdminCouponService {
+  rpc ListCoupons(ListCouponsRequest) returns (CouponList) {
+    option (google.api.http) = { get: "/api/v1/admin/coupons" };
+  }
+  rpc CreateCouponBatch(CreateCouponBatchRequest) returns (CreateCouponBatchReply) {
+    option (google.api.http) = { post: "/api/v1/admin/coupons/batch" body: "*" };
+  }
+  rpc DisableCoupon(DisableCouponRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/admin/coupons/disable" body: "*" };
+  }
+}
+
+message Coupon {
+  uint64 id = 1;
+  string batch_id = 2;
+  string name = 3;
+  string type = 4;   // fixed | percent
+  int64 value = 5;   // fixed=分；percent=万分比
+  string code = 6;
+  string status = 7; // unused | used | disabled
+}
+
+message CouponList {
+  repeated Coupon coupons = 1;
+}
+
+message ListCouponsRequest {
+  string status = 1;
+}
+
+message CreateCouponBatchRequest {
+  string name = 1;
+  string type = 2;   // fixed | percent
+  int64 value = 3;
+  int32 count = 4;
+  int64 expire_at = 5; // unix 秒，0=不限
+}
+
+message CreateCouponBatchReply {
+  int32 count = 1;
+}
+
+message DisableCouponRequest {
+  string batch_id = 1;
+}

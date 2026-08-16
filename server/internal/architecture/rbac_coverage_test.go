@@ -24,12 +24,16 @@ var operatorSeed = map[string]bool{
 	"authz:role_read":        true, "authz:role_read_detail": true, "authz:tree": true,
 	"identity:admin_read": true,
 	"catalog:read":        true, "catalog:read_detail": true,
-	"catalog:category_read": true, "catalog:tag_read": true,
+	"catalog:category_read": true, "catalog:tag_read": true, "catalog:control_read": true,
+	"catalog:review_read": true, "catalog:sku_read": true, "catalog:group_read": true,
 	"inventory:read": true,
 	"order:read":     true, "order:read_detail": true,
 	"payment:read": true, "payment:read_detail": true,
 	"wallet:read":         true,
 	"order:view_delivery": true,
+	"memberlevel:read":    true,
+	"coupon:read":         true,
+	"dashboard:read":      true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。

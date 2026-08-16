@@ -10,6 +10,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -110,11 +112,23 @@ func (s *AdminInventoryService) ListCards(ctx context.Context, req *adminv1.List
 	for _, r := range rows {
 		reply.Cards = append(reply.Cards, &adminv1.CardInfo{
 			Id: r.ID, ProductId: r.ProductID, Status: string(r.Status),
-			MaskedContent: maskContent(r.Content),
+			MaskedContent: s.maskPlain(r),
 			Note:          r.Note,
 		})
 	}
 	return reply, nil
+}
+
+// maskPlain 管理员默认掩码（尾 4 位明文；解密失败降级为 ****，绝不 500——铁律 5/13）。
+func (s *AdminInventoryService) maskPlain(r *ent.Card) string {
+	if s.repo.Cipher == nil {
+		return "****"
+	}
+	plain, err := s.repo.Cipher.Open(r.Content, r.ProductID, r.SubsiteID)
+	if err != nil {
+		return "****"
+	}
+	return maskContent(plain)
 }
 
 // ExportCards 导出（card:export 权限已在 middleware 校验；此处内容解密）。
@@ -139,6 +153,73 @@ func (s *AdminInventoryService) ToggleCard(ctx context.Context, req *adminv1.Tog
 	return &emptypb.Empty{}, nil
 }
 
+// ViewCardContent 查看完整卡密（card:view_content 权限已在 middleware 校验；安全审计）。
+func (s *AdminInventoryService) ViewCardContent(ctx context.Context, req *adminv1.ViewCardContentRequest) (*adminv1.ViewCardContentReply, error) {
+	c, err := data.Client(ctx, s.data).Card.Get(ctx, req.GetId())
+	if ent.IsNotFound(err) {
+		return nil, errors.NotFound("inventory.CARD_NOT_FOUND", "卡密不存在")
+	}
+	if err != nil {
+		return nil, errors.InternalServer("inventory.GET_FAILED", "查询失败")
+	}
+	if s.repo.Cipher == nil {
+		return nil, errors.InternalServer("inventory.CIPHER_MISSING", "卡密密钥未配置")
+	}
+	plain, err := s.repo.Cipher.Open(c.Content, c.ProductID, c.SubsiteID)
+	if err != nil {
+		return nil, errors.InternalServer("inventory.DECRYPT_FAILED", "解密失败（密钥可能已轮换）")
+	}
+
+	// 安全审计：记录解密事件（明文绝不入审计，只记 card_id / actor）
+	claims := identity.ClaimsFromContext(ctx)
+	actorID := uint64(0)
+	if claims != nil {
+		actorID = claims.Subject
+	}
+	_, _ = data.Client(ctx, s.data).SecurityAuditLog.Create().
+		SetActorType(securityauditlog.ActorTypeAdmin).
+		SetNillableActorID(nilOr(actorID)).
+		SetAction("card.view_content").
+		SetMetadata(map[string]any{"card_id": c.ID, "product_id": c.ProductID}).
+		Save(ctx)
+
+	return &adminv1.ViewCardContentReply{Id: c.ID, Content: plain}, nil
+}
+
+// ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限已在 middleware 校验）。
+func (s *AdminInventoryService) ListPremiumCards(ctx context.Context, req *adminv1.ListPremiumCardsRequest) (*adminv1.ListPremiumCardsReply, error) {
+	q := data.Client(ctx, s.data).Card.Query().
+		Where(
+			card.ProductID(req.GetProductId()),
+			card.StatusEQ(card.StatusAvailable),
+			card.NumberHashNotNil(),
+		)
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("inventory.PREMIUM_LIST_FAILED", "读取靓号失败")
+	}
+	rows, err := q.Clone().Order(ent.Asc(card.FieldID)).Limit(500).All(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("inventory.PREMIUM_LIST_FAILED", "读取靓号失败")
+	}
+	reply := &adminv1.ListPremiumCardsReply{Total: int64(total)}
+	for _, r := range rows {
+		reply.Cards = append(reply.Cards, &adminv1.PremiumCardInfo{
+			Id: r.ID, ProductId: r.ProductID, MaskedContent: s.maskPlain(r),
+			DraftPremium: r.DraftPremium, DraftCost: r.DraftCost,
+			PriceCents: r.Price, Status: string(r.Status),
+		})
+	}
+	return reply, nil
+}
+
+func nilOr(v uint64) *uint64 {
+	if v == 0 {
+		return nil
+	}
+	return &v
+}
+
 // ── 工具 ──
 
 func toImportBatch(imp *ent.CardImport) *adminv1.ImportBatch {
@@ -150,12 +231,12 @@ func toImportBatch(imp *ent.CardImport) *adminv1.ImportBatch {
 	}
 }
 
-// maskContent 掩码（尾 4 位；密文场景先解密再掩码——此处简化为 ID 标识）。
-func maskContent(content []byte) string {
-	if len(content) < 4 {
+// maskContent 掩码明文（尾 4 位；不足 4 位返回 ****）。
+func maskContent(plain string) string {
+	if len(plain) <= 4 {
 		return "****"
 	}
-	return "****" + string(content[len(content)-4:])
+	return "****" + plain[len(plain)-4:]
 }
 
 var _ = strings.TrimSpace

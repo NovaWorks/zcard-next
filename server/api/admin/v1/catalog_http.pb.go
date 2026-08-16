@@ -18,35 +18,71 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminCatalogServiceApproveReview = "/zcard.api.admin.v1.AdminCatalogService/ApproveReview"
 const OperationAdminCatalogServiceCreateCategory = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
+const OperationAdminCatalogServiceCreateControl = "/zcard.api.admin.v1.AdminCatalogService/CreateControl"
+const OperationAdminCatalogServiceCreateMemberGroup = "/zcard.api.admin.v1.AdminCatalogService/CreateMemberGroup"
 const OperationAdminCatalogServiceCreateProduct = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
+const OperationAdminCatalogServiceCreateSku = "/zcard.api.admin.v1.AdminCatalogService/CreateSku"
 const OperationAdminCatalogServiceCreateTag = "/zcard.api.admin.v1.AdminCatalogService/CreateTag"
+const OperationAdminCatalogServiceCreateVirtualReview = "/zcard.api.admin.v1.AdminCatalogService/CreateVirtualReview"
 const OperationAdminCatalogServiceDeleteCategory = "/zcard.api.admin.v1.AdminCatalogService/DeleteCategory"
+const OperationAdminCatalogServiceDeleteControl = "/zcard.api.admin.v1.AdminCatalogService/DeleteControl"
+const OperationAdminCatalogServiceDeleteMemberGroup = "/zcard.api.admin.v1.AdminCatalogService/DeleteMemberGroup"
 const OperationAdminCatalogServiceDeleteProduct = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
+const OperationAdminCatalogServiceDeleteSku = "/zcard.api.admin.v1.AdminCatalogService/DeleteSku"
 const OperationAdminCatalogServiceDeleteTag = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
 const OperationAdminCatalogServiceGetProduct = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
 const OperationAdminCatalogServiceListCategories = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
+const OperationAdminCatalogServiceListControls = "/zcard.api.admin.v1.AdminCatalogService/ListControls"
+const OperationAdminCatalogServiceListMemberGroups = "/zcard.api.admin.v1.AdminCatalogService/ListMemberGroups"
 const OperationAdminCatalogServiceListProducts = "/zcard.api.admin.v1.AdminCatalogService/ListProducts"
+const OperationAdminCatalogServiceListReviews = "/zcard.api.admin.v1.AdminCatalogService/ListReviews"
+const OperationAdminCatalogServiceListSkus = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
 const OperationAdminCatalogServiceListTags = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
+const OperationAdminCatalogServiceRejectReview = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
 const OperationAdminCatalogServiceUpdateCategory = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
+const OperationAdminCatalogServiceUpdateControl = "/zcard.api.admin.v1.AdminCatalogService/UpdateControl"
+const OperationAdminCatalogServiceUpdateMemberGroup = "/zcard.api.admin.v1.AdminCatalogService/UpdateMemberGroup"
 const OperationAdminCatalogServiceUpdateProduct = "/zcard.api.admin.v1.AdminCatalogService/UpdateProduct"
+const OperationAdminCatalogServiceUpdateSku = "/zcard.api.admin.v1.AdminCatalogService/UpdateSku"
 
 type AdminCatalogServiceHTTPServer interface {
+	ApproveReview(context.Context, *ApproveReviewRequest) (*ReviewItem, error)
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
+	CreateControl(context.Context, *CreateControlRequest) (*AdminControl, error)
+	CreateMemberGroup(context.Context, *CreateMemberGroupRequest) (*MemberGroup, error)
 	CreateProduct(context.Context, *CreateProductRequest) (*AdminProduct, error)
+	CreateSku(context.Context, *CreateSkuRequest) (*Sku, error)
 	CreateTag(context.Context, *CreateTagRequest) (*Tag, error)
+	CreateVirtualReview(context.Context, *CreateVirtualReviewRequest) (*VirtualReviewItem, error)
 	DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error)
+	DeleteControl(context.Context, *DeleteControlRequest) (*emptypb.Empty, error)
+	DeleteMemberGroup(context.Context, *DeleteMemberGroupRequest) (*emptypb.Empty, error)
 	DeleteProduct(context.Context, *DeleteProductRequest) (*emptypb.Empty, error)
+	DeleteSku(context.Context, *DeleteSkuRequest) (*emptypb.Empty, error)
 	DeleteTag(context.Context, *DeleteTagRequest) (*emptypb.Empty, error)
 	GetProduct(context.Context, *GetProductRequest) (*AdminProduct, error)
 	// ListCategories ── 分类 ──
 	ListCategories(context.Context, *emptypb.Empty) (*CategoryList, error)
+	// ListControls ── 自定义控件 ──
+	ListControls(context.Context, *ListControlsRequest) (*ControlList, error)
+	// ListMemberGroups ── 会员商品组 ──
+	ListMemberGroups(context.Context, *emptypb.Empty) (*MemberGroupList, error)
 	// ListProducts ── 商品 ──
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
+	// ListReviews ── 评价（真实一单一评审核 + 虚拟评价）──
+	ListReviews(context.Context, *ListReviewsRequest) (*ListReviewsReply, error)
+	// ListSkus ── SKU 多规格 ──
+	ListSkus(context.Context, *ListSkusRequest) (*SkuList, error)
 	// ListTags ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
+	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Category, error)
+	UpdateControl(context.Context, *UpdateControlRequest) (*AdminControl, error)
+	UpdateMemberGroup(context.Context, *UpdateMemberGroupRequest) (*MemberGroup, error)
 	UpdateProduct(context.Context, *UpdateProductRequest) (*AdminProduct, error)
+	UpdateSku(context.Context, *UpdateSkuRequest) (*Sku, error)
 }
 
 func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServiceHTTPServer) {
@@ -63,6 +99,22 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("GET", "/api/v1/admin/tags", _AdminCatalogService_ListTags0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/tags", _AdminCatalogService_CreateTag0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/tags/{id}", _AdminCatalogService_DeleteTag0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/products/{product_id}/controls", _AdminCatalogService_ListControls0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/products/{product_id}/controls", _AdminCatalogService_CreateControl0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/controls/{id}", _AdminCatalogService_UpdateControl0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/controls/{id}", _AdminCatalogService_DeleteControl0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/reviews", _AdminCatalogService_ListReviews0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/reviews/{id}/approve", _AdminCatalogService_ApproveReview0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/reviews/{id}/reject", _AdminCatalogService_RejectReview0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/virtual-reviews", _AdminCatalogService_CreateVirtualReview0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/products/{product_id}/skus", _AdminCatalogService_ListSkus0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/products/{product_id}/skus", _AdminCatalogService_CreateSku0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/skus/{id}", _AdminCatalogService_UpdateSku0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/skus/{id}", _AdminCatalogService_DeleteSku0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/member-groups", _AdminCatalogService_ListMemberGroups0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/member-groups", _AdminCatalogService_CreateMemberGroup0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/member-groups/{id}", _AdminCatalogService_UpdateMemberGroup0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/member-groups/{id}", _AdminCatalogService_DeleteMemberGroup0_HTTP_Handler(srv))
 }
 
 func _AdminCatalogService_ListProducts0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
@@ -311,22 +363,382 @@ func _AdminCatalogService_DeleteTag0_HTTP_Handler(srv AdminCatalogServiceHTTPSer
 	}
 }
 
+func _AdminCatalogService_ListControls0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListControlsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceListControls)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListControls(ctx, req.(*ListControlsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ControlList)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_CreateControl0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateControlRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceCreateControl)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateControl(ctx, req.(*CreateControlRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AdminControl)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_UpdateControl0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateControlRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceUpdateControl)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateControl(ctx, req.(*UpdateControlRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AdminControl)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_DeleteControl0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteControlRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceDeleteControl)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteControl(ctx, req.(*DeleteControlRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_ListReviews0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListReviewsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceListReviews)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListReviews(ctx, req.(*ListReviewsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListReviewsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_ApproveReview0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ApproveReviewRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceApproveReview)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ApproveReview(ctx, req.(*ApproveReviewRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ReviewItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_RejectReview0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RejectReviewRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceRejectReview)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RejectReview(ctx, req.(*RejectReviewRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ReviewItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_CreateVirtualReview0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateVirtualReviewRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceCreateVirtualReview)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateVirtualReview(ctx, req.(*CreateVirtualReviewRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*VirtualReviewItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_ListSkus0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListSkusRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceListSkus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListSkus(ctx, req.(*ListSkusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SkuList)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_CreateSku0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateSkuRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceCreateSku)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateSku(ctx, req.(*CreateSkuRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Sku)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_UpdateSku0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateSkuRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceUpdateSku)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSku(ctx, req.(*UpdateSkuRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Sku)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_DeleteSku0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteSkuRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceDeleteSku)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteSku(ctx, req.(*DeleteSkuRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_ListMemberGroups0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceListMemberGroups)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListMemberGroups(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*MemberGroupList)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_CreateMemberGroup0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateMemberGroupRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceCreateMemberGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateMemberGroup(ctx, req.(*CreateMemberGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*MemberGroup)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_UpdateMemberGroup0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateMemberGroupRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceUpdateMemberGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateMemberGroup(ctx, req.(*UpdateMemberGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*MemberGroup)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_DeleteMemberGroup0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteMemberGroupRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceDeleteMemberGroup)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteMemberGroup(ctx, req.(*DeleteMemberGroupRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminCatalogServiceHTTPClient interface {
+	ApproveReview(ctx context.Context, req *ApproveReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
+	CreateControl(ctx context.Context, req *CreateControlRequest, opts ...http.CallOption) (rsp *AdminControl, err error)
+	CreateMemberGroup(ctx context.Context, req *CreateMemberGroupRequest, opts ...http.CallOption) (rsp *MemberGroup, err error)
 	CreateProduct(ctx context.Context, req *CreateProductRequest, opts ...http.CallOption) (rsp *AdminProduct, err error)
+	CreateSku(ctx context.Context, req *CreateSkuRequest, opts ...http.CallOption) (rsp *Sku, err error)
 	CreateTag(ctx context.Context, req *CreateTagRequest, opts ...http.CallOption) (rsp *Tag, err error)
+	CreateVirtualReview(ctx context.Context, req *CreateVirtualReviewRequest, opts ...http.CallOption) (rsp *VirtualReviewItem, err error)
 	DeleteCategory(ctx context.Context, req *DeleteCategoryRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	DeleteControl(ctx context.Context, req *DeleteControlRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	DeleteMemberGroup(ctx context.Context, req *DeleteMemberGroupRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DeleteProduct(ctx context.Context, req *DeleteProductRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	DeleteSku(ctx context.Context, req *DeleteSkuRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DeleteTag(ctx context.Context, req *DeleteTagRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *AdminProduct, err error)
 	// ListCategories ── 分类 ──
 	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CategoryList, err error)
+	// ListControls ── 自定义控件 ──
+	ListControls(ctx context.Context, req *ListControlsRequest, opts ...http.CallOption) (rsp *ControlList, err error)
+	// ListMemberGroups ── 会员商品组 ──
+	ListMemberGroups(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *MemberGroupList, err error)
 	// ListProducts ── 商品 ──
 	ListProducts(ctx context.Context, req *ListProductsRequest, opts ...http.CallOption) (rsp *ListProductsReply, err error)
+	// ListReviews ── 评价（真实一单一评审核 + 虚拟评价）──
+	ListReviews(ctx context.Context, req *ListReviewsRequest, opts ...http.CallOption) (rsp *ListReviewsReply, err error)
+	// ListSkus ── SKU 多规格 ──
+	ListSkus(ctx context.Context, req *ListSkusRequest, opts ...http.CallOption) (rsp *SkuList, err error)
 	// ListTags ── 标签 ──
 	ListTags(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TagList, err error)
+	RejectReview(ctx context.Context, req *RejectReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
+	UpdateControl(ctx context.Context, req *UpdateControlRequest, opts ...http.CallOption) (rsp *AdminControl, err error)
+	UpdateMemberGroup(ctx context.Context, req *UpdateMemberGroupRequest, opts ...http.CallOption) (rsp *MemberGroup, err error)
 	UpdateProduct(ctx context.Context, req *UpdateProductRequest, opts ...http.CallOption) (rsp *AdminProduct, err error)
+	UpdateSku(ctx context.Context, req *UpdateSkuRequest, opts ...http.CallOption) (rsp *Sku, err error)
 }
 
 type AdminCatalogServiceHTTPClientImpl struct {
@@ -337,6 +749,23 @@ func NewAdminCatalogServiceHTTPClient(client *http.Client) AdminCatalogServiceHT
 	return &AdminCatalogServiceHTTPClientImpl{client}
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) ApproveReview(ctx context.Context, in *ApproveReviewRequest, opts ...http.CallOption) (*ReviewItem, error) {
+	var out ReviewItem
+	pattern := "/api/v1/admin/reviews/{id}/approve"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceApproveReview),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...http.CallOption) (*Category, error) {
 	var out Category
 	pattern := "/api/v1/admin/categories"
@@ -345,6 +774,40 @@ func (c *AdminCatalogServiceHTTPClientImpl) CreateCategory(ctx context.Context, 
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceCreateCategory),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) CreateControl(ctx context.Context, in *CreateControlRequest, opts ...http.CallOption) (*AdminControl, error) {
+	var out AdminControl
+	pattern := "/api/v1/admin/products/{product_id}/controls"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceCreateControl),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) CreateMemberGroup(ctx context.Context, in *CreateMemberGroupRequest, opts ...http.CallOption) (*MemberGroup, error) {
+	var out MemberGroup
+	pattern := "/api/v1/admin/member-groups"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceCreateMemberGroup),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
@@ -371,6 +834,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) CreateProduct(ctx context.Context, i
 	return &out, nil
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) CreateSku(ctx context.Context, in *CreateSkuRequest, opts ...http.CallOption) (*Sku, error) {
+	var out Sku
+	pattern := "/api/v1/admin/products/{product_id}/skus"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceCreateSku),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) CreateTag(ctx context.Context, in *CreateTagRequest, opts ...http.CallOption) (*Tag, error) {
 	var out Tag
 	pattern := "/api/v1/admin/tags"
@@ -379,6 +859,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) CreateTag(ctx context.Context, in *C
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceCreateTag),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) CreateVirtualReview(ctx context.Context, in *CreateVirtualReviewRequest, opts ...http.CallOption) (*VirtualReviewItem, error) {
+	var out VirtualReviewItem
+	pattern := "/api/v1/admin/virtual-reviews"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceCreateVirtualReview),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
@@ -404,6 +901,38 @@ func (c *AdminCatalogServiceHTTPClientImpl) DeleteCategory(ctx context.Context, 
 	return &out, nil
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) DeleteControl(ctx context.Context, in *DeleteControlRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/controls/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceDeleteControl),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) DeleteMemberGroup(ctx context.Context, in *DeleteMemberGroupRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/member-groups/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceDeleteMemberGroup),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) DeleteProduct(ctx context.Context, in *DeleteProductRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
 	pattern := "/api/v1/admin/products/{id}"
@@ -411,6 +940,22 @@ func (c *AdminCatalogServiceHTTPClientImpl) DeleteProduct(ctx context.Context, i
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceDeleteProduct),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) DeleteSku(ctx context.Context, in *DeleteSkuRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/skus/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceDeleteSku),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
@@ -469,6 +1014,40 @@ func (c *AdminCatalogServiceHTTPClientImpl) ListCategories(ctx context.Context, 
 	return &out, nil
 }
 
+// ListControls ── 自定义控件 ──
+func (c *AdminCatalogServiceHTTPClientImpl) ListControls(ctx context.Context, in *ListControlsRequest, opts ...http.CallOption) (*ControlList, error) {
+	var out ControlList
+	pattern := "/api/v1/admin/products/{product_id}/controls"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceListControls),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListMemberGroups ── 会员商品组 ──
+func (c *AdminCatalogServiceHTTPClientImpl) ListMemberGroups(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*MemberGroupList, error) {
+	var out MemberGroupList
+	pattern := "/api/v1/admin/member-groups"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceListMemberGroups),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListProducts ── 商品 ──
 func (c *AdminCatalogServiceHTTPClientImpl) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...http.CallOption) (*ListProductsReply, error) {
 	var out ListProductsReply
@@ -477,6 +1056,40 @@ func (c *AdminCatalogServiceHTTPClientImpl) ListProducts(ctx context.Context, in
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceListProducts),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListReviews ── 评价（真实一单一评审核 + 虚拟评价）──
+func (c *AdminCatalogServiceHTTPClientImpl) ListReviews(ctx context.Context, in *ListReviewsRequest, opts ...http.CallOption) (*ListReviewsReply, error) {
+	var out ListReviewsReply
+	pattern := "/api/v1/admin/reviews"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceListReviews),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListSkus ── SKU 多规格 ──
+func (c *AdminCatalogServiceHTTPClientImpl) ListSkus(ctx context.Context, in *ListSkusRequest, opts ...http.CallOption) (*SkuList, error) {
+	var out SkuList
+	pattern := "/api/v1/admin/products/{product_id}/skus"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceListSkus),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
@@ -503,6 +1116,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) ListTags(ctx context.Context, in *em
 	return &out, nil
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) RejectReview(ctx context.Context, in *RejectReviewRequest, opts ...http.CallOption) (*ReviewItem, error) {
+	var out ReviewItem
+	pattern := "/api/v1/admin/reviews/{id}/reject"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceRejectReview),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...http.CallOption) (*Category, error) {
 	var out Category
 	pattern := "/api/v1/admin/categories/{id}"
@@ -520,6 +1150,40 @@ func (c *AdminCatalogServiceHTTPClientImpl) UpdateCategory(ctx context.Context, 
 	return &out, nil
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) UpdateControl(ctx context.Context, in *UpdateControlRequest, opts ...http.CallOption) (*AdminControl, error) {
+	var out AdminControl
+	pattern := "/api/v1/admin/controls/{id}"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceUpdateControl),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) UpdateMemberGroup(ctx context.Context, in *UpdateMemberGroupRequest, opts ...http.CallOption) (*MemberGroup, error) {
+	var out MemberGroup
+	pattern := "/api/v1/admin/member-groups/{id}"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceUpdateMemberGroup),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) UpdateProduct(ctx context.Context, in *UpdateProductRequest, opts ...http.CallOption) (*AdminProduct, error) {
 	var out AdminProduct
 	pattern := "/api/v1/admin/products/{id}"
@@ -528,6 +1192,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) UpdateProduct(ctx context.Context, i
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceUpdateProduct),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) UpdateSku(ctx context.Context, in *UpdateSkuRequest, opts ...http.CallOption) (*Sku, error) {
+	var out Sku
+	pattern := "/api/v1/admin/skus/{id}"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceUpdateSku),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)

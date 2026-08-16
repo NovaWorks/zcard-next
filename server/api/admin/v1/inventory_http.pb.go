@@ -24,7 +24,9 @@ const OperationAdminInventoryServiceImportConfirm = "/zcard.api.admin.v1.AdminIn
 const OperationAdminInventoryServiceImportPreview = "/zcard.api.admin.v1.AdminInventoryService/ImportPreview"
 const OperationAdminInventoryServiceListCards = "/zcard.api.admin.v1.AdminInventoryService/ListCards"
 const OperationAdminInventoryServiceListImports = "/zcard.api.admin.v1.AdminInventoryService/ListImports"
+const OperationAdminInventoryServiceListPremiumCards = "/zcard.api.admin.v1.AdminInventoryService/ListPremiumCards"
 const OperationAdminInventoryServiceToggleCard = "/zcard.api.admin.v1.AdminInventoryService/ToggleCard"
+const OperationAdminInventoryServiceViewCardContent = "/zcard.api.admin.v1.AdminInventoryService/ViewCardContent"
 
 type AdminInventoryServiceHTTPServer interface {
 	// CancelImport CancelImport 撤销批次（删除本批 available 卡）。
@@ -39,8 +41,12 @@ type AdminInventoryServiceHTTPServer interface {
 	ListCards(context.Context, *ListCardsRequest) (*ListCardsReply, error)
 	// ListImports ListImports 导入批次列表。
 	ListImports(context.Context, *ListImportsRequest) (*ListImportsReply, error)
+	// ListPremiumCards ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+	ListPremiumCards(context.Context, *ListPremiumCardsRequest) (*ListPremiumCardsReply, error)
 	// ToggleCard ToggleCard 禁用/启用单张卡。
 	ToggleCard(context.Context, *ToggleCardRequest) (*emptypb.Empty, error)
+	// ViewCardContent ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+	ViewCardContent(context.Context, *ViewCardContentRequest) (*ViewCardContentReply, error)
 }
 
 func RegisterAdminInventoryServiceHTTPServer(s *http.Server, srv AdminInventoryServiceHTTPServer) {
@@ -52,6 +58,8 @@ func RegisterAdminInventoryServiceHTTPServer(s *http.Server, srv AdminInventoryS
 	r.Handle("GET", "/api/v1/admin/inventory/cards", _AdminInventoryService_ListCards0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/inventory/export", _AdminInventoryService_ExportCards0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/inventory/cards/{id}/toggle", _AdminInventoryService_ToggleCard0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/inventory/cards/{id}/content", _AdminInventoryService_ViewCardContent0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/inventory/cards/premium", _AdminInventoryService_ListPremiumCards0_HTTP_Handler(srv))
 }
 
 func _AdminInventoryService_ImportPreview0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
@@ -193,6 +201,47 @@ func _AdminInventoryService_ToggleCard0_HTTP_Handler(srv AdminInventoryServiceHT
 	}
 }
 
+func _AdminInventoryService_ViewCardContent0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ViewCardContentRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInventoryServiceViewCardContent)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ViewCardContent(ctx, req.(*ViewCardContentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ViewCardContentReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminInventoryService_ListPremiumCards0_HTTP_Handler(srv AdminInventoryServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListPremiumCardsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInventoryServiceListPremiumCards)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListPremiumCards(ctx, req.(*ListPremiumCardsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListPremiumCardsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminInventoryServiceHTTPClient interface {
 	// CancelImport CancelImport 撤销批次（删除本批 available 卡）。
 	CancelImport(ctx context.Context, req *CancelImportRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
@@ -206,8 +255,12 @@ type AdminInventoryServiceHTTPClient interface {
 	ListCards(ctx context.Context, req *ListCardsRequest, opts ...http.CallOption) (rsp *ListCardsReply, err error)
 	// ListImports ListImports 导入批次列表。
 	ListImports(ctx context.Context, req *ListImportsRequest, opts ...http.CallOption) (rsp *ListImportsReply, err error)
+	// ListPremiumCards ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+	ListPremiumCards(ctx context.Context, req *ListPremiumCardsRequest, opts ...http.CallOption) (rsp *ListPremiumCardsReply, err error)
 	// ToggleCard ToggleCard 禁用/启用单张卡。
 	ToggleCard(ctx context.Context, req *ToggleCardRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// ViewCardContent ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+	ViewCardContent(ctx context.Context, req *ViewCardContentRequest, opts ...http.CallOption) (rsp *ViewCardContentReply, err error)
 }
 
 type AdminInventoryServiceHTTPClientImpl struct {
@@ -324,6 +377,23 @@ func (c *AdminInventoryServiceHTTPClientImpl) ListImports(ctx context.Context, i
 	return &out, nil
 }
 
+// ListPremiumCards ListPremiumCards 靓号列表（number_hash 命中 + 可用卡；card:premium 权限）。
+func (c *AdminInventoryServiceHTTPClientImpl) ListPremiumCards(ctx context.Context, in *ListPremiumCardsRequest, opts ...http.CallOption) (*ListPremiumCardsReply, error) {
+	var out ListPremiumCardsReply
+	pattern := "/api/v1/admin/inventory/cards/premium"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminInventoryServiceListPremiumCards),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ToggleCard ToggleCard 禁用/启用单张卡。
 func (c *AdminInventoryServiceHTTPClientImpl) ToggleCard(ctx context.Context, in *ToggleCardRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
@@ -336,6 +406,23 @@ func (c *AdminInventoryServiceHTTPClientImpl) ToggleCard(ctx context.Context, in
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ViewCardContent ViewCardContent 查看完整卡密（card:view_content 权限 + 安全审计）。
+func (c *AdminInventoryServiceHTTPClientImpl) ViewCardContent(ctx context.Context, in *ViewCardContentRequest, opts ...http.CallOption) (*ViewCardContentReply, error) {
+	var out ViewCardContentReply
+	pattern := "/api/v1/admin/inventory/cards/{id}/content"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminInventoryServiceViewCardContent),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

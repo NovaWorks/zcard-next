@@ -60,4 +60,37 @@ message Product {
   uint64 category_id = 10;
   // 展示销量 = 真实 + 虚拟
   int64 sales_count = 11;
+  // 自定义控件（下单收集：文本/密码/下拉/数字/多选/单选）
+  repeated ProductControl controls = 12;
+  // 评价（真实 approved + 虚拟合并，按时间/排序）
+  repeated ReviewItem reviews = 13;
+  // 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
+  repeated Sku skus = 14;
+}
+
+// ProductControl 自定义控件定义（下单表单渲染）。
+message ProductControl {
+  uint64 id = 1;
+  string name = 2;
+  string type = 3;           // text | password | select | number | checkbox | radio
+  bool required = 4;
+  repeated string options = 5; // select/checkbox/radio 的选项
+  int32 sort = 6;
+}
+
+// ReviewItem 顾客视角评价（真实 approved + 虚拟合并）。
+message ReviewItem {
+  uint64 id = 1;
+  string nickname = 2;
+  string content = 3;
+  int32 rating = 4;
+  int64 created_at = 5;
+  bool is_virtual = 6;
+}
+
+// Sku 顾客视角多规格（只下发 id/名称/价格）。
+message Sku {
+  uint64 id = 1;
+  string name = 2;
+  int64 price_cents = 3;
 }

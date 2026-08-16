@@ -68,7 +68,41 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	if err != nil {
 		return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
 	}
-	return toStorefrontProduct(p), nil
+	out := toStorefrontProduct(p)
+	controls, err := s.uc.ListControls(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.InternalServer("catalog.CONTROL_FAILED", "读取控件失败")
+	}
+	for _, c := range controls {
+		out.Controls = append(out.Controls, &storefrontv1.ProductControl{
+			Id: c.ID, Name: c.Name, Type: string(c.Type),
+			Required: c.Required, Options: c.Options, Sort: c.Sort,
+		})
+	}
+	reviews, err := s.uc.ListProductReviews(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.InternalServer("catalog.REVIEW_FAILED", "读取评价失败")
+	}
+	for _, rv := range reviews {
+		item := &storefrontv1.ReviewItem{
+			Id: rv.ID, Nickname: rv.Nickname, Content: rv.Content,
+			Rating: rv.Rating, IsVirtual: rv.IsVirtual,
+		}
+		if !rv.CreatedAt.IsZero() {
+			item.CreatedAt = rv.CreatedAt.Unix()
+		}
+		out.Reviews = append(out.Reviews, item)
+	}
+	skus, err := s.uc.ListSkus(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.InternalServer("catalog.SKU_FAILED", "读取规格失败")
+	}
+	for _, sku := range skus {
+		out.Skus = append(out.Skus, &storefrontv1.Sku{
+			Id: sku.ID, Name: sku.Name, PriceCents: int64(sku.Price),
+		})
+	}
+	return out, nil
 }
 
 func toStorefrontProduct(p *port.Product) *storefrontv1.Product {

@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// AdminMemberLevelService 会员等级管理（P3-01 M1b 基础版）。
+service AdminMemberLevelService {
+  rpc ListMemberLevels(google.protobuf.Empty) returns (MemberLevelList) {
+    option (google.api.http) = { get: "/api/v1/admin/member-levels" };
+  }
+  rpc CreateMemberLevel(CreateMemberLevelRequest) returns (MemberLevel) {
+    option (google.api.http) = { post: "/api/v1/admin/member-levels" body: "*" };
+  }
+  rpc UpdateMemberLevel(UpdateMemberLevelRequest) returns (MemberLevel) {
+    option (google.api.http) = { put: "/api/v1/admin/member-levels/{id}" body: "*" };
+  }
+  rpc DeleteMemberLevel(DeleteMemberLevelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/member-levels/{id}" };
+  }
+}
+
+message MemberLevel {
+  uint64 id = 1;
+  string name = 2;
+  string threshold_type = 3;
+  int64 threshold_recharge = 4;
+  int64 threshold_consume = 5;
+  int32 discount = 6; // 万分比
+  int32 sort = 7;
+  bool enabled = 8;
+}
+
+message MemberLevelList {
+  repeated MemberLevel levels = 1;
+}
+
+message CreateMemberLevelRequest {
+  string name = 1;
+  string threshold_type = 2;
+  int64 threshold_recharge = 3;
+  int64 threshold_consume = 4;
+  int32 discount = 5;
+  int32 sort = 6;
+  bool enabled = 7;
+}
+
+message UpdateMemberLevelRequest {
+  uint64 id = 1;
+  string name = 2;
+  int32 discount = 3;
+  int32 sort = 4;
+  bool enabled = 5;
+}
+
+message DeleteMemberLevelRequest {
+  uint64 id = 1;
+}

@@ -20,18 +20,34 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminCatalogService_ListProducts_FullMethodName   = "/zcard.api.admin.v1.AdminCatalogService/ListProducts"
-	AdminCatalogService_GetProduct_FullMethodName     = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
-	AdminCatalogService_CreateProduct_FullMethodName  = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
-	AdminCatalogService_UpdateProduct_FullMethodName  = "/zcard.api.admin.v1.AdminCatalogService/UpdateProduct"
-	AdminCatalogService_DeleteProduct_FullMethodName  = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
-	AdminCatalogService_ListCategories_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
-	AdminCatalogService_CreateCategory_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
-	AdminCatalogService_UpdateCategory_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
-	AdminCatalogService_DeleteCategory_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/DeleteCategory"
-	AdminCatalogService_ListTags_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
-	AdminCatalogService_CreateTag_FullMethodName      = "/zcard.api.admin.v1.AdminCatalogService/CreateTag"
-	AdminCatalogService_DeleteTag_FullMethodName      = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
+	AdminCatalogService_ListProducts_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/ListProducts"
+	AdminCatalogService_GetProduct_FullMethodName          = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
+	AdminCatalogService_CreateProduct_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
+	AdminCatalogService_UpdateProduct_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/UpdateProduct"
+	AdminCatalogService_DeleteProduct_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
+	AdminCatalogService_ListCategories_FullMethodName      = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
+	AdminCatalogService_CreateCategory_FullMethodName      = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
+	AdminCatalogService_UpdateCategory_FullMethodName      = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
+	AdminCatalogService_DeleteCategory_FullMethodName      = "/zcard.api.admin.v1.AdminCatalogService/DeleteCategory"
+	AdminCatalogService_ListTags_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
+	AdminCatalogService_CreateTag_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/CreateTag"
+	AdminCatalogService_DeleteTag_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
+	AdminCatalogService_ListControls_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/ListControls"
+	AdminCatalogService_CreateControl_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/CreateControl"
+	AdminCatalogService_UpdateControl_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/UpdateControl"
+	AdminCatalogService_DeleteControl_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/DeleteControl"
+	AdminCatalogService_ListReviews_FullMethodName         = "/zcard.api.admin.v1.AdminCatalogService/ListReviews"
+	AdminCatalogService_ApproveReview_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/ApproveReview"
+	AdminCatalogService_RejectReview_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
+	AdminCatalogService_CreateVirtualReview_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/CreateVirtualReview"
+	AdminCatalogService_ListSkus_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
+	AdminCatalogService_CreateSku_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/CreateSku"
+	AdminCatalogService_UpdateSku_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/UpdateSku"
+	AdminCatalogService_DeleteSku_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/DeleteSku"
+	AdminCatalogService_ListMemberGroups_FullMethodName    = "/zcard.api.admin.v1.AdminCatalogService/ListMemberGroups"
+	AdminCatalogService_CreateMemberGroup_FullMethodName   = "/zcard.api.admin.v1.AdminCatalogService/CreateMemberGroup"
+	AdminCatalogService_UpdateMemberGroup_FullMethodName   = "/zcard.api.admin.v1.AdminCatalogService/UpdateMemberGroup"
+	AdminCatalogService_DeleteMemberGroup_FullMethodName   = "/zcard.api.admin.v1.AdminCatalogService/DeleteMemberGroup"
 )
 
 // AdminCatalogServiceClient is the client API for AdminCatalogService service.
@@ -55,6 +71,26 @@ type AdminCatalogServiceClient interface {
 	ListTags(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TagList, error)
 	CreateTag(ctx context.Context, in *CreateTagRequest, opts ...grpc.CallOption) (*Tag, error)
 	DeleteTag(ctx context.Context, in *DeleteTagRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ── 自定义控件 ──
+	ListControls(ctx context.Context, in *ListControlsRequest, opts ...grpc.CallOption) (*ControlList, error)
+	CreateControl(ctx context.Context, in *CreateControlRequest, opts ...grpc.CallOption) (*AdminControl, error)
+	UpdateControl(ctx context.Context, in *UpdateControlRequest, opts ...grpc.CallOption) (*AdminControl, error)
+	DeleteControl(ctx context.Context, in *DeleteControlRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ── 评价（真实一单一评审核 + 虚拟评价）──
+	ListReviews(ctx context.Context, in *ListReviewsRequest, opts ...grpc.CallOption) (*ListReviewsReply, error)
+	ApproveReview(ctx context.Context, in *ApproveReviewRequest, opts ...grpc.CallOption) (*ReviewItem, error)
+	RejectReview(ctx context.Context, in *RejectReviewRequest, opts ...grpc.CallOption) (*ReviewItem, error)
+	CreateVirtualReview(ctx context.Context, in *CreateVirtualReviewRequest, opts ...grpc.CallOption) (*VirtualReviewItem, error)
+	// ── SKU 多规格 ──
+	ListSkus(ctx context.Context, in *ListSkusRequest, opts ...grpc.CallOption) (*SkuList, error)
+	CreateSku(ctx context.Context, in *CreateSkuRequest, opts ...grpc.CallOption) (*Sku, error)
+	UpdateSku(ctx context.Context, in *UpdateSkuRequest, opts ...grpc.CallOption) (*Sku, error)
+	DeleteSku(ctx context.Context, in *DeleteSkuRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ── 会员商品组 ──
+	ListMemberGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MemberGroupList, error)
+	CreateMemberGroup(ctx context.Context, in *CreateMemberGroupRequest, opts ...grpc.CallOption) (*MemberGroup, error)
+	UpdateMemberGroup(ctx context.Context, in *UpdateMemberGroupRequest, opts ...grpc.CallOption) (*MemberGroup, error)
+	DeleteMemberGroup(ctx context.Context, in *DeleteMemberGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminCatalogServiceClient struct {
@@ -185,6 +221,166 @@ func (c *adminCatalogServiceClient) DeleteTag(ctx context.Context, in *DeleteTag
 	return out, nil
 }
 
+func (c *adminCatalogServiceClient) ListControls(ctx context.Context, in *ListControlsRequest, opts ...grpc.CallOption) (*ControlList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ControlList)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ListControls_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) CreateControl(ctx context.Context, in *CreateControlRequest, opts ...grpc.CallOption) (*AdminControl, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminControl)
+	err := c.cc.Invoke(ctx, AdminCatalogService_CreateControl_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) UpdateControl(ctx context.Context, in *UpdateControlRequest, opts ...grpc.CallOption) (*AdminControl, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AdminControl)
+	err := c.cc.Invoke(ctx, AdminCatalogService_UpdateControl_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) DeleteControl(ctx context.Context, in *DeleteControlRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminCatalogService_DeleteControl_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) ListReviews(ctx context.Context, in *ListReviewsRequest, opts ...grpc.CallOption) (*ListReviewsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListReviewsReply)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ListReviews_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) ApproveReview(ctx context.Context, in *ApproveReviewRequest, opts ...grpc.CallOption) (*ReviewItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReviewItem)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ApproveReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) RejectReview(ctx context.Context, in *RejectReviewRequest, opts ...grpc.CallOption) (*ReviewItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReviewItem)
+	err := c.cc.Invoke(ctx, AdminCatalogService_RejectReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) CreateVirtualReview(ctx context.Context, in *CreateVirtualReviewRequest, opts ...grpc.CallOption) (*VirtualReviewItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VirtualReviewItem)
+	err := c.cc.Invoke(ctx, AdminCatalogService_CreateVirtualReview_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) ListSkus(ctx context.Context, in *ListSkusRequest, opts ...grpc.CallOption) (*SkuList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SkuList)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ListSkus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) CreateSku(ctx context.Context, in *CreateSkuRequest, opts ...grpc.CallOption) (*Sku, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Sku)
+	err := c.cc.Invoke(ctx, AdminCatalogService_CreateSku_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) UpdateSku(ctx context.Context, in *UpdateSkuRequest, opts ...grpc.CallOption) (*Sku, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Sku)
+	err := c.cc.Invoke(ctx, AdminCatalogService_UpdateSku_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) DeleteSku(ctx context.Context, in *DeleteSkuRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminCatalogService_DeleteSku_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) ListMemberGroups(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MemberGroupList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MemberGroupList)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ListMemberGroups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) CreateMemberGroup(ctx context.Context, in *CreateMemberGroupRequest, opts ...grpc.CallOption) (*MemberGroup, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MemberGroup)
+	err := c.cc.Invoke(ctx, AdminCatalogService_CreateMemberGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) UpdateMemberGroup(ctx context.Context, in *UpdateMemberGroupRequest, opts ...grpc.CallOption) (*MemberGroup, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MemberGroup)
+	err := c.cc.Invoke(ctx, AdminCatalogService_UpdateMemberGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) DeleteMemberGroup(ctx context.Context, in *DeleteMemberGroupRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminCatalogService_DeleteMemberGroup_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminCatalogServiceServer is the server API for AdminCatalogService service.
 // All implementations must embed UnimplementedAdminCatalogServiceServer
 // for forward compatibility.
@@ -206,6 +402,26 @@ type AdminCatalogServiceServer interface {
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
 	CreateTag(context.Context, *CreateTagRequest) (*Tag, error)
 	DeleteTag(context.Context, *DeleteTagRequest) (*emptypb.Empty, error)
+	// ── 自定义控件 ──
+	ListControls(context.Context, *ListControlsRequest) (*ControlList, error)
+	CreateControl(context.Context, *CreateControlRequest) (*AdminControl, error)
+	UpdateControl(context.Context, *UpdateControlRequest) (*AdminControl, error)
+	DeleteControl(context.Context, *DeleteControlRequest) (*emptypb.Empty, error)
+	// ── 评价（真实一单一评审核 + 虚拟评价）──
+	ListReviews(context.Context, *ListReviewsRequest) (*ListReviewsReply, error)
+	ApproveReview(context.Context, *ApproveReviewRequest) (*ReviewItem, error)
+	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
+	CreateVirtualReview(context.Context, *CreateVirtualReviewRequest) (*VirtualReviewItem, error)
+	// ── SKU 多规格 ──
+	ListSkus(context.Context, *ListSkusRequest) (*SkuList, error)
+	CreateSku(context.Context, *CreateSkuRequest) (*Sku, error)
+	UpdateSku(context.Context, *UpdateSkuRequest) (*Sku, error)
+	DeleteSku(context.Context, *DeleteSkuRequest) (*emptypb.Empty, error)
+	// ── 会员商品组 ──
+	ListMemberGroups(context.Context, *emptypb.Empty) (*MemberGroupList, error)
+	CreateMemberGroup(context.Context, *CreateMemberGroupRequest) (*MemberGroup, error)
+	UpdateMemberGroup(context.Context, *UpdateMemberGroupRequest) (*MemberGroup, error)
+	DeleteMemberGroup(context.Context, *DeleteMemberGroupRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminCatalogServiceServer()
 }
 
@@ -251,6 +467,54 @@ func (UnimplementedAdminCatalogServiceServer) CreateTag(context.Context, *Create
 }
 func (UnimplementedAdminCatalogServiceServer) DeleteTag(context.Context, *DeleteTagRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteTag not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ListControls(context.Context, *ListControlsRequest) (*ControlList, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListControls not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) CreateControl(context.Context, *CreateControlRequest) (*AdminControl, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateControl not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) UpdateControl(context.Context, *UpdateControlRequest) (*AdminControl, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateControl not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) DeleteControl(context.Context, *DeleteControlRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteControl not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ListReviews(context.Context, *ListReviewsRequest) (*ListReviewsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListReviews not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ApproveReview(context.Context, *ApproveReviewRequest) (*ReviewItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method ApproveReview not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method RejectReview not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) CreateVirtualReview(context.Context, *CreateVirtualReviewRequest) (*VirtualReviewItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateVirtualReview not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ListSkus(context.Context, *ListSkusRequest) (*SkuList, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListSkus not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) CreateSku(context.Context, *CreateSkuRequest) (*Sku, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSku not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) UpdateSku(context.Context, *UpdateSkuRequest) (*Sku, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSku not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) DeleteSku(context.Context, *DeleteSkuRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteSku not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ListMemberGroups(context.Context, *emptypb.Empty) (*MemberGroupList, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMemberGroups not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) CreateMemberGroup(context.Context, *CreateMemberGroupRequest) (*MemberGroup, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateMemberGroup not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) UpdateMemberGroup(context.Context, *UpdateMemberGroupRequest) (*MemberGroup, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateMemberGroup not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) DeleteMemberGroup(context.Context, *DeleteMemberGroupRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteMemberGroup not implemented")
 }
 func (UnimplementedAdminCatalogServiceServer) mustEmbedUnimplementedAdminCatalogServiceServer() {}
 func (UnimplementedAdminCatalogServiceServer) testEmbeddedByValue()                             {}
@@ -489,6 +753,294 @@ func _AdminCatalogService_DeleteTag_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminCatalogService_ListControls_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListControlsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ListControls(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ListControls_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ListControls(ctx, req.(*ListControlsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_CreateControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateControlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).CreateControl(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_CreateControl_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).CreateControl(ctx, req.(*CreateControlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_UpdateControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateControlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).UpdateControl(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_UpdateControl_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).UpdateControl(ctx, req.(*UpdateControlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_DeleteControl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteControlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).DeleteControl(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_DeleteControl_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).DeleteControl(ctx, req.(*DeleteControlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_ListReviews_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReviewsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ListReviews(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ListReviews_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ListReviews(ctx, req.(*ListReviewsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_ApproveReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ApproveReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ApproveReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ApproveReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ApproveReview(ctx, req.(*ApproveReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_RejectReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RejectReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).RejectReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_RejectReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).RejectReview(ctx, req.(*RejectReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_CreateVirtualReview_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateVirtualReviewRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).CreateVirtualReview(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_CreateVirtualReview_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).CreateVirtualReview(ctx, req.(*CreateVirtualReviewRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_ListSkus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSkusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ListSkus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ListSkus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ListSkus(ctx, req.(*ListSkusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_CreateSku_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSkuRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).CreateSku(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_CreateSku_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).CreateSku(ctx, req.(*CreateSkuRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_UpdateSku_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSkuRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).UpdateSku(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_UpdateSku_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).UpdateSku(ctx, req.(*UpdateSkuRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_DeleteSku_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSkuRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).DeleteSku(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_DeleteSku_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).DeleteSku(ctx, req.(*DeleteSkuRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_ListMemberGroups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ListMemberGroups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ListMemberGroups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ListMemberGroups(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_CreateMemberGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMemberGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).CreateMemberGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_CreateMemberGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).CreateMemberGroup(ctx, req.(*CreateMemberGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_UpdateMemberGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateMemberGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).UpdateMemberGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_UpdateMemberGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).UpdateMemberGroup(ctx, req.(*UpdateMemberGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_DeleteMemberGroup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMemberGroupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).DeleteMemberGroup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_DeleteMemberGroup_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).DeleteMemberGroup(ctx, req.(*DeleteMemberGroupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminCatalogService_ServiceDesc is the grpc.ServiceDesc for AdminCatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -543,6 +1095,70 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteTag",
 			Handler:    _AdminCatalogService_DeleteTag_Handler,
+		},
+		{
+			MethodName: "ListControls",
+			Handler:    _AdminCatalogService_ListControls_Handler,
+		},
+		{
+			MethodName: "CreateControl",
+			Handler:    _AdminCatalogService_CreateControl_Handler,
+		},
+		{
+			MethodName: "UpdateControl",
+			Handler:    _AdminCatalogService_UpdateControl_Handler,
+		},
+		{
+			MethodName: "DeleteControl",
+			Handler:    _AdminCatalogService_DeleteControl_Handler,
+		},
+		{
+			MethodName: "ListReviews",
+			Handler:    _AdminCatalogService_ListReviews_Handler,
+		},
+		{
+			MethodName: "ApproveReview",
+			Handler:    _AdminCatalogService_ApproveReview_Handler,
+		},
+		{
+			MethodName: "RejectReview",
+			Handler:    _AdminCatalogService_RejectReview_Handler,
+		},
+		{
+			MethodName: "CreateVirtualReview",
+			Handler:    _AdminCatalogService_CreateVirtualReview_Handler,
+		},
+		{
+			MethodName: "ListSkus",
+			Handler:    _AdminCatalogService_ListSkus_Handler,
+		},
+		{
+			MethodName: "CreateSku",
+			Handler:    _AdminCatalogService_CreateSku_Handler,
+		},
+		{
+			MethodName: "UpdateSku",
+			Handler:    _AdminCatalogService_UpdateSku_Handler,
+		},
+		{
+			MethodName: "DeleteSku",
+			Handler:    _AdminCatalogService_DeleteSku_Handler,
+		},
+		{
+			MethodName: "ListMemberGroups",
+			Handler:    _AdminCatalogService_ListMemberGroups_Handler,
+		},
+		{
+			MethodName: "CreateMemberGroup",
+			Handler:    _AdminCatalogService_CreateMemberGroup_Handler,
+		},
+		{
+			MethodName: "UpdateMemberGroup",
+			Handler:    _AdminCatalogService_UpdateMemberGroup_Handler,
+		},
+		{
+			MethodName: "DeleteMemberGroup",
+			Handler:    _AdminCatalogService_DeleteMemberGroup_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
