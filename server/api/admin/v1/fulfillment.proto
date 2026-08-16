@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
+service AdminFulfillmentService {
+  // ListPending 待人工发货列表（manual_pending 状态订单）。
+  rpc ListPending(ListPendingRequest) returns (ListPendingReply) {
+    option (google.api.http) = { get: "/api/v1/admin/fulfillment/pending" };
+  }
+  // ManualDeliver 手动交付（卡密内容或物流单号）。
+  rpc ManualDeliver(ManualDeliverRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/fulfillment/{order_no}/deliver"
+      body: "*"
+    };
+  }
+  // ListDeliveries 交付记录列表（掩码默认）。
+  rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/fulfillment" };
+  }
+}
+
+message ListPendingRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListPendingReply {
+  repeated PendingOrder orders = 1;
+}
+
+message PendingOrder {
+  string order_no = 1;
+  uint64 product_id = 2;
+  string product_name = 3;
+  int32 quantity = 4;
+  int64 created_at = 5;
+}
+
+message ManualDeliverRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string content = 2;      // 卡密内容（多行，每行一条）
+  string logistics_no = 3; // 物流单号（与 content 二选一）
+  string remark = 4;
+}
+
+message ListDeliveriesRequest {
+  string order_no = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListDeliveriesReply {
+  repeated DeliveryRecord deliveries = 1;
+}
+
+// DeliveryRecord 交付记录（掩码默认；card:view_content 权限才可见完整内容）。
+message DeliveryRecord {
+  uint64 id = 1;
+  string order_no = 2;
+  uint64 card_id = 3;
+  string content_masked = 4; // ****尾4位
+  string delivered_mode = 5;
+  uint64 delivered_by = 6;
+  int32 fetch_count = 7;
+  int64 delivered_at = 8;
+  string fetched_ip = 9;
+}

@@ -469,6 +469,80 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/fulfillment:
+        get:
+            tags:
+                - AdminFulfillmentService
+            description: ListDeliveries 交付记录列表（掩码默认）。
+            operationId: AdminFulfillmentService_ListDeliveries
+            parameters:
+                - name: orderNo
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListDeliveriesReply'
+    /api/v1/admin/fulfillment/pending:
+        get:
+            tags:
+                - AdminFulfillmentService
+            description: ListPending 待人工发货列表（manual_pending 状态订单）。
+            operationId: AdminFulfillmentService_ListPending
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListPendingReply'
+    /api/v1/admin/fulfillment/{orderNo}/deliver:
+        post:
+            tags:
+                - AdminFulfillmentService
+            description: ManualDeliver 手动交付（卡密内容或物流单号）。
+            operationId: AdminFulfillmentService_ManualDeliver
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ManualDeliverRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/inventory/cards:
         get:
             tags:
@@ -1190,6 +1264,49 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.Currencies'
+    /api/v1/storefront/delivery:
+        get:
+            tags:
+                - StoreDeliveryService
+            description: MaskedDeliveries 我的订单掩码列表。
+            operationId: StoreDeliveryService_MaskedDeliveries
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.MaskedDeliveriesReply'
+    /api/v1/storefront/delivery/fetch:
+        post:
+            tags:
+                - StoreDeliveryService
+            description: 'FetchDelivery 取货（一次性明文；默认 1 次后掩码；Cache-Control: no-store）。'
+            operationId: StoreDeliveryService_FetchDelivery
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.FetchDeliveryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.FetchDeliveryReply'
     /api/v1/storefront/orders:
         post:
             tags:
@@ -1857,6 +1974,29 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
+        zcard.api.admin.v1.DeliveryRecord:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderNo:
+                    type: string
+                cardId:
+                    type: string
+                contentMasked:
+                    type: string
+                deliveredMode:
+                    type: string
+                deliveredBy:
+                    type: string
+                fetchCount:
+                    type: integer
+                    format: int32
+                deliveredAt:
+                    type: string
+                fetchedIp:
+                    type: string
+            description: DeliveryRecord 交付记录（掩码默认；card:view_content 权限才可见完整内容）。
         zcard.api.admin.v1.EnableTOTPReply:
             type: object
             properties:
@@ -1986,6 +2126,13 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.CardInfo'
                 total:
                     type: string
+        zcard.api.admin.v1.ListDeliveriesReply:
+            type: object
+            properties:
+                deliveries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DeliveryRecord'
         zcard.api.admin.v1.ListImportsReply:
             type: object
             properties:
@@ -2011,6 +2158,13 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Payment'
                 nextCursor:
                     type: string
+        zcard.api.admin.v1.ListPendingReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PendingOrder'
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -2085,6 +2239,19 @@ components:
             properties:
                 refreshToken:
                     type: string
+        zcard.api.admin.v1.ManualDeliverRequest:
+            required:
+                - orderNo
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                content:
+                    type: string
+                logisticsNo:
+                    type: string
+                remark:
+                    type: string
         zcard.api.admin.v1.Payment:
             type: object
             properties:
@@ -2111,6 +2278,20 @@ components:
                 createdAt:
                     type: string
             description: Payment 支付单。
+        zcard.api.admin.v1.PendingOrder:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                productId:
+                    type: string
+                productName:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
         zcard.api.admin.v1.Perm:
             type: object
             properties:
@@ -2514,6 +2695,40 @@ components:
                 rateJson:
                     type: string
             description: Currency 货币（rate 为 decimal 字符串——前端 decimal 换算，杜绝浮点误差入口）。
+        zcard.api.storefront.v1.DeliveryItem:
+            type: object
+            properties:
+                itemId:
+                    type: string
+                content:
+                    type: string
+                masked:
+                    type: boolean
+            description: DeliveryItem 交付项（明文只在首次取货返回；之后掩码）。
+        zcard.api.storefront.v1.FetchDeliveryReply:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                status:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.DeliveryItem'
+                fetchCount:
+                    type: integer
+                    format: int32
+        zcard.api.storefront.v1.FetchDeliveryRequest:
+            required:
+                - orderNo
+                - queryPassword
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                queryPassword:
+                    type: string
         zcard.api.storefront.v1.GetOrderReply:
             type: object
             properties:
@@ -2545,6 +2760,25 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Tx'
+        zcard.api.storefront.v1.MaskedDeliveriesReply:
+            type: object
+            properties:
+                deliveries:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.MaskedDelivery'
+        zcard.api.storefront.v1.MaskedDelivery:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                contentMasked:
+                    type: string
+                deliveredAt:
+                    type: string
+                fetchCount:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.OrderItemInput:
             required:
                 - productId
@@ -2654,6 +2888,8 @@ tags:
       description: AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
     - name: AdminCurrencyService
       description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+    - name: AdminFulfillmentService
+      description: AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
     - name: AdminInventoryService
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
     - name: AdminOrderService
@@ -2676,6 +2912,8 @@ tags:
       description: |-
         StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
          里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
+    - name: StoreDeliveryService
+      description: StoreDeliveryService 顾客取货（P1-06 T2 三重门：单号+密码+限流）。
     - name: StoreOrderService
       description: StoreOrderService 顾客下单（P1-03 T2）。
     - name: StorePaymentService

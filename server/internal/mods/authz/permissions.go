@@ -133,6 +133,14 @@ func init() {
 		Perm{Code: "wallet:read", Desc: "查用户流水", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/ListTransactions", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}/transactions"},
 
+		// ── 履约（fulfillment，P1-06）─────────────────
+		Perm{Code: "order:view_delivery", Desc: "查看交付记录", Domain: "fulfillment",
+			Op: "zcard.api.admin.v1.AdminFulfillmentService/ListDeliveries", Method: "GET", Path: "/api/v1/admin/fulfillment"},
+		Perm{Code: "order:view_delivery", Desc: "待发货列表", Domain: "fulfillment",
+			Op: "zcard.api.admin.v1.AdminFulfillmentService/ListPending", Method: "GET", Path: "/api/v1/admin/fulfillment/pending"},
+		Perm{Code: "order:deliver", Desc: "手动发货（超管）", Domain: "fulfillment", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminFulfillmentService/ManualDeliver", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/deliver"},
+
 		// ── 货币管理（settings，P0-04 T3）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},
@@ -146,7 +154,7 @@ func init() {
 		// ── 敏感权限点预登记（§5.20.4 防内部偷卡；路由 M1 落地）──
 		Perm{Code: "card:view_content", Desc: "查看完整卡密（需二次确认+审计）", Domain: "inventory", AdminOnly: true},
 		Perm{Code: "card:export", Desc: "导出卡密（审批+审计+限流）", Domain: "inventory", AdminOnly: true},
-		Perm{Code: "order:view_delivery", Desc: "查看订单交付内容", Domain: "order", AdminOnly: true},
+
 		Perm{Code: "order:refund", Desc: "订单退款（二次确认+审计）", Domain: "order", AdminOnly: true},
 		Perm{Code: "system:update", Desc: "在线更新/密钥轮换", Domain: "system", AdminOnly: true},
 	)

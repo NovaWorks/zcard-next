@@ -28,17 +28,17 @@ var operatorSeed = map[string]bool{
 	"inventory:read": true,
 	"order:read":     true, "order:read_detail": true,
 	"payment:read": true, "payment:read_detail": true,
-	"wallet:read": true,
+	"wallet:read":         true,
+	"order:view_delivery": true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。
 var adminOnlyAllowlist = map[string]bool{
-	// 敏感权限点（§5.20.4 防偷卡五项）
-	"order:view_delivery": true,
-	"order:refund":        true,
-	"system:update":       true,
-	"card:view_content":   true,
-	"card:export":         true,
+	// 敏感权限点（§5.20.4 防偷卡四项——view_delivery 已下放运营）
+	"order:refund":      true,
+	"system:update":     true,
+	"card:view_content": true,
+	"card:export":       true,
 	// 权限与人事高危操作（超管专属）
 	"authz:role_write":         true,
 	"authz:role_grant":         true,

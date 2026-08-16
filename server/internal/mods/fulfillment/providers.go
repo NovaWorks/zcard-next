@@ -5,4 +5,8 @@ package fulfillment
 import "github.com/google/wire"
 
 // ProviderSet fulfillment providers。
-var ProviderSet = wire.NewSet(NewFulfillmentUsecase, NewDeliveryRepoImpl)
+var ProviderSet = wire.NewSet(
+	NewDeliveryRepoImpl,
+	NewStoreDeliveryService,
+	NewAdminFulfillmentService,
+)

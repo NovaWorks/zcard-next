@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreDeliveryService 顾客取货（P1-06 T2 三重门：单号+密码+限流）。
+service StoreDeliveryService {
+  // FetchDelivery 取货（一次性明文；默认 1 次后掩码；Cache-Control: no-store）。
+  rpc FetchDelivery(FetchDeliveryRequest) returns (FetchDeliveryReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/delivery/fetch"
+      body: "*"
+    };
+  }
+  // MaskedDeliveries 我的订单掩码列表。
+  rpc MaskedDeliveries(MaskedDeliveriesRequest) returns (MaskedDeliveriesReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/delivery" };
+  }
+}
+
+message FetchDeliveryRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string query_password = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message FetchDeliveryReply {
+  string order_no = 1;
+  string status = 2;
+  repeated DeliveryItem items = 3;
+  int32 fetch_count = 4;
+}
+
+// DeliveryItem 交付项（明文只在首次取货返回；之后掩码）。
+message DeliveryItem {
+  uint64 item_id = 1;
+  string content = 2;  // 明文或 ****尾4位
+  bool masked = 3;
+}
+
+message MaskedDeliveriesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message MaskedDeliveriesReply {
+  repeated MaskedDelivery deliveries = 1;
+}
+
+message MaskedDelivery {
+  string order_no = 1;
+  string content_masked = 2; // ****尾4位
+  int64 delivered_at = 3;
+  int32 fetch_count = 4;
+}
