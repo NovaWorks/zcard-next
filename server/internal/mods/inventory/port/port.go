@@ -49,3 +49,8 @@ type Inventory interface {
 type CardContentReader interface {
 	Contents(ctx context.Context, cardIDs []uint64, productID, subsiteID uint64) ([]string, error)
 }
+
+// CardReleaser 锁卡回滚（P2-03 供货交付失败时释放；reserved → available）。
+type CardReleaser interface {
+	ReleaseCards(ctx context.Context, cardIDs []uint64) error
+}

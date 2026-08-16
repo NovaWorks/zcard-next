@@ -34,6 +34,10 @@ var operatorSeed = map[string]bool{
 	"memberlevel:read":    true,
 	"coupon:read":         true,
 	"dashboard:read":      true,
+	// M2：货源/采购/供货读权限（运营可查看，写操作超管专属）
+	"supply:read":       true,
+	"procurement:read":  true,
+	"supplier:read":     true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。

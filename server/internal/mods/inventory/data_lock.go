@@ -39,6 +39,7 @@ var (
 func (r *CardRepoImpl) Reserve(ctx context.Context, subsiteID uint64, items []port.ReserveItem) (*port.Reservation, error) {
 	client := data.Client(ctx, r.data)
 	supportsLock := r.data.Dialect.Capabilities().SupportsSkipLocked
+	var locked []port.ReservedCard // 锁到的卡（P2-03 供货交付消费）
 
 	for _, item := range items {
 		if item.Quantity <= 0 {
@@ -82,6 +83,9 @@ func (r *CardRepoImpl) Reserve(ctx context.Context, subsiteID uint64, items []po
 		if len(rows) < want {
 			return nil, ErrInsufficient // 数量不足整批回滚
 		}
+		for _, row := range rows {
+			locked = append(locked, port.ReservedCard{CardID: row.ID, Locked: true})
+		}
 
 		// 2) 置 reserved + order_id + locked_at（CAS：affected rows 校验）
 		ids := make([]uint64, 0, len(rows))
@@ -107,6 +111,7 @@ func (r *CardRepoImpl) Reserve(ctx context.Context, subsiteID uint64, items []po
 	// 返回预留（caller 传入 order_id 后需调 BindOrder）
 	return &port.Reservation{
 		ReservationID: fmt.Sprintf("batch-%d", time.Now().UnixNano()),
+		Cards:         locked,
 		ExpiresAt:     time.Now().Add(30 * time.Minute).UTC(),
 	}, nil
 }
@@ -164,12 +169,17 @@ func (r *CardRepoImpl) ReleaseExpired(ctx context.Context, ttl time.Duration) (i
 // MarkUsed 售出标记（校验 affected rows 防并发重发）。
 func (r *CardRepoImpl) MarkUsed(ctx context.Context, cardIDs []uint64, orderID uint64) error {
 	client := data.Client(ctx, r.data)
-	affected, err := client.Card.Update().
+	// orderID>0：本地订单严格校验绑定（防并发重发）；
+	// orderID=0：供货交付（Reserve 未绑本地订单，order_id 为 NULL）
+	upd := client.Card.Update().
 		Where(
 			card.IDIn(cardIDs...),
 			card.StatusEQ(card.StatusReserved),
-			card.OrderID(orderID),
-		).
+		)
+	if orderID > 0 {
+		upd = upd.Where(card.OrderID(orderID))
+	}
+	affected, err := upd.
 		SetStatus(card.StatusUsed).
 		SetUsedAt(time.Now().UTC()).
 		Save(ctx)
@@ -180,6 +190,20 @@ func (r *CardRepoImpl) MarkUsed(ctx context.Context, cardIDs []uint64, orderID u
 		return ErrNotReserved // 部分卡不在 reserved 状态（并发冲突）
 	}
 	return nil
+}
+
+// ReleaseCards 释放指定锁卡（供货交付失败回滚；reserved → available）。
+func (r *CardRepoImpl) ReleaseCards(ctx context.Context, cardIDs []uint64) error {
+	_, err := data.Client(ctx, r.data).Card.Update().
+		Where(
+			card.IDIn(cardIDs...),
+			card.StatusEQ(card.StatusReserved),
+		).
+		SetStatus(card.StatusAvailable).
+		ClearOrderID().
+		ClearLockedAt().
+		Save(ctx)
+	return err
 }
 
 // MarkUsedAndDelete 即删模式（delivery_mode=delete：发后物理删除卡密行）。

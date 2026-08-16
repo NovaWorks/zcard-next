@@ -204,13 +204,19 @@ func (s *SupplyAPIService) CreateOrder(ctx context.Context, req *supplyv1.Create
 	for _, c := range res.Cards {
 		cardIDs = append(cardIDs, c.CardID)
 	}
-	// 交付：MarkUsed + 解密卡密（内存态）
+	// 交付：MarkUsed + 解密卡密（内存态）；失败回滚锁卡（防 reserved 泄漏）
 	if err := s.inv.MarkUsed(ctx, cardIDs, 0); err != nil {
+		if rl, ok := s.inv.(invport.CardReleaser); ok {
+			_ = rl.ReleaseCards(ctx, cardIDs)
+		}
 		return nil, err
 	}
 	delivered, err := s.cards.Contents(ctx, cardIDs, productID, 0)
 	if err != nil {
 		s.log.Warn("supplier.delivery_read_failed", "order_id", order.ID, "err", err)
+		if rl, ok := s.inv.(invport.CardReleaser); ok {
+			_ = rl.ReleaseCards(ctx, cardIDs)
+		}
 		return nil, errors.New("supplier.DELIVERY_FAILED")
 	}
 	_ = s.repo.MarkSupplyOrderFulfilled(ctx, order.ID)

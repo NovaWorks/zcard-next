@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -85,6 +84,9 @@ func NewHTTPServer(
 ) *khttp.Server {
 	var opts = []khttp.ServerOption{
 		khttp.Filter(corsFilter),
+		// P2-03：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
+		// 仅 /api/supply/*，Ping 免签名；不挂 JWT，架构测试规则 9）
+		khttp.Filter(supplier.SupplyAuthFilter(supplierRepo, 0)),
 		khttp.Middleware(
 			recovery.Recovery(),
 			logging.Server(log.Default()),
@@ -102,13 +104,6 @@ func NewHTTPServer(
 			selector.Server(adminAuthMiddleware(signer, az, dir)).
 				Match(func(_ context.Context, operation string) bool {
 					return isAdminOperation(operation, dir)
-				}).
-				Build(),
-			// P2-03：对外供货 HMAC 四头鉴权（仅 /api/supply/*；Ping 免签名；
-			// 不挂 JWT——架构测试规则 9）
-			selector.Server(supplier.SupplyAuthware(supplierRepo, 0)).
-				Match(func(_ context.Context, operation string) bool {
-					return isSupplyOperation(operation)
 				}).
 				Build(),
 		),
@@ -188,14 +183,6 @@ func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 // 不挂 JWT（架构测试规则 9）；验签由渠道适配器完成（M1b 接真实渠道）。
 func registerPaymentCallback(srv *khttp.Server, payRepo *payment.PaymentRepoImpl, d *data.Data) {
 	payment.RegisterPaymentCallback(srv, payRepo, d)
-}
-
-// isSupplyOperation 对外供货路由（HMAC 鉴权目标；Ping 免签名）。
-func isSupplyOperation(operation string) bool {
-	if strings.HasPrefix(operation, "/zcard.api.supply.v1.SupplyService/") {
-		return !strings.HasSuffix(operation, "/Ping")
-	}
-	return false
 }
 
 func tenancyMainDomain(c *conf.Server) string { return "" } // 由 bootstrap 注入 Tenancy 配置后补齐
