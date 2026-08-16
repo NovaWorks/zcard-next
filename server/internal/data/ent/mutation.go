@@ -40335,23 +40335,24 @@ func (m *ProcessedEventMutation) ResetEdge(name string) error {
 // ProcurementItemMutation represents an operation that mutates the ProcurementItem nodes in the graph.
 type ProcurementItemMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uint64
-	created_at        *time.Time
-	updated_at        *time.Time
-	procurement_id    *uint64
-	addprocurement_id *int64
-	upstream_sku      *string
-	quantity          *int32
-	addquantity       *int32
-	unit_cost         *int64
-	addunit_cost      *int64
-	received_content  *[]byte
-	clearedFields     map[string]struct{}
-	done              bool
-	oldValue          func(context.Context) (*ProcurementItem, error)
-	predicates        []predicate.ProcurementItem
+	op                     Op
+	typ                    string
+	id                     *uint64
+	created_at             *time.Time
+	updated_at             *time.Time
+	procurement_id         *uint64
+	addprocurement_id      *int64
+	upstream_sku           *string
+	quantity               *int32
+	addquantity            *int32
+	unit_cost              *int64
+	addunit_cost           *int64
+	received_content       *[]string
+	appendreceived_content []string
+	clearedFields          map[string]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*ProcurementItem, error)
+	predicates             []predicate.ProcurementItem
 }
 
 var _ ent.Mutation = (*ProcurementItemMutation)(nil)
@@ -40735,12 +40736,13 @@ func (m *ProcurementItemMutation) ResetUnitCost() {
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (m *ProcurementItemMutation) SetReceivedContent(b []byte) {
-	m.received_content = &b
+func (m *ProcurementItemMutation) SetReceivedContent(s []string) {
+	m.received_content = &s
+	m.appendreceived_content = nil
 }
 
 // ReceivedContent returns the value of the "received_content" field in the mutation.
-func (m *ProcurementItemMutation) ReceivedContent() (r []byte, exists bool) {
+func (m *ProcurementItemMutation) ReceivedContent() (r []string, exists bool) {
 	v := m.received_content
 	if v == nil {
 		return
@@ -40751,7 +40753,7 @@ func (m *ProcurementItemMutation) ReceivedContent() (r []byte, exists bool) {
 // OldReceivedContent returns the old "received_content" field's value of the ProcurementItem entity.
 // If the ProcurementItem object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *ProcurementItemMutation) OldReceivedContent(ctx context.Context) (v []byte, err error) {
+func (m *ProcurementItemMutation) OldReceivedContent(ctx context.Context) (v []string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldReceivedContent is only allowed on UpdateOne operations")
 	}
@@ -40765,9 +40767,23 @@ func (m *ProcurementItemMutation) OldReceivedContent(ctx context.Context) (v []b
 	return oldValue.ReceivedContent, nil
 }
 
+// AppendReceivedContent adds s to the "received_content" field.
+func (m *ProcurementItemMutation) AppendReceivedContent(s []string) {
+	m.appendreceived_content = append(m.appendreceived_content, s...)
+}
+
+// AppendedReceivedContent returns the list of values that were appended to the "received_content" field in this mutation.
+func (m *ProcurementItemMutation) AppendedReceivedContent() ([]string, bool) {
+	if len(m.appendreceived_content) == 0 {
+		return nil, false
+	}
+	return m.appendreceived_content, true
+}
+
 // ClearReceivedContent clears the value of the "received_content" field.
 func (m *ProcurementItemMutation) ClearReceivedContent() {
 	m.received_content = nil
+	m.appendreceived_content = nil
 	m.clearedFields[procurementitem.FieldReceivedContent] = struct{}{}
 }
 
@@ -40780,6 +40796,7 @@ func (m *ProcurementItemMutation) ReceivedContentCleared() bool {
 // ResetReceivedContent resets all changes to the "received_content" field.
 func (m *ProcurementItemMutation) ResetReceivedContent() {
 	m.received_content = nil
+	m.appendreceived_content = nil
 	delete(m.clearedFields, procurementitem.FieldReceivedContent)
 }
 
@@ -40936,7 +40953,7 @@ func (m *ProcurementItemMutation) SetField(name string, value ent.Value) error {
 		m.SetUnitCost(v)
 		return nil
 	case procurementitem.FieldReceivedContent:
-		v, ok := value.([]byte)
+		v, ok := value.([]string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -41115,28 +41132,30 @@ func (m *ProcurementItemMutation) ResetEdge(name string) error {
 // ProcurementOrderMutation represents an operation that mutates the ProcurementOrder nodes in the graph.
 type ProcurementOrderMutation struct {
 	config
-	op                Op
-	typ               string
-	id                *uint64
-	created_at        *time.Time
-	updated_at        *time.Time
-	order_item_id     *uint64
-	addorder_item_id  *int64
-	connection_id     *uint64
-	addconnection_id  *int64
-	upstream_order_id *string
-	status            *procurementorder.Status
-	fail_strategy     *procurementorder.FailStrategy
-	retry_count       *int32
-	addretry_count    *int32
-	next_retry_at     *time.Time
-	last_poll_at      *time.Time
-	dedupe_key        *string
-	trace_id          *string
-	clearedFields     map[string]struct{}
-	done              bool
-	oldValue          func(context.Context) (*ProcurementOrder, error)
-	predicates        []predicate.ProcurementOrder
+	op                 Op
+	typ                string
+	id                 *uint64
+	created_at         *time.Time
+	updated_at         *time.Time
+	order_item_id      *uint64
+	addorder_item_id   *int64
+	connection_id      *uint64
+	addconnection_id   *int64
+	upstream_order_id  *string
+	status             *procurementorder.Status
+	fail_strategy      *procurementorder.FailStrategy
+	retry_count        *int32
+	addretry_count     *int32
+	next_retry_at      *time.Time
+	last_poll_at       *time.Time
+	dedupe_key         *string
+	trace_id           *string
+	last_error         *string
+	upstream_refund_id *string
+	clearedFields      map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*ProcurementOrder, error)
+	predicates         []predicate.ProcurementOrder
 }
 
 var _ ent.Mutation = (*ProcurementOrderMutation)(nil)
@@ -41787,6 +41806,104 @@ func (m *ProcurementOrderMutation) ResetTraceID() {
 	delete(m.clearedFields, procurementorder.FieldTraceID)
 }
 
+// SetLastError sets the "last_error" field.
+func (m *ProcurementOrderMutation) SetLastError(s string) {
+	m.last_error = &s
+}
+
+// LastError returns the value of the "last_error" field in the mutation.
+func (m *ProcurementOrderMutation) LastError() (r string, exists bool) {
+	v := m.last_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastError returns the old "last_error" field's value of the ProcurementOrder entity.
+// If the ProcurementOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProcurementOrderMutation) OldLastError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastError: %w", err)
+	}
+	return oldValue.LastError, nil
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (m *ProcurementOrderMutation) ClearLastError() {
+	m.last_error = nil
+	m.clearedFields[procurementorder.FieldLastError] = struct{}{}
+}
+
+// LastErrorCleared returns if the "last_error" field was cleared in this mutation.
+func (m *ProcurementOrderMutation) LastErrorCleared() bool {
+	_, ok := m.clearedFields[procurementorder.FieldLastError]
+	return ok
+}
+
+// ResetLastError resets all changes to the "last_error" field.
+func (m *ProcurementOrderMutation) ResetLastError() {
+	m.last_error = nil
+	delete(m.clearedFields, procurementorder.FieldLastError)
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (m *ProcurementOrderMutation) SetUpstreamRefundID(s string) {
+	m.upstream_refund_id = &s
+}
+
+// UpstreamRefundID returns the value of the "upstream_refund_id" field in the mutation.
+func (m *ProcurementOrderMutation) UpstreamRefundID() (r string, exists bool) {
+	v := m.upstream_refund_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamRefundID returns the old "upstream_refund_id" field's value of the ProcurementOrder entity.
+// If the ProcurementOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProcurementOrderMutation) OldUpstreamRefundID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamRefundID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamRefundID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamRefundID: %w", err)
+	}
+	return oldValue.UpstreamRefundID, nil
+}
+
+// ClearUpstreamRefundID clears the value of the "upstream_refund_id" field.
+func (m *ProcurementOrderMutation) ClearUpstreamRefundID() {
+	m.upstream_refund_id = nil
+	m.clearedFields[procurementorder.FieldUpstreamRefundID] = struct{}{}
+}
+
+// UpstreamRefundIDCleared returns if the "upstream_refund_id" field was cleared in this mutation.
+func (m *ProcurementOrderMutation) UpstreamRefundIDCleared() bool {
+	_, ok := m.clearedFields[procurementorder.FieldUpstreamRefundID]
+	return ok
+}
+
+// ResetUpstreamRefundID resets all changes to the "upstream_refund_id" field.
+func (m *ProcurementOrderMutation) ResetUpstreamRefundID() {
+	m.upstream_refund_id = nil
+	delete(m.clearedFields, procurementorder.FieldUpstreamRefundID)
+}
+
 // Where appends a list predicates to the ProcurementOrderMutation builder.
 func (m *ProcurementOrderMutation) Where(ps ...predicate.ProcurementOrder) {
 	m.predicates = append(m.predicates, ps...)
@@ -41821,7 +41938,7 @@ func (m *ProcurementOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProcurementOrderMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, procurementorder.FieldCreatedAt)
 	}
@@ -41858,6 +41975,12 @@ func (m *ProcurementOrderMutation) Fields() []string {
 	if m.trace_id != nil {
 		fields = append(fields, procurementorder.FieldTraceID)
 	}
+	if m.last_error != nil {
+		fields = append(fields, procurementorder.FieldLastError)
+	}
+	if m.upstream_refund_id != nil {
+		fields = append(fields, procurementorder.FieldUpstreamRefundID)
+	}
 	return fields
 }
 
@@ -41890,6 +42013,10 @@ func (m *ProcurementOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.DedupeKey()
 	case procurementorder.FieldTraceID:
 		return m.TraceID()
+	case procurementorder.FieldLastError:
+		return m.LastError()
+	case procurementorder.FieldUpstreamRefundID:
+		return m.UpstreamRefundID()
 	}
 	return nil, false
 }
@@ -41923,6 +42050,10 @@ func (m *ProcurementOrderMutation) OldField(ctx context.Context, name string) (e
 		return m.OldDedupeKey(ctx)
 	case procurementorder.FieldTraceID:
 		return m.OldTraceID(ctx)
+	case procurementorder.FieldLastError:
+		return m.OldLastError(ctx)
+	case procurementorder.FieldUpstreamRefundID:
+		return m.OldUpstreamRefundID(ctx)
 	}
 	return nil, fmt.Errorf("unknown ProcurementOrder field %s", name)
 }
@@ -42016,6 +42147,20 @@ func (m *ProcurementOrderMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetTraceID(v)
 		return nil
+	case procurementorder.FieldLastError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastError(v)
+		return nil
+	case procurementorder.FieldUpstreamRefundID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamRefundID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ProcurementOrder field %s", name)
 }
@@ -42097,6 +42242,12 @@ func (m *ProcurementOrderMutation) ClearedFields() []string {
 	if m.FieldCleared(procurementorder.FieldTraceID) {
 		fields = append(fields, procurementorder.FieldTraceID)
 	}
+	if m.FieldCleared(procurementorder.FieldLastError) {
+		fields = append(fields, procurementorder.FieldLastError)
+	}
+	if m.FieldCleared(procurementorder.FieldUpstreamRefundID) {
+		fields = append(fields, procurementorder.FieldUpstreamRefundID)
+	}
 	return fields
 }
 
@@ -42122,6 +42273,12 @@ func (m *ProcurementOrderMutation) ClearField(name string) error {
 		return nil
 	case procurementorder.FieldTraceID:
 		m.ClearTraceID()
+		return nil
+	case procurementorder.FieldLastError:
+		m.ClearLastError()
+		return nil
+	case procurementorder.FieldUpstreamRefundID:
+		m.ClearUpstreamRefundID()
 		return nil
 	}
 	return fmt.Errorf("unknown ProcurementOrder nullable field %s", name)
@@ -42166,6 +42323,12 @@ func (m *ProcurementOrderMutation) ResetField(name string) error {
 		return nil
 	case procurementorder.FieldTraceID:
 		m.ResetTraceID()
+		return nil
+	case procurementorder.FieldLastError:
+		m.ResetLastError()
+		return nil
+	case procurementorder.FieldUpstreamRefundID:
+		m.ResetUpstreamRefundID()
 		return nil
 	}
 	return fmt.Errorf("unknown ProcurementOrder field %s", name)

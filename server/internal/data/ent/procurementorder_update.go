@@ -219,6 +219,46 @@ func (_u *ProcurementOrderUpdate) ClearTraceID() *ProcurementOrderUpdate {
 	return _u
 }
 
+// SetLastError sets the "last_error" field.
+func (_u *ProcurementOrderUpdate) SetLastError(v string) *ProcurementOrderUpdate {
+	_u.mutation.SetLastError(v)
+	return _u
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_u *ProcurementOrderUpdate) SetNillableLastError(v *string) *ProcurementOrderUpdate {
+	if v != nil {
+		_u.SetLastError(*v)
+	}
+	return _u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (_u *ProcurementOrderUpdate) ClearLastError() *ProcurementOrderUpdate {
+	_u.mutation.ClearLastError()
+	return _u
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (_u *ProcurementOrderUpdate) SetUpstreamRefundID(v string) *ProcurementOrderUpdate {
+	_u.mutation.SetUpstreamRefundID(v)
+	return _u
+}
+
+// SetNillableUpstreamRefundID sets the "upstream_refund_id" field if the given value is not nil.
+func (_u *ProcurementOrderUpdate) SetNillableUpstreamRefundID(v *string) *ProcurementOrderUpdate {
+	if v != nil {
+		_u.SetUpstreamRefundID(*v)
+	}
+	return _u
+}
+
+// ClearUpstreamRefundID clears the value of the "upstream_refund_id" field.
+func (_u *ProcurementOrderUpdate) ClearUpstreamRefundID() *ProcurementOrderUpdate {
+	_u.mutation.ClearUpstreamRefundID()
+	return _u
+}
+
 // Mutation returns the ProcurementOrderMutation object of the builder.
 func (_u *ProcurementOrderUpdate) Mutation() *ProcurementOrderMutation {
 	return _u.mutation
@@ -285,6 +325,11 @@ func (_u *ProcurementOrderUpdate) check() error {
 	if v, ok := _u.mutation.TraceID(); ok {
 		if err := procurementorder.TraceIDValidator(v); err != nil {
 			return &ValidationError{Name: "trace_id", err: fmt.Errorf(`ent: validator failed for field "ProcurementOrder.trace_id": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.UpstreamRefundID(); ok {
+		if err := procurementorder.UpstreamRefundIDValidator(v); err != nil {
+			return &ValidationError{Name: "upstream_refund_id", err: fmt.Errorf(`ent: validator failed for field "ProcurementOrder.upstream_refund_id": %w`, err)}
 		}
 	}
 	return nil
@@ -355,6 +400,18 @@ func (_u *ProcurementOrderUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if _u.mutation.TraceIDCleared() {
 		_spec.ClearField(procurementorder.FieldTraceID, field.TypeString)
+	}
+	if value, ok := _u.mutation.LastError(); ok {
+		_spec.SetField(procurementorder.FieldLastError, field.TypeString, value)
+	}
+	if _u.mutation.LastErrorCleared() {
+		_spec.ClearField(procurementorder.FieldLastError, field.TypeString)
+	}
+	if value, ok := _u.mutation.UpstreamRefundID(); ok {
+		_spec.SetField(procurementorder.FieldUpstreamRefundID, field.TypeString, value)
+	}
+	if _u.mutation.UpstreamRefundIDCleared() {
+		_spec.ClearField(procurementorder.FieldUpstreamRefundID, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -567,6 +624,46 @@ func (_u *ProcurementOrderUpdateOne) ClearTraceID() *ProcurementOrderUpdateOne {
 	return _u
 }
 
+// SetLastError sets the "last_error" field.
+func (_u *ProcurementOrderUpdateOne) SetLastError(v string) *ProcurementOrderUpdateOne {
+	_u.mutation.SetLastError(v)
+	return _u
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_u *ProcurementOrderUpdateOne) SetNillableLastError(v *string) *ProcurementOrderUpdateOne {
+	if v != nil {
+		_u.SetLastError(*v)
+	}
+	return _u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (_u *ProcurementOrderUpdateOne) ClearLastError() *ProcurementOrderUpdateOne {
+	_u.mutation.ClearLastError()
+	return _u
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (_u *ProcurementOrderUpdateOne) SetUpstreamRefundID(v string) *ProcurementOrderUpdateOne {
+	_u.mutation.SetUpstreamRefundID(v)
+	return _u
+}
+
+// SetNillableUpstreamRefundID sets the "upstream_refund_id" field if the given value is not nil.
+func (_u *ProcurementOrderUpdateOne) SetNillableUpstreamRefundID(v *string) *ProcurementOrderUpdateOne {
+	if v != nil {
+		_u.SetUpstreamRefundID(*v)
+	}
+	return _u
+}
+
+// ClearUpstreamRefundID clears the value of the "upstream_refund_id" field.
+func (_u *ProcurementOrderUpdateOne) ClearUpstreamRefundID() *ProcurementOrderUpdateOne {
+	_u.mutation.ClearUpstreamRefundID()
+	return _u
+}
+
 // Mutation returns the ProcurementOrderMutation object of the builder.
 func (_u *ProcurementOrderUpdateOne) Mutation() *ProcurementOrderMutation {
 	return _u.mutation
@@ -646,6 +743,11 @@ func (_u *ProcurementOrderUpdateOne) check() error {
 	if v, ok := _u.mutation.TraceID(); ok {
 		if err := procurementorder.TraceIDValidator(v); err != nil {
 			return &ValidationError{Name: "trace_id", err: fmt.Errorf(`ent: validator failed for field "ProcurementOrder.trace_id": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.UpstreamRefundID(); ok {
+		if err := procurementorder.UpstreamRefundIDValidator(v); err != nil {
+			return &ValidationError{Name: "upstream_refund_id", err: fmt.Errorf(`ent: validator failed for field "ProcurementOrder.upstream_refund_id": %w`, err)}
 		}
 	}
 	return nil
@@ -733,6 +835,18 @@ func (_u *ProcurementOrderUpdateOne) sqlSave(ctx context.Context) (_node *Procur
 	}
 	if _u.mutation.TraceIDCleared() {
 		_spec.ClearField(procurementorder.FieldTraceID, field.TypeString)
+	}
+	if value, ok := _u.mutation.LastError(); ok {
+		_spec.SetField(procurementorder.FieldLastError, field.TypeString, value)
+	}
+	if _u.mutation.LastErrorCleared() {
+		_spec.ClearField(procurementorder.FieldLastError, field.TypeString)
+	}
+	if value, ok := _u.mutation.UpstreamRefundID(); ok {
+		_spec.SetField(procurementorder.FieldUpstreamRefundID, field.TypeString, value)
+	}
+	if _u.mutation.UpstreamRefundIDCleared() {
+		_spec.ClearField(procurementorder.FieldUpstreamRefundID, field.TypeString)
 	}
 	_node = &ProcurementOrder{config: _u.config}
 	_spec.Assign = _node.assignValues

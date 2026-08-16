@@ -104,6 +104,16 @@ func TraceID(v string) predicate.ProcurementOrder {
 	return predicate.ProcurementOrder(sql.FieldEQ(FieldTraceID, v))
 }
 
+// LastError applies equality check predicate on the "last_error" field. It's identical to LastErrorEQ.
+func LastError(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldEQ(FieldLastError, v))
+}
+
+// UpstreamRefundID applies equality check predicate on the "upstream_refund_id" field. It's identical to UpstreamRefundIDEQ.
+func UpstreamRefundID(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldEQ(FieldUpstreamRefundID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ProcurementOrder {
 	return predicate.ProcurementOrder(sql.FieldEQ(FieldCreatedAt, v))
@@ -657,6 +667,156 @@ func TraceIDEqualFold(v string) predicate.ProcurementOrder {
 // TraceIDContainsFold applies the ContainsFold predicate on the "trace_id" field.
 func TraceIDContainsFold(v string) predicate.ProcurementOrder {
 	return predicate.ProcurementOrder(sql.FieldContainsFold(FieldTraceID, v))
+}
+
+// LastErrorEQ applies the EQ predicate on the "last_error" field.
+func LastErrorEQ(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldEQ(FieldLastError, v))
+}
+
+// LastErrorNEQ applies the NEQ predicate on the "last_error" field.
+func LastErrorNEQ(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNEQ(FieldLastError, v))
+}
+
+// LastErrorIn applies the In predicate on the "last_error" field.
+func LastErrorIn(vs ...string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldIn(FieldLastError, vs...))
+}
+
+// LastErrorNotIn applies the NotIn predicate on the "last_error" field.
+func LastErrorNotIn(vs ...string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNotIn(FieldLastError, vs...))
+}
+
+// LastErrorGT applies the GT predicate on the "last_error" field.
+func LastErrorGT(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldGT(FieldLastError, v))
+}
+
+// LastErrorGTE applies the GTE predicate on the "last_error" field.
+func LastErrorGTE(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldGTE(FieldLastError, v))
+}
+
+// LastErrorLT applies the LT predicate on the "last_error" field.
+func LastErrorLT(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldLT(FieldLastError, v))
+}
+
+// LastErrorLTE applies the LTE predicate on the "last_error" field.
+func LastErrorLTE(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldLTE(FieldLastError, v))
+}
+
+// LastErrorContains applies the Contains predicate on the "last_error" field.
+func LastErrorContains(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldContains(FieldLastError, v))
+}
+
+// LastErrorHasPrefix applies the HasPrefix predicate on the "last_error" field.
+func LastErrorHasPrefix(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldHasPrefix(FieldLastError, v))
+}
+
+// LastErrorHasSuffix applies the HasSuffix predicate on the "last_error" field.
+func LastErrorHasSuffix(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldHasSuffix(FieldLastError, v))
+}
+
+// LastErrorIsNil applies the IsNil predicate on the "last_error" field.
+func LastErrorIsNil() predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldIsNull(FieldLastError))
+}
+
+// LastErrorNotNil applies the NotNil predicate on the "last_error" field.
+func LastErrorNotNil() predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNotNull(FieldLastError))
+}
+
+// LastErrorEqualFold applies the EqualFold predicate on the "last_error" field.
+func LastErrorEqualFold(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldEqualFold(FieldLastError, v))
+}
+
+// LastErrorContainsFold applies the ContainsFold predicate on the "last_error" field.
+func LastErrorContainsFold(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldContainsFold(FieldLastError, v))
+}
+
+// UpstreamRefundIDEQ applies the EQ predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDEQ(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldEQ(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDNEQ applies the NEQ predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDNEQ(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNEQ(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDIn applies the In predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDIn(vs ...string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldIn(FieldUpstreamRefundID, vs...))
+}
+
+// UpstreamRefundIDNotIn applies the NotIn predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDNotIn(vs ...string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNotIn(FieldUpstreamRefundID, vs...))
+}
+
+// UpstreamRefundIDGT applies the GT predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDGT(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldGT(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDGTE applies the GTE predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDGTE(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldGTE(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDLT applies the LT predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDLT(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldLT(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDLTE applies the LTE predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDLTE(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldLTE(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDContains applies the Contains predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDContains(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldContains(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDHasPrefix applies the HasPrefix predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDHasPrefix(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldHasPrefix(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDHasSuffix applies the HasSuffix predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDHasSuffix(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldHasSuffix(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDIsNil applies the IsNil predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDIsNil() predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldIsNull(FieldUpstreamRefundID))
+}
+
+// UpstreamRefundIDNotNil applies the NotNil predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDNotNil() predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldNotNull(FieldUpstreamRefundID))
+}
+
+// UpstreamRefundIDEqualFold applies the EqualFold predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDEqualFold(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldEqualFold(FieldUpstreamRefundID, v))
+}
+
+// UpstreamRefundIDContainsFold applies the ContainsFold predicate on the "upstream_refund_id" field.
+func UpstreamRefundIDContainsFold(v string) predicate.ProcurementOrder {
+	return predicate.ProcurementOrder(sql.FieldContainsFold(FieldUpstreamRefundID, v))
 }
 
 // And groups predicates with the AND operator between them.

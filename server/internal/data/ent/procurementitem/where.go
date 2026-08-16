@@ -84,11 +84,6 @@ func UnitCost(v int64) predicate.ProcurementItem {
 	return predicate.ProcurementItem(sql.FieldEQ(FieldUnitCost, v))
 }
 
-// ReceivedContent applies equality check predicate on the "received_content" field. It's identical to ReceivedContentEQ.
-func ReceivedContent(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldEQ(FieldReceivedContent, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ProcurementItem {
 	return predicate.ProcurementItem(sql.FieldEQ(FieldCreatedAt, v))
@@ -352,46 +347,6 @@ func UnitCostLT(v int64) predicate.ProcurementItem {
 // UnitCostLTE applies the LTE predicate on the "unit_cost" field.
 func UnitCostLTE(v int64) predicate.ProcurementItem {
 	return predicate.ProcurementItem(sql.FieldLTE(FieldUnitCost, v))
-}
-
-// ReceivedContentEQ applies the EQ predicate on the "received_content" field.
-func ReceivedContentEQ(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldEQ(FieldReceivedContent, v))
-}
-
-// ReceivedContentNEQ applies the NEQ predicate on the "received_content" field.
-func ReceivedContentNEQ(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldNEQ(FieldReceivedContent, v))
-}
-
-// ReceivedContentIn applies the In predicate on the "received_content" field.
-func ReceivedContentIn(vs ...[]byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldIn(FieldReceivedContent, vs...))
-}
-
-// ReceivedContentNotIn applies the NotIn predicate on the "received_content" field.
-func ReceivedContentNotIn(vs ...[]byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldNotIn(FieldReceivedContent, vs...))
-}
-
-// ReceivedContentGT applies the GT predicate on the "received_content" field.
-func ReceivedContentGT(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldGT(FieldReceivedContent, v))
-}
-
-// ReceivedContentGTE applies the GTE predicate on the "received_content" field.
-func ReceivedContentGTE(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldGTE(FieldReceivedContent, v))
-}
-
-// ReceivedContentLT applies the LT predicate on the "received_content" field.
-func ReceivedContentLT(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldLT(FieldReceivedContent, v))
-}
-
-// ReceivedContentLTE applies the LTE predicate on the "received_content" field.
-func ReceivedContentLTE(v []byte) predicate.ProcurementItem {
-	return predicate.ProcurementItem(sql.FieldLTE(FieldReceivedContent, v))
 }
 
 // ReceivedContentIsNil applies the IsNil predicate on the "received_content" field.

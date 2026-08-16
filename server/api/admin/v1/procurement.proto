@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+service AdminProcurementService {
+  // ListProcurements 采购单列表（按状态过滤）。
+  rpc ListProcurements(ListProcurementsRequest) returns (ListProcurementsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/procurements" };
+  }
+  // GetProcurement 采购单详情（含采购项/密文行数）。
+  rpc GetProcurement(GetProcurementRequest) returns (ProcurementOrder) {
+    option (google.api.http) = { get: "/api/v1/admin/procurements/{id}" };
+  }
+  // RetryProcurement 手动重试（pending/submitted/polling 均可重新提交或推进轮询）。
+  rpc RetryProcurement(RetryProcurementRequest) returns (ProcurementOrder) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/procurements/{id}/retry"
+      body: "*"
+    };
+  }
+  // MarkProcurementManual 手动标记完成/转人工（人工拿货后回填）。
+  rpc MarkProcurementManual(MarkProcurementManualRequest) returns (ProcurementOrder) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/procurements/{id}/manual"
+      body: "*"
+    };
+  }
+}
+
+message ProcurementOrder {
+  uint64 id = 1;
+  uint64 order_item_id = 2;
+  uint64 connection_id = 3;
+  string upstream_order_id = 4;
+  string status = 5;        // pending | submitted | polling | fulfilled | rejected | refunding | refunded | manual
+  string fail_strategy = 6; // auto_refund | manual
+  int32 retry_count = 7;
+  int64 next_retry_at = 8;
+  int64 last_poll_at = 9;
+  string dedupe_key = 10;
+  string trace_id = 11;
+  string last_error = 12;
+  string upstream_refund_id = 13;
+  int32 item_quantity = 14;
+  int64 item_unit_cost = 15;
+  int32 received_cards = 16; // 已到手卡密行数（密文行数）
+  int64 created_at = 17;
+  int64 updated_at = 18;
+}
+
+message ListProcurementsRequest {
+  string status = 1; // 空 = 全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListProcurementsReply {
+  repeated ProcurementOrder procurements = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetProcurementRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message RetryProcurementRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message MarkProcurementManualRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string remark = 2;
+}

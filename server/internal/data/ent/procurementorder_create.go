@@ -166,6 +166,34 @@ func (_c *ProcurementOrderCreate) SetNillableTraceID(v *string) *ProcurementOrde
 	return _c
 }
 
+// SetLastError sets the "last_error" field.
+func (_c *ProcurementOrderCreate) SetLastError(v string) *ProcurementOrderCreate {
+	_c.mutation.SetLastError(v)
+	return _c
+}
+
+// SetNillableLastError sets the "last_error" field if the given value is not nil.
+func (_c *ProcurementOrderCreate) SetNillableLastError(v *string) *ProcurementOrderCreate {
+	if v != nil {
+		_c.SetLastError(*v)
+	}
+	return _c
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (_c *ProcurementOrderCreate) SetUpstreamRefundID(v string) *ProcurementOrderCreate {
+	_c.mutation.SetUpstreamRefundID(v)
+	return _c
+}
+
+// SetNillableUpstreamRefundID sets the "upstream_refund_id" field if the given value is not nil.
+func (_c *ProcurementOrderCreate) SetNillableUpstreamRefundID(v *string) *ProcurementOrderCreate {
+	if v != nil {
+		_c.SetUpstreamRefundID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ProcurementOrderCreate) SetID(v uint64) *ProcurementOrderCreate {
 	_c.mutation.SetID(v)
@@ -280,6 +308,11 @@ func (_c *ProcurementOrderCreate) check() error {
 			return &ValidationError{Name: "trace_id", err: fmt.Errorf(`ent: validator failed for field "ProcurementOrder.trace_id": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.UpstreamRefundID(); ok {
+		if err := procurementorder.UpstreamRefundIDValidator(v); err != nil {
+			return &ValidationError{Name: "upstream_refund_id", err: fmt.Errorf(`ent: validator failed for field "ProcurementOrder.upstream_refund_id": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -360,6 +393,14 @@ func (_c *ProcurementOrderCreate) createSpec() (*ProcurementOrder, *sqlgraph.Cre
 	if value, ok := _c.mutation.TraceID(); ok {
 		_spec.SetField(procurementorder.FieldTraceID, field.TypeString, value)
 		_node.TraceID = value
+	}
+	if value, ok := _c.mutation.LastError(); ok {
+		_spec.SetField(procurementorder.FieldLastError, field.TypeString, value)
+		_node.LastError = value
+	}
+	if value, ok := _c.mutation.UpstreamRefundID(); ok {
+		_spec.SetField(procurementorder.FieldUpstreamRefundID, field.TypeString, value)
+		_node.UpstreamRefundID = value
 	}
 	return _node, _spec
 }
@@ -584,6 +625,42 @@ func (u *ProcurementOrderUpsert) UpdateTraceID() *ProcurementOrderUpsert {
 // ClearTraceID clears the value of the "trace_id" field.
 func (u *ProcurementOrderUpsert) ClearTraceID() *ProcurementOrderUpsert {
 	u.SetNull(procurementorder.FieldTraceID)
+	return u
+}
+
+// SetLastError sets the "last_error" field.
+func (u *ProcurementOrderUpsert) SetLastError(v string) *ProcurementOrderUpsert {
+	u.Set(procurementorder.FieldLastError, v)
+	return u
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *ProcurementOrderUpsert) UpdateLastError() *ProcurementOrderUpsert {
+	u.SetExcluded(procurementorder.FieldLastError)
+	return u
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *ProcurementOrderUpsert) ClearLastError() *ProcurementOrderUpsert {
+	u.SetNull(procurementorder.FieldLastError)
+	return u
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (u *ProcurementOrderUpsert) SetUpstreamRefundID(v string) *ProcurementOrderUpsert {
+	u.Set(procurementorder.FieldUpstreamRefundID, v)
+	return u
+}
+
+// UpdateUpstreamRefundID sets the "upstream_refund_id" field to the value that was provided on create.
+func (u *ProcurementOrderUpsert) UpdateUpstreamRefundID() *ProcurementOrderUpsert {
+	u.SetExcluded(procurementorder.FieldUpstreamRefundID)
+	return u
+}
+
+// ClearUpstreamRefundID clears the value of the "upstream_refund_id" field.
+func (u *ProcurementOrderUpsert) ClearUpstreamRefundID() *ProcurementOrderUpsert {
+	u.SetNull(procurementorder.FieldUpstreamRefundID)
 	return u
 }
 
@@ -838,6 +915,48 @@ func (u *ProcurementOrderUpsertOne) UpdateTraceID() *ProcurementOrderUpsertOne {
 func (u *ProcurementOrderUpsertOne) ClearTraceID() *ProcurementOrderUpsertOne {
 	return u.Update(func(s *ProcurementOrderUpsert) {
 		s.ClearTraceID()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *ProcurementOrderUpsertOne) SetLastError(v string) *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *ProcurementOrderUpsertOne) UpdateLastError() *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *ProcurementOrderUpsertOne) ClearLastError() *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.ClearLastError()
+	})
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (u *ProcurementOrderUpsertOne) SetUpstreamRefundID(v string) *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.SetUpstreamRefundID(v)
+	})
+}
+
+// UpdateUpstreamRefundID sets the "upstream_refund_id" field to the value that was provided on create.
+func (u *ProcurementOrderUpsertOne) UpdateUpstreamRefundID() *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.UpdateUpstreamRefundID()
+	})
+}
+
+// ClearUpstreamRefundID clears the value of the "upstream_refund_id" field.
+func (u *ProcurementOrderUpsertOne) ClearUpstreamRefundID() *ProcurementOrderUpsertOne {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.ClearUpstreamRefundID()
 	})
 }
 
@@ -1258,6 +1377,48 @@ func (u *ProcurementOrderUpsertBulk) UpdateTraceID() *ProcurementOrderUpsertBulk
 func (u *ProcurementOrderUpsertBulk) ClearTraceID() *ProcurementOrderUpsertBulk {
 	return u.Update(func(s *ProcurementOrderUpsert) {
 		s.ClearTraceID()
+	})
+}
+
+// SetLastError sets the "last_error" field.
+func (u *ProcurementOrderUpsertBulk) SetLastError(v string) *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.SetLastError(v)
+	})
+}
+
+// UpdateLastError sets the "last_error" field to the value that was provided on create.
+func (u *ProcurementOrderUpsertBulk) UpdateLastError() *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.UpdateLastError()
+	})
+}
+
+// ClearLastError clears the value of the "last_error" field.
+func (u *ProcurementOrderUpsertBulk) ClearLastError() *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.ClearLastError()
+	})
+}
+
+// SetUpstreamRefundID sets the "upstream_refund_id" field.
+func (u *ProcurementOrderUpsertBulk) SetUpstreamRefundID(v string) *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.SetUpstreamRefundID(v)
+	})
+}
+
+// UpdateUpstreamRefundID sets the "upstream_refund_id" field to the value that was provided on create.
+func (u *ProcurementOrderUpsertBulk) UpdateUpstreamRefundID() *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.UpdateUpstreamRefundID()
+	})
+}
+
+// ClearUpstreamRefundID clears the value of the "upstream_refund_id" field.
+func (u *ProcurementOrderUpsertBulk) ClearUpstreamRefundID() *ProcurementOrderUpsertBulk {
+	return u.Update(func(s *ProcurementOrderUpsert) {
+		s.ClearUpstreamRefundID()
 	})
 }
 

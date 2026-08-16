@@ -11,6 +11,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
@@ -20,7 +21,7 @@ import (
 )
 
 // NewWorkerServer 构造（Redis 未配置时返回降级占位）。
-func NewWorkerServer(c *conf.Data, enq queue.Enqueuer, dp *data.Dispatcher, supplySync *supply.SyncService) *WorkerServer {
+func NewWorkerServer(c *conf.Data, enq queue.Enqueuer, dp *data.Dispatcher, supplySync *supply.SyncService, procureSvc *procurement.ProcureService) *WorkerServer {
 	w := &WorkerServer{dp: dp}
 	if c == nil || c.Redis == nil || c.Redis.Addr == "" || !enq.Enabled() {
 		log.Default().Info("worker.sync_mode", "msg", "无 Redis：SyncQueue 进程内消费，asynq 消费者未装配")
@@ -56,6 +57,10 @@ func NewWorkerServer(c *conf.Data, enq queue.Enqueuer, dp *data.Dispatcher, supp
 	// 非事件任务（M2）：货源同步（low 队列；payload {"task_id": N}）
 	w.mux.HandleFunc(supply.SyncTaskType, func(ctx context.Context, task *asynq.Task) error {
 		return supplySync.RunTask(ctx, task.Payload())
+	})
+	// M2：采购轮询（critical 队列；payload {"procurement_id": N}）
+	w.mux.HandleFunc(procurement.PollTaskType, func(ctx context.Context, task *asynq.Task) error {
+		return procureSvc.RunPollTask(ctx, task.Payload())
 	})
 	return w
 }

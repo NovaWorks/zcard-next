@@ -1176,6 +1176,103 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Payment'
+    /api/v1/admin/procurements:
+        get:
+            tags:
+                - AdminProcurementService
+            description: ListProcurements 采购单列表（按状态过滤）。
+            operationId: AdminProcurementService_ListProcurements
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListProcurementsReply'
+    /api/v1/admin/procurements/{id}:
+        get:
+            tags:
+                - AdminProcurementService
+            description: GetProcurement 采购单详情（含采购项/密文行数）。
+            operationId: AdminProcurementService_GetProcurement
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ProcurementOrder'
+    /api/v1/admin/procurements/{id}/manual:
+        post:
+            tags:
+                - AdminProcurementService
+            description: MarkProcurementManual 手动标记完成/转人工（人工拿货后回填）。
+            operationId: AdminProcurementService_MarkProcurementManual
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.MarkProcurementManualRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ProcurementOrder'
+    /api/v1/admin/procurements/{id}/retry:
+        post:
+            tags:
+                - AdminProcurementService
+            description: RetryProcurement 手动重试（pending/submitted/polling 均可重新提交或推进轮询）。
+            operationId: AdminProcurementService_RetryProcurement
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RetryProcurementRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ProcurementOrder'
     /api/v1/admin/products:
         get:
             tags:
@@ -3285,6 +3382,21 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.PremiumCardInfo'
                 total:
                     type: string
+        zcard.api.admin.v1.ListProcurementsReply:
+            type: object
+            properties:
+                procurements:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ProcurementOrder'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -3399,6 +3511,15 @@ components:
                 content:
                     type: string
                 logisticsNo:
+                    type: string
+                remark:
+                    type: string
+        zcard.api.admin.v1.MarkProcurementManualRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
                     type: string
                 remark:
                     type: string
@@ -3556,6 +3677,48 @@ components:
                 status:
                     type: string
             description: PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
+        zcard.api.admin.v1.ProcurementOrder:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderItemId:
+                    type: string
+                connectionId:
+                    type: string
+                upstreamOrderId:
+                    type: string
+                status:
+                    type: string
+                failStrategy:
+                    type: string
+                retryCount:
+                    type: integer
+                    format: int32
+                nextRetryAt:
+                    type: string
+                lastPollAt:
+                    type: string
+                dedupeKey:
+                    type: string
+                traceId:
+                    type: string
+                lastError:
+                    type: string
+                upstreamRefundId:
+                    type: string
+                itemQuantity:
+                    type: integer
+                    format: int32
+                itemUnitCost:
+                    type: string
+                receivedCards:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                updatedAt:
+                    type: string
         zcard.api.admin.v1.RefreshTokenRequest:
             required:
                 - refreshToken
@@ -3586,6 +3749,13 @@ components:
                     type: string
             description: RefundOrder 退款单。
         zcard.api.admin.v1.RejectReviewRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.admin.v1.RetryProcurementRequest:
             required:
                 - id
             type: object
@@ -4560,6 +4730,8 @@ tags:
       description: AdminOrderService 订单管理（P1-03 T7）。
     - name: AdminPaymentService
       description: AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
+    - name: AdminProcurementService
+      description: AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。

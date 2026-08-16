@@ -1,4 +1,5 @@
-h1:XmF/N9bu6Vc+dzNmHjf6FR99xFZnvYfpi8JUTtJV8zA=
+h1:Z60FQMCr6zdB/JVZGZjA8ZeHndVgqiQBPnmEQ8xSc0g=
 20260815190726_init.sql h1:GXVlyZMy8rSWuQjzK1/sNKrbne6jIvQO3XNHN/eXhU0=
 20260815195912_add_failed_tasks.sql h1:wu1QwVZdSy5uW3lMD8TAej8SwE2sGL2dQbpw8udAXk4=
 20260815201554_v1_full_schema.sql h1:bP/kFN9FpThTsu1cQPXp3l7zAvafT2DRWypR1MuLYDQ=
+20260816151203_add_procurement_fields.sql h1:8LjW0ibDHv32yb6gmYqj7Pzz9tXlXlKh0n0dciR98eE=

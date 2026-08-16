@@ -20,6 +20,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
@@ -69,6 +70,19 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	outboxWriter := data.NewOutboxWriter(dataData)
 	syncService := supply.NewSyncService(supplyRepoImpl, productRepoImpl, enqueuer, outboxWriter, logger)
 	adminSupplyService := supply.NewAdminSupplyService(supplyRepoImpl, syncService)
+	procureRepo := procurement.NewProcureRepo(dataData)
+	gateway := supply.NewGateway(supplyRepoImpl)
+	cardCipher, err := bootstrap.NewCardCipher(securityConf)
+	if err != nil {
+		cleanup2()
+		cleanup()
+		return nil, nil, err
+	}
+	deliveryRepoImpl := fulfillment.NewDeliveryRepoImpl(dataData, cardCipher)
+	registry := payment.NewRegistry()
+	paymentRepoImpl := payment.NewPaymentRepoImpl(dataData, box, registry)
+	procureService := procurement.NewProcureService(procureRepo, gateway, productRepoImpl, cardCipher, deliveryRepoImpl, paymentRepoImpl, outboxWriter, enqueuer, logger)
+	adminProcurementService := procurement.NewAdminProcurementService(procureRepo, procureService)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
 	adminUserService := authz.NewAdminUserService(adminUserRepoImpl, directory, roleRepoImpl)
@@ -81,12 +95,6 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminCouponService := coupon.NewAdminCouponService(couponRepoImpl)
 	dashboardRepoImpl := dashboard.NewDashboardRepoImpl(dataData)
 	adminDashboardService := dashboard.NewAdminDashboardService(dashboardRepoImpl)
-	cardCipher, err := bootstrap.NewCardCipher(securityConf)
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
 	cardRepoImpl := inventory.NewCardRepoImpl(dataData, cardCipher)
 	adminInventoryService := inventory.NewAdminInventoryService(cardRepoImpl, dataData)
 	generator, err := bootstrap.NewIDGenerator()
@@ -95,27 +103,24 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 		cleanup()
 		return nil, nil, err
 	}
-	orderUsecase := order.NewOrderUsecaseDep(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl)
+	orderUsecase := order.NewOrderUsecaseDep(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl, outboxWriter)
 	adminOrderService := order.NewAdminOrderService(orderUsecase, dataData)
 	storeOrderService := order.NewStoreOrderService(orderUsecase)
-	registry := payment.NewRegistry()
-	paymentRepoImpl := payment.NewPaymentRepoImpl(dataData, box, registry)
 	adminPaymentService := payment.NewAdminPaymentService(paymentRepoImpl, dataData)
 	storePaymentService := payment.NewStorePaymentService(paymentRepoImpl, dataData)
 	walletRepoImpl := wallet.NewWalletRepoImpl(dataData)
 	storeWalletService := wallet.NewStoreWalletService(walletRepoImpl, dataData)
 	adminWalletService := wallet.NewAdminWalletService(walletRepoImpl, dataData)
-	deliveryRepoImpl := fulfillment.NewDeliveryRepoImpl(dataData, cardCipher)
 	storeDeliveryService := fulfillment.NewStoreDeliveryService(deliveryRepoImpl)
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, adminSupplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, adminSupplyService, adminProcurementService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService)
-	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService)
+	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService, procureService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
-	cron := bootstrap.NewCron(syncService)
+	cron := bootstrap.NewCron(syncService, procureService)
 	runMode := provideRunMode()
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
-	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dispatcher, procureService)
 	return app, func() {
 		cleanup2()
 		cleanup()

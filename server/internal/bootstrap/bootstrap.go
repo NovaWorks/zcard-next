@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
@@ -43,6 +44,7 @@ var ProviderSet = wire.NewSet(
 	coupon.ProviderSet,
 	dashboard.ProviderSet,
 	supply.ProviderSet,
+	procurement.ProviderSet,
 	// M1 预告：order ↔ payment 破环点绑定（payment.OrderLifecycle ← order 实现）
-	// M2 预告：procurement/supplier；M3 预告：affiliate/reseller/ticket/notify/media/audit
+	// M3 预告：affiliate/reseller/ticket/notify/media/audit
 )

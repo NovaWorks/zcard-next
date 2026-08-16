@@ -38,6 +38,10 @@ const (
 	FieldDedupeKey = "dedupe_key"
 	// FieldTraceID holds the string denoting the trace_id field in the database.
 	FieldTraceID = "trace_id"
+	// FieldLastError holds the string denoting the last_error field in the database.
+	FieldLastError = "last_error"
+	// FieldUpstreamRefundID holds the string denoting the upstream_refund_id field in the database.
+	FieldUpstreamRefundID = "upstream_refund_id"
 	// Table holds the table name of the procurementorder in the database.
 	Table = "procurement_orders"
 )
@@ -57,6 +61,8 @@ var Columns = []string{
 	FieldLastPollAt,
 	FieldDedupeKey,
 	FieldTraceID,
+	FieldLastError,
+	FieldUpstreamRefundID,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -84,6 +90,8 @@ var (
 	DedupeKeyValidator func(string) error
 	// TraceIDValidator is a validator for the "trace_id" field. It is called by the builders before save.
 	TraceIDValidator func(string) error
+	// UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
+	UpstreamRefundIDValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -211,4 +219,14 @@ func ByDedupeKey(opts ...sql.OrderTermOption) OrderOption {
 // ByTraceID orders the results by the trace_id field.
 func ByTraceID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTraceID, opts...).ToFunc()
+}
+
+// ByLastError orders the results by the last_error field.
+func ByLastError(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastError, opts...).ToFunc()
+}
+
+// ByUpstreamRefundID orders the results by the upstream_refund_id field.
+func ByUpstreamRefundID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpstreamRefundID, opts...).ToFunc()
 }

@@ -40,8 +40,12 @@ type ProcurementOrder struct {
 	// 幂等键（order_item 派生）
 	DedupeKey string `json:"dedupe_key,omitempty"`
 	// TraceID holds the value of the "trace_id" field.
-	TraceID      string `json:"trace_id,omitempty"`
-	selectValues sql.SelectValues
+	TraceID string `json:"trace_id,omitempty"`
+	// 最近失败原因（重试/审计）
+	LastError string `json:"last_error,omitempty"`
+	// 上游退款单号（退款传导回填）
+	UpstreamRefundID string `json:"upstream_refund_id,omitempty"`
+	selectValues     sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -51,7 +55,7 @@ func (*ProcurementOrder) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case procurementorder.FieldID, procurementorder.FieldOrderItemID, procurementorder.FieldConnectionID, procurementorder.FieldRetryCount:
 			values[i] = new(sql.NullInt64)
-		case procurementorder.FieldUpstreamOrderID, procurementorder.FieldStatus, procurementorder.FieldFailStrategy, procurementorder.FieldDedupeKey, procurementorder.FieldTraceID:
+		case procurementorder.FieldUpstreamOrderID, procurementorder.FieldStatus, procurementorder.FieldFailStrategy, procurementorder.FieldDedupeKey, procurementorder.FieldTraceID, procurementorder.FieldLastError, procurementorder.FieldUpstreamRefundID:
 			values[i] = new(sql.NullString)
 		case procurementorder.FieldCreatedAt, procurementorder.FieldUpdatedAt, procurementorder.FieldNextRetryAt, procurementorder.FieldLastPollAt:
 			values[i] = new(sql.NullTime)
@@ -148,6 +152,18 @@ func (_m *ProcurementOrder) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.TraceID = value.String
 			}
+		case procurementorder.FieldLastError:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field last_error", values[i])
+			} else if value.Valid {
+				_m.LastError = value.String
+			}
+		case procurementorder.FieldUpstreamRefundID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field upstream_refund_id", values[i])
+			} else if value.Valid {
+				_m.UpstreamRefundID = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -219,6 +235,12 @@ func (_m *ProcurementOrder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("trace_id=")
 	builder.WriteString(_m.TraceID)
+	builder.WriteString(", ")
+	builder.WriteString("last_error=")
+	builder.WriteString(_m.LastError)
+	builder.WriteString(", ")
+	builder.WriteString("upstream_refund_id=")
+	builder.WriteString(_m.UpstreamRefundID)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -147,6 +147,8 @@ func (ProcurementOrder) Fields() []ent.Field {
 		field.Time("last_poll_at").SchemaType(mysqlTime).Optional().Comment("巡检扫描锚点"),
 		field.String("dedupe_key").MaxLen(120).Unique().Comment("幂等键（order_item 派生）"),
 		field.String("trace_id").MaxLen(64).Optional(),
+		field.Text("last_error").Optional().Comment("最近失败原因（重试/审计）"),
+		field.String("upstream_refund_id").MaxLen(80).Optional().Comment("上游退款单号（退款传导回填）"),
 	}
 }
 
@@ -172,7 +174,7 @@ func (ProcurementItem) Fields() []ent.Field {
 		field.String("upstream_sku").MaxLen(64).Default(""),
 		field.Int32("quantity"),
 		field.Int64("unit_cost").Default(0).Comment("单位成本（分）"),
-		field.Bytes("received_content").Optional().Comment("到手卡密密文（AES-GCM，零明文落盘）"),
+		field.JSON("received_content", []string{}).Optional().Comment("到手卡密密文（base64 行，AES-GCM，零明文落盘）"),
 	}
 }
 

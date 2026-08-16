@@ -12,6 +12,7 @@ package order
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -42,11 +44,12 @@ type OrderUsecase struct {
 	MemberRate memberlevelport.RateResolver
 	Coupon     couponport.CouponResolver
 	Catalog    catalogport.PricingResolver
+	Outbox     events.Writer // order.* 事件发布（M2：procurement 订阅 order.paid）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat}
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox}
 }
 
 // CreateOrderInput 下单输入。
@@ -346,7 +349,51 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, orderNo string) error {
 		SetEvent("paid").
 		SetOperator(orderstatusevent.OperatorSystem).
 		Save(ctx)
+	uc.publishPaid(ctx, client, o)
 	return nil
+}
+
+// publishPaid 发布 order.paid（P2-02 procurement 订阅；payload 含 upstream 项，
+// 消费方无需回查订单——跨模块查询受限）。
+func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *ent.Order) {
+	if uc.Outbox == nil {
+		return
+	}
+	items, err := client.OrderItem.Query().
+		Where(orderitem.OrderID(o.ID)).
+		All(ctx)
+	if err != nil {
+		return // 事件发布失败不阻断支付主流程（outbox 幂等，可后续补发）
+	}
+	type paidItem struct {
+		OrderItemID     uint64 `json:"order_item_id"`
+		ProductID       uint64 `json:"product_id"`
+		SkuID           uint64 `json:"sku_id"`
+		Quantity        int32  `json:"quantity"`
+		FulfillmentType string `json:"fulfillment_type"`
+	}
+	payload := map[string]any{
+		"order_no":   o.OrderNo,
+		"order_id":   o.ID,
+		"subsite_id": o.SubsiteID,
+		"items":      []paidItem{},
+	}
+	rows := []paidItem{}
+	for _, it := range items {
+		rows = append(rows, paidItem{
+			OrderItemID:     it.ID,
+			ProductID:       it.ProductID,
+			SkuID:           it.SkuID,
+			Quantity:        it.Quantity,
+			FulfillmentType: string(it.FulfillmentType),
+		})
+	}
+	payload["items"] = rows
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return
+	}
+	_ = uc.Outbox.Write(ctx, "order", events.OrderPaid, o.OrderNo, DedupeKey(o.OrderNo, "paid"), raw)
 }
 
 // CancelOrder 取消（pending 可取消；paid 后走退款）。

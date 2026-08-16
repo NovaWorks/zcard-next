@@ -88,6 +88,9 @@ func toPortProduct(row *ent.Product) port.Product {
 		DeliveryMode: string(row.DeliveryMode),
 		Status:       row.Status,
 		StockVisible: row.StockVisible,
+		// P2-02：货源信息（procurement 判定上游项）
+		UpstreamSourceID:    row.UpstreamSourceID,
+		UpstreamProductCode: row.UpstreamProductCode,
 	}
 }
 

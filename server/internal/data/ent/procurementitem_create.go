@@ -91,7 +91,7 @@ func (_c *ProcurementItemCreate) SetNillableUnitCost(v *int64) *ProcurementItemC
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (_c *ProcurementItemCreate) SetReceivedContent(v []byte) *ProcurementItemCreate {
+func (_c *ProcurementItemCreate) SetReceivedContent(v []string) *ProcurementItemCreate {
 	_c.mutation.SetReceivedContent(v)
 	return _c
 }
@@ -238,7 +238,7 @@ func (_c *ProcurementItemCreate) createSpec() (*ProcurementItem, *sqlgraph.Creat
 		_node.UnitCost = value
 	}
 	if value, ok := _c.mutation.ReceivedContent(); ok {
-		_spec.SetField(procurementitem.FieldReceivedContent, field.TypeBytes, value)
+		_spec.SetField(procurementitem.FieldReceivedContent, field.TypeJSON, value)
 		_node.ReceivedContent = value
 	}
 	return _node, _spec
@@ -372,7 +372,7 @@ func (u *ProcurementItemUpsert) AddUnitCost(v int64) *ProcurementItemUpsert {
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (u *ProcurementItemUpsert) SetReceivedContent(v []byte) *ProcurementItemUpsert {
+func (u *ProcurementItemUpsert) SetReceivedContent(v []string) *ProcurementItemUpsert {
 	u.Set(procurementitem.FieldReceivedContent, v)
 	return u
 }
@@ -532,7 +532,7 @@ func (u *ProcurementItemUpsertOne) UpdateUnitCost() *ProcurementItemUpsertOne {
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (u *ProcurementItemUpsertOne) SetReceivedContent(v []byte) *ProcurementItemUpsertOne {
+func (u *ProcurementItemUpsertOne) SetReceivedContent(v []string) *ProcurementItemUpsertOne {
 	return u.Update(func(s *ProcurementItemUpsert) {
 		s.SetReceivedContent(v)
 	})
@@ -861,7 +861,7 @@ func (u *ProcurementItemUpsertBulk) UpdateUnitCost() *ProcurementItemUpsertBulk 
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (u *ProcurementItemUpsertBulk) SetReceivedContent(v []byte) *ProcurementItemUpsertBulk {
+func (u *ProcurementItemUpsertBulk) SetReceivedContent(v []string) *ProcurementItemUpsertBulk {
 	return u.Update(func(s *ProcurementItemUpsert) {
 		s.SetReceivedContent(v)
 	})

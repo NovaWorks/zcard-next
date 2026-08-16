@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
@@ -112,8 +113,14 @@ func (_u *ProcurementItemUpdate) AddUnitCost(v int64) *ProcurementItemUpdate {
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (_u *ProcurementItemUpdate) SetReceivedContent(v []byte) *ProcurementItemUpdate {
+func (_u *ProcurementItemUpdate) SetReceivedContent(v []string) *ProcurementItemUpdate {
 	_u.mutation.SetReceivedContent(v)
+	return _u
+}
+
+// AppendReceivedContent appends value to the "received_content" field.
+func (_u *ProcurementItemUpdate) AppendReceivedContent(v []string) *ProcurementItemUpdate {
+	_u.mutation.AppendReceivedContent(v)
 	return _u
 }
 
@@ -211,10 +218,15 @@ func (_u *ProcurementItemUpdate) sqlSave(ctx context.Context) (_node int, err er
 		_spec.AddField(procurementitem.FieldUnitCost, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.ReceivedContent(); ok {
-		_spec.SetField(procurementitem.FieldReceivedContent, field.TypeBytes, value)
+		_spec.SetField(procurementitem.FieldReceivedContent, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedReceivedContent(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, procurementitem.FieldReceivedContent, value)
+		})
 	}
 	if _u.mutation.ReceivedContentCleared() {
-		_spec.ClearField(procurementitem.FieldReceivedContent, field.TypeBytes)
+		_spec.ClearField(procurementitem.FieldReceivedContent, field.TypeJSON)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -320,8 +332,14 @@ func (_u *ProcurementItemUpdateOne) AddUnitCost(v int64) *ProcurementItemUpdateO
 }
 
 // SetReceivedContent sets the "received_content" field.
-func (_u *ProcurementItemUpdateOne) SetReceivedContent(v []byte) *ProcurementItemUpdateOne {
+func (_u *ProcurementItemUpdateOne) SetReceivedContent(v []string) *ProcurementItemUpdateOne {
 	_u.mutation.SetReceivedContent(v)
+	return _u
+}
+
+// AppendReceivedContent appends value to the "received_content" field.
+func (_u *ProcurementItemUpdateOne) AppendReceivedContent(v []string) *ProcurementItemUpdateOne {
+	_u.mutation.AppendReceivedContent(v)
 	return _u
 }
 
@@ -449,10 +467,15 @@ func (_u *ProcurementItemUpdateOne) sqlSave(ctx context.Context) (_node *Procure
 		_spec.AddField(procurementitem.FieldUnitCost, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.ReceivedContent(); ok {
-		_spec.SetField(procurementitem.FieldReceivedContent, field.TypeBytes, value)
+		_spec.SetField(procurementitem.FieldReceivedContent, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedReceivedContent(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, procurementitem.FieldReceivedContent, value)
+		})
 	}
 	if _u.mutation.ReceivedContentCleared() {
-		_spec.ClearField(procurementitem.FieldReceivedContent, field.TypeBytes)
+		_spec.ClearField(procurementitem.FieldReceivedContent, field.TypeJSON)
 	}
 	_node = &ProcurementItem{config: _u.config}
 	_spec.Assign = _node.assignValues

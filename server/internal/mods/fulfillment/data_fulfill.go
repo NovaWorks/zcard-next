@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 )
@@ -427,4 +428,58 @@ func maskContent(plain string) string {
 		return "****"
 	}
 	return "****" + plain[len(plain)-4:]
+}
+
+// ── T5（P2-02）上游采购交付出口 ─────────────────────────────
+
+// AttachUpstreamDelivery 上游卡密交付（P2-02 T4 交付出口）：
+// 入参已是密文（procurement 侧 CardCipher.Seal 后透传），本层只负责：
+//  1. 写 cards（status=used，order_id 绑定——前台取货按 order 关联，与本地卡密同链路）
+//  2. 写 order_deliveries（card_id 引用 + 一次性令牌 + 掩码，无明文快照）
+// 幂等：同 order_item 已交付直接返回（procurement 侧也以采购单状态机兜底）。
+func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []port.UpstreamDeliveryItem) error {
+	client := data.Client(ctx, r.data)
+
+	// 幂等：该 order_item 已有上游交付记录（card_id 关联）→ 直接返回
+	exists, err := client.OrderDelivery.Query().
+		Where(orderdelivery.ItemID(itemID)).
+		Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	deliveredAt := time.Now().UTC()
+	for _, it := range items {
+		// 上游卡密以「已用卡」形态入库（不进入可售库存池；防超卖语义不受影响）
+		c, err := client.Card.Create().
+			SetProductID(productID).
+			SetSubsiteID(0).
+			SetContent(it.SealedContent).
+			SetContentHash(it.ContentHash).
+			SetStatus(card.StatusUsed).
+			SetOrderID(orderID).
+			SetUsedAt(deliveredAt).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("fulfillment.UPSTREAM_CARD_CREATE_FAILED: %w", err)
+		}
+		token := randomToken()
+		_, err = client.OrderDelivery.Create().
+			SetOrderID(orderID).
+			SetItemID(itemID).
+			SetCardID(c.ID).
+			SetDeliveryTokenHash(hashToken(token)).
+			SetDeliveredMode(orderdelivery.DeliveredModeStatus).
+			SetDeliveredBy(0). // auto（上游采购交付）
+			SetFetchCount(0).
+			SetDeliveredAt(deliveredAt).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("fulfillment.UPSTREAM_DELIVERY_CREATE_FAILED: %w", err)
+		}
+	}
+	return nil
 }

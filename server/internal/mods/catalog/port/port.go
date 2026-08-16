@@ -20,6 +20,9 @@ type Product struct {
 	DeliveryMode string      // status / delete
 	Status       int8        // 1=上架 0=下架 2=隐藏
 	StockVisible bool
+	// 货源信息（P2-02 procurement 消费：判定上游项与提交采购）
+	UpstreamSourceID    uint64 // 0 = 自营
+	UpstreamProductCode string
 }
 
 // Control 自定义控件 DTO（下单表单渲染）。

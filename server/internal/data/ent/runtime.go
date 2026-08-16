@@ -1371,6 +1371,10 @@ func init() {
 	procurementorderDescTraceID := procurementorderFields[10].Descriptor()
 	// procurementorder.TraceIDValidator is a validator for the "trace_id" field. It is called by the builders before save.
 	procurementorder.TraceIDValidator = procurementorderDescTraceID.Validators[0].(func(string) error)
+	// procurementorderDescUpstreamRefundID is the schema descriptor for upstream_refund_id field.
+	procurementorderDescUpstreamRefundID := procurementorderFields[12].Descriptor()
+	// procurementorder.UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
+	procurementorder.UpstreamRefundIDValidator = procurementorderDescUpstreamRefundID.Validators[0].(func(string) error)
 	productMixin := schema.Product{}.Mixin()
 	productMixinFields0 := productMixin[0].Fields()
 	_ = productMixinFields0

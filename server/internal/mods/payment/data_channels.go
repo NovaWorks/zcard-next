@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
 // PaymentRepoImpl 支付仓储。
@@ -298,4 +299,21 @@ func ToRefundPB(rf *ent.RefundOrder, orderNo string) *adminv1.RefundOrder {
 		Status: string(rf.Status), Reason: rf.Reason,
 		UpstreamRefundId: rf.UpstreamRefundID,
 	}
+}
+
+// RefundOrder 订单退款入口（P2-02 procurement 失败策略消费，通道 A）：
+// 按订单创建退款单（channel=upstream），订单 refund 流转由 payment 现有编排驱动。
+func (r *PaymentRepoImpl) RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error {
+	if amount <= 0 {
+		o, err := data.Client(ctx, r.data).Order.Get(ctx, orderID)
+		if err != nil {
+			return fmt.Errorf("payment: 退款订单不存在: %w", err)
+		}
+		amount = money.Cents(o.TotalAmount)
+	}
+	if amount <= 0 {
+		return fmt.Errorf("payment: 退款金额必须为正")
+	}
+	_, err := r.CreateRefund(ctx, orderID, int64(amount), string(refundorder.ChannelUpstream), reason)
+	return err
 }

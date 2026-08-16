@@ -67,6 +67,13 @@ type Refunder interface {
 	Refund(ctx context.Context, gatewayOrderNo string, amount money.Cents, reason string, cfg json.RawMessage) error
 }
 
+// OrderRefunder 订单退款入口（P2-02 procurement 失败策略消费，通道 A）：
+// 按订单创建退款单（channel=upstream：货源采购失败自动退款），
+// 由 payment 模块驱动订单 refund 流转。
+type OrderRefunder interface {
+	RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error
+}
+
 // Registry 渠道注册表（按 (provider, channel) 路由；支付渠道配置存 payment_channels）。
 type Registry interface {
 	Register(p Provider)

@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,8 +30,8 @@ type ProcurementItem struct {
 	Quantity int32 `json:"quantity,omitempty"`
 	// 单位成本（分）
 	UnitCost int64 `json:"unit_cost,omitempty"`
-	// 到手卡密密文（AES-GCM，零明文落盘）
-	ReceivedContent []byte `json:"received_content,omitempty"`
+	// 到手卡密密文（base64 行，AES-GCM，零明文落盘）
+	ReceivedContent []string `json:"received_content,omitempty"`
 	selectValues    sql.SelectValues
 }
 
@@ -107,8 +108,10 @@ func (_m *ProcurementItem) assignValues(columns []string, values []any) error {
 		case procurementitem.FieldReceivedContent:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field received_content", values[i])
-			} else if value != nil {
-				_m.ReceivedContent = *value
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.ReceivedContent); err != nil {
+					return fmt.Errorf("unmarshal field received_content: %w", err)
+				}
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])

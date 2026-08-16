@@ -1216,7 +1216,7 @@ var (
 		{Name: "upstream_sku", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "quantity", Type: field.TypeInt32},
 		{Name: "unit_cost", Type: field.TypeInt64, Default: 0},
-		{Name: "received_content", Type: field.TypeBytes, Nullable: true},
+		{Name: "received_content", Type: field.TypeJSON, Nullable: true},
 	}
 	// ProcurementItemsTable holds the schema information for the "procurement_items" table.
 	ProcurementItemsTable = &schema.Table{
@@ -1246,6 +1246,8 @@ var (
 		{Name: "last_poll_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "dedupe_key", Type: field.TypeString, Unique: true, Size: 120},
 		{Name: "trace_id", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "last_error", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "upstream_refund_id", Type: field.TypeString, Nullable: true, Size: 80},
 	}
 	// ProcurementOrdersTable holds the schema information for the "procurement_orders" table.
 	ProcurementOrdersTable = &schema.Table{

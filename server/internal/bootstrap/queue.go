@@ -12,6 +12,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
@@ -41,12 +42,10 @@ func NewEnqueuer(c *conf.Data, dp *data.Dispatcher, dead *data.FailedTaskWriter,
 	return sq, func() {}, nil
 }
 
-// NewDispatcher 消费分发器（事件处理器注册点：M1 的 fulfillment/payment/wallet 在此 Register）。
+// NewDispatcher 消费分发器（事件处理器注册点）。
+// 订阅注册在 cmd/zcard newApp 装配（wire 破环：Dispatcher → ProcureService → Enqueuer → Dispatcher）。
 func NewDispatcher(d *data.Data, logger *slog.Logger) *data.Dispatcher {
-	dp := data.NewDispatcher(d, logger)
-	// M1：dp.Register(data.HandlerReg{Consumer: "fulfillment.order", Type: events.OrderPaid, Fn: ...})
-	// M1：周期任务（订单超时取消等）在 NewCron 内注册
-	return dp
+	return data.NewDispatcher(d, logger)
 }
 
 // NewOutboxRelay relay 构造（生命周期由 server.BackgroundServer 托管）。
@@ -55,12 +54,13 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService) *queue.Cron {
 	c := queue.NewCron()
 	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
 		supplySync.PingAllActive(ctx)
 	})
-	// M2 预告：procurement 巡检（每 30 分钟拉 polling/submitted 单）+ outbox 死信告警
+	// M2：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
+	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
 	return c
 }
