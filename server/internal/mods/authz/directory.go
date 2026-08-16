@@ -242,3 +242,12 @@ var domainLabels = map[string]string{
 	"audit":       "审计",
 	"system":      "系统",
 }
+
+// All 返回全部权限点声明（审计路径映射等消费方使用）。
+func (d *Directory) All() []Perm {
+	out := make([]Perm, 0, len(d.perms))
+	for _, p := range d.perms {
+		out = append(out, p)
+	}
+	return out
+}

@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sync"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -96,6 +97,15 @@ func NewHTTPServer(
 		// P2-03：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
 		// 仅 /api/supply/*，Ping 免签名；不挂 JWT，架构测试规则 9）
 		khttp.Filter(supplier.SupplyAuthFilter(supplierRepo, 0)),
+		// P2-06：变更类 admin 操作审计（Filter 层——中间件拿不到原始请求；
+		// POST/PUT/DELETE 且 2xx；异步落库失败不阻断）
+		khttp.Filter(audit.OpAuditFilter(auditRepo,
+			func(op string) (string, bool) {
+				code, _, ok := dir.PermissionForOp(op)
+				return code, ok
+			},
+			func(r *http.Request) string { return adminOpOfPath(r) },
+		)),
 		khttp.Middleware(
 			recovery.Recovery(),
 			logging.Server(log.Default()),
@@ -115,11 +125,6 @@ func NewHTTPServer(
 					return isAdminOperation(operation, dir)
 				}).
 				Build(),
-			// P2-06：变更类 admin 操作审计（POST/PUT/DELETE；写失败不阻断）
-			audit.OpAuditMiddleware(auditRepo, func(op string) (string, bool) {
-				code, _, ok := dir.PermissionForOp(op)
-				return code, ok
-			}),
 		),
 		khttp.Timeout(30 * time.Second),
 	}
@@ -174,6 +179,8 @@ func NewHTTPServer(
 	if err := reconcileRoutes(srv, dir); err != nil {
 		panic(err)
 	}
+	// P2-06：审计过滤器路径 → operation 映射缓存（对账通过后必命中）
+	buildAuditOpMap(dir)
 	registerPaymentCallback(srv, payRepo, d)
 
 	// TODO(M1b)：go:embed SPA（fullstack build tag；index.html 永不缓存，铁律 8）
@@ -202,6 +209,35 @@ func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 // 不挂 JWT（架构测试规则 9）；验签由渠道适配器完成（M1b 接真实渠道）。
 func registerPaymentCallback(srv *khttp.Server, payRepo *payment.PaymentRepoImpl, d *data.Data) {
 	payment.RegisterPaymentCallback(srv, payRepo, d)
+}
+
+// adminOpOfPath 请求路径 → Kratos operation（审计权限点查询用）。
+// 生成路由的 operation = /<package>.<Service>/<Method>；对账目录已建立
+// Method+Path → operation 映射，此处经 WalkRoute 反查（启动时缓存）。
+func adminOpOfPath(r *http.Request) string {
+	auditOpMu.Lock()
+	defer auditOpMu.Unlock()
+	if auditOpMap == nil {
+		return ""
+	}
+	return auditOpMap[r.Method+" "+r.URL.Path]
+}
+
+// auditOpMap (Method Path) → operation 缓存（NewHTTPServer 装配时填充）。
+var (
+	auditOpMap map[string]string
+	auditOpMu  sync.Mutex
+)
+
+// buildAuditOpMap 从对账目录构建路径映射。
+func buildAuditOpMap(dir *authz.Directory) {
+	m := map[string]string{}
+	for _, p := range dir.All() {
+		m[p.Method+" "+p.Path] = p.Op
+	}
+	auditOpMu.Lock()
+	auditOpMap = m
+	auditOpMu.Unlock()
 }
 
 func tenancyMainDomain(c *conf.Server) string { return "" } // 由 bootstrap 注入 Tenancy 配置后补齐
