@@ -10,6 +10,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/bootstrap"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
@@ -116,6 +117,8 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	settingsReader := notify.ProvideSettingsReader(repoImpl)
 	storeTicketService := ticket.NewStoreTicketService(ticketRepo, generator, portWallet, settingsReader, outboxWriter, logger)
 	adminTicketService := ticket.NewAdminTicketService(ticketRepo, outboxWriter)
+	commissionRepo := affiliate.NewCommissionRepo(dataData)
+	storeAffiliateService := affiliate.NewStoreAffiliateService(commissionRepo)
 	adminAuditService := audit.NewAdminAuditService(auditRepo)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
@@ -127,7 +130,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminMemberLevelService := memberlevel.NewAdminMemberLevelService(memberLevelRepoImpl)
 	adminCouponService := coupon.NewAdminCouponService(couponRepoImpl)
 	dashboardRepoImpl := dashboard.NewDashboardRepoImpl(dataData)
-	adminDashboardService := dashboard.NewAdminDashboardService(dashboardRepoImpl)
+	adminDashboardService := dashboard.NewAdminDashboardService(dashboardRepoImpl, commissionRepo)
 	adminInventoryService := inventory.NewAdminInventoryService(cardRepoImpl, dataData)
 	orderUsecase := order.NewOrderUsecaseDep(dataData, cardRepoImpl, generator, memberLevelRepoImpl, couponRepoImpl, productRepoImpl, outboxWriter, auditRepo, couponRepoImpl, couponRepoImpl, settingsReader)
 	adminOrderService := order.NewAdminOrderService(orderUsecase, dataData)
@@ -138,15 +141,16 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminWalletService := wallet.NewAdminWalletService(walletRepoImpl, dataData)
 	storeDeliveryService := fulfillment.NewStoreDeliveryService(deliveryRepoImpl)
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService, procureService, supplyAPIService, broadcastService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
 	visitCounter := audit.NewVisitCounter()
-	cron := bootstrap.NewCron(syncService, procureService, supplierRepoImpl, auditRepo, visitCounter, broadcastService, adminTicketService)
+	affiliateService := affiliate.NewAffiliateService(commissionRepo, portWallet, settingsReader, outboxWriter, logger)
+	cron := bootstrap.NewCron(syncService, procureService, supplierRepoImpl, auditRepo, visitCounter, broadcastService, adminTicketService, affiliateService)
 	runMode := provideRunMode()
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
-	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dispatcher, procureService, notifyDispatcher)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dispatcher, procureService, notifyDispatcher, affiliateService)
 	return app, func() {
 		cleanup2()
 		cleanup()

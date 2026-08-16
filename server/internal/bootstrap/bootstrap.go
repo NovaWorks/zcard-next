@@ -6,6 +6,7 @@ package bootstrap
 
 import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
@@ -55,6 +56,7 @@ var ProviderSet = wire.NewSet(
 	notify.ProviderSet,
 	audit.ProviderSet,
 	ticket.ProviderSet,
+	affiliate.ProviderSet,
 	// M1 预告：order ↔ payment 破环点绑定（payment.OrderLifecycle ← order 实现）
 	// M3 预告：affiliate/reseller/ticket/notify/media/audit
 )

@@ -103,6 +103,7 @@ func (r *OutboxRelay) deliver(ctx context.Context, row *ent.OutboxEvent) error {
 		EventID:     row.ID,
 		Type:        row.Type,
 		AggregateID: row.AggregateID,
+		Payload:     row.Payload, // 事件载荷必须随信封投递（消费方按载荷解析业务字段）
 	}
 	payload, err := json.Marshal(env)
 	if err != nil {

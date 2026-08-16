@@ -9,6 +9,14 @@ import "google/protobuf/empty.proto";
 
 // AdminDashboardService 工作台指标（P3-07 M1b v1）。
 service AdminDashboardService {
+  // GetReconciliation 对账总览。
+  rpc GetReconciliation(GetReconciliationRequest) returns (GetReconciliationReply) {
+    option (google.api.http) = { get: "/api/v1/admin/dashboard/reconciliation" };
+  }
+  // ListCommissions 佣金列表（P3-03 affiliate）。
+  rpc ListCommissions(ListCommissionsRequest) returns (ListCommissionsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/affiliate/commissions" };
+  }
   rpc GetDashboard(google.protobuf.Empty) returns (DashboardReply) {
     option (google.api.http) = { get: "/api/v1/admin/dashboard" };
   }
@@ -39,4 +47,51 @@ message DashboardReply {
   DashboardStat last30d = 3;
   repeated DashboardTrendPoint trend = 4;
   repeated DashboardTopProduct top_products = 5;
+}
+
+// ListCommissions 佣金管理列表（P3-03）。
+message ListCommissionsRequest {
+  string status = 1; // pending_confirm | available | withdrawn | reversed；空=全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message AdminCommission {
+  uint64 id = 1;
+  uint64 order_id = 2;
+  uint64 buyer_id = 3;
+  uint64 referrer_id = 4;
+  int32 tier = 5;
+  double rate = 6;
+  int64 base_amount = 7;
+  int64 amount = 8;
+  string status = 9;
+  int64 available_at = 10;
+  int64 created_at = 11;
+}
+
+message ListCommissionsReply {
+  repeated AdminCommission commissions = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// GetReconciliation 对账总览（P3-07：订单×支付×佣金三向核对基础报表）。
+message GetReconciliationRequest {
+  string date = 1; // yyyymmdd；空 = 最新
+}
+
+message ReconciliationSummary {
+  string date = 1;
+  int64 order_paid_total = 2;     // 当日已支付订单额（分）
+  int64 payment_success_total = 3; // 当日支付单成功额（分）
+  int64 wallet_recharge_total = 4; // 当日钱包充值（分）
+  int64 commission_total = 5;      // 当日佣金计提（分）
+  int64 order_count = 6;
+  int64 mismatch_count = 7;        // 订单/支付额差异数（>0 需人工）
+}
+
+message GetReconciliationReply {
+  ReconciliationSummary summary = 1;
 }

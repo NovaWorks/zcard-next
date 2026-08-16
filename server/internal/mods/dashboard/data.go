@@ -9,8 +9,11 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 )
 
 // Metric 统计项。
@@ -192,3 +195,95 @@ func (r *DashboardRepoImpl) GetTopProducts(ctx context.Context) ([]TopProduct, e
 }
 
 var _ = ent.Asc // 保持引用
+
+// ReconciliationSummary 对账汇总（P3-07：订单×支付×充值×佣金四向基础核对）。
+type ReconciliationSummary struct {
+	Date                 string
+	OrderPaidTotal       int64
+	PaymentSuccessTotal  int64
+	WalletRechargeTotal  int64
+	CommissionTotal      int64
+	OrderCount           int64
+	MismatchCount        int64
+}
+
+// GetReconciliation 当日对账（口径：本地时区日界——运营对账口径；金额一律分）。
+func (r *DashboardRepoImpl) GetReconciliation(ctx context.Context, date string) (*ReconciliationSummary, error) {
+	var day time.Time
+	if d, err := time.ParseInLocation("20060102", date, time.Local); err == nil {
+		day = d
+	} else {
+		now := time.Now()
+		day = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	}
+	start := day.UTC()
+	end := day.AddDate(0, 0, 1).UTC()
+
+	client := data.Client(ctx, r.data)
+	out := &ReconciliationSummary{Date: day.Format("20060102")}
+
+	// 1) 当日已支付订单
+	orders, err := client.Order.Query().
+		Where(order.PaidAtGTE(start), order.PaidAtLT(end)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, o := range orders {
+		out.OrderPaidTotal += o.TotalAmount
+		out.OrderCount++
+	}
+
+	// 2) 当日支付单成功额
+	pays, err := client.Payment.Query().
+		Where(payment.PaidAtGTE(start), payment.PaidAtLT(end)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range pays {
+		out.PaymentSuccessTotal += p.ChargedAmount
+	}
+
+	// 3) 当日钱包充值（direction=in & type=recharge）
+	recharges, err := client.WalletTransaction.Query().
+		Where(
+			wallettransaction.CreatedAtGTE(start),
+			wallettransaction.CreatedAtLT(end),
+			wallettransaction.DirectionEQ("in"),
+			wallettransaction.TypeEQ("recharge"),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, w := range recharges {
+		out.WalletRechargeTotal += w.Amount
+	}
+
+	// 4) 当日佣金计提（正佣金）
+	commissions, err := client.AffiliateCommission.Query().
+		Where(
+			affiliatecommission.CreatedAtGTE(start),
+			affiliatecommission.CreatedAtLT(end),
+			affiliatecommission.AmountGT(0),
+		).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range commissions {
+		out.CommissionTotal += c.Amount
+	}
+
+	// 5) 差异：订单额 vs 支付单额（余额支付订单会天然差异——差额 = 余额支付部分 + 手续费；
+	// 报表层只报差异数，人工判读）
+	diff := out.OrderPaidTotal - out.PaymentSuccessTotal - out.WalletRechargeTotal
+	if diff < 0 {
+		diff = -diff
+	}
+	if diff > 0 {
+		out.MismatchCount = 1 // 汇总级差异标记（明细级对账 M4 reconciliation_jobs）
+	}
+	return out, nil
+}

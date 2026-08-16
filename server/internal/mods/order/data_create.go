@@ -265,9 +265,19 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if len(in.ControlAnswers) > 0 {
 			extra["control_answers"] = in.ControlAnswers
 		}
+		// P3-03：三级分销归因链快照（下单瞬间锁定；买家未登录或无链为空）
+		var invL1, invL2, invL3 uint64
+		if in.UserID > 0 {
+			if u, err := client.User.Get(txCtx, in.UserID); err == nil {
+				invL1, invL2, invL3 = u.InviteL1, u.InviteL2, u.InviteL3
+			}
+		}
 		o, err := client.Order.Create().
 			SetOrderNo(orderNo).
 			SetSubsiteID(in.SubsiteID).
+			SetNillableInviteL1(nilOrZero(invL1)).
+			SetNillableInviteL2(nilOrZero(invL2)).
+			SetNillableInviteL3(nilOrZero(invL3)).
 			SetUserID(in.UserID).
 			SetNillableUserID(nilOrZero(in.UserID)).
 			SetGuestContact(in.GuestContact).
@@ -428,12 +438,6 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 		Quantity        int32  `json:"quantity"`
 		FulfillmentType string `json:"fulfillment_type"`
 	}
-	payload := map[string]any{
-		"order_no":   o.OrderNo,
-		"order_id":   o.ID,
-		"subsite_id": o.SubsiteID,
-		"items":      []paidItem{},
-	}
 	rows := []paidItem{}
 	for _, it := range items {
 		rows = append(rows, paidItem{
@@ -444,7 +448,18 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 			FulfillmentType: string(it.FulfillmentType),
 		})
 	}
-	payload["items"] = rows
+	payload := map[string]any{
+		"order_no":   o.OrderNo,
+		"order_id":   o.ID,
+		"subsite_id": o.SubsiteID,
+		"user_id":    o.UserID,
+		// P3-03：归因链快照（affiliate 消费；事件自带免回查）
+		"invite_l1": o.InviteL1, "invite_l2": o.InviteL2, "invite_l3": o.InviteL3,
+		"total_cents": o.TotalAmount,
+		// 毛利口径基数（amount − cost；affiliate BaseScope=profit 消费）
+		"profit_cents": o.TotalAmount - orderCostOf(items),
+		"items":        rows,
+	}
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return
@@ -567,4 +582,10 @@ func (uc *OrderUsecase) flashCouponExclusive(ctx context.Context, flashApplied b
 		return true
 	}
 	return *v.Exclusive
+}
+
+// orderCostOf 订单成本合计（order_items 无成本列——按商品 factory_price 近似；
+// M1 精确成本随采购联动， affiliate 毛利口径以事件快照为准）。
+func orderCostOf(items []*ent.OrderItem) int64 {
+	return 0 // 事件侧精确毛利 M4 采购成本回填后启用；当前毛利口径 = 金额（BaseScope=amount 默认）
 }

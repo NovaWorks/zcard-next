@@ -6,6 +6,7 @@ import (
 	"context"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -14,12 +15,41 @@ import (
 // AdminDashboardService 服务。
 type AdminDashboardService struct {
 	adminv1.UnimplementedAdminDashboardServiceServer
-	repo *DashboardRepoImpl
+	repo       *DashboardRepoImpl
+	commission affiliateport.CommissionReader // P3-03 佣金列表（通道 A）
 }
 
 // NewAdminDashboardService 构造。
-func NewAdminDashboardService(repo *DashboardRepoImpl) *AdminDashboardService {
-	return &AdminDashboardService{repo: repo}
+func NewAdminDashboardService(repo *DashboardRepoImpl, commission affiliateport.CommissionReader) *AdminDashboardService {
+	return &AdminDashboardService{repo: repo, commission: commission}
+}
+
+// ListCommissions 佣金列表（P3-03；port 消费——跨模块零 ent 依赖）。
+func (s *AdminDashboardService) ListCommissions(ctx context.Context, req *adminv1.ListCommissionsRequest) (*adminv1.ListCommissionsReply, error) {
+	page := int(req.GetPage())
+	if page < 1 {
+		page = 1
+	}
+	size := int(req.GetPageSize())
+	if size < 1 {
+		size = 20
+	}
+	if size > 100 {
+		size = 100
+	}
+	rows, total, err := s.commission.ListCommissions(ctx, req.GetStatus(), page, size)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", err.Error())
+	}
+	reply := &adminv1.ListCommissionsReply{Total: total, Page: int32(page), PageSize: int32(size)}
+	for _, c := range rows {
+		reply.Commissions = append(reply.Commissions, &adminv1.AdminCommission{
+			Id: c.ID, OrderId: c.OrderID, BuyerId: c.BuyerID, ReferrerId: c.ReferrerID,
+			Tier: c.Tier, Rate: c.Rate, BaseAmount: c.BaseAmount, Amount: c.Amount,
+			Status: c.Status, AvailableAt: c.AvailableAt, CreatedAt: c.CreatedAt,
+		})
+	}
+	return reply, nil
 }
 
 // GetDashboard 工作台指标。
@@ -51,4 +81,23 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, _ *emptypb.Emp
 		})
 	}
 	return reply, nil
+}
+
+// GetReconciliation 对账总览（P3-07）。
+func (s *AdminDashboardService) GetReconciliation(ctx context.Context, req *adminv1.GetReconciliationRequest) (*adminv1.GetReconciliationReply, error) {
+	sum, err := s.repo.GetReconciliation(ctx, req.GetDate())
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", err.Error())
+	}
+	return &adminv1.GetReconciliationReply{
+		Summary: &adminv1.ReconciliationSummary{
+			Date: sum.Date,
+			OrderPaidTotal: sum.OrderPaidTotal,
+			PaymentSuccessTotal: sum.PaymentSuccessTotal,
+			WalletRechargeTotal: sum.WalletRechargeTotal,
+			CommissionTotal: sum.CommissionTotal,
+			OrderCount: sum.OrderCount,
+			MismatchCount: sum.MismatchCount,
+		},
+	}, nil
 }

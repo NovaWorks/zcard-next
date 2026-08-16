@@ -20,7 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminDashboardService_GetDashboard_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
+	AdminDashboardService_GetReconciliation_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
+	AdminDashboardService_ListCommissions_FullMethodName   = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
+	AdminDashboardService_GetDashboard_FullMethodName      = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
 )
 
 // AdminDashboardServiceClient is the client API for AdminDashboardService service.
@@ -29,6 +31,10 @@ const (
 //
 // AdminDashboardService 工作台指标（P3-07 M1b v1）。
 type AdminDashboardServiceClient interface {
+	// GetReconciliation 对账总览。
+	GetReconciliation(ctx context.Context, in *GetReconciliationRequest, opts ...grpc.CallOption) (*GetReconciliationReply, error)
+	// ListCommissions 佣金列表（P3-03 affiliate）。
+	ListCommissions(ctx context.Context, in *ListCommissionsRequest, opts ...grpc.CallOption) (*ListCommissionsReply, error)
 	GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DashboardReply, error)
 }
 
@@ -38,6 +44,26 @@ type adminDashboardServiceClient struct {
 
 func NewAdminDashboardServiceClient(cc grpc.ClientConnInterface) AdminDashboardServiceClient {
 	return &adminDashboardServiceClient{cc}
+}
+
+func (c *adminDashboardServiceClient) GetReconciliation(ctx context.Context, in *GetReconciliationRequest, opts ...grpc.CallOption) (*GetReconciliationReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetReconciliationReply)
+	err := c.cc.Invoke(ctx, AdminDashboardService_GetReconciliation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminDashboardServiceClient) ListCommissions(ctx context.Context, in *ListCommissionsRequest, opts ...grpc.CallOption) (*ListCommissionsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCommissionsReply)
+	err := c.cc.Invoke(ctx, AdminDashboardService_ListCommissions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminDashboardServiceClient) GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DashboardReply, error) {
@@ -56,6 +82,10 @@ func (c *adminDashboardServiceClient) GetDashboard(ctx context.Context, in *empt
 //
 // AdminDashboardService 工作台指标（P3-07 M1b v1）。
 type AdminDashboardServiceServer interface {
+	// GetReconciliation 对账总览。
+	GetReconciliation(context.Context, *GetReconciliationRequest) (*GetReconciliationReply, error)
+	// ListCommissions 佣金列表（P3-03 affiliate）。
+	ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error)
 	GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error)
 	mustEmbedUnimplementedAdminDashboardServiceServer()
 }
@@ -67,6 +97,12 @@ type AdminDashboardServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminDashboardServiceServer struct{}
 
+func (UnimplementedAdminDashboardServiceServer) GetReconciliation(context.Context, *GetReconciliationRequest) (*GetReconciliationReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReconciliation not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCommissions not implemented")
+}
 func (UnimplementedAdminDashboardServiceServer) GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDashboard not implemented")
 }
@@ -89,6 +125,42 @@ func RegisterAdminDashboardServiceServer(s grpc.ServiceRegistrar, srv AdminDashb
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminDashboardService_ServiceDesc, srv)
+}
+
+func _AdminDashboardService_GetReconciliation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReconciliationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).GetReconciliation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_GetReconciliation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).GetReconciliation(ctx, req.(*GetReconciliationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminDashboardService_ListCommissions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCommissionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).ListCommissions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_ListCommissions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).ListCommissions(ctx, req.(*ListCommissionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminDashboardService_GetDashboard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -116,6 +188,14 @@ var AdminDashboardService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminDashboardService",
 	HandlerType: (*AdminDashboardServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetReconciliation",
+			Handler:    _AdminDashboardService_GetReconciliation_Handler,
+		},
+		{
+			MethodName: "ListCommissions",
+			Handler:    _AdminDashboardService_ListCommissions_Handler,
+		},
 		{
 			MethodName: "GetDashboard",
 			Handler:    _AdminDashboardService_GetDashboard_Handler,

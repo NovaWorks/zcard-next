@@ -257,6 +257,34 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+    /api/v1/admin/affiliate/commissions:
+        get:
+            tags:
+                - AdminDashboardService
+            description: ListCommissions 佣金列表（P3-03 affiliate）。
+            operationId: AdminDashboardService_ListCommissions
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListCommissionsReply'
     /api/v1/admin/audit/blacklist:
         get:
             tags:
@@ -1138,6 +1166,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.DashboardReply'
+    /api/v1/admin/dashboard/reconciliation:
+        get:
+            tags:
+                - AdminDashboardService
+            description: GetReconciliation 对账总览。
+            operationId: AdminDashboardService_GetReconciliation
+            parameters:
+                - name: date
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GetReconciliationReply'
     /api/v1/admin/flash-sales:
         get:
             tags:
@@ -3333,6 +3379,72 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListWalletTxReply'
+    /api/v1/storefront/affiliate/commissions:
+        get:
+            tags:
+                - StoreAffiliateService
+            description: ListCommissions 佣金流水（正 + 负债行）。
+            operationId: StoreAffiliateService_ListCommissions
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListMyCommissionsReply'
+    /api/v1/storefront/affiliate/me:
+        get:
+            tags:
+                - StoreAffiliateService
+            description: MyAffiliate 推广码 + 统计（登录用户）。
+            operationId: StoreAffiliateService_MyAffiliate
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.MyAffiliateReply'
+    /api/v1/storefront/affiliate/team:
+        get:
+            tags:
+                - StoreAffiliateService
+            description: ListTeam 下级列表（脱敏用户名）。
+            operationId: StoreAffiliateService_ListTeam
+            parameters:
+                - name: tier
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListTeamReply'
     /api/v1/storefront/banners:
         get:
             tags:
@@ -3933,6 +4045,33 @@ components:
                 remark:
                     type: string
             description: Admin 员工（不含密码哈希等敏感字段）。
+        zcard.api.admin.v1.AdminCommission:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderId:
+                    type: string
+                buyerId:
+                    type: string
+                referrerId:
+                    type: string
+                tier:
+                    type: integer
+                    format: int32
+                rate:
+                    type: number
+                    format: double
+                baseAmount:
+                    type: string
+                amount:
+                    type: string
+                status:
+                    type: string
+                availableAt:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.admin.v1.AdminControl:
             type: object
             properties:
@@ -5041,6 +5180,11 @@ components:
                     items:
                         type: string
                     description: 权限点清单（如 order:list / card:view_content），前端据此生成菜单与按钮
+        zcard.api.admin.v1.GetReconciliationReply:
+            type: object
+            properties:
+                summary:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.ReconciliationSummary'
         zcard.api.admin.v1.GetTicketReply:
             type: object
             properties:
@@ -5224,6 +5368,21 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.CardInfo'
                 total:
                     type: string
+        zcard.api.admin.v1.ListCommissionsReply:
+            type: object
+            properties:
+                commissions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminCommission'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ListConnectionsReply:
             type: object
             properties:
@@ -5997,6 +6156,23 @@ components:
                 amountCents:
                     type: string
                 remark:
+                    type: string
+        zcard.api.admin.v1.ReconciliationSummary:
+            type: object
+            properties:
+                date:
+                    type: string
+                orderPaidTotal:
+                    type: string
+                paymentSuccessTotal:
+                    type: string
+                walletRechargeTotal:
+                    type: string
+                commissionTotal:
+                    type: string
+                orderCount:
+                    type: string
+                mismatchCount:
                     type: string
         zcard.api.admin.v1.RefreshTokenRequest:
             required:
@@ -6941,6 +7117,26 @@ components:
                     type: string
                 points:
                     type: string
+        zcard.api.storefront.v1.CommissionItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderId:
+                    type: string
+                tier:
+                    type: integer
+                    format: int32
+                baseAmount:
+                    type: string
+                amount:
+                    type: string
+                status:
+                    type: string
+                availableAt:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.storefront.v1.CreateOrderReply:
             type: object
             properties:
@@ -7130,6 +7326,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.StoreFlashSale'
+        zcard.api.storefront.v1.ListMyCommissionsReply:
+            type: object
+            properties:
+                commissions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.CommissionItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.ListMyCouponsReply:
             type: object
             properties:
@@ -7198,6 +7409,21 @@ components:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
                 page:
                     $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+        zcard.api.storefront.v1.ListTeamReply:
+            type: object
+            properties:
+                members:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.TeamMember'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.ListTxReply:
             type: object
             properties:
@@ -7229,6 +7455,29 @@ components:
                 fetchCount:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.MyAffiliateReply:
+            type: object
+            properties:
+                userId:
+                    type: string
+                inviteUrl:
+                    type: string
+                pendingCents:
+                    type: string
+                availableCents:
+                    type: string
+                withdrawnCents:
+                    type: string
+                totalCents:
+                    type: string
+                debtCents:
+                    type: string
+                teamL1:
+                    type: string
+                teamL2:
+                    type: string
+                teamL3:
+                    type: string
         zcard.api.storefront.v1.MyCoupon:
             type: object
             properties:
@@ -7504,6 +7753,18 @@ components:
                 name:
                     type: string
                 slug:
+                    type: string
+        zcard.api.storefront.v1.TeamMember:
+            type: object
+            properties:
+                userId:
+                    type: string
+                usernameMasked:
+                    type: string
+                tier:
+                    type: integer
+                    format: int32
+                joinedAt:
                     type: string
         zcard.api.storefront.v1.Ticket:
             type: object
@@ -7796,6 +8057,8 @@ tags:
       description: |-
         RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
          权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
+    - name: StoreAffiliateService
+      description: StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
     - name: StoreCatalogService
       description: |-
         StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。

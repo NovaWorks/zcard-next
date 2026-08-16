@@ -16,6 +16,7 @@ import (
 	supplyv1 "github.com/NovaWorks/zcard-next/server/api/supply/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
@@ -73,6 +74,7 @@ func NewHTTPServer(
 	couponStoreSvc *coupon.StoreCouponService,
 	ticketStoreSvc *ticket.StoreTicketService,
 	ticketAdminSvc *ticket.AdminTicketService,
+	affiliateStoreSvc *affiliate.StoreAffiliateService,
 	auditAdminSvc *audit.AdminAuditService,
 	auditRepo *audit.AuditRepo,
 	roleSvc *authz.RoleService,
@@ -178,6 +180,7 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreCouponServiceHTTPServer(srv, couponStoreSvc)
 	storefrontv1.RegisterStoreTicketServiceHTTPServer(srv, ticketStoreSvc)
 	adminv1.RegisterAdminTicketServiceHTTPServer(srv, ticketAdminSvc)
+	storefrontv1.RegisterStoreAffiliateServiceHTTPServer(srv, affiliateStoreSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

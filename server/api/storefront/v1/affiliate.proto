@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+service StoreAffiliateService {
+  // MyAffiliate 推广码 + 统计（登录用户）。
+  rpc MyAffiliate(google.protobuf.Empty) returns (MyAffiliateReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/affiliate/me" };
+  }
+  // ListTeam 下级列表（脱敏用户名）。
+  rpc ListTeam(ListTeamRequest) returns (ListTeamReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/affiliate/team" };
+  }
+  // ListCommissions 佣金流水（正 + 负债行）。
+  rpc ListCommissions(ListMyCommissionsRequest) returns (ListMyCommissionsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/affiliate/commissions" };
+  }
+}
+
+message MyAffiliateReply {
+  uint64 user_id = 1;          // 推广码 = user_id
+  string invite_url = 2;       // 邀请链接（?ref=）
+  int64 pending_cents = 3;     // 冻结中
+  int64 available_cents = 4;   // 可提
+  int64 withdrawn_cents = 5;   // 已提现
+  int64 total_cents = 6;       // 累计
+  int64 debt_cents = 7;        // 负债
+  int64 team_l1 = 8;           // 直推人数
+  int64 team_l2 = 9;
+  int64 team_l3 = 10;
+}
+
+message ListTeamRequest {
+  int32 tier = 1; // 1|2|3；空=全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message TeamMember {
+  uint64 user_id = 1;
+  string username_masked = 2; // 脱敏（a***z）
+  int32 tier = 3;
+  int64 joined_at = 4;
+}
+
+message ListTeamReply {
+  repeated TeamMember members = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListMyCommissionsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message CommissionItem {
+  uint64 id = 1;
+  uint64 order_id = 2;
+  int32 tier = 3;
+  int64 base_amount = 4;
+  int64 amount = 5;        // 负数 = 负债行
+  string status = 6;       // pending_confirm | available | withdrawn | reversed
+  int64 available_at = 7;
+  int64 created_at = 8;
+}
+
+message ListMyCommissionsReply {
+  repeated CommissionItem commissions = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}

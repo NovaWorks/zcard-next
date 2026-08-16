@@ -12,6 +12,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
@@ -65,7 +66,7 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService) *queue.Cron {
 	c := queue.NewCron()
 	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
@@ -88,5 +89,7 @@ func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService
 	c.AddEvery("notify.broadcast_scan", time.Minute, broadcastSvc.ScanDue)
 	// M3：工单 resolved 超 7 天自动关闭
 	c.AddEvery("ticket.autoclose", time.Hour, ticketAdmin.AutoCloseResolved)
+	// M3：佣金到期确认（冻结期过 → wallet 入账；负债行重试抵扣）
+	c.AddEvery("affiliate.confirm", time.Hour, affiliateSvc.ConfirmDue)
 	return c
 }

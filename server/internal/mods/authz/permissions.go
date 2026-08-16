@@ -204,6 +204,10 @@ func init() {
 		// ── 工作台（dashboard，P3-07 M1b）──────────────
 		Perm{Code: "dashboard:read", Desc: "查看工作台指标", Domain: "dashboard",
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetDashboard", Method: "GET", Path: "/api/v1/admin/dashboard"},
+		Perm{Code: "dashboard:read", Desc: "佣金列表", Domain: "dashboard",
+			Op: "zcard.api.admin.v1.AdminDashboardService/ListCommissions", Method: "GET", Path: "/api/v1/admin/affiliate/commissions"},
+		Perm{Code: "dashboard:read", Desc: "对账总览", Domain: "dashboard",
+			Op: "zcard.api.admin.v1.AdminDashboardService/GetReconciliation", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation"},
 
 		// ── 敏感权限点预登记（§5.20.4 防内部偷卡；路由 M1 落地）──
 		Perm{Code: "card:view_content", Desc: "查看完整卡密（需二次确认+审计）", Domain: "inventory", AdminOnly: true,
