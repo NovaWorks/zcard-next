@@ -25,11 +25,12 @@ import (
 type PaymentRepoImpl struct {
 	data   *data.Data
 	Cipher *crypto.Box // ZCARD_DATA_KEY
+	reg    *Registry   // 渠道 adapter 注册表
 }
 
 // NewPaymentRepoImpl 构造。
-func NewPaymentRepoImpl(d *data.Data, box *crypto.Box) *PaymentRepoImpl {
-	return &PaymentRepoImpl{data: d, Cipher: box}
+func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry) *PaymentRepoImpl {
+	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg}
 }
 
 // ── 渠道管理（T1）────────────────────────────────────────────

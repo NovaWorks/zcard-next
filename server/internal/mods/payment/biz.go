@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/adapter"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 )
 
@@ -19,21 +20,21 @@ func (e *ErrProviderUnknown) Error() string {
 	return fmt.Sprintf("payment: 渠道 %q 未注册", e.Provider)
 }
 
-// registry 渠道注册表（启动装配：各 adapter 自注册）。
-type registry struct {
+// Registry 渠道注册表（启动装配：各 adapter 自注册）。
+type Registry struct {
 	mu        sync.RWMutex
 	providers map[string]port.Provider
 }
 
 // Register 注册渠道 adapter（init/装配期调用）。
-func (r *registry) Register(p port.Provider) {
+func (r *Registry) Register(p port.Provider) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.providers[p.Type()] = p
 }
 
 // Provider 按渠道取 adapter。
-func (r *registry) Provider(provider string) (port.Provider, error) {
+func (r *Registry) Provider(provider string) (port.Provider, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	p, ok := r.providers[provider]
@@ -43,17 +44,24 @@ func (r *registry) Provider(provider string) (port.Provider, error) {
 	return p, nil
 }
 
-// NewRegistry 构造空注册表。
-func NewRegistry() *registry { return &registry{providers: map[string]port.Provider{}} }
+// NewRegistry 构造注册表并注册内置渠道 adapter（alipay/wechat/epay）。
+func NewRegistry() *Registry {
+	r := &Registry{providers: map[string]port.Provider{}}
+	// 内置渠道注册失败仅可能因实现缺陷（如重复 Type），这里直接 panic 暴露问题。
+	if err := adapter.RegisterAll(r); err != nil {
+		panic(err)
+	}
+	return r
+}
 
-var _ port.Registry = (*registry)(nil)
+var _ port.Registry = (*Registry)(nil)
 
 // PaymentUsecase 支付用例骨架（M1a 交付 CreatePayment/HandleCallback/退款编排）。
 type PaymentUsecase struct {
-	registry *registry
+	registry *Registry
 }
 
 // NewPaymentUsecase 构造。
-func NewPaymentUsecase(reg *registry) *PaymentUsecase {
+func NewPaymentUsecase(reg *Registry) *PaymentUsecase {
 	return &PaymentUsecase{registry: reg}
 }

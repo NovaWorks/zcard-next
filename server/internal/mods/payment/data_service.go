@@ -3,11 +3,14 @@ package payment
 // 支付服务（P1-04；admin 渠道/支付单/退款 + storefront 创建支付 + 回调入口）。
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -17,6 +20,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
@@ -126,10 +131,25 @@ func (s *AdminPaymentService) CapturePayment(ctx context.Context, req *adminv1.C
 	if err != nil {
 		return nil, err
 	}
-	// M1a：直接标记成功（wallet 渠道）；真实渠道 M1b 接 Capturer
-	fact := CallbackFact{
-		Channel: p.Channel, Amount: p.Amount, Currency: "CNY", Success: true,
-		ChannelOrderNo: fmt.Sprintf("manual-%d", p.ID),
+	// 真实渠道：走 Capturer 主动查单；不支持 Capturer 的渠道（wallet）保持直接标记成功
+	var fact CallbackFact
+	provider, perr := s.repo.reg.Provider(p.Channel)
+	if perr == nil {
+		if capr, ok := provider.(port.Capturer); ok {
+			ch, _ := data.Client(ctx, s.data).PaymentChannel.Query().Where(paymentchannel.Code(p.Channel)).Only(ctx)
+			f, err := capr.QueryPayment(ctx, p.ChannelOrderNo, s.repo.DecryptConfig(ch))
+			if err != nil {
+				return nil, errors.InternalServer("payment.CAPTURE_FAILED", "查单失败: "+err.Error())
+			}
+			if !f.Success {
+				return nil, errors.BadRequest("payment.NOT_PAID", "上游未支付，无法补单")
+			}
+			fact = CallbackFact{Channel: p.Channel, Amount: int64(f.Amount), Currency: f.Currency, Success: true, ChannelOrderNo: f.ChannelOrderNo}
+		} else {
+			fact = CallbackFact{Channel: p.Channel, Amount: p.Amount, Currency: "CNY", Success: true, ChannelOrderNo: fmt.Sprintf("manual-%d", p.ID)}
+		}
+	} else {
+		fact = CallbackFact{Channel: p.Channel, Amount: p.Amount, Currency: "CNY", Success: true, ChannelOrderNo: fmt.Sprintf("manual-%d", p.ID)}
 	}
 	if err := s.repo.HandleCallback(ctx, p.ID, fact); err != nil {
 		return nil, errors.InternalServer("payment.CAPTURE_FAILED", "补单失败: "+err.Error())
@@ -237,82 +257,172 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		}, nil
 	}
 
-	// 外部渠道：创建 pending 支付单，返回跳转信息（M1b 接真实适配器）
+	// 外部渠道：走 adapter 创建支付（返回收银台/二维码/参数包）
+	provider, err := s.repo.reg.Provider(ch.Driver)
+	if err != nil {
+		return nil, errors.BadRequest("payment.CHANNEL_UNSUPPORTED", "渠道驱动未实现: "+ch.Driver)
+	}
+	cfg := s.repo.DecryptConfig(ch)
+	if err := provider.ValidateConfig(cfg); err != nil {
+		return nil, errors.InternalServer("payment.CHANNEL_CONFIG_INVALID", "渠道配置无效: "+err.Error())
+	}
 	p, err := s.repo.CreatePayment(ctx, o.ID, ch.Code, o.TotalAmount, "")
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建支付失败")
 	}
+	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
+		OrderNo:       o.OrderNo,
+		Channel:       ch.Code,
+		Amount:        money.Cents(o.TotalAmount),
+		Subject:       "订单 " + o.OrderNo,
+		ReturnURL:     "",
+		NotifyBaseURL: "/payments/callback/" + ch.Code,
+		Config:        cfg,
+	})
+	if err != nil {
+		return nil, errors.InternalServer("payment.CREATE_FAILED", "发起支付失败: "+err.Error())
+	}
 	return &storefrontv1.CreatePaymentReply{
-		PaymentId: p.ID, Type: "redirect",
-		Payload: fmt.Sprintf("/payment/pending?id=%d&channel=%s", p.ID, ch.Code),
+		PaymentId: p.ID, Type: info.Type, Payload: string(info.Payload),
 	}, nil
 }
 
 // ── 回调路由（免鉴权——架构测试规则 9）────────────────────
 
-// RegisterPaymentCallback 支付回调入口（POST /payments/callback/{provider}）。
-// 不挂 JWT；验签由各渠道适配器完成（M1b 接入真实渠道后生效）。
+// RegisterPaymentCallback 支付回调入口（POST /payments/callback/{channel_code}）。
+// 不挂 JWT；验签由各渠道适配器完成。ACK 语义：验签失败 401，状态冲突 200，系统错误 500 触发重试。
 func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.Data) {
-	srv.Route("/payments").POST("/callback/{provider}", func(ctx khttp.Context) error {
-		provider := ctx.Vars().Get("provider")
+	srv.Route("/payments").POST("/callback/{channel}", func(ctx khttp.Context) error {
+		channelCode := ctx.Vars().Get("channel")
+		r := ctx.Request()
 
-		// 读取 raw body（上限 1MB）
+		// 1) 读 body（上限 1MB）
 		body := make([]byte, 0)
-		if ctx.Request().Body != nil {
-			b, err := io.ReadAll(io.LimitReader(ctx.Request().Body, 1<<20))
+		if r.Body != nil {
+			b, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 			if err != nil {
 				return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "body read failed"})
 			}
 			body = b
 		}
 
-		// M1a 框架：wallet 渠道直接处理；外部渠道 M1b 接适配器验签
-		var req struct {
-			PaymentID      uint64 `json:"payment_id"`
-			OrderNo        string `json:"order_no"`
-			Amount         int64  `json:"amount"`
-			ChannelOrderNo string `json:"channel_order_no"`
-			Success        bool   `json:"success"`
+		// 2) 查渠道（按 code；停用渠道拒绝）
+		ch, err := data.Client(ctx, d).PaymentChannel.Query().
+			Where(paymentchannel.Code(channelCode), paymentchannel.Enabled(true)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "channel not found"})
 		}
-		if err := json.Unmarshal(body, &req); err != nil {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid json"})
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 
-		if !req.Success {
+		// 3) 取 adapter + 解密凭据
+		provider, err := repo.reg.Provider(ch.Driver)
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "unsupported driver"})
+		}
+		cfg := repo.DecryptConfig(ch)
+
+		// 4) 解析回调为表单 map（表单 or XML）
+		form, err := parseCallbackForm(r, body)
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "parse failed"})
+		}
+
+		// 5) 验签 → CallbackFact
+		verifier, ok := provider.(port.CallbackVerifier)
+		if !ok {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "driver has no callback verifier"})
+		}
+		f, err := verifier.VerifyCallback(form, cfg)
+		if err != nil {
+			return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
+		}
+		if !f.Success {
 			return ctx.JSON(http.StatusOK, map[string]string{"status": "ignored"})
 		}
 
-		// 查支付单
+		// 6) 定位支付单（按单号或回填 channel_order_no）
 		var paymentID uint64
-		if req.PaymentID > 0 {
-			paymentID = req.PaymentID
-		} else if req.OrderNo != "" {
-			o, err := data.Client(ctx, d).Order.Query().Where(order.OrderNo(req.OrderNo)).Only(ctx)
-			if err != nil {
-				return ctx.JSON(http.StatusNotFound, map[string]string{"error": "order not found"})
+		if f.OrderNo != "" {
+			o, err := data.Client(ctx, d).Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
+			if err == nil {
+				p, err := data.Client(ctx, d).Payment.Query().
+					Where(payment.OrderID(o.ID), payment.Channel(channelCode)).Only(ctx)
+				if err == nil {
+					paymentID = p.ID
+				}
 			}
-			p, err := data.Client(ctx, d).Payment.Query().
-				Where(payment.OrderID(o.ID)).Only(ctx)
-			if err != nil {
-				return ctx.JSON(http.StatusNotFound, map[string]string{"error": "payment not found"})
-			}
-			paymentID = p.ID
 		}
 		if paymentID == 0 {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment_id or order_no required"})
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment not found"})
 		}
 
-		// 走回调管线
+		// 7) 走回调管线（四重校验 + 幂等 + markPaid）
 		fact := CallbackFact{
-			Channel: provider, Amount: req.Amount, Currency: "CNY",
-			Success: true, ChannelOrderNo: req.ChannelOrderNo,
+			Channel:        channelCode,
+			ChannelOrderNo: f.ChannelOrderNo,
+			OrderNo:        f.OrderNo,
+			Amount:         int64(f.Amount),
+			Currency:       f.Currency,
+			Success:        f.Success,
+			Raw:            f.Raw,
 		}
 		if err := repo.HandleCallback(ctx, paymentID, fact); err != nil {
-			// ACK 策略：系统错误 500 触发渠道重试
 			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 		return ctx.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
+}
+
+// parseCallbackForm 解析回调为扁平 map：XML（wechat）→ 元素名→文本；否则表单/查询串。
+func parseCallbackForm(r *http.Request, body []byte) (map[string]string, error) {
+	ct := r.Header.Get("Content-Type")
+	if strings.Contains(ct, "xml") {
+		return parseXMLMap(body)
+	}
+	_ = r.ParseForm()
+	m := map[string]string{}
+	for k := range r.Form {
+		m[k] = r.Form.Get(k)
+	}
+	// 若 body 是 JSON 但无表单（兼容旧测试 JSON 兜底），退化为 JSON 对象
+	if len(m) == 0 && len(body) > 0 {
+		var j map[string]any
+		if json.Unmarshal(body, &j) == nil {
+			for k, v := range j {
+				m[k] = fmt.Sprintf("%v", v)
+			}
+		}
+	}
+	return m, nil
+}
+
+// parseXMLMap 扁平 XML（wechat 回调 <xml><k>v</k>...</xml>）→ map。
+func parseXMLMap(body []byte) (map[string]string, error) {
+	dec := xml.NewDecoder(bytes.NewReader(body))
+	m := map[string]string{}
+	var cur string
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			cur = t.Name.Local
+		case xml.CharData:
+			if cur != "" {
+				m[cur] = string(t)
+			}
+		case xml.EndElement:
+			cur = ""
+		}
+	}
+	return m, nil
 }
 
 var _ = refundorder.ChannelWallet // 保持引用

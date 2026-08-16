@@ -19,7 +19,8 @@ type CreatePaymentRequest struct {
 	Subject        string
 	ReturnURL      string
 	NotifyBaseURL  string
-	IdempotencyKey string // 写接口幂等（§7.3）
+	IdempotencyKey string          // 写接口幂等（§7.3）
+	Config         json.RawMessage // 解密后的渠道凭据 JSON（每渠道独立，adapter 无状态）
 }
 
 // RedirectInfo 支付发起结果（收银台/二维码/参数包）。
@@ -53,20 +54,21 @@ type Webhooker interface {
 
 // CallbackVerifier 表单同步回调验签（epay/alipay 类）。
 type CallbackVerifier interface {
-	VerifyCallback(form map[string]string) (*CallbackFact, error)
+	VerifyCallback(form map[string]string, cfg json.RawMessage) (*CallbackFact, error)
 }
 
 // Capturer 主动查单补单（1.x「手动补单」的规范化）。
 type Capturer interface {
-	QueryPayment(ctx context.Context, gatewayOrderNo string) (*CallbackFact, error)
+	QueryPayment(ctx context.Context, gatewayOrderNo string, cfg json.RawMessage) (*CallbackFact, error)
 }
 
 // Refunder 原路退款（2.0 新增能力位，退款编排三通道之一）。
 type Refunder interface {
-	Refund(ctx context.Context, gatewayOrderNo string, amount money.Cents, reason string) error
+	Refund(ctx context.Context, gatewayOrderNo string, amount money.Cents, reason string, cfg json.RawMessage) error
 }
 
 // Registry 渠道注册表（按 (provider, channel) 路由；支付渠道配置存 payment_channels）。
 type Registry interface {
+	Register(p Provider)
 	Provider(provider string) (Provider, error)
 }
