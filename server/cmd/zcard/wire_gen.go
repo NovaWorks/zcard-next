@@ -12,6 +12,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/content"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/dashboard"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
@@ -93,6 +94,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	}
 	supplyAPIService := supplier.NewSupplyAPIService(supplierRepoImpl, productRepoImpl, cardRepoImpl, cardRepoImpl, enqueuer, generator, logger)
 	adminSupplierService := supplier.NewAdminSupplierService(supplierRepoImpl, supplyAPIService)
+	contentRepo := content.NewContentRepo(dataData)
+	adminContentService := content.NewAdminContentService(contentRepo)
+	storeContentService := content.NewStoreContentService(contentRepo)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
 	adminUserService := authz.NewAdminUserService(adminUserRepoImpl, directory, roleRepoImpl)
@@ -116,7 +120,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminWalletService := wallet.NewAdminWalletService(walletRepoImpl, dataData)
 	storeDeliveryService := fulfillment.NewStoreDeliveryService(deliveryRepoImpl)
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService, procureService, supplyAPIService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)

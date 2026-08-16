@@ -1,0 +1,249 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminContentService 内容管理（P2-04）：横幅/文章/分类 CRUD。
+// content_json 入库前经 sanitize（与商品描述同一策略）；slug 唯一。
+service AdminContentService {
+  // CreateBanner 创建横幅（时间窗/跳转类型）。
+  rpc CreateBanner(CreateBannerRequest) returns (Banner) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/content/banners"
+      body: "*"
+    };
+  }
+  // UpdateBanner 更新横幅。
+  rpc UpdateBanner(UpdateBannerRequest) returns (Banner) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/content/banners/{id}"
+      body: "*"
+    };
+  }
+  // DeleteBanner 删除横幅。
+  rpc DeleteBanner(DeleteBannerRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/content/banners/{id}"
+    };
+  }
+  // ListBanners 横幅列表（全量含停用）。
+  rpc ListBanners(ListBannersRequest) returns (ListBannersReply) {
+    option (google.api.http) = { get: "/api/v1/admin/content/banners" };
+  }
+  // CreatePost 创建文章（草稿/发布）。
+  rpc CreatePost(CreatePostRequest) returns (Post) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/content/posts"
+      body: "*"
+    };
+  }
+  // UpdatePost 更新文章。
+  rpc UpdatePost(UpdatePostRequest) returns (Post) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/content/posts/{id}"
+      body: "*"
+    };
+  }
+  // PublishPost 发布/取消发布（首发回填 published_at）。
+  rpc PublishPost(PublishPostRequest) returns (Post) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/content/posts/{id}/publish"
+      body: "*"
+    };
+  }
+  // DeletePost 删除文章。
+  rpc DeletePost(DeletePostRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/content/posts/{id}"
+    };
+  }
+  // ListPosts 文章列表（全量含草稿）。
+  rpc ListPosts(ListPostsRequest) returns (ListPostsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/content/posts" };
+  }
+  // CreateCategory 创建文章分类。
+  rpc CreateCategory(CreatePostCategoryRequest) returns (PostCategory) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/content/categories"
+      body: "*"
+    };
+  }
+  // UpdateCategory 更新分类。
+  rpc UpdateCategory(UpdatePostCategoryRequest) returns (PostCategory) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/content/categories/{id}"
+      body: "*"
+    };
+  }
+  // DeleteCategory 删除分类（存在文章时拒绝）。
+  rpc DeleteCategory(DeletePostCategoryRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/api/v1/admin/content/categories/{id}"
+    };
+  }
+  // ListCategories 分类列表。
+  rpc ListCategories(ListPostCategoriesAdminRequest) returns (ListPostCategoriesAdminReply) {
+    option (google.api.http) = { get: "/api/v1/admin/content/categories" };
+  }
+}
+
+// ── 横幅 ──────────────────────────────────────────────────
+
+message Banner {
+  uint64 id = 1;
+  string name = 2;
+  string position = 3;   // top | middle | bottom
+  string title_json = 4; // 多语言标题 {"zh_CN": "...", "en": "..."}
+  string image = 5;
+  string mobile_image = 6;
+  string link_type = 7;  // product | category | url | ad
+  string link_value = 8;
+  bool is_active = 9;
+  int64 start_at = 10;   // unix 秒；0 = 不限
+  int64 end_at = 11;
+  int32 sort = 12;
+  int64 created_at = 13;
+  int64 updated_at = 14;
+}
+
+message CreateBannerRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string position = 2 [(google.api.field_behavior) = REQUIRED];
+  string title_json = 3;
+  string image = 4 [(google.api.field_behavior) = REQUIRED];
+  string mobile_image = 5;
+  string link_type = 6;
+  string link_value = 7;
+  bool is_active = 8;
+  int64 start_at = 9;
+  int64 end_at = 10;
+  int32 sort = 11;
+}
+
+message UpdateBannerRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  string position = 3;
+  string title_json = 4;
+  string image = 5;
+  string mobile_image = 6;
+  string link_type = 7;
+  string link_value = 8;
+  bool is_active = 9;
+  int64 start_at = 10;
+  int64 end_at = 11;
+  int32 sort = 12;
+}
+
+message DeleteBannerRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListBannersRequest {
+  string position = 1; // 空 = 全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListBannersReply {
+  repeated Banner banners = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// ── 文章 ──────────────────────────────────────────────────
+
+message Post {
+  uint64 id = 1;
+  string slug = 2;
+  string type = 3;        // blog | notice
+  string title_json = 4;
+  string summary_json = 5;
+  string content_json = 6;
+  string thumbnail = 7;
+  uint64 category_id = 8;
+  bool is_published = 9;
+  int64 published_at = 10;
+  int64 created_at = 11;
+  int64 updated_at = 12;
+}
+
+message CreatePostRequest {
+  string slug = 1 [(google.api.field_behavior) = REQUIRED];
+  string type = 2 [(google.api.field_behavior) = REQUIRED];
+  string title_json = 3 [(google.api.field_behavior) = REQUIRED];
+  string summary_json = 4;
+  string content_json = 5 [(google.api.field_behavior) = REQUIRED];
+  string thumbnail = 6;
+  uint64 category_id = 7;
+  bool is_published = 8;
+}
+
+message UpdatePostRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string title_json = 2;
+  string summary_json = 3;
+  string content_json = 4;
+  string thumbnail = 5;
+  uint64 category_id = 6;
+}
+
+message PublishPostRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool publish = 2;
+}
+
+message DeletePostRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListPostsRequest {
+  string type = 1; // 空 = 全部
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListPostsReply {
+  repeated Post posts = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+// ── 分类 ──────────────────────────────────────────────────
+
+message PostCategory {
+  uint64 id = 1;
+  string name = 2;
+  string slug = 3;
+  int32 sort = 4;
+  int64 created_at = 5;
+}
+
+message CreatePostCategoryRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string slug = 2 [(google.api.field_behavior) = REQUIRED];
+  int32 sort = 3;
+}
+
+message UpdatePostCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2;
+  int32 sort = 3;
+}
+
+message DeletePostCategoryRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListPostCategoriesAdminRequest {}
+
+message ListPostCategoriesAdminReply {
+  repeated PostCategory categories = 1;
+}
