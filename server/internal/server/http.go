@@ -23,6 +23,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/dashboard"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
@@ -64,6 +65,8 @@ func NewHTTPServer(
 	supplierRepo *supplier.SupplierRepoImpl,
 	contentAdminSvc *content.AdminContentService,
 	contentStoreSvc *content.StoreContentService,
+	notifyAdminSvc *notify.AdminNotifyService,
+	notifyStoreSvc *notify.StoreNotificationService,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
@@ -152,6 +155,8 @@ func NewHTTPServer(
 	adminv1.RegisterAdminSupplierServiceHTTPServer(srv, supplierAdminSvc)
 	adminv1.RegisterAdminContentServiceHTTPServer(srv, contentAdminSvc)
 	storefrontv1.RegisterStoreContentServiceHTTPServer(srv, contentStoreSvc)
+	adminv1.RegisterAdminNotifyServiceHTTPServer(srv, notifyAdminSvc)
+	storefrontv1.RegisterStoreNotificationServiceHTTPServer(srv, notifyStoreSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

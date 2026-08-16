@@ -23,6 +23,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/admincmd"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
@@ -245,13 +246,22 @@ func runInstall(args []string) error {
 //	all    = HTTP + gRPC + worker + 后台（默认，单机形态）
 //	api    = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
 //	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
-func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService) *kratos.App {
+func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher) *kratos.App {
 	// 事件订阅注册（P2-02）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
 	dp.Register(data.HandlerReg{
 		Consumer: "procurement.order_paid",
 		Type:     events.OrderPaid,
 		Fn:       procureSvc.OnOrderPaid,
 	})
+	// 事件订阅注册（P2-05）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
+	for _, typ := range notify.SubscribedEvents() {
+		t := typ
+		dp.Register(data.HandlerReg{
+			Consumer: "notify.dispatcher",
+			Type:     t,
+			Fn:       notifyDisp.HandleEvent,
+		})
+	}
 	var servers []transport.Server
 	switch server.RunMode(appMode) {
 	case server.ModeAPI:

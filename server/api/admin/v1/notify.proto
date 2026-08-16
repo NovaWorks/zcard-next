@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
+service AdminNotifyService {
+  // UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
+  rpc UpsertTemplate(UpsertNotifyTemplateRequest) returns (NotifyTemplate) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/notify/templates"
+      body: "*"
+    };
+  }
+  // ListTemplates 模板列表。
+  rpc ListTemplates(google.protobuf.Empty) returns (ListNotifyTemplatesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/notify/templates" };
+  }
+  // PreviewTemplate 模板预览（变量样例渲染；不发送）。
+  rpc PreviewTemplate(PreviewTemplateRequest) returns (PreviewTemplateReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/notify/templates/preview"
+      body: "*"
+    };
+  }
+  // ListLogs 发送日志（按状态/事件筛选）。
+  rpc ListLogs(ListNotifyLogsRequest) returns (ListNotifyLogsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/notify/logs" };
+  }
+  // ResendLog 重发失败日志（原变量重投）。
+  rpc ResendLog(ResendNotifyLogRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/notify/logs/{id}/resend"
+      body: "*"
+    };
+  }
+}
+
+message NotifyTemplate {
+  uint64 id = 1;
+  string event_type = 2;
+  string channel = 3;   // email | inbox | sms | telegram
+  string locale = 4;    // zh_CN 默认
+  string subject_tpl = 5;
+  string body_tpl = 6;
+  bool enabled = 7;
+  int64 updated_at = 8;
+}
+
+message UpsertNotifyTemplateRequest {
+  string event_type = 1 [(google.api.field_behavior) = REQUIRED];
+  string channel = 2 [(google.api.field_behavior) = REQUIRED];
+  string locale = 3;
+  string subject_tpl = 4;
+  string body_tpl = 5 [(google.api.field_behavior) = REQUIRED];
+  bool enabled = 6;
+}
+
+message ListNotifyTemplatesReply {
+  repeated NotifyTemplate templates = 1;
+}
+
+message PreviewTemplateRequest {
+  string event_type = 1 [(google.api.field_behavior) = REQUIRED];
+  string channel = 2 [(google.api.field_behavior) = REQUIRED];
+  string locale = 3;
+}
+
+message PreviewTemplateReply {
+  string subject = 1;
+  string body = 2;
+  string error = 3; // 空 = 渲染成功
+}
+
+message ListNotifyLogsRequest {
+  string status = 1;     // pending | sent | failed | skipped；空 = 全部
+  string event_type = 2; // 空 = 全部
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message NotifyLog {
+  uint64 id = 1;
+  string event_type = 2;
+  string biz_type = 3;
+  uint64 biz_id = 4;
+  string channel = 5;
+  string recipient = 6;
+  string locale = 7;
+  string subject = 8;
+  string status = 9;
+  string error_message = 10;
+  int64 created_at = 11;
+}
+
+message ListNotifyLogsReply {
+  repeated NotifyLog logs = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ResendNotifyLogRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}

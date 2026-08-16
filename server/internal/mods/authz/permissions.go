@@ -304,5 +304,17 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminContentService/UpdateCategory", Method: "PUT", Path: "/api/v1/admin/content/categories/{id}"},
 		Perm{Code: "content:write", Desc: "删除分类（超管）", Domain: "content", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminContentService/DeleteCategory", Method: "DELETE", Path: "/api/v1/admin/content/categories/{id}"},
+
+		// ── 通知（notify，P2-05）────────────────────
+		Perm{Code: "notify:read", Desc: "通知模板列表", Domain: "notify",
+			Op: "zcard.api.admin.v1.AdminNotifyService/ListTemplates", Method: "GET", Path: "/api/v1/admin/notify/templates"},
+		Perm{Code: "notify:read", Desc: "发送日志", Domain: "notify",
+			Op: "zcard.api.admin.v1.AdminNotifyService/ListLogs", Method: "GET", Path: "/api/v1/admin/notify/logs"},
+		Perm{Code: "notify:write", Desc: "模板编辑（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/UpsertTemplate", Method: "POST", Path: "/api/v1/admin/notify/templates"},
+		Perm{Code: "notify:write", Desc: "模板预览（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/PreviewTemplate", Method: "POST", Path: "/api/v1/admin/notify/templates/preview"},
+		Perm{Code: "notify:write", Desc: "重发日志（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/ResendLog", Method: "POST", Path: "/api/v1/admin/notify/logs/{id}/resend"},
 	)
 }

@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
+service StoreNotificationService {
+  // UnreadCount 未读数。
+  rpc UnreadCount(google.protobuf.Empty) returns (UnreadCountReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/notifications/unread-count" };
+  }
+  // ListNotifications 站内信列表。
+  rpc ListNotifications(ListNotificationsRequest) returns (ListNotificationsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/notifications" };
+  }
+  // MarkRead 标记已读（id=0 全部）。
+  rpc MarkRead(MarkReadRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/notifications/read"
+      body: "*"
+    };
+  }
+}
+
+message UnreadCountReply {
+  int64 count = 1;
+}
+
+message ListNotificationsRequest {
+  bool unread_only = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message NotificationItem {
+  uint64 id = 1;
+  string title = 2;
+  string content = 3;
+  bool is_read = 4;
+  int64 read_at = 5;
+  string source_type = 6;
+  uint64 source_id = 7;
+  int64 created_at = 8;
+}
+
+message ListNotificationsReply {
+  repeated NotificationItem notifications = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message MarkReadRequest {
+  uint64 id = 1; // 0 = 全部
+}

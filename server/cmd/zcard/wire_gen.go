@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
@@ -97,6 +98,11 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	contentRepo := content.NewContentRepo(dataData)
 	adminContentService := content.NewAdminContentService(contentRepo)
 	storeContentService := content.NewStoreContentService(contentRepo)
+	notifyRepo := notify.NewNotifyRepo(dataData)
+	v := notify.ProvideChannels(notifyRepo, repoImpl)
+	notifyDispatcher := notify.NewDispatcher(notifyRepo, v...)
+	adminNotifyService := notify.NewAdminNotifyService(notifyRepo, notifyDispatcher)
+	storeNotificationService := notify.NewStoreNotificationService(notifyRepo)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)
 	adminUserService := authz.NewAdminUserService(adminUserRepoImpl, directory, roleRepoImpl)
@@ -120,14 +126,14 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminWalletService := wallet.NewAdminWalletService(walletRepoImpl, dataData)
 	storeDeliveryService := fulfillment.NewStoreDeliveryService(deliveryRepoImpl)
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminMemberLevelService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher, syncService, procureService, supplyAPIService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
 	cron := bootstrap.NewCron(syncService, procureService, supplierRepoImpl)
 	runMode := provideRunMode()
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
-	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dispatcher, procureService)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dispatcher, procureService, notifyDispatcher)
 	return app, func() {
 		cleanup2()
 		cleanup()

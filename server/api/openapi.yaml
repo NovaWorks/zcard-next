@@ -1404,6 +1404,110 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/notify/logs:
+        get:
+            tags:
+                - AdminNotifyService
+            description: ListLogs 发送日志（按状态/事件筛选）。
+            operationId: AdminNotifyService_ListLogs
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: eventType
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListNotifyLogsReply'
+    /api/v1/admin/notify/logs/{id}/resend:
+        post:
+            tags:
+                - AdminNotifyService
+            description: ResendLog 重发失败日志（原变量重投）。
+            operationId: AdminNotifyService_ResendLog
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResendNotifyLogRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/notify/templates:
+        get:
+            tags:
+                - AdminNotifyService
+            description: ListTemplates 模板列表。
+            operationId: AdminNotifyService_ListTemplates
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListNotifyTemplatesReply'
+        post:
+            tags:
+                - AdminNotifyService
+            description: UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
+            operationId: AdminNotifyService_UpsertTemplate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpsertNotifyTemplateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.NotifyTemplate'
+    /api/v1/admin/notify/templates/preview:
+        post:
+            tags:
+                - AdminNotifyService
+            description: PreviewTemplate 模板预览（变量样例渲染；不发送）。
+            operationId: AdminNotifyService_PreviewTemplate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.PreviewTemplateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PreviewTemplateReply'
     /api/v1/admin/orders:
         get:
             tags:
@@ -2882,6 +2986,63 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.FetchDeliveryReply'
+    /api/v1/storefront/notifications:
+        get:
+            tags:
+                - StoreNotificationService
+            description: ListNotifications 站内信列表。
+            operationId: StoreNotificationService_ListNotifications
+            parameters:
+                - name: unreadOnly
+                  in: query
+                  schema:
+                    type: boolean
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListNotificationsReply'
+    /api/v1/storefront/notifications/read:
+        post:
+            tags:
+                - StoreNotificationService
+            description: MarkRead 标记已读（id=0 全部）。
+            operationId: StoreNotificationService_MarkRead
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.MarkReadRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/storefront/notifications/unread-count:
+        get:
+            tags:
+                - StoreNotificationService
+            description: UnreadCount 未读数。
+            operationId: StoreNotificationService_UnreadCount
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.UnreadCountReply'
     /api/v1/storefront/orders:
         post:
             tags:
@@ -4250,6 +4411,28 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListNotifyLogsReply:
+            type: object
+            properties:
+                logs:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.NotifyLog'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.ListNotifyTemplatesReply:
+            type: object
+            properties:
+                templates:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.NotifyTemplate'
         zcard.api.admin.v1.ListOrdersReply:
             type: object
             properties:
@@ -4548,6 +4731,50 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevel'
+        zcard.api.admin.v1.NotifyLog:
+            type: object
+            properties:
+                id:
+                    type: string
+                eventType:
+                    type: string
+                bizType:
+                    type: string
+                bizId:
+                    type: string
+                channel:
+                    type: string
+                recipient:
+                    type: string
+                locale:
+                    type: string
+                subject:
+                    type: string
+                status:
+                    type: string
+                errorMessage:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.NotifyTemplate:
+            type: object
+            properties:
+                id:
+                    type: string
+                eventType:
+                    type: string
+                channel:
+                    type: string
+                locale:
+                    type: string
+                subjectTpl:
+                    type: string
+                bodyTpl:
+                    type: string
+                enabled:
+                    type: boolean
+                updatedAt:
+                    type: string
         zcard.api.admin.v1.Payment:
             type: object
             properties:
@@ -4687,6 +4914,27 @@ components:
                 status:
                     type: string
             description: PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
+        zcard.api.admin.v1.PreviewTemplateReply:
+            type: object
+            properties:
+                subject:
+                    type: string
+                body:
+                    type: string
+                error:
+                    type: string
+        zcard.api.admin.v1.PreviewTemplateRequest:
+            required:
+                - eventType
+                - channel
+            type: object
+            properties:
+                eventType:
+                    type: string
+                channel:
+                    type: string
+                locale:
+                    type: string
         zcard.api.admin.v1.ProcurementOrder:
             type: object
             properties:
@@ -4780,6 +5028,13 @@ components:
                     type: string
             description: RefundOrder 退款单。
         zcard.api.admin.v1.RejectReviewRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.admin.v1.ResendNotifyLogRequest:
             required:
                 - id
             type: object
@@ -5507,6 +5762,25 @@ components:
                     type: string
                 pricingOverride:
                     type: string
+        zcard.api.admin.v1.UpsertNotifyTemplateRequest:
+            required:
+                - eventType
+                - channel
+                - bodyTpl
+            type: object
+            properties:
+                eventType:
+                    type: string
+                channel:
+                    type: string
+                locale:
+                    type: string
+                subjectTpl:
+                    type: string
+                bodyTpl:
+                    type: string
+                enabled:
+                    type: boolean
         zcard.api.admin.v1.UpsertSupplierPriceRequest:
             required:
                 - accountId
@@ -5746,6 +6020,21 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.StoreBanner'
+        zcard.api.storefront.v1.ListNotificationsReply:
+            type: object
+            properties:
+                notifications:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.NotificationItem'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.ListPostCategoriesReply:
             type: object
             properties:
@@ -5784,6 +6073,11 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Tx'
+        zcard.api.storefront.v1.MarkReadRequest:
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.storefront.v1.MaskedDeliveriesReply:
             type: object
             properties:
@@ -5803,6 +6097,25 @@ components:
                 fetchCount:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.NotificationItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                isRead:
+                    type: boolean
+                readAt:
+                    type: string
+                sourceType:
+                    type: string
+                sourceId:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.storefront.v1.OrderItemInput:
             required:
                 - productId
@@ -5998,6 +6311,11 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.storefront.v1.UnreadCountReply:
+            type: object
+            properties:
+                count:
+                    type: string
         zcard.api.supply.v1.CancelSupplyOrderReply:
             type: object
             properties:
@@ -6188,6 +6506,8 @@ tags:
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
     - name: AdminMemberLevelService
       description: AdminMemberLevelService 会员等级管理（P3-01 M1b 基础版）。
+    - name: AdminNotifyService
+      description: AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
     - name: AdminOrderService
       description: AdminOrderService 订单管理（P1-03 T7）。
     - name: AdminPaymentService
@@ -6226,6 +6546,8 @@ tags:
          多语言字段按请求语言回落（zh_CN 默认）。
     - name: StoreDeliveryService
       description: StoreDeliveryService 顾客取货（P1-06 T2 三重门：单号+密码+限流）。
+    - name: StoreNotificationService
+      description: StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
     - name: StoreOrderService
       description: StoreOrderService 顾客下单（P1-03 T2）。
     - name: StorePaymentService
