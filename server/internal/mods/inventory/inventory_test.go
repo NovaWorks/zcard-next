@@ -41,7 +41,7 @@ func newTestData(t *testing.T) *data.Data {
 
 func newTestRepo(t *testing.T) (*CardRepoImpl, *data.Data) {
 	d := newTestData(t)
-	repo := NewCardRepoImpl(d)
+	repo := NewCardRepoImpl(d, NewTestCipher(t))
 	return repo, d
 }
 
@@ -178,4 +178,14 @@ func TestMarkUsedAffectedRows(t *testing.T) {
 	if err := repo.MarkUsed(ctx, cardIDs, 100); err == nil {
 		t.Fatal("重复 MarkUsed 应失败（CAS）")
 	}
+}
+
+// NewTestCipher 测试用密钥（随机 32B，每次测试独立）。
+func NewTestCipher(t *testing.T) *CardCipher {
+	t.Helper()
+	c, err := NewCardCipher(make([]byte, 32))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c
 }
