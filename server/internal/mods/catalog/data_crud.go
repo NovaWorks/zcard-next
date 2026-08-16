@@ -31,7 +31,7 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	if f.Keyword != "" {
 		q = q.Where(product.NameHasPrefix(f.Keyword))
 	}
-	if f.Status >= 0 {
+	if f.Status > 0 { // 0=全部（proto3 默认值）；>0 才过滤
 		q = q.Where(product.Status(int8(f.Status)))
 	}
 	total, err := q.Clone().Count(ctx)

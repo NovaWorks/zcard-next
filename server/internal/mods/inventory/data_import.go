@@ -117,11 +117,13 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 				continue
 			}
 
-			// 靓号解析
+			// 靓号解析（非靓号 number=整行，防文件内去重误判）
 			var number string
 			parts := strings.SplitN(line, "---", 3)
 			if len(parts) >= 2 {
 				number = strings.TrimSpace(parts[0])
+			} else {
+				number = strings.TrimSpace(line)
 			}
 
 			// 文件内去重
@@ -168,7 +170,7 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 
 		if len(creates) > 0 {
 			if err := client.Card.CreateBulk(creates...).Exec(ctx); err != nil {
-				// 部分冲突（并发导入同内容）——跳过冲突行
+				// 部分冲突——逐行重试
 				for _, c := range creates {
 					if _, err := c.Save(ctx); err == nil {
 						imported++
