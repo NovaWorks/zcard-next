@@ -1,0 +1,21 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f2329; background: #f5f6f7; }
+.app { min-height: 100vh; }
+.topbar { display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #e5e6e8; position: sticky; top: 0; }
+.topbar .logo { font-size: 18px; font-weight: 600; color: #2563eb; text-decoration: none; }
+.topbar nav { display: flex; gap: 16px; }
+.topbar nav a { color: #4b5563; text-decoration: none; font-size: 14px; }
+.main { max-width: 1080px; margin: 0 auto; padding: 24px 16px; }
+.card { background: #fff; border-radius: 10px; padding: 16px; border: 1px solid #e5e6e8; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+.btn { display: inline-block; padding: 8px 16px; border-radius: 6px; background: #2563eb; color: #fff; border: none; cursor: pointer; font-size: 14px; text-decoration: none; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.secondary { background: #e5e7eb; color: #1f2329; }
+.input, select { width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 4px; }
+.price { color: #e11d48; font-weight: 600; }
+.muted { color: #9ca3af; font-size: 12px; }
+.error { color: #dc2626; font-size: 13px; }
+.success { color: #16a34a; font-size: 13px; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; background: #eef2ff; color: #4338ca; }
