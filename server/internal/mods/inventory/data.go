@@ -12,8 +12,7 @@ type CardRepoImpl struct {
 	Cipher *CardCipher // AES-GCM 加密 + keyed hash（bootstrap 注入）
 }
 
-// NewCardRepoImpl 构造。
-func NewCardRepoImpl(d *data.Data) *CardRepoImpl { return &CardRepoImpl{data: d} }
-
-// SetCipher 注入加密器（wire 装配期调用）。
-func (r *CardRepoImpl) SetCipher(c *CardCipher) { r.Cipher = c }
+// NewCardRepoImpl 构造（cipher 由 bootstrap 注入）。
+func NewCardRepoImpl(d *data.Data, cipher *CardCipher) *CardRepoImpl {
+	return &CardRepoImpl{data: d, Cipher: cipher}
+}

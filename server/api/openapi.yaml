@@ -620,6 +620,74 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewReply'
+    /api/v1/admin/orders:
+        get:
+            tags:
+                - AdminOrderService
+            description: ListOrders 订单列表（游标分页）。
+            operationId: AdminOrderService_ListOrders
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: cursor
+                  in: query
+                  schema:
+                    type: string
+                - name: limit
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListOrdersReply'
+    /api/v1/admin/orders/{orderNo}:
+        get:
+            tags:
+                - AdminOrderService
+            description: GetOrder 订单详情（含金额行+状态事件时间线）。
+            operationId: AdminOrderService_GetOrder
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminOrder'
+    /api/v1/admin/orders/{orderNo}/cancel:
+        post:
+            tags:
+                - AdminOrderService
+            description: CancelOrder 取消订单（pending 可取消）。
+            operationId: AdminOrderService_CancelOrder
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CancelOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/products:
         get:
             tags:
@@ -872,6 +940,48 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.Currencies'
+    /api/v1/storefront/orders:
+        post:
+            tags:
+                - StoreOrderService
+            description: CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
+            operationId: StoreOrderService_CreateOrder
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CreateOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CreateOrderReply'
+    /api/v1/storefront/orders/{orderNo}:
+        get:
+            tags:
+                - StoreOrderService
+            description: GetOrder 凭单号+查询密码查单（三重门之一二）。
+            operationId: StoreOrderService_GetOrder
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: queryPassword
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.GetOrderReply'
     /api/v1/storefront/products:
         get:
             tags:
@@ -962,6 +1072,64 @@ components:
                 remark:
                     type: string
             description: Admin 员工（不含密码哈希等敏感字段）。
+        zcard.api.admin.v1.AdminOrder:
+            type: object
+            properties:
+                id:
+                    type: string
+                orderNo:
+                    type: string
+                status:
+                    type: string
+                totalCents:
+                    type: string
+                costCents:
+                    type: string
+                userId:
+                    type: string
+                guestContact:
+                    type: string
+                contact:
+                    type: string
+                clientIp:
+                    type: string
+                createdAt:
+                    type: string
+                paidAt:
+                    type: string
+                expiredAt:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminOrderItem'
+                amountLines:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AmountLine'
+                statusEvents:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.StatusEvent'
+            description: AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
+        zcard.api.admin.v1.AdminOrderItem:
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                unitPriceCents:
+                    type: string
+                amountCents:
+                    type: string
+                fulfillmentType:
+                    type: string
+                fulfillmentStatus:
+                    type: string
         zcard.api.admin.v1.AdminProduct:
             type: object
             properties:
@@ -1032,12 +1200,36 @@ components:
                     format: date-time
                 lastLoginIp:
                     type: string
+        zcard.api.admin.v1.AmountLine:
+            type: object
+            properties:
+                type:
+                    type: string
+                amountCents:
+                    type: string
+                sourceType:
+                    type: string
+                sourceId:
+                    type: string
+                seq:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.CancelImportRequest:
             required:
                 - id
             type: object
             properties:
                 id:
+                    type: string
+        zcard.api.admin.v1.CancelOrderRequest:
+            required:
+                - orderNo
+                - reason
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                reason:
                     type: string
         zcard.api.admin.v1.CardInfo:
             type: object
@@ -1375,6 +1567,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.ImportBatch'
+        zcard.api.admin.v1.ListOrdersReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminOrder'
+                nextCursor:
+                    type: string
         zcard.api.admin.v1.ListProductsReply:
             type: object
             properties:
@@ -1488,6 +1689,21 @@ components:
                 valueJson:
                     type: string
             description: Setting 设置项（value_json 为 JSON 文档字符串）。
+        zcard.api.admin.v1.StatusEvent:
+            type: object
+            properties:
+                fromStatus:
+                    type: string
+                toStatus:
+                    type: string
+                event:
+                    type: string
+                operator:
+                    type: string
+                reason:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.admin.v1.Tag:
             type: object
             properties:
@@ -1666,6 +1882,30 @@ components:
                     type: integer
                     format: int32
             description: PageResp 分页响应。
+        zcard.api.storefront.v1.CreateOrderReply:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                totalCents:
+                    type: string
+                expiresAt:
+                    type: string
+        zcard.api.storefront.v1.CreateOrderRequest:
+            required:
+                - items
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.OrderItemInput'
+                guestContact:
+                    type: string
+                queryPassword:
+                    type: string
+                contact:
+                    type: string
         zcard.api.storefront.v1.Currencies:
             type: object
             properties:
@@ -1689,6 +1929,21 @@ components:
                 rateJson:
                     type: string
             description: Currency 货币（rate 为 decimal 字符串——前端 decimal 换算，杜绝浮点误差入口）。
+        zcard.api.storefront.v1.GetOrderReply:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                status:
+                    type: string
+                totalCents:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.OrderItemReply'
+                createdAt:
+                    type: string
         zcard.api.storefront.v1.ListProductsReply:
             type: object
             properties:
@@ -1698,6 +1953,31 @@ components:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
                 page:
                     $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+        zcard.api.storefront.v1.OrderItemInput:
+            required:
+                - productId
+                - quantity
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+        zcard.api.storefront.v1.OrderItemReply:
+            type: object
+            properties:
+                productId:
+                    type: string
+                productName:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                unitPriceCents:
+                    type: string
         zcard.api.storefront.v1.Product:
             type: object
             properties:
@@ -1765,6 +2045,8 @@ tags:
       description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
     - name: AdminInventoryService
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+    - name: AdminOrderService
+      description: AdminOrderService 订单管理（P1-03 T7）。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
@@ -1779,6 +2061,8 @@ tags:
       description: |-
         StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
          里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
+    - name: StoreOrderService
+      description: StoreOrderService 顾客下单（P1-03 T2）。
     - name: StorefrontConfigService
       description: |-
         StorefrontConfigService 前台公开配置（P0-04 T3）。

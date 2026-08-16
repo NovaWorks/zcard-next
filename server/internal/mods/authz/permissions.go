@@ -92,8 +92,18 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminInventoryService/ListImports", Method: "GET", Path: "/api/v1/admin/inventory/imports"},
 		Perm{Code: "inventory:import", Desc: "撤销批次（超管）", Domain: "inventory", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminInventoryService/CancelImport", Method: "POST", Path: "/api/v1/admin/inventory/imports/{id}/cancel"},
+		Perm{Code: "card:export", Desc: "导出卡密（超管）", Domain: "inventory", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminInventoryService/ExportCards", Method: "POST", Path: "/api/v1/admin/inventory/export"},
 		Perm{Code: "inventory:write", Desc: "禁用/启用卡（超管）", Domain: "inventory", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminInventoryService/ToggleCard", Method: "PUT", Path: "/api/v1/admin/inventory/cards/{id}/toggle"},
+
+		// ── 订单（order，P1-03）───────────────────────
+		Perm{Code: "order:read", Desc: "查看订单", Domain: "order",
+			Op: "zcard.api.admin.v1.AdminOrderService/ListOrders", Method: "GET", Path: "/api/v1/admin/orders"},
+		Perm{Code: "order:read_detail", Desc: "查看订单详情", Domain: "order",
+			Op: "zcard.api.admin.v1.AdminOrderService/GetOrder", Method: "GET", Path: "/api/v1/admin/orders/{order_no}"},
+		Perm{Code: "order:cancel", Desc: "取消订单（超管）", Domain: "order", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminOrderService/CancelOrder", Method: "POST", Path: "/api/v1/admin/orders/{order_no}/cancel"},
 
 		// ── 货币管理（settings，P0-04 T3）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",

@@ -25,7 +25,8 @@ import (
 var ProviderSet = wire.NewSet(
 	data.ProviderSet,
 	securityProviderSet,
-	queueProviderSet, // 密钥解析（env 优先 → conf 兜底 → dev 随机告警）
+	queueProviderSet,
+	idProviderSet, // 密钥解析（env 优先 → conf 兜底 → dev 随机告警）
 	identity.ProviderSet,
 	authz.ProviderSet,
 	settings.ProviderSet,

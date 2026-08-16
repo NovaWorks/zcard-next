@@ -81,9 +81,3 @@ func CalcParentStatus(itemStatuses []string) string {
 	}
 	return StatusPaid
 }
-
-// OrderUsecase 订单用例骨架（M1a 交付下单管线/超时取消/取货三重门）。
-type OrderUsecase struct{}
-
-// NewOrderUsecase 构造。
-func NewOrderUsecase() *OrderUsecase { return &OrderUsecase{} }

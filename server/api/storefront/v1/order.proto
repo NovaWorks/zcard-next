@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// StoreOrderService 顾客下单（P1-03 T2）。
+service StoreOrderService {
+  // CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/orders"
+      body: "*"
+    };
+  }
+  // GetOrder 凭单号+查询密码查单（三重门之一二）。
+  rpc GetOrder(GetOrderRequest) returns (GetOrderReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/orders/{order_no}" };
+  }
+}
+
+message CreateOrderRequest {
+  repeated OrderItemInput items = 1 [(google.api.field_behavior) = REQUIRED];
+  string guest_contact = 2;
+  string query_password = 3;
+  string contact = 4;
+}
+
+message OrderItemInput {
+  uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 sku_id = 2;
+  int32 quantity = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreateOrderReply {
+  string order_no = 1;
+  int64 total_cents = 2;
+  int64 expires_at = 3;
+}
+
+message GetOrderRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string query_password = 2;
+}
+
+message GetOrderReply {
+  string order_no = 1;
+  string status = 2;
+  int64 total_cents = 3;
+  repeated OrderItemReply items = 4;
+  int64 created_at = 5;
+}
+
+message OrderItemReply {
+  uint64 product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  int64 unit_price_cents = 4;
+}

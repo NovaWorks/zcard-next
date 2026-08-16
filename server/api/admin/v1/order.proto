@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminOrderService 订单管理（P1-03 T7）。
+service AdminOrderService {
+  // ListOrders 订单列表（游标分页）。
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersReply) {
+    option (google.api.http) = { get: "/api/v1/admin/orders" };
+  }
+  // GetOrder 订单详情（含金额行+状态事件时间线）。
+  rpc GetOrder(GetAdminOrderRequest) returns (AdminOrder) {
+    option (google.api.http) = { get: "/api/v1/admin/orders/{order_no}" };
+  }
+  // CancelOrder 取消订单（pending 可取消）。
+  rpc CancelOrder(CancelOrderRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/orders/{order_no}/cancel"
+      body: "*"
+    };
+  }
+}
+
+message ListOrdersRequest {
+  string status = 1;
+  uint64 cursor = 2;
+  int32 limit = 3;
+}
+
+message ListOrdersReply {
+  repeated AdminOrder orders = 1;
+  uint64 next_cursor = 2;
+}
+
+message GetAdminOrderRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
+message AdminOrder {
+  uint64 id = 1;
+  string order_no = 2;
+  string status = 3;
+  int64 total_cents = 4;
+  int64 cost_cents = 5;
+  uint64 user_id = 6;
+  string guest_contact = 7;
+  string contact = 8;
+  string client_ip = 9;
+  int64 created_at = 10;
+  int64 paid_at = 11;
+  int64 expired_at = 12;
+  repeated AdminOrderItem items = 13;
+  repeated AmountLine amount_lines = 14;
+  repeated StatusEvent status_events = 15;
+}
+
+message AdminOrderItem {
+  uint64 product_id = 1;
+  uint64 sku_id = 2;
+  int32 quantity = 3;
+  int64 unit_price_cents = 4;
+  int64 amount_cents = 5;
+  string fulfillment_type = 6;
+  string fulfillment_status = 7;
+}
+
+message AmountLine {
+  string type = 1;
+  int64 amount_cents = 2;
+  string source_type = 3;
+  uint64 source_id = 4;
+  int32 seq = 5;
+}
+
+message StatusEvent {
+  string from_status = 1;
+  string to_status = 2;
+  string event = 3;
+  string operator = 4;
+  string reason = 5;
+  int64 created_at = 6;
+}
+
+message CancelOrderRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string reason = 2 [(google.api.field_behavior) = REQUIRED];
+}

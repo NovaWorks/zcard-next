@@ -26,6 +26,7 @@ var operatorSeed = map[string]bool{
 	"catalog:read":        true, "catalog:read_detail": true,
 	"catalog:category_read": true, "catalog:tag_read": true,
 	"inventory:read": true,
+	"order:read":     true, "order:read_detail": true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。
@@ -53,6 +54,7 @@ var adminOnlyAllowlist = map[string]bool{
 	"catalog:tag_delete":      true,
 	// 库存写操作（超管专属）
 	"inventory:import": true,
+	"order:cancel":     true,
 	"inventory:write":  true,
 }
 

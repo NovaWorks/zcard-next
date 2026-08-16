@@ -5,4 +5,4 @@ package order
 import "github.com/google/wire"
 
 // ProviderSet order providers。
-var ProviderSet = wire.NewSet(NewOrderUsecase, NewOrderRepoImpl)
+var ProviderSet = wire.NewSet(NewOrderUsecaseDep, NewOrderRepoImpl, NewStoreOrderService, NewAdminOrderService)
