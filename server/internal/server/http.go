@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
@@ -61,6 +62,8 @@ func NewHTTPServer(
 	payAdminSvc *payment.AdminPaymentService,
 	payStoreSvc *payment.StorePaymentService,
 	payRepo *payment.PaymentRepoImpl,
+	walletStoreSvc *wallet.StoreWalletService,
+	walletAdminSvc *wallet.AdminWalletService,
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 ) *khttp.Server {
@@ -113,6 +116,8 @@ func NewHTTPServer(
 	adminv1.RegisterAdminPaymentServiceHTTPServer(srv, payAdminSvc)
 	storefrontv1.RegisterStoreOrderServiceHTTPServer(srv, orderStoreSvc)
 	storefrontv1.RegisterStorePaymentServiceHTTPServer(srv, payStoreSvc)
+	storefrontv1.RegisterStoreWalletServiceHTTPServer(srv, walletStoreSvc)
+	adminv1.RegisterAdminWalletServiceHTTPServer(srv, walletAdminSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplySvc)
 

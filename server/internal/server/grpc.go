@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 
 	"github.com/go-kratos/kratos/v3/log"
 	"github.com/go-kratos/kratos/v3/middleware/logging"
@@ -43,6 +44,8 @@ func NewGRPCServer(
 	orderStoreSvc *order.StoreOrderService,
 	payAdminSvc *payment.AdminPaymentService,
 	payStoreSvc *payment.StorePaymentService,
+	walletStoreSvc *wallet.StoreWalletService,
+	walletAdminSvc *wallet.AdminWalletService,
 ) *kgrpc.Server {
 	var opts = []kgrpc.ServerOption{
 		kgrpc.Middleware(
@@ -82,6 +85,8 @@ func NewGRPCServer(
 	adminv1.RegisterAdminPaymentServiceServer(srv, payAdminSvc)
 	storefrontv1.RegisterStoreOrderServiceServer(srv, orderStoreSvc)
 	storefrontv1.RegisterStorePaymentServiceServer(srv, payStoreSvc)
+	storefrontv1.RegisterStoreWalletServiceServer(srv, walletStoreSvc)
+	adminv1.RegisterAdminWalletServiceServer(srv, walletAdminSvc)
 	storefrontv1.RegisterStoreCatalogServiceServer(srv, catalogSvc)
 	supplyv1.RegisterSupplyServiceServer(srv, supplySvc)
 	// reflection 已由 kratos v3 grpc server 内置（手动注册会 duplicate panic）

@@ -1091,6 +1091,79 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/wallet/{userId}:
+        get:
+            tags:
+                - AdminWalletService
+            description: GetBalance 指定用户余额。
+            operationId: AdminWalletService_GetBalance
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Balance'
+    /api/v1/admin/wallet/{userId}/adjust:
+        post:
+            tags:
+                - AdminWalletService
+            description: Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
+            operationId: AdminWalletService_Adjust
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AdjustRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Balance'
+    /api/v1/admin/wallet/{userId}/transactions:
+        get:
+            tags:
+                - AdminWalletService
+            description: ListTransactions 指定用户流水。
+            operationId: AdminWalletService_ListTransactions
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListWalletTxReply'
     /api/v1/storefront/config:
         get:
             tags:
@@ -1231,6 +1304,62 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+    /api/v1/storefront/wallet:
+        get:
+            tags:
+                - StoreWalletService
+            description: GetBalance 余额+积分。
+            operationId: StoreWalletService_GetBalance
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.BalanceReply'
+    /api/v1/storefront/wallet/recharge:
+        post:
+            tags:
+                - StoreWalletService
+            description: CreateRecharge 充值（走支付管线）。
+            operationId: StoreWalletService_CreateRecharge
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CreateRechargeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CreateRechargeReply'
+    /api/v1/storefront/wallet/transactions:
+        get:
+            tags:
+                - StoreWalletService
+            description: ListTransactions 流水（余额）。
+            operationId: StoreWalletService_ListTransactions
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListTxReply'
     /api/v1/supply/ping:
         get:
             tags:
@@ -1246,6 +1375,19 @@ paths:
                                 $ref: '#/components/schemas/zcard.api.supply.v1.PingReply'
 components:
     schemas:
+        zcard.api.admin.v1.AdjustRequest:
+            required:
+                - userId
+                - amountCents
+                - reason
+            type: object
+            properties:
+                userId:
+                    type: string
+                amountCents:
+                    type: string
+                reason:
+                    type: string
         zcard.api.admin.v1.Admin:
             type: object
             properties:
@@ -1410,6 +1552,17 @@ components:
                 seq:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.Balance:
+            type: object
+            properties:
+                userId:
+                    type: string
+                availableCents:
+                    type: string
+                lockedCents:
+                    type: string
+                totalCents:
+                    type: string
         zcard.api.admin.v1.CancelImportRequest:
             required:
                 - id
@@ -1888,6 +2041,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Setting'
+        zcard.api.admin.v1.ListWalletTxReply:
+            type: object
+            properties:
+                transactions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.WalletTx'
+                total:
+                    type: string
         zcard.api.admin.v1.LoginReply:
             type: object
             properties:
@@ -2225,6 +2387,27 @@ components:
                 valueJson:
                     type: string
                     description: 任意 JSON 文档（对象/数组/标量均可），服务端原样存储
+        zcard.api.admin.v1.WalletTx:
+            type: object
+            properties:
+                id:
+                    type: string
+                direction:
+                    type: string
+                type:
+                    type: string
+                amountCents:
+                    type: string
+                balanceBeforeCents:
+                    type: string
+                balanceAfterCents:
+                    type: string
+                reference:
+                    type: string
+                remark:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.common.v1.PageResp:
             type: object
             properties:
@@ -2237,6 +2420,17 @@ components:
                     type: integer
                     format: int32
             description: PageResp 分页响应。
+        zcard.api.storefront.v1.BalanceReply:
+            type: object
+            properties:
+                availableCents:
+                    type: string
+                lockedCents:
+                    type: string
+                totalCents:
+                    type: string
+                points:
+                    type: string
         zcard.api.storefront.v1.CreateOrderReply:
             type: object
             properties:
@@ -2277,6 +2471,23 @@ components:
             type: object
             properties:
                 orderNo:
+                    type: string
+                channel:
+                    type: string
+        zcard.api.storefront.v1.CreateRechargeReply:
+            type: object
+            properties:
+                rechargeId:
+                    type: string
+                paymentId:
+                    type: string
+        zcard.api.storefront.v1.CreateRechargeRequest:
+            required:
+                - amountCents
+                - channel
+            type: object
+            properties:
+                amountCents:
                     type: string
                 channel:
                     type: string
@@ -2327,6 +2538,13 @@ components:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
                 page:
                     $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+        zcard.api.storefront.v1.ListTxReply:
+            type: object
+            properties:
+                transactions:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.Tx'
         zcard.api.storefront.v1.OrderItemInput:
             required:
                 - productId
@@ -2399,6 +2617,25 @@ components:
                 valueJson:
                     type: string
             description: PublicConfigEntry 单键（key 形如 "site.name"；value 为 JSON 文档字符串）。
+        zcard.api.storefront.v1.Tx:
+            type: object
+            properties:
+                id:
+                    type: string
+                direction:
+                    type: string
+                type:
+                    type: string
+                amountCents:
+                    type: string
+                balanceAfterCents:
+                    type: string
+                reference:
+                    type: string
+                remark:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.supply.v1.PingReply:
             type: object
             properties:
@@ -2429,6 +2666,8 @@ tags:
          里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
     - name: AdminUserService
       description: AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+    - name: AdminWalletService
+      description: AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
     - name: RoleService
       description: |-
         RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
@@ -2441,6 +2680,8 @@ tags:
       description: StoreOrderService 顾客下单（P1-03 T2）。
     - name: StorePaymentService
       description: StorePaymentService 顾客支付（P1-04 T2）。
+    - name: StoreWalletService
+      description: StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
     - name: StorefrontConfigService
       description: |-
         StorefrontConfigService 前台公开配置（P0-04 T3）。

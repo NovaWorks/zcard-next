@@ -28,6 +28,7 @@ var operatorSeed = map[string]bool{
 	"inventory:read": true,
 	"order:read":     true, "order:read_detail": true,
 	"payment:read": true, "payment:read_detail": true,
+	"wallet:read": true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。

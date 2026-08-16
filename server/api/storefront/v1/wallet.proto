@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
+service StoreWalletService {
+  // GetBalance 余额+积分。
+  rpc GetBalance(google.protobuf.Empty) returns (BalanceReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/wallet" };
+  }
+  // ListTransactions 流水（余额）。
+  rpc ListTransactions(ListTxRequest) returns (ListTxReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/wallet/transactions" };
+  }
+  // CreateRecharge 充值（走支付管线）。
+  rpc CreateRecharge(CreateRechargeRequest) returns (CreateRechargeReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/wallet/recharge"
+      body: "*"
+    };
+  }
+}
+
+message BalanceReply {
+  int64 available_cents = 1;
+  int64 locked_cents = 2;
+  int64 total_cents = 3;
+  int64 points = 4;
+}
+
+message ListTxRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListTxReply {
+  repeated Tx transactions = 1;
+}
+
+message Tx {
+  uint64 id = 1;
+  string direction = 2;
+  string type = 3;
+  int64 amount_cents = 4;
+  int64 balance_after_cents = 5;
+  string reference = 6;
+  string remark = 7;
+  int64 created_at = 8;
+}
+
+message CreateRechargeRequest {
+  int64 amount_cents = 1 [(google.api.field_behavior) = REQUIRED];
+  string channel = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreateRechargeReply {
+  uint64 recharge_id = 1;
+  uint64 payment_id = 2;
+}

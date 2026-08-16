@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+service AdminWalletService {
+  // GetBalance 指定用户余额。
+  rpc GetBalance(GetBalanceRequest) returns (Balance) {
+    option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}" };
+  }
+  // Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
+  rpc Adjust(AdjustRequest) returns (Balance) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/wallet/{user_id}/adjust"
+      body: "*"
+    };
+  }
+  // ListTransactions 指定用户流水。
+  rpc ListTransactions(ListWalletTxRequest) returns (ListWalletTxReply) {
+    option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}/transactions" };
+  }
+}
+
+message GetBalanceRequest {
+  uint64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message Balance {
+  uint64 user_id = 1;
+  int64 available_cents = 2;
+  int64 locked_cents = 3;
+  int64 total_cents = 4;
+}
+
+message AdjustRequest {
+  uint64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED]; // 正=入账 负=扣减
+  string reason = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListWalletTxRequest {
+  uint64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListWalletTxReply {
+  repeated WalletTx transactions = 1;
+  int64 total = 2;
+}
+
+message WalletTx {
+  uint64 id = 1;
+  string direction = 2;
+  string type = 3;
+  int64 amount_cents = 4;
+  int64 balance_before_cents = 5;
+  int64 balance_after_cents = 6;
+  string reference = 7;
+  string remark = 8;
+  int64 created_at = 9;
+}

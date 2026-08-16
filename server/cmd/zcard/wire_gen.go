@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
 	"github.com/go-kratos/kratos/v3"
 	"log/slog"
@@ -77,6 +78,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	paymentRepoImpl := payment.NewPaymentRepoImpl(dataData, box)
 	adminPaymentService := payment.NewAdminPaymentService(paymentRepoImpl, dataData)
 	storePaymentService := payment.NewStorePaymentService(paymentRepoImpl, dataData)
+	walletRepoImpl := wallet.NewWalletRepoImpl(dataData)
+	storeWalletService := wallet.NewStoreWalletService(walletRepoImpl, dataData)
+	adminWalletService := wallet.NewAdminWalletService(walletRepoImpl, dataData)
 	dispatcher := bootstrap.NewDispatcher(dataData, logger)
 	failedTaskWriter := data.NewFailedTaskWriter(dataData)
 	enqueuer, cleanup2, err := bootstrap.NewEnqueuer(dataConf, dispatcher, failedTaskWriter, logger)
@@ -84,8 +88,8 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 		cleanup()
 		return nil, nil, err
 	}
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, enqueuer, directory)
-	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, enqueuer, directory)
+	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, supplyService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dispatcher)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
 	cron := bootstrap.NewCron()

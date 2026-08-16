@@ -125,6 +125,14 @@ func init() {
 		Perm{Code: "order:refund", Desc: "查看退款", Domain: "payment",
 			Op: "zcard.api.admin.v1.AdminPaymentService/ListRefunds", Method: "GET", Path: "/api/v1/admin/refunds"},
 
+		// ── 钱包（wallet，P1-05）──────────────────────
+		Perm{Code: "wallet:read", Desc: "查用户余额", Domain: "wallet",
+			Op: "zcard.api.admin.v1.AdminWalletService/GetBalance", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}"},
+		Perm{Code: "wallet:adjust", Desc: "手动调账（超管）", Domain: "wallet", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminWalletService/Adjust", Method: "POST", Path: "/api/v1/admin/wallet/{user_id}/adjust"},
+		Perm{Code: "wallet:read", Desc: "查用户流水", Domain: "wallet",
+			Op: "zcard.api.admin.v1.AdminWalletService/ListTransactions", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}/transactions"},
+
 		// ── 货币管理（settings，P0-04 T3）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},
