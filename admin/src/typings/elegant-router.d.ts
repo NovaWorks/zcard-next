@@ -30,6 +30,7 @@ declare module "@elegant-router/types" {
     "role": "/role";
     "settings": "/settings";
     "staff": "/staff";
+    "wallet": "/wallet";
   };
 
   /**
@@ -74,6 +75,7 @@ declare module "@elegant-router/types" {
     | "role"
     | "settings"
     | "staff"
+    | "wallet"
   >;
 
   /**
@@ -103,6 +105,7 @@ declare module "@elegant-router/types" {
     | "role"
     | "settings"
     | "staff"
+    | "wallet"
   >;
 
   /**

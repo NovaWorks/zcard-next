@@ -175,7 +175,8 @@ const routeMap: RouteMap = {
   "product": "/product",
   "role": "/role",
   "settings": "/settings",
-  "staff": "/staff"
+  "staff": "/staff",
+  "wallet": "/wallet"
 };
 
 /**

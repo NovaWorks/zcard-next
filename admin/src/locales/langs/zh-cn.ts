@@ -232,7 +232,8 @@ const local: App.I18n.Schema = {
     'payment-channel': '支付渠道',
     staff: '员工管理',
     role: '角色权限',
-    settings: '系统设置'
+    settings: '系统设置',
+    wallet: '钱包管理'
   },
   page: {
     login: {

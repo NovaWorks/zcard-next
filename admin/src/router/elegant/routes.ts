@@ -151,5 +151,16 @@ export const generatedRoutes: GeneratedRoute[] = [
       icon: 'mdi:account-group-outline',
       order: 6
     }
+  },
+  {
+    name: 'wallet',
+    path: '/wallet',
+    component: 'layout.base$view.wallet',
+    meta: {
+      title: '钱包管理',
+      i18nKey: 'route.wallet',
+      icon: 'mdi:wallet-outline',
+      order: 9
+    }
   }
 ];

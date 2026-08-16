@@ -1,46 +1,138 @@
-<script setup lang="ts">
-import { computed } from 'vue';
-import { useAppStore } from '@/store/modules/app';
-import HeaderBanner from './modules/header-banner.vue';
-import CardData from './modules/card-data.vue';
-import LineChart from './modules/line-chart.vue';
-import PieChart from './modules/pie-chart.vue';
-import ProjectNews from './modules/project-news.vue';
-import CreativityBanner from './modules/creativity-banner.vue';
-
-const appStore = useAppStore();
-
-const gap = computed(() => (appStore.isMobile ? 0 : 16));
-</script>
-
 <template>
-  <NSpace vertical :size="16">
-    <NAlert :title="$t('common.tip')" type="warning">
-      {{ $t('page.home.branchDesc') }}
-    </NAlert>
-    <HeaderBanner />
-    <CardData />
-    <NGrid :x-gap="gap" :y-gap="16" responsive="screen" item-responsive>
-      <NGi span="24 s:24 m:14">
-        <NCard :bordered="false" class="card-wrapper">
-          <LineChart />
+  <div class="min-h-500px flex-col gap-16px overflow-hidden">
+    <!-- 统计卡片 -->
+    <NGrid :x-gap="16" :y-gap="16" cols="s:1 m:3" responsive="screen" item-responsive>
+      <NGi>
+        <NCard :bordered="false" size="small">
+          <div class="text-14px">今日订单数</div>
+          <div class="mt-8px text-28px font-bold">{{ today.orders }}</div>
+          <div class="mt-4px text-12px opacity-60">已支付 {{ today.paid_orders }} 单</div>
         </NCard>
       </NGi>
-      <NGi span="24 s:24 m:10">
-        <NCard :bordered="false" class="card-wrapper">
-          <PieChart />
+      <NGi>
+        <NCard :bordered="false" size="small">
+          <div class="text-14px">今日营收</div>
+          <div class="mt-8px text-28px font-bold">{{ fmtYuan(today.revenue) }}</div>
+        </NCard>
+      </NGi>
+      <NGi>
+        <NCard :bordered="false" size="small">
+          <div class="text-14px">近30天营收</div>
+          <div class="mt-8px text-28px font-bold">{{ fmtYuan(last30d.revenue) }}</div>
         </NCard>
       </NGi>
     </NGrid>
-    <NGrid :x-gap="gap" :y-gap="16" responsive="screen" item-responsive>
-      <NGi span="24 s:24 m:14">
-        <ProjectNews />
-      </NGi>
-      <NGi span="24 s:24 m:10">
-        <CreativityBanner />
-      </NGi>
-    </NGrid>
-  </NSpace>
+
+    <!-- 近7天趋势 -->
+    <NCard title="近7天趋势" :bordered="false">
+      <div ref="domRef" class="h-360px overflow-hidden"></div>
+    </NCard>
+
+    <!-- 商品销量 Top5 -->
+    <NCard title="商品销量 Top5" :bordered="false">
+      <NDataTable :columns="topColumns" :data="topProducts" :loading="loading" size="small" />
+    </NCard>
+  </div>
 </template>
+
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import type { DataTableColumns } from 'naive-ui';
+import { useEcharts } from '@/hooks/common/echarts';
+import { fetchDashboard } from '@/service/api';
+import type { DashboardStat, DashboardTopProduct, DashboardTrendPoint } from '@/service/api';
+
+defineOptions({ name: 'Dashboard' });
+
+const loading = ref(false);
+const today = ref<DashboardStat>({ orders: 0, revenue: 0, paid_orders: 0 });
+const last30d = ref<DashboardStat>({ orders: 0, revenue: 0, paid_orders: 0 });
+const topProducts = ref<DashboardTopProduct[]>([]);
+
+function fmtYuan(cents?: number | null) {
+  return `¥${((cents ?? 0) / 100).toFixed(2)}`;
+}
+
+const { domRef, updateOptions } = useEcharts(() => ({
+  tooltip: {
+    trigger: 'axis'
+  },
+  legend: {
+    data: ['订单数', '营收(元)'],
+    top: '0'
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    top: '18%',
+    containLabel: true
+  },
+  xAxis: {
+    type: 'category',
+    boundaryGap: false,
+    data: [] as string[]
+  },
+  yAxis: [
+    {
+      type: 'value',
+      name: '订单数'
+    },
+    {
+      type: 'value',
+      name: '营收(元)'
+    }
+  ],
+  series: [
+    {
+      name: '订单数',
+      type: 'line',
+      smooth: true,
+      data: [] as number[]
+    },
+    {
+      name: '营收(元)',
+      type: 'line',
+      smooth: true,
+      yAxisIndex: 1,
+      data: [] as number[]
+    }
+  ]
+}));
+
+function renderTrend(trend: DashboardTrendPoint[]) {
+  updateOptions(opts => {
+    opts.xAxis.data = trend.map(item => item.date.slice(5));
+    opts.series[0].data = trend.map(item => item.orders);
+    opts.series[1].data = trend.map(item => Math.round((item.revenue / 100) * 100) / 100);
+    return opts;
+  });
+}
+
+const topColumns: DataTableColumns<DashboardTopProduct> = [
+  { title: '排名', key: 'rank', width: 60, render: (_row, index) => index + 1 },
+  { title: '商品', key: 'name', minWidth: 160 },
+  { title: '销量', key: 'sold_qty', width: 100 },
+  { title: '营收', key: 'revenue', width: 120, render: row => fmtYuan(row.revenue) }
+];
+
+async function loadDashboard() {
+  loading.value = true;
+  try {
+    const { data, error } = await fetchDashboard();
+    if (!error && data) {
+      const d = data as any;
+      today.value = d.today || { orders: 0, revenue: 0, paid_orders: 0 };
+      last30d.value = d.last30d || { orders: 0, revenue: 0, paid_orders: 0 };
+      topProducts.value = (d.top_products || []).slice(0, 5);
+      renderTrend(d.trend || []);
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(loadDashboard);
+</script>
 
 <style scoped></style>

@@ -147,7 +147,7 @@ async function loadList() {
     });
     if (!error && data) {
       products.value = (data as any).products || [];
-      total.value = (data as any).page?.total || 0;
+      total.value = (data as any).total || 0;
     }
   } finally {
     loading.value = false;
