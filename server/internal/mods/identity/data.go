@@ -127,3 +127,17 @@ func (r *AdminUserRepoImpl) Update(ctx context.Context, id uint64, in port.Admin
 func (r *AdminUserRepoImpl) RoleInUse(ctx context.Context, roleID uint64) (bool, error) {
 	return data.Client(ctx, r.data).AdminUser.Query().Where(adminuser.RoleID(roleID)).Exist(ctx)
 }
+
+// ── TOTP 仓储方法（P0-02 T1）────────────────────────────────────
+
+// SetTOTPSecret 存储 TOTP 密钥密文。
+func (r *AdminUserRepoImpl) SetTOTPSecret(ctx context.Context, id uint64, secret []byte) error {
+	_, err := data.Client(ctx, r.data).AdminUser.UpdateOneID(id).SetTotpSecret(secret).Save(ctx)
+	return err
+}
+
+// ClearTOTPSecret 清除 TOTP 绑定。
+func (r *AdminUserRepoImpl) ClearTOTPSecret(ctx context.Context, id uint64) error {
+	_, err := data.Client(ctx, r.data).AdminUser.UpdateOneID(id).ClearTotpSecret().Save(ctx)
+	return err
+}

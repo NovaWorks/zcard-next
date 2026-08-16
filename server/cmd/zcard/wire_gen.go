@@ -36,7 +36,12 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	roleRepoImpl := authz.NewRoleRepoImpl(dataData)
 	rbacUsecase := authz.NewRbacUsecase(roleRepoImpl)
 	adminUserRepoImpl := identity.NewAdminUserRepoImpl(dataData)
-	identityUsecase := identity.NewIdentityUsecase(adminUserRepoImpl, signer)
+	box, err := bootstrap.NewDataBox(securityConf)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	identityUsecase := identity.NewIdentityUsecase(adminUserRepoImpl, signer, dataData, box)
 	adminAuthService := identity.NewAdminAuthService(identityUsecase)
 	repoImpl := settings.NewRepoImpl(dataData)
 	settingsUsecase := settings.NewSettingsUsecase(repoImpl)

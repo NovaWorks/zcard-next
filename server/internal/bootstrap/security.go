@@ -20,7 +20,32 @@ import (
 var securityProviderSet = wire.NewSet(
 	NewSigner,
 	NewCardCipher,
+	NewDataBox,
 )
+
+// NewDataBox 业务数据加密盒（ZCARD_DATA_KEY：凭据列/TOTP 密钥共用）。
+func NewDataBox(sec *conf.Security) (*crypto.Box, error) {
+	if sec == nil {
+		sec = &conf.Security{}
+	}
+	raw := os.Getenv("ZCARD_DATA_KEY")
+	if raw == "" {
+		raw = sec.DataKey
+	}
+	if raw == "" {
+		buf := make([]byte, 32)
+		if _, err := rand.Read(buf); err != nil {
+			return nil, err
+		}
+		raw = hex.EncodeToString(buf)
+		slog.Warn("bootstrap: 未配置 ZCARD_DATA_KEY，使用随机临时密钥（仅限开发）")
+	}
+	key, err := crypto.ParseHexKey(raw)
+	if err != nil {
+		return nil, err
+	}
+	return crypto.NewBox(key)
+}
 
 // resolveKey 密钥解析：env > conf > dev 随机（告警）。
 // kind 用于日志标识（jwt_admin/jwt_user/card/data）。

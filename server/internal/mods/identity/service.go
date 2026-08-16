@@ -1,6 +1,6 @@
 package identity
 
-// Kratos transport 薄层（规划 §4.4：service 只做参数校验与装配，业务逻辑必须在 biz 层）。
+// Kratos transport 薄层：登录/登出/刷新/TOTP 管理。
 
 import (
 	"context"
@@ -9,15 +9,12 @@ import (
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
-	"github.com/go-kratos/kratos/v3/transport/http"
+	khttp "github.com/go-kratos/kratos/v3/transport/http"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-// 权限点（§5.14 权限目录由路由表自动生成，M1；当前见 internal/server/middleware.go）：
-//   auth:profile —— 当前身份（GetProfile）
-
-// AdminAuthService 管理认证服务（实现 adminv1.AdminAuthService）。
+// AdminAuthService 管理认证服务。
 type AdminAuthService struct {
 	adminv1.UnimplementedAdminAuthServiceServer
 	uc *IdentityUsecase
@@ -30,31 +27,83 @@ func NewAdminAuthService(uc *IdentityUsecase) *AdminAuthService {
 
 // Login 管理员登录。
 func (s *AdminAuthService) Login(ctx context.Context, req *adminv1.LoginRequest) (*adminv1.LoginReply, error) {
-	ip := clientIP(ctx)
-	res, err := s.uc.AdminLogin(ctx, req.GetUsername(), req.GetPassword(), req.GetTotpCode(), ip)
+	res, err := s.uc.AdminLogin(ctx, req.GetUsername(), req.GetPassword(), req.GetTotpCode(), clientIP(ctx))
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrAdminDisabled):
-			return nil, errors.Forbidden("identity.ADMIN_DISABLED", "账号已禁用")
-		default:
-			// 登录失败统一 401，不区分「账号不存在/密码错误」（防枚举）
-			return nil, errors.Unauthorized("identity.LOGIN_FAILED", "账号或密码错误")
-		}
+		return nil, mapLoginErr(err)
 	}
 	return &adminv1.LoginReply{
-		AccessToken: res.AccessToken,
-		TokenType:   "Bearer",
-		ExpiresAt:   res.ExpiresAt.Unix(),
-		Admin:       toAdminProfile(res.Admin),
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+		TokenType:    "Bearer",
+		ExpiresAt:    res.ExpiresAt.Unix(),
+		Admin:        toAdminProfile(res.Admin),
 	}, nil
 }
 
-// Logout 登出（JWT 无状态，前端弃用令牌；M3 refresh 轮换后服务端吊销）。
-func (*AdminAuthService) Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+// Logout 登出（吊销 refresh session）。
+func (s *AdminAuthService) Logout(ctx context.Context, req *adminv1.LogoutRequest) (*emptypb.Empty, error) {
+	if req.GetRefreshToken() != "" {
+		_ = s.uc.Logout(ctx, req.GetRefreshToken())
+	}
 	return &emptypb.Empty{}, nil
 }
 
-// GetProfile 当前管理员信息（JWT 鉴权后由 server 中间件注入 claims 上下文）。
+// RefreshToken 用 refresh 换新令牌对。
+func (s *AdminAuthService) RefreshToken(ctx context.Context, req *adminv1.RefreshTokenRequest) (*adminv1.LoginReply, error) {
+	res, err := s.uc.RefreshAccess(ctx, req.GetRefreshToken())
+	if err != nil {
+		return nil, mapLoginErr(err)
+	}
+	return &adminv1.LoginReply{
+		AccessToken:  res.AccessToken,
+		RefreshToken: res.RefreshToken,
+		TokenType:    "Bearer",
+		ExpiresAt:    res.ExpiresAt.Unix(),
+		Admin:        toAdminProfile(res.Admin),
+	}, nil
+}
+
+// EnableTOTP 生成绑定密钥。
+func (s *AdminAuthService) EnableTOTP(ctx context.Context, _ *emptypb.Empty) (*adminv1.EnableTOTPReply, error) {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
+	}
+	secret, url, err := s.uc.EnableTOTP(ctx, claims.Subject, claims.Username)
+	if err != nil {
+		return nil, errors.InternalServer("identity.TOTP_ENABLE_FAILED", "生成密钥失败")
+	}
+	return &adminv1.EnableTOTPReply{Secret: secret, OtpauthUrl: url}, nil
+}
+
+// ConfirmTOTP 确认绑定。
+func (s *AdminAuthService) ConfirmTOTP(ctx context.Context, req *adminv1.ConfirmTOTPRequest) (*emptypb.Empty, error) {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
+	}
+	if err := s.uc.ConfirmTOTP(ctx, claims.Subject, req.GetCode()); err != nil {
+		return nil, errors.BadRequest("identity.TOTP_INVALID", "动态码错误")
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// DisableTOTP 解绑。
+func (s *AdminAuthService) DisableTOTP(ctx context.Context, req *adminv1.ConfirmTOTPRequest) (*emptypb.Empty, error) {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
+	}
+	if err := s.uc.ConfirmTOTP(ctx, claims.Subject, req.GetCode()); err != nil {
+		return nil, errors.BadRequest("identity.TOTP_INVALID", "动态码错误")
+	}
+	if err := s.uc.DisableTOTP(ctx, claims.Subject); err != nil {
+		return nil, errors.InternalServer("identity.TOTP_DISABLE_FAILED", "解绑失败")
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// GetProfile 当前管理员信息。
 func (s *AdminAuthService) GetProfile(ctx context.Context, _ *emptypb.Empty) (*adminv1.GetProfileReply, error) {
 	claims := ClaimsFromContext(ctx)
 	if claims == nil {
@@ -67,6 +116,23 @@ func (s *AdminAuthService) GetProfile(ctx context.Context, _ *emptypb.Empty) (*a
 	return &adminv1.GetProfileReply{Admin: toAdminProfile(*u)}, nil
 }
 
+func mapLoginErr(err error) error {
+	switch {
+	case errors.Is(err, ErrAdminDisabled):
+		return errors.Forbidden("identity.ADMIN_DISABLED", "账号已禁用")
+	case errors.Is(err, ErrLocked):
+		return errors.Forbidden("identity.ACCOUNT_LOCKED", "登录失败次数过多，账号已临时锁定")
+	case errors.Is(err, ErrTOTPRequired):
+		return errors.Unauthorized("identity.TOTP_REQUIRED", "需要两步验证码")
+	case errors.Is(err, ErrTOTPInvalid):
+		return errors.Unauthorized("identity.TOTP_INVALID", "两步验证码错误")
+	case errors.Is(err, ErrSessionInvalid):
+		return errors.Unauthorized("identity.SESSION_INVALID", "会话无效或已过期")
+	default:
+		return errors.Unauthorized("identity.LOGIN_FAILED", "账号或密码错误")
+	}
+}
+
 func toAdminProfile(u AdminUser) *adminv1.AdminProfile {
 	p := &adminv1.AdminProfile{
 		Id:          u.ID,
@@ -75,22 +141,19 @@ func toAdminProfile(u AdminUser) *adminv1.AdminProfile {
 		Avatar:      u.Avatar,
 		RoleId:      u.RoleID,
 		TotpEnabled: len(u.TOTPSecretEnc) > 0,
+		LastLoginIp: u.LastLoginIP,
 	}
 	if !u.LastLoginAt.IsZero() {
 		p.LastLoginAt = timestamppb.New(u.LastLoginAt)
 	}
-	p.LastLoginIp = u.LastLoginIP
 	return p
 }
 
-// clientIP 从 transport 上下文取客户端 IP（登录审计用）。
 func clientIP(ctx context.Context) string {
-	tr, ok := transport.FromServerContext(ctx)
-	if !ok {
-		return ""
-	}
-	if hc, ok := tr.(http.Context); ok {
-		return hc.Request().RemoteAddr
+	if tr, ok := transport.FromServerContext(ctx); ok {
+		if hc, ok := tr.(khttp.Context); ok {
+			return hc.Request().RemoteAddr
+		}
 	}
 	return ""
 }

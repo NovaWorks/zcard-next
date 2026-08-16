@@ -114,7 +114,9 @@ paths:
             operationId: AdminAuthService_Logout
             requestBody:
                 content:
-                    application/json: {}
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LogoutRequest'
                 required: true
             responses:
                 "200":
@@ -133,6 +135,74 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.GetProfileReply'
+    /api/v1/admin/auth/refresh:
+        post:
+            tags:
+                - AdminAuthService
+            description: RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+            operationId: AdminAuthService_RefreshToken
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RefreshTokenRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LoginReply'
+    /api/v1/admin/auth/totp/confirm:
+        post:
+            tags:
+                - AdminAuthService
+            description: ConfirmTOTP 验证一次确认绑定。
+            operationId: AdminAuthService_ConfirmTOTP
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ConfirmTOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/auth/totp/disable:
+        post:
+            tags:
+                - AdminAuthService
+            description: DisableTOTP 解绑。
+            operationId: AdminAuthService_DisableTOTP
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ConfirmTOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/auth/totp/enable:
+        post:
+            tags:
+                - AdminAuthService
+            description: EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+            operationId: AdminAuthService_EnableTOTP
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.EnableTOTPReply'
     /api/v1/admin/authz/permissions:
         get:
             tags:
@@ -541,6 +611,13 @@ components:
                     format: date-time
                 lastLoginIp:
                     type: string
+        zcard.api.admin.v1.ConfirmTOTPRequest:
+            required:
+                - code
+            type: object
+            properties:
+                code:
+                    type: string
         zcard.api.admin.v1.CreateAdminRequest:
             required:
                 - username
@@ -619,6 +696,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
+        zcard.api.admin.v1.EnableTOTPReply:
+            type: object
+            properties:
+                secret:
+                    type: string
+                otpauthUrl:
+                    type: string
         zcard.api.admin.v1.GetProfileReply:
             type: object
             properties:
@@ -676,6 +760,9 @@ components:
                     description: 过期时间（unix 秒）
                 admin:
                     $ref: '#/components/schemas/zcard.api.admin.v1.AdminProfile'
+                refreshToken:
+                    type: string
+                    description: refresh 令牌（14d，一次性轮换）
         zcard.api.admin.v1.LoginRequest:
             required:
                 - username
@@ -689,6 +776,11 @@ components:
                 totpCode:
                     type: string
                     description: TOTP 六位动态码（员工开启二步验证时必填）
+        zcard.api.admin.v1.LogoutRequest:
+            type: object
+            properties:
+                refreshToken:
+                    type: string
         zcard.api.admin.v1.Perm:
             type: object
             properties:
@@ -709,6 +801,13 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Group'
             description: PermissionTree 权限目录树。
+        zcard.api.admin.v1.RefreshTokenRequest:
+            required:
+                - refreshToken
+            type: object
+            properties:
+                refreshToken:
+                    type: string
         zcard.api.admin.v1.Role:
             type: object
             properties:

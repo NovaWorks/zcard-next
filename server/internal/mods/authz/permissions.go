@@ -12,6 +12,14 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminAuthService/GetProfile", Method: "GET", Path: "/api/v1/admin/auth/profile"},
 		Perm{Code: "auth:logout", Desc: "登出", Domain: "auth",
 			Op: "zcard.api.admin.v1.AdminAuthService/Logout", Method: "POST", Path: "/api/v1/admin/auth/logout"},
+		Perm{Code: "auth:refresh", Desc: "刷新令牌", Domain: "auth", Public: true,
+			Op: "zcard.api.admin.v1.AdminAuthService/RefreshToken", Method: "POST", Path: "/api/v1/admin/auth/refresh"},
+		Perm{Code: "auth:totp", Desc: "TOTP 绑定管理", Domain: "auth",
+			Op: "zcard.api.admin.v1.AdminAuthService/EnableTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/enable"},
+		Perm{Code: "auth:totp", Desc: "TOTP 绑定管理", Domain: "auth",
+			Op: "zcard.api.admin.v1.AdminAuthService/ConfirmTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/confirm"},
+		Perm{Code: "auth:totp", Desc: "TOTP 绑定管理", Domain: "auth",
+			Op: "zcard.api.admin.v1.AdminAuthService/DisableTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/disable"},
 
 		// ── 设置中心（settings）──────────────────────────
 		Perm{Code: "settings:read", Desc: "查看设置", Domain: "settings",

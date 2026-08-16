@@ -18,17 +18,29 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminAuthServiceConfirmTOTP = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
+const OperationAdminAuthServiceDisableTOTP = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
+const OperationAdminAuthServiceEnableTOTP = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
 const OperationAdminAuthServiceGetProfile = "/zcard.api.admin.v1.AdminAuthService/GetProfile"
 const OperationAdminAuthServiceLogin = "/zcard.api.admin.v1.AdminAuthService/Login"
 const OperationAdminAuthServiceLogout = "/zcard.api.admin.v1.AdminAuthService/Logout"
+const OperationAdminAuthServiceRefreshToken = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
 
 type AdminAuthServiceHTTPServer interface {
+	// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
+	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
+	// DisableTOTP DisableTOTP 解绑。
+	DisableTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
+	// EnableTOTP EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+	EnableTOTP(context.Context, *emptypb.Empty) (*EnableTOTPReply, error)
 	// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
 	GetProfile(context.Context, *emptypb.Empty) (*GetProfileReply, error)
 	// Login Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
-	Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
+	// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)
 }
 
 func RegisterAdminAuthServiceHTTPServer(s *http.Server, srv AdminAuthServiceHTTPServer) {
@@ -36,6 +48,10 @@ func RegisterAdminAuthServiceHTTPServer(s *http.Server, srv AdminAuthServiceHTTP
 	r.Handle("POST", "/api/v1/admin/auth/login", _AdminAuthService_Login0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/logout", _AdminAuthService_Logout0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/auth/profile", _AdminAuthService_GetProfile0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/refresh", _AdminAuthService_RefreshToken0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/totp/enable", _AdminAuthService_EnableTOTP0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/totp/confirm", _AdminAuthService_ConfirmTOTP0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/totp/disable", _AdminAuthService_DisableTOTP0_HTTP_Handler(srv))
 }
 
 func _AdminAuthService_Login0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
@@ -59,13 +75,13 @@ func _AdminAuthService_Login0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(
 
 func _AdminAuthService_Logout0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in emptypb.Empty
+		var in LogoutRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationAdminAuthServiceLogout)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.Logout(ctx, req.(*emptypb.Empty))
+			return srv.Logout(ctx, req.(*LogoutRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -95,13 +111,97 @@ func _AdminAuthService_GetProfile0_HTTP_Handler(srv AdminAuthServiceHTTPServer) 
 	}
 }
 
+func _AdminAuthService_RefreshToken0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RefreshTokenRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceRefreshToken)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RefreshToken(ctx, req.(*RefreshTokenRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*LoginReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminAuthService_EnableTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceEnableTOTP)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.EnableTOTP(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*EnableTOTPReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminAuthService_ConfirmTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ConfirmTOTPRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceConfirmTOTP)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ConfirmTOTP(ctx, req.(*ConfirmTOTPRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminAuthService_DisableTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ConfirmTOTPRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceDisableTOTP)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DisableTOTP(ctx, req.(*ConfirmTOTPRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminAuthServiceHTTPClient interface {
+	// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
+	ConfirmTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// DisableTOTP DisableTOTP 解绑。
+	DisableTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// EnableTOTP EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+	EnableTOTP(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *EnableTOTPReply, err error)
 	// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
 	GetProfile(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *GetProfileReply, err error)
 	// Login Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
-	Logout(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	Logout(ctx context.Context, req *LogoutRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+	RefreshToken(ctx context.Context, req *RefreshTokenRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 }
 
 type AdminAuthServiceHTTPClientImpl struct {
@@ -110,6 +210,60 @@ type AdminAuthServiceHTTPClientImpl struct {
 
 func NewAdminAuthServiceHTTPClient(client *http.Client) AdminAuthServiceHTTPClient {
 	return &AdminAuthServiceHTTPClientImpl{client}
+}
+
+// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
+func (c *AdminAuthServiceHTTPClientImpl) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/auth/totp/confirm"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceConfirmTOTP),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DisableTOTP DisableTOTP 解绑。
+func (c *AdminAuthServiceHTTPClientImpl) DisableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/auth/totp/disable"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceDisableTOTP),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// EnableTOTP EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+func (c *AdminAuthServiceHTTPClientImpl) EnableTOTP(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*EnableTOTPReply, error) {
+	var out EnableTOTPReply
+	pattern := "/api/v1/admin/auth/totp/enable"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceEnableTOTP),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
@@ -148,7 +302,7 @@ func (c *AdminAuthServiceHTTPClientImpl) Login(ctx context.Context, in *LoginReq
 }
 
 // Logout Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
-func (c *AdminAuthServiceHTTPClientImpl) Logout(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
+func (c *AdminAuthServiceHTTPClientImpl) Logout(ctx context.Context, in *LogoutRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
 	pattern := "/api/v1/admin/auth/logout"
 	path := http.BuildPath(pattern, in)
@@ -156,6 +310,24 @@ func (c *AdminAuthServiceHTTPClientImpl) Logout(ctx context.Context, in *emptypb
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminAuthServiceLogout),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+func (c *AdminAuthServiceHTTPClientImpl) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...http.CallOption) (*LoginReply, error) {
+	var out LoginReply
+	pattern := "/api/v1/admin/auth/refresh"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceRefreshToken),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

@@ -207,7 +207,7 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		{code: "support", name: "客服", desc: "工单/订单只读"},
 	}
 	operatorPerms := []string{
-		"auth:profile", "auth:logout",
+		"auth:profile", "auth:logout", "auth:totp",
 		"settings:read", "settings:read_detail", "settings:update",
 		"settings:currency_read",
 		"authz:role_read", "authz:role_read_detail", "authz:tree",

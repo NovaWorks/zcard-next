@@ -20,7 +20,7 @@ service AdminAuthService {
     };
   }
   // Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
-  rpc Logout(google.protobuf.Empty) returns (google.protobuf.Empty) {
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/api/v1/admin/auth/logout"
       body: "*"
@@ -32,6 +32,34 @@ service AdminAuthService {
       get: "/api/v1/admin/auth/profile"
     };
   }
+  // RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+  rpc RefreshToken(RefreshTokenRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/auth/refresh"
+      body: "*"
+    };
+  }
+  // EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+  rpc EnableTOTP(google.protobuf.Empty) returns (EnableTOTPReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/auth/totp/enable"
+      body: "*"
+    };
+  }
+  // ConfirmTOTP 验证一次确认绑定。
+  rpc ConfirmTOTP(ConfirmTOTPRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/auth/totp/confirm"
+      body: "*"
+    };
+  }
+  // DisableTOTP 解绑。
+  rpc DisableTOTP(ConfirmTOTPRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/auth/totp/disable"
+      body: "*"
+    };
+  }
 }
 
 message LoginRequest {
@@ -39,6 +67,23 @@ message LoginRequest {
   string password = 2 [(google.api.field_behavior) = REQUIRED];
   // TOTP 六位动态码（员工开启二步验证时必填）
   string totp_code = 3;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message EnableTOTPReply {
+  string secret = 1;       // base32 密钥（手输用）
+  string otpauth_url = 2;  // otpauth:// 二维码内容
+}
+
+message ConfirmTOTPRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message LoginReply {
@@ -49,6 +94,8 @@ message LoginReply {
   // 过期时间（unix 秒）
   int64 expires_at = 3;
   AdminProfile admin = 4;
+  // refresh 令牌（14d，一次性轮换）
+  string refresh_token = 5;
 }
 
 message GetProfileReply {

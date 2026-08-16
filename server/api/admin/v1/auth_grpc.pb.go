@@ -20,9 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminAuthService_Login_FullMethodName      = "/zcard.api.admin.v1.AdminAuthService/Login"
-	AdminAuthService_Logout_FullMethodName     = "/zcard.api.admin.v1.AdminAuthService/Logout"
-	AdminAuthService_GetProfile_FullMethodName = "/zcard.api.admin.v1.AdminAuthService/GetProfile"
+	AdminAuthService_Login_FullMethodName        = "/zcard.api.admin.v1.AdminAuthService/Login"
+	AdminAuthService_Logout_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/Logout"
+	AdminAuthService_GetProfile_FullMethodName   = "/zcard.api.admin.v1.AdminAuthService/GetProfile"
+	AdminAuthService_RefreshToken_FullMethodName = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
+	AdminAuthService_EnableTOTP_FullMethodName   = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
+	AdminAuthService_ConfirmTOTP_FullMethodName  = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
+	AdminAuthService_DisableTOTP_FullMethodName  = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
 )
 
 // AdminAuthServiceClient is the client API for AdminAuthService service.
@@ -35,9 +39,17 @@ type AdminAuthServiceClient interface {
 	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	// Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
-	Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
 	GetProfile(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetProfileReply, error)
+	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*LoginReply, error)
+	// EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+	EnableTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EnableTOTPReply, error)
+	// ConfirmTOTP 验证一次确认绑定。
+	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// DisableTOTP 解绑。
+	DisableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminAuthServiceClient struct {
@@ -58,7 +70,7 @@ func (c *adminAuthServiceClient) Login(ctx context.Context, in *LoginRequest, op
 	return out, nil
 }
 
-func (c *adminAuthServiceClient) Logout(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *adminAuthServiceClient) Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminAuthService_Logout_FullMethodName, in, out, cOpts...)
@@ -78,6 +90,46 @@ func (c *adminAuthServiceClient) GetProfile(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
+func (c *adminAuthServiceClient) RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*LoginReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginReply)
+	err := c.cc.Invoke(ctx, AdminAuthService_RefreshToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) EnableTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EnableTOTPReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnableTOTPReply)
+	err := c.cc.Invoke(ctx, AdminAuthService_EnableTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminAuthService_ConfirmTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) DisableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminAuthService_DisableTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminAuthServiceServer is the server API for AdminAuthService service.
 // All implementations must embed UnimplementedAdminAuthServiceServer
 // for forward compatibility.
@@ -88,9 +140,17 @@ type AdminAuthServiceServer interface {
 	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
-	Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
 	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
 	GetProfile(context.Context, *emptypb.Empty) (*GetProfileReply, error)
+	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
+	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)
+	// EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
+	EnableTOTP(context.Context, *emptypb.Empty) (*EnableTOTPReply, error)
+	// ConfirmTOTP 验证一次确认绑定。
+	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
+	// DisableTOTP 解绑。
+	DisableTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminAuthServiceServer()
 }
 
@@ -104,11 +164,23 @@ type UnimplementedAdminAuthServiceServer struct{}
 func (UnimplementedAdminAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
 }
-func (UnimplementedAdminAuthServiceServer) Logout(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (UnimplementedAdminAuthServiceServer) Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
 }
 func (UnimplementedAdminAuthServiceServer) GetProfile(context.Context, *emptypb.Empty) (*GetProfileReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetProfile not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) EnableTOTP(context.Context, *emptypb.Empty) (*EnableTOTPReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnableTOTP not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ConfirmTOTP not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) DisableTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DisableTOTP not implemented")
 }
 func (UnimplementedAdminAuthServiceServer) mustEmbedUnimplementedAdminAuthServiceServer() {}
 func (UnimplementedAdminAuthServiceServer) testEmbeddedByValue()                          {}
@@ -150,7 +222,7 @@ func _AdminAuthService_Login_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _AdminAuthService_Logout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(LogoutRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -162,7 +234,7 @@ func _AdminAuthService_Logout_Handler(srv interface{}, ctx context.Context, dec 
 		FullMethod: AdminAuthService_Logout_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminAuthServiceServer).Logout(ctx, req.(*emptypb.Empty))
+		return srv.(AdminAuthServiceServer).Logout(ctx, req.(*LogoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -185,6 +257,78 @@ func _AdminAuthService_GetProfile_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminAuthService_RefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).RefreshToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_RefreshToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).RefreshToken(ctx, req.(*RefreshTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_EnableTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).EnableTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_EnableTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).EnableTOTP(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_ConfirmTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmTOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).ConfirmTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_ConfirmTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).ConfirmTOTP(ctx, req.(*ConfirmTOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_DisableTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmTOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).DisableTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_DisableTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).DisableTOTP(ctx, req.(*ConfirmTOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminAuthService_ServiceDesc is the grpc.ServiceDesc for AdminAuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -203,6 +347,22 @@ var AdminAuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProfile",
 			Handler:    _AdminAuthService_GetProfile_Handler,
+		},
+		{
+			MethodName: "RefreshToken",
+			Handler:    _AdminAuthService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "EnableTOTP",
+			Handler:    _AdminAuthService_EnableTOTP_Handler,
+		},
+		{
+			MethodName: "ConfirmTOTP",
+			Handler:    _AdminAuthService_ConfirmTOTP_Handler,
+		},
+		{
+			MethodName: "DisableTOTP",
+			Handler:    _AdminAuthService_DisableTOTP_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

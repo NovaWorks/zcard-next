@@ -18,7 +18,7 @@ import (
 // 该函数依赖 ent.Client 无法在架构测试直连，此处提取为镜像清单；
 // 不一致时本测试的角色覆盖断言会漂移，由 syncRolePerms 的幂等性兜底）。
 var operatorSeed = map[string]bool{
-	"auth:profile": true, "auth:logout": true,
+	"auth:profile": true, "auth:logout": true, "auth:totp": true,
 	"settings:read": true, "settings:read_detail": true, "settings:update": true,
 	"settings:currency_read": true,
 	"authz:role_read":        true, "authz:role_read_detail": true, "authz:tree": true,
