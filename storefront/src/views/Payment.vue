@@ -7,6 +7,7 @@
         <option value="alipay">支付宝</option>
         <option value="wechat">微信支付</option>
         <option value="epay">易支付</option>
+        <option value="epusdt">USDT（TRC20）</option>
         <option value="wallet">余额支付</option>
       </select>
     </div>

@@ -76,6 +76,12 @@ type Capturer interface {
 	QueryPayment(ctx context.Context, gatewayOrderNo string, cfg json.RawMessage) (*CallbackFact, error)
 }
 
+// Acker 回调成功应答体（渠道感知，可选能力位）：
+// 未实现则回调管线默认 JSON {"status":"ok"}；epusdt 类网关要求纯文本 "ok"。
+type Acker interface {
+	SuccessAck() string
+}
+
 // Refunder 原路退款（2.0 新增能力位，退款编排三通道之一）。
 type Refunder interface {
 	Refund(ctx context.Context, gatewayOrderNo string, amount money.Cents, reason string, cfg json.RawMessage) error

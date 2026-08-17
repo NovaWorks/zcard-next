@@ -3,9 +3,11 @@ package payment
 // M1b 交易闭环核心测试：支付回调分流（订单型/充值型）+ 余额支付扣款 + 充值到账。
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -334,5 +336,27 @@ func TestRechargeGiftPoints(t *testing.T) {
 	pts, _ = walletRepo.GetPoints(ctx, 1)
 	if pts != 200 {
 		t.Fatalf("幂等重放重复入账积分: %d", pts)
+	}
+}
+
+// TestParseCallbackFormJSONNumber JSON 回调体数字字面保持（P2-09 epusdt）：
+// 10.00 必须保持 "10.00" 而非塌成 "10"——验签按原文重算（签名不变式 §5.5）。
+func TestParseCallbackFormJSONNumber(t *testing.T) {
+	body := []byte(`{"order_id":"S123","amount":10.00,"status":2,"note":"x"}`)
+	r, _ := http.NewRequest(http.MethodPost, "/payments/callback/epusdt", bytes.NewReader(body))
+	r.Header.Set("Content-Type", "application/json")
+	m, err := parseCallbackForm(r, body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m["amount"] != "10.00" {
+		t.Fatalf("数字字面被破坏: %q（应为 10.00）", m["amount"])
+	}
+	if m["status"] != "2" || m["order_id"] != "S123" {
+		t.Fatalf("字段解析错位: %+v", m)
+	}
+	// 字符串字段原样
+	if m["note"] != "x" {
+		t.Fatalf("字符串字段错位: %q", m["note"])
 	}
 }

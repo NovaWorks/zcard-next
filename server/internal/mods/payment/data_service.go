@@ -371,6 +371,11 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		if err := repo.HandleCallback(ctx, paymentID, fact); err != nil {
 			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
+		// 应答体渠道感知（Acker 能力位）：epusdt 类网关要求纯文本 "ok"；
+		// 未实现 Acker 的渠道维持 JSON（alipay/wechat/epay 现状）
+		if acker, ok := provider.(port.Acker); ok {
+			return ctx.String(http.StatusOK, acker.SuccessAck())
+		}
 		return ctx.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
 }
@@ -386,12 +391,27 @@ func parseCallbackForm(r *http.Request, body []byte) (map[string]string, error) 
 	for k := range r.Form {
 		m[k] = r.Form.Get(k)
 	}
-	// 若 body 是 JSON 但无表单（兼容旧测试 JSON 兜底），退化为 JSON 对象
+	// JSON 回调体（epusdt 类）：UseNumber 保留原始字面——10.00 不得塌成 10
+	//（验签按原文重算，签名不变式 §5.5）
 	if len(m) == 0 && len(body) > 0 {
+		dec := json.NewDecoder(bytes.NewReader(body))
+		dec.UseNumber()
 		var j map[string]any
-		if json.Unmarshal(body, &j) == nil {
+		if dec.Decode(&j) == nil {
 			for k, v := range j {
-				m[k] = fmt.Sprintf("%v", v)
+				switch tv := v.(type) {
+				case json.Number:
+					m[k] = tv.String()
+				case string:
+					m[k] = tv
+				case bool:
+					m[k] = fmt.Sprintf("%v", tv)
+				default:
+					_ = tv
+					if b, err := json.Marshal(v); err == nil {
+						m[k] = string(b)
+					}
+				}
 			}
 		}
 	}

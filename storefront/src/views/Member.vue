@@ -116,6 +116,7 @@
           <option value="alipay">支付宝</option>
           <option value="wechat">微信支付</option>
           <option value="epay">易支付</option>
+        <option value="epusdt">USDT（TRC20）</option>
         </select>
       </div>
       <div v-if="rechargeError" class="error" style="margin-bottom: 8px;">{{ rechargeError }}</div>

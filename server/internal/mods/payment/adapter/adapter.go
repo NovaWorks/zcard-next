@@ -30,6 +30,7 @@ func RegisterAll(reg port.Registry) error {
 	reg.Register(NewEpay())
 	reg.Register(NewAlipay())
 	reg.Register(NewWechat())
+	reg.Register(NewEpusdt())
 	return nil
 }
 
