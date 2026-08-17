@@ -2799,6 +2799,25 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/reseller/products:
+        post:
+            tags:
+                - AdminResellerService
+            description: CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+            operationId: AdminResellerService_CreateProduct
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateResellerProductRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ResellerProduct'
     /api/v1/admin/reseller/profiles:
         get:
             tags:
@@ -5410,6 +5429,36 @@ components:
                     type: string
                 reason:
                     type: string
+        zcard.api.admin.v1.CreateResellerProductRequest:
+            required:
+                - name
+            type: object
+            properties:
+                name:
+                    type: string
+                priceCents:
+                    type: string
+                factoryPriceCents:
+                    type: string
+                description:
+                    type: string
+                cover:
+                    type: string
+                categoryId:
+                    type: string
+                stockType:
+                    type: string
+                deliveryMode:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+                sort:
+                    type: integer
+                    format: int32
+                stockVisible:
+                    type: boolean
+            description: CreateResellerProductRequest 分站自营商品上架入参（名称必填；价格/成本分）。
         zcard.api.admin.v1.CreateRoleRequest:
             required:
                 - name
@@ -6909,6 +6958,25 @@ components:
                     type: string
                 name:
                     type: string
+        zcard.api.admin.v1.ResellerProduct:
+            type: object
+            properties:
+                id:
+                    type: string
+                subsiteId:
+                    type: string
+                name:
+                    type: string
+                slug:
+                    type: string
+                priceCents:
+                    type: string
+                status:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+            description: ResellerProduct 分站自营商品（上架结果回执）。
         zcard.api.admin.v1.ResellerProfile:
             type: object
             properties:

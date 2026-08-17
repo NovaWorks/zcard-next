@@ -8,6 +8,7 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
@@ -71,8 +72,9 @@ func (s *AdminCatalogService) GetProduct(ctx context.Context, req *adminv1.GetPr
 
 // CreateProduct 创建商品（description sanitize）。
 func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.CreateProductRequest) (*adminv1.AdminProduct, error) {
-	if req.GetName() == "" || req.GetPriceCents() < 0 {
-		return nil, errors.BadRequest("catalog.INVALID_INPUT", "名称必填、价格非负")
+	// 铁律 16：管理面提交金额必须过服务端边界校验（非负 + 上限）——抓包改金额拦截点
+	if req.GetName() == "" || !money.ValidCents(req.GetPriceCents()) || !money.ValidCents(req.GetFactoryPriceCents()) {
+		return nil, errors.BadRequest("catalog.INVALID_INPUT", "名称必填、价格与成本须为非负且不超上限")
 	}
 	in := port.ProductInput{
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
@@ -94,6 +96,9 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 
 // UpdateProduct 更新商品。
 func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.UpdateProductRequest) (*adminv1.AdminProduct, error) {
+	if req.GetPriceCents() > money.MaxCents || req.GetFactoryPriceCents() > money.MaxCents {
+		return nil, errors.BadRequest("catalog.INVALID_INPUT", "价格与成本不得超出上限")
+	}
 	in := port.ProductInput{
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
 		Description: sanitize.HTML(req.GetDescription()),

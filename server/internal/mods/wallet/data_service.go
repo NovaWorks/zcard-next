@@ -4,6 +4,7 @@ package wallet
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -11,6 +12,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -23,11 +26,13 @@ type StoreWalletService struct {
 	storefrontv1.UnimplementedStoreWalletServiceServer
 	repo *WalletRepoImpl
 	data *data.Data
+	// settings 充值档位读取（铁律 16：客户端金额只作意向，档位由服务端裁决）
+	settings settingsport.SettingsReader
 }
 
 // NewStoreWalletService 构造。
-func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data) *StoreWalletService {
-	return &StoreWalletService{repo: repo, data: d}
+func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader) *StoreWalletService {
+	return &StoreWalletService{repo: repo, data: d, settings: settings}
 }
 
 // GetBalance 余额+积分。
@@ -74,25 +79,78 @@ func (s *StoreWalletService) ListTransactions(ctx context.Context, req *storefro
 	return reply, nil
 }
 
-// CreateRecharge 充值（M1a 框架——真实支付管线 M1b 接入）。
+// CreateRecharge 充值（金额服务端档位裁决；支付确认前绝不入账——铁律 16）。
+//
+// 安全口径：客户端提交的 amount_cents 只是「意向」，服务端按 settings.recharge
+// 档位（enabled/min_amount/max_amount）校验，赠送（gift_tiers）由服务端计算，
+// 落 recharge_orders(pending)。余额入账只发生在支付回调成功后
+// （payment.succeeded → wallet 订阅，reference=recharge:<paymentID>——M1b 支付
+// 管线接线后完成）。抓包改金额只能落在档位区间内且不会直接入账。
 func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefrontv1.CreateRechargeRequest) (*storefrontv1.CreateRechargeReply, error) {
 	claims := identity.ClaimsFromContext(ctx)
 	if claims == nil {
 		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
 	}
-	if req.GetAmountCents() <= 0 {
-		return nil, errors.BadRequest("wallet.INVALID_AMOUNT", "充值金额必须大于 0")
+	amount := req.GetAmountCents()
+	minAmount, maxAmount, enabled := s.rechargePolicy(ctx)
+	if !enabled {
+		return nil, errors.Forbidden("wallet.RECHARGE_DISABLED", "充值功能未开放")
 	}
+	if !money.ValidCents(amount) || amount < minAmount || amount > maxAmount {
+		return nil, errors.BadRequest("wallet.INVALID_AMOUNT", "充值金额超出允许范围")
+	}
+	giftAmount, giftPoints := s.giftFor(ctx, amount)
+	ro, err := s.repo.CreateRechargeOrder(ctx, claims.Subject, amount, giftAmount, giftPoints)
+	if err != nil {
+		return nil, errors.InternalServer("wallet.RECHARGE_FAILED", "创建充值单失败")
+	}
+	return &storefrontv1.CreateRechargeReply{RechargeId: ro.ID}, nil
+}
 
-	// M1a：直接入账（M1b 接支付管线后走回调）
-	ref := fmt.Sprintf("recharge:%d:%d", claims.Subject, req.GetAmountCents())
-	if err := s.repo.CreditInTx(ctx, Entry{
-		UserID: claims.Subject, Direction: "in", Type: "recharge",
-		Amount: req.GetAmountCents(), Reference: ref,
-	}); err != nil {
-		return nil, errors.InternalServer("wallet.RECHARGE_FAILED", "充值失败")
+// rechargePolicy 充值档位（settings.recharge 组；读取失败回退目录默认值——
+// min=1000 分 / max=500000 分 / enabled=true，与 settings 目录一致）。
+func (s *StoreWalletService) rechargePolicy(ctx context.Context) (minAmount, maxAmount int64, enabled bool) {
+	minAmount, maxAmount, enabled = 1000, 500000, true
+	if s.settings == nil {
+		return
 	}
-	return &storefrontv1.CreateRechargeReply{}, nil
+	get := func(key string, out any) bool {
+		raw, err := s.settings.GetJSON(ctx, "recharge", key)
+		if err != nil || len(raw) == 0 {
+			return false
+		}
+		return json.Unmarshal(raw, out) == nil
+	}
+	get("enabled", &enabled)
+	get("min_amount", &minAmount)
+	get("max_amount", &maxAmount)
+	return
+}
+
+// giftFor 赠送档位（gift_tiers 精确匹配充值金额；客户端无法指定赠送——
+// 防止「改赠送字段刷余额」）。
+func (s *StoreWalletService) giftFor(ctx context.Context, amount int64) (giftAmount int64, giftPoints int32) {
+	if s.settings == nil {
+		return 0, 0
+	}
+	raw, err := s.settings.GetJSON(ctx, "recharge", "gift_tiers")
+	if err != nil || len(raw) == 0 {
+		return 0, 0
+	}
+	var tiers []struct {
+		Amount      int64 `json:"amount"`
+		GiftBalance int64 `json:"gift_balance"`
+		GiftPoints  int32 `json:"gift_points"`
+	}
+	if json.Unmarshal(raw, &tiers) != nil {
+		return 0, 0
+	}
+	for _, t := range tiers {
+		if t.Amount == amount {
+			return t.GiftBalance, t.GiftPoints
+		}
+	}
+	return 0, 0
 }
 
 // ── Admin ──
@@ -121,10 +179,14 @@ func (s *AdminWalletService) GetBalance(ctx context.Context, req *adminv1.GetBal
 	}, nil
 }
 
-// Adjust 手动调账。
+// Adjust 手动调账（管理面唯一合法「客户端提交金额」路径——RBAC 权限 + 服务端
+// 边界校验 + 审计覆盖，铁律 16）。
 func (s *AdminWalletService) Adjust(ctx context.Context, req *adminv1.AdjustRequest) (*adminv1.Balance, error) {
 	if req.GetReason() == "" {
 		return nil, errors.BadRequest("wallet.REASON_REQUIRED", "调账原因必填")
+	}
+	if req.GetAmountCents() == 0 || !money.ValidSignedCents(req.GetAmountCents()) {
+		return nil, errors.BadRequest("wallet.INVALID_AMOUNT", "调账金额非法（非零且不超上限）")
 	}
 	claims := identity.ClaimsFromContext(ctx)
 	var operatorID uint64

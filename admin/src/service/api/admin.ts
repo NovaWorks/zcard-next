@@ -139,3 +139,9 @@ export function updateSetting(group: string, key: string, valueJson: string) {
     data: { value_json: valueJson }
   });
 }
+
+// ── 货币（P0-04；符号/位置/小数位——前端金额格式化统一取默认货币）──
+
+export function fetchCurrencies() {
+  return request({ url: '/api/v1/admin/currencies', method: 'get' });
+}

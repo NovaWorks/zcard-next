@@ -50,3 +50,23 @@ func TestParseDecimalStr(t *testing.T) {
 		}
 	}
 }
+
+// TestAmountBounds 服务端金额边界（铁律 16 的校验口径）。
+func TestAmountBounds(t *testing.T) {
+	if !ValidCents(0) || !ValidCents(1) || !ValidCents(MaxCents) {
+		t.Fatal("合法金额被拒绝")
+	}
+	if ValidCents(-1) || ValidCents(MaxCents+1) {
+		t.Fatal("越界金额被放行")
+	}
+	if !ValidSignedCents(-MaxCents) || !ValidSignedCents(MaxCents) {
+		t.Fatal("合法有符号金额被拒绝")
+	}
+	if ValidSignedCents(-MaxCents-1) || ValidSignedCents(MaxCents+1) {
+		t.Fatal("越界有符号金额被放行")
+	}
+	// 元↔分换算安全性：1 元=100 分，10 亿分=1 亿元上限内的典型值必须通过
+	if !ValidCents(100) || !ValidCents(123456789) {
+		t.Fatal("典型金额被拒绝")
+	}
+}

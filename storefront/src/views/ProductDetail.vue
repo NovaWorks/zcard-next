@@ -1,7 +1,7 @@
 <template>
   <div v-if="p" class="card">
     <h2 style="margin-bottom: 8px;">{{ p.name }}</h2>
-    <div class="price" style="font-size: 22px; margin-bottom: 12px;">¥{{ fenToYuan(p.price_cents) }}</div>
+    <div class="price" style="font-size: 22px; margin-bottom: 12px;">{{ formatMoney(p.price_cents) }}</div>
     <div style="margin-bottom: 12px;">类型：{{ stockTypeLabel(p.stock_type) }} · 销量 {{ p.sales_count }}</div>
     <div style="margin-bottom: 16px; white-space: pre-wrap;">{{ p.description || '暂无描述' }}</div>
 
@@ -16,7 +16,7 @@
       <select v-model.number="selectedSku" class="input" style="max-width: 320px;">
         <option :value="0">默认规格</option>
         <option v-for="s in p.skus" :key="s.id" :value="s.id">
-          {{ s.name }}（¥{{ fenToYuan(s.price_cents) }}）
+          {{ s.name }}（{{ formatMoney(s.price_cents) }}）
         </option>
       </select>
     </div>
@@ -88,7 +88,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProduct, createOrder, type Product } from '@/api';
-import { fenToYuan } from '@/api/client';
+import { formatMoney } from '@/api/client';
 
 const route = useRoute();
 const router = useRouter();

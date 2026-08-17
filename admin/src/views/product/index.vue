@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted, h } from "vue";
 import { NButton, NTag, NSpace, NPopconfirm } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchProducts, createProduct, updateProduct, deleteProduct } from "@/service/api";
+import { formatMoney, centsToYuan, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "ProductManagement" });
 
@@ -18,8 +19,8 @@ const pageSize = 20;
 
 const formData = reactive({
   name: "",
-  price_cents: 0,
-  factory_price_cents: 0,
+  price_yuan: 0,
+  factory_price_yuan: 0,
   stock_type: "card",
   status: 1,
 });
@@ -52,14 +53,13 @@ const columns: DataTableColumns<any> = [
     title: "售价",
     key: "price_cents",
     width: 100,
-    render: (row) => `¥${(row.price_cents / 100).toFixed(2)}`,
+    render: (row) => formatMoney(row.price_cents),
   },
   {
     title: "成本",
     key: "factory_price_cents",
     width: 100,
-    render: (row) =>
-      row.factory_price_cents ? `¥${(row.factory_price_cents / 100).toFixed(2)}` : "-",
+    render: (row) => (row.factory_price_cents ? formatMoney(row.factory_price_cents) : "-"),
   },
   {
     title: "类型",
@@ -142,8 +142,8 @@ function handleEdit(row: any) {
   editingId.value = row.id;
   Object.assign(formData, {
     name: row.name,
-    price_cents: row.price_cents,
-    factory_price_cents: row.factory_price_cents,
+    price_yuan: centsToYuan(row.price_cents),
+    factory_price_yuan: centsToYuan(row.factory_price_cents),
     stock_type: row.stock_type,
     status: row.status,
   });
@@ -151,12 +151,18 @@ function handleEdit(row: any) {
 }
 
 async function handleSave() {
-  if (!formData.name || formData.price_cents <= 0) return;
+  if (!formData.name || formData.price_yuan <= 0) return;
   saving.value = true;
   try {
+    // 元 → 分（铁律 15：提交统一 *100，经 utils/money 防浮点）
+    const payload = {
+      ...formData,
+      price_cents: yuanToFen(formData.price_yuan),
+      factory_price_cents: yuanToFen(formData.factory_price_yuan || 0)
+    };
     const { error } = editingId.value
-      ? await updateProduct(editingId.value, formData)
-      : await createProduct(formData);
+      ? await updateProduct(editingId.value, payload)
+      : await createProduct(payload);
     if (!error) {
       showCreate.value = false;
       window.$message?.success(editingId.value ? "更新成功" : "创建成功");
@@ -214,11 +220,11 @@ onMounted(loadList);
         <NFormItem label="商品名称" path="name" :rule="{ required: true }">
           <NInput v-model:value="formData.name" placeholder="请输入商品名称" />
         </NFormItem>
-        <NFormItem label="售价（分）" path="price_cents" :rule="{ required: true }">
-          <NInputNumber v-model:value="formData.price_cents" :min="1" class="w-full" />
+        <NFormItem label="售价（元）" path="price_yuan" :rule="{ required: true }">
+          <NInputNumber v-model:value="formData.price_yuan" :min="0.01" :precision="2" :step="0.01" class="w-full" />
         </NFormItem>
-        <NFormItem label="成本价（分）">
-          <NInputNumber v-model:value="formData.factory_price_cents" :min="0" class="w-full" />
+        <NFormItem label="成本价（元）">
+          <NInputNumber v-model:value="formData.factory_price_yuan" :min="0" :precision="2" :step="0.01" class="w-full" />
         </NFormItem>
         <NFormItem label="库存类型">
           <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />

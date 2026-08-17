@@ -5,6 +5,10 @@ import type { WatermarkProps } from 'naive-ui';
 import { useAppStore } from './store/modules/app';
 import { useThemeStore } from './store/modules/theme';
 import { naiveDateLocales, naiveLocales } from './locales/naive';
+import { initCurrency } from './utils/money';
+
+// 启动加载默认货币（i18n.base_currency → 符号/小数位；失败回退默认符号）
+initCurrency();
 
 defineOptions({
   name: 'App'

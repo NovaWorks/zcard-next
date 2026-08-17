@@ -342,6 +342,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminResellerService/VerifySite", Method: "POST", Path: "/api/v1/admin/reseller/my/sites/{site_id}/verify"},
 		Perm{Code: "reseller:site", Desc: "白标设置（分站主）", Domain: "reseller",
 			Op: "zcard.api.admin.v1.AdminResellerService/SetWhitelabel", Method: "POST", Path: "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel"},
+		Perm{Code: "reseller:product", Desc: "自营商品上架（分站主）", Domain: "reseller",
+			Op: "zcard.api.admin.v1.AdminResellerService/CreateProduct", Method: "POST", Path: "/api/v1/admin/reseller/products"},
 
 		// ── 素材库（media，P3-06）───────────────────
 		Perm{Code: "media:read", Desc: "分类列表", Domain: "media",

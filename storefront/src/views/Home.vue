@@ -24,7 +24,7 @@
       <div v-for="p in products" :key="p.id" class="card" style="cursor: pointer;" @click="$router.push(`/product/${p.id}`)">
         <div class="tag" style="margin-bottom: 8px;">{{ stockTypeLabel(p.stock_type) }}</div>
         <div style="font-weight: 600; margin-bottom: 8px;">{{ p.name }}</div>
-        <div class="price">¥{{ fenToYuan(p.price_cents) }}</div>
+        <div class="price">{{ formatMoney(p.price_cents) }}</div>
         <div class="muted">销量 {{ p.sales_count }}</div>
       </div>
     </div>
@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { listProducts, listBanners, listPosts, type Product, type Banner, type StorePost } from '@/api';
-import { fenToYuan } from '@/api/client';
+import { formatMoney } from '@/api/client';
 
 const products = ref<Product[]>([]);
 const keyword = ref('');

@@ -17,6 +17,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/walletaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 )
@@ -40,6 +41,18 @@ type WalletRepoImpl struct {
 
 // NewWalletRepoImpl 构造。
 func NewWalletRepoImpl(d *data.Data) *WalletRepoImpl { return &WalletRepoImpl{data: d} }
+
+// CreateRechargeOrder 落充值单（pending；赠送金额服务端已算定）。
+// 入账只发生在支付回调成功后——本方法绝不写钱包流水（铁律 16）。
+func (r *WalletRepoImpl) CreateRechargeOrder(ctx context.Context, userID uint64, amount, giftAmount int64, giftPoints int32) (*ent.RechargeOrder, error) {
+	return data.Client(ctx, r.data).RechargeOrder.Create().
+		SetUserID(userID).
+		SetAmount(amount).
+		SetGiftAmount(giftAmount).
+		SetGiftPoints(giftPoints).
+		SetStatus(rechargeorder.StatusPending).
+		Save(ctx)
+}
 
 // CreditInTx 入账（幂等重入：reference 已存在直接返回成功）。
 func (r *WalletRepoImpl) CreditInTx(ctx context.Context, e Entry) error {

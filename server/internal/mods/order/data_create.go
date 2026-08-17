@@ -26,9 +26,10 @@ import (
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
-	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
@@ -46,16 +47,17 @@ type OrderUsecase struct {
 	MemberRate memberlevelport.RateResolver
 	Coupon     couponport.CouponResolver
 	Catalog    catalogport.PricingResolver
-	Outbox     events.Writer // order.* 事件发布（M2：procurement 订阅 order.paid）
-	Gate       auditport.RiskGate // P2-06 下单风控闸门（nil = 未装配跳过）
+	Outbox     events.Writer                // order.* 事件发布（M2：procurement 订阅 order.paid）
+	Gate       auditport.RiskGate           // P2-06 下单风控闸门（nil = 未装配跳过）
 	Flash      couponport.FlashResolver     // M3：秒杀（nil 跳过）
 	Promos     couponport.PromotionResolver // M3：促销（nil 跳过）
 	Settings   settingsport.SettingsReader  // M3：互斥开关读取（nil 默认互斥）
+	Reseller   resellerport.Pricer          // P3-04：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings}
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader, reseller resellerport.Pricer) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings, Reseller: reseller}
 }
 
 // CreateOrderInput 下单输入。
@@ -149,7 +151,8 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		var results []itemResult
 		var totalCents int64
 		var cartItems []couponport.CartItem // 券范围判定输入
-		flashApplied := false                // 券×秒杀互斥判据
+		flashApplied := false               // 券×秒杀互斥判据
+		var totalSubsiteMarkup int64        // 分站加价合计（利润基数快照）
 
 		for _, item := range in.Items {
 			p, err := client.Product.Query().
@@ -211,14 +214,25 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 			}
 
+			// M3 步骤 7：分站定价（listing 与 checkout 共用同一 ResolveUnitPrice——
+			// 1.x 铁律，分站价只在一处计算）。秒杀价覆盖分站价（flash 生效时跳过）。
+			var subsiteMarkup money.Cents
+			if uc.Reseller != nil && in.SubsiteID != tenancy.MainSubsiteID && flashPrice == 0 {
+				if sp, err := uc.Reseller.ResolveUnitPrice(txCtx, in.SubsiteID, item.ProductID, item.SkuID, basePrice); err == nil && sp > basePrice {
+					subsiteMarkup = sp - basePrice
+				}
+			}
+			totalSubsiteMarkup += int64(subsiteMarkup) * int64(item.Quantity)
+
 			pr := PriceCalculator(PriceInput{
-				BasePrice:  basePrice,
-				Quantity:   item.Quantity,
-				MemberRate: memberRate,
-				GroupRate:  groupRate,
-				FlashPrice: flashPrice,
+				BasePrice:     basePrice,
+				Quantity:      item.Quantity,
+				MemberRate:    memberRate,
+				GroupRate:     groupRate,
+				FlashPrice:    flashPrice,
 				PromoDiscount: promoDiscount,
 				PromoName:     promoName,
+				SubsiteMarkup: subsiteMarkup,
 			})
 			results = append(results, itemResult{
 				input: item, res: pr, cost: int64(p.FactoryPrice),
@@ -272,9 +286,22 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				invL1, invL2, invL3 = u.InviteL1, u.InviteL2, u.InviteL3
 			}
 		}
+		// P3-04：分站快照（下单瞬间锁定——分账与退款逆向只认快照，不回溯）
+		profitEligible := true
+		if uc.Reseller != nil && in.SubsiteID != tenancy.MainSubsiteID {
+			profitEligible = uc.Reseller.ProfitEligible(txCtx, in.SubsiteID, in.UserID)
+		}
+		var subsiteDomain *string
+		if in.SubsiteID != tenancy.MainSubsiteID && tc.Host != "" {
+			host := tc.Host
+			subsiteDomain = &host
+		}
 		o, err := client.Order.Create().
 			SetOrderNo(orderNo).
 			SetSubsiteID(in.SubsiteID).
+			SetSubsiteProfit(totalSubsiteMarkup).
+			SetProfitEligible(profitEligible).
+			SetNillableSubsiteDomain(subsiteDomain).
 			SetNillableInviteL1(nilOrZero(invL1)).
 			SetNillableInviteL2(nilOrZero(invL2)).
 			SetNillableInviteL3(nilOrZero(invL3)).
@@ -458,7 +485,10 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 		"total_cents": o.TotalAmount,
 		// 毛利口径基数（amount − cost；affiliate BaseScope=profit 消费）
 		"profit_cents": o.TotalAmount - orderCostOf(items),
-		"items":        rows,
+		// P3-04：分站快照（reseller 分账消费；自购快照不产生利润）
+		"subsite_profit":  o.SubsiteProfit,
+		"profit_eligible": o.ProfitEligible,
+		"items":           rows,
 	}
 	raw, err := json.Marshal(payload)
 	if err != nil {

@@ -18,6 +18,17 @@ const Zero Cents = 0
 // ErrInvalidAmount 金额非法（解析失败/精度越界/负数越界场景）。
 var ErrInvalidAmount = errors.New("money: invalid amount")
 
+// MaxCents 单笔金额上限（1 亿元 = 10^10 分）。管理面提交金额的服务端边界
+// 校验口径（铁律 16）：客户端可提交的金额必须落在 [0, MaxCents]（有符号口径
+// 为 ±MaxCents），超限即拒绝——抓包改金额只能在允许区间内取值。
+const MaxCents int64 = 10_000_000_00
+
+// ValidCents 非负且不超上限（价格/充值等非负金额口径）。
+func ValidCents(v int64) bool { return v >= 0 && v <= MaxCents }
+
+// ValidSignedCents 有符号金额（调账/账本口径；绝对值不超上限）。
+func ValidSignedCents(v int64) bool { return v >= -MaxCents && v <= MaxCents }
+
 // Add 返回 a+b（不改变原值；金额是不可变语义）。
 func (c Cents) Add(other Cents) Cents { return c + other }
 

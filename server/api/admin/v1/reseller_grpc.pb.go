@@ -24,6 +24,7 @@ const (
 	AdminResellerService_AddSite_FullMethodName       = "/zcard.api.admin.v1.AdminResellerService/AddSite"
 	AdminResellerService_VerifySite_FullMethodName    = "/zcard.api.admin.v1.AdminResellerService/VerifySite"
 	AdminResellerService_SetWhitelabel_FullMethodName = "/zcard.api.admin.v1.AdminResellerService/SetWhitelabel"
+	AdminResellerService_CreateProduct_FullMethodName = "/zcard.api.admin.v1.AdminResellerService/CreateProduct"
 	AdminResellerService_ReviewApply_FullMethodName   = "/zcard.api.admin.v1.AdminResellerService/ReviewApply"
 	AdminResellerService_ListProfiles_FullMethodName  = "/zcard.api.admin.v1.AdminResellerService/ListProfiles"
 	AdminResellerService_UpsertPricing_FullMethodName = "/zcard.api.admin.v1.AdminResellerService/UpsertPricing"
@@ -46,6 +47,8 @@ type AdminResellerServiceClient interface {
 	VerifySite(ctx context.Context, in *VerifySiteRequest, opts ...grpc.CallOption) (*VerifySiteReply, error)
 	// SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
 	SetWhitelabel(ctx context.Context, in *SetWhitelabelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+	CreateProduct(ctx context.Context, in *CreateResellerProductRequest, opts ...grpc.CallOption) (*ResellerProduct, error)
 	// ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 	ReviewApply(ctx context.Context, in *ReviewApplyRequest, opts ...grpc.CallOption) (*ResellerProfile, error)
 	// ListProfiles 申请/分站列表。
@@ -100,6 +103,16 @@ func (c *adminResellerServiceClient) SetWhitelabel(ctx context.Context, in *SetW
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminResellerService_SetWhitelabel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminResellerServiceClient) CreateProduct(ctx context.Context, in *CreateResellerProductRequest, opts ...grpc.CallOption) (*ResellerProduct, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResellerProduct)
+	err := c.cc.Invoke(ctx, AdminResellerService_CreateProduct_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -171,6 +184,8 @@ type AdminResellerServiceServer interface {
 	VerifySite(context.Context, *VerifySiteRequest) (*VerifySiteReply, error)
 	// SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
 	SetWhitelabel(context.Context, *SetWhitelabelRequest) (*emptypb.Empty, error)
+	// CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+	CreateProduct(context.Context, *CreateResellerProductRequest) (*ResellerProduct, error)
 	// ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 	ReviewApply(context.Context, *ReviewApplyRequest) (*ResellerProfile, error)
 	// ListProfiles 申请/分站列表。
@@ -202,6 +217,9 @@ func (UnimplementedAdminResellerServiceServer) VerifySite(context.Context, *Veri
 }
 func (UnimplementedAdminResellerServiceServer) SetWhitelabel(context.Context, *SetWhitelabelRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetWhitelabel not implemented")
+}
+func (UnimplementedAdminResellerServiceServer) CreateProduct(context.Context, *CreateResellerProductRequest) (*ResellerProduct, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateProduct not implemented")
 }
 func (UnimplementedAdminResellerServiceServer) ReviewApply(context.Context, *ReviewApplyRequest) (*ResellerProfile, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReviewApply not implemented")
@@ -307,6 +325,24 @@ func _AdminResellerService_SetWhitelabel_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminResellerServiceServer).SetWhitelabel(ctx, req.(*SetWhitelabelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminResellerService_CreateProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateResellerProductRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminResellerServiceServer).CreateProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminResellerService_CreateProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminResellerServiceServer).CreateProduct(ctx, req.(*CreateResellerProductRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -423,6 +459,10 @@ var AdminResellerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetWhitelabel",
 			Handler:    _AdminResellerService_SetWhitelabel_Handler,
+		},
+		{
+			MethodName: "CreateProduct",
+			Handler:    _AdminResellerService_CreateProduct_Handler,
 		},
 		{
 			MethodName: "ReviewApply",

@@ -12,13 +12,13 @@
       <NGi>
         <NCard :bordered="false" size="small">
           <div class="text-14px">今日营收</div>
-          <div class="mt-8px text-28px font-bold">{{ fmtYuan(today.revenue) }}</div>
+          <div class="mt-8px text-28px font-bold">{{ formatMoney(today.revenue) }}</div>
         </NCard>
       </NGi>
       <NGi>
         <NCard :bordered="false" size="small">
           <div class="text-14px">近30天营收</div>
-          <div class="mt-8px text-28px font-bold">{{ fmtYuan(last30d.revenue) }}</div>
+          <div class="mt-8px text-28px font-bold">{{ formatMoney(last30d.revenue) }}</div>
         </NCard>
       </NGi>
     </NGrid>
@@ -40,6 +40,7 @@ import { ref, onMounted } from 'vue';
 import type { DataTableColumns } from 'naive-ui';
 import { useEcharts } from '@/hooks/common/echarts';
 import { fetchDashboard } from '@/service/api';
+import { formatMoney, centsToYuan } from '@/utils/money';
 import type { DashboardStat, DashboardTopProduct, DashboardTrendPoint } from '@/service/api';
 
 defineOptions({ name: 'Dashboard' });
@@ -48,10 +49,6 @@ const loading = ref(false);
 const today = ref<DashboardStat>({ orders: 0, revenue: 0, paid_orders: 0 });
 const last30d = ref<DashboardStat>({ orders: 0, revenue: 0, paid_orders: 0 });
 const topProducts = ref<DashboardTopProduct[]>([]);
-
-function fmtYuan(cents?: number | null) {
-  return `¥${((cents ?? 0) / 100).toFixed(2)}`;
-}
 
 const { domRef, updateOptions } = useEcharts(() => ({
   tooltip: {
@@ -104,7 +101,7 @@ function renderTrend(trend: DashboardTrendPoint[]) {
   updateOptions(opts => {
     opts.xAxis.data = trend.map(item => item.date.slice(5));
     opts.series[0].data = trend.map(item => item.orders);
-    opts.series[1].data = trend.map(item => Math.round((item.revenue / 100) * 100) / 100);
+    opts.series[1].data = trend.map(item => centsToYuan(item.revenue));
     return opts;
   });
 }
@@ -113,7 +110,7 @@ const topColumns: DataTableColumns<DashboardTopProduct> = [
   { title: '排名', key: 'rank', width: 60, render: (_row, index) => index + 1 },
   { title: '商品', key: 'name', minWidth: 160 },
   { title: '销量', key: 'sold_qty', width: 100 },
-  { title: '营收', key: 'revenue', width: 120, render: row => fmtYuan(row.revenue) }
+  { title: '营收', key: 'revenue', width: 120, render: row => formatMoney(row.revenue) }
 ];
 
 async function loadDashboard() {

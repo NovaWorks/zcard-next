@@ -20,6 +20,7 @@ const _ = http.SupportPackageIsVersion3
 
 const OperationAdminResellerServiceAddSite = "/zcard.api.admin.v1.AdminResellerService/AddSite"
 const OperationAdminResellerServiceBalance = "/zcard.api.admin.v1.AdminResellerService/Balance"
+const OperationAdminResellerServiceCreateProduct = "/zcard.api.admin.v1.AdminResellerService/CreateProduct"
 const OperationAdminResellerServiceLedger = "/zcard.api.admin.v1.AdminResellerService/Ledger"
 const OperationAdminResellerServiceListProfiles = "/zcard.api.admin.v1.AdminResellerService/ListProfiles"
 const OperationAdminResellerServiceMySites = "/zcard.api.admin.v1.AdminResellerService/MySites"
@@ -33,6 +34,8 @@ type AdminResellerServiceHTTPServer interface {
 	AddSite(context.Context, *AddSiteRequest) (*ResellerSiteItem, error)
 	// Balance Balance 分站余额（缓存 + 重算对账）。
 	Balance(context.Context, *BalanceRequest) (*BalanceReply, error)
+	// CreateProduct CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+	CreateProduct(context.Context, *CreateResellerProductRequest) (*ResellerProduct, error)
 	// Ledger Ledger 分站账本流水。
 	Ledger(context.Context, *LedgerRequest) (*LedgerReply, error)
 	// ListProfiles ListProfiles 申请/分站列表。
@@ -55,6 +58,7 @@ func RegisterAdminResellerServiceHTTPServer(s *http.Server, srv AdminResellerSer
 	r.Handle("POST", "/api/v1/admin/reseller/my/sites", _AdminResellerService_AddSite0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/reseller/my/sites/{site_id}/verify", _AdminResellerService_VerifySite0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel", _AdminResellerService_SetWhitelabel0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/reseller/products", _AdminResellerService_CreateProduct1_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/reseller/apply/{id}/review", _AdminResellerService_ReviewApply0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/reseller/profiles", _AdminResellerService_ListProfiles0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/reseller/pricing", _AdminResellerService_UpsertPricing0_HTTP_Handler(srv))
@@ -140,6 +144,25 @@ func _AdminResellerService_SetWhitelabel0_HTTP_Handler(srv AdminResellerServiceH
 			return err
 		}
 		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminResellerService_CreateProduct1_HTTP_Handler(srv AdminResellerServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateResellerProductRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminResellerServiceCreateProduct)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateProduct(ctx, req.(*CreateResellerProductRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ResellerProduct)
 		return ctx.Result(200, reply)
 	}
 }
@@ -247,6 +270,8 @@ type AdminResellerServiceHTTPClient interface {
 	AddSite(ctx context.Context, req *AddSiteRequest, opts ...http.CallOption) (rsp *ResellerSiteItem, err error)
 	// Balance Balance 分站余额（缓存 + 重算对账）。
 	Balance(ctx context.Context, req *BalanceRequest, opts ...http.CallOption) (rsp *BalanceReply, err error)
+	// CreateProduct CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+	CreateProduct(ctx context.Context, req *CreateResellerProductRequest, opts ...http.CallOption) (rsp *ResellerProduct, err error)
 	// Ledger Ledger 分站账本流水。
 	Ledger(ctx context.Context, req *LedgerRequest, opts ...http.CallOption) (rsp *LedgerReply, err error)
 	// ListProfiles ListProfiles 申请/分站列表。
@@ -300,6 +325,24 @@ func (c *AdminResellerServiceHTTPClientImpl) Balance(ctx context.Context, in *Ba
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateProduct CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+func (c *AdminResellerServiceHTTPClientImpl) CreateProduct(ctx context.Context, in *CreateResellerProductRequest, opts ...http.CallOption) (*ResellerProduct, error) {
+	var out ResellerProduct
+	pattern := "/api/v1/admin/reseller/products"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminResellerServiceCreateProduct),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

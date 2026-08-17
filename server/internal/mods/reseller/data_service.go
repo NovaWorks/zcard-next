@@ -7,8 +7,9 @@ import (
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -104,7 +105,7 @@ func toProfilePB(p *ent.ResellerProfile) *adminv1.ResellerProfile {
 	out := &adminv1.ResellerProfile{
 		Id: p.ID, UserId: p.UserID, Status: string(p.Status),
 		ApplyReason: p.ApplyReason, RejectReason: p.RejectReason,
-		Level: int32(p.Level),
+		Level:                int32(p.Level),
 		DefaultMarkupPercent: p.DefaultMarkupPercent,
 		MaxMarkupPercent:     p.MaxMarkupPercent,
 		ConfirmDays:          p.ConfirmDays,
@@ -149,8 +150,6 @@ func pageParams(page, pageSize int32) (int, int) {
 	}
 	return p, ps
 }
-
-var _ = resellerledgerentry.FieldID
 
 // ── 分站主自服务面（reseller: 域；数据按本人 profile 隔离）─────────
 
@@ -234,6 +233,45 @@ func (s *AdminResellerService) SetWhitelabel(ctx context.Context, req *adminv1.S
 		return nil, mapErr(err)
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// CreateProduct 分站主：自营商品上架（等级权限位——level>=1 允许自助上架；
+// subsite_id = 本人 profile.ID，与域名访问的下单上下文一致）。
+func (s *AdminResellerService) CreateProduct(ctx context.Context, req *adminv1.CreateResellerProductRequest) (*adminv1.ResellerProduct, error) {
+	p, err := s.myProfile(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if p.Level < 1 {
+		return nil, errors.Forbidden("reseller.NO_LIST_PERMISSION", "当前等级无自助上架权限")
+	}
+	if req.GetName() == "" || !money.ValidCents(req.GetPriceCents()) || !money.ValidCents(req.GetFactoryPriceCents()) {
+		return nil, errors.BadRequest("reseller.PRODUCT_INVALID", "名称必填、价格与成本须为非负且不超上限")
+	}
+	prod, err := s.repo.CreateOwnProduct(ctx, p.ID, OwnProductInput{
+		Name:         req.GetName(),
+		CategoryID:   req.GetCategoryId(),
+		Description:  sanitize.HTML(req.GetDescription()),
+		Cover:        req.GetCover(),
+		Price:        req.GetPriceCents(),
+		FactoryPrice: req.GetFactoryPriceCents(),
+		StockType:    req.GetStockType(),
+		DeliveryMode: req.GetDeliveryMode(),
+		StockVisible: req.GetStockVisible(),
+		Sort:         req.GetSort(),
+		Status:       int8(req.GetStatus()),
+	})
+	if err != nil {
+		return nil, errors.InternalServer("reseller.PRODUCT_CREATE_FAILED", "上架失败: "+err.Error())
+	}
+	out := &adminv1.ResellerProduct{
+		Id: prod.ID, SubsiteId: prod.SubsiteID, Name: prod.Name, Slug: prod.Slug,
+		PriceCents: prod.Price, Status: int32(prod.Status),
+	}
+	if !prod.CreatedAt.IsZero() {
+		out.CreatedAt = prod.CreatedAt.Unix()
+	}
+	return out, nil
 }
 
 func toSitePB(site *ent.ResellerSite) *adminv1.ResellerSiteItem {

@@ -6,6 +6,7 @@ import (
 	"context"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -17,11 +18,14 @@ import (
 type StoreCatalogService struct {
 	storefrontv1.UnimplementedStoreCatalogServiceServer
 	uc *CatalogUsecase
+	// pricer 分站定价（P3-04：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
+	// nil = 主站直营形态不解析分站价）。
+	pricer resellerport.Pricer
 }
 
 // NewStoreCatalogService 构造。
-func NewStoreCatalogService(uc *CatalogUsecase) *StoreCatalogService {
-	return &StoreCatalogService{uc: uc}
+func NewStoreCatalogService(uc *CatalogUsecase, pricer resellerport.Pricer) *StoreCatalogService {
+	return &StoreCatalogService{uc: uc, pricer: pricer}
 }
 
 // ListProducts 商品列表（游客可访问；隐藏商品不出现在列表）。
@@ -53,7 +57,13 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		PageSize: pageSize,
 	}
 	for i := range items {
-		reply.Items = append(reply.Items, toStorefrontProduct(&items[i]))
+		p := &items[i]
+		if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
+			if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, p.Price); err == nil {
+				p.Price = sp // 分站价（下限保护在 ResolveUnitPrice 内）
+			}
+		}
+		reply.Items = append(reply.Items, toStorefrontProduct(p))
 	}
 	return reply, nil
 }
@@ -64,6 +74,13 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	p, err := s.uc.GetVisible(ctx, tc.SubsiteID, req.GetId())
 	if err != nil {
 		return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
+	}
+	// P3-04：分站单价（listing=checkout 同源；SKU 规则优先于商品规则由定价引擎裁定）
+	base := p.Price
+	if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
+		if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, base); err == nil {
+			p.Price = sp
+		}
 	}
 	out := toStorefrontProduct(p)
 	controls, err := s.uc.ListControls(ctx, req.GetId())
@@ -95,8 +112,18 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		return nil, errors.InternalServer("catalog.SKU_FAILED", "读取规格失败")
 	}
 	for _, sku := range skus {
+		skuBase := sku.Price
+		if skuBase == 0 {
+			skuBase = base // 继承商品基础价
+		}
+		skuPrice := skuBase
+		if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
+			if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, sku.ID, skuBase); err == nil {
+				skuPrice = sp
+			}
+		}
 		out.Skus = append(out.Skus, &storefrontv1.Sku{
-			Id: sku.ID, Name: sku.Name, PriceCents: int64(sku.Price),
+			Id: sku.ID, Name: sku.Name, PriceCents: int64(skuPrice),
 		})
 	}
 	return out, nil

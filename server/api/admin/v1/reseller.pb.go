@@ -1204,6 +1204,224 @@ func (x *SetWhitelabelRequest) GetFavicon() string {
 	return ""
 }
 
+// CreateResellerProductRequest 分站自营商品上架入参（名称必填；价格/成本分）。
+type CreateResellerProductRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	PriceCents        int64                  `protobuf:"varint,2,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	FactoryPriceCents int64                  `protobuf:"varint,3,opt,name=factory_price_cents,json=factoryPriceCents,proto3" json:"factory_price_cents,omitempty"`
+	Description       string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Cover             string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
+	CategoryId        uint64                 `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	StockType         string                 `protobuf:"bytes,7,opt,name=stock_type,json=stockType,proto3" json:"stock_type,omitempty"`          // card | url | code
+	DeliveryMode      string                 `protobuf:"bytes,8,opt,name=delivery_mode,json=deliveryMode,proto3" json:"delivery_mode,omitempty"` // status | delete
+	Status            int32                  `protobuf:"varint,9,opt,name=status,proto3" json:"status,omitempty"`                                // 1=上架 0=下架 2=隐藏
+	Sort              int32                  `protobuf:"varint,10,opt,name=sort,proto3" json:"sort,omitempty"`
+	StockVisible      bool                   `protobuf:"varint,11,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CreateResellerProductRequest) Reset() {
+	*x = CreateResellerProductRequest{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateResellerProductRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateResellerProductRequest) ProtoMessage() {}
+
+func (x *CreateResellerProductRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateResellerProductRequest.ProtoReflect.Descriptor instead.
+func (*CreateResellerProductRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CreateResellerProductRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateResellerProductRequest) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *CreateResellerProductRequest) GetFactoryPriceCents() int64 {
+	if x != nil {
+		return x.FactoryPriceCents
+	}
+	return 0
+}
+
+func (x *CreateResellerProductRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateResellerProductRequest) GetCover() string {
+	if x != nil {
+		return x.Cover
+	}
+	return ""
+}
+
+func (x *CreateResellerProductRequest) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *CreateResellerProductRequest) GetStockType() string {
+	if x != nil {
+		return x.StockType
+	}
+	return ""
+}
+
+func (x *CreateResellerProductRequest) GetDeliveryMode() string {
+	if x != nil {
+		return x.DeliveryMode
+	}
+	return ""
+}
+
+func (x *CreateResellerProductRequest) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *CreateResellerProductRequest) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
+func (x *CreateResellerProductRequest) GetStockVisible() bool {
+	if x != nil {
+		return x.StockVisible
+	}
+	return false
+}
+
+// ResellerProduct 分站自营商品（上架结果回执）。
+type ResellerProduct struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	SubsiteId     uint64                 `protobuf:"varint,2,opt,name=subsite_id,json=subsiteId,proto3" json:"subsite_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Slug          string                 `protobuf:"bytes,4,opt,name=slug,proto3" json:"slug,omitempty"`
+	PriceCents    int64                  `protobuf:"varint,5,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	Status        int32                  `protobuf:"varint,6,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResellerProduct) Reset() {
+	*x = ResellerProduct{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResellerProduct) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResellerProduct) ProtoMessage() {}
+
+func (x *ResellerProduct) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResellerProduct.ProtoReflect.Descriptor instead.
+func (*ResellerProduct) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ResellerProduct) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ResellerProduct) GetSubsiteId() uint64 {
+	if x != nil {
+		return x.SubsiteId
+	}
+	return 0
+}
+
+func (x *ResellerProduct) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ResellerProduct) GetSlug() string {
+	if x != nil {
+		return x.Slug
+	}
+	return ""
+}
+
+func (x *ResellerProduct) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *ResellerProduct) GetStatus() int32 {
+	if x != nil {
+		return x.Status
+	}
+	return 0
+}
+
+func (x *ResellerProduct) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
 var File_admin_v1_reseller_proto protoreflect.FileDescriptor
 
 const file_admin_v1_reseller_proto_rawDesc = "" +
@@ -1307,13 +1525,42 @@ const file_admin_v1_reseller_proto_rawDesc = "" +
 	"\asite_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06siteId\x12\x1b\n" +
 	"\tsite_name\x18\x02 \x01(\tR\bsiteName\x12\x12\n" +
 	"\x04logo\x18\x03 \x01(\tR\x04logo\x12\x18\n" +
-	"\afavicon\x18\x04 \x01(\tR\afavicon2\xc6\t\n" +
+	"\afavicon\x18\x04 \x01(\tR\afavicon\"\xf6\x02\n" +
+	"\x1cCreateResellerProductRequest\x12\x17\n" +
+	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1f\n" +
+	"\vprice_cents\x18\x02 \x01(\x03R\n" +
+	"priceCents\x12.\n" +
+	"\x13factory_price_cents\x18\x03 \x01(\x03R\x11factoryPriceCents\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x14\n" +
+	"\x05cover\x18\x05 \x01(\tR\x05cover\x12\x1f\n" +
+	"\vcategory_id\x18\x06 \x01(\x04R\n" +
+	"categoryId\x12\x1d\n" +
+	"\n" +
+	"stock_type\x18\a \x01(\tR\tstockType\x12#\n" +
+	"\rdelivery_mode\x18\b \x01(\tR\fdeliveryMode\x12\x16\n" +
+	"\x06status\x18\t \x01(\x05R\x06status\x12\x12\n" +
+	"\x04sort\x18\n" +
+	" \x01(\x05R\x04sort\x12#\n" +
+	"\rstock_visible\x18\v \x01(\bR\fstockVisible\"\xc0\x01\n" +
+	"\x0fResellerProduct\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"subsite_id\x18\x02 \x01(\x04R\tsubsiteId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x12\n" +
+	"\x04slug\x18\x04 \x01(\tR\x04slug\x12\x1f\n" +
+	"\vprice_cents\x18\x05 \x01(\x03R\n" +
+	"priceCents\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\x05R\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\a \x01(\x03R\tcreatedAt2\xdb\n" +
+	"\n" +
 	"\x14AdminResellerService\x12x\n" +
 	"\aMySites\x12\".zcard.api.admin.v1.MySitesRequest\x1a .zcard.api.admin.v1.MySitesReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/reseller/my/sites\x12\x7f\n" +
 	"\aAddSite\x12\".zcard.api.admin.v1.AddSiteRequest\x1a$.zcard.api.admin.v1.ResellerSiteItem\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/reseller/my/sites\x12\x95\x01\n" +
 	"\n" +
 	"VerifySite\x12%.zcard.api.admin.v1.VerifySiteRequest\x1a#.zcard.api.admin.v1.VerifySiteReply\";\x82\xd3\xe4\x93\x025:\x01*\"0/api/v1/admin/reseller/my/sites/{site_id}/verify\x12\x92\x01\n" +
-	"\rSetWhitelabel\x12(.zcard.api.admin.v1.SetWhitelabelRequest\x1a\x16.google.protobuf.Empty\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/admin/reseller/my/sites/{site_id}/whitelabel\x12\x8f\x01\n" +
+	"\rSetWhitelabel\x12(.zcard.api.admin.v1.SetWhitelabelRequest\x1a\x16.google.protobuf.Empty\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/admin/reseller/my/sites/{site_id}/whitelabel\x12\x92\x01\n" +
+	"\rCreateProduct\x120.zcard.api.admin.v1.CreateResellerProductRequest\x1a#.zcard.api.admin.v1.ResellerProduct\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/reseller/products\x12\x8f\x01\n" +
 	"\vReviewApply\x12&.zcard.api.admin.v1.ReviewApplyRequest\x1a#.zcard.api.admin.v1.ResellerProfile\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/admin/reseller/apply/{id}/review\x12\x87\x01\n" +
 	"\fListProfiles\x12'.zcard.api.admin.v1.ListProfilesRequest\x1a%.zcard.api.admin.v1.ListProfilesReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/reseller/profiles\x12|\n" +
 	"\rUpsertPricing\x12(.zcard.api.admin.v1.UpsertPricingRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/reseller/pricing\x12s\n" +
@@ -1332,26 +1579,28 @@ func file_admin_v1_reseller_proto_rawDescGZIP() []byte {
 	return file_admin_v1_reseller_proto_rawDescData
 }
 
-var file_admin_v1_reseller_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_admin_v1_reseller_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_admin_v1_reseller_proto_goTypes = []any{
-	(*ResellerProfile)(nil),      // 0: zcard.api.admin.v1.ResellerProfile
-	(*ReviewApplyRequest)(nil),   // 1: zcard.api.admin.v1.ReviewApplyRequest
-	(*ListProfilesRequest)(nil),  // 2: zcard.api.admin.v1.ListProfilesRequest
-	(*ListProfilesReply)(nil),    // 3: zcard.api.admin.v1.ListProfilesReply
-	(*UpsertPricingRequest)(nil), // 4: zcard.api.admin.v1.UpsertPricingRequest
-	(*LedgerRequest)(nil),        // 5: zcard.api.admin.v1.LedgerRequest
-	(*LedgerEntry)(nil),          // 6: zcard.api.admin.v1.LedgerEntry
-	(*LedgerReply)(nil),          // 7: zcard.api.admin.v1.LedgerReply
-	(*BalanceRequest)(nil),       // 8: zcard.api.admin.v1.BalanceRequest
-	(*BalanceReply)(nil),         // 9: zcard.api.admin.v1.BalanceReply
-	(*MySitesRequest)(nil),       // 10: zcard.api.admin.v1.MySitesRequest
-	(*ResellerSiteItem)(nil),     // 11: zcard.api.admin.v1.ResellerSiteItem
-	(*MySitesReply)(nil),         // 12: zcard.api.admin.v1.MySitesReply
-	(*AddSiteRequest)(nil),       // 13: zcard.api.admin.v1.AddSiteRequest
-	(*VerifySiteRequest)(nil),    // 14: zcard.api.admin.v1.VerifySiteRequest
-	(*VerifySiteReply)(nil),      // 15: zcard.api.admin.v1.VerifySiteReply
-	(*SetWhitelabelRequest)(nil), // 16: zcard.api.admin.v1.SetWhitelabelRequest
-	(*emptypb.Empty)(nil),        // 17: google.protobuf.Empty
+	(*ResellerProfile)(nil),              // 0: zcard.api.admin.v1.ResellerProfile
+	(*ReviewApplyRequest)(nil),           // 1: zcard.api.admin.v1.ReviewApplyRequest
+	(*ListProfilesRequest)(nil),          // 2: zcard.api.admin.v1.ListProfilesRequest
+	(*ListProfilesReply)(nil),            // 3: zcard.api.admin.v1.ListProfilesReply
+	(*UpsertPricingRequest)(nil),         // 4: zcard.api.admin.v1.UpsertPricingRequest
+	(*LedgerRequest)(nil),                // 5: zcard.api.admin.v1.LedgerRequest
+	(*LedgerEntry)(nil),                  // 6: zcard.api.admin.v1.LedgerEntry
+	(*LedgerReply)(nil),                  // 7: zcard.api.admin.v1.LedgerReply
+	(*BalanceRequest)(nil),               // 8: zcard.api.admin.v1.BalanceRequest
+	(*BalanceReply)(nil),                 // 9: zcard.api.admin.v1.BalanceReply
+	(*MySitesRequest)(nil),               // 10: zcard.api.admin.v1.MySitesRequest
+	(*ResellerSiteItem)(nil),             // 11: zcard.api.admin.v1.ResellerSiteItem
+	(*MySitesReply)(nil),                 // 12: zcard.api.admin.v1.MySitesReply
+	(*AddSiteRequest)(nil),               // 13: zcard.api.admin.v1.AddSiteRequest
+	(*VerifySiteRequest)(nil),            // 14: zcard.api.admin.v1.VerifySiteRequest
+	(*VerifySiteReply)(nil),              // 15: zcard.api.admin.v1.VerifySiteReply
+	(*SetWhitelabelRequest)(nil),         // 16: zcard.api.admin.v1.SetWhitelabelRequest
+	(*CreateResellerProductRequest)(nil), // 17: zcard.api.admin.v1.CreateResellerProductRequest
+	(*ResellerProduct)(nil),              // 18: zcard.api.admin.v1.ResellerProduct
+	(*emptypb.Empty)(nil),                // 19: google.protobuf.Empty
 }
 var file_admin_v1_reseller_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListProfilesReply.profiles:type_name -> zcard.api.admin.v1.ResellerProfile
@@ -1361,22 +1610,24 @@ var file_admin_v1_reseller_proto_depIdxs = []int32{
 	13, // 4: zcard.api.admin.v1.AdminResellerService.AddSite:input_type -> zcard.api.admin.v1.AddSiteRequest
 	14, // 5: zcard.api.admin.v1.AdminResellerService.VerifySite:input_type -> zcard.api.admin.v1.VerifySiteRequest
 	16, // 6: zcard.api.admin.v1.AdminResellerService.SetWhitelabel:input_type -> zcard.api.admin.v1.SetWhitelabelRequest
-	1,  // 7: zcard.api.admin.v1.AdminResellerService.ReviewApply:input_type -> zcard.api.admin.v1.ReviewApplyRequest
-	2,  // 8: zcard.api.admin.v1.AdminResellerService.ListProfiles:input_type -> zcard.api.admin.v1.ListProfilesRequest
-	4,  // 9: zcard.api.admin.v1.AdminResellerService.UpsertPricing:input_type -> zcard.api.admin.v1.UpsertPricingRequest
-	5,  // 10: zcard.api.admin.v1.AdminResellerService.Ledger:input_type -> zcard.api.admin.v1.LedgerRequest
-	8,  // 11: zcard.api.admin.v1.AdminResellerService.Balance:input_type -> zcard.api.admin.v1.BalanceRequest
-	12, // 12: zcard.api.admin.v1.AdminResellerService.MySites:output_type -> zcard.api.admin.v1.MySitesReply
-	11, // 13: zcard.api.admin.v1.AdminResellerService.AddSite:output_type -> zcard.api.admin.v1.ResellerSiteItem
-	15, // 14: zcard.api.admin.v1.AdminResellerService.VerifySite:output_type -> zcard.api.admin.v1.VerifySiteReply
-	17, // 15: zcard.api.admin.v1.AdminResellerService.SetWhitelabel:output_type -> google.protobuf.Empty
-	0,  // 16: zcard.api.admin.v1.AdminResellerService.ReviewApply:output_type -> zcard.api.admin.v1.ResellerProfile
-	3,  // 17: zcard.api.admin.v1.AdminResellerService.ListProfiles:output_type -> zcard.api.admin.v1.ListProfilesReply
-	17, // 18: zcard.api.admin.v1.AdminResellerService.UpsertPricing:output_type -> google.protobuf.Empty
-	7,  // 19: zcard.api.admin.v1.AdminResellerService.Ledger:output_type -> zcard.api.admin.v1.LedgerReply
-	9,  // 20: zcard.api.admin.v1.AdminResellerService.Balance:output_type -> zcard.api.admin.v1.BalanceReply
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
+	17, // 7: zcard.api.admin.v1.AdminResellerService.CreateProduct:input_type -> zcard.api.admin.v1.CreateResellerProductRequest
+	1,  // 8: zcard.api.admin.v1.AdminResellerService.ReviewApply:input_type -> zcard.api.admin.v1.ReviewApplyRequest
+	2,  // 9: zcard.api.admin.v1.AdminResellerService.ListProfiles:input_type -> zcard.api.admin.v1.ListProfilesRequest
+	4,  // 10: zcard.api.admin.v1.AdminResellerService.UpsertPricing:input_type -> zcard.api.admin.v1.UpsertPricingRequest
+	5,  // 11: zcard.api.admin.v1.AdminResellerService.Ledger:input_type -> zcard.api.admin.v1.LedgerRequest
+	8,  // 12: zcard.api.admin.v1.AdminResellerService.Balance:input_type -> zcard.api.admin.v1.BalanceRequest
+	12, // 13: zcard.api.admin.v1.AdminResellerService.MySites:output_type -> zcard.api.admin.v1.MySitesReply
+	11, // 14: zcard.api.admin.v1.AdminResellerService.AddSite:output_type -> zcard.api.admin.v1.ResellerSiteItem
+	15, // 15: zcard.api.admin.v1.AdminResellerService.VerifySite:output_type -> zcard.api.admin.v1.VerifySiteReply
+	19, // 16: zcard.api.admin.v1.AdminResellerService.SetWhitelabel:output_type -> google.protobuf.Empty
+	18, // 17: zcard.api.admin.v1.AdminResellerService.CreateProduct:output_type -> zcard.api.admin.v1.ResellerProduct
+	0,  // 18: zcard.api.admin.v1.AdminResellerService.ReviewApply:output_type -> zcard.api.admin.v1.ResellerProfile
+	3,  // 19: zcard.api.admin.v1.AdminResellerService.ListProfiles:output_type -> zcard.api.admin.v1.ListProfilesReply
+	19, // 20: zcard.api.admin.v1.AdminResellerService.UpsertPricing:output_type -> google.protobuf.Empty
+	7,  // 21: zcard.api.admin.v1.AdminResellerService.Ledger:output_type -> zcard.api.admin.v1.LedgerReply
+	9,  // 22: zcard.api.admin.v1.AdminResellerService.Balance:output_type -> zcard.api.admin.v1.BalanceReply
+	13, // [13:23] is the sub-list for method output_type
+	3,  // [3:13] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -1393,7 +1644,7 @@ func file_admin_v1_reseller_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_reseller_proto_rawDesc), len(file_admin_v1_reseller_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

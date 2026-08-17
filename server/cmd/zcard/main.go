@@ -26,6 +26,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
@@ -247,7 +248,7 @@ func runInstall(args []string) error {
 //	all    = HTTP + gRPC + worker + 后台（默认，单机形态）
 //	api    = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
 //	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
-func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService) *kratos.App {
+func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService) *kratos.App {
 	// 事件订阅注册（P2-02）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
 	dp.Register(data.HandlerReg{
 		Consumer: "procurement.order_paid",
@@ -257,6 +258,8 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 	// 事件订阅注册（P3-03）：order.paid → 三级佣金入账；order.refunded → 逆向扣回
 	dp.Register(data.HandlerReg{Consumer: "affiliate.settle", Type: events.OrderPaid, Fn: affiliateSvc.OnOrderPaid})
 	dp.Register(data.HandlerReg{Consumer: "affiliate.reversal", Type: events.OrderRefunded, Fn: affiliateSvc.OnOrderRefunded})
+	// 事件订阅注册（P3-04）：order.paid → 分站利润入账（订单快照 subsite_profit/profit_eligible）
+	dp.Register(data.HandlerReg{Consumer: "reseller.settle", Type: events.OrderPaid, Fn: resellerSettleSvc.OnOrderPaid})
 	// 事件订阅注册（P2-05）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
 	for _, typ := range notify.SubscribedEvents() {
 		t := typ

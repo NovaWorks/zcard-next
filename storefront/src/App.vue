@@ -19,4 +19,8 @@
 </template>
 
 <script setup lang="ts">
+import { initCurrency } from '@/api/client';
+
+// 启动加载默认货币（i18n.base_currency → 符号/小数位；失败回退默认符号）
+initCurrency();
 </script>

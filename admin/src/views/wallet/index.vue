@@ -13,19 +13,19 @@
         <NGi>
           <NCard size="small" :bordered="false">
             <div class="text-14px">可用余额</div>
-            <div class="mt-8px text-24px font-bold">{{ fmtYuan(balance.available_cents) }}</div>
+            <div class="mt-8px text-24px font-bold">{{ formatMoney(balance.available_cents) }}</div>
           </NCard>
         </NGi>
         <NGi>
           <NCard size="small" :bordered="false">
             <div class="text-14px">冻结余额</div>
-            <div class="mt-8px text-24px font-bold">{{ fmtYuan(balance.locked_cents) }}</div>
+            <div class="mt-8px text-24px font-bold">{{ formatMoney(balance.locked_cents) }}</div>
           </NCard>
         </NGi>
         <NGi>
           <NCard size="small" :bordered="false">
             <div class="text-14px">总余额</div>
-            <div class="mt-8px text-24px font-bold">{{ fmtYuan(balance.total_cents) }}</div>
+            <div class="mt-8px text-24px font-bold">{{ formatMoney(balance.total_cents) }}</div>
           </NCard>
         </NGi>
       </NGrid>
@@ -44,8 +44,8 @@
     <!-- 调账弹窗 -->
     <NModal v-model:show="showAdjust" preset="dialog" title="手动调账" style="width: 480px">
       <NForm label-placement="left" label-width="90">
-        <NFormItem label="金额（分）" required>
-          <NInputNumber v-model:value="adjustForm.amount_cents" class="w-full" placeholder="正数入账，负数扣减" />
+        <NFormItem label="金额（元）" required>
+          <NInputNumber v-model:value="adjustForm.amount_yuan" class="w-full" placeholder="正数入账，负数扣减" :precision="2" :step="0.01" />
         </NFormItem>
         <NFormItem label="原因" required>
           <NInput v-model:value="adjustForm.reason" type="textarea" :rows="3" placeholder="必填，用于审计" />
@@ -64,6 +64,7 @@ import { ref, reactive, computed, h } from 'vue';
 import { NTag } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { fetchWalletBalance, adjustWalletBalance, fetchWalletTransactions } from '@/service/api';
+import { formatMoney, formatSignedMoney, yuanToFen } from '@/utils/money';
 
 defineOptions({ name: 'WalletManagement' });
 
@@ -79,8 +80,8 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = 20;
 
-const adjustForm = reactive<{ amount_cents: number | null; reason: string }>({
-  amount_cents: null,
+const adjustForm = reactive<{ amount_yuan: number | null; reason: string }>({
+  amount_yuan: null,
   reason: ''
 });
 
@@ -90,16 +91,6 @@ const pagination = computed(() => ({
   itemCount: total.value,
   pageCount: Math.ceil(total.value / pageSize)
 }));
-
-function fmtYuan(cents?: number | null) {
-  return `¥${((cents ?? 0) / 100).toFixed(2)}`;
-}
-
-function fmtSignedYuan(cents?: number | null) {
-  const c = cents ?? 0;
-  const sign = c > 0 ? '+' : c < 0 ? '-' : '';
-  return `${sign}¥${(Math.abs(c) / 100).toFixed(2)}`;
-}
 
 function directionText(d?: string) {
   if (!d) return '-';
@@ -150,9 +141,9 @@ const columns: DataTableColumns<any> = [
     render: row => h(NTag, { type: directionType(row.direction), size: 'small' }, { default: () => directionText(row.direction) })
   },
   { title: '类型', key: 'type', width: 100, render: row => typeText(row.type) },
-  { title: '金额', key: 'amount_cents', width: 120, render: row => fmtSignedYuan(row.amount_cents) },
-  { title: '余额前', key: 'balance_before_cents', width: 120, render: row => fmtYuan(row.balance_before_cents) },
-  { title: '余额后', key: 'balance_after_cents', width: 120, render: row => fmtYuan(row.balance_after_cents) },
+  { title: '金额', key: 'amount_cents', width: 120, render: row => formatSignedMoney(row.amount_cents) },
+  { title: '余额前', key: 'balance_before_cents', width: 120, render: row => formatMoney(row.balance_before_cents) },
+  { title: '余额后', key: 'balance_after_cents', width: 120, render: row => formatMoney(row.balance_after_cents) },
   { title: '备注', key: 'remark', minWidth: 140, ellipsis: { tooltip: true } },
   { title: '时间', key: 'created_at', width: 160, render: row => formatTime(row.created_at) }
 ];
@@ -202,21 +193,22 @@ function handlePageChange(p: number) {
 }
 
 async function handleAdjust() {
-  const amount = adjustForm.amount_cents;
-  if (!userId.value || amount === null || amount === 0 || !adjustForm.reason.trim()) {
+  const amountYuan = adjustForm.amount_yuan;
+  if (!userId.value || amountYuan === null || amountYuan === 0 || !adjustForm.reason.trim()) {
     window.$message?.warning('请填写金额和原因');
     return;
   }
   adjusting.value = true;
   try {
+    // 元 → 分（铁律 15：提交统一 *100，经 utils/money 防浮点）
     const { data, error } = await adjustWalletBalance(userId.value, {
-      amount_cents: amount,
+      amount_cents: yuanToFen(amountYuan),
       reason: adjustForm.reason
     });
     if (!error) {
       window.$message?.success('调账成功');
       showAdjust.value = false;
-      Object.assign(adjustForm, { amount_cents: null, reason: '' });
+      Object.assign(adjustForm, { amount_yuan: null, reason: '' });
       balance.value = data || balance.value;
       page.value = 1;
       loadTransactions();

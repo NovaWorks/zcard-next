@@ -31,8 +31,8 @@
           <NDescriptionsItem label="状态">
             <NTag :type="statusType(detail.status)" size="small">{{ statusText(detail.status) }}</NTag>
           </NDescriptionsItem>
-          <NDescriptionsItem label="总额">¥{{ (detail.total_cents / 100).toFixed(2) }}</NDescriptionsItem>
-          <NDescriptionsItem label="成本">¥{{ (detail.cost_cents / 100).toFixed(2) }}</NDescriptionsItem>
+          <NDescriptionsItem label="总额">{{ formatMoney(detail.total_cents) }}</NDescriptionsItem>
+          <NDescriptionsItem label="成本">{{ formatMoney(detail.cost_cents) }}</NDescriptionsItem>
           <NDescriptionsItem label="联系方式">{{ detail.contact || detail.guest_contact || '-' }}</NDescriptionsItem>
           <NDescriptionsItem label="IP">{{ detail.client_ip || '-' }}</NDescriptionsItem>
           <NDescriptionsItem label="创建时间">{{ formatTime(detail.created_at) }}</NDescriptionsItem>
@@ -66,6 +66,7 @@ import { ref, computed, onMounted, h } from 'vue';
 import { NButton, NTag, NSpace, NPopconfirm } from 'naive-ui';
 import type { DataTableColumns } from 'naive-ui';
 import { fetchOrders, fetchOrder, cancelOrder } from '@/service/api';
+import { formatMoney, formatSignedMoney } from '@/utils/money';
 
 defineOptions({ name: 'OrderManagement' });
 
@@ -128,7 +129,7 @@ const columns: DataTableColumns<any> = [
     title: '总额',
     key: 'total_cents',
     width: 100,
-    render: (row) => `¥${(row.total_cents / 100).toFixed(2)}`
+    render: (row) => formatMoney(row.total_cents)
   },
   { title: '联系方式', key: 'contact', width: 140, ellipsis: { tooltip: true } },
   {
@@ -162,9 +163,9 @@ const itemColumns: DataTableColumns<any> = [
     title: '单价',
     key: 'unit_price_cents',
     width: 80,
-    render: (row) => `¥${(row.unit_price_cents / 100).toFixed(2)}`
+    render: (row) => formatMoney(row.unit_price_cents)
   },
-  { title: '小计', key: 'amount_cents', width: 80, render: (row) => `¥${(row.amount_cents / 100).toFixed(2)}` },
+  { title: '小计', key: 'amount_cents', width: 80, render: (row) => formatMoney(row.amount_cents) },
   { title: '履约类型', key: 'fulfillment_type', width: 80 },
   { title: '履约状态', key: 'fulfillment_status', width: 80 }
 ];
@@ -176,7 +177,7 @@ const amountColumns: DataTableColumns<any> = [
     title: '金额',
     key: 'amount_cents',
     width: 80,
-    render: (row) => `${row.amount_cents < 0 ? '' : '+'}${(row.amount_cents / 100).toFixed(2)}`
+    render: (row) => formatSignedMoney(row.amount_cents)
   },
   { title: '来源', key: 'source_type', width: 100 }
 ];

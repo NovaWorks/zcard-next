@@ -36,6 +36,13 @@ service AdminResellerService {
       body: "*"
     };
   }
+  // CreateProduct 分站主：自营商品上架（subsite_id = 本人分站；等级权限位自助上架）。
+  rpc CreateProduct(CreateResellerProductRequest) returns (ResellerProduct) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/reseller/products"
+      body: "*"
+    };
+  }
   // ReviewApply 审核申请（通过设加价率区间与冻结天数）。
   rpc ReviewApply(ReviewApplyRequest) returns (ResellerProfile) {
     option (google.api.http) = {
@@ -186,4 +193,30 @@ message SetWhitelabelRequest {
   string site_name = 2;
   string logo = 3;
   string favicon = 4;
+}
+
+// CreateResellerProductRequest 分站自营商品上架入参（名称必填；价格/成本分）。
+message CreateResellerProductRequest {
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 price_cents = 2;
+  int64 factory_price_cents = 3;
+  string description = 4;
+  string cover = 5;
+  uint64 category_id = 6;
+  string stock_type = 7; // card | url | code
+  string delivery_mode = 8; // status | delete
+  int32 status = 9; // 1=上架 0=下架 2=隐藏
+  int32 sort = 10;
+  bool stock_visible = 11;
+}
+
+// ResellerProduct 分站自营商品（上架结果回执）。
+message ResellerProduct {
+  uint64 id = 1;
+  uint64 subsite_id = 2;
+  string name = 3;
+  string slug = 4;
+  int64 price_cents = 5;
+  int32 status = 6;
+  int64 created_at = 7;
 }
