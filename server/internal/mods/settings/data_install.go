@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
@@ -58,9 +59,12 @@ func Install(ctx context.Context, d *data.Data, in InstallInput) error {
 		}
 		for _, w := range writes {
 			v, _ := json.Marshal(w.value)
+			// 冲突目标显式化：PG 要求 ON CONFLICT (group, key) 带推断列
+			//（SQLite 容忍省略——跨方言纪律 ADR-D18）
 			if err := client.Setting.Create().
 				SetGroup(w.group).SetKey(w.key).SetValue(v).
-				OnConflict().UpdateValue().Exec(ctx); err != nil {
+				OnConflict(sql.ConflictColumns(setting.FieldGroup, setting.FieldKey)).
+				UpdateValue().Exec(ctx); err != nil {
 				return err
 			}
 		}

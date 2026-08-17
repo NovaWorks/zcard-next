@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
@@ -52,14 +53,14 @@ func (r *RepoImpl) List(ctx context.Context, group string) ([]port.Item, error) 
 	return items, nil
 }
 
-// Put upsert 单项（Ent Upsert 跨方言适配，ADR-D18）。
+// Put upsert 单项（Ent Upsert 跨方言适配，ADR-D18；冲突目标显式化——PG 必需）。
 func (r *RepoImpl) Put(ctx context.Context, group, key string, value json.RawMessage) error {
 	client := data.Client(ctx, r.data)
 	return client.Setting.Create().
 		SetGroup(group).
 		SetKey(key).
 		SetValue(value).
-		OnConflict().
+		OnConflict(sql.ConflictColumns(setting.FieldGroup, setting.FieldKey)).
 		UpdateValue().
 		Exec(ctx)
 }
