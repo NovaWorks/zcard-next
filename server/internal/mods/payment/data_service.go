@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -327,34 +328,59 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		}
 		cfg := repo.DecryptConfig(ch)
 
-		// 4) 解析回调为表单 map（表单 or XML）
-		form, err := parseCallbackForm(r, body)
-		if err != nil {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "parse failed"})
-		}
-
-		// 5) 验签 → CallbackFact
-		verifier, ok := provider.(port.CallbackVerifier)
-		if !ok {
-			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "driver has no callback verifier"})
-		}
-		f, err := verifier.VerifyCallback(form, cfg)
-		if err != nil {
-			return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
+		// 4/5) 解析 + 验签 → CallbackFact：
+		//     Webhooker 分支（stripe/paypal——JSON body + 签名头，SDK 验签需凭据）
+		//     优先于表单分支（alipay/wechat/epay/epusdt）
+		var f *port.CallbackFact
+		if hooker, ok := provider.(port.Webhooker); ok && isWebhookRequest(r, ch.Driver) {
+			headers := map[string]string{}
+			for k, vv := range r.Header {
+				if len(vv) > 0 {
+					headers[k] = vv[0]
+				}
+			}
+			fact, err := hooker.ParseWebhook(headers, body, cfg)
+			if err != nil {
+				return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
+			}
+			f = fact
+		} else {
+			verifier, ok := provider.(port.CallbackVerifier)
+			if !ok {
+				return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "driver has no callback verifier"})
+			}
+			form, err := parseCallbackForm(r, body)
+			if err != nil {
+				return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "parse failed"})
+			}
+			f, err = verifier.VerifyCallback(form, cfg)
+			if err != nil {
+				return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
+			}
 		}
 		if !f.Success {
 			return ctx.JSON(http.StatusOK, map[string]string{"status": "ignored"})
 		}
 
-		// 6) 定位支付单（按单号或回填 channel_order_no）
+		// 6) 定位支付单（订单号定位；充值单 RCH<id> 前缀走 recharge 关联）
 		var paymentID uint64
 		if f.OrderNo != "" {
-			o, err := data.Client(ctx, d).Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
-			if err == nil {
-				p, err := data.Client(ctx, d).Payment.Query().
-					Where(payment.OrderID(o.ID), payment.Channel(channelCode)).Only(ctx)
+			if rid, ok := strings.CutPrefix(f.OrderNo, "RCH"); ok {
+				if id, err := strconv.ParseUint(rid, 10, 64); err == nil {
+					p, err := data.Client(ctx, d).Payment.Query().
+						Where(payment.RechargeOrderID(id), payment.Channel(channelCode)).Only(ctx)
+					if err == nil {
+						paymentID = p.ID
+					}
+				}
+			} else {
+				o, err := data.Client(ctx, d).Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
 				if err == nil {
-					paymentID = p.ID
+					p, err := data.Client(ctx, d).Payment.Query().
+						Where(payment.OrderID(o.ID), payment.Channel(channelCode)).Only(ctx)
+					if err == nil {
+						paymentID = p.ID
+					}
 				}
 			}
 		}
@@ -420,6 +446,15 @@ func parseCallbackForm(r *http.Request, body []byte) (map[string]string, error) 
 		}
 	}
 	return m, nil
+}
+
+// isWebhookRequest webhook 分支判定：JSON 内容或渠道专属签名头存在。
+// （stripe：Stripe-Signature；paypal：Paypal-Transmission-*——均为表单分支不可达的头）
+func isWebhookRequest(r *http.Request, driver string) bool {
+	if strings.Contains(r.Header.Get("Content-Type"), "json") {
+		return true
+	}
+	return r.Header.Get("Stripe-Signature") != "" || r.Header.Get("stripe-signature") != ""
 }
 
 // parseXMLMap 扁平 XML（wechat 回调 <xml><k>v</k>...</xml>）→ map。

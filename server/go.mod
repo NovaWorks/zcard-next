@@ -14,6 +14,7 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/pquerna/otp v1.5.0
 	github.com/shopspring/decimal v1.4.0
+	github.com/stripe/stripe-go/v82 v82.5.1
 	go.einride.tech/aip v0.86.3
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/crypto v0.55.0

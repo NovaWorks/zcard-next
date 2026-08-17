@@ -66,9 +66,9 @@ type Provider interface {
 	CreatePayment(ctx context.Context, req CreatePaymentRequest) (*RedirectInfo, error)
 }
 
-// Webhooker JSON webhook 解析（stripe/paypal 类）。
+// Webhooker JSON webhook 解析（stripe/paypal 类；签名验证需渠道凭据——cfg 随调用传入）。
 type Webhooker interface {
-	ParseWebhook(headers map[string]string, body []byte) (*CallbackFact, error)
+	ParseWebhook(headers map[string]string, body []byte, cfg json.RawMessage) (*CallbackFact, error)
 }
 
 // CallbackVerifier 表单同步回调验签（epay/alipay 类）。
