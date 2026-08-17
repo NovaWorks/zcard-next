@@ -23,7 +23,8 @@ import (
 // Dispatcher 事件分发器。
 type Dispatcher struct {
 	repo     *NotifyRepo
-	channels map[string]Channel // name → channel
+	channels map[string]Channel       // name → channel
+	brand    notifyport.BrandResolver // P3-04 白标（nil = 未装配，跳过品牌注入）
 }
 
 // NewDispatcher 构造（注册通道）。
@@ -33,6 +34,12 @@ func NewDispatcher(repo *NotifyRepo, channels ...Channel) *Dispatcher {
 		m[c.Name()] = c
 	}
 	return &Dispatcher{repo: repo, channels: m}
+}
+
+// WithBrandResolver 装配白标解析（wire 经 bootstrap 注入；分站订单邮件品牌隔离）。
+func (d *Dispatcher) WithBrandResolver(r notifyport.BrandResolver) *Dispatcher {
+	d.brand = r
+	return d
 }
 
 // 事件 → 默认通道矩阵（模板可覆盖；通道 enabled 逐个独立判定）。
@@ -62,6 +69,19 @@ func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error
 	}
 	// 白名单变量（事件载荷扁平化；值统一字符串化 + HTML escape 在渲染期）
 	vars := FlattenVars(payload)
+	// P3-04 品牌隔离 fail-closed：分站上下文邮件注入分站白标；
+	// 无白标 → 品牌变量留空（绝不回退主站品牌）
+	if env.SubsiteID > 0 && d.brand != nil {
+		if brand, ok := d.brand.ResolveBrand(ctx, env.SubsiteID); ok {
+			vars["site_name"] = brand.SiteName
+			if brand.Logo != "" {
+				vars["site_logo"] = brand.Logo
+			}
+		} else {
+			vars["site_name"] = ""
+			vars["site_logo"] = ""
+		}
+	}
 	locale := "zh_CN"
 
 	for _, ch := range channels {

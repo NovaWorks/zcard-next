@@ -15,8 +15,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
-	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	_ "modernc.org/sqlite"
 )
@@ -57,8 +57,8 @@ func TestEmailSkipped(t *testing.T) {
 // TestRenderTemplate 白名单渲染 + HTML escape + 未知变量为空。
 func TestRenderTemplate(t *testing.T) {
 	vars := map[string]string{
-		"order_no":  "T123",
-		"email":     "user<x>@evil.com",
+		"order_no": "T123",
+		"email":    "user<x>@evil.com",
 	}
 	tpl := "订单 {{.order_no}} 已支付，通知 {{.email}}，未知 {{.not_exist}}，非法定界 {{.order_no | upper}}"
 	got := RenderTemplate(tpl, vars)
@@ -299,5 +299,64 @@ func TestBroadcastFlow(t *testing.T) {
 	}
 	if b2, err = svc.Cancel(ctx, b2.ID); err != nil || string(b2.Status) != "canceled" {
 		t.Fatalf("pending 取消失败: %v", err)
+	}
+}
+
+// fakeBrandResolver 白标解析假实现。
+type fakeBrandResolver struct {
+	siteName string
+	ok       bool
+}
+
+func (f *fakeBrandResolver) ResolveBrand(_ context.Context, _ uint64) (notifyport.Brand, bool) {
+	return notifyport.Brand{SiteName: f.siteName, Logo: "logo.png"}, f.ok
+}
+
+// TestDispatcherBrandIsolation 品牌隔离 fail-closed：
+// 分站上下文 → 注入分站白标；无白标 → site_name 留空（绝不暴露主站品牌）。
+func TestDispatcherBrandIsolation(t *testing.T) {
+	r := newNotifyRepo(t)
+	ctx := context.Background()
+	if _, err := r.UpsertTemplate(ctx, "order.paid", "inbox", "zh_CN", "支付成功", "站点 {{.site_name}} logo={{.site_logo}}", true); err != nil {
+		t.Fatal(err)
+	}
+	payload := []byte(`{"order_no":"T1","user_id":7,"order_id":1}`)
+
+	// 无白标（fail-closed）：站点变量为空字符串
+	disp := NewDispatcher(r, NewInboxChannel(r))
+	disp.WithBrandResolver(&fakeBrandResolver{ok: false})
+	env := testEnvelope("order.paid", payload)
+	env.SubsiteID = 5 // 分站订单
+	if err := disp.HandleEvent(ctx, env); err != nil {
+		t.Fatal(err)
+	}
+	msgs, _, _ := r.ListInbox(ctx, 7, false, 1, 10)
+	if len(msgs) != 1 || msgs[0].Content != "站点  logo=" {
+		t.Fatalf("无白标应渲染为空（不暴露主站品牌）: %q", msgs[0].Content)
+	}
+
+	// 有白标：注入分站站名
+	disp2 := NewDispatcher(r, NewInboxChannel(r))
+	disp2.WithBrandResolver(&fakeBrandResolver{siteName: "分站小店", ok: true})
+	env2 := testEnvelope("order.paid", []byte(`{"order_no":"T2","user_id":8,"order_id":2}`))
+	env2.SubsiteID = 5
+	if err := disp2.HandleEvent(ctx, env2); err != nil {
+		t.Fatal(err)
+	}
+	msgs2, _, _ := r.ListInbox(ctx, 8, false, 1, 10)
+	if len(msgs2) != 1 || msgs2[0].Content != "站点 分站小店 logo=logo.png" {
+		t.Fatalf("分站白标注入错误: %q", msgs2[0].Content)
+	}
+
+	// 主站事件（SubsiteID=0）：不注入品牌（维持现状语义）
+	disp3 := NewDispatcher(r, NewInboxChannel(r))
+	disp3.WithBrandResolver(&fakeBrandResolver{siteName: "分站小店", ok: true})
+	env3 := testEnvelope("order.paid", []byte(`{"order_no":"T3","user_id":9,"order_id":3}`))
+	if err := disp3.HandleEvent(ctx, env3); err != nil {
+		t.Fatal(err)
+	}
+	msgs3, _, _ := r.ListInbox(ctx, 9, false, 1, 10)
+	if len(msgs3) != 1 || msgs3[0].Content != "站点  logo=" {
+		t.Fatalf("主站事件不应注入分站品牌: %q", msgs3[0].Content)
 	}
 }

@@ -22,6 +22,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 )
 
 // repoRoot 仓库根（server 的上一级——admin/storefront 与 server 平级）。
@@ -217,5 +219,36 @@ func TestMoneyRuleSelfCheck(t *testing.T) {
 	}
 	if inputRe.MatchString(`v-model:value="formData.price_yuan"`) {
 		t.Fatal("自证失败：元输入框样本被误伤")
+	}
+}
+
+// TestResellerPermissionDomain 分站后台权限域独立（P3-04 验收）：
+// 分站主自服务面（reseller:site/reseller:product）非 AdminOnly（分站主可达），
+// 主站面管理操作（reseller:review/reseller:pricing）AdminOnly（分站主不可越权）。
+func TestResellerPermissionDomain(t *testing.T) {
+	dir := authz.BuildDirectory()
+	assert := func(code string, adminOnly bool, wantAdminOnly bool, wantNotAdminOnly bool) {
+		p, ok := dir.Perm(code)
+		if !ok {
+			t.Fatalf("权限点 %s 不存在", code)
+		}
+		if p.AdminOnly != adminOnly {
+			t.Errorf("权限点 %s AdminOnly=%v, want %v", code, p.AdminOnly, adminOnly)
+		}
+	}
+	_ = assert
+	// 主站面：审核/定价为超管专属（分站主不可越权主站资源）
+	for _, code := range []string{"reseller:review", "reseller:pricing"} {
+		p, ok := dir.Perm(code)
+		if !ok || !p.AdminOnly {
+			t.Errorf("主站面权限点 %s 必须 AdminOnly（分站主不可越权）", code)
+		}
+	}
+	// 分站自服务面：站主可达（非 AdminOnly）
+	for _, code := range []string{"reseller:site", "reseller:product"} {
+		p, ok := dir.Perm(code)
+		if !ok || p.AdminOnly {
+			t.Errorf("分站自服务权限点 %s 不应 AdminOnly（分站主可达）", code)
+		}
 	}
 }

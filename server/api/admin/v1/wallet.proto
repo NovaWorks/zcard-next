@@ -25,6 +25,59 @@ service AdminWalletService {
   rpc ListTransactions(ListWalletTxRequest) returns (ListWalletTxReply) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}/transactions" };
   }
+  // ListWithdrawals 提现单列表（状态筛选）。
+  rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/wallet/withdrawals" };
+  }
+  // ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+  rpc ReviewWithdrawal(ReviewWithdrawalRequest) returns (WithdrawalItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/wallet/withdrawals/{id}/review"
+      body: "*"
+    };
+  }
+  // PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+  rpc PayWithdrawal(PayWithdrawalRequest) returns (WithdrawalItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/wallet/withdrawals/{id}/pay"
+      body: "*"
+    };
+  }
+}
+
+message ListWithdrawalsRequest {
+  string status = 1; // pending | approved | paid | rejected
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message ListWithdrawalsReply {
+  repeated WithdrawalItem withdrawals = 1;
+  int64 total = 2;
+}
+
+message WithdrawalItem {
+  uint64 id = 1;
+  uint64 user_id = 2;
+  int64 amount_cents = 3;
+  int64 fee_cents = 4;
+  string method_type = 5;
+  string account = 6;
+  string status = 7; // pending | approved | paid | rejected
+  string reject_reason = 8;
+  int64 reviewed_at = 9;
+  int64 paid_at = 10;
+  int64 created_at = 11;
+}
+
+message ReviewWithdrawalRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool approve = 2;
+  string reason = 3; // 驳回必填
+}
+
+message PayWithdrawalRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message GetBalanceRequest {

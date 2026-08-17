@@ -1504,6 +1504,46 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ImportPreviewReply'
+    /api/v1/admin/license:
+        get:
+            tags:
+                - AdminLicenseService
+            description: GetLicenseStatus 许可证状态（安装/有效性/特性清单/到期）。
+            operationId: AdminLicenseService_GetLicenseStatus
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LicenseStatus'
+        post:
+            tags:
+                - AdminLicenseService
+            description: InstallLicense 安装许可证（校验通过才落库；绑定当前实例）。
+            operationId: AdminLicenseService_InstallLicense
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.InstallLicenseRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LicenseStatus'
+        delete:
+            tags:
+                - AdminLicenseService
+            description: ClearLicense 清除许可证（回到社区版）。
+            operationId: AdminLicenseService_ClearLicense
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/media:
         get:
             tags:
@@ -3746,6 +3786,84 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.VirtualReviewItem'
+    /api/v1/admin/wallet/withdrawals:
+        get:
+            tags:
+                - AdminWalletService
+            description: ListWithdrawals 提现单列表（状态筛选）。
+            operationId: AdminWalletService_ListWithdrawals
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListWithdrawalsReply'
+    /api/v1/admin/wallet/withdrawals/{id}/pay:
+        post:
+            tags:
+                - AdminWalletService
+            description: PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+            operationId: AdminWalletService_PayWithdrawal
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.PayWithdrawalRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.WithdrawalItem'
+    /api/v1/admin/wallet/withdrawals/{id}/review:
+        post:
+            tags:
+                - AdminWalletService
+            description: ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+            operationId: AdminWalletService_ReviewWithdrawal
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ReviewWithdrawalRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.WithdrawalItem'
     /api/v1/admin/wallet/{userId}:
         get:
             tags:
@@ -4500,6 +4618,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListTxReply'
+    /api/v1/storefront/wallet/withdrawals:
+        post:
+            tags:
+                - StoreWalletService
+            description: CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+            operationId: StoreWalletService_CreateWithdrawal
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CreateWithdrawalRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CreateWithdrawalReply'
 components:
     schemas:
         zcard.api.admin.v1.AddSiteRequest:
@@ -5914,6 +6051,13 @@ components:
                         type: string
                 dedup:
                     type: boolean
+        zcard.api.admin.v1.InstallLicenseRequest:
+            required:
+                - content
+            type: object
+            properties:
+                content:
+                    type: string
         zcard.api.admin.v1.LedgerEntry:
             type: object
             properties:
@@ -5948,6 +6092,25 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.LicenseStatus:
+            type: object
+            properties:
+                installed:
+                    type: boolean
+                valid:
+                    type: boolean
+                instanceId:
+                    type: string
+                domain:
+                    type: string
+                features:
+                    type: array
+                    items:
+                        type: string
+                expiresAt:
+                    type: string
+                error:
+                    type: string
         zcard.api.admin.v1.ListAdminsReply:
             type: object
             properties:
@@ -6394,6 +6557,15 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.WalletTx'
                 total:
                     type: string
+        zcard.api.admin.v1.ListWithdrawalsReply:
+            type: object
+            properties:
+                withdrawals:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.WithdrawalItem'
+                total:
+                    type: string
         zcard.api.admin.v1.LoginReply:
             type: object
             properties:
@@ -6638,6 +6810,13 @@ components:
                 ip:
                     type: string
                 createdAt:
+                    type: string
+        zcard.api.admin.v1.PayWithdrawalRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
                     type: string
         zcard.api.admin.v1.Payment:
             type: object
@@ -7111,6 +7290,17 @@ components:
                     type: string
                 approve:
                     type: boolean
+        zcard.api.admin.v1.ReviewWithdrawalRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                approve:
+                    type: boolean
+                reason:
+                    type: string
         zcard.api.admin.v1.Role:
             type: object
             properties:
@@ -7988,6 +8178,31 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.admin.v1.WithdrawalItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                amountCents:
+                    type: string
+                feeCents:
+                    type: string
+                methodType:
+                    type: string
+                account:
+                    type: string
+                status:
+                    type: string
+                rejectReason:
+                    type: string
+                reviewedAt:
+                    type: string
+                paidAt:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.storefront.v1.BalanceReply:
             type: object
             properties:
@@ -8110,6 +8325,31 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.storefront.v1.CreateWithdrawalReply:
+            type: object
+            properties:
+                withdrawalId:
+                    type: string
+                amountCents:
+                    type: string
+                feeCents:
+                    type: string
+                creditedCents:
+                    type: string
+        zcard.api.storefront.v1.CreateWithdrawalRequest:
+            required:
+                - amountCents
+                - methodType
+                - account
+            type: object
+            properties:
+                amountCents:
+                    type: string
+                methodType:
+                    type: string
+                account:
+                    type: string
+            description: CreateWithdrawalRequest 提现申请（金额/收款方式；method_type 须在白名单内）。
         zcard.api.storefront.v1.Currencies:
             type: object
             properties:
@@ -8970,6 +9210,10 @@ tags:
       description: AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
     - name: AdminInventoryService
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+    - name: AdminLicenseService
+      description: |-
+        AdminLicenseService 订阅许可证管理（M3，主文档 §11）：安装/查询/清除。
+         校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
     - name: AdminMediaService
       description: |-
         AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除

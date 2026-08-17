@@ -30,6 +30,8 @@ var operatorSeed = map[string]bool{
 	"order:read":     true, "order:read_detail": true,
 	"payment:read": true, "payment:read_detail": true,
 	"wallet:read":         true,
+	"wallet:withdraw":     true,
+	"license:read":        true,
 	"order:view_delivery": true,
 	"memberlevel:read":    true,
 	"coupon:read":         true,

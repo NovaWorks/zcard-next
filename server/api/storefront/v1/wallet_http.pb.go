@@ -19,12 +19,15 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationStoreWalletServiceCreateRecharge = "/zcard.api.storefront.v1.StoreWalletService/CreateRecharge"
+const OperationStoreWalletServiceCreateWithdrawal = "/zcard.api.storefront.v1.StoreWalletService/CreateWithdrawal"
 const OperationStoreWalletServiceGetBalance = "/zcard.api.storefront.v1.StoreWalletService/GetBalance"
 const OperationStoreWalletServiceListTransactions = "/zcard.api.storefront.v1.StoreWalletService/ListTransactions"
 
 type StoreWalletServiceHTTPServer interface {
 	// CreateRecharge CreateRecharge 充值（走支付管线）。
 	CreateRecharge(context.Context, *CreateRechargeRequest) (*CreateRechargeReply, error)
+	// CreateWithdrawal CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+	CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error)
 	// GetBalance GetBalance 余额+积分。
 	GetBalance(context.Context, *emptypb.Empty) (*BalanceReply, error)
 	// ListTransactions ListTransactions 流水（余额）。
@@ -36,6 +39,7 @@ func RegisterStoreWalletServiceHTTPServer(s *http.Server, srv StoreWalletService
 	r.Handle("GET", "/api/v1/storefront/wallet", _StoreWalletService_GetBalance0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/wallet/transactions", _StoreWalletService_ListTransactions0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/wallet/recharge", _StoreWalletService_CreateRecharge0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/wallet/withdrawals", _StoreWalletService_CreateWithdrawal0_HTTP_Handler(srv))
 }
 
 func _StoreWalletService_GetBalance0_HTTP_Handler(srv StoreWalletServiceHTTPServer) func(ctx http.Context) error {
@@ -95,9 +99,30 @@ func _StoreWalletService_CreateRecharge0_HTTP_Handler(srv StoreWalletServiceHTTP
 	}
 }
 
+func _StoreWalletService_CreateWithdrawal0_HTTP_Handler(srv StoreWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateWithdrawalRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreWalletServiceCreateWithdrawal)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateWithdrawal(ctx, req.(*CreateWithdrawalRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CreateWithdrawalReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StoreWalletServiceHTTPClient interface {
 	// CreateRecharge CreateRecharge 充值（走支付管线）。
 	CreateRecharge(ctx context.Context, req *CreateRechargeRequest, opts ...http.CallOption) (rsp *CreateRechargeReply, err error)
+	// CreateWithdrawal CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+	CreateWithdrawal(ctx context.Context, req *CreateWithdrawalRequest, opts ...http.CallOption) (rsp *CreateWithdrawalReply, err error)
 	// GetBalance GetBalance 余额+积分。
 	GetBalance(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *BalanceReply, err error)
 	// ListTransactions ListTransactions 流水（余额）。
@@ -121,6 +146,24 @@ func (c *StoreWalletServiceHTTPClientImpl) CreateRecharge(ctx context.Context, i
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationStoreWalletServiceCreateRecharge),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateWithdrawal CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+func (c *StoreWalletServiceHTTPClientImpl) CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...http.CallOption) (*CreateWithdrawalReply, error) {
+	var out CreateWithdrawalReply
+	pattern := "/api/v1/storefront/wallet/withdrawals"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreWalletServiceCreateWithdrawal),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

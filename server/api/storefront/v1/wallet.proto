@@ -25,6 +25,13 @@ service StoreWalletService {
       body: "*"
     };
   }
+  // CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+  rpc CreateWithdrawal(CreateWithdrawalRequest) returns (CreateWithdrawalReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/wallet/withdrawals"
+      body: "*"
+    };
+  }
 }
 
 message BalanceReply {
@@ -64,4 +71,18 @@ message CreateRechargeReply {
   uint64 payment_id = 2;
   string type = 3;    // redirect | qrcode | params（与 CreatePaymentReply 同构）
   string payload = 4; // 支付跳转 URL / 二维码内容 / 参数 JSON
+}
+
+// CreateWithdrawalRequest 提现申请（金额/收款方式；method_type 须在白名单内）。
+message CreateWithdrawalRequest {
+  int64 amount_cents = 1 [(google.api.field_behavior) = REQUIRED];
+  string method_type = 2 [(google.api.field_behavior) = REQUIRED]; // 白名单 type（alipay/wechat/bank...）
+  string account = 3 [(google.api.field_behavior) = REQUIRED];    // 收款账号
+}
+
+message CreateWithdrawalReply {
+  uint64 withdrawal_id = 1;
+  int64 amount_cents = 2;
+  int64 fee_cents = 3;
+  int64 credited_cents = 4; // 实际到账 = amount - fee
 }

@@ -31,12 +31,18 @@ var ProviderSet = wire.NewSet(
 	NewNotifyRepo,
 	ProvideChannels,
 	ProvideSettingsReader, // notifyport.SettingsReader 绑定（order 互斥开关等消费）
-	NewDispatcher,
+	ProvideDispatcher,
 	wire.Bind(new(notifyport.Sender), new(*Dispatcher)), // audit Alerter 消费（通道 A）
 	NewBroadcastService,
 	NewAdminNotifyService,
 	NewStoreNotificationService,
 )
+
+// ProvideDispatcher 构造分发器并装配白标解析（BrandResolver 由 reseller 提供，
+// 通道 A；nil = 未装配跳过品牌注入）。
+func ProvideDispatcher(repo *NotifyRepo, channels []Channel, brand notifyport.BrandResolver) *Dispatcher {
+	return NewDispatcher(repo, channels...).WithBrandResolver(brand)
+}
 
 // ProvideSettingsReader settings 适配为通用端口（跨模块共享，通道 A）。
 func ProvideSettingsReader(repo *settings.RepoImpl) notifyport.SettingsReader {

@@ -118,6 +118,15 @@ var groups = map[string]*GroupDef{
 			"gift_tiers": nil, // [{amount,gift_balance,gift_points}]
 		},
 	},
+	"license": {
+		Name: "license", Desc: "订阅许可证",
+		Defaults: map[string]any{
+			"file":        "", // 许可证内容（JSON；安装时写入）
+			"pubkey":      "", // ed25519 公钥（base64；发行侧配置）
+			"domain":      "", // 主站域名（许可证绑定校验；空=跳过）
+			"instance_id": "", // 实例 ID（首次读取时生成并持久化）
+		},
+	},
 	"withdraw": {
 		Name: "withdraw", Desc: "提现",
 		Defaults: map[string]any{

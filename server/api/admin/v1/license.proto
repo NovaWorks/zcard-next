@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminLicenseService 订阅许可证管理（M3，主文档 §11）：安装/查询/清除。
+// 校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
+service AdminLicenseService {
+  // GetLicenseStatus 许可证状态（安装/有效性/特性清单/到期）。
+  rpc GetLicenseStatus(google.protobuf.Empty) returns (LicenseStatus) {
+    option (google.api.http) = { get: "/api/v1/admin/license" };
+  }
+  // InstallLicense 安装许可证（校验通过才落库；绑定当前实例）。
+  rpc InstallLicense(InstallLicenseRequest) returns (LicenseStatus) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/license"
+      body: "*"
+    };
+  }
+  // ClearLicense 清除许可证（回到社区版）。
+  rpc ClearLicense(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/license" };
+  }
+}
+
+message InstallLicenseRequest {
+  string content = 1 [(google.api.field_behavior) = REQUIRED]; // 许可证文件内容（JSON）
+}
+
+message LicenseStatus {
+  bool installed = 1;
+  bool valid = 2;
+  string instance_id = 3;
+  string domain = 4;
+  repeated string features = 5;
+  string expires_at = 6;
+  string error = 7; // 未安装/无效时的原因（fail-closed 提示）
+}

@@ -56,10 +56,10 @@ func TestValidateKey(t *testing.T) {
 	}
 }
 
-// TestGroupCatalog 分组目录快照（14 组；P0-04 验收「全部 12+ 分组」）。
+// TestGroupCatalog 分组目录快照（15 组；P0-04 验收「全部 12+ 分组」；P3-08 加 license）。
 func TestGroupCatalog(t *testing.T) {
 	got := GroupsSorted()
-	want := []string{"affiliate", "footer", "i18n", "notify", "ops", "points", "promo", "recharge", "security", "site", "supply", "template", "trade", "withdraw"}
+	want := []string{"affiliate", "footer", "i18n", "license", "notify", "ops", "points", "promo", "recharge", "security", "site", "supply", "template", "trade", "withdraw"}
 	if len(got) != len(want) {
 		t.Fatalf("分组数漂移：got %v", got)
 	}

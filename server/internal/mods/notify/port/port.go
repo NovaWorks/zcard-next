@@ -25,6 +25,19 @@ type Sender interface {
 	Send(ctx context.Context, msg Message) error
 }
 
+// Brand 站点品牌（白标解析结果）。
+type Brand struct {
+	SiteName string
+	Logo     string
+}
+
+// BrandResolver 站点品牌解析（reseller 实现；分站订单按 subsite_id 解析白标）。
+// fail-closed：解析不到返回 ok=false——调用方不得回退主站品牌（铁律：分站邮件
+// 绝不暴露主站品牌）。
+type BrandResolver interface {
+	ResolveBrand(ctx context.Context, subsiteID uint64) (brand Brand, ok bool)
+}
+
 // SettingsReader 通道配置读取（notify 模块消费 settings，通道 A）。
 // SMTP 等通道运行时读取——配置变更不重启生效（1.x MailService 纪律）。
 type SettingsReader interface {

@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"log/slog"
 
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
@@ -31,6 +32,27 @@ type SettleService struct {
 // NewSettleService 构造。
 func NewSettleService(repo *ResellerRepo, logger *slog.Logger) *SettleService {
 	return &SettleService{repo: repo, log: logger}
+}
+
+// OnOrderRefunded 订阅 order.refunded：按订单快照扣回分站利润
+// （refund_deduct 负行；余额不足 → 负债态，后续利润优先抵扣）。
+func (s *SettleService) OnOrderRefunded(ctx context.Context, env events.Envelope) error {
+	var p struct {
+		OrderID     uint64 `json:"order_id"`
+		RefundRatio int64  `json:"refund_ratio"`
+	}
+	if err := json.Unmarshal(env.Payload, &p); err != nil || p.OrderID == 0 {
+		return nil // 载荷不合法：ACK 不重试
+	}
+	// 订单快照（subsite_profit 为利润基数；主站单/无利润单无动作）
+	o, err := data.Client(ctx, s.repo.data).Order.Get(ctx, p.OrderID)
+	if err != nil || o.SubsiteID == 0 || o.SubsiteProfit <= 0 {
+		return nil
+	}
+	if err := s.repo.RefundDeduct(ctx, o.SubsiteID, o.ID, o.SubsiteProfit, p.RefundRatio); err != nil {
+		s.log.Warn("reseller.refund_deduct_failed", "order_id", p.OrderID, "err", err)
+	}
+	return nil
 }
 
 // OnOrderPaid 订阅 order.paid：按订单快照分站利润入账（幂等 ACK）。

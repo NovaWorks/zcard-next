@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellersite"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/httpx"
 )
 
@@ -122,6 +123,20 @@ func verifyHTTPWellKnown(ctx context.Context, domain, token string) (bool, error
 		}
 	}
 	return false, nil
+}
+
+// ResolveBrand 站点品牌（白标）解析（notify 端口实现；分站订单邮件用）。
+// 取分站主站名/LOGO；无白标配置返回 ok=false（fail-closed——调用方不得回退主站品牌）。
+func (r *ResellerRepo) ResolveBrand(ctx context.Context, subsiteID uint64) (notifyport.Brand, bool) {
+	client := data.Client(ctx, r.data)
+	site, err := client.ResellerSite.Query().
+		Where(resellersite.ProfileID(subsiteID)).
+		Order(ent.Desc(resellersite.FieldIsPrimary), ent.Asc(resellersite.FieldID)).
+		First(ctx)
+	if err != nil || site.SiteName == "" {
+		return notifyport.Brand{}, false
+	}
+	return notifyport.Brand{SiteName: site.SiteName, Logo: site.Logo}, true
 }
 
 // ResolveDomain 域名 → subsite_id（verified 域名；profile 必须 approved）。

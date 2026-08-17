@@ -20,6 +20,9 @@ const _ = http.SupportPackageIsVersion3
 const OperationAdminWalletServiceAdjust = "/zcard.api.admin.v1.AdminWalletService/Adjust"
 const OperationAdminWalletServiceGetBalance = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
 const OperationAdminWalletServiceListTransactions = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
+const OperationAdminWalletServiceListWithdrawals = "/zcard.api.admin.v1.AdminWalletService/ListWithdrawals"
+const OperationAdminWalletServicePayWithdrawal = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
+const OperationAdminWalletServiceReviewWithdrawal = "/zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal"
 
 type AdminWalletServiceHTTPServer interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
@@ -28,6 +31,12 @@ type AdminWalletServiceHTTPServer interface {
 	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
 	// ListTransactions ListTransactions 指定用户流水。
 	ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error)
+	// ListWithdrawals ListWithdrawals 提现单列表（状态筛选）。
+	ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsReply, error)
+	// PayWithdrawal PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+	PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error)
+	// ReviewWithdrawal ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+	ReviewWithdrawal(context.Context, *ReviewWithdrawalRequest) (*WithdrawalItem, error)
 }
 
 func RegisterAdminWalletServiceHTTPServer(s *http.Server, srv AdminWalletServiceHTTPServer) {
@@ -35,6 +44,9 @@ func RegisterAdminWalletServiceHTTPServer(s *http.Server, srv AdminWalletService
 	r.Handle("GET", "/api/v1/admin/wallet/{user_id}", _AdminWalletService_GetBalance0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust", _AdminWalletService_Adjust0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/{user_id}/transactions", _AdminWalletService_ListTransactions0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/wallet/withdrawals", _AdminWalletService_ListWithdrawals0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/review", _AdminWalletService_ReviewWithdrawal0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/pay", _AdminWalletService_PayWithdrawal0_HTTP_Handler(srv))
 }
 
 func _AdminWalletService_GetBalance0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
@@ -103,6 +115,69 @@ func _AdminWalletService_ListTransactions0_HTTP_Handler(srv AdminWalletServiceHT
 	}
 }
 
+func _AdminWalletService_ListWithdrawals0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListWithdrawalsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceListWithdrawals)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListWithdrawals(ctx, req.(*ListWithdrawalsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListWithdrawalsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminWalletService_ReviewWithdrawal0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ReviewWithdrawalRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceReviewWithdrawal)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ReviewWithdrawal(ctx, req.(*ReviewWithdrawalRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*WithdrawalItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminWalletService_PayWithdrawal0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in PayWithdrawalRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServicePayWithdrawal)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PayWithdrawal(ctx, req.(*PayWithdrawalRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*WithdrawalItem)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminWalletServiceHTTPClient interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(ctx context.Context, req *AdjustRequest, opts ...http.CallOption) (rsp *Balance, err error)
@@ -110,6 +185,12 @@ type AdminWalletServiceHTTPClient interface {
 	GetBalance(ctx context.Context, req *GetBalanceRequest, opts ...http.CallOption) (rsp *Balance, err error)
 	// ListTransactions ListTransactions 指定用户流水。
 	ListTransactions(ctx context.Context, req *ListWalletTxRequest, opts ...http.CallOption) (rsp *ListWalletTxReply, err error)
+	// ListWithdrawals ListWithdrawals 提现单列表（状态筛选）。
+	ListWithdrawals(ctx context.Context, req *ListWithdrawalsRequest, opts ...http.CallOption) (rsp *ListWithdrawalsReply, err error)
+	// PayWithdrawal PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+	PayWithdrawal(ctx context.Context, req *PayWithdrawalRequest, opts ...http.CallOption) (rsp *WithdrawalItem, err error)
+	// ReviewWithdrawal ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+	ReviewWithdrawal(ctx context.Context, req *ReviewWithdrawalRequest, opts ...http.CallOption) (rsp *WithdrawalItem, err error)
 }
 
 type AdminWalletServiceHTTPClientImpl struct {
@@ -166,6 +247,59 @@ func (c *AdminWalletServiceHTTPClientImpl) ListTransactions(ctx context.Context,
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListWithdrawals ListWithdrawals 提现单列表（状态筛选）。
+func (c *AdminWalletServiceHTTPClientImpl) ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...http.CallOption) (*ListWithdrawalsReply, error) {
+	var out ListWithdrawalsReply
+	pattern := "/api/v1/admin/wallet/withdrawals"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminWalletServiceListWithdrawals),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// PayWithdrawal PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+func (c *AdminWalletServiceHTTPClientImpl) PayWithdrawal(ctx context.Context, in *PayWithdrawalRequest, opts ...http.CallOption) (*WithdrawalItem, error) {
+	var out WithdrawalItem
+	pattern := "/api/v1/admin/wallet/withdrawals/{id}/pay"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminWalletServicePayWithdrawal),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ReviewWithdrawal ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+func (c *AdminWalletServiceHTTPClientImpl) ReviewWithdrawal(ctx context.Context, in *ReviewWithdrawalRequest, opts ...http.CallOption) (*WithdrawalItem, error) {
+	var out WithdrawalItem
+	pattern := "/api/v1/admin/wallet/withdrawals/{id}/review"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminWalletServiceReviewWithdrawal),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -11,6 +11,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
+	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -101,5 +102,99 @@ func TestStoreListingSubsitePrice(t *testing.T) {
 	}
 	if len(mainReply.Items) != 1 || mainReply.Items[0].PriceCents != 1000 {
 		t.Fatalf("主站列表应只见主站商品原价: %+v", mainReply.Items)
+	}
+}
+
+// TestTenantIsolationMatrix 三租户隔离矩阵（R6 必测）：
+// 两分站+主站 × 列表/详情/更新/删除/同 slug 全组合互不可见。
+func TestTenantIsolationMatrix(t *testing.T) {
+	d := newCatalogResellerData(t)
+	ctx := context.Background()
+	rr := reseller.NewResellerRepo(d)
+
+	// 两个已过审分站（站主 user 1 / user 2）
+	seedOwner := func(uid uint64, name string) uint64 {
+		if _, err := d.Client.User.Create().SetUsername(name).SetStatus(user.StatusActive).Save(ctx); err != nil {
+			t.Fatal(err)
+		}
+		app, err := rr.Apply(ctx, reseller.ApplyInput{UserID: uid, Reason: "开店"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err = rr.Review(ctx, app.ID, true, "", 99, 10, 50, 7); err != nil {
+			t.Fatal(err)
+		}
+		return app.ID
+	}
+	subA := seedOwner(1, "ownerA")
+	subB := seedOwner(2, "ownerB")
+
+	// 三租户各建 1 个同 slug 商品（唯一索引含 subsite_id：分站间同 slug 不冲突）
+	mk := func(subsite uint64, name string) *ent.Product {
+		p, err := rr.CreateOwnProduct(ctx, subsite, reseller.OwnProductInput{Name: name, Price: 1000, Status: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return p
+	}
+	// 英文名 → 同 slug：唯一索引含 subsite_id，分站间同 slug 共存不冲突
+	prodA := mk(subA, "SameProduct")
+	prodB := mk(subB, "SameProduct")
+	prodMain, err := d.Client.Product.Create().
+		SetSubsiteID(0).SetName("SameProduct").SetSlug("sameproduct-3").
+		SetPrice(1000).SetStockType("card").SetStatus(1).Save(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = prodMain
+	if prodA.Slug != "sameproduct" || prodB.Slug != "sameproduct" {
+		t.Fatalf("分站间应允许同 slug 共存: %s vs %s", prodA.Slug, prodB.Slug)
+	}
+
+	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr)
+	ctxA := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subA, IsMain: false})
+	ctxB := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subB, IsMain: false})
+
+	// 列表互不可见（各租户只见自己 1 件）
+	for name, c := range map[string]context.Context{"A": ctxA, "B": ctxB, "主站": ctx} {
+		reply, err := svc.ListProducts(c, &storefrontv1.ListProductsRequest{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(reply.Items) != 1 {
+			t.Fatalf("%s 租户列表应只见自己 1 件: %d", name, len(reply.Items))
+		}
+	}
+
+	// 跨租户详情 404（A 的 ID 在 B 上下文不可见）
+	if _, err := svc.GetProduct(ctxB, &storefrontv1.GetProductRequest{Id: prodA.ID}); err == nil {
+		t.Fatal("跨租户详情应 404")
+	}
+	if _, err := svc.GetProduct(ctx, &storefrontv1.GetProductRequest{Id: prodA.ID}); err == nil {
+		t.Fatal("主站上下文不应看到分站商品")
+	}
+
+	// 更新隔离：A 改名/改价不影响 B 与主站
+	adminSvc := NewAdminCatalogService(NewProductRepoImpl(d, nil))
+	if _, err := adminSvc.UpdateProduct(ctxA, &adminv1.UpdateProductRequest{
+		Id: prodA.ID, Name: "A站改名", PriceCents: 2000,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	gotB, _ := d.Client.Product.Get(ctx, prodB.ID)
+	if gotB.Name == "A站改名" || gotB.Price == 2000 {
+		t.Fatal("A 站更新污染了 B 站商品")
+	}
+	gotMain, _ := d.Client.Product.Get(ctx, prodMain.ID)
+	if gotMain.Name == "A站改名" {
+		t.Fatal("A 站更新污染了主站商品")
+	}
+
+	// 删除隔离：B 删自己的商品，A 不受影响
+	if _, err := adminSvc.DeleteProduct(ctxB, &adminv1.DeleteProductRequest{Id: prodB.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.Client.Product.Get(ctx, prodA.ID); err != nil {
+		t.Fatal("B 删除影响了 A 的商品")
 	}
 }

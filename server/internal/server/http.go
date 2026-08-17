@@ -29,6 +29,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/license"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
@@ -78,6 +79,7 @@ func NewHTTPServer(
 	ticketAdminSvc *ticket.AdminTicketService,
 	affiliateStoreSvc *affiliate.StoreAffiliateService,
 	mediaAdminSvc *media.AdminMediaService,
+	licenseAdminSvc *license.AdminLicenseService,
 	resellerAdminSvc *reseller.AdminResellerService,
 	resellerRepo *reseller.ResellerRepo,
 	userStoreSvc *identity.StoreUserService,
@@ -197,6 +199,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminTicketServiceHTTPServer(srv, ticketAdminSvc)
 	storefrontv1.RegisterStoreAffiliateServiceHTTPServer(srv, affiliateStoreSvc)
 	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
+	adminv1.RegisterAdminLicenseServiceHTTPServer(srv, licenseAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)
 	storefrontv1.RegisterStoreUserServiceHTTPServer(srv, userStoreSvc)
 	// P3-06：素材静态服务（ETag + 白名单扩展；目录列表禁用）

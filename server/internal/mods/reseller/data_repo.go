@@ -28,12 +28,12 @@ import (
 
 // 哨兵错误。
 var (
-	ErrNotFound        = errors.New("reseller: 记录不存在")
-	ErrDuplicateApply  = errors.New("reseller.DUPLICATE_APPLY: 已有申请记录")
-	ErrMarkupExceed    = errors.New("reseller.MARKUP_EXCEED: 超过分站加价率上限")
-	ErrBelowBase       = errors.New("reseller.BELOW_BASE: 分站价不得低于主站基础价")
-	ErrNotApproved     = errors.New("reseller.NOT_APPROVED: 分站未过审")
-	ErrInsufficient    = errors.New("reseller.INSUFFICIENT_BALANCE")
+	ErrNotFound       = errors.New("reseller: 记录不存在")
+	ErrDuplicateApply = errors.New("reseller.DUPLICATE_APPLY: 已有申请记录")
+	ErrMarkupExceed   = errors.New("reseller.MARKUP_EXCEED: 超过分站加价率上限")
+	ErrBelowBase      = errors.New("reseller.BELOW_BASE: 分站价不得低于主站基础价")
+	ErrNotApproved    = errors.New("reseller.NOT_APPROVED: 分站未过审")
+	ErrInsufficient   = errors.New("reseller.INSUFFICIENT_BALANCE")
 )
 
 // ResellerRepo 仓储。
@@ -225,6 +225,7 @@ type SettleInput struct {
 }
 
 // SettleOrderProfit 订单分账入账（幂等键 order_profit:<orderID>；冻结 available_at）。
+// 入账前优先抵扣 pending 负债（利润先还债，与 affiliate 负债态同构）。
 func (r *ResellerRepo) SettleOrderProfit(ctx context.Context, in SettleInput) error {
 	if in.Amount <= 0 {
 		return nil
@@ -238,11 +239,26 @@ func (r *ResellerRepo) SettleOrderProfit(ctx context.Context, in SettleInput) er
 	if confirmDays <= 0 {
 		confirmDays = 7
 	}
+	// 负债优先抵扣（同事务；不足才产生净入账）
+	net, err := r.settleDebt(ctx, in.SubsiteID, int64(in.Amount))
+	if err != nil {
+		return err
+	}
+	if net <= 0 {
+		// 利润全部用于抵债：negative 缓存减少（抵债额=入账额）
+		return r.updateBalance(ctx, in.SubsiteID, 0, 0, -int64(in.Amount))
+	}
+	if net < int64(in.Amount) {
+		// 部分抵债：negative 减少差额
+		if err := r.updateBalance(ctx, in.SubsiteID, 0, 0, -(int64(in.Amount) - net)); err != nil {
+			return err
+		}
+	}
 	_, err = client.ResellerLedgerEntry.Create().
 		SetSubsiteID(in.SubsiteID).
 		SetOrderID(in.OrderID).
 		SetType("order_profit").
-		SetAmount(int64(in.Amount)).
+		SetAmount(net).
 		SetStatus(resellerledgerentry.StatusPending).
 		SetAvailableAt(time.Now().UTC().AddDate(0, 0, confirmDays)).
 		SetIdempotencyKey(fmt.Sprintf("order_profit:%d", in.OrderID)).
@@ -253,7 +269,7 @@ func (r *ResellerRepo) SettleOrderProfit(ctx context.Context, in SettleInput) er
 	if err != nil {
 		return err
 	}
-	return r.refreshBalance(ctx, in.SubsiteID, int64(in.Amount))
+	return r.refreshBalance(ctx, in.SubsiteID, net)
 }
 
 // ConfirmDue 到期确认（pending → available；cron）。
@@ -279,12 +295,19 @@ func (r *ResellerRepo) ConfirmDue(ctx context.Context, now time.Time, limit int)
 
 // refreshBalance 余额缓存增量（available 维度——pending/locked 独立核算）。
 func (r *ResellerRepo) refreshBalance(ctx context.Context, subsiteID uint64, delta int64) error {
+	return r.updateBalance(ctx, subsiteID, delta, 0, 0)
+}
+
+// updateBalance 余额缓存三维增量（available/locked/negative——提现锁定/打款/
+// 驳回/退款扣回/负债抵扣全部经此维护，缓存可由流水重算对账）。
+func (r *ResellerRepo) updateBalance(ctx context.Context, subsiteID uint64, availDelta, lockedDelta, negDelta int64) error {
 	client := data.Client(ctx, r.data)
 	acc, err := client.ResellerBalanceAccount.Query().
 		Where(resellerbalanceaccount.SubsiteIDEQ(subsiteID)).Only(ctx)
 	if ent.IsNotFound(err) {
 		_, err = client.ResellerBalanceAccount.Create().
-			SetSubsiteID(subsiteID).SetAvailable(delta).SetLocked(0).SetNegative(0).
+			SetSubsiteID(subsiteID).
+			SetAvailable(availDelta).SetLocked(lockedDelta).SetNegative(negDelta).
 			Save(ctx)
 		return err
 	}
@@ -292,7 +315,10 @@ func (r *ResellerRepo) refreshBalance(ctx context.Context, subsiteID uint64, del
 		return err
 	}
 	_, err = client.ResellerBalanceAccount.UpdateOneID(acc.ID).
-		SetAvailable(acc.Available + delta).Save(ctx)
+		SetAvailable(acc.Available + availDelta).
+		SetLocked(acc.Locked + lockedDelta).
+		SetNegative(acc.Negative + negDelta).
+		Save(ctx)
 	return err
 }
 

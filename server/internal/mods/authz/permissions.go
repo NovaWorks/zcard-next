@@ -164,6 +164,12 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminWalletService/Adjust", Method: "POST", Path: "/api/v1/admin/wallet/{user_id}/adjust"},
 		Perm{Code: "wallet:read", Desc: "查用户流水", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/ListTransactions", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}/transactions"},
+		Perm{Code: "wallet:withdraw", Desc: "提现单列表", Domain: "wallet",
+			Op: "zcard.api.admin.v1.AdminWalletService/ListWithdrawals", Method: "GET", Path: "/api/v1/admin/wallet/withdrawals"},
+		Perm{Code: "wallet:withdraw_review", Desc: "提现审核（超管）", Domain: "wallet", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal", Method: "POST", Path: "/api/v1/admin/wallet/withdrawals/{id}/review"},
+		Perm{Code: "wallet:withdraw_review", Desc: "提现打款（超管）", Domain: "wallet", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminWalletService/PayWithdrawal", Method: "POST", Path: "/api/v1/admin/wallet/withdrawals/{id}/pay"},
 
 		// ── 履约（fulfillment，P1-06）─────────────────
 		Perm{Code: "order:view_delivery", Desc: "查看交付记录", Domain: "fulfillment",
@@ -344,6 +350,14 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminResellerService/SetWhitelabel", Method: "POST", Path: "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel"},
 		Perm{Code: "reseller:product", Desc: "自营商品上架（分站主）", Domain: "reseller",
 			Op: "zcard.api.admin.v1.AdminResellerService/CreateProduct", Method: "POST", Path: "/api/v1/admin/reseller/products"},
+
+		// ── 订阅许可证（license，P3-08）─────────────
+		Perm{Code: "license:read", Desc: "许可证状态", Domain: "license",
+			Op: "zcard.api.admin.v1.AdminLicenseService/GetLicenseStatus", Method: "GET", Path: "/api/v1/admin/license"},
+		Perm{Code: "license:write", Desc: "安装/清除许可证（超管）", Domain: "license", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminLicenseService/InstallLicense", Method: "POST", Path: "/api/v1/admin/license"},
+		Perm{Code: "license:write", Desc: "清除许可证（超管）", Domain: "license", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminLicenseService/ClearLicense", Method: "DELETE", Path: "/api/v1/admin/license"},
 
 		// ── 素材库（media，P3-06）───────────────────
 		Perm{Code: "media:read", Desc: "分类列表", Domain: "media",

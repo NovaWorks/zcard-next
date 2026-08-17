@@ -23,6 +23,346 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ListWithdrawalsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // pending | approved | paid | rejected
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWithdrawalsRequest) Reset() {
+	*x = ListWithdrawalsRequest{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWithdrawalsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWithdrawalsRequest) ProtoMessage() {}
+
+func (x *ListWithdrawalsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWithdrawalsRequest.ProtoReflect.Descriptor instead.
+func (*ListWithdrawalsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListWithdrawalsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListWithdrawalsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListWithdrawalsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListWithdrawalsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Withdrawals   []*WithdrawalItem      `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListWithdrawalsReply) Reset() {
+	*x = ListWithdrawalsReply{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWithdrawalsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWithdrawalsReply) ProtoMessage() {}
+
+func (x *ListWithdrawalsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWithdrawalsReply.ProtoReflect.Descriptor instead.
+func (*ListWithdrawalsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListWithdrawalsReply) GetWithdrawals() []*WithdrawalItem {
+	if x != nil {
+		return x.Withdrawals
+	}
+	return nil
+}
+
+func (x *ListWithdrawalsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type WithdrawalItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	AmountCents   int64                  `protobuf:"varint,3,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	FeeCents      int64                  `protobuf:"varint,4,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
+	MethodType    string                 `protobuf:"bytes,5,opt,name=method_type,json=methodType,proto3" json:"method_type,omitempty"`
+	Account       string                 `protobuf:"bytes,6,opt,name=account,proto3" json:"account,omitempty"`
+	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"` // pending | approved | paid | rejected
+	RejectReason  string                 `protobuf:"bytes,8,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,omitempty"`
+	ReviewedAt    int64                  `protobuf:"varint,9,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
+	PaidAt        int64                  `protobuf:"varint,10,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *WithdrawalItem) Reset() {
+	*x = WithdrawalItem{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WithdrawalItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WithdrawalItem) ProtoMessage() {}
+
+func (x *WithdrawalItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WithdrawalItem.ProtoReflect.Descriptor instead.
+func (*WithdrawalItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *WithdrawalItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *WithdrawalItem) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *WithdrawalItem) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
+}
+
+func (x *WithdrawalItem) GetFeeCents() int64 {
+	if x != nil {
+		return x.FeeCents
+	}
+	return 0
+}
+
+func (x *WithdrawalItem) GetMethodType() string {
+	if x != nil {
+		return x.MethodType
+	}
+	return ""
+}
+
+func (x *WithdrawalItem) GetAccount() string {
+	if x != nil {
+		return x.Account
+	}
+	return ""
+}
+
+func (x *WithdrawalItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *WithdrawalItem) GetRejectReason() string {
+	if x != nil {
+		return x.RejectReason
+	}
+	return ""
+}
+
+func (x *WithdrawalItem) GetReviewedAt() int64 {
+	if x != nil {
+		return x.ReviewedAt
+	}
+	return 0
+}
+
+func (x *WithdrawalItem) GetPaidAt() int64 {
+	if x != nil {
+		return x.PaidAt
+	}
+	return 0
+}
+
+func (x *WithdrawalItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type ReviewWithdrawalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Approve       bool                   `protobuf:"varint,2,opt,name=approve,proto3" json:"approve,omitempty"`
+	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"` // 驳回必填
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReviewWithdrawalRequest) Reset() {
+	*x = ReviewWithdrawalRequest{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReviewWithdrawalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReviewWithdrawalRequest) ProtoMessage() {}
+
+func (x *ReviewWithdrawalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReviewWithdrawalRequest.ProtoReflect.Descriptor instead.
+func (*ReviewWithdrawalRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ReviewWithdrawalRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ReviewWithdrawalRequest) GetApprove() bool {
+	if x != nil {
+		return x.Approve
+	}
+	return false
+}
+
+func (x *ReviewWithdrawalRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type PayWithdrawalRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PayWithdrawalRequest) Reset() {
+	*x = PayWithdrawalRequest{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PayWithdrawalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PayWithdrawalRequest) ProtoMessage() {}
+
+func (x *PayWithdrawalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PayWithdrawalRequest.ProtoReflect.Descriptor instead.
+func (*PayWithdrawalRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *PayWithdrawalRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 type GetBalanceRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -32,7 +372,7 @@ type GetBalanceRequest struct {
 
 func (x *GetBalanceRequest) Reset() {
 	*x = GetBalanceRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	mi := &file_admin_v1_wallet_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -44,7 +384,7 @@ func (x *GetBalanceRequest) String() string {
 func (*GetBalanceRequest) ProtoMessage() {}
 
 func (x *GetBalanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	mi := &file_admin_v1_wallet_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -57,7 +397,7 @@ func (x *GetBalanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBalanceRequest.ProtoReflect.Descriptor instead.
 func (*GetBalanceRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{0}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetBalanceRequest) GetUserId() uint64 {
@@ -79,7 +419,7 @@ type Balance struct {
 
 func (x *Balance) Reset() {
 	*x = Balance{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[1]
+	mi := &file_admin_v1_wallet_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -91,7 +431,7 @@ func (x *Balance) String() string {
 func (*Balance) ProtoMessage() {}
 
 func (x *Balance) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[1]
+	mi := &file_admin_v1_wallet_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -104,7 +444,7 @@ func (x *Balance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Balance.ProtoReflect.Descriptor instead.
 func (*Balance) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{1}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Balance) GetUserId() uint64 {
@@ -146,7 +486,7 @@ type AdjustRequest struct {
 
 func (x *AdjustRequest) Reset() {
 	*x = AdjustRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[2]
+	mi := &file_admin_v1_wallet_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -158,7 +498,7 @@ func (x *AdjustRequest) String() string {
 func (*AdjustRequest) ProtoMessage() {}
 
 func (x *AdjustRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[2]
+	mi := &file_admin_v1_wallet_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -171,7 +511,7 @@ func (x *AdjustRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdjustRequest.ProtoReflect.Descriptor instead.
 func (*AdjustRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{2}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *AdjustRequest) GetUserId() uint64 {
@@ -206,7 +546,7 @@ type ListWalletTxRequest struct {
 
 func (x *ListWalletTxRequest) Reset() {
 	*x = ListWalletTxRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[3]
+	mi := &file_admin_v1_wallet_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -218,7 +558,7 @@ func (x *ListWalletTxRequest) String() string {
 func (*ListWalletTxRequest) ProtoMessage() {}
 
 func (x *ListWalletTxRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[3]
+	mi := &file_admin_v1_wallet_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -231,7 +571,7 @@ func (x *ListWalletTxRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWalletTxRequest.ProtoReflect.Descriptor instead.
 func (*ListWalletTxRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{3}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ListWalletTxRequest) GetUserId() uint64 {
@@ -265,7 +605,7 @@ type ListWalletTxReply struct {
 
 func (x *ListWalletTxReply) Reset() {
 	*x = ListWalletTxReply{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[4]
+	mi := &file_admin_v1_wallet_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -277,7 +617,7 @@ func (x *ListWalletTxReply) String() string {
 func (*ListWalletTxReply) ProtoMessage() {}
 
 func (x *ListWalletTxReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[4]
+	mi := &file_admin_v1_wallet_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -290,7 +630,7 @@ func (x *ListWalletTxReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWalletTxReply.ProtoReflect.Descriptor instead.
 func (*ListWalletTxReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{4}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ListWalletTxReply) GetTransactions() []*WalletTx {
@@ -324,7 +664,7 @@ type WalletTx struct {
 
 func (x *WalletTx) Reset() {
 	*x = WalletTx{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[5]
+	mi := &file_admin_v1_wallet_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +676,7 @@ func (x *WalletTx) String() string {
 func (*WalletTx) ProtoMessage() {}
 
 func (x *WalletTx) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[5]
+	mi := &file_admin_v1_wallet_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +689,7 @@ func (x *WalletTx) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WalletTx.ProtoReflect.Descriptor instead.
 func (*WalletTx) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{5}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *WalletTx) GetId() uint64 {
@@ -419,7 +759,36 @@ var File_admin_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/wallet.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"1\n" +
+	"\x15admin/v1/wallet.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"a\n" +
+	"\x16ListWithdrawalsRequest\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"r\n" +
+	"\x14ListWithdrawalsReply\x12D\n" +
+	"\vwithdrawals\x18\x01 \x03(\v2\".zcard.api.admin.v1.WithdrawalItemR\vwithdrawals\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xca\x02\n" +
+	"\x0eWithdrawalItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12!\n" +
+	"\famount_cents\x18\x03 \x01(\x03R\vamountCents\x12\x1b\n" +
+	"\tfee_cents\x18\x04 \x01(\x03R\bfeeCents\x12\x1f\n" +
+	"\vmethod_type\x18\x05 \x01(\tR\n" +
+	"methodType\x12\x18\n" +
+	"\aaccount\x18\x06 \x01(\tR\aaccount\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12#\n" +
+	"\rreject_reason\x18\b \x01(\tR\frejectReason\x12\x1f\n" +
+	"\vreviewed_at\x18\t \x01(\x03R\n" +
+	"reviewedAt\x12\x17\n" +
+	"\apaid_at\x18\n" +
+	" \x01(\x03R\x06paidAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\v \x01(\x03R\tcreatedAt\"`\n" +
+	"\x17ReviewWithdrawalRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
+	"\aapprove\x18\x02 \x01(\bR\aapprove\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"+\n" +
+	"\x14PayWithdrawalRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"1\n" +
 	"\x11GetBalanceRequest\x12\x1c\n" +
 	"\auser_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06userId\"\x8f\x01\n" +
 	"\aBalance\x12\x17\n" +
@@ -449,12 +818,15 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\treference\x18\a \x01(\tR\treference\x12\x16\n" +
 	"\x06remark\x18\b \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\x03R\tcreatedAt2\xa4\x03\n" +
+	"created_at\x18\t \x01(\x03R\tcreatedAt2\xed\x06\n" +
 	"\x12AdminWalletService\x12x\n" +
 	"\n" +
 	"GetBalance\x12%.zcard.api.admin.v1.GetBalanceRequest\x1a\x1b.zcard.api.admin.v1.Balance\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/wallet/{user_id}\x12z\n" +
 	"\x06Adjust\x12!.zcard.api.admin.v1.AdjustRequest\x1a\x1b.zcard.api.admin.v1.Balance\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/{user_id}/adjust\x12\x97\x01\n" +
-	"\x10ListTransactions\x12'.zcard.api.admin.v1.ListWalletTxRequest\x1a%.zcard.api.admin.v1.ListWalletTxReply\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/admin/wallet/{user_id}/transactionsB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\x10ListTransactions\x12'.zcard.api.admin.v1.ListWalletTxRequest\x1a%.zcard.api.admin.v1.ListWalletTxReply\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/admin/wallet/{user_id}/transactions\x12\x91\x01\n" +
+	"\x0fListWithdrawals\x12*.zcard.api.admin.v1.ListWithdrawalsRequest\x1a(.zcard.api.admin.v1.ListWithdrawalsReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/wallet/withdrawals\x12\x9c\x01\n" +
+	"\x10ReviewWithdrawal\x12+.zcard.api.admin.v1.ReviewWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/wallet/withdrawals/{id}/review\x12\x93\x01\n" +
+	"\rPayWithdrawal\x12(.zcard.api.admin.v1.PayWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"4\x82\xd3\xe4\x93\x02.:\x01*\")/api/v1/admin/wallet/withdrawals/{id}/payB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_wallet_proto_rawDescOnce sync.Once
@@ -468,28 +840,40 @@ func file_admin_v1_wallet_proto_rawDescGZIP() []byte {
 	return file_admin_v1_wallet_proto_rawDescData
 }
 
-var file_admin_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_admin_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_admin_v1_wallet_proto_goTypes = []any{
-	(*GetBalanceRequest)(nil),   // 0: zcard.api.admin.v1.GetBalanceRequest
-	(*Balance)(nil),             // 1: zcard.api.admin.v1.Balance
-	(*AdjustRequest)(nil),       // 2: zcard.api.admin.v1.AdjustRequest
-	(*ListWalletTxRequest)(nil), // 3: zcard.api.admin.v1.ListWalletTxRequest
-	(*ListWalletTxReply)(nil),   // 4: zcard.api.admin.v1.ListWalletTxReply
-	(*WalletTx)(nil),            // 5: zcard.api.admin.v1.WalletTx
+	(*ListWithdrawalsRequest)(nil),  // 0: zcard.api.admin.v1.ListWithdrawalsRequest
+	(*ListWithdrawalsReply)(nil),    // 1: zcard.api.admin.v1.ListWithdrawalsReply
+	(*WithdrawalItem)(nil),          // 2: zcard.api.admin.v1.WithdrawalItem
+	(*ReviewWithdrawalRequest)(nil), // 3: zcard.api.admin.v1.ReviewWithdrawalRequest
+	(*PayWithdrawalRequest)(nil),    // 4: zcard.api.admin.v1.PayWithdrawalRequest
+	(*GetBalanceRequest)(nil),       // 5: zcard.api.admin.v1.GetBalanceRequest
+	(*Balance)(nil),                 // 6: zcard.api.admin.v1.Balance
+	(*AdjustRequest)(nil),           // 7: zcard.api.admin.v1.AdjustRequest
+	(*ListWalletTxRequest)(nil),     // 8: zcard.api.admin.v1.ListWalletTxRequest
+	(*ListWalletTxReply)(nil),       // 9: zcard.api.admin.v1.ListWalletTxReply
+	(*WalletTx)(nil),                // 10: zcard.api.admin.v1.WalletTx
 }
 var file_admin_v1_wallet_proto_depIdxs = []int32{
-	5, // 0: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
-	0, // 1: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
-	2, // 2: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
-	3, // 3: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
-	1, // 4: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
-	1, // 5: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
-	4, // 6: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2,  // 0: zcard.api.admin.v1.ListWithdrawalsReply.withdrawals:type_name -> zcard.api.admin.v1.WithdrawalItem
+	10, // 1: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
+	5,  // 2: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
+	7,  // 3: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
+	8,  // 4: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
+	0,  // 5: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:input_type -> zcard.api.admin.v1.ListWithdrawalsRequest
+	3,  // 6: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:input_type -> zcard.api.admin.v1.ReviewWithdrawalRequest
+	4,  // 7: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:input_type -> zcard.api.admin.v1.PayWithdrawalRequest
+	6,  // 8: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
+	6,  // 9: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
+	9,  // 10: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
+	1,  // 11: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
+	2,  // 12: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	2,  // 13: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	8,  // [8:14] is the sub-list for method output_type
+	2,  // [2:8] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_wallet_proto_init() }
@@ -503,7 +887,7 @@ func file_admin_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_wallet_proto_rawDesc), len(file_admin_v1_wallet_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

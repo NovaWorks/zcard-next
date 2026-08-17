@@ -23,6 +23,7 @@ const (
 	StoreWalletService_GetBalance_FullMethodName       = "/zcard.api.storefront.v1.StoreWalletService/GetBalance"
 	StoreWalletService_ListTransactions_FullMethodName = "/zcard.api.storefront.v1.StoreWalletService/ListTransactions"
 	StoreWalletService_CreateRecharge_FullMethodName   = "/zcard.api.storefront.v1.StoreWalletService/CreateRecharge"
+	StoreWalletService_CreateWithdrawal_FullMethodName = "/zcard.api.storefront.v1.StoreWalletService/CreateWithdrawal"
 )
 
 // StoreWalletServiceClient is the client API for StoreWalletService service.
@@ -37,6 +38,8 @@ type StoreWalletServiceClient interface {
 	ListTransactions(ctx context.Context, in *ListTxRequest, opts ...grpc.CallOption) (*ListTxReply, error)
 	// CreateRecharge 充值（走支付管线）。
 	CreateRecharge(ctx context.Context, in *CreateRechargeRequest, opts ...grpc.CallOption) (*CreateRechargeReply, error)
+	// CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+	CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...grpc.CallOption) (*CreateWithdrawalReply, error)
 }
 
 type storeWalletServiceClient struct {
@@ -77,6 +80,16 @@ func (c *storeWalletServiceClient) CreateRecharge(ctx context.Context, in *Creat
 	return out, nil
 }
 
+func (c *storeWalletServiceClient) CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...grpc.CallOption) (*CreateWithdrawalReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateWithdrawalReply)
+	err := c.cc.Invoke(ctx, StoreWalletService_CreateWithdrawal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoreWalletServiceServer is the server API for StoreWalletService service.
 // All implementations must embed UnimplementedStoreWalletServiceServer
 // for forward compatibility.
@@ -89,6 +102,8 @@ type StoreWalletServiceServer interface {
 	ListTransactions(context.Context, *ListTxRequest) (*ListTxReply, error)
 	// CreateRecharge 充值（走支付管线）。
 	CreateRecharge(context.Context, *CreateRechargeRequest) (*CreateRechargeReply, error)
+	// CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+	CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error)
 	mustEmbedUnimplementedStoreWalletServiceServer()
 }
 
@@ -107,6 +122,9 @@ func (UnimplementedStoreWalletServiceServer) ListTransactions(context.Context, *
 }
 func (UnimplementedStoreWalletServiceServer) CreateRecharge(context.Context, *CreateRechargeRequest) (*CreateRechargeReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateRecharge not implemented")
+}
+func (UnimplementedStoreWalletServiceServer) CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateWithdrawal not implemented")
 }
 func (UnimplementedStoreWalletServiceServer) mustEmbedUnimplementedStoreWalletServiceServer() {}
 func (UnimplementedStoreWalletServiceServer) testEmbeddedByValue()                            {}
@@ -183,6 +201,24 @@ func _StoreWalletService_CreateRecharge_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreWalletService_CreateWithdrawal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateWithdrawalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreWalletServiceServer).CreateWithdrawal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreWalletService_CreateWithdrawal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreWalletServiceServer).CreateWithdrawal(ctx, req.(*CreateWithdrawalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoreWalletService_ServiceDesc is the grpc.ServiceDesc for StoreWalletService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -201,6 +237,10 @@ var StoreWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateRecharge",
 			Handler:    _StoreWalletService_CreateRecharge_Handler,
+		},
+		{
+			MethodName: "CreateWithdrawal",
+			Handler:    _StoreWalletService_CreateWithdrawal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

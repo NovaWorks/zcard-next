@@ -263,6 +263,8 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 	dp.Register(data.HandlerReg{Consumer: "reseller.settle", Type: events.OrderPaid, Fn: resellerSettleSvc.OnOrderPaid})
 	// 事件订阅注册（P1-06 M1b）：order.paid → 自动交付（reserved→used/即删 + 交付记录；幂等由 FulfillOrder 兜底）
 	dp.Register(data.HandlerReg{Consumer: "fulfillment.deliver", Type: events.OrderPaid, Fn: fulfillRepo.OnOrderPaid})
+	// 事件订阅注册（P3-04）：order.refunded → 分站利润扣回（refund_deduct 负行/负债态）
+	dp.Register(data.HandlerReg{Consumer: "reseller.reversal", Type: events.OrderRefunded, Fn: resellerSettleSvc.OnOrderRefunded})
 	// 事件订阅注册（P2-05）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
 	for _, typ := range notify.SubscribedEvents() {
 		t := typ

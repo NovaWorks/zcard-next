@@ -22,6 +22,9 @@ const (
 	AdminWalletService_GetBalance_FullMethodName       = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
 	AdminWalletService_Adjust_FullMethodName           = "/zcard.api.admin.v1.AdminWalletService/Adjust"
 	AdminWalletService_ListTransactions_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
+	AdminWalletService_ListWithdrawals_FullMethodName  = "/zcard.api.admin.v1.AdminWalletService/ListWithdrawals"
+	AdminWalletService_ReviewWithdrawal_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal"
+	AdminWalletService_PayWithdrawal_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
 )
 
 // AdminWalletServiceClient is the client API for AdminWalletService service.
@@ -36,6 +39,12 @@ type AdminWalletServiceClient interface {
 	Adjust(ctx context.Context, in *AdjustRequest, opts ...grpc.CallOption) (*Balance, error)
 	// ListTransactions 指定用户流水。
 	ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error)
+	// ListWithdrawals 提现单列表（状态筛选）。
+	ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsReply, error)
+	// ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+	ReviewWithdrawal(ctx context.Context, in *ReviewWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error)
+	// PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+	PayWithdrawal(ctx context.Context, in *PayWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error)
 }
 
 type adminWalletServiceClient struct {
@@ -76,6 +85,36 @@ func (c *adminWalletServiceClient) ListTransactions(ctx context.Context, in *Lis
 	return out, nil
 }
 
+func (c *adminWalletServiceClient) ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWithdrawalsReply)
+	err := c.cc.Invoke(ctx, AdminWalletService_ListWithdrawals_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminWalletServiceClient) ReviewWithdrawal(ctx context.Context, in *ReviewWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WithdrawalItem)
+	err := c.cc.Invoke(ctx, AdminWalletService_ReviewWithdrawal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminWalletServiceClient) PayWithdrawal(ctx context.Context, in *PayWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WithdrawalItem)
+	err := c.cc.Invoke(ctx, AdminWalletService_PayWithdrawal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminWalletServiceServer is the server API for AdminWalletService service.
 // All implementations must embed UnimplementedAdminWalletServiceServer
 // for forward compatibility.
@@ -88,6 +127,12 @@ type AdminWalletServiceServer interface {
 	Adjust(context.Context, *AdjustRequest) (*Balance, error)
 	// ListTransactions 指定用户流水。
 	ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error)
+	// ListWithdrawals 提现单列表（状态筛选）。
+	ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsReply, error)
+	// ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
+	ReviewWithdrawal(context.Context, *ReviewWithdrawalRequest) (*WithdrawalItem, error)
+	// PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
+	PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error)
 	mustEmbedUnimplementedAdminWalletServiceServer()
 }
 
@@ -106,6 +151,15 @@ func (UnimplementedAdminWalletServiceServer) Adjust(context.Context, *AdjustRequ
 }
 func (UnimplementedAdminWalletServiceServer) ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTransactions not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListWithdrawals not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) ReviewWithdrawal(context.Context, *ReviewWithdrawalRequest) (*WithdrawalItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReviewWithdrawal not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method PayWithdrawal not implemented")
 }
 func (UnimplementedAdminWalletServiceServer) mustEmbedUnimplementedAdminWalletServiceServer() {}
 func (UnimplementedAdminWalletServiceServer) testEmbeddedByValue()                            {}
@@ -182,6 +236,60 @@ func _AdminWalletService_ListTransactions_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminWalletService_ListWithdrawals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWithdrawalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).ListWithdrawals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_ListWithdrawals_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).ListWithdrawals(ctx, req.(*ListWithdrawalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminWalletService_ReviewWithdrawal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewWithdrawalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).ReviewWithdrawal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_ReviewWithdrawal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).ReviewWithdrawal(ctx, req.(*ReviewWithdrawalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminWalletService_PayWithdrawal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PayWithdrawalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).PayWithdrawal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_PayWithdrawal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).PayWithdrawal(ctx, req.(*PayWithdrawalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminWalletService_ServiceDesc is the grpc.ServiceDesc for AdminWalletService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +308,18 @@ var AdminWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTransactions",
 			Handler:    _AdminWalletService_ListTransactions_Handler,
+		},
+		{
+			MethodName: "ListWithdrawals",
+			Handler:    _AdminWalletService_ListWithdrawals_Handler,
+		},
+		{
+			MethodName: "ReviewWithdrawal",
+			Handler:    _AdminWalletService_ReviewWithdrawal_Handler,
+		},
+		{
+			MethodName: "PayWithdrawal",
+			Handler:    _AdminWalletService_PayWithdrawal_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
