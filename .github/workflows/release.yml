@@ -1,0 +1,59 @@
+name: Release
+
+# 发版流水线（P2-07 T5）：tag push → 双架构构建（版本/更新公钥 -X 注入）
+# → self-update sign 生成签名清单 → GitHub Release 上传。
+# 私钥在 Secrets（ZCARD_SIGN_KEY，hex）；泄露即换钥发版，旧版本 -pubkey 过渡。
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: 构建 + 签名 + 发布
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+
+      - name: 构建双架构（版本 + 更新公钥注入）
+        env:
+          UPDATE_PUBKEY: ${{ secrets.ZCARD_UPDATE_PUBKEY }}
+        run: |
+          set -e
+          cd server
+          VERSION="${GITHUB_REF_NAME}"
+          mkdir -p ../dist
+          for arch in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build \
+              -ldflags "-s -w -X main.Version=${VERSION} \
+                -X github.com/NovaWorks/zcard-next/server/internal/platform/updater.DefaultPublicKeyHex=${UPDATE_PUBKEY}" \
+              -o "../dist/zcard-linux-${arch}" ./cmd/zcard
+          done
+
+      - name: 签名清单（ed25519）
+        env:
+          ZCARD_SIGN_KEY: ${{ secrets.ZCARD_SIGN_KEY }}
+        run: |
+          set -e
+          git log --oneline -20 > dist/CHANGELOG.md || true
+          cd dist
+          # 签名工具用本机架构产物执行（runner 为 amd64）
+          chmod +x zcard-linux-amd64
+          ./zcard-linux-amd64 self-update sign \
+            --version "${GITHUB_REF_NAME}" --channel stable \
+            --notes-file CHANGELOG.md --dir .
+
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/zcard-linux-amd64
+            dist/zcard-linux-arm64
+            dist/update.json
+          generate_release_notes: true

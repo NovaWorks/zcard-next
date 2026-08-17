@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/admincmd"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
@@ -34,6 +36,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
 
 	"github.com/go-kratos/kratos/v3"
@@ -85,6 +88,8 @@ func main() {
 		err = admincmd.RunReencrypt(args)
 	case "install":
 		err = runInstall(args)
+	case "self-update":
+		err = runSelfUpdate(args)
 	case "version":
 		fmt.Printf("%s %s (%s)\n", Name, Version, id)
 	case "help", "-h", "--help":
@@ -108,6 +113,7 @@ func printUsage() {
   zcard migrate [-conf <dir>]                          应用待执行迁移后退出
   zcard admin  create|list|reset-password              运维子命令
   zcard reencrypt-cards --new-key <hex>                卡密密钥轮换
+  zcard self-update [--check|--rollback]               在线更新（ed25519 验签；--check 只查）
   zcard install                                        安装向导（M1 交付）
   zcard version                                        版本信息
 
@@ -176,7 +182,7 @@ func applyMigrationsIfEnabled(ctx context.Context, bc *conf.Bootstrap) error {
 }
 
 // runServe 启动服务。
-func runServe(args []string) error {
+func runServe(args []string) (err error) {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	confDir := fs.String("conf", "configs", "配置目录")
 	mode := fs.String("mode", "all", "运行模式 all|api|worker")
@@ -189,6 +195,22 @@ func runServe(args []string) error {
 	}
 	logger := newLogger(bc)
 	log.SetDefault(logger)
+
+	// 更新 pending 态：serve 任何启动失败（配置/迁移/装配）自动回滚二进制，
+	// systemd 重启即旧版本（§10.4 自动回滚；DB 只前滚，靠备份恢复）。
+	binPath := currentBinaryPath()
+	pending := false
+	if binPath != "" {
+		if st, lerr := updater.LoadState(binPath); lerr == nil && st.Status == updater.StatePending {
+			pending = true
+			logger.Warn("update.pending", "from", st.FromVer, "to", st.ToVer)
+			defer func() {
+				if err != nil && updater.RollbackOnBootFailure(binPath) {
+					logger.Error("update.rollback.applied", "reason", "boot_failure", "from", st.FromVer)
+				}
+			}()
+		}
+	}
 
 	if err := applyMigrationsIfEnabled(context.Background(), bc); err != nil {
 		return err
@@ -207,7 +229,50 @@ func runServe(args []string) error {
 		return err
 	}
 	defer cleanup()
+
+	// 更新健康门（§10.4）：HTTP 就绪 + DB 连通自检通过 → pending 转 ok；
+	// 超时 → 回滚并优雅退出，systemd 重启旧版本。
+	if pending {
+		go func() {
+			herr := updater.HealthGate(context.Background(), healthURL(bc), binPath, 3*time.Minute)
+			if herr == nil {
+				logger.Info("update.healthgate.ok", "version", Version)
+				return
+			}
+			logger.Error("update.healthgate.timeout", "error", herr)
+			if updater.RollbackOnBootFailure(binPath) {
+				logger.Error("update.rollback.applied", "reason", "healthgate_timeout")
+			}
+			_ = app.Stop()
+		}()
+	}
 	return app.Run()
+}
+
+// currentBinaryPath 当前二进制绝对路径（失败返回空串，更新态检查跳过）。
+func currentBinaryPath() string {
+	p, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	p, err = filepath.EvalSymlinks(p)
+	if err != nil {
+		return ""
+	}
+	return p
+}
+
+// healthURL 健康门探测地址（HTTP 监听口 → 127.0.0.1 本机自检）。
+func healthURL(bc *conf.Bootstrap) string {
+	addr := ""
+	if bc.Server != nil && bc.Server.Http != nil {
+		addr = bc.Server.Http.Addr
+	}
+	if addr == "" {
+		addr = "0.0.0.0:8000"
+	}
+	parts := strings.Split(addr, ":")
+	return "http://127.0.0.1:" + parts[len(parts)-1] + "/health"
 }
 
 // runMigrate 仅执行迁移。
