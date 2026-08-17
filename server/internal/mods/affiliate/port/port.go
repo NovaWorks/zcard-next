@@ -5,11 +5,11 @@ import "context"
 
 // CommissionStats 佣金统计（dashboard/前台团队页消费）。
 type CommissionStats struct {
-	PendingCents  int64 `json:"pending_cents"`  // 冻结中（pending_confirm）
+	PendingCents   int64 `json:"pending_cents"`   // 冻结中（pending_confirm）
 	AvailableCents int64 `json:"available_cents"` // 可提（已入 wallet 前）
 	WithdrawnCents int64 `json:"withdrawn_cents"` // 已提现
-	TotalCents    int64 `json:"total_cents"`     // 累计（正佣金合计）
-	DebtCents     int64 `json:"debt_cents"`      // 负债（逆向未扣回）
+	TotalCents     int64 `json:"total_cents"`     // 累计（正佣金合计）
+	DebtCents      int64 `json:"debt_cents"`      // 负债（逆向未扣回）
 }
 
 // CommissionRow 佣金行（dashboard 列表消费；零依赖 DTO）。

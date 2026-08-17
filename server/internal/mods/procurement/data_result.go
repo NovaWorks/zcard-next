@@ -16,9 +16,9 @@ import (
 	"fmt"
 	"time"
 
+	fulfillmentport "github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
-	fulfillmentport "github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 )
 
 // PollTaskType 轮询任务类型（asynq mux 精确匹配）。
@@ -191,4 +191,3 @@ func (s *ProcureService) RunPollTask(ctx context.Context, payload []byte) error 
 	}
 	return s.PollOne(ctx, req.ProcurementID)
 }
-

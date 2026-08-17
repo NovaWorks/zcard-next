@@ -90,19 +90,19 @@ func (s *AdminProcurementService) MarkProcurementManual(ctx context.Context, req
 // toProto 转协议（含采购项信息）。
 func (s *AdminProcurementService) toProto(ctx context.Context, po *ent.ProcurementOrder) *adminv1.ProcurementOrder {
 	out := &adminv1.ProcurementOrder{
-		Id:              po.ID,
-		OrderItemId:     po.OrderItemID,
-		ConnectionId:    po.ConnectionID,
-		UpstreamOrderId: po.UpstreamOrderID,
-		Status:          string(po.Status),
-		FailStrategy:    string(po.FailStrategy),
-		RetryCount:      po.RetryCount,
-		DedupeKey:       po.DedupeKey,
-		TraceId:         po.TraceID,
-		LastError:       po.LastError,
+		Id:               po.ID,
+		OrderItemId:      po.OrderItemID,
+		ConnectionId:     po.ConnectionID,
+		UpstreamOrderId:  po.UpstreamOrderID,
+		Status:           string(po.Status),
+		FailStrategy:     string(po.FailStrategy),
+		RetryCount:       po.RetryCount,
+		DedupeKey:        po.DedupeKey,
+		TraceId:          po.TraceID,
+		LastError:        po.LastError,
 		UpstreamRefundId: po.UpstreamRefundID,
-		CreatedAt:       po.CreatedAt.Unix(),
-		UpdatedAt:       po.UpdatedAt.Unix(),
+		CreatedAt:        po.CreatedAt.Unix(),
+		UpdatedAt:        po.UpdatedAt.Unix(),
 	}
 	if !po.NextRetryAt.IsZero() {
 		out.NextRetryAt = po.NextRetryAt.Unix()

@@ -12,18 +12,18 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticket"
-	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticketmessage"
+	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 )
 
 // 哨兵错误。
 var (
-	ErrNotFound        = errors.New("ticket: 工单不存在")
-	ErrTransition      = errors.New("ticket: 非法状态迁移")
-	ErrGuestContact    = errors.New("ticket.GUEST_CONTACT_REQUIRED: 游客工单需留联系方式")
-	ErrAlreadyRated    = errors.New("ticket: 已评价")
-	ErrNotResolved     = errors.New("ticket: 解决后才能评价")
+	ErrNotFound     = errors.New("ticket: 工单不存在")
+	ErrTransition   = errors.New("ticket: 非法状态迁移")
+	ErrGuestContact = errors.New("ticket.GUEST_CONTACT_REQUIRED: 游客工单需留联系方式")
+	ErrAlreadyRated = errors.New("ticket: 已评价")
+	ErrNotResolved  = errors.New("ticket: 解决后才能评价")
 )
 
 // 状态机：open → processing（首次客服回复）→ resolved → closed。
@@ -46,13 +46,13 @@ func NewTicketRepo(d *data.Data, mediaRef mediaport.Referencer) *TicketRepo {
 
 // CreateInput 创建入参。
 type CreateInput struct {
-	UserID     uint64 // 0=游客
+	UserID       uint64 // 0=游客
 	GuestContact string
-	Type       string // presale | aftersale
-	OrderID    uint64
-	ProductID  uint64
-	Content    string
-	Attachments []uint64
+	Type         string // presale | aftersale
+	OrderID      uint64
+	ProductID    uint64
+	Content      string
+	Attachments  []uint64
 }
 
 // Create 创建工单 + 首条消息（游客联系方式必填；content sanitize）。

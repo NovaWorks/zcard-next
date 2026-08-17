@@ -21,8 +21,8 @@ import (
 // AdminSupplyService 管理面货源服务。
 type AdminSupplyService struct {
 	adminv1.UnimplementedAdminSupplyServiceServer
-	repo  *SupplyRepoImpl
-	sync  *SyncService
+	repo *SupplyRepoImpl
+	sync *SyncService
 }
 
 // NewAdminSupplyService 构造。
@@ -169,14 +169,14 @@ func (s *AdminSupplyService) ListMappings(ctx context.Context, req *adminv1.List
 // UpsertMapping 创建/更新映射。
 func (s *AdminSupplyService) UpsertMapping(ctx context.Context, req *adminv1.UpsertMappingRequest) (*adminv1.SupplyMapping, error) {
 	m, err := s.repo.UpsertMapping(ctx, &ent.SupplyMapping{
-		ConnectionID:      req.GetConnectionId(),
-		UpstreamCategory:  req.GetUpstreamCategory(),
-		LocalCategoryID:   req.GetLocalCategoryId(),
-		UpstreamProduct:   req.GetUpstreamProduct(),
-		LocalProductID:    req.GetLocalProductId(),
-		UpstreamSku:       req.GetUpstreamSku(),
-		LocalSkuID:        req.GetLocalSkuId(),
-		PricingOverride:   mustJSONMap(req.GetPricingOverride()),
+		ConnectionID:     req.GetConnectionId(),
+		UpstreamCategory: req.GetUpstreamCategory(),
+		LocalCategoryID:  req.GetLocalCategoryId(),
+		UpstreamProduct:  req.GetUpstreamProduct(),
+		LocalProductID:   req.GetLocalProductId(),
+		UpstreamSku:      req.GetUpstreamSku(),
+		LocalSkuID:       req.GetLocalSkuId(),
+		PricingOverride:  mustJSONMap(req.GetPricingOverride()),
 	})
 	if err != nil {
 		return nil, err
@@ -335,24 +335,24 @@ func toProtoMapping(m *ent.SupplyMapping) *adminv1.SupplyMapping {
 
 func toProtoTask(t *ent.SupplySyncTask) *adminv1.SupplySyncTask {
 	p := &adminv1.SupplySyncTask{
-		Id:             t.ID,
-		ConnectionId:   t.ConnectionID,
-		Mode:           t.Mode,
-		Scope:          t.Scope,
-		ForceReprice:   t.ForceReprice,
-		Status:         string(t.Status),
-		Total:          int64(t.TotalCount),
-		Processed:      int64(t.ProcessedCount),
-		Created:        int64(t.CreatedCount),
-		Updated:        int64(t.UpdatedCount),
-		PriceUpdated:   int64(t.PriceUpdatedCount),
-		ManualSkipped:  int64(t.ManualSkippedCount),
-		Hidden:         int64(t.HiddenCount),
-		Deleted:        int64(t.DeletedCount),
-		ErrorCode:      t.ErrorCode,
-		ErrorContext:   t.ErrorContext,
-		CurrentStage:   t.CurrentStage,
-		Page:           int32(t.CurrentPage),
+		Id:            t.ID,
+		ConnectionId:  t.ConnectionID,
+		Mode:          t.Mode,
+		Scope:         t.Scope,
+		ForceReprice:  t.ForceReprice,
+		Status:        string(t.Status),
+		Total:         int64(t.TotalCount),
+		Processed:     int64(t.ProcessedCount),
+		Created:       int64(t.CreatedCount),
+		Updated:       int64(t.UpdatedCount),
+		PriceUpdated:  int64(t.PriceUpdatedCount),
+		ManualSkipped: int64(t.ManualSkippedCount),
+		Hidden:        int64(t.HiddenCount),
+		Deleted:       int64(t.DeletedCount),
+		ErrorCode:     t.ErrorCode,
+		ErrorContext:  t.ErrorContext,
+		CurrentStage:  t.CurrentStage,
+		Page:          int32(t.CurrentPage),
 	}
 	if !t.StartedAt.IsZero() {
 		p.StartedAt = t.StartedAt.Unix()

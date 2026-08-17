@@ -15,9 +15,9 @@ type PurchaseRequest struct {
 
 // PurchaseResult 采购提交结果。
 type PurchaseResult struct {
-	UpstreamOrderID string // 查单依据
-	Status          string // delivered | pending
-	Amount          int64  // 分
+	UpstreamOrderID string   // 查单依据
+	Status          string   // delivered | pending
+	Amount          int64    // 分
 	Cards           []string // delivered 时上游卡密（内存明文，调用方必须立即加密）
 }
 

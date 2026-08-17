@@ -105,7 +105,7 @@ func toLicenseOrderPB(row *ent.LicenseOrder) *storefrontv1.LicenseOrderItem {
 		Id: row.ID, Plan: string(row.Plan), AmountCents: row.Amount,
 		Status: string(row.Status), InstanceId: row.InstanceID, Domain: row.Domain,
 		LicenseFile: row.LicenseFile,
-		ExpiresAt:  row.ExpiresAt.Format("2006-01-02T15:04:05Z"),
+		ExpiresAt:   row.ExpiresAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if !row.CreatedAt.IsZero() {
 		item.CreatedAt = row.CreatedAt.Unix()

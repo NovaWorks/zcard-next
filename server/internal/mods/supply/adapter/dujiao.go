@@ -37,10 +37,10 @@ func (a *dujiaoAdapter) signHeaders(method, path, rawQuery string, body []byte) 
 	ts := strconv.FormatInt(time.Now().Unix(), 10)
 	sig := DujiaoSign(a.creds.APISecret, method, path, ts, body)
 	return map[string]string{
-		"Dujiao-Next-Api-Key":       a.creds.APIKey,
-		"Dujiao-Next-Timestamp":     ts,
-		"Dujiao-Next-Signature":     sig,
-		"Content-Type":              "application/json",
+		"Dujiao-Next-Api-Key":   a.creds.APIKey,
+		"Dujiao-Next-Timestamp": ts,
+		"Dujiao-Next-Signature": sig,
+		"Content-Type":          "application/json",
 	}
 }
 
@@ -142,7 +142,7 @@ func (a *dujiaoAdapter) ListProducts(ctx context.Context, page, pageSize int, in
 		return nil, fmt.Errorf("adapter.dujiao: 解析商品列表失败: %w", err)
 	}
 	out := &ProductList{
-		Total: resp.Total,
+		Total:   resp.Total,
 		HasMore: page*pageSize < resp.Total,
 	}
 	for _, p := range resp.Items {

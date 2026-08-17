@@ -19,8 +19,8 @@ import (
 	fulfillmentport "github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
-	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	_ "modernc.org/sqlite"
 )
 
@@ -80,10 +80,10 @@ func seedOrderItem(t *testing.T, d *data.Data) (uint64, uint64) {
 
 // fakeGW 内存网关（可编程结果）。
 type fakeGW struct {
-	submitRes *supplyport.PurchaseResult
-	submitErr error
-	queryRes  *supplyport.PurchaseOrderInfo
-	queryErr  error
+	submitRes   *supplyport.PurchaseResult
+	submitErr   error
+	queryRes    *supplyport.PurchaseOrderInfo
+	queryErr    error
 	submitCalls int
 }
 
@@ -95,7 +95,7 @@ func (f *fakeGW) Query(_ context.Context, _ uint64, _ string) (*supplyport.Purch
 	return f.queryRes, f.queryErr
 }
 func (f *fakeGW) CheckStock(_ context.Context, _ uint64, _ string) (int32, error) { return 10, nil }
-func (f *fakeGW) Refund(_ context.Context, _ uint64, _ string) error               { return nil }
+func (f *fakeGW) Refund(_ context.Context, _ uint64, _ string) error              { return nil }
 
 // fakeAttach 记录交付调用（断言密文透传）。
 type fakeAttach struct {

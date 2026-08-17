@@ -44,8 +44,8 @@ func newMarketingData(t *testing.T) (*CouponRepoImpl, *data.Data) {
 func TestScopeMatrix(t *testing.T) {
 	r, d := newMarketingData(t)
 	ctx := context.Background()
-	seedProduct(t, d, 1, 100)  // 商品 1 分类 100
-	seedProduct(t, d, 2, 200)  // 商品 2 分类 200
+	seedProduct(t, d, 1, 100) // 商品 1 分类 100
+	seedProduct(t, d, 2, 200) // 商品 2 分类 200
 
 	mkCoupon := func(scope string) string {
 		code := fmt.Sprintf("C-SCOPE-%d", time.Now().UnixNano())
@@ -256,5 +256,3 @@ func seedProduct(t *testing.T, d *data.Data, id uint64, categoryID uint64) {
 		_ = err
 	}
 }
-
-

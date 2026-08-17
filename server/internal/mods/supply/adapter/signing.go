@@ -10,8 +10,8 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
-	"sort"
 	"net/url"
+	"sort"
 	"strings"
 )
 

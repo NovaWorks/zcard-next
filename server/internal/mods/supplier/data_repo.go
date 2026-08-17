@@ -22,9 +22,9 @@ import (
 
 // 哨兵错误。
 var (
-	ErrNotFound          = errors.New("supplier: 记录不存在")
+	ErrNotFound            = errors.New("supplier: 记录不存在")
 	ErrInsufficientBalance = errors.New("supplier: 供货余额不足")
-	ErrDuplicateLedger   = errors.New("supplier: 账本幂等键已存在")
+	ErrDuplicateLedger     = errors.New("supplier: 账本幂等键已存在")
 )
 
 // secretAAD api_secret 加密 AAD（按账户 api_key 绑定）。

@@ -50,17 +50,17 @@ func mustConn(t *testing.T, r *SupplyRepoImpl, d *data.Data, name string) *ent.S
 		t.Fatal(err)
 	}
 	conn, err := r.CreateConnection(context.Background(), &ent.SupplyConnection{
-		Name:             name,
-		Driver:           "zcard",
-		BaseURL:          "https://up.example.com",
-		Credentials:      enc,
-		Status:           supplyconnection.StatusActive,
-		RetryIntervals:   "[30,60,300]",
-		ExchangeRate:     1,
+		Name:              name,
+		Driver:            "zcard",
+		BaseURL:           "https://up.example.com",
+		Credentials:       enc,
+		Status:            supplyconnection.StatusActive,
+		RetryIntervals:    "[30,60,300]",
+		ExchangeRate:      1,
 		PriceRoundingMode: supplyconnection.PriceRoundingModeNone,
-		StockMode:        supplyconnection.StockModeReal,
-		AutoSyncPrice:    true,
-		Settings:         map[string]any{"auto_onshelf": true},
+		StockMode:         supplyconnection.StockModeReal,
+		AutoSyncPrice:     true,
+		Settings:          map[string]any{"auto_onshelf": true},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -173,12 +173,12 @@ func TestMappingUpsertIdempotent(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		_, err := r.UpsertMapping(ctx, &ent.SupplyMapping{
-			ConnectionID:     conn.ID,
-			UpstreamProduct:  "P1",
-			UpstreamSku:      "",
-			LocalProductID:   10 + uint64(i),
-			UpStock:          int32(5 + i),
-			PricingOverride:  map[string]any{"last_synced_price": int64(1000 + i)},
+			ConnectionID:    conn.ID,
+			UpstreamProduct: "P1",
+			UpstreamSku:     "",
+			LocalProductID:  10 + uint64(i),
+			UpStock:         int32(5 + i),
+			PricingOverride: map[string]any{"last_synced_price": int64(1000 + i)},
 		})
 		if err != nil {
 			t.Fatal(err)

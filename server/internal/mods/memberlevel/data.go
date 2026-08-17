@@ -21,7 +21,7 @@ import (
 
 // MemberLevelRepoImpl 等级仓储。
 type MemberLevelRepoImpl struct {
-	data    *data.Data
+	data     *data.Data
 	recharge walletport.RechargeReader // countAsRecharge 口径（nil = 充值口径恒 0）
 }
 

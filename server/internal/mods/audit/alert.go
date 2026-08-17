@@ -54,9 +54,9 @@ type Alerter struct {
 	settings notifyport.SettingsReader
 	sender   notifyport.Sender
 
-	mu     sync.Mutex
-	counts map[string][]time.Time // key → 窗口内事件时间
-	lastAlert map[string]time.Time // key → 上次告警时间
+	mu        sync.Mutex
+	counts    map[string][]time.Time // key → 窗口内事件时间
+	lastAlert map[string]time.Time   // key → 上次告警时间
 }
 
 // NewAlerter 构造。

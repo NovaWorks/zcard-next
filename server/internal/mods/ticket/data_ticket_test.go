@@ -237,7 +237,6 @@ func TestPayUrgent(t *testing.T) {
 	}
 }
 
-
 func prioritiesOf(rows []*ent.Ticket) []string {
 	out := make([]string, 0, len(rows))
 	for _, r := range rows {

@@ -64,7 +64,7 @@ func toLevelBrief(lv *ent.MemberLevel) *storefrontv1.LevelBrief {
 	}
 	brief := &storefrontv1.LevelBrief{
 		Id: lv.ID, Name: lv.Name, Discount: lv.Discount,
-		ThresholdType:      string(lv.ThresholdType),
+		ThresholdType:     string(lv.ThresholdType),
 		ThresholdRecharge: lv.ThresholdRecharge,
 		ThresholdConsume:  lv.ThresholdConsume,
 	}

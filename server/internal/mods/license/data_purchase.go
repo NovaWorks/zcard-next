@@ -20,9 +20,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	platformlicense "github.com/NovaWorks/zcard-next/server/internal/platform/license"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
-	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 )
 
 // 专业套餐特性清单（M3 首批；* 为永久通配——订阅版逐项授权）。
@@ -30,17 +30,17 @@ var professionalFeatures = []string{"analytics", "whitelabel_ads", "auto_pricing
 
 // PurchaseOffer 报价视图。
 type PurchaseOffer struct {
-	MonthlyCents  int64
-	YearlyCents   int64
-	Purchasable   bool   // 签发私钥已配置
-	InstanceID    string // 本部署实例 ID
+	MonthlyCents int64
+	YearlyCents  int64
+	Purchasable  bool   // 签发私钥已配置
+	InstanceID   string // 本部署实例 ID
 }
 
 // PurchaseRepo 购买仓储。
 type PurchaseRepo struct {
-	data    *data.Data
-	lic     *LicenseRepo
-	wallet  walletport.Wallet
+	data   *data.Data
+	lic    *LicenseRepo
+	wallet walletport.Wallet
 }
 
 // NewPurchaseRepo 构造。

@@ -13,8 +13,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notification"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifybroadcast"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notifytemplate"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 )
 
 // 哨兵错误。
@@ -146,17 +146,17 @@ func (r *NotifyRepo) ListTemplates(ctx context.Context) ([]*ent.NotifyTemplate, 
 
 // LogInput 日志写入参数。
 type LogInput struct {
-	EventType   string
-	BizType     string
-	BizID       uint64
-	Channel     string
-	Recipient   string
-	Locale      string
-	Subject     string
-	Body        string
-	Status      string // pending | sent | failed | skipped
+	EventType    string
+	BizType      string
+	BizID        uint64
+	Channel      string
+	Recipient    string
+	Locale       string
+	Subject      string
+	Body         string
+	Status       string // pending | sent | failed | skipped
 	ErrorMessage string
-	Variables   map[string]string
+	Variables    map[string]string
 }
 
 // WriteLog 落发送日志（每发送一条一行）。

@@ -8,9 +8,9 @@ import (
 	"log/slog"
 	"testing"
 
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 )
 
 // fakeWriter 记录 UpsertUpstreamProduct 调用（价格保护断言点）。

@@ -12,8 +12,8 @@ import (
 
 // ipBlacklist IP 黑名单（进程内缓存；admin 变更时失效重建）。
 type ipBlacklist struct {
-	exact  map[string]bool
-	cidrs  []*net.IPNet
+	exact map[string]bool
+	cidrs []*net.IPNet
 }
 
 // parseBlacklist 解析黑名单条目（精确 IP 或 CIDR；非法条目跳过不阻断）。

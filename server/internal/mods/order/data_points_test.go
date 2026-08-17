@@ -106,7 +106,7 @@ func TestPointsExchangeOrder(t *testing.T) {
 	if bal != 300 {
 		t.Fatalf("积分扣减错误: %d (want 300)", bal)
 	}
-	tx, _ := d.Client.PointTransaction.Query().Where(pointtransaction.ReferenceEQ("points_pay:"+res.OrderNo)).All(ctx)
+	tx, _ := d.Client.PointTransaction.Query().Where(pointtransaction.ReferenceEQ("points_pay:" + res.OrderNo)).All(ctx)
 	if len(tx) != 1 || tx[0].Type != "redeem" {
 		t.Fatalf("积分流水错误: %+v", tx)
 	}

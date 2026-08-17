@@ -18,8 +18,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
-	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	_ "modernc.org/sqlite"
 )
 
@@ -58,7 +58,7 @@ func (w *fakeWallet) DebitInTx(_ context.Context, e walletport.Entry) error {
 }
 
 func (w *fakeWallet) Lock(_ context.Context, _ uint64, _ money.Cents, _ int64) error { return nil }
-func (w *fakeWallet) Unlock(_ context.Context, _ uint64, _ money.Cents) error { return nil }
+func (w *fakeWallet) Unlock(_ context.Context, _ uint64, _ money.Cents) error        { return nil }
 
 // fakeSettings affiliate 配置桩（扁平键按 key 返回）。
 type fakeSettings struct{ kv map[string]string }

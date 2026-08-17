@@ -2,7 +2,7 @@
 //   - 状态机：pending → submitted/polling → fulfilled/rejected → refunding → refunded/manual
 //     （CAS + 迁移表；并发三通道汇聚同一终态只生效一次）
 //   - 三通道结果获取：指数退避轮询（30s×2/1m×2/2m×2/5m×2/10m，耗尽移交巡检）
-//     + cron 巡检（30min，24h 卡死转人工）+ 上游回调（P2-03 自家协议）
+//   - cron 巡检（30min，24h 卡死转人工）+ 上游回调（P2-03 自家协议）
 //   - 到手即加密（铁律 11 采购侧）：上游卡密内存态 → CardCipher.Seal（AAD 绑定
 //     本地商品/租户）→ 密文落 procurement_items；交付出口复用 fulfillment
 //     AttachUpstreamDelivery（写 cards(used) + order_deliveries，与本地卡密同一出口）

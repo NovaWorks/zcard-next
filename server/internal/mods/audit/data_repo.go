@@ -25,24 +25,24 @@ import (
 
 // 闸门阈值（settings.security 可覆盖——读取侧 M3 接线；默认值与文档一致）。
 const (
-	DefaultMaxPendingPerIP   = 3
-	DefaultFetchFailLockN    = 5
-	DefaultFetchLockTTL      = 30 * time.Minute
-	DefaultOrderPerMinPerIP  = 10
+	DefaultMaxPendingPerIP  = 3
+	DefaultFetchFailLockN   = 5
+	DefaultFetchLockTTL     = 30 * time.Minute
+	DefaultOrderPerMinPerIP = 10
 )
 
 // 哨兵错误。
 var (
-	ErrIPBlacklisted  = errors.New("audit: IP 已被列入黑名单")
-	ErrPendingExceed  = errors.New("audit: 同 IP 待支付订单超限")
-	ErrFreqExceed     = errors.New("audit: 下单频率超限")
-	ErrFetchLocked    = errors.New("audit: 取货失败锁定中（稍后再试）")
+	ErrIPBlacklisted = errors.New("audit: IP 已被列入黑名单")
+	ErrPendingExceed = errors.New("audit: 同 IP 待支付订单超限")
+	ErrFreqExceed    = errors.New("audit: 下单频率超限")
+	ErrFetchLocked   = errors.New("audit: 取货失败锁定中（稍后再试）")
 )
 
 // AuditRepo 审计仓储。
 type AuditRepo struct {
-	data *data.Data
-	log  *slog.Logger
+	data    *data.Data
+	log     *slog.Logger
 	alerter *Alerter // T5 告警（nil = 未装配跳过）
 
 	// 黑名单进程内缓存（admin 变更失效；解析失败用空名单 fail-open）

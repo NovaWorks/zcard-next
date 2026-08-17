@@ -1,6 +1,6 @@
 // Package notify 通知中心（P2-05 T1-T3 落地）：
 //   - 通道：Email（SMTP 运行时配置——变更不重启；未配置/禁用 → skipped 降级不报错）
-//     + Inbox（站内信 + 铃铛 API）；SMS/Telegram M3 交付（Channel 接口位已留）
+//   - Inbox（站内信 + 铃铛 API）；SMS/Telegram M3 交付（Channel 接口位已留）
 //   - 分发器：outbox 事件 → 路由表（事件 → 通道集合）→ 模板渲染（占位符子集
 //     {{.key}} 白名单变量 + 值 HTML escape——双保险防注入）→ 逐通道独立投递 →
 //     每条落 notification_logs（sent/failed/skipped）

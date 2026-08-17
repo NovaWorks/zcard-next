@@ -4,9 +4,9 @@ package catalog
 // sanitize 在 service 层调用后传入；slug 唯一校验在 biz。
 
 import (
-	"strings"
 	"context"
 	"fmt"
+	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"

@@ -57,12 +57,12 @@ func (s *StoreContentService) ListBanners(ctx context.Context, req *storefrontv1
 			mobile = b.Image // 移动端缺省回落 PC 图
 		}
 		out = append(out, &storefrontv1.StoreBanner{
-			Id:           b.ID,
-			Title:        LangValue(b.TitleJSON, locale),
-			Image:        b.Image,
-			MobileImage:  mobile,
-			LinkType:     string(b.LinkType),
-			LinkValue:    b.LinkValue,
+			Id:          b.ID,
+			Title:       LangValue(b.TitleJSON, locale),
+			Image:       b.Image,
+			MobileImage: mobile,
+			LinkType:    string(b.LinkType),
+			LinkValue:   b.LinkValue,
 		})
 	}
 

@@ -40,7 +40,7 @@ func TestCardCipherRoundTrip(t *testing.T) {
 func TestContentHashKeyed(t *testing.T) {
 	c := NewTestCipher(t)
 	h := c.ContentHash("1234") // 低熵明文
-	if len(h) != 64 {           // HMAC-SHA256 hex
+	if len(h) != 64 {          // HMAC-SHA256 hex
 		t.Fatalf("keyed hash 长度错误：%d", len(h))
 	}
 	if h == "1234" {

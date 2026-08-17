@@ -32,7 +32,6 @@ func NewProductRepoImpl(d *data.Data, mediaRef mediaport.Referencer) *ProductRep
 	return &ProductRepoImpl{data: d, mediaRef: mediaRef}
 }
 
-
 // ListVisible 上架商品分页（INDEX(subsite_id, status) 命中；只取列表所需列避免回表）。
 func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter) ([]port.Product, int64, error) {
 	client := data.Client(ctx, r.data)

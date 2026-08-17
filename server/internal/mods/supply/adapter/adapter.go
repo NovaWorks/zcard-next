@@ -13,9 +13,9 @@ package adapter
 
 import (
 	"context"
-	"time"
 	"errors"
 	"fmt"
+	"time"
 )
 
 // 哨兵错误：适配器层把上游协议差异归一化为统一语义（T3 同步/T4 库存判据）。
@@ -97,17 +97,17 @@ type CreateOrderReq struct {
 
 // CreateOrderResult 采购提交结果。
 type CreateOrderResult struct {
-	UpstreamOrderID string // 上游订单号（查单依据；acg-faka 必须存 tradeNo）
-	Status          string // delivered | pending | ...
-	Amount          int64  // 分
+	UpstreamOrderID string   // 上游订单号（查单依据；acg-faka 必须存 tradeNo）
+	Status          string   // delivered | pending | ...
+	Amount          int64    // 分
 	Cards           []string // delivered 时上游卡密（内存态，调用方必须立即加密）
 }
 
 // OrderDetail 上游订单详情。
 type OrderDetail struct {
 	UpstreamOrderID string
-	Status          string // delivered | pending | ...
-	Amount          int64  // 分
+	Status          string   // delivered | pending | ...
+	Amount          int64    // 分
 	Cards           []string // delivered 时上游卡密（内存态）
 }
 

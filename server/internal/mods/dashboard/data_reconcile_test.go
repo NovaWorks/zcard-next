@@ -19,8 +19,8 @@ import (
 
 // fakeSource 对账数据源假实现（内存订单清单 / 可切换不支持）。
 type fakeSource struct {
-	orders       []dashboardport.UpstreamOrder
-	unsupported  bool
+	orders      []dashboardport.UpstreamOrder
+	unsupported bool
 }
 
 func (f *fakeSource) ListOrders(ctx context.Context, connectionID uint64, start, end time.Time) ([]dashboardport.UpstreamOrder, error) {

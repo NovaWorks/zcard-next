@@ -28,8 +28,8 @@ const (
 
 // allowedTypes 白名单：ext → {mime, 魔数}。
 var allowedTypes = map[string]struct {
-	mime   string
-	magic  []byte // 文件头（前 N 字节匹配）
+	mime  string
+	magic []byte // 文件头（前 N 字节匹配）
 }{
 	".jpg":  {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}},
 	".jpeg": {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}},

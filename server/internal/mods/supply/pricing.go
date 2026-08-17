@@ -7,8 +7,8 @@ import "math"
 
 // 取整模式（对齐《数据库架构设计.md》§4.7 price_rounding_mode）。
 const (
-	RoundingNone    = "none"      // 不取整（四舍五入到分）
-	RoundingCeilInt = "ceil_int"  // 向上取整到整数元（分 → 整百）
+	RoundingNone      = "none"       // 不取整（四舍五入到分）
+	RoundingCeilInt   = "ceil_int"   // 向上取整到整数元（分 → 整百）
 	RoundingCeilTenth = "ceil_tenth" // 向上取整到 0.1 元（分 → 整十）
 )
 

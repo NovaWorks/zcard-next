@@ -51,13 +51,13 @@ type OrderUsecase struct {
 	MemberRate memberlevelport.RateResolver
 	Coupon     couponport.CouponResolver
 	Catalog    catalogport.PricingResolver
-	Outbox     events.Writer                // order.* 事件发布（M2：procurement 订阅 order.paid）
-	Gate       auditport.RiskGate           // P2-06 下单风控闸门（nil = 未装配跳过）
-	Flash      couponport.FlashResolver     // M3：秒杀（nil 跳过）
-	Promos     couponport.PromotionResolver // M3：促销（nil 跳过）
-	Settings   settingsport.SettingsReader  // M3：互斥开关读取（nil 默认互斥）
-	Reseller   resellerport.Pricer          // P3-04：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
-	Points     walletport.PointsDebiter     // P3-01：积分兑换下单扣分（nil = 积分单不可用）
+	Outbox     events.Writer                  // order.* 事件发布（M2：procurement 订阅 order.paid）
+	Gate       auditport.RiskGate             // P2-06 下单风控闸门（nil = 未装配跳过）
+	Flash      couponport.FlashResolver       // M3：秒杀（nil 跳过）
+	Promos     couponport.PromotionResolver   // M3：促销（nil 跳过）
+	Settings   settingsport.SettingsReader    // M3：互斥开关读取（nil 默认互斥）
+	Reseller   resellerport.Pricer            // P3-04：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
+	Points     walletport.PointsDebiter       // P3-01：积分兑换下单扣分（nil = 积分单不可用）
 	SlowPay    paymentport.SlowPaymentChecker // P1-03：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
 }
 
@@ -192,7 +192,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		var results []itemResult
 		var totalCents int64
-		var pointsTotal int64 // P3-01：积分兑换单合计（积分单位）
+		var pointsTotal int64               // P3-01：积分兑换单合计（积分单位）
 		var cartItems []couponport.CartItem // 券范围判定输入
 		flashApplied := false               // 券×秒杀互斥判据
 		var totalSubsiteMarkup int64        // 分站加价合计（利润基数快照）

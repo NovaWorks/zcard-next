@@ -29,10 +29,10 @@ type CouponResolver interface {
 
 // FlashInfo 生效秒杀（管线步骤 4 输入）。
 type FlashInfo struct {
-	ID            uint64
-	FlashPrice    money.Cents
-	StartAt       time.Time // 限购累计窗口起点
-	PerUserLimit  int32
+	ID           uint64
+	FlashPrice   money.Cents
+	StartAt      time.Time // 限购累计窗口起点
+	PerUserLimit int32
 }
 
 // FlashResolver 秒杀解析（order 价格管线步骤 4 + 同锁扣减消费）。

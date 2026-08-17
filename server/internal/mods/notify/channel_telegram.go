@@ -22,7 +22,7 @@ import (
 
 // TelegramConfig bot 配置（settings notify 组 telegram 键）。
 type TelegramConfig struct {
-	Enabled bool   `json:"enabled"`
+	Enabled  bool   `json:"enabled"`
 	BotToken string `json:"bot_token"`
 	// ChatIDs 管理员群/频道（逗号分隔；告警与群发多目标）
 	ChatIDs string `json:"chat_ids"`

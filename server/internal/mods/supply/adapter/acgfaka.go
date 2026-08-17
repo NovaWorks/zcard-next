@@ -12,13 +12,13 @@ package adapter
 
 import (
 	"context"
-	"time"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // acgFakaAdapter acg-faka 协议适配器。
@@ -120,20 +120,20 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 		return nil, err
 	}
 	var cats []struct {
-		ID       any `json:"id"`
+		ID       any    `json:"id"`
 		Name     string `json:"name"`
 		Children []struct {
-			Code          string `json:"code"`
-			Name          string `json:"name"`
-			Price         string `json:"price"`
-			FactoryPrice  string `json:"factory_price"`
-			Description   string `json:"description"`
-			Introduce     string `json:"introduce"`
-			Cover         string `json:"cover"`
-			Status        int    `json:"status"` // 1=上架 0=下架
-			Stock         *int32 `json:"stock"`  // 仅自动发货商品有；手动发货缺省
-			CategoryID    any    `json:"category_id"`
-			DeliveryWay   int    `json:"delivery_way"`
+			Code         string `json:"code"`
+			Name         string `json:"name"`
+			Price        string `json:"price"`
+			FactoryPrice string `json:"factory_price"`
+			Description  string `json:"description"`
+			Introduce    string `json:"introduce"`
+			Cover        string `json:"cover"`
+			Status       int    `json:"status"` // 1=上架 0=下架
+			Stock        *int32 `json:"stock"`  // 仅自动发货商品有；手动发货缺省
+			CategoryID   any    `json:"category_id"`
+			DeliveryWay  int    `json:"delivery_way"`
 		} `json:"children"`
 	}
 	if err := json.Unmarshal(raw, &cats); err != nil {

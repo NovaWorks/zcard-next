@@ -466,7 +466,7 @@ func toFlashPB(fs *ent.FlashSale) *adminv1.FlashSaleItem {
 		Id: fs.ID, ProductId: fs.ProductID, SkuId: fs.SkuID,
 		FlashPrice: fs.FlashPrice, LimitQty: fs.LimitQty, SoldQty: fs.SoldQty,
 		PerUserLimit: fs.PerUserLimit,
-		StartAt: fs.StartAt.Unix(), EndAt: fs.EndAt.Unix(),
+		StartAt:      fs.StartAt.Unix(), EndAt: fs.EndAt.Unix(),
 	}
 }
 

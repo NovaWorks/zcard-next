@@ -132,14 +132,14 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 
 func toStorefrontProduct(p *port.Product) *storefrontv1.Product {
 	return &storefrontv1.Product{
-		Id:           p.ID,
-		Name:         p.Name,
-		Slug:         p.Slug,
-		Cover:        "", // cover 字段 M1 加入 Product DTO（当前 port 未含）
-		PriceCents:   int64(p.Price),
-		StockType:    p.StockType,
-		Stock:        0, // 库存数走 inventory 聚合（M1：stock_visible 时返回真实值）
-		StockVisible: p.StockVisible,
+		Id:             p.ID,
+		Name:           p.Name,
+		Slug:           p.Slug,
+		Cover:          "", // cover 字段 M1 加入 Product DTO（当前 port 未含）
+		PriceCents:     int64(p.Price),
+		StockType:      p.StockType,
+		Stock:          0, // 库存数走 inventory 聚合（M1：stock_visible 时返回真实值）
+		StockVisible:   p.StockVisible,
 		PointsRequired: p.PointsRequired, // 积分商城（P3-01；0=常规商品）
 	}
 }

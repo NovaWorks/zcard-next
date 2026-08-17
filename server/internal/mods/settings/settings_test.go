@@ -22,9 +22,9 @@ func TestPublicKeysLeakSnapshot(t *testing.T) {
 // TestSecretKeyCatalog SECRET 清单快照（notify 三键 + license 签发私钥；新增需同步更新测试）。
 func TestSecretKeyCatalog(t *testing.T) {
 	want := map[string]bool{
-		"notify.smtp_password":  true,
-		"notify.sms_key":        true,
-		"notify.sms_secret":     true,
+		"notify.smtp_password":     true,
+		"notify.sms_key":           true,
+		"notify.sms_secret":        true,
 		"license.purchase_privkey": true,
 	}
 	got := map[string]bool{}

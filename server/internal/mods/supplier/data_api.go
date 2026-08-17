@@ -10,10 +10,10 @@ package supplier
 // 余额不足/库存不足 → 明确错误码（下游可编程处理），不产生流水。
 
 import (
-	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"context"
 	"errors"
 	"fmt"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"strconv"
 	"time"
 

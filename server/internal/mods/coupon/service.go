@@ -151,8 +151,6 @@ func (s *AdminCouponService) ListPromotions(ctx context.Context, req *adminv1.Li
 	return reply, nil
 }
 
-
-
 func couponPageParams(page, pageSize int32) (int, int) {
 	p := int(page)
 	if p < 1 {

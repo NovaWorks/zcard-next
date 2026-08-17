@@ -18,20 +18,20 @@ import (
 
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
-	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 )
 
 // AffiliateConfig settings.affiliate 配置（运行时读取，默认值兜底）。
 type AffiliateConfig struct {
-	RateL1     int32  `json:"rate_l1"` // 万分比（默认 500 = 5%）
-	RateL2     int32  `json:"rate_l2"` // 默认 200 = 2%
-	RateL3     int32  `json:"rate_l3"` // 默认 100 = 1%
-	BaseScope  string `json:"base_scope"` // amount | profit（默认 amount）
+	RateL1     int32  `json:"rate_l1"`     // 万分比（默认 500 = 5%）
+	RateL2     int32  `json:"rate_l2"`     // 默认 200 = 2%
+	RateL3     int32  `json:"rate_l3"`     // 默认 100 = 1%
+	BaseScope  string `json:"base_scope"`  // amount | profit（默认 amount）
 	FreezeDays int    `json:"freeze_days"` // 冻结天数（默认 7）
-	SelfBuy    bool   `json:"self_buy"`   // 自购发佣开关（默认 false 不发）
+	SelfBuy    bool   `json:"self_buy"`    // 自购发佣开关（默认 false 不发）
 	Enabled    bool   `json:"enabled"`
 }
 
@@ -51,8 +51,6 @@ type AffiliateService struct {
 	log      *slog.Logger
 }
 
-
-
 // NewAffiliateService 构造。
 func NewAffiliateService(repo *CommissionRepo, wallet walletport.Wallet, settings notifyport.SettingsReader, outbox events.Writer, logger *slog.Logger) *AffiliateService {
 	return &AffiliateService{repo: repo, wallet: wallet, settings: settings, outbox: outbox, log: logger}
@@ -60,15 +58,15 @@ func NewAffiliateService(repo *CommissionRepo, wallet walletport.Wallet, setting
 
 // paidPayload order.paid 载荷（与 order 模块发布结构对齐 + 归因链）。
 type paidPayload struct {
-	OrderNo   string `json:"order_no"`
-	OrderID   uint64 `json:"order_id"`
-	SubsiteID uint64 `json:"subsite_id"`
-	BuyerID   uint64 `json:"user_id"` // 事件载荷统一字段名
-	InviteL1  uint64 `json:"invite_l1"`
-	InviteL2  uint64 `json:"invite_l2"`
-	InviteL3  uint64 `json:"invite_l3"`
-	TotalCents int64 `json:"total_cents"`
-	ProfitCents int64 `json:"profit_cents"` // 毛利口径（amount−cost；order 侧随事件附赠）
+	OrderNo     string `json:"order_no"`
+	OrderID     uint64 `json:"order_id"`
+	SubsiteID   uint64 `json:"subsite_id"`
+	BuyerID     uint64 `json:"user_id"` // 事件载荷统一字段名
+	InviteL1    uint64 `json:"invite_l1"`
+	InviteL2    uint64 `json:"invite_l2"`
+	InviteL3    uint64 `json:"invite_l3"`
+	TotalCents  int64  `json:"total_cents"`
+	ProfitCents int64  `json:"profit_cents"` // 毛利口径（amount−cost；order 侧随事件附赠）
 }
 
 // OnOrderPaid 订阅 order.paid（幂等：UNIQUE(order_id,tier) 兜底 + processed_events）。
@@ -204,8 +202,8 @@ func (s *AffiliateService) ConfirmDue(ctx context.Context) {
 // OnOrderRefunded 订阅 order.refunded（逆向扣回）。
 func (s *AffiliateService) OnOrderRefunded(ctx context.Context, env events.Envelope) error {
 	var p struct {
-		OrderID    uint64 `json:"order_id"`
-		RefundRatio int64 `json:"refund_ratio"` // 万分比（部分退款；0 视为全额）
+		OrderID     uint64 `json:"order_id"`
+		RefundRatio int64  `json:"refund_ratio"` // 万分比（部分退款；0 视为全额）
 	}
 	if err := json.Unmarshal(env.Payload, &p); err != nil {
 		return nil

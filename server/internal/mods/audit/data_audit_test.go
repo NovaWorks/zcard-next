@@ -40,11 +40,11 @@ func newAuditRepo(t *testing.T) (*AuditRepo, *data.Data) {
 // TestNormalizeIP IPv6 /64 聚合 + IPv4 原样。
 func TestNormalizeIP(t *testing.T) {
 	cases := map[string]string{
-		"1.2.3.4":                "1.2.3.4",
-		"2001:db8:1:2:3:4:5:6":   "2001:db8:1:2::",   // /64 聚合
-		"2001:db8:1:2:dead::1":   "2001:db8:1:2::",   // 同 /64 段归一
-		"::1":                    "::",               // 回环聚合
-		"not-an-ip":              "not-an-ip",        // 非法原样
+		"1.2.3.4":              "1.2.3.4",
+		"2001:db8:1:2:3:4:5:6": "2001:db8:1:2::", // /64 聚合
+		"2001:db8:1:2:dead::1": "2001:db8:1:2::", // 同 /64 段归一
+		"::1":                  "::",             // 回环聚合
+		"not-an-ip":            "not-an-ip",      // 非法原样
 	}
 	for in, want := range cases {
 		if got := port.NormalizeIP(in); got != want {
@@ -241,7 +241,9 @@ func TestAlerterThresholdDedup(t *testing.T) {
 }
 
 // fakeSender 记录告警发送。
-type fakeSender struct{ onSend func(notifyport.Message) error }
+type fakeSender struct {
+	onSend func(notifyport.Message) error
+}
 
 func (f *fakeSender) Send(_ context.Context, m notifyport.Message) error {
 	return f.onSend(m)

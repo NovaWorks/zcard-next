@@ -8,8 +8,8 @@ import (
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
-	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -20,7 +20,7 @@ import (
 type AdminDashboardService struct {
 	adminv1.UnimplementedAdminDashboardServiceServer
 	repo       *DashboardRepoImpl
-	reconciler *Reconciler // P3-07 货源对账（job/item 四态）
+	reconciler *Reconciler                    // P3-07 货源对账（job/item 四态）
 	commission affiliateport.CommissionReader // P3-03 佣金列表（通道 A）
 }
 
@@ -162,7 +162,7 @@ func (s *AdminDashboardService) ListReconciliationItems(ctx context.Context, req
 		item := &adminv1.ReconciliationItemDetail{
 			Id: it.ID, Status: string(it.Status),
 			ProcurementOrderId: it.ProcurementOrderID,
-			LocalOrderNo: it.LocalOrderNo, UpstreamOrderNo: it.UpstreamOrderNo,
+			LocalOrderNo:       it.LocalOrderNo, UpstreamOrderNo: it.UpstreamOrderNo,
 			CreatedAt: it.CreatedAt.Unix(),
 		}
 		if len(it.DiffJSON) > 0 {

@@ -17,10 +17,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/license"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
-	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	_ "modernc.org/sqlite"
 )
 
@@ -68,7 +68,7 @@ func newPurchaseEnv(t *testing.T) (*PurchaseRepo, *LicenseRepo, *data.Data, *wal
 		t.Fatal(err)
 	}
 	store := &fakeSettingsStore{m: map[string]json.RawMessage{
-		"license/pubkey":         json.RawMessage(`"` + base64.StdEncoding.EncodeToString(pub) + `"`),
+		"license/pubkey":           json.RawMessage(`"` + base64.StdEncoding.EncodeToString(pub) + `"`),
 		"license/purchase_privkey": json.RawMessage(`"` + base64.StdEncoding.EncodeToString(priv) + `"`),
 	}}
 	licRepo := NewLicenseRepo(store)

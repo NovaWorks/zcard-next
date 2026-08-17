@@ -202,10 +202,10 @@ func (a *zCardAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]
 	}
 	var resp struct {
 		Orders []struct {
-			ID          any    `json:"id"`
-			Amount      int64  `json:"amount"`
-			Status      string `json:"status"`
-			CreatedAt   int64  `json:"created_at"`
+			ID        any    `json:"id"`
+			Amount    int64  `json:"amount"`
+			Status    string `json:"status"`
+			CreatedAt int64  `json:"created_at"`
 		} `json:"orders"`
 	}
 	if err := json.Unmarshal(data, &resp); err != nil {
