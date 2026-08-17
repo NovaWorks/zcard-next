@@ -30,6 +30,7 @@ func (Product) Fields() []ent.Field {
 		field.Int64("factory_price").Default(0).Comment("成本价（分，上游/自营成本快照）"),
 		field.Int64("draft_premium").Default(0).Comment("预选卡密默认加价（分）"),
 		field.JSON("member_price", map[string]int64{}).Optional().Comment("按会员等级价 {level_id: 分}"),
+		field.Int64("points_required").Default(0).Comment("积分兑换价（分单位积分；0=不参与积分商城，P3-01）"),
 		field.Enum("stock_type").Values("card", "url", "code").Default("card").Comment("卡密/链接/兑换码"),
 		field.Bool("stock_visible").Default(true).Comment("是否显示库存"),
 		field.Enum("delivery_mode").Values("status", "delete").Default("status").Comment("发货模式：标记/即删"),

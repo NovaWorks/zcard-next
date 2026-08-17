@@ -30,8 +30,10 @@ type ListProductsRequest struct {
 	// 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
 	Keyword string `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
 	// 扁平分页（query 绑定：?page=1&page_size=20）
-	Page          int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize      int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Page     int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
+	PointsOnly    bool `protobuf:"varint,5,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -92,6 +94,13 @@ func (x *ListProductsRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListProductsRequest) GetPointsOnly() bool {
+	if x != nil {
+		return x.PointsOnly
+	}
+	return false
 }
 
 type ListProductsReply struct {
@@ -230,9 +239,11 @@ type Product struct {
 	// 评价（真实 approved + 虚拟合并，按时间/排序）
 	Reviews []*ReviewItem `protobuf:"bytes,13,rep,name=reviews,proto3" json:"reviews,omitempty"`
 	// 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
-	Skus          []*Sku `protobuf:"bytes,14,rep,name=skus,proto3" json:"skus,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Skus []*Sku `protobuf:"bytes,14,rep,name=skus,proto3" json:"skus,omitempty"`
+	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
+	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
@@ -361,6 +372,13 @@ func (x *Product) GetSkus() []*Sku {
 		return x.Skus
 	}
 	return nil
+}
+
+func (x *Product) GetPointsRequired() int64 {
+	if x != nil {
+		return x.PointsRequired
+	}
+	return 0
 }
 
 // ProductControl 自定义控件定义（下单表单渲染）。
@@ -598,20 +616,22 @@ var File_storefront_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x16common/v1/common.proto\"\x81\x01\n" +
+	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x16common/v1/common.proto\"\xa2\x01\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
 	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\x92\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1f\n" +
+	"\vpoints_only\x18\x05 \x01(\bR\n" +
+	"pointsOnly\"\x92\x01\n" +
 	"\x11ListProductsReply\x126\n" +
 	"\x05items\x18\x01 \x03(\v2 .zcard.api.storefront.v1.ProductR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xec\x03\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x95\x04\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -631,7 +651,8 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"salesCount\x12C\n" +
 	"\bcontrols\x18\f \x03(\v2'.zcard.api.storefront.v1.ProductControlR\bcontrols\x12=\n" +
 	"\areviews\x18\r \x03(\v2#.zcard.api.storefront.v1.ReviewItemR\areviews\x120\n" +
-	"\x04skus\x18\x0e \x03(\v2\x1c.zcard.api.storefront.v1.SkuR\x04skus\"\x92\x01\n" +
+	"\x04skus\x18\x0e \x03(\v2\x1c.zcard.api.storefront.v1.SkuR\x04skus\x12'\n" +
+	"\x0fpoints_required\x18\x0f \x01(\x03R\x0epointsRequired\"\x92\x01\n" +
 	"\x0eProductControl\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +

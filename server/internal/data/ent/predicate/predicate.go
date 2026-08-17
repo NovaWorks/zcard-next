@@ -63,6 +63,9 @@ type Giftcard func(*sql.Selector)
 // GiftcardBatch is the predicate function for giftcardbatch builders.
 type GiftcardBatch func(*sql.Selector)
 
+// LicenseOrder is the predicate function for licenseorder builders.
+type LicenseOrder func(*sql.Selector)
+
 // Media is the predicate function for media builders.
 type Media func(*sql.Selector)
 

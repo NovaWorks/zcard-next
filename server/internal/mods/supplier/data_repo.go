@@ -254,6 +254,17 @@ func (r *SupplierRepoImpl) CreateSupplyOrder(ctx context.Context, accountID uint
 	return o, nil
 }
 
+// ListSupplyOrders 时间窗内供货单（对账数据源；按创建时间）。
+func (r *SupplierRepoImpl) ListSupplyOrders(ctx context.Context, start, end time.Time) ([]*ent.SupplyOrder, error) {
+	return data.Client(ctx, r.data).SupplyOrder.Query().
+		Where(
+			supplyorder.CreatedAtGTE(start),
+			supplyorder.CreatedAtLT(end),
+		).
+		Order(ent.Asc(supplyorder.FieldID)).
+		All(ctx)
+}
+
 // GetSupplyOrderByNo 按下游单号查（幂等返回首单）。
 func (r *SupplierRepoImpl) GetSupplyOrderByNo(ctx context.Context, downstreamOrderNo string) (*ent.SupplyOrder, error) {
 	o, err := data.Client(ctx, r.data).SupplyOrder.Query().

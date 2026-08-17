@@ -20,6 +20,27 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.supply.v1.ListCategoriesReply'
     /api/supply/orders:
+        get:
+            tags:
+                - SupplyService
+            description: ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+            operationId: SupplyService_ListOrders
+            parameters:
+                - name: start
+                  in: query
+                  schema:
+                    type: string
+                - name: end
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.supply.v1.ListSupplyOrdersReply'
         post:
             tags:
                 - SupplyService
@@ -1206,6 +1227,102 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.GetReconciliationReply'
+    /api/v1/admin/dashboard/reconciliation-jobs:
+        post:
+            tags:
+                - AdminDashboardService
+            description: CreateReconciliationJob 创建货源对账任务（时间窗 ≤31 天）。
+            operationId: AdminDashboardService_CreateReconciliationJob
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateReconciliationJobRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ReconciliationJobItem'
+    /api/v1/admin/dashboard/reconciliation-jobs/{id}:
+        get:
+            tags:
+                - AdminDashboardService
+            description: GetReconciliationJob 对账任务详情（四态计数 + 状态可查）。
+            operationId: AdminDashboardService_GetReconciliationJob
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ReconciliationJobItem'
+    /api/v1/admin/dashboard/reconciliation-jobs/{id}/items:
+        get:
+            tags:
+                - AdminDashboardService
+            description: ListReconciliationItems 对账明细分页（四态筛选）。
+            operationId: AdminDashboardService_ListReconciliationItems
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListReconciliationItemsReply'
+    /api/v1/admin/dashboard/reconciliation-jobs/{id}/run:
+        post:
+            tags:
+                - AdminDashboardService
+            description: RunReconciliationJob 执行任务（pending → processing → done/failed）。
+            operationId: AdminDashboardService_RunReconciliationJob
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RunReconciliationJobRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ReconciliationJobItem'
     /api/v1/admin/flash-sales:
         get:
             tags:
@@ -1591,6 +1708,11 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: uncategorized
+                  in: query
+                  description: 仅未分类素材（category_id 为空；与 category_id=0「不过滤」区分）
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -2476,6 +2598,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+    /api/v1/admin/products/batch-status:
+        post:
+            tags:
+                - AdminCatalogService
+            description: BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
+            operationId: AdminCatalogService_BatchUpdateProductStatus
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductStatusReply'
     /api/v1/admin/products/{id}:
         get:
             tags:
@@ -4205,6 +4346,104 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListFlashSalesReply'
+    /api/v1/storefront/license/offer:
+        get:
+            tags:
+                - StoreLicenseService
+            description: GetLicenseOffer 套餐报价（价格服务端裁决；instance_id 供目标实例绑定预览）。
+            operationId: StoreLicenseService_GetLicenseOffer
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LicenseOfferReply'
+    /api/v1/storefront/license/orders:
+        get:
+            tags:
+                - StoreLicenseService
+            description: ListLicenseOrders 购买记录（含许可证文件可重新下载）。
+            operationId: StoreLicenseService_ListLicenseOrders
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListLicenseOrdersReply'
+    /api/v1/storefront/license/purchase:
+        post:
+            tags:
+                - StoreLicenseService
+            description: PurchaseLicense 购买（钱包扣款 → ed25519 签发 → 返回许可证文件）。
+            operationId: StoreLicenseService_PurchaseLicense
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.PurchaseLicenseRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.PurchaseLicenseReply'
+    /api/v1/storefront/member-level:
+        get:
+            tags:
+                - StoreMemberLevelService
+            description: GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
+            operationId: StoreMemberLevelService_GetMyLevel
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.MyLevelReply'
+    /api/v1/storefront/my-orders:
+        get:
+            tags:
+                - StoreOrderService
+            description: ListMyOrders 我的订单（登录态；offset 分页）。
+            operationId: StoreOrderService_ListMyOrders
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: status
+                  in: query
+                  description: 状态筛选（可选：pending_payment/paid/delivered/completed/canceled/expired/refunded）
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListMyOrdersReply'
     /api/v1/storefront/notifications:
         get:
             tags:
@@ -4285,7 +4524,7 @@ paths:
         get:
             tags:
                 - StoreOrderService
-            description: GetOrder 凭单号+查询密码查单（三重门之一二）。
+            description: GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
             operationId: StoreOrderService_GetOrder
             parameters:
                 - name: orderNo
@@ -4304,6 +4543,28 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.GetOrderReply'
+    /api/v1/storefront/orders/{orderNo}/cancel:
+        post:
+            tags:
+                - StoreOrderService
+            description: CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+            operationId: StoreOrderService_CancelMyOrder
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CancelMyOrderRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/storefront/payments:
         post:
             tags:
@@ -4419,6 +4680,11 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: pointsOnly
+                  in: query
+                  description: 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -4920,6 +5186,12 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                pointsRequired:
+                    type: string
+                    description: 积分兑换价（0=不参与积分商城；P3-01）
+                soldCount:
+                    type: string
+                    description: 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -5083,6 +5355,25 @@ components:
                     type: string
                 updatedAt:
                     type: string
+        zcard.api.admin.v1.BatchUpdateProductStatusReply:
+            type: object
+            properties:
+                updated:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.BatchUpdateProductStatusRequest:
+            required:
+                - ids
+                - status
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                status:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.Broadcast:
             type: object
             properties:
@@ -5577,6 +5868,8 @@ components:
                     format: int32
                 enabled:
                     type: boolean
+                pointsRuleJson:
+                    type: string
         zcard.api.admin.v1.CreatePostCategoryRequest:
             required:
                 - name
@@ -5651,6 +5944,22 @@ components:
                 status:
                     type: integer
                     format: int32
+                pointsRequired:
+                    type: string
+                    description: 积分兑换价（0=不参与积分商城；P3-01）
+        zcard.api.admin.v1.CreateReconciliationJobRequest:
+            required:
+                - connectionId
+                - start
+                - end
+            type: object
+            properties:
+                connectionId:
+                    type: string
+                start:
+                    type: string
+                end:
+                    type: string
         zcard.api.admin.v1.CreateRefundRequest:
             required:
                 - orderNo
@@ -6556,6 +6865,15 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListReconciliationItemsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ReconciliationItemDetail'
+                total:
+                    type: string
         zcard.api.admin.v1.ListRefundsReply:
             type: object
             properties:
@@ -6853,6 +7171,9 @@ components:
                     format: int32
                 enabled:
                     type: boolean
+                pointsRuleJson:
+                    type: string
+                    description: '积分产生规则 JSON：{"spend_cents": 每消费多少分, "points": 产出积分数}'
         zcard.api.admin.v1.MemberLevelList:
             type: object
             properties:
@@ -7207,6 +7528,49 @@ components:
                     type: string
                 remark:
                     type: string
+        zcard.api.admin.v1.ReconciliationItemDetail:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: string
+                procurementOrderId:
+                    type: string
+                localOrderNo:
+                    type: string
+                upstreamOrderNo:
+                    type: string
+                diffJson:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.admin.v1.ReconciliationJobItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                connectionId:
+                    type: string
+                status:
+                    type: string
+                timeRangeStart:
+                    type: string
+                timeRangeEnd:
+                    type: string
+                totalCount:
+                    type: integer
+                    format: int32
+                matchedCount:
+                    type: integer
+                    format: int32
+                mismatchedCount:
+                    type: integer
+                    format: int32
+                resultJson:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.admin.v1.ReconciliationSummary:
             type: object
             properties:
@@ -7462,6 +7826,13 @@ components:
                     items:
                         type: string
             description: Role 角色详情。
+        zcard.api.admin.v1.RunReconciliationJobRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
         zcard.api.admin.v1.SecurityLogItem:
             type: object
             properties:
@@ -8007,6 +8378,8 @@ components:
                     format: int32
                 enabled:
                     type: boolean
+                pointsRuleJson:
+                    type: string
         zcard.api.admin.v1.UpdatePostCategoryRequest:
             required:
                 - id
@@ -8069,6 +8442,9 @@ components:
                 status:
                     type: integer
                     format: int32
+                pointsRequired:
+                    type: string
+                    description: 积分兑换价（0=不参与积分商城；P3-01）
         zcard.api.admin.v1.UpdateRolePermissionsRequest:
             required:
                 - id
@@ -8357,6 +8733,13 @@ components:
                     type: string
                 points:
                     type: string
+        zcard.api.storefront.v1.CancelMyOrderRequest:
+            required:
+                - orderNo
+            type: object
+            properties:
+                orderNo:
+                    type: string
         zcard.api.storefront.v1.CommissionItem:
             type: object
             properties:
@@ -8408,6 +8791,9 @@ components:
                     additionalProperties:
                         type: string
                     description: 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
+                usePoints:
+                    type: boolean
+                    description: 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
         zcard.api.storefront.v1.CreatePaymentReply:
             type: object
             properties:
@@ -8581,6 +8967,76 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.TicketMessage'
+        zcard.api.storefront.v1.LevelBrief:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                discount:
+                    type: integer
+                    format: int32
+                thresholdType:
+                    type: string
+                thresholdRecharge:
+                    type: string
+                thresholdConsume:
+                    type: string
+                pointsRuleJson:
+                    type: string
+            description: LevelBrief 等级摘要。
+        zcard.api.storefront.v1.LevelProgress:
+            type: object
+            properties:
+                rechargeGapCents:
+                    type: string
+                    description: 充值口径差额（0 = 已达标；下一等级不含充值条件时为 -1）
+                consumeGapCents:
+                    type: string
+                    description: 消费口径差额（0 = 已达标；下一等级不含消费条件时为 -1）
+                percent:
+                    type: integer
+                    description: 综合进度百分比 0-100（按已达标口径均值粗算；both_and 取较小值）
+                    format: int32
+            description: LevelProgress 距下一等级进度。
+        zcard.api.storefront.v1.LicenseOfferReply:
+            type: object
+            properties:
+                monthlyCents:
+                    type: string
+                    description: 月付价（分；默认 300 = 3U）
+                yearlyCents:
+                    type: string
+                    description: 年付价（分；默认 3000 = 30U）
+                purchasable:
+                    type: boolean
+                    description: 发行侧是否配置签发私钥（false = 本部署不开通在线购买）
+                instanceId:
+                    type: string
+                    description: 本部署实例 ID（自购场景绑定预览；购买其他实例时填对方实例 ID）
+            description: LicenseOfferReply 套餐报价与购买前置状态。
+        zcard.api.storefront.v1.LicenseOrderItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                plan:
+                    type: string
+                amountCents:
+                    type: string
+                status:
+                    type: string
+                instanceId:
+                    type: string
+                domain:
+                    type: string
+                licenseFile:
+                    type: string
+                expiresAt:
+                    type: string
+                createdAt:
+                    type: string
         zcard.api.storefront.v1.ListBannersReply:
             type: object
             properties:
@@ -8595,6 +9051,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.StoreFlashSale'
+        zcard.api.storefront.v1.ListLicenseOrdersReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.LicenseOrderItem'
+                total:
+                    type: string
         zcard.api.storefront.v1.ListMyCommissionsReply:
             type: object
             properties:
@@ -8617,6 +9082,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.MyCoupon'
+        zcard.api.storefront.v1.ListMyOrdersReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.MyOrderItem'
+                total:
+                    type: string
         zcard.api.storefront.v1.ListMyTicketsReply:
             type: object
             properties:
@@ -8804,6 +9278,48 @@ components:
                     type: string
                 expireAt:
                     type: string
+        zcard.api.storefront.v1.MyLevelReply:
+            type: object
+            properties:
+                rechargedCents:
+                    type: string
+                    description: 累计充值（countAsRecharge 口径：仅真实充值入账，互转/调账不计）
+                consumedCents:
+                    type: string
+                    description: 累计消费（已支付及之后状态订单额）
+                points:
+                    type: string
+                    description: 积分余额
+                current:
+                    allOf:
+                        - $ref: '#/components/schemas/zcard.api.storefront.v1.LevelBrief'
+                    description: 当前等级（未命中任何等级为 null）
+                next:
+                    allOf:
+                        - $ref: '#/components/schemas/zcard.api.storefront.v1.LevelBrief'
+                    description: 下一等级（已满级为 null）
+                progress:
+                    allOf:
+                        - $ref: '#/components/schemas/zcard.api.storefront.v1.LevelProgress'
+                    description: 升级进度（距下一等级差额）
+            description: MyLevelReply 等级进度（阈值即时评估口径：只升不降随累计值单调）。
+        zcard.api.storefront.v1.MyOrderItem:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                status:
+                    type: string
+                totalCents:
+                    type: string
+                createdAt:
+                    type: string
+                expiredAt:
+                    type: string
+                itemCount:
+                    type: integer
+                    format: int32
+            description: MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
         zcard.api.storefront.v1.NotificationItem:
             type: object
             properties:
@@ -8909,6 +9425,9 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Sku'
                     description: 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
+                pointsRequired:
+                    type: string
+                    description: 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
             description: Product 顾客视角商品（管理字段与成本价绝不下发）。
         zcard.api.storefront.v1.ProductControl:
             type: object
@@ -8945,6 +9464,32 @@ components:
                 valueJson:
                     type: string
             description: PublicConfigEntry 单键（key 形如 "site.name"；value 为 JSON 文档字符串）。
+        zcard.api.storefront.v1.PurchaseLicenseReply:
+            type: object
+            properties:
+                orderId:
+                    type: string
+                licenseFile:
+                    type: string
+                    description: 许可证文件内容（JSON：license + signature；目标实例后台安装激活）
+                expiresAt:
+                    type: string
+                paidCents:
+                    type: string
+        zcard.api.storefront.v1.PurchaseLicenseRequest:
+            required:
+                - plan
+            type: object
+            properties:
+                plan:
+                    type: string
+                    description: monthly | yearly
+                instanceId:
+                    type: string
+                    description: 目标实例 ID（空 = 绑定本部署实例——发行侧自测/内部发行场景）
+                domain:
+                    type: string
+                    description: 目标域名（可选；空 = 不限域名）
         zcard.api.storefront.v1.RateTicketRequest:
             required:
                 - ticketNo
@@ -9259,6 +9804,13 @@ components:
                     format: int32
                 hasMore:
                     type: boolean
+        zcard.api.supply.v1.ListSupplyOrdersReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.supply.v1.SupplyOrderItem'
         zcard.api.supply.v1.PingReply:
             type: object
             properties:
@@ -9304,6 +9856,19 @@ components:
                     items:
                         type: string
                 instructions:
+                    type: string
+        zcard.api.supply.v1.SupplyOrderItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                downstreamOrderNo:
+                    type: string
+                amount:
+                    type: string
+                status:
+                    type: string
+                createdAt:
                     type: string
         zcard.api.supply.v1.SupplyProduct:
             type: object
@@ -9378,7 +9943,7 @@ tags:
          （ref_count>0 需 confirm）/外链导入/复制链接。
          上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
     - name: AdminMemberLevelService
-      description: AdminMemberLevelService 会员等级管理（P3-01 M1b 基础版）。
+      description: AdminMemberLevelService 会员等级管理（P3-01）。
     - name: AdminNotifyService
       description: AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
     - name: AdminOrderService
@@ -9431,6 +9996,13 @@ tags:
       description: StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
     - name: StoreDeliveryService
       description: StoreDeliveryService 顾客取货（P1-06 T2 三重门：单号+密码+限流）。
+    - name: StoreLicenseService
+      description: |-
+        StoreLicenseService 专业套餐在线购买（P3-08 M3：发行侧部署配置签发私钥后开放；
+         支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
+         文件后在目标实例后台安装激活）。
+    - name: StoreMemberLevelService
+      description: StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
     - name: StoreNotificationService
       description: StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
     - name: StoreOrderService

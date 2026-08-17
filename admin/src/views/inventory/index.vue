@@ -4,11 +4,15 @@ import { NButton, NTag, NPopconfirm, NAlert } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
   fetchProducts,
+  fetchCards,
+  fetchCategories,
   importPreview,
   importConfirm,
   fetchImports,
   cancelImport,
 } from "@/service/api";
+import TablePager from "@/components/common/table-pager.vue";
+import { formatMoney } from "@/utils/money";
 
 defineOptions({ name: "InventoryManagement" });
 
@@ -22,20 +26,69 @@ const importContent = ref("");
 const previewResult = ref<any>(null);
 
 const products = ref<any[]>([]);
+const categories = ref<any[]>([]);
+// 分类联动选择（大厂导入流程：先筛分类 → 再选商品，商品下拉可模糊搜索）
+const filterCatId = ref<number | null>(null); // 顶部筛选
+const importCatId = ref<number | null>(null); // 导入弹窗
 const cards = ref<any[]>([]);
 const batches = ref<any[]>([]);
 const cardTotal = ref(0);
 const cardPage = ref(1);
-const pageSize = 20;
+const pageSize = ref(20);
 
-const productOptions = computed(() => products.value.map((p) => ({ label: p.name, value: p.id })));
+// 分类树扁平（缩进展示层级；0 = 全部）
+const categoryOptions = computed(() => {
+  const map = new Map<number, any>();
+  for (const c of categories.value) map.set(c.id, { ...c, depth: 0, children: [] });
+  const roots: any[] = [];
+  for (const node of map.values()) {
+    const parent = map.get(node.parent_id);
+    if (parent) {
+      node.depth = parent.depth + 1;
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  const out: { label: string; value: number }[] = [{ label: "全部分类", value: 0 }];
+  const walk = (nodes: any[]) => {
+    for (const n of nodes) {
+      out.push({ label: `${"　".repeat(n.depth)}${n.name}`, value: n.id });
+      walk(n.children);
+    }
+  };
+  walk(roots);
+  return out;
+});
 
-const cardPagination = computed(() => ({
-  page: cardPage.value,
-  pageSize,
-  itemCount: cardTotal.value,
-  pageCount: Math.ceil(cardTotal.value / pageSize),
-}));
+// 商品选项（label 带售价区分同名商品；分类联动过滤）
+function productOpts(catId: number | null) {
+  return products.value
+    .filter((p) => !catId || p.category_id === catId)
+    .map((p) => ({ label: `${p.name}（${formatMoney(p.price_cents)}）`, value: p.id }));
+}
+const productOptions = computed(() => productOpts(filterCatId.value));
+const importProductOptions = computed(() => productOpts(importCatId.value));
+
+// 顶部/导入分类变化：当前商品不在新分类下则清空
+function onFilterCatChange() {
+  if (
+    selectedProduct.value &&
+    !productOptions.value.some((o) => o.value === selectedProduct.value)
+  ) {
+    selectedProduct.value = null;
+    cards.value = [];
+    cardTotal.value = 0;
+  }
+}
+function onImportCatChange() {
+  if (
+    importProductId.value &&
+    !importProductOptions.value.some((o) => o.value === importProductId.value)
+  ) {
+    importProductId.value = null;
+  }
+}
 
 const cardColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 60 },
@@ -119,6 +172,33 @@ const batchColumns: DataTableColumns<any> = [
   },
 ];
 
+async function loadCards() {
+  if (!selectedProduct.value) {
+    cards.value = [];
+    cardTotal.value = 0;
+    return;
+  }
+  loading.value = true;
+  try {
+    const { data, error } = await fetchCards({
+      product_id: selectedProduct.value,
+      page: cardPage.value,
+      page_size: pageSize.value,
+    });
+    if (!error && data) {
+      cards.value = (data as any).cards || [];
+      cardTotal.value = (data as any).total || 0;
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
+function resetCards() {
+  cardPage.value = 1;
+  loadCards();
+}
+
 async function loadProducts() {
   const { data, error } = await fetchProducts({ page: 1, page_size: 100 });
   if (!error && data) {
@@ -187,8 +267,14 @@ async function handleCancel(id: number) {
   }
 }
 
+async function loadCategories() {
+  const { data, error } = await fetchCategories();
+  if (!error && data) categories.value = (data as any).categories || [];
+}
+
 onMounted(() => {
   loadProducts();
+  loadCategories();
   loadBatches();
 });
 </script>
@@ -199,22 +285,41 @@ onMounted(() => {
       <div class="mb-16px flex items-center gap-12px">
         <NButton type="primary" @click="showImport = true">导入卡密</NButton>
         <NSelect
+          v-model:value="filterCatId"
+          :options="categoryOptions"
+          placeholder="全部分类"
+          class="w-160px"
+          @update:value="onFilterCatChange"
+        />
+        <NSelect
           v-model:value="selectedProduct"
           :options="productOptions"
-          placeholder="选择商品"
-          class="w-240px"
+          placeholder="搜索/选择商品"
+          class="w-280px"
+          filterable
+          clearable
+          :consistent-menu-width="false"
+          @update:value="resetCards"
         />
       </div>
 
       <NTabs type="line">
         <NTabPane name="cards" tab="卡密列表">
-          <NDataTable
-            :columns="cardColumns"
-            :data="cards"
-            :loading="loading"
-            :pagination="cardPagination"
-            remote
+          <NEmpty
+            v-if="!selectedProduct"
+            size="small"
+            class="my-24px"
+            description="先在上方选择商品查看卡密"
           />
+          <template v-else>
+            <NDataTable :columns="cardColumns" :data="cards" :loading="loading" />
+            <TablePager
+              v-model:page="cardPage"
+              v-model:page-size="pageSize"
+              :total="cardTotal"
+              @change="loadCards"
+            />
+          </template>
         </NTabPane>
         <NTabPane name="batches" tab="导入批次">
           <NDataTable :columns="batchColumns" :data="batches" :loading="batchLoading" />
@@ -226,11 +331,24 @@ onMounted(() => {
     <NModal v-model:show="showImport" preset="dialog" title="导入卡密" style="width: 640px">
       <NForm label-placement="left" label-width="80">
         <NFormItem label="商品">
-          <NSelect
-            v-model:value="importProductId"
-            :options="productOptions"
-            placeholder="选择商品"
-          />
+          <div class="flex w-full items-center gap-8px">
+            <NSelect
+              v-model:value="importCatId"
+              :options="categoryOptions"
+              placeholder="全部分类"
+              class="w-140px shrink-0"
+              @update:value="onImportCatChange"
+            />
+            <NSelect
+              v-model:value="importProductId"
+              :options="importProductOptions"
+              placeholder="输入名称模糊搜索 / 选择商品"
+              class="flex-1"
+              filterable
+              clearable
+              :consistent-menu-width="false"
+            />
+          </div>
         </NFormItem>
         <NFormItem label="卡密内容">
           <NInput

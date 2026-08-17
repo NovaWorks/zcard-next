@@ -20,10 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminDashboardService_GetReconciliation_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
-	AdminDashboardService_ListCommissions_FullMethodName   = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
-	AdminDashboardService_GetDashboard_FullMethodName      = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
-	AdminDashboardService_GetDailyStats_FullMethodName     = "/zcard.api.admin.v1.AdminDashboardService/GetDailyStats"
+	AdminDashboardService_GetReconciliation_FullMethodName       = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
+	AdminDashboardService_ListCommissions_FullMethodName         = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
+	AdminDashboardService_GetDashboard_FullMethodName            = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
+	AdminDashboardService_GetDailyStats_FullMethodName           = "/zcard.api.admin.v1.AdminDashboardService/GetDailyStats"
+	AdminDashboardService_CreateReconciliationJob_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/CreateReconciliationJob"
+	AdminDashboardService_GetReconciliationJob_FullMethodName    = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliationJob"
+	AdminDashboardService_RunReconciliationJob_FullMethodName    = "/zcard.api.admin.v1.AdminDashboardService/RunReconciliationJob"
+	AdminDashboardService_ListReconciliationItems_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/ListReconciliationItems"
 )
 
 // AdminDashboardServiceClient is the client API for AdminDashboardService service.
@@ -39,6 +43,14 @@ type AdminDashboardServiceClient interface {
 	GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DashboardReply, error)
 	// GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
 	GetDailyStats(ctx context.Context, in *GetDailyStatsRequest, opts ...grpc.CallOption) (*GetDailyStatsReply, error)
+	// CreateReconciliationJob 创建货源对账任务（时间窗 ≤31 天）。
+	CreateReconciliationJob(ctx context.Context, in *CreateReconciliationJobRequest, opts ...grpc.CallOption) (*ReconciliationJobItem, error)
+	// GetReconciliationJob 对账任务详情（四态计数 + 状态可查）。
+	GetReconciliationJob(ctx context.Context, in *GetReconciliationJobRequest, opts ...grpc.CallOption) (*ReconciliationJobItem, error)
+	// RunReconciliationJob 执行任务（pending → processing → done/failed）。
+	RunReconciliationJob(ctx context.Context, in *RunReconciliationJobRequest, opts ...grpc.CallOption) (*ReconciliationJobItem, error)
+	// ListReconciliationItems 对账明细分页（四态筛选）。
+	ListReconciliationItems(ctx context.Context, in *ListReconciliationItemsRequest, opts ...grpc.CallOption) (*ListReconciliationItemsReply, error)
 }
 
 type adminDashboardServiceClient struct {
@@ -89,6 +101,46 @@ func (c *adminDashboardServiceClient) GetDailyStats(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *adminDashboardServiceClient) CreateReconciliationJob(ctx context.Context, in *CreateReconciliationJobRequest, opts ...grpc.CallOption) (*ReconciliationJobItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReconciliationJobItem)
+	err := c.cc.Invoke(ctx, AdminDashboardService_CreateReconciliationJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminDashboardServiceClient) GetReconciliationJob(ctx context.Context, in *GetReconciliationJobRequest, opts ...grpc.CallOption) (*ReconciliationJobItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReconciliationJobItem)
+	err := c.cc.Invoke(ctx, AdminDashboardService_GetReconciliationJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminDashboardServiceClient) RunReconciliationJob(ctx context.Context, in *RunReconciliationJobRequest, opts ...grpc.CallOption) (*ReconciliationJobItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReconciliationJobItem)
+	err := c.cc.Invoke(ctx, AdminDashboardService_RunReconciliationJob_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminDashboardServiceClient) ListReconciliationItems(ctx context.Context, in *ListReconciliationItemsRequest, opts ...grpc.CallOption) (*ListReconciliationItemsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListReconciliationItemsReply)
+	err := c.cc.Invoke(ctx, AdminDashboardService_ListReconciliationItems_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminDashboardServiceServer is the server API for AdminDashboardService service.
 // All implementations must embed UnimplementedAdminDashboardServiceServer
 // for forward compatibility.
@@ -102,6 +154,14 @@ type AdminDashboardServiceServer interface {
 	GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error)
 	// GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
 	GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error)
+	// CreateReconciliationJob 创建货源对账任务（时间窗 ≤31 天）。
+	CreateReconciliationJob(context.Context, *CreateReconciliationJobRequest) (*ReconciliationJobItem, error)
+	// GetReconciliationJob 对账任务详情（四态计数 + 状态可查）。
+	GetReconciliationJob(context.Context, *GetReconciliationJobRequest) (*ReconciliationJobItem, error)
+	// RunReconciliationJob 执行任务（pending → processing → done/failed）。
+	RunReconciliationJob(context.Context, *RunReconciliationJobRequest) (*ReconciliationJobItem, error)
+	// ListReconciliationItems 对账明细分页（四态筛选）。
+	ListReconciliationItems(context.Context, *ListReconciliationItemsRequest) (*ListReconciliationItemsReply, error)
 	mustEmbedUnimplementedAdminDashboardServiceServer()
 }
 
@@ -123,6 +183,18 @@ func (UnimplementedAdminDashboardServiceServer) GetDashboard(context.Context, *e
 }
 func (UnimplementedAdminDashboardServiceServer) GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDailyStats not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) CreateReconciliationJob(context.Context, *CreateReconciliationJobRequest) (*ReconciliationJobItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateReconciliationJob not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) GetReconciliationJob(context.Context, *GetReconciliationJobRequest) (*ReconciliationJobItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReconciliationJob not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) RunReconciliationJob(context.Context, *RunReconciliationJobRequest) (*ReconciliationJobItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method RunReconciliationJob not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) ListReconciliationItems(context.Context, *ListReconciliationItemsRequest) (*ListReconciliationItemsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListReconciliationItems not implemented")
 }
 func (UnimplementedAdminDashboardServiceServer) mustEmbedUnimplementedAdminDashboardServiceServer() {}
 func (UnimplementedAdminDashboardServiceServer) testEmbeddedByValue()                               {}
@@ -217,6 +289,78 @@ func _AdminDashboardService_GetDailyStats_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminDashboardService_CreateReconciliationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateReconciliationJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).CreateReconciliationJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_CreateReconciliationJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).CreateReconciliationJob(ctx, req.(*CreateReconciliationJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminDashboardService_GetReconciliationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReconciliationJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).GetReconciliationJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_GetReconciliationJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).GetReconciliationJob(ctx, req.(*GetReconciliationJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminDashboardService_RunReconciliationJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RunReconciliationJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).RunReconciliationJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_RunReconciliationJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).RunReconciliationJob(ctx, req.(*RunReconciliationJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminDashboardService_ListReconciliationItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReconciliationItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).ListReconciliationItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_ListReconciliationItems_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).ListReconciliationItems(ctx, req.(*ListReconciliationItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminDashboardService_ServiceDesc is the grpc.ServiceDesc for AdminDashboardService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -239,6 +383,22 @@ var AdminDashboardService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDailyStats",
 			Handler:    _AdminDashboardService_GetDailyStats_Handler,
+		},
+		{
+			MethodName: "CreateReconciliationJob",
+			Handler:    _AdminDashboardService_CreateReconciliationJob_Handler,
+		},
+		{
+			MethodName: "GetReconciliationJob",
+			Handler:    _AdminDashboardService_GetReconciliationJob_Handler,
+		},
+		{
+			MethodName: "RunReconciliationJob",
+			Handler:    _AdminDashboardService_RunReconciliationJob_Handler,
+		},
+		{
+			MethodName: "ListReconciliationItems",
+			Handler:    _AdminDashboardService_ListReconciliationItems_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

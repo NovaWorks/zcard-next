@@ -12,6 +12,8 @@ package order
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -29,7 +31,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
@@ -53,11 +57,21 @@ type OrderUsecase struct {
 	Promos     couponport.PromotionResolver // M3：促销（nil 跳过）
 	Settings   settingsport.SettingsReader  // M3：互斥开关读取（nil 默认互斥）
 	Reseller   resellerport.Pricer          // P3-04：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
+	Points     walletport.PointsDebiter     // P3-01：积分兑换下单扣分（nil = 积分单不可用）
+	SlowPay    paymentport.SlowPaymentChecker // P1-03：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
-func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader, reseller resellerport.Pricer) *OrderUsecase {
-	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings, Reseller: reseller}
+// SlowPay 经 SetSlowPaymentChecker 由 cmd/zcard newApp 注入（order↔payment wire 环破环点）。
+func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, memberRate memberlevelport.RateResolver, coupon couponport.CouponResolver, cat catalogport.PricingResolver, outbox events.Writer, gate auditport.RiskGate, flash couponport.FlashResolver, promos couponport.PromotionResolver, settings settingsport.SettingsReader, reseller resellerport.Pricer, points walletport.PointsDebiter) *OrderUsecase {
+	return &OrderUsecase{Data: d, Inv: inv, Gen: gen, MemberRate: memberRate, Coupon: coupon, Catalog: cat, Outbox: outbox, Gate: gate, Flash: flash, Promos: promos, Settings: settings, Reseller: reseller, Points: points}
+}
+
+// SetSlowPaymentChecker 慢通道探测注入（装配期一次；payment 侧实现，
+// wire 环：OrderUsecase → payment/port.SlowPaymentChecker → PaymentRepoImpl →
+// order/port.OrderLifecycle → OrderUsecase，故走 newApp 手工装配点）。
+func (uc *OrderUsecase) SetSlowPaymentChecker(c paymentport.SlowPaymentChecker) {
+	uc.SlowPay = c
 }
 
 // CreateOrderInput 下单输入。
@@ -71,6 +85,8 @@ type CreateOrderInput struct {
 	SubsiteID      uint64
 	CouponCode     string            // 优惠券码（可选）
 	ControlAnswers map[string]string // 自定义控件答案（key=控件 ID，落 order.extra）
+	UsePoints      bool              // P3-01：积分兑换下单（全部商品须为积分商品；同事务扣分直落 paid）
+	IdempotencyKey string            // P1-03：下单幂等键（头 Idempotency-Key；同 key 返回首单）
 }
 
 // OrderItemInput 商品行。
@@ -104,6 +120,32 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	var result *CreateOrderResult
 	err := data.Tx(ctx, uc.Data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, uc.Data)
+
+		// P1-03 Idempotency-Key：哈希落库唯一索引；同 key 双击返回首单（§7.3）
+		var idemHash string
+		if in.IdempotencyKey != "" {
+			sum := sha256.Sum256([]byte(in.IdempotencyKey))
+			idemHash = "idem-" + hex.EncodeToString(sum[:])
+			if prev, err := client.Order.Query().
+				Where(order.IdempotencyKey(idemHash)).Only(txCtx); err == nil {
+				exp := prev.ExpiredAt
+				if exp.IsZero() {
+					exp = time.Now().Add(30 * time.Minute).UTC()
+				}
+				result = &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: exp}
+				return nil // 幂等快路径：重复请求返回首次结果
+			}
+		}
+
+		// P3-01：积分兑换前置（登录 + 引擎装配；游客/未装配直接拒绝不建单）
+		if in.UsePoints {
+			if in.UserID == 0 {
+				return fmt.Errorf("order.POINTS_LOGIN_REQUIRED")
+			}
+			if uc.Points == nil {
+				return fmt.Errorf("order.POINTS_UNAVAILABLE")
+			}
+		}
 
 		// 1) 锁卡（库存不足整批回滚）
 		var reserveItems []port.ReserveItem
@@ -150,6 +192,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		var results []itemResult
 		var totalCents int64
+		var pointsTotal int64 // P3-01：积分兑换单合计（积分单位）
 		var cartItems []couponport.CartItem // 券范围判定输入
 		flashApplied := false               // 券×秒杀互斥判据
 		var totalSubsiteMarkup int64        // 分站加价合计（利润基数快照）
@@ -166,6 +209,13 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 			if p.Status != 1 {
 				return fmt.Errorf("order.PRODUCT_NOT_AVAILABLE") // 下架/隐藏
+			}
+			// P3-01：积分兑换单——全部商品须为积分商品（混合单拒绝，口径清晰）
+			if in.UsePoints {
+				if p.PointsRequired <= 0 {
+					return fmt.Errorf("order.POINTS_MIXED_CART")
+				}
+				pointsTotal += p.PointsRequired * int64(item.Quantity)
 			}
 
 			// SKU 价 > 商品价（订单取价经 catalog port 解析；失败降级商品价）
@@ -246,9 +296,12 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		// 4.6) 优惠券（整单一次性；范围矩阵 + 每人限用；券×秒杀互斥默认开）
+		// P3-01：积分兑换单不参与券/金额管线——应付恒 0，凭据=积分流水（type=redeem）
 		var couponValue int64
 		var couponID uint64
-		if uc.Coupon != nil && in.CouponCode != "" && !uc.flashCouponExclusive(txCtx, flashApplied) {
+		if in.UsePoints {
+			totalCents = 0
+		} else if uc.Coupon != nil && in.CouponCode != "" && !uc.flashCouponExclusive(txCtx, flashApplied) {
 			v, cid, err := uc.Coupon.ResolveScoped(txCtx, in.CouponCode, in.UserID, memberLevelID, cartItems)
 			if err != nil {
 				return fmt.Errorf("order.COUPON_INVALID: %w", err)
@@ -279,6 +332,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if len(in.ControlAnswers) > 0 {
 			extra["control_answers"] = in.ControlAnswers
 		}
+		if in.UsePoints {
+			extra["points_total"] = pointsTotal // 积分口径快照（退款/审计读此处）
+		}
 		// P3-03：三级分销归因链快照（下单瞬间锁定；买家未登录或无链为空）
 		var invL1, invL2, invL3 uint64
 		if in.UserID > 0 {
@@ -296,7 +352,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			host := tc.Host
 			subsiteDomain = &host
 		}
-		o, err := client.Order.Create().
+		create := client.Order.Create().
 			SetOrderNo(orderNo).
 			SetSubsiteID(in.SubsiteID).
 			SetSubsiteProfit(totalSubsiteMarkup).
@@ -317,8 +373,19 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetRiskIP(auditport.NormalizeIP(in.ClientIP)).
 			SetExpiredAt(exp).
 			SetVersion(0).
-			SetExtra(extra).
-			Save(txCtx)
+			SetExtra(extra)
+		if idemHash != "" {
+			create.SetIdempotencyKey(idemHash)
+		}
+		o, err := create.Save(txCtx)
+		if ent.IsConstraintError(err) && idemHash != "" {
+			// 并发同 key：唯一索引兜底——返回首单
+			if prev, qerr := client.Order.Query().
+				Where(order.IdempotencyKey(idemHash)).Only(txCtx); qerr == nil {
+				result = &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: prev.ExpiredAt}
+				return nil
+			}
+		}
 		if err != nil {
 			return fmt.Errorf("order.CREATE_FAILED: %w", err)
 		}
@@ -393,6 +460,25 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetOperator(orderstatusevent.OperatorSystem).
 			SetClientIP(in.ClientIP).
 			Save(txCtx)
+
+		// 9) P3-01 积分兑换收尾：同事务扣分（幂等键 points_pay:<orderNo>；
+		//    不足整单回滚）→ 直落 paid（状态机 CAS + order.paid 事件 → 自动交付）。
+		if in.UsePoints {
+			if err := uc.Points.PointDebitInTx(txCtx, walletport.PointEntry{
+				UserID:    in.UserID,
+				Direction: "out",
+				Type:      "redeem",
+				Amount:    pointsTotal,
+				Reference: "points_pay:" + orderNo,
+				OrderID:   o.ID,
+				Remark:    "积分商城兑换",
+			}); err != nil {
+				return fmt.Errorf("order.POINTS_INSUFFICIENT: %w", err)
+			}
+			if err := uc.MarkPaid(txCtx, orderNo); err != nil {
+				return fmt.Errorf("order.POINTS_MARK_PAID_FAILED: %w", err)
+			}
+		}
 
 		result = &CreateOrderResult{
 			OrderNo:    orderNo,
@@ -537,7 +623,9 @@ func (uc *OrderUsecase) CancelOrder(ctx context.Context, orderNo, reason, operat
 	return nil
 }
 
-// ExpireOrder 超时取消（TTL 到期）。
+// ExpireOrder 超时取消（TTL 到期；T6）。
+// 慢通道顺延（1.x 教训）：存在 usdt 族 pending 流水的订单不关闭——顺延一个 TTL
+// 周期等待链上确认（探测失败保守顺延，fail-safe 不误杀）。
 func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
 	client := data.Client(ctx, uc.Data)
 	rows, err := client.Order.Query().
@@ -547,13 +635,49 @@ func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	ttl := 30 * time.Minute
 	count := 0
 	for _, o := range rows {
+		if uc.SlowPay != nil {
+			slow, err := uc.SlowPay.HasPendingSlowPayment(ctx, o.ID)
+			if err != nil || slow {
+				// 顺延一个 TTL（探测异常同样顺延——宁可慢杀不可误杀）
+				_, _ = client.Order.UpdateOneID(o.ID).
+					SetExpiredAt(time.Now().UTC().Add(ttl)).
+					Save(ctx)
+				continue
+			}
+		}
 		if err := uc.CancelOrder(ctx, o.OrderNo, "超时未支付", "system", 0); err == nil {
 			count++
 		}
 	}
 	return count, nil
+}
+
+// ListUserOrders 用户订单列表（登录态「我的订单」；offset 分页——单用户量级安全）。
+func (uc *OrderUsecase) ListUserOrders(ctx context.Context, userID uint64, status string, page, size int) ([]*ent.Order, int64, error) {
+	if userID == 0 {
+		return nil, 0, fmt.Errorf("order.USER_REQUIRED")
+	}
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 || size > 50 {
+		size = 20
+	}
+	q := data.Client(ctx, uc.Data).Order.Query().
+		Where(order.UserID(userID)).
+		Order(ent.Desc(order.FieldID))
+	if status != "" {
+		q = q.Where(order.StatusEQ(order.Status(status)))
+	}
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := q.Clone().Offset((page - 1) * size).Limit(size).All(ctx)
+	return rows, int64(total), err
 }
 
 // GetByOrderNo 按单号查订单。

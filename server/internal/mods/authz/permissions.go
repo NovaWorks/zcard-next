@@ -64,6 +64,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCatalogService/CreateProduct", Method: "POST", Path: "/api/v1/admin/products"},
 		Perm{Code: "catalog:write", Desc: "修改商品（超管）", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/UpdateProduct", Method: "PUT", Path: "/api/v1/admin/products/{id}"},
+		Perm{Code: "catalog:write", Desc: "批量上下架（超管）", Domain: "catalog", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus", Method: "POST", Path: "/api/v1/admin/products/batch-status"},
 		Perm{Code: "catalog:delete", Desc: "删除商品", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteProduct", Method: "DELETE", Path: "/api/v1/admin/products/{id}"},
 		Perm{Code: "catalog:category_read", Desc: "查看分类", Domain: "catalog",
@@ -220,6 +222,14 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetReconciliation", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation"},
 		Perm{Code: "dashboard:read", Desc: "历史日结查询", Domain: "dashboard",
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetDailyStats", Method: "GET", Path: "/api/v1/admin/dashboard/daily-stats"},
+		Perm{Code: "reconcile:read", Desc: "对账任务详情", Domain: "dashboard",
+			Op: "zcard.api.admin.v1.AdminDashboardService/GetReconciliationJob", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation-jobs/{id}"},
+		Perm{Code: "reconcile:read", Desc: "对账明细列表", Domain: "dashboard",
+			Op: "zcard.api.admin.v1.AdminDashboardService/ListReconciliationItems", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation-jobs/{id}/items"},
+		Perm{Code: "reconcile:write", Desc: "创建/执行对账任务（超管）", Domain: "dashboard", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminDashboardService/CreateReconciliationJob", Method: "POST", Path: "/api/v1/admin/dashboard/reconciliation-jobs"},
+		Perm{Code: "reconcile:write", Desc: "执行对账任务（超管）", Domain: "dashboard", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminDashboardService/RunReconciliationJob", Method: "POST", Path: "/api/v1/admin/dashboard/reconciliation-jobs/{id}/run"},
 
 		// ── 敏感权限点预登记（§5.20.4 防内部偷卡；路由 M1 落地）──
 		Perm{Code: "card:view_content", Desc: "查看完整卡密（需二次确认+审计）", Domain: "inventory", AdminOnly: true,

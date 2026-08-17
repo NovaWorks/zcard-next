@@ -246,6 +246,27 @@ func (_u *ProductUpdate) ClearMemberPrice() *ProductUpdate {
 	return _u
 }
 
+// SetPointsRequired sets the "points_required" field.
+func (_u *ProductUpdate) SetPointsRequired(v int64) *ProductUpdate {
+	_u.mutation.ResetPointsRequired()
+	_u.mutation.SetPointsRequired(v)
+	return _u
+}
+
+// SetNillablePointsRequired sets the "points_required" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillablePointsRequired(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetPointsRequired(*v)
+	}
+	return _u
+}
+
+// AddPointsRequired adds value to the "points_required" field.
+func (_u *ProductUpdate) AddPointsRequired(v int64) *ProductUpdate {
+	_u.mutation.AddPointsRequired(v)
+	return _u
+}
+
 // SetStockType sets the "stock_type" field.
 func (_u *ProductUpdate) SetStockType(v product.StockType) *ProductUpdate {
 	_u.mutation.SetStockType(v)
@@ -654,6 +675,12 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.MemberPriceCleared() {
 		_spec.ClearField(product.FieldMemberPrice, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.PointsRequired(); ok {
+		_spec.SetField(product.FieldPointsRequired, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPointsRequired(); ok {
+		_spec.AddField(product.FieldPointsRequired, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.StockType(); ok {
 		_spec.SetField(product.FieldStockType, field.TypeEnum, value)
 	}
@@ -1027,6 +1054,27 @@ func (_u *ProductUpdateOne) SetMemberPrice(v map[string]int64) *ProductUpdateOne
 // ClearMemberPrice clears the value of the "member_price" field.
 func (_u *ProductUpdateOne) ClearMemberPrice() *ProductUpdateOne {
 	_u.mutation.ClearMemberPrice()
+	return _u
+}
+
+// SetPointsRequired sets the "points_required" field.
+func (_u *ProductUpdateOne) SetPointsRequired(v int64) *ProductUpdateOne {
+	_u.mutation.ResetPointsRequired()
+	_u.mutation.SetPointsRequired(v)
+	return _u
+}
+
+// SetNillablePointsRequired sets the "points_required" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillablePointsRequired(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetPointsRequired(*v)
+	}
+	return _u
+}
+
+// AddPointsRequired adds value to the "points_required" field.
+func (_u *ProductUpdateOne) AddPointsRequired(v int64) *ProductUpdateOne {
+	_u.mutation.AddPointsRequired(v)
 	return _u
 }
 
@@ -1467,6 +1515,12 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.MemberPriceCleared() {
 		_spec.ClearField(product.FieldMemberPrice, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.PointsRequired(); ok {
+		_spec.SetField(product.FieldPointsRequired, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPointsRequired(); ok {
+		_spec.AddField(product.FieldPointsRequired, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.StockType(); ok {
 		_spec.SetField(product.FieldStockType, field.TypeEnum, value)

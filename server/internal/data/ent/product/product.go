@@ -41,6 +41,8 @@ const (
 	FieldDraftPremium = "draft_premium"
 	// FieldMemberPrice holds the string denoting the member_price field in the database.
 	FieldMemberPrice = "member_price"
+	// FieldPointsRequired holds the string denoting the points_required field in the database.
+	FieldPointsRequired = "points_required"
 	// FieldStockType holds the string denoting the stock_type field in the database.
 	FieldStockType = "stock_type"
 	// FieldStockVisible holds the string denoting the stock_visible field in the database.
@@ -99,6 +101,7 @@ var Columns = []string{
 	FieldFactoryPrice,
 	FieldDraftPremium,
 	FieldMemberPrice,
+	FieldPointsRequired,
 	FieldStockType,
 	FieldStockVisible,
 	FieldDeliveryMode,
@@ -142,6 +145,8 @@ var (
 	DefaultFactoryPrice int64
 	// DefaultDraftPremium holds the default value on creation for the "draft_premium" field.
 	DefaultDraftPremium int64
+	// DefaultPointsRequired holds the default value on creation for the "points_required" field.
+	DefaultPointsRequired int64
 	// DefaultStockVisible holds the default value on creation for the "stock_visible" field.
 	DefaultStockVisible bool
 	// DefaultDedup holds the default value on creation for the "dedup" field.
@@ -268,6 +273,11 @@ func ByFactoryPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByDraftPremium orders the results by the draft_premium field.
 func ByDraftPremium(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDraftPremium, opts...).ToFunc()
+}
+
+// ByPointsRequired orders the results by the points_required field.
+func ByPointsRequired(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPointsRequired, opts...).ToFunc()
 }
 
 // ByStockType orders the results by the stock_type field.

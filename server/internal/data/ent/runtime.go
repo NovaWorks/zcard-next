@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
@@ -690,6 +691,29 @@ func init() {
 	giftcardbatchDescName := giftcardbatchFields[2].Descriptor()
 	// giftcardbatch.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	giftcardbatch.NameValidator = giftcardbatchDescName.Validators[0].(func(string) error)
+	licenseorderMixin := schema.LicenseOrder{}.Mixin()
+	licenseorderMixinFields0 := licenseorderMixin[0].Fields()
+	_ = licenseorderMixinFields0
+	licenseorderFields := schema.LicenseOrder{}.Fields()
+	_ = licenseorderFields
+	// licenseorderDescCreatedAt is the schema descriptor for created_at field.
+	licenseorderDescCreatedAt := licenseorderMixinFields0[0].Descriptor()
+	// licenseorder.DefaultCreatedAt holds the default value on creation for the created_at field.
+	licenseorder.DefaultCreatedAt = licenseorderDescCreatedAt.Default.(func() time.Time)
+	// licenseorderDescUpdatedAt is the schema descriptor for updated_at field.
+	licenseorderDescUpdatedAt := licenseorderMixinFields0[1].Descriptor()
+	// licenseorder.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	licenseorder.DefaultUpdatedAt = licenseorderDescUpdatedAt.Default.(func() time.Time)
+	// licenseorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	licenseorder.UpdateDefaultUpdatedAt = licenseorderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// licenseorderDescInstanceID is the schema descriptor for instance_id field.
+	licenseorderDescInstanceID := licenseorderFields[5].Descriptor()
+	// licenseorder.InstanceIDValidator is a validator for the "instance_id" field. It is called by the builders before save.
+	licenseorder.InstanceIDValidator = licenseorderDescInstanceID.Validators[0].(func(string) error)
+	// licenseorderDescDomain is the schema descriptor for domain field.
+	licenseorderDescDomain := licenseorderFields[6].Descriptor()
+	// licenseorder.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
+	licenseorder.DomainValidator = licenseorderDescDomain.Validators[0].(func(string) error)
 	mediaMixin := schema.Media{}.Mixin()
 	mediaMixinFields0 := mediaMixin[0].Fields()
 	_ = mediaMixinFields0
@@ -1025,6 +1049,10 @@ func init() {
 	orderDescRiskIP := orderFields[18].Descriptor()
 	// order.RiskIPValidator is a validator for the "risk_ip" field. It is called by the builders before save.
 	order.RiskIPValidator = orderDescRiskIP.Validators[0].(func(string) error)
+	// orderDescIdempotencyKey is the schema descriptor for idempotency_key field.
+	orderDescIdempotencyKey := orderFields[26].Descriptor()
+	// order.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
+	order.IdempotencyKeyValidator = orderDescIdempotencyKey.Validators[0].(func(string) error)
 	orderamountlineFields := schema.OrderAmountLine{}.Fields()
 	_ = orderamountlineFields
 	// orderamountlineDescSourceType is the schema descriptor for source_type field.
@@ -1452,24 +1480,28 @@ func init() {
 	productDescDraftPremium := productFields[9].Descriptor()
 	// product.DefaultDraftPremium holds the default value on creation for the draft_premium field.
 	product.DefaultDraftPremium = productDescDraftPremium.Default.(int64)
+	// productDescPointsRequired is the schema descriptor for points_required field.
+	productDescPointsRequired := productFields[11].Descriptor()
+	// product.DefaultPointsRequired holds the default value on creation for the points_required field.
+	product.DefaultPointsRequired = productDescPointsRequired.Default.(int64)
 	// productDescStockVisible is the schema descriptor for stock_visible field.
-	productDescStockVisible := productFields[12].Descriptor()
+	productDescStockVisible := productFields[13].Descriptor()
 	// product.DefaultStockVisible holds the default value on creation for the stock_visible field.
 	product.DefaultStockVisible = productDescStockVisible.Default.(bool)
 	// productDescDedup is the schema descriptor for dedup field.
-	productDescDedup := productFields[15].Descriptor()
+	productDescDedup := productFields[16].Descriptor()
 	// product.DefaultDedup holds the default value on creation for the dedup field.
 	product.DefaultDedup = productDescDedup.Default.(bool)
 	// productDescSort is the schema descriptor for sort field.
-	productDescSort := productFields[16].Descriptor()
+	productDescSort := productFields[17].Descriptor()
 	// product.DefaultSort holds the default value on creation for the sort field.
 	product.DefaultSort = productDescSort.Default.(int32)
 	// productDescStatus is the schema descriptor for status field.
-	productDescStatus := productFields[17].Descriptor()
+	productDescStatus := productFields[18].Descriptor()
 	// product.DefaultStatus holds the default value on creation for the status field.
 	product.DefaultStatus = productDescStatus.Default.(int8)
 	// productDescUpstreamProductCode is the schema descriptor for upstream_product_code field.
-	productDescUpstreamProductCode := productFields[19].Descriptor()
+	productDescUpstreamProductCode := productFields[20].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
 	productcontrolMixin := schema.ProductControl{}.Mixin()

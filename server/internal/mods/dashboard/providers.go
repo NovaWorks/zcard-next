@@ -5,4 +5,4 @@ package dashboard
 import "github.com/google/wire"
 
 // ProviderSet dashboard providers。
-var ProviderSet = wire.NewSet(NewDashboardRepoImpl, NewAdminDashboardService)
+var ProviderSet = wire.NewSet(NewDashboardRepoImpl, NewReconciler, NewAdminDashboardService)

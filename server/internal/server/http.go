@@ -91,6 +91,8 @@ func NewHTTPServer(
 	currencySvc *settings.AdminCurrencyService,
 	catalogAdminSvc *catalog.AdminCatalogService,
 	memberLevelSvc *memberlevel.AdminMemberLevelService,
+	memberLevelStoreSvc *memberlevel.StoreMemberLevelService,
+	licenseStoreSvc *license.StoreLicenseService,
 	couponSvc *coupon.AdminCouponService,
 	dashboardSvc *dashboard.AdminDashboardService,
 	invSvc *inventory.AdminInventoryService,
@@ -171,6 +173,8 @@ func NewHTTPServer(
 	adminv1.RegisterAdminUserServiceHTTPServer(srv, adminSvc)
 	adminv1.RegisterAdminCurrencyServiceHTTPServer(srv, currencySvc)
 	adminv1.RegisterAdminMemberLevelServiceHTTPServer(srv, memberLevelSvc)
+	storefrontv1.RegisterStoreMemberLevelServiceHTTPServer(srv, memberLevelStoreSvc)
+	storefrontv1.RegisterStoreLicenseServiceHTTPServer(srv, licenseStoreSvc)
 	adminv1.RegisterAdminCouponServiceHTTPServer(srv, couponSvc)
 	adminv1.RegisterAdminDashboardServiceHTTPServer(srv, dashboardSvc)
 	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)

@@ -5,10 +5,12 @@ package supply
 
 import (
 	"context"
+	"time"
 	"encoding/json"
 	"errors"
 
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
+	dashboardport "github.com/NovaWorks/zcard-next/server/internal/mods/dashboard/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 )
 
@@ -35,6 +37,33 @@ func (g *Gateway) adapterFor(ctx context.Context, connectionID uint64) (adapter.
 		return nil, errors.New("supply: 凭据结构不合法（请重新配置连接）")
 	}
 	return adapter.New(conn.Driver, conn.BaseURL, creds, parseRetryIntervals(conn.RetryIntervals))
+}
+
+// ListOrders 上游订单列表（P3-07 对账数据源；dashboard port 消费——类型转换收口在此）。
+// 协议不支持 → ErrUpstreamListUnsupported（对账 job failed 可查）。
+func (g *Gateway) ListOrders(ctx context.Context, connectionID uint64, start, end time.Time) ([]dashboardport.UpstreamOrder, error) {
+	a, err := g.adapterFor(ctx, connectionID)
+	if err != nil {
+		return nil, err
+	}
+	lister, ok := a.(adapter.OrderLister)
+	if !ok {
+		return nil, dashboardport.ErrUpstreamListUnsupported
+	}
+	rows, err := lister.ListOrders(ctx, start, end)
+	if errors.Is(err, adapter.ErrNotSupported) {
+		return nil, dashboardport.ErrUpstreamListUnsupported
+	}
+	if err != nil {
+		return nil, err
+	}
+	out := make([]dashboardport.UpstreamOrder, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, dashboardport.UpstreamOrder{
+			UpstreamOrderID: r.UpstreamOrderID, Amount: r.Amount, Status: r.Status,
+		})
+	}
+	return out, nil
 }
 
 // Submit 提交采购。永久错误归一化（哨兵 → procurement 状态机判 rejected）。

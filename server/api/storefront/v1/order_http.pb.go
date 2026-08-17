@@ -9,6 +9,7 @@ package storefrontv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -17,20 +18,28 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationStoreOrderServiceCancelMyOrder = "/zcard.api.storefront.v1.StoreOrderService/CancelMyOrder"
 const OperationStoreOrderServiceCreateOrder = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
 const OperationStoreOrderServiceGetOrder = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
+const OperationStoreOrderServiceListMyOrders = "/zcard.api.storefront.v1.StoreOrderService/ListMyOrders"
 
 type StoreOrderServiceHTTPServer interface {
+	// CancelMyOrder CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+	CancelMyOrder(context.Context, *CancelMyOrderRequest) (*emptypb.Empty, error)
 	// CreateOrder CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)
-	// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二）。
+	// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderReply, error)
+	// ListMyOrders ListMyOrders 我的订单（登录态；offset 分页）。
+	ListMyOrders(context.Context, *ListMyOrdersRequest) (*ListMyOrdersReply, error)
 }
 
 func RegisterStoreOrderServiceHTTPServer(s *http.Server, srv StoreOrderServiceHTTPServer) {
 	r := s.Route("/")
 	r.Handle("POST", "/api/v1/storefront/orders", _StoreOrderService_CreateOrder0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/orders/{order_no}", _StoreOrderService_GetOrder0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/storefront/my-orders", _StoreOrderService_ListMyOrders0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/orders/{order_no}/cancel", _StoreOrderService_CancelMyOrder0_HTTP_Handler(srv))
 }
 
 func _StoreOrderService_CreateOrder0_HTTP_Handler(srv StoreOrderServiceHTTPServer) func(ctx http.Context) error {
@@ -74,11 +83,56 @@ func _StoreOrderService_GetOrder0_HTTP_Handler(srv StoreOrderServiceHTTPServer) 
 	}
 }
 
+func _StoreOrderService_ListMyOrders0_HTTP_Handler(srv StoreOrderServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListMyOrdersRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreOrderServiceListMyOrders)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListMyOrders(ctx, req.(*ListMyOrdersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListMyOrdersReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StoreOrderService_CancelMyOrder0_HTTP_Handler(srv StoreOrderServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CancelMyOrderRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreOrderServiceCancelMyOrder)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CancelMyOrder(ctx, req.(*CancelMyOrderRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StoreOrderServiceHTTPClient interface {
+	// CancelMyOrder CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+	CancelMyOrder(ctx context.Context, req *CancelMyOrderRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// CreateOrder CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(ctx context.Context, req *CreateOrderRequest, opts ...http.CallOption) (rsp *CreateOrderReply, err error)
-	// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二）。
+	// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 	GetOrder(ctx context.Context, req *GetOrderRequest, opts ...http.CallOption) (rsp *GetOrderReply, err error)
+	// ListMyOrders ListMyOrders 我的订单（登录态；offset 分页）。
+	ListMyOrders(ctx context.Context, req *ListMyOrdersRequest, opts ...http.CallOption) (rsp *ListMyOrdersReply, err error)
 }
 
 type StoreOrderServiceHTTPClientImpl struct {
@@ -87,6 +141,24 @@ type StoreOrderServiceHTTPClientImpl struct {
 
 func NewStoreOrderServiceHTTPClient(client *http.Client) StoreOrderServiceHTTPClient {
 	return &StoreOrderServiceHTTPClientImpl{client}
+}
+
+// CancelMyOrder CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+func (c *StoreOrderServiceHTTPClientImpl) CancelMyOrder(ctx context.Context, in *CancelMyOrderRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/storefront/orders/{order_no}/cancel"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreOrderServiceCancelMyOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // CreateOrder CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
@@ -107,7 +179,7 @@ func (c *StoreOrderServiceHTTPClientImpl) CreateOrder(ctx context.Context, in *C
 	return &out, nil
 }
 
-// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二）。
+// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 func (c *StoreOrderServiceHTTPClientImpl) GetOrder(ctx context.Context, in *GetOrderRequest, opts ...http.CallOption) (*GetOrderReply, error) {
 	var out GetOrderReply
 	pattern := "/api/v1/storefront/orders/{order_no}"
@@ -115,6 +187,23 @@ func (c *StoreOrderServiceHTTPClientImpl) GetOrder(ctx context.Context, in *GetO
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationStoreOrderServiceGetOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListMyOrders ListMyOrders 我的订单（登录态；offset 分页）。
+func (c *StoreOrderServiceHTTPClientImpl) ListMyOrders(ctx context.Context, in *ListMyOrdersRequest, opts ...http.CallOption) (*ListMyOrdersReply, error) {
+	var out ListMyOrdersReply
+	pattern := "/api/v1/storefront/my-orders"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationStoreOrderServiceListMyOrders),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

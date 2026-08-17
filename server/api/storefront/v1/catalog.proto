@@ -33,6 +33,8 @@ message ListProductsRequest {
   // 扁平分页（query 绑定：?page=1&page_size=20）
   int32 page = 3;
   int32 page_size = 4;
+  // 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
+  bool points_only = 5;
 }
 
 message ListProductsReply {
@@ -70,6 +72,8 @@ message Product {
   repeated ReviewItem reviews = 13;
   // 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
   repeated Sku skus = 14;
+  // 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
+  int64 points_required = 15;
 }
 
 // ProductControl 自定义控件定义（下单表单渲染）。

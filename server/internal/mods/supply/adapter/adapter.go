@@ -13,6 +13,7 @@ package adapter
 
 import (
 	"context"
+	"time"
 	"errors"
 	"fmt"
 )
@@ -108,6 +109,12 @@ type OrderDetail struct {
 	Status          string // delivered | pending | ...
 	Amount          int64  // 分
 	Cards           []string // delivered 时上游卡密（内存态）
+}
+
+// OrderLister 上游订单列表能力（P3-07 对账数据源；可选——协议不开放列表的
+// 适配器返回 ErrNotSupported，对账任务置 failed「上游不支持列表对账」）。
+type OrderLister interface {
+	ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error)
 }
 
 // Adapter 货源适配器接口（port 契约，P2-01 T2 / P2-02 消费方）。

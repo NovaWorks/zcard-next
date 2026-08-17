@@ -33,6 +33,7 @@ var operatorSeed = map[string]bool{
 	"wallet:withdraw":     true,
 	"giftcard:read":       true,
 	"license:read":        true,
+	"reconcile:read":      true,
 	"order:view_delivery": true,
 	"memberlevel:read":    true,
 	"coupon:read":         true,

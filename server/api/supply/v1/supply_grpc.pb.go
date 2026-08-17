@@ -26,6 +26,7 @@ const (
 	SupplyService_GetProduct_FullMethodName     = "/zcard.api.supply.v1.SupplyService/GetProduct"
 	SupplyService_GetStock_FullMethodName       = "/zcard.api.supply.v1.SupplyService/GetStock"
 	SupplyService_CreateOrder_FullMethodName    = "/zcard.api.supply.v1.SupplyService/CreateOrder"
+	SupplyService_ListOrders_FullMethodName     = "/zcard.api.supply.v1.SupplyService/ListOrders"
 	SupplyService_GetOrder_FullMethodName       = "/zcard.api.supply.v1.SupplyService/GetOrder"
 	SupplyService_CancelOrder_FullMethodName    = "/zcard.api.supply.v1.SupplyService/CancelOrder"
 	SupplyService_RefundOrder_FullMethodName    = "/zcard.api.supply.v1.SupplyService/RefundOrder"
@@ -54,6 +55,8 @@ type SupplyServiceClient interface {
 	// CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
 	// 同步交付：响应 fulfillment.delivered + cards）。
 	CreateOrder(ctx context.Context, in *CreateSupplyOrderRequest, opts ...grpc.CallOption) (*CreateSupplyOrderReply, error)
+	// ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+	ListOrders(ctx context.Context, in *ListSupplyOrdersRequest, opts ...grpc.CallOption) (*ListSupplyOrdersReply, error)
 	// GetOrder 订单查询（轮询/巡检兜底）。
 	GetOrder(ctx context.Context, in *GetSupplyOrderRequest, opts ...grpc.CallOption) (*GetSupplyOrderReply, error)
 	// CancelOrder 取消（未交付订单释放锁卡）。
@@ -130,6 +133,16 @@ func (c *supplyServiceClient) CreateOrder(ctx context.Context, in *CreateSupplyO
 	return out, nil
 }
 
+func (c *supplyServiceClient) ListOrders(ctx context.Context, in *ListSupplyOrdersRequest, opts ...grpc.CallOption) (*ListSupplyOrdersReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSupplyOrdersReply)
+	err := c.cc.Invoke(ctx, SupplyService_ListOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *supplyServiceClient) GetOrder(ctx context.Context, in *GetSupplyOrderRequest, opts ...grpc.CallOption) (*GetSupplyOrderReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetSupplyOrderReply)
@@ -183,6 +196,8 @@ type SupplyServiceServer interface {
 	// CreateOrder 下游下单（downstream_order_no 幂等；复用本地锁卡防超卖；
 	// 同步交付：响应 fulfillment.delivered + cards）。
 	CreateOrder(context.Context, *CreateSupplyOrderRequest) (*CreateSupplyOrderReply, error)
+	// ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+	ListOrders(context.Context, *ListSupplyOrdersRequest) (*ListSupplyOrdersReply, error)
 	// GetOrder 订单查询（轮询/巡检兜底）。
 	GetOrder(context.Context, *GetSupplyOrderRequest) (*GetSupplyOrderReply, error)
 	// CancelOrder 取消（未交付订单释放锁卡）。
@@ -216,6 +231,9 @@ func (UnimplementedSupplyServiceServer) GetStock(context.Context, *GetStockReque
 }
 func (UnimplementedSupplyServiceServer) CreateOrder(context.Context, *CreateSupplyOrderRequest) (*CreateSupplyOrderReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateOrder not implemented")
+}
+func (UnimplementedSupplyServiceServer) ListOrders(context.Context, *ListSupplyOrdersRequest) (*ListSupplyOrdersReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListOrders not implemented")
 }
 func (UnimplementedSupplyServiceServer) GetOrder(context.Context, *GetSupplyOrderRequest) (*GetSupplyOrderReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOrder not implemented")
@@ -355,6 +373,24 @@ func _SupplyService_CreateOrder_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SupplyService_ListOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSupplyOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SupplyServiceServer).ListOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SupplyService_ListOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SupplyServiceServer).ListOrders(ctx, req.(*ListSupplyOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _SupplyService_GetOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSupplyOrderRequest)
 	if err := dec(in); err != nil {
@@ -439,6 +475,10 @@ var SupplyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateOrder",
 			Handler:    _SupplyService_CreateOrder_Handler,
+		},
+		{
+			MethodName: "ListOrders",
+			Handler:    _SupplyService_ListOrders_Handler,
 		},
 		{
 			MethodName: "GetOrder",

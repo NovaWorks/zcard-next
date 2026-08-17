@@ -76,6 +76,8 @@ type Order struct {
 	InviteL3 uint64 `json:"invite_l3,omitempty"`
 	// 扩展预留（控件答案等，加字段先进 extra）
 	Extra map[string]interface{} `json:"extra,omitempty"`
+	// 下单幂等键哈希（P1-03：同 key 返回首单）
+	IdempotencyKey string `json:"idempotency_key,omitempty"`
 	// PaidAt holds the value of the "paid_at" field.
 	PaidAt time.Time `json:"paid_at,omitempty"`
 	// ClosedAt holds the value of the "closed_at" field.
@@ -174,7 +176,7 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullFloat64)
 		case order.FieldID, order.FieldSubsiteID, order.FieldVersion, order.FieldSubsiteProfit, order.FieldUserID, order.FieldTotalAmount, order.FieldCost, order.FieldAmountDisplay, order.FieldParentID, order.FieldEscrowID, order.FieldInviteL1, order.FieldInviteL2, order.FieldInviteL3:
 			values[i] = new(sql.NullInt64)
-		case order.FieldOrderNo, order.FieldSubsiteDomain, order.FieldGuestContact, order.FieldQueryPasswordHash, order.FieldStatus, order.FieldBaseCurrency, order.FieldDisplayCurrency, order.FieldPaymentChannel, order.FieldContact, order.FieldClientIP, order.FieldRiskIP:
+		case order.FieldOrderNo, order.FieldSubsiteDomain, order.FieldGuestContact, order.FieldQueryPasswordHash, order.FieldStatus, order.FieldBaseCurrency, order.FieldDisplayCurrency, order.FieldPaymentChannel, order.FieldContact, order.FieldClientIP, order.FieldRiskIP, order.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
 		case order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldPaidAt, order.FieldClosedAt, order.FieldExpiredAt:
 			values[i] = new(sql.NullTime)
@@ -377,6 +379,12 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field extra: %w", err)
 				}
 			}
+		case order.FieldIdempotencyKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field idempotency_key", values[i])
+			} else if value.Valid {
+				_m.IdempotencyKey = value.String
+			}
 		case order.FieldPaidAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field paid_at", values[i])
@@ -547,6 +555,9 @@ func (_m *Order) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("extra=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Extra))
+	builder.WriteString(", ")
+	builder.WriteString("idempotency_key=")
+	builder.WriteString(_m.IdempotencyKey)
 	builder.WriteString(", ")
 	builder.WriteString("paid_at=")
 	builder.WriteString(_m.PaidAt.Format(time.ANSIC))

@@ -19,6 +19,7 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminCatalogServiceApproveReview = "/zcard.api.admin.v1.AdminCatalogService/ApproveReview"
+const OperationAdminCatalogServiceBatchUpdateProductStatus = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus"
 const OperationAdminCatalogServiceCreateCategory = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
 const OperationAdminCatalogServiceCreateControl = "/zcard.api.admin.v1.AdminCatalogService/CreateControl"
 const OperationAdminCatalogServiceCreateMemberGroup = "/zcard.api.admin.v1.AdminCatalogService/CreateMemberGroup"
@@ -49,6 +50,8 @@ const OperationAdminCatalogServiceUpdateSku = "/zcard.api.admin.v1.AdminCatalogS
 
 type AdminCatalogServiceHTTPServer interface {
 	ApproveReview(context.Context, *ApproveReviewRequest) (*ReviewItem, error)
+	// BatchUpdateProductStatus BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
+	BatchUpdateProductStatus(context.Context, *BatchUpdateProductStatusRequest) (*BatchUpdateProductStatusReply, error)
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
 	CreateControl(context.Context, *CreateControlRequest) (*AdminControl, error)
 	CreateMemberGroup(context.Context, *CreateMemberGroupRequest) (*MemberGroup, error)
@@ -92,6 +95,7 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("POST", "/api/v1/admin/products", _AdminCatalogService_CreateProduct0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/products/{id}", _AdminCatalogService_UpdateProduct0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/products/{id}", _AdminCatalogService_DeleteProduct0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/products/batch-status", _AdminCatalogService_BatchUpdateProductStatus0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/categories", _AdminCatalogService_ListCategories0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/categories", _AdminCatalogService_CreateCategory0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/categories/{id}", _AdminCatalogService_UpdateCategory0_HTTP_Handler(srv))
@@ -217,6 +221,25 @@ func _AdminCatalogService_DeleteProduct0_HTTP_Handler(srv AdminCatalogServiceHTT
 			return err
 		}
 		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_BatchUpdateProductStatus0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in BatchUpdateProductStatusRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceBatchUpdateProductStatus)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.BatchUpdateProductStatus(ctx, req.(*BatchUpdateProductStatusRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*BatchUpdateProductStatusReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -705,6 +728,8 @@ func _AdminCatalogService_DeleteMemberGroup0_HTTP_Handler(srv AdminCatalogServic
 
 type AdminCatalogServiceHTTPClient interface {
 	ApproveReview(ctx context.Context, req *ApproveReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
+	// BatchUpdateProductStatus BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
+	BatchUpdateProductStatus(ctx context.Context, req *BatchUpdateProductStatusRequest, opts ...http.CallOption) (rsp *BatchUpdateProductStatusReply, err error)
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
 	CreateControl(ctx context.Context, req *CreateControlRequest, opts ...http.CallOption) (rsp *AdminControl, err error)
 	CreateMemberGroup(ctx context.Context, req *CreateMemberGroupRequest, opts ...http.CallOption) (rsp *MemberGroup, err error)
@@ -757,6 +782,24 @@ func (c *AdminCatalogServiceHTTPClientImpl) ApproveReview(ctx context.Context, i
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceApproveReview),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// BatchUpdateProductStatus BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
+func (c *AdminCatalogServiceHTTPClientImpl) BatchUpdateProductStatus(ctx context.Context, in *BatchUpdateProductStatusRequest, opts ...http.CallOption) (*BatchUpdateProductStatusReply, error) {
+	var out BatchUpdateProductStatusReply
+	pattern := "/api/v1/admin/products/batch-status"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceBatchUpdateProductStatus),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

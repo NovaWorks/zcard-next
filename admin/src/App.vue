@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { NConfigProvider, darkTheme } from 'naive-ui';
-import type { WatermarkProps } from 'naive-ui';
-import { useAppStore } from './store/modules/app';
-import { useThemeStore } from './store/modules/theme';
-import { naiveDateLocales, naiveLocales } from './locales/naive';
-import { initCurrency } from './utils/money';
+import { computed } from "vue";
+import { NConfigProvider, darkTheme } from "naive-ui";
+import type { WatermarkProps } from "naive-ui";
+import { useAppStore } from "./store/modules/app";
+import { useThemeStore } from "./store/modules/theme";
+import { naiveDateLocales, naiveLocales } from "./locales/naive";
+import { initCurrency } from "./utils/money";
+import MediaPickerHost from "@/components/common/media-picker/media-picker-host.vue";
 
 // 启动加载默认货币（i18n.base_currency → 符号/小数位；失败回退默认符号）
 initCurrency();
 
 defineOptions({
-  name: 'App'
+  name: "App",
 });
 
 const appStore = useAppStore();
@@ -39,7 +40,7 @@ const watermarkProps = computed<WatermarkProps>(() => {
     xOffset: 12,
     yOffset: 60,
     rotate: -15,
-    zIndex: 9999
+    zIndex: 9999,
   };
 });
 </script>
@@ -55,6 +56,8 @@ const watermarkProps = computed<WatermarkProps>(() => {
     <AppProvider>
       <RouterView class="bg-layout" />
       <NWatermark v-if="themeStore.watermark.visible" v-bind="watermarkProps" />
+      <!-- 素材选择器全局挂载（pickMedia() Promise API；所有图片入口共用） -->
+      <MediaPickerHost />
     </AppProvider>
   </NConfigProvider>
 </template>

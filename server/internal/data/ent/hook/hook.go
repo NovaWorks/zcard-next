@@ -237,6 +237,18 @@ func (f GiftcardBatchFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Valu
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GiftcardBatchMutation", m)
 }
 
+// The LicenseOrderFunc type is an adapter to allow the use of ordinary
+// function as LicenseOrder mutator.
+type LicenseOrderFunc func(context.Context, *ent.LicenseOrderMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f LicenseOrderFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.LicenseOrderMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.LicenseOrderMutation", m)
+}
+
 // The MediaFunc type is an adapter to allow the use of ordinary
 // function as Media mutator.
 type MediaFunc func(context.Context, *ent.MediaMutation) (ent.Value, error)

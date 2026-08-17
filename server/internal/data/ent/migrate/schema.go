@@ -577,6 +577,40 @@ var (
 		Columns:    GiftcardBatchesColumns,
 		PrimaryKey: []*schema.Column{GiftcardBatchesColumns[0]},
 	}
+	// LicenseOrdersColumns holds the columns for the "license_orders" table.
+	LicenseOrdersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "plan", Type: field.TypeEnum, Enums: []string{"monthly", "yearly"}},
+		{Name: "amount", Type: field.TypeInt64},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "success", "canceled"}, Default: "pending"},
+		{Name: "payer_user_id", Type: field.TypeUint64},
+		{Name: "instance_id", Type: field.TypeString, Size: 64},
+		{Name: "domain", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "features", Type: field.TypeJSON, Nullable: true},
+		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "license_file", Type: field.TypeString, Nullable: true, Size: 2147483647},
+		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+	}
+	// LicenseOrdersTable holds the schema information for the "license_orders" table.
+	LicenseOrdersTable = &schema.Table{
+		Name:       "license_orders",
+		Columns:    LicenseOrdersColumns,
+		PrimaryKey: []*schema.Column{LicenseOrdersColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "licenseorder_payer_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{LicenseOrdersColumns[6]},
+			},
+			{
+				Name:    "licenseorder_instance_id",
+				Unique:  false,
+				Columns: []*schema.Column{LicenseOrdersColumns[7]},
+			},
+		},
+	}
 	// MediaColumns holds the columns for the "media" table.
 	MediaColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -815,6 +849,7 @@ var (
 		{Name: "invite_l2", Type: field.TypeUint64, Nullable: true},
 		{Name: "invite_l3", Type: field.TypeUint64, Nullable: true},
 		{Name: "extra", Type: field.TypeJSON, Nullable: true},
+		{Name: "idempotency_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 80},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "expired_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -838,7 +873,7 @@ var (
 			{
 				Name:    "order_status_expired_at",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[32]},
+				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[33]},
 			},
 			{
 				Name:    "order_parent_id",
@@ -1321,6 +1356,7 @@ var (
 		{Name: "factory_price", Type: field.TypeInt64, Default: 0},
 		{Name: "draft_premium", Type: field.TypeInt64, Default: 0},
 		{Name: "member_price", Type: field.TypeJSON, Nullable: true},
+		{Name: "points_required", Type: field.TypeInt64, Default: 0},
 		{Name: "stock_type", Type: field.TypeEnum, Enums: []string{"card", "url", "code"}, Default: "card"},
 		{Name: "stock_visible", Type: field.TypeBool, Default: true},
 		{Name: "delivery_mode", Type: field.TypeEnum, Enums: []string{"status", "delete"}, Default: "status"},
@@ -1351,12 +1387,12 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[20]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[21]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[21]},
+				Columns: []*schema.Column{ProductsColumns[22]},
 			},
 		},
 	}
@@ -2412,6 +2448,7 @@ var (
 		FlashSalesTable,
 		GiftcardsTable,
 		GiftcardBatchesTable,
+		LicenseOrdersTable,
 		MediaTable,
 		MediaCategoriesTable,
 		MemberLevelsTable,

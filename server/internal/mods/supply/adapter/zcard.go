@@ -191,6 +191,37 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 	}, nil
 }
 
+// ListOrders 上游订单列表（P3-07 对账数据源；自家协议端点）。
+func (a *zCardAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error) {
+	q := url.Values{}
+	q.Set("start", strconv.FormatInt(start.Unix(), 10))
+	q.Set("end", strconv.FormatInt(end.Unix(), 10))
+	data, err := a.request(ctx, "GET", "/api/supply/orders", q, nil)
+	if err != nil {
+		return nil, err
+	}
+	var resp struct {
+		Orders []struct {
+			ID          any    `json:"id"`
+			Amount      int64  `json:"amount"`
+			Status      string `json:"status"`
+			CreatedAt   int64  `json:"created_at"`
+		} `json:"orders"`
+	}
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, fmt.Errorf("adapter.zcard: 解析订单列表失败: %w", err)
+	}
+	out := make([]OrderDetail, 0, len(resp.Orders))
+	for _, o := range resp.Orders {
+		out = append(out, OrderDetail{
+			UpstreamOrderID: idString(o.ID),
+			Status:          o.Status,
+			Amount:          o.Amount,
+		})
+	}
+	return out, nil
+}
+
 func (a *zCardAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (*OrderDetail, error) {
 	path := "/api/supply/orders/" + url.PathEscape(upstreamOrderID)
 	data, err := a.request(ctx, "GET", path, nil, nil)

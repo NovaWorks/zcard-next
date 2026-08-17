@@ -1,4 +1,4 @@
-import { request } from '../request';
+import { request } from "../request";
 
 // ── 商品管理 ──
 
@@ -10,9 +10,9 @@ export function fetchProducts(params?: {
   page_size?: number;
 }) {
   return request({
-    url: '/api/v1/admin/products',
-    method: 'get',
-    params
+    url: "/api/v1/admin/products",
+    method: "get",
+    params,
   });
 }
 
@@ -25,60 +25,160 @@ export function createProduct(data: {
   category_id?: number;
   description?: string;
   cover?: string;
+  images?: string[];
   price_cents: number;
   factory_price_cents?: number;
   stock_type: string;
   delivery_mode?: string;
   stock_visible?: boolean;
+  dedup?: boolean;
+  sort?: number;
   status?: number;
+  points_required?: number;
 }) {
   return request({
-    url: '/api/v1/admin/products',
-    method: 'post',
-    data
+    url: "/api/v1/admin/products",
+    method: "post",
+    data,
   });
 }
 
 export function updateProduct(id: number, data: Record<string, any>) {
   return request({
     url: `/api/v1/admin/products/${id}`,
-    method: 'put',
-    data
+    method: "put",
+    data,
   });
 }
 
 export function deleteProduct(id: number) {
   return request({
     url: `/api/v1/admin/products/${id}`,
-    method: 'delete'
+    method: "delete",
+  });
+}
+
+// 批量上下架（列表多选；status 1=上架 0=下架 2=隐藏）
+export function batchUpdateProductStatus(ids: number[], status: number) {
+  return request<{ updated: number }>({
+    url: "/api/v1/admin/products/batch-status",
+    method: "post",
+    data: { ids, status },
   });
 }
 
 // ── 分类管理 ──
 
 export function fetchCategories() {
-  return request({ url: '/api/v1/admin/categories' });
+  return request({ url: "/api/v1/admin/categories" });
 }
 
-export function createCategory(data: { name: string; parent_id?: number; icon?: string; sort?: number }) {
+export function createCategory(data: {
+  name: string;
+  parent_id?: number;
+  icon?: string;
+  sort?: number;
+}) {
   return request({
-    url: '/api/v1/admin/categories',
-    method: 'post',
-    data
+    url: "/api/v1/admin/categories",
+    method: "post",
+    data,
   });
 }
 
 export function updateCategory(id: number, data: Record<string, any>) {
   return request({
     url: `/api/v1/admin/categories/${id}`,
-    method: 'put',
-    data
+    method: "put",
+    data,
   });
 }
 
 export function deleteCategory(id: number) {
   return request({
     url: `/api/v1/admin/categories/${id}`,
-    method: 'delete'
+    method: "delete",
+  });
+}
+
+// ── SKU 多规格（P1-01 M1b；price_cents 0=继承商品价）──
+
+export function fetchSkus(productId: number) {
+  return request<{ skus: any[] }>({ url: `/api/v1/admin/products/${productId}/skus` });
+}
+
+export function createSku(
+  productId: number,
+  data: {
+    name: string;
+    spec_values?: Record<string, string>;
+    price_cents?: number;
+    cost_cents?: number;
+    stock_offset?: number;
+  },
+) {
+  return request({ url: `/api/v1/admin/products/${productId}/skus`, method: "post", data });
+}
+
+export function updateSku(id: number, data: Record<string, any>) {
+  return request({ url: `/api/v1/admin/skus/${id}`, method: "put", data });
+}
+
+export function deleteSku(id: number) {
+  return request({ url: `/api/v1/admin/skus/${id}`, method: "delete" });
+}
+
+// ── 自定义控件（下单收集：text|password|select|number|checkbox|radio）──
+
+export function fetchControls(productId: number) {
+  return request<{ controls: any[] }>({ url: `/api/v1/admin/products/${productId}/controls` });
+}
+
+export function createControl(
+  productId: number,
+  data: {
+    name: string;
+    type: string;
+    required?: boolean;
+    options?: string[];
+    sort?: number;
+  },
+) {
+  return request({ url: `/api/v1/admin/products/${productId}/controls`, method: "post", data });
+}
+
+export function updateControl(id: number, data: Record<string, any>) {
+  return request({ url: `/api/v1/admin/controls/${id}`, method: "put", data });
+}
+
+export function deleteControl(id: number) {
+  return request({ url: `/api/v1/admin/controls/${id}`, method: "delete" });
+}
+
+// ── 标签 ──
+
+export function fetchTags() {
+  return request({ url: "/api/v1/admin/tags" });
+}
+
+export function createTag(data: {
+  name: string;
+  slug: string;
+  icon?: string;
+  color?: string;
+  position?: string;
+}) {
+  return request({ url: "/api/v1/admin/tags", method: "post", data });
+}
+
+export function deleteTag(id: number) {
+  return request({ url: `/api/v1/admin/tags/${id}`, method: "delete" });
+}
+
+// ── 货源连接（跨域只读：商品列表展示「自营/代发 + 供应商名」）──
+
+export function fetchSupplyConnections() {
+  return request<{ connections: { id: number; name: string; driver: string; status: string }[] }>({
+    url: "/api/v1/admin/supply/connections",
   });
 }

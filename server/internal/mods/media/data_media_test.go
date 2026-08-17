@@ -252,3 +252,39 @@ func TestCategories(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestListUncategorized 未分类视图（素材选择器「未分类」过滤——category_id 为空）。
+func TestListUncategorized(t *testing.T) {
+	r, _ := newMediaRepo(t)
+	ctx := context.Background()
+
+	// 分类 + 两张入分类图 + 一张未分类图
+	cat, err := r.CreateCategory(ctx, "商品图", 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inCat, err := r.Upload(ctx, port.UploadInput{Name: "a.png", ContentType: "image/png", Data: tinyPNG(t), CategoryID: cat.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	noCat, err := r.Upload(ctx, port.UploadInput{Name: "b.png", ContentType: "image/png", Data: tinyPNG(t)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 全部（category_id=0 不过滤）= 2
+	all, total, err := r.ListMedia(ctx, 0, "", 1, 20)
+	if err != nil || total != 2 || len(all) != 2 {
+		t.Fatalf("全部列表错误: total=%d err=%v", total, err)
+	}
+	// 未分类 = 1（仅 b）
+	unc, total, err := r.ListUncategorized(ctx, "", 1, 20)
+	if err != nil || total != 1 || len(unc) != 1 || unc[0].ID != noCat.ID {
+		t.Fatalf("未分类过滤错误: total=%d err=%v", total, err)
+	}
+	// 分类视图 = 1（仅 a）
+	inc, total, err := r.ListMedia(ctx, cat.ID, "", 1, 20)
+	if err != nil || total != 1 || inc[0].ID != inCat.ID {
+		t.Fatalf("分类过滤错误: total=%d", total)
+	}
+}

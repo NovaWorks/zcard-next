@@ -55,3 +55,9 @@ type OrderQuery interface {
 	// QueryByNo 单号 + 查询密码取货（constant-time 比对；密码错误与单号错误对外表现一致）。
 	QueryByNo(ctx context.Context, orderNo, queryPassword, clientIP string) (*QueryResult, error)
 }
+
+// SoldCounter 批量已售数量（管理列表展示消费，通道 A）。
+type SoldCounter interface {
+	// SoldBatch 各商品已售数量（paid 及之后状态订单的 order_items.quantity 聚合）。
+	SoldBatch(ctx context.Context, productIDs []uint64) (map[uint64]int64, error)
+}

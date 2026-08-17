@@ -10,6 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -31,8 +32,10 @@ type CreateOrderRequest struct {
 	CouponCode    string                 `protobuf:"bytes,5,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
 	// 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
 	ControlAnswers map[string]string `protobuf:"bytes,6,rep,name=control_answers,json=controlAnswers,proto3" json:"control_answers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
+	UsePoints     bool `protobuf:"varint,7,opt,name=use_points,json=usePoints,proto3" json:"use_points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateOrderRequest) Reset() {
@@ -105,6 +108,13 @@ func (x *CreateOrderRequest) GetControlAnswers() map[string]string {
 		return x.ControlAnswers
 	}
 	return nil
+}
+
+func (x *CreateOrderRequest) GetUsePoints() bool {
+	if x != nil {
+		return x.UsePoints
+	}
+	return false
 }
 
 type OrderItemInput struct {
@@ -423,11 +433,253 @@ func (x *OrderItemReply) GetUnitPriceCents() int64 {
 	return 0
 }
 
+type ListMyOrdersRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Page     int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// 状态筛选（可选：pending_payment/paid/delivered/completed/canceled/expired/refunded）
+	Status        string `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMyOrdersRequest) Reset() {
+	*x = ListMyOrdersRequest{}
+	mi := &file_storefront_v1_order_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMyOrdersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMyOrdersRequest) ProtoMessage() {}
+
+func (x *ListMyOrdersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMyOrdersRequest.ProtoReflect.Descriptor instead.
+func (*ListMyOrdersRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *ListMyOrdersRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListMyOrdersRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListMyOrdersRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type ListMyOrdersReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Orders        []*MyOrderItem         `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMyOrdersReply) Reset() {
+	*x = ListMyOrdersReply{}
+	mi := &file_storefront_v1_order_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMyOrdersReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMyOrdersReply) ProtoMessage() {}
+
+func (x *ListMyOrdersReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMyOrdersReply.ProtoReflect.Descriptor instead.
+func (*ListMyOrdersReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ListMyOrdersReply) GetOrders() []*MyOrderItem {
+	if x != nil {
+		return x.Orders
+	}
+	return nil
+}
+
+func (x *ListMyOrdersReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+// MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
+type MyOrderItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents    int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ExpiredAt     int64                  `protobuf:"varint,5,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	ItemCount     int32                  `protobuf:"varint,6,opt,name=item_count,json=itemCount,proto3" json:"item_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MyOrderItem) Reset() {
+	*x = MyOrderItem{}
+	mi := &file_storefront_v1_order_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MyOrderItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MyOrderItem) ProtoMessage() {}
+
+func (x *MyOrderItem) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MyOrderItem.ProtoReflect.Descriptor instead.
+func (*MyOrderItem) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *MyOrderItem) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *MyOrderItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *MyOrderItem) GetTotalCents() int64 {
+	if x != nil {
+		return x.TotalCents
+	}
+	return 0
+}
+
+func (x *MyOrderItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *MyOrderItem) GetExpiredAt() int64 {
+	if x != nil {
+		return x.ExpiredAt
+	}
+	return 0
+}
+
+func (x *MyOrderItem) GetItemCount() int32 {
+	if x != nil {
+		return x.ItemCount
+	}
+	return 0
+}
+
+type CancelMyOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CancelMyOrderRequest) Reset() {
+	*x = CancelMyOrderRequest{}
+	mi := &file_storefront_v1_order_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CancelMyOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CancelMyOrderRequest) ProtoMessage() {}
+
+func (x *CancelMyOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_order_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CancelMyOrderRequest.ProtoReflect.Descriptor instead.
+func (*CancelMyOrderRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_order_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CancelMyOrderRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
 var File_storefront_v1_order_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"\x8c\x03\n" +
+	"\x19storefront/v1/order.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xab\x03\n" +
 	"\x12CreateOrderRequest\x12B\n" +
 	"\x05items\x18\x01 \x03(\v2'.zcard.api.storefront.v1.OrderItemInputB\x03\xe0A\x02R\x05items\x12#\n" +
 	"\rguest_contact\x18\x02 \x01(\tR\fguestContact\x12%\n" +
@@ -435,7 +687,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\acontact\x18\x04 \x01(\tR\acontact\x12\x1f\n" +
 	"\vcoupon_code\x18\x05 \x01(\tR\n" +
 	"couponCode\x12h\n" +
-	"\x0fcontrol_answers\x18\x06 \x03(\v2?.zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntryR\x0econtrolAnswers\x1aA\n" +
+	"\x0fcontrol_answers\x18\x06 \x03(\v2?.zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntryR\x0econtrolAnswers\x12\x1d\n" +
+	"\n" +
+	"use_points\x18\a \x01(\bR\tusePoints\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"l\n" +
@@ -466,10 +720,32 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12!\n" +
 	"\fproduct_name\x18\x02 \x01(\tR\vproductName\x12\x1a\n" +
 	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12(\n" +
-	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents2\xae\x02\n" +
+	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\"^\n" +
+	"\x13ListMyOrdersRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"g\n" +
+	"\x11ListMyOrdersReply\x12<\n" +
+	"\x06orders\x18\x01 \x03(\v2$.zcard.api.storefront.v1.MyOrderItemR\x06orders\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xbe\x01\n" +
+	"\vMyOrderItem\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
+	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
+	"totalCents\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\x03R\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"expired_at\x18\x05 \x01(\x03R\texpiredAt\x12\x1d\n" +
+	"\n" +
+	"item_count\x18\x06 \x01(\x05R\titemCount\"6\n" +
+	"\x14CancelMyOrderRequest\x12\x1e\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo2\xd0\x04\n" +
 	"\x11StoreOrderService\x12\x8b\x01\n" +
 	"\vCreateOrder\x12+.zcard.api.storefront.v1.CreateOrderRequest\x1a).zcard.api.storefront.v1.CreateOrderReply\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/storefront/orders\x12\x8a\x01\n" +
-	"\bGetOrder\x12(.zcard.api.storefront.v1.GetOrderRequest\x1a&.zcard.api.storefront.v1.GetOrderReply\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/storefront/orders/{order_no}BGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
+	"\bGetOrder\x12(.zcard.api.storefront.v1.GetOrderRequest\x1a&.zcard.api.storefront.v1.GetOrderReply\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/storefront/orders/{order_no}\x12\x8e\x01\n" +
+	"\fListMyOrders\x12,.zcard.api.storefront.v1.ListMyOrdersRequest\x1a*.zcard.api.storefront.v1.ListMyOrdersReply\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/storefront/my-orders\x12\x8e\x01\n" +
+	"\rCancelMyOrder\x12-.zcard.api.storefront.v1.CancelMyOrderRequest\x1a\x16.google.protobuf.Empty\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/storefront/orders/{order_no}/cancelBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
 var (
 	file_storefront_v1_order_proto_rawDescOnce sync.Once
@@ -483,29 +759,39 @@ func file_storefront_v1_order_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_order_proto_rawDescData
 }
 
-var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_storefront_v1_order_proto_goTypes = []any{
-	(*CreateOrderRequest)(nil), // 0: zcard.api.storefront.v1.CreateOrderRequest
-	(*OrderItemInput)(nil),     // 1: zcard.api.storefront.v1.OrderItemInput
-	(*CreateOrderReply)(nil),   // 2: zcard.api.storefront.v1.CreateOrderReply
-	(*GetOrderRequest)(nil),    // 3: zcard.api.storefront.v1.GetOrderRequest
-	(*GetOrderReply)(nil),      // 4: zcard.api.storefront.v1.GetOrderReply
-	(*OrderItemReply)(nil),     // 5: zcard.api.storefront.v1.OrderItemReply
-	nil,                        // 6: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	(*CreateOrderRequest)(nil),   // 0: zcard.api.storefront.v1.CreateOrderRequest
+	(*OrderItemInput)(nil),       // 1: zcard.api.storefront.v1.OrderItemInput
+	(*CreateOrderReply)(nil),     // 2: zcard.api.storefront.v1.CreateOrderReply
+	(*GetOrderRequest)(nil),      // 3: zcard.api.storefront.v1.GetOrderRequest
+	(*GetOrderReply)(nil),        // 4: zcard.api.storefront.v1.GetOrderReply
+	(*OrderItemReply)(nil),       // 5: zcard.api.storefront.v1.OrderItemReply
+	(*ListMyOrdersRequest)(nil),  // 6: zcard.api.storefront.v1.ListMyOrdersRequest
+	(*ListMyOrdersReply)(nil),    // 7: zcard.api.storefront.v1.ListMyOrdersReply
+	(*MyOrderItem)(nil),          // 8: zcard.api.storefront.v1.MyOrderItem
+	(*CancelMyOrderRequest)(nil), // 9: zcard.api.storefront.v1.CancelMyOrderRequest
+	nil,                          // 10: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	(*emptypb.Empty)(nil),        // 11: google.protobuf.Empty
 }
 var file_storefront_v1_order_proto_depIdxs = []int32{
-	1, // 0: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
-	6, // 1: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	5, // 2: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
-	0, // 3: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
-	3, // 4: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
-	2, // 5: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
-	4, // 6: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1,  // 0: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
+	10, // 1: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
+	5,  // 2: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
+	8,  // 3: zcard.api.storefront.v1.ListMyOrdersReply.orders:type_name -> zcard.api.storefront.v1.MyOrderItem
+	0,  // 4: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	3,  // 5: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
+	6,  // 6: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
+	9,  // 7: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
+	2,  // 8: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	4,  // 9: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
+	7,  // 10: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
+	11, // 11: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
+	8,  // [8:12] is the sub-list for method output_type
+	4,  // [4:8] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_order_proto_init() }
@@ -519,7 +805,7 @@ func file_storefront_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_order_proto_rawDesc), len(file_storefront_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

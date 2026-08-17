@@ -159,6 +159,22 @@ func (r *MediaRepo) ListMedia(ctx context.Context, categoryID uint64, keyword st
 	return rows, total, err
 }
 
+// ListUncategorized 仅未分类素材（category_id 为空；素材选择器「未分类」视图）。
+func (r *MediaRepo) ListUncategorized(ctx context.Context, keyword string, page, size int) ([]*ent.Media, int, error) {
+	q := data.Client(ctx, r.data).Media.Query().
+		Where(media.CategoryIDIsNil()).
+		Order(ent.Desc(media.FieldID))
+	if keyword != "" {
+		q = q.Where(media.NameContains(keyword))
+	}
+	total, err := q.Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := q.Offset((page - 1) * size).Limit(size).All(ctx)
+	return rows, total, err
+}
+
 // GetMedia 单个。
 func (r *MediaRepo) GetMedia(ctx context.Context, id uint64) (*ent.Media, error) {
 	m, err := data.Client(ctx, r.data).Media.Get(ctx, id)

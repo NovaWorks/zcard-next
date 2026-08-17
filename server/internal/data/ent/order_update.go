@@ -607,6 +607,26 @@ func (_u *OrderUpdate) ClearExtra() *OrderUpdate {
 	return _u
 }
 
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (_u *OrderUpdate) SetIdempotencyKey(v string) *OrderUpdate {
+	_u.mutation.SetIdempotencyKey(v)
+	return _u
+}
+
+// SetNillableIdempotencyKey sets the "idempotency_key" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableIdempotencyKey(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetIdempotencyKey(*v)
+	}
+	return _u
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (_u *OrderUpdate) ClearIdempotencyKey() *OrderUpdate {
+	_u.mutation.ClearIdempotencyKey()
+	return _u
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (_u *OrderUpdate) SetPaidAt(v time.Time) *OrderUpdate {
 	_u.mutation.SetPaidAt(v)
@@ -981,6 +1001,11 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "risk_ip", err: fmt.Errorf(`ent: validator failed for field "Order.risk_ip": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.IdempotencyKey(); ok {
+		if err := order.IdempotencyKeyValidator(v); err != nil {
+			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1175,6 +1200,12 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ExtraCleared() {
 		_spec.ClearField(order.FieldExtra, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.IdempotencyKey(); ok {
+		_spec.SetField(order.FieldIdempotencyKey, field.TypeString, value)
+	}
+	if _u.mutation.IdempotencyKeyCleared() {
+		_spec.ClearField(order.FieldIdempotencyKey, field.TypeString)
 	}
 	if value, ok := _u.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)
@@ -2057,6 +2088,26 @@ func (_u *OrderUpdateOne) ClearExtra() *OrderUpdateOne {
 	return _u
 }
 
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (_u *OrderUpdateOne) SetIdempotencyKey(v string) *OrderUpdateOne {
+	_u.mutation.SetIdempotencyKey(v)
+	return _u
+}
+
+// SetNillableIdempotencyKey sets the "idempotency_key" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableIdempotencyKey(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetIdempotencyKey(*v)
+	}
+	return _u
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (_u *OrderUpdateOne) ClearIdempotencyKey() *OrderUpdateOne {
+	_u.mutation.ClearIdempotencyKey()
+	return _u
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (_u *OrderUpdateOne) SetPaidAt(v time.Time) *OrderUpdateOne {
 	_u.mutation.SetPaidAt(v)
@@ -2444,6 +2495,11 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "risk_ip", err: fmt.Errorf(`ent: validator failed for field "Order.risk_ip": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.IdempotencyKey(); ok {
+		if err := order.IdempotencyKeyValidator(v); err != nil {
+			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2655,6 +2711,12 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.ExtraCleared() {
 		_spec.ClearField(order.FieldExtra, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.IdempotencyKey(); ok {
+		_spec.SetField(order.FieldIdempotencyKey, field.TypeString, value)
+	}
+	if _u.mutation.IdempotencyKeyCleared() {
+		_spec.ClearField(order.FieldIdempotencyKey, field.TypeString)
 	}
 	if value, ok := _u.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)

@@ -410,6 +410,20 @@ func (_c *OrderCreate) SetExtra(v map[string]interface{}) *OrderCreate {
 	return _c
 }
 
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (_c *OrderCreate) SetIdempotencyKey(v string) *OrderCreate {
+	_c.mutation.SetIdempotencyKey(v)
+	return _c
+}
+
+// SetNillableIdempotencyKey sets the "idempotency_key" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableIdempotencyKey(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetIdempotencyKey(*v)
+	}
+	return _c
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (_c *OrderCreate) SetPaidAt(v time.Time) *OrderCreate {
 	_c.mutation.SetPaidAt(v)
@@ -708,6 +722,11 @@ func (_c *OrderCreate) check() error {
 			return &ValidationError{Name: "risk_ip", err: fmt.Errorf(`ent: validator failed for field "Order.risk_ip": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.IdempotencyKey(); ok {
+		if err := order.IdempotencyKeyValidator(v); err != nil {
+			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -856,6 +875,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Extra(); ok {
 		_spec.SetField(order.FieldExtra, field.TypeJSON, value)
 		_node.Extra = value
+	}
+	if value, ok := _c.mutation.IdempotencyKey(); ok {
+		_spec.SetField(order.FieldIdempotencyKey, field.TypeString, value)
+		_node.IdempotencyKey = value
 	}
 	if value, ok := _c.mutation.PaidAt(); ok {
 		_spec.SetField(order.FieldPaidAt, field.TypeTime, value)
@@ -1542,6 +1565,24 @@ func (u *OrderUpsert) UpdateExtra() *OrderUpsert {
 // ClearExtra clears the value of the "extra" field.
 func (u *OrderUpsert) ClearExtra() *OrderUpsert {
 	u.SetNull(order.FieldExtra)
+	return u
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *OrderUpsert) SetIdempotencyKey(v string) *OrderUpsert {
+	u.Set(order.FieldIdempotencyKey, v)
+	return u
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateIdempotencyKey() *OrderUpsert {
+	u.SetExcluded(order.FieldIdempotencyKey)
+	return u
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *OrderUpsert) ClearIdempotencyKey() *OrderUpsert {
+	u.SetNull(order.FieldIdempotencyKey)
 	return u
 }
 
@@ -2263,6 +2304,27 @@ func (u *OrderUpsertOne) UpdateExtra() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearExtra() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearExtra()
+	})
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *OrderUpsertOne) SetIdempotencyKey(v string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetIdempotencyKey(v)
+	})
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateIdempotencyKey() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateIdempotencyKey()
+	})
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *OrderUpsertOne) ClearIdempotencyKey() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearIdempotencyKey()
 	})
 }
 
@@ -3159,6 +3221,27 @@ func (u *OrderUpsertBulk) UpdateExtra() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearExtra() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearExtra()
+	})
+}
+
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (u *OrderUpsertBulk) SetIdempotencyKey(v string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetIdempotencyKey(v)
+	})
+}
+
+// UpdateIdempotencyKey sets the "idempotency_key" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateIdempotencyKey() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateIdempotencyKey()
+	})
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (u *OrderUpsertBulk) ClearIdempotencyKey() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearIdempotencyKey()
 	})
 }
 

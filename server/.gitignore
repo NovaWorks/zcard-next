@@ -5,3 +5,6 @@
 *.db-shm
 *.db-wal
 /configs/config.yaml
+
+# go build 产物（cmd/zcard 本地编译输出）
+/cmd/zcard/zcard

@@ -66,6 +66,7 @@ func (Order) Fields() []ent.Field {
 		field.Uint64("invite_l2").Optional(),
 		field.Uint64("invite_l3").Optional(),
 		field.JSON("extra", map[string]any{}).Optional().Comment("扩展预留（控件答案等，加字段先进 extra）"),
+		field.String("idempotency_key").MaxLen(80).Unique().Optional().Comment("下单幂等键哈希（P1-03：同 key 返回首单）"),
 		field.Time("paid_at").SchemaType(mysqlTime).Optional(),
 		field.Time("closed_at").SchemaType(mysqlTime).Optional(),
 		field.Time("expired_at").SchemaType(mysqlTime).Optional().Comment("超时取消扫描（INDEX(status, expired_at)）"),

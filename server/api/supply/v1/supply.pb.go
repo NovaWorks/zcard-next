@@ -883,6 +883,179 @@ func (x *CreateSupplyOrderReply) GetErrorMessage() string {
 	return ""
 }
 
+// ListSupplyOrdersRequest 订单列表（时间窗；对账数据源）。
+type ListSupplyOrdersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Start         int64                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"` // 创建时间起点（unix 秒）
+	End           int64                  `protobuf:"varint,2,opt,name=end,proto3" json:"end,omitempty"`     // 创建时间终点（unix 秒）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSupplyOrdersRequest) Reset() {
+	*x = ListSupplyOrdersRequest{}
+	mi := &file_supply_v1_supply_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSupplyOrdersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSupplyOrdersRequest) ProtoMessage() {}
+
+func (x *ListSupplyOrdersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSupplyOrdersRequest.ProtoReflect.Descriptor instead.
+func (*ListSupplyOrdersRequest) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListSupplyOrdersRequest) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *ListSupplyOrdersRequest) GetEnd() int64 {
+	if x != nil {
+		return x.End
+	}
+	return 0
+}
+
+type SupplyOrderItem struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	DownstreamOrderNo string                 `protobuf:"bytes,2,opt,name=downstream_order_no,json=downstreamOrderNo,proto3" json:"downstream_order_no,omitempty"`
+	Amount            int64                  `protobuf:"varint,3,opt,name=amount,proto3" json:"amount,omitempty"`                        // 分
+	Status            string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`                         // pending | paid | delivered | refunded | canceled
+	CreatedAt         int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"` // unix 秒
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SupplyOrderItem) Reset() {
+	*x = SupplyOrderItem{}
+	mi := &file_supply_v1_supply_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplyOrderItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplyOrderItem) ProtoMessage() {}
+
+func (x *SupplyOrderItem) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplyOrderItem.ProtoReflect.Descriptor instead.
+func (*SupplyOrderItem) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SupplyOrderItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SupplyOrderItem) GetDownstreamOrderNo() string {
+	if x != nil {
+		return x.DownstreamOrderNo
+	}
+	return ""
+}
+
+func (x *SupplyOrderItem) GetAmount() int64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *SupplyOrderItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *SupplyOrderItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type ListSupplyOrdersReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Orders        []*SupplyOrderItem     `protobuf:"bytes,1,rep,name=orders,proto3" json:"orders,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSupplyOrdersReply) Reset() {
+	*x = ListSupplyOrdersReply{}
+	mi := &file_supply_v1_supply_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSupplyOrdersReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSupplyOrdersReply) ProtoMessage() {}
+
+func (x *ListSupplyOrdersReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supply_v1_supply_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSupplyOrdersReply.ProtoReflect.Descriptor instead.
+func (*ListSupplyOrdersReply) Descriptor() ([]byte, []int) {
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListSupplyOrdersReply) GetOrders() []*SupplyOrderItem {
+	if x != nil {
+		return x.Orders
+	}
+	return nil
+}
+
 type GetSupplyOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -892,7 +1065,7 @@ type GetSupplyOrderRequest struct {
 
 func (x *GetSupplyOrderRequest) Reset() {
 	*x = GetSupplyOrderRequest{}
-	mi := &file_supply_v1_supply_proto_msgTypes[13]
+	mi := &file_supply_v1_supply_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -904,7 +1077,7 @@ func (x *GetSupplyOrderRequest) String() string {
 func (*GetSupplyOrderRequest) ProtoMessage() {}
 
 func (x *GetSupplyOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[13]
+	mi := &file_supply_v1_supply_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -917,7 +1090,7 @@ func (x *GetSupplyOrderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSupplyOrderRequest.ProtoReflect.Descriptor instead.
 func (*GetSupplyOrderRequest) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{13}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetSupplyOrderRequest) GetId() string {
@@ -940,7 +1113,7 @@ type GetSupplyOrderReply struct {
 
 func (x *GetSupplyOrderReply) Reset() {
 	*x = GetSupplyOrderReply{}
-	mi := &file_supply_v1_supply_proto_msgTypes[14]
+	mi := &file_supply_v1_supply_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -952,7 +1125,7 @@ func (x *GetSupplyOrderReply) String() string {
 func (*GetSupplyOrderReply) ProtoMessage() {}
 
 func (x *GetSupplyOrderReply) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[14]
+	mi := &file_supply_v1_supply_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -965,7 +1138,7 @@ func (x *GetSupplyOrderReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSupplyOrderReply.ProtoReflect.Descriptor instead.
 func (*GetSupplyOrderReply) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{14}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetSupplyOrderReply) GetSupplyOrderId() string {
@@ -1012,7 +1185,7 @@ type CancelSupplyOrderRequest struct {
 
 func (x *CancelSupplyOrderRequest) Reset() {
 	*x = CancelSupplyOrderRequest{}
-	mi := &file_supply_v1_supply_proto_msgTypes[15]
+	mi := &file_supply_v1_supply_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1024,7 +1197,7 @@ func (x *CancelSupplyOrderRequest) String() string {
 func (*CancelSupplyOrderRequest) ProtoMessage() {}
 
 func (x *CancelSupplyOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[15]
+	mi := &file_supply_v1_supply_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1037,7 +1210,7 @@ func (x *CancelSupplyOrderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelSupplyOrderRequest.ProtoReflect.Descriptor instead.
 func (*CancelSupplyOrderRequest) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{15}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CancelSupplyOrderRequest) GetId() string {
@@ -1056,7 +1229,7 @@ type CancelSupplyOrderReply struct {
 
 func (x *CancelSupplyOrderReply) Reset() {
 	*x = CancelSupplyOrderReply{}
-	mi := &file_supply_v1_supply_proto_msgTypes[16]
+	mi := &file_supply_v1_supply_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1068,7 +1241,7 @@ func (x *CancelSupplyOrderReply) String() string {
 func (*CancelSupplyOrderReply) ProtoMessage() {}
 
 func (x *CancelSupplyOrderReply) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[16]
+	mi := &file_supply_v1_supply_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +1254,7 @@ func (x *CancelSupplyOrderReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelSupplyOrderReply.ProtoReflect.Descriptor instead.
 func (*CancelSupplyOrderReply) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{16}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CancelSupplyOrderReply) GetOk() bool {
@@ -1100,7 +1273,7 @@ type RefundSupplyOrderRequest struct {
 
 func (x *RefundSupplyOrderRequest) Reset() {
 	*x = RefundSupplyOrderRequest{}
-	mi := &file_supply_v1_supply_proto_msgTypes[17]
+	mi := &file_supply_v1_supply_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1112,7 +1285,7 @@ func (x *RefundSupplyOrderRequest) String() string {
 func (*RefundSupplyOrderRequest) ProtoMessage() {}
 
 func (x *RefundSupplyOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[17]
+	mi := &file_supply_v1_supply_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1125,7 +1298,7 @@ func (x *RefundSupplyOrderRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefundSupplyOrderRequest.ProtoReflect.Descriptor instead.
 func (*RefundSupplyOrderRequest) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{17}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *RefundSupplyOrderRequest) GetId() string {
@@ -1146,7 +1319,7 @@ type RefundSupplyOrderReply struct {
 
 func (x *RefundSupplyOrderReply) Reset() {
 	*x = RefundSupplyOrderReply{}
-	mi := &file_supply_v1_supply_proto_msgTypes[18]
+	mi := &file_supply_v1_supply_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1158,7 +1331,7 @@ func (x *RefundSupplyOrderReply) String() string {
 func (*RefundSupplyOrderReply) ProtoMessage() {}
 
 func (x *RefundSupplyOrderReply) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[18]
+	mi := &file_supply_v1_supply_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1171,7 +1344,7 @@ func (x *RefundSupplyOrderReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefundSupplyOrderReply.ProtoReflect.Descriptor instead.
 func (*RefundSupplyOrderReply) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{18}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *RefundSupplyOrderReply) GetOk() bool {
@@ -1206,7 +1379,7 @@ type SupplyFulfillment struct {
 
 func (x *SupplyFulfillment) Reset() {
 	*x = SupplyFulfillment{}
-	mi := &file_supply_v1_supply_proto_msgTypes[19]
+	mi := &file_supply_v1_supply_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1218,7 +1391,7 @@ func (x *SupplyFulfillment) String() string {
 func (*SupplyFulfillment) ProtoMessage() {}
 
 func (x *SupplyFulfillment) ProtoReflect() protoreflect.Message {
-	mi := &file_supply_v1_supply_proto_msgTypes[19]
+	mi := &file_supply_v1_supply_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1231,7 +1404,7 @@ func (x *SupplyFulfillment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SupplyFulfillment.ProtoReflect.Descriptor instead.
 func (*SupplyFulfillment) Descriptor() ([]byte, []int) {
-	return file_supply_v1_supply_proto_rawDescGZIP(), []int{19}
+	return file_supply_v1_supply_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *SupplyFulfillment) GetStatus() string {
@@ -1328,7 +1501,19 @@ const file_supply_v1_supply_proto_rawDesc = "" +
 	"\vfulfillment\x18\x04 \x01(\v2&.zcard.api.supply.v1.SupplyFulfillmentR\vfulfillment\x12\x1d\n" +
 	"\n" +
 	"error_code\x18\x05 \x01(\tR\terrorCode\x12#\n" +
-	"\rerror_message\x18\x06 \x01(\tR\ferrorMessage\"'\n" +
+	"\rerror_message\x18\x06 \x01(\tR\ferrorMessage\"A\n" +
+	"\x17ListSupplyOrdersRequest\x12\x14\n" +
+	"\x05start\x18\x01 \x01(\x03R\x05start\x12\x10\n" +
+	"\x03end\x18\x02 \x01(\x03R\x03end\"\xa0\x01\n" +
+	"\x0fSupplyOrderItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12.\n" +
+	"\x13downstream_order_no\x18\x02 \x01(\tR\x11downstreamOrderNo\x12\x16\n" +
+	"\x06amount\x18\x03 \x01(\x03R\x06amount\x12\x16\n" +
+	"\x06status\x18\x04 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\x03R\tcreatedAt\"U\n" +
+	"\x15ListSupplyOrdersReply\x12<\n" +
+	"\x06orders\x18\x01 \x03(\v2$.zcard.api.supply.v1.SupplyOrderItemR\x06orders\"'\n" +
 	"\x15GetSupplyOrderRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"\xe7\x01\n" +
 	"\x13GetSupplyOrderReply\x12&\n" +
@@ -1351,7 +1536,8 @@ const file_supply_v1_supply_proto_rawDesc = "" +
 	"\x11SupplyFulfillment\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x14\n" +
 	"\x05cards\x18\x02 \x03(\tR\x05cards\x12\"\n" +
-	"\finstructions\x18\x03 \x01(\tR\finstructions2\x92\t\n" +
+	"\finstructions\x18\x03 \x01(\tR\finstructions2\x97\n" +
+	"\n" +
 	"\rSupplyService\x12X\n" +
 	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.supply.v1.PingReply\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/api/supply/ping\x12r\n" +
 	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a(.zcard.api.supply.v1.ListCategoriesReply\"\x1e\x82\xd3\xe4\x93\x02\x18\"\x16/api/supply/categories\x12~\n" +
@@ -1359,7 +1545,9 @@ const file_supply_v1_supply_proto_rawDesc = "" +
 	"\n" +
 	"GetProduct\x12&.zcard.api.supply.v1.GetProductRequest\x1a$.zcard.api.supply.v1.GetProductReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/supply/products/{id}\x12}\n" +
 	"\bGetStock\x12$.zcard.api.supply.v1.GetStockRequest\x1a\".zcard.api.supply.v1.GetStockReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/supply/products/{id}/stock\x12\x88\x01\n" +
-	"\vCreateOrder\x12-.zcard.api.supply.v1.CreateSupplyOrderRequest\x1a+.zcard.api.supply.v1.CreateSupplyOrderReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/supply/orders\x12\x81\x01\n" +
+	"\vCreateOrder\x12-.zcard.api.supply.v1.CreateSupplyOrderRequest\x1a+.zcard.api.supply.v1.CreateSupplyOrderReply\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/supply/orders\x12\x82\x01\n" +
+	"\n" +
+	"ListOrders\x12,.zcard.api.supply.v1.ListSupplyOrdersRequest\x1a*.zcard.api.supply.v1.ListSupplyOrdersReply\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/supply/orders\x12\x81\x01\n" +
 	"\bGetOrder\x12*.zcard.api.supply.v1.GetSupplyOrderRequest\x1a(.zcard.api.supply.v1.GetSupplyOrderReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/supply/orders/{id}\x12\x91\x01\n" +
 	"\vCancelOrder\x12-.zcard.api.supply.v1.CancelSupplyOrderRequest\x1a+.zcard.api.supply.v1.CancelSupplyOrderReply\"&\x82\xd3\xe4\x93\x02 \"\x1e/api/supply/orders/{id}/cancel\x12\x91\x01\n" +
 	"\vRefundOrder\x12-.zcard.api.supply.v1.RefundSupplyOrderRequest\x1a+.zcard.api.supply.v1.RefundSupplyOrderReply\"&\x82\xd3\xe4\x93\x02 \"\x1e/api/supply/orders/{id}/refundB?Z=github.com/NovaWorks/zcard-next/server/api/supply/v1;supplyv1b\x06proto3"
@@ -1376,7 +1564,7 @@ func file_supply_v1_supply_proto_rawDescGZIP() []byte {
 	return file_supply_v1_supply_proto_rawDescData
 }
 
-var file_supply_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_supply_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_supply_v1_supply_proto_goTypes = []any{
 	(*PingReply)(nil),                // 0: zcard.api.supply.v1.PingReply
 	(*ListCategoriesReply)(nil),      // 1: zcard.api.supply.v1.ListCategoriesReply
@@ -1391,45 +1579,51 @@ var file_supply_v1_supply_proto_goTypes = []any{
 	(*SupplySku)(nil),                // 10: zcard.api.supply.v1.SupplySku
 	(*CreateSupplyOrderRequest)(nil), // 11: zcard.api.supply.v1.CreateSupplyOrderRequest
 	(*CreateSupplyOrderReply)(nil),   // 12: zcard.api.supply.v1.CreateSupplyOrderReply
-	(*GetSupplyOrderRequest)(nil),    // 13: zcard.api.supply.v1.GetSupplyOrderRequest
-	(*GetSupplyOrderReply)(nil),      // 14: zcard.api.supply.v1.GetSupplyOrderReply
-	(*CancelSupplyOrderRequest)(nil), // 15: zcard.api.supply.v1.CancelSupplyOrderRequest
-	(*CancelSupplyOrderReply)(nil),   // 16: zcard.api.supply.v1.CancelSupplyOrderReply
-	(*RefundSupplyOrderRequest)(nil), // 17: zcard.api.supply.v1.RefundSupplyOrderRequest
-	(*RefundSupplyOrderReply)(nil),   // 18: zcard.api.supply.v1.RefundSupplyOrderReply
-	(*SupplyFulfillment)(nil),        // 19: zcard.api.supply.v1.SupplyFulfillment
-	(*emptypb.Empty)(nil),            // 20: google.protobuf.Empty
+	(*ListSupplyOrdersRequest)(nil),  // 13: zcard.api.supply.v1.ListSupplyOrdersRequest
+	(*SupplyOrderItem)(nil),          // 14: zcard.api.supply.v1.SupplyOrderItem
+	(*ListSupplyOrdersReply)(nil),    // 15: zcard.api.supply.v1.ListSupplyOrdersReply
+	(*GetSupplyOrderRequest)(nil),    // 16: zcard.api.supply.v1.GetSupplyOrderRequest
+	(*GetSupplyOrderReply)(nil),      // 17: zcard.api.supply.v1.GetSupplyOrderReply
+	(*CancelSupplyOrderRequest)(nil), // 18: zcard.api.supply.v1.CancelSupplyOrderRequest
+	(*CancelSupplyOrderReply)(nil),   // 19: zcard.api.supply.v1.CancelSupplyOrderReply
+	(*RefundSupplyOrderRequest)(nil), // 20: zcard.api.supply.v1.RefundSupplyOrderRequest
+	(*RefundSupplyOrderReply)(nil),   // 21: zcard.api.supply.v1.RefundSupplyOrderReply
+	(*SupplyFulfillment)(nil),        // 22: zcard.api.supply.v1.SupplyFulfillment
+	(*emptypb.Empty)(nil),            // 23: google.protobuf.Empty
 }
 var file_supply_v1_supply_proto_depIdxs = []int32{
 	2,  // 0: zcard.api.supply.v1.ListCategoriesReply.categories:type_name -> zcard.api.supply.v1.SupplyCategory
 	9,  // 1: zcard.api.supply.v1.ListProductsReply.items:type_name -> zcard.api.supply.v1.SupplyProduct
 	9,  // 2: zcard.api.supply.v1.GetProductReply.product:type_name -> zcard.api.supply.v1.SupplyProduct
 	10, // 3: zcard.api.supply.v1.SupplyProduct.skus:type_name -> zcard.api.supply.v1.SupplySku
-	19, // 4: zcard.api.supply.v1.CreateSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
-	19, // 5: zcard.api.supply.v1.GetSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
-	20, // 6: zcard.api.supply.v1.SupplyService.Ping:input_type -> google.protobuf.Empty
-	20, // 7: zcard.api.supply.v1.SupplyService.ListCategories:input_type -> google.protobuf.Empty
-	3,  // 8: zcard.api.supply.v1.SupplyService.ListProducts:input_type -> zcard.api.supply.v1.ListProductsRequest
-	5,  // 9: zcard.api.supply.v1.SupplyService.GetProduct:input_type -> zcard.api.supply.v1.GetProductRequest
-	7,  // 10: zcard.api.supply.v1.SupplyService.GetStock:input_type -> zcard.api.supply.v1.GetStockRequest
-	11, // 11: zcard.api.supply.v1.SupplyService.CreateOrder:input_type -> zcard.api.supply.v1.CreateSupplyOrderRequest
-	13, // 12: zcard.api.supply.v1.SupplyService.GetOrder:input_type -> zcard.api.supply.v1.GetSupplyOrderRequest
-	15, // 13: zcard.api.supply.v1.SupplyService.CancelOrder:input_type -> zcard.api.supply.v1.CancelSupplyOrderRequest
-	17, // 14: zcard.api.supply.v1.SupplyService.RefundOrder:input_type -> zcard.api.supply.v1.RefundSupplyOrderRequest
-	0,  // 15: zcard.api.supply.v1.SupplyService.Ping:output_type -> zcard.api.supply.v1.PingReply
-	1,  // 16: zcard.api.supply.v1.SupplyService.ListCategories:output_type -> zcard.api.supply.v1.ListCategoriesReply
-	4,  // 17: zcard.api.supply.v1.SupplyService.ListProducts:output_type -> zcard.api.supply.v1.ListProductsReply
-	6,  // 18: zcard.api.supply.v1.SupplyService.GetProduct:output_type -> zcard.api.supply.v1.GetProductReply
-	8,  // 19: zcard.api.supply.v1.SupplyService.GetStock:output_type -> zcard.api.supply.v1.GetStockReply
-	12, // 20: zcard.api.supply.v1.SupplyService.CreateOrder:output_type -> zcard.api.supply.v1.CreateSupplyOrderReply
-	14, // 21: zcard.api.supply.v1.SupplyService.GetOrder:output_type -> zcard.api.supply.v1.GetSupplyOrderReply
-	16, // 22: zcard.api.supply.v1.SupplyService.CancelOrder:output_type -> zcard.api.supply.v1.CancelSupplyOrderReply
-	18, // 23: zcard.api.supply.v1.SupplyService.RefundOrder:output_type -> zcard.api.supply.v1.RefundSupplyOrderReply
-	15, // [15:24] is the sub-list for method output_type
-	6,  // [6:15] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	22, // 4: zcard.api.supply.v1.CreateSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
+	14, // 5: zcard.api.supply.v1.ListSupplyOrdersReply.orders:type_name -> zcard.api.supply.v1.SupplyOrderItem
+	22, // 6: zcard.api.supply.v1.GetSupplyOrderReply.fulfillment:type_name -> zcard.api.supply.v1.SupplyFulfillment
+	23, // 7: zcard.api.supply.v1.SupplyService.Ping:input_type -> google.protobuf.Empty
+	23, // 8: zcard.api.supply.v1.SupplyService.ListCategories:input_type -> google.protobuf.Empty
+	3,  // 9: zcard.api.supply.v1.SupplyService.ListProducts:input_type -> zcard.api.supply.v1.ListProductsRequest
+	5,  // 10: zcard.api.supply.v1.SupplyService.GetProduct:input_type -> zcard.api.supply.v1.GetProductRequest
+	7,  // 11: zcard.api.supply.v1.SupplyService.GetStock:input_type -> zcard.api.supply.v1.GetStockRequest
+	11, // 12: zcard.api.supply.v1.SupplyService.CreateOrder:input_type -> zcard.api.supply.v1.CreateSupplyOrderRequest
+	13, // 13: zcard.api.supply.v1.SupplyService.ListOrders:input_type -> zcard.api.supply.v1.ListSupplyOrdersRequest
+	16, // 14: zcard.api.supply.v1.SupplyService.GetOrder:input_type -> zcard.api.supply.v1.GetSupplyOrderRequest
+	18, // 15: zcard.api.supply.v1.SupplyService.CancelOrder:input_type -> zcard.api.supply.v1.CancelSupplyOrderRequest
+	20, // 16: zcard.api.supply.v1.SupplyService.RefundOrder:input_type -> zcard.api.supply.v1.RefundSupplyOrderRequest
+	0,  // 17: zcard.api.supply.v1.SupplyService.Ping:output_type -> zcard.api.supply.v1.PingReply
+	1,  // 18: zcard.api.supply.v1.SupplyService.ListCategories:output_type -> zcard.api.supply.v1.ListCategoriesReply
+	4,  // 19: zcard.api.supply.v1.SupplyService.ListProducts:output_type -> zcard.api.supply.v1.ListProductsReply
+	6,  // 20: zcard.api.supply.v1.SupplyService.GetProduct:output_type -> zcard.api.supply.v1.GetProductReply
+	8,  // 21: zcard.api.supply.v1.SupplyService.GetStock:output_type -> zcard.api.supply.v1.GetStockReply
+	12, // 22: zcard.api.supply.v1.SupplyService.CreateOrder:output_type -> zcard.api.supply.v1.CreateSupplyOrderReply
+	15, // 23: zcard.api.supply.v1.SupplyService.ListOrders:output_type -> zcard.api.supply.v1.ListSupplyOrdersReply
+	17, // 24: zcard.api.supply.v1.SupplyService.GetOrder:output_type -> zcard.api.supply.v1.GetSupplyOrderReply
+	19, // 25: zcard.api.supply.v1.SupplyService.CancelOrder:output_type -> zcard.api.supply.v1.CancelSupplyOrderReply
+	21, // 26: zcard.api.supply.v1.SupplyService.RefundOrder:output_type -> zcard.api.supply.v1.RefundSupplyOrderReply
+	17, // [17:27] is the sub-list for method output_type
+	7,  // [7:17] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_supply_v1_supply_proto_init() }
@@ -1443,7 +1637,7 @@ func file_supply_v1_supply_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_supply_v1_supply_proto_rawDesc), len(file_supply_v1_supply_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

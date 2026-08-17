@@ -110,6 +110,11 @@ func DraftPremium(v int64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldDraftPremium, v))
 }
 
+// PointsRequired applies equality check predicate on the "points_required" field. It's identical to PointsRequiredEQ.
+func PointsRequired(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldPointsRequired, v))
+}
+
 // StockVisible applies equality check predicate on the "stock_visible" field. It's identical to StockVisibleEQ.
 func StockVisible(v bool) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldStockVisible, v))
@@ -733,6 +738,46 @@ func MemberPriceIsNil() predicate.Product {
 // MemberPriceNotNil applies the NotNil predicate on the "member_price" field.
 func MemberPriceNotNil() predicate.Product {
 	return predicate.Product(sql.FieldNotNull(FieldMemberPrice))
+}
+
+// PointsRequiredEQ applies the EQ predicate on the "points_required" field.
+func PointsRequiredEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldPointsRequired, v))
+}
+
+// PointsRequiredNEQ applies the NEQ predicate on the "points_required" field.
+func PointsRequiredNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldPointsRequired, v))
+}
+
+// PointsRequiredIn applies the In predicate on the "points_required" field.
+func PointsRequiredIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldPointsRequired, vs...))
+}
+
+// PointsRequiredNotIn applies the NotIn predicate on the "points_required" field.
+func PointsRequiredNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldPointsRequired, vs...))
+}
+
+// PointsRequiredGT applies the GT predicate on the "points_required" field.
+func PointsRequiredGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldPointsRequired, v))
+}
+
+// PointsRequiredGTE applies the GTE predicate on the "points_required" field.
+func PointsRequiredGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldPointsRequired, v))
+}
+
+// PointsRequiredLT applies the LT predicate on the "points_required" field.
+func PointsRequiredLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldPointsRequired, v))
+}
+
+// PointsRequiredLTE applies the LTE predicate on the "points_required" field.
+func PointsRequiredLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldPointsRequired, v))
 }
 
 // StockTypeEQ applies the EQ predicate on the "stock_type" field.

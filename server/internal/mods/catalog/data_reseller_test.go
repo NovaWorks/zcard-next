@@ -175,7 +175,7 @@ func TestTenantIsolationMatrix(t *testing.T) {
 	}
 
 	// 更新隔离：A 改名/改价不影响 B 与主站
-	adminSvc := NewAdminCatalogService(NewProductRepoImpl(d, nil))
+	adminSvc := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil)
 	if _, err := adminSvc.UpdateProduct(ctxA, &adminv1.UpdateProductRequest{
 		Id: prodA.ID, Name: "A站改名", PriceCents: 2000,
 	}); err != nil {

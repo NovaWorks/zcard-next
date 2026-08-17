@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
+service StoreMemberLevelService {
+  // GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
+  rpc GetMyLevel(google.protobuf.Empty) returns (MyLevelReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/member-level" };
+  }
+}
+
+// MyLevelReply 等级进度（阈值即时评估口径：只升不降随累计值单调）。
+message MyLevelReply {
+  // 累计充值（countAsRecharge 口径：仅真实充值入账，互转/调账不计）
+  int64 recharged_cents = 1;
+  // 累计消费（已支付及之后状态订单额）
+  int64 consumed_cents = 2;
+  // 积分余额
+  int64 points = 3;
+  // 当前等级（未命中任何等级为 null）
+  LevelBrief current = 4;
+  // 下一等级（已满级为 null）
+  LevelBrief next = 5;
+  // 升级进度（距下一等级差额）
+  LevelProgress progress = 6;
+}
+
+// LevelBrief 等级摘要。
+message LevelBrief {
+  uint64 id = 1;
+  string name = 2;
+  int32 discount = 3;                // 万分比折扣
+  string threshold_type = 4;         // recharge | consume | both_and | both_or
+  int64 threshold_recharge = 5;      // 升级阈值（分）
+  int64 threshold_consume = 6;
+  string points_rule_json = 7;       // 积分产生规则 {"spend_cents":X,"points":Y}
+}
+
+// LevelProgress 距下一等级进度。
+message LevelProgress {
+  // 充值口径差额（0 = 已达标；下一等级不含充值条件时为 -1）
+  int64 recharge_gap_cents = 1;
+  // 消费口径差额（0 = 已达标；下一等级不含消费条件时为 -1）
+  int64 consume_gap_cents = 2;
+  // 综合进度百分比 0-100（按已达标口径均值粗算；both_and 取较小值）
+  int32 percent = 3;
+}

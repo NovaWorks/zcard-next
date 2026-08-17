@@ -20,6 +20,8 @@ type Product struct {
 	DeliveryMode string      // status / delete
 	Status       int8        // 1=上架 0=下架 2=隐藏
 	StockVisible bool
+	// 积分兑换价（0=常规商品；>0=积分商城商品——order 兑换分支判定，P3-01）
+	PointsRequired int64
 	// 货源信息（P2-02 procurement 消费：判定上游项与提交采购）
 	UpstreamSourceID    uint64 // 0 = 自营
 	UpstreamProductCode string
@@ -61,6 +63,8 @@ type VisibleFilter struct {
 	Keyword    string
 	Page       int32
 	PageSize   int32
+	// PointsOnly 积分商城视图（true=仅 points_required>0 商品；P3-01）
+	PointsOnly bool
 }
 
 // ProductReader 商品读取窄接口（storefront service 与 order 模块消费，通道 A）。
@@ -105,6 +109,9 @@ type ProductInput struct {
 	Dedup        bool
 	Sort         int32
 	Status       int8
+	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，P3-01）
+	PointsRequired    int64
+	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）
 }
 
 // ProductAdminRepo 管理面仓储端口（service 层消费）。

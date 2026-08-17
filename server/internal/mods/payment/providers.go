@@ -15,8 +15,10 @@ var ProviderSet = wire.NewSet(
 	NewPaymentUsecase,
 	NewAdminPaymentService,
 	NewStorePaymentService,
-	// P2-02：订单退款入口（procurement 失败策略消费，通道 A）
+	// P2-02：订单退款入口（procurement 消费，通道 A）
 	wire.Bind(new(port.OrderRefunder), new(*PaymentRepoImpl)),
 	// M1b：充值支付单创建端口（wallet 模块消费，通道 A）
 	wire.Bind(new(port.RechargePayer), new(*PaymentRepoImpl)),
+	// P1-03：慢通道 pending 探测（order 超时取消顺延消费，通道 A）
+	wire.Bind(new(port.SlowPaymentChecker), new(*PaymentRepoImpl)),
 )

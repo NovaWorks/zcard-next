@@ -46,6 +46,7 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		Keyword:    req.GetKeyword(),
 		Page:       page,
 		PageSize:   pageSize,
+		PointsOnly: req.GetPointsOnly(), // 积分商城视图（P3-01）
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品列表失败")
@@ -139,5 +140,6 @@ func toStorefrontProduct(p *port.Product) *storefrontv1.Product {
 		StockType:    p.StockType,
 		Stock:        0, // 库存数走 inventory 聚合（M1：stock_visible 时返回真实值）
 		StockVisible: p.StockVisible,
+		PointsRequired: p.PointsRequired, // 积分商城（P3-01；0=常规商品）
 	}
 }

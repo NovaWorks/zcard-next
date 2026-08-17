@@ -157,7 +157,16 @@ func (s *AdminMediaService) ListCategories(ctx context.Context, _ *emptypb.Empty
 
 func (s *AdminMediaService) ListMedia(ctx context.Context, req *adminv1.ListMediaRequest) (*adminv1.ListMediaReply, error) {
 	page, size := pageParams(req.GetPage(), req.GetPageSize())
-	rows, total, err := s.repo.ListMedia(ctx, req.GetCategoryId(), req.GetKeyword(), page, size)
+	var (
+		rows  []*ent.Media
+		total int
+		err   error
+	)
+	if req.GetUncategorized() {
+		rows, total, err = s.repo.ListUncategorized(ctx, req.GetKeyword(), page, size)
+	} else {
+		rows, total, err = s.repo.ListMedia(ctx, req.GetCategoryId(), req.GetKeyword(), page, size)
+	}
 	if err != nil {
 		return nil, mapMediaError(err)
 	}

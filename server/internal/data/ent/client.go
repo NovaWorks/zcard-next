@@ -34,6 +34,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
@@ -141,6 +142,8 @@ type Client struct {
 	Giftcard *GiftcardClient
 	// GiftcardBatch is the client for interacting with the GiftcardBatch builders.
 	GiftcardBatch *GiftcardBatchClient
+	// LicenseOrder is the client for interacting with the LicenseOrder builders.
+	LicenseOrder *LicenseOrderClient
 	// Media is the client for interacting with the Media builders.
 	Media *MediaClient
 	// MediaCategory is the client for interacting with the MediaCategory builders.
@@ -295,6 +298,7 @@ func (c *Client) init() {
 	c.FlashSale = NewFlashSaleClient(c.config)
 	c.Giftcard = NewGiftcardClient(c.config)
 	c.GiftcardBatch = NewGiftcardBatchClient(c.config)
+	c.LicenseOrder = NewLicenseOrderClient(c.config)
 	c.Media = NewMediaClient(c.config)
 	c.MediaCategory = NewMediaCategoryClient(c.config)
 	c.MemberLevel = NewMemberLevelClient(c.config)
@@ -468,6 +472,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		FlashSale:              NewFlashSaleClient(cfg),
 		Giftcard:               NewGiftcardClient(cfg),
 		GiftcardBatch:          NewGiftcardBatchClient(cfg),
+		LicenseOrder:           NewLicenseOrderClient(cfg),
 		Media:                  NewMediaClient(cfg),
 		MediaCategory:          NewMediaCategoryClient(cfg),
 		MemberLevel:            NewMemberLevelClient(cfg),
@@ -568,6 +573,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		FlashSale:              NewFlashSaleClient(cfg),
 		Giftcard:               NewGiftcardClient(cfg),
 		GiftcardBatch:          NewGiftcardBatchClient(cfg),
+		LicenseOrder:           NewLicenseOrderClient(cfg),
 		Media:                  NewMediaClient(cfg),
 		MediaCategory:          NewMediaCategoryClient(cfg),
 		MemberLevel:            NewMemberLevelClient(cfg),
@@ -662,14 +668,14 @@ func (c *Client) Use(hooks ...Hook) {
 		c.AdminRole, c.AdminUser, c.AffiliateCommission, c.AuditLog, c.Banner, c.Card,
 		c.CardImport, c.CartItem, c.Category, c.Coupon, c.Currency, c.DailyStat,
 		c.DownstreamCallback, c.EmailVerification, c.ExternalIdentity, c.FailedTask,
-		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.Media, c.MediaCategory,
-		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
-		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
-		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.Payment,
-		c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post, c.PostCategory,
-		c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder, c.Product,
-		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
-		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.LicenseOrder, c.Media,
+		c.MediaCategory, c.MemberLevel, c.MemberProductGroup, c.Notification,
+		c.NotificationLog, c.NotifyBroadcast, c.NotifyTemplate, c.Order,
+		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
+		c.OutboxEvent, c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction,
+		c.Post, c.PostCategory, c.ProcessedEvent, c.ProcurementItem,
+		c.ProcurementOrder, c.Product, c.ProductControl, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
@@ -690,14 +696,14 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.AdminRole, c.AdminUser, c.AffiliateCommission, c.AuditLog, c.Banner, c.Card,
 		c.CardImport, c.CartItem, c.Category, c.Coupon, c.Currency, c.DailyStat,
 		c.DownstreamCallback, c.EmailVerification, c.ExternalIdentity, c.FailedTask,
-		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.Media, c.MediaCategory,
-		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
-		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
-		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.Payment,
-		c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post, c.PostCategory,
-		c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder, c.Product,
-		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
-		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.LicenseOrder, c.Media,
+		c.MediaCategory, c.MemberLevel, c.MemberProductGroup, c.Notification,
+		c.NotificationLog, c.NotifyBroadcast, c.NotifyTemplate, c.Order,
+		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
+		c.OutboxEvent, c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction,
+		c.Post, c.PostCategory, c.ProcessedEvent, c.ProcurementItem,
+		c.ProcurementOrder, c.Product, c.ProductControl, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
@@ -752,6 +758,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Giftcard.mutate(ctx, m)
 	case *GiftcardBatchMutation:
 		return c.GiftcardBatch.mutate(ctx, m)
+	case *LicenseOrderMutation:
+		return c.LicenseOrder.mutate(ctx, m)
 	case *MediaMutation:
 		return c.Media.mutate(ctx, m)
 	case *MediaCategoryMutation:
@@ -3421,6 +3429,139 @@ func (c *GiftcardBatchClient) mutate(ctx context.Context, m *GiftcardBatchMutati
 		return (&GiftcardBatchDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown GiftcardBatch mutation op: %q", m.Op())
+	}
+}
+
+// LicenseOrderClient is a client for the LicenseOrder schema.
+type LicenseOrderClient struct {
+	config
+}
+
+// NewLicenseOrderClient returns a client for the LicenseOrder from the given config.
+func NewLicenseOrderClient(c config) *LicenseOrderClient {
+	return &LicenseOrderClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `licenseorder.Hooks(f(g(h())))`.
+func (c *LicenseOrderClient) Use(hooks ...Hook) {
+	c.hooks.LicenseOrder = append(c.hooks.LicenseOrder, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `licenseorder.Intercept(f(g(h())))`.
+func (c *LicenseOrderClient) Intercept(interceptors ...Interceptor) {
+	c.inters.LicenseOrder = append(c.inters.LicenseOrder, interceptors...)
+}
+
+// Create returns a builder for creating a LicenseOrder entity.
+func (c *LicenseOrderClient) Create() *LicenseOrderCreate {
+	mutation := newLicenseOrderMutation(c.config, OpCreate)
+	return &LicenseOrderCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of LicenseOrder entities.
+func (c *LicenseOrderClient) CreateBulk(builders ...*LicenseOrderCreate) *LicenseOrderCreateBulk {
+	return &LicenseOrderCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *LicenseOrderClient) MapCreateBulk(slice any, setFunc func(*LicenseOrderCreate, int)) *LicenseOrderCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &LicenseOrderCreateBulk{err: fmt.Errorf("calling to LicenseOrderClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*LicenseOrderCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &LicenseOrderCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for LicenseOrder.
+func (c *LicenseOrderClient) Update() *LicenseOrderUpdate {
+	mutation := newLicenseOrderMutation(c.config, OpUpdate)
+	return &LicenseOrderUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *LicenseOrderClient) UpdateOne(_m *LicenseOrder) *LicenseOrderUpdateOne {
+	mutation := newLicenseOrderMutation(c.config, OpUpdateOne, withLicenseOrder(_m))
+	return &LicenseOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *LicenseOrderClient) UpdateOneID(id uint64) *LicenseOrderUpdateOne {
+	mutation := newLicenseOrderMutation(c.config, OpUpdateOne, withLicenseOrderID(id))
+	return &LicenseOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for LicenseOrder.
+func (c *LicenseOrderClient) Delete() *LicenseOrderDelete {
+	mutation := newLicenseOrderMutation(c.config, OpDelete)
+	return &LicenseOrderDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *LicenseOrderClient) DeleteOne(_m *LicenseOrder) *LicenseOrderDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *LicenseOrderClient) DeleteOneID(id uint64) *LicenseOrderDeleteOne {
+	builder := c.Delete().Where(licenseorder.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &LicenseOrderDeleteOne{builder}
+}
+
+// Query returns a query builder for LicenseOrder.
+func (c *LicenseOrderClient) Query() *LicenseOrderQuery {
+	return &LicenseOrderQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeLicenseOrder},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a LicenseOrder entity by its id.
+func (c *LicenseOrderClient) Get(ctx context.Context, id uint64) (*LicenseOrder, error) {
+	return c.Query().Where(licenseorder.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *LicenseOrderClient) GetX(ctx context.Context, id uint64) *LicenseOrder {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *LicenseOrderClient) Hooks() []Hook {
+	return c.hooks.LicenseOrder
+}
+
+// Interceptors returns the client interceptors.
+func (c *LicenseOrderClient) Interceptors() []Interceptor {
+	return c.inters.LicenseOrder
+}
+
+func (c *LicenseOrderClient) mutate(ctx context.Context, m *LicenseOrderMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&LicenseOrderCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&LicenseOrderUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&LicenseOrderUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&LicenseOrderDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown LicenseOrder mutation op: %q", m.Op())
 	}
 }
 
@@ -11916,36 +12057,38 @@ type (
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
 		CartItem, Category, Coupon, Currency, DailyStat, DownstreamCallback,
 		EmailVerification, ExternalIdentity, FailedTask, FlashSale, Giftcard,
-		GiftcardBatch, Media, MediaCategory, MemberLevel, MemberProductGroup,
-		Notification, NotificationLog, NotifyBroadcast, NotifyTemplate, Order,
-		OrderAmountLine, OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent,
-		Payment, PaymentChannel, PointAccount, PointTransaction, Post, PostCategory,
-		ProcessedEvent, ProcurementItem, ProcurementOrder, Product, ProductControl,
-		ProductSku, Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob,
-		RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing,
-		ResellerProfile, ResellerRelatedAccount, ResellerSite, Review, RiskLockKey,
-		RolePermission, SecurityAuditLog, Session, Setting, SupplierAccount,
-		SupplierLedgerEntry, SupplierProductPrice, SupplyConnection, SupplyMapping,
-		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
-		UserGroup, V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		GiftcardBatch, LicenseOrder, Media, MediaCategory, MemberLevel,
+		MemberProductGroup, Notification, NotificationLog, NotifyBroadcast,
+		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
+		OrderStatusEvent, OutboxEvent, Payment, PaymentChannel, PointAccount,
+		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
+		ProcurementOrder, Product, ProductControl, ProductSku, Promotion,
+		RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
+		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
+		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
+		SupplierProductPrice, SupplyConnection, SupplyMapping, SupplyNonce,
+		SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
 		Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
 		CartItem, Category, Coupon, Currency, DailyStat, DownstreamCallback,
 		EmailVerification, ExternalIdentity, FailedTask, FlashSale, Giftcard,
-		GiftcardBatch, Media, MediaCategory, MemberLevel, MemberProductGroup,
-		Notification, NotificationLog, NotifyBroadcast, NotifyTemplate, Order,
-		OrderAmountLine, OrderDelivery, OrderItem, OrderStatusEvent, OutboxEvent,
-		Payment, PaymentChannel, PointAccount, PointTransaction, Post, PostCategory,
-		ProcessedEvent, ProcurementItem, ProcurementOrder, Product, ProductControl,
-		ProductSku, Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob,
-		RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing,
-		ResellerProfile, ResellerRelatedAccount, ResellerSite, Review, RiskLockKey,
-		RolePermission, SecurityAuditLog, Session, Setting, SupplierAccount,
-		SupplierLedgerEntry, SupplierProductPrice, SupplyConnection, SupplyMapping,
-		SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User,
-		UserGroup, V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		GiftcardBatch, LicenseOrder, Media, MediaCategory, MemberLevel,
+		MemberProductGroup, Notification, NotificationLog, NotifyBroadcast,
+		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
+		OrderStatusEvent, OutboxEvent, Payment, PaymentChannel, PointAccount,
+		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
+		ProcurementOrder, Product, ProductControl, ProductSku, Promotion,
+		RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
+		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
+		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
+		SupplierProductPrice, SupplyConnection, SupplyMapping, SupplyNonce,
+		SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
 		Withdrawal []ent.Interceptor
 	}
 )

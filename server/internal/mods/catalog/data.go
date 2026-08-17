@@ -49,6 +49,9 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		// 关键词仅等值/前缀匹配（禁止 %xxx% 前缀模糊扫全表，§8.2.5）；全文搜索 M3 走外置
 		q = q.Where(product.NameHasPrefix(f.Keyword))
 	}
+	if f.PointsOnly {
+		q = q.Where(product.PointsRequiredGT(0)) // 积分商城视图（P3-01）
+	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -94,6 +97,8 @@ func toPortProduct(row *ent.Product) port.Product {
 		DeliveryMode: string(row.DeliveryMode),
 		Status:       row.Status,
 		StockVisible: row.StockVisible,
+		// P3-01：积分兑换价（积分商城商品判定）
+		PointsRequired: row.PointsRequired,
 		// P2-02：货源信息（procurement 判定上游项）
 		UpstreamSourceID:    row.UpstreamSourceID,
 		UpstreamProductCode: row.UpstreamProductCode,

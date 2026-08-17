@@ -580,11 +580,13 @@ func (x *MediaItem) GetCreatedAt() int64 {
 }
 
 type ListMediaRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CategoryId    uint64                 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Keyword       string                 `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
-	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	CategoryId uint64                 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Keyword    string                 `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	Page       int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize   int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// 仅未分类素材（category_id 为空；与 category_id=0「不过滤」区分）
+	Uncategorized bool `protobuf:"varint,5,opt,name=uncategorized,proto3" json:"uncategorized,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -645,6 +647,13 @@ func (x *ListMediaRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListMediaRequest) GetUncategorized() bool {
+	if x != nil {
+		return x.Uncategorized
+	}
+	return false
 }
 
 type ListMediaReply struct {
@@ -981,13 +990,14 @@ const file_admin_v1_media_proto_rawDesc = "" +
 	"\tref_count\x18\t \x01(\x05R\brefCount\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\x03R\tcreatedAt\"~\n" +
+	" \x01(\x03R\tcreatedAt\"\xa4\x01\n" +
 	"\x10ListMediaRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
 	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\x8c\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12$\n" +
+	"\runcategorized\x18\x05 \x01(\bR\runcategorized\"\x8c\x01\n" +
 	"\x0eListMediaReply\x123\n" +
 	"\x05items\x18\x01 \x03(\v2\x1d.zcard.api.admin.v1.MediaItemR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +

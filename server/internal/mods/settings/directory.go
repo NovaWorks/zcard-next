@@ -125,7 +125,12 @@ var groups = map[string]*GroupDef{
 			"pubkey":      "", // ed25519 公钥（base64；发行侧配置）
 			"domain":      "", // 主站域名（许可证绑定校验；空=跳过）
 			"instance_id": "", // 实例 ID（首次读取时生成并持久化）
+			// P3-08 在线购买（发行侧部署配置；M3「专业套餐可购买激活」）
+			"purchase_monthly_cents": 300,  // 月付 3U
+			"purchase_yearly_cents":  3000, // 年付 30U
+			"purchase_privkey":       "",   // ed25519 签发私钥（base64；空=不开通在线购买）
 		},
+		SecretKeys: map[string]bool{"purchase_privkey": true},
 	},
 	"withdraw": {
 		Name: "withdraw", Desc: "提现",

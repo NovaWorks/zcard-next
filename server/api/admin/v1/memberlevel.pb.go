@@ -33,8 +33,10 @@ type MemberLevel struct {
 	Discount          int32                  `protobuf:"varint,6,opt,name=discount,proto3" json:"discount,omitempty"` // 万分比
 	Sort              int32                  `protobuf:"varint,7,opt,name=sort,proto3" json:"sort,omitempty"`
 	Enabled           bool                   `protobuf:"varint,8,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// 积分产生规则 JSON：{"spend_cents": 每消费多少分, "points": 产出积分数}
+	PointsRuleJson string `protobuf:"bytes,9,opt,name=points_rule_json,json=pointsRuleJson,proto3" json:"points_rule_json,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *MemberLevel) Reset() {
@@ -123,6 +125,13 @@ func (x *MemberLevel) GetEnabled() bool {
 	return false
 }
 
+func (x *MemberLevel) GetPointsRuleJson() string {
+	if x != nil {
+		return x.PointsRuleJson
+	}
+	return ""
+}
+
 type MemberLevelList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Levels        []*MemberLevel         `protobuf:"bytes,1,rep,name=levels,proto3" json:"levels,omitempty"`
@@ -176,6 +185,7 @@ type CreateMemberLevelRequest struct {
 	Discount          int32                  `protobuf:"varint,5,opt,name=discount,proto3" json:"discount,omitempty"`
 	Sort              int32                  `protobuf:"varint,6,opt,name=sort,proto3" json:"sort,omitempty"`
 	Enabled           bool                   `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PointsRuleJson    string                 `protobuf:"bytes,8,opt,name=points_rule_json,json=pointsRuleJson,proto3" json:"points_rule_json,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -259,15 +269,23 @@ func (x *CreateMemberLevelRequest) GetEnabled() bool {
 	return false
 }
 
+func (x *CreateMemberLevelRequest) GetPointsRuleJson() string {
+	if x != nil {
+		return x.PointsRuleJson
+	}
+	return ""
+}
+
 type UpdateMemberLevelRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Discount      int32                  `protobuf:"varint,3,opt,name=discount,proto3" json:"discount,omitempty"`
-	Sort          int32                  `protobuf:"varint,4,opt,name=sort,proto3" json:"sort,omitempty"`
-	Enabled       bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Discount       int32                  `protobuf:"varint,3,opt,name=discount,proto3" json:"discount,omitempty"`
+	Sort           int32                  `protobuf:"varint,4,opt,name=sort,proto3" json:"sort,omitempty"`
+	Enabled        bool                   `protobuf:"varint,5,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	PointsRuleJson string                 `protobuf:"bytes,6,opt,name=points_rule_json,json=pointsRuleJson,proto3" json:"points_rule_json,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpdateMemberLevelRequest) Reset() {
@@ -335,6 +353,13 @@ func (x *UpdateMemberLevelRequest) GetEnabled() bool {
 	return false
 }
 
+func (x *UpdateMemberLevelRequest) GetPointsRuleJson() string {
+	if x != nil {
+		return x.PointsRuleJson
+	}
+	return ""
+}
+
 type DeleteMemberLevelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -383,7 +408,7 @@ var File_admin_v1_memberlevel_proto protoreflect.FileDescriptor
 
 const file_admin_v1_memberlevel_proto_rawDesc = "" +
 	"\n" +
-	"\x1aadmin/v1/memberlevel.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xfe\x01\n" +
+	"\x1aadmin/v1/memberlevel.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa8\x02\n" +
 	"\vMemberLevel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12%\n" +
@@ -392,9 +417,10 @@ const file_admin_v1_memberlevel_proto_rawDesc = "" +
 	"\x11threshold_consume\x18\x05 \x01(\x03R\x10thresholdConsume\x12\x1a\n" +
 	"\bdiscount\x18\x06 \x01(\x05R\bdiscount\x12\x12\n" +
 	"\x04sort\x18\a \x01(\x05R\x04sort\x12\x18\n" +
-	"\aenabled\x18\b \x01(\bR\aenabled\"J\n" +
+	"\aenabled\x18\b \x01(\bR\aenabled\x12(\n" +
+	"\x10points_rule_json\x18\t \x01(\tR\x0epointsRuleJson\"J\n" +
 	"\x0fMemberLevelList\x127\n" +
-	"\x06levels\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.MemberLevelR\x06levels\"\xfb\x01\n" +
+	"\x06levels\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.MemberLevelR\x06levels\"\xa5\x02\n" +
 	"\x18CreateMemberLevelRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\x0ethreshold_type\x18\x02 \x01(\tR\rthresholdType\x12-\n" +
@@ -402,13 +428,15 @@ const file_admin_v1_memberlevel_proto_rawDesc = "" +
 	"\x11threshold_consume\x18\x04 \x01(\x03R\x10thresholdConsume\x12\x1a\n" +
 	"\bdiscount\x18\x05 \x01(\x05R\bdiscount\x12\x12\n" +
 	"\x04sort\x18\x06 \x01(\x05R\x04sort\x12\x18\n" +
-	"\aenabled\x18\a \x01(\bR\aenabled\"\x88\x01\n" +
+	"\aenabled\x18\a \x01(\bR\aenabled\x12(\n" +
+	"\x10points_rule_json\x18\b \x01(\tR\x0epointsRuleJson\"\xb2\x01\n" +
 	"\x18UpdateMemberLevelRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
 	"\bdiscount\x18\x03 \x01(\x05R\bdiscount\x12\x12\n" +
 	"\x04sort\x18\x04 \x01(\x05R\x04sort\x12\x18\n" +
-	"\aenabled\x18\x05 \x01(\bR\aenabled\"*\n" +
+	"\aenabled\x18\x05 \x01(\bR\aenabled\x12(\n" +
+	"\x10points_rule_json\x18\x06 \x01(\tR\x0epointsRuleJson\"*\n" +
 	"\x18DeleteMemberLevelRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id2\xb4\x04\n" +
 	"\x17AdminMemberLevelService\x12t\n" +

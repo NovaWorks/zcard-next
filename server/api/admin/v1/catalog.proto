@@ -26,6 +26,13 @@ service AdminCatalogService {
   rpc DeleteProduct(DeleteProductRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { delete: "/api/v1/admin/products/{id}" };
   }
+  // BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
+  rpc BatchUpdateProductStatus(BatchUpdateProductStatusRequest) returns (BatchUpdateProductStatusReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/products/batch-status"
+      body: "*"
+    };
+  }
 
   // ── 分类 ──
   rpc ListCategories(google.protobuf.Empty) returns (CategoryList) {
@@ -152,6 +159,10 @@ message AdminProduct {
   string upstream_product_code = 18;
   int64 created_at = 19;
   int64 updated_at = 20;
+  // 积分兑换价（0=不参与积分商城；P3-01）
+  int64 points_required = 21;
+  // 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
+  int64 sold_count = 22;
 }
 
 message CreateProductRequest {
@@ -168,6 +179,8 @@ message CreateProductRequest {
   bool dedup = 11;
   int32 sort = 12;
   int32 status = 13;
+  // 积分兑换价（0=不参与积分商城；P3-01）
+  int64 points_required = 14;
 }
 
 message UpdateProductRequest {
@@ -183,10 +196,21 @@ message UpdateProductRequest {
   bool stock_visible = 10;
   int32 sort = 11;
   int32 status = 12;
+  // 积分兑换价（0=不参与积分商城；P3-01）
+  int64 points_required = 13;
 }
 
 message DeleteProductRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message BatchUpdateProductStatusRequest {
+  repeated uint64 ids = 1 [(google.api.field_behavior) = REQUIRED];
+  int32 status = 2 [(google.api.field_behavior) = REQUIRED]; // 1=上架 0=下架 2=隐藏
+}
+
+message BatchUpdateProductStatusReply {
+  int32 updated = 1;
 }
 
 // ── 分类消息 ──

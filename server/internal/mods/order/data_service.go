@@ -12,9 +12,11 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
+	"github.com/go-kratos/kratos/v3/transport"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -49,6 +51,9 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 		Items: items, GuestContact: req.GetGuestContact(),
 		QueryPassword: req.GetQueryPassword(), Contact: req.GetContact(),
 		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),
+		UsePoints: req.GetUsePoints(),
+		// P1-03：Idempotency-Key 头（同 key 双击返回首单，§7.3）
+		IdempotencyKey: idempotencyKeyFromContext(ctx),
 	})
 	if err != nil {
 		return nil, mapOrderErr(err)
@@ -59,6 +64,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 }
 
 // GetOrder 查单（单号+密码）。
+// 取货三重门之一二（P1-03 补全）：查询密码 或 登录态本人——登录态本人免密码。
 func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetOrderRequest) (*storefrontv1.GetOrderReply, error) {
 	o, err := s.uc.GetByOrderNo(ctx, req.GetOrderNo())
 	if ent.IsNotFound(err) {
@@ -67,9 +73,15 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 	if err != nil {
 		return nil, errors.InternalServer("order.GET_FAILED", "查询失败")
 	}
-	// 查询密码校验（三重门之一：设置则必须匹配；错误与单号不存在表现一致）
-	if o.QueryPasswordHash != "" && req.GetQueryPassword() == "" {
-		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+	// 登录态本人：免查询密码（密码错与单号不存在对外表现一致的纪律不破坏——
+	// 非本人登录态不泄露订单存在性，仍走密码校验路径）
+	claims := identity.ClaimsFromContext(ctx)
+	isOwner := claims != nil && o.UserID != 0 && claims.Subject == o.UserID
+	if !isOwner {
+		// 查询密码校验（三重门之一：设置则必须匹配；错误与单号不存在表现一致）
+		if o.QueryPasswordHash != "" && req.GetQueryPassword() == "" {
+			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+		}
 	}
 	reply := &storefrontv1.GetOrderReply{
 		OrderNo: o.OrderNo, Status: string(o.Status), TotalCents: o.TotalAmount,
@@ -84,6 +96,62 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		})
 	}
 	return reply, nil
+}
+
+// ListMyOrders 我的订单（登录态；P1-03 补全）。
+func (s *StoreOrderService) ListMyOrders(ctx context.Context, req *storefrontv1.ListMyOrdersRequest) (*storefrontv1.ListMyOrdersReply, error) {
+	claims := identity.ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
+	}
+	rows, total, err := s.uc.ListUserOrders(ctx, claims.Subject, req.GetStatus(), int(req.GetPage()), int(req.GetPageSize()))
+	if err != nil {
+		return nil, errors.InternalServer("order.LIST_FAILED", "查询失败")
+	}
+	reply := &storefrontv1.ListMyOrdersReply{Total: total}
+	for _, o := range rows {
+		item := &storefrontv1.MyOrderItem{
+			OrderNo: o.OrderNo, Status: string(o.Status), TotalCents: o.TotalAmount,
+		}
+		if !o.CreatedAt.IsZero() {
+			item.CreatedAt = o.CreatedAt.Unix()
+		}
+		if !o.ExpiredAt.IsZero() {
+			item.ExpiredAt = o.ExpiredAt.Unix()
+		}
+		reply.Orders = append(reply.Orders, item)
+	}
+	return reply, nil
+}
+
+// CancelMyOrder 取消本人待支付订单（P1-03 补全；锁卡释放 + 返券）。
+func (s *StoreOrderService) CancelMyOrder(ctx context.Context, req *storefrontv1.CancelMyOrderRequest) (*emptypb.Empty, error) {
+	claims := identity.ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
+	}
+	o, err := s.uc.GetByOrderNo(ctx, req.GetOrderNo())
+	if ent.IsNotFound(err) {
+		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
+	}
+	if err != nil {
+		return nil, errors.InternalServer("order.GET_FAILED", "查询失败")
+	}
+	if o.UserID == 0 || o.UserID != claims.Subject {
+		return nil, errors.NotFound("order.NOT_FOUND", "订单不存在") // 非本人不泄露存在性
+	}
+	if err := s.uc.CancelOrder(ctx, req.GetOrderNo(), "用户取消", "user", claims.Subject); err != nil {
+		return nil, mapOrderErr(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// idempotencyKeyFromContext 读 Idempotency-Key 头（§7.3）。
+func idempotencyKeyFromContext(ctx context.Context) string {
+	if tr, ok := transport.FromServerContext(ctx); ok {
+		return tr.RequestHeader().Get("Idempotency-Key")
+	}
+	return ""
 }
 
 // ── admin ──
@@ -197,6 +265,12 @@ func mapOrderErr(err error) error {
 		return errors.BadRequest("order.EMPTY_ITEMS", "订单项不能为空")
 	case contains(msg, "COUPON"):
 		return errors.BadRequest("order.COUPON_INVALID", "优惠券无效或不可用")
+	case contains(msg, "POINTS_LOGIN"):
+		return errors.Unauthorized("order.POINTS_LOGIN_REQUIRED", "积分兑换需登录")
+	case contains(msg, "POINTS_MIXED"):
+		return errors.BadRequest("order.POINTS_MIXED_CART", "积分兑换订单须全部为积分商品")
+	case contains(msg, "POINTS"):
+		return errors.BadRequest("order.POINTS_INSUFFICIENT", "积分不足")
 	case contains(msg, "CANNOT_CANCEL"):
 		return errors.BadRequest("order.CANNOT_CANCEL", "订单当前状态不可取消")
 	case contains(msg, "TRANSITION"):

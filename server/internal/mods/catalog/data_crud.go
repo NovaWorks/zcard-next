@@ -84,6 +84,9 @@ func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInpu
 	if len(in.Images) > 0 {
 		create.SetImages(in.Images)
 	}
+	if in.PointsRequiredSet {
+		create.SetPointsRequired(in.PointsRequired)
+	}
 	return create.Save(ctx)
 }
 
@@ -121,10 +124,31 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 	if in.Status >= 0 {
 		q.SetStatus(in.Status)
 	}
+	if in.PointsRequiredSet {
+		q.SetPointsRequired(in.PointsRequired) // 含 0=移出积分商城（PUT 全量语义）
+	}
 	if err := q.Exec(ctx); err != nil {
 		return nil, err
 	}
 	return r.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, id)
+}
+
+// BatchUpdateStatus 批量上下架（P1-01 T2 列表多选；status 1/0/2）。
+func (r *ProductRepoImpl) BatchUpdateStatus(ctx context.Context, ids []uint64, status int8) (int, error) {
+	if len(ids) == 0 {
+		return 0, fmt.Errorf("catalog.EMPTY_IDS")
+	}
+	if status != 0 && status != 1 && status != 2 {
+		return 0, fmt.Errorf("catalog.STATUS_INVALID")
+	}
+	n, err := data.Client(ctx, r.data).Product.Update().
+		Where(product.IDIn(ids...)).
+		SetStatus(status).
+		Save(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
 }
 
 // DeleteProduct 删除（软外键约束：有卡密时拒删）。
@@ -312,6 +336,7 @@ func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 		DeliveryMode: string(p.DeliveryMode), Dedup: p.Dedup,
 		Sort: p.Sort, Status: int32(p.Status),
 		UpstreamSourceId: p.UpstreamSourceID, UpstreamProductCode: p.UpstreamProductCode,
+		PointsRequired: p.PointsRequired,
 	}
 	if !p.CreatedAt.IsZero() {
 		out.CreatedAt = p.CreatedAt.Unix()

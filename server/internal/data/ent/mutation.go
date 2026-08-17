@@ -31,6 +31,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
@@ -124,6 +125,7 @@ const (
 	TypeFlashSale              = "FlashSale"
 	TypeGiftcard               = "Giftcard"
 	TypeGiftcardBatch          = "GiftcardBatch"
+	TypeLicenseOrder           = "LicenseOrder"
 	TypeMedia                  = "Media"
 	TypeMediaCategory          = "MediaCategory"
 	TypeMemberLevel            = "MemberLevel"
@@ -19068,6 +19070,1097 @@ func (m *GiftcardBatchMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown GiftcardBatch edge %s", name)
 }
 
+// LicenseOrderMutation represents an operation that mutates the LicenseOrder nodes in the graph.
+type LicenseOrderMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uint64
+	created_at       *time.Time
+	updated_at       *time.Time
+	plan             *licenseorder.Plan
+	amount           *int64
+	addamount        *int64
+	status           *licenseorder.Status
+	payer_user_id    *uint64
+	addpayer_user_id *int64
+	instance_id      *string
+	domain           *string
+	features         *[]string
+	appendfeatures   []string
+	expires_at       *time.Time
+	license_file     *string
+	paid_at          *time.Time
+	clearedFields    map[string]struct{}
+	done             bool
+	oldValue         func(context.Context) (*LicenseOrder, error)
+	predicates       []predicate.LicenseOrder
+}
+
+var _ ent.Mutation = (*LicenseOrderMutation)(nil)
+
+// licenseorderOption allows management of the mutation configuration using functional options.
+type licenseorderOption func(*LicenseOrderMutation)
+
+// newLicenseOrderMutation creates new mutation for the LicenseOrder entity.
+func newLicenseOrderMutation(c config, op Op, opts ...licenseorderOption) *LicenseOrderMutation {
+	m := &LicenseOrderMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeLicenseOrder,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withLicenseOrderID sets the ID field of the mutation.
+func withLicenseOrderID(id uint64) licenseorderOption {
+	return func(m *LicenseOrderMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *LicenseOrder
+		)
+		m.oldValue = func(ctx context.Context) (*LicenseOrder, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().LicenseOrder.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withLicenseOrder sets the old LicenseOrder of the mutation.
+func withLicenseOrder(node *LicenseOrder) licenseorderOption {
+	return func(m *LicenseOrderMutation) {
+		m.oldValue = func(context.Context) (*LicenseOrder, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m LicenseOrderMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m LicenseOrderMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of LicenseOrder entities.
+func (m *LicenseOrderMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *LicenseOrderMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *LicenseOrderMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().LicenseOrder.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *LicenseOrderMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *LicenseOrderMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *LicenseOrderMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *LicenseOrderMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *LicenseOrderMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *LicenseOrderMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetPlan sets the "plan" field.
+func (m *LicenseOrderMutation) SetPlan(l licenseorder.Plan) {
+	m.plan = &l
+}
+
+// Plan returns the value of the "plan" field in the mutation.
+func (m *LicenseOrderMutation) Plan() (r licenseorder.Plan, exists bool) {
+	v := m.plan
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlan returns the old "plan" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldPlan(ctx context.Context) (v licenseorder.Plan, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlan is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlan requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlan: %w", err)
+	}
+	return oldValue.Plan, nil
+}
+
+// ResetPlan resets all changes to the "plan" field.
+func (m *LicenseOrderMutation) ResetPlan() {
+	m.plan = nil
+}
+
+// SetAmount sets the "amount" field.
+func (m *LicenseOrderMutation) SetAmount(i int64) {
+	m.amount = &i
+	m.addamount = nil
+}
+
+// Amount returns the value of the "amount" field in the mutation.
+func (m *LicenseOrderMutation) Amount() (r int64, exists bool) {
+	v := m.amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAmount returns the old "amount" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldAmount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAmount: %w", err)
+	}
+	return oldValue.Amount, nil
+}
+
+// AddAmount adds i to the "amount" field.
+func (m *LicenseOrderMutation) AddAmount(i int64) {
+	if m.addamount != nil {
+		*m.addamount += i
+	} else {
+		m.addamount = &i
+	}
+}
+
+// AddedAmount returns the value that was added to the "amount" field in this mutation.
+func (m *LicenseOrderMutation) AddedAmount() (r int64, exists bool) {
+	v := m.addamount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAmount resets all changes to the "amount" field.
+func (m *LicenseOrderMutation) ResetAmount() {
+	m.amount = nil
+	m.addamount = nil
+}
+
+// SetStatus sets the "status" field.
+func (m *LicenseOrderMutation) SetStatus(l licenseorder.Status) {
+	m.status = &l
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *LicenseOrderMutation) Status() (r licenseorder.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldStatus(ctx context.Context) (v licenseorder.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *LicenseOrderMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetPayerUserID sets the "payer_user_id" field.
+func (m *LicenseOrderMutation) SetPayerUserID(u uint64) {
+	m.payer_user_id = &u
+	m.addpayer_user_id = nil
+}
+
+// PayerUserID returns the value of the "payer_user_id" field in the mutation.
+func (m *LicenseOrderMutation) PayerUserID() (r uint64, exists bool) {
+	v := m.payer_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayerUserID returns the old "payer_user_id" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldPayerUserID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayerUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayerUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayerUserID: %w", err)
+	}
+	return oldValue.PayerUserID, nil
+}
+
+// AddPayerUserID adds u to the "payer_user_id" field.
+func (m *LicenseOrderMutation) AddPayerUserID(u int64) {
+	if m.addpayer_user_id != nil {
+		*m.addpayer_user_id += u
+	} else {
+		m.addpayer_user_id = &u
+	}
+}
+
+// AddedPayerUserID returns the value that was added to the "payer_user_id" field in this mutation.
+func (m *LicenseOrderMutation) AddedPayerUserID() (r int64, exists bool) {
+	v := m.addpayer_user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPayerUserID resets all changes to the "payer_user_id" field.
+func (m *LicenseOrderMutation) ResetPayerUserID() {
+	m.payer_user_id = nil
+	m.addpayer_user_id = nil
+}
+
+// SetInstanceID sets the "instance_id" field.
+func (m *LicenseOrderMutation) SetInstanceID(s string) {
+	m.instance_id = &s
+}
+
+// InstanceID returns the value of the "instance_id" field in the mutation.
+func (m *LicenseOrderMutation) InstanceID() (r string, exists bool) {
+	v := m.instance_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldInstanceID returns the old "instance_id" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldInstanceID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldInstanceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldInstanceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldInstanceID: %w", err)
+	}
+	return oldValue.InstanceID, nil
+}
+
+// ResetInstanceID resets all changes to the "instance_id" field.
+func (m *LicenseOrderMutation) ResetInstanceID() {
+	m.instance_id = nil
+}
+
+// SetDomain sets the "domain" field.
+func (m *LicenseOrderMutation) SetDomain(s string) {
+	m.domain = &s
+}
+
+// Domain returns the value of the "domain" field in the mutation.
+func (m *LicenseOrderMutation) Domain() (r string, exists bool) {
+	v := m.domain
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDomain returns the old "domain" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldDomain(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDomain is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDomain requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDomain: %w", err)
+	}
+	return oldValue.Domain, nil
+}
+
+// ClearDomain clears the value of the "domain" field.
+func (m *LicenseOrderMutation) ClearDomain() {
+	m.domain = nil
+	m.clearedFields[licenseorder.FieldDomain] = struct{}{}
+}
+
+// DomainCleared returns if the "domain" field was cleared in this mutation.
+func (m *LicenseOrderMutation) DomainCleared() bool {
+	_, ok := m.clearedFields[licenseorder.FieldDomain]
+	return ok
+}
+
+// ResetDomain resets all changes to the "domain" field.
+func (m *LicenseOrderMutation) ResetDomain() {
+	m.domain = nil
+	delete(m.clearedFields, licenseorder.FieldDomain)
+}
+
+// SetFeatures sets the "features" field.
+func (m *LicenseOrderMutation) SetFeatures(s []string) {
+	m.features = &s
+	m.appendfeatures = nil
+}
+
+// Features returns the value of the "features" field in the mutation.
+func (m *LicenseOrderMutation) Features() (r []string, exists bool) {
+	v := m.features
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeatures returns the old "features" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldFeatures(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeatures is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeatures requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeatures: %w", err)
+	}
+	return oldValue.Features, nil
+}
+
+// AppendFeatures adds s to the "features" field.
+func (m *LicenseOrderMutation) AppendFeatures(s []string) {
+	m.appendfeatures = append(m.appendfeatures, s...)
+}
+
+// AppendedFeatures returns the list of values that were appended to the "features" field in this mutation.
+func (m *LicenseOrderMutation) AppendedFeatures() ([]string, bool) {
+	if len(m.appendfeatures) == 0 {
+		return nil, false
+	}
+	return m.appendfeatures, true
+}
+
+// ClearFeatures clears the value of the "features" field.
+func (m *LicenseOrderMutation) ClearFeatures() {
+	m.features = nil
+	m.appendfeatures = nil
+	m.clearedFields[licenseorder.FieldFeatures] = struct{}{}
+}
+
+// FeaturesCleared returns if the "features" field was cleared in this mutation.
+func (m *LicenseOrderMutation) FeaturesCleared() bool {
+	_, ok := m.clearedFields[licenseorder.FieldFeatures]
+	return ok
+}
+
+// ResetFeatures resets all changes to the "features" field.
+func (m *LicenseOrderMutation) ResetFeatures() {
+	m.features = nil
+	m.appendfeatures = nil
+	delete(m.clearedFields, licenseorder.FieldFeatures)
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *LicenseOrderMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *LicenseOrderMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *LicenseOrderMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetLicenseFile sets the "license_file" field.
+func (m *LicenseOrderMutation) SetLicenseFile(s string) {
+	m.license_file = &s
+}
+
+// LicenseFile returns the value of the "license_file" field in the mutation.
+func (m *LicenseOrderMutation) LicenseFile() (r string, exists bool) {
+	v := m.license_file
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLicenseFile returns the old "license_file" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldLicenseFile(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLicenseFile is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLicenseFile requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLicenseFile: %w", err)
+	}
+	return oldValue.LicenseFile, nil
+}
+
+// ClearLicenseFile clears the value of the "license_file" field.
+func (m *LicenseOrderMutation) ClearLicenseFile() {
+	m.license_file = nil
+	m.clearedFields[licenseorder.FieldLicenseFile] = struct{}{}
+}
+
+// LicenseFileCleared returns if the "license_file" field was cleared in this mutation.
+func (m *LicenseOrderMutation) LicenseFileCleared() bool {
+	_, ok := m.clearedFields[licenseorder.FieldLicenseFile]
+	return ok
+}
+
+// ResetLicenseFile resets all changes to the "license_file" field.
+func (m *LicenseOrderMutation) ResetLicenseFile() {
+	m.license_file = nil
+	delete(m.clearedFields, licenseorder.FieldLicenseFile)
+}
+
+// SetPaidAt sets the "paid_at" field.
+func (m *LicenseOrderMutation) SetPaidAt(t time.Time) {
+	m.paid_at = &t
+}
+
+// PaidAt returns the value of the "paid_at" field in the mutation.
+func (m *LicenseOrderMutation) PaidAt() (r time.Time, exists bool) {
+	v := m.paid_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPaidAt returns the old "paid_at" field's value of the LicenseOrder entity.
+// If the LicenseOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LicenseOrderMutation) OldPaidAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPaidAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPaidAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPaidAt: %w", err)
+	}
+	return oldValue.PaidAt, nil
+}
+
+// ClearPaidAt clears the value of the "paid_at" field.
+func (m *LicenseOrderMutation) ClearPaidAt() {
+	m.paid_at = nil
+	m.clearedFields[licenseorder.FieldPaidAt] = struct{}{}
+}
+
+// PaidAtCleared returns if the "paid_at" field was cleared in this mutation.
+func (m *LicenseOrderMutation) PaidAtCleared() bool {
+	_, ok := m.clearedFields[licenseorder.FieldPaidAt]
+	return ok
+}
+
+// ResetPaidAt resets all changes to the "paid_at" field.
+func (m *LicenseOrderMutation) ResetPaidAt() {
+	m.paid_at = nil
+	delete(m.clearedFields, licenseorder.FieldPaidAt)
+}
+
+// Where appends a list predicates to the LicenseOrderMutation builder.
+func (m *LicenseOrderMutation) Where(ps ...predicate.LicenseOrder) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the LicenseOrderMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *LicenseOrderMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.LicenseOrder, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *LicenseOrderMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *LicenseOrderMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (LicenseOrder).
+func (m *LicenseOrderMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *LicenseOrderMutation) Fields() []string {
+	fields := make([]string, 0, 12)
+	if m.created_at != nil {
+		fields = append(fields, licenseorder.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, licenseorder.FieldUpdatedAt)
+	}
+	if m.plan != nil {
+		fields = append(fields, licenseorder.FieldPlan)
+	}
+	if m.amount != nil {
+		fields = append(fields, licenseorder.FieldAmount)
+	}
+	if m.status != nil {
+		fields = append(fields, licenseorder.FieldStatus)
+	}
+	if m.payer_user_id != nil {
+		fields = append(fields, licenseorder.FieldPayerUserID)
+	}
+	if m.instance_id != nil {
+		fields = append(fields, licenseorder.FieldInstanceID)
+	}
+	if m.domain != nil {
+		fields = append(fields, licenseorder.FieldDomain)
+	}
+	if m.features != nil {
+		fields = append(fields, licenseorder.FieldFeatures)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, licenseorder.FieldExpiresAt)
+	}
+	if m.license_file != nil {
+		fields = append(fields, licenseorder.FieldLicenseFile)
+	}
+	if m.paid_at != nil {
+		fields = append(fields, licenseorder.FieldPaidAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *LicenseOrderMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case licenseorder.FieldCreatedAt:
+		return m.CreatedAt()
+	case licenseorder.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case licenseorder.FieldPlan:
+		return m.Plan()
+	case licenseorder.FieldAmount:
+		return m.Amount()
+	case licenseorder.FieldStatus:
+		return m.Status()
+	case licenseorder.FieldPayerUserID:
+		return m.PayerUserID()
+	case licenseorder.FieldInstanceID:
+		return m.InstanceID()
+	case licenseorder.FieldDomain:
+		return m.Domain()
+	case licenseorder.FieldFeatures:
+		return m.Features()
+	case licenseorder.FieldExpiresAt:
+		return m.ExpiresAt()
+	case licenseorder.FieldLicenseFile:
+		return m.LicenseFile()
+	case licenseorder.FieldPaidAt:
+		return m.PaidAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *LicenseOrderMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case licenseorder.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case licenseorder.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case licenseorder.FieldPlan:
+		return m.OldPlan(ctx)
+	case licenseorder.FieldAmount:
+		return m.OldAmount(ctx)
+	case licenseorder.FieldStatus:
+		return m.OldStatus(ctx)
+	case licenseorder.FieldPayerUserID:
+		return m.OldPayerUserID(ctx)
+	case licenseorder.FieldInstanceID:
+		return m.OldInstanceID(ctx)
+	case licenseorder.FieldDomain:
+		return m.OldDomain(ctx)
+	case licenseorder.FieldFeatures:
+		return m.OldFeatures(ctx)
+	case licenseorder.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case licenseorder.FieldLicenseFile:
+		return m.OldLicenseFile(ctx)
+	case licenseorder.FieldPaidAt:
+		return m.OldPaidAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown LicenseOrder field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LicenseOrderMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case licenseorder.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case licenseorder.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case licenseorder.FieldPlan:
+		v, ok := value.(licenseorder.Plan)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlan(v)
+		return nil
+	case licenseorder.FieldAmount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAmount(v)
+		return nil
+	case licenseorder.FieldStatus:
+		v, ok := value.(licenseorder.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case licenseorder.FieldPayerUserID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayerUserID(v)
+		return nil
+	case licenseorder.FieldInstanceID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetInstanceID(v)
+		return nil
+	case licenseorder.FieldDomain:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDomain(v)
+		return nil
+	case licenseorder.FieldFeatures:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeatures(v)
+		return nil
+	case licenseorder.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case licenseorder.FieldLicenseFile:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLicenseFile(v)
+		return nil
+	case licenseorder.FieldPaidAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPaidAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown LicenseOrder field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *LicenseOrderMutation) AddedFields() []string {
+	var fields []string
+	if m.addamount != nil {
+		fields = append(fields, licenseorder.FieldAmount)
+	}
+	if m.addpayer_user_id != nil {
+		fields = append(fields, licenseorder.FieldPayerUserID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *LicenseOrderMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case licenseorder.FieldAmount:
+		return m.AddedAmount()
+	case licenseorder.FieldPayerUserID:
+		return m.AddedPayerUserID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *LicenseOrderMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case licenseorder.FieldAmount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAmount(v)
+		return nil
+	case licenseorder.FieldPayerUserID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPayerUserID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown LicenseOrder numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *LicenseOrderMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(licenseorder.FieldDomain) {
+		fields = append(fields, licenseorder.FieldDomain)
+	}
+	if m.FieldCleared(licenseorder.FieldFeatures) {
+		fields = append(fields, licenseorder.FieldFeatures)
+	}
+	if m.FieldCleared(licenseorder.FieldLicenseFile) {
+		fields = append(fields, licenseorder.FieldLicenseFile)
+	}
+	if m.FieldCleared(licenseorder.FieldPaidAt) {
+		fields = append(fields, licenseorder.FieldPaidAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *LicenseOrderMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *LicenseOrderMutation) ClearField(name string) error {
+	switch name {
+	case licenseorder.FieldDomain:
+		m.ClearDomain()
+		return nil
+	case licenseorder.FieldFeatures:
+		m.ClearFeatures()
+		return nil
+	case licenseorder.FieldLicenseFile:
+		m.ClearLicenseFile()
+		return nil
+	case licenseorder.FieldPaidAt:
+		m.ClearPaidAt()
+		return nil
+	}
+	return fmt.Errorf("unknown LicenseOrder nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *LicenseOrderMutation) ResetField(name string) error {
+	switch name {
+	case licenseorder.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case licenseorder.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case licenseorder.FieldPlan:
+		m.ResetPlan()
+		return nil
+	case licenseorder.FieldAmount:
+		m.ResetAmount()
+		return nil
+	case licenseorder.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case licenseorder.FieldPayerUserID:
+		m.ResetPayerUserID()
+		return nil
+	case licenseorder.FieldInstanceID:
+		m.ResetInstanceID()
+		return nil
+	case licenseorder.FieldDomain:
+		m.ResetDomain()
+		return nil
+	case licenseorder.FieldFeatures:
+		m.ResetFeatures()
+		return nil
+	case licenseorder.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case licenseorder.FieldLicenseFile:
+		m.ResetLicenseFile()
+		return nil
+	case licenseorder.FieldPaidAt:
+		m.ResetPaidAt()
+		return nil
+	}
+	return fmt.Errorf("unknown LicenseOrder field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *LicenseOrderMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *LicenseOrderMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *LicenseOrderMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *LicenseOrderMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *LicenseOrderMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *LicenseOrderMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *LicenseOrderMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown LicenseOrder unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *LicenseOrderMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown LicenseOrder edge %s", name)
+}
+
 // MediaMutation represents an operation that mutates the Media nodes in the graph.
 type MediaMutation struct {
 	config
@@ -26942,6 +28035,7 @@ type OrderMutation struct {
 	invite_l3            *uint64
 	addinvite_l3         *int64
 	extra                *map[string]interface{}
+	idempotency_key      *string
 	paid_at              *time.Time
 	closed_at            *time.Time
 	expired_at           *time.Time
@@ -28632,6 +29726,55 @@ func (m *OrderMutation) ResetExtra() {
 	delete(m.clearedFields, order.FieldExtra)
 }
 
+// SetIdempotencyKey sets the "idempotency_key" field.
+func (m *OrderMutation) SetIdempotencyKey(s string) {
+	m.idempotency_key = &s
+}
+
+// IdempotencyKey returns the value of the "idempotency_key" field in the mutation.
+func (m *OrderMutation) IdempotencyKey() (r string, exists bool) {
+	v := m.idempotency_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIdempotencyKey returns the old "idempotency_key" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldIdempotencyKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIdempotencyKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIdempotencyKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIdempotencyKey: %w", err)
+	}
+	return oldValue.IdempotencyKey, nil
+}
+
+// ClearIdempotencyKey clears the value of the "idempotency_key" field.
+func (m *OrderMutation) ClearIdempotencyKey() {
+	m.idempotency_key = nil
+	m.clearedFields[order.FieldIdempotencyKey] = struct{}{}
+}
+
+// IdempotencyKeyCleared returns if the "idempotency_key" field was cleared in this mutation.
+func (m *OrderMutation) IdempotencyKeyCleared() bool {
+	_, ok := m.clearedFields[order.FieldIdempotencyKey]
+	return ok
+}
+
+// ResetIdempotencyKey resets all changes to the "idempotency_key" field.
+func (m *OrderMutation) ResetIdempotencyKey() {
+	m.idempotency_key = nil
+	delete(m.clearedFields, order.FieldIdempotencyKey)
+}
+
 // SetPaidAt sets the "paid_at" field.
 func (m *OrderMutation) SetPaidAt(t time.Time) {
 	m.paid_at = &t
@@ -29137,7 +30280,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 32)
+	fields := make([]string, 0, 33)
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
 	}
@@ -29225,6 +30368,9 @@ func (m *OrderMutation) Fields() []string {
 	if m.extra != nil {
 		fields = append(fields, order.FieldExtra)
 	}
+	if m.idempotency_key != nil {
+		fields = append(fields, order.FieldIdempotencyKey)
+	}
 	if m.paid_at != nil {
 		fields = append(fields, order.FieldPaidAt)
 	}
@@ -29300,6 +30446,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.InviteL3()
 	case order.FieldExtra:
 		return m.Extra()
+	case order.FieldIdempotencyKey:
+		return m.IdempotencyKey()
 	case order.FieldPaidAt:
 		return m.PaidAt()
 	case order.FieldClosedAt:
@@ -29373,6 +30521,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldInviteL3(ctx)
 	case order.FieldExtra:
 		return m.OldExtra(ctx)
+	case order.FieldIdempotencyKey:
+		return m.OldIdempotencyKey(ctx)
 	case order.FieldPaidAt:
 		return m.OldPaidAt(ctx)
 	case order.FieldClosedAt:
@@ -29590,6 +30740,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExtra(v)
+		return nil
+	case order.FieldIdempotencyKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIdempotencyKey(v)
 		return nil
 	case order.FieldPaidAt:
 		v, ok := value.(time.Time)
@@ -29858,6 +31015,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	if m.FieldCleared(order.FieldExtra) {
 		fields = append(fields, order.FieldExtra)
 	}
+	if m.FieldCleared(order.FieldIdempotencyKey) {
+		fields = append(fields, order.FieldIdempotencyKey)
+	}
 	if m.FieldCleared(order.FieldPaidAt) {
 		fields = append(fields, order.FieldPaidAt)
 	}
@@ -29937,6 +31097,9 @@ func (m *OrderMutation) ClearField(name string) error {
 		return nil
 	case order.FieldExtra:
 		m.ClearExtra()
+		return nil
+	case order.FieldIdempotencyKey:
+		m.ClearIdempotencyKey()
 		return nil
 	case order.FieldPaidAt:
 		m.ClearPaidAt()
@@ -30041,6 +31204,9 @@ func (m *OrderMutation) ResetField(name string) error {
 		return nil
 	case order.FieldExtra:
 		m.ResetExtra()
+		return nil
+	case order.FieldIdempotencyKey:
+		m.ResetIdempotencyKey()
 		return nil
 	case order.FieldPaidAt:
 		m.ResetPaidAt()
@@ -43870,6 +45036,8 @@ type ProductMutation struct {
 	draft_premium         *int64
 	adddraft_premium      *int64
 	member_price          *map[string]int64
+	points_required       *int64
+	addpoints_required    *int64
 	stock_type            *product.StockType
 	stock_visible         *bool
 	delivery_mode         *product.DeliveryMode
@@ -44649,6 +45817,62 @@ func (m *ProductMutation) ResetMemberPrice() {
 	delete(m.clearedFields, product.FieldMemberPrice)
 }
 
+// SetPointsRequired sets the "points_required" field.
+func (m *ProductMutation) SetPointsRequired(i int64) {
+	m.points_required = &i
+	m.addpoints_required = nil
+}
+
+// PointsRequired returns the value of the "points_required" field in the mutation.
+func (m *ProductMutation) PointsRequired() (r int64, exists bool) {
+	v := m.points_required
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPointsRequired returns the old "points_required" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldPointsRequired(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPointsRequired is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPointsRequired requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPointsRequired: %w", err)
+	}
+	return oldValue.PointsRequired, nil
+}
+
+// AddPointsRequired adds i to the "points_required" field.
+func (m *ProductMutation) AddPointsRequired(i int64) {
+	if m.addpoints_required != nil {
+		*m.addpoints_required += i
+	} else {
+		m.addpoints_required = &i
+	}
+}
+
+// AddedPointsRequired returns the value that was added to the "points_required" field in this mutation.
+func (m *ProductMutation) AddedPointsRequired() (r int64, exists bool) {
+	v := m.addpoints_required
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPointsRequired resets all changes to the "points_required" field.
+func (m *ProductMutation) ResetPointsRequired() {
+	m.points_required = nil
+	m.addpoints_required = nil
+}
+
 // SetStockType sets the "stock_type" field.
 func (m *ProductMutation) SetStockType(pt product.StockType) {
 	m.stock_type = &pt
@@ -45264,7 +46488,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 23)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -45303,6 +46527,9 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.member_price != nil {
 		fields = append(fields, product.FieldMemberPrice)
+	}
+	if m.points_required != nil {
+		fields = append(fields, product.FieldPointsRequired)
 	}
 	if m.stock_type != nil {
 		fields = append(fields, product.FieldStockType)
@@ -45368,6 +46595,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.DraftPremium()
 	case product.FieldMemberPrice:
 		return m.MemberPrice()
+	case product.FieldPointsRequired:
+		return m.PointsRequired()
 	case product.FieldStockType:
 		return m.StockType()
 	case product.FieldStockVisible:
@@ -45423,6 +46652,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldDraftPremium(ctx)
 	case product.FieldMemberPrice:
 		return m.OldMemberPrice(ctx)
+	case product.FieldPointsRequired:
+		return m.OldPointsRequired(ctx)
 	case product.FieldStockType:
 		return m.OldStockType(ctx)
 	case product.FieldStockVisible:
@@ -45543,6 +46774,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetMemberPrice(v)
 		return nil
+	case product.FieldPointsRequired:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPointsRequired(v)
+		return nil
 	case product.FieldStockType:
 		v, ok := value.(product.StockType)
 		if !ok {
@@ -45636,6 +46874,9 @@ func (m *ProductMutation) AddedFields() []string {
 	if m.adddraft_premium != nil {
 		fields = append(fields, product.FieldDraftPremium)
 	}
+	if m.addpoints_required != nil {
+		fields = append(fields, product.FieldPointsRequired)
+	}
 	if m.addsort != nil {
 		fields = append(fields, product.FieldSort)
 	}
@@ -45663,6 +46904,8 @@ func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedFactoryPrice()
 	case product.FieldDraftPremium:
 		return m.AddedDraftPremium()
+	case product.FieldPointsRequired:
+		return m.AddedPointsRequired()
 	case product.FieldSort:
 		return m.AddedSort()
 	case product.FieldStatus:
@@ -45712,6 +46955,13 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDraftPremium(v)
+		return nil
+	case product.FieldPointsRequired:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPointsRequired(v)
 		return nil
 	case product.FieldSort:
 		v, ok := value.(int32)
@@ -45856,6 +47106,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldMemberPrice:
 		m.ResetMemberPrice()
+		return nil
+	case product.FieldPointsRequired:
+		m.ResetPointsRequired()
 		return nil
 	case product.FieldStockType:
 		m.ResetStockType()

@@ -44,6 +44,8 @@ type Product struct {
 	DraftPremium int64 `json:"draft_premium,omitempty"`
 	// 按会员等级价 {level_id: 分}
 	MemberPrice map[string]int64 `json:"member_price,omitempty"`
+	// 积分兑换价（分单位积分；0=不参与积分商城，P3-01）
+	PointsRequired int64 `json:"points_required,omitempty"`
 	// 卡密/链接/兑换码
 	StockType product.StockType `json:"stock_type,omitempty"`
 	// 是否显示库存
@@ -108,7 +110,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case product.FieldStockVisible, product.FieldDedup:
 			values[i] = new(sql.NullBool)
-		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
+		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
 			values[i] = new(sql.NullInt64)
 		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldDeliveryMode, product.FieldUpstreamProductCode:
 			values[i] = new(sql.NullString)
@@ -216,6 +218,12 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.MemberPrice); err != nil {
 					return fmt.Errorf("unmarshal field member_price: %w", err)
 				}
+			}
+		case product.FieldPointsRequired:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field points_required", values[i])
+			} else if value.Valid {
+				_m.PointsRequired = value.Int64
 			}
 		case product.FieldStockType:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -363,6 +371,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("member_price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.MemberPrice))
+	builder.WriteString(", ")
+	builder.WriteString("points_required=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PointsRequired))
 	builder.WriteString(", ")
 	builder.WriteString("stock_type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StockType))

@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreLicenseService 专业套餐在线购买（P3-08 M3：发行侧部署配置签发私钥后开放；
+// 支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
+// 文件后在目标实例后台安装激活）。
+service StoreLicenseService {
+  // GetLicenseOffer 套餐报价（价格服务端裁决；instance_id 供目标实例绑定预览）。
+  rpc GetLicenseOffer(google.protobuf.Empty) returns (LicenseOfferReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/license/offer" };
+  }
+  // PurchaseLicense 购买（钱包扣款 → ed25519 签发 → 返回许可证文件）。
+  rpc PurchaseLicense(PurchaseLicenseRequest) returns (PurchaseLicenseReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/license/purchase"
+      body: "*"
+    };
+  }
+  // ListLicenseOrders 购买记录（含许可证文件可重新下载）。
+  rpc ListLicenseOrders(ListLicenseOrdersRequest) returns (ListLicenseOrdersReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/license/orders" };
+  }
+}
+
+// LicenseOfferReply 套餐报价与购买前置状态。
+message LicenseOfferReply {
+  // 月付价（分；默认 300 = 3U）
+  int64 monthly_cents = 1;
+  // 年付价（分；默认 3000 = 30U）
+  int64 yearly_cents = 2;
+  // 发行侧是否配置签发私钥（false = 本部署不开通在线购买）
+  bool purchasable = 3;
+  // 本部署实例 ID（自购场景绑定预览；购买其他实例时填对方实例 ID）
+  string instance_id = 4;
+}
+
+message PurchaseLicenseRequest {
+  // monthly | yearly
+  string plan = 1 [(google.api.field_behavior) = REQUIRED];
+  // 目标实例 ID（空 = 绑定本部署实例——发行侧自测/内部发行场景）
+  string instance_id = 2;
+  // 目标域名（可选；空 = 不限域名）
+  string domain = 3;
+}
+
+message PurchaseLicenseReply {
+  uint64 order_id = 1;
+  // 许可证文件内容（JSON：license + signature；目标实例后台安装激活）
+  string license_file = 2;
+  string expires_at = 3; // RFC3339
+  int64 paid_cents = 4;
+}
+
+message ListLicenseOrdersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListLicenseOrdersReply {
+  repeated LicenseOrderItem orders = 1;
+  int64 total = 2;
+}
+
+message LicenseOrderItem {
+  uint64 id = 1;
+  string plan = 2;
+  int64 amount_cents = 3;
+  string status = 4;      // pending | success | canceled
+  string instance_id = 5;
+  string domain = 6;
+  string license_file = 7;
+  string expires_at = 8;
+  int64 created_at = 9;
+}

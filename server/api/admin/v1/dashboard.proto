@@ -5,6 +5,7 @@ package zcard.api.admin.v1;
 option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
 
 import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
 // AdminDashboardService 工作台指标（P3-07 M1b v1）。
@@ -23,6 +24,28 @@ service AdminDashboardService {
   // GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
   rpc GetDailyStats(GetDailyStatsRequest) returns (GetDailyStatsReply) {
     option (google.api.http) = { get: "/api/v1/admin/dashboard/daily-stats" };
+  }
+  // CreateReconciliationJob 创建货源对账任务（时间窗 ≤31 天）。
+  rpc CreateReconciliationJob(CreateReconciliationJobRequest) returns (ReconciliationJobItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/dashboard/reconciliation-jobs"
+      body: "*"
+    };
+  }
+  // GetReconciliationJob 对账任务详情（四态计数 + 状态可查）。
+  rpc GetReconciliationJob(GetReconciliationJobRequest) returns (ReconciliationJobItem) {
+    option (google.api.http) = { get: "/api/v1/admin/dashboard/reconciliation-jobs/{id}" };
+  }
+  // RunReconciliationJob 执行任务（pending → processing → done/failed）。
+  rpc RunReconciliationJob(RunReconciliationJobRequest) returns (ReconciliationJobItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/dashboard/reconciliation-jobs/{id}/run"
+      body: "*"
+    };
+  }
+  // ListReconciliationItems 对账明细分页（四态筛选）。
+  rpc ListReconciliationItems(ListReconciliationItemsRequest) returns (ListReconciliationItemsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/dashboard/reconciliation-jobs/{id}/items" };
   }
 }
 
@@ -114,4 +137,53 @@ message ReconciliationSummary {
 
 message GetReconciliationReply {
   ReconciliationSummary summary = 1;
+}
+
+message CreateReconciliationJobRequest {
+  uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 start = 2 [(google.api.field_behavior) = REQUIRED]; // unix 秒
+  int64 end = 3 [(google.api.field_behavior) = REQUIRED];   // unix 秒
+}
+
+message ReconciliationJobItem {
+  uint64 id = 1;
+  uint64 connection_id = 2;
+  string status = 3; // pending | processing | done | failed
+  int64 time_range_start = 4;
+  int64 time_range_end = 5;
+  int32 total_count = 6;
+  int32 matched_count = 7;
+  int32 mismatched_count = 8;
+  string result_json = 9;
+  int64 created_at = 10;
+}
+
+message GetReconciliationJobRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message RunReconciliationJobRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListReconciliationItemsRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string status = 2; // matched | mismatched | local_only | upstream_only
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ReconciliationItemDetail {
+  uint64 id = 1;
+  string status = 2;
+  uint64 procurement_order_id = 3;
+  string local_order_no = 4;
+  string upstream_order_no = 5;
+  string diff_json = 6;
+  int64 created_at = 7;
+}
+
+message ListReconciliationItemsReply {
+  repeated ReconciliationItemDetail items = 1;
+  int64 total = 2;
 }

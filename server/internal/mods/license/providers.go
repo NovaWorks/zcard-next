@@ -12,6 +12,9 @@ import (
 var ProviderSet = wire.NewSet(
 	ProvideLicenseRepo,
 	NewAdminLicenseService,
+	// P3-08 M3：专业套餐在线购买（storefront 面）
+	NewPurchaseRepo,
+	NewStoreLicenseService,
 )
 
 // ProvideLicenseRepo 装配（设置读写经 *settings.RepoImpl——通道 A，wire 注入）。

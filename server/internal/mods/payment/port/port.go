@@ -88,6 +88,12 @@ type OrderRefunder interface {
 	RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error
 }
 
+// SlowPaymentChecker 慢通道 pending 流水探测（P1-03 order 超时取消顺延判定，通道 A）：
+// usdt 族链上确认慢于订单 TTL——存在 pending 流水时超时任务顺延不误杀。
+type SlowPaymentChecker interface {
+	HasPendingSlowPayment(ctx context.Context, orderID uint64) (bool, error)
+}
+
 // Registry 渠道注册表（按 (provider, channel) 路由；支付渠道配置存 payment_channels）。
 type Registry interface {
 	Register(p Provider)

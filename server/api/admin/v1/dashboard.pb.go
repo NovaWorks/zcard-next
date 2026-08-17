@@ -885,11 +885,487 @@ func (x *GetReconciliationReply) GetSummary() *ReconciliationSummary {
 	return nil
 }
 
+type CreateReconciliationJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId  uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Start         int64                  `protobuf:"varint,2,opt,name=start,proto3" json:"start,omitempty"` // unix 秒
+	End           int64                  `protobuf:"varint,3,opt,name=end,proto3" json:"end,omitempty"`     // unix 秒
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateReconciliationJobRequest) Reset() {
+	*x = CreateReconciliationJobRequest{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateReconciliationJobRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateReconciliationJobRequest) ProtoMessage() {}
+
+func (x *CreateReconciliationJobRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateReconciliationJobRequest.ProtoReflect.Descriptor instead.
+func (*CreateReconciliationJobRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CreateReconciliationJobRequest) GetConnectionId() uint64 {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return 0
+}
+
+func (x *CreateReconciliationJobRequest) GetStart() int64 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *CreateReconciliationJobRequest) GetEnd() int64 {
+	if x != nil {
+		return x.End
+	}
+	return 0
+}
+
+type ReconciliationJobItem struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ConnectionId    uint64                 `protobuf:"varint,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Status          string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"` // pending | processing | done | failed
+	TimeRangeStart  int64                  `protobuf:"varint,4,opt,name=time_range_start,json=timeRangeStart,proto3" json:"time_range_start,omitempty"`
+	TimeRangeEnd    int64                  `protobuf:"varint,5,opt,name=time_range_end,json=timeRangeEnd,proto3" json:"time_range_end,omitempty"`
+	TotalCount      int32                  `protobuf:"varint,6,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	MatchedCount    int32                  `protobuf:"varint,7,opt,name=matched_count,json=matchedCount,proto3" json:"matched_count,omitempty"`
+	MismatchedCount int32                  `protobuf:"varint,8,opt,name=mismatched_count,json=mismatchedCount,proto3" json:"mismatched_count,omitempty"`
+	ResultJson      string                 `protobuf:"bytes,9,opt,name=result_json,json=resultJson,proto3" json:"result_json,omitempty"`
+	CreatedAt       int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ReconciliationJobItem) Reset() {
+	*x = ReconciliationJobItem{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReconciliationJobItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReconciliationJobItem) ProtoMessage() {}
+
+func (x *ReconciliationJobItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReconciliationJobItem.ProtoReflect.Descriptor instead.
+func (*ReconciliationJobItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ReconciliationJobItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetConnectionId() uint64 {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ReconciliationJobItem) GetTimeRangeStart() int64 {
+	if x != nil {
+		return x.TimeRangeStart
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetTimeRangeEnd() int64 {
+	if x != nil {
+		return x.TimeRangeEnd
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetTotalCount() int32 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetMatchedCount() int32 {
+	if x != nil {
+		return x.MatchedCount
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetMismatchedCount() int32 {
+	if x != nil {
+		return x.MismatchedCount
+	}
+	return 0
+}
+
+func (x *ReconciliationJobItem) GetResultJson() string {
+	if x != nil {
+		return x.ResultJson
+	}
+	return ""
+}
+
+func (x *ReconciliationJobItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type GetReconciliationJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReconciliationJobRequest) Reset() {
+	*x = GetReconciliationJobRequest{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReconciliationJobRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReconciliationJobRequest) ProtoMessage() {}
+
+func (x *GetReconciliationJobRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReconciliationJobRequest.ProtoReflect.Descriptor instead.
+func (*GetReconciliationJobRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetReconciliationJobRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type RunReconciliationJobRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunReconciliationJobRequest) Reset() {
+	*x = RunReconciliationJobRequest{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunReconciliationJobRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunReconciliationJobRequest) ProtoMessage() {}
+
+func (x *RunReconciliationJobRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunReconciliationJobRequest.ProtoReflect.Descriptor instead.
+func (*RunReconciliationJobRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *RunReconciliationJobRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type ListReconciliationItemsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // matched | mismatched | local_only | upstream_only
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReconciliationItemsRequest) Reset() {
+	*x = ListReconciliationItemsRequest{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReconciliationItemsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReconciliationItemsRequest) ProtoMessage() {}
+
+func (x *ListReconciliationItemsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReconciliationItemsRequest.ProtoReflect.Descriptor instead.
+func (*ListReconciliationItemsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListReconciliationItemsRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ListReconciliationItemsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ListReconciliationItemsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListReconciliationItemsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ReconciliationItemDetail struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Status             string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	ProcurementOrderId uint64                 `protobuf:"varint,3,opt,name=procurement_order_id,json=procurementOrderId,proto3" json:"procurement_order_id,omitempty"`
+	LocalOrderNo       string                 `protobuf:"bytes,4,opt,name=local_order_no,json=localOrderNo,proto3" json:"local_order_no,omitempty"`
+	UpstreamOrderNo    string                 `protobuf:"bytes,5,opt,name=upstream_order_no,json=upstreamOrderNo,proto3" json:"upstream_order_no,omitempty"`
+	DiffJson           string                 `protobuf:"bytes,6,opt,name=diff_json,json=diffJson,proto3" json:"diff_json,omitempty"`
+	CreatedAt          int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ReconciliationItemDetail) Reset() {
+	*x = ReconciliationItemDetail{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReconciliationItemDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReconciliationItemDetail) ProtoMessage() {}
+
+func (x *ReconciliationItemDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReconciliationItemDetail.ProtoReflect.Descriptor instead.
+func (*ReconciliationItemDetail) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ReconciliationItemDetail) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ReconciliationItemDetail) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ReconciliationItemDetail) GetProcurementOrderId() uint64 {
+	if x != nil {
+		return x.ProcurementOrderId
+	}
+	return 0
+}
+
+func (x *ReconciliationItemDetail) GetLocalOrderNo() string {
+	if x != nil {
+		return x.LocalOrderNo
+	}
+	return ""
+}
+
+func (x *ReconciliationItemDetail) GetUpstreamOrderNo() string {
+	if x != nil {
+		return x.UpstreamOrderNo
+	}
+	return ""
+}
+
+func (x *ReconciliationItemDetail) GetDiffJson() string {
+	if x != nil {
+		return x.DiffJson
+	}
+	return ""
+}
+
+func (x *ReconciliationItemDetail) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+type ListReconciliationItemsReply struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Items         []*ReconciliationItemDetail `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                       `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReconciliationItemsReply) Reset() {
+	*x = ListReconciliationItemsReply{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReconciliationItemsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReconciliationItemsReply) ProtoMessage() {}
+
+func (x *ListReconciliationItemsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReconciliationItemsReply.ProtoReflect.Descriptor instead.
+func (*ListReconciliationItemsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListReconciliationItemsReply) GetItems() []*ReconciliationItemDetail {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListReconciliationItemsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_admin_v1_dashboard_proto protoreflect.FileDescriptor
 
 const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\n" +
-	"\x18admin/v1/dashboard.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"P\n" +
+	"\x18admin/v1/dashboard.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"P\n" +
 	"\x14GetDailyStatsRequest\x12\x1d\n" +
 	"\n" +
 	"start_date\x18\x01 \x01(\tR\tstartDate\x12\x19\n" +
@@ -960,12 +1436,57 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"orderCount\x12%\n" +
 	"\x0emismatch_count\x18\a \x01(\x03R\rmismatchCount\"]\n" +
 	"\x16GetReconciliationReply\x12C\n" +
-	"\asummary\x18\x01 \x01(\v2).zcard.api.admin.v1.ReconciliationSummaryR\asummary2\xcc\x04\n" +
+	"\asummary\x18\x01 \x01(\v2).zcard.api.admin.v1.ReconciliationSummaryR\asummary\"|\n" +
+	"\x1eCreateReconciliationJobRequest\x12(\n" +
+	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x19\n" +
+	"\x05start\x18\x02 \x01(\x03B\x03\xe0A\x02R\x05start\x12\x15\n" +
+	"\x03end\x18\x03 \x01(\x03B\x03\xe0A\x02R\x03end\"\xe5\x02\n" +
+	"\x15ReconciliationJobItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12#\n" +
+	"\rconnection_id\x18\x02 \x01(\x04R\fconnectionId\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12(\n" +
+	"\x10time_range_start\x18\x04 \x01(\x03R\x0etimeRangeStart\x12$\n" +
+	"\x0etime_range_end\x18\x05 \x01(\x03R\ftimeRangeEnd\x12\x1f\n" +
+	"\vtotal_count\x18\x06 \x01(\x05R\n" +
+	"totalCount\x12#\n" +
+	"\rmatched_count\x18\a \x01(\x05R\fmatchedCount\x12)\n" +
+	"\x10mismatched_count\x18\b \x01(\x05R\x0fmismatchedCount\x12\x1f\n" +
+	"\vresult_json\x18\t \x01(\tR\n" +
+	"resultJson\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\x03R\tcreatedAt\"2\n" +
+	"\x1bGetReconciliationJobRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"2\n" +
+	"\x1bRunReconciliationJobRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"~\n" +
+	"\x1eListReconciliationItemsRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\x82\x02\n" +
+	"\x18ReconciliationItemDetail\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x120\n" +
+	"\x14procurement_order_id\x18\x03 \x01(\x04R\x12procurementOrderId\x12$\n" +
+	"\x0elocal_order_no\x18\x04 \x01(\tR\flocalOrderNo\x12*\n" +
+	"\x11upstream_order_no\x18\x05 \x01(\tR\x0fupstreamOrderNo\x12\x1b\n" +
+	"\tdiff_json\x18\x06 \x01(\tR\bdiffJson\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\a \x01(\x03R\tcreatedAt\"x\n" +
+	"\x1cListReconciliationItemsReply\x12B\n" +
+	"\x05items\x18\x01 \x03(\v2,.zcard.api.admin.v1.ReconciliationItemDetailR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total2\xa6\n" +
+	"\n" +
 	"\x15AdminDashboardService\x12\x9d\x01\n" +
 	"\x11GetReconciliation\x12,.zcard.api.admin.v1.GetReconciliationRequest\x1a*.zcard.api.admin.v1.GetReconciliationReply\".\x82\xd3\xe4\x93\x02(\x12&/api/v1/admin/dashboard/reconciliation\x12\x94\x01\n" +
 	"\x0fListCommissions\x12*.zcard.api.admin.v1.ListCommissionsRequest\x1a(.zcard.api.admin.v1.ListCommissionsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/affiliate/commissions\x12k\n" +
 	"\fGetDashboard\x12\x16.google.protobuf.Empty\x1a\".zcard.api.admin.v1.DashboardReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/admin/dashboard\x12\x8e\x01\n" +
-	"\rGetDailyStats\x12(.zcard.api.admin.v1.GetDailyStatsRequest\x1a&.zcard.api.admin.v1.GetDailyStatsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/dashboard/daily-statsB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\rGetDailyStats\x12(.zcard.api.admin.v1.GetDailyStatsRequest\x1a&.zcard.api.admin.v1.GetDailyStatsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/dashboard/daily-stats\x12\xb0\x01\n" +
+	"\x17CreateReconciliationJob\x122.zcard.api.admin.v1.CreateReconciliationJobRequest\x1a).zcard.api.admin.v1.ReconciliationJobItem\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/dashboard/reconciliation-jobs\x12\xac\x01\n" +
+	"\x14GetReconciliationJob\x12/.zcard.api.admin.v1.GetReconciliationJobRequest\x1a).zcard.api.admin.v1.ReconciliationJobItem\"8\x82\xd3\xe4\x93\x022\x120/api/v1/admin/dashboard/reconciliation-jobs/{id}\x12\xb3\x01\n" +
+	"\x14RunReconciliationJob\x12/.zcard.api.admin.v1.RunReconciliationJobRequest\x1a).zcard.api.admin.v1.ReconciliationJobItem\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/admin/dashboard/reconciliation-jobs/{id}/run\x12\xbf\x01\n" +
+	"\x17ListReconciliationItems\x122.zcard.api.admin.v1.ListReconciliationItemsRequest\x1a0.zcard.api.admin.v1.ListReconciliationItemsReply\">\x82\xd3\xe4\x93\x028\x126/api/v1/admin/dashboard/reconciliation-jobs/{id}/itemsB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_dashboard_proto_rawDescOnce sync.Once
@@ -979,22 +1500,29 @@ func file_admin_v1_dashboard_proto_rawDescGZIP() []byte {
 	return file_admin_v1_dashboard_proto_rawDescData
 }
 
-var file_admin_v1_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_admin_v1_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_admin_v1_dashboard_proto_goTypes = []any{
-	(*GetDailyStatsRequest)(nil),     // 0: zcard.api.admin.v1.GetDailyStatsRequest
-	(*DailyStatPoint)(nil),           // 1: zcard.api.admin.v1.DailyStatPoint
-	(*GetDailyStatsReply)(nil),       // 2: zcard.api.admin.v1.GetDailyStatsReply
-	(*DashboardStat)(nil),            // 3: zcard.api.admin.v1.DashboardStat
-	(*DashboardTrendPoint)(nil),      // 4: zcard.api.admin.v1.DashboardTrendPoint
-	(*DashboardTopProduct)(nil),      // 5: zcard.api.admin.v1.DashboardTopProduct
-	(*DashboardReply)(nil),           // 6: zcard.api.admin.v1.DashboardReply
-	(*ListCommissionsRequest)(nil),   // 7: zcard.api.admin.v1.ListCommissionsRequest
-	(*AdminCommission)(nil),          // 8: zcard.api.admin.v1.AdminCommission
-	(*ListCommissionsReply)(nil),     // 9: zcard.api.admin.v1.ListCommissionsReply
-	(*GetReconciliationRequest)(nil), // 10: zcard.api.admin.v1.GetReconciliationRequest
-	(*ReconciliationSummary)(nil),    // 11: zcard.api.admin.v1.ReconciliationSummary
-	(*GetReconciliationReply)(nil),   // 12: zcard.api.admin.v1.GetReconciliationReply
-	(*emptypb.Empty)(nil),            // 13: google.protobuf.Empty
+	(*GetDailyStatsRequest)(nil),           // 0: zcard.api.admin.v1.GetDailyStatsRequest
+	(*DailyStatPoint)(nil),                 // 1: zcard.api.admin.v1.DailyStatPoint
+	(*GetDailyStatsReply)(nil),             // 2: zcard.api.admin.v1.GetDailyStatsReply
+	(*DashboardStat)(nil),                  // 3: zcard.api.admin.v1.DashboardStat
+	(*DashboardTrendPoint)(nil),            // 4: zcard.api.admin.v1.DashboardTrendPoint
+	(*DashboardTopProduct)(nil),            // 5: zcard.api.admin.v1.DashboardTopProduct
+	(*DashboardReply)(nil),                 // 6: zcard.api.admin.v1.DashboardReply
+	(*ListCommissionsRequest)(nil),         // 7: zcard.api.admin.v1.ListCommissionsRequest
+	(*AdminCommission)(nil),                // 8: zcard.api.admin.v1.AdminCommission
+	(*ListCommissionsReply)(nil),           // 9: zcard.api.admin.v1.ListCommissionsReply
+	(*GetReconciliationRequest)(nil),       // 10: zcard.api.admin.v1.GetReconciliationRequest
+	(*ReconciliationSummary)(nil),          // 11: zcard.api.admin.v1.ReconciliationSummary
+	(*GetReconciliationReply)(nil),         // 12: zcard.api.admin.v1.GetReconciliationReply
+	(*CreateReconciliationJobRequest)(nil), // 13: zcard.api.admin.v1.CreateReconciliationJobRequest
+	(*ReconciliationJobItem)(nil),          // 14: zcard.api.admin.v1.ReconciliationJobItem
+	(*GetReconciliationJobRequest)(nil),    // 15: zcard.api.admin.v1.GetReconciliationJobRequest
+	(*RunReconciliationJobRequest)(nil),    // 16: zcard.api.admin.v1.RunReconciliationJobRequest
+	(*ListReconciliationItemsRequest)(nil), // 17: zcard.api.admin.v1.ListReconciliationItemsRequest
+	(*ReconciliationItemDetail)(nil),       // 18: zcard.api.admin.v1.ReconciliationItemDetail
+	(*ListReconciliationItemsReply)(nil),   // 19: zcard.api.admin.v1.ListReconciliationItemsReply
+	(*emptypb.Empty)(nil),                  // 20: google.protobuf.Empty
 }
 var file_admin_v1_dashboard_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.admin.v1.GetDailyStatsReply.points:type_name -> zcard.api.admin.v1.DailyStatPoint
@@ -1005,19 +1533,28 @@ var file_admin_v1_dashboard_proto_depIdxs = []int32{
 	5,  // 5: zcard.api.admin.v1.DashboardReply.top_products:type_name -> zcard.api.admin.v1.DashboardTopProduct
 	8,  // 6: zcard.api.admin.v1.ListCommissionsReply.commissions:type_name -> zcard.api.admin.v1.AdminCommission
 	11, // 7: zcard.api.admin.v1.GetReconciliationReply.summary:type_name -> zcard.api.admin.v1.ReconciliationSummary
-	10, // 8: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:input_type -> zcard.api.admin.v1.GetReconciliationRequest
-	7,  // 9: zcard.api.admin.v1.AdminDashboardService.ListCommissions:input_type -> zcard.api.admin.v1.ListCommissionsRequest
-	13, // 10: zcard.api.admin.v1.AdminDashboardService.GetDashboard:input_type -> google.protobuf.Empty
-	0,  // 11: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:input_type -> zcard.api.admin.v1.GetDailyStatsRequest
-	12, // 12: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:output_type -> zcard.api.admin.v1.GetReconciliationReply
-	9,  // 13: zcard.api.admin.v1.AdminDashboardService.ListCommissions:output_type -> zcard.api.admin.v1.ListCommissionsReply
-	6,  // 14: zcard.api.admin.v1.AdminDashboardService.GetDashboard:output_type -> zcard.api.admin.v1.DashboardReply
-	2,  // 15: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:output_type -> zcard.api.admin.v1.GetDailyStatsReply
-	12, // [12:16] is the sub-list for method output_type
-	8,  // [8:12] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	18, // 8: zcard.api.admin.v1.ListReconciliationItemsReply.items:type_name -> zcard.api.admin.v1.ReconciliationItemDetail
+	10, // 9: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:input_type -> zcard.api.admin.v1.GetReconciliationRequest
+	7,  // 10: zcard.api.admin.v1.AdminDashboardService.ListCommissions:input_type -> zcard.api.admin.v1.ListCommissionsRequest
+	20, // 11: zcard.api.admin.v1.AdminDashboardService.GetDashboard:input_type -> google.protobuf.Empty
+	0,  // 12: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:input_type -> zcard.api.admin.v1.GetDailyStatsRequest
+	13, // 13: zcard.api.admin.v1.AdminDashboardService.CreateReconciliationJob:input_type -> zcard.api.admin.v1.CreateReconciliationJobRequest
+	15, // 14: zcard.api.admin.v1.AdminDashboardService.GetReconciliationJob:input_type -> zcard.api.admin.v1.GetReconciliationJobRequest
+	16, // 15: zcard.api.admin.v1.AdminDashboardService.RunReconciliationJob:input_type -> zcard.api.admin.v1.RunReconciliationJobRequest
+	17, // 16: zcard.api.admin.v1.AdminDashboardService.ListReconciliationItems:input_type -> zcard.api.admin.v1.ListReconciliationItemsRequest
+	12, // 17: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:output_type -> zcard.api.admin.v1.GetReconciliationReply
+	9,  // 18: zcard.api.admin.v1.AdminDashboardService.ListCommissions:output_type -> zcard.api.admin.v1.ListCommissionsReply
+	6,  // 19: zcard.api.admin.v1.AdminDashboardService.GetDashboard:output_type -> zcard.api.admin.v1.DashboardReply
+	2,  // 20: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:output_type -> zcard.api.admin.v1.GetDailyStatsReply
+	14, // 21: zcard.api.admin.v1.AdminDashboardService.CreateReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
+	14, // 22: zcard.api.admin.v1.AdminDashboardService.GetReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
+	14, // 23: zcard.api.admin.v1.AdminDashboardService.RunReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
+	19, // 24: zcard.api.admin.v1.AdminDashboardService.ListReconciliationItems:output_type -> zcard.api.admin.v1.ListReconciliationItemsReply
+	17, // [17:25] is the sub-list for method output_type
+	9,  // [9:17] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_dashboard_proto_init() }
@@ -1031,7 +1568,7 @@ func file_admin_v1_dashboard_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_dashboard_proto_rawDesc), len(file_admin_v1_dashboard_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

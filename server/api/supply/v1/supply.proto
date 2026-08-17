@@ -51,6 +51,12 @@ service SupplyService {
       body: "*"
     };
   }
+  // ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+  rpc ListOrders(ListSupplyOrdersRequest) returns (ListSupplyOrdersReply) {
+    option (google.api.http) = {
+      get: "/api/supply/orders"
+    };
+  }
   // GetOrder 订单查询（轮询/巡检兜底）。
   rpc GetOrder(GetSupplyOrderRequest) returns (GetSupplyOrderReply) {
     option (google.api.http) = {
@@ -161,6 +167,24 @@ message CreateSupplyOrderReply {
   SupplyFulfillment fulfillment = 4;
   string error_code = 5;
   string error_message = 6;
+}
+
+// ListSupplyOrdersRequest 订单列表（时间窗；对账数据源）。
+message ListSupplyOrdersRequest {
+  int64 start = 1; // 创建时间起点（unix 秒）
+  int64 end = 2;   // 创建时间终点（unix 秒）
+}
+
+message SupplyOrderItem {
+  uint64 id = 1;
+  string downstream_order_no = 2;
+  int64 amount = 3;      // 分
+  string status = 4;     // pending | paid | delivered | refunded | canceled
+  int64 created_at = 5;  // unix 秒
+}
+
+message ListSupplyOrdersReply {
+  repeated SupplyOrderItem orders = 1;
 }
 
 message GetSupplyOrderRequest {

@@ -31,6 +31,9 @@ var policy = func() *bluemonday.Policy {
 
 	// URL 协议白名单
 	p.AllowURLSchemes("http", "https", "mailto")
+	// 相对 URL 放行（富文本插图 = 素材库同源路径 /uploads/**；协议白名单对绝对 URL 仍生效，
+	// data:/javascript: 一律剥离——wangEditor 输出对拍见 sanitize_wang_test.go）
+	p.AllowRelativeURLs(true)
 
 	// 强制 target=_blank rel=noopener（防钓鱼）
 	p.AllowAttrs("target").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")

@@ -3,6 +3,7 @@ package supply
 // wire providers（P2-01）。
 
 import (
+	dashboardport "github.com/NovaWorks/zcard-next/server/internal/mods/dashboard/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 
 	"github.com/google/wire"
@@ -19,4 +20,6 @@ var ProviderSet = wire.NewSet(
 	NewAdminSupplyService,
 	NewGateway,
 	wire.Bind(new(port.UpstreamGateway), new(*Gateway)),
+	// P3-07：对账上游数据源端口（dashboard 消费，通道 A）
+	wire.Bind(new(dashboardport.UpstreamOrderSource), new(*Gateway)),
 )

@@ -31,6 +31,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/flashsale"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
@@ -172,6 +173,7 @@ func checkColumn(t, c string) error {
 			flashsale.Table:              flashsale.ValidColumn,
 			giftcard.Table:               giftcard.ValidColumn,
 			giftcardbatch.Table:          giftcardbatch.ValidColumn,
+			licenseorder.Table:           licenseorder.ValidColumn,
 			media.Table:                  media.ValidColumn,
 			mediacategory.Table:          mediacategory.ValidColumn,
 			memberlevel.Table:            memberlevel.ValidColumn,

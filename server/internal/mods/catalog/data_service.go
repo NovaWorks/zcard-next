@@ -6,6 +6,8 @@ import (
 	"context"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	inventoryport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
+	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -19,12 +21,44 @@ import (
 // AdminCatalogService 管理面目录服务。
 type AdminCatalogService struct {
 	adminv1.UnimplementedAdminCatalogServiceServer
-	repo *ProductRepoImpl
+	repo  *ProductRepoImpl
+	stock inventoryport.StockBatcher // 批量可用库存（nil 容错降级 0）
+	sold  orderport.SoldCounter      // 批量已售数量（nil 容错降级 0）
 }
 
 // NewAdminCatalogService 构造。
-func NewAdminCatalogService(repo *ProductRepoImpl) *AdminCatalogService {
-	return &AdminCatalogService{repo: repo}
+func NewAdminCatalogService(repo *ProductRepoImpl, stock inventoryport.StockBatcher, sold orderport.SoldCounter) *AdminCatalogService {
+	return &AdminCatalogService{repo: repo, stock: stock, sold: sold}
+}
+
+// fillStats 批量填充库存/已售（列表与详情共用；查询失败降级 0 不阻断列表）。
+func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.AdminProduct) {
+	if len(items) == 0 {
+		return
+	}
+	ids := make([]uint64, 0, len(items))
+	cardIDs := make([]uint64, 0) // 仅卡密类需要库存（链接/兑换码不入卡池）
+	for _, p := range items {
+		ids = append(ids, p.Id)
+		if p.StockType == "card" {
+			cardIDs = append(cardIDs, p.Id)
+		}
+	}
+	var stocks, solds map[uint64]int64
+	if s.stock != nil {
+		stocks, _ = s.stock.StockBatch(ctx, cardIDs) // 失败降级：留 0
+	}
+	if s.sold != nil {
+		solds, _ = s.sold.SoldBatch(ctx, ids)
+	}
+	for _, p := range items {
+		if p.StockType == "card" {
+			p.Stock = stocks[p.Id]
+		} else {
+			p.Stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
+		}
+		p.SoldCount = solds[p.Id]
+	}
 }
 
 // ── 商品 ──
@@ -55,6 +89,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 	reply.Total = total
 	reply.Page = page
 	reply.PageSize = size
+	s.fillStats(ctx, reply.Products)
 	return reply, nil
 }
 
@@ -67,7 +102,9 @@ func (s *AdminCatalogService) GetProduct(ctx context.Context, req *adminv1.GetPr
 	if err != nil {
 		return nil, errors.InternalServer("catalog.GET_FAILED", "读取失败")
 	}
-	return ToAdminPB(p), nil
+	out := ToAdminPB(p)
+	s.fillStats(ctx, []*adminv1.AdminProduct{out})
+	return out, nil
 }
 
 // CreateProduct 创建商品（description sanitize）。
@@ -84,6 +121,7 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
 		StockVisible: req.GetStockVisible(), Dedup: req.GetDedup(),
 		Sort: req.GetSort(), Status: int8(req.GetStatus()),
+		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
 	}
 	p, err := s.repo.CreateProduct(ctx, in)
 	if err != nil {
@@ -107,6 +145,7 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		DeliveryMode: req.GetDeliveryMode(),
 		StockVisible: req.GetStockVisible(),
 		Sort:         req.GetSort(), Status: int8(req.GetStatus()),
+		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
 	}
 	old, _ := s.repo.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, req.GetId())
 	p, err := s.repo.UpdateProduct(ctx, req.GetId(), in)
@@ -128,6 +167,15 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 		return nil, errors.InternalServer("catalog.DELETE_FAILED", "删除失败")
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// BatchUpdateProductStatus 批量上下架（列表多选）。
+func (s *AdminCatalogService) BatchUpdateProductStatus(ctx context.Context, req *adminv1.BatchUpdateProductStatusRequest) (*adminv1.BatchUpdateProductStatusReply, error) {
+	n, err := s.repo.BatchUpdateStatus(ctx, req.GetIds(), int8(req.GetStatus()))
+	if err != nil {
+		return nil, errors.BadRequest("catalog.BATCH_STATUS_INVALID", err.Error())
+	}
+	return &adminv1.BatchUpdateProductStatusReply{Updated: int32(n)}, nil
 }
 
 // ── 分类 ──

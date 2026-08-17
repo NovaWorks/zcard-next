@@ -13,4 +13,7 @@ var ProviderSet = wire.NewSet(
 	NewMemberLevelRepoImpl,
 	wire.Bind(new(port.RateResolver), new(*MemberLevelRepoImpl)),
 	NewAdminMemberLevelService,
+	// P3-01 M3：等级进度 storefront 面 + 积分产生事件订阅
+	NewStoreMemberLevelService,
+	NewPointsService,
 )

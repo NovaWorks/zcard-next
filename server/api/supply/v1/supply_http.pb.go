@@ -24,6 +24,7 @@ const OperationSupplyServiceGetOrder = "/zcard.api.supply.v1.SupplyService/GetOr
 const OperationSupplyServiceGetProduct = "/zcard.api.supply.v1.SupplyService/GetProduct"
 const OperationSupplyServiceGetStock = "/zcard.api.supply.v1.SupplyService/GetStock"
 const OperationSupplyServiceListCategories = "/zcard.api.supply.v1.SupplyService/ListCategories"
+const OperationSupplyServiceListOrders = "/zcard.api.supply.v1.SupplyService/ListOrders"
 const OperationSupplyServiceListProducts = "/zcard.api.supply.v1.SupplyService/ListProducts"
 const OperationSupplyServicePing = "/zcard.api.supply.v1.SupplyService/Ping"
 const OperationSupplyServiceRefundOrder = "/zcard.api.supply.v1.SupplyService/RefundOrder"
@@ -42,6 +43,8 @@ type SupplyServiceHTTPServer interface {
 	GetStock(context.Context, *GetStockRequest) (*GetStockReply, error)
 	// ListCategories ListCategories 商品分类（下游建目录）。
 	ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error)
+	// ListOrders ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+	ListOrders(context.Context, *ListSupplyOrdersRequest) (*ListSupplyOrdersReply, error)
 	// ListProducts ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
 	// Ping Ping 连通性与协议版本探测（免签名）。
@@ -58,6 +61,7 @@ func RegisterSupplyServiceHTTPServer(s *http.Server, srv SupplyServiceHTTPServer
 	r.Handle("GET", "/api/supply/products/{id}", _SupplyService_GetProduct0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/supply/products/{id}/stock", _SupplyService_GetStock0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/supply/orders", _SupplyService_CreateOrder0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/supply/orders", _SupplyService_ListOrders0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/supply/orders/{id}", _SupplyService_GetOrder0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/supply/orders/{id}/cancel", _SupplyService_CancelOrder0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/supply/orders/{id}/refund", _SupplyService_RefundOrder0_HTTP_Handler(srv))
@@ -183,6 +187,25 @@ func _SupplyService_CreateOrder0_HTTP_Handler(srv SupplyServiceHTTPServer) func(
 	}
 }
 
+func _SupplyService_ListOrders0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListSupplyOrdersRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationSupplyServiceListOrders)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListOrders(ctx, req.(*ListSupplyOrdersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListSupplyOrdersReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _SupplyService_GetOrder0_HTTP_Handler(srv SupplyServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in GetSupplyOrderRequest
@@ -263,6 +286,8 @@ type SupplyServiceHTTPClient interface {
 	GetStock(ctx context.Context, req *GetStockRequest, opts ...http.CallOption) (rsp *GetStockReply, err error)
 	// ListCategories ListCategories 商品分类（下游建目录）。
 	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListCategoriesReply, err error)
+	// ListOrders ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+	ListOrders(ctx context.Context, req *ListSupplyOrdersRequest, opts ...http.CallOption) (rsp *ListSupplyOrdersReply, err error)
 	// ListProducts ListProducts 商品列表（分页；include_inactive 回声字段防旧版误判）。
 	ListProducts(ctx context.Context, req *ListProductsRequest, opts ...http.CallOption) (rsp *ListProductsReply, err error)
 	// Ping Ping 连通性与协议版本探测（免签名）。
@@ -377,6 +402,23 @@ func (c *SupplyServiceHTTPClientImpl) ListCategories(ctx context.Context, in *em
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListOrders ListOrders 时间窗内订单列表（对账数据源；按创建时间过滤）。
+func (c *SupplyServiceHTTPClientImpl) ListOrders(ctx context.Context, in *ListSupplyOrdersRequest, opts ...http.CallOption) (*ListSupplyOrdersReply, error) {
+	var out ListSupplyOrdersReply
+	pattern := "/api/supply/orders"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationSupplyServiceListOrders),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

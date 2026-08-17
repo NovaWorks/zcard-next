@@ -73,6 +73,8 @@ const (
 	FieldInviteL3 = "invite_l3"
 	// FieldExtra holds the string denoting the extra field in the database.
 	FieldExtra = "extra"
+	// FieldIdempotencyKey holds the string denoting the idempotency_key field in the database.
+	FieldIdempotencyKey = "idempotency_key"
 	// FieldPaidAt holds the string denoting the paid_at field in the database.
 	FieldPaidAt = "paid_at"
 	// FieldClosedAt holds the string denoting the closed_at field in the database.
@@ -169,6 +171,7 @@ var Columns = []string{
 	FieldInviteL2,
 	FieldInviteL3,
 	FieldExtra,
+	FieldIdempotencyKey,
 	FieldPaidAt,
 	FieldClosedAt,
 	FieldExpiredAt,
@@ -223,6 +226,8 @@ var (
 	ClientIPValidator func(string) error
 	// RiskIPValidator is a validator for the "risk_ip" field. It is called by the builders before save.
 	RiskIPValidator func(string) error
+	// IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
+	IdempotencyKeyValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -400,6 +405,11 @@ func ByInviteL2(opts ...sql.OrderTermOption) OrderOption {
 // ByInviteL3 orders the results by the invite_l3 field.
 func ByInviteL3(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInviteL3, opts...).ToFunc()
+}
+
+// ByIdempotencyKey orders the results by the idempotency_key field.
+func ByIdempotencyKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIdempotencyKey, opts...).ToFunc()
 }
 
 // ByPaidAt orders the results by the paid_at field.

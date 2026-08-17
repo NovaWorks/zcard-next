@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreOrderService_CreateOrder_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
-	StoreOrderService_GetOrder_FullMethodName    = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
+	StoreOrderService_CreateOrder_FullMethodName   = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
+	StoreOrderService_GetOrder_FullMethodName      = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
+	StoreOrderService_ListMyOrders_FullMethodName  = "/zcard.api.storefront.v1.StoreOrderService/ListMyOrders"
+	StoreOrderService_CancelMyOrder_FullMethodName = "/zcard.api.storefront.v1.StoreOrderService/CancelMyOrder"
 )
 
 // StoreOrderServiceClient is the client API for StoreOrderService service.
@@ -31,8 +34,12 @@ const (
 type StoreOrderServiceClient interface {
 	// CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error)
-	// GetOrder 凭单号+查询密码查单（三重门之一二）。
+	// GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderReply, error)
+	// ListMyOrders 我的订单（登录态；offset 分页）。
+	ListMyOrders(ctx context.Context, in *ListMyOrdersRequest, opts ...grpc.CallOption) (*ListMyOrdersReply, error)
+	// CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+	CancelMyOrder(ctx context.Context, in *CancelMyOrderRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type storeOrderServiceClient struct {
@@ -63,6 +70,26 @@ func (c *storeOrderServiceClient) GetOrder(ctx context.Context, in *GetOrderRequ
 	return out, nil
 }
 
+func (c *storeOrderServiceClient) ListMyOrders(ctx context.Context, in *ListMyOrdersRequest, opts ...grpc.CallOption) (*ListMyOrdersReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMyOrdersReply)
+	err := c.cc.Invoke(ctx, StoreOrderService_ListMyOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeOrderServiceClient) CancelMyOrder(ctx context.Context, in *CancelMyOrderRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, StoreOrderService_CancelMyOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoreOrderServiceServer is the server API for StoreOrderService service.
 // All implementations must embed UnimplementedStoreOrderServiceServer
 // for forward compatibility.
@@ -71,8 +98,12 @@ func (c *storeOrderServiceClient) GetOrder(ctx context.Context, in *GetOrderRequ
 type StoreOrderServiceServer interface {
 	// CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)
-	// GetOrder 凭单号+查询密码查单（三重门之一二）。
+	// GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderReply, error)
+	// ListMyOrders 我的订单（登录态；offset 分页）。
+	ListMyOrders(context.Context, *ListMyOrdersRequest) (*ListMyOrdersReply, error)
+	// CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+	CancelMyOrder(context.Context, *CancelMyOrderRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedStoreOrderServiceServer()
 }
 
@@ -88,6 +119,12 @@ func (UnimplementedStoreOrderServiceServer) CreateOrder(context.Context, *Create
 }
 func (UnimplementedStoreOrderServiceServer) GetOrder(context.Context, *GetOrderRequest) (*GetOrderReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOrder not implemented")
+}
+func (UnimplementedStoreOrderServiceServer) ListMyOrders(context.Context, *ListMyOrdersRequest) (*ListMyOrdersReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMyOrders not implemented")
+}
+func (UnimplementedStoreOrderServiceServer) CancelMyOrder(context.Context, *CancelMyOrderRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelMyOrder not implemented")
 }
 func (UnimplementedStoreOrderServiceServer) mustEmbedUnimplementedStoreOrderServiceServer() {}
 func (UnimplementedStoreOrderServiceServer) testEmbeddedByValue()                           {}
@@ -146,6 +183,42 @@ func _StoreOrderService_GetOrder_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreOrderService_ListMyOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMyOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).ListMyOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_ListMyOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).ListMyOrders(ctx, req.(*ListMyOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreOrderService_CancelMyOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CancelMyOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreOrderServiceServer).CancelMyOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreOrderService_CancelMyOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreOrderServiceServer).CancelMyOrder(ctx, req.(*CancelMyOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoreOrderService_ServiceDesc is the grpc.ServiceDesc for StoreOrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -160,6 +233,14 @@ var StoreOrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrder",
 			Handler:    _StoreOrderService_GetOrder_Handler,
+		},
+		{
+			MethodName: "ListMyOrders",
+			Handler:    _StoreOrderService_ListMyOrders_Handler,
+		},
+		{
+			MethodName: "CancelMyOrder",
+			Handler:    _StoreOrderService_CancelMyOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

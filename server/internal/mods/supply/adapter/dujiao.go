@@ -268,6 +268,11 @@ func (a *dujiaoAdapter) RefundOrder(ctx context.Context, upstreamOrderID string)
 	return ErrNotSupported // 协议未开放退款端点（1.x 同款）；退款走人工/对账
 }
 
+// ListOrders 对账列表能力：协议未开放订单列表端点——对账走 GetOrder 核对模式。
+func (a *dujiaoAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error) {
+	return nil, ErrNotSupported
+}
+
 // dujiaoProduct 上游商品行（字段对齐友商 UpstreamProduct）。
 type dujiaoProduct struct {
 	ID          any    `json:"id"`

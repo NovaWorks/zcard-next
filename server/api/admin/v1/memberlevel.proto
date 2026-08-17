@@ -7,7 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-// AdminMemberLevelService 会员等级管理（P3-01 M1b 基础版）。
+// AdminMemberLevelService 会员等级管理（P3-01）。
 service AdminMemberLevelService {
   rpc ListMemberLevels(google.protobuf.Empty) returns (MemberLevelList) {
     option (google.api.http) = { get: "/api/v1/admin/member-levels" };
@@ -32,6 +32,8 @@ message MemberLevel {
   int32 discount = 6; // 万分比
   int32 sort = 7;
   bool enabled = 8;
+  // 积分产生规则 JSON：{"spend_cents": 每消费多少分, "points": 产出积分数}
+  string points_rule_json = 9;
 }
 
 message MemberLevelList {
@@ -46,6 +48,7 @@ message CreateMemberLevelRequest {
   int32 discount = 5;
   int32 sort = 6;
   bool enabled = 7;
+  string points_rule_json = 8;
 }
 
 message UpdateMemberLevelRequest {
@@ -54,6 +57,7 @@ message UpdateMemberLevelRequest {
   int32 discount = 3;
   int32 sort = 4;
   bool enabled = 5;
+  string points_rule_json = 6;
 }
 
 message DeleteMemberLevelRequest {

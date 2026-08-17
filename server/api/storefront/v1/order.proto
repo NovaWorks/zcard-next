@@ -6,6 +6,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
 
 // StoreOrderService 顾客下单（P1-03 T2）。
 service StoreOrderService {
@@ -16,9 +17,20 @@ service StoreOrderService {
       body: "*"
     };
   }
-  // GetOrder 凭单号+查询密码查单（三重门之一二）。
+  // GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
   rpc GetOrder(GetOrderRequest) returns (GetOrderReply) {
     option (google.api.http) = { get: "/api/v1/storefront/orders/{order_no}" };
+  }
+  // ListMyOrders 我的订单（登录态；offset 分页）。
+  rpc ListMyOrders(ListMyOrdersRequest) returns (ListMyOrdersReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/my-orders" };
+  }
+  // CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
+  rpc CancelMyOrder(CancelMyOrderRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/orders/{order_no}/cancel"
+      body: "*"
+    };
   }
 }
 
@@ -30,6 +42,8 @@ message CreateOrderRequest {
   string coupon_code = 5;
   // 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
   map<string, string> control_answers = 6;
+  // 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
+  bool use_points = 7;
 }
 
 message OrderItemInput {
@@ -62,4 +76,32 @@ message OrderItemReply {
   string product_name = 2;
   int32 quantity = 3;
   int64 unit_price_cents = 4;
+}
+
+// ── 我的订单（P1-03 补全 2026-08-17）──
+
+message ListMyOrdersRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  // 状态筛选（可选：pending_payment/paid/delivered/completed/canceled/expired/refunded）
+  string status = 3;
+}
+
+message ListMyOrdersReply {
+  repeated MyOrderItem orders = 1;
+  int64 total = 2;
+}
+
+// MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
+message MyOrderItem {
+  string order_no = 1;
+  string status = 2;
+  int64 total_cents = 3;
+  int64 created_at = 4;
+  int64 expired_at = 5;
+  int32 item_count = 6;
+}
+
+message CancelMyOrderRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
 }

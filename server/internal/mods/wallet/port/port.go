@@ -41,6 +41,22 @@ type Points interface {
 	PointCreditInTx(ctx context.Context, e PointEntry) error
 }
 
+// PointsDebiter 积分扣减（order 积分兑换下单消费，通道 B 同事务）。
+type PointsDebiter interface {
+	PointDebitInTx(ctx context.Context, e PointEntry) error
+}
+
+// PointsReader 积分余额读取（memberlevel 等级进度页消费）。
+type PointsReader interface {
+	GetPoints(ctx context.Context, userID uint64) (int64, error)
+}
+
+// RechargeReader 累计充值口径（memberlevel 升级阈值消费；countAsRecharge——
+// 仅 type=recharge 的真实入账，互转/调账/退款不计，防小号互转刷级）。
+type RechargeReader interface {
+	CumulativeRecharge(ctx context.Context, userID uint64) (int64, error)
+}
+
 // Wallet 钱包窄接口（order 余额支付 / payment 退款 / affiliate 佣金入账消费，通道 B 同事务）。
 type Wallet interface {
 	// CreditInTx 入账（充值/退款回/佣金）；幂等重入：reference 已存在直接返回成功。

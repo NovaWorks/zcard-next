@@ -39,7 +39,6 @@ require (
 	github.com/go-openapi/inflect v0.19.0 // indirect
 	github.com/go-playground/form/v4 v4.3.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/subcommands v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect

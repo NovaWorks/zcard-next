@@ -174,6 +174,20 @@ func (_c *ProductCreate) SetMemberPrice(v map[string]int64) *ProductCreate {
 	return _c
 }
 
+// SetPointsRequired sets the "points_required" field.
+func (_c *ProductCreate) SetPointsRequired(v int64) *ProductCreate {
+	_c.mutation.SetPointsRequired(v)
+	return _c
+}
+
+// SetNillablePointsRequired sets the "points_required" field if the given value is not nil.
+func (_c *ProductCreate) SetNillablePointsRequired(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetPointsRequired(*v)
+	}
+	return _c
+}
+
 // SetStockType sets the "stock_type" field.
 func (_c *ProductCreate) SetStockType(v product.StockType) *ProductCreate {
 	_c.mutation.SetStockType(v)
@@ -401,6 +415,10 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultDraftPremium
 		_c.mutation.SetDraftPremium(v)
 	}
+	if _, ok := _c.mutation.PointsRequired(); !ok {
+		v := product.DefaultPointsRequired
+		_c.mutation.SetPointsRequired(v)
+	}
 	if _, ok := _c.mutation.StockType(); !ok {
 		v := product.DefaultStockType
 		_c.mutation.SetStockType(v)
@@ -467,6 +485,9 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.DraftPremium(); !ok {
 		return &ValidationError{Name: "draft_premium", err: errors.New(`ent: missing required field "Product.draft_premium"`)}
+	}
+	if _, ok := _c.mutation.PointsRequired(); !ok {
+		return &ValidationError{Name: "points_required", err: errors.New(`ent: missing required field "Product.points_required"`)}
 	}
 	if _, ok := _c.mutation.StockType(); !ok {
 		return &ValidationError{Name: "stock_type", err: errors.New(`ent: missing required field "Product.stock_type"`)}
@@ -585,6 +606,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.MemberPrice(); ok {
 		_spec.SetField(product.FieldMemberPrice, field.TypeJSON, value)
 		_node.MemberPrice = value
+	}
+	if value, ok := _c.mutation.PointsRequired(); ok {
+		_spec.SetField(product.FieldPointsRequired, field.TypeInt64, value)
+		_node.PointsRequired = value
 	}
 	if value, ok := _c.mutation.StockType(); ok {
 		_spec.SetField(product.FieldStockType, field.TypeEnum, value)
@@ -911,6 +936,24 @@ func (u *ProductUpsert) UpdateMemberPrice() *ProductUpsert {
 // ClearMemberPrice clears the value of the "member_price" field.
 func (u *ProductUpsert) ClearMemberPrice() *ProductUpsert {
 	u.SetNull(product.FieldMemberPrice)
+	return u
+}
+
+// SetPointsRequired sets the "points_required" field.
+func (u *ProductUpsert) SetPointsRequired(v int64) *ProductUpsert {
+	u.Set(product.FieldPointsRequired, v)
+	return u
+}
+
+// UpdatePointsRequired sets the "points_required" field to the value that was provided on create.
+func (u *ProductUpsert) UpdatePointsRequired() *ProductUpsert {
+	u.SetExcluded(product.FieldPointsRequired)
+	return u
+}
+
+// AddPointsRequired adds v to the "points_required" field.
+func (u *ProductUpsert) AddPointsRequired(v int64) *ProductUpsert {
+	u.Add(product.FieldPointsRequired, v)
 	return u
 }
 
@@ -1362,6 +1405,27 @@ func (u *ProductUpsertOne) UpdateMemberPrice() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearMemberPrice() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearMemberPrice()
+	})
+}
+
+// SetPointsRequired sets the "points_required" field.
+func (u *ProductUpsertOne) SetPointsRequired(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetPointsRequired(v)
+	})
+}
+
+// AddPointsRequired adds v to the "points_required" field.
+func (u *ProductUpsertOne) AddPointsRequired(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddPointsRequired(v)
+	})
+}
+
+// UpdatePointsRequired sets the "points_required" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdatePointsRequired() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdatePointsRequired()
 	})
 }
 
@@ -2006,6 +2070,27 @@ func (u *ProductUpsertBulk) UpdateMemberPrice() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearMemberPrice() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearMemberPrice()
+	})
+}
+
+// SetPointsRequired sets the "points_required" field.
+func (u *ProductUpsertBulk) SetPointsRequired(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetPointsRequired(v)
+	})
+}
+
+// AddPointsRequired adds v to the "points_required" field.
+func (u *ProductUpsertBulk) AddPointsRequired(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddPointsRequired(v)
+	})
+}
+
+// UpdatePointsRequired sets the "points_required" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdatePointsRequired() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdatePointsRequired()
 	})
 }
 

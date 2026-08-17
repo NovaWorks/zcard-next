@@ -50,6 +50,8 @@ type Tx struct {
 	Giftcard *GiftcardClient
 	// GiftcardBatch is the client for interacting with the GiftcardBatch builders.
 	GiftcardBatch *GiftcardBatchClient
+	// LicenseOrder is the client for interacting with the LicenseOrder builders.
+	LicenseOrder *LicenseOrderClient
 	// Media is the client for interacting with the Media builders.
 	Media *MediaClient
 	// MediaCategory is the client for interacting with the MediaCategory builders.
@@ -324,6 +326,7 @@ func (tx *Tx) init() {
 	tx.FlashSale = NewFlashSaleClient(tx.config)
 	tx.Giftcard = NewGiftcardClient(tx.config)
 	tx.GiftcardBatch = NewGiftcardBatchClient(tx.config)
+	tx.LicenseOrder = NewLicenseOrderClient(tx.config)
 	tx.Media = NewMediaClient(tx.config)
 	tx.MediaCategory = NewMediaCategoryClient(tx.config)
 	tx.MemberLevel = NewMemberLevelClient(tx.config)

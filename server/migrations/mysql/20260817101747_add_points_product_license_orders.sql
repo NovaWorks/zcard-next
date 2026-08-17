@@ -1,0 +1,4 @@
+-- Modify "products" table
+ALTER TABLE `products` ADD COLUMN `points_required` bigint NOT NULL DEFAULT 0;
+-- Create "license_orders" table
+CREATE TABLE `license_orders` (`id` bigint unsigned NOT NULL AUTO_INCREMENT, `created_at` datetime(3) NOT NULL, `updated_at` datetime(3) NOT NULL, `plan` enum('monthly','yearly') NOT NULL, `amount` bigint NOT NULL, `status` enum('pending','success','canceled') NOT NULL DEFAULT "pending", `payer_user_id` bigint unsigned NOT NULL, `instance_id` varchar(64) NOT NULL, `domain` varchar(255) NULL, `features` json NULL, `expires_at` datetime(3) NOT NULL, `license_file` longtext NULL, `paid_at` datetime(3) NULL, PRIMARY KEY (`id`), INDEX `licenseorder_instance_id` (`instance_id`), INDEX `licenseorder_payer_user_id` (`payer_user_id`)) CHARSET utf8mb4 COLLATE utf8mb4_bin;

@@ -12,6 +12,7 @@ package adapter
 
 import (
 	"context"
+	"time"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -255,4 +256,9 @@ func (a *acgFakaAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (
 func (a *acgFakaAdapter) RefundOrder(ctx context.Context, _ string) error {
 	// 上游无退款端点（1.x 同款：cancelOrder 返回 false）
 	return ErrNotSupported
+}
+
+// ListOrders 对账列表能力：协议未开放订单列表端点。
+func (a *acgFakaAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error) {
+	return nil, ErrNotSupported
 }

@@ -10,6 +10,7 @@ package supplier
 // 余额不足/库存不足 → 明确错误码（下游可编程处理），不产生流水。
 
 import (
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 	"context"
 	"errors"
 	"fmt"
@@ -231,6 +232,28 @@ func (s *SupplyAPIService) CreateOrder(ctx context.Context, req *supplyv1.Create
 		Amount:        amount,
 		Fulfillment:   &supplyv1.SupplyFulfillment{Status: "delivered", Cards: delivered},
 	}, nil
+}
+
+// ListOrders 时间窗订单列表（对账数据源）。
+func (s *SupplyAPIService) ListOrders(ctx context.Context, req *supplyv1.ListSupplyOrdersRequest) (*supplyv1.ListSupplyOrdersReply, error) {
+	start := time.Unix(req.GetStart(), 0).UTC()
+	end := time.Unix(req.GetEnd(), 0).UTC()
+	if end.Before(start) || end.Sub(start) > 31*24*time.Hour {
+		return nil, kerrors.BadRequest("supply.RANGE_INVALID", "时间窗非法（或超过 31 天）")
+	}
+	rows, err := s.repo.ListSupplyOrders(ctx, start, end)
+	if err != nil {
+		return nil, kerrors.InternalServer("supply.LIST_FAILED", "读取订单失败")
+	}
+	reply := &supplyv1.ListSupplyOrdersReply{}
+	for _, o := range rows {
+		reply.Orders = append(reply.Orders, &supplyv1.SupplyOrderItem{
+			Id: o.ID, DownstreamOrderNo: o.DownstreamOrderNo,
+			Amount: o.Amount, Status: string(o.Status),
+			CreatedAt: o.CreatedAt.Unix(),
+		})
+	}
+	return reply, nil
 }
 
 // GetOrder 订单查询。
