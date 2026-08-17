@@ -20,6 +20,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerpricing"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerprofile"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellersite"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -402,4 +403,40 @@ func (r *ResellerRepo) GetBalance(ctx context.Context, subsiteID uint64) (*ent.R
 		return nil, err
 	}
 	return acc, nil
+}
+
+// ListSites 分站域名列表。
+func (r *ResellerRepo) ListSites(ctx context.Context, profileID uint64) ([]*ent.ResellerSite, error) {
+	return data.Client(ctx, r.data).ResellerSite.Query().
+		Where(resellersite.ProfileID(profileID)).
+		Order(ent.Desc(resellersite.FieldID)).
+		All(ctx)
+}
+
+// GetSite 单站点。
+func (r *ResellerRepo) GetSite(ctx context.Context, id uint64) (*ent.ResellerSite, error) {
+	s, err := data.Client(ctx, r.data).ResellerSite.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return s, nil
+}
+
+// SetWhitelabel 白标设置。
+func (r *ResellerRepo) SetWhitelabel(ctx context.Context, siteID uint64, siteName, logo, favicon string) error {
+	upd := data.Client(ctx, r.data).ResellerSite.UpdateOneID(siteID)
+	if siteName != "" {
+		upd.SetSiteName(siteName)
+	}
+	if logo != "" {
+		upd.SetLogo(logo)
+	}
+	if favicon != "" {
+		upd.SetFavicon(favicon)
+	}
+	_, err := upd.Save(ctx)
+	return err
 }

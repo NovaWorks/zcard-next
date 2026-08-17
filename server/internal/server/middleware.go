@@ -12,7 +12,10 @@ package server
 
 import (
 	"context"
+	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
@@ -27,19 +30,81 @@ import (
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 )
 
-// tenantMiddleware 域名解析中间件（§6.5）：Host 匹配主站域名 → 主站上下文；
-// 分站域名走 reseller_sites 验证（M3 交付，当前 fail-open 到主站并留痕 Host）。
-// Ent interceptor（读写自动注入 subsite_id）M1 交付后在此上下文之上生效。
-func tenantMiddleware(mainDomain string) middleware.Middleware {
+// DomainResolver 域名→租户解析端口（reseller 模块实现；server 不依赖业务实现）。
+type DomainResolver interface {
+	ResolveDomain(ctx context.Context, host string) (subsiteID uint64, siteName string, err error)
+}
+
+// domainCache 域名解析缓存（30s——reseller_sites 变更窗口）。
+type domainCache struct {
+	mu  sync.RWMutex
+	m   map[string]domainCacheEntry
+	ttl time.Duration
+}
+type domainCacheEntry struct {
+	subsiteID uint64
+	siteName  string
+	at        time.Time
+}
+
+var dcache = &domainCache{m: map[string]domainCacheEntry{}, ttl: 30 * time.Second}
+
+func (c *domainCache) get(host string) (uint64, string, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	e, ok := c.m[host]
+	if !ok || time.Since(e.at) > c.ttl {
+		return 0, "", false
+	}
+	return e.subsiteID, e.siteName, true
+}
+
+func (c *domainCache) put(host string, subsiteID uint64, siteName string) {
+	c.mu.Lock()
+	c.m[host] = domainCacheEntry{subsiteID: subsiteID, siteName: siteName, at: time.Now()}
+	c.mu.Unlock()
+}
+
+// tenantFilter 域名解析过滤器（§6.5）。
+// http.Filter 层实现（Kratos 中间件的 Transporter 是内部 *khttp.Transport——
+// 拿不到 Host 字段，恒主站；与 audit/supplier 同款 Filter 模式）。
+// Host → verified 分站域名 → 分站上下文；未匹配/未验证 → 主站兜底（fail-open 绝不 5xx）。
+// req.WithContext 后续中间件与业务 handler 自动继承租户上下文。
+func tenantFilter(mainDomain string, resolver DomainResolver) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			tc := tenancy.Context{SubsiteID: tenancy.MainSubsiteID, IsMain: true, Host: r.Host}
+			if resolver != nil && r.Host != "" && r.Host != mainDomain {
+				host := strings.Split(r.Host, ":")[0]
+				if id, _, cached := dcache.get(host); cached {
+					tc.SubsiteID, tc.IsMain = id, id == tenancy.MainSubsiteID
+				} else if id, _, err := resolver.ResolveDomain(r.Context(), host); err == nil && id > 0 {
+					dcache.put(host, id, "")
+					tc.SubsiteID, tc.IsMain = id, false
+				} else {
+					dcache.put(host, 0, "") // 负缓存（主站）30s
+				}
+			}
+			next.ServeHTTP(w, r.WithContext(tenancy.WithContext(r.Context(), tc)))
+		})
+	}
+}
+
+// userAuthMiddleware storefront 用户 realm JWT（storefront 面需要登录态的端点：
+// wallet/ticket/affiliate/user.me）。解析失败放行（claims 为 nil，业务端自行 401——
+// 避免游客可访问的列表端点被一刀切）。
+func userAuthMiddleware(signer *authn.Signer) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {
-			tc := tenancy.Context{SubsiteID: tenancy.MainSubsiteID, IsMain: true}
 			if tr, ok := transport.FromServerContext(ctx); ok {
-				tc.Host = hostOf(tr)
-				// M3：reseller_sites 已验证域名 → SubsiteID/IsMain=false（DNS/文件验证后生效）
+				token := bearerToken(tr.RequestHeader().Get("Authorization"))
+				if token != "" {
+					if claims, err := signer.Verify(authn.RealmUser, token); err == nil {
+						ctx = identity.WithClaims(ctx, claims)
+					}
+				}
 			}
-			_ = mainDomain
-			return handler(tenancy.WithContext(ctx, tc), req)
+			return handler(ctx, req)
 		}
 	}
 }

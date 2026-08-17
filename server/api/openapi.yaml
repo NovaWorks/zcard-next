@@ -2705,6 +2705,84 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.LedgerReply'
+    /api/v1/admin/reseller/my/sites:
+        get:
+            tags:
+                - AdminResellerService
+            description: MySites 分站主：名下域名列表。
+            operationId: AdminResellerService_MySites
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MySitesReply'
+        post:
+            tags:
+                - AdminResellerService
+            description: AddSite 分站主：登记域名（生成验证 token）。
+            operationId: AdminResellerService_AddSite
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AddSiteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ResellerSiteItem'
+    /api/v1/admin/reseller/my/sites/{siteId}/verify:
+        post:
+            tags:
+                - AdminResellerService
+            description: VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+            operationId: AdminResellerService_VerifySite
+            parameters:
+                - name: siteId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.VerifySiteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.VerifySiteReply'
+    /api/v1/admin/reseller/my/sites/{siteId}/whitelabel:
+        post:
+            tags:
+                - AdminResellerService
+            description: SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+            operationId: AdminResellerService_SetWhitelabel
+            parameters:
+                - name: siteId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetWhitelabelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/reseller/pricing:
         post:
             tags:
@@ -4129,12 +4207,13 @@ paths:
                   description: 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
                   schema:
                     type: string
-                - name: page.page
+                - name: page
                   in: query
+                  description: 扁平分页（query 绑定：?page=1&page_size=20）
                   schema:
                     type: integer
                     format: int32
-                - name: page.pageSize
+                - name: pageSize
                   in: query
                   schema:
                     type: integer
@@ -4295,6 +4374,57 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.PayUrgentReply'
+    /api/v1/storefront/user/login:
+        post:
+            tags:
+                - StoreUserService
+            description: Login 登录（返回 user realm JWT）。
+            operationId: StoreUserService_Login
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.LoginRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LoginReply'
+    /api/v1/storefront/user/me:
+        get:
+            tags:
+                - StoreUserService
+            description: Me 我的信息（需登录）。
+            operationId: StoreUserService_Me
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.MeReply'
+    /api/v1/storefront/user/register:
+        post:
+            tags:
+                - StoreUserService
+            description: Register 注册（username+password；invite_code 可选=上级 user_id）。
+            operationId: StoreUserService_Register
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.RegisterRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.RegisterReply'
     /api/v1/storefront/wallet:
         get:
             tags:
@@ -4353,6 +4483,17 @@ paths:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListTxReply'
 components:
     schemas:
+        zcard.api.admin.v1.AddSiteRequest:
+            required:
+                - domain
+            type: object
+            properties:
+                domain:
+                    type: string
+                siteName:
+                    type: string
+                isPrimary:
+                    type: boolean
         zcard.api.admin.v1.AdjustRequest:
             required:
                 - userId
@@ -6375,6 +6516,13 @@ components:
                         type: string
                 categoryId:
                     type: string
+        zcard.api.admin.v1.MySitesReply:
+            type: object
+            properties:
+                sites:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ResellerSiteItem'
         zcard.api.admin.v1.NotifyLog:
             type: object
             properties:
@@ -6790,6 +6938,25 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.admin.v1.ResellerSiteItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                profileId:
+                    type: string
+                domain:
+                    type: string
+                verificationStatus:
+                    type: string
+                verificationToken:
+                    type: string
+                isPrimary:
+                    type: boolean
+                siteName:
+                    type: string
+                logo:
+                    type: string
         zcard.api.admin.v1.ResendNotifyLogRequest:
             required:
                 - id
@@ -6927,6 +7094,19 @@ components:
                 id:
                     type: string
                 notifyUrl:
+                    type: string
+        zcard.api.admin.v1.SetWhitelabelRequest:
+            required:
+                - siteId
+            type: object
+            properties:
+                siteId:
+                    type: string
+                siteName:
+                    type: string
+                logo:
+                    type: string
+                favicon:
                     type: string
         zcard.api.admin.v1.Setting:
             type: object
@@ -7664,6 +7844,20 @@ components:
                     type: string
                 price:
                     type: string
+        zcard.api.admin.v1.VerifySiteReply:
+            type: object
+            properties:
+                verified:
+                    type: boolean
+                method:
+                    type: string
+        zcard.api.admin.v1.VerifySiteRequest:
+            required:
+                - siteId
+            type: object
+            properties:
+                siteId:
+                    type: string
         zcard.api.admin.v1.ViewCardContentReply:
             type: object
             properties:
@@ -7726,18 +7920,6 @@ components:
                     type: string
                 createdAt:
                     type: string
-        zcard.api.common.v1.PageResp:
-            type: object
-            properties:
-                total:
-                    type: string
-                page:
-                    type: integer
-                    format: int32
-                pageSize:
-                    type: integer
-                    format: int32
-            description: PageResp 分页响应。
         zcard.api.storefront.v1.BalanceReply:
             type: object
             properties:
@@ -8039,8 +8221,14 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+                total:
+                    type: string
                 page:
-                    $ref: '#/components/schemas/zcard.api.common.v1.PageResp'
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.ListTeamReply:
             type: object
             properties:
@@ -8063,6 +8251,25 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Tx'
+        zcard.api.storefront.v1.LoginReply:
+            type: object
+            properties:
+                accessToken:
+                    type: string
+                tokenType:
+                    type: string
+                expiresAt:
+                    type: string
+        zcard.api.storefront.v1.LoginRequest:
+            required:
+                - username
+                - password
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
         zcard.api.storefront.v1.MarkReadRequest:
             type: object
             properties:
@@ -8087,6 +8294,21 @@ components:
                 fetchCount:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.MeReply:
+            type: object
+            properties:
+                userId:
+                    type: string
+                username:
+                    type: string
+                email:
+                    type: string
+                createdAt:
+                    type: string
+                isReseller:
+                    type: boolean
+                resellerProfileId:
+                    type: string
         zcard.api.storefront.v1.MyAffiliateReply:
             type: object
             properties:
@@ -8285,6 +8507,29 @@ components:
             type: object
             properties:
                 code:
+                    type: string
+        zcard.api.storefront.v1.RegisterReply:
+            type: object
+            properties:
+                userId:
+                    type: string
+                token:
+                    type: string
+                expiresAt:
+                    type: string
+        zcard.api.storefront.v1.RegisterRequest:
+            required:
+                - username
+                - password
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                email:
+                    type: string
+                inviteCode:
                     type: string
         zcard.api.storefront.v1.ReplyTicketRequest:
             required:
@@ -8722,6 +8967,10 @@ tags:
       description: |-
         StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
          游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
+    - name: StoreUserService
+      description: |-
+        StoreUserService 用户中心（P3-04 前置）：注册/登录（user realm JWT）/我的信息。
+         注册可带邀请码（ref=<user_id>）——三级分销归因链写入（环状拒绝）。
     - name: StoreWalletService
       description: StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
     - name: StorefrontConfigService

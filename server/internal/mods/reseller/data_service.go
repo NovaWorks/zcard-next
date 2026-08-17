@@ -151,3 +151,96 @@ func pageParams(page, pageSize int32) (int, int) {
 }
 
 var _ = resellerledgerentry.FieldID
+
+// ── 分站主自服务面（reseller: 域；数据按本人 profile 隔离）─────────
+
+// myProfile 当前登录分站主的 profile（claims.Subject → user_id 匹配）。
+func (s *AdminResellerService) myProfile(ctx context.Context) (*ent.ResellerProfile, error) {
+	uid := adminUID(ctx)
+	p, err := s.repo.ProfileByUser(ctx, uid)
+	if err != nil {
+		return nil, errors.Forbidden("reseller.NOT_RESELLER", "非分站主或未过审")
+	}
+	if string(p.Status) != "approved" {
+		return nil, errors.Forbidden("reseller.NOT_APPROVED", "分站未过审")
+	}
+	return p, nil
+}
+
+// MySites 名下域名。
+func (s *AdminResellerService) MySites(ctx context.Context, _ *adminv1.MySitesRequest) (*adminv1.MySitesReply, error) {
+	p, err := s.myProfile(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sites, err := s.repo.ListSites(ctx, p.ID)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	reply := &adminv1.MySitesReply{}
+	for _, site := range sites {
+		reply.Sites = append(reply.Sites, toSitePB(site))
+	}
+	return reply, nil
+}
+
+// AddSite 登记域名（本人 profile 下）。
+func (s *AdminResellerService) AddSite(ctx context.Context, req *adminv1.AddSiteRequest) (*adminv1.ResellerSiteItem, error) {
+	p, err := s.myProfile(ctx)
+	if err != nil {
+		return nil, err
+	}
+	site, err := s.repo.AddSite(ctx, p.ID, req.GetDomain(), req.GetSiteName(), req.GetIsPrimary())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return toSitePB(site), nil
+}
+
+// VerifySite 触发验证（本人站点归属校验）。
+func (s *AdminResellerService) VerifySite(ctx context.Context, req *adminv1.VerifySiteRequest) (*adminv1.VerifySiteReply, error) {
+	p, err := s.myProfile(ctx)
+	if err != nil {
+		return nil, err
+	}
+	site, err := s.repo.GetSite(ctx, req.GetSiteId())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	if site.ProfileID != p.ID {
+		return nil, errors.Forbidden("reseller.NOT_YOUR_SITE", "非本人域名")
+	}
+	ok, method, err := s.repo.VerifySite(ctx, site.ID)
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	return &adminv1.VerifySiteReply{Verified: ok, Method: method}, nil
+}
+
+// SetWhitelabel 白标设置（站名/LOGO/favicon）。
+func (s *AdminResellerService) SetWhitelabel(ctx context.Context, req *adminv1.SetWhitelabelRequest) (*emptypb.Empty, error) {
+	p, err := s.myProfile(ctx)
+	if err != nil {
+		return nil, err
+	}
+	site, err := s.repo.GetSite(ctx, req.GetSiteId())
+	if err != nil {
+		return nil, mapErr(err)
+	}
+	if site.ProfileID != p.ID {
+		return nil, errors.Forbidden("reseller.NOT_YOUR_SITE", "非本人域名")
+	}
+	if err := s.repo.SetWhitelabel(ctx, site.ID, req.GetSiteName(), req.GetLogo(), req.GetFavicon()); err != nil {
+		return nil, mapErr(err)
+	}
+	return &emptypb.Empty{}, nil
+}
+
+func toSitePB(site *ent.ResellerSite) *adminv1.ResellerSiteItem {
+	return &adminv1.ResellerSiteItem{
+		Id: site.ID, ProfileId: site.ProfileID, Domain: site.Domain,
+		VerificationStatus: string(site.VerificationStatus),
+		VerificationToken:  site.VerificationToken,
+		IsPrimary:          site.IsPrimary, SiteName: site.SiteName, Logo: site.Logo,
+	}
+}

@@ -334,6 +334,14 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminResellerService/Ledger", Method: "GET", Path: "/api/v1/admin/reseller/ledger"},
 		Perm{Code: "reseller:read", Desc: "分站余额", Domain: "reseller",
 			Op: "zcard.api.admin.v1.AdminResellerService/Balance", Method: "GET", Path: "/api/v1/admin/reseller/balance"},
+		Perm{Code: "reseller:site", Desc: "我的域名（分站主）", Domain: "reseller",
+			Op: "zcard.api.admin.v1.AdminResellerService/MySites", Method: "GET", Path: "/api/v1/admin/reseller/my/sites"},
+		Perm{Code: "reseller:site", Desc: "登记域名（分站主）", Domain: "reseller",
+			Op: "zcard.api.admin.v1.AdminResellerService/AddSite", Method: "POST", Path: "/api/v1/admin/reseller/my/sites"},
+		Perm{Code: "reseller:site", Desc: "验证域名（分站主）", Domain: "reseller",
+			Op: "zcard.api.admin.v1.AdminResellerService/VerifySite", Method: "POST", Path: "/api/v1/admin/reseller/my/sites/{site_id}/verify"},
+		Perm{Code: "reseller:site", Desc: "白标设置（分站主）", Domain: "reseller",
+			Op: "zcard.api.admin.v1.AdminResellerService/SetWhitelabel", Method: "POST", Path: "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel"},
 
 		// ── 素材库（media，P3-06）───────────────────
 		Perm{Code: "media:read", Desc: "分类列表", Domain: "media",

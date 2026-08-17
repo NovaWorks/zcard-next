@@ -30,12 +30,16 @@ message ListProductsRequest {
   uint64 category_id = 1;
   // 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
   string keyword = 2;
-  zcard.api.common.v1.PageReq page = 3;
+  // 扁平分页（query 绑定：?page=1&page_size=20）
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message ListProductsReply {
   repeated Product items = 1;
-  zcard.api.common.v1.PageResp page = 2;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message GetProductRequest {

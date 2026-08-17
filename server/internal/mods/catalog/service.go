@@ -5,7 +5,6 @@ package catalog
 import (
 	"context"
 
-	commonv1 "github.com/NovaWorks/zcard-next/server/api/common/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -29,11 +28,11 @@ func NewStoreCatalogService(uc *CatalogUsecase) *StoreCatalogService {
 // 分页参数缺省：page=1 / page_size=20（嵌套 message 的 query 绑定为 page.page=1 形式）。
 func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv1.ListProductsRequest) (*storefrontv1.ListProductsReply, error) {
 	tc := tenancy.FromContext(ctx)
-	page := req.GetPage().GetPage()
+	page := req.GetPage()
 	if page <= 0 {
 		page = 1
 	}
-	pageSize := req.GetPage().GetPageSize()
+	pageSize := req.GetPageSize()
 	if pageSize <= 0 {
 		pageSize = 20
 	}
@@ -48,12 +47,10 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品列表失败")
 	}
 	reply := &storefrontv1.ListProductsReply{
-		Items: make([]*storefrontv1.Product, 0, len(items)),
-		Page: &commonv1.PageResp{
-			Total:    total,
-			Page:     page,
-			PageSize: pageSize,
-		},
+		Items:    make([]*storefrontv1.Product, 0, len(items)),
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	}
 	for i := range items {
 		reply.Items = append(reply.Items, toStorefrontProduct(&items[i]))

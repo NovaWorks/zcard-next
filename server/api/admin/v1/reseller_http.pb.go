@@ -18,32 +18,130 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminResellerServiceAddSite = "/zcard.api.admin.v1.AdminResellerService/AddSite"
 const OperationAdminResellerServiceBalance = "/zcard.api.admin.v1.AdminResellerService/Balance"
 const OperationAdminResellerServiceLedger = "/zcard.api.admin.v1.AdminResellerService/Ledger"
 const OperationAdminResellerServiceListProfiles = "/zcard.api.admin.v1.AdminResellerService/ListProfiles"
+const OperationAdminResellerServiceMySites = "/zcard.api.admin.v1.AdminResellerService/MySites"
 const OperationAdminResellerServiceReviewApply = "/zcard.api.admin.v1.AdminResellerService/ReviewApply"
+const OperationAdminResellerServiceSetWhitelabel = "/zcard.api.admin.v1.AdminResellerService/SetWhitelabel"
 const OperationAdminResellerServiceUpsertPricing = "/zcard.api.admin.v1.AdminResellerService/UpsertPricing"
+const OperationAdminResellerServiceVerifySite = "/zcard.api.admin.v1.AdminResellerService/VerifySite"
 
 type AdminResellerServiceHTTPServer interface {
+	// AddSite AddSite 分站主：登记域名（生成验证 token）。
+	AddSite(context.Context, *AddSiteRequest) (*ResellerSiteItem, error)
 	// Balance Balance 分站余额（缓存 + 重算对账）。
 	Balance(context.Context, *BalanceRequest) (*BalanceReply, error)
 	// Ledger Ledger 分站账本流水。
 	Ledger(context.Context, *LedgerRequest) (*LedgerReply, error)
 	// ListProfiles ListProfiles 申请/分站列表。
 	ListProfiles(context.Context, *ListProfilesRequest) (*ListProfilesReply, error)
+	// MySites MySites 分站主：名下域名列表。
+	MySites(context.Context, *MySitesRequest) (*MySitesReply, error)
 	// ReviewApply ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 	ReviewApply(context.Context, *ReviewApplyRequest) (*ResellerProfile, error)
+	// SetWhitelabel SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+	SetWhitelabel(context.Context, *SetWhitelabelRequest) (*emptypb.Empty, error)
 	// UpsertPricing UpsertPricing 分站定价规则（SKU>商品>默认）。
 	UpsertPricing(context.Context, *UpsertPricingRequest) (*emptypb.Empty, error)
+	// VerifySite VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+	VerifySite(context.Context, *VerifySiteRequest) (*VerifySiteReply, error)
 }
 
 func RegisterAdminResellerServiceHTTPServer(s *http.Server, srv AdminResellerServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("GET", "/api/v1/admin/reseller/my/sites", _AdminResellerService_MySites0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/reseller/my/sites", _AdminResellerService_AddSite0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/reseller/my/sites/{site_id}/verify", _AdminResellerService_VerifySite0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel", _AdminResellerService_SetWhitelabel0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/reseller/apply/{id}/review", _AdminResellerService_ReviewApply0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/reseller/profiles", _AdminResellerService_ListProfiles0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/reseller/pricing", _AdminResellerService_UpsertPricing0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/reseller/ledger", _AdminResellerService_Ledger0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/reseller/balance", _AdminResellerService_Balance0_HTTP_Handler(srv))
+}
+
+func _AdminResellerService_MySites0_HTTP_Handler(srv AdminResellerServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in MySitesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminResellerServiceMySites)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.MySites(ctx, req.(*MySitesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*MySitesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminResellerService_AddSite0_HTTP_Handler(srv AdminResellerServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AddSiteRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminResellerServiceAddSite)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AddSite(ctx, req.(*AddSiteRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ResellerSiteItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminResellerService_VerifySite0_HTTP_Handler(srv AdminResellerServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in VerifySiteRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminResellerServiceVerifySite)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.VerifySite(ctx, req.(*VerifySiteRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*VerifySiteReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminResellerService_SetWhitelabel0_HTTP_Handler(srv AdminResellerServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetWhitelabelRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminResellerServiceSetWhitelabel)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetWhitelabel(ctx, req.(*SetWhitelabelRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminResellerService_ReviewApply0_HTTP_Handler(srv AdminResellerServiceHTTPServer) func(ctx http.Context) error {
@@ -145,16 +243,24 @@ func _AdminResellerService_Balance0_HTTP_Handler(srv AdminResellerServiceHTTPSer
 }
 
 type AdminResellerServiceHTTPClient interface {
+	// AddSite AddSite 分站主：登记域名（生成验证 token）。
+	AddSite(ctx context.Context, req *AddSiteRequest, opts ...http.CallOption) (rsp *ResellerSiteItem, err error)
 	// Balance Balance 分站余额（缓存 + 重算对账）。
 	Balance(ctx context.Context, req *BalanceRequest, opts ...http.CallOption) (rsp *BalanceReply, err error)
 	// Ledger Ledger 分站账本流水。
 	Ledger(ctx context.Context, req *LedgerRequest, opts ...http.CallOption) (rsp *LedgerReply, err error)
 	// ListProfiles ListProfiles 申请/分站列表。
 	ListProfiles(ctx context.Context, req *ListProfilesRequest, opts ...http.CallOption) (rsp *ListProfilesReply, err error)
+	// MySites MySites 分站主：名下域名列表。
+	MySites(ctx context.Context, req *MySitesRequest, opts ...http.CallOption) (rsp *MySitesReply, err error)
 	// ReviewApply ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 	ReviewApply(ctx context.Context, req *ReviewApplyRequest, opts ...http.CallOption) (rsp *ResellerProfile, err error)
+	// SetWhitelabel SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+	SetWhitelabel(ctx context.Context, req *SetWhitelabelRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// UpsertPricing UpsertPricing 分站定价规则（SKU>商品>默认）。
 	UpsertPricing(ctx context.Context, req *UpsertPricingRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// VerifySite VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+	VerifySite(ctx context.Context, req *VerifySiteRequest, opts ...http.CallOption) (rsp *VerifySiteReply, err error)
 }
 
 type AdminResellerServiceHTTPClientImpl struct {
@@ -163,6 +269,24 @@ type AdminResellerServiceHTTPClientImpl struct {
 
 func NewAdminResellerServiceHTTPClient(client *http.Client) AdminResellerServiceHTTPClient {
 	return &AdminResellerServiceHTTPClientImpl{client}
+}
+
+// AddSite AddSite 分站主：登记域名（生成验证 token）。
+func (c *AdminResellerServiceHTTPClientImpl) AddSite(ctx context.Context, in *AddSiteRequest, opts ...http.CallOption) (*ResellerSiteItem, error) {
+	var out ResellerSiteItem
+	pattern := "/api/v1/admin/reseller/my/sites"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminResellerServiceAddSite),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // Balance Balance 分站余额（缓存 + 重算对账）。
@@ -216,6 +340,23 @@ func (c *AdminResellerServiceHTTPClientImpl) ListProfiles(ctx context.Context, i
 	return &out, nil
 }
 
+// MySites MySites 分站主：名下域名列表。
+func (c *AdminResellerServiceHTTPClientImpl) MySites(ctx context.Context, in *MySitesRequest, opts ...http.CallOption) (*MySitesReply, error) {
+	var out MySitesReply
+	pattern := "/api/v1/admin/reseller/my/sites"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminResellerServiceMySites),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ReviewApply ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 func (c *AdminResellerServiceHTTPClientImpl) ReviewApply(ctx context.Context, in *ReviewApplyRequest, opts ...http.CallOption) (*ResellerProfile, error) {
 	var out ResellerProfile
@@ -234,6 +375,24 @@ func (c *AdminResellerServiceHTTPClientImpl) ReviewApply(ctx context.Context, in
 	return &out, nil
 }
 
+// SetWhitelabel SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+func (c *AdminResellerServiceHTTPClientImpl) SetWhitelabel(ctx context.Context, in *SetWhitelabelRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminResellerServiceSetWhitelabel),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // UpsertPricing UpsertPricing 分站定价规则（SKU>商品>默认）。
 func (c *AdminResellerServiceHTTPClientImpl) UpsertPricing(ctx context.Context, in *UpsertPricingRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
@@ -243,6 +402,24 @@ func (c *AdminResellerServiceHTTPClientImpl) UpsertPricing(ctx context.Context, 
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminResellerServiceUpsertPricing),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// VerifySite VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+func (c *AdminResellerServiceHTTPClientImpl) VerifySite(ctx context.Context, in *VerifySiteRequest, opts ...http.CallOption) (*VerifySiteReply, error) {
+	var out VerifySiteReply
+	pattern := "/api/v1/admin/reseller/my/sites/{site_id}/verify"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminResellerServiceVerifySite),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

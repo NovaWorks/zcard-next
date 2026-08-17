@@ -799,6 +799,411 @@ func (x *BalanceReply) GetRecomputedNegative() int64 {
 	return 0
 }
 
+// MySites 我名下域名（分站主）。
+type MySitesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MySitesRequest) Reset() {
+	*x = MySitesRequest{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MySitesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MySitesRequest) ProtoMessage() {}
+
+func (x *MySitesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MySitesRequest.ProtoReflect.Descriptor instead.
+func (*MySitesRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{10}
+}
+
+type ResellerSiteItem struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProfileId          uint64                 `protobuf:"varint,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
+	Domain             string                 `protobuf:"bytes,3,opt,name=domain,proto3" json:"domain,omitempty"`
+	VerificationStatus string                 `protobuf:"bytes,4,opt,name=verification_status,json=verificationStatus,proto3" json:"verification_status,omitempty"` // pending | verified | failed
+	VerificationToken  string                 `protobuf:"bytes,5,opt,name=verification_token,json=verificationToken,proto3" json:"verification_token,omitempty"`    // 用于 DNS TXT/HTTP 文件内容
+	IsPrimary          bool                   `protobuf:"varint,6,opt,name=is_primary,json=isPrimary,proto3" json:"is_primary,omitempty"`
+	SiteName           string                 `protobuf:"bytes,7,opt,name=site_name,json=siteName,proto3" json:"site_name,omitempty"`
+	Logo               string                 `protobuf:"bytes,8,opt,name=logo,proto3" json:"logo,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ResellerSiteItem) Reset() {
+	*x = ResellerSiteItem{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResellerSiteItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResellerSiteItem) ProtoMessage() {}
+
+func (x *ResellerSiteItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResellerSiteItem.ProtoReflect.Descriptor instead.
+func (*ResellerSiteItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ResellerSiteItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ResellerSiteItem) GetProfileId() uint64 {
+	if x != nil {
+		return x.ProfileId
+	}
+	return 0
+}
+
+func (x *ResellerSiteItem) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *ResellerSiteItem) GetVerificationStatus() string {
+	if x != nil {
+		return x.VerificationStatus
+	}
+	return ""
+}
+
+func (x *ResellerSiteItem) GetVerificationToken() string {
+	if x != nil {
+		return x.VerificationToken
+	}
+	return ""
+}
+
+func (x *ResellerSiteItem) GetIsPrimary() bool {
+	if x != nil {
+		return x.IsPrimary
+	}
+	return false
+}
+
+func (x *ResellerSiteItem) GetSiteName() string {
+	if x != nil {
+		return x.SiteName
+	}
+	return ""
+}
+
+func (x *ResellerSiteItem) GetLogo() string {
+	if x != nil {
+		return x.Logo
+	}
+	return ""
+}
+
+type MySitesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sites         []*ResellerSiteItem    `protobuf:"bytes,1,rep,name=sites,proto3" json:"sites,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MySitesReply) Reset() {
+	*x = MySitesReply{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MySitesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MySitesReply) ProtoMessage() {}
+
+func (x *MySitesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MySitesReply.ProtoReflect.Descriptor instead.
+func (*MySitesReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *MySitesReply) GetSites() []*ResellerSiteItem {
+	if x != nil {
+		return x.Sites
+	}
+	return nil
+}
+
+type AddSiteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Domain        string                 `protobuf:"bytes,1,opt,name=domain,proto3" json:"domain,omitempty"`
+	SiteName      string                 `protobuf:"bytes,2,opt,name=site_name,json=siteName,proto3" json:"site_name,omitempty"`
+	IsPrimary     bool                   `protobuf:"varint,3,opt,name=is_primary,json=isPrimary,proto3" json:"is_primary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddSiteRequest) Reset() {
+	*x = AddSiteRequest{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddSiteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddSiteRequest) ProtoMessage() {}
+
+func (x *AddSiteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddSiteRequest.ProtoReflect.Descriptor instead.
+func (*AddSiteRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *AddSiteRequest) GetDomain() string {
+	if x != nil {
+		return x.Domain
+	}
+	return ""
+}
+
+func (x *AddSiteRequest) GetSiteName() string {
+	if x != nil {
+		return x.SiteName
+	}
+	return ""
+}
+
+func (x *AddSiteRequest) GetIsPrimary() bool {
+	if x != nil {
+		return x.IsPrimary
+	}
+	return false
+}
+
+type VerifySiteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SiteId        uint64                 `protobuf:"varint,1,opt,name=site_id,json=siteId,proto3" json:"site_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifySiteRequest) Reset() {
+	*x = VerifySiteRequest{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifySiteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifySiteRequest) ProtoMessage() {}
+
+func (x *VerifySiteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifySiteRequest.ProtoReflect.Descriptor instead.
+func (*VerifySiteRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *VerifySiteRequest) GetSiteId() uint64 {
+	if x != nil {
+		return x.SiteId
+	}
+	return 0
+}
+
+type VerifySiteReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Verified      bool                   `protobuf:"varint,1,opt,name=verified,proto3" json:"verified,omitempty"`
+	Method        string                 `protobuf:"bytes,2,opt,name=method,proto3" json:"method,omitempty"` // dns | http
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifySiteReply) Reset() {
+	*x = VerifySiteReply{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifySiteReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifySiteReply) ProtoMessage() {}
+
+func (x *VerifySiteReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifySiteReply.ProtoReflect.Descriptor instead.
+func (*VerifySiteReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *VerifySiteReply) GetVerified() bool {
+	if x != nil {
+		return x.Verified
+	}
+	return false
+}
+
+func (x *VerifySiteReply) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+type SetWhitelabelRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SiteId        uint64                 `protobuf:"varint,1,opt,name=site_id,json=siteId,proto3" json:"site_id,omitempty"`
+	SiteName      string                 `protobuf:"bytes,2,opt,name=site_name,json=siteName,proto3" json:"site_name,omitempty"`
+	Logo          string                 `protobuf:"bytes,3,opt,name=logo,proto3" json:"logo,omitempty"`
+	Favicon       string                 `protobuf:"bytes,4,opt,name=favicon,proto3" json:"favicon,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetWhitelabelRequest) Reset() {
+	*x = SetWhitelabelRequest{}
+	mi := &file_admin_v1_reseller_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetWhitelabelRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetWhitelabelRequest) ProtoMessage() {}
+
+func (x *SetWhitelabelRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_reseller_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetWhitelabelRequest.ProtoReflect.Descriptor instead.
+func (*SetWhitelabelRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_reseller_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SetWhitelabelRequest) GetSiteId() uint64 {
+	if x != nil {
+		return x.SiteId
+	}
+	return 0
+}
+
+func (x *SetWhitelabelRequest) GetSiteName() string {
+	if x != nil {
+		return x.SiteName
+	}
+	return ""
+}
+
+func (x *SetWhitelabelRequest) GetLogo() string {
+	if x != nil {
+		return x.Logo
+	}
+	return ""
+}
+
+func (x *SetWhitelabelRequest) GetFavicon() string {
+	if x != nil {
+		return x.Favicon
+	}
+	return ""
+}
+
 var File_admin_v1_reseller_proto protoreflect.FileDescriptor
 
 const file_admin_v1_reseller_proto_rawDesc = "" +
@@ -873,8 +1278,42 @@ const file_admin_v1_reseller_proto_rawDesc = "" +
 	"\bnegative\x18\x03 \x01(\x03R\bnegative\x121\n" +
 	"\x14recomputed_available\x18\x04 \x01(\x03R\x13recomputedAvailable\x12+\n" +
 	"\x11recomputed_locked\x18\x05 \x01(\x03R\x10recomputedLocked\x12/\n" +
-	"\x13recomputed_negative\x18\x06 \x01(\x03R\x12recomputedNegative2\x9e\x05\n" +
-	"\x14AdminResellerService\x12\x8f\x01\n" +
+	"\x13recomputed_negative\x18\x06 \x01(\x03R\x12recomputedNegative\"\x10\n" +
+	"\x0eMySitesRequest\"\x89\x02\n" +
+	"\x10ResellerSiteItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"profile_id\x18\x02 \x01(\x04R\tprofileId\x12\x16\n" +
+	"\x06domain\x18\x03 \x01(\tR\x06domain\x12/\n" +
+	"\x13verification_status\x18\x04 \x01(\tR\x12verificationStatus\x12-\n" +
+	"\x12verification_token\x18\x05 \x01(\tR\x11verificationToken\x12\x1d\n" +
+	"\n" +
+	"is_primary\x18\x06 \x01(\bR\tisPrimary\x12\x1b\n" +
+	"\tsite_name\x18\a \x01(\tR\bsiteName\x12\x12\n" +
+	"\x04logo\x18\b \x01(\tR\x04logo\"J\n" +
+	"\fMySitesReply\x12:\n" +
+	"\x05sites\x18\x01 \x03(\v2$.zcard.api.admin.v1.ResellerSiteItemR\x05sites\"i\n" +
+	"\x0eAddSiteRequest\x12\x1b\n" +
+	"\x06domain\x18\x01 \x01(\tB\x03\xe0A\x02R\x06domain\x12\x1b\n" +
+	"\tsite_name\x18\x02 \x01(\tR\bsiteName\x12\x1d\n" +
+	"\n" +
+	"is_primary\x18\x03 \x01(\bR\tisPrimary\"1\n" +
+	"\x11VerifySiteRequest\x12\x1c\n" +
+	"\asite_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06siteId\"E\n" +
+	"\x0fVerifySiteReply\x12\x1a\n" +
+	"\bverified\x18\x01 \x01(\bR\bverified\x12\x16\n" +
+	"\x06method\x18\x02 \x01(\tR\x06method\"\x7f\n" +
+	"\x14SetWhitelabelRequest\x12\x1c\n" +
+	"\asite_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06siteId\x12\x1b\n" +
+	"\tsite_name\x18\x02 \x01(\tR\bsiteName\x12\x12\n" +
+	"\x04logo\x18\x03 \x01(\tR\x04logo\x12\x18\n" +
+	"\afavicon\x18\x04 \x01(\tR\afavicon2\xc6\t\n" +
+	"\x14AdminResellerService\x12x\n" +
+	"\aMySites\x12\".zcard.api.admin.v1.MySitesRequest\x1a .zcard.api.admin.v1.MySitesReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/reseller/my/sites\x12\x7f\n" +
+	"\aAddSite\x12\".zcard.api.admin.v1.AddSiteRequest\x1a$.zcard.api.admin.v1.ResellerSiteItem\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/reseller/my/sites\x12\x95\x01\n" +
+	"\n" +
+	"VerifySite\x12%.zcard.api.admin.v1.VerifySiteRequest\x1a#.zcard.api.admin.v1.VerifySiteReply\";\x82\xd3\xe4\x93\x025:\x01*\"0/api/v1/admin/reseller/my/sites/{site_id}/verify\x12\x92\x01\n" +
+	"\rSetWhitelabel\x12(.zcard.api.admin.v1.SetWhitelabelRequest\x1a\x16.google.protobuf.Empty\"?\x82\xd3\xe4\x93\x029:\x01*\"4/api/v1/admin/reseller/my/sites/{site_id}/whitelabel\x12\x8f\x01\n" +
 	"\vReviewApply\x12&.zcard.api.admin.v1.ReviewApplyRequest\x1a#.zcard.api.admin.v1.ResellerProfile\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/admin/reseller/apply/{id}/review\x12\x87\x01\n" +
 	"\fListProfiles\x12'.zcard.api.admin.v1.ListProfilesRequest\x1a%.zcard.api.admin.v1.ListProfilesReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/reseller/profiles\x12|\n" +
 	"\rUpsertPricing\x12(.zcard.api.admin.v1.UpsertPricingRequest\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/reseller/pricing\x12s\n" +
@@ -893,7 +1332,7 @@ func file_admin_v1_reseller_proto_rawDescGZIP() []byte {
 	return file_admin_v1_reseller_proto_rawDescData
 }
 
-var file_admin_v1_reseller_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_admin_v1_reseller_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_admin_v1_reseller_proto_goTypes = []any{
 	(*ResellerProfile)(nil),      // 0: zcard.api.admin.v1.ResellerProfile
 	(*ReviewApplyRequest)(nil),   // 1: zcard.api.admin.v1.ReviewApplyRequest
@@ -905,26 +1344,42 @@ var file_admin_v1_reseller_proto_goTypes = []any{
 	(*LedgerReply)(nil),          // 7: zcard.api.admin.v1.LedgerReply
 	(*BalanceRequest)(nil),       // 8: zcard.api.admin.v1.BalanceRequest
 	(*BalanceReply)(nil),         // 9: zcard.api.admin.v1.BalanceReply
-	(*emptypb.Empty)(nil),        // 10: google.protobuf.Empty
+	(*MySitesRequest)(nil),       // 10: zcard.api.admin.v1.MySitesRequest
+	(*ResellerSiteItem)(nil),     // 11: zcard.api.admin.v1.ResellerSiteItem
+	(*MySitesReply)(nil),         // 12: zcard.api.admin.v1.MySitesReply
+	(*AddSiteRequest)(nil),       // 13: zcard.api.admin.v1.AddSiteRequest
+	(*VerifySiteRequest)(nil),    // 14: zcard.api.admin.v1.VerifySiteRequest
+	(*VerifySiteReply)(nil),      // 15: zcard.api.admin.v1.VerifySiteReply
+	(*SetWhitelabelRequest)(nil), // 16: zcard.api.admin.v1.SetWhitelabelRequest
+	(*emptypb.Empty)(nil),        // 17: google.protobuf.Empty
 }
 var file_admin_v1_reseller_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListProfilesReply.profiles:type_name -> zcard.api.admin.v1.ResellerProfile
 	6,  // 1: zcard.api.admin.v1.LedgerReply.entries:type_name -> zcard.api.admin.v1.LedgerEntry
-	1,  // 2: zcard.api.admin.v1.AdminResellerService.ReviewApply:input_type -> zcard.api.admin.v1.ReviewApplyRequest
-	2,  // 3: zcard.api.admin.v1.AdminResellerService.ListProfiles:input_type -> zcard.api.admin.v1.ListProfilesRequest
-	4,  // 4: zcard.api.admin.v1.AdminResellerService.UpsertPricing:input_type -> zcard.api.admin.v1.UpsertPricingRequest
-	5,  // 5: zcard.api.admin.v1.AdminResellerService.Ledger:input_type -> zcard.api.admin.v1.LedgerRequest
-	8,  // 6: zcard.api.admin.v1.AdminResellerService.Balance:input_type -> zcard.api.admin.v1.BalanceRequest
-	0,  // 7: zcard.api.admin.v1.AdminResellerService.ReviewApply:output_type -> zcard.api.admin.v1.ResellerProfile
-	3,  // 8: zcard.api.admin.v1.AdminResellerService.ListProfiles:output_type -> zcard.api.admin.v1.ListProfilesReply
-	10, // 9: zcard.api.admin.v1.AdminResellerService.UpsertPricing:output_type -> google.protobuf.Empty
-	7,  // 10: zcard.api.admin.v1.AdminResellerService.Ledger:output_type -> zcard.api.admin.v1.LedgerReply
-	9,  // 11: zcard.api.admin.v1.AdminResellerService.Balance:output_type -> zcard.api.admin.v1.BalanceReply
-	7,  // [7:12] is the sub-list for method output_type
-	2,  // [2:7] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	11, // 2: zcard.api.admin.v1.MySitesReply.sites:type_name -> zcard.api.admin.v1.ResellerSiteItem
+	10, // 3: zcard.api.admin.v1.AdminResellerService.MySites:input_type -> zcard.api.admin.v1.MySitesRequest
+	13, // 4: zcard.api.admin.v1.AdminResellerService.AddSite:input_type -> zcard.api.admin.v1.AddSiteRequest
+	14, // 5: zcard.api.admin.v1.AdminResellerService.VerifySite:input_type -> zcard.api.admin.v1.VerifySiteRequest
+	16, // 6: zcard.api.admin.v1.AdminResellerService.SetWhitelabel:input_type -> zcard.api.admin.v1.SetWhitelabelRequest
+	1,  // 7: zcard.api.admin.v1.AdminResellerService.ReviewApply:input_type -> zcard.api.admin.v1.ReviewApplyRequest
+	2,  // 8: zcard.api.admin.v1.AdminResellerService.ListProfiles:input_type -> zcard.api.admin.v1.ListProfilesRequest
+	4,  // 9: zcard.api.admin.v1.AdminResellerService.UpsertPricing:input_type -> zcard.api.admin.v1.UpsertPricingRequest
+	5,  // 10: zcard.api.admin.v1.AdminResellerService.Ledger:input_type -> zcard.api.admin.v1.LedgerRequest
+	8,  // 11: zcard.api.admin.v1.AdminResellerService.Balance:input_type -> zcard.api.admin.v1.BalanceRequest
+	12, // 12: zcard.api.admin.v1.AdminResellerService.MySites:output_type -> zcard.api.admin.v1.MySitesReply
+	11, // 13: zcard.api.admin.v1.AdminResellerService.AddSite:output_type -> zcard.api.admin.v1.ResellerSiteItem
+	15, // 14: zcard.api.admin.v1.AdminResellerService.VerifySite:output_type -> zcard.api.admin.v1.VerifySiteReply
+	17, // 15: zcard.api.admin.v1.AdminResellerService.SetWhitelabel:output_type -> google.protobuf.Empty
+	0,  // 16: zcard.api.admin.v1.AdminResellerService.ReviewApply:output_type -> zcard.api.admin.v1.ResellerProfile
+	3,  // 17: zcard.api.admin.v1.AdminResellerService.ListProfiles:output_type -> zcard.api.admin.v1.ListProfilesReply
+	17, // 18: zcard.api.admin.v1.AdminResellerService.UpsertPricing:output_type -> google.protobuf.Empty
+	7,  // 19: zcard.api.admin.v1.AdminResellerService.Ledger:output_type -> zcard.api.admin.v1.LedgerReply
+	9,  // 20: zcard.api.admin.v1.AdminResellerService.Balance:output_type -> zcard.api.admin.v1.BalanceReply
+	12, // [12:21] is the sub-list for method output_type
+	3,  // [3:12] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_reseller_proto_init() }
@@ -938,7 +1393,7 @@ func file_admin_v1_reseller_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_reseller_proto_rawDesc), len(file_admin_v1_reseller_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -79,6 +79,8 @@ func NewHTTPServer(
 	affiliateStoreSvc *affiliate.StoreAffiliateService,
 	mediaAdminSvc *media.AdminMediaService,
 	resellerAdminSvc *reseller.AdminResellerService,
+	resellerRepo *reseller.ResellerRepo,
+	userStoreSvc *identity.StoreUserService,
 	auditAdminSvc *audit.AdminAuditService,
 	auditRepo *audit.AuditRepo,
 	roleSvc *authz.RoleService,
@@ -102,20 +104,27 @@ func NewHTTPServer(
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 ) *khttp.Server {
+	// ⚠️ Kratos khttp.Filter 是整体替换（o.filters = filters）非追加——
+	// 多次调用只有最后一次生效（曾致 supplier HMAC/CORS/租户被 audit 静默覆盖）。
+	// 全部 Filter 必须合并为一次注册。
 	var opts = []khttp.ServerOption{
-		khttp.Filter(corsFilter),
-		// P2-03：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
-		// 仅 /api/supply/*，Ping 免签名；不挂 JWT，架构测试规则 9）
-		khttp.Filter(supplier.SupplyAuthFilter(supplierRepo, 0)),
-		// P2-06：变更类 admin 操作审计（Filter 层——中间件拿不到原始请求；
-		// POST/PUT/DELETE 且 2xx；异步落库失败不阻断）
-		khttp.Filter(audit.OpAuditFilter(auditRepo,
-			func(op string) (string, bool) {
-				code, _, ok := dir.PermissionForOp(op)
-				return code, ok
-			},
-			func(r *http.Request) string { return adminOpOfPath(r) },
-		)),
+		khttp.Filter(
+			corsFilter,
+			// P3-04：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
+			tenantFilter(tenancyMainDomain(c), resellerRepo),
+			// P2-03：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
+			// 仅 /api/supply/*，Ping 免签名；不挂 JWT，架构测试规则 9）
+			supplier.SupplyAuthFilter(supplierRepo, 0),
+			// P2-06：变更类 admin 操作审计（Filter 层——中间件拿不到原始请求；
+			// POST/PUT/DELETE 且 2xx；异步落库失败不阻断）
+			audit.OpAuditFilter(auditRepo,
+				func(op string) (string, bool) {
+					code, _, ok := dir.PermissionForOp(op)
+					return code, ok
+				},
+				func(r *http.Request) string { return adminOpOfPath(r) },
+			),
+		),
 		khttp.Middleware(
 			recovery.Recovery(),
 			logging.Server(log.Default()),
@@ -127,7 +136,9 @@ func NewHTTPServer(
 			}),
 			i18nMiddleware("zh_CN"),
 			ensureInstalled(func() bool { return settings.Installed(context.Background(), d) }),
-			tenantMiddleware(tenancyMainDomain(c)),
+			// P3-04：storefront user realm JWT（解析失败放行——游客端点不受影响；
+			// 需登录端点由业务侧 claims==nil 自行 401）
+			userAuthMiddleware(signer),
 			// admin realm 鉴权仅挂管理面 operation；Public 声明（登录）经目录豁免；
 			// storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
 			selector.Server(adminAuthMiddleware(signer, az, dir)).
@@ -187,6 +198,7 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreAffiliateServiceHTTPServer(srv, affiliateStoreSvc)
 	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)
+	storefrontv1.RegisterStoreUserServiceHTTPServer(srv, userStoreSvc)
 	// P3-06：素材静态服务（ETag + 白名单扩展；目录列表禁用）
 	media.RegisterStatic(srv)
 

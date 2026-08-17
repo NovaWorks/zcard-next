@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreUserService 用户中心（P3-04 前置）：注册/登录（user realm JWT）/我的信息。
+// 注册可带邀请码（ref=<user_id>）——三级分销归因链写入（环状拒绝）。
+service StoreUserService {
+  // Register 注册（username+password；invite_code 可选=上级 user_id）。
+  rpc Register(RegisterRequest) returns (RegisterReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/user/register"
+      body: "*"
+    };
+  }
+  // Login 登录（返回 user realm JWT）。
+  rpc Login(LoginRequest) returns (LoginReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/user/login"
+      body: "*"
+    };
+  }
+  // Me 我的信息（需登录）。
+  rpc Me(google.protobuf.Empty) returns (MeReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/user/me" };
+  }
+}
+
+message RegisterRequest {
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+  string email = 3;
+  string invite_code = 4; // 上级 user_id（推广码；可空）
+}
+
+message RegisterReply {
+  uint64 user_id = 1;
+  string token = 2;      // 注册即登录
+  int64 expires_at = 3;
+}
+
+message LoginRequest {
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message LoginReply {
+  string access_token = 1;
+  string token_type = 2;
+  int64 expires_at = 3;
+}
+
+message MeReply {
+  uint64 user_id = 1;
+  string username = 2;
+  string email = 3;
+  int64 created_at = 4;
+  bool is_reseller = 5;        // 分站主身份（approved）
+  uint64 reseller_profile_id = 6;
+}

@@ -7,7 +7,7 @@
 package storefrontv1
 
 import (
-	v1 "github.com/NovaWorks/zcard-next/server/api/common/v1"
+	_ "github.com/NovaWorks/zcard-next/server/api/common/v1"
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -28,8 +28,10 @@ type ListProductsRequest struct {
 	// 分类过滤（可选）
 	CategoryId uint64 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	// 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
-	Keyword       string      `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
-	Page          *v1.PageReq `protobuf:"bytes,3,opt,name=page,proto3" json:"page,omitempty"`
+	Keyword string `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
+	// 扁平分页（query 绑定：?page=1&page_size=20）
+	Page          int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -78,17 +80,26 @@ func (x *ListProductsRequest) GetKeyword() string {
 	return ""
 }
 
-func (x *ListProductsRequest) GetPage() *v1.PageReq {
+func (x *ListProductsRequest) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
-	return nil
+	return 0
+}
+
+func (x *ListProductsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
 }
 
 type ListProductsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*Product             `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
-	Page          *v1.PageResp           `protobuf:"bytes,2,opt,name=page,proto3" json:"page,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -130,11 +141,25 @@ func (x *ListProductsReply) GetItems() []*Product {
 	return nil
 }
 
-func (x *ListProductsReply) GetPage() *v1.PageResp {
+func (x *ListProductsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *ListProductsReply) GetPage() int32 {
 	if x != nil {
 		return x.Page
 	}
-	return nil
+	return 0
+}
+
+func (x *ListProductsReply) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
 }
 
 type GetProductRequest struct {
@@ -573,15 +598,18 @@ var File_storefront_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x16common/v1/common.proto\"\x82\x01\n" +
+	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x16common/v1/common.proto\"\x81\x01\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
-	"\akeyword\x18\x02 \x01(\tR\akeyword\x120\n" +
-	"\x04page\x18\x03 \x01(\v2\x1c.zcard.api.common.v1.PageReqR\x04page\"~\n" +
+	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\x92\x01\n" +
 	"\x11ListProductsReply\x126\n" +
-	"\x05items\x18\x01 \x03(\v2 .zcard.api.storefront.v1.ProductR\x05items\x121\n" +
-	"\x04page\x18\x02 \x01(\v2\x1d.zcard.api.common.v1.PageRespR\x04page\"(\n" +
+	"\x05items\x18\x01 \x03(\v2 .zcard.api.storefront.v1.ProductR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xec\x03\n" +
 	"\aProduct\x12\x0e\n" +
@@ -652,25 +680,21 @@ var file_storefront_v1_catalog_proto_goTypes = []any{
 	(*ProductControl)(nil),      // 4: zcard.api.storefront.v1.ProductControl
 	(*ReviewItem)(nil),          // 5: zcard.api.storefront.v1.ReviewItem
 	(*Sku)(nil),                 // 6: zcard.api.storefront.v1.Sku
-	(*v1.PageReq)(nil),          // 7: zcard.api.common.v1.PageReq
-	(*v1.PageResp)(nil),         // 8: zcard.api.common.v1.PageResp
 }
 var file_storefront_v1_catalog_proto_depIdxs = []int32{
-	7, // 0: zcard.api.storefront.v1.ListProductsRequest.page:type_name -> zcard.api.common.v1.PageReq
-	3, // 1: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
-	8, // 2: zcard.api.storefront.v1.ListProductsReply.page:type_name -> zcard.api.common.v1.PageResp
-	4, // 3: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
-	5, // 4: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
-	6, // 5: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
-	0, // 6: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
-	2, // 7: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
-	1, // 8: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
-	3, // 9: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	3, // 0: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
+	4, // 1: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
+	5, // 2: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
+	6, // 3: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
+	0, // 4: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
+	2, // 5: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
+	1, // 6: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
+	3, // 7: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_catalog_proto_init() }

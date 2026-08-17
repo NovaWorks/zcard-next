@@ -20,6 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminResellerService_MySites_FullMethodName       = "/zcard.api.admin.v1.AdminResellerService/MySites"
+	AdminResellerService_AddSite_FullMethodName       = "/zcard.api.admin.v1.AdminResellerService/AddSite"
+	AdminResellerService_VerifySite_FullMethodName    = "/zcard.api.admin.v1.AdminResellerService/VerifySite"
+	AdminResellerService_SetWhitelabel_FullMethodName = "/zcard.api.admin.v1.AdminResellerService/SetWhitelabel"
 	AdminResellerService_ReviewApply_FullMethodName   = "/zcard.api.admin.v1.AdminResellerService/ReviewApply"
 	AdminResellerService_ListProfiles_FullMethodName  = "/zcard.api.admin.v1.AdminResellerService/ListProfiles"
 	AdminResellerService_UpsertPricing_FullMethodName = "/zcard.api.admin.v1.AdminResellerService/UpsertPricing"
@@ -34,6 +38,14 @@ const (
 // AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
 // 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
 type AdminResellerServiceClient interface {
+	// MySites 分站主：名下域名列表。
+	MySites(ctx context.Context, in *MySitesRequest, opts ...grpc.CallOption) (*MySitesReply, error)
+	// AddSite 分站主：登记域名（生成验证 token）。
+	AddSite(ctx context.Context, in *AddSiteRequest, opts ...grpc.CallOption) (*ResellerSiteItem, error)
+	// VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+	VerifySite(ctx context.Context, in *VerifySiteRequest, opts ...grpc.CallOption) (*VerifySiteReply, error)
+	// SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+	SetWhitelabel(ctx context.Context, in *SetWhitelabelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 	ReviewApply(ctx context.Context, in *ReviewApplyRequest, opts ...grpc.CallOption) (*ResellerProfile, error)
 	// ListProfiles 申请/分站列表。
@@ -52,6 +64,46 @@ type adminResellerServiceClient struct {
 
 func NewAdminResellerServiceClient(cc grpc.ClientConnInterface) AdminResellerServiceClient {
 	return &adminResellerServiceClient{cc}
+}
+
+func (c *adminResellerServiceClient) MySites(ctx context.Context, in *MySitesRequest, opts ...grpc.CallOption) (*MySitesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MySitesReply)
+	err := c.cc.Invoke(ctx, AdminResellerService_MySites_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminResellerServiceClient) AddSite(ctx context.Context, in *AddSiteRequest, opts ...grpc.CallOption) (*ResellerSiteItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResellerSiteItem)
+	err := c.cc.Invoke(ctx, AdminResellerService_AddSite_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminResellerServiceClient) VerifySite(ctx context.Context, in *VerifySiteRequest, opts ...grpc.CallOption) (*VerifySiteReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifySiteReply)
+	err := c.cc.Invoke(ctx, AdminResellerService_VerifySite_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminResellerServiceClient) SetWhitelabel(ctx context.Context, in *SetWhitelabelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminResellerService_SetWhitelabel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminResellerServiceClient) ReviewApply(ctx context.Context, in *ReviewApplyRequest, opts ...grpc.CallOption) (*ResellerProfile, error) {
@@ -111,6 +163,14 @@ func (c *adminResellerServiceClient) Balance(ctx context.Context, in *BalanceReq
 // AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
 // 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
 type AdminResellerServiceServer interface {
+	// MySites 分站主：名下域名列表。
+	MySites(context.Context, *MySitesRequest) (*MySitesReply, error)
+	// AddSite 分站主：登记域名（生成验证 token）。
+	AddSite(context.Context, *AddSiteRequest) (*ResellerSiteItem, error)
+	// VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+	VerifySite(context.Context, *VerifySiteRequest) (*VerifySiteReply, error)
+	// SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+	SetWhitelabel(context.Context, *SetWhitelabelRequest) (*emptypb.Empty, error)
 	// ReviewApply 审核申请（通过设加价率区间与冻结天数）。
 	ReviewApply(context.Context, *ReviewApplyRequest) (*ResellerProfile, error)
 	// ListProfiles 申请/分站列表。
@@ -131,6 +191,18 @@ type AdminResellerServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminResellerServiceServer struct{}
 
+func (UnimplementedAdminResellerServiceServer) MySites(context.Context, *MySitesRequest) (*MySitesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method MySites not implemented")
+}
+func (UnimplementedAdminResellerServiceServer) AddSite(context.Context, *AddSiteRequest) (*ResellerSiteItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddSite not implemented")
+}
+func (UnimplementedAdminResellerServiceServer) VerifySite(context.Context, *VerifySiteRequest) (*VerifySiteReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifySite not implemented")
+}
+func (UnimplementedAdminResellerServiceServer) SetWhitelabel(context.Context, *SetWhitelabelRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetWhitelabel not implemented")
+}
 func (UnimplementedAdminResellerServiceServer) ReviewApply(context.Context, *ReviewApplyRequest) (*ResellerProfile, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReviewApply not implemented")
 }
@@ -165,6 +237,78 @@ func RegisterAdminResellerServiceServer(s grpc.ServiceRegistrar, srv AdminResell
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminResellerService_ServiceDesc, srv)
+}
+
+func _AdminResellerService_MySites_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MySitesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminResellerServiceServer).MySites(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminResellerService_MySites_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminResellerServiceServer).MySites(ctx, req.(*MySitesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminResellerService_AddSite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddSiteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminResellerServiceServer).AddSite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminResellerService_AddSite_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminResellerServiceServer).AddSite(ctx, req.(*AddSiteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminResellerService_VerifySite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifySiteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminResellerServiceServer).VerifySite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminResellerService_VerifySite_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminResellerServiceServer).VerifySite(ctx, req.(*VerifySiteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminResellerService_SetWhitelabel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetWhitelabelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminResellerServiceServer).SetWhitelabel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminResellerService_SetWhitelabel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminResellerServiceServer).SetWhitelabel(ctx, req.(*SetWhitelabelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminResellerService_ReviewApply_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -264,6 +408,22 @@ var AdminResellerService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminResellerService",
 	HandlerType: (*AdminResellerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "MySites",
+			Handler:    _AdminResellerService_MySites_Handler,
+		},
+		{
+			MethodName: "AddSite",
+			Handler:    _AdminResellerService_AddSite_Handler,
+		},
+		{
+			MethodName: "VerifySite",
+			Handler:    _AdminResellerService_VerifySite_Handler,
+		},
+		{
+			MethodName: "SetWhitelabel",
+			Handler:    _AdminResellerService_SetWhitelabel_Handler,
+		},
 		{
 			MethodName: "ReviewApply",
 			Handler:    _AdminResellerService_ReviewApply_Handler,

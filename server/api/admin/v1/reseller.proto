@@ -11,6 +11,31 @@ import "google/protobuf/empty.proto";
 // AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
 // 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
 service AdminResellerService {
+  // MySites 分站主：名下域名列表。
+  rpc MySites(MySitesRequest) returns (MySitesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/reseller/my/sites" };
+  }
+  // AddSite 分站主：登记域名（生成验证 token）。
+  rpc AddSite(AddSiteRequest) returns (ResellerSiteItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/reseller/my/sites"
+      body: "*"
+    };
+  }
+  // VerifySite 分站主：触发域名验证（DNS TXT / HTTP well-known 双方案）。
+  rpc VerifySite(VerifySiteRequest) returns (VerifySiteReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/reseller/my/sites/{site_id}/verify"
+      body: "*"
+    };
+  }
+  // SetWhitelabel 分站主：白标设置（站名/LOGO/favicon）。
+  rpc SetWhitelabel(SetWhitelabelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/reseller/my/sites/{site_id}/whitelabel"
+      body: "*"
+    };
+  }
   // ReviewApply 审核申请（通过设加价率区间与冻结天数）。
   rpc ReviewApply(ReviewApplyRequest) returns (ResellerProfile) {
     option (google.api.http) = {
@@ -119,4 +144,46 @@ message BalanceReply {
   int64 recomputed_available = 4; // 流水重算（对账口径）
   int64 recomputed_locked = 5;
   int64 recomputed_negative = 6;
+}
+
+// ── 分站主自服务面（reseller: 权限域，数据按 subsite_id 隔离）──
+
+// MySites 我名下域名（分站主）。
+message MySitesRequest {}
+
+message ResellerSiteItem {
+  uint64 id = 1;
+  uint64 profile_id = 2;
+  string domain = 3;
+  string verification_status = 4; // pending | verified | failed
+  string verification_token = 5;  // 用于 DNS TXT/HTTP 文件内容
+  bool is_primary = 6;
+  string site_name = 7;
+  string logo = 8;
+}
+
+message MySitesReply {
+  repeated ResellerSiteItem sites = 1;
+}
+
+message AddSiteRequest {
+  string domain = 1 [(google.api.field_behavior) = REQUIRED];
+  string site_name = 2;
+  bool is_primary = 3;
+}
+
+message VerifySiteRequest {
+  uint64 site_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message VerifySiteReply {
+  bool verified = 1;
+  string method = 2; // dns | http
+}
+
+message SetWhitelabelRequest {
+  uint64 site_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string site_name = 2;
+  string logo = 3;
+  string favicon = 4;
 }

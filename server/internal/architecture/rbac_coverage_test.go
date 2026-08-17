@@ -46,6 +46,7 @@ var operatorSeed = map[string]bool{
 	"media:read":        true,
 	"media:upload":      true,
 	"reseller:read":     true,
+	"reseller:site":     true,
 }
 
 // adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。
