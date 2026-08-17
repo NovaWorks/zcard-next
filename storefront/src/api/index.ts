@@ -160,6 +160,25 @@ export function me() {
   return api.get<MeReply>('/user/me');
 }
 
+// ── 用户自服务（P3-10：找回/改密/改资料）──
+
+export function forgotPassword(email: string) {
+  // 防枚举：后端对任何输入都成功（仅真实邮箱收码）
+  return api.post<null>('/user/password/forgot', { email });
+}
+
+export function resetPassword(body: { email: string; code: string; new_password: string }) {
+  return api.post<{ token: string; expires_at: number }>('/user/password/reset', body); // 重置即登录
+}
+
+export function changePassword(body: { old_password: string; new_password: string }) {
+  return api.post<{ token: string; expires_at: number }>('/user/password/change', body);
+}
+
+export function updateProfile(body: { email: string }) {
+  return api.post<MeReply>('/user/profile', body);
+}
+
 // ── 我的订单（P1-03 M1b 补全）──
 
 export interface MyOrderItem {

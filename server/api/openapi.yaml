@@ -4873,6 +4873,82 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.MeReply'
+    /api/v1/storefront/user/password/change:
+        post:
+            tags:
+                - StoreUserService
+            description: ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+            operationId: StoreUserService_ChangePassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.ChangePasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ChangePasswordReply'
+    /api/v1/storefront/user/password/forgot:
+        post:
+            tags:
+                - StoreUserService
+            description: ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+            operationId: StoreUserService_ForgotPassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.ForgotPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ForgotPasswordReply'
+    /api/v1/storefront/user/password/reset:
+        post:
+            tags:
+                - StoreUserService
+            description: ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+            operationId: StoreUserService_ResetPassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.ResetPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ResetPasswordReply'
+    /api/v1/storefront/user/profile:
+        post:
+            tags:
+                - StoreUserService
+            description: UpdateProfile 修改资料（邮箱；唯一性校验）。
+            operationId: StoreUserService_UpdateProfile
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.UpdateProfileRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.MeReply'
     /api/v1/storefront/user/register:
         post:
             tags:
@@ -8752,6 +8828,23 @@ components:
             properties:
                 orderNo:
                     type: string
+        zcard.api.storefront.v1.ChangePasswordReply:
+            type: object
+            properties:
+                token:
+                    type: string
+                expiresAt:
+                    type: string
+        zcard.api.storefront.v1.ChangePasswordRequest:
+            required:
+                - oldPassword
+                - newPassword
+            type: object
+            properties:
+                oldPassword:
+                    type: string
+                newPassword:
+                    type: string
         zcard.api.storefront.v1.CommissionItem:
             type: object
             properties:
@@ -8947,6 +9040,16 @@ components:
                 orderNo:
                     type: string
                 queryPassword:
+                    type: string
+        zcard.api.storefront.v1.ForgotPasswordReply:
+            type: object
+            properties: {}
+        zcard.api.storefront.v1.ForgotPasswordRequest:
+            required:
+                - email
+            type: object
+            properties:
+                email:
                     type: string
         zcard.api.storefront.v1.GetOrderReply:
             type: object
@@ -9572,6 +9675,26 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.storefront.v1.ResetPasswordReply:
+            type: object
+            properties:
+                token:
+                    type: string
+                expiresAt:
+                    type: string
+        zcard.api.storefront.v1.ResetPasswordRequest:
+            required:
+                - email
+                - code
+                - newPassword
+            type: object
+            properties:
+                email:
+                    type: string
+                code:
+                    type: string
+                newPassword:
+                    type: string
         zcard.api.storefront.v1.ReviewItem:
             type: object
             properties:
@@ -9734,6 +9857,11 @@ components:
             type: object
             properties:
                 count:
+                    type: string
+        zcard.api.storefront.v1.UpdateProfileRequest:
+            type: object
+            properties:
+                email:
                     type: string
         zcard.api.supply.v1.CancelSupplyOrderReply:
             type: object

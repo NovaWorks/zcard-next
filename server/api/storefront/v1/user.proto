@@ -29,6 +29,34 @@ service StoreUserService {
   rpc Me(google.protobuf.Empty) returns (MeReply) {
     option (google.api.http) = { get: "/api/v1/storefront/user/me" };
   }
+  // ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+  rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/user/password/forgot"
+      body: "*"
+    };
+  }
+  // ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+  rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/user/password/reset"
+      body: "*"
+    };
+  }
+  // ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/user/password/change"
+      body: "*"
+    };
+  }
+  // UpdateProfile 修改资料（邮箱；唯一性校验）。
+  rpc UpdateProfile(UpdateProfileRequest) returns (MeReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/user/profile"
+      body: "*"
+    };
+  }
 }
 
 message RegisterRequest {
@@ -62,4 +90,35 @@ message MeReply {
   int64 created_at = 4;
   bool is_reseller = 5;        // 分站主身份（approved）
   uint64 reseller_profile_id = 6;
+}
+
+message ForgotPasswordRequest {
+  string email = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ForgotPasswordReply {}
+
+message ResetPasswordRequest {
+  string email = 1 [(google.api.field_behavior) = REQUIRED];
+  string code = 2 [(google.api.field_behavior) = REQUIRED];        // 邮件验证码
+  string new_password = 3 [(google.api.field_behavior) = REQUIRED]; // >= 6 位
+}
+
+message ResetPasswordReply {
+  string token = 2;      // 重置即登录
+  int64 expires_at = 3;
+}
+
+message ChangePasswordRequest {
+  string old_password = 1 [(google.api.field_behavior) = REQUIRED];
+  string new_password = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ChangePasswordReply {
+  string token = 1;      // 改密后吊销全部 session；新 token 保当前会话
+  int64 expires_at = 2;
+}
+
+message UpdateProfileRequest {
+  string email = 1; // 新邮箱（空=不改；唯一性校验）
 }

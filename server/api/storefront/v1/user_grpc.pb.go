@@ -20,9 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreUserService_Register_FullMethodName = "/zcard.api.storefront.v1.StoreUserService/Register"
-	StoreUserService_Login_FullMethodName    = "/zcard.api.storefront.v1.StoreUserService/Login"
-	StoreUserService_Me_FullMethodName       = "/zcard.api.storefront.v1.StoreUserService/Me"
+	StoreUserService_Register_FullMethodName       = "/zcard.api.storefront.v1.StoreUserService/Register"
+	StoreUserService_Login_FullMethodName          = "/zcard.api.storefront.v1.StoreUserService/Login"
+	StoreUserService_Me_FullMethodName             = "/zcard.api.storefront.v1.StoreUserService/Me"
+	StoreUserService_ForgotPassword_FullMethodName = "/zcard.api.storefront.v1.StoreUserService/ForgotPassword"
+	StoreUserService_ResetPassword_FullMethodName  = "/zcard.api.storefront.v1.StoreUserService/ResetPassword"
+	StoreUserService_ChangePassword_FullMethodName = "/zcard.api.storefront.v1.StoreUserService/ChangePassword"
+	StoreUserService_UpdateProfile_FullMethodName  = "/zcard.api.storefront.v1.StoreUserService/UpdateProfile"
 )
 
 // StoreUserServiceClient is the client API for StoreUserService service.
@@ -38,6 +42,14 @@ type StoreUserServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	// Me 我的信息（需登录）。
 	Me(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MeReply, error)
+	// ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*ForgotPasswordReply, error)
+	// ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordReply, error)
+	// ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordReply, error)
+	// UpdateProfile 修改资料（邮箱；唯一性校验）。
+	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*MeReply, error)
 }
 
 type storeUserServiceClient struct {
@@ -78,6 +90,46 @@ func (c *storeUserServiceClient) Me(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
+func (c *storeUserServiceClient) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*ForgotPasswordReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ForgotPasswordReply)
+	err := c.cc.Invoke(ctx, StoreUserService_ForgotPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeUserServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResetPasswordReply)
+	err := c.cc.Invoke(ctx, StoreUserService_ResetPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeUserServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChangePasswordReply)
+	err := c.cc.Invoke(ctx, StoreUserService_ChangePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeUserServiceClient) UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*MeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MeReply)
+	err := c.cc.Invoke(ctx, StoreUserService_UpdateProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoreUserServiceServer is the server API for StoreUserService service.
 // All implementations must embed UnimplementedStoreUserServiceServer
 // for forward compatibility.
@@ -91,6 +143,14 @@ type StoreUserServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// Me 我的信息（需登录）。
 	Me(context.Context, *emptypb.Empty) (*MeReply, error)
+	// ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordReply, error)
+	// ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordReply, error)
+	// ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordReply, error)
+	// UpdateProfile 修改资料（邮箱；唯一性校验）。
+	UpdateProfile(context.Context, *UpdateProfileRequest) (*MeReply, error)
 	mustEmbedUnimplementedStoreUserServiceServer()
 }
 
@@ -109,6 +169,18 @@ func (UnimplementedStoreUserServiceServer) Login(context.Context, *LoginRequest)
 }
 func (UnimplementedStoreUserServiceServer) Me(context.Context, *emptypb.Empty) (*MeReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Me not implemented")
+}
+func (UnimplementedStoreUserServiceServer) ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ForgotPassword not implemented")
+}
+func (UnimplementedStoreUserServiceServer) ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetPassword not implemented")
+}
+func (UnimplementedStoreUserServiceServer) ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ChangePassword not implemented")
+}
+func (UnimplementedStoreUserServiceServer) UpdateProfile(context.Context, *UpdateProfileRequest) (*MeReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateProfile not implemented")
 }
 func (UnimplementedStoreUserServiceServer) mustEmbedUnimplementedStoreUserServiceServer() {}
 func (UnimplementedStoreUserServiceServer) testEmbeddedByValue()                          {}
@@ -185,6 +257,78 @@ func _StoreUserService_Me_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreUserService_ForgotPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ForgotPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreUserServiceServer).ForgotPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreUserService_ForgotPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreUserServiceServer).ForgotPassword(ctx, req.(*ForgotPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreUserService_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreUserServiceServer).ResetPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreUserService_ResetPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreUserServiceServer).ResetPassword(ctx, req.(*ResetPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreUserService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreUserServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreUserService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreUserServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreUserService_UpdateProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreUserServiceServer).UpdateProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreUserService_UpdateProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreUserServiceServer).UpdateProfile(ctx, req.(*UpdateProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoreUserService_ServiceDesc is the grpc.ServiceDesc for StoreUserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -203,6 +347,22 @@ var StoreUserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Me",
 			Handler:    _StoreUserService_Me_Handler,
+		},
+		{
+			MethodName: "ForgotPassword",
+			Handler:    _StoreUserService_ForgotPassword_Handler,
+		},
+		{
+			MethodName: "ResetPassword",
+			Handler:    _StoreUserService_ResetPassword_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _StoreUserService_ChangePassword_Handler,
+		},
+		{
+			MethodName: "UpdateProfile",
+			Handler:    _StoreUserService_UpdateProfile_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

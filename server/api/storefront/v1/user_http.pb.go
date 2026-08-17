@@ -18,17 +18,29 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationStoreUserServiceChangePassword = "/zcard.api.storefront.v1.StoreUserService/ChangePassword"
+const OperationStoreUserServiceForgotPassword = "/zcard.api.storefront.v1.StoreUserService/ForgotPassword"
 const OperationStoreUserServiceLogin = "/zcard.api.storefront.v1.StoreUserService/Login"
 const OperationStoreUserServiceMe = "/zcard.api.storefront.v1.StoreUserService/Me"
 const OperationStoreUserServiceRegister = "/zcard.api.storefront.v1.StoreUserService/Register"
+const OperationStoreUserServiceResetPassword = "/zcard.api.storefront.v1.StoreUserService/ResetPassword"
+const OperationStoreUserServiceUpdateProfile = "/zcard.api.storefront.v1.StoreUserService/UpdateProfile"
 
 type StoreUserServiceHTTPServer interface {
+	// ChangePassword ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordReply, error)
+	// ForgotPassword ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordReply, error)
 	// Login Login 登录（返回 user realm JWT）。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// Me Me 我的信息（需登录）。
 	Me(context.Context, *emptypb.Empty) (*MeReply, error)
 	// Register Register 注册（username+password；invite_code 可选=上级 user_id）。
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
+	// ResetPassword ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordReply, error)
+	// UpdateProfile UpdateProfile 修改资料（邮箱；唯一性校验）。
+	UpdateProfile(context.Context, *UpdateProfileRequest) (*MeReply, error)
 }
 
 func RegisterStoreUserServiceHTTPServer(s *http.Server, srv StoreUserServiceHTTPServer) {
@@ -36,6 +48,10 @@ func RegisterStoreUserServiceHTTPServer(s *http.Server, srv StoreUserServiceHTTP
 	r.Handle("POST", "/api/v1/storefront/user/register", _StoreUserService_Register0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/user/login", _StoreUserService_Login0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/user/me", _StoreUserService_Me0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/user/password/forgot", _StoreUserService_ForgotPassword0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/user/password/reset", _StoreUserService_ResetPassword0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/user/password/change", _StoreUserService_ChangePassword0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/user/profile", _StoreUserService_UpdateProfile0_HTTP_Handler(srv))
 }
 
 func _StoreUserService_Register0_HTTP_Handler(srv StoreUserServiceHTTPServer) func(ctx http.Context) error {
@@ -95,13 +111,97 @@ func _StoreUserService_Me0_HTTP_Handler(srv StoreUserServiceHTTPServer) func(ctx
 	}
 }
 
+func _StoreUserService_ForgotPassword0_HTTP_Handler(srv StoreUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ForgotPasswordRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreUserServiceForgotPassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ForgotPassword(ctx, req.(*ForgotPasswordRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ForgotPasswordReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StoreUserService_ResetPassword0_HTTP_Handler(srv StoreUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ResetPasswordRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreUserServiceResetPassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetPassword(ctx, req.(*ResetPasswordRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ResetPasswordReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StoreUserService_ChangePassword0_HTTP_Handler(srv StoreUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ChangePasswordRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreUserServiceChangePassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ChangePassword(ctx, req.(*ChangePasswordRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ChangePasswordReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StoreUserService_UpdateProfile0_HTTP_Handler(srv StoreUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateProfileRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreUserServiceUpdateProfile)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateProfile(ctx, req.(*UpdateProfileRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*MeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StoreUserServiceHTTPClient interface {
+	// ChangePassword ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+	ChangePassword(ctx context.Context, req *ChangePasswordRequest, opts ...http.CallOption) (rsp *ChangePasswordReply, err error)
+	// ForgotPassword ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	ForgotPassword(ctx context.Context, req *ForgotPasswordRequest, opts ...http.CallOption) (rsp *ForgotPasswordReply, err error)
 	// Login Login 登录（返回 user realm JWT）。
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
 	// Me Me 我的信息（需登录）。
 	Me(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *MeReply, err error)
 	// Register Register 注册（username+password；invite_code 可选=上级 user_id）。
 	Register(ctx context.Context, req *RegisterRequest, opts ...http.CallOption) (rsp *RegisterReply, err error)
+	// ResetPassword ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+	ResetPassword(ctx context.Context, req *ResetPasswordRequest, opts ...http.CallOption) (rsp *ResetPasswordReply, err error)
+	// UpdateProfile UpdateProfile 修改资料（邮箱；唯一性校验）。
+	UpdateProfile(ctx context.Context, req *UpdateProfileRequest, opts ...http.CallOption) (rsp *MeReply, err error)
 }
 
 type StoreUserServiceHTTPClientImpl struct {
@@ -110,6 +210,42 @@ type StoreUserServiceHTTPClientImpl struct {
 
 func NewStoreUserServiceHTTPClient(client *http.Client) StoreUserServiceHTTPClient {
 	return &StoreUserServiceHTTPClientImpl{client}
+}
+
+// ChangePassword ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
+func (c *StoreUserServiceHTTPClientImpl) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...http.CallOption) (*ChangePasswordReply, error) {
+	var out ChangePasswordReply
+	pattern := "/api/v1/storefront/user/password/change"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreUserServiceChangePassword),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ForgotPassword ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+func (c *StoreUserServiceHTTPClientImpl) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...http.CallOption) (*ForgotPasswordReply, error) {
+	var out ForgotPasswordReply
+	pattern := "/api/v1/storefront/user/password/forgot"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreUserServiceForgotPassword),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // Login Login 登录（返回 user realm JWT）。
@@ -156,6 +292,42 @@ func (c *StoreUserServiceHTTPClientImpl) Register(ctx context.Context, in *Regis
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationStoreUserServiceRegister),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ResetPassword ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
+func (c *StoreUserServiceHTTPClientImpl) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...http.CallOption) (*ResetPasswordReply, error) {
+	var out ResetPasswordReply
+	pattern := "/api/v1/storefront/user/password/reset"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreUserServiceResetPassword),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateProfile UpdateProfile 修改资料（邮箱；唯一性校验）。
+func (c *StoreUserServiceHTTPClientImpl) UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...http.CallOption) (*MeReply, error) {
+	var out MeReply
+	pattern := "/api/v1/storefront/user/profile"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreUserServiceUpdateProfile),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

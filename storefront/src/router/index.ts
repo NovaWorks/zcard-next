@@ -12,6 +12,7 @@ const router = createRouter({
     { path: '/fetch', name: 'fetch', component: () => import('@/views/Fetch.vue') },
     { path: '/member', name: 'member', component: () => import('@/views/Member.vue'), meta: { auth: true } },
     { path: '/login', name: 'login', component: () => import('@/views/Login.vue') },
+    { path: '/forgot-password', name: 'forgot-password', component: () => import('@/views/ForgotPassword.vue') },
     { path: '/register', name: 'register', component: () => import('@/views/Register.vue') },
     { path: '/tickets', name: 'tickets', component: () => import('@/views/Tickets.vue'), meta: { auth: true } },
     { path: '/tickets/:no', name: 'ticket-detail', component: () => import('@/views/TicketDetail.vue'), meta: { auth: true } },

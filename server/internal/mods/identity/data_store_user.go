@@ -25,11 +25,12 @@ type StoreUserService struct {
 	repo   *UserRepo
 	signer *authn.Signer
 	data   *data.Data
+	pwd    *PasswordService // P3-10 自服务（找回/改密/改资料）
 }
 
 // NewStoreUserService 构造。
-func NewStoreUserService(repo *UserRepo, signer *authn.Signer, d *data.Data) *StoreUserService {
-	return &StoreUserService{repo: repo, signer: signer, data: d}
+func NewStoreUserService(repo *UserRepo, signer *authn.Signer, d *data.Data, pwd *PasswordService) *StoreUserService {
+	return &StoreUserService{repo: repo, signer: signer, data: d, pwd: pwd}
 }
 
 // UserRepo 用户仓储。
@@ -160,4 +161,56 @@ func (s *StoreUserService) Me(ctx context.Context, _ *emptypb.Empty) (*storefron
 		reply.ResellerProfileId = p.ID
 	}
 	return reply, nil
+}
+
+// ── P3-10 自服务 API（薄 transport：委托 PasswordService）──────────
+
+// ForgotPassword 发送找回密码验证码（防枚举：任何输入都成功）。
+func (s *StoreUserService) ForgotPassword(ctx context.Context, req *storefrontv1.ForgotPasswordRequest) (*storefrontv1.ForgotPasswordReply, error) {
+	if err := s.pwd.ForgotPassword(ctx, req.GetEmail()); err != nil {
+		return nil, err
+	}
+	return &storefrontv1.ForgotPasswordReply{}, nil
+}
+
+// ResetPassword 验码重置（一次性；吊销 session；重置即登录）。
+func (s *StoreUserService) ResetPassword(ctx context.Context, req *storefrontv1.ResetPasswordRequest) (*storefrontv1.ResetPasswordReply, error) {
+	u, err := s.pwd.ResetPassword(ctx, req.GetEmail(), req.GetCode(), req.GetNewPassword())
+	if err != nil {
+		return nil, err
+	}
+	token, exp, err := s.signer.Issue(authn.RealmUser, u.ID, u.Username, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &storefrontv1.ResetPasswordReply{Token: token, ExpiresAt: exp.Unix()}, nil
+}
+
+// ChangePassword 登录态改密（新 token 保当前会话）。
+func (s *StoreUserService) ChangePassword(ctx context.Context, req *storefrontv1.ChangePasswordRequest) (*storefrontv1.ChangePasswordReply, error) {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.New("identity.UNAUTHORIZED")
+	}
+	u, err := s.pwd.ChangePassword(ctx, claims.Subject, req.GetOldPassword(), req.GetNewPassword())
+	if err != nil {
+		return nil, err
+	}
+	token, exp, err := s.signer.Issue(authn.RealmUser, u.ID, u.Username, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &storefrontv1.ChangePasswordReply{Token: token, ExpiresAt: exp.Unix()}, nil
+}
+
+// UpdateProfile 改邮箱（Me 语义响应）。
+func (s *StoreUserService) UpdateProfile(ctx context.Context, req *storefrontv1.UpdateProfileRequest) (*storefrontv1.MeReply, error) {
+	claims := ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.New("identity.UNAUTHORIZED")
+	}
+	if err := s.pwd.UpdateProfile(ctx, claims.Subject, req.GetEmail()); err != nil {
+		return nil, err
+	}
+	return s.Me(ctx, nil)
 }

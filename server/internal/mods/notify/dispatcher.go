@@ -185,11 +185,18 @@ func ValidateTemplate(tpl string, allowed []string) error {
 }
 
 func logOf(msg notifyport.Message, status, errMsg string) LogInput {
+	// 敏感类型（验证码邮件）：正文/变量不落日志——库内无明文纪律
+	// （邮件照发，仅审计留档脱敏；BizType 契约见调用方）
+	body, vars := msg.Body, msg.Variables
+	if msg.BizType == "password_reset" {
+		body = "[验证码邮件：内容不落日志]"
+		vars = map[string]string{"masked": "true"}
+	}
 	return LogInput{
 		EventType: msg.EventType, BizType: msg.BizType, BizID: msg.BizID,
 		Channel: msg.Channel, Recipient: msg.Recipient, Locale: msg.Locale,
-		Subject: msg.Subject, Body: msg.Body, Status: status,
-		ErrorMessage: errMsg, Variables: msg.Variables,
+		Subject: msg.Subject, Body: body, Status: status,
+		ErrorMessage: errMsg, Variables: vars,
 	}
 }
 

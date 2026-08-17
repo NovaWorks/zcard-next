@@ -15,6 +15,7 @@
     </button>
     <div class="muted" style="margin-top: 12px; text-align: center;">
       没有账号？<router-link :to="{ path: '/register', query: $route.query.redirect ? { redirect: String($route.query.redirect) } : {} }">注册</router-link>
+      ｜ <router-link to="/forgot-password">忘记密码？</router-link>
     </div>
   </div>
 </template>

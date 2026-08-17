@@ -6,6 +6,7 @@
       <button :class="{ active: tab === 'transactions' }" @click="switchTab('transactions')">余额流水</button>
       <button :class="{ active: tab === 'recharge' }" @click="switchTab('recharge')">充值</button>
       <button :class="{ active: tab === 'giftcard' }" @click="switchTab('giftcard')">礼品卡</button>
+      <button :class="{ active: tab === 'security' }" @click="switchTab('security')">账户安全</button>
     </div>
 
     <!-- 总览：余额四数 + 等级进度 + 快捷入口 -->
@@ -88,13 +89,25 @@
       </div>
     </div>
 
-    <!-- 充值（任意金额，服务端档位裁决；支付载荷三形态同支付页） -->
+    <!-- 充值（档位可视化 + 自定义金额；服务端裁决；支付载荷三形态同支付页） -->
     <div v-if="tab === 'recharge'" class="card" style="max-width: 480px;">
+      <div v-if="giftTiers.length" class="field">
+        <label>充值档位</label>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px;">
+          <button v-for="tier in giftTiers" :key="tier.amount" class="btn secondary"
+                  :style="rechargeYuan === centsToYuan(tier.amount) ? 'background:#2563eb;color:#fff' : ''"
+                  @click="pickTier(tier)">
+            <div>{{ formatMoney(tier.amount) }}</div>
+            <div v-if="tier.gift_balance" style="font-size: 12px;">送 {{ formatMoney(tier.gift_balance) }}</div>
+            <div v-if="tier.gift_points" style="font-size: 12px;">送 {{ tier.gift_points }} 积分</div>
+          </button>
+        </div>
+      </div>
       <div class="field">
-        <label>充值金额（元）</label>
+        <label>充值金额（元）<span v-if="giftTiers.length" class="muted">（自定义）</span></label>
         <input class="input" v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="10" />
         <div class="muted" v-if="rechargeMeta">限额 {{ formatMoney(rechargeMeta.min_amount) }} ~ {{ formatMoney(rechargeMeta.max_amount) }}
-          <template v-if="giftTiers.length">；充值赠送见支付结果</template>
+          <template v-if="giftTiers.length && !giftTiers.some((t) => t.gift_balance || t.gift_points)">；充值赠送见支付结果</template>
         </div>
       </div>
       <div class="field">
@@ -125,6 +138,39 @@
       <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
       <button class="btn" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '兑换' }}</button>
     </div>
+
+    <!-- 账户安全（P3-10：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
+    <div v-if="tab === 'security'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 420px)); gap: 16px;">
+      <div class="card">
+        <h3 style="margin-bottom: 12px;">修改密码</h3>
+        <div class="field">
+          <label>当前密码</label>
+          <input class="input" v-model="oldPwd" type="password" placeholder="当前密码" />
+        </div>
+        <div class="field">
+          <label>新密码</label>
+          <input class="input" v-model="newPwd" type="password" placeholder="至少 6 位" />
+        </div>
+        <div class="field">
+          <label>确认新密码</label>
+          <input class="input" v-model="newPwd2" type="password" placeholder="再输入一次" />
+        </div>
+        <div v-if="pwdError" class="error" style="margin-bottom: 8px;">{{ pwdError }}</div>
+        <div v-if="pwdOk" class="success" style="margin-bottom: 8px;">已修改（其他设备将退出登录）</div>
+        <button class="btn" :disabled="changingPwd" @click="doChangePwd">{{ changingPwd ? '提交中…' : '修改密码' }}</button>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom: 12px;">修改邮箱</h3>
+        <div class="muted" style="margin-bottom: 8px;">当前：{{ level?.points !== undefined ? '' : '' }}{{ meEmail || '未设置' }}</div>
+        <div class="field">
+          <label>新邮箱</label>
+          <input class="input" v-model="newEmail" type="email" placeholder="you@example.com" />
+        </div>
+        <div v-if="emailError" class="error" style="margin-bottom: 8px;">{{ emailError }}</div>
+        <div v-if="emailOk" class="success" style="margin-bottom: 8px;">邮箱已更新（找回密码将发往新邮箱）</div>
+        <button class="btn secondary" :disabled="changingEmail" @click="doChangeEmail">{{ changingEmail ? '提交中…' : '更新邮箱' }}</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -132,12 +178,12 @@
 import { ref, onMounted } from 'vue';
 import {
   getBalance, getMyLevel, listMyOrders, cancelMyOrder, listTransactions,
-  createRecharge, redeemGiftcard,
+  createRecharge, redeemGiftcard, changePassword, updateProfile, me,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
-import { api, formatMoney, formatSignedMoney } from '@/api/client';
+import { api, formatMoney, formatSignedMoney, setToken, centsToYuan } from '@/api/client';
 
-const tab = ref<'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard'>('overview');
+const tab = ref<'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'security'>('overview');
 const balance = ref<BalanceReply | null>(null);
 const level = ref<MyLevelReply | null>(null);
 
@@ -187,7 +233,7 @@ onMounted(async () => {
   }
 });
 
-function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard') {
+function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'security') {
   tab.value = t;
   if (t === 'orders' && !orders.value.length) loadOrders(1);
   if (t === 'transactions' && !transactions.value.length) loadTx(1);
@@ -219,6 +265,10 @@ async function cancel(orderNo: string) {
     return;
   }
   loadOrders(ordersPage.value);
+}
+
+function pickTier(tier: { amount: number }) {
+  rechargeYuan.value = centsToYuan(tier.amount);
 }
 
 async function doRecharge() {
@@ -269,6 +319,52 @@ async function doRedeem() {
   giftCode.value = '';
   const b = await getBalance();
   balance.value = b.data;
+}
+
+// security（P3-10）
+const oldPwd = ref('');
+const newPwd = ref('');
+const newPwd2 = ref('');
+const pwdError = ref('');
+const pwdOk = ref(false);
+const changingPwd = ref(false);
+const meEmail = ref('');
+const newEmail = ref('');
+const emailError = ref('');
+const emailOk = ref(false);
+const changingEmail = ref(false);
+
+async function loadMe() {
+  const { data } = await me();
+  meEmail.value = data?.email || '';
+}
+loadMe();
+
+async function doChangePwd() {
+  pwdError.value = '';
+  pwdOk.value = false;
+  if (newPwd.value.length < 6) { pwdError.value = '新密码至少 6 位'; return; }
+  if (newPwd.value !== newPwd2.value) { pwdError.value = '两次输入不一致'; return; }
+  changingPwd.value = true;
+  const { data, error } = await changePassword({ old_password: oldPwd.value, new_password: newPwd.value });
+  changingPwd.value = false;
+  if (error || !data) { pwdError.value = error || '当前密码错误'; return; }
+  setToken(data.token); // 新 token 保当前会话（其他设备已被吊销）
+  pwdOk.value = true;
+  oldPwd.value = ''; newPwd.value = ''; newPwd2.value = '';
+}
+
+async function doChangeEmail() {
+  emailError.value = '';
+  emailOk.value = false;
+  if (!newEmail.value.includes('@')) { emailError.value = '请输入有效邮箱'; return; }
+  changingEmail.value = true;
+  const { data, error } = await updateProfile({ email: newEmail.value.trim() });
+  changingEmail.value = false;
+  if (error || !data) { emailError.value = error || '邮箱可能已被占用'; return; }
+  meEmail.value = data.email;
+  newEmail.value = '';
+  emailOk.value = true;
 }
 
 function statusText(s: string): string {

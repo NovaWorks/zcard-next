@@ -34,7 +34,8 @@ func newUserSvc(t *testing.T) (*StoreUserService, *data.Data) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return NewStoreUserService(NewUserRepo(d), signer, d), d
+	return NewStoreUserService(NewUserRepo(d), signer, d,
+		NewPasswordService(d, signer, &fakeSender{codes: make(chan string, 8)})), d
 }
 
 // TestRegisterChain 注册归因链（l1/l2/l3 三级传递）。
