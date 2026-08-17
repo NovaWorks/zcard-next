@@ -11,6 +11,7 @@
         <router-link to="/posts">文章</router-link>
         <router-link to="/fetch">取货</router-link>
         <template v-if="authState.loggedIn">
+          <router-link to="/cart">购物车</router-link>
           <router-link to="/member">会员中心</router-link>
           <router-link to="/tickets">工单</router-link>
           <router-link to="/coupons">优惠券</router-link>

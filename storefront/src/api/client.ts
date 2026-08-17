@@ -66,7 +66,8 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
 
 export const api = {
   get: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params),
-  post: <T>(path: string, body: unknown) => request<T>('POST', path, body)
+  post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
+  delete_: <T>(path: string) => request<T>('DELETE', path)
 };
 
 // ── 金额工具（铁律 15：API 一律 int64「分」，显示 /100 为元、提交 *100 为分）──

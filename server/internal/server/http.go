@@ -99,6 +99,7 @@ func NewHTTPServer(
 	invSvc *inventory.AdminInventoryService,
 	orderAdminSvc *order.AdminOrderService,
 	orderStoreSvc *order.StoreOrderService,
+	cartSvc *order.StoreCartService,
 	payAdminSvc *payment.AdminPaymentService,
 	payStoreSvc *payment.StorePaymentService,
 	payRepo *payment.PaymentRepoImpl,
@@ -184,6 +185,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminOrderServiceHTTPServer(srv, orderAdminSvc)
 	adminv1.RegisterAdminPaymentServiceHTTPServer(srv, payAdminSvc)
 	storefrontv1.RegisterStoreOrderServiceHTTPServer(srv, orderStoreSvc)
+	storefrontv1.RegisterStoreCartServiceHTTPServer(srv, cartSvc)
 	storefrontv1.RegisterStorePaymentServiceHTTPServer(srv, payStoreSvc)
 	storefrontv1.RegisterStoreWalletServiceHTTPServer(srv, walletStoreSvc)
 	adminv1.RegisterAdminWalletServiceHTTPServer(srv, walletAdminSvc)

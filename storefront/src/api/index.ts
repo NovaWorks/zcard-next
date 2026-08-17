@@ -179,6 +179,38 @@ export function updateProfile(body: { email: string }) {
   return api.post<MeReply>('/user/profile', body);
 }
 
+// ── 购物车（P1-03b：CRUD；结算复用 createOrder 多商品一单）──
+
+export interface CartItem {
+  id: number;
+  product_id: number;
+  sku_id: number;
+  quantity: number;
+  product_name: string;
+  price_cents: number;
+  stock: number;
+  points_only: boolean;
+  points_required: number;
+  valid: boolean;
+  added_at: number;
+}
+
+export function addCart(product_id: number, quantity = 1, sku_id = 0) {
+  return api.post<CartItem>('/cart/items', { product_id, quantity, sku_id });
+}
+
+export function listCart() {
+  return api.get<{ items: CartItem[]; total: number }>('/cart');
+}
+
+export function updateCart(id: number, quantity: number) {
+  return api.post<CartItem>(`/cart/items/${id}`, { id, quantity });
+}
+
+export function removeCart(id: number) {
+  return api.delete_(`/cart/items/${id}`);
+}
+
 // ── 我的订单（P1-03 M1b 补全）──
 
 export interface MyOrderItem {

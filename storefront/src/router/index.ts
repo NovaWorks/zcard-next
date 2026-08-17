@@ -18,6 +18,7 @@ const router = createRouter({
     { path: '/tickets/:no', name: 'ticket-detail', component: () => import('@/views/TicketDetail.vue'), meta: { auth: true } },
     { path: '/affiliate', name: 'affiliate', component: () => import('@/views/Affiliate.vue'), meta: { auth: true } },
     { path: '/points', name: 'points', component: () => import('@/views/Points.vue') },
+    { path: '/cart', name: 'cart', component: () => import('@/views/Cart.vue'), meta: { auth: true } },
     { path: '/coupons', name: 'coupons', component: () => import('@/views/Coupons.vue'), meta: { auth: true } },
     { path: '/posts', name: 'posts', component: () => import('@/views/Posts.vue') },
     { path: '/posts/:slug', name: 'post-detail', component: () => import('@/views/PostDetail.vue') }

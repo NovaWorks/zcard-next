@@ -4230,6 +4230,78 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListBannersReply'
+    /api/v1/storefront/cart:
+        get:
+            tags:
+                - StoreCartService
+            description: ListCart 我的购物车（商品快照联查；失效商品打标）。
+            operationId: StoreCartService_ListCart
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListCartReply'
+    /api/v1/storefront/cart/items:
+        post:
+            tags:
+                - StoreCartService
+            description: AddCartItem 加购（同 user+product+sku 合并数量；商品须上架）。
+            operationId: StoreCartService_AddCartItem
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.AddCartItemRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CartItem'
+    /api/v1/storefront/cart/items/{id}:
+        post:
+            tags:
+                - StoreCartService
+            description: UpdateCartItem 改量（quantity=0 即删除）。
+            operationId: StoreCartService_UpdateCartItem
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.UpdateCartItemRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CartItem'
+        delete:
+            tags:
+                - StoreCartService
+            description: RemoveCartItem 移除。
+            operationId: StoreCartService_RemoveCartItem
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/storefront/config:
         get:
             tags:
@@ -8810,6 +8882,19 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.storefront.v1.AddCartItemRequest:
+            required:
+                - productId
+                - quantity
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.BalanceReply:
             type: object
             properties:
@@ -8827,6 +8912,33 @@ components:
             type: object
             properties:
                 orderNo:
+                    type: string
+        zcard.api.storefront.v1.CartItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                productName:
+                    type: string
+                    description: 商品快照（联查现值——结算前端展示用）
+                priceCents:
+                    type: string
+                stock:
+                    type: string
+                pointsOnly:
+                    type: boolean
+                pointsRequired:
+                    type: string
+                valid:
+                    type: boolean
+                addedAt:
                     type: string
         zcard.api.storefront.v1.ChangePasswordReply:
             type: object
@@ -9159,6 +9271,16 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.StoreBanner'
+        zcard.api.storefront.v1.ListCartReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.CartItem'
+                total:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.ListFlashSalesReply:
             type: object
             properties:
@@ -9858,6 +9980,17 @@ components:
             properties:
                 count:
                     type: string
+        zcard.api.storefront.v1.UpdateCartItemRequest:
+            required:
+                - id
+                - quantity
+            type: object
+            properties:
+                id:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.UpdateProfileRequest:
             type: object
             properties:
@@ -10124,6 +10257,10 @@ tags:
          权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
     - name: StoreAffiliateService
       description: StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+    - name: StoreCartService
+      description: |-
+        StoreCartService 购物车（P1-03b T5 销账）：登录态专属 CRUD；
+         结算复用 StoreOrderService.CreateOrder（多商品一单支付，零下单改动）。
     - name: StoreCatalogService
       description: |-
         StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。

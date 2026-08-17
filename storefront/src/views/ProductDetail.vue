@@ -72,6 +72,9 @@
     <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
     <div class="actions">
       <button class="btn" :disabled="submitting" @click="buy">{{ submitting ? '提交中…' : '立即购买' }}</button>
+      <button class="btn secondary" :disabled="submitting || !canCart" @click="addToCart">
+        {{ addingCart ? '加入中…' : '加入购物车' }}
+      </button>
       <button v-if="p.points_required && p.points_required > 0" class="btn secondary" :disabled="submitting" @click="exchangePoints">
         积分兑换（{{ p.points_required }} 分）
       </button>
@@ -97,8 +100,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getProduct, createOrder, type Product } from '@/api';
+import { getProduct, createOrder, addCart, type Product } from '@/api';
 import { formatMoney, getToken } from '@/api/client';
+import { computed } from 'vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -111,6 +115,19 @@ const couponCode = ref('');
 const controlAnswers = ref<Record<string, string>>({});
 const submitting = ref(false);
 const error = ref('');
+const addingCart = ref(false);
+// 购物车：登录态 + 非积分商品（积分单不可混合，走兑换按钮）
+const canCart = computed(() => getToken() !== null && !(p.value?.points_required && p.value.points_required > 0));
+
+async function addToCart() {
+  if (!p.value) return;
+  addingCart.value = true;
+  error.value = '';
+  const { error: err } = await addCart(p.value.id, quantity.value, selectedSku.value || 0);
+  addingCart.value = false;
+  if (err) { error.value = err; return; }
+  if (confirm('已加入购物车，去结算？')) router.push('/cart');
+}
 
 function stockTypeLabel(t: string) {
   return ({ card: '卡密', url: '链接', code: '兑换码' } as Record<string, string>)[t] || t;
