@@ -26,36 +26,40 @@ func TestGiftcardBatchRedeem(t *testing.T) {
 	repo, walletRepo := newGiftcardRepo(t)
 	ctx := context.Background()
 
-	batch, err := repo.CreateBatch(ctx, BatchInput{
+	batch, codes, err := repo.CreateBatch(ctx, BatchInput{
 		BatchNo: "GC20260817", Name: "开业卡", Amount: 5000, Quantity: 3, Operator: 9,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if batch.Quantity != 3 {
-		t.Fatalf("批次数量错误: %d", batch.Quantity)
+	if batch.Quantity != 3 || len(codes) != 3 {
+		t.Fatalf("批次数量/明文码错误: %d/%d", batch.Quantity, len(codes))
 	}
-	// 库内无明文（密文 + keyed hash 唯一）
+	// 库内无明文（密文 + keyed hash 唯一）；明文码仅创建一次性返回
 	cards, _ := repo.data.Client.Giftcard.Query().Where(giftcard.BatchID(batch.ID)).All(ctx)
 	if len(cards) != 3 {
 		t.Fatalf("卡数量错误: %d", len(cards))
+	}
+	codeSet := map[string]bool{}
+	for _, c := range codes {
+		codeSet[c] = true
 	}
 	for _, c := range cards {
 		if string(c.Code) == "" || len(c.Code) < 16 {
 			t.Fatal("卡密应为密文")
 		}
+		// 返回的明文码与库内密文一一对应（解密闭环）
+		plain, err := repo.cipher.Open(c.Code, 0, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !codeSet[plain] {
+			t.Fatalf("明文码 %q 不在创建返回清单中", plain)
+		}
 	}
 
-	// 拿第一张卡明文（测试解密验证）——模拟用户持有
-	plain := "GC20260817-ABCDEFGHIJKLMNOP" // 与生成算法无关：兑换按 hash 匹配，用解密验证闭环
-	sealed, _ := repo.cipher.Seal(plain, 0, 0)
-	_ = sealed
-	// 实际兑换：用批次内第一张卡——生成算法随机，测试里直接读密文解密获得明文
-	first := cards[0]
-	decrypted, err := repo.cipher.Open(first.Code, 0, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// 实际兑换：用批次第一张卡的明文（创建返回值——生产路径即此来源）
+	decrypted := codes[0]
 	amount, err := repo.Redeem(ctx, decrypted, 1)
 	if err != nil {
 		t.Fatal(err)

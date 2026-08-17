@@ -30,7 +30,7 @@ type AdminWalletServiceHTTPServer interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(context.Context, *AdjustRequest) (*Balance, error)
 	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
-	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*GiftcardBatchItem, error)
+	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error)
 	// GetBalance GetBalance 指定用户余额。
 	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
 	// ListGiftcardBatches ListGiftcardBatches 批次列表。
@@ -200,7 +200,7 @@ func _AdminWalletService_CreateGiftcardBatch0_HTTP_Handler(srv AdminWalletServic
 		if err != nil {
 			return err
 		}
-		reply := out.(*GiftcardBatchItem)
+		reply := out.(*CreateGiftcardBatchReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -228,7 +228,7 @@ type AdminWalletServiceHTTPClient interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(ctx context.Context, req *AdjustRequest, opts ...http.CallOption) (rsp *Balance, err error)
 	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
-	CreateGiftcardBatch(ctx context.Context, req *CreateGiftcardBatchRequest, opts ...http.CallOption) (rsp *GiftcardBatchItem, err error)
+	CreateGiftcardBatch(ctx context.Context, req *CreateGiftcardBatchRequest, opts ...http.CallOption) (rsp *CreateGiftcardBatchReply, err error)
 	// GetBalance GetBalance 指定用户余额。
 	GetBalance(ctx context.Context, req *GetBalanceRequest, opts ...http.CallOption) (rsp *Balance, err error)
 	// ListGiftcardBatches ListGiftcardBatches 批次列表。
@@ -270,8 +270,8 @@ func (c *AdminWalletServiceHTTPClientImpl) Adjust(ctx context.Context, in *Adjus
 }
 
 // CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
-func (c *AdminWalletServiceHTTPClientImpl) CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...http.CallOption) (*GiftcardBatchItem, error) {
-	var out GiftcardBatchItem
+func (c *AdminWalletServiceHTTPClientImpl) CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...http.CallOption) (*CreateGiftcardBatchReply, error) {
+	var out CreateGiftcardBatchReply
 	pattern := "/api/v1/admin/wallet/giftcard-batches"
 	path := http.BuildPath(pattern, in)
 	opts = append([]http.CallOption{

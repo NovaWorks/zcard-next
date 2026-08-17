@@ -45,12 +45,15 @@ type BatchInput struct {
 }
 
 // CreateBatch 批次创建 + 批量生成卡（密文 + keyed hash 唯一索引；批次号唯一幂等）。
-func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.GiftcardBatch, error) {
+// 返回明文码列表——**仅此一次**（库内无明文铁律 11；调用方随响应一次性下发，
+// 服务端不留存），与 P1-06 一次性明文交付快照同纪律。
+func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.GiftcardBatch, []string, error) {
 	// 批量生成（数量上限护栏：单批 ≤ 5000）
 	if in.Quantity <= 0 || in.Quantity > 5000 {
-		return nil, fmt.Errorf("giftcard.QUANTITY_INVALID")
+		return nil, nil, fmt.Errorf("giftcard.QUANTITY_INVALID")
 	}
 	var batch *ent.GiftcardBatch
+	codes := make([]string, 0, in.Quantity)
 	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, r.data)
 		created, err := client.GiftcardBatch.Create().
@@ -67,6 +70,7 @@ func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.Gif
 		creates := make([]*ent.GiftcardCreate, 0, in.Quantity)
 		for i := int32(0); i < in.Quantity; i++ {
 			plain := randomGiftcardCode(in.BatchNo, i)
+			codes = append(codes, plain)
 			sealed, err := r.cipher.Seal(plain, 0, 0)
 			if err != nil {
 				return err
@@ -83,7 +87,10 @@ func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.Gif
 		}
 		return nil
 	})
-	return batch, err
+	if err != nil {
+		return nil, nil, err
+	}
+	return batch, codes, nil
 }
 
 // ListBatches 批次列表。
@@ -188,9 +195,9 @@ func randomGiftcardCode(batchNo string, seq int32) string {
 	if _, err := crand.Read(b); err != nil {
 		return fmt.Sprintf("%s-%08d", batchNo, seq)
 	}
-	out := make([]byte, 20)
+	out := make([]byte, len(b)) // 与随机源等长（尾部 NUL 会进明文码/JSON）
 	for i, c := range b {
 		out[i] = charset[int(c)%len(charset)]
 	}
-	return fmt.Sprintf("%s-%s", batchNo, string(out))
+	return fmt.Sprintf("%s-%s", batchNo, out)
 }

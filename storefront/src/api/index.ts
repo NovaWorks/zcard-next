@@ -93,8 +93,8 @@ export function listProducts(params?: { keyword?: string; page?: number; page_si
   return api.get<ListProductsReply>('/products', {
     keyword: params?.keyword,
     points_only: params?.points_only,
-    'page.page': params?.page,
-    'page.page_size': params?.page_size
+    page: params?.page,
+    page_size: params?.page_size
   });
 }
 

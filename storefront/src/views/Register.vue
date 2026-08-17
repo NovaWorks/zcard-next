@@ -32,6 +32,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { register } from '@/api';
 import { setToken } from '@/api/client';
+import { refreshAuth } from '@/auth';
 
 const route = useRoute();
 const router = useRouter();
@@ -67,6 +68,7 @@ async function submit() {
     return;
   }
   setToken(data.token); // 注册即登录
+  await refreshAuth(); // 顶栏登录态即时更新
   router.push(typeof route.query.redirect === 'string' ? route.query.redirect : '/member');
 }
 </script>

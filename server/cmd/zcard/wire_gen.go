@@ -68,7 +68,13 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	productRepoImpl := catalog.NewProductRepoImpl(dataData, mediaRepo)
 	catalogUsecase := catalog.NewCatalogUsecase(productRepoImpl)
 	resellerRepo := reseller.NewResellerRepo(dataData)
-	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase, resellerRepo)
+	cardCipher, err := bootstrap.NewCardCipher(securityConf)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	cardRepoImpl := inventory.NewCardRepoImpl(dataData, cardCipher)
+	storeCatalogService := catalog.NewStoreCatalogService(catalogUsecase, resellerRepo, cardRepoImpl)
 	supplyRepoImpl := supply.NewSupplyRepoImpl(dataData, box)
 	dispatcher := bootstrap.NewDispatcher(dataData, logger)
 	failedTaskWriter := data.NewFailedTaskWriter(dataData)
@@ -82,12 +88,6 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminSupplyService := supply.NewAdminSupplyService(supplyRepoImpl, syncService)
 	procureRepo := procurement.NewProcureRepo(dataData)
 	gateway := supply.NewGateway(supplyRepoImpl)
-	cardCipher, err := bootstrap.NewCardCipher(securityConf)
-	if err != nil {
-		cleanup2()
-		cleanup()
-		return nil, nil, err
-	}
 	notifyRepo := notify.NewNotifyRepo(dataData)
 	v := notify.ProvideChannels(notifyRepo, repoImpl)
 	notifyDispatcher := notify.ProvideDispatcher(notifyRepo, v, resellerRepo)
@@ -95,7 +95,6 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	auditRepo := audit.NewAuditRepoWithAlerter(dataData, logger, alerter)
 	deliveryRepoImpl := fulfillment.NewDeliveryRepoImpl(dataData, cardCipher, auditRepo, auditRepo)
 	registry := payment.NewRegistry()
-	cardRepoImpl := inventory.NewCardRepoImpl(dataData, cardCipher)
 	generator, err := bootstrap.NewIDGenerator()
 	if err != nil {
 		cleanup2()

@@ -17,11 +17,12 @@ import (
 
 // 礼品卡方法挂在 AdminWalletService（批次管理）与 StoreWalletService（兑换）上，
 // 构造注入 *GiftcardRepo（wire）。// CreateGiftcardBatch 批次创建（面额/数量服务端边界校验——铁律 16）。
-func (s *AdminWalletService) CreateGiftcardBatch(ctx context.Context, req *adminv1.CreateGiftcardBatchRequest) (*adminv1.GiftcardBatchItem, error) {
+// 明文码仅本响应一次性返回（此后不可取——库内无明文，铁律 11）。
+func (s *AdminWalletService) CreateGiftcardBatch(ctx context.Context, req *adminv1.CreateGiftcardBatchRequest) (*adminv1.CreateGiftcardBatchReply, error) {
 	if !money.ValidCents(req.GetAmountCents()) || req.GetAmountCents() <= 0 {
 		return nil, errors.BadRequest("wallet.GIFTCARD_INVALID", "面额须为正且不超上限")
 	}
-	batch, err := s.giftcards.CreateBatch(ctx, BatchInput{
+	batch, codes, err := s.giftcards.CreateBatch(ctx, BatchInput{
 		BatchNo: req.GetBatchNo(), Name: req.GetName(),
 		Amount: req.GetAmountCents(), Quantity: req.GetQuantity(),
 		Operator: adminWalletUID(ctx),
@@ -36,7 +37,7 @@ func (s *AdminWalletService) CreateGiftcardBatch(ctx context.Context, req *admin
 		}
 		return nil, errors.InternalServer("wallet.BATCH_FAILED", "批次创建失败")
 	}
-	return toGiftcardBatchPB(batch), nil
+	return &adminv1.CreateGiftcardBatchReply{Batch: toGiftcardBatchPB(batch), Codes: codes}, nil
 }
 
 // ListGiftcardBatches 批次列表。

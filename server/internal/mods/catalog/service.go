@@ -9,6 +9,7 @@ import (
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	inventoryport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -21,11 +22,13 @@ type StoreCatalogService struct {
 	// pricer 分站定价（P3-04：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
 	// nil = 主站直营形态不解析分站价）。
 	pricer resellerport.Pricer
+	// stock 批量可用库存（库存真实值；nil 容错降级 0——同 AdminCatalogService）
+	stock inventoryport.StockBatcher
 }
 
 // NewStoreCatalogService 构造。
-func NewStoreCatalogService(uc *CatalogUsecase, pricer resellerport.Pricer) *StoreCatalogService {
-	return &StoreCatalogService{uc: uc, pricer: pricer}
+func NewStoreCatalogService(uc *CatalogUsecase, pricer resellerport.Pricer, stock inventoryport.StockBatcher) *StoreCatalogService {
+	return &StoreCatalogService{uc: uc, pricer: pricer, stock: stock}
 }
 
 // ListProducts 商品列表（游客可访问；隐藏商品不出现在列表）。
@@ -57,6 +60,16 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		Page:     page,
 		PageSize: pageSize,
 	}
+	var cardIDs []uint64
+	for i := range items {
+		if items[i].StockType == "card" {
+			cardIDs = append(cardIDs, items[i].ID)
+		}
+	}
+	var stocks map[uint64]int64
+	if s.stock != nil {
+		stocks, _ = s.stock.StockBatch(ctx, cardIDs) // 失败降级：留 0
+	}
 	for i := range items {
 		p := &items[i]
 		if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
@@ -64,7 +77,7 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 				p.Price = sp // 分站价（下限保护在 ResolveUnitPrice 内）
 			}
 		}
-		reply.Items = append(reply.Items, toStorefrontProduct(p))
+		reply.Items = append(reply.Items, toStorefrontProduct(p, stocks))
 	}
 	return reply, nil
 }
@@ -83,7 +96,11 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 			p.Price = sp
 		}
 	}
-	out := toStorefrontProduct(p)
+	var stocks map[uint64]int64
+	if s.stock != nil && p.StockType == "card" {
+		stocks, _ = s.stock.StockBatch(ctx, []uint64{p.ID})
+	}
+	out := toStorefrontProduct(p, stocks)
 	controls, err := s.uc.ListControls(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.InternalServer("catalog.CONTROL_FAILED", "读取控件失败")
@@ -130,7 +147,18 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	return out, nil
 }
 
-func toStorefrontProduct(p *port.Product) *storefrontv1.Product {
+// toStorefrontProduct DTO 映射。stocks 为批量可用库存（nil = 未注入/失败降级）：
+// card 类商品取真实值（stock_visible=false 时仍返回真实值——展示与否由前端
+// 按 stock_visible 决定；P3-09 冒烟修复：此前写死 0）；非 card 类 -1=不限。
+func toStorefrontProduct(p *port.Product, stocks map[uint64]int64) *storefrontv1.Product {
+	var stock int64
+	if p.StockType == "card" {
+		if stocks != nil {
+			stock = stocks[p.ID]
+		}
+	} else {
+		stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
+	}
 	return &storefrontv1.Product{
 		Id:             p.ID,
 		Name:           p.Name,
@@ -138,7 +166,7 @@ func toStorefrontProduct(p *port.Product) *storefrontv1.Product {
 		Cover:          "", // cover 字段 M1 加入 Product DTO（当前 port 未含）
 		PriceCents:     int64(p.Price),
 		StockType:      p.StockType,
-		Stock:          0, // 库存数走 inventory 聚合（M1：stock_visible 时返回真实值）
+		Stock:          stock,
 		StockVisible:   p.StockVisible,
 		PointsRequired: p.PointsRequired, // 积分商城（P3-01；0=常规商品）
 	}

@@ -66,7 +66,7 @@ func TestStoreListingSubsitePrice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr)
+	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr, nil)
 
 	// 分站域名上下文 → 列表分站价 +10%
 	subsiteCtx := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subsite, IsMain: false})
@@ -151,7 +151,7 @@ func TestTenantIsolationMatrix(t *testing.T) {
 		t.Fatalf("分站间应允许同 slug 共存: %s vs %s", prodA.Slug, prodB.Slug)
 	}
 
-	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr)
+	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr, nil)
 	ctxA := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subA, IsMain: false})
 	ctxB := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subB, IsMain: false})
 

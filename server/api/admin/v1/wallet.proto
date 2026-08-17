@@ -44,7 +44,7 @@ service AdminWalletService {
     };
   }
   // CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
-  rpc CreateGiftcardBatch(CreateGiftcardBatchRequest) returns (GiftcardBatchItem) {
+  rpc CreateGiftcardBatch(CreateGiftcardBatchRequest) returns (CreateGiftcardBatchReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/wallet/giftcard-batches"
       body: "*"
@@ -61,6 +61,13 @@ message CreateGiftcardBatchRequest {
   string name = 2 [(google.api.field_behavior) = REQUIRED];
   int64 amount_cents = 3 [(google.api.field_behavior) = REQUIRED];
   int32 quantity = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// CreateGiftcardBatchReply 批次 + 明文码（仅创建响应一次性返回；此后任何端点
+// 不可再取——库内无明文，铁律 11；同 P1-06 一次性明文交付纪律）。
+message CreateGiftcardBatchReply {
+  GiftcardBatchItem batch = 1;
+  repeated string codes = 2; // 明文兑换码（当次响应后仅存于管理员侧）
 }
 
 message GiftcardBatchItem {

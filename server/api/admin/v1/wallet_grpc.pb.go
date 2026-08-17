@@ -48,7 +48,7 @@ type AdminWalletServiceClient interface {
 	// PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
 	PayWithdrawal(ctx context.Context, in *PayWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error)
 	// CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
-	CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*GiftcardBatchItem, error)
+	CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*CreateGiftcardBatchReply, error)
 	// ListGiftcardBatches 批次列表。
 	ListGiftcardBatches(ctx context.Context, in *ListGiftcardBatchesRequest, opts ...grpc.CallOption) (*ListGiftcardBatchesReply, error)
 }
@@ -121,9 +121,9 @@ func (c *adminWalletServiceClient) PayWithdrawal(ctx context.Context, in *PayWit
 	return out, nil
 }
 
-func (c *adminWalletServiceClient) CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*GiftcardBatchItem, error) {
+func (c *adminWalletServiceClient) CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*CreateGiftcardBatchReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GiftcardBatchItem)
+	out := new(CreateGiftcardBatchReply)
 	err := c.cc.Invoke(ctx, AdminWalletService_CreateGiftcardBatch_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -160,7 +160,7 @@ type AdminWalletServiceServer interface {
 	// PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
 	PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error)
 	// CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
-	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*GiftcardBatchItem, error)
+	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error)
 	// ListGiftcardBatches 批次列表。
 	ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error)
 	mustEmbedUnimplementedAdminWalletServiceServer()
@@ -191,7 +191,7 @@ func (UnimplementedAdminWalletServiceServer) ReviewWithdrawal(context.Context, *
 func (UnimplementedAdminWalletServiceServer) PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error) {
 	return nil, status.Error(codes.Unimplemented, "method PayWithdrawal not implemented")
 }
-func (UnimplementedAdminWalletServiceServer) CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*GiftcardBatchItem, error) {
+func (UnimplementedAdminWalletServiceServer) CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateGiftcardBatch not implemented")
 }
 func (UnimplementedAdminWalletServiceServer) ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error) {

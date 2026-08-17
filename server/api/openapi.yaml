@@ -3990,7 +3990,7 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/zcard.api.admin.v1.GiftcardBatchItem'
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CreateGiftcardBatchReply'
     /api/v1/admin/wallet/withdrawals:
         get:
             tags:
@@ -5799,6 +5799,18 @@ components:
                     type: integer
                     format: int32
             description: CreateFlashSale 创建秒杀（限量与卡密同锁）。
+        zcard.api.admin.v1.CreateGiftcardBatchReply:
+            type: object
+            properties:
+                batch:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.GiftcardBatchItem'
+                codes:
+                    type: array
+                    items:
+                        type: string
+            description: |-
+                CreateGiftcardBatchReply 批次 + 明文码（仅创建响应一次性返回；此后任何端点
+                 不可再取——库内无明文，铁律 11；同 P1-06 一次性明文交付纪律）。
         zcard.api.admin.v1.CreateGiftcardBatchRequest:
             required:
                 - batchNo

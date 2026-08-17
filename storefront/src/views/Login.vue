@@ -24,6 +24,7 @@ import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { login } from '@/api';
 import { setToken } from '@/api/client';
+import { refreshAuth } from '@/auth';
 
 const route = useRoute();
 const router = useRouter();
@@ -46,6 +47,7 @@ async function submit() {
     return;
   }
   setToken(data.access_token);
+  await refreshAuth(); // 顶栏登录态即时更新（SPA 内不整页刷新）
   router.push(typeof route.query.redirect === 'string' ? route.query.redirect : '/member');
 }
 </script>
