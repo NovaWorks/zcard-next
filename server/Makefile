@@ -44,9 +44,29 @@ check-gen: generate
 	git diff --exit-code -- . ':(exclude)go.sum' || (echo "ERROR: 生成物存在未提交变更，请运行 make generate 后提交"; exit 1)
 
 .PHONY: build
-# 构建单二进制
+# 构建单二进制（API-only；前端经外部静态服务部署）
 build:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/zcard ./cmd/zcard
+
+.PHONY: web-dist
+# 前端产物 → web/（embed 锚点；go:embed 无法引用模块外路径）。
+# monorepo 两前端构建后拷贝；重复执行幂等（rsync --delete 保持与源一致）。
+web-dist:
+	cd ../storefront && pnpm install --frozen-lockfile && pnpm build
+	cd ../admin && pnpm install --frozen-lockfile && pnpm build
+	rm -rf web/storefront web/admin
+	mkdir -p web/storefront web/admin
+	cp -R ../storefront/dist/ web/storefront/
+	cp -R ../admin/dist/ web/admin/
+
+.PHONY: build-fullstack
+# 完整交付形态（§10.1）：单二进制嵌入 admin+storefront（dist 缺失即编译失败）。
+# 首次/前端有变更时自动重建产物；SKIP_WEB_DIST=1 跳过（产物已就绪时加速）。
+build-fullstack:
+ifndef SKIP_WEB_DIST
+	make web-dist
+endif
+	mkdir -p bin/ && go build -tags fullstack -ldflags "-X main.Version=$(VERSION)" -o ./bin/zcard ./cmd/zcard
 
 .PHONY: run
 # 本地运行（SQLite 起步；默认读取 configs/config.yaml）

@@ -20,8 +20,21 @@ jobs:
         with:
           go-version-file: server/go.mod
           cache-dependency-path: server/go.sum
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            storefront/pnpm-lock.yaml
+            admin/pnpm-lock.yaml
 
-      - name: 构建双架构（版本 + 更新公钥注入）
+      - name: 前端产物 → embed 锚点（fullstack 单二进制，§10.1）
+        run: make -C server web-dist
+
+      - name: 构建双架构（fullstack + 版本/更新公钥注入）
         env:
           UPDATE_PUBKEY: ${{ secrets.ZCARD_UPDATE_PUBKEY }}
         run: |
@@ -30,7 +43,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME}"
           mkdir -p ../dist
           for arch in amd64 arm64; do
-            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build \
+            CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -tags fullstack \
               -ldflags "-s -w -X main.Version=${VERSION} \
                 -X github.com/NovaWorks/zcard-next/server/internal/platform/updater.DefaultPublicKeyHex=${UPDATE_PUBKEY}" \
               -o "../dist/zcard-linux-${arch}" ./cmd/zcard

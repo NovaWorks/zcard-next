@@ -42,6 +42,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
+	"github.com/NovaWorks/zcard-next/server/internal/web"
 
 	"github.com/go-kratos/kratos/v3/log"
 	"github.com/go-kratos/kratos/v3/middleware/logging"
@@ -220,8 +221,19 @@ func NewHTTPServer(
 	buildAuditOpMap(dir)
 	registerPaymentCallback(srv, payRepo, d)
 
-	// TODO(M1b)：go:embed SPA（fullstack build tag；index.html 永不缓存，铁律 8）
-	// TODO(M1)：/install 安装向导（EnsureInstalled 中间件先于业务路由）
+	// fullstack SPA（§10.1）：storefront 兜底根 + admin 独立前缀；未匹配回落
+	// index.html 由前端路由接管。保留前缀（/api /uploads /health /payments
+	// /install）已注册的业务/静态路由优先命中，回落仅在未匹配时发生。
+	if web.Available() {
+		// admin 前缀：配置 admin_base_path（§7.3 安全入口可配），默认 /admin
+		adminBase := "/admin"
+		if c != nil && c.AdminBasePath != "" {
+			adminBase = c.AdminBasePath
+		}
+		srv.HandlePrefix(adminBase, web.NewAdminHandler())
+		// storefront 兜底根（最后注册，最广匹配、最低优先）
+		srv.HandlePrefix("/", web.NewStorefrontHandler())
+	}
 	return srv
 }
 
