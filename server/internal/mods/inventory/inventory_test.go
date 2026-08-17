@@ -75,8 +75,9 @@ func seedCards(t *testing.T, d *data.Data, count int) uint64 {
 }
 
 // TestSequentialReserve_10of100 防超卖 CAS 验证：连续 100 单买 10 张，恰好 10 成功。
-// SQLite 单写者天然串行（等价于并发路径的 CAS 效果验证）；MySQL/PG 真并发测试
-// 在 CI 集成线用 FOR UPDATE SKIP LOCKED 跑（M1a CI 点亮）。
+// SQLite 单写者天然串行（等价于并发路径的 CAS 效果验证）；MySQL/PG 真并发
+// （FOR UPDATE SKIP LOCKED + 共享池 50 连接竞争）已兑付——P0-05 集成线
+// internal/testint/oversell_test.go（M1 验收「双路径」正式闭环）。
 func TestSequentialReserve_10of100(t *testing.T) {
 	repo, d := newTestRepo(t)
 	productID := seedCards(t, d, 10)

@@ -58,6 +58,14 @@ run: build
 test:
 	go test ./...
 
+.PHONY: test-integration
+# 集成线（P0-05）：真 MySQL/PG。-tags=integration + DSN 环境变量
+# （ZCARD_TEST_MYSQL_DSN / ZCARD_TEST_PG_DSN），未配置的方言自动 Skip。
+# 本地起库：docker run -d -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql:8
+#           docker run -d -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres:16
+test-integration:
+	go test -tags=integration -count=1 -timeout 15m ./internal/testint/...
+
 .PHONY: lint
 # 静态检查（gofmt：生成物豁免；CI M1 起接 golangci-lint）
 lint:

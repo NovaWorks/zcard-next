@@ -83,5 +83,14 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: server/go.mod
-      - name: 集成测试（占位：M1 交付并发防超卖双路径用例）
-        run: echo "M1 起启用：go test -tags=integration ./..."
+          cache-dependency-path: server/go.sum
+      - name: 集成测试（MySQL 线——防超卖真并发 + 全量迁移真跑）
+        working-directory: server
+        env:
+          ZCARD_TEST_MYSQL_DSN: "root:root@tcp(127.0.0.1:3306)/mysql?parseTime=True&loc=UTC"
+        run: make test-integration
+      - name: 集成测试（PG 线，必跑——§13 方言矩阵）
+        working-directory: server
+        env:
+          ZCARD_TEST_PG_DSN: "postgres://postgres:pass@127.0.0.1:5432/postgres?sslmode=disable"
+        run: make test-integration
