@@ -1,3 +1,3 @@
 #!/usr/bin/env tsx
 
-import './src/index';
+import "./src/index";

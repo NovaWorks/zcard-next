@@ -1,8 +1,8 @@
-import type { AxiosHeaderValue, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import type { ResponseType } from './type';
+import type { AxiosHeaderValue, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import type { ResponseType } from "./type";
 
 export function getContentType(config: InternalAxiosRequestConfig) {
-  const contentType: AxiosHeaderValue = config.headers?.['Content-Type'] || 'application/json';
+  const contentType: AxiosHeaderValue = config.headers?.["Content-Type"] || "application/json";
 
   return contentType;
 }
@@ -25,21 +25,21 @@ export function isHttpSuccess(status: number) {
 export function isResponseJson(response: AxiosResponse) {
   const { responseType } = response.config;
 
-  return responseType === 'json' || responseType === undefined;
+  return responseType === "json" || responseType === undefined;
 }
 
 export async function transformResponse(response: AxiosResponse) {
-  const responseType: ResponseType = (response.config?.responseType as ResponseType) || 'json';
-  if (responseType === 'json') return;
+  const responseType: ResponseType = (response.config?.responseType as ResponseType) || "json";
+  if (responseType === "json") return;
 
-  const isJson = (response.headers['content-type'] as string)?.includes('application/json');
+  const isJson = (response.headers["content-type"] as string)?.includes("application/json");
   if (!isJson) return;
 
-  if (responseType === 'blob') {
+  if (responseType === "blob") {
     await transformBlobToJson(response);
   }
 
-  if (responseType === 'arrayBuffer') {
+  if (responseType === "arrayBuffer") {
     await transformArrayBufferToJson(response);
   }
 }
@@ -48,11 +48,11 @@ export async function transformBlobToJson(response: AxiosResponse) {
   try {
     let data = response.data;
 
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       data = JSON.parse(data);
     }
 
-    if (Object.prototype.toString.call(data) === '[object Blob]') {
+    if (Object.prototype.toString.call(data) === "[object Blob]") {
       const json = await data.text();
       data = JSON.parse(json);
     }
@@ -65,11 +65,11 @@ export async function transformArrayBufferToJson(response: AxiosResponse) {
   try {
     let data = response.data;
 
-    if (typeof data === 'string') {
+    if (typeof data === "string") {
       data = JSON.parse(data);
     }
 
-    if (Object.prototype.toString.call(data) === '[object ArrayBuffer]') {
+    if (Object.prototype.toString.call(data) === "[object ArrayBuffer]") {
       const json = new TextDecoder().decode(data);
       data = JSON.parse(json);
     }

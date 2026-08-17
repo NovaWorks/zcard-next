@@ -1,20 +1,25 @@
 <script setup lang="ts">
-import { useThemeStore } from '@/store/modules/theme';
-import { $t } from '@/locales';
-import SettingItem from '../../../components/setting-item.vue';
+import { useThemeStore } from "@/store/modules/theme";
+import { $t } from "@/locales";
+import SettingItem from "../../../components/setting-item.vue";
 
 defineOptions({
-  name: 'HeaderSettings'
+  name: "HeaderSettings",
 });
 
 const themeStore = useThemeStore();
 </script>
 
 <template>
-  <NDivider>{{ $t('theme.layout.header.title') }}</NDivider>
+  <NDivider>{{ $t("theme.layout.header.title") }}</NDivider>
   <TransitionGroup tag="div" name="setting-list" class="flex-col-stretch gap-12px">
     <SettingItem key="1" :label="$t('theme.layout.header.height')">
-      <NInputNumber v-model:value="themeStore.header.height" size="small" :step="1" class="w-120px" />
+      <NInputNumber
+        v-model:value="themeStore.header.height"
+        size="small"
+        :step="1"
+        class="w-120px"
+      />
     </SettingItem>
     <SettingItem key="2" :label="$t('theme.layout.header.breadcrumb.visible')">
       <NSwitch v-model:value="themeStore.header.breadcrumb.visible" />

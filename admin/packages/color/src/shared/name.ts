@@ -1,5 +1,5 @@
-import { colorNames } from '../constant';
-import { getHex, getHsl, getRgb } from './colord';
+import { colorNames } from "../constant";
+import { getHex, getHsl, getRgb } from "./colord";
 
 /**
  * Get color name
@@ -17,7 +17,7 @@ export function getColorName(color: string) {
   let cl = -1;
   let df = -1;
 
-  let name = '';
+  let name = "";
 
   colorNames.some((item, index) => {
     const [hexValue, colorName] = item;

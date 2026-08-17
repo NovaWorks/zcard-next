@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { themeTabModeOptions } from '@/constants/app';
-import { useThemeStore } from '@/store/modules/theme';
-import { translateOptions } from '@/utils/common';
-import { $t } from '@/locales';
-import SettingItem from '../../../components/setting-item.vue';
+import { themeTabModeOptions } from "@/constants/app";
+import { useThemeStore } from "@/store/modules/theme";
+import { translateOptions } from "@/utils/common";
+import { $t } from "@/locales";
+import SettingItem from "../../../components/setting-item.vue";
 
 defineOptions({
-  name: 'TabSettings'
+  name: "TabSettings",
 });
 
 const themeStore = useThemeStore();
 </script>
 
 <template>
-  <NDivider>{{ $t('theme.layout.tab.title') }}</NDivider>
+  <NDivider>{{ $t("theme.layout.tab.title") }}</NDivider>
   <TransitionGroup tag="div" name="setting-list" class="flex-col-stretch gap-12px">
     <SettingItem key="1" :label="$t('theme.layout.tab.visible')">
       <NSwitch v-model:value="themeStore.tab.visible" />
@@ -35,7 +35,11 @@ const themeStore = useThemeStore();
         class="w-120px"
       />
     </SettingItem>
-    <SettingItem v-if="themeStore.tab.visible" key="5" :label="$t('theme.layout.tab.closeByMiddleClick')">
+    <SettingItem
+      v-if="themeStore.tab.visible"
+      key="5"
+      :label="$t('theme.layout.tab.closeByMiddleClick')"
+    >
       <template #suffix>
         <IconTooltip :desc="$t('theme.layout.tab.closeByMiddleClickTip')" />
       </template>

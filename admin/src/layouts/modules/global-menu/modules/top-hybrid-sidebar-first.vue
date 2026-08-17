@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { RouteKey } from '@elegant-router/types';
-import { GLOBAL_HEADER_MENU_ID, GLOBAL_SIDER_MENU_ID } from '@/constants/app';
-import { useAppStore } from '@/store/modules/app';
-import { useThemeStore } from '@/store/modules/theme';
-import { useRouterPush } from '@/hooks/common/router';
-import FirstLevelMenu from '../components/first-level-menu.vue';
-import { useMenu, useMixMenuContext } from '../context';
+import type { RouteKey } from "@elegant-router/types";
+import { GLOBAL_HEADER_MENU_ID, GLOBAL_SIDER_MENU_ID } from "@/constants/app";
+import { useAppStore } from "@/store/modules/app";
+import { useThemeStore } from "@/store/modules/theme";
+import { useRouterPush } from "@/hooks/common/router";
+import FirstLevelMenu from "../components/first-level-menu.vue";
+import { useMenu, useMixMenuContext } from "../context";
 
 defineOptions({
-  name: 'TopHybridSidebarFirst'
+  name: "TopHybridSidebarFirst",
 });
 
 const appStore = useAppStore();
@@ -19,8 +19,8 @@ const {
   secondLevelMenus,
   activeFirstLevelMenuKey,
   handleSelectFirstLevelMenu,
-  activeDeepestLevelMenuKey
-} = useMixMenuContext('TopHybridSidebarFirst');
+  activeDeepestLevelMenuKey,
+} = useMixMenuContext("TopHybridSidebarFirst");
 const { selectedKey } = useMenu();
 
 /**

@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { $t } from '@/locales';
+import { computed } from "vue";
+import { $t } from "@/locales";
 
-defineOptions({ name: 'MenuToggler' });
+defineOptions({ name: "MenuToggler" });
 
 interface Props {
   /** Show collapsed icon */
@@ -14,7 +14,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   arrowIcon: false,
-  zIndex: 98
+  zIndex: 98,
 });
 
 type NumberBool = 0 | 1;
@@ -22,13 +22,13 @@ type NumberBool = 0 | 1;
 const icon = computed(() => {
   const icons: Record<NumberBool, Record<NumberBool, string>> = {
     0: {
-      0: 'line-md:menu-fold-left',
-      1: 'line-md:menu-fold-right'
+      0: "line-md:menu-fold-left",
+      1: "line-md:menu-fold-right",
     },
     1: {
-      0: 'ph-caret-double-left-bold',
-      1: 'ph-caret-double-right-bold'
-    }
+      0: "ph-caret-double-left-bold",
+      1: "ph-caret-double-right-bold",
+    },
   };
 
   const arrowIcon = Number(props.arrowIcon || false) as NumberBool;

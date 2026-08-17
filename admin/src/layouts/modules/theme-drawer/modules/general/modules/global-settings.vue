@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import { useThemeStore } from '@/store/modules/theme';
-import { $t } from '@/locales';
-import SettingItem from '../../../components/setting-item.vue';
+import { useThemeStore } from "@/store/modules/theme";
+import { $t } from "@/locales";
+import SettingItem from "../../../components/setting-item.vue";
 
 defineOptions({
-  name: 'GlobalSettings'
+  name: "GlobalSettings",
 });
 
 const themeStore = useThemeStore();
 </script>
 
 <template>
-  <NDivider>{{ $t('theme.general.title') }}</NDivider>
+  <NDivider>{{ $t("theme.general.title") }}</NDivider>
   <SettingItem :label="$t('theme.general.multilingual.visible')">
     <NSwitch v-model:value="themeStore.header.multilingual.visible" />
   </SettingItem>

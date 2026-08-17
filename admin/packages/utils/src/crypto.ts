@@ -1,4 +1,4 @@
-import CryptoJS from 'crypto-js';
+import CryptoJS from "crypto-js";
 
 export class Crypto<T extends object> {
   /** Secret */

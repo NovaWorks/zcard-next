@@ -3,15 +3,15 @@ export {};
 declare global {
   export interface Window {
     /** NProgress instance */
-    NProgress?: import('nprogress').NProgress;
+    NProgress?: import("nprogress").NProgress;
     /** Loading bar instance */
-    $loadingBar?: import('naive-ui').LoadingBarProviderInst;
+    $loadingBar?: import("naive-ui").LoadingBarProviderInst;
     /** Dialog instance */
-    $dialog?: import('naive-ui').DialogProviderInst;
+    $dialog?: import("naive-ui").DialogProviderInst;
     /** Message instance */
-    $message?: import('naive-ui').MessageProviderInst;
+    $message?: import("naive-ui").MessageProviderInst;
     /** Notification instance */
-    $notification?: import('naive-ui').NotificationProviderInst;
+    $notification?: import("naive-ui").NotificationProviderInst;
   }
 
   /** Build time of the project */

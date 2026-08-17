@@ -1,11 +1,13 @@
 <script setup lang="ts">
 defineOptions({
-  name: 'SvgClose'
+  name: "SvgClose",
 });
 </script>
 
 <template>
-  <div class=":soy: relative h-16px w-16px inline-flex items-center justify-center rd-50% text-14px">
+  <div
+    class=":soy: relative h-16px w-16px inline-flex items-center justify-center rd-50% text-14px"
+  >
     <svg width="1em" height="1em" viewBox="0 0 1024 1024">
       <path
         fill="currentColor"

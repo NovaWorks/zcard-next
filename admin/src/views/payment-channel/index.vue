@@ -134,7 +134,7 @@ onMounted(loadList);
             v-model:value="form.config_json"
             type="textarea"
             :rows="5"
-            placeholder="{&quot;app_id&quot;:&quot;...&quot;,&quot;private_key&quot;:&quot;...&quot;}"
+            placeholder='{"app_id":"...","private_key":"..."}'
           />
         </NFormItem>
         <NFormItem label="启用">

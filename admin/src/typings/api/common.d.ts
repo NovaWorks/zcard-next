@@ -21,7 +21,7 @@ declare namespace Api {
     }
 
     /** common search params of table */
-    type CommonSearchParams = Pick<Common.PaginatingCommonParams, 'current' | 'size'>;
+    type CommonSearchParams = Pick<Common.PaginatingCommonParams, "current" | "size">;
 
     /**
      * enable status
@@ -29,7 +29,7 @@ declare namespace Api {
      * - "1": enabled
      * - "2": disabled
      */
-    type EnableStatus = '1' | '2';
+    type EnableStatus = "1" | "2";
 
     /** common record */
     type CommonRecord<T = any> = {

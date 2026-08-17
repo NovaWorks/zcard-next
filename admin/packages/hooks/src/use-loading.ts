@@ -1,4 +1,4 @@
-import useBoolean from './use-boolean';
+import useBoolean from "./use-boolean";
 
 /**
  * Loading
@@ -11,6 +11,6 @@ export default function useLoading(initValue = false) {
   return {
     loading,
     startLoading,
-    endLoading
+    endLoading,
   };
 }

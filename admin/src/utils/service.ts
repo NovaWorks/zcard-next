@@ -1,4 +1,4 @@
-import json5 from 'json5';
+import json5 from "json5";
 
 /**
  * Create service config by current env
@@ -13,28 +13,28 @@ export function createServiceConfig(env: Env.ImportMeta) {
     other = json5.parse(VITE_OTHER_SERVICE_BASE_URL);
   } catch {
     // eslint-disable-next-line no-console
-    console.error('VITE_OTHER_SERVICE_BASE_URL is not a valid json5 string');
+    console.error("VITE_OTHER_SERVICE_BASE_URL is not a valid json5 string");
   }
 
   const httpConfig: App.Service.SimpleServiceConfig = {
     baseURL: VITE_SERVICE_BASE_URL,
-    other
+    other,
   };
 
   const otherHttpKeys = Object.keys(httpConfig.other) as App.Service.OtherBaseURLKey[];
 
-  const otherConfig: App.Service.OtherServiceConfigItem[] = otherHttpKeys.map(key => {
+  const otherConfig: App.Service.OtherServiceConfigItem[] = otherHttpKeys.map((key) => {
     return {
       key,
       baseURL: httpConfig.other[key],
-      proxyPattern: createProxyPattern(key)
+      proxyPattern: createProxyPattern(key),
     };
   });
 
   const config: App.Service.ServiceConfig = {
     baseURL: httpConfig.baseURL,
     proxyPattern: createProxyPattern(),
-    other: otherConfig
+    other: otherConfig,
   };
 
   return config;
@@ -51,13 +51,13 @@ export function getServiceBaseURL(env: Env.ImportMeta, isProxy: boolean) {
 
   const otherBaseURL = {} as Record<App.Service.OtherBaseURLKey, string>;
 
-  other.forEach(item => {
+  other.forEach((item) => {
     otherBaseURL[item.key] = isProxy ? item.proxyPattern : item.baseURL;
   });
 
   return {
     baseURL: isProxy ? createProxyPattern() : baseURL,
-    otherBaseURL
+    otherBaseURL,
   };
 }
 
@@ -68,7 +68,7 @@ export function getServiceBaseURL(env: Env.ImportMeta, isProxy: boolean) {
  */
 function createProxyPattern(key?: App.Service.OtherBaseURLKey) {
   if (!key) {
-    return '/proxy-default';
+    return "/proxy-default";
   }
 
   return `/proxy-${key}`;

@@ -1,25 +1,25 @@
 <script setup lang="ts" generic="T extends Record<string, unknown>, K = never">
-import { computed } from 'vue';
-import { VueDraggable } from 'vue-draggable-plus';
-import { $t } from '@/locales';
+import { computed } from "vue";
+import { VueDraggable } from "vue-draggable-plus";
+import { $t } from "@/locales";
 
 defineOptions({
-  name: 'TableColumnSetting'
+  name: "TableColumnSetting",
 });
 
-const columns = defineModel<NaiveUI.TableColumnCheck[]>('columns', {
-  required: true
+const columns = defineModel<NaiveUI.TableColumnCheck[]>("columns", {
+  required: true,
 });
 
 const tooltipRecord: Record<NaiveUI.TableColumnFixed, App.I18n.I18nKey> = {
-  left: 'datatable.fixed.right',
-  right: 'datatable.fixed.unFixed',
-  unFixed: 'datatable.fixed.left'
+  left: "datatable.fixed.right",
+  right: "datatable.fixed.unFixed",
+  unFixed: "datatable.fixed.left",
 };
 
 function handleFixed(column: NaiveUI.TableColumnCheck) {
-  const fixedOptions: NaiveUI.TableColumnFixed[] = ['left', 'right', 'unFixed'];
-  const index = fixedOptions.findIndex(item => item === column.fixed);
+  const fixedOptions: NaiveUI.TableColumnFixed[] = ["left", "right", "unFixed"];
+  const index = fixedOptions.findIndex((item) => item === column.fixed);
   const nextIndex = index === fixedOptions.length - 1 ? 0 : index + 1;
   column.fixed = fixedOptions[nextIndex];
 }
@@ -28,7 +28,7 @@ const visibleStats = computed(() => {
   let total = 0;
   let checked = 0;
 
-  columns.value.forEach(column => {
+  columns.value.forEach((column) => {
     if (!column.visible) return;
 
     total += 1;
@@ -51,7 +51,7 @@ const selectAllIndeterminate = computed(() => {
 });
 
 function toggleSelectAll(checked: boolean) {
-  columns.value.forEach(column => {
+  columns.value.forEach((column) => {
     if (!column.visible) return;
 
     column.checked = checked;
@@ -66,7 +66,7 @@ function toggleSelectAll(checked: boolean) {
         <template #icon>
           <icon-ant-design-setting-outlined class="text-icon" />
         </template>
-        {{ $t('common.columnSetting') }}
+        {{ $t("common.columnSetting") }}
       </NButton>
     </template>
     <div>
@@ -78,11 +78,16 @@ function toggleSelectAll(checked: boolean) {
           class="flex-1"
           @update:checked="toggleSelectAll"
         >
-          {{ $t('common.selectAll') }}
+          {{ $t("common.selectAll") }}
         </NCheckbox>
       </div>
       <NDivider class="!my-4px" />
-      <VueDraggable v-model="columns" :animation="150" filter=".none_draggable" class="max-h-[200px] overflow-y-auto">
+      <VueDraggable
+        v-model="columns"
+        :animation="150"
+        filter=".none_draggable"
+        class="max-h-[200px] overflow-y-auto"
+      >
         <div
           v-for="item in columns"
           :key="item.key"

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { createTextVNode, defineComponent } from 'vue';
-import { useDialog, useLoadingBar, useMessage, useNotification } from 'naive-ui';
+import { createTextVNode, defineComponent } from "vue";
+import { useDialog, useLoadingBar, useMessage, useNotification } from "naive-ui";
 
 defineOptions({
-  name: 'AppProvider'
+  name: "AppProvider",
 });
 
 const ContextHolder = defineComponent({
-  name: 'ContextHolder',
+  name: "ContextHolder",
   setup() {
     function register() {
       window.$loadingBar = useLoadingBar();
@@ -19,7 +19,7 @@ const ContextHolder = defineComponent({
     register();
 
     return () => createTextVNode();
-  }
+  },
 });
 </script>
 

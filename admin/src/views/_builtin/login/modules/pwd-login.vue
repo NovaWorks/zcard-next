@@ -123,9 +123,7 @@ async function handleAccountLogin(account: Account) {
         </NButton>
       </div>
       <NDivider class="text-14px text-#666 !m-0">
-        {{
-          $t("page.login.pwdLogin.otherAccountLogin")
-        }}
+        {{ $t("page.login.pwdLogin.otherAccountLogin") }}
       </NDivider>
       <div class="flex-center gap-12px">
         <NButton

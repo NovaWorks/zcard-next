@@ -1,1 +1,1 @@
-export * from '@alova/mock';
+export * from "@alova/mock";

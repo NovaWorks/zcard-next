@@ -1,4 +1,4 @@
-import { request } from '../request';
+import { request } from "../request";
 
 // ── 工作台 ──
 
@@ -31,5 +31,5 @@ export interface DashboardData {
 
 /** 获取工作台统计数据（金额单位为分） */
 export function fetchDashboard() {
-  return request({ url: '/api/v1/admin/dashboard' });
+  return request({ url: "/api/v1/admin/dashboard" });
 }

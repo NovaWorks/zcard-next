@@ -1,19 +1,27 @@
-import type { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import type {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
 
 export type ContentType =
-  | 'text/html'
-  | 'text/plain'
-  | 'multipart/form-data'
-  | 'application/json'
-  | 'application/x-www-form-urlencoded'
-  | 'application/octet-stream';
+  | "text/html"
+  | "text/plain"
+  | "multipart/form-data"
+  | "application/json"
+  | "application/x-www-form-urlencoded"
+  | "application/octet-stream";
 
-export type ResponseTransform<Input = any, Output = any> = (input: Input) => Output | Promise<Output>;
+export type ResponseTransform<Input = any, Output = any> = (
+  input: Input,
+) => Output | Promise<Output>;
 
 export interface RequestOption<
   ResponseData,
   ApiData = ResponseData,
-  State extends Record<string, unknown> = Record<string, unknown>
+  State extends Record<string, unknown> = Record<string, unknown>,
 > {
   /**
    * The default state
@@ -39,7 +47,9 @@ export interface RequestOption<
    *
    * @param config Axios config
    */
-  onRequest: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>;
+  onRequest: (
+    config: InternalAxiosRequestConfig,
+  ) => InternalAxiosRequestConfig | Promise<InternalAxiosRequestConfig>;
   /**
    * The hook to check backend response is success or not
    *
@@ -56,7 +66,7 @@ export interface RequestOption<
    */
   onBackendFail: (
     response: AxiosResponse<ResponseData>,
-    instance: AxiosInstance
+    instance: AxiosInstance,
   ) => Promise<AxiosResponse | null> | Promise<void>;
   /**
    * The hook to handle error
@@ -75,13 +85,16 @@ interface ResponseMap {
   stream: ReadableStream<Uint8Array>;
   document: Document;
 }
-export type ResponseType = keyof ResponseMap | 'json';
+export type ResponseType = keyof ResponseMap | "json";
 
 export type MappedType<R extends ResponseType, JsonType = any> = R extends keyof ResponseMap
   ? ResponseMap[R]
   : JsonType;
 
-export type CustomAxiosRequestConfig<R extends ResponseType = 'json'> = Omit<AxiosRequestConfig, 'responseType'> & {
+export type CustomAxiosRequestConfig<R extends ResponseType = "json"> = Omit<
+  AxiosRequestConfig,
+  "responseType"
+> & {
   responseType?: R;
 };
 
@@ -97,9 +110,12 @@ export interface RequestInstanceCommon<State extends Record<string, unknown>> {
 }
 
 /** The request instance */
-export interface RequestInstance<ApiData, State extends Record<string, unknown>> extends RequestInstanceCommon<State> {
-  <T extends ApiData = ApiData, R extends ResponseType = 'json'>(
-    config: CustomAxiosRequestConfig<R>
+export interface RequestInstance<
+  ApiData,
+  State extends Record<string, unknown>,
+> extends RequestInstanceCommon<State> {
+  <T extends ApiData = ApiData, R extends ResponseType = "json">(
+    config: CustomAxiosRequestConfig<R>,
   ): Promise<MappedType<R, T>>;
 }
 
@@ -122,9 +138,9 @@ export type FlatResponseData<ResponseData, ApiData> =
 export interface FlatRequestInstance<
   ResponseData,
   ApiData,
-  State extends Record<string, unknown>
+  State extends Record<string, unknown>,
 > extends RequestInstanceCommon<State> {
-  <T extends ApiData = ApiData, R extends ResponseType = 'json'>(
-    config: CustomAxiosRequestConfig<R>
+  <T extends ApiData = ApiData, R extends ResponseType = "json">(
+    config: CustomAxiosRequestConfig<R>,
   ): Promise<FlatResponseData<ResponseData, MappedType<R, T>>>;
 }

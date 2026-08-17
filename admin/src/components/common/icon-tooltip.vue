@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed, useSlots } from 'vue';
-import type { PopoverPlacement } from 'naive-ui';
+import { computed, useSlots } from "vue";
+import type { PopoverPlacement } from "naive-ui";
 
-defineOptions({ name: 'IconTooltip' });
+defineOptions({ name: "IconTooltip" });
 
 interface Props {
   icon?: string;
@@ -12,17 +12,17 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  icon: 'mdi-help-circle',
-  localIcon: '',
-  desc: '',
-  placement: 'top'
+  icon: "mdi-help-circle",
+  localIcon: "",
+  desc: "",
+  placement: "top",
 });
 
 const slots = useSlots();
 const hasCustomTrigger = computed(() => Boolean(slots.trigger));
 
 if (!hasCustomTrigger.value && !props.icon && !props.localIcon) {
-  throw new Error('icon or localIcon is required when no custom trigger slot is provided');
+  throw new Error("icon or localIcon is required when no custom trigger slot is provided");
 }
 </script>
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import ThemePreset from './modules/theme-preset.vue';
+import ThemePreset from "./modules/theme-preset.vue";
 
 defineOptions({
-  name: 'PresetSettings'
+  name: "PresetSettings",
 });
 </script>
 

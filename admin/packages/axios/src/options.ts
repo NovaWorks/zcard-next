@@ -1,22 +1,22 @@
-import type { CreateAxiosDefaults } from 'axios';
-import type { IAxiosRetryConfig } from 'axios-retry';
-import { stringify } from 'qs';
-import { isHttpSuccess } from './shared';
-import type { RequestOption } from './type';
+import type { CreateAxiosDefaults } from "axios";
+import type { IAxiosRetryConfig } from "axios-retry";
+import { stringify } from "qs";
+import { isHttpSuccess } from "./shared";
+import type { RequestOption } from "./type";
 
 export function createDefaultOptions<
   ResponseData,
   ApiData = ResponseData,
-  State extends Record<string, unknown> = Record<string, unknown>
+  State extends Record<string, unknown> = Record<string, unknown>,
 >(options?: Partial<RequestOption<ResponseData, ApiData, State>>) {
   const opts: RequestOption<ResponseData, ApiData, State> = {
     defaultState: {} as State,
-    transform: async response => response.data as unknown as ApiData,
-    transformBackendResponse: async response => response.data as unknown as ApiData,
-    onRequest: async config => config,
-    isBackendSuccess: _response => true,
+    transform: async (response) => response.data as unknown as ApiData,
+    transformBackendResponse: async (response) => response.data as unknown as ApiData,
+    onRequest: async (config) => config,
+    isBackendSuccess: (_response) => true,
     onBackendFail: async () => {},
-    onError: async () => {}
+    onError: async () => {},
   };
 
   if (options?.transform) {
@@ -32,7 +32,7 @@ export function createDefaultOptions<
 
 export function createRetryOptions(config?: Partial<CreateAxiosDefaults>) {
   const retryConfig: IAxiosRetryConfig = {
-    retries: 0
+    retries: 0,
   };
 
   Object.assign(retryConfig, config);
@@ -46,12 +46,12 @@ export function createAxiosConfig(config?: Partial<CreateAxiosDefaults>) {
   const axiosConfig: CreateAxiosDefaults = {
     timeout: TEN_SECONDS,
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
     validateStatus: isHttpSuccess,
-    paramsSerializer: params => {
+    paramsSerializer: (params) => {
       return stringify(params);
-    }
+    },
   };
 
   Object.assign(axiosConfig, config);

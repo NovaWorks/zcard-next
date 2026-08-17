@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { getPaletteColorByNumber } from '@sa/color';
+import { computed } from "vue";
+import { getPaletteColorByNumber } from "@sa/color";
 
-defineOptions({ name: 'WaveBg' });
+defineOptions({ name: "WaveBg" });
 
 interface Props {
   /** Theme color */

@@ -1,20 +1,20 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import type { RouteKey } from '@elegant-router/types';
-import { SimpleScrollbar } from '@sa/materials';
-import { useBoolean } from '@sa/hooks';
-import { GLOBAL_HEADER_MENU_ID, GLOBAL_SIDER_MENU_ID } from '@/constants/app';
-import { useAppStore } from '@/store/modules/app';
-import { useThemeStore } from '@/store/modules/theme';
-import { useRouteStore } from '@/store/modules/route';
-import { useRouterPush } from '@/hooks/common/router';
-import { useMenu, useMixMenuContext } from '../context';
-import FirstLevelMenu from '../components/first-level-menu.vue';
-import GlobalLogo from '../../global-logo/index.vue';
+import { computed, ref, watch } from "vue";
+import { useRoute } from "vue-router";
+import type { RouteKey } from "@elegant-router/types";
+import { SimpleScrollbar } from "@sa/materials";
+import { useBoolean } from "@sa/hooks";
+import { GLOBAL_HEADER_MENU_ID, GLOBAL_SIDER_MENU_ID } from "@/constants/app";
+import { useAppStore } from "@/store/modules/app";
+import { useThemeStore } from "@/store/modules/theme";
+import { useRouteStore } from "@/store/modules/route";
+import { useRouterPush } from "@/hooks/common/router";
+import { useMenu, useMixMenuContext } from "../context";
+import FirstLevelMenu from "../components/first-level-menu.vue";
+import GlobalLogo from "../../global-logo/index.vue";
 
 defineOptions({
-  name: 'VerticalHybridHeaderFirst'
+  name: "VerticalHybridHeaderFirst",
 });
 
 const route = useRoute();
@@ -35,13 +35,15 @@ const {
   getActiveSecondLevelMenuKey,
   childLevelMenus,
   hasChildLevelMenus,
-  activeDeepestLevelMenuKey
-} = useMixMenuContext('VerticalHybridHeaderFirst');
+  activeDeepestLevelMenuKey,
+} = useMixMenuContext("VerticalHybridHeaderFirst");
 const { selectedKey } = useMenu();
 
 const inverted = computed(() => !themeStore.darkMode && themeStore.sider.inverted);
 
-const showDrawer = computed(() => hasChildLevelMenus.value && (drawerVisible.value || appStore.mixSiderFixed));
+const showDrawer = computed(
+  () => hasChildLevelMenus.value && (drawerVisible.value || appStore.mixSiderFixed),
+);
 
 function handleSelectMixMenu(key: RouteKey) {
   handleSelectSecondLevelMenu(key);
@@ -66,7 +68,8 @@ function handleSelectMenu(key: RouteKey) {
   // Case 1: autoSelectFirstMenu disabled - only activate menu for display
   if (!themeStore.sider.autoSelectFirstMenu) {
     // Check if there are third-level menus
-    const hasChildren = secondLevelMenus.value.find(menu => menu.key === secondFirstMenuKey)?.children?.length;
+    const hasChildren = secondLevelMenus.value.find((menu) => menu.key === secondFirstMenuKey)
+      ?.children?.length;
 
     // If there are third-level menus, expand them
     if (hasChildren) {
@@ -104,7 +107,7 @@ watch(
   () => {
     updateExpandedKeys();
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 
@@ -136,7 +139,10 @@ watch(
       <div
         class="relative h-full transition-width-300"
         :style="{
-          width: appStore.mixSiderFixed && hasChildLevelMenus ? themeStore.sider.mixChildMenuWidth + 'px' : '0px'
+          width:
+            appStore.mixSiderFixed && hasChildLevelMenus
+              ? themeStore.sider.mixChildMenuWidth + 'px'
+              : '0px',
         }"
       >
         <DarkModeContainer
@@ -144,8 +150,11 @@ watch(
           :inverted="inverted"
           :style="{ width: showDrawer ? themeStore.sider.mixChildMenuWidth + 'px' : '0px' }"
         >
-          <header class="flex-y-center justify-between px-12px" :style="{ height: themeStore.header.height + 'px' }">
-            <h2 class="text-16px text-primary font-bold">{{ $t('system.title') }}</h2>
+          <header
+            class="flex-y-center justify-between px-12px"
+            :style="{ height: themeStore.header.height + 'px' }"
+          >
+            <h2 class="text-16px text-primary font-bold">{{ $t("system.title") }}</h2>
             <PinToggler
               :pin="appStore.mixSiderFixed"
               :class="{ 'text-white:88 !hover:text-white': inverted }"

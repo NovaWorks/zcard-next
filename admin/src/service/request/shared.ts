@@ -1,10 +1,10 @@
-import { useAuthStore } from '@/store/modules/auth';
-import { localStg } from '@/utils/storage';
-import { fetchRefreshToken } from '../api';
-import type { RequestInstanceState } from './type';
+import { useAuthStore } from "@/store/modules/auth";
+import { localStg } from "@/utils/storage";
+import { fetchRefreshToken } from "../api";
+import type { RequestInstanceState } from "./type";
 
 export function getAuthorization() {
-  const token = localStg.get('token');
+  const token = localStg.get("token");
   const Authorization = token ? `Bearer ${token}` : null;
   return Authorization;
 }
@@ -12,7 +12,7 @@ export function getAuthorization() {
 /** refresh token（Kratos：POST /api/v1/admin/auth/refresh） */
 async function handleRefreshToken() {
   const { resetStore } = useAuthStore();
-  const rToken = localStg.get('refreshToken') || '';
+  const rToken = localStg.get("refreshToken") || "";
   if (!rToken) return false;
 
   const { error, data } = await fetchRefreshToken(rToken);
@@ -20,8 +20,8 @@ async function handleRefreshToken() {
     // Kratos 返回 snake_case
     const accessToken = (data as any).access_token || (data as any).token;
     const newRefresh = (data as any).refresh_token || (data as any).refreshToken;
-    if (accessToken) localStg.set('token', accessToken);
-    if (newRefresh) localStg.set('refreshToken', newRefresh);
+    if (accessToken) localStg.set("token", accessToken);
+    if (newRefresh) localStg.set("refreshToken", newRefresh);
     return true;
   }
   resetStore();

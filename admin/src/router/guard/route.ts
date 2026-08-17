@@ -1,9 +1,14 @@
-import type { LocationQueryRaw, RouteLocationNormalized, RouteLocationRaw, Router } from 'vue-router';
-import type { RouteKey, RoutePath } from '@elegant-router/types';
-import { useAuthStore } from '@/store/modules/auth';
-import { useRouteStore } from '@/store/modules/route';
-import { localStg } from '@/utils/storage';
-import { getRouteName } from '@/router/elegant/transform';
+import type {
+  LocationQueryRaw,
+  RouteLocationNormalized,
+  RouteLocationRaw,
+  Router,
+} from "vue-router";
+import type { RouteKey, RoutePath } from "@elegant-router/types";
+import { useAuthStore } from "@/store/modules/auth";
+import { useRouteStore } from "@/store/modules/route";
+import { localStg } from "@/utils/storage";
+import { getRouteName } from "@/router/elegant/transform";
 
 /**
  * create route guard
@@ -20,15 +25,15 @@ export function createRouteGuard(router: Router) {
 
     const authStore = useAuthStore();
 
-    const rootRoute: RouteKey = 'root';
-    const loginRoute: RouteKey = 'login';
-    const noAuthorizationRoute: RouteKey = '403';
+    const rootRoute: RouteKey = "root";
+    const loginRoute: RouteKey = "login";
+    const noAuthorizationRoute: RouteKey = "403";
 
-    const isLogin = Boolean(localStg.get('token'));
+    const isLogin = Boolean(localStg.get("token"));
     const needLogin = !to.meta.constant;
     const routeRoles = to.meta.roles || [];
 
-    const hasRole = authStore.userInfo.roles.some(role => routeRoles.includes(role));
+    const hasRole = authStore.userInfo.roles.some((role) => routeRoles.includes(role));
     const hasAuth = authStore.isStaticSuper || !routeRoles.length || hasRole;
 
     // if it is login route when logged in, then switch to the root page
@@ -64,7 +69,7 @@ export function createRouteGuard(router: Router) {
 async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw | null> {
   const routeStore = useRouteStore();
 
-  const notFoundRoute: RouteKey = 'not-found';
+  const notFoundRoute: RouteKey = "not-found";
   const isNotFoundRoute = to.name === notFoundRoute;
 
   // if the constant route is not initialized, then initialize the constant route
@@ -78,13 +83,13 @@ async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw 
       path,
       replace: true,
       query: to.query,
-      hash: to.hash
+      hash: to.hash,
     };
 
     return location;
   }
 
-  const isLogin = Boolean(localStg.get('token'));
+  const isLogin = Boolean(localStg.get("token"));
 
   if (!isLogin) {
     // if the user is not logged in and the route is a constant route but not the "not-found" route, then it is allowed to access.
@@ -95,12 +100,12 @@ async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw 
     }
 
     // if the user is not logged in, then switch to the login page
-    const loginRoute: RouteKey = 'login';
+    const loginRoute: RouteKey = "login";
     const query = getRouteQueryOfLoginRoute(to, routeStore.routeHome);
 
     const location: RouteLocationRaw = {
       name: loginRoute,
-      query
+      query,
     };
 
     return location;
@@ -113,14 +118,14 @@ async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw 
     // the route is captured by the "not-found" route because the auth route is not initialized
     // after the auth route is initialized, redirect to the original route
     if (isNotFoundRoute) {
-      const rootRoute: RouteKey = 'root';
-      const path = to.redirectedFrom?.name === rootRoute ? '/' : to.fullPath;
+      const rootRoute: RouteKey = "root";
+      const path = to.redirectedFrom?.name === rootRoute ? "/" : to.fullPath;
 
       const location: RouteLocationRaw = {
         path,
         replace: true,
         query: to.query,
-        hash: to.hash
+        hash: to.hash,
       };
 
       return location;
@@ -137,11 +142,11 @@ async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw 
 
   // it is captured by the "not-found" route, then check whether the route exists
   const exist = await routeStore.getIsAuthRouteExist(to.path as RoutePath);
-  const noPermissionRoute: RouteKey = '403';
+  const noPermissionRoute: RouteKey = "403";
 
   if (exist) {
     const location: RouteLocationRaw = {
-      name: noPermissionRoute
+      name: noPermissionRoute,
     };
 
     return location;
@@ -153,16 +158,16 @@ async function initRoute(to: RouteLocationNormalized): Promise<RouteLocationRaw 
 function handleRouteSwitch(to: RouteLocationNormalized, from: RouteLocationNormalized) {
   // route with href
   if (to.meta.href) {
-    window.open(to.meta.href, '_blank');
+    window.open(to.meta.href, "_blank");
 
     return { path: from.fullPath, replace: true, query: from.query, hash: to.hash };
   }
 }
 
 function getRouteQueryOfLoginRoute(to: RouteLocationNormalized, routeHome: RouteKey) {
-  const loginRoute: RouteKey = 'login';
+  const loginRoute: RouteKey = "login";
   const redirect = to.fullPath;
-  const [redirectPath, redirectQuery] = redirect.split('?');
+  const [redirectPath, redirectQuery] = redirect.split("?");
   const redirectName = getRouteName(redirectPath as RoutePath);
 
   const isRedirectHome = routeHome === redirectName;

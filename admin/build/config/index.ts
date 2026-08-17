@@ -1,2 +1,2 @@
-export * from './proxy';
-export * from './time';
+export * from "./proxy";
+export * from "./time";

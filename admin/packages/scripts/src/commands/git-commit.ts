@@ -1,9 +1,9 @@
-import path from 'node:path';
-import { readFileSync } from 'node:fs';
-import { prompt } from 'enquirer';
-import { execCommand } from '../shared';
-import { locales } from '../locales';
-import type { Lang } from '../locales';
+import path from "node:path";
+import { readFileSync } from "node:fs";
+import { prompt } from "enquirer";
+import { execCommand } from "../shared";
+import { locales } from "../locales";
+import type { Lang } from "../locales";
 
 interface PromptObject {
   types: string;
@@ -16,10 +16,10 @@ interface PromptObject {
  *
  * @param lang
  */
-export async function gitCommit(lang: Lang = 'en-us') {
+export async function gitCommit(lang: Lang = "en-us") {
   const { gitCommitMessages, gitCommitNoStaged, gitCommitTypes, gitCommitScopes } = locales[lang];
 
-  const stagedFiles = await execCommand('git', ['diff', '--cached', '--name-only']);
+  const stagedFiles = await execCommand("git", ["diff", "--cached", "--name-only"]);
 
   if (!stagedFiles) {
     console.error(gitCommitNoStaged);
@@ -33,69 +33,69 @@ export async function gitCommit(lang: Lang = 'en-us') {
 
     return {
       name: value,
-      message
+      message,
     };
   });
 
   const scopesChoices = gitCommitScopes.map(([value, msg]) => ({
     name: value,
-    message: `${value.padEnd(30)} (${msg})`
+    message: `${value.padEnd(30)} (${msg})`,
   }));
 
   // Suppress ERR_USE_AFTER_CLOSE thrown by enquirer's readline cleanup on Ctrl+C (Node.js v24+)
   const errorHandler = (error: NodeJS.ErrnoException) => {
-    if (error.code === 'ERR_USE_AFTER_CLOSE') {
+    if (error.code === "ERR_USE_AFTER_CLOSE") {
       process.exit(0);
     }
   };
-  process.on('uncaughtException', errorHandler);
+  process.on("uncaughtException", errorHandler);
 
   let result: PromptObject;
 
   try {
     result = await prompt<PromptObject>([
       {
-        name: 'types',
-        type: 'select',
+        name: "types",
+        type: "select",
         message: gitCommitMessages.types,
-        choices: typesChoices
+        choices: typesChoices,
       },
       {
-        name: 'scopes',
-        type: 'select',
+        name: "scopes",
+        type: "select",
         message: gitCommitMessages.scopes,
-        choices: scopesChoices
+        choices: scopesChoices,
       },
       {
-        name: 'description',
-        type: 'text',
-        message: gitCommitMessages.description
-      }
+        name: "description",
+        type: "text",
+        message: gitCommitMessages.description,
+      },
     ]);
   } catch {
     process.exit(0);
   } finally {
-    process.off('uncaughtException', errorHandler);
+    process.off("uncaughtException", errorHandler);
   }
 
-  const breaking = result.description.startsWith('!') ? '!' : '';
+  const breaking = result.description.startsWith("!") ? "!" : "";
 
-  const description = result.description.replace(/^!/, '').trim();
+  const description = result.description.replace(/^!/, "").trim();
 
   const commitMsg = `${result.types}(${result.scopes})${breaking}: ${description}`;
 
-  await execCommand('git', ['commit', '-m', commitMsg], { stdio: 'inherit' });
+  await execCommand("git", ["commit", "-m", commitMsg], { stdio: "inherit" });
 }
 
 /** Git commit message verify */
-export async function gitCommitVerify(lang: Lang = 'en-us', ignores: RegExp[] = []) {
-  const gitPath = await execCommand('git', ['rev-parse', '--show-toplevel']);
+export async function gitCommitVerify(lang: Lang = "en-us", ignores: RegExp[] = []) {
+  const gitPath = await execCommand("git", ["rev-parse", "--show-toplevel"]);
 
-  const gitMsgPath = path.join(gitPath, '.git', 'COMMIT_EDITMSG');
+  const gitMsgPath = path.join(gitPath, ".git", "COMMIT_EDITMSG");
 
-  const commitMsg = readFileSync(gitMsgPath, 'utf8').trim();
+  const commitMsg = readFileSync(gitMsgPath, "utf8").trim();
 
-  if (ignores.some(regExp => regExp.test(commitMsg))) return;
+  if (ignores.some((regExp) => regExp.test(commitMsg))) return;
 
   const REG_EXP = /(?<type>[a-z]+)(?:\((?<scope>.+)\))?(?<breaking>!)?: (?<description>.+)/i;
 

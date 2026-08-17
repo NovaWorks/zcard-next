@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { Component } from 'vue';
-import type { PageTabMode, PageTabProps } from '../../types';
-import { ACTIVE_COLOR, createTabCssVars } from './shared';
-import ChromeTab from './chrome-tab.vue';
-import ButtonTab from './button-tab.vue';
-import SliderTab from './slider-tab.vue';
-import SvgClose from './svg-close.vue';
-import style from './index.module.css';
+import { computed } from "vue";
+import type { Component } from "vue";
+import type { PageTabMode, PageTabProps } from "../../types";
+import { ACTIVE_COLOR, createTabCssVars } from "./shared";
+import ChromeTab from "./chrome-tab.vue";
+import ButtonTab from "./button-tab.vue";
+import SliderTab from "./slider-tab.vue";
+import SvgClose from "./svg-close.vue";
+import style from "./index.module.css";
 
 defineOptions({
-  name: 'PageTab'
+  name: "PageTab",
 });
 
 const props = withDefaults(defineProps<PageTabProps>(), {
-  mode: 'chrome',
-  commonClass: 'transition-all-300',
+  mode: "chrome",
+  commonClass: "transition-all-300",
   activeColor: ACTIVE_COLOR,
-  closable: true
+  closable: true,
 });
 
 interface Emits {
-  (e: 'close'): void;
+  (e: "close"): void;
 }
 
 const emit = defineEmits<Emits>();
@@ -32,16 +32,16 @@ const activeTabComponent = computed(() => {
   const tabComponentMap = {
     chrome: {
       component: ChromeTab,
-      class: chromeClass
+      class: chromeClass,
     },
     button: {
       component: ButtonTab,
-      class: buttonClass
+      class: buttonClass,
     },
     slider: {
       component: SliderTab,
-      class: sliderClass
-    }
+      class: sliderClass,
+    },
   } satisfies Record<PageTabMode, { component: Component; class?: string }>;
 
   return tabComponentMap[mode];
@@ -56,12 +56,17 @@ const bindProps = computed(() => {
 });
 
 function handleClose() {
-  emit('close');
+  emit("close");
 }
 </script>
 
 <template>
-  <component :is="activeTabComponent.component" :class="activeTabComponent.class" :style="cssVars" v-bind="bindProps">
+  <component
+    :is="activeTabComponent.component"
+    :class="activeTabComponent.class"
+    :style="cssVars"
+    v-bind="bindProps"
+  >
     <template #prefix>
       <slot name="prefix"></slot>
     </template>

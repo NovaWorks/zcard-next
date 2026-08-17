@@ -1,22 +1,22 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { themePageAnimationModeOptions, themeScrollModeOptions } from '@/constants/app';
-import { useThemeStore } from '@/store/modules/theme';
-import { translateOptions } from '@/utils/common';
-import { $t } from '@/locales';
-import SettingItem from '../../../components/setting-item.vue';
+import { computed } from "vue";
+import { themePageAnimationModeOptions, themeScrollModeOptions } from "@/constants/app";
+import { useThemeStore } from "@/store/modules/theme";
+import { translateOptions } from "@/utils/common";
+import { $t } from "@/locales";
+import SettingItem from "../../../components/setting-item.vue";
 
 defineOptions({
-  name: 'ContentSettings'
+  name: "ContentSettings",
 });
 
 const themeStore = useThemeStore();
 
-const isWrapperScrollMode = computed(() => themeStore.layout.scrollMode === 'wrapper');
+const isWrapperScrollMode = computed(() => themeStore.layout.scrollMode === "wrapper");
 </script>
 
 <template>
-  <NDivider>{{ $t('theme.layout.content.title') }}</NDivider>
+  <NDivider>{{ $t("theme.layout.content.title") }}</NDivider>
   <TransitionGroup tag="div" name="setting-list" class="flex-col-stretch gap-12px">
     <SettingItem key="1" :label="$t('theme.layout.content.scrollMode.title')">
       <template #suffix>
@@ -32,7 +32,11 @@ const isWrapperScrollMode = computed(() => themeStore.layout.scrollMode === 'wra
     <SettingItem key="2" :label="$t('theme.layout.content.page.animate')">
       <NSwitch v-model:value="themeStore.page.animate" />
     </SettingItem>
-    <SettingItem v-if="themeStore.page.animate" key="3" :label="$t('theme.layout.content.page.mode.title')">
+    <SettingItem
+      v-if="themeStore.page.animate"
+      key="3"
+      :label="$t('theme.layout.content.page.mode.title')"
+    >
       <NSelect
         v-model:value="themeStore.page.animateMode"
         :options="translateOptions(themePageAnimationModeOptions)"
@@ -40,7 +44,11 @@ const isWrapperScrollMode = computed(() => themeStore.layout.scrollMode === 'wra
         class="w-120px"
       />
     </SettingItem>
-    <SettingItem v-if="isWrapperScrollMode" key="4" :label="$t('theme.layout.content.fixedHeaderAndTab')">
+    <SettingItem
+      v-if="isWrapperScrollMode"
+      key="4"
+      :label="$t('theme.layout.content.fixedHeaderAndTab')"
+    >
       <NSwitch v-model:value="themeStore.fixedHeaderAndTab" />
     </SettingItem>
   </TransitionGroup>

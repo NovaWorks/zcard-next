@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref } from "vue";
 
 /**
  * Boolean
@@ -26,6 +26,6 @@ export default function useBoolean(initValue = false) {
     setBool,
     setTrue,
     setFalse,
-    toggle
+    toggle,
   };
 }

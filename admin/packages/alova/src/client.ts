@@ -1,1 +1,1 @@
-export * from 'alova/client';
+export * from "alova/client";

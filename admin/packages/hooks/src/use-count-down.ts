@@ -1,5 +1,5 @@
-import { computed, onScopeDispose, ref } from 'vue';
-import { useRafFn } from '@vueuse/core';
+import { computed, onScopeDispose, ref } from "vue";
+import { useRafFn } from "@vueuse/core";
 
 /**
  * A hook for implementing a countdown timer. It uses `requestAnimationFrame` for smooth and accurate timing,
@@ -35,7 +35,7 @@ export default function useCountDown(initialSeconds: number) {
         pause();
       }
     },
-    { immediate: false } // The timer does not start automatically.
+    { immediate: false }, // The timer does not start automatically.
   );
 
   /**
@@ -63,6 +63,6 @@ export default function useCountDown(initialSeconds: number) {
     count,
     isCounting,
     start,
-    stop
+    stop,
   };
 }

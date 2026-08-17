@@ -1,4 +1,4 @@
-import type { Router } from 'vue-router';
+import type { Router } from "vue-router";
 
 export function createProgressGuard(router: Router) {
   router.beforeEach(() => {

@@ -3,7 +3,7 @@
 // 未加载完成回退 ¥/2。纯整数运算：显示用整数拆位，提交 Math.round 防浮点漂移。
 // 全站金额显示/提交必须经本文件，禁止内联 `xxx / 100` 或硬编码符号（架构测试守护）。
 
-import { fetchSettings, fetchCurrencies } from '@/service/api';
+import { fetchSettings, fetchCurrencies } from "@/service/api";
 
 export interface CurrencyMeta {
   symbol: string; // 货币符号（¥/$）
@@ -11,7 +11,7 @@ export interface CurrencyMeta {
   precision: number; // 小数位（CNY=2、JPY=0）
 }
 
-const DEFAULT_META: CurrencyMeta = { symbol: '¥', position: 'prefix', precision: 2 };
+const DEFAULT_META: CurrencyMeta = { symbol: "¥", position: "prefix", precision: 2 };
 
 let current: CurrencyMeta = { ...DEFAULT_META };
 
@@ -32,8 +32,8 @@ export function fenToYuan(cents: number): string {
   const whole = Math.floor(v / base);
   const frac = v % base;
   return (
-    `${neg ? '-' : ''}${whole}` +
-    (current.precision > 0 ? `.${String(frac).padStart(current.precision, '0')}` : '')
+    `${neg ? "-" : ""}${whole}` +
+    (current.precision > 0 ? `.${String(frac).padStart(current.precision, "0")}` : "")
   );
 }
 
@@ -50,14 +50,14 @@ export function centsToYuan(cents: number): number {
 // formatMoney 带符号格式化（显示唯一入口；符号位置感知）。
 export function formatMoney(cents: number): string {
   const v = fenToYuan(cents);
-  return current.position === 'suffix' ? `${v}${current.symbol}` : `${current.symbol}${v}`;
+  return current.position === "suffix" ? `${v}${current.symbol}` : `${current.symbol}${v}`;
 }
 
 // formatSignedMoney 有符号金额（流水/调账：正数带 +，负数 fenToYuan 自带 -）。
 export function formatSignedMoney(cents: number): string {
   const v = fenToYuan(cents);
   const body = cents > 0 ? `+${v}` : v;
-  return current.position === 'suffix' ? `${body}${current.symbol}` : `${current.symbol}${body}`;
+  return current.position === "suffix" ? `${body}${current.symbol}` : `${current.symbol}${body}`;
 }
 
 // ── 默认货币加载（后台 i18n.base_currency → /admin/currencies 符号/位置/小数位）──
@@ -68,14 +68,17 @@ export function initCurrency(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
       try {
-        const [settingsRes, currencyRes] = await Promise.all([fetchSettings('i18n'), fetchCurrencies()]);
-        let baseCode = 'CNY';
+        const [settingsRes, currencyRes] = await Promise.all([
+          fetchSettings("i18n"),
+          fetchCurrencies(),
+        ]);
+        let baseCode = "CNY";
         const items: any[] = ((settingsRes as any)?.data as any)?.items || [];
-        const entry = items.find((it: any) => it.key === 'base_currency');
+        const entry = items.find((it: any) => it.key === "base_currency");
         if (entry?.value_json) {
           try {
             const v = JSON.parse(entry.value_json);
-            if (typeof v === 'string' && v) baseCode = v;
+            if (typeof v === "string" && v) baseCode = v;
           } catch {
             /* 非法配置回退默认 */
           }

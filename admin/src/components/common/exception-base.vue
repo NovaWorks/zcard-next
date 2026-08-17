@@ -1,11 +1,11 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
-import { useRouterPush } from '@/hooks/common/router';
-import { $t } from '@/locales';
+import { computed } from "vue";
+import { useRouterPush } from "@/hooks/common/router";
+import { $t } from "@/locales";
 
-defineOptions({ name: 'ExceptionBase' });
+defineOptions({ name: "ExceptionBase" });
 
-type ExceptionType = '403' | '404' | '500';
+type ExceptionType = "403" | "404" | "500";
 
 interface Props {
   /**
@@ -23,9 +23,9 @@ const props = defineProps<Props>();
 const { routerPushByKey } = useRouterPush();
 
 const iconMap: Record<ExceptionType, string> = {
-  '403': 'no-permission',
-  '404': 'not-found',
-  '500': 'service-error'
+  "403": "no-permission",
+  "404": "not-found",
+  "500": "service-error",
 };
 
 const icon = computed(() => iconMap[props.type]);
@@ -36,7 +36,7 @@ const icon = computed(() => iconMap[props.type]);
     <div class="flex text-400px text-primary">
       <SvgIcon :local-icon="icon" />
     </div>
-    <NButton type="primary" @click="routerPushByKey('root')">{{ $t('common.backToHome') }}</NButton>
+    <NButton type="primary" @click="routerPushByKey('root')">{{ $t("common.backToHome") }}</NButton>
   </div>
 </template>
 
