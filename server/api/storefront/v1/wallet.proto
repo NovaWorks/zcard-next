@@ -62,4 +62,6 @@ message CreateRechargeRequest {
 message CreateRechargeReply {
   uint64 recharge_id = 1;
   uint64 payment_id = 2;
+  string type = 3;    // redirect | qrcode | params（与 CreatePaymentReply 同构）
+  string payload = 4; // 支付跳转 URL / 二维码内容 / 参数 JSON
 }

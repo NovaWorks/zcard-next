@@ -72,6 +72,28 @@ func (_c *PaymentCreate) SetOrderID(v uint64) *PaymentCreate {
 	return _c
 }
 
+// SetNillableOrderID sets the "order_id" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableOrderID(v *uint64) *PaymentCreate {
+	if v != nil {
+		_c.SetOrderID(*v)
+	}
+	return _c
+}
+
+// SetRechargeOrderID sets the "recharge_order_id" field.
+func (_c *PaymentCreate) SetRechargeOrderID(v uint64) *PaymentCreate {
+	_c.mutation.SetRechargeOrderID(v)
+	return _c
+}
+
+// SetNillableRechargeOrderID sets the "recharge_order_id" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableRechargeOrderID(v *uint64) *PaymentCreate {
+	if v != nil {
+		_c.SetRechargeOrderID(*v)
+	}
+	return _c
+}
+
 // SetChannel sets the "channel" field.
 func (_c *PaymentCreate) SetChannel(v string) *PaymentCreate {
 	_c.mutation.SetChannel(v)
@@ -257,9 +279,6 @@ func (_c *PaymentCreate) check() error {
 	if _, ok := _c.mutation.SubsiteID(); !ok {
 		return &ValidationError{Name: "subsite_id", err: errors.New(`ent: missing required field "Payment.subsite_id"`)}
 	}
-	if _, ok := _c.mutation.OrderID(); !ok {
-		return &ValidationError{Name: "order_id", err: errors.New(`ent: missing required field "Payment.order_id"`)}
-	}
 	if _, ok := _c.mutation.Channel(); !ok {
 		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required field "Payment.channel"`)}
 	}
@@ -294,9 +313,6 @@ func (_c *PaymentCreate) check() error {
 		if err := payment.IdempotencyKeyValidator(v); err != nil {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Payment.idempotency_key": %w`, err)}
 		}
-	}
-	if len(_c.mutation.OrderIDs()) == 0 {
-		return &ValidationError{Name: "order", err: errors.New(`ent: missing required edge "Payment.order"`)}
 	}
 	return nil
 }
@@ -342,6 +358,10 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SubsiteID(); ok {
 		_spec.SetField(payment.FieldSubsiteID, field.TypeUint64, value)
 		_node.SubsiteID = value
+	}
+	if value, ok := _c.mutation.RechargeOrderID(); ok {
+		_spec.SetField(payment.FieldRechargeOrderID, field.TypeUint64, value)
+		_node.RechargeOrderID = value
 	}
 	if value, ok := _c.mutation.Channel(); ok {
 		_spec.SetField(payment.FieldChannel, field.TypeString, value)
@@ -487,6 +507,36 @@ func (u *PaymentUpsert) SetOrderID(v uint64) *PaymentUpsert {
 // UpdateOrderID sets the "order_id" field to the value that was provided on create.
 func (u *PaymentUpsert) UpdateOrderID() *PaymentUpsert {
 	u.SetExcluded(payment.FieldOrderID)
+	return u
+}
+
+// ClearOrderID clears the value of the "order_id" field.
+func (u *PaymentUpsert) ClearOrderID() *PaymentUpsert {
+	u.SetNull(payment.FieldOrderID)
+	return u
+}
+
+// SetRechargeOrderID sets the "recharge_order_id" field.
+func (u *PaymentUpsert) SetRechargeOrderID(v uint64) *PaymentUpsert {
+	u.Set(payment.FieldRechargeOrderID, v)
+	return u
+}
+
+// UpdateRechargeOrderID sets the "recharge_order_id" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateRechargeOrderID() *PaymentUpsert {
+	u.SetExcluded(payment.FieldRechargeOrderID)
+	return u
+}
+
+// AddRechargeOrderID adds v to the "recharge_order_id" field.
+func (u *PaymentUpsert) AddRechargeOrderID(v uint64) *PaymentUpsert {
+	u.Add(payment.FieldRechargeOrderID, v)
+	return u
+}
+
+// ClearRechargeOrderID clears the value of the "recharge_order_id" field.
+func (u *PaymentUpsert) ClearRechargeOrderID() *PaymentUpsert {
+	u.SetNull(payment.FieldRechargeOrderID)
 	return u
 }
 
@@ -737,6 +787,41 @@ func (u *PaymentUpsertOne) SetOrderID(v uint64) *PaymentUpsertOne {
 func (u *PaymentUpsertOne) UpdateOrderID() *PaymentUpsertOne {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateOrderID()
+	})
+}
+
+// ClearOrderID clears the value of the "order_id" field.
+func (u *PaymentUpsertOne) ClearOrderID() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearOrderID()
+	})
+}
+
+// SetRechargeOrderID sets the "recharge_order_id" field.
+func (u *PaymentUpsertOne) SetRechargeOrderID(v uint64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetRechargeOrderID(v)
+	})
+}
+
+// AddRechargeOrderID adds v to the "recharge_order_id" field.
+func (u *PaymentUpsertOne) AddRechargeOrderID(v uint64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddRechargeOrderID(v)
+	})
+}
+
+// UpdateRechargeOrderID sets the "recharge_order_id" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateRechargeOrderID() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateRechargeOrderID()
+	})
+}
+
+// ClearRechargeOrderID clears the value of the "recharge_order_id" field.
+func (u *PaymentUpsertOne) ClearRechargeOrderID() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearRechargeOrderID()
 	})
 }
 
@@ -1178,6 +1263,41 @@ func (u *PaymentUpsertBulk) SetOrderID(v uint64) *PaymentUpsertBulk {
 func (u *PaymentUpsertBulk) UpdateOrderID() *PaymentUpsertBulk {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateOrderID()
+	})
+}
+
+// ClearOrderID clears the value of the "order_id" field.
+func (u *PaymentUpsertBulk) ClearOrderID() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearOrderID()
+	})
+}
+
+// SetRechargeOrderID sets the "recharge_order_id" field.
+func (u *PaymentUpsertBulk) SetRechargeOrderID(v uint64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetRechargeOrderID(v)
+	})
+}
+
+// AddRechargeOrderID adds v to the "recharge_order_id" field.
+func (u *PaymentUpsertBulk) AddRechargeOrderID(v uint64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddRechargeOrderID(v)
+	})
+}
+
+// UpdateRechargeOrderID sets the "recharge_order_id" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateRechargeOrderID() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateRechargeOrderID()
+	})
+}
+
+// ClearRechargeOrderID clears the value of the "recharge_order_id" field.
+func (u *PaymentUpsertBulk) ClearRechargeOrderID() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearRechargeOrderID()
 	})
 }
 

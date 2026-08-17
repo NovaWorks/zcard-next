@@ -23,6 +23,8 @@ const (
 	FieldSubsiteID = "subsite_id"
 	// FieldOrderID holds the string denoting the order_id field in the database.
 	FieldOrderID = "order_id"
+	// FieldRechargeOrderID holds the string denoting the recharge_order_id field in the database.
+	FieldRechargeOrderID = "recharge_order_id"
 	// FieldChannel holds the string denoting the channel field in the database.
 	FieldChannel = "channel"
 	// FieldChannelOrderNo holds the string denoting the channel_order_no field in the database.
@@ -61,6 +63,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldSubsiteID,
 	FieldOrderID,
+	FieldRechargeOrderID,
 	FieldChannel,
 	FieldChannelOrderNo,
 	FieldAmount,
@@ -156,6 +159,11 @@ func BySubsiteID(opts ...sql.OrderTermOption) OrderOption {
 // ByOrderID orders the results by the order_id field.
 func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOrderID, opts...).ToFunc()
+}
+
+// ByRechargeOrderID orders the results by the recharge_order_id field.
+func ByRechargeOrderID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRechargeOrderID, opts...).ToFunc()
 }
 
 // ByChannel orders the results by the channel field.

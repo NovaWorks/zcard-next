@@ -8076,6 +8076,10 @@ components:
                     type: string
                 paymentId:
                     type: string
+                type:
+                    type: string
+                payload:
+                    type: string
         zcard.api.storefront.v1.CreateRechargeRequest:
             required:
                 - amountCents

@@ -343,6 +343,8 @@ type CreateRechargeReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RechargeId    uint64                 `protobuf:"varint,1,opt,name=recharge_id,json=rechargeId,proto3" json:"recharge_id,omitempty"`
 	PaymentId     uint64                 `protobuf:"varint,2,opt,name=payment_id,json=paymentId,proto3" json:"payment_id,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`       // redirect | qrcode | params（与 CreatePaymentReply 同构）
+	Payload       string                 `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"` // 支付跳转 URL / 二维码内容 / 参数 JSON
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -391,6 +393,20 @@ func (x *CreateRechargeReply) GetPaymentId() uint64 {
 	return 0
 }
 
+func (x *CreateRechargeReply) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *CreateRechargeReply) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
+}
+
 var File_storefront_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_wallet_proto_rawDesc = "" +
@@ -419,12 +435,14 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"created_at\x18\b \x01(\x03R\tcreatedAt\"^\n" +
 	"\x15CreateRechargeRequest\x12&\n" +
 	"\famount_cents\x18\x01 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
-	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\"U\n" +
+	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\"\x83\x01\n" +
 	"\x13CreateRechargeReply\x12\x1f\n" +
 	"\vrecharge_id\x18\x01 \x01(\x04R\n" +
 	"rechargeId\x12\x1d\n" +
 	"\n" +
-	"payment_id\x18\x02 \x01(\x04R\tpaymentId2\xb7\x03\n" +
+	"payment_id\x18\x02 \x01(\x04R\tpaymentId\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x18\n" +
+	"\apayload\x18\x04 \x01(\tR\apayload2\xb7\x03\n" +
 	"\x12StoreWalletService\x12n\n" +
 	"\n" +
 	"GetBalance\x12\x16.google.protobuf.Empty\x1a%.zcard.api.storefront.v1.BalanceReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/storefront/wallet\x12\x90\x01\n" +

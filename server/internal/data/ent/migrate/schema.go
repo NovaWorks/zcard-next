@@ -1058,6 +1058,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "recharge_order_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "channel", Type: field.TypeString, Size: 50},
 		{Name: "channel_order_no", Type: field.TypeString, Nullable: true, Size: 80},
 		{Name: "amount", Type: field.TypeInt64},
@@ -1067,7 +1068,7 @@ var (
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "raw", Type: field.TypeJSON, Nullable: true},
 		{Name: "idempotency_key", Type: field.TypeString, Nullable: true, Size: 64},
-		{Name: "order_id", Type: field.TypeUint64},
+		{Name: "order_id", Type: field.TypeUint64, Nullable: true},
 	}
 	// PaymentsTable holds the schema information for the "payments" table.
 	PaymentsTable = &schema.Table{
@@ -1077,26 +1078,26 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payments_orders_payments",
-				Columns:    []*schema.Column{PaymentsColumns[13]},
+				Columns:    []*schema.Column{PaymentsColumns[14]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "payment_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[13]},
+				Columns: []*schema.Column{PaymentsColumns[14]},
 			},
 			{
 				Name:    "payment_channel_channel_order_no",
 				Unique:  true,
-				Columns: []*schema.Column{PaymentsColumns[4], PaymentsColumns[5]},
+				Columns: []*schema.Column{PaymentsColumns[5], PaymentsColumns[6]},
 			},
 			{
 				Name:    "payment_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[9], PaymentsColumns[1]},
+				Columns: []*schema.Column{PaymentsColumns[10], PaymentsColumns[1]},
 			},
 		},
 	}

@@ -25,8 +25,10 @@ type Payment struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// 租户（0=主站；由 interceptor 自动注入，业务不手写）
 	SubsiteID uint64 `json:"subsite_id,omitempty"`
-	// 关联订单（硬外键 → orders）
+	// 关联订单（订单支付单；充值支付单为空）
 	OrderID uint64 `json:"order_id,omitempty"`
+	// 关联充值单（充值支付单；订单支付单为空）
+	RechargeOrderID uint64 `json:"recharge_order_id,omitempty"`
 	// 渠道码
 	Channel string `json:"channel,omitempty"`
 	// 网关单号（回调时回填）
@@ -78,7 +80,7 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case payment.FieldRaw:
 			values[i] = new([]byte)
-		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldFee:
+		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldFee:
 			values[i] = new(sql.NullInt64)
 		case payment.FieldChannel, payment.FieldChannelOrderNo, payment.FieldStatus, payment.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
@@ -128,6 +130,12 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field order_id", values[i])
 			} else if value.Valid {
 				_m.OrderID = uint64(value.Int64)
+			}
+		case payment.FieldRechargeOrderID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field recharge_order_id", values[i])
+			} else if value.Valid {
+				_m.RechargeOrderID = uint64(value.Int64)
 			}
 		case payment.FieldChannel:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -237,6 +245,9 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("order_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.OrderID))
+	builder.WriteString(", ")
+	builder.WriteString("recharge_order_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RechargeOrderID))
 	builder.WriteString(", ")
 	builder.WriteString("channel=")
 	builder.WriteString(_m.Channel)

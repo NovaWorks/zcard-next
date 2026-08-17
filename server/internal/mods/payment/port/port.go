@@ -29,6 +29,20 @@ type RedirectInfo struct {
 	Payload json.RawMessage
 }
 
+// RechargePaymentInfo 充值支付单发起结果（wallet 模块消费）。
+type RechargePaymentInfo struct {
+	PaymentID uint64
+	Type      string // redirect / qrcode / params
+	Payload   string
+}
+
+// RechargePayer 充值支付单创建端口（wallet 模块消费，通道 A）：
+// 充值单落 pending 后创建支付单（关联 recharge_order_id）+ 渠道发起，
+// 余额入账只发生在回调成功后（铁律 16）。
+type RechargePayer interface {
+	CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel string, amount money.Cents) (*RechargePaymentInfo, error)
+}
+
 // CallbackFact 回调事实（VerifyCallback/ParseWebhook 的统一产出，四重校验的输入）。
 type CallbackFact struct {
 	Provider       string

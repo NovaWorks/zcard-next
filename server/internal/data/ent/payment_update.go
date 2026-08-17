@@ -72,6 +72,39 @@ func (_u *PaymentUpdate) SetNillableOrderID(v *uint64) *PaymentUpdate {
 	return _u
 }
 
+// ClearOrderID clears the value of the "order_id" field.
+func (_u *PaymentUpdate) ClearOrderID() *PaymentUpdate {
+	_u.mutation.ClearOrderID()
+	return _u
+}
+
+// SetRechargeOrderID sets the "recharge_order_id" field.
+func (_u *PaymentUpdate) SetRechargeOrderID(v uint64) *PaymentUpdate {
+	_u.mutation.ResetRechargeOrderID()
+	_u.mutation.SetRechargeOrderID(v)
+	return _u
+}
+
+// SetNillableRechargeOrderID sets the "recharge_order_id" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableRechargeOrderID(v *uint64) *PaymentUpdate {
+	if v != nil {
+		_u.SetRechargeOrderID(*v)
+	}
+	return _u
+}
+
+// AddRechargeOrderID adds value to the "recharge_order_id" field.
+func (_u *PaymentUpdate) AddRechargeOrderID(v int64) *PaymentUpdate {
+	_u.mutation.AddRechargeOrderID(v)
+	return _u
+}
+
+// ClearRechargeOrderID clears the value of the "recharge_order_id" field.
+func (_u *PaymentUpdate) ClearRechargeOrderID() *PaymentUpdate {
+	_u.mutation.ClearRechargeOrderID()
+	return _u
+}
+
 // SetChannel sets the "channel" field.
 func (_u *PaymentUpdate) SetChannel(v string) *PaymentUpdate {
 	_u.mutation.SetChannel(v)
@@ -315,9 +348,6 @@ func (_u *PaymentUpdate) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Payment.idempotency_key": %w`, err)}
 		}
 	}
-	if _u.mutation.OrderCleared() && len(_u.mutation.OrderIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Payment.order"`)
-	}
 	return nil
 }
 
@@ -341,6 +371,15 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(payment.FieldSubsiteID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.RechargeOrderID(); ok {
+		_spec.SetField(payment.FieldRechargeOrderID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedRechargeOrderID(); ok {
+		_spec.AddField(payment.FieldRechargeOrderID, field.TypeUint64, value)
+	}
+	if _u.mutation.RechargeOrderIDCleared() {
+		_spec.ClearField(payment.FieldRechargeOrderID, field.TypeUint64)
 	}
 	if value, ok := _u.mutation.Channel(); ok {
 		_spec.SetField(payment.FieldChannel, field.TypeString, value)
@@ -482,6 +521,39 @@ func (_u *PaymentUpdateOne) SetNillableOrderID(v *uint64) *PaymentUpdateOne {
 	if v != nil {
 		_u.SetOrderID(*v)
 	}
+	return _u
+}
+
+// ClearOrderID clears the value of the "order_id" field.
+func (_u *PaymentUpdateOne) ClearOrderID() *PaymentUpdateOne {
+	_u.mutation.ClearOrderID()
+	return _u
+}
+
+// SetRechargeOrderID sets the "recharge_order_id" field.
+func (_u *PaymentUpdateOne) SetRechargeOrderID(v uint64) *PaymentUpdateOne {
+	_u.mutation.ResetRechargeOrderID()
+	_u.mutation.SetRechargeOrderID(v)
+	return _u
+}
+
+// SetNillableRechargeOrderID sets the "recharge_order_id" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableRechargeOrderID(v *uint64) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetRechargeOrderID(*v)
+	}
+	return _u
+}
+
+// AddRechargeOrderID adds value to the "recharge_order_id" field.
+func (_u *PaymentUpdateOne) AddRechargeOrderID(v int64) *PaymentUpdateOne {
+	_u.mutation.AddRechargeOrderID(v)
+	return _u
+}
+
+// ClearRechargeOrderID clears the value of the "recharge_order_id" field.
+func (_u *PaymentUpdateOne) ClearRechargeOrderID() *PaymentUpdateOne {
+	_u.mutation.ClearRechargeOrderID()
 	return _u
 }
 
@@ -741,9 +813,6 @@ func (_u *PaymentUpdateOne) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Payment.idempotency_key": %w`, err)}
 		}
 	}
-	if _u.mutation.OrderCleared() && len(_u.mutation.OrderIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "Payment.order"`)
-	}
 	return nil
 }
 
@@ -784,6 +853,15 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.AddedSubsiteID(); ok {
 		_spec.AddField(payment.FieldSubsiteID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.RechargeOrderID(); ok {
+		_spec.SetField(payment.FieldRechargeOrderID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedRechargeOrderID(); ok {
+		_spec.AddField(payment.FieldRechargeOrderID, field.TypeUint64, value)
+	}
+	if _u.mutation.RechargeOrderIDCleared() {
+		_spec.ClearField(payment.FieldRechargeOrderID, field.TypeUint64)
 	}
 	if value, ok := _u.mutation.Channel(); ok {
 		_spec.SetField(payment.FieldChannel, field.TypeString, value)

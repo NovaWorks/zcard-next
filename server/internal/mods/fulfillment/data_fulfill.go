@@ -29,11 +29,11 @@ import (
 
 // DeliveryRepoImpl 交付仓储。
 type DeliveryRepoImpl struct {
-	data   *data.Data
-	cipher *inventory.CardCipher
-	inv    inventory.CardRepo
-	gate   auditport.RiskGate // P2-06 取货失败锁定（nil = 未装配跳过）
-	auditor auditport.Auditor // P2-06 取货安全审计（nil = 未装配跳过）
+	data    *data.Data
+	cipher  *inventory.CardCipher
+	inv     inventory.CardRepo
+	gate    auditport.RiskGate // P2-06 取货失败锁定（nil = 未装配跳过）
+	auditor auditport.Auditor  // P2-06 取货安全审计（nil = 未装配跳过）
 }
 
 // actorTypeOf 订单归属（游客 user_id=0 → guest）。
@@ -93,11 +93,26 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 
 	deliveredAt := time.Now().UTC()
 
-	// 逐卡：MarkUsed + 交付记录
-	var cardIDs []uint64
-	for _, c := range cards {
-		cardIDs = append(cardIDs, c.ID)
+	// 商品发货模式映射（products.delivery_mode：status=标记 / delete=即删）
+	modeByProduct := map[uint64]string{}
+	for _, it := range items {
+		if _, ok := modeByProduct[it.ProductID]; ok {
+			continue
+		}
+		if prod, err := client.Product.Get(ctx, it.ProductID); err == nil {
+			modeByProduct[it.ProductID] = string(prod.DeliveryMode)
+		}
+	}
+	modeOf := func(productID uint64) orderdelivery.DeliveredMode {
+		if modeByProduct[productID] == "delete" {
+			return orderdelivery.DeliveredModeDelete
+		}
+		return orderdelivery.DeliveredModeStatus
+	}
 
+	// 逐卡：MarkUsed + 交付记录（即删模式交付后物理删除卡密行）
+	var deleteCardIDs []uint64
+	for _, c := range cards {
 		// MarkUsed（affected rows 校验防并发重发）
 		affected, err := client.Card.Update().
 			Where(card.ID(c.ID), card.StatusEQ(card.StatusReserved), card.OrderID(o.ID)).
@@ -114,12 +129,13 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 		// 交付记录（card_id 引用 + 一次性令牌哈希——不存明文）
 		token := randomToken()
 		tokenHash := hashToken(token)
+		mode := modeOf(c.ProductID)
 		_, err = client.OrderDelivery.Create().
 			SetOrderID(o.ID).
 			SetItemID(0).
 			SetCardID(c.ID).
 			SetDeliveryTokenHash(tokenHash).
-			SetDeliveredMode(orderdelivery.DeliveredModeStatus).
+			SetDeliveredMode(mode).
 			SetDeliveredBy(0). // auto
 			SetFetchCount(0).
 			SetDeliveredAt(deliveredAt).
@@ -127,12 +143,13 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 		if err != nil {
 			return fmt.Errorf("fulfillment.DELIVERY_CREATE_FAILED: %w", err)
 		}
+		if mode == orderdelivery.DeliveredModeDelete {
+			deleteCardIDs = append(deleteCardIDs, c.ID) // 即删：交付后物理删除（取货占位兜底见 FetchDelivery）
+		}
 	}
-
-	// 即删模式：交付后物理删除卡密行
-	for _, it := range items {
-		if it.FulfillmentType == orderitem.FulfillmentTypeAuto {
-			// 检查商品 delivery_mode（简化：全部标记模式，即删 M1b 按商品配置）
+	if len(deleteCardIDs) > 0 {
+		if _, err := client.Card.Delete().Where(card.IDIn(deleteCardIDs...)).Exec(ctx); err != nil {
+			return fmt.Errorf("fulfillment.DELETE_MODE_FAILED: %w", err)
 		}
 	}
 
@@ -467,6 +484,7 @@ func maskContent(plain string) string {
 // 入参已是密文（procurement 侧 CardCipher.Seal 后透传），本层只负责：
 //  1. 写 cards（status=used，order_id 绑定——前台取货按 order 关联，与本地卡密同链路）
 //  2. 写 order_deliveries（card_id 引用 + 一次性令牌 + 掩码，无明文快照）
+//
 // 幂等：同 order_item 已交付直接返回（procurement 侧也以采购单状态机兜底）。
 func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []port.UpstreamDeliveryItem) error {
 	client := data.Client(ctx, r.data)

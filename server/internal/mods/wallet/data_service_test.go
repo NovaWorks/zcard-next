@@ -10,11 +10,22 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/go-kratos/kratos/v3/errors"
 )
+
+// fakePayer 充值支付创建假实现（记录调用，返回固定 payment_id）。
+type fakePayer struct {
+	calls int
+}
+
+func (f *fakePayer) CreateRechargePayment(_ context.Context, rechargeOrderID uint64, channel string, _ money.Cents) (*paymentport.RechargePaymentInfo, error) {
+	f.calls++
+	return &paymentport.RechargePaymentInfo{PaymentID: 900 + uint64(f.calls), Type: "redirect", Payload: "https://pay.example/1"}, nil
+}
 
 // fakeSettings 充值档位假实现（settings.recharge 组键值）。
 type fakeSettings struct{ m map[string][]byte }
@@ -45,10 +56,11 @@ func newRechargeSettings(t *testing.T, enabled bool, minA, maxA int64, tiers str
 	return &fakeSettings{m: m}
 }
 
-func newStoreWalletService(t *testing.T) (*StoreWalletService, *WalletRepoImpl) {
+func newStoreWalletService(t *testing.T, payer paymentport.RechargePayer) (*StoreWalletService, *WalletRepoImpl) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	return NewStoreWalletService(repo, d, nil), repo
+	// 支付管线未装配（payer=nil）——充值 fail-closed 测试只验证档位与零入账
+	return NewStoreWalletService(repo, d, nil, payer), repo
 }
 
 func userCtx(uid uint64) context.Context {
@@ -57,7 +69,7 @@ func userCtx(uid uint64) context.Context {
 
 // TestRechargePolicy 档位裁决：停用/超下限/超上限/超全局上限全部拒绝。
 func TestRechargePolicy(t *testing.T) {
-	svc, _ := newStoreWalletService(t)
+	svc, _ := newStoreWalletService(t, &fakePayer{})
 	ctx := userCtx(1)
 
 	cases := []struct {
@@ -83,7 +95,7 @@ func TestRechargePolicy(t *testing.T) {
 
 // TestRechargeFailClosed 核心安全断言：创建充值单绝不直接入账（支付确认前零入账）。
 func TestRechargeFailClosed(t *testing.T) {
-	svc, repo := newStoreWalletService(t)
+	svc, repo := newStoreWalletService(t, &fakePayer{})
 	svc.settings = newRechargeSettings(t, true, 1000, 500000,
 		`[{"amount":10000,"gift_balance":500,"gift_points":100}]`)
 	ctx := userCtx(1)
@@ -113,7 +125,7 @@ func TestRechargeFailClosed(t *testing.T) {
 
 // TestRechargeRequireLogin 未登录拒绝。
 func TestRechargeRequireLogin(t *testing.T) {
-	svc, _ := newStoreWalletService(t)
+	svc, _ := newStoreWalletService(t, &fakePayer{})
 	_, err := svc.CreateRecharge(context.Background(), &storefrontv1.CreateRechargeRequest{AmountCents: 1000})
 	if !errors.IsUnauthorized(err) {
 		t.Fatalf("未登录应拒绝: %v", err)

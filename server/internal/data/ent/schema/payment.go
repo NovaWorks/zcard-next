@@ -42,6 +42,8 @@ func (PaymentChannel) Indexes() []ent.Index {
 
 // Payment 支付单（§4.4）。channel_order_no 隔离下游回传格式；
 // UNIQUE(channel, channel_order_no) 为回调幂等核对锚点之一（回调幂等三层：状态机/行锁二次校验/业务幂等键）。
+// order_id 与 recharge_order_id 二选一：订单支付单关联 orders，充值支付单关联
+// recharge_orders（M1b 充值走支付管线；回调按关联类型分流）。
 type Payment struct {
 	ent.Schema
 }
@@ -51,7 +53,8 @@ func (Payment) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}, TenantMixin
 func (Payment) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
-		field.Uint64("order_id").Comment("关联订单（硬外键 → orders）"),
+		field.Uint64("order_id").Optional().Comment("关联订单（订单支付单；充值支付单为空）"),
+		field.Uint64("recharge_order_id").Optional().Comment("关联充值单（充值支付单；订单支付单为空）"),
 		field.String("channel").MaxLen(50).Comment("渠道码"),
 		field.String("channel_order_no").MaxLen(80).Optional().Comment("网关单号（回调时回填）"),
 		field.Int64("amount").Comment("应收（分，基础货币）"),
@@ -74,11 +77,10 @@ func (Payment) Indexes() []ent.Index {
 
 func (Payment) Edges() []ent.Edge {
 	return []ent.Edge{
-		// 硬外键 → orders（核心聚合内）
+		// 软外键 → orders（订单支付单；充值支付单不关联）
 		edge.From("order", Order.Type).
 			Ref("payments").
 			Field("order_id").
-			Required().
 			Unique(),
 	}
 }

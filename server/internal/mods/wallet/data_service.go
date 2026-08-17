@@ -13,6 +13,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -28,11 +29,13 @@ type StoreWalletService struct {
 	data *data.Data
 	// settings 充值档位读取（铁律 16：客户端金额只作意向，档位由服务端裁决）
 	settings settingsport.SettingsReader
+	// payer 充值支付单创建（payment 端口，通道 A；nil = 支付管线未装配）
+	payer paymentport.RechargePayer
 }
 
 // NewStoreWalletService 构造。
-func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader) *StoreWalletService {
-	return &StoreWalletService{repo: repo, data: d, settings: settings}
+func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader, payer paymentport.RechargePayer) *StoreWalletService {
+	return &StoreWalletService{repo: repo, data: d, settings: settings, payer: payer}
 }
 
 // GetBalance 余额+积分。
@@ -104,7 +107,50 @@ func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefront
 	if err != nil {
 		return nil, errors.InternalServer("wallet.RECHARGE_FAILED", "创建充值单失败")
 	}
-	return &storefrontv1.CreateRechargeReply{RechargeId: ro.ID}, nil
+	// 创建支付单并发起渠道（充值单保持 pending；余额入账只发生在回调成功后）
+	if s.payer == nil {
+		return nil, errors.InternalServer("wallet.PAYMENT_UNBOUND", "支付管线未装配")
+	}
+	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), money.Cents(amount))
+	if err != nil {
+		return nil, mapRechargeErr(err)
+	}
+	return &storefrontv1.CreateRechargeReply{
+		RechargeId: ro.ID, PaymentId: info.PaymentID,
+		Type: info.Type, Payload: info.Payload,
+	}, nil
+}
+
+// mapRechargeErr 充值支付发起错误映射（渠道不存在/停用/配置无效等）。
+func mapRechargeErr(err error) error {
+	msg := err.Error()
+	switch {
+	case containsStr(msg, "CHANNEL_NOT_FOUND"):
+		return errors.NotFound("wallet.CHANNEL_NOT_FOUND", "支付渠道不存在或未启用")
+	case containsStr(msg, "CHANNEL_INVALID"):
+		return errors.BadRequest("wallet.CHANNEL_INVALID", "充值不支持余额渠道")
+	case containsStr(msg, "CHANNEL_UNSUPPORTED"):
+		return errors.BadRequest("wallet.CHANNEL_UNSUPPORTED", "支付渠道驱动未实现")
+	case containsStr(msg, "CHANNEL_CONFIG_INVALID"):
+		return errors.InternalServer("wallet.CHANNEL_CONFIG_INVALID", "支付渠道配置无效")
+	case containsStr(msg, "RECHARGE_NOT_FOUND"):
+		return errors.NotFound("wallet.RECHARGE_NOT_FOUND", "充值单不存在")
+	default:
+		return errors.InternalServer("wallet.PAYMENT_CREATE_FAILED", "发起支付失败")
+	}
+}
+
+func containsStr(s, sub string) bool {
+	return len(s) >= len(sub) && (s == sub || len(sub) > 0 && indexOf(s, sub) >= 0)
+}
+
+func indexOf(s, sub string) int {
+	for i := 0; i+len(sub) <= len(s); i++ {
+		if s[i:i+len(sub)] == sub {
+			return i
+		}
+	}
+	return -1
 }
 
 // rechargePolicy 充值档位（settings.recharge 组；读取失败回退目录默认值——

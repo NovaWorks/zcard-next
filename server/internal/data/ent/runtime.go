@@ -1175,23 +1175,23 @@ func init() {
 	// payment.DefaultSubsiteID holds the default value on creation for the subsite_id field.
 	payment.DefaultSubsiteID = paymentDescSubsiteID.Default.(uint64)
 	// paymentDescChannel is the schema descriptor for channel field.
-	paymentDescChannel := paymentFields[2].Descriptor()
+	paymentDescChannel := paymentFields[3].Descriptor()
 	// payment.ChannelValidator is a validator for the "channel" field. It is called by the builders before save.
 	payment.ChannelValidator = paymentDescChannel.Validators[0].(func(string) error)
 	// paymentDescChannelOrderNo is the schema descriptor for channel_order_no field.
-	paymentDescChannelOrderNo := paymentFields[3].Descriptor()
+	paymentDescChannelOrderNo := paymentFields[4].Descriptor()
 	// payment.ChannelOrderNoValidator is a validator for the "channel_order_no" field. It is called by the builders before save.
 	payment.ChannelOrderNoValidator = paymentDescChannelOrderNo.Validators[0].(func(string) error)
 	// paymentDescChargedAmount is the schema descriptor for charged_amount field.
-	paymentDescChargedAmount := paymentFields[5].Descriptor()
+	paymentDescChargedAmount := paymentFields[6].Descriptor()
 	// payment.DefaultChargedAmount holds the default value on creation for the charged_amount field.
 	payment.DefaultChargedAmount = paymentDescChargedAmount.Default.(int64)
 	// paymentDescFee is the schema descriptor for fee field.
-	paymentDescFee := paymentFields[6].Descriptor()
+	paymentDescFee := paymentFields[7].Descriptor()
 	// payment.DefaultFee holds the default value on creation for the fee field.
 	payment.DefaultFee = paymentDescFee.Default.(int64)
 	// paymentDescIdempotencyKey is the schema descriptor for idempotency_key field.
-	paymentDescIdempotencyKey := paymentFields[10].Descriptor()
+	paymentDescIdempotencyKey := paymentFields[11].Descriptor()
 	// payment.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	payment.IdempotencyKeyValidator = paymentDescIdempotencyKey.Validators[0].(func(string) error)
 	paymentchannelMixin := schema.PaymentChannel{}.Mixin()

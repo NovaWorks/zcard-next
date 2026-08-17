@@ -75,6 +75,11 @@ func OrderID(v uint64) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldOrderID, v))
 }
 
+// RechargeOrderID applies equality check predicate on the "recharge_order_id" field. It's identical to RechargeOrderIDEQ.
+func RechargeOrderID(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldRechargeOrderID, v))
+}
+
 // Channel applies equality check predicate on the "channel" field. It's identical to ChannelEQ.
 func Channel(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldChannel, v))
@@ -248,6 +253,66 @@ func OrderIDIn(vs ...uint64) predicate.Payment {
 // OrderIDNotIn applies the NotIn predicate on the "order_id" field.
 func OrderIDNotIn(vs ...uint64) predicate.Payment {
 	return predicate.Payment(sql.FieldNotIn(FieldOrderID, vs...))
+}
+
+// OrderIDIsNil applies the IsNil predicate on the "order_id" field.
+func OrderIDIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldOrderID))
+}
+
+// OrderIDNotNil applies the NotNil predicate on the "order_id" field.
+func OrderIDNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldOrderID))
+}
+
+// RechargeOrderIDEQ applies the EQ predicate on the "recharge_order_id" field.
+func RechargeOrderIDEQ(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldRechargeOrderID, v))
+}
+
+// RechargeOrderIDNEQ applies the NEQ predicate on the "recharge_order_id" field.
+func RechargeOrderIDNEQ(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldRechargeOrderID, v))
+}
+
+// RechargeOrderIDIn applies the In predicate on the "recharge_order_id" field.
+func RechargeOrderIDIn(vs ...uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldRechargeOrderID, vs...))
+}
+
+// RechargeOrderIDNotIn applies the NotIn predicate on the "recharge_order_id" field.
+func RechargeOrderIDNotIn(vs ...uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldRechargeOrderID, vs...))
+}
+
+// RechargeOrderIDGT applies the GT predicate on the "recharge_order_id" field.
+func RechargeOrderIDGT(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldRechargeOrderID, v))
+}
+
+// RechargeOrderIDGTE applies the GTE predicate on the "recharge_order_id" field.
+func RechargeOrderIDGTE(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldRechargeOrderID, v))
+}
+
+// RechargeOrderIDLT applies the LT predicate on the "recharge_order_id" field.
+func RechargeOrderIDLT(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldRechargeOrderID, v))
+}
+
+// RechargeOrderIDLTE applies the LTE predicate on the "recharge_order_id" field.
+func RechargeOrderIDLTE(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldRechargeOrderID, v))
+}
+
+// RechargeOrderIDIsNil applies the IsNil predicate on the "recharge_order_id" field.
+func RechargeOrderIDIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldRechargeOrderID))
+}
+
+// RechargeOrderIDNotNil applies the NotNil predicate on the "recharge_order_id" field.
+func RechargeOrderIDNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldRechargeOrderID))
 }
 
 // ChannelEQ applies the EQ predicate on the "channel" field.
