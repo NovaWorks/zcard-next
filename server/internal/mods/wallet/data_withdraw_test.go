@@ -46,7 +46,7 @@ func seedBalance(t *testing.T, repo *WalletRepoImpl, uid uint64, amount int64) {
 func TestWithdrawApply(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewStoreWalletService(repo, d, nil, nil)
+	svc := NewStoreWalletService(repo, d, nil, nil, nil)
 	seedWithdrawSettings(t, svc)
 	seedBalance(t, repo, 1, 5000)
 	ctx := userCtx(1)
@@ -102,8 +102,8 @@ func TestWithdrawApply(t *testing.T) {
 func TestWithdrawReviewPay(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewStoreWalletService(repo, d, nil, nil)
-	admin := NewAdminWalletService(repo, d)
+	svc := NewStoreWalletService(repo, d, nil, nil, nil)
+	admin := NewAdminWalletService(repo, d, nil)
 	seedWithdrawSettings(t, svc)
 	seedBalance(t, repo, 1, 5000)
 	ctx := userCtx(1)
@@ -155,8 +155,8 @@ func TestWithdrawReviewPay(t *testing.T) {
 func TestWithdrawRejectUnlock(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewStoreWalletService(repo, d, nil, nil)
-	admin := NewAdminWalletService(repo, d)
+	svc := NewStoreWalletService(repo, d, nil, nil, nil)
+	admin := NewAdminWalletService(repo, d, nil)
 	seedWithdrawSettings(t, svc)
 	seedBalance(t, repo, 1, 5000)
 	ctx := userCtx(1)

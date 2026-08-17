@@ -252,3 +252,24 @@ func TestResellerPermissionDomain(t *testing.T) {
 		}
 	}
 }
+
+// TestReportSQLTenantPlaceholder 裸 SQL 收口（P3-07，架构测试规则 12）：
+// report 包是全仓唯一裸 SQL 收口；其 SQL 字符串必须包含 subsite_id 租户条件
+// 占位——防未来报表查询扫全租户（分站数据泄漏 + 大表扫描）。
+func TestReportSQLTenantPlaceholder(t *testing.T) {
+	reportDir := filepath.Join(mustRepoRoot(t), "internal/data/report")
+	files := walkFiles(t, reportDir, []string{".go"})
+	if len(files) == 0 {
+		t.Fatal("report 包不存在（裸 SQL 收口职责缺失）")
+	}
+	sqlRe := regexp.MustCompile(`(?i)SELECT\s+.*?(?:FROM|JOIN)\s+[` + "`\"'" + `]?[a-z_]+`)
+	for _, f := range files {
+		src := readFile(t, f)
+		// 逐条 SQL 语句（按分号/换行切分的简化静态扫描）
+		for _, stmt := range sqlRe.FindAllString(src, -1) {
+			if !strings.Contains(strings.ToLower(stmt), "subsite") {
+				t.Errorf("%s: 裸 SQL 缺少 subsite_id 租户条件占位: %q（规则 12——报表必须租户隔离）", f, stmt)
+			}
+		}
+	}
+}

@@ -14,6 +14,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
 // Metric 统计项。
@@ -55,34 +56,41 @@ func paidStatuses() []order.Status {
 	}
 }
 
-// GetOverview 返回 today/last7d/last30d 三项统计。
+// GetOverview 返回 today/last7d/last30d 三项统计（P3-07 M3：分站视角自动隔离——
+// 按 tenancy.Context.SubsiteID 过滤，分站后台只看本站）。
 func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, last7d, last30d Metric, err error) {
+	subsite := tenancy.FromContext(ctx).SubsiteID
 	now := time.Now().UTC()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	if m, e := r.metricBetween(ctx, todayStart, now); e == nil {
+	if m, e := r.metricBetween(ctx, subsite, todayStart, now); e == nil {
 		today = m
 	}
-	if m, e := r.metricBetween(ctx, now.AddDate(0, 0, -7), now); e == nil {
+	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -7), now); e == nil {
 		last7d = m
 	}
-	if m, e := r.metricBetween(ctx, now.AddDate(0, 0, -30), now); e == nil {
+	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -30), now); e == nil {
 		last30d = m
 	}
 	return today, last7d, last30d, nil
 }
 
-func (r *DashboardRepoImpl) metricBetween(ctx context.Context, start, end time.Time) (Metric, error) {
+// metricBetweenSubsite 指定租户区段聚合（日结任务用）。
+func (r *DashboardRepoImpl) metricBetweenSubsite(ctx context.Context, subsite uint64, start, end time.Time) (Metric, error) {
 	client := data.Client(ctx, r.data)
 	orders, err := client.Order.Query().
-		Where(order.CreatedAtGTE(start), order.CreatedAtLTE(end)).
+		Where(
+			order.CreatedAtGTE(start),
+			order.CreatedAtLTE(end),
+			order.SubsiteID(subsite),
+		).
 		All(ctx)
 	if err != nil {
 		return Metric{}, err
 	}
 	m := Metric{Orders: int64(len(orders))}
 	paid := map[order.Status]bool{}
-	for _, s := range paidStatuses() {
-		paid[s] = true
+	for _, st := range paidStatuses() {
+		paid[st] = true
 	}
 	for _, o := range orders {
 		if paid[o.Status] {
@@ -93,13 +101,18 @@ func (r *DashboardRepoImpl) metricBetween(ctx context.Context, start, end time.T
 	return m, nil
 }
 
-// GetTrend 近 7 天每日订单数与营收（含今日，共 7 个桶）。
+func (r *DashboardRepoImpl) metricBetween(ctx context.Context, subsite uint64, start, end time.Time) (Metric, error) {
+	return r.metricBetweenSubsite(ctx, subsite, start, end)
+}
+
+// GetTrend 近 7 天每日订单数与营收（含今日，共 7 个桶；分站隔离）。
 func (r *DashboardRepoImpl) GetTrend(ctx context.Context) ([]TrendPoint, error) {
+	subsite := tenancy.FromContext(ctx).SubsiteID
 	now := time.Now().UTC()
 	start := now.AddDate(0, 0, -6)
 	client := data.Client(ctx, r.data)
 	rows, err := client.Order.Query().
-		Where(order.CreatedAtGTE(start)).
+		Where(order.CreatedAtGTE(start), order.SubsiteID(subsite)).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -133,13 +146,14 @@ func (r *DashboardRepoImpl) GetTrend(ctx context.Context) ([]TrendPoint, error) 
 	return out, nil
 }
 
-// GetTopProducts 近 30 天销量 Top5。
+// GetTopProducts 近 30 天销量 Top5（分站隔离）。
 func (r *DashboardRepoImpl) GetTopProducts(ctx context.Context) ([]TopProduct, error) {
+	subsite := tenancy.FromContext(ctx).SubsiteID
 	now := time.Now().UTC()
 	start := now.AddDate(0, 0, -30)
 	client := data.Client(ctx, r.data)
 	paidOrders, err := client.Order.Query().
-		Where(order.CreatedAtGTE(start), order.StatusIn(paidStatuses()...)).
+		Where(order.CreatedAtGTE(start), order.StatusIn(paidStatuses()...), order.SubsiteID(subsite)).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -198,13 +212,13 @@ var _ = ent.Asc // 保持引用
 
 // ReconciliationSummary 对账汇总（P3-07：订单×支付×充值×佣金四向基础核对）。
 type ReconciliationSummary struct {
-	Date                 string
-	OrderPaidTotal       int64
-	PaymentSuccessTotal  int64
-	WalletRechargeTotal  int64
-	CommissionTotal      int64
-	OrderCount           int64
-	MismatchCount        int64
+	Date                string
+	OrderPaidTotal      int64
+	PaymentSuccessTotal int64
+	WalletRechargeTotal int64
+	CommissionTotal     int64
+	OrderCount          int64
+	MismatchCount       int64
 }
 
 // GetReconciliation 当日对账（口径：本地时区日界——运营对账口径；金额一律分）。

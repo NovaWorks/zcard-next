@@ -31,11 +31,13 @@ type StoreWalletService struct {
 	settings settingsport.SettingsReader
 	// payer 充值支付单创建（payment 端口，通道 A；nil = 支付管线未装配）
 	payer paymentport.RechargePayer
+	// giftcards 礼品卡兑换（P1-05 T4；nil = 未装配）
+	giftcards *GiftcardRepo
 }
 
 // NewStoreWalletService 构造。
-func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader, payer paymentport.RechargePayer) *StoreWalletService {
-	return &StoreWalletService{repo: repo, data: d, settings: settings, payer: payer}
+func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader, payer paymentport.RechargePayer, giftcards *GiftcardRepo) *StoreWalletService {
+	return &StoreWalletService{repo: repo, data: d, settings: settings, payer: payer, giftcards: giftcards}
 }
 
 // GetBalance 余额+积分。
@@ -48,8 +50,10 @@ func (s *StoreWalletService) GetBalance(ctx context.Context, _ *emptypb.Empty) (
 	if err != nil {
 		return nil, errors.InternalServer("wallet.BALANCE_FAILED", "查询余额失败")
 	}
+	points, _ := s.repo.GetPoints(ctx, claims.Subject)
 	return &storefrontv1.BalanceReply{
 		AvailableCents: avail, LockedCents: locked, TotalCents: avail + locked,
+		Points: points,
 	}, nil
 }
 
@@ -204,13 +208,14 @@ func (s *StoreWalletService) giftFor(ctx context.Context, amount int64) (giftAmo
 // AdminWalletService 钱包管理服务。
 type AdminWalletService struct {
 	adminv1.UnimplementedAdminWalletServiceServer
-	repo *WalletRepoImpl
-	data *data.Data
+	repo      *WalletRepoImpl
+	data      *data.Data
+	giftcards *GiftcardRepo // 礼品卡批次管理（P1-05 T4；nil = 未装配）
 }
 
 // NewAdminWalletService 构造。
-func NewAdminWalletService(repo *WalletRepoImpl, d *data.Data) *AdminWalletService {
-	return &AdminWalletService{repo: repo, data: d}
+func NewAdminWalletService(repo *WalletRepoImpl, d *data.Data, giftcards *GiftcardRepo) *AdminWalletService {
+	return &AdminWalletService{repo: repo, data: d, giftcards: giftcards}
 }
 
 // GetBalance 指定用户余额。

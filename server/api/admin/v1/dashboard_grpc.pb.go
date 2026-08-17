@@ -23,6 +23,7 @@ const (
 	AdminDashboardService_GetReconciliation_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
 	AdminDashboardService_ListCommissions_FullMethodName   = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
 	AdminDashboardService_GetDashboard_FullMethodName      = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
+	AdminDashboardService_GetDailyStats_FullMethodName     = "/zcard.api.admin.v1.AdminDashboardService/GetDailyStats"
 )
 
 // AdminDashboardServiceClient is the client API for AdminDashboardService service.
@@ -36,6 +37,8 @@ type AdminDashboardServiceClient interface {
 	// ListCommissions 佣金列表（P3-03 affiliate）。
 	ListCommissions(ctx context.Context, in *ListCommissionsRequest, opts ...grpc.CallOption) (*ListCommissionsReply, error)
 	GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DashboardReply, error)
+	// GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+	GetDailyStats(ctx context.Context, in *GetDailyStatsRequest, opts ...grpc.CallOption) (*GetDailyStatsReply, error)
 }
 
 type adminDashboardServiceClient struct {
@@ -76,6 +79,16 @@ func (c *adminDashboardServiceClient) GetDashboard(ctx context.Context, in *empt
 	return out, nil
 }
 
+func (c *adminDashboardServiceClient) GetDailyStats(ctx context.Context, in *GetDailyStatsRequest, opts ...grpc.CallOption) (*GetDailyStatsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDailyStatsReply)
+	err := c.cc.Invoke(ctx, AdminDashboardService_GetDailyStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminDashboardServiceServer is the server API for AdminDashboardService service.
 // All implementations must embed UnimplementedAdminDashboardServiceServer
 // for forward compatibility.
@@ -87,6 +100,8 @@ type AdminDashboardServiceServer interface {
 	// ListCommissions 佣金列表（P3-03 affiliate）。
 	ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error)
 	GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error)
+	// GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+	GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error)
 	mustEmbedUnimplementedAdminDashboardServiceServer()
 }
 
@@ -105,6 +120,9 @@ func (UnimplementedAdminDashboardServiceServer) ListCommissions(context.Context,
 }
 func (UnimplementedAdminDashboardServiceServer) GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDashboard not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDailyStats not implemented")
 }
 func (UnimplementedAdminDashboardServiceServer) mustEmbedUnimplementedAdminDashboardServiceServer() {}
 func (UnimplementedAdminDashboardServiceServer) testEmbeddedByValue()                               {}
@@ -181,6 +199,24 @@ func _AdminDashboardService_GetDashboard_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminDashboardService_GetDailyStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDailyStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).GetDailyStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_GetDailyStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).GetDailyStats(ctx, req.(*GetDailyStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminDashboardService_ServiceDesc is the grpc.ServiceDesc for AdminDashboardService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -199,6 +235,10 @@ var AdminDashboardService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDashboard",
 			Handler:    _AdminDashboardService_GetDashboard_Handler,
+		},
+		{
+			MethodName: "GetDailyStats",
+			Handler:    _AdminDashboardService_GetDailyStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

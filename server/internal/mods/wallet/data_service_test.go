@@ -60,7 +60,7 @@ func newStoreWalletService(t *testing.T, payer paymentport.RechargePayer) (*Stor
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
 	// 支付管线未装配（payer=nil）——充值 fail-closed 测试只验证档位与零入账
-	return NewStoreWalletService(repo, d, nil, payer), repo
+	return NewStoreWalletService(repo, d, nil, payer, nil), repo
 }
 
 func userCtx(uid uint64) context.Context {
@@ -136,7 +136,7 @@ func TestRechargeRequireLogin(t *testing.T) {
 func TestAdjustBounds(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewAdminWalletService(repo, d)
+	svc := NewAdminWalletService(repo, d, nil)
 	ctx := context.Background()
 
 	if _, err := svc.Adjust(ctx, &adminv1.AdjustRequest{UserId: 1, AmountCents: 0, Reason: "r"}); !errors.IsBadRequest(err) {

@@ -25,6 +25,13 @@ service StoreWalletService {
       body: "*"
     };
   }
+  // RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
+  rpc RedeemGiftcard(RedeemGiftcardRequest) returns (RedeemGiftcardReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/wallet/giftcards/redeem"
+      body: "*"
+    };
+  }
   // CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
   rpc CreateWithdrawal(CreateWithdrawalRequest) returns (CreateWithdrawalReply) {
     option (google.api.http) = {
@@ -71,6 +78,16 @@ message CreateRechargeReply {
   uint64 payment_id = 2;
   string type = 3;    // redirect | qrcode | params（与 CreatePaymentReply 同构）
   string payload = 4; // 支付跳转 URL / 二维码内容 / 参数 JSON
+}
+
+// RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破限流；余额入账幂等键 giftcard:<id>）。
+message RedeemGiftcardRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message RedeemGiftcardReply {
+  int64 amount_cents = 1;
+  int64 balance_after_cents = 2;
 }
 
 // CreateWithdrawalRequest 提现申请（金额/收款方式；method_type 须在白名单内）。

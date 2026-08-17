@@ -170,6 +170,10 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal", Method: "POST", Path: "/api/v1/admin/wallet/withdrawals/{id}/review"},
 		Perm{Code: "wallet:withdraw_review", Desc: "提现打款（超管）", Domain: "wallet", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminWalletService/PayWithdrawal", Method: "POST", Path: "/api/v1/admin/wallet/withdrawals/{id}/pay"},
+		Perm{Code: "giftcard:write", Desc: "礼品卡批次创建（超管）", Domain: "wallet", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch", Method: "POST", Path: "/api/v1/admin/wallet/giftcard-batches"},
+		Perm{Code: "giftcard:read", Desc: "礼品卡批次列表", Domain: "wallet",
+			Op: "zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches", Method: "GET", Path: "/api/v1/admin/wallet/giftcard-batches"},
 
 		// ── 履约（fulfillment，P1-06）─────────────────
 		Perm{Code: "order:view_delivery", Desc: "查看交付记录", Domain: "fulfillment",
@@ -214,6 +218,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminDashboardService/ListCommissions", Method: "GET", Path: "/api/v1/admin/affiliate/commissions"},
 		Perm{Code: "dashboard:read", Desc: "对账总览", Domain: "dashboard",
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetReconciliation", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation"},
+		Perm{Code: "dashboard:read", Desc: "历史日结查询", Domain: "dashboard",
+			Op: "zcard.api.admin.v1.AdminDashboardService/GetDailyStats", Method: "GET", Path: "/api/v1/admin/dashboard/daily-stats"},
 
 		// ── 敏感权限点预登记（§5.20.4 防内部偷卡；路由 M1 落地）──
 		Perm{Code: "card:view_content", Desc: "查看完整卡密（需二次确认+审计）", Domain: "inventory", AdminOnly: true,

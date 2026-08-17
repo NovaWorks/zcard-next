@@ -1166,6 +1166,28 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.DashboardReply'
+    /api/v1/admin/dashboard/daily-stats:
+        get:
+            tags:
+                - AdminDashboardService
+            description: GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+            operationId: AdminDashboardService_GetDailyStats
+            parameters:
+                - name: startDate
+                  in: query
+                  schema:
+                    type: string
+                - name: endDate
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GetDailyStatsReply'
     /api/v1/admin/dashboard/reconciliation:
         get:
             tags:
@@ -3786,6 +3808,48 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.VirtualReviewItem'
+    /api/v1/admin/wallet/giftcard-batches:
+        get:
+            tags:
+                - AdminWalletService
+            description: ListGiftcardBatches 批次列表。
+            operationId: AdminWalletService_ListGiftcardBatches
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListGiftcardBatchesReply'
+        post:
+            tags:
+                - AdminWalletService
+            description: CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+            operationId: AdminWalletService_CreateGiftcardBatch
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateGiftcardBatchRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GiftcardBatchItem'
     /api/v1/admin/wallet/withdrawals:
         get:
             tags:
@@ -4575,6 +4639,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.BalanceReply'
+    /api/v1/storefront/wallet/giftcards/redeem:
+        post:
+            tags:
+                - StoreWalletService
+            description: RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
+            operationId: StoreWalletService_RedeemGiftcard
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.RedeemGiftcardRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.RedeemGiftcardReply'
     /api/v1/storefront/wallet/recharge:
         post:
             tags:
@@ -5425,6 +5508,23 @@ components:
                     type: integer
                     format: int32
             description: CreateFlashSale 创建秒杀（限量与卡密同锁）。
+        zcard.api.admin.v1.CreateGiftcardBatchRequest:
+            required:
+                - batchNo
+                - name
+                - amountCents
+                - quantity
+            type: object
+            properties:
+                batchNo:
+                    type: string
+                name:
+                    type: string
+                amountCents:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.CreateMediaCategoryRequest:
             required:
                 - name
@@ -5724,6 +5824,17 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Currency'
+        zcard.api.admin.v1.DailyStatPoint:
+            type: object
+            properties:
+                date:
+                    type: string
+                orders:
+                    type: string
+                amountCents:
+                    type: string
+                paidOrders:
+                    type: string
         zcard.api.admin.v1.DashboardReply:
             type: object
             properties:
@@ -5890,6 +6001,13 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.admin.v1.GetDailyStatsReply:
+            type: object
+            properties:
+                points:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DailyStatPoint'
         zcard.api.admin.v1.GetProfileReply:
             type: object
             properties:
@@ -5914,6 +6032,22 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.AdminTicketMessage'
+        zcard.api.admin.v1.GiftcardBatchItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                batchNo:
+                    type: string
+                name:
+                    type: string
+                amountCents:
+                    type: string
+                quantity:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
         zcard.api.admin.v1.GrantCouponReply:
             type: object
             properties:
@@ -6209,6 +6343,15 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListGiftcardBatchesReply:
+            type: object
+            properties:
+                batches:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.GiftcardBatchItem'
+                total:
+                    type: string
         zcard.api.admin.v1.ListHealthReply:
             type: object
             properties:
@@ -8820,6 +8963,21 @@ components:
             properties:
                 code:
                     type: string
+        zcard.api.storefront.v1.RedeemGiftcardReply:
+            type: object
+            properties:
+                amountCents:
+                    type: string
+                balanceAfterCents:
+                    type: string
+        zcard.api.storefront.v1.RedeemGiftcardRequest:
+            required:
+                - code
+            type: object
+            properties:
+                code:
+                    type: string
+            description: RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破限流；余额入账幂等键 giftcard:<id>）。
         zcard.api.storefront.v1.RegisterReply:
             type: object
             properties:

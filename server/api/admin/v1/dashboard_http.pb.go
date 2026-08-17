@@ -18,11 +18,14 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminDashboardServiceGetDailyStats = "/zcard.api.admin.v1.AdminDashboardService/GetDailyStats"
 const OperationAdminDashboardServiceGetDashboard = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
 const OperationAdminDashboardServiceGetReconciliation = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
 const OperationAdminDashboardServiceListCommissions = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
 
 type AdminDashboardServiceHTTPServer interface {
+	// GetDailyStats GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+	GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error)
 	GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error)
 	// GetReconciliation GetReconciliation 对账总览。
 	GetReconciliation(context.Context, *GetReconciliationRequest) (*GetReconciliationReply, error)
@@ -35,6 +38,7 @@ func RegisterAdminDashboardServiceHTTPServer(s *http.Server, srv AdminDashboardS
 	r.Handle("GET", "/api/v1/admin/dashboard/reconciliation", _AdminDashboardService_GetReconciliation0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/affiliate/commissions", _AdminDashboardService_ListCommissions0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/dashboard", _AdminDashboardService_GetDashboard0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/dashboard/daily-stats", _AdminDashboardService_GetDailyStats0_HTTP_Handler(srv))
 }
 
 func _AdminDashboardService_GetReconciliation0_HTTP_Handler(srv AdminDashboardServiceHTTPServer) func(ctx http.Context) error {
@@ -94,7 +98,28 @@ func _AdminDashboardService_GetDashboard0_HTTP_Handler(srv AdminDashboardService
 	}
 }
 
+func _AdminDashboardService_GetDailyStats0_HTTP_Handler(srv AdminDashboardServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetDailyStatsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminDashboardServiceGetDailyStats)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetDailyStats(ctx, req.(*GetDailyStatsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetDailyStatsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminDashboardServiceHTTPClient interface {
+	// GetDailyStats GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+	GetDailyStats(ctx context.Context, req *GetDailyStatsRequest, opts ...http.CallOption) (rsp *GetDailyStatsReply, err error)
 	GetDashboard(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *DashboardReply, err error)
 	// GetReconciliation GetReconciliation 对账总览。
 	GetReconciliation(ctx context.Context, req *GetReconciliationRequest, opts ...http.CallOption) (rsp *GetReconciliationReply, err error)
@@ -108,6 +133,23 @@ type AdminDashboardServiceHTTPClientImpl struct {
 
 func NewAdminDashboardServiceHTTPClient(client *http.Client) AdminDashboardServiceHTTPClient {
 	return &AdminDashboardServiceHTTPClientImpl{client}
+}
+
+// GetDailyStats GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+func (c *AdminDashboardServiceHTTPClientImpl) GetDailyStats(ctx context.Context, in *GetDailyStatsRequest, opts ...http.CallOption) (*GetDailyStatsReply, error) {
+	var out GetDailyStatsReply
+	pattern := "/api/v1/admin/dashboard/daily-stats"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminDashboardServiceGetDailyStats),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *AdminDashboardServiceHTTPClientImpl) GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*DashboardReply, error) {

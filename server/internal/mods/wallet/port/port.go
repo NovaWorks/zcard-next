@@ -25,6 +25,22 @@ type Entry struct {
 	Remark    string
 }
 
+// PointEntry 积分入账请求（与 Entry 同构）。
+type PointEntry struct {
+	UserID    uint64
+	Direction string // in | out
+	Type      string // earn_recharge / earn_consume / redeem / adjust ...
+	Amount    int64  // 正数
+	Reference string // 幂等键
+	OrderID   uint64
+	Remark    string
+}
+
+// Points 积分账本窄接口（payment 充值赠送消费，通道 B 同事务）。
+type Points interface {
+	PointCreditInTx(ctx context.Context, e PointEntry) error
+}
+
 // Wallet 钱包窄接口（order 余额支付 / payment 退款 / affiliate 佣金入账消费，通道 B 同事务）。
 type Wallet interface {
 	// CreditInTx 入账（充值/退款回/佣金）；幂等重入：reference 已存在直接返回成功。

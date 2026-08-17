@@ -19,12 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminWalletService_GetBalance_FullMethodName       = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
-	AdminWalletService_Adjust_FullMethodName           = "/zcard.api.admin.v1.AdminWalletService/Adjust"
-	AdminWalletService_ListTransactions_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
-	AdminWalletService_ListWithdrawals_FullMethodName  = "/zcard.api.admin.v1.AdminWalletService/ListWithdrawals"
-	AdminWalletService_ReviewWithdrawal_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal"
-	AdminWalletService_PayWithdrawal_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
+	AdminWalletService_GetBalance_FullMethodName          = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
+	AdminWalletService_Adjust_FullMethodName              = "/zcard.api.admin.v1.AdminWalletService/Adjust"
+	AdminWalletService_ListTransactions_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
+	AdminWalletService_ListWithdrawals_FullMethodName     = "/zcard.api.admin.v1.AdminWalletService/ListWithdrawals"
+	AdminWalletService_ReviewWithdrawal_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal"
+	AdminWalletService_PayWithdrawal_FullMethodName       = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
+	AdminWalletService_CreateGiftcardBatch_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch"
+	AdminWalletService_ListGiftcardBatches_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
 )
 
 // AdminWalletServiceClient is the client API for AdminWalletService service.
@@ -45,6 +47,10 @@ type AdminWalletServiceClient interface {
 	ReviewWithdrawal(ctx context.Context, in *ReviewWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error)
 	// PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
 	PayWithdrawal(ctx context.Context, in *PayWithdrawalRequest, opts ...grpc.CallOption) (*WithdrawalItem, error)
+	// CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+	CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*GiftcardBatchItem, error)
+	// ListGiftcardBatches 批次列表。
+	ListGiftcardBatches(ctx context.Context, in *ListGiftcardBatchesRequest, opts ...grpc.CallOption) (*ListGiftcardBatchesReply, error)
 }
 
 type adminWalletServiceClient struct {
@@ -115,6 +121,26 @@ func (c *adminWalletServiceClient) PayWithdrawal(ctx context.Context, in *PayWit
 	return out, nil
 }
 
+func (c *adminWalletServiceClient) CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*GiftcardBatchItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GiftcardBatchItem)
+	err := c.cc.Invoke(ctx, AdminWalletService_CreateGiftcardBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminWalletServiceClient) ListGiftcardBatches(ctx context.Context, in *ListGiftcardBatchesRequest, opts ...grpc.CallOption) (*ListGiftcardBatchesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListGiftcardBatchesReply)
+	err := c.cc.Invoke(ctx, AdminWalletService_ListGiftcardBatches_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminWalletServiceServer is the server API for AdminWalletService service.
 // All implementations must embed UnimplementedAdminWalletServiceServer
 // for forward compatibility.
@@ -133,6 +159,10 @@ type AdminWalletServiceServer interface {
 	ReviewWithdrawal(context.Context, *ReviewWithdrawalRequest) (*WithdrawalItem, error)
 	// PayWithdrawal 打款（人工打款模式：approved→paid + locked 扣减 + 流水）。
 	PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error)
+	// CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*GiftcardBatchItem, error)
+	// ListGiftcardBatches 批次列表。
+	ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error)
 	mustEmbedUnimplementedAdminWalletServiceServer()
 }
 
@@ -160,6 +190,12 @@ func (UnimplementedAdminWalletServiceServer) ReviewWithdrawal(context.Context, *
 }
 func (UnimplementedAdminWalletServiceServer) PayWithdrawal(context.Context, *PayWithdrawalRequest) (*WithdrawalItem, error) {
 	return nil, status.Error(codes.Unimplemented, "method PayWithdrawal not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*GiftcardBatchItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateGiftcardBatch not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListGiftcardBatches not implemented")
 }
 func (UnimplementedAdminWalletServiceServer) mustEmbedUnimplementedAdminWalletServiceServer() {}
 func (UnimplementedAdminWalletServiceServer) testEmbeddedByValue()                            {}
@@ -290,6 +326,42 @@ func _AdminWalletService_PayWithdrawal_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminWalletService_CreateGiftcardBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGiftcardBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).CreateGiftcardBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_CreateGiftcardBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).CreateGiftcardBatch(ctx, req.(*CreateGiftcardBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminWalletService_ListGiftcardBatches_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGiftcardBatchesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).ListGiftcardBatches(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_ListGiftcardBatches_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).ListGiftcardBatches(ctx, req.(*ListGiftcardBatchesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminWalletService_ServiceDesc is the grpc.ServiceDesc for AdminWalletService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -320,6 +392,14 @@ var AdminWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PayWithdrawal",
 			Handler:    _AdminWalletService_PayWithdrawal_Handler,
+		},
+		{
+			MethodName: "CreateGiftcardBatch",
+			Handler:    _AdminWalletService_CreateGiftcardBatch_Handler,
+		},
+		{
+			MethodName: "ListGiftcardBatches",
+			Handler:    _AdminWalletService_ListGiftcardBatches_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

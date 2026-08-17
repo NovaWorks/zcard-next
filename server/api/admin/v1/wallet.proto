@@ -43,6 +43,43 @@ service AdminWalletService {
       body: "*"
     };
   }
+  // CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+  rpc CreateGiftcardBatch(CreateGiftcardBatchRequest) returns (GiftcardBatchItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/wallet/giftcard-batches"
+      body: "*"
+    };
+  }
+  // ListGiftcardBatches 批次列表。
+  rpc ListGiftcardBatches(ListGiftcardBatchesRequest) returns (ListGiftcardBatchesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/wallet/giftcard-batches" };
+  }
+}
+
+message CreateGiftcardBatchRequest {
+  string batch_no = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+  int64 amount_cents = 3 [(google.api.field_behavior) = REQUIRED];
+  int32 quantity = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message GiftcardBatchItem {
+  uint64 id = 1;
+  string batch_no = 2;
+  string name = 3;
+  int64 amount_cents = 4;
+  int32 quantity = 5;
+  int64 created_at = 6;
+}
+
+message ListGiftcardBatchesRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListGiftcardBatchesReply {
+  repeated GiftcardBatchItem batches = 1;
+  int64 total = 2;
 }
 
 message ListWithdrawalsRequest {

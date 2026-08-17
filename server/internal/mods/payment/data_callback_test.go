@@ -101,7 +101,7 @@ func newCallbackEnv(t *testing.T) (*data.Data, *PaymentRepoImpl, *wallet.WalletR
 	walletPort := wallet.ProvidePortWallet(walletRepo)
 	writer := &captureWriter{}
 	lifecycle := &fakeLifecycle{}
-	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, writer)
+	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer)
 	return d, repo, walletRepo, writer, lifecycle
 }
 
@@ -300,5 +300,39 @@ func TestCreateRechargePaymentFlow(t *testing.T) {
 	// 余额渠道充值拒绝
 	if _, err := repo.CreateRechargePayment(ctx, ro.ID, "balance", 10000); err == nil {
 		t.Fatal("充值不应支持余额渠道")
+	}
+}
+
+// TestRechargeGiftPoints 充值赠送积分接线（回调事务内积分入账，幂等重放只入一次）。
+func TestRechargeGiftPoints(t *testing.T) {
+	d, repo, walletRepo, _, _ := newCallbackEnv(t)
+	ctx := context.Background()
+	ro, err := d.Client.RechargeOrder.Create().
+		SetUserID(1).SetAmount(10000).SetGiftAmount(0).SetGiftPoints(200).
+		SetStatus("pending").Save(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := d.Client.Payment.Create().
+		SetRechargeOrderID(ro.ID).SetChannel("epay").SetAmount(10000).
+		SetStatus("pending").Save(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fact := CallbackFact{Channel: "epay", ChannelOrderNo: "R1", Amount: 10000, Currency: "CNY", Success: true}
+	if err := repo.HandleCallback(ctx, p.ID, fact); err != nil {
+		t.Fatal(err)
+	}
+	pts, err := walletRepo.GetPoints(ctx, 1)
+	if err != nil || pts != 200 {
+		t.Fatalf("赠送积分未入账: %d %v", pts, err)
+	}
+	// 幂等重放：积分不重复入账
+	if err := repo.HandleCallback(ctx, p.ID, fact); err != nil {
+		t.Fatal(err)
+	}
+	pts, _ = walletRepo.GetPoints(ctx, 1)
+	if pts != 200 {
+		t.Fatalf("幂等重放重复入账积分: %d", pts)
 	}
 }

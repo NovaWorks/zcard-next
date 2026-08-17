@@ -4,9 +4,11 @@ package dashboard
 
 import (
 	"context"
+	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -83,6 +85,28 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, _ *emptypb.Emp
 	return reply, nil
 }
 
+// GetDailyStats 历史日结（分站视角自动隔离：subsite 取自 tenancy 上下文）。
+func (s *AdminDashboardService) GetDailyStats(ctx context.Context, req *adminv1.GetDailyStatsRequest) (*adminv1.GetDailyStatsReply, error) {
+	subsite := tenancy.FromContext(ctx).SubsiteID
+	start, end := req.GetStartDate(), req.GetEndDate()
+	if start == "" || end == "" {
+		now := time.Now().UTC()
+		start = now.AddDate(0, 0, -6).Format("20060102")
+		end = now.Format("20060102")
+	}
+	points, err := s.repo.GetDailyStats(ctx, subsite, start, end)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.DAILY_FAILED", "读取日结失败")
+	}
+	reply := &adminv1.GetDailyStatsReply{}
+	for _, p := range points {
+		reply.Points = append(reply.Points, &adminv1.DailyStatPoint{
+			Date: p.Date, Orders: p.Orders, AmountCents: p.Amount, PaidOrders: p.Paid,
+		})
+	}
+	return reply, nil
+}
+
 // GetReconciliation 对账总览（P3-07）。
 func (s *AdminDashboardService) GetReconciliation(ctx context.Context, req *adminv1.GetReconciliationRequest) (*adminv1.GetReconciliationReply, error) {
 	sum, err := s.repo.GetReconciliation(ctx, req.GetDate())
@@ -91,13 +115,13 @@ func (s *AdminDashboardService) GetReconciliation(ctx context.Context, req *admi
 	}
 	return &adminv1.GetReconciliationReply{
 		Summary: &adminv1.ReconciliationSummary{
-			Date: sum.Date,
-			OrderPaidTotal: sum.OrderPaidTotal,
+			Date:                sum.Date,
+			OrderPaidTotal:      sum.OrderPaidTotal,
 			PaymentSuccessTotal: sum.PaymentSuccessTotal,
 			WalletRechargeTotal: sum.WalletRechargeTotal,
-			CommissionTotal: sum.CommissionTotal,
-			OrderCount: sum.OrderCount,
-			MismatchCount: sum.MismatchCount,
+			CommissionTotal:     sum.CommissionTotal,
+			OrderCount:          sum.OrderCount,
+			MismatchCount:       sum.MismatchCount,
 		},
 	}, nil
 }

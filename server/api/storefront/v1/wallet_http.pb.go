@@ -22,6 +22,7 @@ const OperationStoreWalletServiceCreateRecharge = "/zcard.api.storefront.v1.Stor
 const OperationStoreWalletServiceCreateWithdrawal = "/zcard.api.storefront.v1.StoreWalletService/CreateWithdrawal"
 const OperationStoreWalletServiceGetBalance = "/zcard.api.storefront.v1.StoreWalletService/GetBalance"
 const OperationStoreWalletServiceListTransactions = "/zcard.api.storefront.v1.StoreWalletService/ListTransactions"
+const OperationStoreWalletServiceRedeemGiftcard = "/zcard.api.storefront.v1.StoreWalletService/RedeemGiftcard"
 
 type StoreWalletServiceHTTPServer interface {
 	// CreateRecharge CreateRecharge 充值（走支付管线）。
@@ -32,6 +33,8 @@ type StoreWalletServiceHTTPServer interface {
 	GetBalance(context.Context, *emptypb.Empty) (*BalanceReply, error)
 	// ListTransactions ListTransactions 流水（余额）。
 	ListTransactions(context.Context, *ListTxRequest) (*ListTxReply, error)
+	// RedeemGiftcard RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
+	RedeemGiftcard(context.Context, *RedeemGiftcardRequest) (*RedeemGiftcardReply, error)
 }
 
 func RegisterStoreWalletServiceHTTPServer(s *http.Server, srv StoreWalletServiceHTTPServer) {
@@ -39,6 +42,7 @@ func RegisterStoreWalletServiceHTTPServer(s *http.Server, srv StoreWalletService
 	r.Handle("GET", "/api/v1/storefront/wallet", _StoreWalletService_GetBalance0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/wallet/transactions", _StoreWalletService_ListTransactions0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/wallet/recharge", _StoreWalletService_CreateRecharge0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/wallet/giftcards/redeem", _StoreWalletService_RedeemGiftcard0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/wallet/withdrawals", _StoreWalletService_CreateWithdrawal0_HTTP_Handler(srv))
 }
 
@@ -99,6 +103,25 @@ func _StoreWalletService_CreateRecharge0_HTTP_Handler(srv StoreWalletServiceHTTP
 	}
 }
 
+func _StoreWalletService_RedeemGiftcard0_HTTP_Handler(srv StoreWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RedeemGiftcardRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreWalletServiceRedeemGiftcard)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RedeemGiftcard(ctx, req.(*RedeemGiftcardRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RedeemGiftcardReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _StoreWalletService_CreateWithdrawal0_HTTP_Handler(srv StoreWalletServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in CreateWithdrawalRequest
@@ -127,6 +150,8 @@ type StoreWalletServiceHTTPClient interface {
 	GetBalance(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *BalanceReply, err error)
 	// ListTransactions ListTransactions 流水（余额）。
 	ListTransactions(ctx context.Context, req *ListTxRequest, opts ...http.CallOption) (rsp *ListTxReply, err error)
+	// RedeemGiftcard RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
+	RedeemGiftcard(ctx context.Context, req *RedeemGiftcardRequest, opts ...http.CallOption) (rsp *RedeemGiftcardReply, err error)
 }
 
 type StoreWalletServiceHTTPClientImpl struct {
@@ -201,6 +226,24 @@ func (c *StoreWalletServiceHTTPClientImpl) ListTransactions(ctx context.Context,
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// RedeemGiftcard RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
+func (c *StoreWalletServiceHTTPClientImpl) RedeemGiftcard(ctx context.Context, in *RedeemGiftcardRequest, opts ...http.CallOption) (*RedeemGiftcardReply, error) {
+	var out RedeemGiftcardReply
+	pattern := "/api/v1/storefront/wallet/giftcards/redeem"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreWalletServiceRedeemGiftcard),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

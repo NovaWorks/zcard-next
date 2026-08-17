@@ -20,6 +20,26 @@ service AdminDashboardService {
   rpc GetDashboard(google.protobuf.Empty) returns (DashboardReply) {
     option (google.api.http) = { get: "/api/v1/admin/dashboard" };
   }
+  // GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
+  rpc GetDailyStats(GetDailyStatsRequest) returns (GetDailyStatsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/dashboard/daily-stats" };
+  }
+}
+
+message GetDailyStatsRequest {
+  string start_date = 1; // yyyymmdd（空 = 近 7 天）
+  string end_date = 2;
+}
+
+message DailyStatPoint {
+  string date = 1;
+  int64 orders = 2;
+  int64 amount_cents = 3;
+  int64 paid_orders = 4;
+}
+
+message GetDailyStatsReply {
+  repeated DailyStatPoint points = 1;
 }
 
 message DashboardStat {

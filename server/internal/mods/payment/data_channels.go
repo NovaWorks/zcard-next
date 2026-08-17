@@ -35,12 +35,13 @@ type PaymentRepoImpl struct {
 	// M1b 回调管线依赖（wire 注入，§4.6 破环点）：
 	lifecycle orderport.OrderLifecycle // 订单型回调 → 状态机推进 + order.paid 事件（同事务）
 	wallet    walletport.Wallet        // 余额支付扣款 / 充值到账入账（通道 B 同事务）
+	points    walletport.Points        // 充值赠送积分（积分账本；nil = 未装配跳过）
 	outbox    events.Writer            // recharge.succeeded 等事件
 }
 
 // NewPaymentRepoImpl 构造。
-func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, outbox events.Writer) *PaymentRepoImpl {
-	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, outbox: outbox}
+func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer) *PaymentRepoImpl {
+	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox}
 }
 
 // ── 渠道管理（T1）────────────────────────────────────────────
@@ -322,6 +323,16 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 			Remark:    fmt.Sprintf("充值到账（本金 %d 分 + 赠送 %d 分）", ro.Amount, ro.GiftAmount),
 		}); err != nil {
 			return fmt.Errorf("payment.RECHARGE_CREDIT_FAILED: %w", err)
+		}
+	}
+	// 赠送积分（幂等键 points:recharge:<paymentID>；积分账本 M1b）
+	if ro.GiftPoints > 0 && r.points != nil {
+		if err := r.points.PointCreditInTx(ctx, walletport.PointEntry{
+			UserID: ro.UserID, Direction: "in", Type: "earn_recharge",
+			Amount: int64(ro.GiftPoints), Reference: fmt.Sprintf("points:recharge:%d", p.ID),
+			Remark: fmt.Sprintf("充值赠送积分 %d", ro.GiftPoints),
+		}); err != nil {
+			return fmt.Errorf("payment.RECHARGE_POINTS_FAILED: %w", err)
 		}
 	}
 	// 充值成功事件（notify 消费）

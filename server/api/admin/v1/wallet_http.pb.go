@@ -18,7 +18,9 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminWalletServiceAdjust = "/zcard.api.admin.v1.AdminWalletService/Adjust"
+const OperationAdminWalletServiceCreateGiftcardBatch = "/zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch"
 const OperationAdminWalletServiceGetBalance = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
+const OperationAdminWalletServiceListGiftcardBatches = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
 const OperationAdminWalletServiceListTransactions = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
 const OperationAdminWalletServiceListWithdrawals = "/zcard.api.admin.v1.AdminWalletService/ListWithdrawals"
 const OperationAdminWalletServicePayWithdrawal = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
@@ -27,8 +29,12 @@ const OperationAdminWalletServiceReviewWithdrawal = "/zcard.api.admin.v1.AdminWa
 type AdminWalletServiceHTTPServer interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(context.Context, *AdjustRequest) (*Balance, error)
+	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*GiftcardBatchItem, error)
 	// GetBalance GetBalance 指定用户余额。
 	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
+	// ListGiftcardBatches ListGiftcardBatches 批次列表。
+	ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error)
 	// ListTransactions ListTransactions 指定用户流水。
 	ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error)
 	// ListWithdrawals ListWithdrawals 提现单列表（状态筛选）。
@@ -47,6 +53,8 @@ func RegisterAdminWalletServiceHTTPServer(s *http.Server, srv AdminWalletService
 	r.Handle("GET", "/api/v1/admin/wallet/withdrawals", _AdminWalletService_ListWithdrawals0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/review", _AdminWalletService_ReviewWithdrawal0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/pay", _AdminWalletService_PayWithdrawal0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_CreateGiftcardBatch0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv))
 }
 
 func _AdminWalletService_GetBalance0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
@@ -178,11 +186,53 @@ func _AdminWalletService_PayWithdrawal0_HTTP_Handler(srv AdminWalletServiceHTTPS
 	}
 }
 
+func _AdminWalletService_CreateGiftcardBatch0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateGiftcardBatchRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceCreateGiftcardBatch)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateGiftcardBatch(ctx, req.(*CreateGiftcardBatchRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GiftcardBatchItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListGiftcardBatchesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceListGiftcardBatches)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListGiftcardBatches(ctx, req.(*ListGiftcardBatchesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListGiftcardBatchesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminWalletServiceHTTPClient interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(ctx context.Context, req *AdjustRequest, opts ...http.CallOption) (rsp *Balance, err error)
+	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+	CreateGiftcardBatch(ctx context.Context, req *CreateGiftcardBatchRequest, opts ...http.CallOption) (rsp *GiftcardBatchItem, err error)
 	// GetBalance GetBalance 指定用户余额。
 	GetBalance(ctx context.Context, req *GetBalanceRequest, opts ...http.CallOption) (rsp *Balance, err error)
+	// ListGiftcardBatches ListGiftcardBatches 批次列表。
+	ListGiftcardBatches(ctx context.Context, req *ListGiftcardBatchesRequest, opts ...http.CallOption) (rsp *ListGiftcardBatchesReply, err error)
 	// ListTransactions ListTransactions 指定用户流水。
 	ListTransactions(ctx context.Context, req *ListWalletTxRequest, opts ...http.CallOption) (rsp *ListWalletTxReply, err error)
 	// ListWithdrawals ListWithdrawals 提现单列表（状态筛选）。
@@ -219,6 +269,24 @@ func (c *AdminWalletServiceHTTPClientImpl) Adjust(ctx context.Context, in *Adjus
 	return &out, nil
 }
 
+// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
+func (c *AdminWalletServiceHTTPClientImpl) CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...http.CallOption) (*GiftcardBatchItem, error) {
+	var out GiftcardBatchItem
+	pattern := "/api/v1/admin/wallet/giftcard-batches"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminWalletServiceCreateGiftcardBatch),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // GetBalance GetBalance 指定用户余额。
 func (c *AdminWalletServiceHTTPClientImpl) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...http.CallOption) (*Balance, error) {
 	var out Balance
@@ -227,6 +295,23 @@ func (c *AdminWalletServiceHTTPClientImpl) GetBalance(ctx context.Context, in *G
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminWalletServiceGetBalance),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListGiftcardBatches ListGiftcardBatches 批次列表。
+func (c *AdminWalletServiceHTTPClientImpl) ListGiftcardBatches(ctx context.Context, in *ListGiftcardBatchesRequest, opts ...http.CallOption) (*ListGiftcardBatchesReply, error) {
+	var out ListGiftcardBatchesReply
+	pattern := "/api/v1/admin/wallet/giftcard-batches"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminWalletServiceListGiftcardBatches),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
