@@ -1,7 +1,12 @@
 <template>
   <div v-if="p" class="card">
     <h2 style="margin-bottom: 8px;">{{ p.name }}</h2>
-    <div class="price" style="font-size: 22px; margin-bottom: 12px;">{{ formatMoney(p.price_cents) }}</div>
+    <div class="price" style="font-size: 22px; margin-bottom: 12px;">
+      {{ formatMoney(p.price_cents) }}
+      <span v-if="p.points_required && p.points_required > 0" class="tag" style="margin-left: 8px; font-size: 14px;">
+        或 {{ p.points_required }} 积分兑换
+      </span>
+    </div>
     <div style="margin-bottom: 12px;">类型：{{ stockTypeLabel(p.stock_type) }} · 销量 {{ p.sales_count }}</div>
     <div style="margin-bottom: 16px; white-space: pre-wrap;">{{ p.description || '暂无描述' }}</div>
 
@@ -65,7 +70,12 @@
       <input v-model="couponCode" type="text" class="input" style="max-width: 320px;" />
     </div>
     <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
-    <button class="btn" :disabled="submitting" @click="buy">{{ submitting ? '提交中…' : '立即购买' }}</button>
+    <div class="actions">
+      <button class="btn" :disabled="submitting" @click="buy">{{ submitting ? '提交中…' : '立即购买' }}</button>
+      <button v-if="p.points_required && p.points_required > 0" class="btn secondary" :disabled="submitting" @click="exchangePoints">
+        积分兑换（{{ p.points_required }} 分）
+      </button>
+    </div>
 
     <!-- 评价（真实 approved + 虚拟合并） -->
     <div v-if="p.reviews?.length" style="margin-top: 24px;">
@@ -88,7 +98,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProduct, createOrder, type Product } from '@/api';
-import { formatMoney } from '@/api/client';
+import { formatMoney, getToken } from '@/api/client';
 
 const route = useRoute();
 const router = useRouter();
@@ -143,5 +153,30 @@ async function buy() {
   submitting.value = false;
   if (err) { error.value = err; return; }
   router.push(`/payment/${data!.order_no}`);
+}
+
+// 积分兑换（P3-01：use_points → 服务端同事务扣积分 → 订单直落 paid → 取货页交付）
+async function exchangePoints() {
+  if (!p.value) return;
+  if (!getToken()) {
+    router.push({ path: '/login', query: { redirect: route.fullPath } });
+    return;
+  }
+  if (!queryPassword.value || queryPassword.value.length < 4) {
+    error.value = '积分兑换同样需要设置查询密码（取货用，至少 4 位）';
+    return;
+  }
+  if (!confirm(`确认用 ${p.value.points_required} 积分兑换本商品？`)) return;
+  submitting.value = true;
+  error.value = '';
+  const { data, error: err } = await createOrder({
+    items: [{ product_id: p.value.id, quantity: 1 }],
+    query_password: queryPassword.value,
+    use_points: true
+  });
+  submitting.value = false;
+  if (err) { error.value = err; return; }
+  alert('兑换成功，订单已支付，请前往取货页领取');
+  router.push('/fetch');
 }
 </script>

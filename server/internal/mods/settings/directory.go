@@ -117,6 +117,8 @@ var groups = map[string]*GroupDef{
 			"max_amount": 500000,
 			"gift_tiers": nil, // [{amount,gift_balance,gift_points}]
 		},
+		// 前台公开：充值页档位/赠送规则展示（P3-09；金额裁决仍在服务端）
+		PublicKeys: map[string]bool{"enabled": true, "min_amount": true, "max_amount": true, "gift_tiers": true},
 	},
 	"license": {
 		Name: "license", Desc: "订阅许可证",

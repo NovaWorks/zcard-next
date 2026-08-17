@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { getToken } from '@/api/client';
 import Home from '@/views/Home.vue';
 
+// meta.auth：需登录页面（P3-09 T1）——无 token 跳 /login 带回跳。
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -8,10 +10,24 @@ const router = createRouter({
     { path: '/product/:id', name: 'product', component: () => import('@/views/ProductDetail.vue') },
     { path: '/payment/:orderNo', name: 'payment', component: () => import('@/views/Payment.vue') },
     { path: '/fetch', name: 'fetch', component: () => import('@/views/Fetch.vue') },
-    { path: '/member', name: 'member', component: () => import('@/views/Member.vue') },
+    { path: '/member', name: 'member', component: () => import('@/views/Member.vue'), meta: { auth: true } },
+    { path: '/login', name: 'login', component: () => import('@/views/Login.vue') },
+    { path: '/register', name: 'register', component: () => import('@/views/Register.vue') },
+    { path: '/tickets', name: 'tickets', component: () => import('@/views/Tickets.vue'), meta: { auth: true } },
+    { path: '/tickets/:no', name: 'ticket-detail', component: () => import('@/views/TicketDetail.vue'), meta: { auth: true } },
+    { path: '/affiliate', name: 'affiliate', component: () => import('@/views/Affiliate.vue'), meta: { auth: true } },
+    { path: '/points', name: 'points', component: () => import('@/views/Points.vue') },
+    { path: '/coupons', name: 'coupons', component: () => import('@/views/Coupons.vue'), meta: { auth: true } },
     { path: '/posts', name: 'posts', component: () => import('@/views/Posts.vue') },
     { path: '/posts/:slug', name: 'post-detail', component: () => import('@/views/PostDetail.vue') }
   ]
+});
+
+router.beforeEach((to) => {
+  if (to.meta.auth && !getToken()) {
+    return { path: '/login', query: { redirect: to.fullPath } };
+  }
+  return true;
 });
 
 export default router;

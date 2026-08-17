@@ -1,13 +1,28 @@
 // 前台 API 客户端：fetch 封装，金额一律「分」int64。
+// 认证（P3-09 T1）：user realm JWT 存 localStorage，请求自动带 Bearer；
+// 401 且本地有 token → 判定过期，清 token 跳登录（游客端点 401 不误伤）。
 
 const BASE = '/api/v1/storefront';
+const TOKEN_KEY = 'zcard_token';
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
 
 interface ApiResult<T> {
   data: T | null;
   error: string | null;
 }
 
-async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | undefined>): Promise<ApiResult<T>> {
+async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>): Promise<ApiResult<T>> {
   let url = `${BASE}${path}`;
   if (params) {
     const q = new URLSearchParams();
@@ -17,10 +32,14 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
     const qs = q.toString();
     if (qs) url += `?${qs}`;
   }
+  const token = getToken();
   try {
     const res = await fetch(url, {
       method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
+      headers: {
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
       body: body ? JSON.stringify(body) : undefined
     });
     const text = await res.text();
@@ -31,6 +50,12 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
       json = text;
     }
     if (!res.ok) {
+      // token 过期/失效：清态跳登录（带回跳）；无 token 的 401 属游客端点误触，不动
+      if (res.status === 401 && token) {
+        clearToken();
+        const redirect = encodeURIComponent(location.pathname + location.search);
+        location.href = `/login?redirect=${redirect}`;
+      }
       return { data: null, error: json?.message || json?.error || `HTTP ${res.status}` };
     }
     return { data: json as T, error: null };
@@ -40,7 +65,7 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
 }
 
 export const api = {
-  get: <T>(path: string, params?: Record<string, string | number | undefined>) => request<T>('GET', path, undefined, params),
+  get: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params),
   post: <T>(path: string, body: unknown) => request<T>('POST', path, body)
 };
 
