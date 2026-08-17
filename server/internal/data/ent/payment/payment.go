@@ -33,6 +33,12 @@ const (
 	FieldAmount = "amount"
 	// FieldChargedAmount holds the string denoting the charged_amount field in the database.
 	FieldChargedAmount = "charged_amount"
+	// FieldChargedCurrency holds the string denoting the charged_currency field in the database.
+	FieldChargedCurrency = "charged_currency"
+	// FieldExchangeRate holds the string denoting the exchange_rate field in the database.
+	FieldExchangeRate = "exchange_rate"
+	// FieldChargedUnits holds the string denoting the charged_units field in the database.
+	FieldChargedUnits = "charged_units"
 	// FieldFee holds the string denoting the fee field in the database.
 	FieldFee = "fee"
 	// FieldStatus holds the string denoting the status field in the database.
@@ -68,6 +74,9 @@ var Columns = []string{
 	FieldChannelOrderNo,
 	FieldAmount,
 	FieldChargedAmount,
+	FieldChargedCurrency,
+	FieldExchangeRate,
+	FieldChargedUnits,
 	FieldFee,
 	FieldStatus,
 	FieldPaidAt,
@@ -100,6 +109,12 @@ var (
 	ChannelOrderNoValidator func(string) error
 	// DefaultChargedAmount holds the default value on creation for the "charged_amount" field.
 	DefaultChargedAmount int64
+	// ChargedCurrencyValidator is a validator for the "charged_currency" field. It is called by the builders before save.
+	ChargedCurrencyValidator func(string) error
+	// DefaultExchangeRate holds the default value on creation for the "exchange_rate" field.
+	DefaultExchangeRate float64
+	// DefaultChargedUnits holds the default value on creation for the "charged_units" field.
+	DefaultChargedUnits int64
 	// DefaultFee holds the default value on creation for the "fee" field.
 	DefaultFee int64
 	// IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
@@ -184,6 +199,21 @@ func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 // ByChargedAmount orders the results by the charged_amount field.
 func ByChargedAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldChargedAmount, opts...).ToFunc()
+}
+
+// ByChargedCurrency orders the results by the charged_currency field.
+func ByChargedCurrency(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChargedCurrency, opts...).ToFunc()
+}
+
+// ByExchangeRate orders the results by the exchange_rate field.
+func ByExchangeRate(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExchangeRate, opts...).ToFunc()
+}
+
+// ByChargedUnits orders the results by the charged_units field.
+func ByChargedUnits(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChargedUnits, opts...).ToFunc()
 }
 
 // ByFee orders the results by the fee field.

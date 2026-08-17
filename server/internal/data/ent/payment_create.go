@@ -134,6 +134,48 @@ func (_c *PaymentCreate) SetNillableChargedAmount(v *int64) *PaymentCreate {
 	return _c
 }
 
+// SetChargedCurrency sets the "charged_currency" field.
+func (_c *PaymentCreate) SetChargedCurrency(v string) *PaymentCreate {
+	_c.mutation.SetChargedCurrency(v)
+	return _c
+}
+
+// SetNillableChargedCurrency sets the "charged_currency" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableChargedCurrency(v *string) *PaymentCreate {
+	if v != nil {
+		_c.SetChargedCurrency(*v)
+	}
+	return _c
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (_c *PaymentCreate) SetExchangeRate(v float64) *PaymentCreate {
+	_c.mutation.SetExchangeRate(v)
+	return _c
+}
+
+// SetNillableExchangeRate sets the "exchange_rate" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableExchangeRate(v *float64) *PaymentCreate {
+	if v != nil {
+		_c.SetExchangeRate(*v)
+	}
+	return _c
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (_c *PaymentCreate) SetChargedUnits(v int64) *PaymentCreate {
+	_c.mutation.SetChargedUnits(v)
+	return _c
+}
+
+// SetNillableChargedUnits sets the "charged_units" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableChargedUnits(v *int64) *PaymentCreate {
+	if v != nil {
+		_c.SetChargedUnits(*v)
+	}
+	return _c
+}
+
 // SetFee sets the "fee" field.
 func (_c *PaymentCreate) SetFee(v int64) *PaymentCreate {
 	_c.mutation.SetFee(v)
@@ -258,6 +300,14 @@ func (_c *PaymentCreate) defaults() {
 		v := payment.DefaultChargedAmount
 		_c.mutation.SetChargedAmount(v)
 	}
+	if _, ok := _c.mutation.ExchangeRate(); !ok {
+		v := payment.DefaultExchangeRate
+		_c.mutation.SetExchangeRate(v)
+	}
+	if _, ok := _c.mutation.ChargedUnits(); !ok {
+		v := payment.DefaultChargedUnits
+		_c.mutation.SetChargedUnits(v)
+	}
 	if _, ok := _c.mutation.Fee(); !ok {
 		v := payment.DefaultFee
 		_c.mutation.SetFee(v)
@@ -297,6 +347,17 @@ func (_c *PaymentCreate) check() error {
 	}
 	if _, ok := _c.mutation.ChargedAmount(); !ok {
 		return &ValidationError{Name: "charged_amount", err: errors.New(`ent: missing required field "Payment.charged_amount"`)}
+	}
+	if v, ok := _c.mutation.ChargedCurrency(); ok {
+		if err := payment.ChargedCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "charged_currency", err: fmt.Errorf(`ent: validator failed for field "Payment.charged_currency": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ExchangeRate(); !ok {
+		return &ValidationError{Name: "exchange_rate", err: errors.New(`ent: missing required field "Payment.exchange_rate"`)}
+	}
+	if _, ok := _c.mutation.ChargedUnits(); !ok {
+		return &ValidationError{Name: "charged_units", err: errors.New(`ent: missing required field "Payment.charged_units"`)}
 	}
 	if _, ok := _c.mutation.Fee(); !ok {
 		return &ValidationError{Name: "fee", err: errors.New(`ent: missing required field "Payment.fee"`)}
@@ -378,6 +439,18 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ChargedAmount(); ok {
 		_spec.SetField(payment.FieldChargedAmount, field.TypeInt64, value)
 		_node.ChargedAmount = value
+	}
+	if value, ok := _c.mutation.ChargedCurrency(); ok {
+		_spec.SetField(payment.FieldChargedCurrency, field.TypeString, value)
+		_node.ChargedCurrency = value
+	}
+	if value, ok := _c.mutation.ExchangeRate(); ok {
+		_spec.SetField(payment.FieldExchangeRate, field.TypeFloat64, value)
+		_node.ExchangeRate = value
+	}
+	if value, ok := _c.mutation.ChargedUnits(); ok {
+		_spec.SetField(payment.FieldChargedUnits, field.TypeInt64, value)
+		_node.ChargedUnits = value
 	}
 	if value, ok := _c.mutation.Fee(); ok {
 		_spec.SetField(payment.FieldFee, field.TypeInt64, value)
@@ -603,6 +676,60 @@ func (u *PaymentUpsert) UpdateChargedAmount() *PaymentUpsert {
 // AddChargedAmount adds v to the "charged_amount" field.
 func (u *PaymentUpsert) AddChargedAmount(v int64) *PaymentUpsert {
 	u.Add(payment.FieldChargedAmount, v)
+	return u
+}
+
+// SetChargedCurrency sets the "charged_currency" field.
+func (u *PaymentUpsert) SetChargedCurrency(v string) *PaymentUpsert {
+	u.Set(payment.FieldChargedCurrency, v)
+	return u
+}
+
+// UpdateChargedCurrency sets the "charged_currency" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateChargedCurrency() *PaymentUpsert {
+	u.SetExcluded(payment.FieldChargedCurrency)
+	return u
+}
+
+// ClearChargedCurrency clears the value of the "charged_currency" field.
+func (u *PaymentUpsert) ClearChargedCurrency() *PaymentUpsert {
+	u.SetNull(payment.FieldChargedCurrency)
+	return u
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (u *PaymentUpsert) SetExchangeRate(v float64) *PaymentUpsert {
+	u.Set(payment.FieldExchangeRate, v)
+	return u
+}
+
+// UpdateExchangeRate sets the "exchange_rate" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateExchangeRate() *PaymentUpsert {
+	u.SetExcluded(payment.FieldExchangeRate)
+	return u
+}
+
+// AddExchangeRate adds v to the "exchange_rate" field.
+func (u *PaymentUpsert) AddExchangeRate(v float64) *PaymentUpsert {
+	u.Add(payment.FieldExchangeRate, v)
+	return u
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (u *PaymentUpsert) SetChargedUnits(v int64) *PaymentUpsert {
+	u.Set(payment.FieldChargedUnits, v)
+	return u
+}
+
+// UpdateChargedUnits sets the "charged_units" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateChargedUnits() *PaymentUpsert {
+	u.SetExcluded(payment.FieldChargedUnits)
+	return u
+}
+
+// AddChargedUnits adds v to the "charged_units" field.
+func (u *PaymentUpsert) AddChargedUnits(v int64) *PaymentUpsert {
+	u.Add(payment.FieldChargedUnits, v)
 	return u
 }
 
@@ -899,6 +1026,69 @@ func (u *PaymentUpsertOne) AddChargedAmount(v int64) *PaymentUpsertOne {
 func (u *PaymentUpsertOne) UpdateChargedAmount() *PaymentUpsertOne {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateChargedAmount()
+	})
+}
+
+// SetChargedCurrency sets the "charged_currency" field.
+func (u *PaymentUpsertOne) SetChargedCurrency(v string) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChargedCurrency(v)
+	})
+}
+
+// UpdateChargedCurrency sets the "charged_currency" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateChargedCurrency() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChargedCurrency()
+	})
+}
+
+// ClearChargedCurrency clears the value of the "charged_currency" field.
+func (u *PaymentUpsertOne) ClearChargedCurrency() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearChargedCurrency()
+	})
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (u *PaymentUpsertOne) SetExchangeRate(v float64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetExchangeRate(v)
+	})
+}
+
+// AddExchangeRate adds v to the "exchange_rate" field.
+func (u *PaymentUpsertOne) AddExchangeRate(v float64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddExchangeRate(v)
+	})
+}
+
+// UpdateExchangeRate sets the "exchange_rate" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateExchangeRate() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateExchangeRate()
+	})
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (u *PaymentUpsertOne) SetChargedUnits(v int64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChargedUnits(v)
+	})
+}
+
+// AddChargedUnits adds v to the "charged_units" field.
+func (u *PaymentUpsertOne) AddChargedUnits(v int64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddChargedUnits(v)
+	})
+}
+
+// UpdateChargedUnits sets the "charged_units" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateChargedUnits() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChargedUnits()
 	})
 }
 
@@ -1375,6 +1565,69 @@ func (u *PaymentUpsertBulk) AddChargedAmount(v int64) *PaymentUpsertBulk {
 func (u *PaymentUpsertBulk) UpdateChargedAmount() *PaymentUpsertBulk {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateChargedAmount()
+	})
+}
+
+// SetChargedCurrency sets the "charged_currency" field.
+func (u *PaymentUpsertBulk) SetChargedCurrency(v string) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChargedCurrency(v)
+	})
+}
+
+// UpdateChargedCurrency sets the "charged_currency" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateChargedCurrency() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChargedCurrency()
+	})
+}
+
+// ClearChargedCurrency clears the value of the "charged_currency" field.
+func (u *PaymentUpsertBulk) ClearChargedCurrency() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearChargedCurrency()
+	})
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (u *PaymentUpsertBulk) SetExchangeRate(v float64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetExchangeRate(v)
+	})
+}
+
+// AddExchangeRate adds v to the "exchange_rate" field.
+func (u *PaymentUpsertBulk) AddExchangeRate(v float64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddExchangeRate(v)
+	})
+}
+
+// UpdateExchangeRate sets the "exchange_rate" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateExchangeRate() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateExchangeRate()
+	})
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (u *PaymentUpsertBulk) SetChargedUnits(v int64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChargedUnits(v)
+	})
+}
+
+// AddChargedUnits adds v to the "charged_units" field.
+func (u *PaymentUpsertBulk) AddChargedUnits(v int64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddChargedUnits(v)
+	})
+}
+
+// UpdateChargedUnits sets the "charged_units" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateChargedUnits() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChargedUnits()
 	})
 }
 

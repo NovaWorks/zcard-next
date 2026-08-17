@@ -103,7 +103,7 @@ func newCallbackEnv(t *testing.T) (*data.Data, *PaymentRepoImpl, *wallet.WalletR
 	walletPort := wallet.ProvidePortWallet(walletRepo)
 	writer := &captureWriter{}
 	lifecycle := &fakeLifecycle{}
-	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer)
+	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer, nil)
 	return d, repo, walletRepo, writer, lifecycle
 }
 
@@ -358,5 +358,142 @@ func TestParseCallbackFormJSONNumber(t *testing.T) {
 	// 字符串字段原样
 	if m["note"] != "x" {
 		t.Fatalf("字符串字段错位: %q", m["note"])
+	}
+}
+
+// ── P2-09 T2 币种快照 ─────────────────────────────────────────────
+
+// fakeCurrencyReader 假币种表（USD rate=0.14 精度 2）。
+type fakeCurrencyReader struct{}
+
+func (fakeCurrencyReader) CurrencyByCode(_ context.Context, code string) (string, int32, error) {
+	if code == "USD" {
+		return "0.14000000", 2, nil
+	}
+	return "", 2, fmt.Errorf("currency not found: %s", code)
+}
+
+// TestComputeCharge 换算 helper 矩阵：
+// 无 target_currency/CNY → 同币直收（Units=0）；USD → ToDisplay 精确换算；
+// 未配置币种 → fail-safe 直收；非法汇率 → 直收。
+func TestComputeCharge(t *testing.T) {
+	d, _, _, _, _ := newCallbackEnv(t)
+	repo := &PaymentRepoImpl{data: d, currency: fakeCurrencyReader{}}
+	ctx := context.Background()
+
+	// 1) 同币直收：无 target_currency
+	snap := repo.computeCharge(ctx, json.RawMessage(`{"pid":"1"}`), 1000)
+	if snap.Units != 0 || snap.Currency != "" {
+		t.Fatalf("无目标币种应直收: %+v", snap)
+	}
+	// 2) CNY 显式 → 直收
+	snap = repo.computeCharge(ctx, json.RawMessage(`{"target_currency":"CNY"}`), 1000)
+	if snap.Units != 0 {
+		t.Fatalf("CNY 应直收: %+v", snap)
+	}
+	// 3) USD：1000 分 × 0.14 = 140 美分
+	snap = repo.computeCharge(ctx, json.RawMessage(`{"target_currency":"USD"}`), 1000)
+	if snap.Units != 140 || snap.Currency != "USD" {
+		t.Fatalf("USD 换算错误: %+v", snap)
+	}
+	if snap.Rate < 0.13999999 || snap.Rate > 0.14000001 {
+		t.Fatalf("快照汇率错误: %v", snap.Rate)
+	}
+	// 4) 未配置币种 → fail-safe 直收
+	snap = repo.computeCharge(ctx, json.RawMessage(`{"target_currency":"EUR"}`), 1000)
+	if snap.Units != 0 {
+		t.Fatalf("未配置币种应直收: %+v", snap)
+	}
+	// 5) currency reader 缺席（nil）→ 直收
+	repoNil := &PaymentRepoImpl{data: d}
+	snap = repoNil.computeCharge(ctx, json.RawMessage(`{"target_currency":"USD"}`), 1000)
+	if snap.Units != 0 {
+		t.Fatalf("nil reader 应直收: %+v", snap)
+	}
+}
+
+// TestCallbackCrossCurrencySnapshot 跨币回调核对矩阵：
+// units 精确匹配→成功且 charged_amount 换算回基础分；units 不符→拒；币种不符→拒。
+func TestCallbackCrossCurrencySnapshot(t *testing.T) {
+	d, repo, _, writer, lifecycle := newCallbackEnv(t)
+	repo.currency = fakeCurrencyReader{}
+	ctx := context.Background()
+	o, p := seedPendingOrder(t, d, "epay", 1000)
+	// 预置快照：应收 1000 分 CNY，渠道 140 美分 USD @0.14
+	if _, err := d.Client.Payment.UpdateOne(p).
+		SetChargedUnits(140).SetChargedCurrency("USD").SetExchangeRate(0.14).
+		Save(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1) 正确回调：140 units USD → 成功；charged_amount 回基础分 ≈ 1000
+	if err := repo.HandleCallback(ctx, p.ID, CallbackFact{
+		Channel: "epay", ChannelOrderNo: "TX1", OrderNo: o.OrderNo,
+		Amount: 140, Currency: "USD", Success: true,
+	}); err != nil {
+		t.Fatalf("跨币回调应成功: %v", err)
+	}
+	got, _ := d.Client.Payment.Get(ctx, p.ID)
+	if string(got.Status) != "success" {
+		t.Fatalf("状态错误: %s", got.Status)
+	}
+	if got.ChargedAmount < 990 || got.ChargedAmount > 1010 {
+		t.Fatalf("charged_amount 应换算回 ~1000 分: %d", got.ChargedAmount)
+	}
+	if len(lifecycle.markPaidCalls) != 1 {
+		t.Fatal("MarkPaid 应调用")
+	}
+
+	// 2) units 不符 → 拒（新支付单）
+	o2, p2 := seedPendingOrder(t, d, "epay", 1000)
+	_ = o2
+	if _, err := d.Client.Payment.UpdateOne(p2).
+		SetChargedUnits(140).SetChargedCurrency("USD").SetExchangeRate(0.14).
+		Save(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.HandleCallback(ctx, p2.ID, CallbackFact{
+		Channel: "epay", Amount: 999, Currency: "USD", Success: true,
+	}); err == nil {
+		t.Fatal("units 不符应拒绝")
+	}
+
+	// 3) 币种不符 → 拒
+	if err := repo.HandleCallback(ctx, p2.ID, CallbackFact{
+		Channel: "epay", Amount: 140, Currency: "EUR", Success: true,
+	}); err == nil {
+		t.Fatal("币种不符应拒绝")
+	}
+	_ = writer
+}
+
+// TestCallbackLegacyCNYPath 旧同币路径回归：无快照（charged_units=0）→ fact.Amount==amount + CNY 口径不变。
+func TestCallbackLegacyCNYPath(t *testing.T) {
+	d, repo, _, _, lifecycle := newCallbackEnv(t)
+	repo.currency = fakeCurrencyReader{}
+	ctx := context.Background()
+	o, p := seedPendingOrder(t, d, "epay", 1000)
+
+	// 旧路径拒绝非 CNY
+	if err := repo.HandleCallback(ctx, p.ID, CallbackFact{
+		Channel: "epay", Amount: 1000, Currency: "USD", Success: true,
+	}); err == nil {
+		t.Fatal("旧路径非 CNY 应拒绝")
+	}
+	// 旧路径金额不符拒绝
+	if err := repo.HandleCallback(ctx, p.ID, CallbackFact{
+		Channel: "epay", Amount: 999, Currency: "CNY", Success: true,
+	}); err == nil {
+		t.Fatal("旧路径金额不符应拒绝")
+	}
+	// 正常成功
+	if err := repo.HandleCallback(ctx, p.ID, CallbackFact{
+		Channel: "epay", ChannelOrderNo: "T9", OrderNo: o.OrderNo,
+		Amount: 1000, Currency: "CNY", Success: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(lifecycle.markPaidCalls) != 1 {
+		t.Fatal("旧路径成功应 MarkPaid")
 	}
 }

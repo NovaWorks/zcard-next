@@ -36801,6 +36801,11 @@ type PaymentMutation struct {
 	addamount            *int64
 	charged_amount       *int64
 	addcharged_amount    *int64
+	charged_currency     *string
+	exchange_rate        *float64
+	addexchange_rate     *float64
+	charged_units        *int64
+	addcharged_units     *int64
 	fee                  *int64
 	addfee               *int64
 	status               *payment.Status
@@ -37364,6 +37369,167 @@ func (m *PaymentMutation) ResetChargedAmount() {
 	m.addcharged_amount = nil
 }
 
+// SetChargedCurrency sets the "charged_currency" field.
+func (m *PaymentMutation) SetChargedCurrency(s string) {
+	m.charged_currency = &s
+}
+
+// ChargedCurrency returns the value of the "charged_currency" field in the mutation.
+func (m *PaymentMutation) ChargedCurrency() (r string, exists bool) {
+	v := m.charged_currency
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChargedCurrency returns the old "charged_currency" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldChargedCurrency(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChargedCurrency is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChargedCurrency requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChargedCurrency: %w", err)
+	}
+	return oldValue.ChargedCurrency, nil
+}
+
+// ClearChargedCurrency clears the value of the "charged_currency" field.
+func (m *PaymentMutation) ClearChargedCurrency() {
+	m.charged_currency = nil
+	m.clearedFields[payment.FieldChargedCurrency] = struct{}{}
+}
+
+// ChargedCurrencyCleared returns if the "charged_currency" field was cleared in this mutation.
+func (m *PaymentMutation) ChargedCurrencyCleared() bool {
+	_, ok := m.clearedFields[payment.FieldChargedCurrency]
+	return ok
+}
+
+// ResetChargedCurrency resets all changes to the "charged_currency" field.
+func (m *PaymentMutation) ResetChargedCurrency() {
+	m.charged_currency = nil
+	delete(m.clearedFields, payment.FieldChargedCurrency)
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (m *PaymentMutation) SetExchangeRate(f float64) {
+	m.exchange_rate = &f
+	m.addexchange_rate = nil
+}
+
+// ExchangeRate returns the value of the "exchange_rate" field in the mutation.
+func (m *PaymentMutation) ExchangeRate() (r float64, exists bool) {
+	v := m.exchange_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExchangeRate returns the old "exchange_rate" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldExchangeRate(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExchangeRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExchangeRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExchangeRate: %w", err)
+	}
+	return oldValue.ExchangeRate, nil
+}
+
+// AddExchangeRate adds f to the "exchange_rate" field.
+func (m *PaymentMutation) AddExchangeRate(f float64) {
+	if m.addexchange_rate != nil {
+		*m.addexchange_rate += f
+	} else {
+		m.addexchange_rate = &f
+	}
+}
+
+// AddedExchangeRate returns the value that was added to the "exchange_rate" field in this mutation.
+func (m *PaymentMutation) AddedExchangeRate() (r float64, exists bool) {
+	v := m.addexchange_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExchangeRate resets all changes to the "exchange_rate" field.
+func (m *PaymentMutation) ResetExchangeRate() {
+	m.exchange_rate = nil
+	m.addexchange_rate = nil
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (m *PaymentMutation) SetChargedUnits(i int64) {
+	m.charged_units = &i
+	m.addcharged_units = nil
+}
+
+// ChargedUnits returns the value of the "charged_units" field in the mutation.
+func (m *PaymentMutation) ChargedUnits() (r int64, exists bool) {
+	v := m.charged_units
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChargedUnits returns the old "charged_units" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldChargedUnits(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChargedUnits is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChargedUnits requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChargedUnits: %w", err)
+	}
+	return oldValue.ChargedUnits, nil
+}
+
+// AddChargedUnits adds i to the "charged_units" field.
+func (m *PaymentMutation) AddChargedUnits(i int64) {
+	if m.addcharged_units != nil {
+		*m.addcharged_units += i
+	} else {
+		m.addcharged_units = &i
+	}
+}
+
+// AddedChargedUnits returns the value that was added to the "charged_units" field in this mutation.
+func (m *PaymentMutation) AddedChargedUnits() (r int64, exists bool) {
+	v := m.addcharged_units
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetChargedUnits resets all changes to the "charged_units" field.
+func (m *PaymentMutation) ResetChargedUnits() {
+	m.charged_units = nil
+	m.addcharged_units = nil
+}
+
 // SetFee sets the "fee" field.
 func (m *PaymentMutation) SetFee(i int64) {
 	m.fee = &i
@@ -37680,7 +37846,7 @@ func (m *PaymentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, payment.FieldCreatedAt)
 	}
@@ -37707,6 +37873,15 @@ func (m *PaymentMutation) Fields() []string {
 	}
 	if m.charged_amount != nil {
 		fields = append(fields, payment.FieldChargedAmount)
+	}
+	if m.charged_currency != nil {
+		fields = append(fields, payment.FieldChargedCurrency)
+	}
+	if m.exchange_rate != nil {
+		fields = append(fields, payment.FieldExchangeRate)
+	}
+	if m.charged_units != nil {
+		fields = append(fields, payment.FieldChargedUnits)
 	}
 	if m.fee != nil {
 		fields = append(fields, payment.FieldFee)
@@ -37749,6 +37924,12 @@ func (m *PaymentMutation) Field(name string) (ent.Value, bool) {
 		return m.Amount()
 	case payment.FieldChargedAmount:
 		return m.ChargedAmount()
+	case payment.FieldChargedCurrency:
+		return m.ChargedCurrency()
+	case payment.FieldExchangeRate:
+		return m.ExchangeRate()
+	case payment.FieldChargedUnits:
+		return m.ChargedUnits()
 	case payment.FieldFee:
 		return m.Fee()
 	case payment.FieldStatus:
@@ -37786,6 +37967,12 @@ func (m *PaymentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldAmount(ctx)
 	case payment.FieldChargedAmount:
 		return m.OldChargedAmount(ctx)
+	case payment.FieldChargedCurrency:
+		return m.OldChargedCurrency(ctx)
+	case payment.FieldExchangeRate:
+		return m.OldExchangeRate(ctx)
+	case payment.FieldChargedUnits:
+		return m.OldChargedUnits(ctx)
 	case payment.FieldFee:
 		return m.OldFee(ctx)
 	case payment.FieldStatus:
@@ -37868,6 +38055,27 @@ func (m *PaymentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetChargedAmount(v)
 		return nil
+	case payment.FieldChargedCurrency:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChargedCurrency(v)
+		return nil
+	case payment.FieldExchangeRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExchangeRate(v)
+		return nil
+	case payment.FieldChargedUnits:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChargedUnits(v)
+		return nil
 	case payment.FieldFee:
 		v, ok := value.(int64)
 		if !ok {
@@ -37923,6 +38131,12 @@ func (m *PaymentMutation) AddedFields() []string {
 	if m.addcharged_amount != nil {
 		fields = append(fields, payment.FieldChargedAmount)
 	}
+	if m.addexchange_rate != nil {
+		fields = append(fields, payment.FieldExchangeRate)
+	}
+	if m.addcharged_units != nil {
+		fields = append(fields, payment.FieldChargedUnits)
+	}
 	if m.addfee != nil {
 		fields = append(fields, payment.FieldFee)
 	}
@@ -37942,6 +38156,10 @@ func (m *PaymentMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAmount()
 	case payment.FieldChargedAmount:
 		return m.AddedChargedAmount()
+	case payment.FieldExchangeRate:
+		return m.AddedExchangeRate()
+	case payment.FieldChargedUnits:
+		return m.AddedChargedUnits()
 	case payment.FieldFee:
 		return m.AddedFee()
 	}
@@ -37981,6 +38199,20 @@ func (m *PaymentMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddChargedAmount(v)
 		return nil
+	case payment.FieldExchangeRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExchangeRate(v)
+		return nil
+	case payment.FieldChargedUnits:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChargedUnits(v)
+		return nil
 	case payment.FieldFee:
 		v, ok := value.(int64)
 		if !ok {
@@ -38004,6 +38236,9 @@ func (m *PaymentMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(payment.FieldChannelOrderNo) {
 		fields = append(fields, payment.FieldChannelOrderNo)
+	}
+	if m.FieldCleared(payment.FieldChargedCurrency) {
+		fields = append(fields, payment.FieldChargedCurrency)
 	}
 	if m.FieldCleared(payment.FieldPaidAt) {
 		fields = append(fields, payment.FieldPaidAt)
@@ -38036,6 +38271,9 @@ func (m *PaymentMutation) ClearField(name string) error {
 		return nil
 	case payment.FieldChannelOrderNo:
 		m.ClearChannelOrderNo()
+		return nil
+	case payment.FieldChargedCurrency:
+		m.ClearChargedCurrency()
 		return nil
 	case payment.FieldPaidAt:
 		m.ClearPaidAt()
@@ -38080,6 +38318,15 @@ func (m *PaymentMutation) ResetField(name string) error {
 		return nil
 	case payment.FieldChargedAmount:
 		m.ResetChargedAmount()
+		return nil
+	case payment.FieldChargedCurrency:
+		m.ResetChargedCurrency()
+		return nil
+	case payment.FieldExchangeRate:
+		m.ResetExchangeRate()
+		return nil
+	case payment.FieldChargedUnits:
+		m.ResetChargedUnits()
 		return nil
 	case payment.FieldFee:
 		m.ResetFee()

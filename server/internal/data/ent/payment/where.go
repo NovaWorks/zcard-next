@@ -100,6 +100,21 @@ func ChargedAmount(v int64) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldChargedAmount, v))
 }
 
+// ChargedCurrency applies equality check predicate on the "charged_currency" field. It's identical to ChargedCurrencyEQ.
+func ChargedCurrency(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChargedCurrency, v))
+}
+
+// ExchangeRate applies equality check predicate on the "exchange_rate" field. It's identical to ExchangeRateEQ.
+func ExchangeRate(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldExchangeRate, v))
+}
+
+// ChargedUnits applies equality check predicate on the "charged_units" field. It's identical to ChargedUnitsEQ.
+func ChargedUnits(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChargedUnits, v))
+}
+
 // Fee applies equality check predicate on the "fee" field. It's identical to FeeEQ.
 func Fee(v int64) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldFee, v))
@@ -533,6 +548,161 @@ func ChargedAmountLT(v int64) predicate.Payment {
 // ChargedAmountLTE applies the LTE predicate on the "charged_amount" field.
 func ChargedAmountLTE(v int64) predicate.Payment {
 	return predicate.Payment(sql.FieldLTE(FieldChargedAmount, v))
+}
+
+// ChargedCurrencyEQ applies the EQ predicate on the "charged_currency" field.
+func ChargedCurrencyEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyNEQ applies the NEQ predicate on the "charged_currency" field.
+func ChargedCurrencyNEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyIn applies the In predicate on the "charged_currency" field.
+func ChargedCurrencyIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldChargedCurrency, vs...))
+}
+
+// ChargedCurrencyNotIn applies the NotIn predicate on the "charged_currency" field.
+func ChargedCurrencyNotIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldChargedCurrency, vs...))
+}
+
+// ChargedCurrencyGT applies the GT predicate on the "charged_currency" field.
+func ChargedCurrencyGT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyGTE applies the GTE predicate on the "charged_currency" field.
+func ChargedCurrencyGTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyLT applies the LT predicate on the "charged_currency" field.
+func ChargedCurrencyLT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyLTE applies the LTE predicate on the "charged_currency" field.
+func ChargedCurrencyLTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyContains applies the Contains predicate on the "charged_currency" field.
+func ChargedCurrencyContains(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContains(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyHasPrefix applies the HasPrefix predicate on the "charged_currency" field.
+func ChargedCurrencyHasPrefix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasPrefix(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyHasSuffix applies the HasSuffix predicate on the "charged_currency" field.
+func ChargedCurrencyHasSuffix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasSuffix(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyIsNil applies the IsNil predicate on the "charged_currency" field.
+func ChargedCurrencyIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldChargedCurrency))
+}
+
+// ChargedCurrencyNotNil applies the NotNil predicate on the "charged_currency" field.
+func ChargedCurrencyNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldChargedCurrency))
+}
+
+// ChargedCurrencyEqualFold applies the EqualFold predicate on the "charged_currency" field.
+func ChargedCurrencyEqualFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEqualFold(FieldChargedCurrency, v))
+}
+
+// ChargedCurrencyContainsFold applies the ContainsFold predicate on the "charged_currency" field.
+func ChargedCurrencyContainsFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContainsFold(FieldChargedCurrency, v))
+}
+
+// ExchangeRateEQ applies the EQ predicate on the "exchange_rate" field.
+func ExchangeRateEQ(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldExchangeRate, v))
+}
+
+// ExchangeRateNEQ applies the NEQ predicate on the "exchange_rate" field.
+func ExchangeRateNEQ(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldExchangeRate, v))
+}
+
+// ExchangeRateIn applies the In predicate on the "exchange_rate" field.
+func ExchangeRateIn(vs ...float64) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldExchangeRate, vs...))
+}
+
+// ExchangeRateNotIn applies the NotIn predicate on the "exchange_rate" field.
+func ExchangeRateNotIn(vs ...float64) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldExchangeRate, vs...))
+}
+
+// ExchangeRateGT applies the GT predicate on the "exchange_rate" field.
+func ExchangeRateGT(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldExchangeRate, v))
+}
+
+// ExchangeRateGTE applies the GTE predicate on the "exchange_rate" field.
+func ExchangeRateGTE(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldExchangeRate, v))
+}
+
+// ExchangeRateLT applies the LT predicate on the "exchange_rate" field.
+func ExchangeRateLT(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldExchangeRate, v))
+}
+
+// ExchangeRateLTE applies the LTE predicate on the "exchange_rate" field.
+func ExchangeRateLTE(v float64) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldExchangeRate, v))
+}
+
+// ChargedUnitsEQ applies the EQ predicate on the "charged_units" field.
+func ChargedUnitsEQ(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChargedUnits, v))
+}
+
+// ChargedUnitsNEQ applies the NEQ predicate on the "charged_units" field.
+func ChargedUnitsNEQ(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldChargedUnits, v))
+}
+
+// ChargedUnitsIn applies the In predicate on the "charged_units" field.
+func ChargedUnitsIn(vs ...int64) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldChargedUnits, vs...))
+}
+
+// ChargedUnitsNotIn applies the NotIn predicate on the "charged_units" field.
+func ChargedUnitsNotIn(vs ...int64) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldChargedUnits, vs...))
+}
+
+// ChargedUnitsGT applies the GT predicate on the "charged_units" field.
+func ChargedUnitsGT(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldChargedUnits, v))
+}
+
+// ChargedUnitsGTE applies the GTE predicate on the "charged_units" field.
+func ChargedUnitsGTE(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldChargedUnits, v))
+}
+
+// ChargedUnitsLT applies the LT predicate on the "charged_units" field.
+func ChargedUnitsLT(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldChargedUnits, v))
+}
+
+// ChargedUnitsLTE applies the LTE predicate on the "charged_units" field.
+func ChargedUnitsLTE(v int64) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldChargedUnits, v))
 }
 
 // FeeEQ applies the EQ predicate on the "fee" field.

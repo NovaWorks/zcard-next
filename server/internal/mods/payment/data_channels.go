@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -21,10 +22,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/shopspring/decimal"
 )
 
 // PaymentRepoImpl 支付仓储。
@@ -33,15 +36,64 @@ type PaymentRepoImpl struct {
 	Cipher *crypto.Box // ZCARD_DATA_KEY
 	reg    *Registry   // 渠道 adapter 注册表
 	// M1b 回调管线依赖（wire 注入，§4.6 破环点）：
-	lifecycle orderport.OrderLifecycle // 订单型回调 → 状态机推进 + order.paid 事件（同事务）
-	wallet    walletport.Wallet        // 余额支付扣款 / 充值到账入账（通道 B 同事务）
-	points    walletport.Points        // 充值赠送积分（积分账本；nil = 未装配跳过）
-	outbox    events.Writer            // recharge.succeeded 等事件
+	lifecycle orderport.OrderLifecycle    // 订单型回调 → 状态机推进 + order.paid 事件（同事务）
+	wallet    walletport.Wallet           // 余额支付扣款 / 充值到账入账（通道 B 同事务）
+	points    walletport.Points           // 充值赠送积分（积分账本；nil = 未装配跳过）
+	outbox    events.Writer               // recharge.succeeded 等事件
+	currency  settingsport.CurrencyReader // 币种快照换算（P2-09 T2；nil = 同币直收）
 }
 
 // NewPaymentRepoImpl 构造。
-func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer) *PaymentRepoImpl {
-	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox}
+func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer, currency settingsport.CurrencyReader) *PaymentRepoImpl {
+	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency}
+}
+
+// ChargeSnapshot 币种快照换算（P2-09 T2）：
+// 渠道凭据 target_currency（空/CNY）→ 同币直收（units=amount, rate=1, currency=CNY）；
+// 否则 currency 表 rate/precision → money.ToDisplay（decimal 精确、四舍五入）。
+// rate 缺失/非法 → 1:1 直通（safeRate 语义——宁可同币直收不错换）。
+type ChargeSnapshot struct {
+	Units    int64
+	Currency string
+	Rate     float64
+}
+
+func (r *PaymentRepoImpl) computeCharge(ctx context.Context, cfg json.RawMessage, amount money.Cents) ChargeSnapshot {
+	direct := ChargeSnapshot{Units: 0, Currency: "", Rate: 0} // 0 units = 同币直收路径
+	var probe struct {
+		TargetCurrency string `json:"target_currency"`
+	}
+	if json.Unmarshal(cfg, &probe) != nil || probe.TargetCurrency == "" {
+		return direct
+	}
+	tc := strings.ToUpper(strings.TrimSpace(probe.TargetCurrency))
+	if tc == "CNY" || r.currency == nil {
+		return direct
+	}
+	rateStr, precision, err := r.currency.CurrencyByCode(ctx, tc)
+	if err != nil || rateStr == "" {
+		return direct // 币种未配置：同币直收（fail-safe，渠道侧以 CNY 收）
+	}
+	rate, err := decimal.NewFromString(rateStr)
+	if err != nil || rate.IsZero() || rate.IsNegative() {
+		return direct
+	}
+	ex := money.ToDisplay(amount, rate, precision)
+	rf, _ := rate.Float64()
+	return ChargeSnapshot{Units: ex.DisplayAmount, Currency: tc, Rate: rf}
+}
+
+// snapshotCharge 渠道发起成功后固化快照三列（跨币路径；同币直收零写）。
+// 失败仅日志不阻断（快照缺失时回调走旧核对路径——fail-safe）。
+func (r *PaymentRepoImpl) snapshotCharge(ctx context.Context, paymentID uint64, snap ChargeSnapshot) {
+	if snap.Units == 0 {
+		return
+	}
+	_, _ = data.Client(ctx, r.data).Payment.UpdateOneID(paymentID).
+		SetChargedUnits(snap.Units).
+		SetChargedCurrency(snap.Currency).
+		SetExchangeRate(snap.Rate).
+		Save(ctx)
 }
 
 // ── 渠道管理（T1）────────────────────────────────────────────
@@ -161,17 +213,20 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	if err := provider.ValidateConfig(cfg); err != nil {
 		return nil, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: %w", err)
 	}
+	snap := r.computeCharge(ctx, cfg, amount)
 	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
-		OrderNo:       fmt.Sprintf("RCH%d", ro.ID),
-		Channel:       channel,
-		Amount:        amount,
-		Subject:       "余额充值",
+		OrderNo:      fmt.Sprintf("RCH%d", ro.ID),
+		Channel:      channel,
+		Amount:       amount,
+		Subject:      "余额充值",
+		ChargedUnits: snap.Units, ChargedCurrency: snap.Currency,
 		NotifyBaseURL: "/payments/callback/" + channel,
 		Config:        cfg,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("payment.CREATE_FAILED: %w", err)
 	}
+	r.snapshotCharge(ctx, p.ID, snap)
 	return &port.RechargePaymentInfo{
 		PaymentID: p.ID, Type: info.Type, Payload: string(info.Payload),
 	}, nil
@@ -234,14 +289,38 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 		}
 
 		// 3) 四重校验（渠道/单号/金额/币种——金额永远对服务端权威值）
+		//    跨币路径（P2-09 T2 快照）：回调金额=渠道币种最小单位，对 charged_units
+		//    精确核对（网关回显下单金额，零二次换算）；实收换算回基础货币分落 charged_amount。
+		//    同币路径（charged_units=0）：旧口径 fact.Amount==amount + CNY。
 		if fact.Channel != p.Channel {
 			return fmt.Errorf("payment.CHANNEL_MISMATCH")
 		}
-		if fact.Amount != p.Amount {
-			return fmt.Errorf("payment.AMOUNT_MISMATCH: want %d got %d", p.Amount, fact.Amount)
-		}
-		if fact.Currency != "CNY" {
-			return fmt.Errorf("payment.CURRENCY_MISMATCH")
+		chargedBase := fact.Amount
+		if p.ChargedUnits > 0 {
+			if fact.Amount != p.ChargedUnits {
+				return fmt.Errorf("payment.AMOUNT_MISMATCH: want units %d got %d", p.ChargedUnits, fact.Amount)
+			}
+			if !strings.EqualFold(fact.Currency, p.ChargedCurrency) {
+				return fmt.Errorf("payment.CURRENCY_MISMATCH: want %s got %s", p.ChargedCurrency, fact.Currency)
+			}
+			// 实收换算回基础货币分（快照汇率；decimal 精确）
+			if rate := decimal.NewFromFloat(p.ExchangeRate); !rate.IsZero() {
+				prec := int32(2)
+				if r.currency != nil {
+					if _, p32, err := r.currency.CurrencyByCode(ctx, p.ChargedCurrency); err == nil {
+						prec = p32
+					}
+				}
+				base, _ := money.FromDisplay(fact.Amount, rate, prec)
+				chargedBase = int64(base)
+			}
+		} else {
+			if fact.Amount != p.Amount {
+				return fmt.Errorf("payment.AMOUNT_MISMATCH: want %d got %d", p.Amount, fact.Amount)
+			}
+			if fact.Currency != "CNY" {
+				return fmt.Errorf("payment.CURRENCY_MISMATCH")
+			}
 		}
 
 		// 4) 幂等第二层 + 分流推进（支付单 CAS pending→success）
@@ -249,7 +328,7 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 		_, err = client.Payment.Update().
 			Where(payment.ID(p.ID), payment.StatusEQ(payment.StatusPending)).
 			SetStatus(payment.StatusSuccess).
-			SetChargedAmount(fact.Amount).
+			SetChargedAmount(chargedBase).
 			SetChannelOrderNo(fact.ChannelOrderNo).
 			SetPaidAt(now).
 			Save(txCtx)

@@ -111,7 +111,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	orderLifecycle := order.ProvideOrderLifecycle(orderUsecase)
 	portWallet := wallet.ProvidePortWallet(walletRepoImpl)
 	points := wallet.ProvidePortPoints(walletRepoImpl)
-	paymentRepoImpl := payment.NewPaymentRepoImpl(dataData, box, registry, orderLifecycle, portWallet, points, outboxWriter)
+	paymentRepoImpl := payment.NewPaymentRepoImpl(dataData, box, registry, orderLifecycle, portWallet, points, outboxWriter, repoImpl)
 	procureService := procurement.NewProcureService(procureRepo, gateway, productRepoImpl, cardCipher, deliveryRepoImpl, paymentRepoImpl, outboxWriter, enqueuer, logger)
 	adminProcurementService := procurement.NewAdminProcurementService(procureRepo, procureService)
 	supplierRepoImpl := supplier.NewSupplierRepoImpl(dataData, box)

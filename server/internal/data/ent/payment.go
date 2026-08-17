@@ -37,6 +37,12 @@ type Payment struct {
 	Amount int64 `json:"amount,omitempty"`
 	// 实收（分，回调核对；金额核对永远对基础货币）
 	ChargedAmount int64 `json:"charged_amount,omitempty"`
+	// 渠道币种 ISO 码（空=CNY 同币直收）
+	ChargedCurrency string `json:"charged_currency,omitempty"`
+	// 快照汇率（1 基础货币=rate 渠道币；0=未换算）
+	ExchangeRate float64 `json:"exchange_rate,omitempty"`
+	// 渠道币种应收最小单位（发适配器金额；回调精确核对）
+	ChargedUnits int64 `json:"charged_units,omitempty"`
 	// 手续费（分）
 	Fee int64 `json:"fee,omitempty"`
 	// Status holds the value of the "status" field.
@@ -80,9 +86,11 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case payment.FieldRaw:
 			values[i] = new([]byte)
-		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldFee:
+		case payment.FieldExchangeRate:
+			values[i] = new(sql.NullFloat64)
+		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldChargedUnits, payment.FieldFee:
 			values[i] = new(sql.NullInt64)
-		case payment.FieldChannel, payment.FieldChannelOrderNo, payment.FieldStatus, payment.FieldIdempotencyKey:
+		case payment.FieldChannel, payment.FieldChannelOrderNo, payment.FieldChargedCurrency, payment.FieldStatus, payment.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
 		case payment.FieldCreatedAt, payment.FieldUpdatedAt, payment.FieldPaidAt:
 			values[i] = new(sql.NullTime)
@@ -160,6 +168,24 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field charged_amount", values[i])
 			} else if value.Valid {
 				_m.ChargedAmount = value.Int64
+			}
+		case payment.FieldChargedCurrency:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field charged_currency", values[i])
+			} else if value.Valid {
+				_m.ChargedCurrency = value.String
+			}
+		case payment.FieldExchangeRate:
+			if value, ok := values[i].(*sql.NullFloat64); !ok {
+				return fmt.Errorf("unexpected type %T for field exchange_rate", values[i])
+			} else if value.Valid {
+				_m.ExchangeRate = value.Float64
+			}
+		case payment.FieldChargedUnits:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field charged_units", values[i])
+			} else if value.Valid {
+				_m.ChargedUnits = value.Int64
 			}
 		case payment.FieldFee:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -260,6 +286,15 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("charged_amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ChargedAmount))
+	builder.WriteString(", ")
+	builder.WriteString("charged_currency=")
+	builder.WriteString(_m.ChargedCurrency)
+	builder.WriteString(", ")
+	builder.WriteString("exchange_rate=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ExchangeRate))
+	builder.WriteString(", ")
+	builder.WriteString("charged_units=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChargedUnits))
 	builder.WriteString(", ")
 	builder.WriteString("fee=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Fee))

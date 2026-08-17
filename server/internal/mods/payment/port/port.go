@@ -14,13 +14,18 @@ import (
 // CreatePaymentRequest 创建支付请求。
 type CreatePaymentRequest struct {
 	OrderNo        string
-	Channel        string // 渠道码
-	Amount         money.Cents
+	Channel        string      // 渠道码
+	Amount         money.Cents // 应收（基础货币分；记账与核对权威值）
 	Subject        string
 	ReturnURL      string
 	NotifyBaseURL  string
 	IdempotencyKey string          // 写接口幂等（§7.3）
 	Config         json.RawMessage // 解密后的渠道凭据 JSON（每渠道独立，adapter 无状态）
+	// ── 币种快照（P2-09 T2：服务端按 currency 表换算后的渠道金额）──
+	// ChargedUnits==0 即同币直收（CNY）——适配器用 Amount（向后兼容 alipay/wechat/epay）；
+	// 非 0 时适配器以 ChargedUnits/ChargedCurrency 构造协议金额，回调亦以此口径核对。
+	ChargedUnits    int64
+	ChargedCurrency string // ISO 码（USD/EUR…；空=CNY）
 }
 
 // RedirectInfo 支付发起结果（收银台/二维码/参数包）。

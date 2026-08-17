@@ -270,6 +270,8 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建支付失败")
 	}
+	// 币种快照（P2-09 T2）：target_currency → currency 表换算 → 适配器收渠道金额
+	snap := s.repo.computeCharge(ctx, cfg, money.Cents(o.TotalAmount))
 	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
 		OrderNo:       o.OrderNo,
 		Channel:       ch.Code,
@@ -278,10 +280,12 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		ReturnURL:     "",
 		NotifyBaseURL: "/payments/callback/" + ch.Code,
 		Config:        cfg,
+		ChargedUnits:  snap.Units, ChargedCurrency: snap.Currency,
 	})
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "发起支付失败: "+err.Error())
 	}
+	s.repo.snapshotCharge(ctx, p.ID, snap)
 	return &storefrontv1.CreatePaymentReply{
 		PaymentId: p.ID, Type: info.Type, Payload: string(info.Payload),
 	}, nil

@@ -3,6 +3,8 @@ package schema
 // 所有权：mods/payment（M1；表结构 M0 落地）
 
 import (
+	"entgo.io/ent/dialect"
+
 	"encoding/json"
 
 	"entgo.io/ent"
@@ -59,6 +61,17 @@ func (Payment) Fields() []ent.Field {
 		field.String("channel_order_no").MaxLen(80).Optional().Comment("网关单号（回调时回填）"),
 		field.Int64("amount").Comment("应收（分，基础货币）"),
 		field.Int64("charged_amount").Default(0).Comment("实收（分，回调核对；金额核对永远对基础货币）"),
+		// ── 币种快照（P2-09 T2：跨境渠道下单瞬间固化，回调按快照核对零二次换算）──
+		// 同币直收（CNY）路径三列零写：charged_units=0 即走旧核对（fact.Amount==amount）
+		field.String("charged_currency").MaxLen(8).Optional().Comment("渠道币种 ISO 码（空=CNY 同币直收）"),
+		field.Float("exchange_rate").Default(0).
+			SchemaType(map[string]string{
+				dialect.MySQL:    "decimal(20,8)",
+				dialect.Postgres: "numeric(20,8)",
+				dialect.SQLite:   "real",
+			}).
+			Comment("快照汇率（1 基础货币=rate 渠道币；0=未换算）"),
+		field.Int64("charged_units").Default(0).Comment("渠道币种应收最小单位（发适配器金额；回调精确核对）"),
 		field.Int64("fee").Default(0).Comment("手续费（分）"),
 		field.Enum("status").Values("pending", "success", "failed").Default("pending"),
 		field.Time("paid_at").SchemaType(mysqlTime).Optional(),

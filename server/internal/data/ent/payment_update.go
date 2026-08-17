@@ -181,6 +181,68 @@ func (_u *PaymentUpdate) AddChargedAmount(v int64) *PaymentUpdate {
 	return _u
 }
 
+// SetChargedCurrency sets the "charged_currency" field.
+func (_u *PaymentUpdate) SetChargedCurrency(v string) *PaymentUpdate {
+	_u.mutation.SetChargedCurrency(v)
+	return _u
+}
+
+// SetNillableChargedCurrency sets the "charged_currency" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableChargedCurrency(v *string) *PaymentUpdate {
+	if v != nil {
+		_u.SetChargedCurrency(*v)
+	}
+	return _u
+}
+
+// ClearChargedCurrency clears the value of the "charged_currency" field.
+func (_u *PaymentUpdate) ClearChargedCurrency() *PaymentUpdate {
+	_u.mutation.ClearChargedCurrency()
+	return _u
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (_u *PaymentUpdate) SetExchangeRate(v float64) *PaymentUpdate {
+	_u.mutation.ResetExchangeRate()
+	_u.mutation.SetExchangeRate(v)
+	return _u
+}
+
+// SetNillableExchangeRate sets the "exchange_rate" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableExchangeRate(v *float64) *PaymentUpdate {
+	if v != nil {
+		_u.SetExchangeRate(*v)
+	}
+	return _u
+}
+
+// AddExchangeRate adds value to the "exchange_rate" field.
+func (_u *PaymentUpdate) AddExchangeRate(v float64) *PaymentUpdate {
+	_u.mutation.AddExchangeRate(v)
+	return _u
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (_u *PaymentUpdate) SetChargedUnits(v int64) *PaymentUpdate {
+	_u.mutation.ResetChargedUnits()
+	_u.mutation.SetChargedUnits(v)
+	return _u
+}
+
+// SetNillableChargedUnits sets the "charged_units" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableChargedUnits(v *int64) *PaymentUpdate {
+	if v != nil {
+		_u.SetChargedUnits(*v)
+	}
+	return _u
+}
+
+// AddChargedUnits adds value to the "charged_units" field.
+func (_u *PaymentUpdate) AddChargedUnits(v int64) *PaymentUpdate {
+	_u.mutation.AddChargedUnits(v)
+	return _u
+}
+
 // SetFee sets the "fee" field.
 func (_u *PaymentUpdate) SetFee(v int64) *PaymentUpdate {
 	_u.mutation.ResetFee()
@@ -338,6 +400,11 @@ func (_u *PaymentUpdate) check() error {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ChargedCurrency(); ok {
+		if err := payment.ChargedCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "charged_currency", err: fmt.Errorf(`ent: validator failed for field "Payment.charged_currency": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := payment.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Payment.status": %w`, err)}
@@ -401,6 +468,24 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedChargedAmount(); ok {
 		_spec.AddField(payment.FieldChargedAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ChargedCurrency(); ok {
+		_spec.SetField(payment.FieldChargedCurrency, field.TypeString, value)
+	}
+	if _u.mutation.ChargedCurrencyCleared() {
+		_spec.ClearField(payment.FieldChargedCurrency, field.TypeString)
+	}
+	if value, ok := _u.mutation.ExchangeRate(); ok {
+		_spec.SetField(payment.FieldExchangeRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedExchangeRate(); ok {
+		_spec.AddField(payment.FieldExchangeRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ChargedUnits(); ok {
+		_spec.SetField(payment.FieldChargedUnits, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedChargedUnits(); ok {
+		_spec.AddField(payment.FieldChargedUnits, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Fee(); ok {
 		_spec.SetField(payment.FieldFee, field.TypeInt64, value)
@@ -633,6 +718,68 @@ func (_u *PaymentUpdateOne) AddChargedAmount(v int64) *PaymentUpdateOne {
 	return _u
 }
 
+// SetChargedCurrency sets the "charged_currency" field.
+func (_u *PaymentUpdateOne) SetChargedCurrency(v string) *PaymentUpdateOne {
+	_u.mutation.SetChargedCurrency(v)
+	return _u
+}
+
+// SetNillableChargedCurrency sets the "charged_currency" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableChargedCurrency(v *string) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetChargedCurrency(*v)
+	}
+	return _u
+}
+
+// ClearChargedCurrency clears the value of the "charged_currency" field.
+func (_u *PaymentUpdateOne) ClearChargedCurrency() *PaymentUpdateOne {
+	_u.mutation.ClearChargedCurrency()
+	return _u
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (_u *PaymentUpdateOne) SetExchangeRate(v float64) *PaymentUpdateOne {
+	_u.mutation.ResetExchangeRate()
+	_u.mutation.SetExchangeRate(v)
+	return _u
+}
+
+// SetNillableExchangeRate sets the "exchange_rate" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableExchangeRate(v *float64) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetExchangeRate(*v)
+	}
+	return _u
+}
+
+// AddExchangeRate adds value to the "exchange_rate" field.
+func (_u *PaymentUpdateOne) AddExchangeRate(v float64) *PaymentUpdateOne {
+	_u.mutation.AddExchangeRate(v)
+	return _u
+}
+
+// SetChargedUnits sets the "charged_units" field.
+func (_u *PaymentUpdateOne) SetChargedUnits(v int64) *PaymentUpdateOne {
+	_u.mutation.ResetChargedUnits()
+	_u.mutation.SetChargedUnits(v)
+	return _u
+}
+
+// SetNillableChargedUnits sets the "charged_units" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableChargedUnits(v *int64) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetChargedUnits(*v)
+	}
+	return _u
+}
+
+// AddChargedUnits adds value to the "charged_units" field.
+func (_u *PaymentUpdateOne) AddChargedUnits(v int64) *PaymentUpdateOne {
+	_u.mutation.AddChargedUnits(v)
+	return _u
+}
+
 // SetFee sets the "fee" field.
 func (_u *PaymentUpdateOne) SetFee(v int64) *PaymentUpdateOne {
 	_u.mutation.ResetFee()
@@ -803,6 +950,11 @@ func (_u *PaymentUpdateOne) check() error {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ChargedCurrency(); ok {
+		if err := payment.ChargedCurrencyValidator(v); err != nil {
+			return &ValidationError{Name: "charged_currency", err: fmt.Errorf(`ent: validator failed for field "Payment.charged_currency": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := payment.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Payment.status": %w`, err)}
@@ -883,6 +1035,24 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.AddedChargedAmount(); ok {
 		_spec.AddField(payment.FieldChargedAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.ChargedCurrency(); ok {
+		_spec.SetField(payment.FieldChargedCurrency, field.TypeString, value)
+	}
+	if _u.mutation.ChargedCurrencyCleared() {
+		_spec.ClearField(payment.FieldChargedCurrency, field.TypeString)
+	}
+	if value, ok := _u.mutation.ExchangeRate(); ok {
+		_spec.SetField(payment.FieldExchangeRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.AddedExchangeRate(); ok {
+		_spec.AddField(payment.FieldExchangeRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ChargedUnits(); ok {
+		_spec.SetField(payment.FieldChargedUnits, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedChargedUnits(); ok {
+		_spec.AddField(payment.FieldChargedUnits, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Fee(); ok {
 		_spec.SetField(payment.FieldFee, field.TypeInt64, value)

@@ -113,9 +113,16 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	if c.APIURL == "" || c.PID == "" || c.SecretKey == "" {
 		return nil, fmt.Errorf("epusdt: api_url/pid/secret_key 必填")
 	}
+	// 币种快照（P2-09 T2）：跨币路径服务端已换算——ChargedUnits/ChargedCurrency
+	// 为权威金额；同币直收回落 cfg currency（默认 cny）
 	currency := c.Currency
 	if currency == "" {
 		currency = "cny"
+	}
+	chargeUnits := int64(req.Amount)
+	if req.ChargedUnits > 0 {
+		currency = strings.ToLower(req.ChargedCurrency)
+		chargeUnits = req.ChargedUnits
 	}
 	token := c.Token
 	if token == "" {
@@ -126,10 +133,11 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		network = "TRC20"
 	}
 	params := map[string]string{
-		"pid":          c.PID,
-		"order_id":     req.OrderNo,
-		"currency":     currency,
-		"amount":       centsToYuan(int64(req.Amount)), // 法币元两位小数（换算在网关侧）
+		"pid":      c.PID,
+		"order_id": req.OrderNo,
+		"currency": currency,
+		// GMPay cny/usd 均两位小数（最小单位=分/美分同构）；快照口径直接出口
+		"amount":       centsToYuan(chargeUnits),
 		"notify_url":   req.NotifyBaseURL,
 		"redirect_url": req.ReturnURL,
 		"name":         req.Subject,
