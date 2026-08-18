@@ -141,16 +141,31 @@ const batchColumns: DataTableColumns<any> = [
   {
     title: "状态",
     key: "status",
-    width: 80,
+    width: 90,
     render: (row) =>
       h(
         NTag,
         {
           type:
-            row.status === "done" ? "success" : row.status === "processing" ? "info" : "default",
+            row.status === "done"
+              ? "success"
+              : row.status === "processing"
+                ? "info"
+                : row.status === "failed"
+                  ? "error"
+                  : "default",
           size: "small",
         },
-        { default: () => row.status },
+        {
+          default: () =>
+            ({
+              pending: "待处理",
+              processing: "处理中",
+              done: "已完成",
+              failed: "失败",
+              canceled: "已撤销",
+            })[row.status] || row.status,
+        },
       ),
   },
   {

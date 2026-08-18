@@ -32,6 +32,12 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
       if (Authorization) {
         Object.assign(config.headers, { Authorization });
       }
+      // Kratos 要求 POST/PUT/PATCH 必须带 JSON body：axios 对无 data 请求会移除
+      // Content-Type → 后端 400 CODEC（unregister Content-Type）。统一补空对象。
+      const method = (config.method || "").toLowerCase();
+      if (["post", "put", "patch"].includes(method) && config.data == null) {
+        config.data = {};
+      }
       return config;
     },
     isBackendSuccess(response) {
