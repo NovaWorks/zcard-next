@@ -104,7 +104,7 @@ func newCallbackEnv(t *testing.T) (*data.Data, *PaymentRepoImpl, *wallet.WalletR
 	walletPort := wallet.ProvidePortWallet(walletRepo)
 	writer := &captureWriter{}
 	lifecycle := &fakeLifecycle{}
-	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer, nil)
+	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer, nil, nil)
 	return d, repo, walletRepo, writer, lifecycle
 }
 

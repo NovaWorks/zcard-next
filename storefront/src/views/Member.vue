@@ -112,14 +112,10 @@
       </div>
       <div class="field">
         <label>支付渠道</label>
-        <select v-model="rechargeChannel">
-          <option value="alipay">支付宝</option>
-          <option value="wechat">微信支付</option>
-          <option value="epay">易支付</option>
-        <option value="epusdt">USDT（TRC20）</option>
-        <option value="stripe">Stripe（Visa/万事达）</option>
-        <option value="paypal">PayPal</option>
+        <select v-model="rechargeChannel" :disabled="rechargeChannels.length === 0">
+          <option v-for="c in rechargeChannels" :key="c.code" :value="c.code">{{ c.name }}</option>
         </select>
+        <div v-if="rechargeChannels.length === 0" class="muted">暂无可用的支付渠道</div>
       </div>
       <div v-if="rechargeError" class="error" style="margin-bottom: 8px;">{{ rechargeError }}</div>
       <button class="btn" :disabled="recharging" @click="doRecharge">{{ recharging ? '创建中…' : '创建充值单' }}</button>
@@ -182,6 +178,7 @@ import { ref, onMounted } from 'vue';
 import {
   getBalance, getMyLevel, listMyOrders, cancelMyOrder, listTransactions,
   createRecharge, redeemGiftcard, changePassword, updateProfile, me,
+  fetchPaymentChannels, type ChannelItem,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
 import { api, formatMoney, formatSignedMoney, setToken, centsToYuan } from '@/api/client';
@@ -204,7 +201,8 @@ const txPageSize = 15;
 
 // 充值
 const rechargeYuan = ref<number | null>(null);
-const rechargeChannel = ref('alipay');
+const rechargeChannels = ref<ChannelItem[]>([]);
+const rechargeChannel = ref('');
 const recharging = ref(false);
 const rechargeError = ref('');
 const rechargeRedirect = ref('');
@@ -234,6 +232,7 @@ onMounted(async () => {
   if (tiers) {
     try { giftTiers.value = JSON.parse(tiers); } catch { /* 非法配置忽略 */ }
   }
+  loadRechargeChannels();
 });
 
 function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'security') {
@@ -272,6 +271,14 @@ async function cancel(orderNo: string) {
 
 function pickTier(tier: { amount: number }) {
   rechargeYuan.value = centsToYuan(tier.amount);
+}
+
+async function loadRechargeChannels() {
+  const { data, error } = await fetchPaymentChannels();
+  if (!error && data) {
+    rechargeChannels.value = data.channels || [];
+    rechargeChannel.value = rechargeChannels.value[0]?.code || '';
+  }
 }
 
 async function doRecharge() {

@@ -2373,6 +2373,19 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/payment/drivers:
+        get:
+            tags:
+                - AdminPaymentService
+            description: ListDrivers 驱动元数据（含配置字段 schema——admin 配置面动态表单渲染）。
+            operationId: AdminPaymentService_ListDrivers
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DriverList'
     /api/v1/admin/payments:
         get:
             tags:
@@ -4637,6 +4650,19 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/storefront/payment/channels:
+        get:
+            tags:
+                - StorePaymentService
+            description: ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+            operationId: StorePaymentService_ListChannels
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ChannelListReply'
     /api/v1/storefront/payments:
         post:
             tags:
@@ -5667,6 +5693,12 @@ components:
                 sort:
                     type: integer
                     format: int32
+                configuredFields:
+                    type: array
+                    items:
+                        type: string
+                callbackUrl:
+                    type: string
             description: Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
         zcard.api.admin.v1.ChannelList:
             type: object
@@ -5675,6 +5707,30 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Channel'
+        zcard.api.admin.v1.ConfigField:
+            type: object
+            properties:
+                key:
+                    type: string
+                label:
+                    type: string
+                type:
+                    type: string
+                required:
+                    type: boolean
+                placeholder:
+                    type: string
+                help:
+                    type: string
+                sensitive:
+                    type: boolean
+                options:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Option'
+                default:
+                    type: string
+            description: ConfigField 配置字段 schema（前端按 type 动态渲染表单）。
         zcard.api.admin.v1.ConfirmTOTPRequest:
             required:
                 - code
@@ -6401,6 +6457,30 @@ components:
             properties:
                 batchId:
                     type: string
+        zcard.api.admin.v1.Driver:
+            type: object
+            properties:
+                code:
+                    type: string
+                name:
+                    type: string
+                icon:
+                    type: string
+                description:
+                    type: string
+                fields:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ConfigField'
+            description: Driver 渠道驱动元数据（ListDrivers）。
+        zcard.api.admin.v1.DriverList:
+            type: object
+            properties:
+                drivers:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Driver'
+            description: DriverList 驱动元数据列表。
         zcard.api.admin.v1.EnableTOTPReply:
             type: object
             properties:
@@ -7435,6 +7515,13 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.admin.v1.Option:
+            type: object
+            properties:
+                label:
+                    type: string
+                value:
+                    type: string
         zcard.api.admin.v1.PayWithdrawalRequest:
             required:
                 - id
@@ -8421,6 +8508,8 @@ components:
                     type: string
                 fee:
                     type: string
+                feeType:
+                    type: string
                 enabled:
                     type: boolean
                 sort:
@@ -8957,6 +9046,23 @@ components:
                     type: string
                 newPassword:
                     type: string
+        zcard.api.storefront.v1.ChannelItem:
+            type: object
+            properties:
+                code:
+                    type: string
+                name:
+                    type: string
+                driver:
+                    type: string
+        zcard.api.storefront.v1.ChannelListReply:
+            type: object
+            properties:
+                channels:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.ChannelItem'
+            description: ChannelListReply 启用渠道列表。
         zcard.api.storefront.v1.CommissionItem:
             type: object
             properties:

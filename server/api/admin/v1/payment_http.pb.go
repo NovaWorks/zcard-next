@@ -24,6 +24,7 @@ const OperationAdminPaymentServiceCreateRefund = "/zcard.api.admin.v1.AdminPayme
 const OperationAdminPaymentServiceDeleteChannel = "/zcard.api.admin.v1.AdminPaymentService/DeleteChannel"
 const OperationAdminPaymentServiceGetPayment = "/zcard.api.admin.v1.AdminPaymentService/GetPayment"
 const OperationAdminPaymentServiceListChannels = "/zcard.api.admin.v1.AdminPaymentService/ListChannels"
+const OperationAdminPaymentServiceListDrivers = "/zcard.api.admin.v1.AdminPaymentService/ListDrivers"
 const OperationAdminPaymentServiceListPayments = "/zcard.api.admin.v1.AdminPaymentService/ListPayments"
 const OperationAdminPaymentServiceListRefunds = "/zcard.api.admin.v1.AdminPaymentService/ListRefunds"
 const OperationAdminPaymentServiceUpdateChannel = "/zcard.api.admin.v1.AdminPaymentService/UpdateChannel"
@@ -38,6 +39,8 @@ type AdminPaymentServiceHTTPServer interface {
 	GetPayment(context.Context, *GetPaymentRequest) (*Payment, error)
 	// ListChannels ── 渠道管理 ──
 	ListChannels(context.Context, *emptypb.Empty) (*ChannelList, error)
+	// ListDrivers ListDrivers 驱动元数据（含配置字段 schema——admin 配置面动态表单渲染）。
+	ListDrivers(context.Context, *emptypb.Empty) (*DriverList, error)
 	// ListPayments ── 支付单 ──
 	ListPayments(context.Context, *ListPaymentsRequest) (*ListPaymentsReply, error)
 	ListRefunds(context.Context, *ListRefundsRequest) (*ListRefundsReply, error)
@@ -47,6 +50,7 @@ type AdminPaymentServiceHTTPServer interface {
 func RegisterAdminPaymentServiceHTTPServer(s *http.Server, srv AdminPaymentServiceHTTPServer) {
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/admin/payment/channels", _AdminPaymentService_ListChannels0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/payment/drivers", _AdminPaymentService_ListDrivers0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/payment/channels", _AdminPaymentService_CreateChannel0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/payment/channels/{id}", _AdminPaymentService_UpdateChannel0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/payment/channels/{id}", _AdminPaymentService_DeleteChannel0_HTTP_Handler(srv))
@@ -72,6 +76,25 @@ func _AdminPaymentService_ListChannels0_HTTP_Handler(srv AdminPaymentServiceHTTP
 			return err
 		}
 		reply := out.(*ChannelList)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminPaymentService_ListDrivers0_HTTP_Handler(srv AdminPaymentServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminPaymentServiceListDrivers)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListDrivers(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*DriverList)
 		return ctx.Result(200, reply)
 	}
 }
@@ -250,6 +273,8 @@ type AdminPaymentServiceHTTPClient interface {
 	GetPayment(ctx context.Context, req *GetPaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
 	// ListChannels ── 渠道管理 ──
 	ListChannels(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ChannelList, err error)
+	// ListDrivers ListDrivers 驱动元数据（含配置字段 schema——admin 配置面动态表单渲染）。
+	ListDrivers(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *DriverList, err error)
 	// ListPayments ── 支付单 ──
 	ListPayments(ctx context.Context, req *ListPaymentsRequest, opts ...http.CallOption) (rsp *ListPaymentsReply, err error)
 	ListRefunds(ctx context.Context, req *ListRefundsRequest, opts ...http.CallOption) (rsp *ListRefundsReply, err error)
@@ -357,6 +382,23 @@ func (c *AdminPaymentServiceHTTPClientImpl) ListChannels(ctx context.Context, in
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminPaymentServiceListChannels),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListDrivers ListDrivers 驱动元数据（含配置字段 schema——admin 配置面动态表单渲染）。
+func (c *AdminPaymentServiceHTTPClientImpl) ListDrivers(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*DriverList, error) {
+	var out DriverList
+	pattern := "/api/v1/admin/payment/drivers"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminPaymentServiceListDrivers),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

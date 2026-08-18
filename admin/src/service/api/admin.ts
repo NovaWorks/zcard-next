@@ -145,3 +145,9 @@ export function updateSetting(group: string, key: string, valueJson: string) {
 export function fetchCurrencies() {
   return request({ url: "/api/v1/admin/currencies", method: "get" });
 }
+
+// ── 支付驱动元数据（P2-09 T5：配置面动态表单渲染）──
+
+export function fetchDrivers() {
+  return request({ url: "/api/v1/admin/payment/drivers" });
+}

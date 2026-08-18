@@ -114,6 +114,16 @@ export function createOrder(body: {
   return api.post<CreateOrderReply>('/orders', body);
 }
 
+export interface ChannelItem {
+  code: string;
+  name: string;
+  driver: string;
+}
+
+export function fetchPaymentChannels() {
+  return api.get<{ channels: ChannelItem[] }>('/payment/channels');
+}
+
 export function createPayment(order_no: string, channel: string) {
   return api.post<CreatePaymentReply>('/payments', { order_no, channel });
 }

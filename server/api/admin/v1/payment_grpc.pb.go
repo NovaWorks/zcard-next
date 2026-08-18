@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	AdminPaymentService_ListChannels_FullMethodName   = "/zcard.api.admin.v1.AdminPaymentService/ListChannels"
+	AdminPaymentService_ListDrivers_FullMethodName    = "/zcard.api.admin.v1.AdminPaymentService/ListDrivers"
 	AdminPaymentService_CreateChannel_FullMethodName  = "/zcard.api.admin.v1.AdminPaymentService/CreateChannel"
 	AdminPaymentService_UpdateChannel_FullMethodName  = "/zcard.api.admin.v1.AdminPaymentService/UpdateChannel"
 	AdminPaymentService_DeleteChannel_FullMethodName  = "/zcard.api.admin.v1.AdminPaymentService/DeleteChannel"
@@ -39,6 +40,8 @@ const (
 type AdminPaymentServiceClient interface {
 	// ── 渠道管理 ──
 	ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelList, error)
+	// ListDrivers 驱动元数据（含配置字段 schema——admin 配置面动态表单渲染）。
+	ListDrivers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DriverList, error)
 	CreateChannel(ctx context.Context, in *CreateChannelRequest, opts ...grpc.CallOption) (*Channel, error)
 	UpdateChannel(ctx context.Context, in *UpdateChannelRequest, opts ...grpc.CallOption) (*Channel, error)
 	DeleteChannel(ctx context.Context, in *DeleteChannelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -64,6 +67,16 @@ func (c *adminPaymentServiceClient) ListChannels(ctx context.Context, in *emptyp
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ChannelList)
 	err := c.cc.Invoke(ctx, AdminPaymentService_ListChannels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminPaymentServiceClient) ListDrivers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DriverList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DriverList)
+	err := c.cc.Invoke(ctx, AdminPaymentService_ListDrivers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +171,8 @@ func (c *adminPaymentServiceClient) ListRefunds(ctx context.Context, in *ListRef
 type AdminPaymentServiceServer interface {
 	// ── 渠道管理 ──
 	ListChannels(context.Context, *emptypb.Empty) (*ChannelList, error)
+	// ListDrivers 驱动元数据（含配置字段 schema——admin 配置面动态表单渲染）。
+	ListDrivers(context.Context, *emptypb.Empty) (*DriverList, error)
 	CreateChannel(context.Context, *CreateChannelRequest) (*Channel, error)
 	UpdateChannel(context.Context, *UpdateChannelRequest) (*Channel, error)
 	DeleteChannel(context.Context, *DeleteChannelRequest) (*emptypb.Empty, error)
@@ -181,6 +196,9 @@ type UnimplementedAdminPaymentServiceServer struct{}
 
 func (UnimplementedAdminPaymentServiceServer) ListChannels(context.Context, *emptypb.Empty) (*ChannelList, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListChannels not implemented")
+}
+func (UnimplementedAdminPaymentServiceServer) ListDrivers(context.Context, *emptypb.Empty) (*DriverList, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDrivers not implemented")
 }
 func (UnimplementedAdminPaymentServiceServer) CreateChannel(context.Context, *CreateChannelRequest) (*Channel, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateChannel not implemented")
@@ -241,6 +259,24 @@ func _AdminPaymentService_ListChannels_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminPaymentServiceServer).ListChannels(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminPaymentService_ListDrivers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminPaymentServiceServer).ListDrivers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminPaymentService_ListDrivers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminPaymentServiceServer).ListDrivers(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -399,6 +435,10 @@ var AdminPaymentService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListChannels",
 			Handler:    _AdminPaymentService_ListChannels_Handler,
+		},
+		{
+			MethodName: "ListDrivers",
+			Handler:    _AdminPaymentService_ListDrivers_Handler,
 		},
 		{
 			MethodName: "CreateChannel",

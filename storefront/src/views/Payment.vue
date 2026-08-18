@@ -3,18 +3,13 @@
     <h2 style="margin-bottom: 12px;">选择支付方式</h2>
     <div class="field">
       <label>支付渠道</label>
-      <select v-model="channel">
-        <option value="alipay">支付宝</option>
-        <option value="wechat">微信支付</option>
-        <option value="epay">易支付</option>
-        <option value="epusdt">USDT（TRC20）</option>
-        <option value="stripe">Stripe（Visa/万事达）</option>
-        <option value="paypal">PayPal</option>
-        <option value="wallet">余额支付</option>
+      <select v-model="channel" :disabled="channels.length === 0">
+        <option v-for="c in channels" :key="c.code" :value="c.code">{{ c.name }}</option>
       </select>
     </div>
+    <div v-if="channels.length === 0" class="muted" style="margin-bottom: 12px;">暂无可用的支付渠道</div>
     <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
-    <button class="btn" :disabled="submitting" @click="pay">{{ submitting ? '处理中…' : '去支付' }}</button>
+    <button class="btn" :disabled="submitting || channels.length === 0" @click="pay">{{ submitting ? '处理中…' : '去支付' }}</button>
 
     <div v-if="redirectUrl" style="margin-top: 16px;">
       <a class="btn" :href="redirectUrl" target="_blank">跳转到收银台</a>
@@ -38,13 +33,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { createPayment } from '@/api';
+import { createPayment, fetchPaymentChannels, type ChannelItem } from '@/api';
 
 const route = useRoute();
 const orderNo = String(route.params.orderNo || '');
-const channel = ref('alipay');
+const channels = ref<ChannelItem[]>([]);
+const channel = ref('');
 const submitting = ref(false);
 const error = ref('');
 const redirectUrl = ref('');
@@ -52,6 +48,13 @@ const qrcode = ref('');
 const paramsUrl = ref('');
 const paramsData = ref<Record<string, string>>({});
 const paid = ref(false);
+
+onMounted(async () => {
+  const { data, error: err } = await fetchPaymentChannels();
+  if (err) { error.value = err; return; }
+  channels.value = data?.channels || [];
+  channel.value = channels.value[0]?.code || '';
+});
 
 async function pay() {
   submitting.value = true;

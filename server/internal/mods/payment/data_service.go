@@ -52,35 +52,140 @@ func (s *AdminPaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 	}
 	reply := &adminv1.ChannelList{}
 	for _, ch := range rows {
-		reply.Channels = append(reply.Channels, ToChannelPB(ch))
+		reply.Channels = append(reply.Channels, s.channelPB(ctx, ch))
 	}
 	return reply, nil
 }
 
-// CreateChannel 创建渠道。
+// CreateChannel 创建渠道（P2-09 T5：驱动存在性 + 凭据即时校验——创建即反馈）。
 func (s *AdminPaymentService) CreateChannel(ctx context.Context, req *adminv1.CreateChannelRequest) (*adminv1.Channel, error) {
 	if req.GetName() == "" || req.GetCode() == "" || req.GetDriver() == "" {
 		return nil, errors.BadRequest("payment.INVALID_INPUT", "名称/编码/驱动必填")
 	}
+	if req.GetDriver() != "wallet" { // wallet 为内置驱动（service 层直接 markPaid）
+		provider, err := s.repo.reg.Provider(req.GetDriver())
+		if err != nil {
+			return nil, errors.BadRequest("payment.DRIVER_UNSUPPORTED", "渠道驱动未实现: "+req.GetDriver())
+		}
+		if err := provider.ValidateConfig(json.RawMessage(req.GetConfigJson())); err != nil {
+			return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", err.Error())
+		}
+	}
+	feeType := req.GetFeeType()
+	if feeType == "" {
+		feeType = string(paymentchannel.FeeTypeFixed) // ent enum 拒绝空值——默认固定费率
+	}
 	ch, err := s.repo.CreateChannel(ctx, req.GetName(), req.GetCode(), req.GetDriver(),
-		req.GetConfigJson(), req.GetFee(), req.GetFeeType(), req.GetEnabled(), req.GetSort())
+		req.GetConfigJson(), req.GetFee(), feeType, req.GetEnabled(), req.GetSort())
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建失败（code 可能重复）")
 	}
-	return ToChannelPB(ch), nil
+	return s.channelPB(ctx, ch), nil
 }
 
-// UpdateChannel 更新渠道。
+// ListDrivers 驱动元数据（P2-09 T5：admin 配置面动态表单渲染的数据源）。
+func (s *AdminPaymentService) ListDrivers(ctx context.Context, _ *emptypb.Empty) (*adminv1.DriverList, error) {
+	drivers := []*adminv1.Driver{{
+		Code: "wallet", Name: "余额支付", Icon: "wallet",
+		Description: "站内余额支付（无需外部凭据）",
+	}}
+	for _, p := range s.repo.reg.All() {
+		d := &adminv1.Driver{Code: p.Type()}
+		if m, ok := p.(port.MetaProvider); ok {
+			meta := m.Meta()
+			d.Name, d.Icon, d.Description = meta.Name, meta.Icon, meta.Description
+		} else {
+			d.Name = p.Type() // 未声明元数据的驱动回落驱动码
+		}
+		if f, ok := p.(port.FieldProvider); ok {
+			for _, cf := range f.ConfigFields() {
+				fd := &adminv1.ConfigField{
+					Key: cf.Key, Label: cf.Label, Type: cf.Type, Required: cf.Required,
+					Placeholder: cf.Placeholder, Help: cf.Help, Sensitive: cf.Sensitive, Default: cf.Default,
+				}
+				for _, o := range cf.Options {
+					fd.Options = append(fd.Options, &adminv1.Option{Label: o.Label, Value: o.Value})
+				}
+				d.Fields = append(d.Fields, fd)
+			}
+		} else {
+			// 未声明 schema 的驱动（自定义）——默认 JSON 文本框
+			d.Fields = append(d.Fields, &adminv1.ConfigField{
+				Key: "config", Label: "凭据 JSON", Type: "textarea", Required: true,
+				Help: "该驱动未声明字段模板，直接填写 JSON",
+			})
+		}
+		drivers = append(drivers, d)
+	}
+	return &adminv1.DriverList{Drivers: drivers}, nil
+}
+
+// channelPB 渠道协议对象（P2-09 T5）：
+// 补充已配置字段名 + 回调地址；凭据脱敏回显——敏感字段掩码 ****
+// （编辑体验：非敏感字段可回显，敏感字段留空不覆盖）。
+func (s *AdminPaymentService) channelPB(ctx context.Context, ch *ent.PaymentChannel) *adminv1.Channel {
+	pb := ToChannelPB(ch)
+	pb.ConfiguredFields = s.repo.ConfiguredFields(ch)
+	pb.CallbackUrl = s.repo.CallbackURL(ctx, ch.Code)
+	if ch.Driver != "wallet" {
+		if p, err := s.repo.reg.Provider(ch.Driver); err == nil {
+			if fp, ok := p.(port.FieldProvider); ok {
+				sensitive := map[string]bool{}
+				for _, f := range fp.ConfigFields() {
+					if f.Sensitive {
+						sensitive[f.Key] = true
+					}
+				}
+				var m map[string]json.RawMessage
+				if json.Unmarshal(s.repo.DecryptConfig(ch), &m) == nil {
+					for k := range m {
+						if sensitive[k] {
+							m[k] = json.RawMessage(`"****"`)
+						}
+					}
+					if b, err := json.Marshal(m); err == nil {
+						pb.ConfigJson = string(b)
+					}
+				}
+			}
+		}
+	}
+	return pb
+}
+
+// UpdateChannel 更新渠道（P2-09 T5：fee_type 更新 + 凭据变更即时校验；
+// config_json=**** 跳过凭据修改——敏感字段留空不覆盖）。
 func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.UpdateChannelRequest) (*adminv1.Channel, error) {
+	if ft := req.GetFeeType(); ft != "" && ft != string(paymentchannel.FeeTypePercent) && ft != string(paymentchannel.FeeTypeFixed) {
+		return nil, errors.BadRequest("payment.INVALID_INPUT", "fee_type 须为 percent/fixed")
+	}
+	if req.GetConfigJson() != "" && req.GetConfigJson() != `"****"` {
+		old, err := data.Client(ctx, s.data).PaymentChannel.Get(ctx, req.GetId())
+		if ent.IsNotFound(err) {
+			return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
+		}
+		if err != nil {
+			return nil, errors.InternalServer("payment.UPDATE_FAILED", "读取渠道失败")
+		}
+		if old.Driver != "wallet" {
+			provider, err := s.repo.reg.Provider(old.Driver)
+			if err != nil {
+				return nil, errors.BadRequest("payment.DRIVER_UNSUPPORTED", "渠道驱动未实现: "+old.Driver)
+			}
+			if err := provider.ValidateConfig(json.RawMessage(req.GetConfigJson())); err != nil {
+				return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", err.Error())
+			}
+		}
+	}
 	ch, err := s.repo.UpdateChannel(ctx, req.GetId(), req.GetName(), req.GetConfigJson(),
-		req.GetFee(), req.GetEnabled(), req.GetSort())
+		req.GetFee(), req.GetFeeType(), req.GetEnabled(), req.GetSort())
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
 	if err != nil {
 		return nil, errors.InternalServer("payment.UPDATE_FAILED", "更新失败")
 	}
-	return ToChannelPB(ch), nil
+	return s.channelPB(ctx, ch), nil
 }
 
 // DeleteChannel 删除渠道。
@@ -209,6 +314,22 @@ type StorePaymentService struct {
 // NewStorePaymentService 构造。
 func NewStorePaymentService(repo *PaymentRepoImpl, d *data.Data) *StorePaymentService {
 	return &StorePaymentService{repo: repo, data: d}
+}
+
+// ListChannels 启用渠道列表（P2-09 T5：渠道下拉数据源——替代前端硬编码枚举）。
+func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.ChannelListReply, error) {
+	rows, err := data.Client(ctx, s.data).PaymentChannel.Query().
+		Where(paymentchannel.Enabled(true)).
+		Order(ent.Asc(paymentchannel.FieldSort)).
+		All(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("payment.LIST_FAILED", "读取渠道失败")
+	}
+	reply := &storefrontv1.ChannelListReply{}
+	for _, ch := range rows {
+		reply.Channels = append(reply.Channels, &storefrontv1.ChannelItem{Code: ch.Code, Name: ch.Name, Driver: ch.Driver})
+	}
+	return reply, nil
 }
 
 // CreatePayment 创建支付。

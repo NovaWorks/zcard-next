@@ -1,62 +1,107 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, h } from "vue";
-import { NButton, NPopconfirm, NSwitch } from "naive-ui";
-import type { DataTableColumns } from "naive-ui";
-import { fetchChannels, createChannel, updateChannel, deleteChannel } from "@/service/api";
+// 支付渠道管理（P2-09 T5 重写）——大厂交互：
+// 卡片网格（品牌徽标/状态 Tag/已配置判定）+ 勾选式添加（批量接入 + 引导配置）
+// + schema 驱动配置弹窗（敏感字段留空不修改、回调地址一键复制、手续费区）。
+// 设计参照：1.x sysadmin 卡片式 + Filament 配置弹窗（回调地址展示先例）。
+import { ref, reactive, computed, onMounted, h } from "vue";
+import {
+  NButton,
+  NPopconfirm,
+  NSwitch,
+  NModal,
+  NForm,
+  NFormItem,
+  NInput,
+  NSelect,
+  NInputNumber,
+  NRadioGroup,
+  NRadio,
+  NAlert,
+  NEmpty,
+  NSpin,
+  NDivider,
+  NTag,
+  NCheckbox,
+  useMessage,
+} from "naive-ui";
+import { fetchChannels, fetchDrivers, createChannel, updateChannel, deleteChannel } from "@/service/api";
 
 defineOptions({ name: "PaymentChannelManagement" });
 
+const message = useMessage();
+
+interface ConfigFieldSchema {
+  key: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder: string;
+  help: string;
+  sensitive: boolean;
+  options: { label: string; value: string }[];
+  default: string;
+}
+interface DriverMeta {
+  code: string;
+  name: string;
+  icon: string;
+  description: string;
+  fields: ConfigFieldSchema[];
+}
+interface ChannelRow {
+  id: number;
+  name: string;
+  code: string;
+  driver: string;
+  config_json: string;
+  configured_fields: string[];
+  callback_url: string;
+  enabled: boolean;
+  fee: number;
+  fee_type: string;
+}
+
+// ── 品牌徽标（品牌色字母徽章；未知驱动回落通用卡标）──
+const driverBadges: Record<string, { char: string; bg: string; color?: string }> = {
+  alipay: { char: "支", bg: "linear-gradient(135deg,#1677ff,#0e5fd8)", color: "#fff" },
+  wechat: { char: "微", bg: "linear-gradient(135deg,#07c160,#06ad56)", color: "#fff" },
+  epay: { char: "易", bg: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "#fff" },
+  epusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
+  stripe: { char: "S", bg: "linear-gradient(135deg,#635bff,#5851ea)", color: "#fff" },
+  paypal: { char: "P", bg: "linear-gradient(135deg,#003087,#012169)", color: "#fff" },
+};
+const badgeOf = (code: string) =>
+  driverBadges[code] || { char: "💳", bg: "linear-gradient(135deg,#64748b,#475569)", color: "#fff" };
+
 const loading = ref(false);
 const saving = ref(false);
-const showCreate = ref(false);
-const channels = ref<any[]>([]);
+const channels = ref<ChannelRow[]>([]);
+const drivers = ref<DriverMeta[]>([]);
 
+// ── 添加渠道（勾选式批量接入）──
+const addVisible = ref(false);
+const driversLoading = ref(false);
+const adding = ref(false);
+const checkedDrivers = reactive<Record<string, boolean>>({});
+
+// ── 配置弹窗 ──
+const configVisible = ref(false);
+const current = ref<ChannelRow | null>(null);
+const currentFields = computed<ConfigFieldSchema[]>(() => {
+  if (!current.value) return [];
+  const d = drivers.value.find((x) => x.code === current.value?.driver);
+  return d?.fields || [];
+});
 const form = reactive({
   name: "",
-  code: "",
-  driver: "wallet",
-  config_json: "{}",
   enabled: true,
+  fee_type: "fixed",
+  fee: 0,
+  values: {} as Record<string, string>,
 });
 
-const driverOptions = [
-  { label: "余额支付", value: "wallet" },
-  { label: "支付宝", value: "alipay" },
-  { label: "微信支付", value: "wechat" },
-  { label: "易支付", value: "epay" },
-];
-
-const columns: DataTableColumns<any> = [
-  { title: "ID", key: "id", width: 50 },
-  { title: "名称", key: "name", width: 140 },
-  { title: "编码", key: "code", width: 100 },
-  { title: "驱动", key: "driver", width: 100 },
-  { title: "凭据", key: "config_json", width: 80, render: () => "****" },
-  {
-    title: "状态",
-    key: "enabled",
-    width: 80,
-    render: (row) =>
-      h(NSwitch, {
-        value: row.enabled,
-        onUpdateValue: (val: boolean) => handleToggle(row, val),
-      }),
-  },
-  {
-    title: "操作",
-    key: "actions",
-    width: 80,
-    render: (row) =>
-      h(
-        NPopconfirm,
-        { onPositiveClick: () => handleDelete(row.id) },
-        {
-          trigger: () => h(NButton, { size: "small", type: "error" }, { default: () => "删除" }),
-          default: () => "确定删除该渠道？",
-        },
-      ),
-  },
-];
+const driverOf = (code: string) => drivers.value.find((d) => d.code === code);
+const isConfigured = (ch: ChannelRow) => (ch.configured_fields || []).length > 0;
 
 async function loadList() {
   loading.value = true;
@@ -68,82 +113,355 @@ async function loadList() {
   }
 }
 
-async function handleCreate() {
-  if (!form.name || !form.code) return;
-  saving.value = true;
-  try {
-    const { error } = await createChannel(form);
-    if (!error) {
-      window.$message?.success("创建成功");
-      showCreate.value = false;
-      Object.assign(form, {
-        name: "",
-        code: "",
-        driver: "wallet",
-        config_json: "{}",
-        enabled: true,
-      });
-      loadList();
-    }
-  } finally {
-    saving.value = false;
-  }
+async function loadDrivers() {
+  const { data, error } = await fetchDrivers();
+  if (!error && data) drivers.value = (data as any).drivers || [];
 }
 
-async function handleToggle(row: any, val: boolean) {
+// ── 添加渠道：勾选驱动 → 批量创建 → 引导配置第一个 ──
+function openAddDialog() {
+  addVisible.value = true;
+  driversLoading.value = true;
+  checkedDrivers && Object.keys(checkedDrivers).forEach((k) => delete checkedDrivers[k]);
+  loadDrivers().finally(() => (driversLoading.value = false));
+}
+
+const addableDrivers = computed(() =>
+  drivers.value.filter((d) => !channels.value.some((c) => c.code === d.code)),
+);
+
+async function handleAdd() {
+  const picked = drivers.value.filter((d) => checkedDrivers[d.code]);
+  if (picked.length === 0) {
+    message.warning("请至少选择一个支付渠道");
+    return;
+  }
+  adding.value = true;
+  const created: ChannelRow[] = [];
+  for (const d of picked) {
+    const { data, error } = await createChannel({
+      name: d.name,
+      code: d.code,
+      driver: d.code,
+      config_json: "{}",
+      enabled: true,
+      fee: 0,
+      fee_type: "fixed",
+    });
+    if (!error && data) created.push(data);
+  }
+  adding.value = false;
+  if (created.length === 0) {
+    message.error("添加失败，请重试");
+    return;
+  }
+  addVisible.value = false;
+  message.success(`已添加 ${created.length} 个渠道`);
+  await loadList();
+  // 引导式：自动打开第一个新渠道的配置弹窗补凭据
+  openConfig(created[0]);
+}
+
+// ── 配置弹窗：schema 驱动表单 ──
+const feeLabel = computed(() => (form.fee_type === "percent" ? "比例（%）" : "固定金额（元）"));
+
+function openConfig(ch: ChannelRow) {
+  current.value = ch;
+  form.name = ch.name;
+  form.enabled = ch.enabled;
+  form.fee_type = ch.fee_type || "fixed";
+  // fee：fixed=分 → 元；percent=万分比 → 百分比
+  form.fee = ch.fee_type === "percent" ? ch.fee / 100 : ch.fee / 100;
+  form.values = {};
+  // 脱敏回显：非敏感字段显值；敏感字段 **** → 显示为空（留空=不修改）
+  let echo: Record<string, any> = {};
+  try {
+    echo = JSON.parse(ch.config_json || "{}");
+  } catch {
+    echo = {};
+  }
+  for (const f of currentFields.value) {
+    const v = echo[f.key];
+    if (typeof v === "string" && v !== "****" && v !== "") form.values[f.key] = v;
+  }
+  configVisible.value = true;
+}
+
+const configuredKeys = computed(() => new Set(current.value?.configured_fields || []));
+
+function handleConfigSave() {
+  if (!current.value) return;
+  // 必填校验：未配置过的必填字段必须填写
+  for (const f of currentFields.value) {
+    if (f.required && !configuredKeys.value.has(f.key) && !(form.values[f.key] || "").trim()) {
+      message.warning(`请填写「${f.label}」`);
+      return;
+    }
+  }
+  // 构造凭据：非空且非掩码的字段；敏感字段留空=不覆盖（后端 **** 语义）
+  const cfg: Record<string, string> = {};
+  for (const f of currentFields.value) {
+    const v = (form.values[f.key] || "").trim();
+    if (v && v !== "****") cfg[f.key] = v;
+  }
+  const payload: Record<string, any> = {
+    name: form.name.trim(),
+    enabled: form.enabled,
+    fee_type: form.fee_type,
+    fee: Math.round(form.fee * (form.fee_type === "percent" ? 100 : 100)),
+  };
+  if (Object.keys(cfg).length > 0) payload.config_json = JSON.stringify(cfg);
+  saving.value = true;
+  updateChannel(current.value.id, payload)
+    .then(({ error }) => {
+      if (!error) {
+        message.success("保存成功，立即生效");
+        configVisible.value = false;
+        loadList();
+      }
+    })
+    .finally(() => (saving.value = false));
+}
+
+// ── 启用/删除 ──
+async function handleToggle(row: ChannelRow, val: boolean) {
   const { error } = await updateChannel(row.id, { enabled: val });
   if (!error) {
     row.enabled = val;
-    window.$message?.success(val ? "已启用" : "已停用");
+    message.success(val ? "已启用" : "已停用");
   }
 }
 
-async function handleDelete(id: number) {
-  const { error } = await deleteChannel(id);
+async function handleDelete(row: ChannelRow) {
+  const { error } = await deleteChannel(row.id);
   if (!error) {
-    window.$message?.success("删除成功");
+    message.success("已删除");
     loadList();
   }
 }
 
-onMounted(loadList);
+async function copyText(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+    message.success("已复制");
+  } catch {
+    message.error("复制失败，请手动选择复制");
+  }
+}
+
+onMounted(() => {
+  loadList();
+  loadDrivers();
+});
 </script>
 
 <template>
   <div class="min-h-500px">
-    <NCard title="支付渠道">
-      <div class="mb-16px">
-        <NButton type="primary" @click="showCreate = true">新增渠道</NButton>
+    <!-- 页头：标题 + 说明 + 添加入口 -->
+    <div class="mb-16px flex items-center justify-between gap-16px">
+      <div>
+        <div class="text-16px font-600">支付渠道</div>
+        <div class="text-12px opacity-60 mt-4px">接入支付渠道并在下方完成凭据配置，保存后立即生效</div>
       </div>
-      <NDataTable :columns="columns" :data="channels" :loading="loading" />
-    </NCard>
+      <NButton type="primary" @click="openAddDialog">添加渠道</NButton>
+    </div>
 
-    <NModal v-model:show="showCreate" preset="dialog" title="新增支付渠道" style="width: 560px">
-      <NForm :model="form" label-placement="left" label-width="90">
-        <NFormItem label="名称" required>
-          <NInput v-model:value="form.name" placeholder="如：支付宝当面付" />
-        </NFormItem>
-        <NFormItem label="编码" required>
-          <NInput v-model:value="form.code" placeholder="如：alipay" />
-        </NFormItem>
-        <NFormItem label="驱动" required>
-          <NSelect v-model:value="form.driver" :options="driverOptions" />
-        </NFormItem>
-        <NFormItem label="凭据 JSON" required>
-          <NInput
-            v-model:value="form.config_json"
-            type="textarea"
-            :rows="5"
-            placeholder='{"app_id":"...","private_key":"..."}'
-          />
+    <!-- 渠道卡片网格 -->
+    <NSpin :show="loading">
+      <div v-if="channels.length === 0 && !loading">
+        <NEmpty description="尚未接入任何支付渠道" style="padding: 48px 0">
+          <template #extra>
+            <NButton type="primary" @click="openAddDialog">添加第一个支付渠道</NButton>
+          </template>
+        </NEmpty>
+      </div>
+      <div
+        class="grid gap-16px"
+        style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr))"
+      >
+        <div
+          v-for="ch in channels"
+          :key="ch.id"
+          class="rounded-12px border border-#e5e7eb dark:border-#333 p-20px flex flex-col gap-12px transition-shadow hover:shadow-md"
+        >
+          <!-- 头部：徽标 + 名称 + 状态 -->
+          <div class="flex items-start gap-12px">
+            <div
+              class="w-44px h-44px rounded-12px flex items-center justify-center text-20px font-700 shrink-0"
+              :style="{ background: badgeOf(ch.code).bg, color: badgeOf(ch.code).color }"
+            >
+              {{ badgeOf(ch.code).char }}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-600 truncate">{{ ch.name }}</div>
+              <div class="text-12px font-mono opacity-50 truncate">{{ ch.code }}</div>
+            </div>
+            <NSwitch size="small" :value="ch.enabled" @update:value="(v: boolean) => handleToggle(ch, v)" />
+          </div>
+
+          <!-- 状态 Tags：启用 + 已配置 -->
+          <div class="flex gap-8px">
+            <NTag size="small" :type="ch.enabled ? 'success' : 'default'" :bordered="false">
+              {{ ch.enabled ? "已启用" : "已停用" }}
+            </NTag>
+            <NTag size="small" :type="isConfigured(ch) ? 'success' : 'warning'" :bordered="false">
+              {{ isConfigured(ch) ? "已配置" : "待配置" }}
+            </NTag>
+            <NTag v-if="ch.fee > 0" size="small" type="info" :bordered="false">
+              {{ ch.fee_type === "percent" ? `费率 ${(ch.fee / 100).toFixed(2)}%` : `手续费 ${(ch.fee / 100).toFixed(2)} 元` }}
+            </NTag>
+          </div>
+
+          <!-- 驱动说明 -->
+          <div class="text-12px opacity-60 flex-1">{{ driverOf(ch.driver)?.description || ch.driver }}</div>
+
+          <!-- 操作 -->
+          <div class="flex items-center gap-8px pt-4px border-t border-#f1f5f9 dark:border-#333">
+            <NButton size="small" type="primary" secondary class="flex-1" @click="openConfig(ch)">
+              {{ isConfigured(ch) ? "配置" : "去配置" }}
+            </NButton>
+            <NPopconfirm :on-positive-click="() => handleDelete(ch)">
+              <template #trigger>
+                <NButton size="small" type="error" secondary>删除</NButton>
+              </template>
+              删除后该渠道将无法继续收款，确定删除？
+            </NPopconfirm>
+          </div>
+        </div>
+      </div>
+    </NSpin>
+
+    <!-- 添加渠道：勾选式批量接入 -->
+    <NModal v-model:show="addVisible" preset="card" title="添加支付渠道" style="width: 560px">
+      <div class="text-12px opacity-60 mb-12px">选择要接入的支付渠道（可多选），创建后自动进入凭据配置</div>
+      <NSpin :show="driversLoading">
+        <div class="flex flex-col gap-8px max-h-360px overflow-auto pr-4px">
+          <NCheckbox
+            v-for="d in addableDrivers"
+            :key="d.code"
+            v-model:checked="checkedDrivers[d.code]"
+            class="rounded-8px border border-#e5e7eb dark:border-#333 px-12px py-10px"
+            :class="{ 'opacity-40': !checkedDrivers[d.code] }"
+          >
+            <div class="flex items-center gap-10px">
+              <div
+                class="w-32px h-32px rounded-8px flex items-center justify-center text-14px font-700 shrink-0"
+                :style="{ background: badgeOf(d.code).bg, color: badgeOf(d.code).color }"
+              >
+                {{ badgeOf(d.code).char }}
+              </div>
+              <div class="min-w-0">
+                <div class="text-13px font-500">{{ d.name }}</div>
+                <div class="text-12px opacity-50 truncate">{{ d.description }}</div>
+              </div>
+            </div>
+          </NCheckbox>
+          <div v-if="addableDrivers.length === 0" class="text-center text-12px opacity-50 py-16px">
+            全部渠道均已接入
+          </div>
+        </div>
+      </NSpin>
+      <template #footer>
+        <div class="flex justify-end gap-8px">
+          <NButton @click="addVisible = false">取消</NButton>
+          <NButton type="primary" :loading="adding" :disabled="Object.values(checkedDrivers).filter(Boolean).length === 0" @click="handleAdd">
+            添加所选（{{ Object.values(checkedDrivers).filter(Boolean).length }}）
+          </NButton>
+        </div>
+      </template>
+    </NModal>
+
+    <!-- 配置弹窗：schema 驱动 -->
+    <NModal v-model:show="configVisible" preset="card" :title="`配置「${current?.name || ''}」`" style="width: 640px">
+      <div class="text-12px opacity-60 mb-16px">填写该支付通道所需的参数，保存后立即生效</div>
+
+      <NForm label-placement="left" label-width="110" class="config-form">
+        <NFormItem label="渠道名称">
+          <NInput v-model:value="form.name" placeholder="渠道显示名称" />
         </NFormItem>
         <NFormItem label="启用">
           <NSwitch v-model:value="form.enabled" />
         </NFormItem>
+
+        <!-- 手续费 -->
+        <NDivider title-placement="left" style="margin: 4px 0 16px">手续费</NDivider>
+        <NFormItem label="计费方式">
+          <NRadioGroup v-model:value="form.fee_type">
+            <NRadio value="fixed">固定金额</NRadio>
+            <NRadio value="percent">按比例</NRadio>
+          </NRadioGroup>
+        </NFormItem>
+        <NFormItem :label="feeLabel">
+          <NInputNumber
+            v-model:value="form.fee"
+            :min="0"
+            :max="form.fee_type === 'percent' ? 100 : 1000000"
+            :step="form.fee_type === 'percent' ? 0.1 : 0.01"
+            :precision="2"
+            style="width: 200px"
+          />
+          <span class="ml-8px text-12px opacity-50">{{ form.fee_type === "percent" ? "%" : "元" }}</span>
+        </NFormItem>
+
+        <!-- 渠道参数（schema 驱动） -->
+        <template v-if="currentFields.length > 0">
+          <NDivider title-placement="left" style="margin: 4px 0 16px">渠道参数</NDivider>
+          <NFormItem
+            v-for="f in currentFields"
+            :key="f.key"
+            :label="f.label"
+            :required="f.required && !configuredKeys.has(f.key)"
+          >
+            <template v-if="f.type === 'select'">
+              <NSelect
+                v-model:value="form.values[f.key]"
+                :options="f.options.map((o) => ({ label: o.label, value: o.value }))"
+                :placeholder="f.placeholder || '请选择'"
+                style="width: 100%"
+              />
+            </template>
+            <template v-else-if="f.type === 'textarea'">
+              <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="f.placeholder || ''" />
+            </template>
+            <template v-else-if="f.type === 'number'">
+              <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" />
+            </template>
+            <template v-else>
+              <NInput
+                v-model:value="form.values[f.key]"
+                :type="f.sensitive ? 'password' : 'text'"
+                show-password-on="click"
+                :placeholder="f.sensitive && configuredKeys.has(f.key) ? '留空表示不修改' : f.placeholder"
+              />
+            </template>
+            <div v-if="f.help" class="text-12px opacity-50 mt-4px">{{ f.help }}</div>
+            <div v-else-if="f.sensitive && configuredKeys.has(f.key)" class="text-12px opacity-50 mt-4px">
+              已配置，留空保持不变
+            </div>
+          </NFormItem>
+        </template>
+
+        <!-- 回调地址（配置到支付平台 webhook/notify） -->
+        <template v-if="current?.callback_url">
+          <NDivider title-placement="left" style="margin: 4px 0 16px">回调地址</NDivider>
+          <NAlert type="info" :show-icon="true" style="margin-bottom: 16px">
+            <template #title>异步通知回调地址</template>
+            <div class="text-12px opacity-70 mb-8px">将该地址配置到支付平台的 webhook / 异步通知，用于接收支付结果</div>
+            <div class="flex items-center gap-8px">
+              <code class="flex-1 text-12px break-all select-all bg-#f1f5f9 dark:bg-#333 rounded-6px px-8px py-6px">
+                {{ current.callback_url }}
+              </code>
+              <NButton size="small" secondary type="primary" @click="copyText(current.callback_url)">复制</NButton>
+            </div>
+          </NAlert>
+        </template>
       </NForm>
-      <template #action>
-        <NButton @click="showCreate = false">取消</NButton>
-        <NButton type="primary" :loading="saving" @click="handleCreate">创建</NButton>
+
+      <template #footer>
+        <div class="flex justify-end gap-8px">
+          <NButton @click="configVisible = false">取消</NButton>
+          <NButton type="primary" :loading="saving" @click="handleConfigSave">保存</NButton>
+        </div>
       </template>
     </NModal>
   </div>

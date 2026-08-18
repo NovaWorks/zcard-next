@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -41,11 +42,12 @@ type PaymentRepoImpl struct {
 	points    walletport.Points           // 充值赠送积分（积分账本；nil = 未装配跳过）
 	outbox    events.Writer               // recharge.succeeded 等事件
 	currency  settingsport.CurrencyReader // 币种快照换算（P2-09 T2；nil = 同币直收）
+	settings  settingsport.Provider       // site/url 等（P2-09 T5 回调地址拼接；nil = 相对路径）
 }
 
 // NewPaymentRepoImpl 构造。
-func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer, currency settingsport.CurrencyReader) *PaymentRepoImpl {
-	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency}
+func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer, currency settingsport.CurrencyReader, settings settingsport.Provider) *PaymentRepoImpl {
+	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency, settings: settings}
 }
 
 // ChargeSnapshot 币种快照换算（P2-09 T2）：
@@ -123,8 +125,8 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 		Save(ctx)
 }
 
-// UpdateChannel 更新渠道（config_json=**** 跳过凭据修改）。
-func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, enabled bool, sort int32) (*ent.PaymentChannel, error) {
+// UpdateChannel 更新渠道（config_json=**** 跳过凭据修改；feeType 空=不修改）。
+func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32) (*ent.PaymentChannel, error) {
 	q := data.Client(ctx, r.data).PaymentChannel.UpdateOneID(id)
 	if name != "" {
 		q.SetName(name)
@@ -142,6 +144,9 @@ func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, co
 	}
 	if fee >= 0 {
 		q.SetFee(fee)
+	}
+	if feeType != "" {
+		q.SetFeeType(paymentchannel.FeeType(feeType))
 	}
 	q.SetEnabled(enabled)
 	if sort >= 0 {
@@ -162,6 +167,46 @@ func (r *PaymentRepoImpl) DecryptConfig(ch *ent.PaymentChannel) json.RawMessage 
 		return json.RawMessage(`{}`)
 	}
 	return json.RawMessage(plain)
+}
+
+// CallbackURL 渠道回调地址（站点 URL 拼接；site/url 未配置回落相对路径——
+// P2-09 T5：admin 配置面板展示复制，填到支付平台 webhook/notify 配置）。
+func (r *PaymentRepoImpl) CallbackURL(ctx context.Context, code string) string {
+	base := ""
+	if r.settings != nil {
+		if raw, err := r.settings.Get(ctx, "site", "url"); err == nil && len(raw) > 2 {
+			var v string
+			if json.Unmarshal(raw, &v) == nil {
+				base = strings.TrimRight(v, "/")
+			}
+		}
+	}
+	return base + "/payments/callback/" + code
+}
+
+// ConfiguredFields 已配置字段名列表（解密后统计非空值——仅名不显值，脱敏；
+// admin 前端「已配置」状态判定 + 敏感字段编辑时留空不覆盖）。
+func (r *PaymentRepoImpl) ConfiguredFields(ch *ent.PaymentChannel) []string {
+	cfg := r.DecryptConfig(ch)
+	if len(cfg) == 0 || string(cfg) == "{}" {
+		return nil
+	}
+	var m map[string]json.RawMessage
+	if json.Unmarshal(cfg, &m) != nil {
+		return nil
+	}
+	out := make([]string, 0, len(m))
+	for k, v := range m {
+		var sv string
+		if json.Unmarshal(v, &sv) != nil {
+			continue // 非字符串值（结构体等）不参与判定
+		}
+		if strings.TrimSpace(sv) != "" {
+			out = append(out, k)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // ── 支付单（T4）────────────────────────────────────────────

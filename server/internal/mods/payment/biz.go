@@ -7,6 +7,7 @@ package payment
 
 import (
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/adapter"
@@ -42,6 +43,18 @@ func (r *Registry) Provider(provider string) (port.Provider, error) {
 		return nil, &ErrProviderUnknown{Provider: provider}
 	}
 	return p, nil
+}
+
+// All 全部已注册 adapter（P2-09 T5：admin 配置面驱动元数据遍历）。
+func (r *Registry) All() []port.Provider {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	out := make([]port.Provider, 0, len(r.providers))
+	for _, p := range r.providers {
+		out = append(out, p)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Type() < out[j].Type() })
+	return out
 }
 
 // NewRegistry 构造注册表并注册内置渠道 adapter（alipay/wechat/epay）。

@@ -87,6 +87,43 @@ type Acker interface {
 	SuccessAck() string
 }
 
+// ConfigField 渠道配置字段 schema（P2-09 T5：admin 配置面动态表单渲染）。
+type ConfigField struct {
+	Key         string
+	Label       string
+	Type        string // text | password | textarea | select | number | switch
+	Required    bool
+	Placeholder string
+	Help        string
+	Sensitive   bool // 敏感字段：编辑时留空=保持原值，不回显
+	Options     []ConfigOption
+	Default     string
+}
+
+// ConfigOption 下拉选项。
+type ConfigOption struct {
+	Label string
+	Value string
+}
+
+// FieldProvider 配置字段 schema 声明（可选能力位；未实现则默认单 JSON 文本框——
+// 向后兼容，保证自定义驱动可用）。
+type FieldProvider interface {
+	ConfigFields() []ConfigField
+}
+
+// DriverMeta 驱动元数据（admin 配置面展示）。
+type DriverMeta struct {
+	Name        string
+	Icon        string // 品牌图标标识（前端图标库映射）
+	Description string
+}
+
+// MetaProvider 驱动元数据声明（可选能力位；未实现则回落 Type() 名）。
+type MetaProvider interface {
+	Meta() DriverMeta
+}
+
 // Refunder 原路退款（2.0 新增能力位，退款编排三通道之一）。
 type Refunder interface {
 	Refund(ctx context.Context, gatewayOrderNo string, amount money.Cents, reason string, cfg json.RawMessage) error

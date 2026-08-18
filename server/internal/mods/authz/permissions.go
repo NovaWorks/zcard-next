@@ -142,6 +142,8 @@ func init() {
 		// ── 支付（payment，P1-04）─────────────────────
 		Perm{Code: "payment:read", Desc: "查看渠道", Domain: "payment",
 			Op: "zcard.api.admin.v1.AdminPaymentService/ListChannels", Method: "GET", Path: "/api/v1/admin/payment/channels"},
+		Perm{Code: "payment:read", Desc: "查看驱动元数据（配置面表单 schema）", Domain: "payment",
+			Op: "zcard.api.admin.v1.AdminPaymentService/ListDrivers", Method: "GET", Path: "/api/v1/admin/payment/drivers"},
 		Perm{Code: "payment:write", Desc: "创建渠道（超管）", Domain: "payment", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminPaymentService/CreateChannel", Method: "POST", Path: "/api/v1/admin/payment/channels"},
 		Perm{Code: "payment:write", Desc: "修改渠道（超管）", Domain: "payment", AdminOnly: true,

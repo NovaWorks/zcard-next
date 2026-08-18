@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	StorePaymentService_ListChannels_FullMethodName  = "/zcard.api.storefront.v1.StorePaymentService/ListChannels"
 	StorePaymentService_CreatePayment_FullMethodName = "/zcard.api.storefront.v1.StorePaymentService/CreatePayment"
 )
 
@@ -28,6 +30,8 @@ const (
 //
 // StorePaymentService 顾客支付（P1-04 T2）。
 type StorePaymentServiceClient interface {
+	// ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+	ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelListReply, error)
 	// CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(ctx context.Context, in *CreatePaymentRequest, opts ...grpc.CallOption) (*CreatePaymentReply, error)
 }
@@ -38,6 +42,16 @@ type storePaymentServiceClient struct {
 
 func NewStorePaymentServiceClient(cc grpc.ClientConnInterface) StorePaymentServiceClient {
 	return &storePaymentServiceClient{cc}
+}
+
+func (c *storePaymentServiceClient) ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelListReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ChannelListReply)
+	err := c.cc.Invoke(ctx, StorePaymentService_ListChannels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *storePaymentServiceClient) CreatePayment(ctx context.Context, in *CreatePaymentRequest, opts ...grpc.CallOption) (*CreatePaymentReply, error) {
@@ -56,6 +70,8 @@ func (c *storePaymentServiceClient) CreatePayment(ctx context.Context, in *Creat
 //
 // StorePaymentService 顾客支付（P1-04 T2）。
 type StorePaymentServiceServer interface {
+	// ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+	ListChannels(context.Context, *emptypb.Empty) (*ChannelListReply, error)
 	// CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(context.Context, *CreatePaymentRequest) (*CreatePaymentReply, error)
 	mustEmbedUnimplementedStorePaymentServiceServer()
@@ -68,6 +84,9 @@ type StorePaymentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStorePaymentServiceServer struct{}
 
+func (UnimplementedStorePaymentServiceServer) ListChannels(context.Context, *emptypb.Empty) (*ChannelListReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListChannels not implemented")
+}
 func (UnimplementedStorePaymentServiceServer) CreatePayment(context.Context, *CreatePaymentRequest) (*CreatePaymentReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePayment not implemented")
 }
@@ -90,6 +109,24 @@ func RegisterStorePaymentServiceServer(s grpc.ServiceRegistrar, srv StorePayment
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&StorePaymentService_ServiceDesc, srv)
+}
+
+func _StorePaymentService_ListChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorePaymentServiceServer).ListChannels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StorePaymentService_ListChannels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorePaymentServiceServer).ListChannels(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _StorePaymentService_CreatePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -117,6 +154,10 @@ var StorePaymentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.storefront.v1.StorePaymentService",
 	HandlerType: (*StorePaymentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListChannels",
+			Handler:    _StorePaymentService_ListChannels_Handler,
+		},
 		{
 			MethodName: "CreatePayment",
 			Handler:    _StorePaymentService_CreatePayment_Handler,
