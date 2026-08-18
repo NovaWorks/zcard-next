@@ -122,7 +122,7 @@ const columns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 220,
+    width: 300,
     render: (row) =>
       h(
         NSpace,
@@ -143,6 +143,13 @@ const columns: DataTableColumns<any> = [
                   { default: () => "编辑" },
                 )
               : null,
+            checkAuth("identity:admin_reset_pwd")
+              ? h(
+                  NButton,
+                  { size: "small", onClick: () => openResetPwd(row) },
+                  { default: () => "重置密码" },
+                )
+              : null,
             moreMenu(row),
           ],
         },
@@ -153,9 +160,6 @@ const columns: DataTableColumns<any> = [
 // 次要操作收敛为「更多」下拉（大厂表格惯例：主操作外露，次操作收进 ⋯）
 function moreMenu(row: any) {
   const options: DropdownOption[] = [];
-  if (checkAuth("identity:admin_reset_pwd")) {
-    options.push({ label: "重置密码", key: "reset-pwd" });
-  }
   if (row.totp_enabled && checkAuth("identity:admin_totp_reset")) {
     options.push({ label: "解绑 TOTP", key: "totp-reset" });
   }
@@ -176,9 +180,6 @@ function moreMenu(row: any) {
 
 function handleMore(key: string | number, row: any) {
   switch (key) {
-    case "reset-pwd":
-      openResetPwd(row);
-      break;
     case "totp-reset":
       handleResetTOTP(row);
       break;
