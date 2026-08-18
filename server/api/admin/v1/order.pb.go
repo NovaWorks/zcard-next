@@ -337,16 +337,25 @@ func (x *AdminOrder) GetStatusEvents() []*StatusEvent {
 }
 
 type AdminOrderItem struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ProductId         uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	SkuId             uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
-	Quantity          int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	UnitPriceCents    int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
-	AmountCents       int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	FulfillmentType   string                 `protobuf:"bytes,6,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
-	FulfillmentStatus string                 `protobuf:"bytes,7,opt,name=fulfillment_status,json=fulfillmentStatus,proto3" json:"fulfillment_status,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	ProductId           uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId               uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	Quantity            int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPriceCents      int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	AmountCents         int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	FulfillmentType     string                 `protobuf:"bytes,6,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
+	FulfillmentStatus   string                 `protobuf:"bytes,7,opt,name=fulfillment_status,json=fulfillmentStatus,proto3" json:"fulfillment_status,omitempty"`
+	Name                string                 `protobuf:"bytes,8,opt,name=name,proto3" json:"name,omitempty"`                                                             // 商品名（联查当前）
+	SkuName             string                 `protobuf:"bytes,9,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`                                        // SKU 名快照
+	CostCents           int64                  `protobuf:"varint,10,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`                                // 成本快照（分）
+	IsSelf              bool                   `protobuf:"varint,11,opt,name=is_self,json=isSelf,proto3" json:"is_self,omitempty"`                                         // 自营（upstream_source_id 为空）
+	UpstreamSourceId    uint64                 `protobuf:"varint,12,opt,name=upstream_source_id,json=upstreamSourceId,proto3" json:"upstream_source_id,omitempty"`         // 货源连接 ID
+	UpstreamSourceName  string                 `protobuf:"bytes,13,opt,name=upstream_source_name,json=upstreamSourceName,proto3" json:"upstream_source_name,omitempty"`    // 上游渠道名
+	UpstreamDriver      string                 `protobuf:"bytes,14,opt,name=upstream_driver,json=upstreamDriver,proto3" json:"upstream_driver,omitempty"`                  // 上游驱动（zcard/dujiao_next/acg_faka）
+	UpstreamProductCode string                 `protobuf:"bytes,15,opt,name=upstream_product_code,json=upstreamProductCode,proto3" json:"upstream_product_code,omitempty"` // 上游商品标识
+	UpstreamUrl         string                 `protobuf:"bytes,16,opt,name=upstream_url,json=upstreamUrl,proto3" json:"upstream_url,omitempty"`                           // 上游地址（base_url）
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *AdminOrderItem) Reset() {
@@ -424,6 +433,69 @@ func (x *AdminOrderItem) GetFulfillmentType() string {
 func (x *AdminOrderItem) GetFulfillmentStatus() string {
 	if x != nil {
 		return x.FulfillmentStatus
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetCostCents() int64 {
+	if x != nil {
+		return x.CostCents
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetIsSelf() bool {
+	if x != nil {
+		return x.IsSelf
+	}
+	return false
+}
+
+func (x *AdminOrderItem) GetUpstreamSourceId() uint64 {
+	if x != nil {
+		return x.UpstreamSourceId
+	}
+	return 0
+}
+
+func (x *AdminOrderItem) GetUpstreamSourceName() string {
+	if x != nil {
+		return x.UpstreamSourceName
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetUpstreamDriver() string {
+	if x != nil {
+		return x.UpstreamDriver
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetUpstreamProductCode() string {
+	if x != nil {
+		return x.UpstreamProductCode
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetUpstreamUrl() string {
+	if x != nil {
+		return x.UpstreamUrl
 	}
 	return ""
 }
@@ -676,7 +748,7 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"expired_at\x18\f \x01(\x03R\texpiredAt\x128\n" +
 	"\x05items\x18\r \x03(\v2\".zcard.api.admin.v1.AdminOrderItemR\x05items\x12A\n" +
 	"\famount_lines\x18\x0e \x03(\v2\x1e.zcard.api.admin.v1.AmountLineR\vamountLines\x12D\n" +
-	"\rstatus_events\x18\x0f \x03(\v2\x1f.zcard.api.admin.v1.StatusEventR\fstatusEvents\"\x89\x02\n" +
+	"\rstatus_events\x18\x0f \x03(\v2\x1f.zcard.api.admin.v1.StatusEventR\fstatusEvents\"\xd0\x04\n" +
 	"\x0eAdminOrderItem\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x15\n" +
@@ -685,7 +757,18 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\x12!\n" +
 	"\famount_cents\x18\x05 \x01(\x03R\vamountCents\x12)\n" +
 	"\x10fulfillment_type\x18\x06 \x01(\tR\x0ffulfillmentType\x12-\n" +
-	"\x12fulfillment_status\x18\a \x01(\tR\x11fulfillmentStatus\"\x93\x01\n" +
+	"\x12fulfillment_status\x18\a \x01(\tR\x11fulfillmentStatus\x12\x12\n" +
+	"\x04name\x18\b \x01(\tR\x04name\x12\x19\n" +
+	"\bsku_name\x18\t \x01(\tR\askuName\x12\x1d\n" +
+	"\n" +
+	"cost_cents\x18\n" +
+	" \x01(\x03R\tcostCents\x12\x17\n" +
+	"\ais_self\x18\v \x01(\bR\x06isSelf\x12,\n" +
+	"\x12upstream_source_id\x18\f \x01(\x04R\x10upstreamSourceId\x120\n" +
+	"\x14upstream_source_name\x18\r \x01(\tR\x12upstreamSourceName\x12'\n" +
+	"\x0fupstream_driver\x18\x0e \x01(\tR\x0eupstreamDriver\x122\n" +
+	"\x15upstream_product_code\x18\x0f \x01(\tR\x13upstreamProductCode\x12!\n" +
+	"\fupstream_url\x18\x10 \x01(\tR\vupstreamUrl\"\x93\x01\n" +
 	"\n" +
 	"AmountLine\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12!\n" +

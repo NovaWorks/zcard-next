@@ -12,6 +12,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
@@ -181,7 +183,7 @@ func (s *AdminOrderService) ListOrders(ctx context.Context, req *adminv1.ListOrd
 	}
 	reply := &adminv1.ListOrdersReply{}
 	for _, o := range rows {
-		reply.Orders = append(reply.Orders, toAdminOrderPB(o, nil, nil, nil))
+		reply.Orders = append(reply.Orders, toAdminOrderPB(o, nil, nil, nil, nil, nil))
 	}
 	if len(rows) == int(limit) {
 		reply.NextCursor = rows[len(rows)-1].ID
@@ -203,8 +205,43 @@ func (s *AdminOrderService) GetOrder(ctx context.Context, req *adminv1.GetAdminO
 	lines, _ := client.OrderAmountLine.Query().Where(orderamountline.OrderID(o.ID)).
 		Order(ent.Asc(orderamountline.FieldSeq)).All(ctx)
 	events, _ := client.OrderStatusEvent.Query().Where(orderstatusevent.OrderID(o.ID)).
-		Order(ent.Asc(orderstatusevent.FieldCreatedAt)).All(ctx)
-	return toAdminOrderPB(o, items, lines, events), nil
+		Order(ent.Asc(orderstatusevent.FieldCreatedAt), ent.Asc(orderstatusevent.FieldID)).All(ctx)
+	// 商品/上游联查（P2-09 T5 修复：订单详情展示自营/上游渠道/链接/成本——老项目同款信息区）
+	products, connections := s.loadItemUpstream(ctx, items)
+	return toAdminOrderPB(o, items, lines, events, products, connections), nil
+}
+
+// loadItemUpstream 批量联查订单项的商品与上游货源连接（软外键——无 ent edge）。
+func (s *AdminOrderService) loadItemUpstream(ctx context.Context, items []*ent.OrderItem) (map[uint64]*ent.Product, map[uint64]*ent.SupplyConnection) {
+	products := map[uint64]*ent.Product{}
+	connIDs := map[uint64]bool{}
+	if len(items) > 0 {
+		ids := make([]uint64, 0, len(items))
+		for _, it := range items {
+			ids = append(ids, it.ProductID)
+		}
+		rows, _ := data.Client(ctx, s.data).Product.Query().
+			Where(product.IDIn(ids...)).All(ctx)
+		for _, pr := range rows {
+			products[pr.ID] = pr
+			if pr.UpstreamSourceID != 0 {
+				connIDs[pr.UpstreamSourceID] = true
+			}
+		}
+	}
+	connections := map[uint64]*ent.SupplyConnection{}
+	if len(connIDs) > 0 {
+		ids := make([]uint64, 0, len(connIDs))
+		for id := range connIDs {
+			ids = append(ids, id)
+		}
+		rows, _ := data.Client(ctx, s.data).SupplyConnection.Query().
+			Where(supplyconnection.IDIn(ids...)).All(ctx)
+		for _, conn := range rows {
+			connections[conn.ID] = conn
+		}
+	}
+	return products, connections
 }
 
 // CancelOrder 取消。
@@ -217,7 +254,8 @@ func (s *AdminOrderService) CancelOrder(ctx context.Context, req *adminv1.Cancel
 
 // ── 映射 ──
 
-func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmountLine, events []*ent.OrderStatusEvent) *adminv1.AdminOrder {
+func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmountLine, events []*ent.OrderStatusEvent,
+	products map[uint64]*ent.Product, connections map[uint64]*ent.SupplyConnection) *adminv1.AdminOrder {
 	out := &adminv1.AdminOrder{
 		Id: o.ID, OrderNo: o.OrderNo, Status: string(o.Status),
 		TotalCents: o.TotalAmount, CostCents: o.Cost,
@@ -232,11 +270,27 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 		out.ExpiredAt = o.ExpiredAt.Unix()
 	}
 	for _, it := range items {
-		out.Items = append(out.Items, &adminv1.AdminOrderItem{
+		pb := &adminv1.AdminOrderItem{
 			ProductId: it.ProductID, SkuId: it.SkuID, Quantity: it.Quantity,
 			UnitPriceCents: it.UnitPrice, AmountCents: it.Amount,
 			FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus,
-		})
+			SkuName: it.SkuName, CostCents: it.Cost,
+		}
+		// 自营/上游信息（商品快照缺失时回落商品当前态——订单详情以商品为准）
+		if pr := products[it.ProductID]; pr != nil {
+			pb.Name = pr.Name
+			pb.IsSelf = pr.UpstreamSourceID == 0 // 0=自营
+			if pr.UpstreamSourceID != 0 {
+				pb.UpstreamSourceId = pr.UpstreamSourceID
+				pb.UpstreamProductCode = pr.UpstreamProductCode
+				if conn := connections[pr.UpstreamSourceID]; conn != nil {
+					pb.UpstreamSourceName = conn.Name
+					pb.UpstreamDriver = conn.Driver
+					pb.UpstreamUrl = conn.BaseURL
+				}
+			}
+		}
+		out.Items = append(out.Items, pb)
 	}
 	for _, l := range lines {
 		out.AmountLines = append(out.AmountLines, &adminv1.AmountLine{

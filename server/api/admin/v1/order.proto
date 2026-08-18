@@ -69,6 +69,15 @@ message AdminOrderItem {
   int64 amount_cents = 5;
   string fulfillment_type = 6;
   string fulfillment_status = 7;
+  string name = 8;                   // 商品名（联查当前）
+  string sku_name = 9;               // SKU 名快照
+  int64 cost_cents = 10;             // 成本快照（分）
+  bool is_self = 11;                 // 自营（upstream_source_id 为空）
+  uint64 upstream_source_id = 12;    // 货源连接 ID
+  string upstream_source_name = 13;  // 上游渠道名
+  string upstream_driver = 14;       // 上游驱动（zcard/dujiao_next/acg_faka）
+  string upstream_product_code = 15; // 上游商品标识
+  string upstream_url = 16;          // 上游地址（base_url）
 }
 
 message AmountLine {
