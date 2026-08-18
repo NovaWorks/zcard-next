@@ -26,7 +26,11 @@ const allCodes = computed<string[]>(() =>
 );
 const groupKeys = computed<string[]>(() => props.permTree.map((g: any) => g.key as string));
 const isWildcard = computed(() => (props.role?.permissions || []).includes("*"));
-const allChecked = computed(() => checked.value.length === allCodes.value.length);
+// cascade 勾选时 naive-ui 会把父级分组键一并写入 checked-keys——
+// 保存与计数必须过滤出叶子权限码，否则分组键会作为权限点落库
+const allCodeSet = computed<Set<string>>(() => new Set(allCodes.value));
+const leafChecked = computed<string[]>(() => checked.value.filter((c) => allCodeSet.value.has(c)));
+const allChecked = computed(() => leafChecked.value.length === allCodes.value.length);
 
 watch(
   () => props.show,
@@ -45,7 +49,7 @@ function selectAll() {
 }
 
 function invertSelection() {
-  checked.value = allCodes.value.filter((c) => !checked.value.includes(c));
+  checked.value = allCodes.value.filter((c) => !leafChecked.value.includes(c));
 }
 
 function expandAll() {
@@ -58,13 +62,13 @@ function collapseAll() {
 
 async function handleSave() {
   if (!props.role) return;
-  if (!checked.value.length) {
+  if (!leafChecked.value.length) {
     window.$message?.error("至少保留一项权限——清空将导致该角色（含你自己）失去后台访问能力");
     return;
   }
   saving.value = true;
   try {
-    const { error } = await updateRolePermissions(props.role.id, checked.value);
+    const { error } = await updateRolePermissions(props.role.id, leafChecked.value);
     if (!error) {
       window.$message?.success("权限已更新（对该角色在线员工实时生效，菜单重新登录后刷新）");
       emit("saved");
@@ -101,7 +105,7 @@ async function handleSave() {
           <NButton size="tiny" secondary @click="invertSelection">反选</NButton>
         </NSpace>
         <span class="text-12px text-gray-400">
-          已选 {{ checked.length }}/{{ allCodes.length }}
+          已选 {{ leafChecked.length }}/{{ allCodes.length }}
         </span>
         <NSpace size="small" class="ml-auto">
           <NButton size="tiny" quaternary @click="expandAll">展开全部</NButton>
@@ -131,7 +135,7 @@ async function handleSave() {
             :loading="saving"
             @click="handleSave"
           >
-            保存{{ allChecked ? "" : `（${checked.length} 项）` }}
+            保存{{ allChecked ? "" : `（${leafChecked.length} 项）` }}
           </NButton>
         </div>
       </template>
