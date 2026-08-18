@@ -118,6 +118,7 @@
           <option value="epay">易支付</option>
         <option value="epusdt">USDT（TRC20）</option>
         <option value="stripe">Stripe（Visa/万事达）</option>
+        <option value="paypal">PayPal</option>
         </select>
       </div>
       <div v-if="rechargeError" class="error" style="margin-bottom: 8px;">{{ rechargeError }}</div>

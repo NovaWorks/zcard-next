@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -294,10 +295,13 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 
 // ── 回调路由（免鉴权——架构测试规则 9）────────────────────
 
-// RegisterPaymentCallback 支付回调入口（POST /payments/callback/{channel_code}）。
-// 不挂 JWT；验签由各渠道适配器完成。ACK 语义：验签失败 401，状态冲突 200，系统错误 500 触发重试。
+// RegisterPaymentCallback 支付回调入口（POST /payments/callback/{channel_code}）
+// + PayPal return 同步捕获（GET /payments/return/{channel}?token=<order_id>）。
+// 均不挂 JWT；验签由各渠道适配器完成。ACK 语义：验签失败 401，状态冲突 200，
+// 系统错误 500 触发重试。
 func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.Data) {
-	srv.Route("/payments").POST("/callback/{channel}", func(ctx khttp.Context) error {
+	payments := srv.Route("/payments")
+	payments.POST("/callback/{channel}", func(ctx khttp.Context) error {
 		channelCode := ctx.Vars().Get("channel")
 		r := ctx.Request()
 
@@ -363,27 +367,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		}
 
 		// 6) 定位支付单（订单号定位；充值单 RCH<id> 前缀走 recharge 关联）
-		var paymentID uint64
-		if f.OrderNo != "" {
-			if rid, ok := strings.CutPrefix(f.OrderNo, "RCH"); ok {
-				if id, err := strconv.ParseUint(rid, 10, 64); err == nil {
-					p, err := data.Client(ctx, d).Payment.Query().
-						Where(payment.RechargeOrderID(id), payment.Channel(channelCode)).Only(ctx)
-					if err == nil {
-						paymentID = p.ID
-					}
-				}
-			} else {
-				o, err := data.Client(ctx, d).Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
-				if err == nil {
-					p, err := data.Client(ctx, d).Payment.Query().
-						Where(payment.OrderID(o.ID), payment.Channel(channelCode)).Only(ctx)
-					if err == nil {
-						paymentID = p.ID
-					}
-				}
-			}
-		}
+		paymentID := locatePaymentByFact(ctx, d, channelCode, f)
 		if paymentID == 0 {
 			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment not found"})
 		}
@@ -408,6 +392,90 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		}
 		return ctx.JSON(http.StatusOK, map[string]string{"status": "ok"})
 	})
+	// PayPal return 同步捕获（P2-09 T4）：买家在 PayPal 授权后跳回
+	// return_url（PayPal 追加 token=<order_id>，1.x 生产依赖）——
+	// 先查后捕（Capturer），成功后走回调管线 markPaid，302 回店铺页。
+	payments.GET("/return/{channel}", func(ctx khttp.Context) error {
+		channelCode := ctx.Vars().Get("channel")
+		token := strings.TrimSpace(ctx.Request().URL.Query().Get("token"))
+		// 单号白名单（匿名端点出站放大器——1.x M-11）
+		if !paypalOrderIDTokenRe.MatchString(token) {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid token"})
+		}
+		ch, err := data.Client(ctx, d).PaymentChannel.Query().
+			Where(paymentchannel.Code(channelCode), paymentchannel.Enabled(true)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "channel not found"})
+		}
+		if err != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		provider, err := repo.reg.Provider(ch.Driver)
+		if err != nil {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "unsupported driver"})
+		}
+		capturer, ok := provider.(port.Capturer)
+		if !ok {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "driver has no capturer"})
+		}
+		f, err := capturer.QueryPayment(ctx, token, repo.DecryptConfig(ch))
+		if err != nil {
+			return ctx.JSON(http.StatusBadGateway, map[string]string{"error": "capture failed"})
+		}
+		// 未支付/处理中：302 回支付页（可重试或换渠道）
+		fallback := "/payment/" + f.OrderNo
+		if strings.HasPrefix(f.OrderNo, "RCH") {
+			fallback = "/member"
+		}
+		if !f.Success {
+			return ctx.JSON(http.StatusFound, khttp.NewRedirect(fallback, http.StatusFound))
+		}
+		paymentID := locatePaymentByFact(ctx, d, channelCode, f)
+		if paymentID == 0 {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment not found"})
+		}
+		if err := repo.HandleCallback(ctx, paymentID, CallbackFact{
+			Channel:        channelCode,
+			ChannelOrderNo: f.ChannelOrderNo,
+			OrderNo:        f.OrderNo,
+			Amount:         int64(f.Amount),
+			Currency:       f.Currency,
+			Success:        f.Success,
+			Raw:            f.Raw,
+		}); err != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return ctx.JSON(http.StatusFound, khttp.NewRedirect(fallback, http.StatusFound))
+	})
+}
+
+// locatePaymentByFact 按回调事实定位支付单（订单号定位；充值单 RCH<id> 前缀走
+// recharge 关联）。回调路由与 PayPal return 捕获端点共用。
+func locatePaymentByFact(ctx context.Context, d *data.Data, channelCode string, f *port.CallbackFact) uint64 {
+	if f == nil || f.OrderNo == "" {
+		return 0
+	}
+	client := data.Client(ctx, d)
+	if rid, ok := strings.CutPrefix(f.OrderNo, "RCH"); ok {
+		if id, err := strconv.ParseUint(rid, 10, 64); err == nil {
+			p, err := client.Payment.Query().
+				Where(payment.RechargeOrderID(id), payment.Channel(channelCode)).Only(ctx)
+			if err == nil {
+				return p.ID
+			}
+		}
+		return 0
+	}
+	o, err := client.Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
+	if err != nil {
+		return 0
+	}
+	p, err := client.Payment.Query().
+		Where(payment.OrderID(o.ID), payment.Channel(channelCode)).Only(ctx)
+	if err != nil {
+		return 0
+	}
+	return p.ID
 }
 
 // parseCallbackForm 解析回调为扁平 map：XML（wechat）→ 元素名→文本；否则表单/查询串。
@@ -454,8 +522,12 @@ func isWebhookRequest(r *http.Request, driver string) bool {
 	if strings.Contains(r.Header.Get("Content-Type"), "json") {
 		return true
 	}
-	return r.Header.Get("Stripe-Signature") != "" || r.Header.Get("stripe-signature") != ""
+	return r.Header.Get("Stripe-Signature") != "" ||
+		r.Header.Get("Paypal-Transmission-Id") != ""
 }
+
+// paypalOrderIDTokenRe PayPal return 捕获 token 白名单（匿名端点出站放大器——1.x M-11）。
+var paypalOrderIDTokenRe = regexp.MustCompile(`^[A-Z0-9]{5,30}$`)
 
 // parseXMLMap 扁平 XML（wechat 回调 <xml><k>v</k>...</xml>）→ map。
 func parseXMLMap(body []byte) (map[string]string, error) {

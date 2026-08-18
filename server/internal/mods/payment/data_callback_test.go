@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -495,5 +496,29 @@ func TestCallbackLegacyCNYPath(t *testing.T) {
 	}
 	if len(lifecycle.markPaidCalls) != 1 {
 		t.Fatal("旧路径成功应 MarkPaid")
+	}
+}
+
+// TestIsWebhookRequest webhook 分支判定（P2-09 T4：paypal 五头进入 Webhooker 分支）。
+func TestIsWebhookRequest(t *testing.T) {
+	cases := []struct {
+		name   string
+		header map[string]string
+		want   bool
+	}{
+		{"stripe 签名头", map[string]string{"Stripe-Signature": "t=1,v1=x"}, true},
+		{"paypal 传输头", map[string]string{"Paypal-Transmission-Id": "t1"}, true},
+		{"JSON 内容类型", map[string]string{"Content-Type": "application/json"}, true},
+		{"表单回调", map[string]string{"Content-Type": "application/x-www-form-urlencoded"}, false},
+		{"无头", map[string]string{}, false},
+	}
+	for _, c := range cases {
+		req := httptest.NewRequest(http.MethodPost, "/payments/callback/x", nil)
+		for k, v := range c.header {
+			req.Header.Set(k, v)
+		}
+		if got := isWebhookRequest(req, "paypal"); got != c.want {
+			t.Fatalf("%s: isWebhookRequest = %v, want %v", c.name, got, c.want)
+		}
 	}
 }
