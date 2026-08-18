@@ -24,10 +24,16 @@ export function getCurrency(): CurrencyMeta {
   return { ...current };
 }
 
+// safeCents 金额归一化：proto3 零值字段不输出 → undefined 传入时兜底 0（杜绝 NaN）。
+function safeCents(cents: number): number {
+  return Number.isFinite(cents) ? cents : 0;
+}
+
 // fenToYuan 分 → 元字符串（不含符号；纯整数运算，禁止浮点参与）。
 export function fenToYuan(cents: number): string {
-  const neg = cents < 0;
-  const v = Math.abs(cents);
+  const n = safeCents(cents);
+  const neg = n < 0;
+  const v = Math.abs(n);
   const base = 10 ** current.precision;
   const whole = Math.floor(v / base);
   const frac = v % base;
@@ -39,12 +45,12 @@ export function fenToYuan(cents: number): string {
 
 // yuanToFen 元 → 分（提交入口；Math.round 防浮点漂移，如 12.34*100=1233.9999...）。
 export function yuanToFen(yuan: number): number {
-  return Math.round(yuan * 10 ** current.precision);
+  return Math.round(safeCents(yuan) * 10 ** current.precision);
 }
 
 // centsToYuan 分 → 元数值（输入框回填/图表数据用；界面展示一律走 formatMoney）。
 export function centsToYuan(cents: number): number {
-  return cents / 10 ** current.precision;
+  return safeCents(cents) / 10 ** current.precision;
 }
 
 // formatMoney 带符号格式化（显示唯一入口；符号位置感知）。

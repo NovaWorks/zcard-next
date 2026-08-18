@@ -96,8 +96,16 @@ type ConfigField struct {
 	Placeholder string
 	Help        string
 	Sensitive   bool // 敏感字段：编辑时留空=保持原值，不回显
+	Dynamic     bool // 选项动态加载（OptionProvider；加载失败回落 Options）
+	Multiple    bool // 多选（保存为数组；epusdt token/network——占位订单模式）
 	Options     []ConfigOption
 	Default     string
+}
+
+// FieldOptionsResult 动态选项结果。
+type FieldOptionsResult struct {
+	Options  []ConfigOption
+	Fallback bool // 上游不可达回落静态矩阵（前端提示「无法连接网关」）
 }
 
 // ConfigOption 下拉选项。
@@ -122,6 +130,13 @@ type DriverMeta struct {
 // MetaProvider 驱动元数据声明（可选能力位；未实现则回落 Type() 名）。
 type MetaProvider interface {
 	Meta() DriverMeta
+}
+
+// OptionProvider 字段选项动态加载（P2-09 T5 修复）：epusdt network/token 的
+// 可选值以网关 GET /payments/gmpay/v1/config 的 supported_assets 为准（官方文档
+// 明示——每个商户实例启用的链/代币不同）；实现方负责上游不可达回落静态矩阵。
+type OptionProvider interface {
+	FieldOptions(ctx context.Context, field string, partial json.RawMessage) (FieldOptionsResult, error)
 }
 
 // Refunder 原路退款（2.0 新增能力位，退款编排三通道之一）。

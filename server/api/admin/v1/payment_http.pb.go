@@ -22,6 +22,7 @@ const OperationAdminPaymentServiceCapturePayment = "/zcard.api.admin.v1.AdminPay
 const OperationAdminPaymentServiceCreateChannel = "/zcard.api.admin.v1.AdminPaymentService/CreateChannel"
 const OperationAdminPaymentServiceCreateRefund = "/zcard.api.admin.v1.AdminPaymentService/CreateRefund"
 const OperationAdminPaymentServiceDeleteChannel = "/zcard.api.admin.v1.AdminPaymentService/DeleteChannel"
+const OperationAdminPaymentServiceFieldOptions = "/zcard.api.admin.v1.AdminPaymentService/FieldOptions"
 const OperationAdminPaymentServiceGetPayment = "/zcard.api.admin.v1.AdminPaymentService/GetPayment"
 const OperationAdminPaymentServiceListChannels = "/zcard.api.admin.v1.AdminPaymentService/ListChannels"
 const OperationAdminPaymentServiceListDrivers = "/zcard.api.admin.v1.AdminPaymentService/ListDrivers"
@@ -36,6 +37,9 @@ type AdminPaymentServiceHTTPServer interface {
 	// CreateRefund ── 退款 ──
 	CreateRefund(context.Context, *CreateRefundRequest) (*RefundOrder, error)
 	DeleteChannel(context.Context, *DeleteChannelRequest) (*emptypb.Empty, error)
+	// FieldOptions FieldOptions 驱动字段选项动态加载（epusdt network/token 以网关 supported_assets
+	// 为准；网关不可达时后端回落静态矩阵并标记 fallback）。
+	FieldOptions(context.Context, *FieldOptionsRequest) (*FieldOptionsReply, error)
 	GetPayment(context.Context, *GetPaymentRequest) (*Payment, error)
 	// ListChannels ── 渠道管理 ──
 	ListChannels(context.Context, *emptypb.Empty) (*ChannelList, error)
@@ -51,6 +55,7 @@ func RegisterAdminPaymentServiceHTTPServer(s *http.Server, srv AdminPaymentServi
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/admin/payment/channels", _AdminPaymentService_ListChannels0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/payment/drivers", _AdminPaymentService_ListDrivers0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/payment/drivers/{code}/field-options", _AdminPaymentService_FieldOptions0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/payment/channels", _AdminPaymentService_CreateChannel0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/payment/channels/{id}", _AdminPaymentService_UpdateChannel0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/payment/channels/{id}", _AdminPaymentService_DeleteChannel0_HTTP_Handler(srv))
@@ -95,6 +100,28 @@ func _AdminPaymentService_ListDrivers0_HTTP_Handler(srv AdminPaymentServiceHTTPS
 			return err
 		}
 		reply := out.(*DriverList)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminPaymentService_FieldOptions0_HTTP_Handler(srv AdminPaymentServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in FieldOptionsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminPaymentServiceFieldOptions)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.FieldOptions(ctx, req.(*FieldOptionsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*FieldOptionsReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -270,6 +297,9 @@ type AdminPaymentServiceHTTPClient interface {
 	// CreateRefund ── 退款 ──
 	CreateRefund(ctx context.Context, req *CreateRefundRequest, opts ...http.CallOption) (rsp *RefundOrder, err error)
 	DeleteChannel(ctx context.Context, req *DeleteChannelRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// FieldOptions FieldOptions 驱动字段选项动态加载（epusdt network/token 以网关 supported_assets
+	// 为准；网关不可达时后端回落静态矩阵并标记 fallback）。
+	FieldOptions(ctx context.Context, req *FieldOptionsRequest, opts ...http.CallOption) (rsp *FieldOptionsReply, err error)
 	GetPayment(ctx context.Context, req *GetPaymentRequest, opts ...http.CallOption) (rsp *Payment, err error)
 	// ListChannels ── 渠道管理 ──
 	ListChannels(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ChannelList, err error)
@@ -352,6 +382,24 @@ func (c *AdminPaymentServiceHTTPClientImpl) DeleteChannel(ctx context.Context, i
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// FieldOptions FieldOptions 驱动字段选项动态加载（epusdt network/token 以网关 supported_assets
+// 为准；网关不可达时后端回落静态矩阵并标记 fallback）。
+func (c *AdminPaymentServiceHTTPClientImpl) FieldOptions(ctx context.Context, in *FieldOptionsRequest, opts ...http.CallOption) (*FieldOptionsReply, error) {
+	var out FieldOptionsReply
+	pattern := "/api/v1/admin/payment/drivers/{code}/field-options"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminPaymentServiceFieldOptions),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

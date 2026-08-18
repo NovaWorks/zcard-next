@@ -24,7 +24,7 @@ import {
   NCheckbox,
   useMessage,
 } from "naive-ui";
-import { fetchChannels, fetchDrivers, createChannel, updateChannel, deleteChannel } from "@/service/api";
+import { fetchChannels, fetchDrivers, fetchFieldOptions, createChannel, updateChannel, deleteChannel } from "@/service/api";
 
 defineOptions({ name: "PaymentChannelManagement" });
 
@@ -38,6 +38,8 @@ interface ConfigFieldSchema {
   placeholder: string;
   help: string;
   sensitive: boolean;
+  dynamic: boolean;
+  multiple: boolean;
   options: { label: string; value: string }[];
   default: string;
 }
@@ -97,8 +99,41 @@ const form = reactive({
   enabled: true,
   fee_type: "fixed",
   fee: 0,
-  values: {} as Record<string, string>,
+  values: {} as Record<string, string | string[]>,
 });
+
+// 动态选项（epusdt network/token——以网关 supported_assets 为准；失败回落静态 + 提示）
+const dynamicOpts = reactive<Record<string, { options: { label: string; value: string }[]; fallback: boolean }>>({});
+const dynamicLoading = reactive<Record<string, boolean>>({});
+
+/** 加载动态字段选项；partial 取当前表单非敏感值（api_url 等），network 变化联动 token */
+async function loadFieldOptions(f: ConfigFieldSchema) {
+  const key = f.key;
+  dynamicLoading[key] = true;
+  const partial: Record<string, string | string[]> = {};
+  for (const fld of currentFields.value) {
+    if (fld.sensitive) continue;
+    const v = form.values[fld.key];
+    if (Array.isArray(v)) {
+      if (v.length > 0) partial[fld.key] = v;
+    } else if ((v || "").trim()) {
+      partial[fld.key] = v as string;
+    }
+  }
+  const { data, error } = await fetchFieldOptions(current.value?.driver || "", key, JSON.stringify(partial));
+  if (!error && data) {
+    dynamicOpts[key] = { options: data.options || [], fallback: !!data.fallback };
+  } else {
+    dynamicOpts[key] = { options: f.options || [], fallback: true };
+  }
+  dynamicLoading[key] = false;
+}
+
+/** 字段选项（动态优先，未加载回落 schema 静态 options） */
+function fieldOptionsOf(f: ConfigFieldSchema) {
+  if (f.dynamic && dynamicOpts[f.key]) return dynamicOpts[f.key].options;
+  return f.options || [];
+}
 
 const driverOf = (code: string) => drivers.value.find((d) => d.code === code);
 const isConfigured = (ch: ChannelRow) => (ch.configured_fields || []).length > 0;
@@ -170,8 +205,8 @@ function openConfig(ch: ChannelRow) {
   form.name = ch.name;
   form.enabled = ch.enabled;
   form.fee_type = ch.fee_type || "fixed";
-  // fee：fixed=分 → 元；percent=万分比 → 百分比
-  form.fee = ch.fee_type === "percent" ? ch.fee / 100 : ch.fee / 100;
+  // fee：fixed=分 → 元；percent=万分比 → 百分比（proto3 零值不输出——undefined 兜底 0）
+  form.fee = Number(ch.fee || 0) / 100;
   form.values = {};
   // 脱敏回显：非敏感字段显值；敏感字段 **** → 显示为空（留空=不修改）
   let echo: Record<string, any> = {};
@@ -182,7 +217,15 @@ function openConfig(ch: ChannelRow) {
   }
   for (const f of currentFields.value) {
     const v = echo[f.key];
-    if (typeof v === "string" && v !== "****" && v !== "") form.values[f.key] = v;
+    if (Array.isArray(v) && v.length > 0) {
+      form.values[f.key] = v; // 多选字段回显
+    } else if (typeof v === "string" && v !== "****" && v !== "") {
+      form.values[f.key] = v;
+    }
+  }
+  // 动态选项字段（epusdt network/token）：打开即拉取网关 supported_assets
+  for (const f of currentFields.value) {
+    if (f.dynamic) loadFieldOptions(f);
   }
   configVisible.value = true;
 }
@@ -191,18 +234,25 @@ const configuredKeys = computed(() => new Set(current.value?.configured_fields |
 
 function handleConfigSave() {
   if (!current.value) return;
-  // 必填校验：未配置过的必填字段必须填写
+  // 必填校验：未配置过的必填字段必须填写（数组=非空）
   for (const f of currentFields.value) {
-    if (f.required && !configuredKeys.value.has(f.key) && !(form.values[f.key] || "").trim()) {
+    const v = form.values[f.key];
+    const filled = Array.isArray(v) ? v.length > 0 : !!((v as string) || "").trim();
+    if (f.required && !configuredKeys.value.has(f.key) && !filled) {
       message.warning(`请填写「${f.label}」`);
       return;
     }
   }
   // 构造凭据：非空且非掩码的字段；敏感字段留空=不覆盖（后端 **** 语义）
-  const cfg: Record<string, string> = {};
+  const cfg: Record<string, any> = {};
   for (const f of currentFields.value) {
-    const v = (form.values[f.key] || "").trim();
-    if (v && v !== "****") cfg[f.key] = v;
+    const v = form.values[f.key];
+    if (Array.isArray(v)) {
+      if (v.length > 0) cfg[f.key] = v; // 多选数组原样保存
+    } else {
+      const sv = ((v as string) || "").trim();
+      if (sv && sv !== "****") cfg[f.key] = sv;
+    }
   }
   const payload: Record<string, any> = {
     name: form.name.trim(),
@@ -307,8 +357,8 @@ onMounted(() => {
             <NTag size="small" :type="isConfigured(ch) ? 'success' : 'warning'" :bordered="false">
               {{ isConfigured(ch) ? "已配置" : "待配置" }}
             </NTag>
-            <NTag v-if="ch.fee > 0" size="small" type="info" :bordered="false">
-              {{ ch.fee_type === "percent" ? `费率 ${(ch.fee / 100).toFixed(2)}%` : `手续费 ${(ch.fee / 100).toFixed(2)} 元` }}
+            <NTag v-if="(ch.fee || 0) > 0" size="small" type="info" :bordered="false">
+              {{ ch.fee_type === "percent" ? `费率 ${((ch.fee || 0) / 100).toFixed(2)}%` : `手续费 ${((ch.fee || 0) / 100).toFixed(2)} 元` }}
             </NTag>
           </div>
 
@@ -415,10 +465,26 @@ onMounted(() => {
             <template v-if="f.type === 'select'">
               <NSelect
                 v-model:value="form.values[f.key]"
-                :options="f.options.map((o) => ({ label: o.label, value: o.value }))"
-                :placeholder="f.placeholder || '请选择'"
+                :options="fieldOptionsOf(f)"
+                :multiple="f.multiple"
+                :collapse-tags="f.multiple"
+                :max-tag-count="f.multiple ? 3 : undefined"
+                :loading="!!dynamicLoading[f.key]"
+                :placeholder="f.multiple ? '选择支持的选项（可多选）' : f.placeholder || '请选择'"
                 style="width: 100%"
+                @update:value="
+                  (v) => {
+                    // 级联：network 变化 → 刷新 token 选项（已选链的代币并集）
+                    if (f.dynamic && f.key === 'network') {
+                      const tokenField = currentFields.find((x) => x.key === 'token');
+                      if (tokenField) loadFieldOptions(tokenField);
+                    }
+                  }
+                "
               />
+              <div v-if="f.dynamic && dynamicOpts[f.key]?.fallback" class="text-12px opacity-50 mt-4px">
+                无法连接网关，当前为内置选项（配置网关地址后自动刷新）
+              </div>
             </template>
             <template v-else-if="f.type === 'textarea'">
               <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="f.placeholder || ''" />

@@ -151,3 +151,11 @@ export function fetchCurrencies() {
 export function fetchDrivers() {
   return request({ url: "/api/v1/admin/payment/drivers" });
 }
+
+export function fetchFieldOptions(code: string, field: string, configJson: string) {
+  return request({
+    url: `/api/v1/admin/payment/drivers/${code}/field-options`,
+    method: "get",
+    params: { field, config_json: configJson },
+  });
+}

@@ -2386,6 +2386,35 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.DriverList'
+    /api/v1/admin/payment/drivers/{code}/field-options:
+        get:
+            tags:
+                - AdminPaymentService
+            description: |-
+                FieldOptions 驱动字段选项动态加载（epusdt network/token 以网关 supported_assets
+                 为准；网关不可达时后端回落静态矩阵并标记 fallback）。
+            operationId: AdminPaymentService_FieldOptions
+            parameters:
+                - name: code
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: field
+                  in: query
+                  schema:
+                    type: string
+                - name: configJson
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.FieldOptionsReply'
     /api/v1/admin/payments:
         get:
             tags:
@@ -5313,6 +5342,24 @@ components:
                     type: string
                 fulfillmentStatus:
                     type: string
+                name:
+                    type: string
+                skuName:
+                    type: string
+                costCents:
+                    type: string
+                isSelf:
+                    type: boolean
+                upstreamSourceId:
+                    type: string
+                upstreamSourceName:
+                    type: string
+                upstreamDriver:
+                    type: string
+                upstreamProductCode:
+                    type: string
+                upstreamUrl:
+                    type: string
         zcard.api.admin.v1.AdminProduct:
             type: object
             properties:
@@ -5723,6 +5770,10 @@ components:
                 help:
                     type: string
                 sensitive:
+                    type: boolean
+                dynamic:
+                    type: boolean
+                multiple:
                     type: boolean
                 options:
                     type: array
@@ -6519,6 +6570,15 @@ components:
             properties:
                 productId:
                     type: string
+        zcard.api.admin.v1.FieldOptionsReply:
+            type: object
+            properties:
+                options:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.Option'
+                fallback:
+                    type: boolean
         zcard.api.admin.v1.FlashSaleItem:
             type: object
             properties:

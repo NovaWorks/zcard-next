@@ -18,6 +18,11 @@ service AdminPaymentService {
   rpc ListDrivers(google.protobuf.Empty) returns (DriverList) {
     option (google.api.http) = { get: "/api/v1/admin/payment/drivers" };
   }
+  // FieldOptions 驱动字段选项动态加载（epusdt network/token 以网关 supported_assets
+  // 为准；网关不可达时后端回落静态矩阵并标记 fallback）。
+  rpc FieldOptions(FieldOptionsRequest) returns (FieldOptionsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/payment/drivers/{code}/field-options" };
+  }
   rpc CreateChannel(CreateChannelRequest) returns (Channel) {
     option (google.api.http) = { post: "/api/v1/admin/payment/channels" body: "*" };
   }
@@ -91,13 +96,26 @@ message ConfigField {
   string placeholder = 5;
   string help = 6;    // 字段帮助文案
   bool sensitive = 7; // 敏感字段：编辑时留空=保持原值，不回显
-  repeated Option options = 8;
-  string default = 9;
+  bool dynamic = 8; // 选项动态加载（FieldOptions；失败回落 options）
+  bool multiple = 9; // 多选（保存为数组；epusdt token/network——占位订单模式）
+  repeated Option options = 10;
+  string default = 11;
 }
 
 message Option {
   string label = 1;
   string value = 2;
+}
+
+message FieldOptionsRequest {
+  string code = 1 [(google.api.field_behavior) = REQUIRED]; // 驱动码
+  string field = 2 [(google.api.field_behavior) = REQUIRED]; // 字段 key（network/token）
+  string config_json = 3; // 部分配置（仅非敏感字段，如 api_url）
+}
+
+message FieldOptionsReply {
+  repeated Option options = 1;
+  bool fallback = 2; // true=上游不可达回落静态矩阵（前端提示）
 }
 
 message CreateChannelRequest {

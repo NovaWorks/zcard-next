@@ -75,7 +75,17 @@ func TestCreateChannelValidateConfig(t *testing.T) {
 	if !isBadRequest(err, "payment.DRIVER_UNSUPPORTED") {
 		t.Fatalf("驱动未实现应 400 DRIVER_UNSUPPORTED: %v", err)
 	}
-	// 配置无效（paypal 缺 client_secret）
+	// 空凭据创建成功（待配置状态——勾选式添加路径）
+	empty, err := svc.CreateChannel(ctx, &adminv1.CreateChannelRequest{
+		Name: "Alipay", Code: "alipay2", Driver: "alipay", ConfigJson: `{}`, Enabled: true,
+	})
+	if err != nil {
+		t.Fatalf("空凭据创建应成功（待配置）: %v", err)
+	}
+	if len(empty.ConfiguredFields) != 0 {
+		t.Fatalf("空凭据渠道 configured_fields 应为空: %+v", empty.ConfiguredFields)
+	}
+	// 配置无效（paypal 缺 client_secret——提交实际配置时才校验）
 	_, err = svc.CreateChannel(ctx, &adminv1.CreateChannelRequest{
 		Name: "paypal", Code: "paypal2", Driver: "paypal", ConfigJson: `{"client_id":"x"}`,
 	})
@@ -194,6 +204,10 @@ func TestStorefrontListChannels(t *testing.T) {
 	if _, err := svc.repo.CreateChannel(ctx, "停用", "disabled1", "epay", `{"pid":"1","key":"k"}`, 0, "fixed", false, 0); err != nil {
 		t.Fatal(err)
 	}
+	// 建一个启用但未配置的渠道（待配置——不应下发）
+	if _, err := svc.repo.CreateChannel(ctx, "待配置", "unconf1", "stripe", `{}`, 0, "fixed", true, 0); err != nil {
+		t.Fatal(err)
+	}
 	reply, err := svc.ListChannels(ctx, &emptypb.Empty{})
 	if err != nil {
 		t.Fatal(err)
@@ -210,6 +224,45 @@ func TestStorefrontListChannels(t *testing.T) {
 	}
 	if codes["disabled1"] {
 		t.Fatal("停用渠道不应下发")
+	}
+	if codes["unconf1"] {
+		t.Fatal("待配置渠道（空凭据）不应下发")
+	}
+}
+
+// TestFieldOptionsEndpoint 动态选项端点：转发驱动 OptionProvider + 不支持拒绝。
+func TestFieldOptionsEndpoint(t *testing.T) {
+	_, repo, _, _, _ := newCallbackEnv(t)
+	svc := NewAdminPaymentService(repo, nil)
+	ctx := context.Background()
+
+	// epusdt 支持动态选项；api_url 缺失 → 静态矩阵（非 fallback）
+	reply, err := svc.FieldOptions(ctx, &adminv1.FieldOptionsRequest{Code: "epusdt", Field: "network", ConfigJson: `{}`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reply.Fallback || len(reply.Options) < 6 {
+		t.Fatalf("静态回落错位: %+v", reply)
+	}
+	// token 静态矩阵
+	reply, err = svc.FieldOptions(ctx, &adminv1.FieldOptionsRequest{Code: "epusdt", Field: "token", ConfigJson: `{}`})
+	if err != nil || len(reply.Options) != 5 {
+		t.Fatalf("token 静态矩阵错位: %v %+v", err, reply)
+	}
+	// 未知驱动 → 400
+	_, err = svc.FieldOptions(ctx, &adminv1.FieldOptionsRequest{Code: "notexist", Field: "network"})
+	if !isBadRequest(err, "payment.DRIVER_UNSUPPORTED") {
+		t.Fatalf("未知驱动应 400: %v", err)
+	}
+	// 不支持动态选项的驱动（alipay）→ 400
+	_, err = svc.FieldOptions(ctx, &adminv1.FieldOptionsRequest{Code: "alipay", Field: "app_id"})
+	if !isBadRequest(err, "payment.OPTIONS_UNSUPPORTED") {
+		t.Fatalf("不支持动态选项应 400: %v", err)
+	}
+	// 缺参数 → 400
+	_, err = svc.FieldOptions(ctx, &adminv1.FieldOptionsRequest{})
+	if !isBadRequest(err, "payment.INVALID_INPUT") {
+		t.Fatalf("缺参应 400: %v", err)
 	}
 }
 

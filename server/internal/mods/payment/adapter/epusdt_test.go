@@ -173,3 +173,170 @@ func TestEpusdtAckerAndValidate(t *testing.T) {
 		t.Fatal("缺凭据应拒绝")
 	}
 }
+
+// TestEpusdtFieldOptions 动态选项（P2-09 T5 修复）：网关 supported_assets 为准；
+// 网关不可达/api_url 缺失 → 静态矩阵回落；token 按 network 级联过滤。
+func TestEpusdtFieldOptions(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/payments/gmpay/v1/config" {
+			w.WriteHeader(404)
+			return
+		}
+		_, _ = w.Write([]byte(`{"code":0,"message":"ok","data":{"supported_assets":[
+			{"network":"tron","display_name":"TRON","tokens":["USDT","TRX"]},
+			{"network":"erc20","display_name":"ERC20","tokens":["USDT","USDC","ETH"]},
+			{"network":"aptos","display_name":"","tokens":["USDC"]}
+		]}}`))
+	}))
+	defer srv.Close()
+	a := NewEpusdt()
+	partial := json.RawMessage(fmt.Sprintf(`{"api_url":%q}`, srv.URL))
+
+	// 网络：动态（display_name 缺省回落 network）
+	res, err := a.FieldOptions(context.Background(), "network", partial)
+	if err != nil || res.Fallback {
+		t.Fatalf("network 动态加载失败: %v %+v", err, res)
+	}
+	got := map[string]string{}
+	for _, o := range res.Options {
+		got[o.Value] = o.Label
+	}
+	if got["tron"] != "TRON" || got["erc20"] != "ERC20" || got["aptos"] != "aptos" {
+		t.Fatalf("network 选项错位: %+v", got)
+	}
+	if len(res.Options) != 3 {
+		t.Fatalf("network 选项应 3 个: %d", len(res.Options))
+	}
+
+	// 代币：无 network 过滤 → 全量去重
+	res, err = a.FieldOptions(context.Background(), "token", partial)
+	if err != nil || res.Fallback {
+		t.Fatalf("token 动态加载失败: %v %+v", err, res)
+	}
+	vals := []string{}
+	for _, o := range res.Options {
+		vals = append(vals, o.Value)
+	}
+	if strings.Join(vals, ",") != "ETH,TRX,USDC,USDT" {
+		t.Fatalf("token 全量去重错位: %+v", vals)
+	}
+
+	// 级联：network=tron → 仅该链代币
+	res, err = a.FieldOptions(context.Background(), "token", json.RawMessage(fmt.Sprintf(`{"api_url":%q,"network":"tron"}`, srv.URL)))
+	if err != nil || res.Fallback {
+		t.Fatalf("级联加载失败: %v %+v", err, res)
+	}
+	if len(res.Options) != 2 || res.Options[0].Value != "TRX" || res.Options[1].Value != "USDT" {
+		t.Fatalf("tron 链代币错位: %+v", res.Options)
+	}
+
+	// 网关不可达 → 静态回落 + Fallback 标记
+	dead := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(500)
+	}))
+	defer dead.Close()
+	res, err = a.FieldOptions(context.Background(), "network", json.RawMessage(fmt.Sprintf(`{"api_url":%q}`, dead.URL)))
+	if err != nil || !res.Fallback {
+		t.Fatalf("网关不可达应回落静态: %v %+v", err, res)
+	}
+	if len(res.Options) != 6 || res.Options[0].Value != "tron" {
+		t.Fatalf("静态网络矩阵错位: %+v", res.Options)
+	}
+
+	// api_url 缺失 → 静态（非 fallback——表单未填地址属正常态）
+	res, err = a.FieldOptions(context.Background(), "network", json.RawMessage(`{}`))
+	if err != nil || res.Fallback || len(res.Options) != 6 {
+		t.Fatalf("缺 api_url 应静态: %v %+v", err, res)
+	}
+	// 静态代币矩阵
+	res, _ = a.FieldOptions(context.Background(), "token", json.RawMessage(`{}`))
+	if len(res.Options) != 5 {
+		t.Fatalf("静态代币矩阵错位: %+v", res.Options)
+	}
+}
+
+// TestEpusdtMultiTokenPlaceholder 多选收款（P2-09 T5）：
+// 恰好一币一链 → 下单锁定该方式；多选/未选 → 占位订单（不传 token/network）。
+func TestEpusdtMultiTokenPlaceholder(t *testing.T) {
+	capture := func(cfg json.RawMessage) map[string]string {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/payments/gmpay/v1/order/create-transaction" {
+				w.WriteHeader(404)
+				return
+			}
+			_ = json.NewDecoder(r.Body).Decode(&gotPlaceholderBody)
+			_, _ = w.Write([]byte(`{"status_code":200,"message":"ok","data":{"trade_id":"T1","payment_url":"https://gw/pay/T1"}}`))
+		}))
+		t.Cleanup(srv.Close)
+		a := NewEpusdt()
+		// 覆盖 api_url 指向假网关（保留 tokens/networks 等其余字段）
+		var m map[string]any
+		_ = json.Unmarshal(cfg, &m)
+		m["api_url"] = srv.URL
+		body, _ := json.Marshal(m)
+		if _, err := a.CreatePayment(context.Background(), port.CreatePaymentRequest{
+			OrderNo: "S1", Amount: money.Cents(1000), Config: body,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		b := gotPlaceholderBody
+		gotPlaceholderBody = nil
+		return b
+	}
+
+	// 1) 多选（2 币 + 2 链）→ 占位订单：请求无 token/network
+	body := capture(json.RawMessage(`{"api_url":"https://gw","pid":"1","secret_key":"s","tokens":["USDT","USDC"],"networks":["tron","erc20"]}`))
+	if _, ok := body["token"]; ok {
+		t.Fatalf("多选应占位订单（不传 token）: %+v", body)
+	}
+	if _, ok := body["network"]; ok {
+		t.Fatalf("多选应占位订单（不传 network）: %+v", body)
+	}
+	if !epusdtVerifySign(body, "s", body["signature"]) {
+		t.Fatal("占位订单签名自验失败")
+	}
+
+	// 2) 恰好一币一链 → 锁定传参（network 协议小写）
+	body = capture(json.RawMessage(`{"api_url":"https://gw","pid":"1","secret_key":"s","tokens":["USDT"],"networks":["tron"]}`))
+	if body["token"] != "USDT" || body["network"] != "tron" {
+		t.Fatalf("单选组合应锁定传参: %+v", body)
+	}
+
+	// 3) 未选（仅旧单值字段）→ 占位订单（协议允许缺省）
+	body = capture(json.RawMessage(`{"api_url":"https://gw","pid":"1","secret_key":"s"}`))
+	if _, ok := body["token"]; ok {
+		t.Fatalf("未选应占位订单: %+v", body)
+	}
+}
+
+// TestEpusdtFieldOptionsMultiNetwork 级联多选：network 数组过滤 token 并集。
+func TestEpusdtFieldOptionsMultiNetwork(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"data":{"supported_assets":[
+			{"network":"tron","display_name":"TRON","tokens":["USDT","TRX"]},
+			{"network":"erc20","display_name":"ERC20","tokens":["USDT","USDC","ETH"]},
+			{"network":"bep20","display_name":"BEP20","tokens":["USDT","BNB"]}
+		]}}`))
+	}))
+	defer srv.Close()
+	a := NewEpusdt()
+	// network 多选 [tron, erc20] → token 并集（去重）
+	res, err := a.FieldOptions(context.Background(), "token", json.RawMessage(fmt.Sprintf(`{"api_url":%q,"network":["tron","erc20"]}`, srv.URL)))
+	if err != nil || res.Fallback {
+		t.Fatalf("级联多选失败: %v %+v", err, res)
+	}
+	vals := []string{}
+	for _, o := range res.Options {
+		vals = append(vals, o.Value)
+	}
+	if strings.Join(vals, ",") != "ETH,TRX,USDC,USDT" {
+		t.Fatalf("tron+erc20 并集错位: %+v", vals)
+	}
+	// 字符串逗号分隔兼容（前端旧格式）
+	res, _ = a.FieldOptions(context.Background(), "token", json.RawMessage(fmt.Sprintf(`{"api_url":%q,"network":"bep20"}`, srv.URL)))
+	if len(res.Options) != 2 || res.Options[0].Value != "BNB" || res.Options[1].Value != "USDT" {
+		t.Fatalf("bep20 过滤错位: %+v", res.Options)
+	}
+}
+
+var gotPlaceholderBody map[string]string

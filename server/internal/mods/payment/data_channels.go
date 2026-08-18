@@ -198,10 +198,15 @@ func (r *PaymentRepoImpl) ConfiguredFields(ch *ent.PaymentChannel) []string {
 	out := make([]string, 0, len(m))
 	for k, v := range m {
 		var sv string
-		if json.Unmarshal(v, &sv) != nil {
-			continue // 非字符串值（结构体等）不参与判定
+		if json.Unmarshal(v, &sv) == nil {
+			if strings.TrimSpace(sv) != "" {
+				out = append(out, k)
+			}
+			continue
 		}
-		if strings.TrimSpace(sv) != "" {
+		// 数组值（多选字段 token/network）：非空数组算已配置
+		var arr []json.RawMessage
+		if json.Unmarshal(v, &arr) == nil && len(arr) > 0 {
 			out = append(out, k)
 		}
 	}

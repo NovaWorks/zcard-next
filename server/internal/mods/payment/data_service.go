@@ -67,8 +67,12 @@ func (s *AdminPaymentService) CreateChannel(ctx context.Context, req *adminv1.Cr
 		if err != nil {
 			return nil, errors.BadRequest("payment.DRIVER_UNSUPPORTED", "渠道驱动未实现: "+req.GetDriver())
 		}
-		if err := provider.ValidateConfig(json.RawMessage(req.GetConfigJson())); err != nil {
-			return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", err.Error())
+		// 创建允许空凭据（待配置状态——勾选式添加后引导补凭据）；
+		// 仅提交了实际配置时校验，填写支付信息保存那一步即时反馈
+		if strings.TrimSpace(req.GetConfigJson()) != "" && req.GetConfigJson() != "{}" {
+			if err := provider.ValidateConfig(json.RawMessage(req.GetConfigJson())); err != nil {
+				return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", err.Error())
+			}
 		}
 	}
 	feeType := req.GetFeeType()
@@ -101,7 +105,8 @@ func (s *AdminPaymentService) ListDrivers(ctx context.Context, _ *emptypb.Empty)
 			for _, cf := range f.ConfigFields() {
 				fd := &adminv1.ConfigField{
 					Key: cf.Key, Label: cf.Label, Type: cf.Type, Required: cf.Required,
-					Placeholder: cf.Placeholder, Help: cf.Help, Sensitive: cf.Sensitive, Default: cf.Default,
+					Placeholder: cf.Placeholder, Help: cf.Help, Sensitive: cf.Sensitive,
+					Dynamic: cf.Dynamic, Multiple: cf.Multiple, Default: cf.Default,
 				}
 				for _, o := range cf.Options {
 					fd.Options = append(fd.Options, &adminv1.Option{Label: o.Label, Value: o.Value})
@@ -118,6 +123,31 @@ func (s *AdminPaymentService) ListDrivers(ctx context.Context, _ *emptypb.Empty)
 		drivers = append(drivers, d)
 	}
 	return &adminv1.DriverList{Drivers: drivers}, nil
+}
+
+// FieldOptions 驱动字段动态选项（P2-09 T5 修复：epusdt network/token 以网关
+// supported_assets 为准——转发适配器 OptionProvider，失败回落静态矩阵）。
+func (s *AdminPaymentService) FieldOptions(ctx context.Context, req *adminv1.FieldOptionsRequest) (*adminv1.FieldOptionsReply, error) {
+	if req.GetCode() == "" || req.GetField() == "" {
+		return nil, errors.BadRequest("payment.INVALID_INPUT", "code/field 必填")
+	}
+	provider, err := s.repo.reg.Provider(req.GetCode())
+	if err != nil {
+		return nil, errors.BadRequest("payment.DRIVER_UNSUPPORTED", "渠道驱动未实现: "+req.GetCode())
+	}
+	op, ok := provider.(port.OptionProvider)
+	if !ok {
+		return nil, errors.BadRequest("payment.OPTIONS_UNSUPPORTED", "驱动不支持动态选项")
+	}
+	res, err := op.FieldOptions(ctx, req.GetField(), json.RawMessage(req.GetConfigJson()))
+	if err != nil {
+		return nil, errors.InternalServer("payment.OPTIONS_FAILED", "加载选项失败: "+err.Error())
+	}
+	reply := &adminv1.FieldOptionsReply{Fallback: res.Fallback}
+	for _, o := range res.Options {
+		reply.Options = append(reply.Options, &adminv1.Option{Label: o.Label, Value: o.Value})
+	}
+	return reply, nil
 }
 
 // channelPB 渠道协议对象（P2-09 T5）：
@@ -317,6 +347,7 @@ func NewStorePaymentService(repo *PaymentRepoImpl, d *data.Data) *StorePaymentSe
 }
 
 // ListChannels 启用渠道列表（P2-09 T5：渠道下拉数据源——替代前端硬编码枚举）。
+// 过滤：启用 + 已配置（空凭据的「待配置」渠道不对顾客展示；wallet 内置无需配置）。
 func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.ChannelListReply, error) {
 	rows, err := data.Client(ctx, s.data).PaymentChannel.Query().
 		Where(paymentchannel.Enabled(true)).
@@ -327,6 +358,9 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 	}
 	reply := &storefrontv1.ChannelListReply{}
 	for _, ch := range rows {
+		if ch.Driver != "wallet" && len(s.repo.ConfiguredFields(ch)) == 0 {
+			continue // 待配置渠道不下发
+		}
 		reply.Channels = append(reply.Channels, &storefrontv1.ChannelItem{Code: ch.Code, Name: ch.Name, Driver: ch.Driver})
 	}
 	return reply, nil

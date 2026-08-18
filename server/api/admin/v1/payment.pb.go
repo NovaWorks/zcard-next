@@ -324,8 +324,10 @@ type ConfigField struct {
 	Placeholder   string                 `protobuf:"bytes,5,opt,name=placeholder,proto3" json:"placeholder,omitempty"`
 	Help          string                 `protobuf:"bytes,6,opt,name=help,proto3" json:"help,omitempty"`            // 字段帮助文案
 	Sensitive     bool                   `protobuf:"varint,7,opt,name=sensitive,proto3" json:"sensitive,omitempty"` // 敏感字段：编辑时留空=保持原值，不回显
-	Options       []*Option              `protobuf:"bytes,8,rep,name=options,proto3" json:"options,omitempty"`
-	Default       string                 `protobuf:"bytes,9,opt,name=default,proto3" json:"default,omitempty"`
+	Dynamic       bool                   `protobuf:"varint,8,opt,name=dynamic,proto3" json:"dynamic,omitempty"`     // 选项动态加载（FieldOptions；失败回落 options）
+	Multiple      bool                   `protobuf:"varint,9,opt,name=multiple,proto3" json:"multiple,omitempty"`   // 多选（保存为数组；epusdt token/network——占位订单模式）
+	Options       []*Option              `protobuf:"bytes,10,rep,name=options,proto3" json:"options,omitempty"`
+	Default       string                 `protobuf:"bytes,11,opt,name=default,proto3" json:"default,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -409,6 +411,20 @@ func (x *ConfigField) GetSensitive() bool {
 	return false
 }
 
+func (x *ConfigField) GetDynamic() bool {
+	if x != nil {
+		return x.Dynamic
+	}
+	return false
+}
+
+func (x *ConfigField) GetMultiple() bool {
+	if x != nil {
+		return x.Multiple
+	}
+	return false
+}
+
 func (x *ConfigField) GetOptions() []*Option {
 	if x != nil {
 		return x.Options
@@ -475,6 +491,118 @@ func (x *Option) GetValue() string {
 	return ""
 }
 
+type FieldOptionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`                               // 驱动码
+	Field         string                 `protobuf:"bytes,2,opt,name=field,proto3" json:"field,omitempty"`                             // 字段 key（network/token）
+	ConfigJson    string                 `protobuf:"bytes,3,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // 部分配置（仅非敏感字段，如 api_url）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FieldOptionsRequest) Reset() {
+	*x = FieldOptionsRequest{}
+	mi := &file_admin_v1_payment_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FieldOptionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FieldOptionsRequest) ProtoMessage() {}
+
+func (x *FieldOptionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_payment_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FieldOptionsRequest.ProtoReflect.Descriptor instead.
+func (*FieldOptionsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *FieldOptionsRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *FieldOptionsRequest) GetField() string {
+	if x != nil {
+		return x.Field
+	}
+	return ""
+}
+
+func (x *FieldOptionsRequest) GetConfigJson() string {
+	if x != nil {
+		return x.ConfigJson
+	}
+	return ""
+}
+
+type FieldOptionsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Options       []*Option              `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	Fallback      bool                   `protobuf:"varint,2,opt,name=fallback,proto3" json:"fallback,omitempty"` // true=上游不可达回落静态矩阵（前端提示）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FieldOptionsReply) Reset() {
+	*x = FieldOptionsReply{}
+	mi := &file_admin_v1_payment_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FieldOptionsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FieldOptionsReply) ProtoMessage() {}
+
+func (x *FieldOptionsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_payment_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FieldOptionsReply.ProtoReflect.Descriptor instead.
+func (*FieldOptionsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FieldOptionsReply) GetOptions() []*Option {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+func (x *FieldOptionsReply) GetFallback() bool {
+	if x != nil {
+		return x.Fallback
+	}
+	return false
+}
+
 type CreateChannelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -491,7 +619,7 @@ type CreateChannelRequest struct {
 
 func (x *CreateChannelRequest) Reset() {
 	*x = CreateChannelRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[6]
+	mi := &file_admin_v1_payment_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -503,7 +631,7 @@ func (x *CreateChannelRequest) String() string {
 func (*CreateChannelRequest) ProtoMessage() {}
 
 func (x *CreateChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[6]
+	mi := &file_admin_v1_payment_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -516,7 +644,7 @@ func (x *CreateChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChannelRequest.ProtoReflect.Descriptor instead.
 func (*CreateChannelRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{6}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *CreateChannelRequest) GetName() string {
@@ -590,7 +718,7 @@ type UpdateChannelRequest struct {
 
 func (x *UpdateChannelRequest) Reset() {
 	*x = UpdateChannelRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[7]
+	mi := &file_admin_v1_payment_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -602,7 +730,7 @@ func (x *UpdateChannelRequest) String() string {
 func (*UpdateChannelRequest) ProtoMessage() {}
 
 func (x *UpdateChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[7]
+	mi := &file_admin_v1_payment_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -615,7 +743,7 @@ func (x *UpdateChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChannelRequest.ProtoReflect.Descriptor instead.
 func (*UpdateChannelRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{7}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *UpdateChannelRequest) GetId() uint64 {
@@ -676,7 +804,7 @@ type DeleteChannelRequest struct {
 
 func (x *DeleteChannelRequest) Reset() {
 	*x = DeleteChannelRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[8]
+	mi := &file_admin_v1_payment_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +816,7 @@ func (x *DeleteChannelRequest) String() string {
 func (*DeleteChannelRequest) ProtoMessage() {}
 
 func (x *DeleteChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[8]
+	mi := &file_admin_v1_payment_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +829,7 @@ func (x *DeleteChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChannelRequest.ProtoReflect.Descriptor instead.
 func (*DeleteChannelRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{8}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteChannelRequest) GetId() uint64 {
@@ -723,7 +851,7 @@ type ListPaymentsRequest struct {
 
 func (x *ListPaymentsRequest) Reset() {
 	*x = ListPaymentsRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[9]
+	mi := &file_admin_v1_payment_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -735,7 +863,7 @@ func (x *ListPaymentsRequest) String() string {
 func (*ListPaymentsRequest) ProtoMessage() {}
 
 func (x *ListPaymentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[9]
+	mi := &file_admin_v1_payment_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -748,7 +876,7 @@ func (x *ListPaymentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPaymentsRequest.ProtoReflect.Descriptor instead.
 func (*ListPaymentsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{9}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ListPaymentsRequest) GetStatus() string {
@@ -789,7 +917,7 @@ type ListPaymentsReply struct {
 
 func (x *ListPaymentsReply) Reset() {
 	*x = ListPaymentsReply{}
-	mi := &file_admin_v1_payment_proto_msgTypes[10]
+	mi := &file_admin_v1_payment_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -801,7 +929,7 @@ func (x *ListPaymentsReply) String() string {
 func (*ListPaymentsReply) ProtoMessage() {}
 
 func (x *ListPaymentsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[10]
+	mi := &file_admin_v1_payment_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -814,7 +942,7 @@ func (x *ListPaymentsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPaymentsReply.ProtoReflect.Descriptor instead.
 func (*ListPaymentsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{10}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ListPaymentsReply) GetPayments() []*Payment {
@@ -840,7 +968,7 @@ type GetPaymentRequest struct {
 
 func (x *GetPaymentRequest) Reset() {
 	*x = GetPaymentRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[11]
+	mi := &file_admin_v1_payment_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -852,7 +980,7 @@ func (x *GetPaymentRequest) String() string {
 func (*GetPaymentRequest) ProtoMessage() {}
 
 func (x *GetPaymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[11]
+	mi := &file_admin_v1_payment_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -865,7 +993,7 @@ func (x *GetPaymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPaymentRequest.ProtoReflect.Descriptor instead.
 func (*GetPaymentRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{11}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetPaymentRequest) GetId() uint64 {
@@ -884,7 +1012,7 @@ type CapturePaymentRequest struct {
 
 func (x *CapturePaymentRequest) Reset() {
 	*x = CapturePaymentRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[12]
+	mi := &file_admin_v1_payment_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -896,7 +1024,7 @@ func (x *CapturePaymentRequest) String() string {
 func (*CapturePaymentRequest) ProtoMessage() {}
 
 func (x *CapturePaymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[12]
+	mi := &file_admin_v1_payment_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -909,7 +1037,7 @@ func (x *CapturePaymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CapturePaymentRequest.ProtoReflect.Descriptor instead.
 func (*CapturePaymentRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{12}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CapturePaymentRequest) GetId() uint64 {
@@ -939,7 +1067,7 @@ type Payment struct {
 
 func (x *Payment) Reset() {
 	*x = Payment{}
-	mi := &file_admin_v1_payment_proto_msgTypes[13]
+	mi := &file_admin_v1_payment_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -951,7 +1079,7 @@ func (x *Payment) String() string {
 func (*Payment) ProtoMessage() {}
 
 func (x *Payment) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[13]
+	mi := &file_admin_v1_payment_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -964,7 +1092,7 @@ func (x *Payment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Payment.ProtoReflect.Descriptor instead.
 func (*Payment) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *Payment) GetId() uint64 {
@@ -1056,7 +1184,7 @@ type CreateRefundRequest struct {
 
 func (x *CreateRefundRequest) Reset() {
 	*x = CreateRefundRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[14]
+	mi := &file_admin_v1_payment_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1068,7 +1196,7 @@ func (x *CreateRefundRequest) String() string {
 func (*CreateRefundRequest) ProtoMessage() {}
 
 func (x *CreateRefundRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[14]
+	mi := &file_admin_v1_payment_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1081,7 +1209,7 @@ func (x *CreateRefundRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateRefundRequest.ProtoReflect.Descriptor instead.
 func (*CreateRefundRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CreateRefundRequest) GetOrderNo() string {
@@ -1121,7 +1249,7 @@ type ListRefundsRequest struct {
 
 func (x *ListRefundsRequest) Reset() {
 	*x = ListRefundsRequest{}
-	mi := &file_admin_v1_payment_proto_msgTypes[15]
+	mi := &file_admin_v1_payment_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1133,7 +1261,7 @@ func (x *ListRefundsRequest) String() string {
 func (*ListRefundsRequest) ProtoMessage() {}
 
 func (x *ListRefundsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[15]
+	mi := &file_admin_v1_payment_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1146,7 +1274,7 @@ func (x *ListRefundsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRefundsRequest.ProtoReflect.Descriptor instead.
 func (*ListRefundsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListRefundsRequest) GetStatus() string {
@@ -1165,7 +1293,7 @@ type ListRefundsReply struct {
 
 func (x *ListRefundsReply) Reset() {
 	*x = ListRefundsReply{}
-	mi := &file_admin_v1_payment_proto_msgTypes[16]
+	mi := &file_admin_v1_payment_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1177,7 +1305,7 @@ func (x *ListRefundsReply) String() string {
 func (*ListRefundsReply) ProtoMessage() {}
 
 func (x *ListRefundsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[16]
+	mi := &file_admin_v1_payment_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1190,7 +1318,7 @@ func (x *ListRefundsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListRefundsReply.ProtoReflect.Descriptor instead.
 func (*ListRefundsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListRefundsReply) GetRefunds() []*RefundOrder {
@@ -1218,7 +1346,7 @@ type RefundOrder struct {
 
 func (x *RefundOrder) Reset() {
 	*x = RefundOrder{}
-	mi := &file_admin_v1_payment_proto_msgTypes[17]
+	mi := &file_admin_v1_payment_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1230,7 +1358,7 @@ func (x *RefundOrder) String() string {
 func (*RefundOrder) ProtoMessage() {}
 
 func (x *RefundOrder) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_payment_proto_msgTypes[17]
+	mi := &file_admin_v1_payment_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1243,7 +1371,7 @@ func (x *RefundOrder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefundOrder.ProtoReflect.Descriptor instead.
 func (*RefundOrder) Descriptor() ([]byte, []int) {
-	return file_admin_v1_payment_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_payment_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *RefundOrder) GetId() uint64 {
@@ -1338,7 +1466,7 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x127\n" +
-	"\x06fields\x18\x05 \x03(\v2\x1f.zcard.api.admin.v1.ConfigFieldR\x06fields\"\x89\x02\n" +
+	"\x06fields\x18\x05 \x03(\v2\x1f.zcard.api.admin.v1.ConfigFieldR\x06fields\"\xbf\x02\n" +
 	"\vConfigField\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12\x12\n" +
@@ -1346,12 +1474,23 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\brequired\x18\x04 \x01(\bR\brequired\x12 \n" +
 	"\vplaceholder\x18\x05 \x01(\tR\vplaceholder\x12\x12\n" +
 	"\x04help\x18\x06 \x01(\tR\x04help\x12\x1c\n" +
-	"\tsensitive\x18\a \x01(\bR\tsensitive\x124\n" +
-	"\aoptions\x18\b \x03(\v2\x1a.zcard.api.admin.v1.OptionR\aoptions\x12\x18\n" +
-	"\adefault\x18\t \x01(\tR\adefault\"4\n" +
+	"\tsensitive\x18\a \x01(\bR\tsensitive\x12\x18\n" +
+	"\adynamic\x18\b \x01(\bR\adynamic\x12\x1a\n" +
+	"\bmultiple\x18\t \x01(\bR\bmultiple\x124\n" +
+	"\aoptions\x18\n" +
+	" \x03(\v2\x1a.zcard.api.admin.v1.OptionR\aoptions\x12\x18\n" +
+	"\adefault\x18\v \x01(\tR\adefault\"4\n" +
 	"\x06Option\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"\xe6\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"j\n" +
+	"\x13FieldOptionsRequest\x12\x17\n" +
+	"\x04code\x18\x01 \x01(\tB\x03\xe0A\x02R\x04code\x12\x19\n" +
+	"\x05field\x18\x02 \x01(\tB\x03\xe0A\x02R\x05field\x12\x1f\n" +
+	"\vconfig_json\x18\x03 \x01(\tR\n" +
+	"configJson\"e\n" +
+	"\x11FieldOptionsReply\x124\n" +
+	"\aoptions\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.OptionR\aoptions\x12\x1a\n" +
+	"\bfallback\x18\x02 \x01(\bR\bfallback\"\xe6\x01\n" +
 	"\x14CreateChannelRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x17\n" +
 	"\x04code\x18\x02 \x01(\tB\x03\xe0A\x02R\x04code\x12\x1b\n" +
@@ -1419,10 +1558,11 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x06reason\x18\a \x01(\tR\x06reason\x12,\n" +
 	"\x12upstream_refund_id\x18\b \x01(\tR\x10upstreamRefundId\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\x03R\tcreatedAt2\xfb\t\n" +
+	"created_at\x18\t \x01(\x03R\tcreatedAt2\x98\v\n" +
 	"\x13AdminPaymentService\x12o\n" +
 	"\fListChannels\x12\x16.google.protobuf.Empty\x1a\x1f.zcard.api.admin.v1.ChannelList\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/payment/channels\x12l\n" +
-	"\vListDrivers\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.admin.v1.DriverList\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/payment/drivers\x12\x81\x01\n" +
+	"\vListDrivers\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.admin.v1.DriverList\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/payment/drivers\x12\x9a\x01\n" +
+	"\fFieldOptions\x12'.zcard.api.admin.v1.FieldOptionsRequest\x1a%.zcard.api.admin.v1.FieldOptionsReply\":\x82\xd3\xe4\x93\x024\x122/api/v1/admin/payment/drivers/{code}/field-options\x12\x81\x01\n" +
 	"\rCreateChannel\x12(.zcard.api.admin.v1.CreateChannelRequest\x1a\x1b.zcard.api.admin.v1.Channel\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/payment/channels\x12\x86\x01\n" +
 	"\rUpdateChannel\x12(.zcard.api.admin.v1.UpdateChannelRequest\x1a\x1b.zcard.api.admin.v1.Channel\".\x82\xd3\xe4\x93\x02(:\x01*\x1a#/api/v1/admin/payment/channels/{id}\x12~\n" +
 	"\rDeleteChannel\x12(.zcard.api.admin.v1.DeleteChannelRequest\x1a\x16.google.protobuf.Empty\"+\x82\xd3\xe4\x93\x02%*#/api/v1/admin/payment/channels/{id}\x12~\n" +
@@ -1445,7 +1585,7 @@ func file_admin_v1_payment_proto_rawDescGZIP() []byte {
 	return file_admin_v1_payment_proto_rawDescData
 }
 
-var file_admin_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_admin_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_admin_v1_payment_proto_goTypes = []any{
 	(*ChannelList)(nil),           // 0: zcard.api.admin.v1.ChannelList
 	(*Channel)(nil),               // 1: zcard.api.admin.v1.Channel
@@ -1453,52 +1593,57 @@ var file_admin_v1_payment_proto_goTypes = []any{
 	(*Driver)(nil),                // 3: zcard.api.admin.v1.Driver
 	(*ConfigField)(nil),           // 4: zcard.api.admin.v1.ConfigField
 	(*Option)(nil),                // 5: zcard.api.admin.v1.Option
-	(*CreateChannelRequest)(nil),  // 6: zcard.api.admin.v1.CreateChannelRequest
-	(*UpdateChannelRequest)(nil),  // 7: zcard.api.admin.v1.UpdateChannelRequest
-	(*DeleteChannelRequest)(nil),  // 8: zcard.api.admin.v1.DeleteChannelRequest
-	(*ListPaymentsRequest)(nil),   // 9: zcard.api.admin.v1.ListPaymentsRequest
-	(*ListPaymentsReply)(nil),     // 10: zcard.api.admin.v1.ListPaymentsReply
-	(*GetPaymentRequest)(nil),     // 11: zcard.api.admin.v1.GetPaymentRequest
-	(*CapturePaymentRequest)(nil), // 12: zcard.api.admin.v1.CapturePaymentRequest
-	(*Payment)(nil),               // 13: zcard.api.admin.v1.Payment
-	(*CreateRefundRequest)(nil),   // 14: zcard.api.admin.v1.CreateRefundRequest
-	(*ListRefundsRequest)(nil),    // 15: zcard.api.admin.v1.ListRefundsRequest
-	(*ListRefundsReply)(nil),      // 16: zcard.api.admin.v1.ListRefundsReply
-	(*RefundOrder)(nil),           // 17: zcard.api.admin.v1.RefundOrder
-	(*emptypb.Empty)(nil),         // 18: google.protobuf.Empty
+	(*FieldOptionsRequest)(nil),   // 6: zcard.api.admin.v1.FieldOptionsRequest
+	(*FieldOptionsReply)(nil),     // 7: zcard.api.admin.v1.FieldOptionsReply
+	(*CreateChannelRequest)(nil),  // 8: zcard.api.admin.v1.CreateChannelRequest
+	(*UpdateChannelRequest)(nil),  // 9: zcard.api.admin.v1.UpdateChannelRequest
+	(*DeleteChannelRequest)(nil),  // 10: zcard.api.admin.v1.DeleteChannelRequest
+	(*ListPaymentsRequest)(nil),   // 11: zcard.api.admin.v1.ListPaymentsRequest
+	(*ListPaymentsReply)(nil),     // 12: zcard.api.admin.v1.ListPaymentsReply
+	(*GetPaymentRequest)(nil),     // 13: zcard.api.admin.v1.GetPaymentRequest
+	(*CapturePaymentRequest)(nil), // 14: zcard.api.admin.v1.CapturePaymentRequest
+	(*Payment)(nil),               // 15: zcard.api.admin.v1.Payment
+	(*CreateRefundRequest)(nil),   // 16: zcard.api.admin.v1.CreateRefundRequest
+	(*ListRefundsRequest)(nil),    // 17: zcard.api.admin.v1.ListRefundsRequest
+	(*ListRefundsReply)(nil),      // 18: zcard.api.admin.v1.ListRefundsReply
+	(*RefundOrder)(nil),           // 19: zcard.api.admin.v1.RefundOrder
+	(*emptypb.Empty)(nil),         // 20: google.protobuf.Empty
 }
 var file_admin_v1_payment_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.admin.v1.ChannelList.channels:type_name -> zcard.api.admin.v1.Channel
 	3,  // 1: zcard.api.admin.v1.DriverList.drivers:type_name -> zcard.api.admin.v1.Driver
 	4,  // 2: zcard.api.admin.v1.Driver.fields:type_name -> zcard.api.admin.v1.ConfigField
 	5,  // 3: zcard.api.admin.v1.ConfigField.options:type_name -> zcard.api.admin.v1.Option
-	13, // 4: zcard.api.admin.v1.ListPaymentsReply.payments:type_name -> zcard.api.admin.v1.Payment
-	17, // 5: zcard.api.admin.v1.ListRefundsReply.refunds:type_name -> zcard.api.admin.v1.RefundOrder
-	18, // 6: zcard.api.admin.v1.AdminPaymentService.ListChannels:input_type -> google.protobuf.Empty
-	18, // 7: zcard.api.admin.v1.AdminPaymentService.ListDrivers:input_type -> google.protobuf.Empty
-	6,  // 8: zcard.api.admin.v1.AdminPaymentService.CreateChannel:input_type -> zcard.api.admin.v1.CreateChannelRequest
-	7,  // 9: zcard.api.admin.v1.AdminPaymentService.UpdateChannel:input_type -> zcard.api.admin.v1.UpdateChannelRequest
-	8,  // 10: zcard.api.admin.v1.AdminPaymentService.DeleteChannel:input_type -> zcard.api.admin.v1.DeleteChannelRequest
-	9,  // 11: zcard.api.admin.v1.AdminPaymentService.ListPayments:input_type -> zcard.api.admin.v1.ListPaymentsRequest
-	11, // 12: zcard.api.admin.v1.AdminPaymentService.GetPayment:input_type -> zcard.api.admin.v1.GetPaymentRequest
-	12, // 13: zcard.api.admin.v1.AdminPaymentService.CapturePayment:input_type -> zcard.api.admin.v1.CapturePaymentRequest
-	14, // 14: zcard.api.admin.v1.AdminPaymentService.CreateRefund:input_type -> zcard.api.admin.v1.CreateRefundRequest
-	15, // 15: zcard.api.admin.v1.AdminPaymentService.ListRefunds:input_type -> zcard.api.admin.v1.ListRefundsRequest
-	0,  // 16: zcard.api.admin.v1.AdminPaymentService.ListChannels:output_type -> zcard.api.admin.v1.ChannelList
-	2,  // 17: zcard.api.admin.v1.AdminPaymentService.ListDrivers:output_type -> zcard.api.admin.v1.DriverList
-	1,  // 18: zcard.api.admin.v1.AdminPaymentService.CreateChannel:output_type -> zcard.api.admin.v1.Channel
-	1,  // 19: zcard.api.admin.v1.AdminPaymentService.UpdateChannel:output_type -> zcard.api.admin.v1.Channel
-	18, // 20: zcard.api.admin.v1.AdminPaymentService.DeleteChannel:output_type -> google.protobuf.Empty
-	10, // 21: zcard.api.admin.v1.AdminPaymentService.ListPayments:output_type -> zcard.api.admin.v1.ListPaymentsReply
-	13, // 22: zcard.api.admin.v1.AdminPaymentService.GetPayment:output_type -> zcard.api.admin.v1.Payment
-	13, // 23: zcard.api.admin.v1.AdminPaymentService.CapturePayment:output_type -> zcard.api.admin.v1.Payment
-	17, // 24: zcard.api.admin.v1.AdminPaymentService.CreateRefund:output_type -> zcard.api.admin.v1.RefundOrder
-	16, // 25: zcard.api.admin.v1.AdminPaymentService.ListRefunds:output_type -> zcard.api.admin.v1.ListRefundsReply
-	16, // [16:26] is the sub-list for method output_type
-	6,  // [6:16] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	5,  // 4: zcard.api.admin.v1.FieldOptionsReply.options:type_name -> zcard.api.admin.v1.Option
+	15, // 5: zcard.api.admin.v1.ListPaymentsReply.payments:type_name -> zcard.api.admin.v1.Payment
+	19, // 6: zcard.api.admin.v1.ListRefundsReply.refunds:type_name -> zcard.api.admin.v1.RefundOrder
+	20, // 7: zcard.api.admin.v1.AdminPaymentService.ListChannels:input_type -> google.protobuf.Empty
+	20, // 8: zcard.api.admin.v1.AdminPaymentService.ListDrivers:input_type -> google.protobuf.Empty
+	6,  // 9: zcard.api.admin.v1.AdminPaymentService.FieldOptions:input_type -> zcard.api.admin.v1.FieldOptionsRequest
+	8,  // 10: zcard.api.admin.v1.AdminPaymentService.CreateChannel:input_type -> zcard.api.admin.v1.CreateChannelRequest
+	9,  // 11: zcard.api.admin.v1.AdminPaymentService.UpdateChannel:input_type -> zcard.api.admin.v1.UpdateChannelRequest
+	10, // 12: zcard.api.admin.v1.AdminPaymentService.DeleteChannel:input_type -> zcard.api.admin.v1.DeleteChannelRequest
+	11, // 13: zcard.api.admin.v1.AdminPaymentService.ListPayments:input_type -> zcard.api.admin.v1.ListPaymentsRequest
+	13, // 14: zcard.api.admin.v1.AdminPaymentService.GetPayment:input_type -> zcard.api.admin.v1.GetPaymentRequest
+	14, // 15: zcard.api.admin.v1.AdminPaymentService.CapturePayment:input_type -> zcard.api.admin.v1.CapturePaymentRequest
+	16, // 16: zcard.api.admin.v1.AdminPaymentService.CreateRefund:input_type -> zcard.api.admin.v1.CreateRefundRequest
+	17, // 17: zcard.api.admin.v1.AdminPaymentService.ListRefunds:input_type -> zcard.api.admin.v1.ListRefundsRequest
+	0,  // 18: zcard.api.admin.v1.AdminPaymentService.ListChannels:output_type -> zcard.api.admin.v1.ChannelList
+	2,  // 19: zcard.api.admin.v1.AdminPaymentService.ListDrivers:output_type -> zcard.api.admin.v1.DriverList
+	7,  // 20: zcard.api.admin.v1.AdminPaymentService.FieldOptions:output_type -> zcard.api.admin.v1.FieldOptionsReply
+	1,  // 21: zcard.api.admin.v1.AdminPaymentService.CreateChannel:output_type -> zcard.api.admin.v1.Channel
+	1,  // 22: zcard.api.admin.v1.AdminPaymentService.UpdateChannel:output_type -> zcard.api.admin.v1.Channel
+	20, // 23: zcard.api.admin.v1.AdminPaymentService.DeleteChannel:output_type -> google.protobuf.Empty
+	12, // 24: zcard.api.admin.v1.AdminPaymentService.ListPayments:output_type -> zcard.api.admin.v1.ListPaymentsReply
+	15, // 25: zcard.api.admin.v1.AdminPaymentService.GetPayment:output_type -> zcard.api.admin.v1.Payment
+	15, // 26: zcard.api.admin.v1.AdminPaymentService.CapturePayment:output_type -> zcard.api.admin.v1.Payment
+	19, // 27: zcard.api.admin.v1.AdminPaymentService.CreateRefund:output_type -> zcard.api.admin.v1.RefundOrder
+	18, // 28: zcard.api.admin.v1.AdminPaymentService.ListRefunds:output_type -> zcard.api.admin.v1.ListRefundsReply
+	18, // [18:29] is the sub-list for method output_type
+	7,  // [7:18] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_payment_proto_init() }
@@ -1512,7 +1657,7 @@ func file_admin_v1_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_payment_proto_rawDesc), len(file_admin_v1_payment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

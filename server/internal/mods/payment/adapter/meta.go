@@ -65,8 +65,15 @@ func (a *EpusdtAdapter) ConfigFields() []port.ConfigField {
 		{Key: "pid", Label: "商户 ID", Type: "text", Required: true, Placeholder: "网关后台分配的 PID"},
 		{Key: "secret_key", Label: "API 密钥", Type: "password", Required: true, Sensitive: true, Help: "网关后台的密钥（HMAC 签名）"},
 		{Key: "currency", Label: "法币计价", Type: "select", Default: "cny", Options: []port.ConfigOption{{Label: "CNY 人民币", Value: "cny"}, {Label: "USD 美元", Value: "usd"}}},
-		{Key: "token", Label: "支付代币", Type: "text", Default: "USDT", Placeholder: "USDT"},
-		{Key: "network", Label: "网络", Type: "text", Default: "TRC20", Placeholder: "TRC20"},
+		// token/network：select 下拉 + 动态选项（以网关 /config 的 supported_assets 为准——
+		// 每个商户实例启用的链/代币不同；网关不可达时前端回落下方静态矩阵并提示）
+		// token/network 多选：恰好一币一链 → 下单锁定；多选/未选 → 占位订单收银台自选
+		{Key: "token", Label: "支付代币", Type: "select", Dynamic: true, Multiple: true, Default: "USDT",
+			Help:    "收款代币（需 epusdt 服务端已启用）。多选时顾客在收银台自选；仅选一个则锁定该币种",
+			Options: epusdtStaticTokenOptions()},
+		{Key: "network", Label: "网络", Type: "select", Dynamic: true, Multiple: true, Default: "tron",
+			Help:    "收款链（需 epusdt 服务端已启用，以服务端为准）；TRC20 手续费最低推荐。多选时顾客在收银台自选",
+			Options: epusdtStaticNetworkOptions()},
 	}
 }
 
