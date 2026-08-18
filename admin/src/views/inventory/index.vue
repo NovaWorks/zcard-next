@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, h } from "vue";
 import { NButton, NTag, NPopconfirm, NAlert } from "naive-ui";
+import { checkAuth } from "@/directives";
 import type { DataTableColumns } from "naive-ui";
 import {
   fetchProducts,
@@ -173,7 +174,7 @@ const batchColumns: DataTableColumns<any> = [
     key: "actions",
     width: 80,
     render: (row) =>
-      row.status === "done"
+      row.status === "done" && checkAuth("inventory:import")
         ? h(
             NPopconfirm,
             { onPositiveClick: () => handleCancel(row.id) },
@@ -320,7 +321,7 @@ onMounted(() => {
   <div class="min-h-500px flex-col gap-16px overflow-hidden">
     <NCard title="卡密库存" class="flex-1">
       <div class="mb-16px flex items-center gap-12px">
-        <NButton type="primary" @click="showImport = true">导入卡密</NButton>
+        <NButton v-auth="'inventory:import'" type="primary" @click="showImport = true">导入卡密</NButton>
         <NSelect
           v-model:value="filterCatId"
           :options="categoryOptions"

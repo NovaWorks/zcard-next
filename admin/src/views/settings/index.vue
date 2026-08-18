@@ -90,6 +90,7 @@ onMounted(loadSettings);
               />
             </template>
             <NButton
+              v-auth="'settings:update'"
               size="small"
               type="primary"
               :loading="savingKey === item.key"

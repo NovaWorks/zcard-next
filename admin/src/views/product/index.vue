@@ -18,6 +18,7 @@ import {
   fetchSupplyConnections,
 } from "@/service/api";
 import { formatMoney, centsToYuan, yuanToFen } from "@/utils/money";
+import { checkAuth } from "@/directives";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import RichEditor from "@/components/common/rich-editor/index.vue";
 import TablePager from "@/components/common/table-pager.vue";
@@ -89,7 +90,9 @@ function priceLine(row: any, field: "price" | "cost") {
   const label = field === "price" ? "售价" : "成本";
   return h("div", { class: "money-cell group inline-flex items-center gap-4px" }, [
     h("span", {}, cents ? formatMoney(cents) : "-"),
-    h(
+    // 改价铅笔仅 catalog:write 可见（渲染函数内求值，权限变更后随表格重渲染生效）
+    checkAuth("catalog:write")
+      ? h(
       NPopover,
       {
         show: !!cellPopover[key],
@@ -142,7 +145,8 @@ function priceLine(row: any, field: "price" | "cost") {
             ),
           ]),
       },
-    ),
+        )
+      : null,
   ]);
 }
 
@@ -393,20 +397,24 @@ const columns: DataTableColumns<any> = [
         { size: "small" },
         {
           default: () => [
-            h(
-              NButton,
-              { size: "small", onClick: () => handleEdit(row) },
-              { default: () => "编辑" },
-            ),
-            h(
-              NPopconfirm,
-              { onPositiveClick: () => handleDelete(row.id) },
-              {
-                trigger: () =>
-                  h(NButton, { size: "small", type: "error" }, { default: () => "删除" }),
-                default: () => "确定删除该商品？",
-              },
-            ),
+            checkAuth("catalog:write")
+              ? h(
+                  NButton,
+                  { size: "small", onClick: () => handleEdit(row) },
+                  { default: () => "编辑" },
+                )
+              : null,
+            checkAuth("catalog:delete")
+              ? h(
+                  NPopconfirm,
+                  { onPositiveClick: () => handleDelete(row.id) },
+                  {
+                    trigger: () =>
+                      h(NButton, { size: "small", type: "error" }, { default: () => "删除" }),
+                    default: () => "确定删除该商品？",
+                  },
+                )
+              : null,
           ],
         },
       ),
@@ -579,6 +587,7 @@ onMounted(() => {
     <NCard title="商品管理" class="flex-1">
       <div class="mb-16px flex items-center gap-12px">
         <NButton
+          v-auth="'catalog:write'"
           type="primary"
           @click="
             resetForm();
@@ -607,13 +616,13 @@ onMounted(() => {
         >
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 1, '上架')">
           <template #trigger>
-            <NButton size="small" type="success">批量上架</NButton>
+            <NButton v-auth="'catalog:write'" size="small" type="success">批量上架</NButton>
           </template>
           确定上架选中的 {{ checkedKeys.length }} 件商品？
         </NPopconfirm>
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 0, '下架')">
           <template #trigger>
-            <NButton size="small" type="warning">批量下架</NButton>
+            <NButton v-auth="'catalog:write'" size="small" type="warning">批量下架</NButton>
           </template>
           确定下架选中的 {{ checkedKeys.length }} 件商品？
         </NPopconfirm>
@@ -677,7 +686,13 @@ onMounted(() => {
                 default-expand-all
                 class="flex-1"
               />
-              <NButton size="small" quaternary type="primary" @click="showCategory = true">
+              <NButton
+                v-auth="'catalog:category_write'"
+                size="small"
+                quaternary
+                type="primary"
+                @click="showCategory = true"
+              >
                 管理分类
               </NButton>
             </div>

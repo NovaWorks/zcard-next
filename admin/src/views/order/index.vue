@@ -13,6 +13,7 @@ import {
   NSelect,
 } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
+import { checkAuth } from "@/directives";
 import { fetchOrders, fetchOrder, cancelOrder } from "@/service/api";
 import { formatMoney, formatSignedMoney } from "@/utils/money";
 
@@ -199,7 +200,7 @@ const columns: DataTableColumns<any> = [
               { size: "small", onClick: () => handleDetail(row.order_no) },
               { default: () => "详情" },
             ),
-            row.status === "pending_payment"
+            row.status === "pending_payment" && checkAuth("order:cancel")
               ? h(
                   NPopconfirm,
                   { onPositiveClick: () => handleCancel(row.order_no) },

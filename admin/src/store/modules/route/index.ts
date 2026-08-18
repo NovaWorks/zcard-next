@@ -18,6 +18,7 @@ import { getRouteName, getRoutePath } from "@/router/elegant/transform";
 import { useAuthStore } from "../auth";
 import { useTabStore } from "../tab";
 import {
+  filterAuthRoutesByPermissions,
   filterAuthRoutesByRoles,
   filterRoutesByDev,
   getBreadcrumbsByRoute,
@@ -204,15 +205,31 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     if (authStore.isStaticSuper) {
       addAuthRoutes(staticAuthRoutes);
     } else {
-      const filteredAuthRoutes = filterAuthRoutesByRoles(
-        staticAuthRoutes,
-        authStore.userInfo.roles,
+      const filteredAuthRoutes = filterAuthRoutesByPermissions(
+        filterAuthRoutesByRoles(staticAuthRoutes, authStore.userInfo.roles),
+        authStore.userInfo.buttons,
       );
 
       addAuthRoutes(filteredAuthRoutes);
     }
 
     handleConstantAndAuthRoutes();
+
+    // 权限过滤后默认 home 可能不可见（如无 dashboard:read）：
+    // 根路由重定向与首页 tab 落到首个可见业务路由，防登录后 404/403
+    const firstVisible = [...authRoutes.value]
+      .filter((route) => !route.meta?.hideInMenu)
+      .sort((next, prev) => (Number(next.meta?.order) || 0) - (Number(prev.meta?.order) || 0))[0];
+    if (firstVisible) {
+      setRouteHome(firstVisible.name as LastLevelRouteKey);
+      handleUpdateRootRouteRedirect(firstVisible.name as LastLevelRouteKey);
+    } else if (!authStore.isStaticSuper) {
+      // 零可路由账号（角色被收走全部页面权限）：会话无意义且会困死在 403
+      // （已登录访问 /login 被守卫弹回 root）——主动登出回登录页，保留逃生通道
+      setIsInitAuthRoute(true);
+      authStore.resetStore();
+      return;
+    }
 
     setIsInitAuthRoute(true);
   }

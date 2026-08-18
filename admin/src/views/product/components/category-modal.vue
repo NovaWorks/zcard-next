@@ -163,7 +163,7 @@ function handleMenu(key: string | number, cat: any) {
   <NModal v-model:show="visible" preset="card" title="分类管理" style="width: 520px">
     <div class="mb-12px flex items-center justify-between">
       <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类</span>
-      <NButton size="small" type="primary" @click="showCreate = !showCreate">
+      <NButton v-auth="'catalog:category_write'" size="small" type="primary" @click="showCreate = !showCreate">
         {{ showCreate ? "收起" : "新建分类" }}
       </NButton>
     </div>
@@ -227,7 +227,7 @@ function handleMenu(key: string | number, cat: any) {
       <NInput v-model:value="renameText" @keyup.enter="handleRename" />
       <template #action>
         <NButton @click="renaming = null">取消</NButton>
-        <NButton type="primary" @click="handleRename">确定</NButton>
+        <NButton v-auth="'catalog:category_write'" type="primary" @click="handleRename">确定</NButton>
       </template>
     </NModal>
 
@@ -242,7 +242,7 @@ function handleMenu(key: string | number, cat: any) {
       确定删除分类「{{ deleteConfirm.cat?.name }}」？分类下仍有商品时将无法删除。
       <template #action>
         <NButton @click="deleteConfirm.show = false">取消</NButton>
-        <NButton type="error" @click="handleDelete">删除</NButton>
+        <NButton v-auth="'catalog:category_delete'" type="error" @click="handleDelete">删除</NButton>
       </template>
     </NModal>
   </NModal>

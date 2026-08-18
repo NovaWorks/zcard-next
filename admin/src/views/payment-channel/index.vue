@@ -313,7 +313,7 @@ onMounted(() => {
         <div class="text-16px font-600">支付渠道</div>
         <div class="text-12px opacity-60 mt-4px">接入支付渠道并在下方完成凭据配置，保存后立即生效</div>
       </div>
-      <NButton type="primary" @click="openAddDialog">添加渠道</NButton>
+      <NButton v-auth="'payment:write'" type="primary" @click="openAddDialog">添加渠道</NButton>
     </div>
 
     <!-- 渠道卡片网格 -->
@@ -321,7 +321,7 @@ onMounted(() => {
       <div v-if="channels.length === 0 && !loading">
         <NEmpty description="尚未接入任何支付渠道" style="padding: 48px 0">
           <template #extra>
-            <NButton type="primary" @click="openAddDialog">添加第一个支付渠道</NButton>
+            <NButton v-auth="'payment:write'" type="primary" @click="openAddDialog">添加第一个支付渠道</NButton>
           </template>
         </NEmpty>
       </div>
@@ -367,12 +367,12 @@ onMounted(() => {
 
           <!-- 操作 -->
           <div class="flex items-center gap-8px pt-4px border-t border-#f1f5f9 dark:border-#333">
-            <NButton size="small" type="primary" secondary class="flex-1" @click="openConfig(ch)">
+            <NButton v-auth="'payment:write'" size="small" type="primary" secondary class="flex-1" @click="openConfig(ch)">
               {{ isConfigured(ch) ? "配置" : "去配置" }}
             </NButton>
             <NPopconfirm :on-positive-click="() => handleDelete(ch)">
               <template #trigger>
-                <NButton size="small" type="error" secondary>删除</NButton>
+                <NButton v-auth="'payment:delete'" size="small" type="error" secondary>删除</NButton>
               </template>
               删除后该渠道将无法继续收款，确定删除？
             </NPopconfirm>
@@ -526,7 +526,7 @@ onMounted(() => {
       <template #footer>
         <div class="flex justify-end gap-8px">
           <NButton @click="configVisible = false">取消</NButton>
-          <NButton type="primary" :loading="saving" @click="handleConfigSave">保存</NButton>
+          <NButton v-auth="'payment:write'" type="primary" :loading="saving" @click="handleConfigSave">保存</NButton>
         </div>
       </template>
     </NModal>

@@ -27,7 +27,6 @@ declare module "@elegant-router/types" {
     "order": "/order";
     "payment-channel": "/payment-channel";
     "product": "/product";
-    "role": "/role";
     "settings": "/settings";
     "staff": "/staff";
     "wallet": "/wallet";
@@ -72,7 +71,6 @@ declare module "@elegant-router/types" {
     | "order"
     | "payment-channel"
     | "product"
-    | "role"
     | "settings"
     | "staff"
     | "wallet"
@@ -102,7 +100,6 @@ declare module "@elegant-router/types" {
     | "order"
     | "payment-channel"
     | "product"
-    | "role"
     | "settings"
     | "staff"
     | "wallet"

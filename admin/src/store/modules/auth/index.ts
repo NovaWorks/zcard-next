@@ -152,12 +152,18 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     const { data, error } = await fetchGetUserInfo();
 
     if (!error) {
-      // Kratos 返回 { admin: { id, username, nickname, roles... } }
+      // Kratos 返回 { admin: {...}, permissions: ["catalog:read", ...] }（snake_case）
       const admin = (data as any)?.admin || data;
       userInfo.userId = String(admin?.id || admin?.user_id || "");
       userInfo.userName = admin?.username || admin?.userName || "";
-      userInfo.roles = ["R_super"]; // M1b：从权限目录动态获取
-      userInfo.buttons = [];
+      // 真实权限点（后端 GetProfile 下发）：buttons 供 hasAuth/v-auth 按钮级控制；
+      // roles 仅映射超管（R_super 驱动 isStaticSuper 全量放行），非超管为空走权限码过滤。
+      // 兼容回退：旧后端无 permissions 字段（undefined≠空数组）→ 按 R_super 全量放行
+      // （后端中间件每请求仍独立鉴权，此处仅菜单/按钮表现层回退，不构成越权）
+      const rawPerms = (data as any)?.permissions;
+      const perms: string[] = Array.isArray(rawPerms) ? rawPerms : ["*"];
+      userInfo.buttons = perms;
+      userInfo.roles = perms.includes("*") ? ["R_super"] : [];
       return true;
     }
 

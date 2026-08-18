@@ -9,6 +9,7 @@ import {
   setupNProgress,
 } from "./plugins";
 import { setupStore } from "./store";
+import { setupDirectives } from "./directives";
 import { setupRouter } from "./router";
 import { getLocale, setupI18n } from "./locales";
 import App from "./App.vue";
@@ -25,6 +26,8 @@ async function setupApp() {
   const app = createApp(App);
 
   setupStore(app);
+
+  setupDirectives(app);
 
   await setupRouter(app);
 

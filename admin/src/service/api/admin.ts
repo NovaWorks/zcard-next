@@ -72,6 +72,29 @@ export function toggleAdmin(id: number, enabled: boolean) {
   });
 }
 
+export function resetAdminPassword(id: number, password: string) {
+  return request({
+    url: `/api/v1/admin/admins/${id}/reset-password`,
+    method: "put",
+    data: { password },
+  });
+}
+
+export function resetAdminTOTP(id: number) {
+  return request({
+    url: `/api/v1/admin/admins/${id}/totp-reset`,
+    method: "put",
+    data: {},
+  });
+}
+
+export function deleteAdmin(id: number) {
+  return request({
+    url: `/api/v1/admin/admins/${id}`,
+    method: "delete",
+  });
+}
+
 // ── 角色管理 ──
 
 export function fetchRoles() {

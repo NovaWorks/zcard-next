@@ -8,6 +8,7 @@ import type {
 import { isDev } from "@/constants/env";
 import { useSvgIcon } from "@/hooks/common/icon";
 import { $t } from "@/locales";
+import { hasRoutePermission } from "@/router/permissions";
 
 /**
  * Filter auth routes by roles
@@ -17,6 +18,43 @@ import { $t } from "@/locales";
  */
 export function filterAuthRoutesByRoles(routes: ElegantConstRoute[], roles: string[]) {
   return routes.flatMap((route) => filterAuthRouteByRoles(route, roles));
+}
+
+/**
+ * Filter auth routes by permission codes（后端 authz 权限点；按 route.name 查 ROUTE_PERMISSIONS）
+ *
+ * @param routes Auth routes
+ * @param buttons 当前用户权限点集（profile.permissions）
+ */
+export function filterAuthRoutesByPermissions(routes: ElegantConstRoute[], buttons: string[]) {
+  return routes.flatMap((route) => filterAuthRouteByPermissions(route, buttons));
+}
+
+/**
+ * Filter auth route by permission codes
+ *
+ * @param route Auth route
+ * @param buttons Permission codes of current user
+ */
+function filterAuthRouteByPermissions(
+  route: ElegantConstRoute,
+  buttons: string[],
+): ElegantConstRoute[] {
+  const filterRoute = { ...route };
+
+  if (filterRoute.children?.length) {
+    filterRoute.children = filterRoute.children.flatMap((item) =>
+      filterAuthRouteByPermissions(item, buttons),
+    );
+  }
+
+  // Exclude the route if it has no children after filtering
+  if (filterRoute.children?.length === 0) {
+    return [];
+  }
+
+  // constant 路由与未登记路由放行（登录即可见），登记路由须命中任一权限点
+  return hasRoutePermission(route.name as string, buttons) ? [filterRoute] : [];
 }
 
 /**

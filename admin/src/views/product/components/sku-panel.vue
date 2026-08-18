@@ -9,6 +9,7 @@
 import { ref, computed, watch, h } from "vue";
 import { NButton, NTag, NSpace, NPopconfirm, NInput, NInputNumber, NEmpty } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
+import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, yuanToFen } from "@/utils/money";
 
@@ -306,31 +307,35 @@ const columns: DataTableColumns<SkuRow> = [
         { size: "small" },
         {
           default: () => [
-            h(
-              NButton,
-              {
-                size: "small",
-                type: "primary",
-                ghost: true,
-                disabled: !row.dirty,
-                loading: saving.value,
-                onClick: () => saveRow(row),
-              },
-              { default: () => "保存" },
-            ),
-            h(
-              NPopconfirm,
-              { onPositiveClick: () => handleDelete(row) },
-              {
-                trigger: () =>
-                  h(
-                    NButton,
-                    { size: "small", type: "error", quaternary: true },
-                    { default: () => "删除" },
-                  ),
-                default: () => "确定删除该规格？",
-              },
-            ),
+            checkAuth("catalog:sku_write")
+              ? h(
+                  NButton,
+                  {
+                    size: "small",
+                    type: "primary",
+                    ghost: true,
+                    disabled: !row.dirty,
+                    loading: saving.value,
+                    onClick: () => saveRow(row),
+                  },
+                  { default: () => "保存" },
+                )
+              : null,
+            checkAuth("catalog:sku_write")
+              ? h(
+                  NPopconfirm,
+                  { onPositiveClick: () => handleDelete(row) },
+                  {
+                    trigger: () =>
+                      h(
+                        NButton,
+                        { size: "small", type: "error", quaternary: true },
+                        { default: () => "删除" },
+                      ),
+                    default: () => "确定删除该规格？",
+                  },
+                )
+              : null,
           ],
         },
       ),
@@ -343,7 +348,7 @@ const columns: DataTableColumns<SkuRow> = [
     <!-- ① 规格定义区（顶部标签对齐控件面板风格） -->
     <NCard size="small" class="mb-12px" title="规格设置">
       <template #header-extra>
-        <NButton size="tiny" quaternary type="primary" @click="addSpec">+ 添加规格</NButton>
+        <NButton v-auth="'catalog:sku_write'" size="tiny" quaternary type="primary" @click="addSpec">+ 添加规格</NButton>
       </template>
       <NEmpty
         v-if="!specs.length"
@@ -364,11 +369,12 @@ const columns: DataTableColumns<SkuRow> = [
           placeholder="规格值，逗号分隔（如 月卡,季卡,年卡）"
           class="min-w-220px flex-1"
         />
-        <NButton size="small" quaternary type="error" @click="removeSpec(i)">删除</NButton>
+        <NButton v-auth="'catalog:sku_write'" size="small" quaternary type="error" @click="removeSpec(i)">删除</NButton>
       </div>
       <div class="mt-8px flex flex-wrap items-center gap-8px">
-        <NButton size="small" type="primary" ghost @click="generate">生成规格组合</NButton>
+        <NButton v-auth="'catalog:sku_write'" size="small" type="primary" ghost @click="generate">生成规格组合</NButton>
         <NButton
+          v-auth="'catalog:sku_write'"
           size="small"
           type="primary"
           :disabled="!newRows.length"

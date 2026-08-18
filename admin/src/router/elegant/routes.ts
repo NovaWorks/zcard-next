@@ -120,17 +120,6 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
-    name: 'role',
-    path: '/role',
-    component: 'layout.base$view.role',
-    meta: {
-      title: '角色权限',
-      i18nKey: 'route.role',
-      icon: 'mdi:shield-account-outline',
-      order: 7
-    }
-  },
-  {
     name: 'settings',
     path: '/settings',
     component: 'layout.base$view.settings',

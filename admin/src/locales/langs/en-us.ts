@@ -238,7 +238,6 @@ const local: App.I18n.Schema = {
     order: "Orders",
     "payment-channel": "Payment Channels",
     staff: "Staff",
-    role: "Roles",
     settings: "Settings",
     wallet: "Wallet",
   },

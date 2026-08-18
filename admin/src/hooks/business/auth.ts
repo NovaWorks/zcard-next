@@ -8,11 +8,18 @@ export function useAuth() {
       return false;
     }
 
-    if (typeof codes === "string") {
-      return authStore.userInfo.buttons.includes(codes);
+    // buttons = profile 下发的权限点码；"*" 为超管通配（与后端 authz.Allowed 同语义）
+    const buttons = authStore.userInfo.buttons;
+
+    if (buttons.includes("*")) {
+      return true;
     }
 
-    return codes.some((code) => authStore.userInfo.buttons.includes(code));
+    if (typeof codes === "string") {
+      return buttons.includes(codes);
+    }
+
+    return codes.some((code) => buttons.includes(code));
   }
 
   return {

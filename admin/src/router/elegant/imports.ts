@@ -25,7 +25,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   order: () => import("@/views/order/index.vue"),
   "payment-channel": () => import("@/views/payment-channel/index.vue"),
   product: () => import("@/views/product/index.vue"),
-  role: () => import("@/views/role/index.vue"),
   settings: () => import("@/views/settings/index.vue"),
   staff: () => import("@/views/staff/index.vue"),
   wallet: () => import("@/views/wallet/index.vue"),

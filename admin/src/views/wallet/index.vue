@@ -174,7 +174,7 @@ async function handleAdjust() {
       <div class="mb-16px flex items-center gap-12px">
         <NInputNumber v-model:value="userId" :min="1" placeholder="用户 ID" class="w-200px" />
         <NButton type="primary" :loading="balanceLoading" @click="loadBalance">查询余额</NButton>
-        <NButton :disabled="!balance" @click="showAdjust = true">调账</NButton>
+        <NButton v-auth="'wallet:adjust'" :disabled="!balance" @click="showAdjust = true">调账</NButton>
       </div>
 
       <!-- 余额卡片 -->
@@ -240,7 +240,7 @@ async function handleAdjust() {
       </NForm>
       <template #action>
         <NButton @click="showAdjust = false">取消</NButton>
-        <NButton type="primary" :loading="adjusting" @click="handleAdjust">确定</NButton>
+        <NButton v-auth="'wallet:adjust'" type="primary" :loading="adjusting" @click="handleAdjust">确定</NButton>
       </template>
     </NModal>
   </div>

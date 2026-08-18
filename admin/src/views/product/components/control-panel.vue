@@ -7,6 +7,7 @@ import { ref, reactive, computed, watch, h } from "vue";
 import { NButton, NTag, NSpace, NPopconfirm } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchControls, createControl, updateControl, deleteControl } from "@/service/api";
+import { checkAuth } from "@/directives";
 
 const props = defineProps<{ productId: number }>();
 
@@ -89,20 +90,24 @@ const columns: DataTableColumns<any> = [
         { size: "small" },
         {
           default: () => [
-            h(
-              NButton,
-              { size: "small", onClick: () => handleEdit(row) },
-              { default: () => "编辑" },
-            ),
-            h(
-              NPopconfirm,
-              { onPositiveClick: () => handleDelete(row.id) },
-              {
-                trigger: () =>
-                  h(NButton, { size: "small", type: "error" }, { default: () => "删除" }),
-                default: () => "确定删除该控件？",
-              },
-            ),
+            checkAuth("catalog:control_write")
+              ? h(
+                  NButton,
+                  { size: "small", onClick: () => handleEdit(row) },
+                  { default: () => "编辑" },
+                )
+              : null,
+            checkAuth("catalog:control_delete")
+              ? h(
+                  NPopconfirm,
+                  { onPositiveClick: () => handleDelete(row.id) },
+                  {
+                    trigger: () =>
+                      h(NButton, { size: "small", type: "error" }, { default: () => "删除" }),
+                    default: () => "确定删除该控件？",
+                  },
+                )
+              : null,
           ],
         },
       ),
@@ -194,7 +199,7 @@ async function handleDelete(id: number) {
 <template>
   <div>
     <div class="mb-12px">
-      <NButton size="small" type="primary" @click="showForm = !showForm">
+      <NButton v-auth="'catalog:control_write'" size="small" type="primary" @click="showForm = !showForm">
         {{ showForm ? "收起" : "新增控件" }}
       </NButton>
     </div>
@@ -234,7 +239,7 @@ async function handleDelete(id: number) {
         <span class="text-12px text-gray-400">控件在下单表单渲染，答案随订单落库</span>
         <NSpace>
           <NButton v-if="editingId" size="small" @click="resetForm">取消编辑</NButton>
-          <NButton type="primary" size="small" :loading="saving" @click="handleSave">
+          <NButton v-auth="'catalog:control_write'" type="primary" size="small" :loading="saving" @click="handleSave">
             {{ editingId ? "更新控件" : "创建控件" }}
           </NButton>
         </NSpace>

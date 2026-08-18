@@ -468,18 +468,18 @@ const categorySelectOptions = computed(() => [
             accept="image/*"
             :before-upload="beforeUpload as any"
           >
-            <NButton size="small" type="primary" :loading="uploading > 0">上传图片</NButton>
+            <NButton v-auth="'media:upload'" size="small" type="primary" :loading="uploading > 0">上传图片</NButton>
           </NUpload>
-          <NButton size="small" @click="showImport = true">外链导入</NButton>
+          <NButton v-auth="'media:upload'" size="small" @click="showImport = true">外链导入</NButton>
           <NButton size="small" quaternary @click="togglePageAll">
             {{ pageAllSelected ? "取消全选" : "全选本页" }}
           </NButton>
-          <NButton size="small" :disabled="!selectedIds.size" @click="showMove = true">
+          <NButton v-auth="'media:write'" size="small" :disabled="!selectedIds.size" @click="showMove = true">
             移动到分类{{ selectedIds.size ? `（${selectedIds.size}）` : "" }}
           </NButton>
           <NPopconfirm @positive-click="handleDelete(false)">
             <template #trigger>
-              <NButton size="small" type="error" ghost :disabled="!selectedIds.size">
+              <NButton v-auth="'media:delete'" size="small" type="error" ghost :disabled="!selectedIds.size">
                 删除{{ selectedIds.size ? `（${selectedIds.size}）` : "" }}
               </NButton>
             </template>
@@ -547,6 +547,7 @@ const categorySelectOptions = computed(() => [
               >
                 <NButton size="tiny" quaternary @click.stop="copyURL(item.url)">复制链接</NButton>
                 <NButton
+                  v-auth="'media:write'"
                   size="tiny"
                   quaternary
                   @click.stop="((renamingMedia = item), (renameMediaText = item.name))"
@@ -573,7 +574,12 @@ const categorySelectOptions = computed(() => [
       >
         <div class="mb-8px flex items-center justify-between">
           <span class="text-13px font-medium">素材分类</span>
-          <NButton size="tiny" quaternary type="primary" @click="showCatCreate = !showCatCreate"
+          <NButton
+            v-auth="'media:write'"
+            size="tiny"
+            quaternary
+            type="primary"
+            @click="showCatCreate = !showCatCreate"
             >+ 新建</NButton
           >
         </div>
@@ -641,7 +647,7 @@ const categorySelectOptions = computed(() => [
                   trigger="click"
                   @select="(key: string | number) => handleCatMenu(key, cat)"
                 >
-                  <NButton size="tiny" quaternary @click.stop>⋯</NButton>
+                  <NButton v-auth="'media:write'" size="tiny" quaternary @click.stop>⋯</NButton>
                 </NDropdown>
               </span>
             </div>

@@ -173,7 +173,6 @@ const routeMap: RouteMap = {
   "order": "/order",
   "payment-channel": "/payment-channel",
   "product": "/product",
-  "role": "/role",
   "settings": "/settings",
   "staff": "/staff",
   "wallet": "/wallet"
