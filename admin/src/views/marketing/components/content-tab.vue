@@ -3,9 +3,10 @@
 import { onMounted, ref, h } from "vue";
 import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NPopconfirm, NSelect, NSwitch, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
-import { fetchBanners, createBanner, deleteBanner, fetchPosts, createPost, publishPost, deletePost } from "@/service/api";
+import { fetchBanners, createBanner, deleteBanner, fetchPosts, createPost, updatePost, publishPost, deletePost } from "@/service/api";
 import { checkAuth } from "@/directives";
 import MediaField from "@/components/common/media-picker/media-field.vue";
+import MdHtmlEditor from "@/components/common/md-html-editor/index.vue";
 
 defineOptions({ name: "ContentTab" });
 
@@ -22,7 +23,29 @@ const bannerColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
   { title: "名称", key: "name", width: 120 },
   { title: "位置", key: "position", width: 70 },
-  { title: "图片", key: "image", width: 200, ellipsis: true, render: (row) => row.image || "-" },
+  {
+    title: "图片",
+    key: "image",
+    width: 200,
+    render: (row) =>
+      row.image
+        ? h(
+            "span",
+            {
+              class: "img-preview-trigger text-primary",
+              style: "border-bottom:1px dotted var(--primary-color);cursor:pointer;position:relative;",
+            },
+            [
+              row.image.length > 28 ? row.image.slice(0, 28) + "…" : row.image,
+              h("img", {
+                src: row.image,
+                class: "img-preview-pop",
+                style: "display:none;position:absolute;left:0;top:24px;z-index:100;width:360px;max-height:240px;object-fit:contain;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,.25);background:#fff;padding:4px;",
+              }),
+            ],
+          )
+        : "-",
+  },
   { title: "跳转", key: "link_value", width: 140, ellipsis: true, render: (row) => row.link_value || "-" },
   { title: "排序", key: "sort", width: 56 },
   {
@@ -48,6 +71,18 @@ const posts = ref<any[]>([]);
 const showPost = ref(false);
 const postSaving = ref(false);
 const postForm = ref({ slug: "", type: "notice", title: "", summary: "", content: "", is_published: true });
+const editingPost = ref<any>(null);
+
+// title_json/content_json → zh_CN 展示值
+function zhValue(json: string): string {
+  if (!json) return "-";
+  try {
+    const v = JSON.parse(json);
+    return v.zh_CN || v.zh || Object.values(v)[0] || "-";
+  } catch {
+    return json;
+  }
+}
 
 const postColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
@@ -58,7 +93,7 @@ const postColumns: DataTableColumns<any> = [
     width: 70,
     render: (row) => h(NTag, { size: "small", type: row.type === "notice" ? "warning" : "info" }, { default: () => (row.type === "notice" ? "公告" : "博客") }),
   },
-  { title: "标题", key: "title_json", minWidth: 160, ellipsis: true },
+  { title: "标题", key: "title_json", minWidth: 160, ellipsis: true, render: (row) => zhValue(row.title_json) },
   {
     title: "发布",
     key: "is_published",
@@ -71,6 +106,9 @@ const postColumns: DataTableColumns<any> = [
     width: 150,
     render: (row) =>
       h("div", { class: "flex gap-4px" }, [
+        canWrite()
+          ? h(NButton, { size: "tiny", onClick: () => openEditPost(row) }, { default: () => "编辑" })
+          : null,
         canWrite()
           ? h(NButton, { size: "tiny", onClick: () => handlePublish(row) }, { default: () => (row.is_published ? "下架" : "发布") })
           : null,
@@ -125,22 +163,48 @@ async function handleDeleteBanner(id: number) {
   }
 }
 
+function openEditPost(row: any) {
+  editingPost.value = row;
+  postForm.value = {
+    slug: row.slug,
+    type: row.type,
+    title: String(zhValue(row.title_json) === "-" ? "" : zhValue(row.title_json)),
+    summary: String(zhValue(row.summary_json) === "-" ? "" : zhValue(row.summary_json)),
+    content: String(zhValue(row.content_json) === "-" ? "" : zhValue(row.content_json)),
+    is_published: row.is_published,
+  };
+  showPost.value = true;
+}
+
 async function handlePost() {
   if (!postForm.value.slug || !postForm.value.title || !postForm.value.content) return;
   postSaving.value = true;
   try {
-    const { error } = await createPost({
-      slug: postForm.value.slug,
-      type: postForm.value.type,
-      title_json: JSON.stringify({ zh_CN: postForm.value.title }),
-      summary_json: postForm.value.summary ? JSON.stringify({ zh_CN: postForm.value.summary }) : undefined,
-      content_json: JSON.stringify({ zh_CN: postForm.value.content }),
-      is_published: postForm.value.is_published,
-    });
-    if (!error) {
-      window.$message?.success("文章已创建");
-      showPost.value = false;
-      loadPosts();
+    if (editingPost.value) {
+      const { error } = await updatePost(editingPost.value.id, {
+        title_json: JSON.stringify({ zh_CN: postForm.value.title }),
+        summary_json: postForm.value.summary ? JSON.stringify({ zh_CN: postForm.value.summary }) : undefined,
+        content_json: JSON.stringify({ zh_CN: postForm.value.content }),
+      });
+      if (!error) {
+        window.$message?.success("文章已更新");
+        showPost.value = false;
+        loadPosts();
+      }
+    } else {
+      const { error } = await createPost({
+        slug: postForm.value.slug,
+        type: postForm.value.type,
+        title_json: JSON.stringify({ zh_CN: postForm.value.title }),
+        summary_json: postForm.value.summary ? JSON.stringify({ zh_CN: postForm.value.summary }) : undefined,
+        content_json: JSON.stringify({ zh_CN: postForm.value.content }),
+        is_published: postForm.value.is_published,
+      });
+      if (!error) {
+        window.$message?.success("文章已创建");
+        showPost.value = false;
+        loadPosts();
+      }
     }
   } finally {
     postSaving.value = false;
@@ -181,7 +245,14 @@ onMounted(() => {
     <div>
       <div class="mb-8px flex items-center gap-8px">
         <span class="text-13px font-500">公告/文章</span>
-        <NButton v-if="canWrite()" size="tiny" type="primary" @click="showPost = true">新增文章</NButton>
+        <NButton
+          v-if="canWrite()"
+          size="tiny"
+          type="primary"
+          @click="((editingPost = null), (postForm = { slug: '', type: 'notice', title: '', summary: '', content: '', is_published: true }), (showPost = true))"
+        >
+          新增文章
+        </NButton>
       </div>
       <NDataTable :columns="postColumns" :data="posts" :loading="postLoading" size="small" />
     </div>
@@ -216,13 +287,13 @@ onMounted(() => {
       </template>
     </NModal>
 
-    <NModal v-model:show="showPost" preset="dialog" title="新增公告/文章" style="width: 560px">
+    <NModal v-model:show="showPost" preset="dialog" :title="editingPost ? `编辑文章：${editingPost.slug}` : '新增公告/文章'" style="width: 680px">
       <NForm :model="postForm" label-placement="left" label-width="72">
         <NFormItem label="slug" required>
-          <NInput v-model:value="postForm.slug" placeholder="如 notice-0818" />
+          <NInput v-model:value="postForm.slug" placeholder="如 notice-0818" :disabled="!!editingPost" />
         </NFormItem>
         <NFormItem label="类型">
-          <NSelect v-model:value="postForm.type" :options="[{ label: '公告', value: 'notice' }, { label: '博客', value: 'blog' }]" />
+          <NSelect v-model:value="postForm.type" :options="[{ label: '公告', value: 'notice' }, { label: '博客', value: 'blog' }]" :disabled="!!editingPost" />
         </NFormItem>
         <NFormItem label="标题" required>
           <NInput v-model:value="postForm.title" />
@@ -231,7 +302,9 @@ onMounted(() => {
           <NInput v-model:value="postForm.summary" />
         </NFormItem>
         <NFormItem label="正文" required>
-          <NInput v-model:value="postForm.content" type="textarea" :rows="6" />
+          <div class="w-full">
+            <MdHtmlEditor v-model="postForm.content" height="300px" />
+          </div>
         </NFormItem>
         <NFormItem label="直接发布">
           <NSwitch v-model:value="postForm.is_published" />
@@ -239,8 +312,15 @@ onMounted(() => {
       </NForm>
       <template #action>
         <NButton @click="showPost = false">取消</NButton>
-        <NButton type="primary" :loading="postSaving" @click="handlePost">创建</NButton>
+        <NButton type="primary" :loading="postSaving" @click="handlePost">{{ editingPost ? "保存" : "创建" }}</NButton>
       </template>
     </NModal>
   </div>
 </template>
+
+<style scoped>
+/* 横幅图片悬停预览（原生 :hover 命中测试，无 JS 依赖） */
+:deep(.img-preview-trigger:hover .img-preview-pop) {
+  display: block !important;
+}
+</style>

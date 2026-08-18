@@ -71,7 +71,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: '卡密库存',
       i18nKey: 'route.inventory',
       icon: 'mdi:card-multiple-outline',
-      order: 3
+      order: 4
     }
   },
   {
@@ -91,8 +91,10 @@ export const generatedRoutes: GeneratedRoute[] = [
     path: '/marketing',
     component: 'layout.base$view.marketing',
     meta: {
-      title: 'marketing',
-      i18nKey: 'route.marketing'
+      title: '营销管理',
+      i18nKey: 'route.marketing',
+      icon: 'mdi:megaphone',
+      order: 3
     }
   },
   {
@@ -103,7 +105,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: '订单管理',
       i18nKey: 'route.order',
       icon: 'mdi:order-bool-ascending-variant',
-      order: 4
+      order: 5
     }
   },
   {
@@ -114,7 +116,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: '支付渠道',
       i18nKey: 'route.payment-channel',
       icon: 'mdi:credit-card-outline',
-      order: 5
+      order: 6
     }
   },
   {
@@ -147,7 +149,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: '员工管理',
       i18nKey: 'route.staff',
       icon: 'mdi:account-group-outline',
-      order: 6
+      order: 7
     }
   },
   {
