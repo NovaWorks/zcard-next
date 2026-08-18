@@ -164,6 +164,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       const perms: string[] = Array.isArray(rawPerms) ? rawPerms : ["*"];
       userInfo.buttons = perms;
       userInfo.roles = perms.includes("*") ? ["R_super"] : [];
+      // 登录页跳过的货币初始化在此补载（符号/小数位从后台拉取）
+      import("@/utils/money").then((m) => m.initCurrency(true)).catch(() => {});
       return true;
     }
 

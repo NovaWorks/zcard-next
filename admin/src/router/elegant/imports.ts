@@ -22,6 +22,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   login: () => import("@/views/_builtin/login/index.vue"),
   home: () => import("@/views/home/index.vue"),
   inventory: () => import("@/views/inventory/index.vue"),
+  marketing: () => import("@/views/marketing/index.vue"),
   order: () => import("@/views/order/index.vue"),
   "payment-channel": () => import("@/views/payment-channel/index.vue"),
   product: () => import("@/views/product/index.vue"),

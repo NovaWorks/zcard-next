@@ -234,6 +234,7 @@ const local: App.I18n.Schema = {
     "iframe-page": "Iframe",
     home: "Home",
     product: "Products",
+    marketing: "Marketing",
     inventory: "Inventory",
     order: "Orders",
     "payment-channel": "Payment Channels",

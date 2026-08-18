@@ -227,6 +227,7 @@ const local: App.I18n.Schema = {
     "iframe-page": "外链页面",
     home: "首页",
     product: "商品管理",
+    marketing: "营销管理",
     inventory: "卡密库存",
     order: "订单管理",
     "payment-channel": "支付渠道",

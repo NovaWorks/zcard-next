@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import { fetchSettings, updateSetting } from "@/service/api";
+import { NTabs as OuterTabs, NTabPane as OuterTabPane } from "naive-ui";
+import { checkAuth } from "@/directives";
+import CurrencyTab from "./components/currency-tab.vue";
+import AuditTab from "./components/audit-tab.vue";
 
 defineOptions({ name: "SettingsManagement" });
 
@@ -61,6 +65,8 @@ onMounted(loadSettings);
 <template>
   <div class="min-h-500px">
     <NCard title="系统设置">
+      <OuterTabs type="line">
+      <OuterTabPane name="settings" tab="参数设置">
       <NTabs v-model:value="activeGroup" type="line" @update:value="loadSettings">
         <NTabPane v-for="g in groups" :key="g.key" :name="g.key" :tab="g.label" />
       </NTabs>
@@ -101,6 +107,14 @@ onMounted(loadSettings);
           </div>
         </NFormItem>
       </NForm>
+          </OuterTabPane>
+      <OuterTabPane v-if="checkAuth('settings:currency_read')" name="currency" tab="货币">
+        <CurrencyTab />
+      </OuterTabPane>
+      <OuterTabPane v-if="checkAuth('audit:read')" name="audit" tab="审计日志">
+        <AuditTab />
+      </OuterTabPane>
+      </OuterTabs>
     </NCard>
   </div>
 </template>

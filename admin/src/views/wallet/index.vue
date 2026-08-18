@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import TablePager from "@/components/common/table-pager.vue";
+import { NTabs, NTabPane } from "naive-ui";
+import { checkAuth } from "@/directives";
+import WithdrawTab from "./components/withdraw-tab.vue";
+import GiftcardTab from "./components/giftcard-tab.vue";
 import { ref, reactive, h } from "vue";
 import { NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
@@ -170,6 +174,8 @@ async function handleAdjust() {
 <template>
   <div class="min-h-500px flex-col gap-16px overflow-hidden">
     <NCard title="钱包管理" class="flex-1">
+      <NTabs type="line">
+      <NTabPane name="balance" tab="余额/流水">
       <!-- 查询 -->
       <div class="mb-16px flex items-center gap-12px">
         <NInputNumber v-model:value="userId" :min="1" placeholder="用户 ID" class="w-200px" />
@@ -215,6 +221,14 @@ async function handleAdjust() {
         :total="total"
         @change="loadTransactions"
       />
+          </NTabPane>
+      <NTabPane v-if="checkAuth('wallet:withdraw')" name="withdraw" tab="提现审核">
+        <WithdrawTab />
+      </NTabPane>
+      <NTabPane v-if="checkAuth('giftcard:read')" name="giftcard" tab="礼品卡">
+        <GiftcardTab />
+      </NTabPane>
+      </NTabs>
     </NCard>
 
     <!-- 调账弹窗 -->

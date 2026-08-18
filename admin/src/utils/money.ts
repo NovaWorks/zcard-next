@@ -4,6 +4,7 @@
 // 全站金额显示/提交必须经本文件，禁止内联 `xxx / 100` 或硬编码符号（架构测试守护）。
 
 import { fetchSettings, fetchCurrencies } from "@/service/api";
+import { localStg } from "@/utils/storage";
 
 export interface CurrencyMeta {
   symbol: string; // 货币符号（¥/$）
@@ -70,8 +71,16 @@ export function formatSignedMoney(cents: number): string {
 
 let initPromise: Promise<void> | null = null;
 
-export function initCurrency(): Promise<void> {
+export function initCurrency(force = false): Promise<void> {
+  if (force) initPromise = null;
   if (!initPromise) {
+    // 未登录（登录页）时跳过：本初始化走需鉴权的 admin 接口，401 会触发
+    // 全局登出级联（onBackendFail → resetStore），曾把刚登录成功的会话清掉。
+    // 登录成功后由 auth store 以 force=true 重新初始化。
+    if (!localStg.get("token")) {
+      initPromise = Promise.resolve();
+      return initPromise;
+    }
     initPromise = (async () => {
       try {
         const [settingsRes, currencyRes] = await Promise.all([
