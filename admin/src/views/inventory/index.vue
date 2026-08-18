@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, h } from "vue";
+import { ref, computed, onMounted, watch, h } from "vue";
 import { NButton, NTag, NPopconfirm, NAlert } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
@@ -233,6 +233,21 @@ async function loadBatches() {
   }
 }
 
+// 自动预览：产品/内容变化后 500ms 防抖触发（输入即出统计，无需手动点预览）
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+watch([importProductId, importContent], () => {
+  previewResult.value = null; // 旧预览随内容变化失效
+  if (previewTimer) clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => {
+    if (importProductId.value && importContent.value.trim()) handlePreview();
+  }, 500);
+});
+
+// 预览统计（proto3 零值不输出——undefined 兜底 0，杜绝 NaN）
+const previewDup = () => (previewResult.value?.dup_in_file || 0) + (previewResult.value?.dup_in_db || 0);
+const previewImportable = () =>
+  (previewResult.value?.total || 0) - previewDup();
+
 async function handlePreview() {
   if (!importProductId.value || !importContent.value.trim()) return;
   const lines = importContent.value
@@ -263,7 +278,14 @@ async function handleImport() {
       lines,
     });
     if (!error) {
-      window.$message?.success(`导入成功：${(data as any)?.imported || 0} 条`);
+      const imported = (data as any)?.imported || 0;
+      const skipped = (data as any)?.skipped || 0;
+      const failed = (data as any)?.failed || 0;
+      window.$message?.success(
+        `导入完成：新增 ${imported} 条` +
+          (skipped > 0 ? `，重复跳过 ${skipped} 条` : "") +
+          (failed > 0 ? `，失败 ${failed} 条` : ""),
+      );
       showImport.value = false;
       importContent.value = "";
       previewResult.value = null;
@@ -380,16 +402,15 @@ onMounted(() => {
         <NButton
           type="primary"
           :loading="importing"
-          :disabled="!previewResult"
+          :disabled="!importProductId || !importContent.trim()"
           @click="handleImport"
         >
-          确认导入（{{ previewResult?.total || 0 }} 条）
+          确认导入{{ previewResult ? "（可导入 " + previewImportable() + " 条）" : "" }}
         </NButton>
       </template>
       <NAlert v-if="previewResult" type="info" class="mt-12px">
-        总计 {{ previewResult.total }} 条 | 重复
-        {{ previewResult.dup_in_file + previewResult.dup_in_db }} 条 | 可导入
-        {{ previewResult.total - previewResult.dup_in_file - previewResult.dup_in_db }} 条
+        总计 {{ previewResult.total || 0 }} 条 | 重复 {{ previewDup() }} 条 | 可导入
+        {{ previewImportable() }} 条
       </NAlert>
     </NModal>
   </div>

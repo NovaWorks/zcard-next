@@ -184,14 +184,17 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 		}
 	}
 
-	// 更新批次状态
-	_, err = client.CardImport.UpdateOne(imp).
+	// 更新批次状态（UpdateOne 返回值不入内存对象——重新读取保证
+	// imported/skipped/status 反映真实结果，否则响应恒为创建态 0/processing）
+	if _, err = client.CardImport.UpdateOne(imp).
 		SetImported(imported).
 		SetSkipped(skipped).
 		SetFailed(failed).
 		SetStatus(cardimport.StatusDone).
-		Save(ctx)
-	return imp, err
+		Save(ctx); err != nil {
+		return nil, err
+	}
+	return client.CardImport.Get(ctx, imp.ID)
 }
 
 // ListImports 导入批次列表。
