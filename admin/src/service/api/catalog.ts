@@ -182,3 +182,21 @@ export function fetchSupplyConnections() {
     url: "/api/v1/admin/supply/connections",
   });
 }
+
+// ── 评价管理（catalog:review_read / review_manage）──
+
+export function fetchReviews(params: { status?: string; page?: number; page_size?: number }) {
+  return request({ url: "/api/v1/admin/reviews", params });
+}
+
+export function approveReview(id: number) {
+  return request({ url: `/api/v1/admin/reviews/${id}/approve`, method: "post", data: {} });
+}
+
+export function rejectReview(id: number) {
+  return request({ url: `/api/v1/admin/reviews/${id}/reject`, method: "post", data: {} });
+}
+
+export function createVirtualReview(data: { product_id: number; nickname?: string; content: string; rating?: number; sort?: number }) {
+  return request({ url: "/api/v1/admin/virtual-reviews", method: "post", data });
+}

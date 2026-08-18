@@ -25,6 +25,7 @@ import TablePager from "@/components/common/table-pager.vue";
 import SkuPanel from "./components/sku-panel.vue";
 import ControlPanel from "./components/control-panel.vue";
 import CategoryModal from "./components/category-modal.vue";
+import ReviewsDrawer from "./components/reviews-drawer.vue";
 
 defineOptions({ name: "ProductManagement" });
 
@@ -41,6 +42,14 @@ const page = ref(1);
 const pageSize = ref(20);
 
 // 列表多选（批量上下架）
+const showReviews = ref(false);
+const reviewProduct = ref<any>(null);
+
+function openReviews(row: any) {
+  reviewProduct.value = row;
+  showReviews.value = true;
+}
+
 const checkedKeys = ref<number[]>([]);
 
 // ── 单元格价格编辑（售价/成本）：铅笔图标 → 气泡输入（大厂轻量编辑模式）──
@@ -402,6 +411,13 @@ const columns: DataTableColumns<any> = [
                   NButton,
                   { size: "small", onClick: () => handleEdit(row) },
                   { default: () => "编辑" },
+                )
+              : null,
+            checkAuth("catalog:review_read")
+              ? h(
+                  NButton,
+                  { size: "small", quaternary: true, onClick: () => openReviews(row) },
+                  { default: () => "评价" },
                 )
               : null,
             checkAuth("catalog:delete")
@@ -829,6 +845,11 @@ onMounted(() => {
       @refresh="loadCategories"
       @created="(id: number) => (formData.category_id = id)"
     />
+  <!-- 评价管理抽屉 -->
+  <ReviewsDrawer
+    v-model:show="showReviews"
+    :product="reviewProduct"
+  />
   </div>
 </template>
 

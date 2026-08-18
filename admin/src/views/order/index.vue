@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TablePager from "@/components/common/table-pager.vue";
-import { ref, onMounted, h } from "vue";
+import { ref, reactive, onMounted, h } from "vue";
 import {
   NButton,
   NTag,
@@ -14,7 +14,15 @@ import {
 } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { checkAuth } from "@/directives";
-import { fetchOrders, fetchOrder, cancelOrder } from "@/service/api";
+import {
+  fetchOrders,
+  fetchOrder,
+  cancelOrder,
+  createRefund,
+  fetchPendingDeliveries,
+  manualDeliver,
+} from "@/service/api";
+import PendingDeliverTab from "./components/pending-deliver-tab.vue";
 import { formatMoney, formatSignedMoney } from "@/utils/money";
 
 defineOptions({ name: "OrderManagement" });
@@ -337,6 +345,45 @@ async function handleDetail(orderNo: string) {
   }
 }
 
+// ── 订单退款（order:refund 超管专属；渠道钱包/网关/上游三路）──
+const showRefund = ref(false);
+const refunding = ref(false);
+const refundForm = reactive({
+  order_no: "",
+  amount_yuan: 0,
+  channel: "wallet" as string,
+  reason: "",
+});
+const refundableStatuses = ["paid", "fulfilling", "delivered", "completed"];
+
+function openRefund(row: any) {
+  refundForm.order_no = row.order_no;
+  refundForm.amount_yuan = Number((row.total_cents / 100).toFixed(2));
+  refundForm.channel = "wallet";
+  refundForm.reason = "";
+  showRefund.value = true;
+}
+
+async function handleRefund() {
+  if (!refundForm.amount_yuan || refundForm.amount_yuan <= 0) return;
+  refunding.value = true;
+  try {
+    const { error } = await createRefund({
+      order_no: refundForm.order_no,
+      amount_cents: Math.round(refundForm.amount_yuan * 100),
+      channel: refundForm.channel,
+      reason: refundForm.reason || undefined,
+    });
+    if (!error) {
+      window.$message?.success("退款单已创建（渠道执行结果以退款单状态为准）");
+      showRefund.value = false;
+      loadOrders();
+    }
+  } finally {
+    refunding.value = false;
+  }
+}
+
 async function handleCancel(orderNo: string) {
   const { error } = await cancelOrder(orderNo, "管理员取消");
   if (!error) {
@@ -351,27 +398,34 @@ onMounted(loadOrders);
 <template>
   <div class="min-h-500px flex-col gap-16px overflow-hidden">
     <NCard title="订单管理" class="flex-1">
-      <div class="mb-16px flex items-center gap-12px">
-        <NSelect
-          v-model:value="statusFilter"
-          :options="statusOptions"
-          placeholder="全部状态"
-          clearable
-          class="w-160px"
-          @update:value="resetOrderList"
-        />
-        <NButton @click="loadOrders">刷新</NButton>
-      </div>
+      <NTabs type="line">
+        <NTabPane name="orders" tab="订单列表">
+          <div class="mb-16px flex items-center gap-12px">
+            <NSelect
+              v-model:value="statusFilter"
+              :options="statusOptions"
+              placeholder="全部状态"
+              clearable
+              class="w-160px"
+              @update:value="resetOrderList"
+            />
+            <NButton @click="loadOrders">刷新</NButton>
+          </div>
 
-      <NDataTable :columns="columns" :data="orders" :loading="loading" />
+          <NDataTable :columns="columns" :data="orders" :loading="loading" />
 
-      <TablePager
-        v-model:page="page"
-        v-model:page-size="pageSize"
-        mode="cursor"
-        :has-more="hasMore"
-        @change="onPagerChange"
-      />
+          <TablePager
+            v-model:page="page"
+            v-model:page-size="pageSize"
+            mode="cursor"
+            :has-more="hasMore"
+            @change="onPagerChange"
+          />
+        </NTabPane>
+        <NTabPane v-if="checkAuth('order:view_delivery')" name="pending" tab="待发货">
+          <PendingDeliverTab />
+        </NTabPane>
+      </NTabs>
     </NCard>
 
     <!-- 订单详情弹窗 -->
@@ -457,6 +511,59 @@ onMounted(loadOrders);
             暂无状态事件
           </div>
         </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-8px">
+          <!-- NPopconfirm 的 trigger 槽必须恰好一个子节点：v-if 放在 Popconfirm 自身（空槽会抛 follower 错误） -->
+          <NPopconfirm
+            v-if="detail.status === 'pending_payment' && checkAuth('order:cancel')"
+            @positive-click="handleCancel(detail.order_no)"
+          >
+            <template #trigger>
+              <NButton size="small" type="warning">取消订单</NButton>
+            </template>
+            确定取消该订单？
+          </NPopconfirm>
+          <NButton
+            v-if="refundableStatuses.includes(detail.status) && checkAuth('order:refund')"
+            size="small"
+            type="error"
+            @click="openRefund(detail)"
+          >
+            退款
+          </NButton>
+        </div>
+      </template>
+    </NModal>
+
+    <!-- 退款弹窗（order:refund 超管专属） -->
+    <NModal
+      v-model:show="showRefund"
+      preset="dialog"
+      :title="`订单退款：${refundForm.order_no}`"
+      style="width: 460px"
+    >
+      <NForm :model="refundForm" label-placement="left" label-width="72">
+        <NFormItem label="退款渠道" required>
+          <NSelect
+            v-model:value="refundForm.channel"
+            :options="[
+              { label: '钱包余额（原路：余额支付/落钱包）', value: 'wallet' },
+              { label: '支付网关（原路退回）', value: 'gateway' },
+              { label: '上游退货（代发订单传导）', value: 'upstream' },
+            ]"
+          />
+        </NFormItem>
+        <NFormItem label="金额(元)" required>
+          <NInputNumber v-model:value="refundForm.amount_yuan" :min="0.01" :precision="2" class="w-full" />
+        </NFormItem>
+        <NFormItem label="原因">
+          <NInput v-model:value="refundForm.reason" placeholder="选填，会记入订单状态事件与审计" />
+        </NFormItem>
+      </NForm>
+      <template #action>
+        <NButton @click="showRefund = false">取消</NButton>
+        <NButton type="error" :loading="refunding" @click="handleRefund">创建退款</NButton>
       </template>
     </NModal>
   </div>

@@ -2,7 +2,7 @@ import { computed, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 import { defineStore } from "pinia";
 import { useLoading } from "@sa/hooks";
-import { fetchGetUserInfo, fetchLogin } from "@/service/api";
+import { fetchGetUserInfo, fetchLogin, fetchLogout } from "@/service/api";
 import { useRouterPush } from "@/hooks/common/router";
 import { localStg } from "@/utils/storage";
 import { SetupStoreId } from "@/enum";
@@ -170,6 +170,19 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     return false;
   }
 
+  /** Logout（先请求后端吊销 refresh 会话，再清本地——只清本地会留下 14 天有效会话） */
+  async function logout() {
+    const rToken = localStg.get("refreshToken");
+    if (rToken) {
+      try {
+        await fetchLogout(rToken);
+      } catch {
+        // 吊销失败也继续登出（token 可能已过期）
+      }
+    }
+    await resetStore();
+  }
+
   async function initUserInfo() {
     const maybeToken = getToken();
 
@@ -190,6 +203,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     isLogin,
     loginLoading,
     resetStore,
+    logout,
     login,
     initUserInfo,
   };

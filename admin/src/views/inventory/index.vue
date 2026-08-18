@@ -11,6 +11,9 @@ import {
   importConfirm,
   fetchImports,
   cancelImport,
+  toggleCard,
+  exportCards,
+  fetchPremiumCards,
 } from "@/service/api";
 import TablePager from "@/components/common/table-pager.vue";
 import { formatMoney } from "@/utils/money";
@@ -131,6 +134,25 @@ const cardColumns: DataTableColumns<any> = [
     width: 160,
     render: (row) => (row.created_at ? new Date(row.created_at * 1000).toLocaleString() : "-"),
   },
+  {
+    title: "操作",
+    key: "actions",
+    width: 90,
+    render: (row) => {
+      if (!checkAuth("inventory:write")) return null;
+      if (row.status !== "available" && row.status !== "disabled") return null;
+      const disabling = row.status === "available";
+      return h(
+        NPopconfirm,
+        { onPositiveClick: () => handleToggleCard(row, disabling) },
+        {
+          trigger: () =>
+            h(NButton, { size: "small", type: disabling ? "warning" : "success", quaternary: true }, { default: () => (disabling ? "禁用" : "启用") }),
+          default: () => (disabling ? "禁用后该卡不可售，确定？" : "恢复该卡为可售，确定？"),
+        },
+      );
+    },
+  },
 ];
 
 const batchColumns: DataTableColumns<any> = [
@@ -187,6 +209,69 @@ const batchColumns: DataTableColumns<any> = [
         : null,
   },
 ];
+
+// ── 卡密禁用/启用（inventory:write 超管专属）──
+async function handleToggleCard(row: any, disabling: boolean) {
+  const { error } = await toggleCard(row.id, !disabling);
+  if (!error) {
+    window.$message?.success(disabling ? "已禁用" : "已启用");
+    loadCards();
+  }
+}
+
+// ── 导出（card:export 超管专属；CSV 行由后端 CsvSafe 处理）──
+const exporting = ref(false);
+async function handleExport() {
+  if (!selectedProduct.value) {
+    window.$message?.warning("请先选择商品");
+    return;
+  }
+  exporting.value = true;
+  try {
+    const { data, error } = await exportCards(selectedProduct.value);
+    if (!error && data?.lines?.length) {
+      const blob = new Blob([(data.lines as string[]).join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cards-product-${selectedProduct.value}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      window.$message?.success(`已导出 ${data.lines.length} 行`);
+    } else if (!error) {
+      window.$message?.warning("该商品没有可导出的卡密");
+    }
+  } finally {
+    exporting.value = false;
+  }
+}
+
+// ── 靓号库（card:premium 超管专属）──
+const premiumCards = ref<any[]>([]);
+const premiumTotal = ref(0);
+const premiumLoading = ref(false);
+const premiumColumns: DataTableColumns<any> = [
+  { title: "ID", key: "id", width: 60 },
+  { title: "商品ID", key: "product_id", width: 80 },
+  { title: "号码", key: "masked_content", minWidth: 120, render: (row) => row.masked_content || "****" },
+  { title: "预选加价", key: "draft_premium", width: 100, render: (row) => formatMoney(row.draft_premium || 0) },
+  { title: "预选成本", key: "draft_cost", width: 100, render: (row) => formatMoney(row.draft_cost || 0) },
+  { title: "靓号价", key: "price_cents", width: 100, render: (row) => (row.price_cents ? formatMoney(row.price_cents) : "商品价+加价") },
+  { title: "状态", key: "status", width: 80, render: (row) => row.status },
+];
+async function loadPremium() {
+  if (!selectedProduct.value) return;
+  premiumLoading.value = true;
+  try {
+    const { data, error } = await fetchPremiumCards(selectedProduct.value);
+    if (!error && data) {
+      premiumCards.value = (data as any).cards || [];
+      premiumTotal.value = (data as any).total || 0;
+    }
+  } finally {
+    premiumLoading.value = false;
+  }
+}
 
 async function loadCards() {
   if (!selectedProduct.value) {
@@ -322,6 +407,7 @@ onMounted(() => {
     <NCard title="卡密库存" class="flex-1">
       <div class="mb-16px flex items-center gap-12px">
         <NButton v-auth="'inventory:import'" type="primary" @click="showImport = true">导入卡密</NButton>
+        <NButton v-auth="'card:export'" :loading="exporting" @click="handleExport">导出</NButton>
         <NSelect
           v-model:value="filterCatId"
           :options="categoryOptions"
@@ -361,6 +447,18 @@ onMounted(() => {
         </NTabPane>
         <NTabPane name="batches" tab="导入批次">
           <NDataTable :columns="batchColumns" :data="batches" :loading="batchLoading" />
+        </NTabPane>
+        <NTabPane name="premium" tab="靓号库" @update:appears="loadPremium">
+          <NEmpty
+            v-if="!selectedProduct"
+            size="small"
+            class="my-24px"
+            description="先在上方选择商品查看靓号卡"
+          />
+          <template v-else>
+            <NDataTable :columns="premiumColumns" :data="premiumCards" :loading="premiumLoading" />
+            <div v-if="premiumTotal" class="mt-8px text-12px text-gray-400">共 {{ premiumTotal }} 张</div>
+          </template>
         </NTabPane>
       </NTabs>
     </NCard>

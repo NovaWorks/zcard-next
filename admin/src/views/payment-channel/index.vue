@@ -25,6 +25,8 @@ import {
   useMessage,
 } from "naive-ui";
 import { fetchChannels, fetchDrivers, fetchFieldOptions, createChannel, updateChannel, deleteChannel } from "@/service/api";
+import PaymentsTab from "./components/payments-tab.vue";
+import { checkAuth } from "@/directives";
 
 defineOptions({ name: "PaymentChannelManagement" });
 
@@ -316,7 +318,9 @@ onMounted(() => {
       <NButton v-auth="'payment:write'" type="primary" @click="openAddDialog">添加渠道</NButton>
     </div>
 
-    <!-- 渠道卡片网格 -->
+    <NTabs type="line">
+      <NTabPane name="channels" tab="渠道管理">
+            <!-- 渠道卡片网格 -->
     <NSpin :show="loading">
       <div v-if="channels.length === 0 && !loading">
         <NEmpty description="尚未接入任何支付渠道" style="padding: 48px 0">
@@ -380,6 +384,11 @@ onMounted(() => {
         </div>
       </div>
     </NSpin>
+      </NTabPane>
+      <NTabPane v-if="checkAuth('payment:read_detail')" name="payments" tab="支付单/退款单">
+        <PaymentsTab />
+      </NTabPane>
+    </NTabs>
 
     <!-- 添加渠道：勾选式批量接入 -->
     <NModal v-model:show="addVisible" preset="card" title="添加支付渠道" style="width: 560px">

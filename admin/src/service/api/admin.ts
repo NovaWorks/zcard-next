@@ -171,6 +171,16 @@ export function fetchCurrencies() {
 
 // ── 支付驱动元数据（P2-09 T5：配置面动态表单渲染）──
 
+// ── 支付单（payment:read_detail / payment:capture）──
+
+export function fetchPayments(params: { status?: string; order_no?: string; cursor?: number; limit?: number }) {
+  return request({ url: "/api/v1/admin/payments", params });
+}
+
+export function capturePayment(id: number) {
+  return request({ url: `/api/v1/admin/payments/${id}/capture`, method: "post", data: {} });
+}
+
 export function fetchDrivers() {
   return request({ url: "/api/v1/admin/payment/drivers" });
 }

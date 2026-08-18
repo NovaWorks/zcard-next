@@ -49,8 +49,8 @@ function logout() {
     content: $t("common.logoutConfirm"),
     positiveText: $t("common.confirm"),
     negativeText: $t("common.cancel"),
-    onPositiveClick: () => {
-      authStore.resetStore();
+    onPositiveClick: async () => {
+      await authStore.logout();
     },
   });
 }
