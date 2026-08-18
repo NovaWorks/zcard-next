@@ -14,6 +14,7 @@ var ProviderSet = wire.NewSet(
 	NewAdminUserRepoImpl,
 	wire.Bind(new(AdminUserRepo), new(*AdminUserRepoImpl)),
 	wire.Bind(new(port.AdminMutator), new(*AdminUserRepoImpl)),
+	wire.Bind(new(port.AdminReader), new(*AdminUserRepoImpl)),
 	NewUserRepo,
 	NewAdminAuthService,
 	NewPasswordService,

@@ -370,10 +370,13 @@ var RoleService_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	AdminUserService_ListAdmins_FullMethodName  = "/zcard.api.admin.v1.AdminUserService/ListAdmins"
-	AdminUserService_CreateAdmin_FullMethodName = "/zcard.api.admin.v1.AdminUserService/CreateAdmin"
-	AdminUserService_UpdateAdmin_FullMethodName = "/zcard.api.admin.v1.AdminUserService/UpdateAdmin"
-	AdminUserService_ToggleAdmin_FullMethodName = "/zcard.api.admin.v1.AdminUserService/ToggleAdmin"
+	AdminUserService_ListAdmins_FullMethodName         = "/zcard.api.admin.v1.AdminUserService/ListAdmins"
+	AdminUserService_CreateAdmin_FullMethodName        = "/zcard.api.admin.v1.AdminUserService/CreateAdmin"
+	AdminUserService_UpdateAdmin_FullMethodName        = "/zcard.api.admin.v1.AdminUserService/UpdateAdmin"
+	AdminUserService_ToggleAdmin_FullMethodName        = "/zcard.api.admin.v1.AdminUserService/ToggleAdmin"
+	AdminUserService_ResetAdminPassword_FullMethodName = "/zcard.api.admin.v1.AdminUserService/ResetAdminPassword"
+	AdminUserService_ResetAdminTOTP_FullMethodName     = "/zcard.api.admin.v1.AdminUserService/ResetAdminTOTP"
+	AdminUserService_DeleteAdmin_FullMethodName        = "/zcard.api.admin.v1.AdminUserService/DeleteAdmin"
 )
 
 // AdminUserServiceClient is the client API for AdminUserService service.
@@ -390,6 +393,12 @@ type AdminUserServiceClient interface {
 	UpdateAdmin(ctx context.Context, in *UpdateAdminRequest, opts ...grpc.CallOption) (*Admin, error)
 	// ToggleAdmin 启用/禁用员工。
 	ToggleAdmin(ctx context.Context, in *ToggleAdminRequest, opts ...grpc.CallOption) (*Admin, error)
+	// ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+	ResetAdminPassword(ctx context.Context, in *ResetAdminPasswordRequest, opts ...grpc.CallOption) (*Admin, error)
+	// ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+	ResetAdminTOTP(ctx context.Context, in *ResetAdminTOTPRequest, opts ...grpc.CallOption) (*Admin, error)
+	// DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+	DeleteAdmin(ctx context.Context, in *DeleteAdminRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminUserServiceClient struct {
@@ -440,6 +449,36 @@ func (c *adminUserServiceClient) ToggleAdmin(ctx context.Context, in *ToggleAdmi
 	return out, nil
 }
 
+func (c *adminUserServiceClient) ResetAdminPassword(ctx context.Context, in *ResetAdminPasswordRequest, opts ...grpc.CallOption) (*Admin, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Admin)
+	err := c.cc.Invoke(ctx, AdminUserService_ResetAdminPassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminUserServiceClient) ResetAdminTOTP(ctx context.Context, in *ResetAdminTOTPRequest, opts ...grpc.CallOption) (*Admin, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Admin)
+	err := c.cc.Invoke(ctx, AdminUserService_ResetAdminTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminUserServiceClient) DeleteAdmin(ctx context.Context, in *DeleteAdminRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminUserService_DeleteAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminUserServiceServer is the server API for AdminUserService service.
 // All implementations must embed UnimplementedAdminUserServiceServer
 // for forward compatibility.
@@ -454,6 +493,12 @@ type AdminUserServiceServer interface {
 	UpdateAdmin(context.Context, *UpdateAdminRequest) (*Admin, error)
 	// ToggleAdmin 启用/禁用员工。
 	ToggleAdmin(context.Context, *ToggleAdminRequest) (*Admin, error)
+	// ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+	ResetAdminPassword(context.Context, *ResetAdminPasswordRequest) (*Admin, error)
+	// ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+	ResetAdminTOTP(context.Context, *ResetAdminTOTPRequest) (*Admin, error)
+	// DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+	DeleteAdmin(context.Context, *DeleteAdminRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminUserServiceServer()
 }
 
@@ -475,6 +520,15 @@ func (UnimplementedAdminUserServiceServer) UpdateAdmin(context.Context, *UpdateA
 }
 func (UnimplementedAdminUserServiceServer) ToggleAdmin(context.Context, *ToggleAdminRequest) (*Admin, error) {
 	return nil, status.Error(codes.Unimplemented, "method ToggleAdmin not implemented")
+}
+func (UnimplementedAdminUserServiceServer) ResetAdminPassword(context.Context, *ResetAdminPasswordRequest) (*Admin, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetAdminPassword not implemented")
+}
+func (UnimplementedAdminUserServiceServer) ResetAdminTOTP(context.Context, *ResetAdminTOTPRequest) (*Admin, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetAdminTOTP not implemented")
+}
+func (UnimplementedAdminUserServiceServer) DeleteAdmin(context.Context, *DeleteAdminRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteAdmin not implemented")
 }
 func (UnimplementedAdminUserServiceServer) mustEmbedUnimplementedAdminUserServiceServer() {}
 func (UnimplementedAdminUserServiceServer) testEmbeddedByValue()                          {}
@@ -569,6 +623,60 @@ func _AdminUserService_ToggleAdmin_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminUserService_ResetAdminPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetAdminPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminUserServiceServer).ResetAdminPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminUserService_ResetAdminPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminUserServiceServer).ResetAdminPassword(ctx, req.(*ResetAdminPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminUserService_ResetAdminTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetAdminTOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminUserServiceServer).ResetAdminTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminUserService_ResetAdminTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminUserServiceServer).ResetAdminTOTP(ctx, req.(*ResetAdminTOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminUserService_DeleteAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminUserServiceServer).DeleteAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminUserService_DeleteAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminUserServiceServer).DeleteAdmin(ctx, req.(*DeleteAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminUserService_ServiceDesc is the grpc.ServiceDesc for AdminUserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -591,6 +699,18 @@ var AdminUserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ToggleAdmin",
 			Handler:    _AdminUserService_ToggleAdmin_Handler,
+		},
+		{
+			MethodName: "ResetAdminPassword",
+			Handler:    _AdminUserService_ResetAdminPassword_Handler,
+		},
+		{
+			MethodName: "ResetAdminTOTP",
+			Handler:    _AdminUserService_ResetAdminTOTP_Handler,
+		},
+		{
+			MethodName: "DeleteAdmin",
+			Handler:    _AdminUserService_DeleteAdmin_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

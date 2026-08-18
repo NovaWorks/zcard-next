@@ -253,6 +253,46 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+        delete:
+            tags:
+                - AdminUserService
+            description: DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+            operationId: AdminUserService_DeleteAdmin
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/admins/{id}/reset-password:
+        put:
+            tags:
+                - AdminUserService
+            description: ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+            operationId: AdminUserService_ResetAdminPassword
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResetAdminPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
     /api/v1/admin/admins/{id}/toggle:
         put:
             tags:
@@ -270,6 +310,31 @@ paths:
                     application/json:
                         schema:
                             $ref: '#/components/schemas/zcard.api.admin.v1.ToggleAdminRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.Admin'
+    /api/v1/admin/admins/{id}/totp-reset:
+        put:
+            tags:
+                - AdminUserService
+            description: ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+            operationId: AdminUserService_ResetAdminTOTP
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResetAdminTOTPRequest'
                 required: true
             responses:
                 "200":
@@ -8026,6 +8091,23 @@ components:
                 id:
                     type: string
         zcard.api.admin.v1.ResendSupplierCallbackRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.admin.v1.ResetAdminPasswordRequest:
+            required:
+                - id
+                - password
+            type: object
+            properties:
+                id:
+                    type: string
+                password:
+                    type: string
+        zcard.api.admin.v1.ResetAdminTOTPRequest:
             required:
                 - id
             type: object

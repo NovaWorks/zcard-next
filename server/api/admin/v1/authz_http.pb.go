@@ -347,15 +347,24 @@ func (c *RoleServiceHTTPClientImpl) UpdateRolePermissions(ctx context.Context, i
 }
 
 const OperationAdminUserServiceCreateAdmin = "/zcard.api.admin.v1.AdminUserService/CreateAdmin"
+const OperationAdminUserServiceDeleteAdmin = "/zcard.api.admin.v1.AdminUserService/DeleteAdmin"
 const OperationAdminUserServiceListAdmins = "/zcard.api.admin.v1.AdminUserService/ListAdmins"
+const OperationAdminUserServiceResetAdminPassword = "/zcard.api.admin.v1.AdminUserService/ResetAdminPassword"
+const OperationAdminUserServiceResetAdminTOTP = "/zcard.api.admin.v1.AdminUserService/ResetAdminTOTP"
 const OperationAdminUserServiceToggleAdmin = "/zcard.api.admin.v1.AdminUserService/ToggleAdmin"
 const OperationAdminUserServiceUpdateAdmin = "/zcard.api.admin.v1.AdminUserService/UpdateAdmin"
 
 type AdminUserServiceHTTPServer interface {
 	// CreateAdmin CreateAdmin 创建员工（密码 bcrypt）。
 	CreateAdmin(context.Context, *CreateAdminRequest) (*Admin, error)
+	// DeleteAdmin DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+	DeleteAdmin(context.Context, *DeleteAdminRequest) (*emptypb.Empty, error)
 	// ListAdmins ListAdmins 员工列表。
 	ListAdmins(context.Context, *emptypb.Empty) (*ListAdminsReply, error)
+	// ResetAdminPassword ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+	ResetAdminPassword(context.Context, *ResetAdminPasswordRequest) (*Admin, error)
+	// ResetAdminTOTP ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+	ResetAdminTOTP(context.Context, *ResetAdminTOTPRequest) (*Admin, error)
 	// ToggleAdmin ToggleAdmin 启用/禁用员工。
 	ToggleAdmin(context.Context, *ToggleAdminRequest) (*Admin, error)
 	// UpdateAdmin UpdateAdmin 修改员工（昵称/头像/角色）。
@@ -368,6 +377,9 @@ func RegisterAdminUserServiceHTTPServer(s *http.Server, srv AdminUserServiceHTTP
 	r.Handle("POST", "/api/v1/admin/admins", _AdminUserService_CreateAdmin0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/admins/{id}", _AdminUserService_UpdateAdmin0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/admins/{id}/toggle", _AdminUserService_ToggleAdmin0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/admins/{id}/reset-password", _AdminUserService_ResetAdminPassword0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/admins/{id}/totp-reset", _AdminUserService_ResetAdminTOTP0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/admins/{id}", _AdminUserService_DeleteAdmin0_HTTP_Handler(srv))
 }
 
 func _AdminUserService_ListAdmins0_HTTP_Handler(srv AdminUserServiceHTTPServer) func(ctx http.Context) error {
@@ -452,11 +464,83 @@ func _AdminUserService_ToggleAdmin0_HTTP_Handler(srv AdminUserServiceHTTPServer)
 	}
 }
 
+func _AdminUserService_ResetAdminPassword0_HTTP_Handler(srv AdminUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ResetAdminPasswordRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminUserServiceResetAdminPassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetAdminPassword(ctx, req.(*ResetAdminPasswordRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Admin)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminUserService_ResetAdminTOTP0_HTTP_Handler(srv AdminUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ResetAdminTOTPRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminUserServiceResetAdminTOTP)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetAdminTOTP(ctx, req.(*ResetAdminTOTPRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Admin)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminUserService_DeleteAdmin0_HTTP_Handler(srv AdminUserServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteAdminRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminUserServiceDeleteAdmin)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteAdmin(ctx, req.(*DeleteAdminRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminUserServiceHTTPClient interface {
 	// CreateAdmin CreateAdmin 创建员工（密码 bcrypt）。
 	CreateAdmin(ctx context.Context, req *CreateAdminRequest, opts ...http.CallOption) (rsp *Admin, err error)
+	// DeleteAdmin DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+	DeleteAdmin(ctx context.Context, req *DeleteAdminRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ListAdmins ListAdmins 员工列表。
 	ListAdmins(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListAdminsReply, err error)
+	// ResetAdminPassword ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+	ResetAdminPassword(ctx context.Context, req *ResetAdminPasswordRequest, opts ...http.CallOption) (rsp *Admin, err error)
+	// ResetAdminTOTP ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+	ResetAdminTOTP(ctx context.Context, req *ResetAdminTOTPRequest, opts ...http.CallOption) (rsp *Admin, err error)
 	// ToggleAdmin ToggleAdmin 启用/禁用员工。
 	ToggleAdmin(ctx context.Context, req *ToggleAdminRequest, opts ...http.CallOption) (rsp *Admin, err error)
 	// UpdateAdmin UpdateAdmin 修改员工（昵称/头像/角色）。
@@ -489,6 +573,23 @@ func (c *AdminUserServiceHTTPClientImpl) CreateAdmin(ctx context.Context, in *Cr
 	return &out, nil
 }
 
+// DeleteAdmin DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+func (c *AdminUserServiceHTTPClientImpl) DeleteAdmin(ctx context.Context, in *DeleteAdminRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/admins/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminUserServiceDeleteAdmin),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListAdmins ListAdmins 员工列表。
 func (c *AdminUserServiceHTTPClientImpl) ListAdmins(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*ListAdminsReply, error) {
 	var out ListAdminsReply
@@ -500,6 +601,42 @@ func (c *AdminUserServiceHTTPClientImpl) ListAdmins(ctx context.Context, in *emp
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ResetAdminPassword ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+func (c *AdminUserServiceHTTPClientImpl) ResetAdminPassword(ctx context.Context, in *ResetAdminPasswordRequest, opts ...http.CallOption) (*Admin, error) {
+	var out Admin
+	pattern := "/api/v1/admin/admins/{id}/reset-password"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminUserServiceResetAdminPassword),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ResetAdminTOTP ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+func (c *AdminUserServiceHTTPClientImpl) ResetAdminTOTP(ctx context.Context, in *ResetAdminTOTPRequest, opts ...http.CallOption) (*Admin, error) {
+	var out Admin
+	pattern := "/api/v1/admin/admins/{id}/totp-reset"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminUserServiceResetAdminTOTP),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

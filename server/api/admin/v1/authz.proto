@@ -77,6 +77,24 @@ service AdminUserService {
       body: "*"
     };
   }
+  // ResetAdminPassword 重置员工密码（≥8 位 bcrypt；吊销其全部管理面会话强制重登）。
+  rpc ResetAdminPassword(ResetAdminPasswordRequest) returns (Admin) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/admins/{id}/reset-password"
+      body: "*"
+    };
+  }
+  // ResetAdminTOTP 解绑员工 TOTP（吊销其全部管理面会话强制重登）。
+  rpc ResetAdminTOTP(ResetAdminTOTPRequest) returns (Admin) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/admins/{id}/totp-reset"
+      body: "*"
+    };
+  }
+  // DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话一并清除）。
+  rpc DeleteAdmin(DeleteAdminRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/admins/{id}" };
+  }
 }
 
 message ListRolesReply {
@@ -175,4 +193,17 @@ message UpdateAdminRequest {
 message ToggleAdminRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   bool enabled = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ResetAdminPasswordRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string password = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ResetAdminTOTPRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message DeleteAdminRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }

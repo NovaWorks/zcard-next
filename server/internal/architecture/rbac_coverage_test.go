@@ -65,8 +65,11 @@ var adminOnlyAllowlist = map[string]bool{
 	"authz:role_write":         true,
 	"authz:role_grant":         true,
 	"authz:role_delete":        true,
-	"identity:admin_write":     true,
-	"identity:admin_toggle":    true,
+	"identity:admin_write":      true,
+	"identity:admin_toggle":     true,
+	"identity:admin_reset_pwd":  true,
+	"identity:admin_totp_reset": true,
+	"identity:admin_delete":    true,
 	"settings:currency_write":  true,
 	"settings:currency_delete": true,
 	// 商品目录写操作（超管专属，M1 起按角色开放）

@@ -54,6 +54,12 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminUserService/UpdateAdmin", Method: "PUT", Path: "/api/v1/admin/admins/{id}"},
 		Perm{Code: "identity:admin_toggle", Desc: "启停员工（超管专属）", Domain: "identity", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUserService/ToggleAdmin", Method: "PUT", Path: "/api/v1/admin/admins/{id}/toggle"},
+		Perm{Code: "identity:admin_reset_pwd", Desc: "重置员工密码（超管专属）", Domain: "identity", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUserService/ResetAdminPassword", Method: "PUT", Path: "/api/v1/admin/admins/{id}/reset-password"},
+		Perm{Code: "identity:admin_totp_reset", Desc: "解绑员工 TOTP（超管专属）", Domain: "identity", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUserService/ResetAdminTOTP", Method: "PUT", Path: "/api/v1/admin/admins/{id}/totp-reset"},
+		Perm{Code: "identity:admin_delete", Desc: "删除员工（超管专属；内置超管角色与本人不可删）", Domain: "identity", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUserService/DeleteAdmin", Method: "DELETE", Path: "/api/v1/admin/admins/{id}"},
 
 		// ── 商品目录（catalog，P1-01）──────────────────
 		Perm{Code: "catalog:read", Desc: "查看商品", Domain: "catalog",

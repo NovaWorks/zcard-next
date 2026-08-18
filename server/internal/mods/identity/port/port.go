@@ -40,4 +40,12 @@ type AdminMutator interface {
 	Update(ctx context.Context, id uint64, in AdminInput) (*AdminAccount, error)
 	// ExistsRoleInUse 角色是否仍有员工挂载（删除角色前置校验）。
 	RoleInUse(ctx context.Context, roleID uint64) (bool, error)
+	// ResetPassword 重置员工密码（bcrypt；authz API 面消费——重置后须 RevokeAdminSessions）。
+	ResetPassword(ctx context.Context, id uint64, password string) error
+	// ClearTOTP 解绑员工 TOTP（authz API 面消费——解绑后须 RevokeAdminSessions）。
+	ClearTOTP(ctx context.Context, id uint64) error
+	// RevokeAdminSessions 吊销员工全部管理面会话（密码重置/解绑 TOTP 后强制重登）。
+	RevokeAdminSessions(ctx context.Context, id uint64) error
+	// Delete 删除员工（连同其管理面会话；超管/自删保护由 authz API 面负责）。
+	Delete(ctx context.Context, id uint64) error
 }

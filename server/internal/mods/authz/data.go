@@ -200,6 +200,11 @@ func (r *RoleRepoImpl) replaceAll(ctx context.Context, roleID uint64, perms []st
 
 // EnsureBuiltinRoles 落内置角色种子（幂等；P0-03 起 operator/support 覆盖 authz 只读
 // 与员工只读两个基础权限点，rbac_coverage_test 据此断言目录覆盖）。
+//
+// 种子语义（2026-08-18 修订）：
+//   - 仅在角色**新建**时写入权限点——已有角色（含被后台改过权限的内置角色）不覆盖，
+//     后台的 UpdateRolePermissions 编辑因此跨重启/重装保留；
+//   - 例外：super_admin 的 * 通配是系统不变量，每次执行强制恢复（防误操作锁死超管）。
 func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 	builtin := []struct{ code, name, desc string }{
 		{code: "super_admin", name: "超级管理员", desc: "全部权限（* 通配）"},
@@ -217,7 +222,8 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		"inventory:read",
 		"order:read", "order:read_detail",
 		"payment:read", "payment:read_detail",
-		"wallet:read",
+		"wallet:read", "wallet:withdraw",
+		"giftcard:read", "license:read", "reconcile:read",
 		"order:view_delivery",
 		"memberlevel:read",
 		"coupon:read",
@@ -239,21 +245,25 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 	}
 	for _, b := range builtin {
 		role, err := client.AdminRole.Query().Where(adminrole.Code(b.code)).Only(ctx)
+		created := false
 		if ent.IsNotFound(err) {
 			role, err = client.AdminRole.Create().
 				SetName(b.name).SetCode(b.code).SetDescription(b.desc).SetIsBuiltin(true).Save(ctx)
+			created = true
 		}
 		if err != nil {
 			return err
 		}
-		var perms []string
-		if b.code == "super_admin" {
-			perms = []string{"*"}
-		} else {
-			perms = operatorPerms
-		}
-		if err := syncRolePerms(ctx, client, role.ID, perms); err != nil {
-			return err
+		switch {
+		case b.code == "super_admin":
+			// 不变量：超管通配符每次强制（幂等替换为 *）
+			if err := syncRolePerms(ctx, client, role.ID, []string{"*"}); err != nil {
+				return err
+			}
+		case created:
+			if err := syncRolePerms(ctx, client, role.ID, operatorPerms); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

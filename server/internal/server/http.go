@@ -26,6 +26,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/dashboard"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	identityport "github.com/NovaWorks/zcard-next/server/internal/mods/identity/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/license"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
@@ -63,6 +64,7 @@ func NewHTTPServer(
 	d *data.Data,
 	signer *authn.Signer,
 	az port.Authorizer,
+	adminReader identityport.AdminReader,
 	authSvc *identity.AdminAuthService,
 	settingsSvc *settings.AdminSettingsService,
 	catalogSvc *catalog.StoreCatalogService,
@@ -147,7 +149,7 @@ func NewHTTPServer(
 			userAuthMiddleware(signer),
 			// admin realm 鉴权仅挂管理面 operation；Public 声明（登录）经目录豁免；
 			// storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
-			selector.Server(adminAuthMiddleware(signer, az, dir)).
+			selector.Server(adminAuthMiddleware(signer, az, dir, adminReader)).
 				Match(func(_ context.Context, operation string) bool {
 					return isAdminOperation(operation, dir)
 				}).

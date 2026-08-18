@@ -20,6 +20,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	identityport "github.com/NovaWorks/zcard-next/server/internal/mods/identity/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
@@ -137,9 +138,14 @@ func isAdminOperation(operation string, dir *authz.Directory) bool {
 	return strings.HasPrefix(operation, adminPathPrefix)
 }
 
-// adminAuthMiddleware admin realm 鉴权：JWT 校验 → 权限点校验（RBAC）→ 注入 claims。
+// adminAuthMiddleware admin realm 鉴权：JWT 校验 → 账户实时状态（enabled + 当前
+// RoleID，禁用/换角色即时生效）→ 权限点校验（RBAC）→ 注入 claims。
 // 超管角色（*）通配放行（authz 模块）。
-func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Directory) middleware.Middleware {
+//
+// 每请求按主键回查 admin_users 一次（管理面低频、PK get 代价可忽略）——JWT 内的
+// RoleID 是签发时快照，换角色后旧 token 若沿用快照将保留旧权限直至过期，此处
+// 以库中当前值为准（fail-closed：账户不存在/查询失败一律 401）。
+func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Directory, admins identityport.AdminReader) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {
 			tr, ok := transport.FromServerContext(ctx)
@@ -154,6 +160,14 @@ func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Di
 			if err != nil {
 				return nil, errors.Unauthorized("identity.UNAUTHORIZED", "令牌无效或已过期")
 			}
+			acc, err := admins.Admin(ctx, claims.Subject)
+			if err != nil || acc == nil {
+				return nil, errors.Unauthorized("identity.UNAUTHORIZED", "账户不存在")
+			}
+			if !acc.Enabled {
+				return nil, errors.Unauthorized("identity.ADMIN_DISABLED", "账号已禁用")
+			}
+			claims.RoleID = acc.RoleID
 			if perm, _, ok := dir.PermissionForOp(tr.Operation()); ok && !az.Allowed(ctx, claims.RoleID, perm) {
 				return nil, errors.Forbidden("authz.PERMISSION_DENIED", "权限不足")
 			}

@@ -952,6 +952,146 @@ func (x *ToggleAdminRequest) GetEnabled() bool {
 	return false
 }
 
+type ResetAdminPasswordRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetAdminPasswordRequest) Reset() {
+	*x = ResetAdminPasswordRequest{}
+	mi := &file_admin_v1_authz_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetAdminPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetAdminPasswordRequest) ProtoMessage() {}
+
+func (x *ResetAdminPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_authz_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetAdminPasswordRequest.ProtoReflect.Descriptor instead.
+func (*ResetAdminPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_authz_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ResetAdminPasswordRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ResetAdminPasswordRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type ResetAdminTOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetAdminTOTPRequest) Reset() {
+	*x = ResetAdminTOTPRequest{}
+	mi := &file_admin_v1_authz_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetAdminTOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetAdminTOTPRequest) ProtoMessage() {}
+
+func (x *ResetAdminTOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_authz_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetAdminTOTPRequest.ProtoReflect.Descriptor instead.
+func (*ResetAdminTOTPRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_authz_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ResetAdminTOTPRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+type DeleteAdminRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteAdminRequest) Reset() {
+	*x = DeleteAdminRequest{}
+	mi := &file_admin_v1_authz_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteAdminRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteAdminRequest) ProtoMessage() {}
+
+func (x *DeleteAdminRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_authz_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteAdminRequest.ProtoReflect.Descriptor instead.
+func (*DeleteAdminRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_authz_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DeleteAdminRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_admin_v1_authz_proto protoreflect.FileDescriptor
 
 const file_admin_v1_authz_proto_rawDesc = "" +
@@ -1021,7 +1161,14 @@ const file_admin_v1_authz_proto_rawDesc = "" +
 	"\x06remark\x18\x05 \x01(\tR\x06remark\"H\n" +
 	"\x12ToggleAdminRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1d\n" +
-	"\aenabled\x18\x02 \x01(\bB\x03\xe0A\x02R\aenabled2\xe5\x06\n" +
+	"\aenabled\x18\x02 \x01(\bB\x03\xe0A\x02R\aenabled\"Q\n" +
+	"\x19ResetAdminPasswordRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1f\n" +
+	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\",\n" +
+	"\x15ResetAdminTOTPRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\")\n" +
+	"\x12DeleteAdminRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xe5\x06\n" +
 	"\vRoleService\x12j\n" +
 	"\tListRoles\x12\x16.google.protobuf.Empty\x1a\".zcard.api.admin.v1.ListRolesReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/admin/authz/roles\x12o\n" +
 	"\aGetRole\x12\".zcard.api.admin.v1.GetRoleRequest\x1a\x18.zcard.api.admin.v1.Role\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/authz/roles/{id}\x12s\n" +
@@ -1032,13 +1179,16 @@ const file_admin_v1_authz_proto_rawDesc = "" +
 	"\n" +
 	"DeleteRole\x12%.zcard.api.admin.v1.DeleteRoleRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 *\x1e/api/v1/admin/authz/roles/{id}\x12\x9a\x01\n" +
 	"\x15UpdateRolePermissions\x120.zcard.api.admin.v1.UpdateRolePermissionsRequest\x1a\x18.zcard.api.admin.v1.Role\"5\x82\xd3\xe4\x93\x02/:\x01*\x1a*/api/v1/admin/authz/roles/{id}/permissions\x12x\n" +
-	"\x11GetPermissionTree\x12\x16.google.protobuf.Empty\x1a\".zcard.api.admin.v1.PermissionTree\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/authz/permissions2\xe5\x03\n" +
+	"\x11GetPermissionTree\x12\x16.google.protobuf.Empty\x1a\".zcard.api.admin.v1.PermissionTree\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/authz/permissions2\xf7\x06\n" +
 	"\x10AdminUserService\x12g\n" +
 	"\n" +
 	"ListAdmins\x12\x16.google.protobuf.Empty\x1a#.zcard.api.admin.v1.ListAdminsReply\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/admin/admins\x12q\n" +
 	"\vCreateAdmin\x12&.zcard.api.admin.v1.CreateAdminRequest\x1a\x19.zcard.api.admin.v1.Admin\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\"\x14/api/v1/admin/admins\x12v\n" +
 	"\vUpdateAdmin\x12&.zcard.api.admin.v1.UpdateAdminRequest\x1a\x19.zcard.api.admin.v1.Admin\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/api/v1/admin/admins/{id}\x12}\n" +
-	"\vToggleAdmin\x12&.zcard.api.admin.v1.ToggleAdminRequest\x1a\x19.zcard.api.admin.v1.Admin\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /api/v1/admin/admins/{id}/toggleB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\vToggleAdmin\x12&.zcard.api.admin.v1.ToggleAdminRequest\x1a\x19.zcard.api.admin.v1.Admin\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /api/v1/admin/admins/{id}/toggle\x12\x93\x01\n" +
+	"\x12ResetAdminPassword\x12-.zcard.api.admin.v1.ResetAdminPasswordRequest\x1a\x19.zcard.api.admin.v1.Admin\"3\x82\xd3\xe4\x93\x02-:\x01*\x1a(/api/v1/admin/admins/{id}/reset-password\x12\x87\x01\n" +
+	"\x0eResetAdminTOTP\x12).zcard.api.admin.v1.ResetAdminTOTPRequest\x1a\x19.zcard.api.admin.v1.Admin\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/api/v1/admin/admins/{id}/totp-reset\x12p\n" +
+	"\vDeleteAdmin\x12&.zcard.api.admin.v1.DeleteAdminRequest\x1a\x16.google.protobuf.Empty\"!\x82\xd3\xe4\x93\x02\x1b*\x19/api/v1/admin/admins/{id}B=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_authz_proto_rawDescOnce sync.Once
@@ -1052,7 +1202,7 @@ func file_admin_v1_authz_proto_rawDescGZIP() []byte {
 	return file_admin_v1_authz_proto_rawDescData
 }
 
-var file_admin_v1_authz_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_admin_v1_authz_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_admin_v1_authz_proto_goTypes = []any{
 	(*ListRolesReply)(nil),               // 0: zcard.api.admin.v1.ListRolesReply
 	(*GetRoleRequest)(nil),               // 1: zcard.api.admin.v1.GetRoleRequest
@@ -1069,37 +1219,46 @@ var file_admin_v1_authz_proto_goTypes = []any{
 	(*CreateAdminRequest)(nil),           // 12: zcard.api.admin.v1.CreateAdminRequest
 	(*UpdateAdminRequest)(nil),           // 13: zcard.api.admin.v1.UpdateAdminRequest
 	(*ToggleAdminRequest)(nil),           // 14: zcard.api.admin.v1.ToggleAdminRequest
-	(*emptypb.Empty)(nil),                // 15: google.protobuf.Empty
+	(*ResetAdminPasswordRequest)(nil),    // 15: zcard.api.admin.v1.ResetAdminPasswordRequest
+	(*ResetAdminTOTPRequest)(nil),        // 16: zcard.api.admin.v1.ResetAdminTOTPRequest
+	(*DeleteAdminRequest)(nil),           // 17: zcard.api.admin.v1.DeleteAdminRequest
+	(*emptypb.Empty)(nil),                // 18: google.protobuf.Empty
 }
 var file_admin_v1_authz_proto_depIdxs = []int32{
 	6,  // 0: zcard.api.admin.v1.ListRolesReply.roles:type_name -> zcard.api.admin.v1.Role
 	8,  // 1: zcard.api.admin.v1.PermissionTree.groups:type_name -> zcard.api.admin.v1.Group
 	9,  // 2: zcard.api.admin.v1.Group.perms:type_name -> zcard.api.admin.v1.Perm
 	11, // 3: zcard.api.admin.v1.ListAdminsReply.admins:type_name -> zcard.api.admin.v1.Admin
-	15, // 4: zcard.api.admin.v1.RoleService.ListRoles:input_type -> google.protobuf.Empty
+	18, // 4: zcard.api.admin.v1.RoleService.ListRoles:input_type -> google.protobuf.Empty
 	1,  // 5: zcard.api.admin.v1.RoleService.GetRole:input_type -> zcard.api.admin.v1.GetRoleRequest
 	2,  // 6: zcard.api.admin.v1.RoleService.CreateRole:input_type -> zcard.api.admin.v1.CreateRoleRequest
 	3,  // 7: zcard.api.admin.v1.RoleService.UpdateRole:input_type -> zcard.api.admin.v1.UpdateRoleRequest
 	4,  // 8: zcard.api.admin.v1.RoleService.DeleteRole:input_type -> zcard.api.admin.v1.DeleteRoleRequest
 	5,  // 9: zcard.api.admin.v1.RoleService.UpdateRolePermissions:input_type -> zcard.api.admin.v1.UpdateRolePermissionsRequest
-	15, // 10: zcard.api.admin.v1.RoleService.GetPermissionTree:input_type -> google.protobuf.Empty
-	15, // 11: zcard.api.admin.v1.AdminUserService.ListAdmins:input_type -> google.protobuf.Empty
+	18, // 10: zcard.api.admin.v1.RoleService.GetPermissionTree:input_type -> google.protobuf.Empty
+	18, // 11: zcard.api.admin.v1.AdminUserService.ListAdmins:input_type -> google.protobuf.Empty
 	12, // 12: zcard.api.admin.v1.AdminUserService.CreateAdmin:input_type -> zcard.api.admin.v1.CreateAdminRequest
 	13, // 13: zcard.api.admin.v1.AdminUserService.UpdateAdmin:input_type -> zcard.api.admin.v1.UpdateAdminRequest
 	14, // 14: zcard.api.admin.v1.AdminUserService.ToggleAdmin:input_type -> zcard.api.admin.v1.ToggleAdminRequest
-	0,  // 15: zcard.api.admin.v1.RoleService.ListRoles:output_type -> zcard.api.admin.v1.ListRolesReply
-	6,  // 16: zcard.api.admin.v1.RoleService.GetRole:output_type -> zcard.api.admin.v1.Role
-	6,  // 17: zcard.api.admin.v1.RoleService.CreateRole:output_type -> zcard.api.admin.v1.Role
-	6,  // 18: zcard.api.admin.v1.RoleService.UpdateRole:output_type -> zcard.api.admin.v1.Role
-	15, // 19: zcard.api.admin.v1.RoleService.DeleteRole:output_type -> google.protobuf.Empty
-	6,  // 20: zcard.api.admin.v1.RoleService.UpdateRolePermissions:output_type -> zcard.api.admin.v1.Role
-	7,  // 21: zcard.api.admin.v1.RoleService.GetPermissionTree:output_type -> zcard.api.admin.v1.PermissionTree
-	10, // 22: zcard.api.admin.v1.AdminUserService.ListAdmins:output_type -> zcard.api.admin.v1.ListAdminsReply
-	11, // 23: zcard.api.admin.v1.AdminUserService.CreateAdmin:output_type -> zcard.api.admin.v1.Admin
-	11, // 24: zcard.api.admin.v1.AdminUserService.UpdateAdmin:output_type -> zcard.api.admin.v1.Admin
-	11, // 25: zcard.api.admin.v1.AdminUserService.ToggleAdmin:output_type -> zcard.api.admin.v1.Admin
-	15, // [15:26] is the sub-list for method output_type
-	4,  // [4:15] is the sub-list for method input_type
+	15, // 15: zcard.api.admin.v1.AdminUserService.ResetAdminPassword:input_type -> zcard.api.admin.v1.ResetAdminPasswordRequest
+	16, // 16: zcard.api.admin.v1.AdminUserService.ResetAdminTOTP:input_type -> zcard.api.admin.v1.ResetAdminTOTPRequest
+	17, // 17: zcard.api.admin.v1.AdminUserService.DeleteAdmin:input_type -> zcard.api.admin.v1.DeleteAdminRequest
+	0,  // 18: zcard.api.admin.v1.RoleService.ListRoles:output_type -> zcard.api.admin.v1.ListRolesReply
+	6,  // 19: zcard.api.admin.v1.RoleService.GetRole:output_type -> zcard.api.admin.v1.Role
+	6,  // 20: zcard.api.admin.v1.RoleService.CreateRole:output_type -> zcard.api.admin.v1.Role
+	6,  // 21: zcard.api.admin.v1.RoleService.UpdateRole:output_type -> zcard.api.admin.v1.Role
+	18, // 22: zcard.api.admin.v1.RoleService.DeleteRole:output_type -> google.protobuf.Empty
+	6,  // 23: zcard.api.admin.v1.RoleService.UpdateRolePermissions:output_type -> zcard.api.admin.v1.Role
+	7,  // 24: zcard.api.admin.v1.RoleService.GetPermissionTree:output_type -> zcard.api.admin.v1.PermissionTree
+	10, // 25: zcard.api.admin.v1.AdminUserService.ListAdmins:output_type -> zcard.api.admin.v1.ListAdminsReply
+	11, // 26: zcard.api.admin.v1.AdminUserService.CreateAdmin:output_type -> zcard.api.admin.v1.Admin
+	11, // 27: zcard.api.admin.v1.AdminUserService.UpdateAdmin:output_type -> zcard.api.admin.v1.Admin
+	11, // 28: zcard.api.admin.v1.AdminUserService.ToggleAdmin:output_type -> zcard.api.admin.v1.Admin
+	11, // 29: zcard.api.admin.v1.AdminUserService.ResetAdminPassword:output_type -> zcard.api.admin.v1.Admin
+	11, // 30: zcard.api.admin.v1.AdminUserService.ResetAdminTOTP:output_type -> zcard.api.admin.v1.Admin
+	18, // 31: zcard.api.admin.v1.AdminUserService.DeleteAdmin:output_type -> google.protobuf.Empty
+	18, // [18:32] is the sub-list for method output_type
+	4,  // [4:18] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1116,7 +1275,7 @@ func file_admin_v1_authz_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_authz_proto_rawDesc), len(file_admin_v1_authz_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   15,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   2,
 		},

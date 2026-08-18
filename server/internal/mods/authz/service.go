@@ -7,6 +7,8 @@ import (
 	"context"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	authzport "github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	identityport "github.com/NovaWorks/zcard-next/server/internal/mods/identity/port"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -109,14 +111,15 @@ func (s *RoleService) GetPermissionTree(_ context.Context, _ *emptypb.Empty) (*a
 // AdminUserService 员工管理服务（数据经 identity port）。
 type AdminUserService struct {
 	adminv1.UnimplementedAdminUserServiceServer
-	mut  identityport.AdminMutator
-	dir  *Directory
-	repo RoleRepo
+	mut     identityport.AdminMutator
+	readers identityport.AdminReader
+	dir     *Directory
+	repo    RoleRepo
 }
 
 // NewAdminUserService 构造。
-func NewAdminUserService(mut identityport.AdminMutator, dir *Directory, repo RoleRepo) *AdminUserService {
-	return &AdminUserService{mut: mut, dir: dir, repo: repo}
+func NewAdminUserService(mut identityport.AdminMutator, readers identityport.AdminReader, dir *Directory, repo RoleRepo) *AdminUserService {
+	return &AdminUserService{mut: mut, readers: readers, dir: dir, repo: repo}
 }
 
 // ListAdmins 员工列表（附角色名）。
@@ -165,14 +168,100 @@ func (s *AdminUserService) UpdateAdmin(ctx context.Context, req *adminv1.UpdateA
 	return &adminv1.Admin{Id: a.ID, Username: a.Username, Nickname: a.Nickname, Avatar: a.Avatar, RoleId: a.RoleID, Enabled: a.Enabled, TotpEnabled: a.TOTPEnabled}, nil
 }
 
-// ToggleAdmin 启停员工（禁用立即失去访问权——JWT 仍有校验 enabled 的 M1 项，当前先落库）。
+// ToggleAdmin 启停员工（禁用即时生效——admin 鉴权中间件每请求回查 enabled；
+// 禁用最后一位启用的内置超管被拒，防全员锁死后台）。
 func (s *AdminUserService) ToggleAdmin(ctx context.Context, req *adminv1.ToggleAdminRequest) (*adminv1.Admin, error) {
 	enabled := req.GetEnabled()
+	if !enabled && s.isLastEnabledSuper(ctx, req.GetId()) {
+		return nil, errors.Forbidden("identity.LAST_SUPER_ADMIN", "不能禁用最后一位启用的超级管理员")
+	}
 	a, err := s.mut.Update(ctx, req.GetId(), identityport.AdminInput{Enabled: &enabled})
 	if err != nil {
 		return nil, errors.NotFound("identity.ADMIN_NOT_FOUND", "员工不存在")
 	}
 	return &adminv1.Admin{Id: a.ID, Username: a.Username, Nickname: a.Nickname, RoleId: a.RoleID, Enabled: a.Enabled}, nil
+}
+
+// DeleteAdmin 删除员工（内置超管角色与本人不可删；其管理面会话同事务清除）。
+func (s *AdminUserService) DeleteAdmin(ctx context.Context, req *adminv1.DeleteAdminRequest) (*emptypb.Empty, error) {
+	if claims := identity.ClaimsFromContext(ctx); claims != nil && claims.Subject == req.GetId() {
+		return nil, errors.Forbidden("identity.ADMIN_SELF_DELETE", "不能删除当前登录账号")
+	}
+	if acc, err := s.readers.Admin(ctx, req.GetId()); err == nil && acc != nil && s.repo != nil {
+		if role, err := s.repo.RoleByID(ctx, acc.RoleID); err == nil && role.Code == authzport.RoleSuperAdmin {
+			return nil, errors.Forbidden("identity.ADMIN_PROTECTED", "内置超级管理员不可删除")
+		}
+	}
+	if err := s.mut.Delete(ctx, req.GetId()); err != nil {
+		return nil, errors.NotFound("identity.ADMIN_NOT_FOUND", "员工不存在")
+	}
+	return &emptypb.Empty{}, nil
+}
+
+// isLastEnabledSuper 目标是否为最后一位启用的内置超管（防禁用后无人可管）。
+func (s *AdminUserService) isLastEnabledSuper(ctx context.Context, id uint64) bool {
+	if s.repo == nil {
+		return false
+	}
+	acc, err := s.readers.Admin(ctx, id)
+	if err != nil || acc == nil {
+		return false
+	}
+	role, err := s.repo.RoleByID(ctx, acc.RoleID)
+	if err != nil || role.Code != authzport.RoleSuperAdmin {
+		return false
+	}
+	list, err := s.mut.List(ctx)
+	if err != nil {
+		return false // 查询失败保守放行，由启用状态自身兜底
+	}
+	for _, a := range list {
+		if a.ID != acc.ID && a.Enabled && a.RoleID == acc.RoleID {
+			return false
+		}
+	}
+	return true
+}
+
+// ResetAdminPassword 重置员工密码（≥8 位安全基线；凭据接管类操作——吊销其全部
+// 管理面会话强制重登，防旧会话在密码泄露场景下继续存活）。
+func (s *AdminUserService) ResetAdminPassword(ctx context.Context, req *adminv1.ResetAdminPasswordRequest) (*adminv1.Admin, error) {
+	if len(req.GetPassword()) < 8 {
+		return nil, errors.BadRequest("identity.WEAK_PASSWORD", "密码至少 8 位（安全基线）")
+	}
+	if err := s.mut.ResetPassword(ctx, req.GetId(), req.GetPassword()); err != nil {
+		return nil, errors.NotFound("identity.ADMIN_NOT_FOUND", "员工不存在")
+	}
+	_ = s.mut.RevokeAdminSessions(ctx, req.GetId())
+	return s.adminByID(ctx, req.GetId())
+}
+
+// ResetAdminTOTP 解绑员工 TOTP（二因素移除属高危——吊销其全部管理面会话强制重登，
+// 员工下次登录自行重新绑定）。
+func (s *AdminUserService) ResetAdminTOTP(ctx context.Context, req *adminv1.ResetAdminTOTPRequest) (*adminv1.Admin, error) {
+	if err := s.mut.ClearTOTP(ctx, req.GetId()); err != nil {
+		return nil, errors.NotFound("identity.ADMIN_NOT_FOUND", "员工不存在")
+	}
+	_ = s.mut.RevokeAdminSessions(ctx, req.GetId())
+	return s.adminByID(ctx, req.GetId())
+}
+
+// adminByID 回读员工最新状态（含角色名）。
+func (s *AdminUserService) adminByID(ctx context.Context, id uint64) (*adminv1.Admin, error) {
+	a, err := s.readers.Admin(ctx, id)
+	if err != nil || a == nil {
+		return nil, errors.NotFound("identity.ADMIN_NOT_FOUND", "员工不存在")
+	}
+	roleName := ""
+	if s.repo != nil {
+		if r, err := s.repo.RoleByID(ctx, a.RoleID); err == nil {
+			roleName = r.Name
+		}
+	}
+	return &adminv1.Admin{
+		Id: a.ID, Username: a.Username, Nickname: a.Nickname, Avatar: a.Avatar,
+		RoleId: a.RoleID, RoleName: roleName, Enabled: a.Enabled, TotpEnabled: a.TOTPEnabled,
+	}, nil
 }
 
 func mapRoleErr(err error) error {

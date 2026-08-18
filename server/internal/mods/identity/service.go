@@ -6,6 +6,7 @@ import (
 	"context"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	authzport "github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
@@ -18,11 +19,12 @@ import (
 type AdminAuthService struct {
 	adminv1.UnimplementedAdminAuthServiceServer
 	uc *IdentityUsecase
+	az authzport.Authorizer
 }
 
-// NewAdminAuthService 构造。
-func NewAdminAuthService(uc *IdentityUsecase) *AdminAuthService {
-	return &AdminAuthService{uc: uc}
+// NewAdminAuthService 构造（az 用于 profile 下发权限点清单，前端动态路由消费）。
+func NewAdminAuthService(uc *IdentityUsecase, az authzport.Authorizer) *AdminAuthService {
+	return &AdminAuthService{uc: uc, az: az}
 }
 
 // Login 管理员登录。
@@ -113,7 +115,13 @@ func (s *AdminAuthService) GetProfile(ctx context.Context, _ *emptypb.Empty) (*a
 	if err != nil {
 		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
 	}
-	return &adminv1.GetProfileReply{Admin: toAdminProfile(*u)}, nil
+	// 权限点清单下发（auth.proto GetProfileReply.permissions——前端据此生成菜单与按钮）。
+	// 读取失败时下发空清单（fail-closed：后端中间件每请求仍独立校验，不受此快照影响）。
+	perms, _ := s.az.PermissionsOf(ctx, claims.RoleID)
+	if perms == nil {
+		perms = []string{}
+	}
+	return &adminv1.GetProfileReply{Admin: toAdminProfile(*u), Permissions: perms}, nil
 }
 
 func mapLoginErr(err error) error {
