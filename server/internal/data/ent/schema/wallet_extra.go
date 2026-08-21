@@ -66,6 +66,7 @@ func (RechargeOrder) Fields() []ent.Field {
 		field.Int64("gift_amount").Default(0).Comment("赠送余额（分）"),
 		field.Int32("gift_points").Default(0).Comment("赠送积分"),
 		field.Enum("target").Values("balance", "supply").Default("balance").Comment("入账方向（supply=供货商预存，M2）"),
+		field.Uint64("supplier_account_id").Optional().Comment("target=supply 时的入账目标对接账户"),
 		field.Enum("status").Values("pending", "success", "failed", "expired").Default("pending"),
 		field.Uint64("payment_id").Optional(),
 		field.Time("paid_at").SchemaType(mysqlTime).Optional(),

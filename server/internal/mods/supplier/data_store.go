@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -15,6 +16,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -28,12 +32,14 @@ const (
 // StoreSupplierService 前台供货对接服务。
 type StoreSupplierService struct {
 	storefrontv1.UnimplementedStoreSupplierServiceServer
-	repo *SupplierRepoImpl
+	repo     *SupplierRepoImpl
+	settings settingsport.SettingsReader // 充值档位（recharge 组；nil = 目录缺省）
+	payer    paymentport.RechargePayer   // 充值支付单创建（nil = 支付管线未装配）
 }
 
 // NewStoreSupplierService 构造。
-func NewStoreSupplierService(repo *SupplierRepoImpl) *StoreSupplierService {
-	return &StoreSupplierService{repo: repo}
+func NewStoreSupplierService(repo *SupplierRepoImpl, settings settingsport.SettingsReader, payer paymentport.RechargePayer) *StoreSupplierService {
+	return &StoreSupplierService{repo: repo, settings: settings, payer: payer}
 }
 
 // currentUser 当前登录用户（user realm JWT；未登录 401）。
@@ -180,6 +186,84 @@ func (s *StoreSupplierService) CancelSupplierApplication(ctx context.Context, re
 	return &emptypb.Empty{}, nil
 }
 
+// CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；支付确认前不入账）。
+//
+// 安全口径：amount_cents 只是意向，服务端按 settings.recharge 档位
+// （enabled/min_amount/max_amount，与钱包充值同一套）校验；落 recharge_orders
+// (pending, target=supply)。余额入账只发生在支付回调成功后（payment.succeeded →
+// settleRecharge 按 target 分支入账供货账户，reference=recharge:<paymentID> 幂等）。
+// 供货预存无赠送（gift=0）。
+func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *storefrontv1.CreateSupplierRechargeRequest) (*storefrontv1.CreateSupplierRechargeReply, error) {
+	uid, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	acc, err := s.mine(ctx, uid, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if acc.Status != supplieraccount.StatusApproved {
+		return nil, errors.Forbidden("supplier.NOT_APPROVED", "审核通过后才能充值")
+	}
+	amount := req.GetAmountCents()
+	minAmount, maxAmount, enabled := s.rechargePolicy(ctx)
+	if !enabled {
+		return nil, errors.Forbidden("supplier.RECHARGE_DISABLED", "充值功能未开放")
+	}
+	if !money.ValidCents(amount) || amount < minAmount || amount > maxAmount {
+		return nil, errors.BadRequest("supplier.INVALID_AMOUNT", "充值金额超出允许范围")
+	}
+	if s.payer == nil {
+		return nil, errors.InternalServer("supplier.PAYMENT_UNBOUND", "支付管线未装配")
+	}
+	ro, err := s.repo.CreateSupplyRechargeOrder(ctx, uid, acc.ID, amount)
+	if err != nil {
+		return nil, errors.InternalServer("supplier.RECHARGE_FAILED", "创建充值单失败")
+	}
+	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), money.Cents(amount))
+	if err != nil {
+		return nil, mapSupplierRechargeErr(err)
+	}
+	return &storefrontv1.CreateSupplierRechargeReply{
+		RechargeId: ro.ID, PaymentId: info.PaymentID,
+		Type: info.Type, Payload: info.Payload,
+	}, nil
+}
+
+// rechargePolicy 充值档位（settings.recharge 组；与钱包充值同源同缺省——
+// min=1000 分 / max=500000 分 / enabled=true，对齐 wallet 目录缺省）。
+func (s *StoreSupplierService) rechargePolicy(ctx context.Context) (minAmount, maxAmount int64, enabled bool) {
+	minAmount, maxAmount, enabled = 1000, 500000, true
+	if s.settings == nil {
+		return
+	}
+	get := func(key string, out any) bool {
+		raw, err := s.settings.GetJSON(ctx, "recharge", key)
+		if err != nil || len(raw) == 0 {
+			return false
+		}
+		return json.Unmarshal(raw, out) == nil
+	}
+	get("enabled", &enabled)
+	get("min_amount", &minAmount)
+	get("max_amount", &maxAmount)
+	return
+}
+
+// mapSupplierRechargeErr 充值支付发起错误映射（与钱包 mapRechargeErr 同口径）。
+func mapSupplierRechargeErr(err error) error {
+	if err == nil {
+		return nil
+	}
+	msg := err.Error()
+	for _, prefix := range []string{"payment.CHANNEL_NOT_FOUND", "payment.CHANNEL_DISABLED", "payment.CONFIG_INVALID"} {
+		if strings.HasPrefix(msg, prefix) {
+			return errors.BadRequest("supplier.PAYMENT_CHANNEL_UNAVAILABLE", "支付渠道不可用，请更换支付方式")
+		}
+	}
+	return errors.InternalServer("supplier.PAYMENT_FAILED", "发起支付失败，请稍后重试")
+}
+
 // mine 属主校验：账户必须归属当前用户。
 func (s *StoreSupplierService) mine(ctx context.Context, uid, id uint64) (*ent.SupplierAccount, error) {
 	acc, err := s.repo.GetAccount(ctx, id)
@@ -215,6 +299,7 @@ func toStoreAccountPB(acc *ent.SupplierAccount) *storefrontv1.SupplierAccountRep
 		DisplayName: acc.DisplayName, Contact: acc.Contact,
 		ApplyReason: acc.ApplyReason, ReviewNote: acc.ReviewNote,
 		ApiKey: acc.APIKey, CreatedAt: acc.CreatedAt.Unix(),
+		BalanceCache: acc.BalanceCache,
 	}
 	if !acc.ReviewedAt.IsZero() {
 		p.ReviewedAt = acc.ReviewedAt.Unix()

@@ -31,6 +31,8 @@ type RechargeOrder struct {
 	GiftPoints int32 `json:"gift_points,omitempty"`
 	// 入账方向（supply=供货商预存，M2）
 	Target rechargeorder.Target `json:"target,omitempty"`
+	// target=supply 时的入账目标对接账户
+	SupplierAccountID uint64 `json:"supplier_account_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status rechargeorder.Status `json:"status,omitempty"`
 	// PaymentID holds the value of the "payment_id" field.
@@ -45,7 +47,7 @@ func (*RechargeOrder) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case rechargeorder.FieldID, rechargeorder.FieldUserID, rechargeorder.FieldAmount, rechargeorder.FieldGiftAmount, rechargeorder.FieldGiftPoints, rechargeorder.FieldPaymentID:
+		case rechargeorder.FieldID, rechargeorder.FieldUserID, rechargeorder.FieldAmount, rechargeorder.FieldGiftAmount, rechargeorder.FieldGiftPoints, rechargeorder.FieldSupplierAccountID, rechargeorder.FieldPaymentID:
 			values[i] = new(sql.NullInt64)
 		case rechargeorder.FieldTarget, rechargeorder.FieldStatus:
 			values[i] = new(sql.NullString)
@@ -113,6 +115,12 @@ func (_m *RechargeOrder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field target", values[i])
 			} else if value.Valid {
 				_m.Target = rechargeorder.Target(value.String)
+			}
+		case rechargeorder.FieldSupplierAccountID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field supplier_account_id", values[i])
+			} else if value.Valid {
+				_m.SupplierAccountID = uint64(value.Int64)
 			}
 		case rechargeorder.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -188,6 +196,9 @@ func (_m *RechargeOrder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("target=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Target))
+	builder.WriteString(", ")
+	builder.WriteString("supplier_account_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SupplierAccountID))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))

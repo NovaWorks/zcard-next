@@ -21,7 +21,7 @@ import (
 
 // TestListDrivers 驱动元数据：wallet 内置 + 六 adapter + 字段 schema 完整。
 func TestListDrivers(t *testing.T) {
-	_, repo, _, _, _ := newCallbackEnv(t)
+	_, repo, _, _, _, _ := newCallbackEnv(t)
 	svc := NewAdminPaymentService(repo, nil)
 	// 需要 data 才能 channelPB？ListDrivers 不碰 data——直接用 repo
 	list, err := svc.ListDrivers(context.Background(), &emptypb.Empty{})
@@ -66,7 +66,7 @@ func TestListDrivers(t *testing.T) {
 
 // TestCreateChannelValidateConfig 创建时凭据即时校验（驱动未实现/配置无效拒绝）。
 func TestCreateChannelValidateConfig(t *testing.T) {
-	d, repo, _, _, _ := newCallbackEnv(t)
+	d, repo, _, _, _, _ := newCallbackEnv(t)
 	svc := NewAdminPaymentService(repo, d)
 	ctx := context.Background()
 
@@ -111,7 +111,7 @@ func TestCreateChannelValidateConfig(t *testing.T) {
 // TestChannelPBMaskedEcho 脱敏回显：敏感字段 ****、非敏感显值、configured_fields、
 // callback_url（settings 未装配 → 相对路径）。
 func TestChannelPBMaskedEcho(t *testing.T) {
-	d, repo, _, _, _ := newCallbackEnv(t)
+	d, repo, _, _, _, _ := newCallbackEnv(t)
 	svc := NewAdminPaymentService(repo, d)
 	ctx := context.Background()
 
@@ -154,7 +154,7 @@ func TestChannelPBMaskedEcho(t *testing.T) {
 
 // TestUpdateChannelFeeTypeAndValidate 更新：fee_type 传递 + 凭据变更校验 + **** 跳过。
 func TestUpdateChannelFeeTypeAndValidate(t *testing.T) {
-	d, repo, _, _, _ := newCallbackEnv(t)
+	d, repo, _, _, _, _ := newCallbackEnv(t)
 	svc := NewAdminPaymentService(repo, d)
 	ctx := context.Background()
 
@@ -198,7 +198,7 @@ func TestUpdateChannelFeeTypeAndValidate(t *testing.T) {
 
 // TestStorefrontListChannels 启用渠道过滤（停用渠道不下发）。
 func TestStorefrontListChannels(t *testing.T) {
-	d, repo, _, _, _ := newCallbackEnv(t)
+	d, repo, _, _, _, _ := newCallbackEnv(t)
 	svc := NewStorePaymentService(repo, d)
 	ctx := context.Background()
 
@@ -253,7 +253,7 @@ func TestStorefrontListChannels(t *testing.T) {
 
 // TestFieldOptionsEndpoint 动态选项端点：转发驱动 OptionProvider + 不支持拒绝。
 func TestFieldOptionsEndpoint(t *testing.T) {
-	_, repo, _, _, _ := newCallbackEnv(t)
+	_, repo, _, _, _, _ := newCallbackEnv(t)
 	svc := NewAdminPaymentService(repo, nil)
 	ctx := context.Background()
 

@@ -132,6 +132,33 @@ func (_u *RechargeOrderUpdate) SetNillableTarget(v *rechargeorder.Target) *Recha
 	return _u
 }
 
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (_u *RechargeOrderUpdate) SetSupplierAccountID(v uint64) *RechargeOrderUpdate {
+	_u.mutation.ResetSupplierAccountID()
+	_u.mutation.SetSupplierAccountID(v)
+	return _u
+}
+
+// SetNillableSupplierAccountID sets the "supplier_account_id" field if the given value is not nil.
+func (_u *RechargeOrderUpdate) SetNillableSupplierAccountID(v *uint64) *RechargeOrderUpdate {
+	if v != nil {
+		_u.SetSupplierAccountID(*v)
+	}
+	return _u
+}
+
+// AddSupplierAccountID adds value to the "supplier_account_id" field.
+func (_u *RechargeOrderUpdate) AddSupplierAccountID(v int64) *RechargeOrderUpdate {
+	_u.mutation.AddSupplierAccountID(v)
+	return _u
+}
+
+// ClearSupplierAccountID clears the value of the "supplier_account_id" field.
+func (_u *RechargeOrderUpdate) ClearSupplierAccountID() *RechargeOrderUpdate {
+	_u.mutation.ClearSupplierAccountID()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *RechargeOrderUpdate) SetStatus(v rechargeorder.Status) *RechargeOrderUpdate {
 	_u.mutation.SetStatus(v)
@@ -291,6 +318,15 @@ func (_u *RechargeOrderUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.Target(); ok {
 		_spec.SetField(rechargeorder.FieldTarget, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.SupplierAccountID(); ok {
+		_spec.SetField(rechargeorder.FieldSupplierAccountID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplierAccountID(); ok {
+		_spec.AddField(rechargeorder.FieldSupplierAccountID, field.TypeUint64, value)
+	}
+	if _u.mutation.SupplierAccountIDCleared() {
+		_spec.ClearField(rechargeorder.FieldSupplierAccountID, field.TypeUint64)
+	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(rechargeorder.FieldStatus, field.TypeEnum, value)
 	}
@@ -430,6 +466,33 @@ func (_u *RechargeOrderUpdateOne) SetNillableTarget(v *rechargeorder.Target) *Re
 	if v != nil {
 		_u.SetTarget(*v)
 	}
+	return _u
+}
+
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (_u *RechargeOrderUpdateOne) SetSupplierAccountID(v uint64) *RechargeOrderUpdateOne {
+	_u.mutation.ResetSupplierAccountID()
+	_u.mutation.SetSupplierAccountID(v)
+	return _u
+}
+
+// SetNillableSupplierAccountID sets the "supplier_account_id" field if the given value is not nil.
+func (_u *RechargeOrderUpdateOne) SetNillableSupplierAccountID(v *uint64) *RechargeOrderUpdateOne {
+	if v != nil {
+		_u.SetSupplierAccountID(*v)
+	}
+	return _u
+}
+
+// AddSupplierAccountID adds value to the "supplier_account_id" field.
+func (_u *RechargeOrderUpdateOne) AddSupplierAccountID(v int64) *RechargeOrderUpdateOne {
+	_u.mutation.AddSupplierAccountID(v)
+	return _u
+}
+
+// ClearSupplierAccountID clears the value of the "supplier_account_id" field.
+func (_u *RechargeOrderUpdateOne) ClearSupplierAccountID() *RechargeOrderUpdateOne {
+	_u.mutation.ClearSupplierAccountID()
 	return _u
 }
 
@@ -621,6 +684,15 @@ func (_u *RechargeOrderUpdateOne) sqlSave(ctx context.Context) (_node *RechargeO
 	}
 	if value, ok := _u.mutation.Target(); ok {
 		_spec.SetField(rechargeorder.FieldTarget, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.SupplierAccountID(); ok {
+		_spec.SetField(rechargeorder.FieldSupplierAccountID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedSupplierAccountID(); ok {
+		_spec.AddField(rechargeorder.FieldSupplierAccountID, field.TypeUint64, value)
+	}
+	if _u.mutation.SupplierAccountIDCleared() {
+		_spec.ClearField(rechargeorder.FieldSupplierAccountID, field.TypeUint64)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(rechargeorder.FieldStatus, field.TypeEnum, value)

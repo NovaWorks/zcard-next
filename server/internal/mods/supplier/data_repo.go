@@ -12,6 +12,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/downstreamcallback"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
@@ -127,6 +128,20 @@ func (r *SupplierRepoImpl) CancelApplication(ctx context.Context, id uint64) err
 		return fmt.Errorf("supplier: 仅申请中的账户可撤销")
 	}
 	return nil
+}
+
+// CreateSupplyRechargeOrder 落供货充值单（pending；target=supply）。
+// 入账只发生在支付回调成功后（铁律 16）；供货预存无赠送。
+func (r *SupplierRepoImpl) CreateSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount int64) (*ent.RechargeOrder, error) {
+	return data.Client(ctx, r.data).RechargeOrder.Create().
+		SetUserID(userID).
+		SetAmount(amount).
+		SetGiftAmount(0).
+		SetGiftPoints(0).
+		SetTarget(rechargeorder.TargetSupply).
+		SetSupplierAccountID(accountID).
+		SetStatus(rechargeorder.StatusPending).
+		Save(ctx)
 }
 
 // AccountByKey 按 key 查账户（AuthStore 实现；返回解密 secret）。

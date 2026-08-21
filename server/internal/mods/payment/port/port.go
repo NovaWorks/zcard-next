@@ -48,6 +48,12 @@ type RechargePayer interface {
 	CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel string, amount money.Cents) (*RechargePaymentInfo, error)
 }
 
+// SupplierRecharger 供货账户余额入账端口（payment 回调消费；wire 绑定 supplier repo）：
+// target=supply 的充值单支付成功后，将本金入账到对接账户供货余额（幂等键由调用方保证）。
+type SupplierRecharger interface {
+	Recharge(ctx context.Context, accountID uint64, amount int64, reference, remark string) error
+}
+
 // CallbackFact 回调事实（VerifyCallback/ParseWebhook 的统一产出，四重校验的输入）。
 type CallbackFact struct {
 	Provider       string

@@ -104,6 +104,20 @@ func (_c *RechargeOrderCreate) SetNillableTarget(v *rechargeorder.Target) *Recha
 	return _c
 }
 
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (_c *RechargeOrderCreate) SetSupplierAccountID(v uint64) *RechargeOrderCreate {
+	_c.mutation.SetSupplierAccountID(v)
+	return _c
+}
+
+// SetNillableSupplierAccountID sets the "supplier_account_id" field if the given value is not nil.
+func (_c *RechargeOrderCreate) SetNillableSupplierAccountID(v *uint64) *RechargeOrderCreate {
+	if v != nil {
+		_c.SetSupplierAccountID(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *RechargeOrderCreate) SetStatus(v rechargeorder.Status) *RechargeOrderCreate {
 	_c.mutation.SetStatus(v)
@@ -310,6 +324,10 @@ func (_c *RechargeOrderCreate) createSpec() (*RechargeOrder, *sqlgraph.CreateSpe
 		_spec.SetField(rechargeorder.FieldTarget, field.TypeEnum, value)
 		_node.Target = value
 	}
+	if value, ok := _c.mutation.SupplierAccountID(); ok {
+		_spec.SetField(rechargeorder.FieldSupplierAccountID, field.TypeUint64, value)
+		_node.SupplierAccountID = value
+	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(rechargeorder.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
@@ -467,6 +485,30 @@ func (u *RechargeOrderUpsert) SetTarget(v rechargeorder.Target) *RechargeOrderUp
 // UpdateTarget sets the "target" field to the value that was provided on create.
 func (u *RechargeOrderUpsert) UpdateTarget() *RechargeOrderUpsert {
 	u.SetExcluded(rechargeorder.FieldTarget)
+	return u
+}
+
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (u *RechargeOrderUpsert) SetSupplierAccountID(v uint64) *RechargeOrderUpsert {
+	u.Set(rechargeorder.FieldSupplierAccountID, v)
+	return u
+}
+
+// UpdateSupplierAccountID sets the "supplier_account_id" field to the value that was provided on create.
+func (u *RechargeOrderUpsert) UpdateSupplierAccountID() *RechargeOrderUpsert {
+	u.SetExcluded(rechargeorder.FieldSupplierAccountID)
+	return u
+}
+
+// AddSupplierAccountID adds v to the "supplier_account_id" field.
+func (u *RechargeOrderUpsert) AddSupplierAccountID(v uint64) *RechargeOrderUpsert {
+	u.Add(rechargeorder.FieldSupplierAccountID, v)
+	return u
+}
+
+// ClearSupplierAccountID clears the value of the "supplier_account_id" field.
+func (u *RechargeOrderUpsert) ClearSupplierAccountID() *RechargeOrderUpsert {
+	u.SetNull(rechargeorder.FieldSupplierAccountID)
 	return u
 }
 
@@ -684,6 +726,34 @@ func (u *RechargeOrderUpsertOne) SetTarget(v rechargeorder.Target) *RechargeOrde
 func (u *RechargeOrderUpsertOne) UpdateTarget() *RechargeOrderUpsertOne {
 	return u.Update(func(s *RechargeOrderUpsert) {
 		s.UpdateTarget()
+	})
+}
+
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (u *RechargeOrderUpsertOne) SetSupplierAccountID(v uint64) *RechargeOrderUpsertOne {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.SetSupplierAccountID(v)
+	})
+}
+
+// AddSupplierAccountID adds v to the "supplier_account_id" field.
+func (u *RechargeOrderUpsertOne) AddSupplierAccountID(v uint64) *RechargeOrderUpsertOne {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.AddSupplierAccountID(v)
+	})
+}
+
+// UpdateSupplierAccountID sets the "supplier_account_id" field to the value that was provided on create.
+func (u *RechargeOrderUpsertOne) UpdateSupplierAccountID() *RechargeOrderUpsertOne {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.UpdateSupplierAccountID()
+	})
+}
+
+// ClearSupplierAccountID clears the value of the "supplier_account_id" field.
+func (u *RechargeOrderUpsertOne) ClearSupplierAccountID() *RechargeOrderUpsertOne {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.ClearSupplierAccountID()
 	})
 }
 
@@ -1076,6 +1146,34 @@ func (u *RechargeOrderUpsertBulk) SetTarget(v rechargeorder.Target) *RechargeOrd
 func (u *RechargeOrderUpsertBulk) UpdateTarget() *RechargeOrderUpsertBulk {
 	return u.Update(func(s *RechargeOrderUpsert) {
 		s.UpdateTarget()
+	})
+}
+
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (u *RechargeOrderUpsertBulk) SetSupplierAccountID(v uint64) *RechargeOrderUpsertBulk {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.SetSupplierAccountID(v)
+	})
+}
+
+// AddSupplierAccountID adds v to the "supplier_account_id" field.
+func (u *RechargeOrderUpsertBulk) AddSupplierAccountID(v uint64) *RechargeOrderUpsertBulk {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.AddSupplierAccountID(v)
+	})
+}
+
+// UpdateSupplierAccountID sets the "supplier_account_id" field to the value that was provided on create.
+func (u *RechargeOrderUpsertBulk) UpdateSupplierAccountID() *RechargeOrderUpsertBulk {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.UpdateSupplierAccountID()
+	})
+}
+
+// ClearSupplierAccountID clears the value of the "supplier_account_id" field.
+func (u *RechargeOrderUpsertBulk) ClearSupplierAccountID() *RechargeOrderUpsertBulk {
+	return u.Update(func(s *RechargeOrderUpsert) {
+		s.ClearSupplierAccountID()
 	})
 }
 

@@ -5282,6 +5282,33 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierCredentialsReply'
+    /api/v1/storefront/supplier/accounts/{id}/recharge:
+        post:
+            tags:
+                - StoreSupplierService
+            description: |-
+                CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
+                 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
+            operationId: StoreSupplierService_CreateSupplierRecharge
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.CreateSupplierRechargeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CreateSupplierRechargeReply'
     /api/v1/storefront/supplier/accounts/{id}/regenerate-secret:
         post:
             tags:
@@ -10131,6 +10158,30 @@ components:
                     type: string
                 channel:
                     type: string
+        zcard.api.storefront.v1.CreateSupplierRechargeReply:
+            type: object
+            properties:
+                rechargeId:
+                    type: string
+                paymentId:
+                    type: string
+                type:
+                    type: string
+                payload:
+                    type: string
+        zcard.api.storefront.v1.CreateSupplierRechargeRequest:
+            required:
+                - id
+                - amountCents
+                - channel
+            type: object
+            properties:
+                id:
+                    type: string
+                amountCents:
+                    type: string
+                channel:
+                    type: string
         zcard.api.storefront.v1.CreateTicketRequest:
             required:
                 - type
@@ -11146,6 +11197,8 @@ components:
                 reviewedAt:
                     type: string
                 createdAt:
+                    type: string
+                balanceCache:
                     type: string
         zcard.api.storefront.v1.SupplierCredentialsReply:
             type: object

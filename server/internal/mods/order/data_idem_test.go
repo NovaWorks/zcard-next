@@ -48,7 +48,7 @@ func newIdemEnv(t *testing.T) (*data.Data, *OrderUsecase, *paymentmod.PaymentRep
 	}
 	uc := &OrderUsecase{Data: d, Inv: fakeInventory{}, Gen: gen}
 	// 慢通道探测只需 data 句柄，其余依赖 nil（HasPendingSlowPayment 不触达）
-	payRepo := paymentmod.NewPaymentRepoImpl(d, nil, nil, nil, nil, nil, nil, nil, nil)
+	payRepo := paymentmod.NewPaymentRepoImpl(d, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	return d, uc, payRepo
 }
 

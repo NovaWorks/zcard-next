@@ -112,6 +112,7 @@ type SupplierAccountReply struct {
 	ApiKey        string                 `protobuf:"bytes,8,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`             // app_id（明文常驻）
 	ReviewedAt    int64                  `protobuf:"varint,9,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	BalanceCache  int64                  `protobuf:"varint,11,opt,name=balance_cache,json=balanceCache,proto3" json:"balance_cache,omitempty"` // 供货余额（分）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -212,6 +213,13 @@ func (x *SupplierAccountReply) GetReviewedAt() int64 {
 func (x *SupplierAccountReply) GetCreatedAt() int64 {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *SupplierAccountReply) GetBalanceCache() int64 {
+	if x != nil {
+		return x.BalanceCache
 	}
 	return 0
 }
@@ -392,6 +400,134 @@ func (x *CancelSupplierApplicationRequest) GetId() uint64 {
 	return 0
 }
 
+type CreateSupplierRechargeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                      // 对接账户（须 approved 且归属本人）
+	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"` // 意向金额（分；服务端按档位裁决）
+	Channel       string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`                             // 支付渠道 code
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSupplierRechargeRequest) Reset() {
+	*x = CreateSupplierRechargeRequest{}
+	mi := &file_storefront_v1_supplier_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSupplierRechargeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSupplierRechargeRequest) ProtoMessage() {}
+
+func (x *CreateSupplierRechargeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_supplier_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSupplierRechargeRequest.ProtoReflect.Descriptor instead.
+func (*CreateSupplierRechargeRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_supplier_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *CreateSupplierRechargeRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *CreateSupplierRechargeRequest) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
+}
+
+func (x *CreateSupplierRechargeRequest) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+type CreateSupplierRechargeReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RechargeId    uint64                 `protobuf:"varint,1,opt,name=recharge_id,json=rechargeId,proto3" json:"recharge_id,omitempty"`
+	PaymentId     uint64                 `protobuf:"varint,2,opt,name=payment_id,json=paymentId,proto3" json:"payment_id,omitempty"`
+	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`       // redirect | qrcode | params（与 CreateRechargeReply 同构）
+	Payload       string                 `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"` // 支付跳转 URL / 二维码内容 / 参数 JSON
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateSupplierRechargeReply) Reset() {
+	*x = CreateSupplierRechargeReply{}
+	mi := &file_storefront_v1_supplier_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateSupplierRechargeReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateSupplierRechargeReply) ProtoMessage() {}
+
+func (x *CreateSupplierRechargeReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_supplier_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateSupplierRechargeReply.ProtoReflect.Descriptor instead.
+func (*CreateSupplierRechargeReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_supplier_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CreateSupplierRechargeReply) GetRechargeId() uint64 {
+	if x != nil {
+		return x.RechargeId
+	}
+	return 0
+}
+
+func (x *CreateSupplierRechargeReply) GetPaymentId() uint64 {
+	if x != nil {
+		return x.PaymentId
+	}
+	return 0
+}
+
+func (x *CreateSupplierRechargeReply) GetType() string {
+	if x != nil {
+		return x.Type
+	}
+	return ""
+}
+
+func (x *CreateSupplierRechargeReply) GetPayload() string {
+	if x != nil {
+		return x.Payload
+	}
+	return ""
+}
+
 type SupplierCredentialsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -405,7 +541,7 @@ type SupplierCredentialsReply struct {
 
 func (x *SupplierCredentialsReply) Reset() {
 	*x = SupplierCredentialsReply{}
-	mi := &file_storefront_v1_supplier_proto_msgTypes[6]
+	mi := &file_storefront_v1_supplier_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -417,7 +553,7 @@ func (x *SupplierCredentialsReply) String() string {
 func (*SupplierCredentialsReply) ProtoMessage() {}
 
 func (x *SupplierCredentialsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_supplier_proto_msgTypes[6]
+	mi := &file_storefront_v1_supplier_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -430,7 +566,7 @@ func (x *SupplierCredentialsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SupplierCredentialsReply.ProtoReflect.Descriptor instead.
 func (*SupplierCredentialsReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_supplier_proto_rawDescGZIP(), []int{6}
+	return file_storefront_v1_supplier_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SupplierCredentialsReply) GetId() uint64 {
@@ -479,7 +615,7 @@ const file_storefront_v1_supplier_proto_rawDesc = "" +
 	"\acontact\x18\x03 \x01(\tR\acontact\x12!\n" +
 	"\fapply_reason\x18\x04 \x01(\tR\vapplyReason\x12\x1d\n" +
 	"\n" +
-	"notify_url\x18\x05 \x01(\tR\tnotifyUrl\"\xb4\x02\n" +
+	"notify_url\x18\x05 \x01(\tR\tnotifyUrl\"\xd9\x02\n" +
 	"\x14SupplierAccountReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
 	"\bprotocol\x18\x02 \x01(\tR\bprotocol\x12\x16\n" +
@@ -494,7 +630,8 @@ const file_storefront_v1_supplier_proto_rawDesc = "" +
 	"reviewedAt\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\x03R\tcreatedAt\"f\n" +
+	" \x01(\x03R\tcreatedAt\x12#\n" +
+	"\rbalance_cache\x18\v \x01(\x03R\fbalanceCache\"f\n" +
 	"\x19ListSupplierAccountsReply\x12I\n" +
 	"\baccounts\x18\x01 \x03(\v2-.zcard.api.storefront.v1.SupplierAccountReplyR\baccounts\"/\n" +
 	"\x1dGetSupplierCredentialsRequest\x12\x0e\n" +
@@ -502,20 +639,32 @@ const file_storefront_v1_supplier_proto_rawDesc = "" +
 	"\x1fRegenerateSupplierSecretRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\"2\n" +
 	" CancelSupplierApplicationRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\"\x96\x01\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\"{\n" +
+	"\x1dCreateSupplierRechargeRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12&\n" +
+	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
+	"\achannel\x18\x03 \x01(\tB\x03\xe0A\x02R\achannel\"\x8b\x01\n" +
+	"\x1bCreateSupplierRechargeReply\x12\x1f\n" +
+	"\vrecharge_id\x18\x01 \x01(\x04R\n" +
+	"rechargeId\x12\x1d\n" +
+	"\n" +
+	"payment_id\x18\x02 \x01(\x04R\tpaymentId\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04type\x12\x18\n" +
+	"\apayload\x18\x04 \x01(\tR\apayload\"\x96\x01\n" +
 	"\x18SupplierCredentialsReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
 	"\bprotocol\x18\x02 \x01(\tR\bprotocol\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x17\n" +
 	"\aapi_key\x18\x04 \x01(\tR\x06apiKey\x12\x1d\n" +
 	"\n" +
-	"api_secret\x18\x05 \x01(\tR\tapiSecret2\xa7\a\n" +
+	"api_secret\x18\x05 \x01(\tR\tapiSecret2\xef\b\n" +
 	"\x14StoreSupplierService\x12\xba\x01\n" +
 	"\x19SubmitSupplierApplication\x129.zcard.api.storefront.v1.SubmitSupplierApplicationRequest\x1a-.zcard.api.storefront.v1.SupplierAccountReply\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/storefront/supplier/applications\x12\x92\x01\n" +
 	"\x16ListMySupplierAccounts\x12\x16.google.protobuf.Empty\x1a2.zcard.api.storefront.v1.ListSupplierAccountsReply\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/storefront/supplier/accounts\x12\xc2\x01\n" +
 	"\x16GetSupplierCredentials\x126.zcard.api.storefront.v1.GetSupplierCredentialsRequest\x1a1.zcard.api.storefront.v1.SupplierCredentialsReply\"=\x82\xd3\xe4\x93\x027\x125/api/v1/storefront/supplier/accounts/{id}/credentials\x12\xcc\x01\n" +
 	"\x18RegenerateSupplierSecret\x128.zcard.api.storefront.v1.RegenerateSupplierSecretRequest\x1a1.zcard.api.storefront.v1.SupplierCredentialsReply\"C\x82\xd3\xe4\x93\x02=\";/api/v1/storefront/supplier/accounts/{id}/regenerate-secret\x12\xa8\x01\n" +
-	"\x19CancelSupplierApplication\x129.zcard.api.storefront.v1.CancelSupplierApplicationRequest\x1a\x16.google.protobuf.Empty\"8\x82\xd3\xe4\x93\x022\"0/api/v1/storefront/supplier/accounts/{id}/cancelBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
+	"\x19CancelSupplierApplication\x129.zcard.api.storefront.v1.CancelSupplierApplicationRequest\x1a\x16.google.protobuf.Empty\"8\x82\xd3\xe4\x93\x022\"0/api/v1/storefront/supplier/accounts/{id}/cancel\x12\xc5\x01\n" +
+	"\x16CreateSupplierRecharge\x126.zcard.api.storefront.v1.CreateSupplierRechargeRequest\x1a4.zcard.api.storefront.v1.CreateSupplierRechargeReply\"=\x82\xd3\xe4\x93\x027:\x01*\"2/api/v1/storefront/supplier/accounts/{id}/rechargeBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
 var (
 	file_storefront_v1_supplier_proto_rawDescOnce sync.Once
@@ -529,7 +678,7 @@ func file_storefront_v1_supplier_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_supplier_proto_rawDescData
 }
 
-var file_storefront_v1_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_storefront_v1_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_storefront_v1_supplier_proto_goTypes = []any{
 	(*SubmitSupplierApplicationRequest)(nil), // 0: zcard.api.storefront.v1.SubmitSupplierApplicationRequest
 	(*SupplierAccountReply)(nil),             // 1: zcard.api.storefront.v1.SupplierAccountReply
@@ -537,23 +686,27 @@ var file_storefront_v1_supplier_proto_goTypes = []any{
 	(*GetSupplierCredentialsRequest)(nil),    // 3: zcard.api.storefront.v1.GetSupplierCredentialsRequest
 	(*RegenerateSupplierSecretRequest)(nil),  // 4: zcard.api.storefront.v1.RegenerateSupplierSecretRequest
 	(*CancelSupplierApplicationRequest)(nil), // 5: zcard.api.storefront.v1.CancelSupplierApplicationRequest
-	(*SupplierCredentialsReply)(nil),         // 6: zcard.api.storefront.v1.SupplierCredentialsReply
-	(*emptypb.Empty)(nil),                    // 7: google.protobuf.Empty
+	(*CreateSupplierRechargeRequest)(nil),    // 6: zcard.api.storefront.v1.CreateSupplierRechargeRequest
+	(*CreateSupplierRechargeReply)(nil),      // 7: zcard.api.storefront.v1.CreateSupplierRechargeReply
+	(*SupplierCredentialsReply)(nil),         // 8: zcard.api.storefront.v1.SupplierCredentialsReply
+	(*emptypb.Empty)(nil),                    // 9: google.protobuf.Empty
 }
 var file_storefront_v1_supplier_proto_depIdxs = []int32{
 	1, // 0: zcard.api.storefront.v1.ListSupplierAccountsReply.accounts:type_name -> zcard.api.storefront.v1.SupplierAccountReply
 	0, // 1: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:input_type -> zcard.api.storefront.v1.SubmitSupplierApplicationRequest
-	7, // 2: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:input_type -> google.protobuf.Empty
+	9, // 2: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:input_type -> google.protobuf.Empty
 	3, // 3: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:input_type -> zcard.api.storefront.v1.GetSupplierCredentialsRequest
 	4, // 4: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:input_type -> zcard.api.storefront.v1.RegenerateSupplierSecretRequest
 	5, // 5: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:input_type -> zcard.api.storefront.v1.CancelSupplierApplicationRequest
-	1, // 6: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:output_type -> zcard.api.storefront.v1.SupplierAccountReply
-	2, // 7: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:output_type -> zcard.api.storefront.v1.ListSupplierAccountsReply
-	6, // 8: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
-	6, // 9: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
-	7, // 10: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:output_type -> google.protobuf.Empty
-	6, // [6:11] is the sub-list for method output_type
-	1, // [1:6] is the sub-list for method input_type
+	6, // 6: zcard.api.storefront.v1.StoreSupplierService.CreateSupplierRecharge:input_type -> zcard.api.storefront.v1.CreateSupplierRechargeRequest
+	1, // 7: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:output_type -> zcard.api.storefront.v1.SupplierAccountReply
+	2, // 8: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:output_type -> zcard.api.storefront.v1.ListSupplierAccountsReply
+	8, // 9: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
+	8, // 10: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
+	9, // 11: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:output_type -> google.protobuf.Empty
+	7, // 12: zcard.api.storefront.v1.StoreSupplierService.CreateSupplierRecharge:output_type -> zcard.api.storefront.v1.CreateSupplierRechargeReply
+	7, // [7:13] is the sub-list for method output_type
+	1, // [1:7] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -570,7 +723,7 @@ func file_storefront_v1_supplier_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_supplier_proto_rawDesc), len(file_storefront_v1_supplier_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

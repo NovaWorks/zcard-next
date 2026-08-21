@@ -1526,6 +1526,7 @@ var (
 		{Name: "gift_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "gift_points", Type: field.TypeInt32, Default: 0},
 		{Name: "target", Type: field.TypeEnum, Enums: []string{"balance", "supply"}, Default: "balance"},
+		{Name: "supplier_account_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "success", "failed", "expired"}, Default: "pending"},
 		{Name: "payment_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -1544,7 +1545,7 @@ var (
 			{
 				Name:    "rechargeorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{RechargeOrdersColumns[8]},
+				Columns: []*schema.Column{RechargeOrdersColumns[9]},
 			},
 		},
 	}

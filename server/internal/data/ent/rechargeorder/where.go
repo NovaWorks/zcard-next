@@ -84,6 +84,11 @@ func GiftPoints(v int32) predicate.RechargeOrder {
 	return predicate.RechargeOrder(sql.FieldEQ(FieldGiftPoints, v))
 }
 
+// SupplierAccountID applies equality check predicate on the "supplier_account_id" field. It's identical to SupplierAccountIDEQ.
+func SupplierAccountID(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldEQ(FieldSupplierAccountID, v))
+}
+
 // PaymentID applies equality check predicate on the "payment_id" field. It's identical to PaymentIDEQ.
 func PaymentID(v uint64) predicate.RechargeOrder {
 	return predicate.RechargeOrder(sql.FieldEQ(FieldPaymentID, v))
@@ -352,6 +357,56 @@ func TargetIn(vs ...Target) predicate.RechargeOrder {
 // TargetNotIn applies the NotIn predicate on the "target" field.
 func TargetNotIn(vs ...Target) predicate.RechargeOrder {
 	return predicate.RechargeOrder(sql.FieldNotIn(FieldTarget, vs...))
+}
+
+// SupplierAccountIDEQ applies the EQ predicate on the "supplier_account_id" field.
+func SupplierAccountIDEQ(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldEQ(FieldSupplierAccountID, v))
+}
+
+// SupplierAccountIDNEQ applies the NEQ predicate on the "supplier_account_id" field.
+func SupplierAccountIDNEQ(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldNEQ(FieldSupplierAccountID, v))
+}
+
+// SupplierAccountIDIn applies the In predicate on the "supplier_account_id" field.
+func SupplierAccountIDIn(vs ...uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldIn(FieldSupplierAccountID, vs...))
+}
+
+// SupplierAccountIDNotIn applies the NotIn predicate on the "supplier_account_id" field.
+func SupplierAccountIDNotIn(vs ...uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldNotIn(FieldSupplierAccountID, vs...))
+}
+
+// SupplierAccountIDGT applies the GT predicate on the "supplier_account_id" field.
+func SupplierAccountIDGT(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldGT(FieldSupplierAccountID, v))
+}
+
+// SupplierAccountIDGTE applies the GTE predicate on the "supplier_account_id" field.
+func SupplierAccountIDGTE(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldGTE(FieldSupplierAccountID, v))
+}
+
+// SupplierAccountIDLT applies the LT predicate on the "supplier_account_id" field.
+func SupplierAccountIDLT(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldLT(FieldSupplierAccountID, v))
+}
+
+// SupplierAccountIDLTE applies the LTE predicate on the "supplier_account_id" field.
+func SupplierAccountIDLTE(v uint64) predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldLTE(FieldSupplierAccountID, v))
+}
+
+// SupplierAccountIDIsNil applies the IsNil predicate on the "supplier_account_id" field.
+func SupplierAccountIDIsNil() predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldIsNull(FieldSupplierAccountID))
+}
+
+// SupplierAccountIDNotNil applies the NotNil predicate on the "supplier_account_id" field.
+func SupplierAccountIDNotNil() predicate.RechargeOrder {
+	return predicate.RechargeOrder(sql.FieldNotNull(FieldSupplierAccountID))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

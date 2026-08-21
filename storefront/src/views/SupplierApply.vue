@@ -9,6 +9,7 @@
       <div class="muted" style="margin-top: 6px; line-height: 1.7;">
         申请通过后，你的第三方站点（acg-faka / dujiao-next / 另一套 ZCard）可把本站作为上游供货方，
         填本站地址 + 下方凭据即可对接，无需改动对方代码。协议在申请时选定，一个账户对应一种面板。
+        下游下单从账户「供货余额」扣款，余额不足请先充值。
       </div>
     </div>
 
@@ -50,12 +51,16 @@
       <div v-else class="account-list" style="display: flex; flex-direction: column; gap: 10px;">
         <div v-for="a in accounts" :key="a.id" class="account-item" style="border: 1px solid #e5e6e8; border-radius: 10px; padding: 12px;">
           <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
-            <div>
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
               <b>{{ a.display_name }}</b>
               <span class="tag" style="margin-left: 8px;">{{ protocolLabel(a.protocol) }}</span>
               <span class="tag" :style="statusStyle(a.status)">{{ statusLabel(a.status) }}</span>
             </div>
-            <div class="actions" style="gap: 8px;">
+            <div class="actions" style="gap: 8px; align-items: center;">
+              <span v-if="a.status === 'approved'" style="font-size: 14px; margin-right: 4px;">
+                余额 <b style="color: #2563eb; font-size: 16px;">{{ formatMoney(a.balance_cache || 0) }}</b>
+              </span>
+              <button v-if="a.status === 'approved'" class="btn" style="padding: 6px 14px; font-size: 13px;" @click="openRecharge(a)">充值</button>
               <button v-if="a.status === 'applying'" class="btn secondary" @click="cancel(a)">撤销申请</button>
               <button v-if="a.status === 'approved'" class="btn secondary" @click="showCredentials(a)">{{ credOpenId === a.id ? '收起凭据' : '查看凭据' }}</button>
               <button v-if="a.status === 'approved'" class="btn secondary" @click="regenerate(a)">重置密钥</button>
@@ -105,6 +110,98 @@
         </div>
       </div>
     </div>
+
+    <!-- 充值弹窗（大厂收银风格：余额卡 + 档位网格 + 支付方式 + 主按钮） -->
+    <div v-if="rechargeOpen" class="recharge-mask" @click.self="closeRecharge">
+      <div class="recharge-modal">
+        <div class="recharge-head">
+          <div style="font-weight: 700; font-size: 16px;">供货余额充值</div>
+          <button class="recharge-close" @click="closeRecharge">✕</button>
+        </div>
+
+        <!-- 余额卡 -->
+        <div class="balance-hero">
+          <div class="muted" style="color: rgba(255,255,255,0.75);">当前余额</div>
+          <div style="font-size: 28px; font-weight: 800; letter-spacing: 0.5px;">{{ formatMoney(rechargeTarget?.balance_cache || 0) }}</div>
+          <div style="font-size: 12px; opacity: 0.8; margin-top: 4px;">{{ rechargeTarget?.display_name }} · {{ protocolLabel(rechargeTarget?.protocol || '') }}</div>
+        </div>
+
+        <div class="recharge-body">
+          <!-- 成功反馈 -->
+          <div v-if="rechargeDone" class="recharge-done">
+            <div style="font-size: 42px;">✅</div>
+            <div style="font-weight: 700; margin-top: 8px;">充值成功</div>
+            <div class="muted" style="margin-top: 4px;">已到账 {{ formatMoney(rechargeDoneAmount) }}，支付完成后余额自动更新</div>
+            <button class="btn" style="margin-top: 16px; width: 100%;" @click="closeRecharge">完成</button>
+          </div>
+
+          <template v-else>
+            <!-- 金额档位 -->
+            <div class="recharge-section">
+              <div class="recharge-label">充值金额</div>
+              <div class="tier-grid">
+                <button
+                  v-for="t in presetTiers"
+                  :key="t"
+                  class="tier-card"
+                  :class="{ active: rechargeYuan === t }"
+                  @click="rechargeYuan = t"
+                >
+                  {{ formatMoney(t * 100) }}
+                </button>
+                <button class="tier-card custom" :class="{ active: !presetTiers.includes(rechargeYuan as number) && rechargeYuan !== null }" @click="focusCustom = true">
+                  自定义
+                </button>
+              </div>
+              <div v-if="focusCustom" class="custom-input">
+                <input class="input" v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="输入金额" autofocus />
+              </div>
+              <div class="muted" style="margin-top: 6px;">限额 {{ formatMoney(rechargeMeta.min_amount || 1000) }} ~ {{ formatMoney(rechargeMeta.max_amount || 500000) }}</div>
+            </div>
+
+            <!-- 支付方式 -->
+            <div class="recharge-section">
+              <div class="recharge-label">支付方式</div>
+              <div v-if="rechargeChannels.length === 0" class="muted">暂无可用的支付渠道</div>
+              <div v-else class="channel-list">
+                <label
+                  v-for="c in rechargeChannels"
+                  :key="c.code"
+                  class="channel-card"
+                  :class="{ active: rechargeChannel === c.code }"
+                >
+                  <input v-model="rechargeChannel" type="radio" :value="c.code" style="display: none;" />
+                  <span class="channel-dot" :class="{ on: rechargeChannel === c.code }"></span>
+                  <span class="channel-name">{{ c.name }}</span>
+                </label>
+              </div>
+            </div>
+
+            <div v-if="rechargeError" style="color: #dc2626; font-size: 13px; margin: 8px 0;">{{ rechargeError }}</div>
+
+            <!-- 支付跳转 -->
+            <div v-if="rechargeRedirect" style="margin-top: 12px;">
+              <a class="btn" style="width: 100%; text-align: center; text-decoration: none;" :href="rechargeRedirect" target="_blank">去支付（跳转收银台）</a>
+              <div class="muted" style="text-align: center; margin-top: 6px;">支付完成后余额自动到账</div>
+            </div>
+            <div v-else-if="rechargeQrcode" style="margin-top: 12px; text-align: center;">
+              <img :src="`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(rechargeQrcode)}`" alt="支付二维码" style="width: 180px; border-radius: 10px;" />
+              <div class="muted" style="margin-top: 6px;">请使用对应 App 扫码支付，完成后余额自动到账</div>
+            </div>
+
+            <!-- 主按钮 -->
+            <button
+              v-if="!rechargeRedirect && !rechargeQrcode"
+              class="recharge-submit"
+              :disabled="recharging || !rechargeYuan || rechargeYuan <= 0 || !rechargeChannel"
+              @click="doRecharge"
+            >
+              {{ recharging ? '创建支付单…' : `立即充值 ${formatMoney((rechargeYuan ?? 0) * 100)}` }}
+            </button>
+          </template>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -112,9 +209,11 @@
 import { onMounted, ref } from 'vue';
 import {
   listMySupplierAccounts, submitSupplierApplication, getSupplierCredentials,
-  regenerateSupplierSecret, cancelSupplierApplication,
+  regenerateSupplierSecret, cancelSupplierApplication, createSupplierRecharge,
+  fetchPaymentChannels, type ChannelItem,
   type SupplierAccount, type SupplierCredentials,
 } from '@/api';
+import { api, formatMoney, centsToYuan } from '@/api/client';
 
 const protocols = [
   { value: 'zcard', label: 'ZCard', desc: '另一套 ZCard 系统对接（X-Supply 四头签名）' },
@@ -135,6 +234,119 @@ const regeneratedSecret = ref('');
 const copied = ref('');
 
 const origin = typeof location !== 'undefined' ? location.origin : '';
+
+// ── 充值（收银弹窗）──
+const rechargeOpen = ref(false);
+const rechargeTarget = ref<SupplierAccount | null>(null);
+const rechargeYuan = ref<number | null>(null);
+const presetTiers = ref<number[]>([100, 200, 500, 1000, 2000]);
+const focusCustom = ref(false);
+const rechargeChannels = ref<ChannelItem[]>([]);
+const rechargeChannel = ref('');
+const recharging = ref(false);
+const rechargeError = ref('');
+const rechargeRedirect = ref('');
+const rechargeQrcode = ref('');
+const rechargeMeta = ref<{ min_amount: number; max_amount: number } | null>(null);
+const rechargeDone = ref(false);
+const rechargeDoneAmount = ref(0);
+
+async function openRecharge(a: SupplierAccount) {
+  rechargeTarget.value = a;
+  rechargeYuan.value = presetTiers.value[1] ?? 100; // 默认第二档
+  focusCustom.value = false;
+  rechargeError.value = '';
+  rechargeRedirect.value = '';
+  rechargeQrcode.value = '';
+  rechargeDone.value = false;
+  rechargeOpen.value = true;
+  // 支付渠道 + 充值限额（复用钱包充值配置）
+  const [ch, cfg] = await Promise.all([fetchPaymentChannels(), api.get<{ entries: { key: string; value_json: string }[] }>('/config')]);
+  rechargeChannels.value = ch.data?.channels || [];
+  rechargeChannel.value = rechargeChannels.value[0]?.code || '';
+  const find = (k: string) => cfg.data?.entries?.find((e) => e.key === k)?.value_json;
+  const min = find('recharge.min_amount');
+  const max = find('recharge.max_amount');
+  if (min && max) {
+    rechargeMeta.value = { min_amount: Number(JSON.parse(min)), max_amount: Number(JSON.parse(max)) };
+  }
+  const tiers = find('recharge.gift_tiers');
+  if (tiers) {
+    try {
+      const list = JSON.parse(tiers) as { amount: number }[];
+      if (list.length) presetTiers.value = list.map((t) => centsToYuan(t.amount)).slice(0, 5);
+      rechargeYuan.value = presetTiers.value[1] ?? presetTiers.value[0];
+    } catch { /* 非法配置忽略 */ }
+  }
+}
+
+function closeRecharge() {
+  rechargeOpen.value = false;
+  rechargeTarget.value = null;
+}
+
+async function doRecharge() {
+  if (!rechargeTarget.value) return;
+  if (!rechargeYuan.value || rechargeYuan.value <= 0) {
+    rechargeError.value = '请输入充值金额';
+    return;
+  }
+  if (!rechargeChannel.value) {
+    rechargeError.value = '请选择支付方式';
+    return;
+  }
+  recharging.value = true;
+  rechargeError.value = '';
+  rechargeRedirect.value = '';
+  rechargeQrcode.value = '';
+  const { data, error } = await createSupplierRecharge(rechargeTarget.value.id, {
+    amount_cents: Math.round(rechargeYuan.value * 100),
+    channel: rechargeChannel.value,
+  });
+  recharging.value = false;
+  if (error || !data) {
+    rechargeError.value = error || '创建失败';
+    return;
+  }
+  // 支付载荷三形态（与充值/支付页同构）
+  if (data.type === 'redirect') rechargeRedirect.value = data.payload;
+  else if (data.type === 'qrcode') rechargeQrcode.value = data.payload;
+  else if (data.type === 'params') {
+    try {
+      const p = JSON.parse(data.payload);
+      rechargeRedirect.value = p.url || '';
+      rechargeError.value = p.url ? '' : '支付参数异常';
+    } catch {
+      rechargeError.value = '支付参数异常';
+    }
+  }
+  // 轮询账户余额（支付完成后刷新）
+  pollBalance(rechargeTarget.value.id);
+}
+
+let balanceTimer: ReturnType<typeof setInterval> | null = null;
+function pollBalance(id: number) {
+  if (balanceTimer) clearInterval(balanceTimer);
+  const started = Date.now();
+  balanceTimer = setInterval(async () => {
+    const { data } = await listMySupplierAccounts();
+    if (!data) return;
+    const acc = data.accounts.find((a) => a.id === id);
+    if (acc) {
+      const before = rechargeTarget.value?.balance_cache || 0;
+      if (acc.balance_cache > before) {
+        rechargeDone.value = true;
+        rechargeDoneAmount.value = acc.balance_cache - before;
+        if (balanceTimer) clearInterval(balanceTimer);
+        await load();
+      }
+    }
+    // 5 分钟超时停止轮询
+    if (Date.now() - started > 5 * 60 * 1000 && balanceTimer) {
+      clearInterval(balanceTimer);
+    }
+  }, 3000);
+}
 
 function protocolLabel(p: string) {
   return ({ zcard: 'ZCard', dujiao_next: 'dujiao-next', acg_faka: 'acg-faka' } as any)[p] || p;
@@ -249,3 +461,142 @@ async function cancel(a: SupplierAccount) {
 
 onMounted(load);
 </script>
+
+<style scoped>
+/* 充值收银弹窗（大厂交互：蒙层 + 圆角卡片 + 余额卡 + 档位网格 + 主按钮） */
+.recharge-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.recharge-modal {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.25);
+  overflow: hidden;
+  animation: recharge-in 0.18s ease-out;
+}
+@keyframes recharge-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.recharge-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px 0;
+}
+.recharge-close {
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.recharge-close:hover { background: #e5e7eb; }
+.balance-hero {
+  margin: 14px 18px 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e40af, #2563eb 60%, #3b82f6);
+  color: #fff;
+  padding: 16px 18px;
+}
+.recharge-body { padding: 14px 18px 18px; }
+.recharge-section { margin-bottom: 14px; }
+.recharge-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+.tier-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.tier-card {
+  border: 1px solid #e5e6e8;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 4px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1f2329;
+  transition: all 0.12s;
+}
+.tier-card:hover { border-color: #93c5fd; }
+.tier-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb inset;
+}
+.tier-symbol { font-size: 12px; font-weight: 500; margin-right: 2px; }
+.custom-input { margin-top: 8px; }
+.channel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.channel-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e5e6e8;
+  border-radius: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.channel-card:hover { border-color: #93c5fd; }
+.channel-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.channel-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  position: relative;
+  flex-shrink: 0;
+}
+.channel-dot.on { border-color: #2563eb; }
+.channel-dot.on::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #2563eb;
+}
+.channel-name { font-size: 14px; font-weight: 500; }
+.recharge-submit {
+  width: 100%;
+  margin-top: 6px;
+  padding: 13px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.recharge-submit:hover:not(:disabled) { background: #1d4ed8; }
+.recharge-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.recharge-done { text-align: center; padding: 18px 0 6px; }
+</style>

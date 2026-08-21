@@ -19,6 +19,7 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationStoreSupplierServiceCancelSupplierApplication = "/zcard.api.storefront.v1.StoreSupplierService/CancelSupplierApplication"
+const OperationStoreSupplierServiceCreateSupplierRecharge = "/zcard.api.storefront.v1.StoreSupplierService/CreateSupplierRecharge"
 const OperationStoreSupplierServiceGetSupplierCredentials = "/zcard.api.storefront.v1.StoreSupplierService/GetSupplierCredentials"
 const OperationStoreSupplierServiceListMySupplierAccounts = "/zcard.api.storefront.v1.StoreSupplierService/ListMySupplierAccounts"
 const OperationStoreSupplierServiceRegenerateSupplierSecret = "/zcard.api.storefront.v1.StoreSupplierService/RegenerateSupplierSecret"
@@ -27,6 +28,9 @@ const OperationStoreSupplierServiceSubmitSupplierApplication = "/zcard.api.store
 type StoreSupplierServiceHTTPServer interface {
 	// CancelSupplierApplication CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
 	CancelSupplierApplication(context.Context, *CancelSupplierApplicationRequest) (*emptypb.Empty, error)
+	// CreateSupplierRecharge CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
+	// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
+	CreateSupplierRecharge(context.Context, *CreateSupplierRechargeRequest) (*CreateSupplierRechargeReply, error)
 	// GetSupplierCredentials GetSupplierCredentials 查看凭据（仅 approved 且归属本人；返回明文 api_secret）。
 	GetSupplierCredentials(context.Context, *GetSupplierCredentialsRequest) (*SupplierCredentialsReply, error)
 	// ListMySupplierAccounts ListMySupplierAccounts 我的对接账户（申请中/已通过/已驳回/已禁用全量）。
@@ -45,6 +49,7 @@ func RegisterStoreSupplierServiceHTTPServer(s *http.Server, srv StoreSupplierSer
 	r.Handle("GET", "/api/v1/storefront/supplier/accounts/{id}/credentials", _StoreSupplierService_GetSupplierCredentials0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/regenerate-secret", _StoreSupplierService_RegenerateSupplierSecret0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/cancel", _StoreSupplierService_CancelSupplierApplication0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/recharge", _StoreSupplierService_CreateSupplierRecharge0_HTTP_Handler(srv))
 }
 
 func _StoreSupplierService_SubmitSupplierApplication0_HTTP_Handler(srv StoreSupplierServiceHTTPServer) func(ctx http.Context) error {
@@ -151,9 +156,34 @@ func _StoreSupplierService_CancelSupplierApplication0_HTTP_Handler(srv StoreSupp
 	}
 }
 
+func _StoreSupplierService_CreateSupplierRecharge0_HTTP_Handler(srv StoreSupplierServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateSupplierRechargeRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreSupplierServiceCreateSupplierRecharge)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateSupplierRecharge(ctx, req.(*CreateSupplierRechargeRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CreateSupplierRechargeReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StoreSupplierServiceHTTPClient interface {
 	// CancelSupplierApplication CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
 	CancelSupplierApplication(ctx context.Context, req *CancelSupplierApplicationRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// CreateSupplierRecharge CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
+	// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
+	CreateSupplierRecharge(ctx context.Context, req *CreateSupplierRechargeRequest, opts ...http.CallOption) (rsp *CreateSupplierRechargeReply, err error)
 	// GetSupplierCredentials GetSupplierCredentials 查看凭据（仅 approved 且归属本人；返回明文 api_secret）。
 	GetSupplierCredentials(ctx context.Context, req *GetSupplierCredentialsRequest, opts ...http.CallOption) (rsp *SupplierCredentialsReply, err error)
 	// ListMySupplierAccounts ListMySupplierAccounts 我的对接账户（申请中/已通过/已驳回/已禁用全量）。
@@ -184,6 +214,25 @@ func (c *StoreSupplierServiceHTTPClientImpl) CancelSupplierApplication(ctx conte
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// CreateSupplierRecharge CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
+// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
+func (c *StoreSupplierServiceHTTPClientImpl) CreateSupplierRecharge(ctx context.Context, in *CreateSupplierRechargeRequest, opts ...http.CallOption) (*CreateSupplierRechargeReply, error) {
+	var out CreateSupplierRechargeReply
+	pattern := "/api/v1/storefront/supplier/accounts/{id}/recharge"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreSupplierServiceCreateSupplierRecharge),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,7 @@ const (
 	StoreSupplierService_GetSupplierCredentials_FullMethodName    = "/zcard.api.storefront.v1.StoreSupplierService/GetSupplierCredentials"
 	StoreSupplierService_RegenerateSupplierSecret_FullMethodName  = "/zcard.api.storefront.v1.StoreSupplierService/RegenerateSupplierSecret"
 	StoreSupplierService_CancelSupplierApplication_FullMethodName = "/zcard.api.storefront.v1.StoreSupplierService/CancelSupplierApplication"
+	StoreSupplierService_CreateSupplierRecharge_FullMethodName    = "/zcard.api.storefront.v1.StoreSupplierService/CreateSupplierRecharge"
 )
 
 // StoreSupplierServiceClient is the client API for StoreSupplierService service.
@@ -46,6 +47,9 @@ type StoreSupplierServiceClient interface {
 	RegenerateSupplierSecret(ctx context.Context, in *RegenerateSupplierSecretRequest, opts ...grpc.CallOption) (*SupplierCredentialsReply, error)
 	// CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
 	CancelSupplierApplication(ctx context.Context, in *CancelSupplierApplicationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
+	// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
+	CreateSupplierRecharge(ctx context.Context, in *CreateSupplierRechargeRequest, opts ...grpc.CallOption) (*CreateSupplierRechargeReply, error)
 }
 
 type storeSupplierServiceClient struct {
@@ -106,6 +110,16 @@ func (c *storeSupplierServiceClient) CancelSupplierApplication(ctx context.Conte
 	return out, nil
 }
 
+func (c *storeSupplierServiceClient) CreateSupplierRecharge(ctx context.Context, in *CreateSupplierRechargeRequest, opts ...grpc.CallOption) (*CreateSupplierRechargeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateSupplierRechargeReply)
+	err := c.cc.Invoke(ctx, StoreSupplierService_CreateSupplierRecharge_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoreSupplierServiceServer is the server API for StoreSupplierService service.
 // All implementations must embed UnimplementedStoreSupplierServiceServer
 // for forward compatibility.
@@ -125,6 +139,9 @@ type StoreSupplierServiceServer interface {
 	RegenerateSupplierSecret(context.Context, *RegenerateSupplierSecretRequest) (*SupplierCredentialsReply, error)
 	// CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
 	CancelSupplierApplication(context.Context, *CancelSupplierApplicationRequest) (*emptypb.Empty, error)
+	// CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；
+	// 支付确认前不入账——回调成功后入账到供货余额，reference 幂等）。
+	CreateSupplierRecharge(context.Context, *CreateSupplierRechargeRequest) (*CreateSupplierRechargeReply, error)
 	mustEmbedUnimplementedStoreSupplierServiceServer()
 }
 
@@ -149,6 +166,9 @@ func (UnimplementedStoreSupplierServiceServer) RegenerateSupplierSecret(context.
 }
 func (UnimplementedStoreSupplierServiceServer) CancelSupplierApplication(context.Context, *CancelSupplierApplicationRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelSupplierApplication not implemented")
+}
+func (UnimplementedStoreSupplierServiceServer) CreateSupplierRecharge(context.Context, *CreateSupplierRechargeRequest) (*CreateSupplierRechargeReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateSupplierRecharge not implemented")
 }
 func (UnimplementedStoreSupplierServiceServer) mustEmbedUnimplementedStoreSupplierServiceServer() {}
 func (UnimplementedStoreSupplierServiceServer) testEmbeddedByValue()                              {}
@@ -261,6 +281,24 @@ func _StoreSupplierService_CancelSupplierApplication_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreSupplierService_CreateSupplierRecharge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateSupplierRechargeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreSupplierServiceServer).CreateSupplierRecharge(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreSupplierService_CreateSupplierRecharge_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreSupplierServiceServer).CreateSupplierRecharge(ctx, req.(*CreateSupplierRechargeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoreSupplierService_ServiceDesc is the grpc.ServiceDesc for StoreSupplierService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -287,6 +325,10 @@ var StoreSupplierService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelSupplierApplication",
 			Handler:    _StoreSupplierService_CancelSupplierApplication_Handler,
+		},
+		{
+			MethodName: "CreateSupplierRecharge",
+			Handler:    _StoreSupplierService_CreateSupplierRecharge_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

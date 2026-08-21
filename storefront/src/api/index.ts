@@ -766,3 +766,10 @@ export function regenerateSupplierSecret(id: number) {
 export function cancelSupplierApplication(id: number) {
   return api.post<{ ok: boolean }>(`/supplier/accounts/${id}/cancel`, {});
 }
+
+export function createSupplierRecharge(id: number, body: { amount_cents: number; channel: string }) {
+  return api.post<{ recharge_id: number; payment_id: number; type: string; payload: string }>(
+    `/supplier/accounts/${id}/recharge`,
+    body,
+  );
+}

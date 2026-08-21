@@ -51291,28 +51291,30 @@ func (m *PromotionMutation) ResetEdge(name string) error {
 // RechargeOrderMutation represents an operation that mutates the RechargeOrder nodes in the graph.
 type RechargeOrderMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uint64
-	created_at     *time.Time
-	updated_at     *time.Time
-	user_id        *uint64
-	adduser_id     *int64
-	amount         *int64
-	addamount      *int64
-	gift_amount    *int64
-	addgift_amount *int64
-	gift_points    *int32
-	addgift_points *int32
-	target         *rechargeorder.Target
-	status         *rechargeorder.Status
-	payment_id     *uint64
-	addpayment_id  *int64
-	paid_at        *time.Time
-	clearedFields  map[string]struct{}
-	done           bool
-	oldValue       func(context.Context) (*RechargeOrder, error)
-	predicates     []predicate.RechargeOrder
+	op                     Op
+	typ                    string
+	id                     *uint64
+	created_at             *time.Time
+	updated_at             *time.Time
+	user_id                *uint64
+	adduser_id             *int64
+	amount                 *int64
+	addamount              *int64
+	gift_amount            *int64
+	addgift_amount         *int64
+	gift_points            *int32
+	addgift_points         *int32
+	target                 *rechargeorder.Target
+	supplier_account_id    *uint64
+	addsupplier_account_id *int64
+	status                 *rechargeorder.Status
+	payment_id             *uint64
+	addpayment_id          *int64
+	paid_at                *time.Time
+	clearedFields          map[string]struct{}
+	done                   bool
+	oldValue               func(context.Context) (*RechargeOrder, error)
+	predicates             []predicate.RechargeOrder
 }
 
 var _ ent.Mutation = (*RechargeOrderMutation)(nil)
@@ -51751,6 +51753,76 @@ func (m *RechargeOrderMutation) ResetTarget() {
 	m.target = nil
 }
 
+// SetSupplierAccountID sets the "supplier_account_id" field.
+func (m *RechargeOrderMutation) SetSupplierAccountID(u uint64) {
+	m.supplier_account_id = &u
+	m.addsupplier_account_id = nil
+}
+
+// SupplierAccountID returns the value of the "supplier_account_id" field in the mutation.
+func (m *RechargeOrderMutation) SupplierAccountID() (r uint64, exists bool) {
+	v := m.supplier_account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSupplierAccountID returns the old "supplier_account_id" field's value of the RechargeOrder entity.
+// If the RechargeOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RechargeOrderMutation) OldSupplierAccountID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSupplierAccountID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSupplierAccountID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSupplierAccountID: %w", err)
+	}
+	return oldValue.SupplierAccountID, nil
+}
+
+// AddSupplierAccountID adds u to the "supplier_account_id" field.
+func (m *RechargeOrderMutation) AddSupplierAccountID(u int64) {
+	if m.addsupplier_account_id != nil {
+		*m.addsupplier_account_id += u
+	} else {
+		m.addsupplier_account_id = &u
+	}
+}
+
+// AddedSupplierAccountID returns the value that was added to the "supplier_account_id" field in this mutation.
+func (m *RechargeOrderMutation) AddedSupplierAccountID() (r int64, exists bool) {
+	v := m.addsupplier_account_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearSupplierAccountID clears the value of the "supplier_account_id" field.
+func (m *RechargeOrderMutation) ClearSupplierAccountID() {
+	m.supplier_account_id = nil
+	m.addsupplier_account_id = nil
+	m.clearedFields[rechargeorder.FieldSupplierAccountID] = struct{}{}
+}
+
+// SupplierAccountIDCleared returns if the "supplier_account_id" field was cleared in this mutation.
+func (m *RechargeOrderMutation) SupplierAccountIDCleared() bool {
+	_, ok := m.clearedFields[rechargeorder.FieldSupplierAccountID]
+	return ok
+}
+
+// ResetSupplierAccountID resets all changes to the "supplier_account_id" field.
+func (m *RechargeOrderMutation) ResetSupplierAccountID() {
+	m.supplier_account_id = nil
+	m.addsupplier_account_id = nil
+	delete(m.clearedFields, rechargeorder.FieldSupplierAccountID)
+}
+
 // SetStatus sets the "status" field.
 func (m *RechargeOrderMutation) SetStatus(r rechargeorder.Status) {
 	m.status = &r
@@ -51940,7 +52012,7 @@ func (m *RechargeOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RechargeOrderMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, rechargeorder.FieldCreatedAt)
 	}
@@ -51961,6 +52033,9 @@ func (m *RechargeOrderMutation) Fields() []string {
 	}
 	if m.target != nil {
 		fields = append(fields, rechargeorder.FieldTarget)
+	}
+	if m.supplier_account_id != nil {
+		fields = append(fields, rechargeorder.FieldSupplierAccountID)
 	}
 	if m.status != nil {
 		fields = append(fields, rechargeorder.FieldStatus)
@@ -51993,6 +52068,8 @@ func (m *RechargeOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.GiftPoints()
 	case rechargeorder.FieldTarget:
 		return m.Target()
+	case rechargeorder.FieldSupplierAccountID:
+		return m.SupplierAccountID()
 	case rechargeorder.FieldStatus:
 		return m.Status()
 	case rechargeorder.FieldPaymentID:
@@ -52022,6 +52099,8 @@ func (m *RechargeOrderMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldGiftPoints(ctx)
 	case rechargeorder.FieldTarget:
 		return m.OldTarget(ctx)
+	case rechargeorder.FieldSupplierAccountID:
+		return m.OldSupplierAccountID(ctx)
 	case rechargeorder.FieldStatus:
 		return m.OldStatus(ctx)
 	case rechargeorder.FieldPaymentID:
@@ -52086,6 +52165,13 @@ func (m *RechargeOrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTarget(v)
 		return nil
+	case rechargeorder.FieldSupplierAccountID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSupplierAccountID(v)
+		return nil
 	case rechargeorder.FieldStatus:
 		v, ok := value.(rechargeorder.Status)
 		if !ok {
@@ -52127,6 +52213,9 @@ func (m *RechargeOrderMutation) AddedFields() []string {
 	if m.addgift_points != nil {
 		fields = append(fields, rechargeorder.FieldGiftPoints)
 	}
+	if m.addsupplier_account_id != nil {
+		fields = append(fields, rechargeorder.FieldSupplierAccountID)
+	}
 	if m.addpayment_id != nil {
 		fields = append(fields, rechargeorder.FieldPaymentID)
 	}
@@ -52146,6 +52235,8 @@ func (m *RechargeOrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedGiftAmount()
 	case rechargeorder.FieldGiftPoints:
 		return m.AddedGiftPoints()
+	case rechargeorder.FieldSupplierAccountID:
+		return m.AddedSupplierAccountID()
 	case rechargeorder.FieldPaymentID:
 		return m.AddedPaymentID()
 	}
@@ -52185,6 +52276,13 @@ func (m *RechargeOrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddGiftPoints(v)
 		return nil
+	case rechargeorder.FieldSupplierAccountID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSupplierAccountID(v)
+		return nil
 	case rechargeorder.FieldPaymentID:
 		v, ok := value.(int64)
 		if !ok {
@@ -52200,6 +52298,9 @@ func (m *RechargeOrderMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *RechargeOrderMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(rechargeorder.FieldSupplierAccountID) {
+		fields = append(fields, rechargeorder.FieldSupplierAccountID)
+	}
 	if m.FieldCleared(rechargeorder.FieldPaymentID) {
 		fields = append(fields, rechargeorder.FieldPaymentID)
 	}
@@ -52220,6 +52321,9 @@ func (m *RechargeOrderMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *RechargeOrderMutation) ClearField(name string) error {
 	switch name {
+	case rechargeorder.FieldSupplierAccountID:
+		m.ClearSupplierAccountID()
+		return nil
 	case rechargeorder.FieldPaymentID:
 		m.ClearPaymentID()
 		return nil
@@ -52254,6 +52358,9 @@ func (m *RechargeOrderMutation) ResetField(name string) error {
 		return nil
 	case rechargeorder.FieldTarget:
 		m.ResetTarget()
+		return nil
+	case rechargeorder.FieldSupplierAccountID:
+		m.ResetSupplierAccountID()
 		return nil
 	case rechargeorder.FieldStatus:
 		m.ResetStatus()

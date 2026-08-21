@@ -43,11 +43,12 @@ type PaymentRepoImpl struct {
 	outbox    events.Writer               // recharge.succeeded 等事件
 	currency  settingsport.CurrencyReader // 币种快照换算（P2-09 T2；nil = 同币直收）
 	settings  settingsport.Provider       // site/url 等（P2-09 T5 回调地址拼接；nil = 相对路径）
+	supplier  port.SupplierRecharger      // target=supply 充值入账（供货账户余额；nil = 未装配跳过）
 }
 
 // NewPaymentRepoImpl 构造。
-func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer, currency settingsport.CurrencyReader, settings settingsport.Provider) *PaymentRepoImpl {
-	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency, settings: settings}
+func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle orderport.OrderLifecycle, wallet walletport.Wallet, points walletport.Points, outbox events.Writer, currency settingsport.CurrencyReader, settings settingsport.Provider, supplier port.SupplierRecharger) *PaymentRepoImpl {
+	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency, settings: settings, supplier: supplier}
 }
 
 // ChargeSnapshot 币种快照换算（P2-09 T2）：
@@ -447,9 +448,19 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 		Save(ctx); err != nil {
 		return err
 	}
-	// 余额入账（本金+赠送；幂等键 recharge:<paymentID>，重放只入一次）
+	// 入账分支（target 由建单时定；金额全部取服务端落库值，铁律 16）：
+	//   balance → 用户钱包余额（本金+赠送）+ 赠送积分；
+	//   supply  → 对接账户供货余额（本金；供货预存无赠送）。
 	total := ro.Amount + ro.GiftAmount
-	if total > 0 && r.wallet != nil {
+	if ro.Target == rechargeorder.TargetSupply {
+		if ro.SupplierAccountID > 0 && r.supplier != nil {
+			if err := r.supplier.Recharge(ctx, ro.SupplierAccountID, ro.Amount,
+				fmt.Sprintf("recharge:%d", p.ID),
+				fmt.Sprintf("对接账户自助充值到账（用户 #%d）", ro.UserID)); err != nil {
+				return fmt.Errorf("payment.SUPPLY_RECHARGE_FAILED: %w", err)
+			}
+		}
+	} else if total > 0 && r.wallet != nil {
 		if err := r.wallet.CreditInTx(ctx, walletport.Entry{
 			UserID: ro.UserID, Direction: walletport.DirectionIn,
 			Type: "recharge", Amount: money.Cents(total),

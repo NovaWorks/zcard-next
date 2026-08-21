@@ -64,8 +64,24 @@ func (f *fakeLifecycle) Cancel(ctx context.Context, orderNo, reason string, op o
 	return nil
 }
 
+// fakeSupplierRecharger target=supply 充值入账替身（记录调用参数）。
+type fakeSupplierRecharger struct {
+	accountID uint64
+	amount    int64
+	reference string
+	calls     int
+}
+
+func (f *fakeSupplierRecharger) Recharge(ctx context.Context, accountID uint64, amount int64, reference, remark string) error {
+	f.calls++
+	f.accountID = accountID
+	f.amount = amount
+	f.reference = reference
+	return nil
+}
+
 // newCallbackEnv 回调测试环境：内存 SQLite + 渠道（external/wallet）+ 用户 + 余额。
-func newCallbackEnv(t *testing.T) (*data.Data, *PaymentRepoImpl, *wallet.WalletRepoImpl, *captureWriter, *fakeLifecycle) {
+func newCallbackEnv(t *testing.T) (*data.Data, *PaymentRepoImpl, *wallet.WalletRepoImpl, *captureWriter, *fakeLifecycle, *fakeSupplierRecharger) {
 	t.Helper()
 	handle, err := db.SQLite.Open(fmt.Sprintf("file:paytest%d?mode=memory&cache=shared&_pragma=foreign_keys(1)", time.Now().UnixNano()))
 	if err != nil {
@@ -104,8 +120,9 @@ func newCallbackEnv(t *testing.T) (*data.Data, *PaymentRepoImpl, *wallet.WalletR
 	walletPort := wallet.ProvidePortWallet(walletRepo)
 	writer := &captureWriter{}
 	lifecycle := &fakeLifecycle{}
-	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer, nil, nil)
-	return d, repo, walletRepo, writer, lifecycle
+	supplierRecharger := &fakeSupplierRecharger{}
+	repo := NewPaymentRepoImpl(d, box, NewRegistry(), lifecycle, walletPort, wallet.ProvidePortPoints(walletRepo), writer, nil, nil, supplierRecharger)
+	return d, repo, walletRepo, writer, lifecycle, supplierRecharger
 }
 
 // seedPendingOrder 建待支付订单 + 外部渠道支付单。
@@ -135,7 +152,7 @@ func seedPendingOrder(t *testing.T, d *data.Data, channel string, amount int64) 
 
 // TestCallbackOrderBranch 订单型回调：payment success + lifecycle.MarkPaid 调用。
 func TestCallbackOrderBranch(t *testing.T) {
-	d, repo, _, writer, lifecycle := newCallbackEnv(t)
+	d, repo, _, writer, lifecycle, _ := newCallbackEnv(t)
 	ctx := context.Background()
 	o, p := seedPendingOrder(t, d, "epay", 1000)
 
@@ -181,7 +198,7 @@ func TestCallbackOrderBranch(t *testing.T) {
 
 // TestCallbackRechargeBranch 充值型回调：充值单 success + 余额入账（含赠送）+ 事件 + 幂等。
 func TestCallbackRechargeBranch(t *testing.T) {
-	d, repo, walletRepo, writer, _ := newCallbackEnv(t)
+	d, repo, walletRepo, writer, _, _ := newCallbackEnv(t)
 	ctx := context.Background()
 	ro, err := d.Client.RechargeOrder.Create().
 		SetUserID(1).SetAmount(10000).SetGiftAmount(500).
@@ -224,9 +241,64 @@ func TestCallbackRechargeBranch(t *testing.T) {
 	}
 }
 
+// TestCallbackSupplierRechargeBranch target=supply 充值回调：入账到供货账户
+// （非钱包余额）+ 幂等重放 + 无赠送积分。
+func TestCallbackSupplierRechargeBranch(t *testing.T) {
+	d, repo, walletRepo, writer, _, supplierRecharger := newCallbackEnv(t)
+	ctx := context.Background()
+	ro, err := d.Client.RechargeOrder.Create().
+		SetUserID(1).SetAmount(20000).SetGiftAmount(0).SetGiftPoints(0).
+		SetTarget(rechargeorder.TargetSupply).SetSupplierAccountID(77).
+		SetStatus(rechargeorder.StatusPending).Save(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := d.Client.Payment.Create().
+		SetRechargeOrderID(ro.ID).SetChannel("epay").SetAmount(20000).
+		SetStatus("pending").Save(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := repo.HandleCallback(ctx, p.ID, CallbackFact{
+		Channel: "epay", ChannelOrderNo: "RS1", Amount: 20000, Currency: "CNY", Success: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// 入账到供货账户（本金，非钱包）
+	if supplierRecharger.calls != 1 || supplierRecharger.accountID != 77 || supplierRecharger.amount != 20000 {
+		t.Fatalf("供货入账异常: %+v", supplierRecharger)
+	}
+	if supplierRecharger.reference != fmt.Sprintf("recharge:%d", p.ID) {
+		t.Fatalf("幂等键异常: %s", supplierRecharger.reference)
+	}
+	// 钱包余额与积分不受影响
+	avail, _, _ := walletRepo.GetBalance(ctx, 1)
+	if avail != 0 {
+		t.Fatalf("供货充值不得进钱包余额: %d", avail)
+	}
+	got, _ := d.Client.RechargeOrder.Get(ctx, ro.ID)
+	if string(got.Status) != "success" || got.PaymentID != p.ID {
+		t.Fatalf("充值单状态错误: %+v", got)
+	}
+	if !writer.has(events.RechargeSucceeded) {
+		t.Fatal("应发布 recharge.succeeded 事件")
+	}
+
+	// 幂等重放：只入账一次
+	if err := repo.HandleCallback(ctx, p.ID, CallbackFact{
+		Channel: "epay", ChannelOrderNo: "RS1", Amount: 20000, Currency: "CNY", Success: true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if supplierRecharger.calls != 1 {
+		t.Fatalf("幂等重放重复入账: %d", supplierRecharger.calls)
+	}
+}
+
 // TestCallbackWalletBalance 余额渠道订单支付：事务内扣款 + MarkPaid。
 func TestCallbackWalletBalance(t *testing.T) {
-	d, repo, walletRepo, _, lifecycle := newCallbackEnv(t)
+	d, repo, walletRepo, _, lifecycle, _ := newCallbackEnv(t)
 	ctx := context.Background()
 	// 预存余额 5000
 	if err := walletRepo.CreditInTx(ctx, wallet.Entry{
@@ -275,7 +347,7 @@ var _ = time.Now
 
 // TestCreateRechargePaymentFlow 充值支付端到端：payer 建单+渠道发起 → 回调 → 到账。
 func TestCreateRechargePaymentFlow(t *testing.T) {
-	d, repo, walletRepo, _, _ := newCallbackEnv(t)
+	d, repo, walletRepo, _, _, _ := newCallbackEnv(t)
 	ctx := context.Background()
 	ro, err := d.Client.RechargeOrder.Create().
 		SetUserID(1).SetAmount(10000).SetGiftAmount(0).
@@ -308,7 +380,7 @@ func TestCreateRechargePaymentFlow(t *testing.T) {
 
 // TestRechargeGiftPoints 充值赠送积分接线（回调事务内积分入账，幂等重放只入一次）。
 func TestRechargeGiftPoints(t *testing.T) {
-	d, repo, walletRepo, _, _ := newCallbackEnv(t)
+	d, repo, walletRepo, _, _, _ := newCallbackEnv(t)
 	ctx := context.Background()
 	ro, err := d.Client.RechargeOrder.Create().
 		SetUserID(1).SetAmount(10000).SetGiftAmount(0).SetGiftPoints(200).
@@ -378,7 +450,7 @@ func (fakeCurrencyReader) CurrencyByCode(_ context.Context, code string) (string
 // 无 target_currency/CNY → 同币直收（Units=0）；USD → ToDisplay 精确换算；
 // 未配置币种 → fail-safe 直收；非法汇率 → 直收。
 func TestComputeCharge(t *testing.T) {
-	d, _, _, _, _ := newCallbackEnv(t)
+	d, _, _, _, _, _ := newCallbackEnv(t)
 	repo := &PaymentRepoImpl{data: d, currency: fakeCurrencyReader{}}
 	ctx := context.Background()
 
@@ -416,7 +488,7 @@ func TestComputeCharge(t *testing.T) {
 // TestCallbackCrossCurrencySnapshot 跨币回调核对矩阵：
 // units 精确匹配→成功且 charged_amount 换算回基础分；units 不符→拒；币种不符→拒。
 func TestCallbackCrossCurrencySnapshot(t *testing.T) {
-	d, repo, _, writer, lifecycle := newCallbackEnv(t)
+	d, repo, _, writer, lifecycle, _ := newCallbackEnv(t)
 	repo.currency = fakeCurrencyReader{}
 	ctx := context.Background()
 	o, p := seedPendingOrder(t, d, "epay", 1000)
@@ -470,7 +542,7 @@ func TestCallbackCrossCurrencySnapshot(t *testing.T) {
 
 // TestCallbackLegacyCNYPath 旧同币路径回归：无快照（charged_units=0）→ fact.Amount==amount + CNY 口径不变。
 func TestCallbackLegacyCNYPath(t *testing.T) {
-	d, repo, _, _, lifecycle := newCallbackEnv(t)
+	d, repo, _, _, lifecycle, _ := newCallbackEnv(t)
 	repo.currency = fakeCurrencyReader{}
 	ctx := context.Background()
 	o, p := seedPendingOrder(t, d, "epay", 1000)

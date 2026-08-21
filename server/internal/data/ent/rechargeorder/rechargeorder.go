@@ -28,6 +28,8 @@ const (
 	FieldGiftPoints = "gift_points"
 	// FieldTarget holds the string denoting the target field in the database.
 	FieldTarget = "target"
+	// FieldSupplierAccountID holds the string denoting the supplier_account_id field in the database.
+	FieldSupplierAccountID = "supplier_account_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldPaymentID holds the string denoting the payment_id field in the database.
@@ -48,6 +50,7 @@ var Columns = []string{
 	FieldGiftAmount,
 	FieldGiftPoints,
 	FieldTarget,
+	FieldSupplierAccountID,
 	FieldStatus,
 	FieldPaymentID,
 	FieldPaidAt,
@@ -171,6 +174,11 @@ func ByGiftPoints(opts ...sql.OrderTermOption) OrderOption {
 // ByTarget orders the results by the target field.
 func ByTarget(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldTarget, opts...).ToFunc()
+}
+
+// BySupplierAccountID orders the results by the supplier_account_id field.
+func BySupplierAccountID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplierAccountID, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.
