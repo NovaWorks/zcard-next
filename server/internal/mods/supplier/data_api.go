@@ -276,6 +276,11 @@ func (s *SupplyAPIService) fulfillOrder(ctx context.Context, accountID, productI
 		if rl, ok := s.inv.(invport.CardReleaser); ok {
 			_ = rl.ReleaseCards(ctx, cardIDs)
 		}
+		// 交付失败回滚账务：退回扣款 + 订单 rejected（下游可换 request_no 重试）。
+		// 已 MarkUsed 的卡可能无法释放——卡密不可解属数据/密钥问题走人工核对，
+		// 但账必须平：不能让下游「钱扣了、货没到、查单还停在 paid」。
+		_ = s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_refund", amount, ref+":refund", "交付失败退回")
+		_ = s.repo.MarkSupplyOrderRejected(ctx, order.ID)
 		return nil, errors.New("supplier.DELIVERY_FAILED")
 	}
 	_ = s.repo.MarkSupplyOrderFulfilled(ctx, order.ID)
@@ -322,12 +327,20 @@ func (s *SupplyAPIService) GetOrder(ctx context.Context, req *supplyv1.GetSupply
 	if err != nil {
 		return nil, err
 	}
-	return &supplyv1.GetSupplyOrderReply{
+	reply := &supplyv1.GetSupplyOrderReply{
 		SupplyOrderId:     strconv.FormatUint(o.ID, 10),
 		DownstreamOrderNo: o.DownstreamOrderNo,
 		Status:            string(o.Status),
 		Amount:            o.Amount,
-	}, nil
+	}
+	// 已交付：回卡密（items 快照 card_ids → 解密重建；与 acg query 回 secret /
+	// dujiao get order 回 payload 对齐——下游补查订单可取货）
+	if string(o.Status) == "fulfilled" {
+		if cards, err := s.cardsPayloadOf(ctx, o); err == nil && len(cards) > 0 {
+			reply.Fulfillment = &supplyv1.SupplyFulfillment{Status: "delivered", Cards: cards}
+		}
+	}
+	return reply, nil
 }
 
 // CancelOrder 取消（未交付：账本退回 + rejected）。
