@@ -158,6 +158,30 @@ func (s *AdminSupplierService) UpsertPrice(ctx context.Context, req *adminv1.Ups
 	return &emptypb.Empty{}, nil
 }
 
+// ListPrices 账号的专属价列表（P2-10：浏览覆盖价）。
+func (s *AdminSupplierService) ListPrices(ctx context.Context, req *adminv1.ListSupplierPricesRequest) (*adminv1.ListSupplierPricesReply, error) {
+	rows, err := s.repo.ListPrices(ctx, req.GetAccountId())
+	if err != nil {
+		return nil, err
+	}
+	reply := &adminv1.ListSupplierPricesReply{}
+	for _, r := range rows {
+		reply.Prices = append(reply.Prices, &adminv1.SupplierPriceItem{
+			Id: r.ID, ProductId: r.ProductID, SkuId: r.SkuID,
+			Price: r.Price, UpdatedAt: r.UpdatedAt.Unix(),
+		})
+	}
+	return reply, nil
+}
+
+// DeletePrice 删除专属价（恢复基础供货价）。
+func (s *AdminSupplierService) DeletePrice(ctx context.Context, req *adminv1.DeleteSupplierPriceRequest) (*emptypb.Empty, error) {
+	if err := s.repo.DeletePrice(ctx, req.GetId()); err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
+}
+
 // ListCallbacks 回调记录。
 func (s *AdminSupplierService) ListCallbacks(ctx context.Context, req *adminv1.ListSupplierCallbacksRequest) (*adminv1.ListSupplierCallbacksReply, error) {
 	page, size := pageParams(req.GetPage(), req.GetPageSize())
