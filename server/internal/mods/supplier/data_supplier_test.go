@@ -38,11 +38,11 @@ func newSupplierTestData(t *testing.T) (*SupplierRepoImpl, *data.Data) {
 func seedAccount(t *testing.T, r *SupplierRepoImpl) uint64 {
 	t.Helper()
 	ctx := context.Background()
-	acc, err := r.CreateAccount(ctx, "下游A", "key-001", "supplier-secret-abc123", "contact@example.com")
+	acc, err := r.CreateAccount(ctx, "下游A", "key-001", "supplier-secret-abc123", "contact@example.com", "zcard", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	acc, err = r.ReviewAccount(ctx, acc.ID, true)
+	acc, err = r.ReviewAccount(ctx, acc.ID, true, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestCreateSupplyOrderIdempotent(t *testing.T) {
 func TestAccountSecretEncrypted(t *testing.T) {
 	r, _ := newSupplierTestData(t)
 	ctx := context.Background()
-	acc, err := r.CreateAccount(ctx, "密文测试", "key-sec", "plain-secret-xyz", "")
+	acc, err := r.CreateAccount(ctx, "密文测试", "key-sec", "plain-secret-xyz", "", "zcard", "")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -82,29 +83,58 @@ func (s *SupplyAPIService) DeliverCallback(ctx context.Context, supplyOrderID ui
 		return nil
 	}
 
-	body, _ := json.Marshal(map[string]any{
-		"supply_order_id":     o.ID,
-		"downstream_order_no": o.DownstreamOrderNo,
-		"status":              string(o.Status),
-		"amount":              o.Amount,
-	})
-	ts := strconv.FormatInt(time.Now().Unix(), 10)
-	nonce := fmt.Sprintf("cb_%d_%d", time.Now().UnixNano(), o.ID)
-	apiKey, secret, err := s.repo.CredentialsOf(ctx, o.AccountID)
+	// 回调签名按账号协议分支（P2-10 B：dujiao 兼容账号发 dujiao 事件格式 +
+	// 3 头签名——签名 path 固定为协议常量 /api/v1/upstream/callback，非实际 URL）
+	apiKey, secret, protocol, err := s.repo.CredentialsWithProtocolOf(ctx, o.AccountID)
 	if err != nil {
 		_ = s.repo.MarkCallbackResult(ctx, cb.ID, false, err.Error())
 		return nil // 密钥问题不入死信（提示重置）
 	}
+	ts := strconv.FormatInt(time.Now().Unix(), 10)
 	client := httpx.NewSafeClient(15 * time.Second)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cb.CallbackURL, bytes.NewReader(body))
-	if err != nil {
-		return err
+
+	var body []byte
+	var req *http.Request
+	if protocol == "dujiao_next" {
+		fulfillment := map[string]any{"type": "auto", "status": "delivered"}
+		if cards, cerr := s.cardsPayloadOf(ctx, o); cerr == nil {
+			fulfillment["payload"] = strings.Join(cards, "\n")
+		}
+		body, _ = json.Marshal(map[string]any{
+			"event":               "order.fulfilled",
+			"order_id":            strconv.FormatUint(o.ID, 10),
+			"order_no":            o.DownstreamOrderNo,
+			"downstream_order_no": strings.TrimPrefix(o.DownstreamOrderNo, ""),
+			"status":              "delivered",
+			"fulfillment":         fulfillment,
+			"timestamp":           time.Now().Unix(),
+		})
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, cb.CallbackURL, bytes.NewReader(body))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Dujiao-Next-Api-Key", apiKey)
+		req.Header.Set("Dujiao-Next-Timestamp", ts)
+		req.Header.Set("Dujiao-Next-Signature", dujiaoSign(secret, http.MethodPost, "/api/v1/upstream/callback", ts, body))
+	} else {
+		body, _ = json.Marshal(map[string]any{
+			"supply_order_id":     o.ID,
+			"downstream_order_no": o.DownstreamOrderNo,
+			"status":              string(o.Status),
+			"amount":              o.Amount,
+		})
+		nonce := fmt.Sprintf("cb_%d_%d", time.Now().UnixNano(), o.ID)
+		req, err = http.NewRequestWithContext(ctx, http.MethodPost, cb.CallbackURL, bytes.NewReader(body))
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Supply-Key", apiKey)
+		req.Header.Set("X-Supply-Timestamp", ts)
+		req.Header.Set("X-Supply-Nonce", nonce)
+		req.Header.Set("X-Supply-Signature", supplySign(secret, http.MethodPost, req.URL.Path, req.URL.RawQuery, ts, nonce, body))
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Supply-Key", apiKey)
-	req.Header.Set("X-Supply-Timestamp", ts)
-	req.Header.Set("X-Supply-Nonce", nonce)
-	req.Header.Set("X-Supply-Signature", supplySign(secret, http.MethodPost, req.URL.Path, req.URL.RawQuery, ts, nonce, body))
 	resp, err := client.Do(req)
 	if err != nil {
 		_ = s.repo.MarkCallbackResult(ctx, cb.ID, false, err.Error())

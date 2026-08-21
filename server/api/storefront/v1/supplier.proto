@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// StoreSupplierService 前台对接申请（个人中心）：申请成为供货商户 →
+// 后台审核 → 凭据管理（app_id + api_secret）。
+// 通过后凭据可直接填入 acg-faka/dujiao-next/zcard 三面板（协议由申请时选定）。
+service StoreSupplierService {
+  // SubmitSupplierApplication 提交对接申请（服务端生成 api_key/api_secret；
+  // api_secret 不在本响应返回——审核通过后在凭据接口查看）。
+  rpc SubmitSupplierApplication(SubmitSupplierApplicationRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/supplier/applications"
+      body: "*"
+    };
+  }
+  // ListMySupplierAccounts 我的对接账户（申请中/已通过/已驳回/已禁用全量）。
+  rpc ListMySupplierAccounts(google.protobuf.Empty) returns (ListSupplierAccountsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/supplier/accounts" };
+  }
+  // GetSupplierCredentials 查看凭据（仅 approved 且归属本人；返回明文 api_secret）。
+  rpc GetSupplierCredentials(GetSupplierCredentialsRequest) returns (SupplierCredentialsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/supplier/accounts/{id}/credentials" };
+  }
+  // RegenerateSupplierSecret 重置密钥（旧 secret 立即失效；新明文仅此一次返回）。
+  rpc RegenerateSupplierSecret(RegenerateSupplierSecretRequest) returns (SupplierCredentialsReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/supplier/accounts/{id}/regenerate-secret"
+    };
+  }
+  // CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
+  rpc CancelSupplierApplication(CancelSupplierApplicationRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/supplier/accounts/{id}/cancel"
+    };
+  }
+}
+
+message SubmitSupplierApplicationRequest {
+  // 下游面板协议：zcard | dujiao_next | acg_faka
+  string protocol = 1 [(google.api.field_behavior) = REQUIRED];
+  string display_name = 2 [(google.api.field_behavior) = REQUIRED]; // 站点/店铺名（≤100）
+  string contact = 3;    // 联系方式（QQ/邮箱/手机）
+  string apply_reason = 4; // 申请理由（≤500）
+  string notify_url = 5; // 交付回调地址（可选；HTTPS 强制）
+}
+
+message SupplierAccountReply {
+  uint64 id = 1;
+  string protocol = 2;
+  string status = 3; // applying | approved | rejected | disabled
+  string display_name = 4;
+  string contact = 5;
+  string apply_reason = 6;
+  string review_note = 7; // 审核意见/驳回理由
+  string api_key = 8; // app_id（明文常驻）
+  int64 reviewed_at = 9;
+  int64 created_at = 10;
+}
+
+message ListSupplierAccountsReply {
+  repeated SupplierAccountReply accounts = 1;
+}
+
+message GetSupplierCredentialsRequest {
+  uint64 id = 1;
+}
+
+message RegenerateSupplierSecretRequest {
+  uint64 id = 1;
+}
+
+message CancelSupplierApplicationRequest {
+  uint64 id = 1;
+}
+
+message SupplierCredentialsReply {
+  uint64 id = 1;
+  string protocol = 2;
+  string status = 3;
+  string api_key = 4;    // app_id（明文）
+  string api_secret = 5; // app_key（明文；重置后旧值立即失效）
+}

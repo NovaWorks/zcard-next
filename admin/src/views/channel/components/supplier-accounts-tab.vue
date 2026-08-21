@@ -1,0 +1,511 @@
+<script setup lang="ts">
+// 供货账号管理（supplier:read / supplier:write）：下游客户账户。
+// protocol 三选一：ZCard 自有协议 / dujiao-next 兼容 / acg-faka 兼容（P2-10 B/C）——
+// 兼容账号让对应平台不改代码即可对接本站；创建后展示「对接配置说明」。
+import { h, onMounted, reactive, ref } from "vue";
+import {
+  NButton, NCard, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem,
+  NPopconfirm, NSelect, NSpace, NTag, NAlert,
+} from "naive-ui";
+import type { DataTableColumns } from "naive-ui";
+import {
+  fetchSupplierAccounts, createSupplierAccount, reviewSupplierAccount, toggleSupplierAccount,
+  resetSupplierSecret, rechargeSupplierAccount, fetchSupplierLedger,
+  fetchSupplierCallbacks, resendSupplierCallback, upsertSupplierPrice,
+  fetchSupplierPrices, deleteSupplierPrice,
+} from "@/service/api";
+import { checkAuth } from "@/directives";
+import { formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
+import FilterTabs from "@/components/common/filter-tabs.vue";
+
+defineOptions({ name: "SupplierAccountsTab" });
+
+const loading = ref(false);
+const accounts = ref<any[]>([]);
+const statusFilter = ref<"" | "applying" | "approved" | "rejected" | "disabled">("");
+
+const statusTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "待审核", value: "applying", type: "warning" as const },
+  { label: "已通过", value: "approved", type: "success" as const },
+  { label: "已驳回", value: "rejected", type: "error" as const },
+  { label: "已禁用", value: "disabled", type: "default" as const },
+];
+
+const protocolMeta: Record<string, { label: string; tag: "success" | "info" | "warning"; hint: string }> = {
+  zcard: { label: "ZCard", tag: "success", hint: "对接另一套 ZCard：填本站地址 + api_key/api_secret（X-Supply-* 四头签名）" },
+  dujiao_next: { label: "dujiao 兼容", tag: "info", hint: "对方 dujiao-next 后台「站点连接」填本站地址 + 下发的是 api_key/api_secret（Dujiao-Next-* 三头）" },
+  acg_faka: { label: "acg 兼容", tag: "warning", hint: "对方 acg-faka 后台「共享店铺(异次元)」填本站地址 + 商户ID=api_key、密钥=api_secret" },
+};
+
+const canWrite = () => checkAuth("supplier:write");
+
+async function load() {
+  loading.value = true;
+  try {
+    const { data, error } = await fetchSupplierAccounts({ page: 1, page_size: 200 });
+    if (!error && data) {
+      const rows = (data as any).accounts || [];
+      accounts.value = statusFilter.value === "" ? rows : rows.filter((r: any) => r.status === statusFilter.value);
+    }
+  } finally {
+    loading.value = false;
+  }
+}
+
+// ── 新增 ──
+const showForm = ref(false);
+const saving = ref(false);
+const form = reactive({
+  name: "",
+  protocol: "zcard",
+  api_key: "",
+  api_secret: "",
+  display_name: "",
+  contact: "",
+});
+
+function openCreate() {
+  form.name = "";
+  form.protocol = "zcard";
+  form.api_key = "";
+  form.api_secret = "";
+  form.display_name = "";
+  form.contact = "";
+  showForm.value = true;
+}
+
+const secretOnce = ref(""); // 创建/重置时一次性回显
+async function submitForm() {
+  if (!form.name || !form.api_key || !form.api_secret) {
+    window.$message?.warning("名称、api_key、api_secret 必填");
+    return;
+  }
+  saving.value = true;
+  try {
+    const { data, error } = await createSupplierAccount({ ...form });
+    if (!error && data) {
+      secretOnce.value = (data as any).api_secret || "";
+      window.$message?.success("账号已创建（待审核后生效）");
+      showForm.value = false;
+      load();
+    }
+  } finally {
+    saving.value = false;
+  }
+}
+
+// ── 审核（通过直接确认；驳回弹窗填意见）──
+const reviewModal = ref(false);
+const reviewTarget = ref<any>(null);
+const reviewNote = ref("");
+
+function openReview(row: any) {
+  reviewTarget.value = row;
+  reviewNote.value = "";
+  reviewModal.value = true;
+}
+
+async function submitReview() {
+  if (!reviewNote.value.trim()) {
+    window.$message?.warning("驳回时请填写审核意见（将展示给申请人）");
+    return;
+  }
+  const { error } = await reviewSupplierAccount(reviewTarget.value.id, false, reviewNote.value.trim());
+  if (!error) {
+    window.$message?.success("已驳回");
+    reviewModal.value = false;
+    load();
+  }
+}
+
+async function handleReview(row: any) {
+  const { error } = await reviewSupplierAccount(row.id, true);
+  if (!error) {
+    window.$message?.success("已通过审核");
+    load();
+  }
+}
+
+async function handleToggle(row: any) {
+  const { error } = await toggleSupplierAccount(row.id, row.status === "disabled");
+  if (!error) {
+    window.$message?.success(row.status === "disabled" ? "已启用" : "已禁用");
+    load();
+  }
+}
+
+async function handleResetSecret(row: any) {
+  const { data, error } = await resetSupplierSecret(row.id);
+  if (!error && data) {
+    secretOnce.value = (data as any).api_secret || "";
+    window.$message?.success("密钥已重置（旧密钥立即失效）");
+  }
+}
+
+// ── 充值 ──
+const showRecharge = ref(false);
+const rechargeTarget = ref<any>(null);
+const rechargeYuan = ref<number | null>(null);
+const rechargeRemark = ref("");
+const recharging = ref(false);
+function openRecharge(row: any) {
+  rechargeTarget.value = row;
+  rechargeYuan.value = null;
+  rechargeRemark.value = "";
+  showRecharge.value = true;
+}
+async function submitRecharge() {
+  if (rechargeYuan.value === null || rechargeYuan.value === 0) {
+    window.$message?.warning("请填写充值金额（元）");
+    return;
+  }
+  recharging.value = true;
+  try {
+    const { error } = await rechargeSupplierAccount(
+      rechargeTarget.value.id,
+      yuanToFen(rechargeYuan.value),
+      `recharge:admin:${Date.now()}`,
+      rechargeRemark.value || "管理员充值",
+    );
+    if (!error) {
+      window.$message?.success("已充值");
+      showRecharge.value = false;
+      load();
+    }
+  } finally {
+    recharging.value = false;
+  }
+}
+
+// ── 账本抽屉 ──
+const showLedger = ref(false);
+const ledgerRows = ref<any[]>([]);
+const ledgerTarget = ref<any>(null);
+const ledgerLoading = ref(false);
+async function openLedger(row: any) {
+  ledgerTarget.value = row;
+  showLedger.value = true;
+  ledgerLoading.value = true;
+  try {
+    const { data, error } = await fetchSupplierLedger({ account_id: row.id, page: 1, page_size: 50 });
+    if (!error && data) ledgerRows.value = (data as any).entries || [];
+  } finally {
+    ledgerLoading.value = false;
+  }
+}
+
+const columns: DataTableColumns<any> = [
+  { title: "ID", key: "id", width: 56 },
+  { title: "名称", key: "name", width: 120, ellipsis: true },
+  {
+    title: "协议",
+    key: "protocol",
+    width: 96,
+    render: (row) => h(NTag, { size: "small", type: protocolMeta[row.protocol]?.tag || "default", bordered: false }, { default: () => protocolMeta[row.protocol]?.label || row.protocol }),
+  },
+  { title: "api_key", key: "api_key", width: 140, ellipsis: true },
+  { title: "余额", key: "balance_cache", width: 90, render: (row) => formatMoney(row.balance_cache) },
+  {
+    title: "状态",
+    key: "status",
+    width: 80,
+    render: (row) =>
+      h(NTag, { size: "small", type: row.status === "approved" ? "success" : row.status === "applying" ? "warning" : row.status === "rejected" ? "error" : "default", bordered: false }, { default: () => ({ approved: "已通过", applying: "待审核", rejected: "已驳回", disabled: "已禁用" } as any)[row.status] || row.status }),
+  },
+  {
+    title: "申请/审核信息",
+    key: "apply_info",
+    minWidth: 180,
+    ellipsis: true,
+    render: (row) => {
+      const parts: string[] = [];
+      if (row.owner_user_id) parts.push(`申请人 #${row.owner_user_id}`);
+      if (row.apply_reason) parts.push(`理由：${row.apply_reason}`);
+      if (row.review_note) parts.push(`意见：${row.review_note}`);
+      return parts.length ? parts.join(" ｜ ") : "-";
+    },
+  },
+  {
+    title: "操作",
+    key: "actions",
+    width: 330,
+    render: (row) =>
+      h("div", { class: "flex flex-wrap gap-4px" }, [
+        row.status === "applying" && canWrite()
+          ? h(NPopconfirm, { onPositiveClick: () => handleReview(row) }, { trigger: () => h(NButton, { size: "tiny", type: "success", secondary: true }, { default: () => "通过" }), default: () => "通过后该账号可调供货/兼容 API" })
+          : null,
+        row.status === "applying" && canWrite()
+          ? h(NButton, { size: "tiny", quaternary: true, onClick: () => openReview(row) }, { default: () => "驳回" })
+          : null,
+        row.status !== "applying" && canWrite()
+          ? h(NButton, { size: "tiny", quaternary: true, onClick: () => handleToggle(row) }, { default: () => (row.status === "disabled" ? "启用" : "禁用") })
+          : null,
+        canWrite()
+          ? h(NPopconfirm, { onPositiveClick: () => handleResetSecret(row) }, { trigger: () => h(NButton, { size: "tiny", type: "warning", quaternary: true }, { default: () => "重置密钥" }), default: () => "重置后旧密钥立即失效，确定？" })
+          : null,
+        canWrite()
+          ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => openRecharge(row) }, { default: () => "充值" })
+          : null,
+        h(NButton, { size: "tiny", quaternary: true, onClick: () => openLedger(row) }, { default: () => "账本" }),
+        canWrite()
+          ? h(NButton, { size: "tiny", quaternary: true, onClick: () => openPrice(row) }, { default: () => "专属价" })
+          : null,
+      ]),
+  },
+];
+
+// ── 回调记录（死信重发）──
+const showCallbacks = ref(false);
+const callbacks = ref<any[]>([]);
+const callbacksLoading = ref(false);
+async function openCallbacks() {
+  showCallbacks.value = true;
+  callbacksLoading.value = true;
+  try {
+    const { data, error } = await fetchSupplierCallbacks({ page: 1, page_size: 50 });
+    if (!error && data) callbacks.value = (data as any).callbacks || [];
+  } finally {
+    callbacksLoading.value = false;
+  }
+}
+async function handleResend(row: any) {
+  const { error } = await resendSupplierCallback(row.id);
+  if (!error) {
+    window.$message?.success("已重发");
+    openCallbacks();
+  }
+}
+
+// ── 专属价（账号 × 商品覆盖价；空 SKU = 商品级默认）──
+const showPrice = ref(false);
+const priceTarget = ref<any>(null);
+const priceForm = reactive({ product_id: null as number | null, sku_id: null as number | null, priceYuan: null as number | null });
+const priceSaving = ref(false);
+const priceRows = ref<any[]>([]);
+const priceLoading = ref(false);
+function openPrice(row: any) {
+  priceTarget.value = row;
+  priceForm.product_id = null;
+  priceForm.sku_id = null;
+  priceForm.priceYuan = null;
+  showPrice.value = true;
+  loadPrices(row.id);
+}
+async function loadPrices(accountId: number) {
+  priceLoading.value = true;
+  try {
+    const { data, error } = await fetchSupplierPrices(accountId);
+    if (!error && data) priceRows.value = (data as any).prices || [];
+  } finally {
+    priceLoading.value = false;
+  }
+}
+async function handleDeletePrice(row: any) {
+  const { error } = await deleteSupplierPrice(row.id);
+  if (!error) {
+    window.$message?.success("已删除（恢复基础供货价）");
+    loadPrices(priceTarget.value.id);
+  }
+}
+async function submitPrice() {
+  if (!priceForm.product_id || priceForm.priceYuan === null) {
+    window.$message?.warning("请填写商品 ID 与价格");
+    return;
+  }
+  priceSaving.value = true;
+  try {
+    const { error } = await upsertSupplierPrice({
+      account_id: priceTarget.value.id,
+      product_id: priceForm.product_id,
+      sku_id: priceForm.sku_id ?? 0,
+      price: yuanToFen(priceForm.priceYuan),
+    });
+    if (!error) {
+      window.$message?.success("专属价已保存（优先于基础供货价）");
+      priceForm.product_id = null;
+      priceForm.sku_id = null;
+      priceForm.priceYuan = null;
+      loadPrices(priceTarget.value.id);
+    }
+  } finally {
+    priceSaving.value = false;
+  }
+}
+
+onMounted(load);
+</script>
+
+<template>
+  <div>
+    <div class="mb-12px flex flex-wrap items-center justify-between gap-8px">
+      <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" @change="load" />
+      <NSpace>
+        <NButton size="small" quaternary @click="openCallbacks">回调记录</NButton>
+        <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增供货账号</NButton>
+      </NSpace>
+    </div>
+
+    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" />
+
+    <!-- 密钥一次性回显 -->
+    <NModal :show="!!secretOnce" preset="dialog" title="密钥（仅此一次展示，请立即保存）" style="width: 520px" @update:show="secretOnce = ''">
+      <NAlert type="warning" :bordered="false" class="mb-8px">关闭后无法再次查看，丢失只能重置。</NAlert>
+      <NInput :value="secretOnce" readonly type="textarea" :rows="2" />
+    </NModal>
+
+    <!-- 驳回审核 -->
+    <NModal v-model:show="reviewModal" preset="dialog" :title="`驳回申请：${reviewTarget?.name || ''}`" style="width: 440px">
+      <NForm label-placement="top">
+        <NAlert type="warning" :bordered="false" class="mb-8px">驳回后申请人可在个人中心看到驳回状态与意见，可重新申请。</NAlert>
+        <NFormItem label="审核意见" required>
+          <NInput v-model:value="reviewNote" type="textarea" :rows="3" placeholder="如：资料不完整、站点未备案等" />
+        </NFormItem>
+      </NForm>
+      <template #action>
+        <NButton @click="reviewModal = false">取消</NButton>
+        <NButton type="error" @click="submitReview">确认驳回</NButton>
+      </template>
+    </NModal>
+
+    <!-- 新增 -->
+    <NModal v-model:show="showForm" preset="card" title="新增供货账号" style="width: 540px">
+      <NForm label-placement="left" label-width="110">
+        <NFormItem label="名称" required>
+          <NInput v-model:value="form.name" placeholder="下游客户标识" />
+        </NFormItem>
+        <NFormItem label="对接协议" required>
+          <NSelect
+            v-model:value="form.protocol"
+            :options="[
+              { label: 'ZCard（自有协议）', value: 'zcard' },
+              { label: 'dujiao-next 兼容（对方不改代码）', value: 'dujiao_next' },
+              { label: 'acg-faka 兼容（对方不改代码）', value: 'acg_faka' },
+            ]"
+          />
+        </NFormItem>
+        <NAlert type="info" :bordered="false" class="mb-12px">
+          {{ protocolMeta[form.protocol]?.hint }}
+        </NAlert>
+        <NFormItem :label="form.protocol === 'acg_faka' ? '商户ID(app_id)' : 'api_key'" required>
+          <NInput v-model:value="form.api_key" :placeholder="form.protocol === 'acg_faka' ? '数字 ID（对方后台填的商户ID）' : '随机字符串'" />
+        </NFormItem>
+        <NFormItem :label="form.protocol === 'acg_faka' ? '密钥(app_key)' : 'api_secret'" required>
+          <NInput v-model:value="form.api_secret" placeholder="签名密钥" />
+        </NFormItem>
+        <NFormItem label="店铺名(回显)">
+          <NInput v-model:value="form.display_name" placeholder="connect/ping 返回的 shopName/site_name" />
+        </NFormItem>
+        <NFormItem label="联系方式">
+          <NInput v-model:value="form.contact" />
+        </NFormItem>
+      </NForm>
+      <template #footer>
+        <NButton size="small" class="mr-8px" @click="showForm = false">取消</NButton>
+        <NButton size="small" type="primary" :loading="saving" @click="submitForm">创建</NButton>
+      </template>
+    </NModal>
+
+    <!-- 充值 -->
+    <NModal v-model:show="showRecharge" preset="dialog" :title="`充值：${rechargeTarget?.name || ''}`" style="width: 420px">
+      <NForm label-placement="top">
+        <NFormItem label="当前余额">
+          <span>{{ fenToYuan(rechargeTarget?.balance_cache || 0) }} 元</span>
+        </NFormItem>
+        <NFormItem label="充值金额（元）" required>
+          <NInputNumber v-model:value="rechargeYuan" :min="0.01" :precision="2" class="w-full" />
+        </NFormItem>
+        <NFormItem label="备注">
+          <NInput v-model:value="rechargeRemark" placeholder="将写入账本" />
+        </NFormItem>
+      </NForm>
+      <template #action>
+        <NButton @click="showRecharge = false">取消</NButton>
+        <NButton type="primary" :loading="recharging" @click="submitRecharge">充值</NButton>
+      </template>
+    </NModal>
+
+    <!-- 回调记录 -->
+    <NModal v-model:show="showCallbacks" preset="card" title="下游回调记录（失败可重发）" style="width: 760px">
+      <NDataTable
+        size="small"
+        :loading="callbacksLoading"
+        :data="callbacks"
+        :columns="[
+          { title: 'ID', key: 'id', width: 60 },
+          { title: '订单', key: 'supply_order_id', width: 80 },
+          { title: '状态', key: 'callback_status', width: 90, render: (r: any) => r.callback_status },
+          { title: '重试', key: 'retry_count', width: 60 },
+          { title: '最近错误', key: 'last_error', minWidth: 200, ellipsis: true, render: (r: any) => r.last_error || '-' },
+          {
+            title: '操作',
+            key: 'actions',
+            width: 80,
+            render: (r: any) =>
+              r.callback_status !== 'success' && canWrite()
+                ? h(NButton, { size: 'tiny', quaternary: true, onClick: () => handleResend(r) }, { default: () => '重发' })
+                : null,
+          },
+        ]"
+      />
+    </NModal>
+
+    <!-- 专属价 -->
+    <NModal v-model:show="showPrice" preset="dialog" :title="`专属价：${priceTarget?.name || ''}`" style="width: 440px">
+      <NForm label-placement="top">
+        <NAlert type="info" :bordered="false" class="mb-8px">专属价优先于商品基础供货价（该账号下单按此价扣款）。</NAlert>
+        <NFormItem label="商品 ID" required>
+          <NInputNumber v-model:value="priceForm.product_id" :min="1" class="w-full" />
+        </NFormItem>
+        <NFormItem label="SKU ID（可空 = 商品级默认价）">
+          <NInputNumber v-model:value="priceForm.sku_id" :min="0" class="w-full" />
+        </NFormItem>
+        <NFormItem label="专属价（元）" required>
+          <NInputNumber v-model:value="priceForm.priceYuan" :min="0.01" :precision="2" class="w-full" />
+        </NFormItem>
+      </NForm>
+      <div class="mb-12px">
+        <div class="mb-6px text-13px font-500">已有专属价（{{ priceRows.length }}）</div>
+        <NDataTable
+          size="small"
+          :loading="priceLoading"
+          :data="priceRows"
+          max-height="220"
+          :columns="[
+            { title: '商品ID', key: 'product_id', width: 80 },
+            { title: 'SKU', key: 'sku_id', width: 70, render: (r: any) => (r.sku_id ? r.sku_id : '商品级') },
+            { title: '价格', key: 'price', width: 100, render: (r: any) => fenToYuan(r.price) + ' 元' },
+            {
+              title: '',
+              key: 'actions',
+              width: 60,
+              render: (r: any) =>
+                canWrite()
+                  ? h(NPopconfirm, { onPositiveClick: () => handleDeletePrice(r) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }), default: () => '删除后恢复基础供货价？' })
+                  : null,
+            },
+          ]"
+        />
+      </div>
+      <template #action>
+        <NButton @click="showPrice = false">取消</NButton>
+        <NButton type="primary" :loading="priceSaving" @click="submitPrice">保存</NButton>
+      </template>
+    </NModal>
+
+    <!-- 账本 -->
+    <NModal v-model:show="showLedger" preset="card" :title="`账本：${ledgerTarget?.name || ''}`" style="width: 720px">
+      <NDataTable
+        size="small"
+        :loading="ledgerLoading"
+        :data="ledgerRows"
+        :columns="[
+          { title: '时间', key: 'created_at', width: 160, render: (r: any) => (r.created_at ? new Date(r.created_at * 1000).toLocaleString() : '-') },
+          { title: '类型', key: 'type', width: 110, render: (r: any) => ({ recharge: '充值', supply_pay: '供货扣款', supply_refund: '退款', adjust: '调账' } as any)[r.type] || r.type },
+          { title: '金额', key: 'amount', width: 110, render: (r: any) => (r.amount >= 0 ? '+' : '') + fenToYuan(r.amount) },
+          { title: '备注', key: 'remark', ellipsis: true, render: (r: any) => r.remark || '-' },
+        ]"
+      />
+    </NModal>
+  </div>
+</template>

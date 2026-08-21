@@ -19,9 +19,11 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminSupplierServiceCreateAccount = "/zcard.api.admin.v1.AdminSupplierService/CreateAccount"
+const OperationAdminSupplierServiceDeletePrice = "/zcard.api.admin.v1.AdminSupplierService/DeletePrice"
 const OperationAdminSupplierServiceListAccounts = "/zcard.api.admin.v1.AdminSupplierService/ListAccounts"
 const OperationAdminSupplierServiceListCallbacks = "/zcard.api.admin.v1.AdminSupplierService/ListCallbacks"
 const OperationAdminSupplierServiceListLedger = "/zcard.api.admin.v1.AdminSupplierService/ListLedger"
+const OperationAdminSupplierServiceListPrices = "/zcard.api.admin.v1.AdminSupplierService/ListPrices"
 const OperationAdminSupplierServiceRecharge = "/zcard.api.admin.v1.AdminSupplierService/Recharge"
 const OperationAdminSupplierServiceResendCallback = "/zcard.api.admin.v1.AdminSupplierService/ResendCallback"
 const OperationAdminSupplierServiceResetSecret = "/zcard.api.admin.v1.AdminSupplierService/ResetSecret"
@@ -33,19 +35,23 @@ const OperationAdminSupplierServiceUpsertPrice = "/zcard.api.admin.v1.AdminSuppl
 type AdminSupplierServiceHTTPServer interface {
 	// CreateAccount CreateAccount 下游申请（secret 明文只在此响应出现一次）。
 	CreateAccount(context.Context, *CreateSupplierAccountRequest) (*SupplierAccountReply, error)
+	// DeletePrice DeletePrice 删除专属价（恢复基础供货价）。
+	DeletePrice(context.Context, *DeleteSupplierPriceRequest) (*emptypb.Empty, error)
 	// ListAccounts ListAccounts 账户列表（secret 零回显）。
 	ListAccounts(context.Context, *ListSupplierAccountsRequest) (*ListSupplierAccountsReply, error)
 	// ListCallbacks ListCallbacks 回调记录（含死信）。
 	ListCallbacks(context.Context, *ListSupplierCallbacksRequest) (*ListSupplierCallbacksReply, error)
 	// ListLedger ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(context.Context, *ListSupplierLedgerRequest) (*ListSupplierLedgerReply, error)
+	// ListPrices ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	ListPrices(context.Context, *ListSupplierPricesRequest) (*ListSupplierPricesReply, error)
 	// Recharge Recharge 账户充值（账本入账）。
 	Recharge(context.Context, *RechargeSupplierRequest) (*emptypb.Empty, error)
 	// ResendCallback ResendCallback 手动重发回调（死信恢复）。
 	ResendCallback(context.Context, *ResendSupplierCallbackRequest) (*emptypb.Empty, error)
 	// ResetSecret ResetSecret 重置密钥（返回明文一次）。
 	ResetSecret(context.Context, *ResetSupplierSecretRequest) (*ResetSupplierSecretReply, error)
-	// ReviewAccount ReviewAccount 审核（applying → approved/disabled）。
+	// ReviewAccount ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
 	ReviewAccount(context.Context, *ReviewSupplierAccountRequest) (*SupplierAccountReply, error)
 	// SetNotifyURL SetNotifyURL 配置回调地址。
 	SetNotifyURL(context.Context, *SetSupplierNotifyURLRequest) (*SupplierAccountReply, error)
@@ -65,6 +71,8 @@ func RegisterAdminSupplierServiceHTTPServer(s *http.Server, srv AdminSupplierSer
 	r.Handle("PUT", "/api/v1/admin/supplier/accounts/{id}/notify-url", _AdminSupplierService_SetNotifyURL0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supplier/accounts/{id}/recharge", _AdminSupplierService_Recharge0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supplier/ledger", _AdminSupplierService_ListLedger0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/supplier/prices", _AdminSupplierService_ListPrices0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/supplier/prices/{id}", _AdminSupplierService_DeletePrice0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supplier/prices", _AdminSupplierService_UpsertPrice0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supplier/callbacks", _AdminSupplierService_ListCallbacks0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supplier/callbacks/{id}/resend", _AdminSupplierService_ResendCallback0_HTTP_Handler(srv))
@@ -237,6 +245,47 @@ func _AdminSupplierService_ListLedger0_HTTP_Handler(srv AdminSupplierServiceHTTP
 	}
 }
 
+func _AdminSupplierService_ListPrices0_HTTP_Handler(srv AdminSupplierServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListSupplierPricesRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplierServiceListPrices)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListPrices(ctx, req.(*ListSupplierPricesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListSupplierPricesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminSupplierService_DeletePrice0_HTTP_Handler(srv AdminSupplierServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteSupplierPriceRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplierServiceDeletePrice)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeletePrice(ctx, req.(*DeleteSupplierPriceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AdminSupplierService_UpsertPrice0_HTTP_Handler(srv AdminSupplierServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in UpsertSupplierPriceRequest
@@ -300,19 +349,23 @@ func _AdminSupplierService_ResendCallback0_HTTP_Handler(srv AdminSupplierService
 type AdminSupplierServiceHTTPClient interface {
 	// CreateAccount CreateAccount 下游申请（secret 明文只在此响应出现一次）。
 	CreateAccount(ctx context.Context, req *CreateSupplierAccountRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
+	// DeletePrice DeletePrice 删除专属价（恢复基础供货价）。
+	DeletePrice(ctx context.Context, req *DeleteSupplierPriceRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ListAccounts ListAccounts 账户列表（secret 零回显）。
 	ListAccounts(ctx context.Context, req *ListSupplierAccountsRequest, opts ...http.CallOption) (rsp *ListSupplierAccountsReply, err error)
 	// ListCallbacks ListCallbacks 回调记录（含死信）。
 	ListCallbacks(ctx context.Context, req *ListSupplierCallbacksRequest, opts ...http.CallOption) (rsp *ListSupplierCallbacksReply, err error)
 	// ListLedger ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(ctx context.Context, req *ListSupplierLedgerRequest, opts ...http.CallOption) (rsp *ListSupplierLedgerReply, err error)
+	// ListPrices ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	ListPrices(ctx context.Context, req *ListSupplierPricesRequest, opts ...http.CallOption) (rsp *ListSupplierPricesReply, err error)
 	// Recharge Recharge 账户充值（账本入账）。
 	Recharge(ctx context.Context, req *RechargeSupplierRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ResendCallback ResendCallback 手动重发回调（死信恢复）。
 	ResendCallback(ctx context.Context, req *ResendSupplierCallbackRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ResetSecret ResetSecret 重置密钥（返回明文一次）。
 	ResetSecret(ctx context.Context, req *ResetSupplierSecretRequest, opts ...http.CallOption) (rsp *ResetSupplierSecretReply, err error)
-	// ReviewAccount ReviewAccount 审核（applying → approved/disabled）。
+	// ReviewAccount ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
 	ReviewAccount(ctx context.Context, req *ReviewSupplierAccountRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
 	// SetNotifyURL SetNotifyURL 配置回调地址。
 	SetNotifyURL(ctx context.Context, req *SetSupplierNotifyURLRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
@@ -342,6 +395,23 @@ func (c *AdminSupplierServiceHTTPClientImpl) CreateAccount(ctx context.Context, 
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeletePrice DeletePrice 删除专属价（恢复基础供货价）。
+func (c *AdminSupplierServiceHTTPClientImpl) DeletePrice(ctx context.Context, in *DeleteSupplierPriceRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/supplier/prices/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminSupplierServiceDeletePrice),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -390,6 +460,23 @@ func (c *AdminSupplierServiceHTTPClientImpl) ListLedger(ctx context.Context, in 
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminSupplierServiceListLedger),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListPrices ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+func (c *AdminSupplierServiceHTTPClientImpl) ListPrices(ctx context.Context, in *ListSupplierPricesRequest, opts ...http.CallOption) (*ListSupplierPricesReply, error) {
+	var out ListSupplierPricesReply
+	pattern := "/api/v1/admin/supplier/prices"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminSupplierServiceListPrices),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
@@ -453,7 +540,7 @@ func (c *AdminSupplierServiceHTTPClientImpl) ResetSecret(ctx context.Context, in
 	return &out, nil
 }
 
-// ReviewAccount ReviewAccount 审核（applying → approved/disabled）。
+// ReviewAccount ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
 func (c *AdminSupplierServiceHTTPClientImpl) ReviewAccount(ctx context.Context, in *ReviewSupplierAccountRequest, opts ...http.CallOption) (*SupplierAccountReply, error) {
 	var out SupplierAccountReply
 	pattern := "/api/v1/admin/supplier/accounts/{id}/review"

@@ -28,6 +28,8 @@ const (
 	AdminSupplierService_SetNotifyURL_FullMethodName   = "/zcard.api.admin.v1.AdminSupplierService/SetNotifyURL"
 	AdminSupplierService_Recharge_FullMethodName       = "/zcard.api.admin.v1.AdminSupplierService/Recharge"
 	AdminSupplierService_ListLedger_FullMethodName     = "/zcard.api.admin.v1.AdminSupplierService/ListLedger"
+	AdminSupplierService_ListPrices_FullMethodName     = "/zcard.api.admin.v1.AdminSupplierService/ListPrices"
+	AdminSupplierService_DeletePrice_FullMethodName    = "/zcard.api.admin.v1.AdminSupplierService/DeletePrice"
 	AdminSupplierService_UpsertPrice_FullMethodName    = "/zcard.api.admin.v1.AdminSupplierService/UpsertPrice"
 	AdminSupplierService_ListCallbacks_FullMethodName  = "/zcard.api.admin.v1.AdminSupplierService/ListCallbacks"
 	AdminSupplierService_ResendCallback_FullMethodName = "/zcard.api.admin.v1.AdminSupplierService/ResendCallback"
@@ -44,7 +46,7 @@ type AdminSupplierServiceClient interface {
 	CreateAccount(ctx context.Context, in *CreateSupplierAccountRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error)
 	// ListAccounts 账户列表（secret 零回显）。
 	ListAccounts(ctx context.Context, in *ListSupplierAccountsRequest, opts ...grpc.CallOption) (*ListSupplierAccountsReply, error)
-	// ReviewAccount 审核（applying → approved/disabled）。
+	// ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
 	ReviewAccount(ctx context.Context, in *ReviewSupplierAccountRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error)
 	// ToggleAccount 启停。
 	ToggleAccount(ctx context.Context, in *ToggleSupplierAccountRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error)
@@ -56,6 +58,10 @@ type AdminSupplierServiceClient interface {
 	Recharge(ctx context.Context, in *RechargeSupplierRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(ctx context.Context, in *ListSupplierLedgerRequest, opts ...grpc.CallOption) (*ListSupplierLedgerReply, error)
+	// ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	ListPrices(ctx context.Context, in *ListSupplierPricesRequest, opts ...grpc.CallOption) (*ListSupplierPricesReply, error)
+	// DeletePrice 删除专属价（恢复基础供货价）。
+	DeletePrice(ctx context.Context, in *DeleteSupplierPriceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// UpsertPrice 供货定价（覆盖价）。
 	UpsertPrice(ctx context.Context, in *UpsertSupplierPriceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ListCallbacks 回调记录（含死信）。
@@ -152,6 +158,26 @@ func (c *adminSupplierServiceClient) ListLedger(ctx context.Context, in *ListSup
 	return out, nil
 }
 
+func (c *adminSupplierServiceClient) ListPrices(ctx context.Context, in *ListSupplierPricesRequest, opts ...grpc.CallOption) (*ListSupplierPricesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListSupplierPricesReply)
+	err := c.cc.Invoke(ctx, AdminSupplierService_ListPrices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSupplierServiceClient) DeletePrice(ctx context.Context, in *DeleteSupplierPriceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminSupplierService_DeletePrice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminSupplierServiceClient) UpsertPrice(ctx context.Context, in *UpsertSupplierPriceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
@@ -193,7 +219,7 @@ type AdminSupplierServiceServer interface {
 	CreateAccount(context.Context, *CreateSupplierAccountRequest) (*SupplierAccountReply, error)
 	// ListAccounts 账户列表（secret 零回显）。
 	ListAccounts(context.Context, *ListSupplierAccountsRequest) (*ListSupplierAccountsReply, error)
-	// ReviewAccount 审核（applying → approved/disabled）。
+	// ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
 	ReviewAccount(context.Context, *ReviewSupplierAccountRequest) (*SupplierAccountReply, error)
 	// ToggleAccount 启停。
 	ToggleAccount(context.Context, *ToggleSupplierAccountRequest) (*SupplierAccountReply, error)
@@ -205,6 +231,10 @@ type AdminSupplierServiceServer interface {
 	Recharge(context.Context, *RechargeSupplierRequest) (*emptypb.Empty, error)
 	// ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(context.Context, *ListSupplierLedgerRequest) (*ListSupplierLedgerReply, error)
+	// ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	ListPrices(context.Context, *ListSupplierPricesRequest) (*ListSupplierPricesReply, error)
+	// DeletePrice 删除专属价（恢复基础供货价）。
+	DeletePrice(context.Context, *DeleteSupplierPriceRequest) (*emptypb.Empty, error)
 	// UpsertPrice 供货定价（覆盖价）。
 	UpsertPrice(context.Context, *UpsertSupplierPriceRequest) (*emptypb.Empty, error)
 	// ListCallbacks 回调记录（含死信）。
@@ -244,6 +274,12 @@ func (UnimplementedAdminSupplierServiceServer) Recharge(context.Context, *Rechar
 }
 func (UnimplementedAdminSupplierServiceServer) ListLedger(context.Context, *ListSupplierLedgerRequest) (*ListSupplierLedgerReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListLedger not implemented")
+}
+func (UnimplementedAdminSupplierServiceServer) ListPrices(context.Context, *ListSupplierPricesRequest) (*ListSupplierPricesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPrices not implemented")
+}
+func (UnimplementedAdminSupplierServiceServer) DeletePrice(context.Context, *DeleteSupplierPriceRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeletePrice not implemented")
 }
 func (UnimplementedAdminSupplierServiceServer) UpsertPrice(context.Context, *UpsertSupplierPriceRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpsertPrice not implemented")
@@ -419,6 +455,42 @@ func _AdminSupplierService_ListLedger_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSupplierService_ListPrices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListSupplierPricesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplierServiceServer).ListPrices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplierService_ListPrices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplierServiceServer).ListPrices(ctx, req.(*ListSupplierPricesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminSupplierService_DeletePrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteSupplierPriceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplierServiceServer).DeletePrice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplierService_DeletePrice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplierServiceServer).DeletePrice(ctx, req.(*DeleteSupplierPriceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminSupplierService_UpsertPrice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpsertSupplierPriceRequest)
 	if err := dec(in); err != nil {
@@ -511,6 +583,14 @@ var AdminSupplierService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListLedger",
 			Handler:    _AdminSupplierService_ListLedger_Handler,
+		},
+		{
+			MethodName: "ListPrices",
+			Handler:    _AdminSupplierService_ListPrices_Handler,
+		},
+		{
+			MethodName: "DeletePrice",
+			Handler:    _AdminSupplierService_DeletePrice_Handler,
 		},
 		{
 			MethodName: "UpsertPrice",

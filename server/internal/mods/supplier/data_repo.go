@@ -43,19 +43,90 @@ func NewSupplierRepoImpl(d *data.Data, box *crypto.Box) *SupplierRepoImpl {
 
 // ── 账户 ──────────────────────────────────────────────────
 
-// CreateAccount 下游申请（secret 加密入库；只显示一次的语义由 admin service 处理）。
-func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiSecret, contact string) (*ent.SupplierAccount, error) {
+// CreateAccount 下游申请（secret 加密入库；只显示一次的语义由 service 层处理）。
+func (r *SupplierRepoImpl) CreateAccount(ctx context.Context, name, apiKey, apiSecret, contact, protocol, displayName string) (*ent.SupplierAccount, error) {
 	enc, err := r.box.Seal([]byte(apiSecret), secretAAD(apiKey))
 	if err != nil {
 		return nil, fmt.Errorf("supplier: secret 加密失败: %w", err)
 	}
-	return data.Client(ctx, r.data).SupplierAccount.Create().
+	create := data.Client(ctx, r.data).SupplierAccount.Create().
 		SetName(name).
 		SetAPIKey(apiKey).
 		SetAPISecret(enc).
 		SetContact(contact).
 		SetStatus(supplieraccount.StatusApplying).
-		Save(ctx)
+		SetProtocol(supplieraccount.Protocol(protocol)).
+		SetOwnerUserID(0)
+	if displayName != "" {
+		create.SetDisplayName(displayName)
+	}
+	return create.Save(ctx)
+}
+
+// CreateApplication 前台对接申请（owner=用户 id；凭据由 service 生成后传入）。
+func (r *SupplierRepoImpl) CreateApplication(ctx context.Context, ownerUserID uint64, protocol, displayName, contact, applyReason, notifyURL, apiKey, apiSecret string) (*ent.SupplierAccount, error) {
+	enc, err := r.box.Seal([]byte(apiSecret), secretAAD(apiKey))
+	if err != nil {
+		return nil, fmt.Errorf("supplier: secret 加密失败: %w", err)
+	}
+	create := data.Client(ctx, r.data).SupplierAccount.Create().
+		SetName(displayName).
+		SetAPIKey(apiKey).
+		SetAPISecret(enc).
+		SetContact(contact).
+		SetStatus(supplieraccount.StatusApplying).
+		SetProtocol(supplieraccount.Protocol(protocol)).
+		SetOwnerUserID(ownerUserID).
+		SetDisplayName(displayName)
+	if applyReason != "" {
+		create.SetApplyReason(applyReason)
+	}
+	if notifyURL != "" {
+		create.SetNotifyURL(notifyURL)
+	}
+	return create.Save(ctx)
+}
+
+// ListMyAccounts 前台用户的账户列表（按创建倒序）。
+func (r *SupplierRepoImpl) ListMyAccounts(ctx context.Context, ownerUserID uint64) ([]*ent.SupplierAccount, error) {
+	return data.Client(ctx, r.data).SupplierAccount.Query().
+		Where(supplieraccount.OwnerUserID(ownerUserID)).
+		Order(ent.Desc(supplieraccount.FieldID)).
+		All(ctx)
+}
+
+// CountMyApplying 用户申请中数量（防刷护栏）。
+func (r *SupplierRepoImpl) CountMyApplying(ctx context.Context, ownerUserID uint64) (int, error) {
+	return data.Client(ctx, r.data).SupplierAccount.Query().
+		Where(
+			supplieraccount.OwnerUserID(ownerUserID),
+			supplieraccount.StatusEQ(supplieraccount.StatusApplying),
+		).
+		Count(ctx)
+}
+
+// CountMyAccounts 用户账户总数（防刷护栏）。
+func (r *SupplierRepoImpl) CountMyAccounts(ctx context.Context, ownerUserID uint64) (int, error) {
+	return data.Client(ctx, r.data).SupplierAccount.Query().
+		Where(supplieraccount.OwnerUserID(ownerUserID)).
+		Count(ctx)
+}
+
+// CancelApplication 撤销申请（仅 applying；已审核的不可撤销）。
+func (r *SupplierRepoImpl) CancelApplication(ctx context.Context, id uint64) error {
+	n, err := data.Client(ctx, r.data).SupplierAccount.Delete().
+		Where(
+			supplieraccount.ID(id),
+			supplieraccount.StatusEQ(supplieraccount.StatusApplying),
+		).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("supplier: 仅申请中的账户可撤销")
+	}
+	return nil
 }
 
 // AccountByKey 按 key 查账户（AuthStore 实现；返回解密 secret）。
@@ -96,16 +167,19 @@ func (r *SupplierRepoImpl) ListAccounts(ctx context.Context, page, pageSize int)
 	return rows, total, err
 }
 
-// ReviewAccount 审核（applying → approved/disabled）。
-func (r *SupplierRepoImpl) ReviewAccount(ctx context.Context, id uint64, approve bool) (*ent.SupplierAccount, error) {
-	status := supplieraccount.StatusDisabled
+// ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
+func (r *SupplierRepoImpl) ReviewAccount(ctx context.Context, id uint64, approve bool, reviewNote string) (*ent.SupplierAccount, error) {
+	status := supplieraccount.StatusRejected
 	if approve {
 		status = supplieraccount.StatusApproved
 	}
-	acc, err := data.Client(ctx, r.data).SupplierAccount.UpdateOneID(id).
+	upd := data.Client(ctx, r.data).SupplierAccount.UpdateOneID(id).
 		SetStatus(status).
-		SetReviewedAt(time.Now().UTC()).
-		Save(ctx)
+		SetReviewedAt(time.Now().UTC())
+	if reviewNote != "" {
+		upd.SetReviewNote(reviewNote)
+	}
+	acc, err := upd.Save(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -291,6 +365,12 @@ func (r *SupplierRepoImpl) GetSupplyOrder(ctx context.Context, id uint64) (*ent.
 	return o, nil
 }
 
+// UpdateSupplyOrderItems 更新 items 快照（交付后补记 card_ids；兼容层查单重建 payload 用）。
+func (r *SupplierRepoImpl) UpdateSupplyOrderItems(ctx context.Context, id uint64, items []map[string]any) error {
+	_, err := data.Client(ctx, r.data).SupplyOrder.UpdateOneID(id).SetItems(items).Save(ctx)
+	return err
+}
+
 // MarkSupplyOrderFulfilled 交付完成（fulfilling → fulfilled + fulfilled_at）。
 func (r *SupplierRepoImpl) MarkSupplyOrderFulfilled(ctx context.Context, id uint64) error {
 	_, err := data.Client(ctx, r.data).SupplyOrder.UpdateOneID(id).
@@ -454,13 +534,36 @@ func (r *SupplierRepoImpl) ResetCallback(ctx context.Context, id uint64) (*ent.D
 
 // CredentialsOf 按账户取凭据（api_key 明文 + 解密 secret；回调转发签名用）。
 func (r *SupplierRepoImpl) CredentialsOf(ctx context.Context, accountID uint64) (apiKey, apiSecret string, err error) {
+	key, secret, _, err := r.CredentialsWithProtocolOf(ctx, accountID)
+	return key, secret, err
+}
+
+// CredentialsWithProtocolOf 凭据 + 账号协议（兼容层回调签名器分支用；P2-10 B）。
+func (r *SupplierRepoImpl) CredentialsWithProtocolOf(ctx context.Context, accountID uint64) (apiKey, apiSecret, protocol string, err error) {
 	acc, err := r.GetAccount(ctx, accountID)
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 	plain, err := r.box.Open(acc.APISecret, secretAAD(acc.APIKey))
 	if err != nil {
-		return "", "", fmt.Errorf("supplier: secret 解密失败（需重置密钥）: %w", err)
+		return "", "", "", fmt.Errorf("supplier: secret 解密失败（需重置密钥）: %w", err)
 	}
-	return acc.APIKey, string(plain), nil
+	return acc.APIKey, string(plain), string(acc.Protocol), nil
+}
+
+// ListPrices 账号的专属价列表（P2-10：浏览/管理覆盖价）。
+func (r *SupplierRepoImpl) ListPrices(ctx context.Context, accountID uint64) ([]*ent.SupplierProductPrice, error) {
+	return data.Client(ctx, r.data).SupplierProductPrice.Query().
+		Where(supplierproductprice.SupplierAccountID(accountID)).
+		Order(ent.Desc(supplierproductprice.FieldUpdatedAt)).
+		All(ctx)
+}
+
+// DeletePrice 删除专属价（恢复基础供货价）。
+func (r *SupplierRepoImpl) DeletePrice(ctx context.Context, id uint64) error {
+	n, err := data.Client(ctx, r.data).SupplierProductPrice.Delete().Where(supplierproductprice.ID(id)).Exec(ctx)
+	if err == nil && n == 0 {
+		return fmt.Errorf("supplier: 专属价不存在")
+	}
+	return err
 }

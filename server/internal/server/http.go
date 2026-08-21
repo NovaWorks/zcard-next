@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/content"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon"
@@ -39,6 +41,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
+	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/ticket"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
@@ -72,6 +75,7 @@ func NewHTTPServer(
 	procureAdminSvc *procurement.AdminProcurementService,
 	supplyAPISvc *supplier.SupplyAPIService,
 	supplierAdminSvc *supplier.AdminSupplierService,
+	supplierStoreSvc *supplier.StoreSupplierService,
 	supplierRepo *supplier.SupplierRepoImpl,
 	contentAdminSvc *content.AdminContentService,
 	contentStoreSvc *content.StoreContentService,
@@ -86,11 +90,14 @@ func NewHTTPServer(
 	resellerAdminSvc *reseller.AdminResellerService,
 	resellerRepo *reseller.ResellerRepo,
 	userStoreSvc *identity.StoreUserService,
+	userManageSvc *identity.AdminUserManageService,
 	auditAdminSvc *audit.AdminAuditService,
 	auditRepo *audit.AuditRepo,
 	roleSvc *authz.RoleService,
 	adminSvc *authz.AdminUserService,
 	confSvc *settings.StorefrontConfigService,
+	captchaSvc *captcha.StoreCaptchaService,
+	storeMediaSvc *media.StoreMediaService,
 	currencySvc *settings.AdminCurrencyService,
 	catalogAdminSvc *catalog.AdminCatalogService,
 	memberLevelSvc *memberlevel.AdminMemberLevelService,
@@ -100,6 +107,8 @@ func NewHTTPServer(
 	dashboardSvc *dashboard.AdminDashboardService,
 	invSvc *inventory.AdminInventoryService,
 	orderAdminSvc *order.AdminOrderService,
+	procureSvc *procurement.ProcureService,
+	upstreamGW supplyport.UpstreamGateway,
 	orderStoreSvc *order.StoreOrderService,
 	cartSvc *order.StoreCartService,
 	payAdminSvc *payment.AdminPaymentService,
@@ -111,6 +120,7 @@ func NewHTTPServer(
 	fulfillAdminSvc *fulfillment.AdminFulfillmentService,
 	enq queue.Enqueuer,
 	dir *authz.Directory,
+	tracker *audit.TrackRepo,
 ) *khttp.Server {
 	// ⚠️ Kratos khttp.Filter 是整体替换（o.filters = filters）非追加——
 	// 多次调用只有最后一次生效（曾致 supplier HMAC/CORS/租户被 audit 静默覆盖）。
@@ -125,7 +135,7 @@ func NewHTTPServer(
 			supplier.SupplyAuthFilter(supplierRepo, 0),
 			// P2-06：变更类 admin 操作审计（Filter 层——中间件拿不到原始请求；
 			// POST/PUT/DELETE 且 2xx；异步落库失败不阻断）
-			audit.OpAuditFilter(auditRepo,
+			audit.OpAuditFilter(auditRepo, signer,
 				func(op string) (string, bool) {
 					code, _, ok := dir.PermissionForOp(op)
 					return code, ok
@@ -147,6 +157,14 @@ func NewHTTPServer(
 			// P3-04：storefront user realm JWT（解析失败放行——游客端点不受影响；
 			// 需登录端点由业务侧 claims==nil 自行 401）
 			userAuthMiddleware(signer),
+			// T5：storefront 访问埋点（PV/UV 明细 + 在线心跳；游客/登录均记，
+			// 失败忽略）。仅挂 storefront operation，admin/supply/回调不埋。
+			selector.Server(storefrontVisitMiddleware(tracker)).
+				Match(func(_ context.Context, operation string) bool {
+					return strings.HasPrefix(operation, "/zcard.api.storefront.v1.") ||
+						strings.HasPrefix(operation, "/api/v1/storefront/")
+				}).
+				Build(),
 			// admin realm 鉴权仅挂管理面 operation；Public 声明（登录）经目录豁免；
 			// storefront/supply/回调路由不挂 JWT（架构测试规则 9）。
 			selector.Server(adminAuthMiddleware(signer, az, dir, adminReader)).
@@ -182,6 +200,8 @@ func NewHTTPServer(
 	adminv1.RegisterAdminCouponServiceHTTPServer(srv, couponSvc)
 	adminv1.RegisterAdminDashboardServiceHTTPServer(srv, dashboardSvc)
 	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)
+	storefrontv1.RegisterStoreCaptchaServiceHTTPServer(srv, captchaSvc)
+	storefrontv1.RegisterStoreMediaServiceHTTPServer(srv, storeMediaSvc)
 	adminv1.RegisterAdminCatalogServiceHTTPServer(srv, catalogAdminSvc)
 	adminv1.RegisterAdminInventoryServiceHTTPServer(srv, invSvc)
 	adminv1.RegisterAdminOrderServiceHTTPServer(srv, orderAdminSvc)
@@ -211,8 +231,21 @@ func NewHTTPServer(
 	adminv1.RegisterAdminLicenseServiceHTTPServer(srv, licenseAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)
 	storefrontv1.RegisterStoreUserServiceHTTPServer(srv, userStoreSvc)
+	storefrontv1.RegisterStoreSupplierServiceHTTPServer(srv, supplierStoreSvc)
+	adminv1.RegisterAdminUserManageServiceHTTPServer(srv, userManageSvc)
 	// P3-06：素材静态服务（ETag + 白名单扩展；目录列表禁用）
 	media.RegisterStatic(srv)
+	// 主题模板静态服务（预览图；白名单图片扩展 + 防穿越）
+	settings.RegisterTemplateStatic(srv)
+
+	// P2-10 B/C：协议兼容层（对外供货——让 dujiao-next / acg-faka 平台不改代码
+	// 即可对接本站）。原生 handler 挂载（外部协议契约不进我们的 proto/OpenAPI）；
+	// 不挂 JWT（架构测试规则 9）；须在 SPA 兜底前注册。
+	supplier.RegisterDujiaoCompat(srv, supplyAPISvc)
+	supplier.RegisterAcgFakaCompat(srv, supplyAPISvc)
+
+	// P2-10 E：上游回调接收（采购三通道之回调；不挂 JWT，验签在 handler 内按驱动分支）
+	procurement.RegisterUpstreamCallback(srv, procureSvc, upstreamGW)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

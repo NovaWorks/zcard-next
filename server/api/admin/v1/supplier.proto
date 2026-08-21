@@ -22,7 +22,7 @@ service AdminSupplierService {
   rpc ListAccounts(ListSupplierAccountsRequest) returns (ListSupplierAccountsReply) {
     option (google.api.http) = { get: "/api/v1/admin/supplier/accounts" };
   }
-  // ReviewAccount 审核（applying → approved/disabled）。
+  // ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
   rpc ReviewAccount(ReviewSupplierAccountRequest) returns (SupplierAccountReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/supplier/accounts/{id}/review"
@@ -61,6 +61,14 @@ service AdminSupplierService {
   rpc ListLedger(ListSupplierLedgerRequest) returns (ListSupplierLedgerReply) {
     option (google.api.http) = { get: "/api/v1/admin/supplier/ledger" };
   }
+  // ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+  rpc ListPrices(ListSupplierPricesRequest) returns (ListSupplierPricesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supplier/prices" };
+  }
+  // DeletePrice 删除专属价（恢复基础供货价）。
+  rpc DeletePrice(DeleteSupplierPriceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/supplier/prices/{id}" };
+  }
   // UpsertPrice 供货定价（覆盖价）。
   rpc UpsertPrice(UpsertSupplierPriceRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
@@ -87,11 +95,16 @@ message SupplierAccountReply {
   string api_key = 3;
   string api_secret = 4; // 仅创建/重置时回显（一次）
   string contact = 5;
-  string status = 6; // applying | approved | disabled
+  string status = 6; // applying | approved | rejected | disabled
   int64 balance_cache = 7;
   string notify_url = 8;
   int64 reviewed_at = 9;
   int64 created_at = 10;
+  string protocol = 11;    // zcard | dujiao_next | acg_faka（对外供货协议；P2-10 B/C）
+  string display_name = 12; // connect/ping 回显店铺名
+  uint64 owner_user_id = 13; // 前台申请归属用户（0=admin 手动建号）
+  string apply_reason = 14;  // 申请理由（前台申请时填）
+  string review_note = 15;   // 审核意见/驳回理由
 }
 
 message CreateSupplierAccountRequest {
@@ -99,6 +112,8 @@ message CreateSupplierAccountRequest {
   string api_key = 2 [(google.api.field_behavior) = REQUIRED];
   string api_secret = 3 [(google.api.field_behavior) = REQUIRED];
   string contact = 4;
+  string protocol = 5;     // 空 = zcard；dujiao_next/acg_faka 为兼容账号
+  string display_name = 6;
 }
 
 message ListSupplierAccountsRequest {
@@ -116,6 +131,7 @@ message ListSupplierAccountsReply {
 message ReviewSupplierAccountRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   bool approve = 2;
+  string review_note = 3; // 审核意见；驳回时建议必填（≤500）
 }
 
 message ToggleSupplierAccountRequest {
@@ -172,6 +188,26 @@ message UpsertSupplierPriceRequest {
   uint64 product_id = 2 [(google.api.field_behavior) = REQUIRED];
   uint64 sku_id = 3;
   int64 price = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListSupplierPricesRequest {
+  uint64 account_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message SupplierPriceItem {
+  uint64 id = 1;
+  uint64 product_id = 2;
+  uint64 sku_id = 3; // 0 = 商品级默认价
+  int64 price = 4;   // 分
+  int64 updated_at = 5;
+}
+
+message ListSupplierPricesReply {
+  repeated SupplierPriceItem prices = 1;
+}
+
+message DeleteSupplierPriceRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message ListSupplierCallbacksRequest {

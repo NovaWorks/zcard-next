@@ -148,7 +148,7 @@ func (s *SupplyAPIService) GetStock(ctx context.Context, req *supplyv1.GetStockR
 	return &supplyv1.GetStockReply{Stock: int32(stock)}, nil
 }
 
-// CreateOrder 下单：幂等 → 核算 → 扣款 → 锁卡 → 交付。
+// CreateOrder 下单：幂等 → 核算 → 扣款 → 锁卡 → 交付（zcard-supply-v2 协议壳）。
 func (s *SupplyAPIService) CreateOrder(ctx context.Context, req *supplyv1.CreateSupplyOrderRequest) (*supplyv1.CreateSupplyOrderReply, error) {
 	accountID := SupplyAccountID(ctx)
 	if req.GetDownstreamOrderNo() == "" {
@@ -157,49 +157,107 @@ func (s *SupplyAPIService) CreateOrder(ctx context.Context, req *supplyv1.Create
 	if req.GetQuantity() < 1 {
 		return nil, errors.New("supplier.INVALID_QUANTITY")
 	}
-	// 幂等：同 downstream_order_no 重复下单返回首单
-	if existing, err := s.repo.GetSupplyOrderByNo(ctx, req.GetDownstreamOrderNo()); err == nil {
-		return s.orderReply(existing), nil
-	}
 	productID, err := strconv.ParseUint(req.GetProductId(), 10, 64)
 	if err != nil {
 		return nil, errors.New("supplier.INVALID_PRODUCT_ID")
 	}
+	out, err := s.fulfillOrder(ctx, accountID, productID, req.GetQuantity(), req.GetDownstreamOrderNo(), req.GetCallbackUrl(), req.GetTraceId())
+	if err != nil {
+		return nil, err
+	}
+	if out.rejected {
+		return &supplyv1.CreateSupplyOrderReply{Status: "rejected", ErrorCode: out.errCode, ErrorMessage: out.errMsg}, nil
+	}
+	reply := &supplyv1.CreateSupplyOrderReply{
+		SupplyOrderId: strconv.FormatUint(out.order.ID, 10),
+		Status:        string(out.order.Status),
+		Amount:        out.amount,
+	}
+	if out.delivered {
+		reply.Status = "fulfilled"
+		reply.Fulfillment = &supplyv1.SupplyFulfillment{Status: "delivered", Cards: out.cards}
+	}
+	return reply, nil
+}
+
+// cardsPayloadOf 从 items 快照 card_ids 重建已交付订单卡密（兼容层查单/payload 用）。
+func (s *SupplyAPIService) cardsPayloadOf(ctx context.Context, o *ent.SupplyOrder) ([]string, error) {
+	if len(o.Items) == 0 {
+		return nil, errors.New("items 快照缺失")
+	}
+	productID, _ := parseUintAny(o.Items[0]["product_id"])
+	raw, _ := o.Items[0]["card_ids"].([]any)
+	ids := make([]uint64, 0, len(raw))
+	for _, v := range raw {
+		if id, err := parseUintAny(v); err == nil && id > 0 {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil, errors.New("无 card_ids")
+	}
+	return s.cards.Contents(ctx, ids, productID, 0)
+}
+
+// fulfillOutcome 协议无关下单结果（zcard v2 与兼容层 B/C 共用核心）。
+type fulfillOutcome struct {
+	order     *ent.SupplyOrder
+	cards     []string // 交付卡密（内存态；delivered=false 时为空）
+	amount    int64    // 分
+	delivered bool
+	rejected  bool   // 业务拒绝（下游可编程处理；err 为 nil 时有效）
+	errCode   string // product_unavailable | insufficient_balance | no_stock
+	errMsg    string
+}
+
+// fulfillOrder 下单核心（协议无关）：幂等 → 供货价 → 扣款 → 锁卡 → 交付 →
+// 回调登记。items 快照带 card_ids（兼容层查单重建 payload 用）。
+func (s *SupplyAPIService) fulfillOrder(ctx context.Context, accountID, productID uint64, quantity int32, downstreamOrderNo, callbackURL, traceID string) (*fulfillOutcome, error) {
+	// 幂等：同 downstream_order_no 重复下单返回首单（已交付的从 items 快照重建卡密）
+	if existing, err := s.repo.GetSupplyOrderByNo(ctx, downstreamOrderNo); err == nil {
+		out := &fulfillOutcome{order: existing, amount: existing.Amount, delivered: string(existing.Status) == "fulfilled"}
+		if out.delivered {
+			if cards, err := s.cardsPayloadOf(ctx, existing); err == nil {
+				out.cards = cards
+			}
+		}
+		return out, nil
+	}
 	p, err := s.reader.GetForSupply(ctx, productID)
 	if err != nil || p.Status == 0 {
-		return &supplyv1.CreateSupplyOrderReply{Status: "rejected", ErrorCode: "product_unavailable", ErrorMessage: "商品不可用"}, nil
+		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}, nil
 	}
 	// 供货价（覆盖价 > 基础价）
 	price := p.Price
 	if override, err := s.repo.PriceOf(ctx, accountID, productID, 0); err == nil && override > 0 {
 		price = override
 	}
-	amount := price * int64(req.GetQuantity())
+	amount := price * int64(quantity)
 	// 建单（pending）
 	items := []map[string]any{{
-		"product_id": productID, "name": p.Name, "quantity": req.GetQuantity(), "unit_price": price,
+		"product_id": productID, "name": p.Name, "quantity": quantity, "unit_price": price,
 	}}
-	order, err := s.repo.CreateSupplyOrder(ctx, accountID, req.GetDownstreamOrderNo(), items, amount)
+	order, err := s.repo.CreateSupplyOrder(ctx, accountID, downstreamOrderNo, items, amount)
 	if err != nil {
 		return nil, err
 	}
 	// 账本扣款（幂等键 supply_order:<downID>；余额不足不产生流水）
-	ref := "supply_order:" + req.GetDownstreamOrderNo()
+	ref := "supply_order:" + downstreamOrderNo
 	if err := s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_pay", -amount, ref, "下游下单扣款"); err != nil {
 		_ = s.repo.MarkSupplyOrderRejected(ctx, order.ID)
 		if errors.Is(err, ErrInsufficientBalance) {
-			return &supplyv1.CreateSupplyOrderReply{Status: "rejected", ErrorCode: "insufficient_balance", ErrorMessage: "供货余额不足"}, nil
+			return &fulfillOutcome{rejected: true, errCode: "insufficient_balance", errMsg: "供货余额不足"}, nil
 		}
 		return nil, err
 	}
 	_ = s.repo.MarkSupplyOrderPaid(ctx, order.ID)
 	// 锁卡（同一库存池；防超卖）
-	res, err := s.inv.Reserve(ctx, 0, []invport.ReserveItem{{ProductID: productID, Quantity: req.GetQuantity()}})
-	if err != nil || len(res.Cards) < int(req.GetQuantity()) {
+	res, err := s.inv.Reserve(ctx, 0, []invport.ReserveItem{{ProductID: productID, Quantity: quantity}})
+	if err != nil || len(res.Cards) < int(quantity) {
 		// 库存不足：账本退回 + rejected
-		_ = s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_refund", amount, "supply_order:"+req.GetDownstreamOrderNo()+":refund", "库存不足退回")
+		_ = s.repo.LedgerEntry(ctx, accountID, order.ID, "supply_refund", amount, ref+":refund", "库存不足退回")
 		_ = s.repo.MarkSupplyOrderRejected(ctx, order.ID)
-		return &supplyv1.CreateSupplyOrderReply{Status: "rejected", ErrorCode: "no_stock", ErrorMessage: "库存不足"}, nil
+		return &fulfillOutcome{rejected: true, errCode: "no_stock", errMsg: "库存不足"}, nil
 	}
 	cardIDs := make([]uint64, 0, len(res.Cards))
 	for _, c := range res.Cards {
@@ -221,17 +279,15 @@ func (s *SupplyAPIService) CreateOrder(ctx context.Context, req *supplyv1.Create
 		return nil, errors.New("supplier.DELIVERY_FAILED")
 	}
 	_ = s.repo.MarkSupplyOrderFulfilled(ctx, order.ID)
-	// 回调转发登记（T5）
-	if req.GetCallbackUrl() != "" {
-		_, _ = s.repo.CreateCallback(ctx, order.ID, accountID, req.GetDownstreamOrderNo(), req.GetCallbackUrl(), req.GetTraceId())
+	// items 快照补记 card_ids（兼容层查单重建 payload 用）
+	items[0]["card_ids"] = cardIDs
+	_ = s.repo.UpdateSupplyOrderItems(ctx, order.ID, items)
+	// 回调转发登记（T5；acg_faka 协议无回调——调用方不传 callbackURL 即可）
+	if callbackURL != "" {
+		_, _ = s.repo.CreateCallback(ctx, order.ID, accountID, downstreamOrderNo, callbackURL, traceID)
 		s.EnqueueCallback(ctx, order.ID)
 	}
-	return &supplyv1.CreateSupplyOrderReply{
-		SupplyOrderId: strconv.FormatUint(order.ID, 10),
-		Status:        "fulfilled",
-		Amount:        amount,
-		Fulfillment:   &supplyv1.SupplyFulfillment{Status: "delivered", Cards: delivered},
-	}, nil
+	return &fulfillOutcome{order: order, amount: amount, cards: delivered, delivered: true}, nil
 }
 
 // ListOrders 时间窗订单列表（对账数据源）。

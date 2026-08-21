@@ -33,7 +33,14 @@ func (s *AdminSupplierService) CreateAccount(ctx context.Context, req *adminv1.C
 	if req.GetApiKey() == "" || req.GetApiSecret() == "" {
 		return nil, errors.New("supplier.KEY_REQUIRED: api_key/api_secret 必填")
 	}
-	acc, err := s.repo.CreateAccount(ctx, req.GetName(), req.GetApiKey(), req.GetApiSecret(), req.GetContact())
+	protocol := req.GetProtocol()
+	if protocol == "" {
+		protocol = "zcard"
+	}
+	if protocol != "zcard" && protocol != "dujiao_next" && protocol != "acg_faka" {
+		return nil, errors.New("supplier.INVALID_PROTOCOL: protocol 必须为 zcard|dujiao_next|acg_faka")
+	}
+	acc, err := s.repo.CreateAccount(ctx, req.GetName(), req.GetApiKey(), req.GetApiSecret(), req.GetContact(), protocol, req.GetDisplayName())
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +61,12 @@ func (s *AdminSupplierService) ListAccounts(ctx context.Context, req *adminv1.Li
 	return reply, nil
 }
 
-// ReviewAccount 审核。
+// ReviewAccount 审核（通过/驳回；驳回置 rejected 状态并记录意见）。
 func (s *AdminSupplierService) ReviewAccount(ctx context.Context, req *adminv1.ReviewSupplierAccountRequest) (*adminv1.SupplierAccountReply, error) {
-	acc, err := s.repo.ReviewAccount(ctx, req.GetId(), req.GetApprove())
+	if !req.GetApprove() && strings.TrimSpace(req.GetReviewNote()) == "" {
+		return nil, errors.New("supplier.REVIEW_NOTE_REQUIRED: 驳回时请填写审核意见")
+	}
+	acc, err := s.repo.ReviewAccount(ctx, req.GetId(), req.GetApprove(), strings.TrimSpace(req.GetReviewNote()))
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +182,9 @@ func toAccountPB(acc *ent.SupplierAccount, secretOnce string) *adminv1.SupplierA
 		Contact: acc.Contact, Status: string(acc.Status),
 		BalanceCache: acc.BalanceCache, NotifyUrl: acc.NotifyURL,
 		CreatedAt: acc.CreatedAt.Unix(),
+		Protocol:  string(acc.Protocol), DisplayName: acc.DisplayName,
+		OwnerUserId: acc.OwnerUserID, ApplyReason: acc.ApplyReason,
+		ReviewNote: acc.ReviewNote,
 	}
 	if !acc.ReviewedAt.IsZero() {
 		p.ReviewedAt = acc.ReviewedAt.Unix()

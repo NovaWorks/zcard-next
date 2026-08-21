@@ -30,11 +30,16 @@ type SupplierAccountReply struct {
 	ApiKey        string                 `protobuf:"bytes,3,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	ApiSecret     string                 `protobuf:"bytes,4,opt,name=api_secret,json=apiSecret,proto3" json:"api_secret,omitempty"` // 仅创建/重置时回显（一次）
 	Contact       string                 `protobuf:"bytes,5,opt,name=contact,proto3" json:"contact,omitempty"`
-	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"` // applying | approved | disabled
+	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"` // applying | approved | rejected | disabled
 	BalanceCache  int64                  `protobuf:"varint,7,opt,name=balance_cache,json=balanceCache,proto3" json:"balance_cache,omitempty"`
 	NotifyUrl     string                 `protobuf:"bytes,8,opt,name=notify_url,json=notifyUrl,proto3" json:"notify_url,omitempty"`
 	ReviewedAt    int64                  `protobuf:"varint,9,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Protocol      string                 `protobuf:"bytes,11,opt,name=protocol,proto3" json:"protocol,omitempty"`                             // zcard | dujiao_next | acg_faka（对外供货协议；P2-10 B/C）
+	DisplayName   string                 `protobuf:"bytes,12,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`    // connect/ping 回显店铺名
+	OwnerUserId   uint64                 `protobuf:"varint,13,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"` // 前台申请归属用户（0=admin 手动建号）
+	ApplyReason   string                 `protobuf:"bytes,14,opt,name=apply_reason,json=applyReason,proto3" json:"apply_reason,omitempty"`    // 申请理由（前台申请时填）
+	ReviewNote    string                 `protobuf:"bytes,15,opt,name=review_note,json=reviewNote,proto3" json:"review_note,omitempty"`       // 审核意见/驳回理由
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -139,12 +144,49 @@ func (x *SupplierAccountReply) GetCreatedAt() int64 {
 	return 0
 }
 
+func (x *SupplierAccountReply) GetProtocol() string {
+	if x != nil {
+		return x.Protocol
+	}
+	return ""
+}
+
+func (x *SupplierAccountReply) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *SupplierAccountReply) GetOwnerUserId() uint64 {
+	if x != nil {
+		return x.OwnerUserId
+	}
+	return 0
+}
+
+func (x *SupplierAccountReply) GetApplyReason() string {
+	if x != nil {
+		return x.ApplyReason
+	}
+	return ""
+}
+
+func (x *SupplierAccountReply) GetReviewNote() string {
+	if x != nil {
+		return x.ReviewNote
+	}
+	return ""
+}
+
 type CreateSupplierAccountRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	ApiKey        string                 `protobuf:"bytes,2,opt,name=api_key,json=apiKey,proto3" json:"api_key,omitempty"`
 	ApiSecret     string                 `protobuf:"bytes,3,opt,name=api_secret,json=apiSecret,proto3" json:"api_secret,omitempty"`
 	Contact       string                 `protobuf:"bytes,4,opt,name=contact,proto3" json:"contact,omitempty"`
+	Protocol      string                 `protobuf:"bytes,5,opt,name=protocol,proto3" json:"protocol,omitempty"` // 空 = zcard；dujiao_next/acg_faka 为兼容账号
+	DisplayName   string                 `protobuf:"bytes,6,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -203,6 +245,20 @@ func (x *CreateSupplierAccountRequest) GetApiSecret() string {
 func (x *CreateSupplierAccountRequest) GetContact() string {
 	if x != nil {
 		return x.Contact
+	}
+	return ""
+}
+
+func (x *CreateSupplierAccountRequest) GetProtocol() string {
+	if x != nil {
+		return x.Protocol
+	}
+	return ""
+}
+
+func (x *CreateSupplierAccountRequest) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
 	}
 	return ""
 }
@@ -331,6 +387,7 @@ type ReviewSupplierAccountRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Approve       bool                   `protobuf:"varint,2,opt,name=approve,proto3" json:"approve,omitempty"`
+	ReviewNote    string                 `protobuf:"bytes,3,opt,name=review_note,json=reviewNote,proto3" json:"review_note,omitempty"` // 审核意见；驳回时建议必填（≤500）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -377,6 +434,13 @@ func (x *ReviewSupplierAccountRequest) GetApprove() bool {
 		return x.Approve
 	}
 	return false
+}
+
+func (x *ReviewSupplierAccountRequest) GetReviewNote() string {
+	if x != nil {
+		return x.ReviewNote
+	}
+	return ""
 }
 
 type ToggleSupplierAccountRequest struct {
@@ -935,6 +999,214 @@ func (x *UpsertSupplierPriceRequest) GetPrice() int64 {
 	return 0
 }
 
+type ListSupplierPricesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AccountId     uint64                 `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSupplierPricesRequest) Reset() {
+	*x = ListSupplierPricesRequest{}
+	mi := &file_admin_v1_supplier_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSupplierPricesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSupplierPricesRequest) ProtoMessage() {}
+
+func (x *ListSupplierPricesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supplier_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSupplierPricesRequest.ProtoReflect.Descriptor instead.
+func (*ListSupplierPricesRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListSupplierPricesRequest) GetAccountId() uint64 {
+	if x != nil {
+		return x.AccountId
+	}
+	return 0
+}
+
+type SupplierPriceItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId         uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"` // 0 = 商品级默认价
+	Price         int64                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`              // 分
+	UpdatedAt     int64                  `protobuf:"varint,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupplierPriceItem) Reset() {
+	*x = SupplierPriceItem{}
+	mi := &file_admin_v1_supplier_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplierPriceItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplierPriceItem) ProtoMessage() {}
+
+func (x *SupplierPriceItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supplier_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplierPriceItem.ProtoReflect.Descriptor instead.
+func (*SupplierPriceItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *SupplierPriceItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SupplierPriceItem) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *SupplierPriceItem) GetSkuId() uint64 {
+	if x != nil {
+		return x.SkuId
+	}
+	return 0
+}
+
+func (x *SupplierPriceItem) GetPrice() int64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *SupplierPriceItem) GetUpdatedAt() int64 {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return 0
+}
+
+type ListSupplierPricesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Prices        []*SupplierPriceItem   `protobuf:"bytes,1,rep,name=prices,proto3" json:"prices,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListSupplierPricesReply) Reset() {
+	*x = ListSupplierPricesReply{}
+	mi := &file_admin_v1_supplier_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListSupplierPricesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListSupplierPricesReply) ProtoMessage() {}
+
+func (x *ListSupplierPricesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supplier_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListSupplierPricesReply.ProtoReflect.Descriptor instead.
+func (*ListSupplierPricesReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListSupplierPricesReply) GetPrices() []*SupplierPriceItem {
+	if x != nil {
+		return x.Prices
+	}
+	return nil
+}
+
+type DeleteSupplierPriceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteSupplierPriceRequest) Reset() {
+	*x = DeleteSupplierPriceRequest{}
+	mi := &file_admin_v1_supplier_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteSupplierPriceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteSupplierPriceRequest) ProtoMessage() {}
+
+func (x *DeleteSupplierPriceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supplier_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteSupplierPriceRequest.ProtoReflect.Descriptor instead.
+func (*DeleteSupplierPriceRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *DeleteSupplierPriceRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 type ListSupplierCallbacksRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // 空 = 全部
@@ -946,7 +1218,7 @@ type ListSupplierCallbacksRequest struct {
 
 func (x *ListSupplierCallbacksRequest) Reset() {
 	*x = ListSupplierCallbacksRequest{}
-	mi := &file_admin_v1_supplier_proto_msgTypes[14]
+	mi := &file_admin_v1_supplier_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -958,7 +1230,7 @@ func (x *ListSupplierCallbacksRequest) String() string {
 func (*ListSupplierCallbacksRequest) ProtoMessage() {}
 
 func (x *ListSupplierCallbacksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supplier_proto_msgTypes[14]
+	mi := &file_admin_v1_supplier_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +1243,7 @@ func (x *ListSupplierCallbacksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSupplierCallbacksRequest.ProtoReflect.Descriptor instead.
 func (*ListSupplierCallbacksRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListSupplierCallbacksRequest) GetStatus() string {
@@ -1013,7 +1285,7 @@ type SupplierCallback struct {
 
 func (x *SupplierCallback) Reset() {
 	*x = SupplierCallback{}
-	mi := &file_admin_v1_supplier_proto_msgTypes[15]
+	mi := &file_admin_v1_supplier_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1025,7 +1297,7 @@ func (x *SupplierCallback) String() string {
 func (*SupplierCallback) ProtoMessage() {}
 
 func (x *SupplierCallback) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supplier_proto_msgTypes[15]
+	mi := &file_admin_v1_supplier_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1038,7 +1310,7 @@ func (x *SupplierCallback) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SupplierCallback.ProtoReflect.Descriptor instead.
 func (*SupplierCallback) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *SupplierCallback) GetId() uint64 {
@@ -1123,7 +1395,7 @@ type ListSupplierCallbacksReply struct {
 
 func (x *ListSupplierCallbacksReply) Reset() {
 	*x = ListSupplierCallbacksReply{}
-	mi := &file_admin_v1_supplier_proto_msgTypes[16]
+	mi := &file_admin_v1_supplier_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1135,7 +1407,7 @@ func (x *ListSupplierCallbacksReply) String() string {
 func (*ListSupplierCallbacksReply) ProtoMessage() {}
 
 func (x *ListSupplierCallbacksReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supplier_proto_msgTypes[16]
+	mi := &file_admin_v1_supplier_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1148,7 +1420,7 @@ func (x *ListSupplierCallbacksReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSupplierCallbacksReply.ProtoReflect.Descriptor instead.
 func (*ListSupplierCallbacksReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListSupplierCallbacksReply) GetCallbacks() []*SupplierCallback {
@@ -1188,7 +1460,7 @@ type ResendSupplierCallbackRequest struct {
 
 func (x *ResendSupplierCallbackRequest) Reset() {
 	*x = ResendSupplierCallbackRequest{}
-	mi := &file_admin_v1_supplier_proto_msgTypes[17]
+	mi := &file_admin_v1_supplier_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1200,7 +1472,7 @@ func (x *ResendSupplierCallbackRequest) String() string {
 func (*ResendSupplierCallbackRequest) ProtoMessage() {}
 
 func (x *ResendSupplierCallbackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supplier_proto_msgTypes[17]
+	mi := &file_admin_v1_supplier_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1213,7 +1485,7 @@ func (x *ResendSupplierCallbackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResendSupplierCallbackRequest.ProtoReflect.Descriptor instead.
 func (*ResendSupplierCallbackRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ResendSupplierCallbackRequest) GetId() uint64 {
@@ -1227,7 +1499,7 @@ var File_admin_v1_supplier_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\n" +
-	"\x17admin/v1/supplier.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa8\x02\n" +
+	"\x17admin/v1/supplier.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xcf\x03\n" +
 	"\x14SupplierAccountReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
@@ -1243,13 +1515,21 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"reviewedAt\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\x03R\tcreatedAt\"\x93\x01\n" +
+	" \x01(\x03R\tcreatedAt\x12\x1a\n" +
+	"\bprotocol\x18\v \x01(\tR\bprotocol\x12!\n" +
+	"\fdisplay_name\x18\f \x01(\tR\vdisplayName\x12\"\n" +
+	"\rowner_user_id\x18\r \x01(\x04R\vownerUserId\x12!\n" +
+	"\fapply_reason\x18\x0e \x01(\tR\vapplyReason\x12\x1f\n" +
+	"\vreview_note\x18\x0f \x01(\tR\n" +
+	"reviewNote\"\xd2\x01\n" +
 	"\x1cCreateSupplierAccountRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1c\n" +
 	"\aapi_key\x18\x02 \x01(\tB\x03\xe0A\x02R\x06apiKey\x12\"\n" +
 	"\n" +
 	"api_secret\x18\x03 \x01(\tB\x03\xe0A\x02R\tapiSecret\x12\x18\n" +
-	"\acontact\x18\x04 \x01(\tR\acontact\"N\n" +
+	"\acontact\x18\x04 \x01(\tR\acontact\x12\x1a\n" +
+	"\bprotocol\x18\x05 \x01(\tR\bprotocol\x12!\n" +
+	"\fdisplay_name\x18\x06 \x01(\tR\vdisplayName\"N\n" +
 	"\x1bListSupplierAccountsRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\xa8\x01\n" +
@@ -1257,10 +1537,12 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\baccounts\x18\x01 \x03(\v2(.zcard.api.admin.v1.SupplierAccountReplyR\baccounts\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"M\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"n\n" +
 	"\x1cReviewSupplierAccountRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
-	"\aapprove\x18\x02 \x01(\bR\aapprove\"M\n" +
+	"\aapprove\x18\x02 \x01(\bR\aapprove\x12\x1f\n" +
+	"\vreview_note\x18\x03 \x01(\tR\n" +
+	"reviewNote\"M\n" +
 	"\x1cToggleSupplierAccountRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
 	"\aenabled\x18\x02 \x01(\bR\aenabled\"U\n" +
@@ -1306,7 +1588,22 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x02 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
 	"\x06sku_id\x18\x03 \x01(\x04R\x05skuId\x12\x19\n" +
-	"\x05price\x18\x04 \x01(\x03B\x03\xe0A\x02R\x05price\"g\n" +
+	"\x05price\x18\x04 \x01(\x03B\x03\xe0A\x02R\x05price\"?\n" +
+	"\x19ListSupplierPricesRequest\x12\"\n" +
+	"\n" +
+	"account_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\taccountId\"\x8e\x01\n" +
+	"\x11SupplierPriceItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x03 \x01(\x04R\x05skuId\x12\x14\n" +
+	"\x05price\x18\x04 \x01(\x03R\x05price\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\x03R\tupdatedAt\"X\n" +
+	"\x17ListSupplierPricesReply\x12=\n" +
+	"\x06prices\x18\x01 \x03(\v2%.zcard.api.admin.v1.SupplierPriceItemR\x06prices\"1\n" +
+	"\x1aDeleteSupplierPriceRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"g\n" +
 	"\x1cListSupplierCallbacksRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
@@ -1332,7 +1629,7 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"4\n" +
 	"\x1dResendSupplierCallbackRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xbe\r\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xd4\x0f\n" +
 	"\x14AdminSupplierService\x12\x97\x01\n" +
 	"\rCreateAccount\x120.zcard.api.admin.v1.CreateSupplierAccountRequest\x1a(.zcard.api.admin.v1.SupplierAccountReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/supplier/accounts\x12\x97\x01\n" +
 	"\fListAccounts\x12/.zcard.api.admin.v1.ListSupplierAccountsRequest\x1a-.zcard.api.admin.v1.ListSupplierAccountsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/supplier/accounts\x12\xa3\x01\n" +
@@ -1342,7 +1639,10 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\fSetNotifyURL\x12/.zcard.api.admin.v1.SetSupplierNotifyURLRequest\x1a(.zcard.api.admin.v1.SupplierAccountReply\":\x82\xd3\xe4\x93\x024:\x01*\x1a//api/v1/admin/supplier/accounts/{id}/notify-url\x12\x89\x01\n" +
 	"\bRecharge\x12+.zcard.api.admin.v1.RechargeSupplierRequest\x1a\x16.google.protobuf.Empty\"8\x82\xd3\xe4\x93\x022:\x01*\"-/api/v1/admin/supplier/accounts/{id}/recharge\x12\x8f\x01\n" +
 	"\n" +
-	"ListLedger\x12-.zcard.api.admin.v1.ListSupplierLedgerRequest\x1a+.zcard.api.admin.v1.ListSupplierLedgerReply\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/supplier/ledger\x12\x7f\n" +
+	"ListLedger\x12-.zcard.api.admin.v1.ListSupplierLedgerRequest\x1a+.zcard.api.admin.v1.ListSupplierLedgerReply\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/supplier/ledger\x12\x8f\x01\n" +
+	"\n" +
+	"ListPrices\x12-.zcard.api.admin.v1.ListSupplierPricesRequest\x1a+.zcard.api.admin.v1.ListSupplierPricesReply\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/supplier/prices\x12\x81\x01\n" +
+	"\vDeletePrice\x12..zcard.api.admin.v1.DeleteSupplierPriceRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$*\"/api/v1/admin/supplier/prices/{id}\x12\x7f\n" +
 	"\vUpsertPrice\x12..zcard.api.admin.v1.UpsertSupplierPriceRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/supplier/prices\x12\x9b\x01\n" +
 	"\rListCallbacks\x120.zcard.api.admin.v1.ListSupplierCallbacksRequest\x1a..zcard.api.admin.v1.ListSupplierCallbacksReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/supplier/callbacks\x12\x94\x01\n" +
 	"\x0eResendCallback\x121.zcard.api.admin.v1.ResendSupplierCallbackRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/supplier/callbacks/{id}/resendB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
@@ -1359,7 +1659,7 @@ func file_admin_v1_supplier_proto_rawDescGZIP() []byte {
 	return file_admin_v1_supplier_proto_rawDescData
 }
 
-var file_admin_v1_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_admin_v1_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_admin_v1_supplier_proto_goTypes = []any{
 	(*SupplierAccountReply)(nil),          // 0: zcard.api.admin.v1.SupplierAccountReply
 	(*CreateSupplierAccountRequest)(nil),  // 1: zcard.api.admin.v1.CreateSupplierAccountRequest
@@ -1375,43 +1675,52 @@ var file_admin_v1_supplier_proto_goTypes = []any{
 	(*SupplierLedgerEntry)(nil),           // 11: zcard.api.admin.v1.SupplierLedgerEntry
 	(*ListSupplierLedgerReply)(nil),       // 12: zcard.api.admin.v1.ListSupplierLedgerReply
 	(*UpsertSupplierPriceRequest)(nil),    // 13: zcard.api.admin.v1.UpsertSupplierPriceRequest
-	(*ListSupplierCallbacksRequest)(nil),  // 14: zcard.api.admin.v1.ListSupplierCallbacksRequest
-	(*SupplierCallback)(nil),              // 15: zcard.api.admin.v1.SupplierCallback
-	(*ListSupplierCallbacksReply)(nil),    // 16: zcard.api.admin.v1.ListSupplierCallbacksReply
-	(*ResendSupplierCallbackRequest)(nil), // 17: zcard.api.admin.v1.ResendSupplierCallbackRequest
-	(*emptypb.Empty)(nil),                 // 18: google.protobuf.Empty
+	(*ListSupplierPricesRequest)(nil),     // 14: zcard.api.admin.v1.ListSupplierPricesRequest
+	(*SupplierPriceItem)(nil),             // 15: zcard.api.admin.v1.SupplierPriceItem
+	(*ListSupplierPricesReply)(nil),       // 16: zcard.api.admin.v1.ListSupplierPricesReply
+	(*DeleteSupplierPriceRequest)(nil),    // 17: zcard.api.admin.v1.DeleteSupplierPriceRequest
+	(*ListSupplierCallbacksRequest)(nil),  // 18: zcard.api.admin.v1.ListSupplierCallbacksRequest
+	(*SupplierCallback)(nil),              // 19: zcard.api.admin.v1.SupplierCallback
+	(*ListSupplierCallbacksReply)(nil),    // 20: zcard.api.admin.v1.ListSupplierCallbacksReply
+	(*ResendSupplierCallbackRequest)(nil), // 21: zcard.api.admin.v1.ResendSupplierCallbackRequest
+	(*emptypb.Empty)(nil),                 // 22: google.protobuf.Empty
 }
 var file_admin_v1_supplier_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListSupplierAccountsReply.accounts:type_name -> zcard.api.admin.v1.SupplierAccountReply
 	11, // 1: zcard.api.admin.v1.ListSupplierLedgerReply.entries:type_name -> zcard.api.admin.v1.SupplierLedgerEntry
-	15, // 2: zcard.api.admin.v1.ListSupplierCallbacksReply.callbacks:type_name -> zcard.api.admin.v1.SupplierCallback
-	1,  // 3: zcard.api.admin.v1.AdminSupplierService.CreateAccount:input_type -> zcard.api.admin.v1.CreateSupplierAccountRequest
-	2,  // 4: zcard.api.admin.v1.AdminSupplierService.ListAccounts:input_type -> zcard.api.admin.v1.ListSupplierAccountsRequest
-	4,  // 5: zcard.api.admin.v1.AdminSupplierService.ReviewAccount:input_type -> zcard.api.admin.v1.ReviewSupplierAccountRequest
-	5,  // 6: zcard.api.admin.v1.AdminSupplierService.ToggleAccount:input_type -> zcard.api.admin.v1.ToggleSupplierAccountRequest
-	6,  // 7: zcard.api.admin.v1.AdminSupplierService.ResetSecret:input_type -> zcard.api.admin.v1.ResetSupplierSecretRequest
-	8,  // 8: zcard.api.admin.v1.AdminSupplierService.SetNotifyURL:input_type -> zcard.api.admin.v1.SetSupplierNotifyURLRequest
-	9,  // 9: zcard.api.admin.v1.AdminSupplierService.Recharge:input_type -> zcard.api.admin.v1.RechargeSupplierRequest
-	10, // 10: zcard.api.admin.v1.AdminSupplierService.ListLedger:input_type -> zcard.api.admin.v1.ListSupplierLedgerRequest
-	13, // 11: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:input_type -> zcard.api.admin.v1.UpsertSupplierPriceRequest
-	14, // 12: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:input_type -> zcard.api.admin.v1.ListSupplierCallbacksRequest
-	17, // 13: zcard.api.admin.v1.AdminSupplierService.ResendCallback:input_type -> zcard.api.admin.v1.ResendSupplierCallbackRequest
-	0,  // 14: zcard.api.admin.v1.AdminSupplierService.CreateAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	3,  // 15: zcard.api.admin.v1.AdminSupplierService.ListAccounts:output_type -> zcard.api.admin.v1.ListSupplierAccountsReply
-	0,  // 16: zcard.api.admin.v1.AdminSupplierService.ReviewAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	0,  // 17: zcard.api.admin.v1.AdminSupplierService.ToggleAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	7,  // 18: zcard.api.admin.v1.AdminSupplierService.ResetSecret:output_type -> zcard.api.admin.v1.ResetSupplierSecretReply
-	0,  // 19: zcard.api.admin.v1.AdminSupplierService.SetNotifyURL:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	18, // 20: zcard.api.admin.v1.AdminSupplierService.Recharge:output_type -> google.protobuf.Empty
-	12, // 21: zcard.api.admin.v1.AdminSupplierService.ListLedger:output_type -> zcard.api.admin.v1.ListSupplierLedgerReply
-	18, // 22: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:output_type -> google.protobuf.Empty
-	16, // 23: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:output_type -> zcard.api.admin.v1.ListSupplierCallbacksReply
-	18, // 24: zcard.api.admin.v1.AdminSupplierService.ResendCallback:output_type -> google.protobuf.Empty
-	14, // [14:25] is the sub-list for method output_type
-	3,  // [3:14] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	15, // 2: zcard.api.admin.v1.ListSupplierPricesReply.prices:type_name -> zcard.api.admin.v1.SupplierPriceItem
+	19, // 3: zcard.api.admin.v1.ListSupplierCallbacksReply.callbacks:type_name -> zcard.api.admin.v1.SupplierCallback
+	1,  // 4: zcard.api.admin.v1.AdminSupplierService.CreateAccount:input_type -> zcard.api.admin.v1.CreateSupplierAccountRequest
+	2,  // 5: zcard.api.admin.v1.AdminSupplierService.ListAccounts:input_type -> zcard.api.admin.v1.ListSupplierAccountsRequest
+	4,  // 6: zcard.api.admin.v1.AdminSupplierService.ReviewAccount:input_type -> zcard.api.admin.v1.ReviewSupplierAccountRequest
+	5,  // 7: zcard.api.admin.v1.AdminSupplierService.ToggleAccount:input_type -> zcard.api.admin.v1.ToggleSupplierAccountRequest
+	6,  // 8: zcard.api.admin.v1.AdminSupplierService.ResetSecret:input_type -> zcard.api.admin.v1.ResetSupplierSecretRequest
+	8,  // 9: zcard.api.admin.v1.AdminSupplierService.SetNotifyURL:input_type -> zcard.api.admin.v1.SetSupplierNotifyURLRequest
+	9,  // 10: zcard.api.admin.v1.AdminSupplierService.Recharge:input_type -> zcard.api.admin.v1.RechargeSupplierRequest
+	10, // 11: zcard.api.admin.v1.AdminSupplierService.ListLedger:input_type -> zcard.api.admin.v1.ListSupplierLedgerRequest
+	14, // 12: zcard.api.admin.v1.AdminSupplierService.ListPrices:input_type -> zcard.api.admin.v1.ListSupplierPricesRequest
+	17, // 13: zcard.api.admin.v1.AdminSupplierService.DeletePrice:input_type -> zcard.api.admin.v1.DeleteSupplierPriceRequest
+	13, // 14: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:input_type -> zcard.api.admin.v1.UpsertSupplierPriceRequest
+	18, // 15: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:input_type -> zcard.api.admin.v1.ListSupplierCallbacksRequest
+	21, // 16: zcard.api.admin.v1.AdminSupplierService.ResendCallback:input_type -> zcard.api.admin.v1.ResendSupplierCallbackRequest
+	0,  // 17: zcard.api.admin.v1.AdminSupplierService.CreateAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	3,  // 18: zcard.api.admin.v1.AdminSupplierService.ListAccounts:output_type -> zcard.api.admin.v1.ListSupplierAccountsReply
+	0,  // 19: zcard.api.admin.v1.AdminSupplierService.ReviewAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	0,  // 20: zcard.api.admin.v1.AdminSupplierService.ToggleAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	7,  // 21: zcard.api.admin.v1.AdminSupplierService.ResetSecret:output_type -> zcard.api.admin.v1.ResetSupplierSecretReply
+	0,  // 22: zcard.api.admin.v1.AdminSupplierService.SetNotifyURL:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	22, // 23: zcard.api.admin.v1.AdminSupplierService.Recharge:output_type -> google.protobuf.Empty
+	12, // 24: zcard.api.admin.v1.AdminSupplierService.ListLedger:output_type -> zcard.api.admin.v1.ListSupplierLedgerReply
+	16, // 25: zcard.api.admin.v1.AdminSupplierService.ListPrices:output_type -> zcard.api.admin.v1.ListSupplierPricesReply
+	22, // 26: zcard.api.admin.v1.AdminSupplierService.DeletePrice:output_type -> google.protobuf.Empty
+	22, // 27: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:output_type -> google.protobuf.Empty
+	20, // 28: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:output_type -> zcard.api.admin.v1.ListSupplierCallbacksReply
+	22, // 29: zcard.api.admin.v1.AdminSupplierService.ResendCallback:output_type -> google.protobuf.Empty
+	17, // [17:30] is the sub-list for method output_type
+	4,  // [4:17] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_supplier_proto_init() }
@@ -1425,7 +1734,7 @@ func file_admin_v1_supplier_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_supplier_proto_rawDesc), len(file_admin_v1_supplier_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

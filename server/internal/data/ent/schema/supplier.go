@@ -23,10 +23,26 @@ func (SupplierAccount) Fields() []ent.Field {
 		field.String("api_key").MaxLen(64).Unique().Comment("下游识别 key（可索引明文）"),
 		field.Bytes("api_secret").Comment("AES-256-GCM 加密 secret"),
 		field.String("contact").MaxLen(255).Optional().Comment("联系方式（申请审核用）"),
-		field.Enum("status").Values("applying", "approved", "disabled").Default("applying"),
+		field.Enum("status").Values("applying", "approved", "rejected", "disabled").Default("applying"),
 		field.Int64("balance_cache").Default(0).Comment("供货余额缓存（可由流水重算）"),
 		field.String("notify_url").MaxLen(500).Optional().Comment("交付回调地址（HTTPS 强制）"),
 		field.Time("reviewed_at").SchemaType(mysqlTime).Optional(),
+		// P2-10 B/C：该账号对外说话用的协议（决定兼容层凭据形态与回调签名器）。
+		// dujiao_next：api_key=Api-Key、secret=签名密钥；acg_faka：api_key=数字
+		// app_id、secret=32 位 app_key（MD5 验签时解密参与）。
+		field.Enum("protocol").Values("zcard", "dujiao_next", "acg_faka").Default("zcard"),
+		field.String("display_name").MaxLen(100).Optional().Comment("connect/ping 回显的店铺名（shopName/site_name）"),
+		// 前台对接申请（P3-xx）：owner=前台用户 id（admin 手动建号恒 0）；
+		// apply_reason 申请理由、review_note 审核意见（驳回时必填）。
+		field.Uint64("owner_user_id").Optional().Default(0).Comment("申请归属前台用户（0=admin 建号）"),
+		field.String("apply_reason").MaxLen(500).Optional().Comment("申请理由（审核用）"),
+		field.String("review_note").MaxLen(500).Optional().Comment("审核意见/驳回理由"),
+	}
+}
+
+func (SupplierAccount) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("owner_user_id"),
 	}
 }
 

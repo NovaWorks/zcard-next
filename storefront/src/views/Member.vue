@@ -6,6 +6,9 @@
       <button :class="{ active: tab === 'transactions' }" @click="switchTab('transactions')">余额流水</button>
       <button :class="{ active: tab === 'recharge' }" @click="switchTab('recharge')">充值</button>
       <button :class="{ active: tab === 'giftcard' }" @click="switchTab('giftcard')">礼品卡</button>
+      <button :class="{ active: tab === 'promo' }" @click="switchTab('promo')">推广营销</button>
+      <button :class="{ active: tab === 'supplier' }" @click="switchTab('supplier')">对接申请</button>
+      <button :class="{ active: tab === 'withdraw' }" @click="switchTab('withdraw')">提现</button>
       <button :class="{ active: tab === 'security' }" @click="switchTab('security')">账户安全</button>
     </div>
 
@@ -38,6 +41,18 @@
         </div>
       </div>
       <div v-else class="card muted">加载中…</div>
+
+      <!-- 我的推广码（分销入口；点击切到推广营销 tab） -->
+      <div class="card" style="margin-top: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; cursor: pointer;" @click="switchTab('promo')">
+        <div>
+          <div class="muted">我的推广码</div>
+          <div style="font-family: ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #2563eb; margin-top: 2px;">{{ myPromoCode || '点击开通' }}</div>
+        </div>
+        <div style="flex: 1; min-width: 200px;" class="muted">
+          分享推广链接给好友，注册/下单均可赚三级佣金 →
+        </div>
+        <span style="font-size: 22px;">🔗</span>
+      </div>
     </div>
 
     <!-- 我的订单 -->
@@ -52,9 +67,14 @@
             <td>{{ o.item_count }}</td>
             <td class="muted">{{ fmtTime(o.created_at) }}</td>
             <td class="actions">
-              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending'">去支付</router-link>
-              <router-link class="btn secondary" :to="`/fetch`" v-else>取货</router-link>
-              <button class="btn secondary" v-if="o.status === 'pending'" @click="cancel(o.order_no)">取消</button>
+              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">去支付</router-link>
+              <router-link
+                class="btn secondary"
+                :to="`/fetch?order_no=${o.order_no}`"
+                v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
+              >取货</router-link>
+              <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
+              <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
             </td>
           </tr>
           <tr v-if="!orders.length"><td colspan="6" class="muted" style="text-align: center;">暂无订单</td></tr>
@@ -138,6 +158,25 @@
       <button class="btn" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '兑换' }}</button>
     </div>
 
+    <!-- 推广营销（内嵌推广中心：推广码/二维码/团队/佣金） -->
+    <div v-if="tab === 'promo'">
+      <Affiliate />
+    </div>
+
+    <!-- 对接申请（内嵌供货申请中心：提交申请/审核状态/凭据管理） -->
+    <div v-if="tab === 'supplier'">
+      <SupplierApply />
+    </div>
+
+    <!-- 提现（跳转独立提现页：佣金提现+收款码+记录） -->
+    <div v-if="tab === 'withdraw'" class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; cursor: pointer;" @click="$router.push('/withdraw')">
+      <div>
+        <b>佣金提现</b>
+        <div class="muted" style="margin-top: 4px;">支持支付宝 / 微信收款码 / USDT TRC20 · 最低 {{ '' }}提现 · 提现记录与工单支持</div>
+      </div>
+      <router-link class="btn btn-primary" to="/withdraw">进入提现</router-link>
+    </div>
+
     <!-- 账户安全（P3-10：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
     <div v-if="tab === 'security'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 420px)); gap: 16px;">
       <div class="card">
@@ -160,7 +199,7 @@
       </div>
       <div class="card">
         <h3 style="margin-bottom: 12px;">修改邮箱</h3>
-        <div class="muted" style="margin-bottom: 8px;">当前：{{ level?.points !== undefined ? '' : '' }}{{ meEmail || '未设置' }}</div>
+        <div class="muted" style="margin-bottom: 8px;">当前：{{ meEmail || '未设置' }}</div>
         <div class="field">
           <label>新邮箱</label>
           <input class="input" v-model="newEmail" type="email" placeholder="you@example.com" />
@@ -182,8 +221,10 @@ import {
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
 import { api, formatMoney, formatSignedMoney, setToken, centsToYuan } from '@/api/client';
+import Affiliate from './Affiliate.vue';
+import SupplierApply from './SupplierApply.vue';
 
-const tab = ref<'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'security'>('overview');
+const tab = ref<'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'promo' | 'supplier' | 'withdraw' | 'security'>('overview');
 const balance = ref<BalanceReply | null>(null);
 const level = ref<MyLevelReply | null>(null);
 
@@ -235,7 +276,7 @@ onMounted(async () => {
   loadRechargeChannels();
 });
 
-function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'security') {
+function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'promo' | 'supplier' | 'withdraw' | 'security') {
   tab.value = t;
   if (t === 'orders' && !orders.value.length) loadOrders(1);
   if (t === 'transactions' && !transactions.value.length) loadTx(1);
@@ -347,7 +388,9 @@ const changingEmail = ref(false);
 async function loadMe() {
   const { data } = await me();
   meEmail.value = data?.email || '';
+  myPromoCode.value = data?.promo_code || '';
 }
+const myPromoCode = ref('');
 loadMe();
 
 async function doChangePwd() {
@@ -378,10 +421,18 @@ async function doChangeEmail() {
 }
 
 function statusText(s: string): string {
-  return ({ pending: '待支付', paid: '已支付', delivered: '已发货', completed: '已完成', cancelled: '已取消', expired: '已过期', refunded: '已退款' } as Record<string, string>)[s] || s;
+  return ({
+    pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货',
+    delivered: '已发货', completed: '已完成', canceled: '已取消', expired: '已过期',
+    refund_pending: '退款中', refunded: '已退款',
+  } as Record<string, string>)[s] || s;
 }
 function statusBadge(s: string): string {
-  return ({ pending: 'badge orange', paid: 'badge blue', delivered: 'badge green', completed: 'badge green', cancelled: 'badge gray', expired: 'badge gray', refunded: 'badge red' } as Record<string, string>)[s] || 'badge gray';
+  return ({
+    pending_payment: 'badge orange', paid: 'badge blue', fulfilling: 'badge blue', partially_delivered: 'badge green',
+    delivered: 'badge green', completed: 'badge green', canceled: 'badge gray', expired: 'badge gray',
+    refund_pending: 'badge orange', refunded: 'badge red',
+  } as Record<string, string>)[s] || 'badge gray';
 }
 function fmtTime(ts: number): string {
   return ts ? new Date(ts * 1000).toLocaleString() : '';

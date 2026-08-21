@@ -13,6 +13,7 @@ var ProviderSet = wire.NewSet(
 	NewSupplierRepoImpl,
 	NewSupplyAPIService,
 	NewAdminSupplierService,
+	NewStoreSupplierService,
 	// 依赖经 wire 结构匹配：SupplierCatalog ← catalog（已 Bind）、
 	// Inventory/CardContentReader ← inventory、Enqueuer ← bootstrap
 )
