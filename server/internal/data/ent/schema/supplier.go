@@ -37,6 +37,9 @@ func (SupplierAccount) Fields() []ent.Field {
 		field.Uint64("owner_user_id").Optional().Default(0).Comment("申请归属前台用户（0=admin 建号）"),
 		field.String("apply_reason").MaxLen(500).Optional().Comment("申请理由（审核用）"),
 		field.String("review_note").MaxLen(500).Optional().Comment("审核意见/驳回理由"),
+		// IP 白名单（申请通过后可配置）：空数组 = 所有 IP 放行；非空 = 仅命中（精确 IP
+		// 或 CIDR 网段）的请求可调供货/兼容接口。鉴权层（三协议统一）强制。
+		field.JSON("ip_whitelist", []string{}).Optional().Comment("IP 白名单（空=不限；支持精确 IP 与 CIDR）"),
 	}
 }
 

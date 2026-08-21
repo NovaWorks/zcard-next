@@ -73,9 +73,10 @@ func (s *SupplyAPIService) DeliverCallback(ctx context.Context, supplyOrderID ui
 	if err != nil {
 		return err
 	}
-	// CallbackUrlGuard：HTTPS 强制 + 私网拒绝（配置错误不入死信重试，提示重配）
-	if len(cb.CallbackURL) < 8 || cb.CallbackURL[:8] != "https://" {
-		_ = s.repo.MarkCallbackResult(ctx, cb.ID, false, "回调必须 HTTPS")
+	// CallbackUrlGuard：http/https 均放行（下游可按环境选择）+ 私网拒绝
+	// （SSRF 校验不变；配置错误不入死信重试，提示重配）
+	if !strings.HasPrefix(cb.CallbackURL, "https://") && !strings.HasPrefix(cb.CallbackURL, "http://") {
+		_ = s.repo.MarkCallbackResult(ctx, cb.ID, false, "回调地址必须以 http:// 或 https:// 开头")
 		return nil
 	}
 	if err := httpx.ValidateURL(cb.CallbackURL); err != nil {

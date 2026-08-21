@@ -20,19 +20,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminSupplierService_CreateAccount_FullMethodName  = "/zcard.api.admin.v1.AdminSupplierService/CreateAccount"
-	AdminSupplierService_ListAccounts_FullMethodName   = "/zcard.api.admin.v1.AdminSupplierService/ListAccounts"
-	AdminSupplierService_ReviewAccount_FullMethodName  = "/zcard.api.admin.v1.AdminSupplierService/ReviewAccount"
-	AdminSupplierService_ToggleAccount_FullMethodName  = "/zcard.api.admin.v1.AdminSupplierService/ToggleAccount"
-	AdminSupplierService_ResetSecret_FullMethodName    = "/zcard.api.admin.v1.AdminSupplierService/ResetSecret"
-	AdminSupplierService_SetNotifyURL_FullMethodName   = "/zcard.api.admin.v1.AdminSupplierService/SetNotifyURL"
-	AdminSupplierService_Recharge_FullMethodName       = "/zcard.api.admin.v1.AdminSupplierService/Recharge"
-	AdminSupplierService_ListLedger_FullMethodName     = "/zcard.api.admin.v1.AdminSupplierService/ListLedger"
-	AdminSupplierService_ListPrices_FullMethodName     = "/zcard.api.admin.v1.AdminSupplierService/ListPrices"
-	AdminSupplierService_DeletePrice_FullMethodName    = "/zcard.api.admin.v1.AdminSupplierService/DeletePrice"
-	AdminSupplierService_UpsertPrice_FullMethodName    = "/zcard.api.admin.v1.AdminSupplierService/UpsertPrice"
-	AdminSupplierService_ListCallbacks_FullMethodName  = "/zcard.api.admin.v1.AdminSupplierService/ListCallbacks"
-	AdminSupplierService_ResendCallback_FullMethodName = "/zcard.api.admin.v1.AdminSupplierService/ResendCallback"
+	AdminSupplierService_CreateAccount_FullMethodName          = "/zcard.api.admin.v1.AdminSupplierService/CreateAccount"
+	AdminSupplierService_ListAccounts_FullMethodName           = "/zcard.api.admin.v1.AdminSupplierService/ListAccounts"
+	AdminSupplierService_ReviewAccount_FullMethodName          = "/zcard.api.admin.v1.AdminSupplierService/ReviewAccount"
+	AdminSupplierService_ToggleAccount_FullMethodName          = "/zcard.api.admin.v1.AdminSupplierService/ToggleAccount"
+	AdminSupplierService_ResetSecret_FullMethodName            = "/zcard.api.admin.v1.AdminSupplierService/ResetSecret"
+	AdminSupplierService_SetNotifyURL_FullMethodName           = "/zcard.api.admin.v1.AdminSupplierService/SetNotifyURL"
+	AdminSupplierService_Recharge_FullMethodName               = "/zcard.api.admin.v1.AdminSupplierService/Recharge"
+	AdminSupplierService_ListLedger_FullMethodName             = "/zcard.api.admin.v1.AdminSupplierService/ListLedger"
+	AdminSupplierService_ListPrices_FullMethodName             = "/zcard.api.admin.v1.AdminSupplierService/ListPrices"
+	AdminSupplierService_DeletePrice_FullMethodName            = "/zcard.api.admin.v1.AdminSupplierService/DeletePrice"
+	AdminSupplierService_UpsertPrice_FullMethodName            = "/zcard.api.admin.v1.AdminSupplierService/UpsertPrice"
+	AdminSupplierService_ListCallbacks_FullMethodName          = "/zcard.api.admin.v1.AdminSupplierService/ListCallbacks"
+	AdminSupplierService_ResendCallback_FullMethodName         = "/zcard.api.admin.v1.AdminSupplierService/ResendCallback"
+	AdminSupplierService_SetSupplierIPWhitelist_FullMethodName = "/zcard.api.admin.v1.AdminSupplierService/SetSupplierIPWhitelist"
 )
 
 // AdminSupplierServiceClient is the client API for AdminSupplierService service.
@@ -68,6 +69,8 @@ type AdminSupplierServiceClient interface {
 	ListCallbacks(ctx context.Context, in *ListSupplierCallbacksRequest, opts ...grpc.CallOption) (*ListSupplierCallbacksReply, error)
 	// ResendCallback 手动重发回调（死信恢复）。
 	ResendCallback(ctx context.Context, in *ResendSupplierCallbackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+	SetSupplierIPWhitelist(ctx context.Context, in *SetSupplierIPWhitelistRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error)
 }
 
 type adminSupplierServiceClient struct {
@@ -208,6 +211,16 @@ func (c *adminSupplierServiceClient) ResendCallback(ctx context.Context, in *Res
 	return out, nil
 }
 
+func (c *adminSupplierServiceClient) SetSupplierIPWhitelist(ctx context.Context, in *SetSupplierIPWhitelistRequest, opts ...grpc.CallOption) (*SupplierAccountReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupplierAccountReply)
+	err := c.cc.Invoke(ctx, AdminSupplierService_SetSupplierIPWhitelist_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminSupplierServiceServer is the server API for AdminSupplierService service.
 // All implementations must embed UnimplementedAdminSupplierServiceServer
 // for forward compatibility.
@@ -241,6 +254,8 @@ type AdminSupplierServiceServer interface {
 	ListCallbacks(context.Context, *ListSupplierCallbacksRequest) (*ListSupplierCallbacksReply, error)
 	// ResendCallback 手动重发回调（死信恢复）。
 	ResendCallback(context.Context, *ResendSupplierCallbackRequest) (*emptypb.Empty, error)
+	// SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+	SetSupplierIPWhitelist(context.Context, *SetSupplierIPWhitelistRequest) (*SupplierAccountReply, error)
 	mustEmbedUnimplementedAdminSupplierServiceServer()
 }
 
@@ -289,6 +304,9 @@ func (UnimplementedAdminSupplierServiceServer) ListCallbacks(context.Context, *L
 }
 func (UnimplementedAdminSupplierServiceServer) ResendCallback(context.Context, *ResendSupplierCallbackRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ResendCallback not implemented")
+}
+func (UnimplementedAdminSupplierServiceServer) SetSupplierIPWhitelist(context.Context, *SetSupplierIPWhitelistRequest) (*SupplierAccountReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetSupplierIPWhitelist not implemented")
 }
 func (UnimplementedAdminSupplierServiceServer) mustEmbedUnimplementedAdminSupplierServiceServer() {}
 func (UnimplementedAdminSupplierServiceServer) testEmbeddedByValue()                              {}
@@ -545,6 +563,24 @@ func _AdminSupplierService_ResendCallback_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSupplierService_SetSupplierIPWhitelist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetSupplierIPWhitelistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplierServiceServer).SetSupplierIPWhitelist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplierService_SetSupplierIPWhitelist_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplierServiceServer).SetSupplierIPWhitelist(ctx, req.(*SetSupplierIPWhitelistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminSupplierService_ServiceDesc is the grpc.ServiceDesc for AdminSupplierService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -603,6 +639,10 @@ var AdminSupplierService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ResendCallback",
 			Handler:    _AdminSupplierService_ResendCallback_Handler,
+		},
+		{
+			MethodName: "SetSupplierIPWhitelist",
+			Handler:    _AdminSupplierService_SetSupplierIPWhitelist_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

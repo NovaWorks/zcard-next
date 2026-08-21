@@ -924,6 +924,16 @@ func ReviewNoteContainsFold(v string) predicate.SupplierAccount {
 	return predicate.SupplierAccount(sql.FieldContainsFold(FieldReviewNote, v))
 }
 
+// IPWhitelistIsNil applies the IsNil predicate on the "ip_whitelist" field.
+func IPWhitelistIsNil() predicate.SupplierAccount {
+	return predicate.SupplierAccount(sql.FieldIsNull(FieldIPWhitelist))
+}
+
+// IPWhitelistNotNil applies the NotNil predicate on the "ip_whitelist" field.
+func IPWhitelistNotNil() predicate.SupplierAccount {
+	return predicate.SupplierAccount(sql.FieldNotNull(FieldIPWhitelist))
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.SupplierAccount) predicate.SupplierAccount {
 	return predicate.SupplierAccount(sql.AndPredicates(predicates...))

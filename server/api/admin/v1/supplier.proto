@@ -87,6 +87,13 @@ service AdminSupplierService {
       body: "*"
     };
   }
+  // SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+  rpc SetSupplierIPWhitelist(SetSupplierIPWhitelistRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/supplier/accounts/{id}/ip-whitelist"
+      body: "*"
+    };
+  }
 }
 
 message SupplierAccountReply {
@@ -105,6 +112,7 @@ message SupplierAccountReply {
   uint64 owner_user_id = 13; // 前台申请归属用户（0=admin 手动建号）
   string apply_reason = 14;  // 申请理由（前台申请时填）
   string review_note = 15;   // 审核意见/驳回理由
+  repeated string ip_whitelist = 16; // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
 }
 
 message CreateSupplierAccountRequest {
@@ -238,4 +246,9 @@ message ListSupplierCallbacksReply {
 
 message ResendSupplierCallbackRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message SetSupplierIPWhitelistRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string ips = 2; // 精确 IP 或 CIDR 网段；空 = 不限
 }

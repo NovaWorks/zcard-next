@@ -1959,6 +1959,7 @@ var (
 		{Name: "owner_user_id", Type: field.TypeUint64, Nullable: true, Default: 0},
 		{Name: "apply_reason", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "review_note", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "ip_whitelist", Type: field.TypeJSON, Nullable: true},
 	}
 	// SupplierAccountsTable holds the schema information for the "supplier_accounts" table.
 	SupplierAccountsTable = &schema.Table{

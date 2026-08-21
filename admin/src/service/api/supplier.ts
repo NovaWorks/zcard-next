@@ -59,3 +59,11 @@ export function fetchSupplierPrices(accountId: number) {
 export function deleteSupplierPrice(id: number) {
   return request({ url: `/api/v1/admin/supplier/prices/${id}`, method: "delete" });
 }
+
+export function setSupplierIPWhitelist(id: number, ips: string[]) {
+  return request({
+    url: `/api/v1/admin/supplier/accounts/${id}/ip-whitelist`,
+    method: "put",
+    data: { ips },
+  });
+}

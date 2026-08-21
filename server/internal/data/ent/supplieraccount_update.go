@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
@@ -264,6 +265,24 @@ func (_u *SupplierAccountUpdate) ClearReviewNote() *SupplierAccountUpdate {
 	return _u
 }
 
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (_u *SupplierAccountUpdate) SetIPWhitelist(v []string) *SupplierAccountUpdate {
+	_u.mutation.SetIPWhitelist(v)
+	return _u
+}
+
+// AppendIPWhitelist appends value to the "ip_whitelist" field.
+func (_u *SupplierAccountUpdate) AppendIPWhitelist(v []string) *SupplierAccountUpdate {
+	_u.mutation.AppendIPWhitelist(v)
+	return _u
+}
+
+// ClearIPWhitelist clears the value of the "ip_whitelist" field.
+func (_u *SupplierAccountUpdate) ClearIPWhitelist() *SupplierAccountUpdate {
+	_u.mutation.ClearIPWhitelist()
+	return _u
+}
+
 // Mutation returns the SupplierAccountMutation object of the builder.
 func (_u *SupplierAccountUpdate) Mutation() *SupplierAccountMutation {
 	return _u.mutation
@@ -435,6 +454,17 @@ func (_u *SupplierAccountUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.ReviewNoteCleared() {
 		_spec.ClearField(supplieraccount.FieldReviewNote, field.TypeString)
+	}
+	if value, ok := _u.mutation.IPWhitelist(); ok {
+		_spec.SetField(supplieraccount.FieldIPWhitelist, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedIPWhitelist(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, supplieraccount.FieldIPWhitelist, value)
+		})
+	}
+	if _u.mutation.IPWhitelistCleared() {
+		_spec.ClearField(supplieraccount.FieldIPWhitelist, field.TypeJSON)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -692,6 +722,24 @@ func (_u *SupplierAccountUpdateOne) ClearReviewNote() *SupplierAccountUpdateOne 
 	return _u
 }
 
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (_u *SupplierAccountUpdateOne) SetIPWhitelist(v []string) *SupplierAccountUpdateOne {
+	_u.mutation.SetIPWhitelist(v)
+	return _u
+}
+
+// AppendIPWhitelist appends value to the "ip_whitelist" field.
+func (_u *SupplierAccountUpdateOne) AppendIPWhitelist(v []string) *SupplierAccountUpdateOne {
+	_u.mutation.AppendIPWhitelist(v)
+	return _u
+}
+
+// ClearIPWhitelist clears the value of the "ip_whitelist" field.
+func (_u *SupplierAccountUpdateOne) ClearIPWhitelist() *SupplierAccountUpdateOne {
+	_u.mutation.ClearIPWhitelist()
+	return _u
+}
+
 // Mutation returns the SupplierAccountMutation object of the builder.
 func (_u *SupplierAccountUpdateOne) Mutation() *SupplierAccountMutation {
 	return _u.mutation
@@ -893,6 +941,17 @@ func (_u *SupplierAccountUpdateOne) sqlSave(ctx context.Context) (_node *Supplie
 	}
 	if _u.mutation.ReviewNoteCleared() {
 		_spec.ClearField(supplieraccount.FieldReviewNote, field.TypeString)
+	}
+	if value, ok := _u.mutation.IPWhitelist(); ok {
+		_spec.SetField(supplieraccount.FieldIPWhitelist, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedIPWhitelist(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, supplieraccount.FieldIPWhitelist, value)
+		})
+	}
+	if _u.mutation.IPWhitelistCleared() {
+		_spec.ClearField(supplieraccount.FieldIPWhitelist, field.TypeJSON)
 	}
 	_node = &SupplierAccount{config: _u.config}
 	_spec.Assign = _node.assignValues

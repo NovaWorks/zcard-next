@@ -6,6 +6,7 @@ package supplier
 import (
 	"context"
 	"encoding/hex"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -39,7 +40,7 @@ func userCtx(uid uint64) context.Context {
 }
 
 func TestStoreSubmitApplication(t *testing.T) {
-	svc, _ := newStoreSupplierService(t)
+	svc, repo := newStoreSupplierService(t)
 	acc, err := svc.SubmitSupplierApplication(userCtx(1), &storefrontv1.SubmitSupplierApplicationRequest{
 		Protocol: "acg_faka", DisplayName: "我的小店", Contact: "qq:123",
 		ApplyReason: "想接入供货", NotifyUrl: "https://shop.example.com/cb",
@@ -72,11 +73,35 @@ func TestStoreSubmitApplication(t *testing.T) {
 	}); err == nil {
 		t.Fatal("空站点名应拒绝")
 	}
-	// 回调必须 HTTPS
+	// 回调地址：http 与 https 均支持；裸域名自动补 https://
+	httpAcc, err := svc.SubmitSupplierApplication(userCtx(1), &storefrontv1.SubmitSupplierApplicationRequest{
+		Protocol: "zcard", DisplayName: "http站", NotifyUrl: "http://plain.example.com/cb",
+	})
+	if err != nil {
+		t.Fatalf("http 回调应被接受: %v", err)
+	}
+	if httpAcc.Id == 0 {
+		t.Fatal("http 回调建户失败")
+	}
+	domainAcc, err := svc.SubmitSupplierApplication(userCtx(1), &storefrontv1.SubmitSupplierApplicationRequest{
+		Protocol: "zcard", DisplayName: "裸域名站", NotifyUrl: "shop.example.com/cb",
+	})
+	if err != nil {
+		t.Fatalf("裸域名回调应被接受（自动补 https）: %v", err)
+	}
+	// 裸域名归一校验：落库后 notify_url 带 https:// 前缀
+	stored, err := repo.GetAccount(context.Background(), domainAcc.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stored.NotifyURL != "https://shop.example.com/cb" {
+		t.Fatalf("裸域名应归一为 https:// 前缀: %q", stored.NotifyURL)
+	}
+	// 非法回调格式拒绝
 	if _, err := svc.SubmitSupplierApplication(userCtx(1), &storefrontv1.SubmitSupplierApplicationRequest{
-		Protocol: "zcard", DisplayName: "x", NotifyUrl: "http://plain.example.com/cb",
+		Protocol: "zcard", DisplayName: "x", NotifyUrl: "ftp://bad.example.com/cb",
 	}); err == nil {
-		t.Fatal("非 HTTPS 回调应拒绝")
+		t.Fatal("非 http/https 回调应拒绝")
 	}
 	// 未登录拒绝
 	if _, err := svc.SubmitSupplierApplication(context.Background(), &storefrontv1.SubmitSupplierApplicationRequest{
@@ -291,5 +316,121 @@ func TestStoreSupplierRecharge(t *testing.T) {
 		if a.Id == acc.Id && a.BalanceCache != 0 {
 			t.Fatalf("支付前不得入账: %+v", a)
 		}
+	}
+}
+
+func TestIPWhitelistMatch(t *testing.T) {
+	r := func(xff, remote string) *http.Request {
+		req, _ := http.NewRequest("POST", "/api/supply/orders", nil)
+		if xff != "" {
+			req.Header.Set("X-Forwarded-For", xff)
+		}
+		req.RemoteAddr = remote
+		return req
+	}
+
+	// 空名单 = 全放行
+	if !ipAllowed(nil, r("", "1.2.3.4:5678")) {
+		t.Fatal("空名单应放行")
+	}
+	if !ipAllowed([]string{}, r("", "1.2.3.4:5678")) {
+		t.Fatal("空名单（空切片）应放行")
+	}
+	// 精确 IP：命中 / 未命中；XFF 优先于 RemoteAddr
+	wl := []string{"1.2.3.4"}
+	if !ipAllowed(wl, r("", "1.2.3.4:9999")) {
+		t.Fatal("精确 IP 应命中")
+	}
+	if ipAllowed(wl, r("", "1.2.3.5:9999")) {
+		t.Fatal("未命中 IP 应拒绝")
+	}
+	if !ipAllowed(wl, r("1.2.3.4, 10.0.0.1", "10.0.0.1:9999")) {
+		t.Fatal("XFF 首段应优先")
+	}
+	if ipAllowed(wl, r("9.9.9.9", "1.2.3.4:9999")) {
+		t.Fatal("XFF 存在时应以 XFF 为准（未命中拒绝）")
+	}
+	// CIDR
+	cidr := []string{"10.0.0.0/24"}
+	if !ipAllowed(cidr, r("", "10.0.0.55:1234")) {
+		t.Fatal("CIDR 内应命中")
+	}
+	if ipAllowed(cidr, r("", "10.0.1.1:1234")) {
+		t.Fatal("CIDR 外应拒绝")
+	}
+	// 条目校验
+	if err := ValidateIPWhitelistEntry("1.2.3.4"); err != nil {
+		t.Fatalf("合法 IP 被拒: %v", err)
+	}
+	if err := ValidateIPWhitelistEntry("10.0.0.0/8"); err != nil {
+		t.Fatalf("合法 CIDR 被拒: %v", err)
+	}
+	if err := ValidateIPWhitelistEntry("not-an-ip"); err == nil {
+		t.Fatal("非法条目应拒绝")
+	}
+	if err := ValidateIPWhitelistEntry("10.0.0.0/99"); err == nil {
+		t.Fatal("非法掩码应拒绝")
+	}
+}
+
+func TestStoreIPWhitelist(t *testing.T) {
+	repo, _ := newSupplierTestData(t)
+	svc := NewStoreSupplierService(repo, nil, nil)
+
+	// 申请 + 审核通过
+	acc, err := svc.SubmitSupplierApplication(userCtx(1), &storefrontv1.SubmitSupplierApplicationRequest{
+		Protocol: "zcard", DisplayName: "白名单测试",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.ReviewAccount(context.Background(), acc.Id, true, ""); err != nil {
+		t.Fatal(err)
+	}
+
+	// 设置白名单（混合精确 IP + CIDR；含重复与空白——应清洗）
+	updated, err := svc.SetSupplierIPWhitelist(userCtx(1), &storefrontv1.SetSupplierIPWhitelistRequest{
+		Id: acc.Id, Ips: []string{" 1.2.3.4 ", "10.0.0.0/24", "1.2.3.4", ""},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated.IpWhitelist) != 2 || updated.IpWhitelist[0] != "1.2.3.4" || updated.IpWhitelist[1] != "10.0.0.0/24" {
+		t.Fatalf("白名单清洗异常: %v", updated.IpWhitelist)
+	}
+
+	// 非法条目拒绝
+	if _, err := svc.SetSupplierIPWhitelist(userCtx(1), &storefrontv1.SetSupplierIPWhitelistRequest{
+		Id: acc.Id, Ips: []string{"bad-entry"},
+	}); err == nil {
+		t.Fatal("非法白名单条目应拒绝")
+	}
+
+	// 清空 = 所有 IP 放行
+	updated, err = svc.SetSupplierIPWhitelist(userCtx(1), &storefrontv1.SetSupplierIPWhitelistRequest{
+		Id: acc.Id, Ips: []string{},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated.IpWhitelist) != 0 {
+		t.Fatalf("清空后白名单应为空: %v", updated.IpWhitelist)
+	}
+
+	// 越权拒绝
+	if _, err := svc.SetSupplierIPWhitelist(userCtx(2), &storefrontv1.SetSupplierIPWhitelistRequest{
+		Id: acc.Id, Ips: []string{"1.2.3.4"},
+	}); err == nil {
+		t.Fatal("越权设置白名单应拒绝")
+	}
+
+	// 未审核账户拒绝
+	acc2, _ := svc.SubmitSupplierApplication(userCtx(1), &storefrontv1.SubmitSupplierApplicationRequest{
+		Protocol: "zcard", DisplayName: "未审核",
+	})
+	if _, err := svc.SetSupplierIPWhitelist(userCtx(1), &storefrontv1.SetSupplierIPWhitelistRequest{
+		Id: acc2.Id, Ips: []string{"1.2.3.4"},
+	}); err == nil {
+		t.Fatal("未审核账户应拒绝设置白名单")
 	}
 }

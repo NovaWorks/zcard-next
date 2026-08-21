@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -46,7 +47,9 @@ type SupplierAccount struct {
 	// 申请理由（审核用）
 	ApplyReason string `json:"apply_reason,omitempty"`
 	// 审核意见/驳回理由
-	ReviewNote   string `json:"review_note,omitempty"`
+	ReviewNote string `json:"review_note,omitempty"`
+	// IP 白名单（空=不限；支持精确 IP 与 CIDR）
+	IPWhitelist  []string `json:"ip_whitelist,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -55,7 +58,7 @@ func (*SupplierAccount) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case supplieraccount.FieldAPISecret:
+		case supplieraccount.FieldAPISecret, supplieraccount.FieldIPWhitelist:
 			values[i] = new([]byte)
 		case supplieraccount.FieldID, supplieraccount.FieldBalanceCache, supplieraccount.FieldOwnerUserID:
 			values[i] = new(sql.NullInt64)
@@ -174,6 +177,14 @@ func (_m *SupplierAccount) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ReviewNote = value.String
 			}
+		case supplieraccount.FieldIPWhitelist:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field ip_whitelist", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.IPWhitelist); err != nil {
+					return fmt.Errorf("unmarshal field ip_whitelist: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -254,6 +265,9 @@ func (_m *SupplierAccount) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("review_note=")
 	builder.WriteString(_m.ReviewNote)
+	builder.WriteString(", ")
+	builder.WriteString("ip_whitelist=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IPWhitelist))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -90,13 +90,27 @@ func (s *AdminSupplierService) ResetSecret(ctx context.Context, req *adminv1.Res
 	return &adminv1.ResetSupplierSecretReply{ApiSecret: req.GetNewSecret()}, nil
 }
 
-// SetNotifyURL 配置回调地址（HTTPS 强制）。
+// SetNotifyURL 配置回调地址（http/https 均支持）。
 func (s *AdminSupplierService) SetNotifyURL(ctx context.Context, req *adminv1.SetSupplierNotifyURLRequest) (*adminv1.SupplierAccountReply, error) {
-	u, err := url.Parse(req.GetNotifyUrl())
-	if err != nil || u.Scheme != "https" {
-		return nil, errors.New("supplier.NOTIFY_URL_HTTPS_REQUIRED: 回调地址必须 HTTPS")
+	notifyURL := strings.TrimSpace(req.GetNotifyUrl())
+	u, err := url.Parse(notifyURL)
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+		return nil, errors.New("supplier.NOTIFY_URL_INVALID: 回调地址格式不正确（http/https）")
 	}
-	if err := s.repo.SetNotifyURL(ctx, req.GetId(), req.GetNotifyUrl()); err != nil {
+	if err := s.repo.SetNotifyURL(ctx, req.GetId(), notifyURL); err != nil {
+		return nil, err
+	}
+	acc, _ := s.repo.GetAccount(ctx, req.GetId())
+	return toAccountPB(acc, ""), nil
+}
+
+// SetIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+func (s *AdminSupplierService) SetIPWhitelist(ctx context.Context, req *adminv1.SetSupplierIPWhitelistRequest) (*adminv1.SupplierAccountReply, error) {
+	ips, err := normalizeWhitelist(req.GetIps())
+	if err != nil {
+		return nil, errors.New("supplier.IP_WHITELIST_INVALID: " + err.Error())
+	}
+	if err := s.repo.SetIPWhitelist(ctx, req.GetId(), ips); err != nil {
 		return nil, err
 	}
 	acc, _ := s.repo.GetAccount(ctx, req.GetId())
@@ -184,7 +198,7 @@ func toAccountPB(acc *ent.SupplierAccount, secretOnce string) *adminv1.SupplierA
 		CreatedAt: acc.CreatedAt.Unix(),
 		Protocol:  string(acc.Protocol), DisplayName: acc.DisplayName,
 		OwnerUserId: acc.OwnerUserID, ApplyReason: acc.ApplyReason,
-		ReviewNote: acc.ReviewNote,
+		ReviewNote: acc.ReviewNote, IpWhitelist: acc.IPWhitelist,
 	}
 	if !acc.ReviewedAt.IsZero() {
 		p.ReviewedAt = acc.ReviewedAt.Unix()

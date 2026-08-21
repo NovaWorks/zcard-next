@@ -48,6 +48,13 @@ service StoreSupplierService {
       body: "*"
     };
   }
+  // SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
+  rpc SetSupplierIPWhitelist(SetSupplierIPWhitelistRequest) returns (SupplierAccountReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/supplier/accounts/{id}/ip-whitelist"
+      body: "*"
+    };
+  }
 }
 
 message SubmitSupplierApplicationRequest {
@@ -71,6 +78,7 @@ message SupplierAccountReply {
   int64 reviewed_at = 9;
   int64 created_at = 10;
   int64 balance_cache = 11; // 供货余额（分）
+  repeated string ip_whitelist = 12; // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
 }
 
 message ListSupplierAccountsReply {
@@ -93,6 +101,11 @@ message CreateSupplierRechargeRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED]; // 对接账户（须 approved 且归属本人）
   int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED]; // 意向金额（分；服务端按档位裁决）
   string channel = 3 [(google.api.field_behavior) = REQUIRED]; // 支付渠道 code
+}
+
+message SetSupplierIPWhitelistRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  repeated string ips = 2; // 精确 IP 或 CIDR 网段（如 1.2.3.4、10.0.0.0/24）；空 = 不限
 }
 
 message CreateSupplierRechargeReply {

@@ -34,7 +34,8 @@
         <input v-model="form.contact" class="input" placeholder="联系方式：QQ / 邮箱 / 手机" maxlength="255" />
       </div>
       <div style="margin-top: 10px;">
-        <input v-model="form.notify_url" class="input" placeholder="交付回调地址（可选，HTTPS）" maxlength="500" />
+        <input v-model="form.notify_url" class="input" placeholder="交付回调地址（选填；直接填域名即可，支持 http/https）" maxlength="500" />
+        <div class="muted" style="margin-top: 4px;">示例：shop.example.com/callback 或 http(s)://shop.example.com/callback（不填则无回调）</div>
       </div>
       <textarea v-model="form.apply_reason" class="input" style="margin-top: 10px; width: 100%; min-height: 64px;" placeholder="申请理由（可选，审核时参考）" maxlength="500"></textarea>
       <div class="actions" style="margin-top: 12px;">
@@ -89,6 +90,35 @@
                 新密钥（旧密钥已失效）：<code>{{ regeneratedSecret }}</code>
               </div>
             </template>
+
+            <!-- IP 白名单（审核通过后可配置；空 = 所有 IP 放行） -->
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e5e6e8;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <b style="font-size: 13px;">🔒 IP 白名单</b>
+                <span class="muted" style="font-size: 12px;">{{ (a.ip_whitelist || []).length ? `已限制 ${a.ip_whitelist.length} 条` : '未限制（所有 IP 可调用）' }}</span>
+              </div>
+              <div class="muted" style="margin: 6px 0 8px; line-height: 1.7; font-size: 12px;">
+                出于安全考虑，可限制只有指定 IP 的服务器才能调用本账户的对接接口。
+                <b>不填写 = 默认所有 IP 都可以请求</b>；填写后仅白名单内 IP 可用（支持精确 IP 如 1.2.3.4，或网段如 10.0.0.0/24，最多 20 条）。服务器出口 IP 变更后请及时更新，否则接口将被拒绝。
+              </div>
+              <div v-if="(a.ip_whitelist || []).length" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+                <span v-for="ip in a.ip_whitelist" :key="ip" class="ip-chip">
+                  <code>{{ ip }}</code>
+                  <button class="ip-chip-x" title="移除" @click="removeWhitelistIP(a, ip)">✕</button>
+                </span>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <input
+                  v-model="whitelistInput"
+                  class="input"
+                  style="flex: 1; min-width: 200px;"
+                  placeholder="添加 IP 或网段，如 1.2.3.4 / 10.0.0.0/24"
+                  @keyup.enter="addWhitelistIP(a)"
+                />
+                <button class="btn secondary" :disabled="whitelistSaving" @click="addWhitelistIP(a)">添加</button>
+              </div>
+              <div v-if="whitelistError" style="color: #dc2626; font-size: 12px; margin-top: 6px;">{{ whitelistError }}</div>
+            </div>
             <div class="muted" style="margin-top: 10px; line-height: 1.8;">
               <b style="color: #1f2329;">对接方式</b><br />
               <template v-if="a.protocol === 'acg_faka'">
@@ -210,7 +240,7 @@ import { onMounted, ref } from 'vue';
 import {
   listMySupplierAccounts, submitSupplierApplication, getSupplierCredentials,
   regenerateSupplierSecret, cancelSupplierApplication, createSupplierRecharge,
-  fetchPaymentChannels, type ChannelItem,
+  setSupplierIPWhitelist, fetchPaymentChannels, type ChannelItem,
   type SupplierAccount, type SupplierCredentials,
 } from '@/api';
 import { api, formatMoney } from '@/api/client';
@@ -232,6 +262,66 @@ const credLoading = ref(false);
 const credentials = ref<SupplierCredentials | null>(null);
 const regeneratedSecret = ref('');
 const copied = ref('');
+
+// ── IP 白名单管理（审核通过后的账户；空 = 所有 IP 放行）──
+const whitelistInput = ref('');
+const whitelistSaving = ref(false);
+const whitelistError = ref('');
+
+function validIPOrCIDR(v: string): boolean {
+  const s = v.trim();
+  if (!s) return false;
+  if (s.includes('/')) {
+    const [ip, mask] = s.split('/');
+    const m = Number(mask);
+    if (!ip || !Number.isInteger(m) || m < 0 || m > (ip.includes(':') ? 128 : 32)) return false;
+    return validIPOrCIDR(ip);
+  }
+  return /^(\d{1,3}\.){3}\d{1,3}$/.test(s) || s.includes(':'); // IPv4 点分或 IPv6（含冒号粗校验，后端精确校验）
+}
+
+async function saveWhitelist(a: SupplierAccount, ips: string[]) {
+  whitelistSaving.value = true;
+  whitelistError.value = '';
+  try {
+    const { data, error } = await setSupplierIPWhitelist(a.id, ips);
+    if (error) {
+      whitelistError.value = error;
+      return;
+    }
+    // 本地同步（列表态 + 展开态）
+    a.ip_whitelist = data?.ip_whitelist || ips;
+    const row = accounts.value.find((x) => x.id === a.id);
+    if (row) row.ip_whitelist = a.ip_whitelist;
+    whitelistInput.value = '';
+  } finally {
+    whitelistSaving.value = false;
+  }
+}
+
+async function addWhitelistIP(a: SupplierAccount) {
+  const ip = whitelistInput.value.trim();
+  if (!ip) return;
+  if (!validIPOrCIDR(ip)) {
+    whitelistError.value = '格式不正确：请填精确 IP（1.2.3.4）或网段（10.0.0.0/24）';
+    return;
+  }
+  const next = [...(a.ip_whitelist || [])];
+  if (next.includes(ip)) {
+    whitelistError.value = '该 IP 已在白名单中';
+    return;
+  }
+  if (next.length >= 20) {
+    whitelistError.value = '白名单最多 20 条';
+    return;
+  }
+  await saveWhitelist(a, [...next, ip]);
+}
+
+async function removeWhitelistIP(a: SupplierAccount, ip: string) {
+  if (!confirm(`确认从白名单移除 ${ip}？`)) return;
+  await saveWhitelist(a, (a.ip_whitelist || []).filter((x) => x !== ip));
+}
 
 const origin = typeof location !== 'undefined' ? location.origin : '';
 
@@ -381,8 +471,11 @@ async function submit() {
     formError.value = '请填写站点/店铺名';
     return;
   }
-  if (form.value.notify_url && !/^https:\/\//.test(form.value.notify_url)) {
-    formError.value = '回调地址必须 HTTPS';
+  // 回调地址归一：裸域名自动补 https://；http/https 均支持
+  let notifyURL = form.value.notify_url.trim();
+  if (notifyURL && !notifyURL.includes('://')) notifyURL = `https://${notifyURL}`;
+  if (notifyURL && !/^https?:\/\//.test(notifyURL)) {
+    formError.value = '回调地址仅支持 http/https（或直接填域名）';
     return;
   }
   submitting.value = true;
@@ -392,7 +485,7 @@ async function submit() {
       display_name: form.value.display_name.trim(),
       contact: form.value.contact.trim(),
       apply_reason: form.value.apply_reason.trim(),
-      notify_url: form.value.notify_url.trim(),
+      notify_url: notifyURL,
     });
     if (error) {
       formError.value = error;
@@ -591,4 +684,29 @@ onMounted(load);
 .recharge-submit:hover:not(:disabled) { background: #1d4ed8; }
 .recharge-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 .recharge-done { text-align: center; padding: 18px 0 6px; }
+
+/* IP 白名单条目 chip */
+.ip-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  padding: 3px 4px 3px 10px;
+  font-size: 13px;
+}
+.ip-chip code { font-size: 12.5px; color: #1d4ed8; }
+.ip-chip-x {
+  border: none;
+  background: #dbeafe;
+  color: #1d4ed8;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+}
+.ip-chip-x:hover { background: #93c5fd; }
 </style>

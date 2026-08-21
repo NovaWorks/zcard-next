@@ -130,6 +130,17 @@ func (r *SupplierRepoImpl) CancelApplication(ctx context.Context, id uint64) err
 	return nil
 }
 
+// SetIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；条目合法性由 service 校验）。
+func (r *SupplierRepoImpl) SetIPWhitelist(ctx context.Context, id uint64, ips []string) error {
+	if ips == nil {
+		ips = []string{}
+	}
+	_, err := data.Client(ctx, r.data).SupplierAccount.UpdateOneID(id).
+		SetIPWhitelist(ips).
+		Save(ctx)
+	return err
+}
+
 // CreateSupplyRechargeOrder 落供货充值单（pending；target=supply）。
 // 入账只发生在支付回调成功后（铁律 16）；供货预存无赠送。
 func (r *SupplierRepoImpl) CreateSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount int64) (*ent.RechargeOrder, error) {

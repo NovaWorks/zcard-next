@@ -733,6 +733,7 @@ export interface SupplierAccount {
   reviewed_at: number;
   created_at: number;
   balance_cache: number; // 供货余额（分）
+  ip_whitelist?: string[]; // IP 白名单（空=所有 IP 放行）
 }
 
 export interface SupplierCredentials {
@@ -774,4 +775,8 @@ export function createSupplierRecharge(id: number, body: { amount_cents: number;
     `/supplier/accounts/${id}/recharge`,
     body,
   );
+}
+
+export function setSupplierIPWhitelist(id: number, ips: string[]) {
+  return api.post<SupplierAccount>(`/supplier/accounts/${id}/ip-whitelist`, { ips });
 }

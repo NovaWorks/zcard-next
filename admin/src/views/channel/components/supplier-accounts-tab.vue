@@ -15,7 +15,7 @@ import {
   fetchSupplierAccounts, createSupplierAccount, reviewSupplierAccount, toggleSupplierAccount,
   resetSupplierSecret, rechargeSupplierAccount, fetchSupplierLedger,
   fetchSupplierCallbacks, resendSupplierCallback, upsertSupplierPrice,
-  fetchSupplierPrices, deleteSupplierPrice,
+  fetchSupplierPrices, deleteSupplierPrice, setSupplierIPWhitelist,
 } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
@@ -149,6 +149,49 @@ async function handleToggle(row: any) {
   }
 }
 
+// ── 账户详情（对接信息查看 + IP 白名单管理；api_key 仅在此展示）──
+const detailModal = ref(false);
+const detailTarget = ref<any>(null);
+const detailWhitelist = ref<string[]>([]);
+const detailWhitelistInput = ref("");
+const detailWhitelistSaving = ref(false);
+
+function openDetail(row: any) {
+  detailTarget.value = row;
+  detailWhitelist.value = [...(row.ip_whitelist || [])];
+  detailWhitelistInput.value = "";
+  detailModal.value = true;
+}
+
+function addDetailWhitelistIP() {
+  const ip = detailWhitelistInput.value.trim();
+  if (!ip) return;
+  if (detailWhitelist.value.includes(ip)) {
+    window.$message?.warning("该 IP 已在白名单中");
+    return;
+  }
+  if (detailWhitelist.value.length >= 20) {
+    window.$message?.warning("白名单最多 20 条");
+    return;
+  }
+  detailWhitelist.value.push(ip);
+  detailWhitelistInput.value = "";
+}
+
+async function saveDetailWhitelist() {
+  detailWhitelistSaving.value = true;
+  try {
+    const { data, error } = await setSupplierIPWhitelist(detailTarget.value.id, detailWhitelist.value);
+    if (!error) {
+      detailWhitelist.value = [...((data as any)?.ip_whitelist || detailWhitelist.value)];
+      window.$message?.success(detailWhitelist.value.length ? `白名单已更新（${detailWhitelist.value.length} 条）` : "白名单已清空（所有 IP 放行）");
+      load();
+    }
+  } finally {
+    detailWhitelistSaving.value = false;
+  }
+}
+
 async function handleResetSecret(row: any) {
   const { data, error } = await resetSupplierSecret(row.id);
   if (!error && data) {
@@ -218,7 +261,6 @@ const columns: DataTableColumns<any> = [
     width: 96,
     render: (row) => h(NTag, { size: "small", type: protocolMeta[row.protocol]?.tag || "default", bordered: false }, { default: () => protocolMeta[row.protocol]?.label || row.protocol }),
   },
-  { title: "api_key", key: "api_key", width: 140, ellipsis: true },
   { title: "余额", key: "balance_cache", width: 90, render: (row) => formatMoney(row.balance_cache) },
   {
     title: "状态",
@@ -243,9 +285,10 @@ const columns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 330,
+    width: 360,
     render: (row) =>
       h("div", { class: "flex flex-wrap gap-4px" }, [
+        h(NButton, { size: "tiny", quaternary: true, onClick: () => openDetail(row) }, { default: () => "📄 详情" }),
         row.status === "applying" && canWrite()
           ? h(NButton, { size: "tiny", type: "warning", secondary: true, onClick: () => openReview(row) }, { default: () => "🔍 审核" })
           : null,
@@ -387,9 +430,6 @@ onMounted(load);
         <NDescriptionsItem label="申请人">用户 #{{ reviewTarget.owner_user_id || '—（后台建号）' }}</NDescriptionsItem>
         <NDescriptionsItem label="联系方式">{{ reviewTarget.contact || '—' }}</NDescriptionsItem>
         <NDescriptionsItem label="申请时间">{{ fmtTime(reviewTarget.created_at) }}</NDescriptionsItem>
-        <NDescriptionsItem label="app_id" :span="2">
-          <code class="text-13px">{{ reviewTarget.api_key }}</code>
-        </NDescriptionsItem>
         <NDescriptionsItem label="申请理由" :span="2">{{ reviewTarget.apply_reason || '—（未填写）' }}</NDescriptionsItem>
       </NDescriptions>
       <NAlert type="info" :bordered="false" class="mb-12px">
@@ -407,6 +447,52 @@ onMounted(load);
           <NButton type="success" :loading="reviewSubmitting" @click="submitReview(true)">通过并开通</NButton>
         </div>
       </template>
+    </NModal>
+
+    <!-- 账户详情：对接信息（api_key 仅在此展示）+ IP 白名单管理 -->
+    <NModal v-model:show="detailModal" preset="card" :title="`对接账户详情 #${detailTarget?.id || ''}`" style="width: 620px">
+      <NDescriptions v-if="detailTarget" :column="2" size="small" bordered label-placement="left" class="mb-12px">
+        <NDescriptionsItem label="站点名" :span="2">{{ detailTarget.display_name || detailTarget.name }}</NDescriptionsItem>
+        <NDescriptionsItem label="对接协议">
+          <NTag size="small" :type="protocolMeta[detailTarget.protocol]?.tag || 'default'" :bordered="false">
+            {{ protocolMeta[detailTarget.protocol]?.label || detailTarget.protocol }}
+          </NTag>
+        </NDescriptionsItem>
+        <NDescriptionsItem label="状态">
+          <NTag size="small" :type="detailTarget.status === 'approved' ? 'success' : detailTarget.status === 'applying' ? 'warning' : detailTarget.status === 'rejected' ? 'error' : 'default'" :bordered="false">
+            {{ ({ approved: "已通过", applying: "待审核", rejected: "已驳回", disabled: "已禁用" } as any)[detailTarget.status] || detailTarget.status }}
+          </NTag>
+        </NDescriptionsItem>
+        <NDescriptionsItem label="app_id（api_key）" :span="2">
+          <code class="text-13px">{{ detailTarget.api_key }}</code>
+        </NDescriptionsItem>
+        <NDescriptionsItem label="api_secret" :span="2">
+          <span class="text-gray-400 text-13px">加密存储，不可查看（仅创建/重置时明文下发一次）</span>
+        </NDescriptionsItem>
+        <NDescriptionsItem label="申请人">用户 #{{ detailTarget.owner_user_id || '—（后台建号）' }}</NDescriptionsItem>
+        <NDescriptionsItem label="联系方式">{{ detailTarget.contact || '—' }}</NDescriptionsItem>
+        <NDescriptionsItem label="余额">{{ formatMoney(detailTarget.balance_cache) }}</NDescriptionsItem>
+        <NDescriptionsItem label="创建时间">{{ fmtTime(detailTarget.created_at) }}</NDescriptionsItem>
+        <NDescriptionsItem label="回调地址" :span="2">{{ detailTarget.notify_url || '—（未配置）' }}</NDescriptionsItem>
+        <NDescriptionsItem v-if="detailTarget.apply_reason" label="申请理由" :span="2">{{ detailTarget.apply_reason }}</NDescriptionsItem>
+        <NDescriptionsItem v-if="detailTarget.review_note" label="审核意见" :span="2">{{ detailTarget.review_note }}</NDescriptionsItem>
+      </NDescriptions>
+
+      <!-- IP 白名单（空 = 所有 IP 放行；接口鉴权层强制） -->
+      <NAlert type="info" :bordered="false" class="mb-8px">
+        IP 白名单：不填 = 所有 IP 都可以请求本账户接口；填写后仅白名单内 IP 可调用（精确 IP 或 CIDR 网段，最多 20 条）。
+      </NAlert>
+      <div class="flex flex-wrap gap-6px mb-8px" v-if="detailWhitelist.length">
+        <NTag v-for="ip in detailWhitelist" :key="ip" closable size="small" @close="detailWhitelist = detailWhitelist.filter((x: string) => x !== ip)">
+          {{ ip }}
+        </NTag>
+      </div>
+      <div v-else class="text-13px text-gray-400 mb-8px">（白名单为空：所有 IP 放行）</div>
+      <div class="flex gap-8px">
+        <NInput v-model:value="detailWhitelistInput" placeholder="添加 IP 或网段，如 1.2.3.4 / 10.0.0.0/24" @keyup.enter="addDetailWhitelistIP" />
+        <NButton :disabled="!canWrite()" @click="addDetailWhitelistIP">添加</NButton>
+        <NButton type="primary" :loading="detailWhitelistSaving" :disabled="!canWrite()" @click="saveDetailWhitelist">保存白名单</NButton>
+      </div>
     </NModal>
 
     <!-- 新增 -->

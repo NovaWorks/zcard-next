@@ -29,6 +29,7 @@ const OperationAdminSupplierServiceResendCallback = "/zcard.api.admin.v1.AdminSu
 const OperationAdminSupplierServiceResetSecret = "/zcard.api.admin.v1.AdminSupplierService/ResetSecret"
 const OperationAdminSupplierServiceReviewAccount = "/zcard.api.admin.v1.AdminSupplierService/ReviewAccount"
 const OperationAdminSupplierServiceSetNotifyURL = "/zcard.api.admin.v1.AdminSupplierService/SetNotifyURL"
+const OperationAdminSupplierServiceSetSupplierIPWhitelist = "/zcard.api.admin.v1.AdminSupplierService/SetSupplierIPWhitelist"
 const OperationAdminSupplierServiceToggleAccount = "/zcard.api.admin.v1.AdminSupplierService/ToggleAccount"
 const OperationAdminSupplierServiceUpsertPrice = "/zcard.api.admin.v1.AdminSupplierService/UpsertPrice"
 
@@ -55,6 +56,8 @@ type AdminSupplierServiceHTTPServer interface {
 	ReviewAccount(context.Context, *ReviewSupplierAccountRequest) (*SupplierAccountReply, error)
 	// SetNotifyURL SetNotifyURL 配置回调地址。
 	SetNotifyURL(context.Context, *SetSupplierNotifyURLRequest) (*SupplierAccountReply, error)
+	// SetSupplierIPWhitelist SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+	SetSupplierIPWhitelist(context.Context, *SetSupplierIPWhitelistRequest) (*SupplierAccountReply, error)
 	// ToggleAccount ToggleAccount 启停。
 	ToggleAccount(context.Context, *ToggleSupplierAccountRequest) (*SupplierAccountReply, error)
 	// UpsertPrice UpsertPrice 供货定价（覆盖价）。
@@ -76,6 +79,7 @@ func RegisterAdminSupplierServiceHTTPServer(s *http.Server, srv AdminSupplierSer
 	r.Handle("POST", "/api/v1/admin/supplier/prices", _AdminSupplierService_UpsertPrice0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supplier/callbacks", _AdminSupplierService_ListCallbacks0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supplier/callbacks/{id}/resend", _AdminSupplierService_ResendCallback0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/supplier/accounts/{id}/ip-whitelist", _AdminSupplierService_SetSupplierIPWhitelist0_HTTP_Handler(srv))
 }
 
 func _AdminSupplierService_CreateAccount0_HTTP_Handler(srv AdminSupplierServiceHTTPServer) func(ctx http.Context) error {
@@ -346,6 +350,28 @@ func _AdminSupplierService_ResendCallback0_HTTP_Handler(srv AdminSupplierService
 	}
 }
 
+func _AdminSupplierService_SetSupplierIPWhitelist0_HTTP_Handler(srv AdminSupplierServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetSupplierIPWhitelistRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplierServiceSetSupplierIPWhitelist)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetSupplierIPWhitelist(ctx, req.(*SetSupplierIPWhitelistRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SupplierAccountReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminSupplierServiceHTTPClient interface {
 	// CreateAccount CreateAccount 下游申请（secret 明文只在此响应出现一次）。
 	CreateAccount(ctx context.Context, req *CreateSupplierAccountRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
@@ -369,6 +395,8 @@ type AdminSupplierServiceHTTPClient interface {
 	ReviewAccount(ctx context.Context, req *ReviewSupplierAccountRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
 	// SetNotifyURL SetNotifyURL 配置回调地址。
 	SetNotifyURL(ctx context.Context, req *SetSupplierNotifyURLRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
+	// SetSupplierIPWhitelist SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+	SetSupplierIPWhitelist(ctx context.Context, req *SetSupplierIPWhitelistRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
 	// ToggleAccount ToggleAccount 启停。
 	ToggleAccount(ctx context.Context, req *ToggleSupplierAccountRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
 	// UpsertPrice UpsertPrice 供货定价（覆盖价）。
@@ -567,6 +595,24 @@ func (c *AdminSupplierServiceHTTPClientImpl) SetNotifyURL(ctx context.Context, i
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminSupplierServiceSetNotifyURL),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetSupplierIPWhitelist SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+func (c *AdminSupplierServiceHTTPClientImpl) SetSupplierIPWhitelist(ctx context.Context, in *SetSupplierIPWhitelistRequest, opts ...http.CallOption) (*SupplierAccountReply, error) {
+	var out SupplierAccountReply
+	pattern := "/api/v1/admin/supplier/accounts/{id}/ip-whitelist"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminSupplierServiceSetSupplierIPWhitelist),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)

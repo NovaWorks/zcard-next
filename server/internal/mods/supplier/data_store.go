@@ -9,6 +9,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -71,11 +72,13 @@ func (s *StoreSupplierService) SubmitSupplierApplication(ctx context.Context, re
 	if len([]rune(req.GetApplyReason())) > 500 {
 		return nil, errors.BadRequest("supplier.REASON_TOO_LONG", "申请理由不能超过 500 字")
 	}
+	// 回调地址：http/https 均支持；裸域名自动补 https://（用户只需填域名）
 	notifyURL := strings.TrimSpace(req.GetNotifyUrl())
 	if notifyURL != "" {
+		notifyURL = normalizeCallbackURL(notifyURL)
 		u, err := url.Parse(notifyURL)
-		if err != nil || u.Scheme != "https" {
-			return nil, errors.BadRequest("supplier.NOTIFY_URL_HTTPS_REQUIRED", "回调地址必须 HTTPS")
+		if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" {
+			return nil, errors.BadRequest("supplier.NOTIFY_URL_INVALID", "回调地址格式不正确（填域名即可，如 shop.example.com/callback）")
 		}
 	}
 	// 防刷护栏（并发下轻微超限可接受——上限为软约束）
@@ -279,6 +282,63 @@ func (s *StoreSupplierService) mine(ctx context.Context, uid, id uint64) (*ent.S
 	return acc, nil
 }
 
+// normalizeCallbackURL 裸域名补 https://（用户只填域名场景）；已带 http/https
+// 前缀原样返回；带其他 scheme（ftp:// 等）不处理——交由调用方格式校验拒绝。
+func normalizeCallbackURL(raw string) string {
+	if strings.Contains(raw, "://") {
+		return raw
+	}
+	return "https://" + raw
+}
+
+// SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
+func (s *StoreSupplierService) SetSupplierIPWhitelist(ctx context.Context, req *storefrontv1.SetSupplierIPWhitelistRequest) (*storefrontv1.SupplierAccountReply, error) {
+	uid, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	acc, err := s.mine(ctx, uid, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if acc.Status != supplieraccount.StatusApproved {
+		return nil, errors.Forbidden("supplier.NOT_APPROVED", "审核通过后才能配置 IP 白名单")
+	}
+	ips, err := normalizeWhitelist(req.GetIps())
+	if err != nil {
+		return nil, errors.BadRequest("supplier.IP_WHITELIST_INVALID", err.Error())
+	}
+	if err := s.repo.SetIPWhitelist(ctx, acc.ID, ips); err != nil {
+		return nil, err
+	}
+	updated, err := s.repo.GetAccount(ctx, acc.ID)
+	if err != nil {
+		return nil, err
+	}
+	return toStoreAccountPB(updated), nil
+}
+
+// normalizeWhitelist 白名单条目清洗：去空/去重 + 格式校验（精确 IP 或 CIDR）+ 数量上限。
+func normalizeWhitelist(ips []string) ([]string, error) {
+	seen := map[string]bool{}
+	out := make([]string, 0, len(ips))
+	for _, ip := range ips {
+		ip = strings.TrimSpace(ip)
+		if ip == "" || seen[ip] {
+			continue
+		}
+		if err := ValidateIPWhitelistEntry(ip); err != nil {
+			return nil, err
+		}
+		seen[ip] = true
+		out = append(out, ip)
+	}
+	if len(out) > maxWhitelistEntries {
+		return nil, fmt.Errorf("白名单最多 %d 条", maxWhitelistEntries)
+	}
+	return out, nil
+}
+
 // generateCredentials 生成一对凭据（api_key 32 字符 hex / api_secret 64 字符 hex）。
 func generateCredentials() (apiKey, apiSecret string, err error) {
 	keyBytes := make([]byte, 16)
@@ -299,7 +359,7 @@ func toStoreAccountPB(acc *ent.SupplierAccount) *storefrontv1.SupplierAccountRep
 		DisplayName: acc.DisplayName, Contact: acc.Contact,
 		ApplyReason: acc.ApplyReason, ReviewNote: acc.ReviewNote,
 		ApiKey: acc.APIKey, CreatedAt: acc.CreatedAt.Unix(),
-		BalanceCache: acc.BalanceCache,
+		BalanceCache: acc.BalanceCache, IpWhitelist: acc.IPWhitelist,
 	}
 	if !acc.ReviewedAt.IsZero() {
 		p.ReviewedAt = acc.ReviewedAt.Unix()

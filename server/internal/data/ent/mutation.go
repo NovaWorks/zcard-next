@@ -65097,30 +65097,32 @@ func (m *SettingMutation) ResetEdge(name string) error {
 // SupplierAccountMutation represents an operation that mutates the SupplierAccount nodes in the graph.
 type SupplierAccountMutation struct {
 	config
-	op               Op
-	typ              string
-	id               *uint64
-	created_at       *time.Time
-	updated_at       *time.Time
-	name             *string
-	api_key          *string
-	api_secret       *[]byte
-	contact          *string
-	status           *supplieraccount.Status
-	balance_cache    *int64
-	addbalance_cache *int64
-	notify_url       *string
-	reviewed_at      *time.Time
-	protocol         *supplieraccount.Protocol
-	display_name     *string
-	owner_user_id    *uint64
-	addowner_user_id *int64
-	apply_reason     *string
-	review_note      *string
-	clearedFields    map[string]struct{}
-	done             bool
-	oldValue         func(context.Context) (*SupplierAccount, error)
-	predicates       []predicate.SupplierAccount
+	op                 Op
+	typ                string
+	id                 *uint64
+	created_at         *time.Time
+	updated_at         *time.Time
+	name               *string
+	api_key            *string
+	api_secret         *[]byte
+	contact            *string
+	status             *supplieraccount.Status
+	balance_cache      *int64
+	addbalance_cache   *int64
+	notify_url         *string
+	reviewed_at        *time.Time
+	protocol           *supplieraccount.Protocol
+	display_name       *string
+	owner_user_id      *uint64
+	addowner_user_id   *int64
+	apply_reason       *string
+	review_note        *string
+	ip_whitelist       *[]string
+	appendip_whitelist []string
+	clearedFields      map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*SupplierAccount, error)
+	predicates         []predicate.SupplierAccount
 }
 
 var _ ent.Mutation = (*SupplierAccountMutation)(nil)
@@ -65899,6 +65901,71 @@ func (m *SupplierAccountMutation) ResetReviewNote() {
 	delete(m.clearedFields, supplieraccount.FieldReviewNote)
 }
 
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (m *SupplierAccountMutation) SetIPWhitelist(s []string) {
+	m.ip_whitelist = &s
+	m.appendip_whitelist = nil
+}
+
+// IPWhitelist returns the value of the "ip_whitelist" field in the mutation.
+func (m *SupplierAccountMutation) IPWhitelist() (r []string, exists bool) {
+	v := m.ip_whitelist
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIPWhitelist returns the old "ip_whitelist" field's value of the SupplierAccount entity.
+// If the SupplierAccount object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierAccountMutation) OldIPWhitelist(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIPWhitelist is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIPWhitelist requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIPWhitelist: %w", err)
+	}
+	return oldValue.IPWhitelist, nil
+}
+
+// AppendIPWhitelist adds s to the "ip_whitelist" field.
+func (m *SupplierAccountMutation) AppendIPWhitelist(s []string) {
+	m.appendip_whitelist = append(m.appendip_whitelist, s...)
+}
+
+// AppendedIPWhitelist returns the list of values that were appended to the "ip_whitelist" field in this mutation.
+func (m *SupplierAccountMutation) AppendedIPWhitelist() ([]string, bool) {
+	if len(m.appendip_whitelist) == 0 {
+		return nil, false
+	}
+	return m.appendip_whitelist, true
+}
+
+// ClearIPWhitelist clears the value of the "ip_whitelist" field.
+func (m *SupplierAccountMutation) ClearIPWhitelist() {
+	m.ip_whitelist = nil
+	m.appendip_whitelist = nil
+	m.clearedFields[supplieraccount.FieldIPWhitelist] = struct{}{}
+}
+
+// IPWhitelistCleared returns if the "ip_whitelist" field was cleared in this mutation.
+func (m *SupplierAccountMutation) IPWhitelistCleared() bool {
+	_, ok := m.clearedFields[supplieraccount.FieldIPWhitelist]
+	return ok
+}
+
+// ResetIPWhitelist resets all changes to the "ip_whitelist" field.
+func (m *SupplierAccountMutation) ResetIPWhitelist() {
+	m.ip_whitelist = nil
+	m.appendip_whitelist = nil
+	delete(m.clearedFields, supplieraccount.FieldIPWhitelist)
+}
+
 // Where appends a list predicates to the SupplierAccountMutation builder.
 func (m *SupplierAccountMutation) Where(ps ...predicate.SupplierAccount) {
 	m.predicates = append(m.predicates, ps...)
@@ -65933,7 +66000,7 @@ func (m *SupplierAccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierAccountMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 16)
 	if m.created_at != nil {
 		fields = append(fields, supplieraccount.FieldCreatedAt)
 	}
@@ -65979,6 +66046,9 @@ func (m *SupplierAccountMutation) Fields() []string {
 	if m.review_note != nil {
 		fields = append(fields, supplieraccount.FieldReviewNote)
 	}
+	if m.ip_whitelist != nil {
+		fields = append(fields, supplieraccount.FieldIPWhitelist)
+	}
 	return fields
 }
 
@@ -66017,6 +66087,8 @@ func (m *SupplierAccountMutation) Field(name string) (ent.Value, bool) {
 		return m.ApplyReason()
 	case supplieraccount.FieldReviewNote:
 		return m.ReviewNote()
+	case supplieraccount.FieldIPWhitelist:
+		return m.IPWhitelist()
 	}
 	return nil, false
 }
@@ -66056,6 +66128,8 @@ func (m *SupplierAccountMutation) OldField(ctx context.Context, name string) (en
 		return m.OldApplyReason(ctx)
 	case supplieraccount.FieldReviewNote:
 		return m.OldReviewNote(ctx)
+	case supplieraccount.FieldIPWhitelist:
+		return m.OldIPWhitelist(ctx)
 	}
 	return nil, fmt.Errorf("unknown SupplierAccount field %s", name)
 }
@@ -66170,6 +66244,13 @@ func (m *SupplierAccountMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetReviewNote(v)
 		return nil
+	case supplieraccount.FieldIPWhitelist:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIPWhitelist(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SupplierAccount field %s", name)
 }
@@ -66248,6 +66329,9 @@ func (m *SupplierAccountMutation) ClearedFields() []string {
 	if m.FieldCleared(supplieraccount.FieldReviewNote) {
 		fields = append(fields, supplieraccount.FieldReviewNote)
 	}
+	if m.FieldCleared(supplieraccount.FieldIPWhitelist) {
+		fields = append(fields, supplieraccount.FieldIPWhitelist)
+	}
 	return fields
 }
 
@@ -66282,6 +66366,9 @@ func (m *SupplierAccountMutation) ClearField(name string) error {
 		return nil
 	case supplieraccount.FieldReviewNote:
 		m.ClearReviewNote()
+		return nil
+	case supplieraccount.FieldIPWhitelist:
+		m.ClearIPWhitelist()
 		return nil
 	}
 	return fmt.Errorf("unknown SupplierAccount nullable field %s", name)
@@ -66335,6 +66422,9 @@ func (m *SupplierAccountMutation) ResetField(name string) error {
 		return nil
 	case supplieraccount.FieldReviewNote:
 		m.ResetReviewNote()
+		return nil
+	case supplieraccount.FieldIPWhitelist:
+		m.ResetIPWhitelist()
 		return nil
 	}
 	return fmt.Errorf("unknown SupplierAccount field %s", name)

@@ -3491,6 +3491,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
+    /api/v1/admin/supplier/accounts/{id}/ip-whitelist:
+        put:
+            tags:
+                - AdminSupplierService
+            description: SetSupplierIPWhitelist 设置 IP 白名单（空 = 所有 IP 放行；接口鉴权层强制）。
+            operationId: AdminSupplierService_SetSupplierIPWhitelist
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetSupplierIPWhitelistRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplierAccountReply'
     /api/v1/admin/supplier/accounts/{id}/notify-url:
         put:
             tags:
@@ -5282,6 +5307,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierCredentialsReply'
+    /api/v1/storefront/supplier/accounts/{id}/ip-whitelist:
+        post:
+            tags:
+                - StoreSupplierService
+            description: SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
+            operationId: StoreSupplierService_SetSupplierIPWhitelist
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SetSupplierIPWhitelistRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierAccountReply'
     /api/v1/storefront/supplier/accounts/{id}/recharge:
         post:
             tags:
@@ -6993,6 +7043,8 @@ components:
                 fulfillingOrders:
                     type: string
                 lowStockProducts:
+                    type: string
+                pendingSupplierApplications:
                     type: string
         zcard.api.admin.v1.DashboardReply:
             type: object
@@ -8935,6 +8987,17 @@ components:
             properties:
                 entries:
                     type: string
+        zcard.api.admin.v1.SetSupplierIPWhitelistRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                ips:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.SetSupplierNotifyURLRequest:
             required:
                 - id
@@ -9080,6 +9143,10 @@ components:
                     type: string
                 reviewNote:
                     type: string
+                ipWhitelist:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.SupplierCallback:
             type: object
             properties:
@@ -10010,6 +10077,8 @@ components:
                 valid:
                     type: boolean
                 addedAt:
+                    type: string
+                productCover:
                     type: string
         zcard.api.storefront.v1.CategoryItem:
             type: object
@@ -11077,6 +11146,17 @@ components:
                     type: string
                 captchaCode:
                     type: string
+        zcard.api.storefront.v1.SetSupplierIPWhitelistRequest:
+            required:
+                - id
+            type: object
+            properties:
+                id:
+                    type: string
+                ips:
+                    type: array
+                    items:
+                        type: string
         zcard.api.storefront.v1.Sku:
             type: object
             properties:
@@ -11200,6 +11280,10 @@ components:
                     type: string
                 balanceCache:
                     type: string
+                ipWhitelist:
+                    type: array
+                    items:
+                        type: string
         zcard.api.storefront.v1.SupplierCredentialsReply:
             type: object
             properties:

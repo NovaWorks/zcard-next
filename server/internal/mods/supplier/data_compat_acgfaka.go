@@ -95,6 +95,11 @@ func (h *acgCompat) wrap(fn func(w http.ResponseWriter, r *http.Request, account
 			writeAcgErr(w, "商户被禁用")
 			return
 		}
+		// IP 白名单（空名单放行；非空须命中）
+		if !ipAllowed(account.IPWhitelist, r) {
+			writeAcgErr(w, "请求 IP 不在白名单内")
+			return
+		}
 		if string(account.Protocol) != "acg_faka" {
 			writeAcgErr(w, "商户ID不存在") // 非 acg 账号不暴露
 			return

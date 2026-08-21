@@ -44,6 +44,8 @@ const (
 	FieldApplyReason = "apply_reason"
 	// FieldReviewNote holds the string denoting the review_note field in the database.
 	FieldReviewNote = "review_note"
+	// FieldIPWhitelist holds the string denoting the ip_whitelist field in the database.
+	FieldIPWhitelist = "ip_whitelist"
 	// Table holds the table name of the supplieraccount in the database.
 	Table = "supplier_accounts"
 )
@@ -66,6 +68,7 @@ var Columns = []string{
 	FieldOwnerUserID,
 	FieldApplyReason,
 	FieldReviewNote,
+	FieldIPWhitelist,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

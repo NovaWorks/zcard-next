@@ -98,6 +98,10 @@ func authenticate(r *http.Request, store AuthStore, skew int64) (context.Context
 	if string(account.Status) != "approved" {
 		return nil, newAuthError(errAccountDisabled, "账户未审核或已禁用")
 	}
+	// IP 白名单（空名单放行；非空须命中——精确 IP 或 CIDR）
+	if !ipAllowed(account.IPWhitelist, r) {
+		return nil, newAuthError(errAccountDisabled, "请求 IP 不在白名单内")
+	}
 	// 验签（先验签后写 nonce——1.x 教训：未验签请求不污染 nonce 缓存）
 	body, _ := io.ReadAll(r.Body)
 	r.Body = io.NopCloser(bytes.NewReader(body)) // 恢复 body（后续 Kratos 解码需要）

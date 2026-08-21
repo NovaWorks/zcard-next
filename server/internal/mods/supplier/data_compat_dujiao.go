@@ -108,6 +108,10 @@ func (h *dujiaoCompat) authenticate(r *http.Request) (*ent.SupplierAccount, erro
 	if string(account.Status) != "approved" {
 		return nil, newAuthError(errAccountDisabled, "账户未审核或已禁用")
 	}
+	// IP 白名单（空名单放行；非空须命中）
+	if !ipAllowed(account.IPWhitelist, r) {
+		return nil, newAuthError(errAccountDisabled, "请求 IP 不在白名单内")
+	}
 	if string(account.Protocol) != "dujiao_next" {
 		return nil, newAuthError(errUnknownKey, "该 api_key 不是 dujiao_next 兼容账号")
 	}

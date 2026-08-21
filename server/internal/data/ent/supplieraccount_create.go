@@ -208,6 +208,12 @@ func (_c *SupplierAccountCreate) SetNillableReviewNote(v *string) *SupplierAccou
 	return _c
 }
 
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (_c *SupplierAccountCreate) SetIPWhitelist(v []string) *SupplierAccountCreate {
+	_c.mutation.SetIPWhitelist(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SupplierAccountCreate) SetID(v uint64) *SupplierAccountCreate {
 	_c.mutation.SetID(v)
@@ -438,6 +444,10 @@ func (_c *SupplierAccountCreate) createSpec() (*SupplierAccount, *sqlgraph.Creat
 	if value, ok := _c.mutation.ReviewNote(); ok {
 		_spec.SetField(supplieraccount.FieldReviewNote, field.TypeString, value)
 		_node.ReviewNote = value
+	}
+	if value, ok := _c.mutation.IPWhitelist(); ok {
+		_spec.SetField(supplieraccount.FieldIPWhitelist, field.TypeJSON, value)
+		_node.IPWhitelist = value
 	}
 	return _node, _spec
 }
@@ -710,6 +720,24 @@ func (u *SupplierAccountUpsert) UpdateReviewNote() *SupplierAccountUpsert {
 // ClearReviewNote clears the value of the "review_note" field.
 func (u *SupplierAccountUpsert) ClearReviewNote() *SupplierAccountUpsert {
 	u.SetNull(supplieraccount.FieldReviewNote)
+	return u
+}
+
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (u *SupplierAccountUpsert) SetIPWhitelist(v []string) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldIPWhitelist, v)
+	return u
+}
+
+// UpdateIPWhitelist sets the "ip_whitelist" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateIPWhitelist() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldIPWhitelist)
+	return u
+}
+
+// ClearIPWhitelist clears the value of the "ip_whitelist" field.
+func (u *SupplierAccountUpsert) ClearIPWhitelist() *SupplierAccountUpsert {
+	u.SetNull(supplieraccount.FieldIPWhitelist)
 	return u
 }
 
@@ -1020,6 +1048,27 @@ func (u *SupplierAccountUpsertOne) UpdateReviewNote() *SupplierAccountUpsertOne 
 func (u *SupplierAccountUpsertOne) ClearReviewNote() *SupplierAccountUpsertOne {
 	return u.Update(func(s *SupplierAccountUpsert) {
 		s.ClearReviewNote()
+	})
+}
+
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (u *SupplierAccountUpsertOne) SetIPWhitelist(v []string) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetIPWhitelist(v)
+	})
+}
+
+// UpdateIPWhitelist sets the "ip_whitelist" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateIPWhitelist() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateIPWhitelist()
+	})
+}
+
+// ClearIPWhitelist clears the value of the "ip_whitelist" field.
+func (u *SupplierAccountUpsertOne) ClearIPWhitelist() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearIPWhitelist()
 	})
 }
 
@@ -1496,6 +1545,27 @@ func (u *SupplierAccountUpsertBulk) UpdateReviewNote() *SupplierAccountUpsertBul
 func (u *SupplierAccountUpsertBulk) ClearReviewNote() *SupplierAccountUpsertBulk {
 	return u.Update(func(s *SupplierAccountUpsert) {
 		s.ClearReviewNote()
+	})
+}
+
+// SetIPWhitelist sets the "ip_whitelist" field.
+func (u *SupplierAccountUpsertBulk) SetIPWhitelist(v []string) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetIPWhitelist(v)
+	})
+}
+
+// UpdateIPWhitelist sets the "ip_whitelist" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateIPWhitelist() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateIPWhitelist()
+	})
+}
+
+// ClearIPWhitelist clears the value of the "ip_whitelist" field.
+func (u *SupplierAccountUpsertBulk) ClearIPWhitelist() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearIPWhitelist()
 	})
 }
 

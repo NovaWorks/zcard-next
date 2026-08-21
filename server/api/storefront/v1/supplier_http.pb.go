@@ -23,6 +23,7 @@ const OperationStoreSupplierServiceCreateSupplierRecharge = "/zcard.api.storefro
 const OperationStoreSupplierServiceGetSupplierCredentials = "/zcard.api.storefront.v1.StoreSupplierService/GetSupplierCredentials"
 const OperationStoreSupplierServiceListMySupplierAccounts = "/zcard.api.storefront.v1.StoreSupplierService/ListMySupplierAccounts"
 const OperationStoreSupplierServiceRegenerateSupplierSecret = "/zcard.api.storefront.v1.StoreSupplierService/RegenerateSupplierSecret"
+const OperationStoreSupplierServiceSetSupplierIPWhitelist = "/zcard.api.storefront.v1.StoreSupplierService/SetSupplierIPWhitelist"
 const OperationStoreSupplierServiceSubmitSupplierApplication = "/zcard.api.storefront.v1.StoreSupplierService/SubmitSupplierApplication"
 
 type StoreSupplierServiceHTTPServer interface {
@@ -37,6 +38,8 @@ type StoreSupplierServiceHTTPServer interface {
 	ListMySupplierAccounts(context.Context, *emptypb.Empty) (*ListSupplierAccountsReply, error)
 	// RegenerateSupplierSecret RegenerateSupplierSecret 重置密钥（旧 secret 立即失效；新明文仅此一次返回）。
 	RegenerateSupplierSecret(context.Context, *RegenerateSupplierSecretRequest) (*SupplierCredentialsReply, error)
+	// SetSupplierIPWhitelist SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
+	SetSupplierIPWhitelist(context.Context, *SetSupplierIPWhitelistRequest) (*SupplierAccountReply, error)
 	// SubmitSupplierApplication SubmitSupplierApplication 提交对接申请（服务端生成 api_key/api_secret；
 	// api_secret 不在本响应返回——审核通过后在凭据接口查看）。
 	SubmitSupplierApplication(context.Context, *SubmitSupplierApplicationRequest) (*SupplierAccountReply, error)
@@ -50,6 +53,7 @@ func RegisterStoreSupplierServiceHTTPServer(s *http.Server, srv StoreSupplierSer
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/regenerate-secret", _StoreSupplierService_RegenerateSupplierSecret0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/cancel", _StoreSupplierService_CancelSupplierApplication0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/recharge", _StoreSupplierService_CreateSupplierRecharge0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/supplier/accounts/{id}/ip-whitelist", _StoreSupplierService_SetSupplierIPWhitelist0_HTTP_Handler(srv))
 }
 
 func _StoreSupplierService_SubmitSupplierApplication0_HTTP_Handler(srv StoreSupplierServiceHTTPServer) func(ctx http.Context) error {
@@ -178,6 +182,28 @@ func _StoreSupplierService_CreateSupplierRecharge0_HTTP_Handler(srv StoreSupplie
 	}
 }
 
+func _StoreSupplierService_SetSupplierIPWhitelist0_HTTP_Handler(srv StoreSupplierServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetSupplierIPWhitelistRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreSupplierServiceSetSupplierIPWhitelist)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetSupplierIPWhitelist(ctx, req.(*SetSupplierIPWhitelistRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SupplierAccountReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StoreSupplierServiceHTTPClient interface {
 	// CancelSupplierApplication CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
 	CancelSupplierApplication(ctx context.Context, req *CancelSupplierApplicationRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
@@ -190,6 +216,8 @@ type StoreSupplierServiceHTTPClient interface {
 	ListMySupplierAccounts(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListSupplierAccountsReply, err error)
 	// RegenerateSupplierSecret RegenerateSupplierSecret 重置密钥（旧 secret 立即失效；新明文仅此一次返回）。
 	RegenerateSupplierSecret(ctx context.Context, req *RegenerateSupplierSecretRequest, opts ...http.CallOption) (rsp *SupplierCredentialsReply, err error)
+	// SetSupplierIPWhitelist SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
+	SetSupplierIPWhitelist(ctx context.Context, req *SetSupplierIPWhitelistRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
 	// SubmitSupplierApplication SubmitSupplierApplication 提交对接申请（服务端生成 api_key/api_secret；
 	// api_secret 不在本响应返回——审核通过后在凭据接口查看）。
 	SubmitSupplierApplication(ctx context.Context, req *SubmitSupplierApplicationRequest, opts ...http.CallOption) (rsp *SupplierAccountReply, err error)
@@ -284,6 +312,24 @@ func (c *StoreSupplierServiceHTTPClientImpl) RegenerateSupplierSecret(ctx contex
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetSupplierIPWhitelist SetSupplierIPWhitelist 设置 IP 白名单（仅 approved 且归属本人；空 = 所有 IP 放行）。
+func (c *StoreSupplierServiceHTTPClientImpl) SetSupplierIPWhitelist(ctx context.Context, in *SetSupplierIPWhitelistRequest, opts ...http.CallOption) (*SupplierAccountReply, error) {
+	var out SupplierAccountReply
+	pattern := "/api/v1/storefront/supplier/accounts/{id}/ip-whitelist"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStoreSupplierServiceSetSupplierIPWhitelist),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

@@ -340,6 +340,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminSupplierService/ListCallbacks", Method: "GET", Path: "/api/v1/admin/supplier/callbacks"},
 		Perm{Code: "supplier:write", Desc: "手动重发回调（超管）", Domain: "supplier", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminSupplierService/ResendCallback", Method: "POST", Path: "/api/v1/admin/supplier/callbacks/{id}/resend"},
+		Perm{Code: "supplier:write", Desc: "设置 IP 白名单（超管）", Domain: "supplier", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminSupplierService/SetIPWhitelist", Method: "PUT", Path: "/api/v1/admin/supplier/accounts/{id}/ip-whitelist"},
 
 		// ── 内容（content，P2-04）────────────────────
 		Perm{Code: "content:read", Desc: "横幅列表", Domain: "content",

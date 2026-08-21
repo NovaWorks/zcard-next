@@ -40,6 +40,7 @@ type SupplierAccountReply struct {
 	OwnerUserId   uint64                 `protobuf:"varint,13,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"` // 前台申请归属用户（0=admin 手动建号）
 	ApplyReason   string                 `protobuf:"bytes,14,opt,name=apply_reason,json=applyReason,proto3" json:"apply_reason,omitempty"`    // 申请理由（前台申请时填）
 	ReviewNote    string                 `protobuf:"bytes,15,opt,name=review_note,json=reviewNote,proto3" json:"review_note,omitempty"`       // 审核意见/驳回理由
+	IpWhitelist   []string               `protobuf:"bytes,16,rep,name=ip_whitelist,json=ipWhitelist,proto3" json:"ip_whitelist,omitempty"`    // IP 白名单（空=所有 IP 放行；精确 IP 或 CIDR）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -177,6 +178,13 @@ func (x *SupplierAccountReply) GetReviewNote() string {
 		return x.ReviewNote
 	}
 	return ""
+}
+
+func (x *SupplierAccountReply) GetIpWhitelist() []string {
+	if x != nil {
+		return x.IpWhitelist
+	}
+	return nil
 }
 
 type CreateSupplierAccountRequest struct {
@@ -1495,11 +1503,63 @@ func (x *ResendSupplierCallbackRequest) GetId() uint64 {
 	return 0
 }
 
+type SetSupplierIPWhitelistRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Ips           []string               `protobuf:"bytes,2,rep,name=ips,proto3" json:"ips,omitempty"` // 精确 IP 或 CIDR 网段；空 = 不限
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SetSupplierIPWhitelistRequest) Reset() {
+	*x = SetSupplierIPWhitelistRequest{}
+	mi := &file_admin_v1_supplier_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetSupplierIPWhitelistRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetSupplierIPWhitelistRequest) ProtoMessage() {}
+
+func (x *SetSupplierIPWhitelistRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supplier_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetSupplierIPWhitelistRequest.ProtoReflect.Descriptor instead.
+func (*SetSupplierIPWhitelistRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supplier_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *SetSupplierIPWhitelistRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SetSupplierIPWhitelistRequest) GetIps() []string {
+	if x != nil {
+		return x.Ips
+	}
+	return nil
+}
+
 var File_admin_v1_supplier_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\n" +
-	"\x17admin/v1/supplier.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xcf\x03\n" +
+	"\x17admin/v1/supplier.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf2\x03\n" +
 	"\x14SupplierAccountReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
@@ -1521,7 +1581,8 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\rowner_user_id\x18\r \x01(\x04R\vownerUserId\x12!\n" +
 	"\fapply_reason\x18\x0e \x01(\tR\vapplyReason\x12\x1f\n" +
 	"\vreview_note\x18\x0f \x01(\tR\n" +
-	"reviewNote\"\xd2\x01\n" +
+	"reviewNote\x12!\n" +
+	"\fip_whitelist\x18\x10 \x03(\tR\vipWhitelist\"\xd2\x01\n" +
 	"\x1cCreateSupplierAccountRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1c\n" +
 	"\aapi_key\x18\x02 \x01(\tB\x03\xe0A\x02R\x06apiKey\x12\"\n" +
@@ -1629,7 +1690,10 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"4\n" +
 	"\x1dResendSupplierCallbackRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xd4\x0f\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"F\n" +
+	"\x1dSetSupplierIPWhitelistRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x10\n" +
+	"\x03ips\x18\x02 \x03(\tR\x03ips2\x8a\x11\n" +
 	"\x14AdminSupplierService\x12\x97\x01\n" +
 	"\rCreateAccount\x120.zcard.api.admin.v1.CreateSupplierAccountRequest\x1a(.zcard.api.admin.v1.SupplierAccountReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/supplier/accounts\x12\x97\x01\n" +
 	"\fListAccounts\x12/.zcard.api.admin.v1.ListSupplierAccountsRequest\x1a-.zcard.api.admin.v1.ListSupplierAccountsReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/supplier/accounts\x12\xa3\x01\n" +
@@ -1645,7 +1709,8 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\vDeletePrice\x12..zcard.api.admin.v1.DeleteSupplierPriceRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$*\"/api/v1/admin/supplier/prices/{id}\x12\x7f\n" +
 	"\vUpsertPrice\x12..zcard.api.admin.v1.UpsertSupplierPriceRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/supplier/prices\x12\x9b\x01\n" +
 	"\rListCallbacks\x120.zcard.api.admin.v1.ListSupplierCallbacksRequest\x1a..zcard.api.admin.v1.ListSupplierCallbacksReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/supplier/callbacks\x12\x94\x01\n" +
-	"\x0eResendCallback\x121.zcard.api.admin.v1.ResendSupplierCallbackRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/supplier/callbacks/{id}/resendB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\x0eResendCallback\x121.zcard.api.admin.v1.ResendSupplierCallbackRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/supplier/callbacks/{id}/resend\x12\xb3\x01\n" +
+	"\x16SetSupplierIPWhitelist\x121.zcard.api.admin.v1.SetSupplierIPWhitelistRequest\x1a(.zcard.api.admin.v1.SupplierAccountReply\"<\x82\xd3\xe4\x93\x026:\x01*\x1a1/api/v1/admin/supplier/accounts/{id}/ip-whitelistB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_supplier_proto_rawDescOnce sync.Once
@@ -1659,7 +1724,7 @@ func file_admin_v1_supplier_proto_rawDescGZIP() []byte {
 	return file_admin_v1_supplier_proto_rawDescData
 }
 
-var file_admin_v1_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_admin_v1_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_admin_v1_supplier_proto_goTypes = []any{
 	(*SupplierAccountReply)(nil),          // 0: zcard.api.admin.v1.SupplierAccountReply
 	(*CreateSupplierAccountRequest)(nil),  // 1: zcard.api.admin.v1.CreateSupplierAccountRequest
@@ -1683,7 +1748,8 @@ var file_admin_v1_supplier_proto_goTypes = []any{
 	(*SupplierCallback)(nil),              // 19: zcard.api.admin.v1.SupplierCallback
 	(*ListSupplierCallbacksReply)(nil),    // 20: zcard.api.admin.v1.ListSupplierCallbacksReply
 	(*ResendSupplierCallbackRequest)(nil), // 21: zcard.api.admin.v1.ResendSupplierCallbackRequest
-	(*emptypb.Empty)(nil),                 // 22: google.protobuf.Empty
+	(*SetSupplierIPWhitelistRequest)(nil), // 22: zcard.api.admin.v1.SetSupplierIPWhitelistRequest
+	(*emptypb.Empty)(nil),                 // 23: google.protobuf.Empty
 }
 var file_admin_v1_supplier_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListSupplierAccountsReply.accounts:type_name -> zcard.api.admin.v1.SupplierAccountReply
@@ -1703,21 +1769,23 @@ var file_admin_v1_supplier_proto_depIdxs = []int32{
 	13, // 14: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:input_type -> zcard.api.admin.v1.UpsertSupplierPriceRequest
 	18, // 15: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:input_type -> zcard.api.admin.v1.ListSupplierCallbacksRequest
 	21, // 16: zcard.api.admin.v1.AdminSupplierService.ResendCallback:input_type -> zcard.api.admin.v1.ResendSupplierCallbackRequest
-	0,  // 17: zcard.api.admin.v1.AdminSupplierService.CreateAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	3,  // 18: zcard.api.admin.v1.AdminSupplierService.ListAccounts:output_type -> zcard.api.admin.v1.ListSupplierAccountsReply
-	0,  // 19: zcard.api.admin.v1.AdminSupplierService.ReviewAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	0,  // 20: zcard.api.admin.v1.AdminSupplierService.ToggleAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	7,  // 21: zcard.api.admin.v1.AdminSupplierService.ResetSecret:output_type -> zcard.api.admin.v1.ResetSupplierSecretReply
-	0,  // 22: zcard.api.admin.v1.AdminSupplierService.SetNotifyURL:output_type -> zcard.api.admin.v1.SupplierAccountReply
-	22, // 23: zcard.api.admin.v1.AdminSupplierService.Recharge:output_type -> google.protobuf.Empty
-	12, // 24: zcard.api.admin.v1.AdminSupplierService.ListLedger:output_type -> zcard.api.admin.v1.ListSupplierLedgerReply
-	16, // 25: zcard.api.admin.v1.AdminSupplierService.ListPrices:output_type -> zcard.api.admin.v1.ListSupplierPricesReply
-	22, // 26: zcard.api.admin.v1.AdminSupplierService.DeletePrice:output_type -> google.protobuf.Empty
-	22, // 27: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:output_type -> google.protobuf.Empty
-	20, // 28: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:output_type -> zcard.api.admin.v1.ListSupplierCallbacksReply
-	22, // 29: zcard.api.admin.v1.AdminSupplierService.ResendCallback:output_type -> google.protobuf.Empty
-	17, // [17:30] is the sub-list for method output_type
-	4,  // [4:17] is the sub-list for method input_type
+	22, // 17: zcard.api.admin.v1.AdminSupplierService.SetSupplierIPWhitelist:input_type -> zcard.api.admin.v1.SetSupplierIPWhitelistRequest
+	0,  // 18: zcard.api.admin.v1.AdminSupplierService.CreateAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	3,  // 19: zcard.api.admin.v1.AdminSupplierService.ListAccounts:output_type -> zcard.api.admin.v1.ListSupplierAccountsReply
+	0,  // 20: zcard.api.admin.v1.AdminSupplierService.ReviewAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	0,  // 21: zcard.api.admin.v1.AdminSupplierService.ToggleAccount:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	7,  // 22: zcard.api.admin.v1.AdminSupplierService.ResetSecret:output_type -> zcard.api.admin.v1.ResetSupplierSecretReply
+	0,  // 23: zcard.api.admin.v1.AdminSupplierService.SetNotifyURL:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	23, // 24: zcard.api.admin.v1.AdminSupplierService.Recharge:output_type -> google.protobuf.Empty
+	12, // 25: zcard.api.admin.v1.AdminSupplierService.ListLedger:output_type -> zcard.api.admin.v1.ListSupplierLedgerReply
+	16, // 26: zcard.api.admin.v1.AdminSupplierService.ListPrices:output_type -> zcard.api.admin.v1.ListSupplierPricesReply
+	23, // 27: zcard.api.admin.v1.AdminSupplierService.DeletePrice:output_type -> google.protobuf.Empty
+	23, // 28: zcard.api.admin.v1.AdminSupplierService.UpsertPrice:output_type -> google.protobuf.Empty
+	20, // 29: zcard.api.admin.v1.AdminSupplierService.ListCallbacks:output_type -> zcard.api.admin.v1.ListSupplierCallbacksReply
+	23, // 30: zcard.api.admin.v1.AdminSupplierService.ResendCallback:output_type -> google.protobuf.Empty
+	0,  // 31: zcard.api.admin.v1.AdminSupplierService.SetSupplierIPWhitelist:output_type -> zcard.api.admin.v1.SupplierAccountReply
+	18, // [18:32] is the sub-list for method output_type
+	4,  // [4:18] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1734,7 +1802,7 @@ func file_admin_v1_supplier_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_supplier_proto_rawDesc), len(file_admin_v1_supplier_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
