@@ -145,7 +145,7 @@
                   :key="t"
                   class="tier-card"
                   :class="{ active: rechargeYuan === t }"
-                  @click="rechargeYuan = t"
+                  @click="rechargeYuan = t; focusCustom = false"
                 >
                   {{ formatMoney(t * 100) }}
                 </button>
