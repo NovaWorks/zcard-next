@@ -188,11 +188,11 @@ func (s *StoreSupplierService) CancelSupplierApplication(ctx context.Context, re
 
 // CreateSupplierRecharge 对接账户自助充值（金额服务端档位裁决；支付确认前不入账）。
 //
-// 安全口径：amount_cents 只是意向，服务端按 settings.recharge 档位
-// （enabled/min_amount/max_amount，与钱包充值同一套）校验；落 recharge_orders
-// (pending, target=supply)。余额入账只发生在支付回调成功后（payment.succeeded →
-// settleRecharge 按 target 分支入账供货账户，reference=recharge:<paymentID> 幂等）。
-// 供货预存无赠送（gift=0）。
+// 安全口径：amount_cents 只是意向，服务端按 settings.supplier_recharge 档位
+// （enabled/min_amount/max_amount——供货充值独立配置组，与钱包 recharge 组隔离）
+// 校验；落 recharge_orders (pending, target=supply)。余额入账只发生在支付回调
+// 成功后（payment.succeeded → settleRecharge 按 target 分支入账供货账户，
+// reference=recharge:<paymentID> 幂等）。供货预存无赠送（gift=0）。
 func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *storefrontv1.CreateSupplierRechargeRequest) (*storefrontv1.CreateSupplierRechargeReply, error) {
 	uid, err := currentUser(ctx)
 	if err != nil {
@@ -230,15 +230,15 @@ func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *
 	}, nil
 }
 
-// rechargePolicy 充值档位（settings.recharge 组；与钱包充值同源同缺省——
-// min=1000 分 / max=500000 分 / enabled=true，对齐 wallet 目录缺省）。
+// rechargePolicy 供货充值档位（settings.supplier_recharge 组——独立于钱包
+// recharge 组；缺省 min=1000 分 / max=500000 分 / enabled=true，与目录一致）。
 func (s *StoreSupplierService) rechargePolicy(ctx context.Context) (minAmount, maxAmount int64, enabled bool) {
 	minAmount, maxAmount, enabled = 1000, 500000, true
 	if s.settings == nil {
 		return
 	}
 	get := func(key string, out any) bool {
-		raw, err := s.settings.GetJSON(ctx, "recharge", key)
+		raw, err := s.settings.GetJSON(ctx, "supplier_recharge", key)
 		if err != nil || len(raw) == 0 {
 			return false
 		}

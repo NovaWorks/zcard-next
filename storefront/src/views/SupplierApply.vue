@@ -213,7 +213,7 @@ import {
   fetchPaymentChannels, type ChannelItem,
   type SupplierAccount, type SupplierCredentials,
 } from '@/api';
-import { api, formatMoney, centsToYuan } from '@/api/client';
+import { api, formatMoney } from '@/api/client';
 
 const protocols = [
   { value: 'zcard', label: 'ZCard', desc: '另一套 ZCard 系统对接（X-Supply 四头签名）' },
@@ -260,23 +260,15 @@ async function openRecharge(a: SupplierAccount) {
   rechargeQrcode.value = '';
   rechargeDone.value = false;
   rechargeOpen.value = true;
-  // 支付渠道 + 充值限额（复用钱包充值配置）
+  // 支付渠道 + 供货充值限额（独立配置组 supplier_recharge，与钱包充值隔离）
   const [ch, cfg] = await Promise.all([fetchPaymentChannels(), api.get<{ entries: { key: string; value_json: string }[] }>('/config')]);
   rechargeChannels.value = ch.data?.channels || [];
   rechargeChannel.value = rechargeChannels.value[0]?.code || '';
   const find = (k: string) => cfg.data?.entries?.find((e) => e.key === k)?.value_json;
-  const min = find('recharge.min_amount');
-  const max = find('recharge.max_amount');
+  const min = find('supplier_recharge.min_amount');
+  const max = find('supplier_recharge.max_amount');
   if (min && max) {
     rechargeMeta.value = { min_amount: Number(JSON.parse(min)), max_amount: Number(JSON.parse(max)) };
-  }
-  const tiers = find('recharge.gift_tiers');
-  if (tiers) {
-    try {
-      const list = JSON.parse(tiers) as { amount: number }[];
-      if (list.length) presetTiers.value = list.map((t) => centsToYuan(t.amount)).slice(0, 5);
-      rechargeYuan.value = presetTiers.value[1] ?? presetTiers.value[0];
-    } catch { /* 非法配置忽略 */ }
   }
 }
 

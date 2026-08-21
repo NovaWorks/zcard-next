@@ -32,6 +32,7 @@ const groups = [
   { key: "security", label: "安全" },
   { key: "ops", label: "运维" },
   { key: "recharge", label: "充值" },
+  { key: "supplier_recharge", label: "供货充值" },
   { key: "notify", label: "邮件短信" },
   { key: "service", label: "客户代码" },
   { key: "i18n", label: "语言货币" },
