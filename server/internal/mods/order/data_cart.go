@@ -180,6 +180,7 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 		return nil, err
 	}
 	item.ProductName = p.Name
+	item.ProductCover = p.Cover
 	item.PointsRequired = p.PointsRequired
 	item.PointsOnly = p.PointsRequired > 0
 	item.Valid = p.Status == 1 // 上架 on_sale（隐藏/下架打标失效） // 上架才可选（隐藏/下架打标）

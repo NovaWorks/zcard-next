@@ -5,8 +5,8 @@
     @click="$router.push(`/product/${p.id}`)"
   >
     <div class="pc-cover">
-      <img v-if="p.cover" :src="p.cover" :alt="p.name" loading="lazy" />
-      <div v-else class="pc-cover-placeholder">{{ p.name.slice(0, 1) }}</div>
+      <img v-if="p.cover" :src="p.cover" :alt="p.name" loading="lazy" @error="onImgError" />
+      <img v-else :src="NO_IMAGE" :alt="p.name" class="pc-noimg" loading="lazy" />
       <span v-if="p.points_required" class="pc-points-tag">{{ p.points_required }} 积分</span>
     </div>
     <div class="pc-body">
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import type { Product } from '@/api';
 import { formatMoney } from '@/api/client';
+import { NO_IMAGE, onImgError } from '@/no-image';
 
 defineProps<{
   p: Product;
@@ -74,6 +75,9 @@ defineProps<{
   color: #bfdbfe;
   background: linear-gradient(135deg, #eff6ff, #dbeafe);
 }
+/* 无图占位（SVG data URI）：contain 完整显示，不参与 hover 缩放 */
+.pc-noimg { object-fit: contain !important; }
+.product-card:hover .pc-cover img.pc-noimg { transform: none; }
 .pc-points-tag {
   position: absolute;
   left: 8px;

@@ -18,7 +18,12 @@
     <div class="grid">
       <div v-for="p in products" :key="p.id" class="card">
         <router-link :to="`/product/${p.id}`">
-          <img v-if="p.cover" :src="p.cover" style="width: 100%; border-radius: 6px; margin-bottom: 8px;" alt="" />
+          <img
+            :src="p.cover || NO_IMAGE"
+            :style="{ width: '100%', borderRadius: '6px', marginBottom: '8px', objectFit: p.cover ? 'cover' : 'contain', background: '#f1f5f9' }"
+            :alt="p.name"
+            @error="onImgError"
+          />
           <div style="font-weight: 600;">{{ p.name }}</div>
         </router-link>
         <div style="margin: 8px 0; color: #4338ca; font-weight: 700;">
@@ -40,6 +45,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { listProducts, getMyLevel, createOrder, type Product, type MyLevelReply } from '@/api';
 import { getToken } from '@/api/client';
+import { NO_IMAGE, onImgError } from '@/no-image';
 
 const router = useRouter();
 const products = ref<Product[]>([]);

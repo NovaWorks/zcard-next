@@ -24,10 +24,10 @@
         <router-link to="/fetch">取货查询</router-link>
       </nav>
       <div class="nav-right">
-        <router-link to="/cart" class="cart-link">
+        <router-link to="/cart" class="cart-link" title="查看购物车">
           <span class="cart-icon">🛒</span>
           <span class="cart-label">购物车</span>
-          <span v-if="cartCount > 0" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
+          <span v-if="cartCount > 0" :key="cartCount" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
         </router-link>
         <template v-if="authState.loggedIn">
           <router-link to="/member" class="member-link" title="个人中心">👤 个人中心</router-link>
@@ -98,12 +98,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
-import { listCart, listPosts, getPost, type StorePost } from '@/api';
-import { mergeGuestCart, guestCartCount } from '@/cart';
+import { listPosts, getPost, type StorePost } from '@/api';
+import { mergeGuestCart, refreshCartState, cartState } from '@/cart';
 import { captureRefCode } from '@/ref';
 import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
@@ -119,16 +119,10 @@ refreshAuth();
 const siteName = ref('ZCard 商店');
 const year = new Date().getFullYear();
 
-// 购物车角标（登录 → 后端计数；游客 → 本地购物车计数）
-const cartCount = ref(0);
-async function loadCartCount() {
-  if (!authState.loggedIn) {
-    cartCount.value = guestCartCount();
-    return;
-  }
-  const { data, error } = await listCart().catch(() => ({ data: null, error: '' }));
-  if (!error && data) cartCount.value = (data.items || []).reduce((s, i) => s + i.quantity, 0);
-}
+// 购物车角标：共享响应式状态（商品页加购/删除实时联动；:key 变化触发弹跳动画）
+const cartCount = computed(() => cartState.value.count);
+// 登录/登出后重拉（登录合并本地车、登出回退本地车）
+watch(() => authState.loggedIn, () => { refreshCartState(); });
 
 // 统计代码（service.stats_script）：注入 document.body 末尾——统计代码置底，与客服悬浮球无关
 let statsInjected = false;
@@ -199,12 +193,11 @@ onMounted(async () => {
       if (typeof script === 'string' && script.trim()) injectStatsScript(script);
     }
   } catch { /* 配置接口失败保留默认 */ }
-  loadCartCount();
+  refreshCartState();
   window.addEventListener('scroll', onScroll);
-  // 登录态：合并本地游客购物车到后端（游客加购的商品登录后自动同步）
+  // 登录态：合并本地游客购物车到后端（游客加购的商品登录后自动同步；merge 内部会刷新角标）
   if (authState.loggedIn) {
     await mergeGuestCart();
-    loadCartCount();
   }
   // 公告：每会话首次访问自动弹出（sessionStorage 标记）
   await loadNotice();

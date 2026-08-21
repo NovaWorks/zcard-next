@@ -13,9 +13,9 @@
       <!-- 左栏：商品图 -->
       <div class="pd-gallery">
         <div class="pd-cover" @click="showLightbox = true">
-          <img v-if="p.cover" :src="p.cover" :alt="p.name" />
-          <div v-else class="pd-cover-placeholder">{{ p.name.slice(0, 1) }}</div>
-          <span class="pd-zoom-hint">🔍 点击查看大图</span>
+          <img v-if="p.cover" :src="p.cover" :alt="p.name" @error="onImgError" />
+          <img v-else :src="NO_IMAGE" :alt="p.name" class="pd-noimg" />
+          <span v-if="p.cover" class="pd-zoom-hint">🔍 点击查看大图</span>
         </div>
       </div>
 
@@ -135,8 +135,17 @@
           <button class="pd-btn-buy" :disabled="submitting" @click="buy">
             {{ submitting ? '提交中…' : '立即购买' }}
           </button>
-          <button class="pd-btn-cart" :disabled="submitting || !canCart" @click="addToCart">
-            {{ added ? '✓ 已加入' : addingCart ? '加入中…' : '加入购物车' }}
+          <button
+            v-if="canCart"
+            class="pd-btn-cart"
+            :class="{ 'is-in': inCartNow }"
+            :disabled="submitting || cartBusy"
+            :title="inCartNow ? '从购物车移除' : '加入购物车'"
+            @click="inCartNow ? removeFromCart() : addToCart()"
+          >
+            <template v-if="cartBusy">{{ addingCart ? '加入中…' : '处理中…' }}</template>
+            <template v-else-if="inCartNow">🗑️ 移除购物车</template>
+            <template v-else>🛒 加入购物车</template>
           </button>
           <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting" @click="exchangePoints">
             积分兑换（{{ p.points_required }} 分）
@@ -181,8 +190,9 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
 import { formatMoney, getToken } from '@/api/client';
+import { NO_IMAGE, onImgError } from '@/no-image';
 import { authState } from '@/auth';
-import { addToCart as addToCartStore } from '@/cart';
+import { addToCart as addToCartStore, removeCartItem, cartItemOf } from '@/cart';
 import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import CaptchaInput from '@/components/CaptchaInput.vue';
@@ -199,8 +209,16 @@ const controlAnswers = ref<Record<string, string>>({});
 const submitting = ref(false);
 const error = ref('');
 const addingCart = ref(false);
-const added = ref(false);
+const removingCart = ref(false);
 const showLightbox = ref(false);
+
+// 购物车（淘宝式切换）：当前商品 + 所选 SKU 在购物车 → 按钮变灰「移除购物车」
+const canCart = computed(() => !(p.value?.points_required && p.value.points_required > 0));
+const inCartNow = computed(() => {
+  if (!p.value || !canCart.value) return false;
+  return !!cartItemOf(p.value.id, selectedSku.value || 0);
+});
+const cartBusy = computed(() => addingCart.value || removingCart.value);
 
 // 当前显示价（跟随所选 SKU）
 const displayPrice = computed(() => {
@@ -224,7 +242,6 @@ const stockPct = computed(() => {
 });
 
 // 购物车：积分商品不可加购（积分单走兑换按钮）；游客加购进本地购物车（老项目同款）
-const canCart = computed(() => !(p.value?.points_required && p.value.points_required > 0));
 
 async function addToCart() {
   if (!p.value) return;
@@ -233,8 +250,17 @@ async function addToCart() {
   const { error: err } = await addToCartStore(p.value, quantity.value, selectedSku.value || 0);
   addingCart.value = false;
   if (err) { error.value = err; return; }
-  added.value = true;
-  setTimeout(() => (added.value = false), 2000);
+  // 成功后按钮经 cartState 响应式切换为「移除购物车」（无临时态）
+}
+
+async function removeFromCart() {
+  if (!p.value) return;
+  const item = cartItemOf(p.value.id, selectedSku.value || 0);
+  if (!item) return;
+  removingCart.value = true;
+  const { error: err } = await removeCartItem(item.id);
+  removingCart.value = false;
+  if (err) { error.value = err; return; }
 }
 
 function stockTypeLabel(t: string) {
@@ -359,6 +385,8 @@ async function exchangePoints() {
   background: #f1f5f9; cursor: zoom-in; border: 1px solid #e5e7eb;
 }
 .pd-cover img { width: 100%; height: 100%; object-fit: cover; }
+/* 无图占位（SVG data URI）：contain 完整显示，不提示放大 */
+.pd-noimg { object-fit: contain !important; cursor: default; }
 .pd-cover-placeholder {
   width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
   font-size: 56px; font-weight: 700; color: #bfdbfe;
@@ -450,6 +478,13 @@ async function exchangePoints() {
   background: #fff; color: #2563eb; border: 2px solid #2563eb; transition: all 0.15s;
 }
 .pd-btn-cart:hover:not(:disabled) { background: #eff6ff; }
+/* 已在购物车：灰色「移除」形态（淘宝式切换） */
+.pd-btn-cart.is-in {
+  background: #f3f4f6; color: #6b7280; border-color: #d1d5db;
+}
+.pd-btn-cart.is-in:hover:not(:disabled) {
+  background: #e5e7eb; color: #374151; border-color: #9ca3af;
+}
 .pd-btn-points {
   flex: 1; min-width: 140px; padding: 12px 0; cursor: pointer;
   border-radius: 10px; font-size: 15px; font-weight: 700;

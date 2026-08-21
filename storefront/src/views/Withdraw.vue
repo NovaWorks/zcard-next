@@ -1,5 +1,7 @@
 <template>
   <div class="wd-page">
+    <!-- 个人中心共用导航（提现高亮；可切回其他区块） -->
+    <MemberTabs active="withdraw" />
     <h2 class="wd-title">佣金提现</h2>
 
     <!-- 未开放 -->
@@ -131,6 +133,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import MemberTabs from '@/components/MemberTabs.vue';
 import {
   myAffiliate, listMyWithdrawals, createWithdrawal, uploadQrCode,
   fetchWithdrawConfig, type MyAffiliateReply, type MyWithdrawalItem, type WithdrawConfig,

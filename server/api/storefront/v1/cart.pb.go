@@ -193,6 +193,7 @@ type CartItem struct {
 	PointsRequired int64  `protobuf:"varint,9,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	Valid          bool   `protobuf:"varint,10,opt,name=valid,proto3" json:"valid,omitempty"` // false=已下架/隐藏（列表打标不可选）
 	AddedAt        int64  `protobuf:"varint,11,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`
+	ProductCover   string `protobuf:"bytes,12,opt,name=product_cover,json=productCover,proto3" json:"product_cover,omitempty"` // 商品封面（无图时前端显示默认占位）
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -304,6 +305,13 @@ func (x *CartItem) GetAddedAt() int64 {
 	return 0
 }
 
+func (x *CartItem) GetProductCover() string {
+	if x != nil {
+		return x.ProductCover
+	}
+	return ""
+}
+
 type ListCartReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*CartItem            `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -370,7 +378,7 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1f\n" +
 	"\bquantity\x18\x02 \x01(\x05B\x03\xe0A\x02R\bquantity\",\n" +
 	"\x15RemoveCartItemRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xc1\x02\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xe6\x02\n" +
 	"\bCartItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -386,7 +394,8 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\x0fpoints_required\x18\t \x01(\x03R\x0epointsRequired\x12\x14\n" +
 	"\x05valid\x18\n" +
 	" \x01(\bR\x05valid\x12\x19\n" +
-	"\badded_at\x18\v \x01(\x03R\aaddedAt\"^\n" +
+	"\badded_at\x18\v \x01(\x03R\aaddedAt\x12#\n" +
+	"\rproduct_cover\x18\f \x01(\tR\fproductCover\"^\n" +
 	"\rListCartReply\x127\n" +
 	"\x05items\x18\x01 \x03(\v2!.zcard.api.storefront.v1.CartItemR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total2\xa5\x04\n" +

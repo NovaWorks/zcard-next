@@ -299,6 +299,7 @@ export interface CartItem {
   points_required: number;
   valid: boolean;
   added_at: number;
+  product_cover?: string; // 商品封面（无图时前端显示默认占位）
 }
 
 export function addCart(product_id: number, quantity = 1, sku_id = 0) {
@@ -731,6 +732,7 @@ export interface SupplierAccount {
   api_key: string;       // app_id（明文常驻）
   reviewed_at: number;
   created_at: number;
+  balance_cache: number; // 供货余额（分）
 }
 
 export interface SupplierCredentials {

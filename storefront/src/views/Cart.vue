@@ -25,9 +25,12 @@
         <div v-for="it in items" :key="it.id" class="cart-item" :class="{ invalid: !it.valid || it.stock === 0 }">
           <input type="checkbox" :disabled="!it.valid || it.stock === 0" v-model="selected" :value="it.id" class="cart-item-check" />
           <router-link v-if="it.valid" :to="`/product/${it.product_id}`" class="cart-item-cover">
-            <span class="cart-item-ph">{{ it.product_name.slice(0, 1) }}</span>
+            <img v-if="it.product_cover" :src="it.product_cover" :alt="it.product_name" @error="onImgError" />
+            <img v-else :src="NO_IMAGE" :alt="it.product_name" style="object-fit: contain;" />
           </router-link>
-          <div v-else class="cart-item-cover"><span class="cart-item-ph">{{ it.product_name.slice(0, 1) }}</span></div>
+          <div v-else class="cart-item-cover">
+            <img :src="NO_IMAGE" :alt="it.product_name" style="object-fit: contain;" />
+          </div>
           <div class="cart-item-info">
             <router-link v-if="it.valid" :to="`/product/${it.product_id}`" class="cart-item-name">{{ it.product_name }}</router-link>
             <span v-else class="cart-item-name">{{ it.product_name }}</span>
@@ -118,6 +121,7 @@ import { useRouter } from 'vue-router';
 import { createOrder, getProduct, updateCart, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type CartItem, type ProductControl, type TradeConfig } from '@/api';
 import { formatMoney } from '@/api/client';
 import { loadCart, updateGuestQty, removeCartItem, clearPurchased } from '@/cart';
+import { NO_IMAGE, onImgError } from '@/no-image';
 import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import CaptchaInput from '@/components/CaptchaInput.vue';
@@ -295,6 +299,7 @@ const queryPwd = ref('');
   display: flex; align-items: center; justify-content: center;
   text-decoration: none;
 }
+.cart-item-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cart-item-ph { font-size: 20px; font-weight: 700; color: #93c5fd; }
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name {

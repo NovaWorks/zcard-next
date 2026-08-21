@@ -156,7 +156,7 @@
               <div v-if="focusCustom" class="custom-input">
                 <input class="input" v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="输入金额" autofocus />
               </div>
-              <div class="muted" style="margin-top: 6px;">限额 {{ formatMoney(rechargeMeta.min_amount || 1000) }} ~ {{ formatMoney(rechargeMeta.max_amount || 500000) }}</div>
+              <div class="muted" style="margin-top: 6px;">限额 {{ formatMoney(rechargeMeta?.min_amount || 1000) }} ~ {{ formatMoney(rechargeMeta?.max_amount || 500000) }}</div>
             </div>
 
             <!-- 支付方式 -->

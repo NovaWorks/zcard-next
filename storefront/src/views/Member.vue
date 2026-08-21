@@ -1,16 +1,6 @@
 <template>
   <div>
-    <div class="tabs">
-      <button :class="{ active: tab === 'overview' }" @click="tab = 'overview'">总览</button>
-      <button :class="{ active: tab === 'orders' }" @click="switchTab('orders')">我的订单</button>
-      <button :class="{ active: tab === 'transactions' }" @click="switchTab('transactions')">余额流水</button>
-      <button :class="{ active: tab === 'recharge' }" @click="switchTab('recharge')">充值</button>
-      <button :class="{ active: tab === 'giftcard' }" @click="switchTab('giftcard')">礼品卡</button>
-      <button :class="{ active: tab === 'promo' }" @click="switchTab('promo')">推广营销</button>
-      <button :class="{ active: tab === 'supplier' }" @click="switchTab('supplier')">对接申请</button>
-      <button :class="{ active: tab === 'withdraw' }" @click="switchTab('withdraw')">提现</button>
-      <button :class="{ active: tab === 'security' }" @click="switchTab('security')">账户安全</button>
-    </div>
+    <MemberTabs :active="tab" />
 
     <!-- 总览：余额四数 + 等级进度 + 快捷入口 -->
     <div v-if="tab === 'overview'">
@@ -168,15 +158,6 @@
       <SupplierApply />
     </div>
 
-    <!-- 提现（跳转独立提现页：佣金提现+收款码+记录） -->
-    <div v-if="tab === 'withdraw'" class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; cursor: pointer;" @click="$router.push('/withdraw')">
-      <div>
-        <b>佣金提现</b>
-        <div class="muted" style="margin-top: 4px;">支持支付宝 / 微信收款码 / USDT TRC20 · 最低 {{ '' }}提现 · 提现记录与工单支持</div>
-      </div>
-      <router-link class="btn btn-primary" to="/withdraw">进入提现</router-link>
-    </div>
-
     <!-- 账户安全（P3-10：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
     <div v-if="tab === 'security'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 420px)); gap: 16px;">
       <div class="card">
@@ -213,7 +194,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   getBalance, getMyLevel, listMyOrders, cancelMyOrder, listTransactions,
   createRecharge, redeemGiftcard, changePassword, updateProfile, me,
@@ -223,8 +205,18 @@ import {
 import { api, formatMoney, formatSignedMoney, setToken, centsToYuan } from '@/api/client';
 import Affiliate from './Affiliate.vue';
 import SupplierApply from './SupplierApply.vue';
+import MemberTabs from '@/components/MemberTabs.vue';
 
-const tab = ref<'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'promo' | 'supplier' | 'withdraw' | 'security'>('overview');
+// tab 由 ?tab= 查询参数驱动（MemberTabs 导航跳转 /member?tab=xxx）——
+// 从 /withdraw 等独立页返回时能直接恢复到对应区块。
+type Tab = 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'promo' | 'supplier' | 'security';
+const TAB_KEYS: readonly string[] = ['overview', 'orders', 'transactions', 'recharge', 'giftcard', 'promo', 'supplier', 'security'];
+function normalizeTab(v: unknown): Tab {
+  return TAB_KEYS.includes(v as string) ? (v as Tab) : 'overview';
+}
+const route = useRoute();
+const tab = ref<Tab>(normalizeTab(route.query.tab));
+watch(() => route.query.tab, (v) => switchTab(normalizeTab(v)));
 const balance = ref<BalanceReply | null>(null);
 const level = ref<MyLevelReply | null>(null);
 
@@ -258,6 +250,9 @@ const giftOk = ref<{ amount_cents: number; balance_after_cents: number } | null>
 const redeeming = ref(false);
 
 onMounted(async () => {
+  // 直接带 ?tab= 进入（如从提现页返回）：触发对应区块懒加载
+  if (tab.value === 'orders' && !orders.value.length) loadOrders(1);
+  if (tab.value === 'transactions' && !transactions.value.length) loadTx(1);
   const [b, l] = await Promise.all([getBalance(), getMyLevel()]);
   balance.value = b.data;
   level.value = l.data;
@@ -276,7 +271,7 @@ onMounted(async () => {
   loadRechargeChannels();
 });
 
-function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'promo' | 'supplier' | 'withdraw' | 'security') {
+function switchTab(t: 'overview' | 'orders' | 'transactions' | 'recharge' | 'giftcard' | 'promo' | 'supplier' | 'security') {
   tab.value = t;
   if (t === 'orders' && !orders.value.length) loadOrders(1);
   if (t === 'transactions' && !transactions.value.length) loadTx(1);
