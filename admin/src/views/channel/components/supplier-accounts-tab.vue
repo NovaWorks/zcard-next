@@ -1,11 +1,14 @@
 <script setup lang="ts">
-// 供货账号管理（supplier:read / supplier:write）：下游客户账户。
+// 供货账号管理（supplier:read / supplier:write）：下游客户账户 + 对接申请审核工作台。
 // protocol 三选一：ZCard 自有协议 / dujiao-next 兼容 / acg-faka 兼容（P2-10 B/C）——
 // 兼容账号让对应平台不改代码即可对接本站；创建后展示「对接配置说明」。
-import { h, onMounted, reactive, ref } from "vue";
+// 前台个人中心提交的申请（owner_user_id>0）在「待审核」筛选下集中处理：
+// 审核弹窗展示完整申请资料，「通过并开通」即生效（用户前台可查凭据），驳回须填意见。
+import { h, computed, onMounted, reactive, ref } from "vue";
+import { useRoute } from "vue-router";
 import {
   NButton, NCard, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem,
-  NPopconfirm, NSelect, NSpace, NTag, NAlert,
+  NPopconfirm, NSelect, NSpace, NTag, NAlert, NDescriptions, NDescriptionsItem,
 } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
@@ -20,9 +23,19 @@ import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "SupplierAccountsTab" });
 
+const route = useRoute();
 const loading = ref(false);
-const accounts = ref<any[]>([]);
-const statusFilter = ref<"" | "applying" | "approved" | "rejected" | "disabled">("");
+const allAccounts = ref<any[]>([]);
+const statusFilter = ref<"" | "applying" | "approved" | "rejected" | "disabled">(
+  route.query.status === "applying" ? "applying" : "",
+);
+
+// 客户端过滤（全量 ≤200 拉取，内存筛选）
+const accounts = computed(() =>
+  statusFilter.value === "" ? allAccounts.value : allAccounts.value.filter((r: any) => r.status === statusFilter.value),
+);
+// 待审核数（横幅提醒——有待审申请时置顶提示，一键切到审核视图）
+const applyingCount = computed(() => allAccounts.value.filter((r: any) => r.status === "applying").length);
 
 const statusTabs = [
   { label: "全部", value: "", type: "default" as const },
@@ -45,8 +58,7 @@ async function load() {
   try {
     const { data, error } = await fetchSupplierAccounts({ page: 1, page_size: 200 });
     if (!error && data) {
-      const rows = (data as any).accounts || [];
-      accounts.value = statusFilter.value === "" ? rows : rows.filter((r: any) => r.status === statusFilter.value);
+      allAccounts.value = (data as any).accounts || [];
     }
   } finally {
     loading.value = false;
@@ -95,10 +107,11 @@ async function submitForm() {
   }
 }
 
-// ── 审核（通过直接确认；驳回弹窗填意见）──
+// ── 审核工作台（统一弹窗：申请资料 + 意见 + 通过并开通/驳回）──
 const reviewModal = ref(false);
 const reviewTarget = ref<any>(null);
 const reviewNote = ref("");
+const reviewSubmitting = ref(false);
 
 function openReview(row: any) {
   reviewTarget.value = row;
@@ -106,24 +119,25 @@ function openReview(row: any) {
   reviewModal.value = true;
 }
 
-async function submitReview() {
-  if (!reviewNote.value.trim()) {
+function fmtTime(ts: number) {
+  return ts ? new Date(ts * 1000).toLocaleString() : "-";
+}
+
+async function submitReview(approve: boolean) {
+  if (!approve && !reviewNote.value.trim()) {
     window.$message?.warning("驳回时请填写审核意见（将展示给申请人）");
     return;
   }
-  const { error } = await reviewSupplierAccount(reviewTarget.value.id, false, reviewNote.value.trim());
-  if (!error) {
-    window.$message?.success("已驳回");
-    reviewModal.value = false;
-    load();
-  }
-}
-
-async function handleReview(row: any) {
-  const { error } = await reviewSupplierAccount(row.id, true);
-  if (!error) {
-    window.$message?.success("已通过审核");
-    load();
+  reviewSubmitting.value = true;
+  try {
+    const { error } = await reviewSupplierAccount(reviewTarget.value.id, approve, reviewNote.value.trim() || undefined);
+    if (!error) {
+      window.$message?.success(approve ? "已通过并开通（申请人可在前台查看凭据）" : "已驳回（申请人可查看意见并重新申请）");
+      reviewModal.value = false;
+      load();
+    }
+  } finally {
+    reviewSubmitting.value = false;
   }
 }
 
@@ -233,10 +247,7 @@ const columns: DataTableColumns<any> = [
     render: (row) =>
       h("div", { class: "flex flex-wrap gap-4px" }, [
         row.status === "applying" && canWrite()
-          ? h(NPopconfirm, { onPositiveClick: () => handleReview(row) }, { trigger: () => h(NButton, { size: "tiny", type: "success", secondary: true }, { default: () => "通过" }), default: () => "通过后该账号可调供货/兼容 API" })
-          : null,
-        row.status === "applying" && canWrite()
-          ? h(NButton, { size: "tiny", quaternary: true, onClick: () => openReview(row) }, { default: () => "驳回" })
+          ? h(NButton, { size: "tiny", type: "warning", secondary: true, onClick: () => openReview(row) }, { default: () => "🔍 审核" })
           : null,
         row.status !== "applying" && canWrite()
           ? h(NButton, { size: "tiny", quaternary: true, onClick: () => handleToggle(row) }, { default: () => (row.status === "disabled" ? "启用" : "禁用") })
@@ -338,8 +349,18 @@ onMounted(load);
 
 <template>
   <div>
+    <!-- 待审提醒（有待审申请时置顶；一键切到审核视图） -->
+    <NAlert v-if="applyingCount > 0 && statusFilter !== 'applying'" type="warning" :bordered="false" class="mb-12px">
+      <template #default>
+        <div class="flex items-center justify-between gap-8px">
+          <span>⏳ 有 <b>{{ applyingCount }}</b> 个对接申请待审核（前台用户提交）</span>
+          <NButton size="tiny" type="warning" secondary @click="statusFilter = 'applying'">立即审核</NButton>
+        </div>
+      </template>
+    </NAlert>
+
     <div class="mb-12px flex flex-wrap items-center justify-between gap-8px">
-      <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" @change="load" />
+      <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" />
       <NSpace>
         <NButton size="small" quaternary @click="openCallbacks">回调记录</NButton>
         <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增供货账号</NButton>
@@ -354,17 +375,37 @@ onMounted(load);
       <NInput :value="secretOnce" readonly type="textarea" :rows="2" />
     </NModal>
 
-    <!-- 驳回审核 -->
-    <NModal v-model:show="reviewModal" preset="dialog" :title="`驳回申请：${reviewTarget?.name || ''}`" style="width: 440px">
+    <!-- 审核工作台：申请资料 + 意见 + 通过并开通 / 驳回 -->
+    <NModal v-model:show="reviewModal" preset="card" :title="`对接申请审核 #${reviewTarget?.id || ''}`" style="width: 560px">
+      <NDescriptions v-if="reviewTarget" :column="2" size="small" bordered label-placement="left" class="mb-12px">
+        <NDescriptionsItem label="站点名" :span="2">{{ reviewTarget.display_name || reviewTarget.name }}</NDescriptionsItem>
+        <NDescriptionsItem label="对接协议">
+          <NTag size="small" :type="protocolMeta[reviewTarget.protocol]?.tag || 'default'" :bordered="false">
+            {{ protocolMeta[reviewTarget.protocol]?.label || reviewTarget.protocol }}
+          </NTag>
+        </NDescriptionsItem>
+        <NDescriptionsItem label="申请人">用户 #{{ reviewTarget.owner_user_id || '—（后台建号）' }}</NDescriptionsItem>
+        <NDescriptionsItem label="联系方式">{{ reviewTarget.contact || '—' }}</NDescriptionsItem>
+        <NDescriptionsItem label="申请时间">{{ fmtTime(reviewTarget.created_at) }}</NDescriptionsItem>
+        <NDescriptionsItem label="app_id" :span="2">
+          <code class="text-13px">{{ reviewTarget.api_key }}</code>
+        </NDescriptionsItem>
+        <NDescriptionsItem label="申请理由" :span="2">{{ reviewTarget.apply_reason || '—（未填写）' }}</NDescriptionsItem>
+      </NDescriptions>
+      <NAlert type="info" :bordered="false" class="mb-12px">
+        {{ protocolMeta[reviewTarget?.protocol]?.hint }}
+      </NAlert>
       <NForm label-placement="top">
-        <NAlert type="warning" :bordered="false" class="mb-8px">驳回后申请人可在个人中心看到驳回状态与意见，可重新申请。</NAlert>
-        <NFormItem label="审核意见" required>
-          <NInput v-model:value="reviewNote" type="textarea" :rows="3" placeholder="如：资料不完整、站点未备案等" />
+        <NFormItem label="审核意见（驳回时必填；申请人可在前台查看）">
+          <NInput v-model:value="reviewNote" type="textarea" :rows="3" placeholder="如：资料不完整、站点无法访问等；通过时可留空" />
         </NFormItem>
       </NForm>
-      <template #action>
-        <NButton @click="reviewModal = false">取消</NButton>
-        <NButton type="error" @click="submitReview">确认驳回</NButton>
+      <template #footer>
+        <div class="flex justify-end gap-8px">
+          <NButton @click="reviewModal = false">取消</NButton>
+          <NButton type="error" secondary :loading="reviewSubmitting" @click="submitReview(false)">驳回</NButton>
+          <NButton type="success" :loading="reviewSubmitting" @click="submitReview(true)">通过并开通</NButton>
+        </div>
       </template>
     </NModal>
 

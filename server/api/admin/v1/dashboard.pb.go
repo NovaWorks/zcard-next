@@ -535,13 +535,14 @@ func (x *DashboardTopChannel) GetFailedCount() int64 {
 }
 
 type DashboardPending struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	PendingWithdrawals int64                  `protobuf:"varint,1,opt,name=pending_withdrawals,json=pendingWithdrawals,proto3" json:"pending_withdrawals,omitempty"` // 待审核提现
-	PendingRefunds     int64                  `protobuf:"varint,2,opt,name=pending_refunds,json=pendingRefunds,proto3" json:"pending_refunds,omitempty"`             // 待处理退款（refund_pending）
-	FulfillingOrders   int64                  `protobuf:"varint,3,opt,name=fulfilling_orders,json=fulfillingOrders,proto3" json:"fulfilling_orders,omitempty"`       // 履约中订单
-	LowStockProducts   int64                  `protobuf:"varint,4,opt,name=low_stock_products,json=lowStockProducts,proto3" json:"low_stock_products,omitempty"`     // 库存预警商品数
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"open.v1"`
+	PendingWithdrawals          int64                  `protobuf:"varint,1,opt,name=pending_withdrawals,json=pendingWithdrawals,proto3" json:"pending_withdrawals,omitempty"`                              // 待审核提现
+	PendingRefunds              int64                  `protobuf:"varint,2,opt,name=pending_refunds,json=pendingRefunds,proto3" json:"pending_refunds,omitempty"`                                          // 待处理退款（refund_pending）
+	FulfillingOrders            int64                  `protobuf:"varint,3,opt,name=fulfilling_orders,json=fulfillingOrders,proto3" json:"fulfilling_orders,omitempty"`                                    // 履约中订单
+	LowStockProducts            int64                  `protobuf:"varint,4,opt,name=low_stock_products,json=lowStockProducts,proto3" json:"low_stock_products,omitempty"`                                  // 库存预警商品数
+	PendingSupplierApplications int64                  `protobuf:"varint,5,opt,name=pending_supplier_applications,json=pendingSupplierApplications,proto3" json:"pending_supplier_applications,omitempty"` // 待审对接申请（supplier_accounts applying）
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *DashboardPending) Reset() {
@@ -598,6 +599,13 @@ func (x *DashboardPending) GetFulfillingOrders() int64 {
 func (x *DashboardPending) GetLowStockProducts() int64 {
 	if x != nil {
 		return x.LowStockProducts
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetPendingSupplierApplications() int64 {
+	if x != nil {
+		return x.PendingSupplierApplications
 	}
 	return 0
 }
@@ -1831,12 +1839,13 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\vtotal_count\x18\x02 \x01(\x03R\n" +
 	"totalCount\x12#\n" +
 	"\rsuccess_count\x18\x03 \x01(\x03R\fsuccessCount\x12!\n" +
-	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\"\xc7\x01\n" +
+	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\"\x8b\x02\n" +
 	"\x10DashboardPending\x12/\n" +
 	"\x13pending_withdrawals\x18\x01 \x01(\x03R\x12pendingWithdrawals\x12'\n" +
 	"\x0fpending_refunds\x18\x02 \x01(\x03R\x0ependingRefunds\x12+\n" +
 	"\x11fulfilling_orders\x18\x03 \x01(\x03R\x10fulfillingOrders\x12,\n" +
-	"\x12low_stock_products\x18\x04 \x01(\x03R\x10lowStockProducts\"'\n" +
+	"\x12low_stock_products\x18\x04 \x01(\x03R\x10lowStockProducts\x12B\n" +
+	"\x1dpending_supplier_applications\x18\x05 \x01(\x03R\x1bpendingSupplierApplications\"'\n" +
 	"\x11GetTrafficRequest\x12\x12\n" +
 	"\x04days\x18\x01 \x01(\x05R\x04days\"B\n" +
 	"\fTrafficPoint\x12\x12\n" +

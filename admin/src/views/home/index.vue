@@ -203,6 +203,8 @@ const todos = computed(() => {
   const p = data.value?.pending;
   if (!p) return [];
   return [
+    // 待审对接申请 → 渠道管理·供货账号 tab（自动筛待审核）
+    { label: "待审对接申请", value: p.pending_supplier_applications, path: { path: "/channel", query: { tab: "suppliers", status: "applying" } }, warn: true },
     { label: "待审核提现", value: p.pending_withdrawals, path: "/wallet", warn: true },
     { label: "待处理退款", value: p.pending_refunds, path: "/order", warn: true },
     { label: "履约中订单", value: p.fulfilling_orders, path: "/order", warn: false },

@@ -109,6 +109,7 @@ message DashboardPending {
   int64 pending_refunds = 2;     // 待处理退款（refund_pending）
   int64 fulfilling_orders = 3;   // 履约中订单
   int64 low_stock_products = 4;  // 库存预警商品数
+  int64 pending_supplier_applications = 5; // 待审对接申请（supplier_accounts applying）
 }
 
 message GetTrafficRequest {

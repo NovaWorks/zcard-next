@@ -87,6 +87,7 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "库存统计失败: "+err.Error())
 	}
+	pendingSupplierApps := s.repo.GetPendingSupplierApplications(ctx)
 	onlineUsers := s.onlineUsers(ctx)
 
 	reply := &adminv1.DashboardReply{
@@ -98,10 +99,11 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 		Prev30D:     toStatPB(prev30d),
 		OnlineUsers: onlineUsers,
 		Pending: &adminv1.DashboardPending{
-			PendingWithdrawals: withdrawals,
-			PendingRefunds:     refunds,
-			FulfillingOrders:   fulfilling,
-			LowStockProducts:   lowStock,
+			PendingWithdrawals:          withdrawals,
+			PendingRefunds:              refunds,
+			FulfillingOrders:            fulfilling,
+			LowStockProducts:            lowStock,
+			PendingSupplierApplications: pendingSupplierApps,
 		},
 	}
 	for _, tp := range trend {

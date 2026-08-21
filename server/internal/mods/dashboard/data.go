@@ -15,6 +15,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
@@ -264,6 +265,16 @@ func (r *DashboardRepoImpl) GetLowStockCount(ctx context.Context, threshold int)
 		}
 	}
 	return low, nil
+}
+
+// GetPendingSupplierApplications 待审对接申请数（supplier_accounts status=applying；前台申请后台审核）。
+func (r *DashboardRepoImpl) GetPendingSupplierApplications(ctx context.Context) int64 {
+	if n, e := data.Client(ctx, r.data).SupplierAccount.Query().
+		Where(supplieraccount.StatusEQ(supplieraccount.StatusApplying)).
+		Count(ctx); e == nil {
+		return int64(n)
+	}
+	return 0
 }
 
 // GetPending 待办统计：待审核提现（全局）、待处理退款、履约中订单（分站）。
