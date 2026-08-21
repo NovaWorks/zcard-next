@@ -21,6 +21,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationStoreOrderServiceCancelMyOrder = "/zcard.api.storefront.v1.StoreOrderService/CancelMyOrder"
 const OperationStoreOrderServiceCreateOrder = "/zcard.api.storefront.v1.StoreOrderService/CreateOrder"
 const OperationStoreOrderServiceGetOrder = "/zcard.api.storefront.v1.StoreOrderService/GetOrder"
+const OperationStoreOrderServiceListGuestOrders = "/zcard.api.storefront.v1.StoreOrderService/ListGuestOrders"
 const OperationStoreOrderServiceListMyOrders = "/zcard.api.storefront.v1.StoreOrderService/ListMyOrders"
 
 type StoreOrderServiceHTTPServer interface {
@@ -30,6 +31,9 @@ type StoreOrderServiceHTTPServer interface {
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)
 	// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 	GetOrder(context.Context, *GetOrderRequest) (*GetOrderReply, error)
+	// ListGuestOrders ListGuestOrders 游客按下单联系方式查订单列表（邮箱/手机号；精简信息——
+	// 卡密仍需逐单查询密码，防枚举：查不到返回空）。
+	ListGuestOrders(context.Context, *ListGuestOrdersRequest) (*ListGuestOrdersReply, error)
 	// ListMyOrders ListMyOrders 我的订单（登录态；offset 分页）。
 	ListMyOrders(context.Context, *ListMyOrdersRequest) (*ListMyOrdersReply, error)
 }
@@ -39,6 +43,7 @@ func RegisterStoreOrderServiceHTTPServer(s *http.Server, srv StoreOrderServiceHT
 	r.Handle("POST", "/api/v1/storefront/orders", _StoreOrderService_CreateOrder0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/orders/{order_no}", _StoreOrderService_GetOrder0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/my-orders", _StoreOrderService_ListMyOrders0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/storefront/guest-orders", _StoreOrderService_ListGuestOrders0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/orders/{order_no}/cancel", _StoreOrderService_CancelMyOrder0_HTTP_Handler(srv))
 }
 
@@ -102,6 +107,25 @@ func _StoreOrderService_ListMyOrders0_HTTP_Handler(srv StoreOrderServiceHTTPServ
 	}
 }
 
+func _StoreOrderService_ListGuestOrders0_HTTP_Handler(srv StoreOrderServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListGuestOrdersRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreOrderServiceListGuestOrders)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListGuestOrders(ctx, req.(*ListGuestOrdersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListGuestOrdersReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _StoreOrderService_CancelMyOrder0_HTTP_Handler(srv StoreOrderServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in CancelMyOrderRequest
@@ -131,6 +155,9 @@ type StoreOrderServiceHTTPClient interface {
 	CreateOrder(ctx context.Context, req *CreateOrderRequest, opts ...http.CallOption) (rsp *CreateOrderReply, err error)
 	// GetOrder GetOrder 凭单号+查询密码查单（三重门之一二：查询密码/登录态本人）。
 	GetOrder(ctx context.Context, req *GetOrderRequest, opts ...http.CallOption) (rsp *GetOrderReply, err error)
+	// ListGuestOrders ListGuestOrders 游客按下单联系方式查订单列表（邮箱/手机号；精简信息——
+	// 卡密仍需逐单查询密码，防枚举：查不到返回空）。
+	ListGuestOrders(ctx context.Context, req *ListGuestOrdersRequest, opts ...http.CallOption) (rsp *ListGuestOrdersReply, err error)
 	// ListMyOrders ListMyOrders 我的订单（登录态；offset 分页）。
 	ListMyOrders(ctx context.Context, req *ListMyOrdersRequest, opts ...http.CallOption) (rsp *ListMyOrdersReply, err error)
 }
@@ -187,6 +214,24 @@ func (c *StoreOrderServiceHTTPClientImpl) GetOrder(ctx context.Context, in *GetO
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationStoreOrderServiceGetOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListGuestOrders ListGuestOrders 游客按下单联系方式查订单列表（邮箱/手机号；精简信息——
+// 卡密仍需逐单查询密码，防枚举：查不到返回空）。
+func (c *StoreOrderServiceHTTPClientImpl) ListGuestOrders(ctx context.Context, in *ListGuestOrdersRequest, opts ...http.CallOption) (*ListGuestOrdersReply, error) {
+	var out ListGuestOrdersReply
+	pattern := "/api/v1/storefront/guest-orders"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationStoreOrderServiceListGuestOrders),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

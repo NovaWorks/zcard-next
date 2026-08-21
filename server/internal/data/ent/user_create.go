@@ -70,6 +70,20 @@ func (_c *UserCreate) SetNillableEmail(v *string) *UserCreate {
 	return _c
 }
 
+// SetPhone sets the "phone" field.
+func (_c *UserCreate) SetPhone(v string) *UserCreate {
+	_c.mutation.SetPhone(v)
+	return _c
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (_c *UserCreate) SetNillablePhone(v *string) *UserCreate {
+	if v != nil {
+		_c.SetPhone(*v)
+	}
+	return _c
+}
+
 // SetPasswordHash sets the "password_hash" field.
 func (_c *UserCreate) SetPasswordHash(v string) *UserCreate {
 	_c.mutation.SetPasswordHash(v)
@@ -154,6 +168,20 @@ func (_c *UserCreate) SetNillableInviteL3(v *uint64) *UserCreate {
 	return _c
 }
 
+// SetPromoCode sets the "promo_code" field.
+func (_c *UserCreate) SetPromoCode(v string) *UserCreate {
+	_c.mutation.SetPromoCode(v)
+	return _c
+}
+
+// SetNillablePromoCode sets the "promo_code" field if the given value is not nil.
+func (_c *UserCreate) SetNillablePromoCode(v *string) *UserCreate {
+	if v != nil {
+		_c.SetPromoCode(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *UserCreate) SetID(v uint64) *UserCreate {
 	_c.mutation.SetID(v)
@@ -230,6 +258,11 @@ func (_c *UserCreate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Phone(); ok {
+		if err := user.PhoneValidator(v); err != nil {
+			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "User.phone": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.PasswordHash(); ok {
 		if err := user.PasswordHashValidator(v); err != nil {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
@@ -241,6 +274,11 @@ func (_c *UserCreate) check() error {
 	if v, ok := _c.mutation.Status(); ok {
 		if err := user.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.PromoCode(); ok {
+		if err := user.PromoCodeValidator(v); err != nil {
+			return &ValidationError{Name: "promo_code", err: fmt.Errorf(`ent: validator failed for field "User.promo_code": %w`, err)}
 		}
 	}
 	return nil
@@ -292,6 +330,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldEmail, field.TypeString, value)
 		_node.Email = value
 	}
+	if value, ok := _c.mutation.Phone(); ok {
+		_spec.SetField(user.FieldPhone, field.TypeString, value)
+		_node.Phone = value
+	}
 	if value, ok := _c.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 		_node.PasswordHash = value
@@ -315,6 +357,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.InviteL3(); ok {
 		_spec.SetField(user.FieldInviteL3, field.TypeUint64, value)
 		_node.InviteL3 = value
+	}
+	if value, ok := _c.mutation.PromoCode(); ok {
+		_spec.SetField(user.FieldPromoCode, field.TypeString, value)
+		_node.PromoCode = value
 	}
 	return _node, _spec
 }
@@ -407,6 +453,24 @@ func (u *UserUpsert) UpdateEmail() *UserUpsert {
 // ClearEmail clears the value of the "email" field.
 func (u *UserUpsert) ClearEmail() *UserUpsert {
 	u.SetNull(user.FieldEmail)
+	return u
+}
+
+// SetPhone sets the "phone" field.
+func (u *UserUpsert) SetPhone(v string) *UserUpsert {
+	u.Set(user.FieldPhone, v)
+	return u
+}
+
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePhone() *UserUpsert {
+	u.SetExcluded(user.FieldPhone)
+	return u
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (u *UserUpsert) ClearPhone() *UserUpsert {
+	u.SetNull(user.FieldPhone)
 	return u
 }
 
@@ -530,6 +594,24 @@ func (u *UserUpsert) ClearInviteL3() *UserUpsert {
 	return u
 }
 
+// SetPromoCode sets the "promo_code" field.
+func (u *UserUpsert) SetPromoCode(v string) *UserUpsert {
+	u.Set(user.FieldPromoCode, v)
+	return u
+}
+
+// UpdatePromoCode sets the "promo_code" field to the value that was provided on create.
+func (u *UserUpsert) UpdatePromoCode() *UserUpsert {
+	u.SetExcluded(user.FieldPromoCode)
+	return u
+}
+
+// ClearPromoCode clears the value of the "promo_code" field.
+func (u *UserUpsert) ClearPromoCode() *UserUpsert {
+	u.SetNull(user.FieldPromoCode)
+	return u
+}
+
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -627,6 +709,27 @@ func (u *UserUpsertOne) UpdateEmail() *UserUpsertOne {
 func (u *UserUpsertOne) ClearEmail() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearEmail()
+	})
+}
+
+// SetPhone sets the "phone" field.
+func (u *UserUpsertOne) SetPhone(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPhone(v)
+	})
+}
+
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePhone() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePhone()
+	})
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (u *UserUpsertOne) ClearPhone() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPhone()
 	})
 }
 
@@ -767,6 +870,27 @@ func (u *UserUpsertOne) UpdateInviteL3() *UserUpsertOne {
 func (u *UserUpsertOne) ClearInviteL3() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearInviteL3()
+	})
+}
+
+// SetPromoCode sets the "promo_code" field.
+func (u *UserUpsertOne) SetPromoCode(v string) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPromoCode(v)
+	})
+}
+
+// UpdatePromoCode sets the "promo_code" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdatePromoCode() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePromoCode()
+	})
+}
+
+// ClearPromoCode clears the value of the "promo_code" field.
+func (u *UserUpsertOne) ClearPromoCode() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPromoCode()
 	})
 }
 
@@ -1036,6 +1160,27 @@ func (u *UserUpsertBulk) ClearEmail() *UserUpsertBulk {
 	})
 }
 
+// SetPhone sets the "phone" field.
+func (u *UserUpsertBulk) SetPhone(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPhone(v)
+	})
+}
+
+// UpdatePhone sets the "phone" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePhone() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePhone()
+	})
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (u *UserUpsertBulk) ClearPhone() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPhone()
+	})
+}
+
 // SetPasswordHash sets the "password_hash" field.
 func (u *UserUpsertBulk) SetPasswordHash(v string) *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
@@ -1173,6 +1318,27 @@ func (u *UserUpsertBulk) UpdateInviteL3() *UserUpsertBulk {
 func (u *UserUpsertBulk) ClearInviteL3() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.ClearInviteL3()
+	})
+}
+
+// SetPromoCode sets the "promo_code" field.
+func (u *UserUpsertBulk) SetPromoCode(v string) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetPromoCode(v)
+	})
+}
+
+// UpdatePromoCode sets the "promo_code" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdatePromoCode() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdatePromoCode()
+	})
+}
+
+// ClearPromoCode clears the value of the "promo_code" field.
+func (u *UserUpsertBulk) ClearPromoCode() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.ClearPromoCode()
 	})
 }
 

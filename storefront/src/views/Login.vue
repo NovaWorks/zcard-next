@@ -2,12 +2,16 @@
   <div class="card" style="max-width: 420px; margin: 40px auto;">
     <h2 style="margin-bottom: 16px;">登录</h2>
     <div class="field">
-      <label>用户名</label>
-      <input class="input" v-model="username" type="text" placeholder="用户名" @keyup.enter="submit" />
+      <label>账号</label>
+      <input class="input" v-model="username" type="text" placeholder="用户名 / 邮箱 / 手机号" @keyup.enter="submit" />
     </div>
     <div class="field">
       <label>密码</label>
       <input class="input" v-model="password" type="password" placeholder="密码" @keyup.enter="submit" />
+    </div>
+    <div v-if="captchaCfg.login" class="field">
+      <label>图形验证码 *</label>
+      <CaptchaInput ref="captchaRef" @update:code="captchaCode = $event" @update:captcha-id="captchaId = $event" />
     </div>
     <div v-if="error" class="error">{{ error }}</div>
     <button class="btn" style="width: 100%; margin-top: 8px;" :disabled="loading" @click="submit">
@@ -21,9 +25,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { login } from '@/api';
+import { login, fetchCaptchaConfig, type CaptchaConfig } from '@/api';
+import CaptchaInput from '@/components/CaptchaInput.vue';
 import { setToken } from '@/api/client';
 import { refreshAuth } from '@/auth';
 
@@ -33,18 +38,36 @@ const username = ref('');
 const password = ref('');
 const error = ref('');
 const loading = ref(false);
+const captchaCfg = ref<CaptchaConfig>({ login: false, register: true, order: false, reset: true });
+const captchaId = ref('');
+const captchaCode = ref('');
+const captchaRef = ref<InstanceType<typeof CaptchaInput> | null>(null);
+
+onMounted(async () => {
+  captchaCfg.value = await fetchCaptchaConfig();
+});
 
 async function submit() {
   if (!username.value || !password.value) {
-    error.value = '请输入用户名和密码';
+    error.value = '请输入账号和密码';
     return;
   }
   loading.value = true;
   error.value = '';
-  const { data, error: err } = await login({ username: username.value, password: password.value });
+  if (captchaCfg.value.login && !captchaCode.value) {
+    error.value = '请输入图形验证码';
+    return;
+  }
+  const { data, error: err } = await login({
+    username: username.value,
+    password: password.value,
+    captcha_id: captchaId.value || undefined,
+    captcha_code: captchaCode.value || undefined,
+  });
   loading.value = false;
   if (err || !data) {
     error.value = err || '登录失败';
+    captchaRef.value?.refresh(); // 失败自动换图
     return;
   }
   setToken(data.access_token);

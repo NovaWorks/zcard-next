@@ -4,16 +4,19 @@ package order
 
 import (
 	"context"
+	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
@@ -27,12 +30,13 @@ import (
 // StoreOrderService 顾客下单服务。
 type StoreOrderService struct {
 	storefrontv1.UnimplementedStoreOrderServiceServer
-	uc *OrderUsecase
+	uc      *OrderUsecase
+	captcha *captcha.Service // 图形验证码（captcha_order 场景）
 }
 
 // NewStoreOrderService 构造。
-func NewStoreOrderService(uc *OrderUsecase) *StoreOrderService {
-	return &StoreOrderService{uc: uc}
+func NewStoreOrderService(uc *OrderUsecase, cap *captcha.Service) *StoreOrderService {
+	return &StoreOrderService{uc: uc, captcha: cap}
 }
 
 // CreateOrder 下单。
@@ -49,11 +53,23 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 			ProductID: it.GetProductId(), SkuID: it.GetSkuId(), Quantity: it.GetQuantity(),
 		})
 	}
+	// 登录态绑定买家（userAuthMiddleware 注入的 claims；0=游客单）
+	var userID uint64
+	// 图形验证码（captcha_order 开启时前置——游客下单防机器人）
+	if s.captcha != nil {
+		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
+			return nil, err
+		}
+	}
+	if claims := identity.ClaimsFromContext(ctx); claims != nil {
+		userID = claims.Subject
+	}
 	res, err := s.uc.CreateOrder(ctx, CreateOrderInput{
-		Items: items, GuestContact: req.GetGuestContact(),
+		Items: items, UserID: userID, GuestContact: req.GetGuestContact(),
 		QueryPassword: req.GetQueryPassword(), Contact: req.GetContact(),
 		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),
 		UsePoints: req.GetUsePoints(),
+		RefCode: req.GetRefCode(),
 		// P1-03：Idempotency-Key 头（同 key 双击返回首单，§7.3）
 		IdempotencyKey: idempotencyKeyFromContext(ctx),
 	})
@@ -89,6 +105,9 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		OrderNo: o.OrderNo, Status: string(o.Status), TotalCents: o.TotalAmount,
 		CreatedAt: o.CreatedAt.Unix(),
 	}
+	if !o.ExpiredAt.IsZero() {
+		reply.ExpiresAt = o.ExpiredAt.Unix()
+	}
 	// 子项
 	items, _ := data.Client(ctx, s.uc.Data).OrderItem.Query().
 		Where(orderitem.OrderID(o.ID)).All(ctx)
@@ -120,6 +139,38 @@ func (s *StoreOrderService) ListMyOrders(ctx context.Context, req *storefrontv1.
 		}
 		if !o.ExpiredAt.IsZero() {
 			item.ExpiredAt = o.ExpiredAt.Unix()
+		}
+		reply.Orders = append(reply.Orders, item)
+	}
+	return reply, nil
+}
+
+// ListGuestOrders 游客按下单联系方式查订单列表（邮箱/手机号）。
+// 安全口径：仅游客单（user_id 空）；精简信息（单号/状态/金额/时间——无卡密）；
+// 卡密仍需逐单查询密码（fetchDelivery 三重门）；查不到返回空列表（防枚举与
+// 查询不存在表现一致）；限最近 20 条。
+func (s *StoreOrderService) ListGuestOrders(ctx context.Context, req *storefrontv1.ListGuestOrdersRequest) (*storefrontv1.ListGuestOrdersReply, error) {
+	contact := strings.TrimSpace(req.GetContact())
+	if contact == "" || len(contact) > 255 {
+		return nil, errors.BadRequest("order.CONTACT_INVALID", "请输入下单时留的邮箱或手机号")
+	}
+	rows, err := data.Client(ctx, s.uc.Data).Order.Query().
+		Where(
+			// 游客单：user_id NULL 或 0（历史写入两种形态并存）
+			order.Or(order.UserIDIsNil(), order.UserID(0)),
+			order.Or(order.Contact(contact), order.GuestContact(contact)),
+		).
+		Order(ent.Desc(order.FieldID)).
+		Limit(20).
+		All(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("order.LIST_FAILED", "查询失败")
+	}
+	reply := &storefrontv1.ListGuestOrdersReply{}
+	for _, o := range rows {
+		item := &storefrontv1.GuestOrderItem{
+			OrderNo: o.OrderNo, Status: string(o.Status), TotalCents: o.TotalAmount,
+			CreatedAt: o.CreatedAt.Unix(), ExpiresAt: o.ExpiredAt.Unix(),
 		}
 		reply.Orders = append(reply.Orders, item)
 	}
@@ -331,6 +382,14 @@ func mapOrderErr(err error) error {
 		return errors.BadRequest("order.TRANSITION_NOT_ALLOWED", "状态迁移不允许")
 	case contains(msg, "NOT_FOUND"):
 		return errors.NotFound("order.NOT_FOUND", "订单不存在")
+	case contains(msg, "QUERY_PASSWORD_REQUIRED"):
+		return errors.BadRequest("order.QUERY_PASSWORD_REQUIRED", "请设置查询密码（至少 4 位，取货时使用）")
+	case contains(msg, "CONTACT_REQUIRED"), contains(msg, "CONTACT_INVALID"):
+		// 透出 usecase 校验文案（含联系方式模式说明）
+		if idx := strings.Index(msg, ": "); idx >= 0 && idx+2 < len(msg) {
+			return errors.BadRequest("order.CONTACT_INVALID", msg[idx+2:])
+		}
+		return errors.BadRequest("order.CONTACT_INVALID", "请填写有效的联系方式")
 	default:
 		return errors.InternalServer("order.CREATE_FAILED", "下单失败")
 	}

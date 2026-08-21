@@ -68,6 +68,26 @@ func (_u *UserUpdate) ClearEmail() *UserUpdate {
 	return _u
 }
 
+// SetPhone sets the "phone" field.
+func (_u *UserUpdate) SetPhone(v string) *UserUpdate {
+	_u.mutation.SetPhone(v)
+	return _u
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (_u *UserUpdate) SetNillablePhone(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetPhone(*v)
+	}
+	return _u
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (_u *UserUpdate) ClearPhone() *UserUpdate {
+	_u.mutation.ClearPhone()
+	return _u
+}
+
 // SetPasswordHash sets the "password_hash" field.
 func (_u *UserUpdate) SetPasswordHash(v string) *UserUpdate {
 	_u.mutation.SetPasswordHash(v)
@@ -203,6 +223,26 @@ func (_u *UserUpdate) ClearInviteL3() *UserUpdate {
 	return _u
 }
 
+// SetPromoCode sets the "promo_code" field.
+func (_u *UserUpdate) SetPromoCode(v string) *UserUpdate {
+	_u.mutation.SetPromoCode(v)
+	return _u
+}
+
+// SetNillablePromoCode sets the "promo_code" field if the given value is not nil.
+func (_u *UserUpdate) SetNillablePromoCode(v *string) *UserUpdate {
+	if v != nil {
+		_u.SetPromoCode(*v)
+	}
+	return _u
+}
+
+// ClearPromoCode clears the value of the "promo_code" field.
+func (_u *UserUpdate) ClearPromoCode() *UserUpdate {
+	_u.mutation.ClearPromoCode()
+	return _u
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdate) Mutation() *UserMutation {
 	return _u.mutation
@@ -256,6 +296,11 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Phone(); ok {
+		if err := user.PhoneValidator(v); err != nil {
+			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "User.phone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PasswordHash(); ok {
 		if err := user.PasswordHashValidator(v); err != nil {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
@@ -264,6 +309,11 @@ func (_u *UserUpdate) check() error {
 	if v, ok := _u.mutation.Status(); ok {
 		if err := user.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PromoCode(); ok {
+		if err := user.PromoCodeValidator(v); err != nil {
+			return &ValidationError{Name: "promo_code", err: fmt.Errorf(`ent: validator failed for field "User.promo_code": %w`, err)}
 		}
 	}
 	return nil
@@ -292,6 +342,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.EmailCleared() {
 		_spec.ClearField(user.FieldEmail, field.TypeString)
+	}
+	if value, ok := _u.mutation.Phone(); ok {
+		_spec.SetField(user.FieldPhone, field.TypeString, value)
+	}
+	if _u.mutation.PhoneCleared() {
+		_spec.ClearField(user.FieldPhone, field.TypeString)
 	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
@@ -334,6 +390,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.InviteL3Cleared() {
 		_spec.ClearField(user.FieldInviteL3, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.PromoCode(); ok {
+		_spec.SetField(user.FieldPromoCode, field.TypeString, value)
+	}
+	if _u.mutation.PromoCodeCleared() {
+		_spec.ClearField(user.FieldPromoCode, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -392,6 +454,26 @@ func (_u *UserUpdateOne) SetNillableEmail(v *string) *UserUpdateOne {
 // ClearEmail clears the value of the "email" field.
 func (_u *UserUpdateOne) ClearEmail() *UserUpdateOne {
 	_u.mutation.ClearEmail()
+	return _u
+}
+
+// SetPhone sets the "phone" field.
+func (_u *UserUpdateOne) SetPhone(v string) *UserUpdateOne {
+	_u.mutation.SetPhone(v)
+	return _u
+}
+
+// SetNillablePhone sets the "phone" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillablePhone(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetPhone(*v)
+	}
+	return _u
+}
+
+// ClearPhone clears the value of the "phone" field.
+func (_u *UserUpdateOne) ClearPhone() *UserUpdateOne {
+	_u.mutation.ClearPhone()
 	return _u
 }
 
@@ -530,6 +612,26 @@ func (_u *UserUpdateOne) ClearInviteL3() *UserUpdateOne {
 	return _u
 }
 
+// SetPromoCode sets the "promo_code" field.
+func (_u *UserUpdateOne) SetPromoCode(v string) *UserUpdateOne {
+	_u.mutation.SetPromoCode(v)
+	return _u
+}
+
+// SetNillablePromoCode sets the "promo_code" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillablePromoCode(v *string) *UserUpdateOne {
+	if v != nil {
+		_u.SetPromoCode(*v)
+	}
+	return _u
+}
+
+// ClearPromoCode clears the value of the "promo_code" field.
+func (_u *UserUpdateOne) ClearPromoCode() *UserUpdateOne {
+	_u.mutation.ClearPromoCode()
+	return _u
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (_u *UserUpdateOne) Mutation() *UserMutation {
 	return _u.mutation
@@ -596,6 +698,11 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "User.email": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Phone(); ok {
+		if err := user.PhoneValidator(v); err != nil {
+			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "User.phone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.PasswordHash(); ok {
 		if err := user.PasswordHashValidator(v); err != nil {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
@@ -604,6 +711,11 @@ func (_u *UserUpdateOne) check() error {
 	if v, ok := _u.mutation.Status(); ok {
 		if err := user.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "User.status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PromoCode(); ok {
+		if err := user.PromoCodeValidator(v); err != nil {
+			return &ValidationError{Name: "promo_code", err: fmt.Errorf(`ent: validator failed for field "User.promo_code": %w`, err)}
 		}
 	}
 	return nil
@@ -650,6 +762,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if _u.mutation.EmailCleared() {
 		_spec.ClearField(user.FieldEmail, field.TypeString)
 	}
+	if value, ok := _u.mutation.Phone(); ok {
+		_spec.SetField(user.FieldPhone, field.TypeString, value)
+	}
+	if _u.mutation.PhoneCleared() {
+		_spec.ClearField(user.FieldPhone, field.TypeString)
+	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
@@ -691,6 +809,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.InviteL3Cleared() {
 		_spec.ClearField(user.FieldInviteL3, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.PromoCode(); ok {
+		_spec.SetField(user.FieldPromoCode, field.TypeString, value)
+	}
+	if _u.mutation.PromoCodeCleared() {
+		_spec.ClearField(user.FieldPromoCode, field.TypeString)
 	}
 	_node = &User{config: _u.config}
 	_spec.Assign = _node.assignValues

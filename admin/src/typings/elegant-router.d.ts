@@ -20,6 +20,7 @@ declare module "@elegant-router/types" {
     "403": "/403";
     "404": "/404";
     "500": "/500";
+    "channel": "/channel";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "inventory": "/inventory";
@@ -30,6 +31,7 @@ declare module "@elegant-router/types" {
     "product": "/product";
     "settings": "/settings";
     "staff": "/staff";
+    "user": "/user";
     "wallet": "/wallet";
   };
 
@@ -65,6 +67,7 @@ declare module "@elegant-router/types" {
     | "403"
     | "404"
     | "500"
+    | "channel"
     | "home"
     | "iframe-page"
     | "inventory"
@@ -75,6 +78,7 @@ declare module "@elegant-router/types" {
     | "product"
     | "settings"
     | "staff"
+    | "user"
     | "wallet"
   >;
 
@@ -97,6 +101,7 @@ declare module "@elegant-router/types" {
     | "500"
     | "iframe-page"
     | "login"
+    | "channel"
     | "home"
     | "inventory"
     | "marketing"
@@ -105,6 +110,7 @@ declare module "@elegant-router/types" {
     | "product"
     | "settings"
     | "staff"
+    | "user"
     | "wallet"
   >;
 

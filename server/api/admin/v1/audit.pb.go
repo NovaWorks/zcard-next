@@ -95,6 +95,7 @@ type OpLogItem struct {
 	AfterJson       string                 `protobuf:"bytes,8,opt,name=after_json,json=afterJson,proto3" json:"after_json,omitempty"`
 	Ip              string                 `protobuf:"bytes,9,opt,name=ip,proto3" json:"ip,omitempty"`
 	CreatedAt       int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	OperatorName    string                 `protobuf:"bytes,11,opt,name=operator_name,json=operatorName,proto3" json:"operator_name,omitempty"` // 读取时富化的操作者账号（已删除/未知为空）
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -197,6 +198,13 @@ func (x *OpLogItem) GetCreatedAt() int64 {
 		return x.CreatedAt
 	}
 	return 0
+}
+
+func (x *OpLogItem) GetOperatorName() string {
+	if x != nil {
+		return x.OperatorName
+	}
+	return ""
 }
 
 type ListOpLogsReply struct {
@@ -336,6 +344,7 @@ type SecurityLogItem struct {
 	Ip            string                 `protobuf:"bytes,5,opt,name=ip,proto3" json:"ip,omitempty"`
 	MetadataJson  string                 `protobuf:"bytes,6,opt,name=metadata_json,json=metadataJson,proto3" json:"metadata_json,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ActorName     string                 `protobuf:"bytes,8,opt,name=actor_name,json=actorName,proto3" json:"actor_name,omitempty"` // 读取时富化的主体账号（guest/system/未知为空）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -417,6 +426,13 @@ func (x *SecurityLogItem) GetCreatedAt() int64 {
 		return x.CreatedAt
 	}
 	return 0
+}
+
+func (x *SecurityLogItem) GetActorName() string {
+	if x != nil {
+		return x.ActorName
+	}
+	return ""
 }
 
 type ListSecurityLogsReply struct {
@@ -788,7 +804,7 @@ const file_admin_v1_audit_proto_rawDesc = "" +
 	"\voperator_id\x18\x01 \x01(\x04R\n" +
 	"operatorId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\xa9\x02\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\xce\x02\n" +
 	"\tOpLogItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12#\n" +
 	"\roperator_type\x18\x02 \x01(\tR\foperatorType\x12\x1f\n" +
@@ -804,7 +820,8 @@ const file_admin_v1_audit_proto_rawDesc = "" +
 	"\x02ip\x18\t \x01(\tR\x02ip\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\x03R\tcreatedAt\"\x8b\x01\n" +
+	" \x01(\x03R\tcreatedAt\x12#\n" +
+	"\roperator_name\x18\v \x01(\tR\foperatorName\"\x8b\x01\n" +
 	"\x0fListOpLogsReply\x121\n" +
 	"\x04logs\x18\x01 \x03(\v2\x1d.zcard.api.admin.v1.OpLogItemR\x04logs\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
@@ -813,7 +830,7 @@ const file_admin_v1_audit_proto_rawDesc = "" +
 	"\x17ListSecurityLogsRequest\x12\x16\n" +
 	"\x06action\x18\x01 \x01(\tR\x06action\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\xc7\x01\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\xe6\x01\n" +
 	"\x0fSecurityLogItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -823,7 +840,9 @@ const file_admin_v1_audit_proto_rawDesc = "" +
 	"\x02ip\x18\x05 \x01(\tR\x02ip\x12#\n" +
 	"\rmetadata_json\x18\x06 \x01(\tR\fmetadataJson\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\x03R\tcreatedAt\"\x97\x01\n" +
+	"created_at\x18\a \x01(\x03R\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"actor_name\x18\b \x01(\tR\tactorName\"\x97\x01\n" +
 	"\x15ListSecurityLogsReply\x127\n" +
 	"\x04logs\x18\x01 \x03(\v2#.zcard.api.admin.v1.SecurityLogItemR\x04logs\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +

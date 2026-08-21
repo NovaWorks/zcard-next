@@ -32,7 +32,11 @@ service StoreWalletService {
       body: "*"
     };
   }
-  // CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+  // ListMyWithdrawals 本人提现记录（状态/驳回原因/时间）。
+  rpc ListMyWithdrawals(ListMyWithdrawalsRequest) returns (ListMyWithdrawalsReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/wallet/withdrawals/mine" };
+  }
+  // CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
   rpc CreateWithdrawal(CreateWithdrawalRequest) returns (CreateWithdrawalReply) {
     option (google.api.http) = {
       post: "/api/v1/storefront/wallet/withdrawals"
@@ -90,11 +94,37 @@ message RedeemGiftcardReply {
   int64 balance_after_cents = 2;
 }
 
+message ListMyWithdrawalsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListMyWithdrawalsReply {
+  repeated MyWithdrawalItem withdrawals = 1;
+  int64 total = 2;
+}
+
+message MyWithdrawalItem {
+  uint64 withdrawal_id = 1;
+  int64 amount_cents = 2;
+  int64 fee_cents = 3;
+  string method_type = 4;
+  string method_name = 5;
+  string account = 6;
+  string status = 7; // pending | approved | paid | rejected
+  string reject_reason = 8;
+  int64 reviewed_at = 9;
+  int64 paid_at = 10;
+  int64 created_at = 11;
+  string receipt = 12; // 打款回执（流水号/备注）
+}
+
 // CreateWithdrawalRequest 提现申请（金额/收款方式；method_type 须在白名单内）。
 message CreateWithdrawalRequest {
   int64 amount_cents = 1 [(google.api.field_behavior) = REQUIRED];
-  string method_type = 2 [(google.api.field_behavior) = REQUIRED]; // 白名单 type（alipay/wechat/bank...）
-  string account = 3 [(google.api.field_behavior) = REQUIRED];    // 收款账号
+  string method_type = 2 [(google.api.field_behavior) = REQUIRED]; // 白名单 type（alipay/wechat/usdt_trc20/bank）
+  string account = 3 [(google.api.field_behavior) = REQUIRED];    // 收款账号（USDT=TRC20 地址）
+  string qr_code_url = 4; // 收款码图片 URL（微信/支付宝可选；admin 审核展示）
 }
 
 message CreateWithdrawalReply {

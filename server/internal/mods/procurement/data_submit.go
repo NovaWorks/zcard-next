@@ -111,8 +111,14 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 		return nil // 防御：非上游项（本地项误入）
 	}
 
-	// 建单（pending；dedupe_key = order_item:N）
-	po, err := s.repo.CreatePending(ctx, orderItemID, p.UpstreamSourceID, p.UpstreamProductCode, quantity, "auto_refund", payload.OrderNo)
+	// 建单（pending；dedupe_key = order_item:N；失败策略取渠道级配置，默认自动退款）
+	failStrategy := "auto_refund"
+	if s.gw != nil {
+		if fs := s.gw.FailStrategyOf(ctx, p.UpstreamSourceID); fs != "" {
+			failStrategy = fs
+		}
+	}
+	po, err := s.repo.CreatePending(ctx, orderItemID, p.UpstreamSourceID, p.UpstreamProductCode, quantity, failStrategy, payload.OrderNo)
 	if err != nil {
 		if errors.Is(err, ErrDuplicatePurchase) {
 			return nil // 并发已建
@@ -138,7 +144,8 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	switch res.Status {
 	case "delivered":
 		return s.finalizeDelivered(ctx, po.ID, payload.OrderID, orderItemID, productID, payload.SubsiteID, res.Cards, res.Amount)
-	case "pending", "submitted":
+	case "pending", "submitted", "paid", "accepted", "processing":
+		// dujiao 等上游：钱包受理即 paid（异步交付）——轮询/回调推进
 		// 受理：记 upstream_order_id + 退避（默认间隔表首档 30s）
 		next := time.Now().UTC().Add(30 * time.Second)
 		if err := s.repo.MarkSubmitted(ctx, po.ID, res.UpstreamOrderID, next); err != nil {

@@ -16,6 +16,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -23,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
@@ -87,6 +89,7 @@ type CreateOrderInput struct {
 	ControlAnswers map[string]string // 自定义控件答案（key=控件 ID，落 order.extra）
 	UsePoints      bool              // P3-01：积分兑换下单（全部商品须为积分商品；同事务扣分直落 paid）
 	IdempotencyKey string            // P1-03：下单幂等键（头 Idempotency-Key；同 key 返回首单）
+	RefCode        string            // 推广归因码（游客/无链用户：实时解析推广者 → 订单级快照）
 }
 
 // OrderItemInput 商品行。
@@ -108,6 +111,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	tc := tenancy.FromContext(ctx)
 	if in.SubsiteID == 0 {
 		in.SubsiteID = tc.SubsiteID
+	}
+
+	// 交易设置校验（settings.trade；读取失败走保守默认——强制查询密码 + any 联系方式）
+	if err := uc.validateTradeRequirements(ctx, in); err != nil {
+		return nil, err
 	}
 
 	// P2-06 下单风控闸门（事务前快速失败；事务内 pending 计数复查见 Gate 实现说明）
@@ -147,10 +155,22 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 		}
 
-		// 1) 锁卡（库存不足整批回滚）
+		// 1) 锁卡（库存不足整批回滚）。上游代发商品跳过本地锁卡——卡密在
+		// 支付后由 procurement 向上游采购回填（P2-02 链路；本地池无其卡）。
+		upstreamItem := map[uint64]bool{} // product_id → 是否上游项
 		var reserveItems []port.ReserveItem
 		for _, item := range in.Items {
 			if item.Quantity <= 0 {
+				continue
+			}
+			p, err := client.Product.Query().
+				Where(product.ID(item.ProductID), product.SubsiteID(in.SubsiteID)).
+				Only(txCtx)
+			if err != nil {
+				continue // 商品校验在计价循环统一做（PRODUCT_NOT_FOUND）
+			}
+			if p.UpstreamSourceID > 0 {
+				upstreamItem[item.ProductID] = true
 				continue
 			}
 			reserveItems = append(reserveItems, port.ReserveItem{
@@ -159,11 +179,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				Quantity:  item.Quantity,
 			})
 		}
-		if len(reserveItems) == 0 {
-			return fmt.Errorf("order.EMPTY_ITEMS")
-		}
-		if _, err := uc.Inv.Reserve(txCtx, in.SubsiteID, reserveItems); err != nil {
-			return fmt.Errorf("order.INSUFFICIENT_STOCK: %w", err)
+		if len(reserveItems) > 0 {
+			if _, err := uc.Inv.Reserve(txCtx, in.SubsiteID, reserveItems); err != nil {
+				return fmt.Errorf("order.INSUFFICIENT_STOCK: %w", err)
+			}
 		}
 
 		// 2) 生成订单号（雪花）
@@ -335,11 +354,19 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if in.UsePoints {
 			extra["points_total"] = pointsTotal // 积分口径快照（退款/审计读此处）
 		}
-		// P3-03：三级分销归因链快照（下单瞬间锁定；买家未登录或无链为空）
+		// P3-03：三级分销归因链快照（下单瞬间锁定）。优先级：
+		// 1) 登录用户读自身邀请链（注册时绑定）；
+		// 2) 链为空且带 ref_code（推广链接进站）→ 实时解析推广者订单级归因
+		//    （不改用户链——一次性快照；游客/无链老用户下单均发佣）
 		var invL1, invL2, invL3 uint64
 		if in.UserID > 0 {
 			if u, err := client.User.Get(txCtx, in.UserID); err == nil {
 				invL1, invL2, invL3 = u.InviteL1, u.InviteL2, u.InviteL3
+			}
+		}
+		if invL1 == 0 && in.RefCode != "" {
+			if inviter := uc.resolveRefCode(txCtx, in.RefCode); inviter != nil && inviter.ID != in.UserID {
+				invL1, invL2, invL3 = inviter.ID, inviter.InviteL1, inviter.InviteL2
 			}
 		}
 		// P3-04：分站快照（下单瞬间锁定——分账与退款逆向只认快照，不回溯）
@@ -390,8 +417,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			return fmt.Errorf("order.CREATE_FAILED: %w", err)
 		}
 
-		// 6) 绑定订单到卡（Reserve 后回填 order_id）
+		// 6) 绑定订单到卡（Reserve 后回填 order_id；上游项无本地卡可绑）
 		for _, item := range in.Items {
+			if upstreamItem[item.ProductID] {
+				continue
+			}
 			if err := uc.Inv.BindOrder(txCtx, in.SubsiteID, item.ProductID, o.ID, item.Quantity); err != nil {
 				return err
 			}
@@ -408,7 +438,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetQuantity(r.input.Quantity).
 				SetAmount(int64(r.res.Total)).
 				SetCost(r.cost).
-				SetFulfillmentType(orderitem.FulfillmentTypeAuto).
+				SetFulfillmentType(fulfillmentTypeOf(upstreamItem[r.input.ProductID])).
 				SetFulfillmentStatus("pending").
 				Save(txCtx)
 			if err != nil {
@@ -738,8 +768,170 @@ func (uc *OrderUsecase) flashCouponExclusive(ctx context.Context, flashApplied b
 	return *v.Exclusive
 }
 
+// resolveRefCode 推广码解析（双格式：8 位随机码 promo_code 匹配 / 旧数字 user_id）。
+// 与 identity.ResolvePromoCode 同口径；模块不互相依赖（ent 直查，通道 A 免疫）。
+func (uc *OrderUsecase) resolveRefCode(ctx context.Context, code string) *ent.User {
+	code = strings.ToUpper(strings.TrimSpace(code))
+	if code == "" {
+		return nil
+	}
+	client := data.Client(ctx, uc.Data)
+	if u, err := client.User.Query().Where(user.PromoCode(code)).Only(ctx); err == nil {
+		return u
+	}
+	// 旧数字 user_id 兼容（存量推广链接）
+	if isDigitStr(code) {
+		var id uint64
+		for _, c := range code {
+			id = id*10 + uint64(c-'0')
+		}
+		if id > 0 {
+			if u, err := client.User.Get(ctx, id); err == nil {
+				return u
+			}
+		}
+	}
+	return nil
+}
+
+func isDigitStr(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+// validateTradeRequirements 交易设置下单校验（settings.trade）：
+//   - query_password（默认 true）：下单必须设置查询密码（≥4 位）——否则客户忘记
+//     密码且无联系方式时订单无法找回
+//   - contact_required（默认 any）：none|phone|email|qq|any——游客必须留对应
+//     格式联系方式作为查询标识；登录用户已有账户可追溯，不强制
+//
+// 读取失败走保守默认（强制密码 + any）。
+func (uc *OrderUsecase) validateTradeRequirements(ctx context.Context, in CreateOrderInput) error {
+	// 查询密码强制（所有下单者——含登录用户：取货三重门的核心凭证）
+	if uc.queryPasswordRequired(ctx) {
+		if len(in.QueryPassword) < 4 {
+			return fmt.Errorf("order.QUERY_PASSWORD_REQUIRED: 请设置查询密码（至少 4 位，取货时使用）")
+		}
+	}
+	// 联系方式（仅游客；登录用户有账户可追溯；积分兑换游客在事务内 POINTS_LOGIN 拒绝，
+	// 此处跳过避免拦截语义——联系方式校验只对常规游客单生效）
+	if in.UserID == 0 && !in.UsePoints {
+		mode := uc.contactRequired(ctx)
+		contact := strings.TrimSpace(in.Contact)
+		if contact == "" {
+			contact = strings.TrimSpace(in.GuestContact)
+		}
+		if mode != "none" {
+			if contact == "" {
+				return fmt.Errorf("order.CONTACT_REQUIRED: 请填写联系方式（%s），用于订单查询与售后", contactModeLabel(mode))
+			}
+			if !contactMatchesMode(contact, mode) {
+				return fmt.Errorf("order.CONTACT_INVALID: 联系方式格式不符（需要%s）", contactModeLabel(mode))
+			}
+		}
+	}
+	return nil
+}
+
+// queryPasswordRequired 查询密码强制开关（settings.trade.query_password；默认 true）。
+func (uc *OrderUsecase) queryPasswordRequired(ctx context.Context) bool {
+	if uc.Settings == nil {
+		return true
+	}
+	raw, err := uc.Settings.GetJSON(ctx, "trade", "query_password")
+	if err != nil || len(raw) == 0 {
+		return true
+	}
+	var v bool
+	if json.Unmarshal(raw, &v) != nil {
+		return true
+	}
+	return v
+}
+
+// contactRequired 联系方式要求（settings.trade.contact_required；默认 any）。
+func (uc *OrderUsecase) contactRequired(ctx context.Context) string {
+	if uc.Settings == nil {
+		return "any"
+	}
+	raw, err := uc.Settings.GetJSON(ctx, "trade", "contact_required")
+	if err != nil || len(raw) == 0 {
+		return "any"
+	}
+	var v string
+	if json.Unmarshal(raw, &v) != nil || v == "" {
+		return "any"
+	}
+	return v
+}
+
+// contactModeLabel 联系方式要求显示名。
+func contactModeLabel(mode string) string {
+	switch mode {
+	case "phone":
+		return "手机号"
+	case "email":
+		return "邮箱"
+	case "qq":
+		return "QQ 号"
+	default:
+		return "邮箱或手机号等任一联系方式"
+	}
+}
+
+// contactMatchesMode 联系方式格式校验（宽松口径：any=邮箱/手机/QQ 任一）。
+func contactMatchesMode(contact, mode string) bool {
+	isEmail := strings.Contains(contact, "@") && strings.Contains(contact, ".")
+	isPhone := len(contact) >= 7 && len(contact) <= 15 && isDigitsOrPhone(contact)
+	isQQ := isDigits(contact) && len(contact) >= 5 && len(contact) <= 12
+	switch mode {
+	case "phone":
+		return isPhone
+	case "email":
+		return isEmail
+	case "qq":
+		return isQQ
+	default: // any
+		return isEmail || isPhone || isQQ
+	}
+}
+
+func isDigits(s string) bool {
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return len(s) > 0
+}
+
+func isDigitsOrPhone(s string) bool {
+	for _, r := range s {
+		if (r < '0' || r > '9') && r != '+' && r != '-' && r != ' ' {
+			return false
+		}
+	}
+	return true
+}
+
 // orderCostOf 订单成本合计（order_items 无成本列——按商品 factory_price 近似；
 // M1 精确成本随采购联动， affiliate 毛利口径以事件快照为准）。
 func orderCostOf(items []*ent.OrderItem) int64 {
 	return 0 // 事件侧精确毛利 M4 采购成本回填后启用；当前毛利口径 = 金额（BaseScope=amount 默认）
+}
+
+// fulfillmentTypeOf 上游代发项 → upstream（procurement 订阅 order.paid 后向上游
+// 采购）；本地商品 → auto（本地卡密履约）。
+func fulfillmentTypeOf(isUpstream bool) orderitem.FulfillmentType {
+	if isUpstream {
+		return orderitem.FulfillmentTypeUpstream
+	}
+	return orderitem.FulfillmentTypeAuto
 }

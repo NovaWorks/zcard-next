@@ -5,14 +5,17 @@ import { checkAuth } from "@/directives";
 import WithdrawTab from "./components/withdraw-tab.vue";
 import GiftcardTab from "./components/giftcard-tab.vue";
 import { ref, reactive, h } from "vue";
-import { NTag } from "naive-ui";
+import { NTag, NSelect } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
-import { fetchWalletBalance, adjustWalletBalance, fetchWalletTransactions } from "@/service/api";
+import { fetchWalletBalance, adjustWalletBalance, fetchWalletTransactions, fetchUsers } from "@/service/api";
 import { formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "WalletManagement" });
 
 const userId = ref<number | null>(null);
+const selectedUser = ref<any>(null);
+const userOptions = ref<{ label: string; value: number }[]>([]);
+const userLoading = ref(false);
 const balance = ref<any>(null);
 const balanceLoading = ref(false);
 const loading = ref(false);
@@ -105,9 +108,34 @@ const columns: DataTableColumns<any> = [
   { title: "时间", key: "created_at", width: 160, render: (row) => formatTime(row.created_at) },
 ];
 
+/** 远程搜索用户（用户名/注册邮箱模糊匹配），选中后以用户 ID 查余额/流水/调账 */
+async function onUserSearch(keyword: string) {
+  if (!keyword.trim()) {
+    userOptions.value = [];
+    return;
+  }
+  userLoading.value = true;
+  try {
+    const { data, error } = await fetchUsers({ keyword: keyword.trim(), page: 1, page_size: 10 });
+    if (!error && data) {
+      userOptions.value = (data.users || []).map((u: any) => ({
+        label: u.email ? `${u.username}（${u.email}）` : u.username,
+        value: u.id,
+        user: u,
+      }));
+    }
+  } finally {
+    userLoading.value = false;
+  }
+}
+
+function onUserChange(_value: number | null, option: any) {
+  selectedUser.value = option?.user || null;
+}
+
 async function loadBalance() {
   if (!userId.value) {
-    window.$message?.warning("请输入用户 ID");
+    window.$message?.warning("请搜索并选择用户（用户名或邮箱）");
     return;
   }
   balanceLoading.value = true;
@@ -178,9 +206,23 @@ async function handleAdjust() {
       <NTabPane name="balance" tab="余额/流水">
       <!-- 查询 -->
       <div class="mb-16px flex items-center gap-12px">
-        <NInputNumber v-model:value="userId" :min="1" placeholder="用户 ID" class="w-200px" />
+        <NSelect
+          v-model:value="userId"
+          :options="userOptions"
+          :loading="userLoading"
+          filterable
+          remote
+          clearable
+          placeholder="搜索用户名或注册邮箱"
+          class="w-300px"
+          @search="onUserSearch"
+          @update:value="onUserChange"
+        />
         <NButton type="primary" :loading="balanceLoading" @click="loadBalance">查询余额</NButton>
         <NButton v-auth="'wallet:adjust'" :disabled="!balance" @click="showAdjust = true">调账</NButton>
+        <span v-if="selectedUser" class="text-13px text-gray-500">
+          当前用户：#{{ selectedUser.id }} {{ selectedUser.username }}<template v-if="selectedUser.email">（{{ selectedUser.email }}）</template>
+        </span>
       </div>
 
       <!-- 余额卡片 -->

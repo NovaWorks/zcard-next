@@ -66,12 +66,15 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService) *queue.Cron {
 	c := queue.NewCron()
 	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
 		supplySync.PingAllActive(ctx)
 	})
+	// P2-10 S3：定时同步调度（每分钟扫描 settings.schedule 到期任务）+ 看门狗（僵死任务回收）
+	c.AddEvery("supply.schedule_scan", time.Minute, supplyScheduler.Scan)
+	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)
 	// M2：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
 	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
 	// M2：供货 nonce 过期清理（每小时）
@@ -84,6 +87,10 @@ func NewCron(supplySync *supply.SyncService, procure *procurement.ProcureService
 	})
 	c.AddEvery("audit.visit_flush", time.Minute, func(ctx context.Context) {
 		visitCounter.Flush()
+	})
+	// T5：访问明细/在线心跳清理（每小时——明细保留 90 天，心跳保留 24 小时）
+	c.AddEvery("audit.visit_cleanup", time.Hour, func(ctx context.Context) {
+		_ = trackRepo.CleanupVisitData(ctx)
 	})
 	// M3：定时群发扫描（到期 pending → 入队）
 	c.AddEvery("notify.broadcast_scan", time.Minute, broadcastSvc.ScanDue)

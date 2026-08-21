@@ -20,6 +20,18 @@ import { formatMoney } from "@/utils/money";
 
 defineOptions({ name: "InventoryManagement" });
 
+/** 导入批次状态 → 中文 */
+function importStatusText(s?: string) {
+  const map: Record<string, string> = {
+    pending: "待处理",
+    processing: "处理中",
+    done: "已完成",
+    failed: "失败",
+    canceled: "已撤销",
+  };
+  return (s && map[s]) || s || "-";
+}
+
 const loading = ref(false);
 const batchLoading = ref(false);
 const importing = ref(false);
@@ -180,14 +192,7 @@ const batchColumns: DataTableColumns<any> = [
           size: "small",
         },
         {
-          default: () =>
-            ({
-              pending: "待处理",
-              processing: "处理中",
-              done: "已完成",
-              failed: "失败",
-              canceled: "已撤销",
-            })[row.status] || row.status,
+          default: () => importStatusText(row.status),
         },
       ),
   },

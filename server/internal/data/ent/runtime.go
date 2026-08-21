@@ -39,6 +39,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/outboxevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
@@ -82,6 +83,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticketmessage"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usergroup"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usersession"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/v1idmap"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/virtualreview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/visitlog"
@@ -1181,6 +1183,39 @@ func init() {
 	outboxeventDescCreatedAt := outboxeventFields[8].Descriptor()
 	// outboxevent.DefaultCreatedAt holds the default value on creation for the created_at field.
 	outboxevent.DefaultCreatedAt = outboxeventDescCreatedAt.Default.(func() time.Time)
+	pageviewMixin := schema.PageView{}.Mixin()
+	pageviewMixinFields0 := pageviewMixin[0].Fields()
+	_ = pageviewMixinFields0
+	pageviewMixinFields1 := pageviewMixin[1].Fields()
+	_ = pageviewMixinFields1
+	pageviewFields := schema.PageView{}.Fields()
+	_ = pageviewFields
+	// pageviewDescCreatedAt is the schema descriptor for created_at field.
+	pageviewDescCreatedAt := pageviewMixinFields0[0].Descriptor()
+	// pageview.DefaultCreatedAt holds the default value on creation for the created_at field.
+	pageview.DefaultCreatedAt = pageviewDescCreatedAt.Default.(func() time.Time)
+	// pageviewDescUpdatedAt is the schema descriptor for updated_at field.
+	pageviewDescUpdatedAt := pageviewMixinFields0[1].Descriptor()
+	// pageview.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	pageview.DefaultUpdatedAt = pageviewDescUpdatedAt.Default.(func() time.Time)
+	// pageview.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	pageview.UpdateDefaultUpdatedAt = pageviewDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// pageviewDescSubsiteID is the schema descriptor for subsite_id field.
+	pageviewDescSubsiteID := pageviewMixinFields1[0].Descriptor()
+	// pageview.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	pageview.DefaultSubsiteID = pageviewDescSubsiteID.Default.(uint64)
+	// pageviewDescDay is the schema descriptor for day field.
+	pageviewDescDay := pageviewFields[1].Descriptor()
+	// pageview.DayValidator is a validator for the "day" field. It is called by the builders before save.
+	pageview.DayValidator = pageviewDescDay.Validators[0].(func(string) error)
+	// pageviewDescPath is the schema descriptor for path field.
+	pageviewDescPath := pageviewFields[2].Descriptor()
+	// pageview.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	pageview.PathValidator = pageviewDescPath.Validators[0].(func(string) error)
+	// pageviewDescIP is the schema descriptor for ip field.
+	pageviewDescIP := pageviewFields[4].Descriptor()
+	// pageview.IPValidator is a validator for the "ip" field. It is called by the builders before save.
+	pageview.IPValidator = pageviewDescIP.Validators[0].(func(string) error)
 	paymentMixin := schema.Payment{}.Mixin()
 	paymentMixinFields0 := paymentMixin[0].Fields()
 	_ = paymentMixinFields0
@@ -2032,6 +2067,22 @@ func init() {
 	supplieraccountDescNotifyURL := supplieraccountFields[7].Descriptor()
 	// supplieraccount.NotifyURLValidator is a validator for the "notify_url" field. It is called by the builders before save.
 	supplieraccount.NotifyURLValidator = supplieraccountDescNotifyURL.Validators[0].(func(string) error)
+	// supplieraccountDescDisplayName is the schema descriptor for display_name field.
+	supplieraccountDescDisplayName := supplieraccountFields[10].Descriptor()
+	// supplieraccount.DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
+	supplieraccount.DisplayNameValidator = supplieraccountDescDisplayName.Validators[0].(func(string) error)
+	// supplieraccountDescOwnerUserID is the schema descriptor for owner_user_id field.
+	supplieraccountDescOwnerUserID := supplieraccountFields[11].Descriptor()
+	// supplieraccount.DefaultOwnerUserID holds the default value on creation for the owner_user_id field.
+	supplieraccount.DefaultOwnerUserID = supplieraccountDescOwnerUserID.Default.(uint64)
+	// supplieraccountDescApplyReason is the schema descriptor for apply_reason field.
+	supplieraccountDescApplyReason := supplieraccountFields[12].Descriptor()
+	// supplieraccount.ApplyReasonValidator is a validator for the "apply_reason" field. It is called by the builders before save.
+	supplieraccount.ApplyReasonValidator = supplieraccountDescApplyReason.Validators[0].(func(string) error)
+	// supplieraccountDescReviewNote is the schema descriptor for review_note field.
+	supplieraccountDescReviewNote := supplieraccountFields[13].Descriptor()
+	// supplieraccount.ReviewNoteValidator is a validator for the "review_note" field. It is called by the builders before save.
+	supplieraccount.ReviewNoteValidator = supplieraccountDescReviewNote.Validators[0].(func(string) error)
 	supplierledgerentryFields := schema.SupplierLedgerEntry{}.Fields()
 	_ = supplierledgerentryFields
 	// supplierledgerentryDescType is the schema descriptor for type field.
@@ -2124,16 +2175,20 @@ func init() {
 	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[10].Descriptor()
 	// supplyconnection.DefaultPriceMarkupPercent holds the default value on creation for the price_markup_percent field.
 	supplyconnection.DefaultPriceMarkupPercent = supplyconnectionDescPriceMarkupPercent.Default.(float64)
+	// supplyconnectionDescPriceMarkupAmount is the schema descriptor for price_markup_amount field.
+	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[11].Descriptor()
+	// supplyconnection.DefaultPriceMarkupAmount holds the default value on creation for the price_markup_amount field.
+	supplyconnection.DefaultPriceMarkupAmount = supplyconnectionDescPriceMarkupAmount.Default.(int64)
 	// supplyconnectionDescAutoSyncPrice is the schema descriptor for auto_sync_price field.
-	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[12].Descriptor()
+	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[13].Descriptor()
 	// supplyconnection.DefaultAutoSyncPrice holds the default value on creation for the auto_sync_price field.
 	supplyconnection.DefaultAutoSyncPrice = supplyconnectionDescAutoSyncPrice.Default.(bool)
 	// supplyconnectionDescLastPingOk is the schema descriptor for last_ping_ok field.
-	supplyconnectionDescLastPingOk := supplyconnectionFields[16].Descriptor()
+	supplyconnectionDescLastPingOk := supplyconnectionFields[17].Descriptor()
 	// supplyconnection.DefaultLastPingOk holds the default value on creation for the last_ping_ok field.
 	supplyconnection.DefaultLastPingOk = supplyconnectionDescLastPingOk.Default.(bool)
 	// supplyconnectionDescBalanceCache is the schema descriptor for balance_cache field.
-	supplyconnectionDescBalanceCache := supplyconnectionFields[19].Descriptor()
+	supplyconnectionDescBalanceCache := supplyconnectionFields[20].Descriptor()
 	// supplyconnection.DefaultBalanceCache holds the default value on creation for the balance_cache field.
 	supplyconnection.DefaultBalanceCache = supplyconnectionDescBalanceCache.Default.(int64)
 	supplymappingMixin := schema.SupplyMapping{}.Mixin()
@@ -2368,10 +2423,18 @@ func init() {
 	userDescEmail := userFields[2].Descriptor()
 	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
+	// userDescPhone is the schema descriptor for phone field.
+	userDescPhone := userFields[3].Descriptor()
+	// user.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
+	user.PhoneValidator = userDescPhone.Validators[0].(func(string) error)
 	// userDescPasswordHash is the schema descriptor for password_hash field.
-	userDescPasswordHash := userFields[3].Descriptor()
+	userDescPasswordHash := userFields[4].Descriptor()
 	// user.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
 	user.PasswordHashValidator = userDescPasswordHash.Validators[0].(func(string) error)
+	// userDescPromoCode is the schema descriptor for promo_code field.
+	userDescPromoCode := userFields[10].Descriptor()
+	// user.PromoCodeValidator is a validator for the "promo_code" field. It is called by the builders before save.
+	user.PromoCodeValidator = userDescPromoCode.Validators[0].(func(string) error)
 	usergroupMixin := schema.UserGroup{}.Mixin()
 	usergroupMixinFields0 := usergroupMixin[0].Fields()
 	_ = usergroupMixinFields0
@@ -2395,6 +2458,31 @@ func init() {
 	usergroupDescName := usergroupFields[2].Descriptor()
 	// usergroup.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	usergroup.NameValidator = usergroupDescName.Validators[0].(func(string) error)
+	usersessionMixin := schema.UserSession{}.Mixin()
+	usersessionMixinFields0 := usersessionMixin[0].Fields()
+	_ = usersessionMixinFields0
+	usersessionMixinFields1 := usersessionMixin[1].Fields()
+	_ = usersessionMixinFields1
+	usersessionFields := schema.UserSession{}.Fields()
+	_ = usersessionFields
+	// usersessionDescCreatedAt is the schema descriptor for created_at field.
+	usersessionDescCreatedAt := usersessionMixinFields0[0].Descriptor()
+	// usersession.DefaultCreatedAt holds the default value on creation for the created_at field.
+	usersession.DefaultCreatedAt = usersessionDescCreatedAt.Default.(func() time.Time)
+	// usersessionDescUpdatedAt is the schema descriptor for updated_at field.
+	usersessionDescUpdatedAt := usersessionMixinFields0[1].Descriptor()
+	// usersession.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	usersession.DefaultUpdatedAt = usersessionDescUpdatedAt.Default.(func() time.Time)
+	// usersession.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	usersession.UpdateDefaultUpdatedAt = usersessionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// usersessionDescSubsiteID is the schema descriptor for subsite_id field.
+	usersessionDescSubsiteID := usersessionMixinFields1[0].Descriptor()
+	// usersession.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	usersession.DefaultSubsiteID = usersessionDescSubsiteID.Default.(uint64)
+	// usersessionDescIP is the schema descriptor for ip field.
+	usersessionDescIP := usersessionFields[2].Descriptor()
+	// usersession.IPValidator is a validator for the "ip" field. It is called by the builders before save.
+	usersession.IPValidator = usersessionDescIP.Validators[0].(func(string) error)
 	v1idmapFields := schema.V1IDMap{}.Fields()
 	_ = v1idmapFields
 	// v1idmapDescTableName is the schema descriptor for table_name field.
@@ -2535,4 +2623,8 @@ func init() {
 	withdrawalDescRejectReason := withdrawalFields[7].Descriptor()
 	// withdrawal.RejectReasonValidator is a validator for the "reject_reason" field. It is called by the builders before save.
 	withdrawal.RejectReasonValidator = withdrawalDescRejectReason.Validators[0].(func(string) error)
+	// withdrawalDescReceipt is the schema descriptor for receipt field.
+	withdrawalDescReceipt := withdrawalFields[10].Descriptor()
+	// withdrawal.ReceiptValidator is a validator for the "receipt" field. It is called by the builders before save.
+	withdrawal.ReceiptValidator = withdrawalDescReceipt.Validators[0].(func(string) error)
 }

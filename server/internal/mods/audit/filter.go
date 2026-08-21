@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 )
 
 // snapshotFn 快照取值函数（聚合键 → 变更前数据；由业务模块注册）。
@@ -32,9 +32,12 @@ func RegisterSnapshot(routePrefix string, fn snapshotFn) {
 }
 
 // OpAuditFilter 操作审计过滤器工厂。
+// signer：admin JWT 校验器（操作者身份取自令牌——鉴权中间件注入的 claims 只
+// 存在于下游 handler ctx，不会写回 Filter 层的 *http.Request，故此处自行校验；
+// HMAC 校验代价可忽略）。
 // permOf：operation → 权限点（authz 目录查询注入，避免循环依赖）。
 // 响应状态：仅 2xx 记录（错误响应未产生变更）。
-func OpAuditFilter(repo *AuditRepo, permOf func(op string) (code string, ok bool), opOf func(r *http.Request) string) func(http.Handler) http.Handler {
+func OpAuditFilter(repo *AuditRepo, signer *authn.Signer, permOf func(op string) (code string, ok bool), opOf func(r *http.Request) string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// 只审计变更类管理面操作（GET 不落）
@@ -60,8 +63,13 @@ func OpAuditFilter(repo *AuditRepo, permOf func(op string) (code string, ok bool
 				IP:           clientIP(r),
 				UserAgent:    truncate(r.UserAgent(), 255),
 			}
-			if claims := identity.ClaimsFromContext(r.Context()); claims != nil {
-				in.OperatorID = claims.Subject
+			// 操作者：admin JWT 直接校验（见函数注释）；失败留 0 = 未知
+			if signer != nil {
+				if tok, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer "); ok {
+					if claims, err := signer.Verify(authn.RealmAdmin, strings.TrimSpace(tok)); err == nil {
+						in.OperatorID = claims.Subject
+					}
+				}
 			}
 			if op := opOf(r); op != "" {
 				if code, ok := permOf(op); ok {

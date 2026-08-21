@@ -72,6 +72,10 @@ func Install(ctx context.Context, d *data.Data, in InstallInput) error {
 		if err := authz.EnsureBuiltinRoles(ctx, client); err != nil {
 			return err
 		}
+		// 2.1) 基础货币种子（幂等；CNY 恒等 rate=1）
+		if err := EnsureDefaultCurrencies(ctx, d); err != nil {
+			return err
+		}
 		// 3) 管理员（super_admin）
 		role, err := client.AdminRole.Query().Where().First(ctx)
 		if err != nil {

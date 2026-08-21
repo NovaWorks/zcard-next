@@ -13,32 +13,42 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/walletaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 )
 
-// CreateWithdrawal 提现申请：Lock(available→locked) + 落 withdrawals(pending)，
-// 同一事务（Lock 内部写流水；withdrawals 行状态机后续流转）。
+// CommissionConsumer 佣金消耗端口（打款 FIFO；affiliate.CommissionRepo 实现，
+// 通道 A——wallet 不直接依赖 affiliate 包）。
+type CommissionConsumer interface {
+	ConsumeAvailableFIFO(ctx context.Context, userID uint64, amount int64) error
+}
+
+// SetCommissionConsumer 装配期注入（wire 后手工/构造器）。
+func (r *WalletRepoImpl) SetCommissionConsumer(c CommissionConsumer) { r.commissions = c }
+
+// CreateWithdrawal 提现申请（佣金提现：冻结口径 = pending/approved 提现单金额
+// 合计——不锁钱包余额、不逐行锁佣金行；打款时 FIFO 消耗佣金置 withdrawn）。
+// 可提校验由 service 层完成（stats.available − frozen ≥ amount）。
 func (r *WalletRepoImpl) CreateWithdrawal(ctx context.Context, userID uint64, amount, fee int64, method map[string]any) (*ent.Withdrawal, error) {
-	var w *ent.Withdrawal
-	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
-		if err := r.Lock(txCtx, userID, amount, 0); err != nil {
-			return err // 余额不足/并发冲突整体回滚
-		}
-		created, err := data.Client(txCtx, r.data).Withdrawal.Create().
-			SetUserID(userID).
-			SetAmount(amount).
-			SetFee(fee).
-			SetMethod(method).
-			SetStatus(withdrawal.StatusPending).
-			Save(txCtx)
-		if err != nil {
-			return err
-		}
-		w = created
-		return nil
-	})
-	return w, err
+	return data.Client(ctx, r.data).Withdrawal.Create().
+		SetUserID(userID).
+		SetAmount(amount).
+		SetFee(fee).
+		SetMethod(method).
+		SetStatus(withdrawal.StatusPending).
+		Save(ctx)
+}
+
+// ListWithdrawalsByUser 本人提现记录（按 ID 倒序分页）。
+func (r *WalletRepoImpl) ListWithdrawalsByUser(ctx context.Context, userID uint64, page, size int) ([]*ent.Withdrawal, int64, error) {
+	q := data.Client(ctx, r.data).Withdrawal.Query().
+		Where(withdrawal.UserID(userID)).
+		Order(ent.Desc(withdrawal.FieldID))
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := q.Offset((page - 1) * size).Limit(size).All(ctx)
+	return rows, int64(total), err
 }
 
 // ListWithdrawals 提现单列表（状态筛选；按 ID 倒序）。
@@ -61,7 +71,8 @@ func (r *WalletRepoImpl) GetWithdrawal(ctx context.Context, id uint64) (*ent.Wit
 	return data.Client(ctx, r.data).Withdrawal.Get(ctx, id)
 }
 
-// ReviewWithdrawal 审核：通过→approved（锁定保持）；驳回→rejected + Unlock 回余额。
+// ReviewWithdrawal 审核：通过→approved；驳回→rejected（佣金冻结口径由提现单
+// 状态自动释放——rejected 不再计入 frozen，无需回滚动作）。
 func (r *WalletRepoImpl) ReviewWithdrawal(ctx context.Context, id uint64, approve bool, reason string, reviewerID uint64) (*ent.Withdrawal, error) {
 	var w *ent.Withdrawal
 	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
@@ -82,10 +93,7 @@ func (r *WalletRepoImpl) ReviewWithdrawal(ctx context.Context, id uint64, approv
 				Save(txCtx)
 			return nil
 		}
-		// 驳回：解锁回余额（幂等由状态机 CAS 保证）
-		if err := r.Unlock(txCtx, w.UserID, w.Amount); err != nil {
-			return err
-		}
+		// 驳回：冻结口径自动释放（frozen 只统计 pending/approved）
 		upd := client.Withdrawal.UpdateOneID(id).
 			SetStatus(withdrawal.StatusRejected).
 			SetReviewedBy(reviewerID).
@@ -99,8 +107,9 @@ func (r *WalletRepoImpl) ReviewWithdrawal(ctx context.Context, id uint64, approv
 	return w, err
 }
 
-// PayWithdrawal 打款（人工打款模式）：approved→paid + locked 扣减 + 流水 type=withdraw。
-func (r *WalletRepoImpl) PayWithdrawal(ctx context.Context, id uint64) (*ent.Withdrawal, error) {
+// PayWithdrawal 打款（人工打款模式）：approved→paid + 佣金 FIFO 消耗
+// （available→withdrawn，末行拆分；线下人工转账不动钱包账户）。
+func (r *WalletRepoImpl) PayWithdrawal(ctx context.Context, id uint64, receipt string) (*ent.Withdrawal, error) {
 	var w *ent.Withdrawal
 	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, r.data)
@@ -111,49 +120,21 @@ func (r *WalletRepoImpl) PayWithdrawal(ctx context.Context, id uint64) (*ent.Wit
 		if w.Status != withdrawal.StatusApproved {
 			return fmt.Errorf("wallet.WITHDRAWAL_NOT_APPROVED")
 		}
-		// locked 扣减 + 流水（withdraw 出账；余额=available+locked 快照可重算）
-		if err := r.withdrawPaid(txCtx, w.UserID, w.Amount, w.ID); err != nil {
-			return err
+		// 佣金 FIFO 消耗（nil = 未装配佣金端口的旧部署，跳过——仅状态流转）
+		if r.commissions != nil {
+			if err := r.commissions.ConsumeAvailableFIFO(txCtx, w.UserID, w.Amount); err != nil {
+				return err
+			}
 		}
-		w, _ = client.Withdrawal.UpdateOneID(id).
+		upd := client.Withdrawal.UpdateOneID(id).
 			SetStatus(withdrawal.StatusPaid).
-			SetPaidAt(time.Now().UTC()).
-			Save(txCtx)
+			SetPaidAt(time.Now().UTC())
+		if receipt != "" {
+			upd.SetReceipt(receipt)
+		}
+		w, _ = upd.Save(txCtx)
 		return nil
 	})
 	return w, err
 }
 
-// withdrawPaid locked 扣减 + 流水（幂等键 withdraw:<id>，重放只扣一次）。
-func (r *WalletRepoImpl) withdrawPaid(ctx context.Context, userID uint64, amount int64, withdrawalID uint64) error {
-	client := data.Client(ctx, r.data)
-	acc, err := client.WalletAccount.Query().
-		Where(walletaccount.UserID(userID)).Only(ctx)
-	if err != nil {
-		return err
-	}
-	if acc.Locked < amount {
-		return fmt.Errorf("wallet.INSUFFICIENT_LOCKED")
-	}
-	affected, err := client.WalletAccount.Update().
-		Where(walletaccount.ID(acc.ID), walletaccount.Locked(acc.Locked)).
-		SetLocked(acc.Locked - amount).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	if affected == 0 {
-		return fmt.Errorf("wallet.CONCURRENT_UPDATE")
-	}
-	_, err = client.WalletTransaction.Create().
-		SetUserID(userID).
-		SetDirection("out").
-		SetType("withdraw").
-		SetAmount(amount).
-		SetBalanceBefore(acc.Available + acc.Locked).
-		SetBalanceAfter(acc.Available + acc.Locked - amount).
-		SetReference(fmt.Sprintf("withdraw:%d", withdrawalID)).
-		SetRemark("提现打款").
-		Save(ctx)
-	return err
-}

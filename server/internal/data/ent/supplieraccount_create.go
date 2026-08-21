@@ -138,6 +138,76 @@ func (_c *SupplierAccountCreate) SetNillableReviewedAt(v *time.Time) *SupplierAc
 	return _c
 }
 
+// SetProtocol sets the "protocol" field.
+func (_c *SupplierAccountCreate) SetProtocol(v supplieraccount.Protocol) *SupplierAccountCreate {
+	_c.mutation.SetProtocol(v)
+	return _c
+}
+
+// SetNillableProtocol sets the "protocol" field if the given value is not nil.
+func (_c *SupplierAccountCreate) SetNillableProtocol(v *supplieraccount.Protocol) *SupplierAccountCreate {
+	if v != nil {
+		_c.SetProtocol(*v)
+	}
+	return _c
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_c *SupplierAccountCreate) SetDisplayName(v string) *SupplierAccountCreate {
+	_c.mutation.SetDisplayName(v)
+	return _c
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_c *SupplierAccountCreate) SetNillableDisplayName(v *string) *SupplierAccountCreate {
+	if v != nil {
+		_c.SetDisplayName(*v)
+	}
+	return _c
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (_c *SupplierAccountCreate) SetOwnerUserID(v uint64) *SupplierAccountCreate {
+	_c.mutation.SetOwnerUserID(v)
+	return _c
+}
+
+// SetNillableOwnerUserID sets the "owner_user_id" field if the given value is not nil.
+func (_c *SupplierAccountCreate) SetNillableOwnerUserID(v *uint64) *SupplierAccountCreate {
+	if v != nil {
+		_c.SetOwnerUserID(*v)
+	}
+	return _c
+}
+
+// SetApplyReason sets the "apply_reason" field.
+func (_c *SupplierAccountCreate) SetApplyReason(v string) *SupplierAccountCreate {
+	_c.mutation.SetApplyReason(v)
+	return _c
+}
+
+// SetNillableApplyReason sets the "apply_reason" field if the given value is not nil.
+func (_c *SupplierAccountCreate) SetNillableApplyReason(v *string) *SupplierAccountCreate {
+	if v != nil {
+		_c.SetApplyReason(*v)
+	}
+	return _c
+}
+
+// SetReviewNote sets the "review_note" field.
+func (_c *SupplierAccountCreate) SetReviewNote(v string) *SupplierAccountCreate {
+	_c.mutation.SetReviewNote(v)
+	return _c
+}
+
+// SetNillableReviewNote sets the "review_note" field if the given value is not nil.
+func (_c *SupplierAccountCreate) SetNillableReviewNote(v *string) *SupplierAccountCreate {
+	if v != nil {
+		_c.SetReviewNote(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SupplierAccountCreate) SetID(v uint64) *SupplierAccountCreate {
 	_c.mutation.SetID(v)
@@ -195,6 +265,14 @@ func (_c *SupplierAccountCreate) defaults() {
 		v := supplieraccount.DefaultBalanceCache
 		_c.mutation.SetBalanceCache(v)
 	}
+	if _, ok := _c.mutation.Protocol(); !ok {
+		v := supplieraccount.DefaultProtocol
+		_c.mutation.SetProtocol(v)
+	}
+	if _, ok := _c.mutation.OwnerUserID(); !ok {
+		v := supplieraccount.DefaultOwnerUserID
+		_c.mutation.SetOwnerUserID(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -243,6 +321,29 @@ func (_c *SupplierAccountCreate) check() error {
 	if v, ok := _c.mutation.NotifyURL(); ok {
 		if err := supplieraccount.NotifyURLValidator(v); err != nil {
 			return &ValidationError{Name: "notify_url", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.notify_url": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Protocol(); !ok {
+		return &ValidationError{Name: "protocol", err: errors.New(`ent: missing required field "SupplierAccount.protocol"`)}
+	}
+	if v, ok := _c.mutation.Protocol(); ok {
+		if err := supplieraccount.ProtocolValidator(v); err != nil {
+			return &ValidationError{Name: "protocol", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.protocol": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.DisplayName(); ok {
+		if err := supplieraccount.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.display_name": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ApplyReason(); ok {
+		if err := supplieraccount.ApplyReasonValidator(v); err != nil {
+			return &ValidationError{Name: "apply_reason", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.apply_reason": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ReviewNote(); ok {
+		if err := supplieraccount.ReviewNoteValidator(v); err != nil {
+			return &ValidationError{Name: "review_note", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.review_note": %w`, err)}
 		}
 	}
 	return nil
@@ -317,6 +418,26 @@ func (_c *SupplierAccountCreate) createSpec() (*SupplierAccount, *sqlgraph.Creat
 	if value, ok := _c.mutation.ReviewedAt(); ok {
 		_spec.SetField(supplieraccount.FieldReviewedAt, field.TypeTime, value)
 		_node.ReviewedAt = value
+	}
+	if value, ok := _c.mutation.Protocol(); ok {
+		_spec.SetField(supplieraccount.FieldProtocol, field.TypeEnum, value)
+		_node.Protocol = value
+	}
+	if value, ok := _c.mutation.DisplayName(); ok {
+		_spec.SetField(supplieraccount.FieldDisplayName, field.TypeString, value)
+		_node.DisplayName = value
+	}
+	if value, ok := _c.mutation.OwnerUserID(); ok {
+		_spec.SetField(supplieraccount.FieldOwnerUserID, field.TypeUint64, value)
+		_node.OwnerUserID = value
+	}
+	if value, ok := _c.mutation.ApplyReason(); ok {
+		_spec.SetField(supplieraccount.FieldApplyReason, field.TypeString, value)
+		_node.ApplyReason = value
+	}
+	if value, ok := _c.mutation.ReviewNote(); ok {
+		_spec.SetField(supplieraccount.FieldReviewNote, field.TypeString, value)
+		_node.ReviewNote = value
 	}
 	return _node, _spec
 }
@@ -499,6 +620,96 @@ func (u *SupplierAccountUpsert) UpdateReviewedAt() *SupplierAccountUpsert {
 // ClearReviewedAt clears the value of the "reviewed_at" field.
 func (u *SupplierAccountUpsert) ClearReviewedAt() *SupplierAccountUpsert {
 	u.SetNull(supplieraccount.FieldReviewedAt)
+	return u
+}
+
+// SetProtocol sets the "protocol" field.
+func (u *SupplierAccountUpsert) SetProtocol(v supplieraccount.Protocol) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldProtocol, v)
+	return u
+}
+
+// UpdateProtocol sets the "protocol" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateProtocol() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldProtocol)
+	return u
+}
+
+// SetDisplayName sets the "display_name" field.
+func (u *SupplierAccountUpsert) SetDisplayName(v string) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldDisplayName, v)
+	return u
+}
+
+// UpdateDisplayName sets the "display_name" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateDisplayName() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldDisplayName)
+	return u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (u *SupplierAccountUpsert) ClearDisplayName() *SupplierAccountUpsert {
+	u.SetNull(supplieraccount.FieldDisplayName)
+	return u
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (u *SupplierAccountUpsert) SetOwnerUserID(v uint64) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldOwnerUserID, v)
+	return u
+}
+
+// UpdateOwnerUserID sets the "owner_user_id" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateOwnerUserID() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldOwnerUserID)
+	return u
+}
+
+// AddOwnerUserID adds v to the "owner_user_id" field.
+func (u *SupplierAccountUpsert) AddOwnerUserID(v uint64) *SupplierAccountUpsert {
+	u.Add(supplieraccount.FieldOwnerUserID, v)
+	return u
+}
+
+// ClearOwnerUserID clears the value of the "owner_user_id" field.
+func (u *SupplierAccountUpsert) ClearOwnerUserID() *SupplierAccountUpsert {
+	u.SetNull(supplieraccount.FieldOwnerUserID)
+	return u
+}
+
+// SetApplyReason sets the "apply_reason" field.
+func (u *SupplierAccountUpsert) SetApplyReason(v string) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldApplyReason, v)
+	return u
+}
+
+// UpdateApplyReason sets the "apply_reason" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateApplyReason() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldApplyReason)
+	return u
+}
+
+// ClearApplyReason clears the value of the "apply_reason" field.
+func (u *SupplierAccountUpsert) ClearApplyReason() *SupplierAccountUpsert {
+	u.SetNull(supplieraccount.FieldApplyReason)
+	return u
+}
+
+// SetReviewNote sets the "review_note" field.
+func (u *SupplierAccountUpsert) SetReviewNote(v string) *SupplierAccountUpsert {
+	u.Set(supplieraccount.FieldReviewNote, v)
+	return u
+}
+
+// UpdateReviewNote sets the "review_note" field to the value that was provided on create.
+func (u *SupplierAccountUpsert) UpdateReviewNote() *SupplierAccountUpsert {
+	u.SetExcluded(supplieraccount.FieldReviewNote)
+	return u
+}
+
+// ClearReviewNote clears the value of the "review_note" field.
+func (u *SupplierAccountUpsert) ClearReviewNote() *SupplierAccountUpsert {
+	u.SetNull(supplieraccount.FieldReviewNote)
 	return u
 }
 
@@ -704,6 +915,111 @@ func (u *SupplierAccountUpsertOne) UpdateReviewedAt() *SupplierAccountUpsertOne 
 func (u *SupplierAccountUpsertOne) ClearReviewedAt() *SupplierAccountUpsertOne {
 	return u.Update(func(s *SupplierAccountUpsert) {
 		s.ClearReviewedAt()
+	})
+}
+
+// SetProtocol sets the "protocol" field.
+func (u *SupplierAccountUpsertOne) SetProtocol(v supplieraccount.Protocol) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetProtocol(v)
+	})
+}
+
+// UpdateProtocol sets the "protocol" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateProtocol() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateProtocol()
+	})
+}
+
+// SetDisplayName sets the "display_name" field.
+func (u *SupplierAccountUpsertOne) SetDisplayName(v string) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetDisplayName(v)
+	})
+}
+
+// UpdateDisplayName sets the "display_name" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateDisplayName() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateDisplayName()
+	})
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (u *SupplierAccountUpsertOne) ClearDisplayName() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearDisplayName()
+	})
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (u *SupplierAccountUpsertOne) SetOwnerUserID(v uint64) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetOwnerUserID(v)
+	})
+}
+
+// AddOwnerUserID adds v to the "owner_user_id" field.
+func (u *SupplierAccountUpsertOne) AddOwnerUserID(v uint64) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.AddOwnerUserID(v)
+	})
+}
+
+// UpdateOwnerUserID sets the "owner_user_id" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateOwnerUserID() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateOwnerUserID()
+	})
+}
+
+// ClearOwnerUserID clears the value of the "owner_user_id" field.
+func (u *SupplierAccountUpsertOne) ClearOwnerUserID() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearOwnerUserID()
+	})
+}
+
+// SetApplyReason sets the "apply_reason" field.
+func (u *SupplierAccountUpsertOne) SetApplyReason(v string) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetApplyReason(v)
+	})
+}
+
+// UpdateApplyReason sets the "apply_reason" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateApplyReason() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateApplyReason()
+	})
+}
+
+// ClearApplyReason clears the value of the "apply_reason" field.
+func (u *SupplierAccountUpsertOne) ClearApplyReason() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearApplyReason()
+	})
+}
+
+// SetReviewNote sets the "review_note" field.
+func (u *SupplierAccountUpsertOne) SetReviewNote(v string) *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetReviewNote(v)
+	})
+}
+
+// UpdateReviewNote sets the "review_note" field to the value that was provided on create.
+func (u *SupplierAccountUpsertOne) UpdateReviewNote() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateReviewNote()
+	})
+}
+
+// ClearReviewNote clears the value of the "review_note" field.
+func (u *SupplierAccountUpsertOne) ClearReviewNote() *SupplierAccountUpsertOne {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearReviewNote()
 	})
 }
 
@@ -1075,6 +1391,111 @@ func (u *SupplierAccountUpsertBulk) UpdateReviewedAt() *SupplierAccountUpsertBul
 func (u *SupplierAccountUpsertBulk) ClearReviewedAt() *SupplierAccountUpsertBulk {
 	return u.Update(func(s *SupplierAccountUpsert) {
 		s.ClearReviewedAt()
+	})
+}
+
+// SetProtocol sets the "protocol" field.
+func (u *SupplierAccountUpsertBulk) SetProtocol(v supplieraccount.Protocol) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetProtocol(v)
+	})
+}
+
+// UpdateProtocol sets the "protocol" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateProtocol() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateProtocol()
+	})
+}
+
+// SetDisplayName sets the "display_name" field.
+func (u *SupplierAccountUpsertBulk) SetDisplayName(v string) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetDisplayName(v)
+	})
+}
+
+// UpdateDisplayName sets the "display_name" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateDisplayName() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateDisplayName()
+	})
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (u *SupplierAccountUpsertBulk) ClearDisplayName() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearDisplayName()
+	})
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (u *SupplierAccountUpsertBulk) SetOwnerUserID(v uint64) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetOwnerUserID(v)
+	})
+}
+
+// AddOwnerUserID adds v to the "owner_user_id" field.
+func (u *SupplierAccountUpsertBulk) AddOwnerUserID(v uint64) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.AddOwnerUserID(v)
+	})
+}
+
+// UpdateOwnerUserID sets the "owner_user_id" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateOwnerUserID() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateOwnerUserID()
+	})
+}
+
+// ClearOwnerUserID clears the value of the "owner_user_id" field.
+func (u *SupplierAccountUpsertBulk) ClearOwnerUserID() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearOwnerUserID()
+	})
+}
+
+// SetApplyReason sets the "apply_reason" field.
+func (u *SupplierAccountUpsertBulk) SetApplyReason(v string) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetApplyReason(v)
+	})
+}
+
+// UpdateApplyReason sets the "apply_reason" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateApplyReason() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateApplyReason()
+	})
+}
+
+// ClearApplyReason clears the value of the "apply_reason" field.
+func (u *SupplierAccountUpsertBulk) ClearApplyReason() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearApplyReason()
+	})
+}
+
+// SetReviewNote sets the "review_note" field.
+func (u *SupplierAccountUpsertBulk) SetReviewNote(v string) *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.SetReviewNote(v)
+	})
+}
+
+// UpdateReviewNote sets the "review_note" field to the value that was provided on create.
+func (u *SupplierAccountUpsertBulk) UpdateReviewNote() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.UpdateReviewNote()
+	})
+}
+
+// ClearReviewNote clears the value of the "review_note" field.
+func (u *SupplierAccountUpsertBulk) ClearReviewNote() *SupplierAccountUpsertBulk {
+	return u.Update(func(s *SupplierAccountUpsert) {
+		s.ClearReviewNote()
 	})
 }
 

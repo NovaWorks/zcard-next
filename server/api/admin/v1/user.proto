@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// AdminUserManageService 前台用户管理（storefront 注册用户；员工管理见
+// AdminUserService——两者数据域独立，勿混）。
+service AdminUserManageService {
+  // ListUsers 用户列表（关键词/状态筛选，分页）。
+  rpc ListUsers(ListUsersRequest) returns (ListUsersReply) {
+    option (google.api.http) = { get: "/api/v1/admin/users" };
+  }
+  // GetUser 用户详情。
+  rpc GetUser(GetUserRequest) returns (UserItem) {
+    option (google.api.http) = { get: "/api/v1/admin/users/{id}" };
+  }
+  // SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。
+  rpc SetUserStatus(SetUserStatusRequest) returns (UserItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/users/{id}/status"
+      body: "*"
+    };
+  }
+}
+
+message ListUsersRequest {
+  string keyword = 1; // 用户名/邮箱模糊匹配
+  string status = 2;  // active | banned（空 = 全部）
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ListUsersReply {
+  repeated UserItem users = 1;
+  int64 total = 2;
+}
+
+message GetUserRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message SetUserStatusRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string status = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// UserItem 前台用户（敏感字段如密码哈希绝不外发）。
+message UserItem {
+  uint64 id = 1;
+  string username = 2;
+  string email = 3;
+  string status = 4; // active | banned | deleted
+  int64 last_login_at = 5;
+  int64 created_at = 6;
+}

@@ -11,6 +11,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -23,6 +24,118 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ListCategoriesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Categories    []*CategoryItem        `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCategoriesReply) Reset() {
+	*x = ListCategoriesReply{}
+	mi := &file_storefront_v1_catalog_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCategoriesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCategoriesReply) ProtoMessage() {}
+
+func (x *ListCategoriesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_catalog_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCategoriesReply.ProtoReflect.Descriptor instead.
+func (*ListCategoriesReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListCategoriesReply) GetCategories() []*CategoryItem {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+type CategoryItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Icon          string                 `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"`
+	ParentId      uint64                 `protobuf:"varint,4,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"` // 父分类（0=根；多级分类树形）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CategoryItem) Reset() {
+	*x = CategoryItem{}
+	mi := &file_storefront_v1_catalog_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CategoryItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategoryItem) ProtoMessage() {}
+
+func (x *CategoryItem) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_catalog_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CategoryItem.ProtoReflect.Descriptor instead.
+func (*CategoryItem) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CategoryItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *CategoryItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CategoryItem) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *CategoryItem) GetParentId() uint64 {
+	if x != nil {
+		return x.ParentId
+	}
+	return 0
+}
+
 type ListProductsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 分类过滤（可选）
@@ -33,14 +146,16 @@ type ListProductsRequest struct {
 	Page     int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
-	PointsOnly    bool `protobuf:"varint,5,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"`
+	PointsOnly bool `protobuf:"varint,5,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"`
+	// 排序：newest（默认）| price_asc | price_desc | sales
+	Sort          string `protobuf:"bytes,6,opt,name=sort,proto3" json:"sort,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListProductsRequest) Reset() {
 	*x = ListProductsRequest{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[0]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +167,7 @@ func (x *ListProductsRequest) String() string {
 func (*ListProductsRequest) ProtoMessage() {}
 
 func (x *ListProductsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[0]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +180,7 @@ func (x *ListProductsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProductsRequest.ProtoReflect.Descriptor instead.
 func (*ListProductsRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{0}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ListProductsRequest) GetCategoryId() uint64 {
@@ -103,6 +218,13 @@ func (x *ListProductsRequest) GetPointsOnly() bool {
 	return false
 }
 
+func (x *ListProductsRequest) GetSort() string {
+	if x != nil {
+		return x.Sort
+	}
+	return ""
+}
+
 type ListProductsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*Product             `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
@@ -115,7 +237,7 @@ type ListProductsReply struct {
 
 func (x *ListProductsReply) Reset() {
 	*x = ListProductsReply{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[1]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -127,7 +249,7 @@ func (x *ListProductsReply) String() string {
 func (*ListProductsReply) ProtoMessage() {}
 
 func (x *ListProductsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[1]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -140,7 +262,7 @@ func (x *ListProductsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProductsReply.ProtoReflect.Descriptor instead.
 func (*ListProductsReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{1}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ListProductsReply) GetItems() []*Product {
@@ -180,7 +302,7 @@ type GetProductRequest struct {
 
 func (x *GetProductRequest) Reset() {
 	*x = GetProductRequest{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[2]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -192,7 +314,7 @@ func (x *GetProductRequest) String() string {
 func (*GetProductRequest) ProtoMessage() {}
 
 func (x *GetProductRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[2]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -205,7 +327,7 @@ func (x *GetProductRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProductRequest.ProtoReflect.Descriptor instead.
 func (*GetProductRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{2}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetProductRequest) GetId() uint64 {
@@ -248,7 +370,7 @@ type Product struct {
 
 func (x *Product) Reset() {
 	*x = Product{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[3]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -260,7 +382,7 @@ func (x *Product) String() string {
 func (*Product) ProtoMessage() {}
 
 func (x *Product) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[3]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,7 +395,7 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{3}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Product) GetId() uint64 {
@@ -396,7 +518,7 @@ type ProductControl struct {
 
 func (x *ProductControl) Reset() {
 	*x = ProductControl{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[4]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -408,7 +530,7 @@ func (x *ProductControl) String() string {
 func (*ProductControl) ProtoMessage() {}
 
 func (x *ProductControl) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[4]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -421,7 +543,7 @@ func (x *ProductControl) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductControl.ProtoReflect.Descriptor instead.
 func (*ProductControl) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{4}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ProductControl) GetId() uint64 {
@@ -481,7 +603,7 @@ type ReviewItem struct {
 
 func (x *ReviewItem) Reset() {
 	*x = ReviewItem{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -493,7 +615,7 @@ func (x *ReviewItem) String() string {
 func (*ReviewItem) ProtoMessage() {}
 
 func (x *ReviewItem) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -506,7 +628,7 @@ func (x *ReviewItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReviewItem.ProtoReflect.Descriptor instead.
 func (*ReviewItem) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{5}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReviewItem) GetId() uint64 {
@@ -563,7 +685,7 @@ type Sku struct {
 
 func (x *Sku) Reset() {
 	*x = Sku{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -575,7 +697,7 @@ func (x *Sku) String() string {
 func (*Sku) ProtoMessage() {}
 
 func (x *Sku) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -588,7 +710,7 @@ func (x *Sku) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Sku.ProtoReflect.Descriptor instead.
 func (*Sku) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Sku) GetId() uint64 {
@@ -616,7 +738,16 @@ var File_storefront_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x16common/v1/common.proto\"\xa2\x01\n" +
+	"\x1bstorefront/v1/catalog.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x16common/v1/common.proto\"\\\n" +
+	"\x13ListCategoriesReply\x12E\n" +
+	"\n" +
+	"categories\x18\x01 \x03(\v2%.zcard.api.storefront.v1.CategoryItemR\n" +
+	"categories\"c\n" +
+	"\fCategoryItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
+	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x1b\n" +
+	"\tparent_id\x18\x04 \x01(\x04R\bparentId\"\xb6\x01\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
@@ -624,7 +755,8 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1f\n" +
 	"\vpoints_only\x18\x05 \x01(\bR\n" +
-	"pointsOnly\"\x92\x01\n" +
+	"pointsOnly\x12\x12\n" +
+	"\x04sort\x18\x06 \x01(\tR\x04sort\"\x92\x01\n" +
 	"\x11ListProductsReply\x126\n" +
 	"\x05items\x18\x01 \x03(\v2 .zcard.api.storefront.v1.ProductR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
@@ -674,11 +806,12 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
 	"\vprice_cents\x18\x03 \x01(\x03R\n" +
-	"priceCents2\xac\x02\n" +
+	"priceCents2\xab\x03\n" +
 	"\x13StoreCatalogService\x12\x8d\x01\n" +
 	"\fListProducts\x12,.zcard.api.storefront.v1.ListProductsRequest\x1a*.zcard.api.storefront.v1.ListProductsReply\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/storefront/products\x12\x84\x01\n" +
 	"\n" +
-	"GetProduct\x12*.zcard.api.storefront.v1.GetProductRequest\x1a .zcard.api.storefront.v1.Product\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/storefront/products/{id}BGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
+	"GetProduct\x12*.zcard.api.storefront.v1.GetProductRequest\x1a .zcard.api.storefront.v1.Product\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/storefront/products/{id}\x12}\n" +
+	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a,.zcard.api.storefront.v1.ListCategoriesReply\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/storefront/categoriesBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
 var (
 	file_storefront_v1_catalog_proto_rawDescOnce sync.Once
@@ -692,30 +825,36 @@ func file_storefront_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_catalog_proto_rawDescData
 }
 
-var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_storefront_v1_catalog_proto_goTypes = []any{
-	(*ListProductsRequest)(nil), // 0: zcard.api.storefront.v1.ListProductsRequest
-	(*ListProductsReply)(nil),   // 1: zcard.api.storefront.v1.ListProductsReply
-	(*GetProductRequest)(nil),   // 2: zcard.api.storefront.v1.GetProductRequest
-	(*Product)(nil),             // 3: zcard.api.storefront.v1.Product
-	(*ProductControl)(nil),      // 4: zcard.api.storefront.v1.ProductControl
-	(*ReviewItem)(nil),          // 5: zcard.api.storefront.v1.ReviewItem
-	(*Sku)(nil),                 // 6: zcard.api.storefront.v1.Sku
+	(*ListCategoriesReply)(nil), // 0: zcard.api.storefront.v1.ListCategoriesReply
+	(*CategoryItem)(nil),        // 1: zcard.api.storefront.v1.CategoryItem
+	(*ListProductsRequest)(nil), // 2: zcard.api.storefront.v1.ListProductsRequest
+	(*ListProductsReply)(nil),   // 3: zcard.api.storefront.v1.ListProductsReply
+	(*GetProductRequest)(nil),   // 4: zcard.api.storefront.v1.GetProductRequest
+	(*Product)(nil),             // 5: zcard.api.storefront.v1.Product
+	(*ProductControl)(nil),      // 6: zcard.api.storefront.v1.ProductControl
+	(*ReviewItem)(nil),          // 7: zcard.api.storefront.v1.ReviewItem
+	(*Sku)(nil),                 // 8: zcard.api.storefront.v1.Sku
+	(*emptypb.Empty)(nil),       // 9: google.protobuf.Empty
 }
 var file_storefront_v1_catalog_proto_depIdxs = []int32{
-	3, // 0: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
-	4, // 1: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
-	5, // 2: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
-	6, // 3: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
-	0, // 4: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
-	2, // 5: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
-	1, // 6: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
-	3, // 7: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1, // 0: zcard.api.storefront.v1.ListCategoriesReply.categories:type_name -> zcard.api.storefront.v1.CategoryItem
+	5, // 1: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
+	6, // 2: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
+	7, // 3: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
+	8, // 4: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
+	2, // 5: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
+	4, // 6: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
+	9, // 7: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	3, // 8: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
+	5, // 9: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
+	0, // 10: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_catalog_proto_init() }
@@ -729,7 +868,7 @@ func file_storefront_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_catalog_proto_rawDesc), len(file_storefront_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

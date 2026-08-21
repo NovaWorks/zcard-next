@@ -35,6 +35,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
@@ -181,6 +182,17 @@ func applyMigrationsIfEnabled(ctx context.Context, bc *conf.Bootstrap) error {
 	return nil
 }
 
+// ensureSeeds 启动补种（幂等；独立于迁移开关——表已存在即可）：基础货币
+// 缺失时写入（老库升级自动补 CNY，新库由 Install 事务同源写入）。
+func ensureSeeds(ctx context.Context, bc *conf.Bootstrap) error {
+	d, cleanup, err := data.NewData(bc.Data)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	return settings.EnsureDefaultCurrencies(ctx, d)
+}
+
 // runServe 启动服务。
 func runServe(args []string) (err error) {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
@@ -213,6 +225,9 @@ func runServe(args []string) (err error) {
 	}
 
 	if err := applyMigrationsIfEnabled(context.Background(), bc); err != nil {
+		return err
+	}
+	if err := ensureSeeds(context.Background(), bc); err != nil {
 		return err
 	}
 	switch *mode {
@@ -317,10 +332,12 @@ func runInstall(args []string) error {
 //	all    = HTTP + gRPC + worker + 后台（默认，单机形态）
 //	api    = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
 //	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
-func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService, fulfillRepo *fulfillment.DeliveryRepoImpl, pointsSvc *memberlevel.PointsService, orderUC *order.OrderUsecase, payRepo *payment.PaymentRepoImpl) *kratos.App {
+func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService, fulfillRepo *fulfillment.DeliveryRepoImpl, pointsSvc *memberlevel.PointsService, orderUC *order.OrderUsecase, payRepo *payment.PaymentRepoImpl, walletRepo *wallet.WalletRepoImpl) *kratos.App {
 	// P1-03 破环点：order 超时取消慢通道顺延探测 ← payment 实现
 	// （wire 环 OrderUsecase ↔ PaymentRepoImpl，装配期手工注入——同 dp.Register 模式）
 	orderUC.SetSlowPaymentChecker(payRepo)
+	// 佣金提现打通：打款 FIFO 消耗佣金（affiliate → wallet 注入，装配期一次）
+	walletRepo.SetCommissionConsumer(affiliateSvc.Repo())
 	// 事件订阅注册（P2-02）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
 	dp.Register(data.HandlerReg{
 		Consumer: "procurement.order_paid",

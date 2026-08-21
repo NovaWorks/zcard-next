@@ -9,7 +9,6 @@ package adminv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,6 +22,7 @@ const OperationAdminDashboardServiceGetDailyStats = "/zcard.api.admin.v1.AdminDa
 const OperationAdminDashboardServiceGetDashboard = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
 const OperationAdminDashboardServiceGetReconciliation = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
 const OperationAdminDashboardServiceGetReconciliationJob = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliationJob"
+const OperationAdminDashboardServiceGetTraffic = "/zcard.api.admin.v1.AdminDashboardService/GetTraffic"
 const OperationAdminDashboardServiceListCommissions = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
 const OperationAdminDashboardServiceListReconciliationItems = "/zcard.api.admin.v1.AdminDashboardService/ListReconciliationItems"
 const OperationAdminDashboardServiceRunReconciliationJob = "/zcard.api.admin.v1.AdminDashboardService/RunReconciliationJob"
@@ -32,11 +32,13 @@ type AdminDashboardServiceHTTPServer interface {
 	CreateReconciliationJob(context.Context, *CreateReconciliationJobRequest) (*ReconciliationJobItem, error)
 	// GetDailyStats GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
 	GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error)
-	GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error)
+	GetDashboard(context.Context, *GetDashboardRequest) (*DashboardReply, error)
 	// GetReconciliation GetReconciliation 对账总览。
 	GetReconciliation(context.Context, *GetReconciliationRequest) (*GetReconciliationReply, error)
 	// GetReconciliationJob GetReconciliationJob 对账任务详情（四态计数 + 状态可查）。
 	GetReconciliationJob(context.Context, *GetReconciliationJobRequest) (*ReconciliationJobItem, error)
+	// GetTraffic GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+	GetTraffic(context.Context, *GetTrafficRequest) (*GetTrafficReply, error)
 	// ListCommissions ListCommissions 佣金列表（P3-03 affiliate）。
 	ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error)
 	// ListReconciliationItems ListReconciliationItems 对账明细分页（四态筛选）。
@@ -50,6 +52,7 @@ func RegisterAdminDashboardServiceHTTPServer(s *http.Server, srv AdminDashboardS
 	r.Handle("GET", "/api/v1/admin/dashboard/reconciliation", _AdminDashboardService_GetReconciliation0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/affiliate/commissions", _AdminDashboardService_ListCommissions0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/dashboard", _AdminDashboardService_GetDashboard0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/dashboard/traffic", _AdminDashboardService_GetTraffic0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/dashboard/daily-stats", _AdminDashboardService_GetDailyStats0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/dashboard/reconciliation-jobs", _AdminDashboardService_CreateReconciliationJob0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/dashboard/reconciliation-jobs/{id}", _AdminDashboardService_GetReconciliationJob0_HTTP_Handler(srv))
@@ -97,19 +100,38 @@ func _AdminDashboardService_ListCommissions0_HTTP_Handler(srv AdminDashboardServ
 
 func _AdminDashboardService_GetDashboard0_HTTP_Handler(srv AdminDashboardServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in emptypb.Empty
+		var in GetDashboardRequest
 		if err := ctx.BindQuery(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationAdminDashboardServiceGetDashboard)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.GetDashboard(ctx, req.(*emptypb.Empty))
+			return srv.GetDashboard(ctx, req.(*GetDashboardRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
 			return err
 		}
 		reply := out.(*DashboardReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminDashboardService_GetTraffic0_HTTP_Handler(srv AdminDashboardServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetTrafficRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminDashboardServiceGetTraffic)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetTraffic(ctx, req.(*GetTrafficRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*GetTrafficReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -223,11 +245,13 @@ type AdminDashboardServiceHTTPClient interface {
 	CreateReconciliationJob(ctx context.Context, req *CreateReconciliationJobRequest, opts ...http.CallOption) (rsp *ReconciliationJobItem, err error)
 	// GetDailyStats GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
 	GetDailyStats(ctx context.Context, req *GetDailyStatsRequest, opts ...http.CallOption) (rsp *GetDailyStatsReply, err error)
-	GetDashboard(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *DashboardReply, err error)
+	GetDashboard(ctx context.Context, req *GetDashboardRequest, opts ...http.CallOption) (rsp *DashboardReply, err error)
 	// GetReconciliation GetReconciliation 对账总览。
 	GetReconciliation(ctx context.Context, req *GetReconciliationRequest, opts ...http.CallOption) (rsp *GetReconciliationReply, err error)
 	// GetReconciliationJob GetReconciliationJob 对账任务详情（四态计数 + 状态可查）。
 	GetReconciliationJob(ctx context.Context, req *GetReconciliationJobRequest, opts ...http.CallOption) (rsp *ReconciliationJobItem, err error)
+	// GetTraffic GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+	GetTraffic(ctx context.Context, req *GetTrafficRequest, opts ...http.CallOption) (rsp *GetTrafficReply, err error)
 	// ListCommissions ListCommissions 佣金列表（P3-03 affiliate）。
 	ListCommissions(ctx context.Context, req *ListCommissionsRequest, opts ...http.CallOption) (rsp *ListCommissionsReply, err error)
 	// ListReconciliationItems ListReconciliationItems 对账明细分页（四态筛选）。
@@ -279,7 +303,7 @@ func (c *AdminDashboardServiceHTTPClientImpl) GetDailyStats(ctx context.Context,
 	return &out, nil
 }
 
-func (c *AdminDashboardServiceHTTPClientImpl) GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*DashboardReply, error) {
+func (c *AdminDashboardServiceHTTPClientImpl) GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...http.CallOption) (*DashboardReply, error) {
 	var out DashboardReply
 	pattern := "/api/v1/admin/dashboard"
 	path := http.BuildPath(pattern, in, http.WithQueryParams())
@@ -320,6 +344,23 @@ func (c *AdminDashboardServiceHTTPClientImpl) GetReconciliationJob(ctx context.C
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminDashboardServiceGetReconciliationJob),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetTraffic GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+func (c *AdminDashboardServiceHTTPClientImpl) GetTraffic(ctx context.Context, in *GetTrafficRequest, opts ...http.CallOption) (*GetTrafficReply, error) {
+	var out GetTrafficReply
+	pattern := "/api/v1/admin/dashboard/traffic"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminDashboardServiceGetTraffic),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

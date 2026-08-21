@@ -1,6 +1,34 @@
 <template>
   <div>
-    <!-- 推广码 + 五数统计 -->
+    <!-- 推广中心头部：推广码 + 二维码 + 推广链接 -->
+    <div class="card promo-hero" v-if="my">
+      <!-- 左列：推广码 + 推广链接（纵向分区） -->
+      <div class="promo-left">
+        <div class="promo-block">
+          <div class="promo-block-title">我的推广码</div>
+          <div class="promo-code-row">
+            <div class="promo-code">{{ my.promo_code || my.user_id }}</div>
+            <button class="btn secondary" @click="copyCode">{{ copiedCode ? '✓ 已复制' : '复制推广码' }}</button>
+          </div>
+        </div>
+        <div class="promo-block">
+          <div class="promo-block-title">推广链接</div>
+          <div class="actions">
+            <input class="input" :value="my.invite_url" readonly style="flex: 1;" />
+            <button class="btn secondary" @click="copyLink">{{ copied ? '✓ 已复制' : '复制链接' }}</button>
+          </div>
+          <div class="muted" style="margin-top: 8px;">好友通过链接注册/下单，你都能获得佣金</div>
+        </div>
+      </div>
+      <!-- 右列：二维码（垂直居中） -->
+      <div class="promo-qr">
+        <canvas ref="qrCanvas" width="200" height="200"></canvas>
+        <div class="muted" style="text-align: center; margin-top: 6px;">扫码进入推广页</div>
+        <button class="btn secondary" style="width: 100%; margin-top: 6px;" @click="downloadQr">下载二维码</button>
+      </div>
+    </div>
+
+    <!-- 收益统计 -->
     <div class="stat-grid" v-if="my">
       <div class="card"><div class="muted">冻结中佣金</div><div class="stat-num">{{ formatMoney(my.pending_cents) }}</div></div>
       <div class="card"><div class="muted">可提现</div><div class="stat-num" style="color: #16a34a;">{{ formatMoney(my.available_cents) }}</div></div>
@@ -9,30 +37,20 @@
       <div class="card" v-if="my.debt_cents > 0"><div class="muted">负债（退款扣回）</div><div class="stat-num" style="color: #dc2626;">{{ formatMoney(my.debt_cents) }}</div></div>
     </div>
 
+    <!-- 团队概览 + 规则说明 -->
     <div class="card" style="margin-bottom: 16px;" v-if="my">
-      <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-        <div>
-          <div class="muted">我的推广码</div>
-          <div style="font-size: 20px; font-weight: 700; margin: 4px 0;">{{ my.user_id }}</div>
-        </div>
-        <div style="flex: 1; min-width: 260px;">
-          <div class="muted">邀请链接</div>
-          <div class="actions" style="margin-top: 4px;">
-            <input class="input" :value="my.invite_url" readonly style="flex: 1;" />
-            <button class="btn secondary" @click="copyLink">复制</button>
-          </div>
-        </div>
+      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
+        <div>团队：直推 {{ my.team_l1 }} 人 · 二级 {{ my.team_l2 }} 人 · 三级 {{ my.team_l3 }} 人</div>
+        <span class="badge blue">三级分销</span>
       </div>
-      <div class="muted" style="margin-top: 8px;">
-        团队：直推 {{ my.team_l1 }} 人 · 二级 {{ my.team_l2 }} 人 · 三级 {{ my.team_l3 }} 人
+      <div class="muted" style="margin-top: 6px;">
+        📌 归因规则：好友经你的推广链接访问后 30 天内注册或下单均计入你的团队；佣金按订单金额三级分成（比例由站长配置），冻结期后可提现
       </div>
-      <div v-if="copied" class="success" style="margin-top: 6px;">已复制到剪贴板</div>
     </div>
 
     <div class="tabs">
       <button :class="{ active: tab === 'team' }" @click="switchTab('team')">我的团队</button>
       <button :class="{ active: tab === 'commissions' }" @click="switchTab('commissions')">佣金流水</button>
-      <button :class="{ active: tab === 'withdraw' }" @click="switchTab('withdraw')">提现</button>
     </div>
 
     <!-- 团队 -->
@@ -81,38 +99,20 @@
       </div>
     </div>
 
-    <!-- 提现 -->
-    <div v-if="tab === 'withdraw'" class="card" style="max-width: 480px;">
-      <div class="muted" style="margin-bottom: 12px;">
-        可提现 {{ formatMoney(my?.available_cents || 0) }}；提现经人工审核后打款，手续费从金额中扣除
+    <!-- 提现（独立页入口） -->
+    <div v-if="tab === 'withdraw'" class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+      <div>
+        <b>佣金提现</b>
+        <div class="muted" style="margin-top: 4px;">支付宝 / 微信收款码 / USDT TRC20 · 提现记录 · 工单支持</div>
       </div>
-      <div class="field">
-        <label>提现金额（元）</label>
-        <input class="input" v-model.number="withdrawYuan" type="number" min="1" step="0.01" />
-      </div>
-      <div class="field">
-        <label>收款方式</label>
-        <select v-model="withdrawMethod">
-          <option value="alipay">支付宝</option>
-          <option value="wechat">微信</option>
-          <option value="bank">银行转账</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>收款账号</label>
-        <input class="input" v-model="withdrawAccount" type="text" placeholder="支付宝账号 / 微信号 / 银行卡号" />
-      </div>
-      <div v-if="withdrawError" class="error" style="margin-bottom: 8px;">{{ withdrawError }}</div>
-      <div v-if="withdrawOk" class="success" style="margin-bottom: 8px;">
-        申请成功 #{{ withdrawOk.withdrawal_id }}：金额 {{ formatMoney(withdrawOk.amount_cents) }}，手续费 {{ formatMoney(withdrawOk.fee_cents) }}，实际到账 {{ formatMoney(withdrawOk.credited_cents) }}（等待审核）
-      </div>
-      <button class="btn" :disabled="withdrawing" @click="doWithdraw">{{ withdrawing ? '提交中…' : '申请提现' }}</button>
+      <router-link class="btn btn-primary" to="/withdraw">去提现</router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
+import QRCode from 'qrcode';
 import {
   myAffiliate, listTeam, listCommissions, createWithdrawal,
   type MyAffiliateReply, type TeamMember, type CommissionItem
@@ -122,6 +122,8 @@ import { formatMoney, formatSignedMoney } from '@/api/client';
 const tab = ref<'team' | 'commissions' | 'withdraw'>('team');
 const my = ref<MyAffiliateReply | null>(null);
 const copied = ref(false);
+const copiedCode = ref(false);
+const qrCanvas = ref<HTMLCanvasElement | null>(null);
 
 const team = ref<TeamMember[]>([]);
 const teamTier = ref(0);
@@ -141,6 +143,15 @@ onMounted(async () => {
   const { data } = await myAffiliate();
   my.value = data;
   loadTeam(1);
+  // 推广链接二维码（canvas 渲染；链接为空跳过）
+  if (data?.invite_url) {
+    await nextTick();
+    if (qrCanvas.value) {
+      try {
+        await QRCode.toCanvas(qrCanvas.value, data.invite_url, { width: 200, margin: 2 });
+      } catch { /* 渲染失败忽略——复制链接兜底 */ }
+    }
+  }
 });
 
 function switchTab(t: 'team' | 'commissions' | 'withdraw') {
@@ -171,6 +182,26 @@ async function copyLink() {
   } catch {
     /* 剪贴板不可用（HTTP 环境）——手选复制 */
   }
+}
+
+async function copyCode() {
+  const code = my.value?.promo_code || String(my.value?.user_id || '');
+  if (!code) return;
+  try {
+    await navigator.clipboard.writeText(code);
+    copiedCode.value = true;
+    setTimeout(() => (copiedCode.value = false), 2000);
+  } catch { /* 忽略 */ }
+}
+
+function downloadQr() {
+  if (!qrCanvas.value) return;
+  try {
+    const link = document.createElement('a');
+    link.download = `promo-qrcode-${my.value?.promo_code || my.value?.user_id}.png`;
+    link.href = qrCanvas.value.toDataURL('image/png');
+    link.click();
+  } catch { /* 忽略 */ }
 }
 
 async function doWithdraw() {
@@ -212,3 +243,30 @@ function fmtTime(ts: number): string {
   return ts ? new Date(ts * 1000).toLocaleString() : '';
 }
 </script>
+
+<style scoped>
+/* 推广头部：左（码+链接）/ 右（二维码）经典两栏；窄屏纵向堆叠 */
+.promo-hero {
+  display: flex; gap: 24px; align-items: center;
+  background: linear-gradient(135deg, #eff6ff, #fff);
+  border-color: #dbeafe;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) { .promo-hero { flex-direction: column-reverse; } }
+.promo-left {
+  flex: 1; min-width: 260px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+.promo-block + .promo-block { border-top: 1px dashed #dbeafe; padding-top: 16px; }
+.promo-block-title { font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
+.promo-code-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.promo-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 32px; font-weight: 800; letter-spacing: 4px; color: #2563eb;
+}
+.promo-qr {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+  padding: 12px; flex-shrink: 0;
+}
+.promo-qr canvas { display: block; border-radius: 6px; }
+</style>

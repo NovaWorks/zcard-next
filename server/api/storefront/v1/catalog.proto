@@ -6,6 +6,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
 import "common/v1/common.proto";
 
 // StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
@@ -23,6 +24,23 @@ service StoreCatalogService {
       get: "/api/v1/storefront/products/{id}"
     };
   }
+  // ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+  rpc ListCategories(google.protobuf.Empty) returns (ListCategoriesReply) {
+    option (google.api.http) = {
+      get: "/api/v1/storefront/categories"
+    };
+  }
+}
+
+message ListCategoriesReply {
+  repeated CategoryItem categories = 1;
+}
+
+message CategoryItem {
+  uint64 id = 1;
+  string name = 2;
+  string icon = 3;
+  uint64 parent_id = 4; // 父分类（0=根；多级分类树形）
 }
 
 message ListProductsRequest {
@@ -35,6 +53,8 @@ message ListProductsRequest {
   int32 page_size = 4;
   // 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
   bool points_only = 5;
+  // 排序：newest（默认）| price_asc | price_desc | sales
+  string sort = 6;
 }
 
 message ListProductsReply {

@@ -9,6 +9,7 @@ import { ref, reactive, computed, watch } from "vue";
 import { NButton, NTag, NPopconfirm, NInput, NModal, NDropdown } from "naive-ui";
 import TablePager from "@/components/common/table-pager.vue";
 import type { UploadCustomRequestOptions, DropdownOption } from "naive-ui";
+import { resolveMediaUrl } from "@/utils/media";
 import {
   fetchMediaList,
   fetchMediaCategories,
@@ -518,7 +519,7 @@ const categorySelectOptions = computed(() => [
               @click="toggleSelect(item, $event)"
             >
               <NImage
-                :src="item.url"
+                :src="resolveMediaUrl(item.url)"
                 width="100%"
                 height="110"
                 object-fit="cover"
@@ -703,7 +704,7 @@ const categorySelectOptions = computed(() => [
           :key="item.id"
           class="flex items-center gap-8px py-2px text-12px"
         >
-          <img :src="item.url" class="h-24px w-24px rounded-2px object-cover" />
+          <img :src="resolveMediaUrl(item.url)" class="h-24px w-24px rounded-2px object-cover" />
           <span class="truncate">{{ item.name }}</span>
           <NTag size="tiny" type="warning">引用 {{ item.ref_count }} 处</NTag>
         </div>

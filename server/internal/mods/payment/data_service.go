@@ -22,6 +22,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
@@ -348,6 +349,7 @@ func NewStorePaymentService(repo *PaymentRepoImpl, d *data.Data) *StorePaymentSe
 
 // ListChannels 启用渠道列表（P2-09 T5：渠道下拉数据源——替代前端硬编码枚举）。
 // 过滤：启用 + 已配置（空凭据的「待配置」渠道不对顾客展示；wallet 内置无需配置）。
+// 游客不下发 wallet（余额支付需登录态；游客仅可用真实支付渠道）。
 func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.ChannelListReply, error) {
 	rows, err := data.Client(ctx, s.data).PaymentChannel.Query().
 		Where(paymentchannel.Enabled(true)).
@@ -356,8 +358,13 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 	if err != nil {
 		return nil, errors.InternalServer("payment.LIST_FAILED", "读取渠道失败")
 	}
+	// 游客判定：无登录 claims（余额支付依赖钱包账户）
+	guest := identity.ClaimsFromContext(ctx) == nil
 	reply := &storefrontv1.ChannelListReply{}
 	for _, ch := range rows {
+		if guest && ch.Driver == "wallet" {
+			continue // 游客不可用余额支付
+		}
 		if ch.Driver != "wallet" && len(s.repo.ConfiguredFields(ch)) == 0 {
 			continue // 待配置渠道不下发
 		}

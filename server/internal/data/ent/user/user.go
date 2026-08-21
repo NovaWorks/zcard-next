@@ -22,6 +22,8 @@ const (
 	FieldUsername = "username"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
+	// FieldPhone holds the string denoting the phone field in the database.
+	FieldPhone = "phone"
 	// FieldPasswordHash holds the string denoting the password_hash field in the database.
 	FieldPasswordHash = "password_hash"
 	// FieldStatus holds the string denoting the status field in the database.
@@ -34,6 +36,8 @@ const (
 	FieldInviteL2 = "invite_l2"
 	// FieldInviteL3 holds the string denoting the invite_l3 field in the database.
 	FieldInviteL3 = "invite_l3"
+	// FieldPromoCode holds the string denoting the promo_code field in the database.
+	FieldPromoCode = "promo_code"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 )
@@ -45,12 +49,14 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldUsername,
 	FieldEmail,
+	FieldPhone,
 	FieldPasswordHash,
 	FieldStatus,
 	FieldLastLoginAt,
 	FieldInviteL1,
 	FieldInviteL2,
 	FieldInviteL3,
+	FieldPromoCode,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -74,8 +80,12 @@ var (
 	UsernameValidator func(string) error
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	EmailValidator func(string) error
+	// PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
+	PhoneValidator func(string) error
 	// PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
 	PasswordHashValidator func(string) error
+	// PromoCodeValidator is a validator for the "promo_code" field. It is called by the builders before save.
+	PromoCodeValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -133,6 +143,11 @@ func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
 }
 
+// ByPhone orders the results by the phone field.
+func ByPhone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhone, opts...).ToFunc()
+}
+
 // ByPasswordHash orders the results by the password_hash field.
 func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPasswordHash, opts...).ToFunc()
@@ -161,4 +176,9 @@ func ByInviteL2(opts ...sql.OrderTermOption) OrderOption {
 // ByInviteL3 orders the results by the invite_l3 field.
 func ByInviteL3(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldInviteL3, opts...).ToFunc()
+}
+
+// ByPromoCode orders the results by the promo_code field.
+func ByPromoCode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPromoCode, opts...).ToFunc()
 }

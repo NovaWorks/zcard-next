@@ -9,6 +9,7 @@ import (
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	identityport "github.com/NovaWorks/zcard-next/server/internal/mods/identity/port"
 
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -16,12 +17,54 @@ import (
 // AdminAuditService 管理面审计服务。
 type AdminAuditService struct {
 	adminv1.UnimplementedAdminAuditServiceServer
-	repo *AuditRepo
+	repo   *AuditRepo
+	admins identityport.AdminReader // 操作者/主体名称富化（nil = 跳过）
+	users  identityport.UserReader  // 安全审计 user 主体名称富化（nil = 跳过）
 }
 
 // NewAdminAuditService 构造。
-func NewAdminAuditService(repo *AuditRepo) *AdminAuditService {
-	return &AdminAuditService{repo: repo}
+func NewAdminAuditService(repo *AuditRepo, admins identityport.AdminReader, users identityport.UserReader) *AdminAuditService {
+	return &AdminAuditService{repo: repo, admins: admins, users: users}
+}
+
+// enrichAdminNames 员工 ID → 账号名（去重批量 PK get；失败项省略——前端回落 #ID）。
+func (s *AdminAuditService) enrichAdminNames(ctx context.Context, ids ...uint64) map[uint64]string {
+	out := make(map[uint64]string, len(ids))
+	if s.admins == nil {
+		return out
+	}
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if _, done := out[id]; done {
+			continue
+		}
+		if acc, err := s.admins.Admin(ctx, id); err == nil && acc != nil {
+			out[id] = acc.Username
+		}
+	}
+	return out
+}
+
+// enrichUserNames 前台用户 ID → 账号名（同上）。
+func (s *AdminAuditService) enrichUserNames(ctx context.Context, ids ...uint64) map[uint64]string {
+	out := make(map[uint64]string, len(ids))
+	if s.users == nil {
+		return out
+	}
+	for _, id := range ids {
+		if id == 0 {
+			continue
+		}
+		if _, done := out[id]; done {
+			continue
+		}
+		if name, err := s.users.Username(ctx, id); err == nil && name != "" {
+			out[id] = name
+		}
+	}
+	return out
 }
 
 // ListOpLogs 操作审计。
@@ -31,10 +74,18 @@ func (s *AdminAuditService) ListOpLogs(ctx context.Context, req *adminv1.ListOpL
 	if err != nil {
 		return nil, err
 	}
+	adminIDs := make([]uint64, 0, len(rows))
+	for _, l := range rows {
+		if l.OperatorType == "admin" {
+			adminIDs = append(adminIDs, l.OperatorID)
+		}
+	}
+	names := s.enrichAdminNames(ctx, adminIDs...)
 	reply := &adminv1.ListOpLogsReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
 	for _, l := range rows {
 		item := &adminv1.OpLogItem{
 			Id: l.ID, OperatorType: string(l.OperatorType), OperatorId: l.OperatorID,
+			OperatorName:  names[l.OperatorID],
 			PermissionPoint: l.PermissionPoint, Action: l.Action, Route: l.Route,
 			Ip: l.IP, CreatedAt: l.CreatedAt.Unix(),
 		}
@@ -60,10 +111,27 @@ func (s *AdminAuditService) ListSecurityLogs(ctx context.Context, req *adminv1.L
 	if err != nil {
 		return nil, err
 	}
+	adminIDs := make([]uint64, 0, len(rows))
+	userIDs := make([]uint64, 0, len(rows))
+	for _, l := range rows {
+		switch l.ActorType {
+		case "admin":
+			adminIDs = append(adminIDs, l.ActorID)
+		case "user":
+			userIDs = append(userIDs, l.ActorID)
+		}
+	}
+	adminNames := s.enrichAdminNames(ctx, adminIDs...)
+	userNames := s.enrichUserNames(ctx, userIDs...)
 	reply := &adminv1.ListSecurityLogsReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
 	for _, l := range rows {
+		name := adminNames[l.ActorID]
+		if l.ActorType == "user" {
+			name = userNames[l.ActorID]
+		}
 		item := &adminv1.SecurityLogItem{
 			Id: l.ID, ActorType: string(l.ActorType), ActorId: l.ActorID,
+			ActorName: name,
 			Action: l.Action, Ip: l.IP, CreatedAt: l.CreatedAt.Unix(),
 		}
 		if l.Metadata != nil {

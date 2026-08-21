@@ -7,20 +7,66 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	dashboardport "github.com/NovaWorks/zcard-next/server/internal/mods/dashboard/port"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 )
 
+// ErrCooldownActive 渠道熔断冷却中（可重试口径：procurement 退避轮询自然吸收）。
+var ErrCooldownActive = errors.New("supply: rate limit cooldown active")
+
 // Gateway supply 采购网关（实现 supplyport.UpstreamGateway）。
+// P2-10 S2：出站共享自适应节奏器——熔断冷却中直接拒绝（可重试口径），
+// 限流信号反馈降速、成功反馈回升（采购请求量小，主要防持续撞墙）。
 type Gateway struct {
-	repo *SupplyRepoImpl
+	repo  *SupplyRepoImpl
+	pacer *Pacer // nil = 不节流（测试）
 }
 
 // NewGateway 构造。
-func NewGateway(repo *SupplyRepoImpl) *Gateway { return &Gateway{repo: repo} }
+func NewGateway(repo *SupplyRepoImpl, pacer *Pacer) *Gateway { return &Gateway{repo: repo, pacer: pacer} }
+
+// FailStrategyOf 渠道级失败策略（port 实现；读连接 settings.failure_action）。
+func (g *Gateway) FailStrategyOf(ctx context.Context, connectionID uint64) string {
+	conn, err := g.repo.GetConnection(ctx, connectionID)
+	if err != nil {
+		return "auto_refund"
+	}
+	if v, _ := conn.Settings["failure_action"].(string); v == "manual" {
+		return "manual"
+	}
+	return "auto_refund"
+}
+
+// gate 出站前置：熔断冷却判定（冷却中返回可重试错误——procurement 侧退避轮询）。
+func (g *Gateway) gate(ctx context.Context, connectionID uint64) (*ent.SupplyConnection, error) {
+	conn, err := g.repo.GetConnection(ctx, connectionID)
+	if err != nil {
+		return nil, err
+	}
+	if g.pacer != nil && g.pacer.CooldownActive(conn) {
+		return nil, fmt.Errorf("supply: 渠道熔断冷却中（上游限流），采购稍后自动重试: %w", ErrCooldownActive)
+	}
+	return conn, nil
+}
+
+// feedback 出站结果反馈节奏器（err 分类：限流降速 / 成功回升）。
+func (g *Gateway) feedback(ctx context.Context, conn *ent.SupplyConnection, err error) {
+	if g.pacer == nil {
+		return
+	}
+	if err != nil && errors.Is(err, adapter.ErrRateLimited) {
+		g.pacer.OnRateLimited(ctx, conn, err.Error())
+		return
+	}
+	if err == nil {
+		g.pacer.OnSuccess(ctx, conn)
+	}
+}
 
 // adapterFor 按连接构造适配器（凭据解密失败 → 明确错误）。
 func (g *Gateway) adapterFor(ctx context.Context, connectionID uint64) (adapter.Adapter, error) {
@@ -68,6 +114,10 @@ func (g *Gateway) ListOrders(ctx context.Context, connectionID uint64, start, en
 
 // Submit 提交采购。永久错误归一化（哨兵 → procurement 状态机判 rejected）。
 func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*supplyport.PurchaseResult, error) {
+	conn, err := g.gate(ctx, req.ConnectionID)
+	if err != nil {
+		return nil, err
+	}
 	a, err := g.adapterFor(ctx, req.ConnectionID)
 	if err != nil {
 		return nil, err
@@ -77,8 +127,9 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 		Quantity:          req.Quantity,
 		DownstreamOrderNo: req.DownstreamOrderNo,
 		TraceID:           req.TraceID,
-		CallbackURL:       req.CallbackURL,
+		CallbackURL:       g.submitCallbackURL(ctx, req.ConnectionID, req.CallbackURL),
 	})
+	g.feedback(ctx, conn, err)
 	if err != nil {
 		switch {
 		case errors.Is(err, adapter.ErrProductDeleted):
@@ -102,11 +153,16 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 
 // Query 查询上游订单。
 func (g *Gateway) Query(ctx context.Context, connectionID uint64, upstreamOrderID string) (*supplyport.PurchaseOrderInfo, error) {
+	conn, err := g.gate(ctx, connectionID)
+	if err != nil {
+		return nil, err
+	}
 	a, err := g.adapterFor(ctx, connectionID)
 	if err != nil {
 		return nil, err
 	}
 	detail, err := a.GetOrder(ctx, upstreamOrderID)
+	g.feedback(ctx, conn, err)
 	if err != nil {
 		return nil, err
 	}
@@ -141,4 +197,17 @@ func (g *Gateway) Refund(ctx context.Context, connectionID uint64, upstreamOrder
 		return supplyport.ErrRefundNotSupported
 	}
 	return err
+}
+
+// submitCallbackURL 回调地址决策：请求显式指定 > 连接配置 callback_url（运营在
+// 渠道管理里登记的本站公网回调地址；P2-10 E 提交时自动携带给上游）。
+func (g *Gateway) submitCallbackURL(ctx context.Context, connectionID uint64, explicit string) string {
+	if explicit != "" {
+		return explicit
+	}
+	conn, err := g.repo.GetConnection(ctx, connectionID)
+	if err != nil {
+		return ""
+	}
+	return conn.CallbackURL
 }

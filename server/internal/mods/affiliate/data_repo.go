@@ -11,6 +11,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 	entUser "github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 )
@@ -238,4 +239,95 @@ func (r *CommissionRepo) ListTeam(ctx context.Context, userID uint64, tier, page
 	}
 	rows, err := q.Offset((page - 1) * size).Limit(size).All(ctx)
 	return rows, total, err
+}
+
+// ── 佣金提现（冻结口径 + FIFO 消耗；提现源=佣金，与推广中心数字一致）──
+
+// FrozenWithdrawAmount 冻结中提现额（pending/approved 提现单金额合计）——
+// 可提 = stats.available − frozen（申请校验与前端展示共用口径）。
+func (r *CommissionRepo) FrozenWithdrawAmount(ctx context.Context, userID uint64) (int64, error) {
+	var rows []*ent.Withdrawal
+	var err error
+	if rows, err = data.Client(ctx, r.data).Withdrawal.Query().
+		Where(
+			withdrawal.UserID(userID),
+			withdrawal.StatusIn(withdrawal.StatusPending, withdrawal.StatusApproved),
+		).
+		All(ctx); err != nil {
+		return 0, err
+	}
+	var sum int64
+	for _, w := range rows {
+		sum += w.Amount
+	}
+	return sum, nil
+}
+
+// ConsumeAvailableFIFO 打款消耗：available 佣金行按 ID 升序置 withdrawn；
+// 末行超出部分拆分（原行减额 + 复制一行 withdrawn=所需）——dujiao 同款纪律。
+// 事务内调用；可用不足返回错误（整单回滚）。
+func (r *CommissionRepo) ConsumeAvailableFIFO(ctx context.Context, userID uint64, amount int64) error {
+	if amount <= 0 {
+		return fmt.Errorf("affiliate.WITHDRAW_AMOUNT_INVALID")
+	}
+	client := data.Client(ctx, r.data)
+	rows, err := client.AffiliateCommission.Query().
+		Where(
+			affiliatecommission.ReferrerID(userID),
+			affiliatecommission.StatusEQ(affiliatecommission.StatusAvailable),
+			affiliatecommission.AmountGT(0),
+		).
+		Order(ent.Asc(affiliatecommission.FieldID)).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	var avail int64
+	for _, c := range rows {
+		avail += c.Amount
+	}
+	if avail < amount {
+		return fmt.Errorf("affiliate.INSUFFICIENT_AVAILABLE: 可提佣金不足")
+	}
+	remain := amount
+	for _, c := range rows {
+		if remain <= 0 {
+			break
+		}
+		if c.Amount <= remain {
+			// 整行消耗
+			if _, err := client.AffiliateCommission.UpdateOne(c).
+				SetStatus(affiliatecommission.StatusWithdrawn).
+				Save(ctx); err != nil {
+				return err
+			}
+			remain -= c.Amount
+		} else {
+			// 拆分：原行保留余额，新行 withdrawn=已消耗部分（复制关键字段）
+			if _, err := client.AffiliateCommission.UpdateOne(c).
+				SetAmount(c.Amount - remain).
+				Save(ctx); err != nil {
+				return err
+			}
+			// 拆分行 order_id 加 1e12 偏移规避 UNIQUE(order_id, tier)——
+			// 拆分行只服务提现统计（available/withdrawn 合计），不参与订单幂等
+			create := client.AffiliateCommission.Create().
+				SetReferrerID(c.ReferrerID).
+				SetOrderID(c.OrderID + 1_000_000_000_000).
+				SetBuyerID(c.BuyerID).
+				SetTier(c.Tier).
+				SetRate(c.Rate).
+				SetBaseAmount(c.BaseAmount).
+				SetAmount(remain).
+				SetStatus(affiliatecommission.StatusWithdrawn)
+			if !c.AvailableAt.IsZero() {
+				create.SetAvailableAt(c.AvailableAt)
+			}
+			if _, err := create.Save(ctx); err != nil {
+				return err
+			}
+			remain = 0
+		}
+	}
+	return nil
 }

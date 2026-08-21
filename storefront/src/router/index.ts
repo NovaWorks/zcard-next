@@ -7,8 +7,10 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', name: 'home', component: Home },
+    { path: '/products', name: 'products', component: () => import('@/views/Products.vue') },
     { path: '/product/:id', name: 'product', component: () => import('@/views/ProductDetail.vue') },
     { path: '/payment/:orderNo', name: 'payment', component: () => import('@/views/Payment.vue') },
+    { path: '/order/:orderNo', name: 'order-detail', component: () => import('@/views/OrderDetail.vue'), meta: { auth: true } },
     { path: '/fetch', name: 'fetch', component: () => import('@/views/Fetch.vue') },
     { path: '/member', name: 'member', component: () => import('@/views/Member.vue'), meta: { auth: true } },
     { path: '/login', name: 'login', component: () => import('@/views/Login.vue') },
@@ -17,6 +19,7 @@ const router = createRouter({
     { path: '/tickets', name: 'tickets', component: () => import('@/views/Tickets.vue'), meta: { auth: true } },
     { path: '/tickets/:no', name: 'ticket-detail', component: () => import('@/views/TicketDetail.vue'), meta: { auth: true } },
     { path: '/affiliate', name: 'affiliate', component: () => import('@/views/Affiliate.vue'), meta: { auth: true } },
+    { path: '/withdraw', name: 'withdraw', component: () => import('@/views/Withdraw.vue'), meta: { auth: true } },
     { path: '/points', name: 'points', component: () => import('@/views/Points.vue') },
     { path: '/cart', name: 'cart', component: () => import('@/views/Cart.vue'), meta: { auth: true } },
     { path: '/coupons', name: 'coupons', component: () => import('@/views/Coupons.vue'), meta: { auth: true } },

@@ -28,6 +28,9 @@ var (
 	ErrInsufficientBalance = errors.New("adapter: upstream balance insufficient")
 	// ErrNoStock 上游明确无库存（fail-open 语义下快速拒绝）。
 	ErrNoStock = errors.New("adapter: upstream no stock")
+	// ErrRateLimited 上游限流或疑似 WAF 拦截（429 / 200 但非 JSON）——
+	// 自适应节奏器的降速信号（P2-10 S2；AIMD 判据）。
+	ErrRateLimited = errors.New("adapter: upstream rate limited")
 	// ErrNotSupported 上游协议不支持该能力（如 acg-faka 无退款）。
 	ErrNotSupported = errors.New("adapter: capability not supported by upstream")
 )
@@ -84,6 +87,11 @@ type ProductList struct {
 	Total   int
 	Items   []Product
 	HasMore bool
+	// IncludesInactive 上游是否真的在本次响应里包含了下架商品（dujiao 回声字段）。
+	// 删除对账的权威性判据：仅当快照完整（全量 + 回声为 true）时，
+	// 「上游未见」才可推断为已删除（误判会把下架商品当删除下架掉——语义虽同向
+	// 但统计口径失真；旧版上游不识别 include_inactive 时必须禁用对账）。
+	IncludesInactive bool
 }
 
 // CreateOrderReq 采购提交请求（DownstreamOrderNo 即幂等键，随请求发送）。
@@ -115,6 +123,13 @@ type OrderDetail struct {
 // 适配器返回 ErrNotSupported，对账任务置 failed「上游不支持列表对账」）。
 type OrderLister interface {
 	ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error)
+}
+
+// IncrementalLister 增量商品列表能力（可选——协议支持 updated_after 过滤的
+// 适配器实现；不支持增量的驱动不实现本接口，同步引擎自动回落全量分页）。
+// 注意：增量快照不具删除对账权威性（未见 ≠ 已删除），引擎仅在全量模式对账。
+type IncrementalLister interface {
+	ListProductsAfter(ctx context.Context, page, pageSize int, updatedAfter time.Time) (*ProductList, error)
 }
 
 // Adapter 货源适配器接口（port 契约，P2-01 T2 / P2-02 消费方）。

@@ -152,6 +152,20 @@ func (_c *WithdrawalCreate) SetNillableReviewedAt(v *time.Time) *WithdrawalCreat
 	return _c
 }
 
+// SetReceipt sets the "receipt" field.
+func (_c *WithdrawalCreate) SetReceipt(v string) *WithdrawalCreate {
+	_c.mutation.SetReceipt(v)
+	return _c
+}
+
+// SetNillableReceipt sets the "receipt" field if the given value is not nil.
+func (_c *WithdrawalCreate) SetNillableReceipt(v *string) *WithdrawalCreate {
+	if v != nil {
+		_c.SetReceipt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *WithdrawalCreate) SetID(v uint64) *WithdrawalCreate {
 	_c.mutation.SetID(v)
@@ -244,6 +258,11 @@ func (_c *WithdrawalCreate) check() error {
 			return &ValidationError{Name: "reject_reason", err: fmt.Errorf(`ent: validator failed for field "Withdrawal.reject_reason": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.Receipt(); ok {
+		if err := withdrawal.ReceiptValidator(v); err != nil {
+			return &ValidationError{Name: "receipt", err: fmt.Errorf(`ent: validator failed for field "Withdrawal.receipt": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -320,6 +339,10 @@ func (_c *WithdrawalCreate) createSpec() (*Withdrawal, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ReviewedAt(); ok {
 		_spec.SetField(withdrawal.FieldReviewedAt, field.TypeTime, value)
 		_node.ReviewedAt = value
+	}
+	if value, ok := _c.mutation.Receipt(); ok {
+		_spec.SetField(withdrawal.FieldReceipt, field.TypeString, value)
+		_node.Receipt = value
 	}
 	return _node, _spec
 }
@@ -538,6 +561,24 @@ func (u *WithdrawalUpsert) UpdateReviewedAt() *WithdrawalUpsert {
 // ClearReviewedAt clears the value of the "reviewed_at" field.
 func (u *WithdrawalUpsert) ClearReviewedAt() *WithdrawalUpsert {
 	u.SetNull(withdrawal.FieldReviewedAt)
+	return u
+}
+
+// SetReceipt sets the "receipt" field.
+func (u *WithdrawalUpsert) SetReceipt(v string) *WithdrawalUpsert {
+	u.Set(withdrawal.FieldReceipt, v)
+	return u
+}
+
+// UpdateReceipt sets the "receipt" field to the value that was provided on create.
+func (u *WithdrawalUpsert) UpdateReceipt() *WithdrawalUpsert {
+	u.SetExcluded(withdrawal.FieldReceipt)
+	return u
+}
+
+// ClearReceipt clears the value of the "receipt" field.
+func (u *WithdrawalUpsert) ClearReceipt() *WithdrawalUpsert {
+	u.SetNull(withdrawal.FieldReceipt)
 	return u
 }
 
@@ -785,6 +826,27 @@ func (u *WithdrawalUpsertOne) UpdateReviewedAt() *WithdrawalUpsertOne {
 func (u *WithdrawalUpsertOne) ClearReviewedAt() *WithdrawalUpsertOne {
 	return u.Update(func(s *WithdrawalUpsert) {
 		s.ClearReviewedAt()
+	})
+}
+
+// SetReceipt sets the "receipt" field.
+func (u *WithdrawalUpsertOne) SetReceipt(v string) *WithdrawalUpsertOne {
+	return u.Update(func(s *WithdrawalUpsert) {
+		s.SetReceipt(v)
+	})
+}
+
+// UpdateReceipt sets the "receipt" field to the value that was provided on create.
+func (u *WithdrawalUpsertOne) UpdateReceipt() *WithdrawalUpsertOne {
+	return u.Update(func(s *WithdrawalUpsert) {
+		s.UpdateReceipt()
+	})
+}
+
+// ClearReceipt clears the value of the "receipt" field.
+func (u *WithdrawalUpsertOne) ClearReceipt() *WithdrawalUpsertOne {
+	return u.Update(func(s *WithdrawalUpsert) {
+		s.ClearReceipt()
 	})
 }
 
@@ -1198,6 +1260,27 @@ func (u *WithdrawalUpsertBulk) UpdateReviewedAt() *WithdrawalUpsertBulk {
 func (u *WithdrawalUpsertBulk) ClearReviewedAt() *WithdrawalUpsertBulk {
 	return u.Update(func(s *WithdrawalUpsert) {
 		s.ClearReviewedAt()
+	})
+}
+
+// SetReceipt sets the "receipt" field.
+func (u *WithdrawalUpsertBulk) SetReceipt(v string) *WithdrawalUpsertBulk {
+	return u.Update(func(s *WithdrawalUpsert) {
+		s.SetReceipt(v)
+	})
+}
+
+// UpdateReceipt sets the "receipt" field to the value that was provided on create.
+func (u *WithdrawalUpsertBulk) UpdateReceipt() *WithdrawalUpsertBulk {
+	return u.Update(func(s *WithdrawalUpsert) {
+		s.UpdateReceipt()
+	})
+}
+
+// ClearReceipt clears the value of the "receipt" field.
+func (u *WithdrawalUpsertBulk) ClearReceipt() *WithdrawalUpsertBulk {
+	return u.Update(func(s *WithdrawalUpsert) {
+		s.ClearReceipt()
 	})
 }
 

@@ -40,6 +40,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'channel',
+    path: '/channel',
+    component: 'layout.base$view.channel',
+    meta: {
+      title: '渠道管理',
+      i18nKey: 'route.channel',
+      icon: 'mdi:transit-connection-variant',
+      order: 10
+    }
+  },
+  {
     name: 'home',
     path: '/home',
     component: 'layout.base$view.home',
@@ -138,7 +149,7 @@ export const generatedRoutes: GeneratedRoute[] = [
       title: '系统设置',
       i18nKey: 'route.settings',
       icon: 'mdi:cog-outline',
-      order: 8
+      order: 11
     }
   },
   {
@@ -150,6 +161,17 @@ export const generatedRoutes: GeneratedRoute[] = [
       i18nKey: 'route.staff',
       icon: 'mdi:account-group-outline',
       order: 7
+    }
+  },
+  {
+    name: 'user',
+    path: '/user',
+    component: 'layout.base$view.user',
+    meta: {
+      title: '用户管理',
+      i18nKey: 'route.user',
+      icon: 'mdi:account-group-outline',
+      order: 1.5
     }
   },
   {

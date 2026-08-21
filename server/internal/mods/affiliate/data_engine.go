@@ -256,3 +256,6 @@ func (s *AffiliateService) PublishConfirmed(ctx context.Context, c *ent.Affiliat
 	_ = s.outbox.Write(ctx, "affiliate", "affiliate.commission.confirmed",
 		refKey(c.ID), refKey(c.ID)+":confirmed", raw)
 }
+
+// Repo 佣金仓储导出（wallet 打款 FIFO 消耗注入用，装配期一次）。
+func (s *AffiliateService) Repo() *CommissionRepo { return s.repo }

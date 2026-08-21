@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 )
 
@@ -37,6 +38,10 @@ func mustCIDRs(cidrs ...string) []*net.IPNet {
 	}
 	return out
 }
+
+// allowPrivate 联调开关（ZCARD_HTTPX_ALLOW_PRIVATE=1）：放行私有/保留段出站，
+// 供本机多服务端到端联调。生产严禁开启（SSRF 防护旁路）。
+var allowPrivate = os.Getenv("ZCARD_HTTPX_ALLOW_PRIVATE") == "1"
 
 // IsPrivateIP 判断 IP 是否落在私有/保留段（导出供测试与诊断）。
 func IsPrivateIP(ip net.IP) bool {
@@ -75,7 +80,7 @@ func ValidateURL(raw string) error {
 
 func checkHost(host string) error {
 	if ip := net.ParseIP(host); ip != nil {
-		if IsPrivateIP(ip) {
+		if !allowPrivate && IsPrivateIP(ip) {
 			return &ErrBlockedAddress{Host: host}
 		}
 		return nil
@@ -103,7 +108,7 @@ func NewSafeClient(timeout time.Duration) *http.Client {
 			if err != nil {
 				return nil, err
 			}
-			if ip := net.ParseIP(host); ip != nil && IsPrivateIP(ip) {
+			if ip := net.ParseIP(host); ip != nil && !allowPrivate && IsPrivateIP(ip) {
 				return nil, &ErrBlockedAddress{Host: host}
 			}
 			return dialer.DialContext(ctx, network, net.JoinHostPort(host, port))

@@ -18,6 +18,7 @@ import (
 var ProviderSet = wire.NewSet(
 	NewMediaRepo,
 	NewAdminMediaService,
+	NewStoreMediaService,
 	wire.Bind(new(port.Uploader), new(*MediaRepo)),
 	wire.Bind(new(port.Referencer), new(*MediaRepo)),
 )

@@ -52,6 +52,7 @@ message OpLogItem {
   string after_json = 8;
   string ip = 9;
   int64 created_at = 10;
+  string operator_name = 11; // 读取时富化的操作者账号（已删除/未知为空）
 }
 
 message ListOpLogsReply {
@@ -75,6 +76,7 @@ message SecurityLogItem {
   string ip = 5;
   string metadata_json = 6;
   int64 created_at = 7;
+  string actor_name = 8; // 读取时富化的主体账号（guest/system/未知为空）
 }
 
 message ListSecurityLogsReply {

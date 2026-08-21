@@ -78,6 +78,7 @@ func (r *SupplyRepoImpl) CreateConnection(ctx context.Context, conn *ent.SupplyC
 		SetRetryIntervals(conn.RetryIntervals).
 		SetExchangeRate(conn.ExchangeRate).
 		SetPriceMarkupPercent(conn.PriceMarkupPercent).
+		SetPriceMarkupAmount(conn.PriceMarkupAmount).
 		SetPriceRoundingMode(supplyconnection.PriceRoundingMode(conn.PriceRoundingMode)).
 		SetAutoSyncPrice(conn.AutoSyncPrice).
 		SetStockMode(supplyconnection.StockMode(conn.StockMode)).
@@ -113,6 +114,9 @@ func (r *SupplyRepoImpl) UpdateConnection(ctx context.Context, id uint64, upd *e
 	if upd.PriceMarkupPercent != 0 {
 		existing.PriceMarkupPercent = upd.PriceMarkupPercent
 	}
+	if upd.PriceMarkupAmount != 0 {
+		existing.PriceMarkupAmount = upd.PriceMarkupAmount
+	}
 	if upd.PriceRoundingMode != "" {
 		existing.PriceRoundingMode = upd.PriceRoundingMode
 	}
@@ -125,6 +129,9 @@ func (r *SupplyRepoImpl) UpdateConnection(ctx context.Context, id uint64, upd *e
 	if upd.AutoSyncPrice {
 		existing.AutoSyncPrice = true
 	}
+	if upd.Settings != nil {
+		existing.Settings = upd.Settings
+	}
 	return data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id).
 		SetName(existing.Name).
 		SetBaseURL(existing.BaseURL).
@@ -133,10 +140,12 @@ func (r *SupplyRepoImpl) UpdateConnection(ctx context.Context, id uint64, upd *e
 		SetRetryIntervals(existing.RetryIntervals).
 		SetExchangeRate(existing.ExchangeRate).
 		SetPriceMarkupPercent(existing.PriceMarkupPercent).
+		SetPriceMarkupAmount(existing.PriceMarkupAmount).
 		SetPriceRoundingMode(existing.PriceRoundingMode).
 		SetAutoSyncPrice(existing.AutoSyncPrice).
 		SetStockMode(existing.StockMode).
 		SetStatus(existing.Status).
+		SetSettings(existing.Settings).
 		Save(ctx)
 }
 
@@ -326,6 +335,36 @@ func (r *SupplyRepoImpl) GetMapping(ctx context.Context, connectionID uint64, up
 	return m, nil
 }
 
+// ── 节奏器状态（P2-10 S2）────────────────────────────────
+
+// UpdateRateState 仅写节奏器持久状态（rate_state JSON）。
+func (r *SupplyRepoImpl) UpdateRateState(ctx context.Context, id uint64, state map[string]any) error {
+	_, err := data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id).
+		SetRateState(state).Save(ctx)
+	return err
+}
+
+// TripRateLimit 熔断：冷却截止 + 状态 + last_error。
+func (r *SupplyRepoImpl) TripRateLimit(ctx context.Context, id uint64, until time.Time, state map[string]any, lastErr string) error {
+	upd := data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id).
+		SetRateLimitUntil(until).
+		SetRateState(state)
+	if lastErr != "" {
+		upd.SetLastError(lastErr)
+	}
+	_, err := upd.Save(ctx)
+	return err
+}
+
+// ClearRateLimit 解除熔断（半开探测成功后；同时清 last_error）。
+func (r *SupplyRepoImpl) ClearRateLimit(ctx context.Context, id uint64) error {
+	_, err := data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id).
+		ClearRateLimitUntil().
+		ClearLastError().
+		Save(ctx)
+	return err
+}
+
 // ── 同步任务 ──────────────────────────────────────────────
 
 // CreateSyncTask 创建同步任务（pending）。
@@ -432,6 +471,16 @@ func (r *SupplyRepoImpl) FinishTask(ctx context.Context, id uint64, status suppl
 	return err
 }
 
+// ResetTaskPending 重置任务为 pending（失败自动重试用；清心跳与取消标志）。
+func (r *SupplyRepoImpl) ResetTaskPending(ctx context.Context, id uint64) error {
+	_, err := data.Client(ctx, r.data).SupplySyncTask.UpdateOneID(id).
+		SetStatus(supplysynctask.StatusPending).
+		ClearHeartbeatAt().
+		ClearCancelRequestedAt().
+		Save(ctx)
+	return err
+}
+
 // RequestCancel 请求取消（分批间检查标志）。
 func (r *SupplyRepoImpl) RequestCancel(ctx context.Context, id uint64) (*ent.SupplySyncTask, error) {
 	task, err := r.GetSyncTask(ctx, id)
@@ -449,6 +498,59 @@ func (r *SupplyRepoImpl) RequestCancel(ctx context.Context, id uint64) (*ent.Sup
 // LoadTaskProgress 读取任务当前统计（取消检查 + 进度读取）。
 func (r *SupplyRepoImpl) LoadTaskProgress(ctx context.Context, id uint64) (*ent.SupplySyncTask, error) {
 	return r.GetSyncTask(ctx, id)
+}
+
+// ── 调度（P2-10 S3）───────────────────────────────────────
+
+// HasRunningTask 连接是否存在未完结同步任务（pending/processing；调度防重入）。
+func (r *SupplyRepoImpl) HasRunningTask(ctx context.Context, connectionID uint64) (bool, error) {
+	n, err := data.Client(ctx, r.data).SupplySyncTask.Query().
+		Where(
+			supplysynctask.ConnectionID(connectionID),
+			supplysynctask.StatusIn(supplysynctask.StatusPending, supplysynctask.StatusProcessing),
+		).
+		Count(ctx)
+	return n > 0, err
+}
+
+// TouchScopeAnchor 写 scope 调度锚点列（派发定时任务时回写）。
+func (r *SupplyRepoImpl) TouchScopeAnchor(ctx context.Context, id uint64, scope string) error {
+	now := time.Now().UTC()
+	upd := data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id)
+	switch scope {
+	case ScopeCollect:
+		upd.SetLastCollectAt(now)
+	case ScopePrice:
+		upd.SetLastPriceSyncAt(now)
+	case ScopeStatus:
+		upd.SetLastStatusSyncAt(now)
+	default:
+		return nil
+	}
+	_, err := upd.Save(ctx)
+	return err
+}
+
+// ListStaleProcessing 心跳超时的 processing 任务（看门狗 reapStale；
+// 心跳为零的用 started_at 判定——刚开工尚未打第一次心跳的任务不会误伤）。
+func (r *SupplyRepoImpl) ListStaleProcessing(ctx context.Context, staleBefore time.Time) ([]*ent.SupplySyncTask, error) {
+	rows, err := data.Client(ctx, r.data).SupplySyncTask.Query().
+		Where(supplysynctask.StatusEQ(supplysynctask.StatusProcessing)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*ent.SupplySyncTask, 0, 4)
+	for _, t := range rows {
+		anchor := t.HeartbeatAt
+		if anchor.IsZero() {
+			anchor = t.StartedAt
+		}
+		if !anchor.IsZero() && anchor.Before(staleBefore) {
+			out = append(out, t)
+		}
+	}
+	return out, nil
 }
 
 // parseRetryIntervals 解析 retry_intervals JSON 数组（秒）。

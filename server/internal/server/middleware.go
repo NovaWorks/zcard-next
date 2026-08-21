@@ -12,11 +12,14 @@ package server
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
+	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
@@ -172,6 +175,30 @@ func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Di
 				return nil, errors.Forbidden("authz.PERMISSION_DENIED", "权限不足")
 			}
 			return handler(identity.WithClaims(ctx, claims), req)
+		}
+	}
+}
+
+// storefrontVisitMiddleware storefront 访问埋点（T5）：PV/UV 明细 + 登录用户在线心跳。
+// 注册在 userAuthMiddleware 之后（需已解析 claims）；仅 selector 匹配 storefront
+// operation；埋点写失败忽略——统计性质绝不阻断业务请求。
+func storefrontVisitMiddleware(tracker *audit.TrackRepo) middleware.Middleware {
+	return func(handler middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, req any) (any, error) {
+			if tracker != nil {
+				if r, ok := khttp.RequestFromServerContext(ctx); ok {
+					var userID uint64
+					if claims := identity.ClaimsFromContext(ctx); claims != nil {
+						userID = claims.Subject
+					}
+					ip := r.RemoteAddr
+					if host, _, err := net.SplitHostPort(ip); err == nil {
+						ip = host
+					}
+					tracker.RecordVisit(ctx, tenancy.FromContext(ctx).SubsiteID, r.URL.Path, userID, auditport.NormalizeIP(ip))
+				}
+			}
+			return handler(ctx, req)
 		}
 	}
 }

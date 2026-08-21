@@ -14,6 +14,10 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminAuthService/Logout", Method: "POST", Path: "/api/v1/admin/auth/logout"},
 		Perm{Code: "auth:refresh", Desc: "刷新令牌", Domain: "auth", Public: true,
 			Op: "zcard.api.admin.v1.AdminAuthService/RefreshToken", Method: "POST", Path: "/api/v1/admin/auth/refresh"},
+		Perm{Code: "auth:captcha", Desc: "登录图形验证码（免鉴权）", Domain: "auth", Public: true,
+			Op: "zcard.api.admin.v1.AdminAuthService/GetCaptchaImage", Method: "GET", Path: "/api/v1/admin/auth/captcha/image"},
+		Perm{Code: "auth:captcha", Desc: "登录验证码开关（免鉴权）", Domain: "auth", Public: true,
+			Op: "zcard.api.admin.v1.AdminAuthService/GetCaptchaConfig", Method: "GET", Path: "/api/v1/admin/auth/captcha-config"},
 		Perm{Code: "auth:totp", Desc: "TOTP 绑定管理", Domain: "auth",
 			Op: "zcard.api.admin.v1.AdminAuthService/EnableTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/enable"},
 		Perm{Code: "auth:totp", Desc: "TOTP 绑定管理", Domain: "auth",
@@ -24,10 +28,16 @@ func init() {
 		// ── 设置中心（settings）──────────────────────────
 		Perm{Code: "settings:read", Desc: "查看设置", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminSettingsService/ListSettings", Method: "GET", Path: "/api/v1/admin/settings"},
+		Perm{Code: "settings:read", Desc: "查看设置", Domain: "settings",
+			Op: "zcard.api.admin.v1.AdminSettingsService/ListTemplates", Method: "GET", Path: "/api/v1/admin/settings/templates"},
 		Perm{Code: "settings:read_detail", Desc: "查看设置项", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminSettingsService/GetSetting", Method: "GET", Path: "/api/v1/admin/settings/{group}/{key}"},
 		Perm{Code: "settings:update", Desc: "修改设置", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminSettingsService/UpdateSetting", Method: "PUT", Path: "/api/v1/admin/settings/{group}/{key}"},
+		Perm{Code: "settings:update", Desc: "修改设置", Domain: "settings",
+			Op: "zcard.api.admin.v1.AdminSettingsService/UpdateSettings", Method: "PUT", Path: "/api/v1/admin/settings"},
+		Perm{Code: "settings:update", Desc: "安装主题", Domain: "settings",
+			Op: "zcard.api.admin.v1.AdminSettingsService/InstallTemplate", Method: "POST", Path: "/api/v1/admin/settings/templates/install"},
 
 		// ── 权限管理（authz，本任务 T2 新增路由）──────────
 		Perm{Code: "authz:role_read", Desc: "查看角色", Domain: "authz",
@@ -48,6 +58,14 @@ func init() {
 		// ── 员工管理（identity 数据层 + authz API 面）─────
 		Perm{Code: "identity:admin_read", Desc: "查看员工", Domain: "identity",
 			Op: "zcard.api.admin.v1.AdminUserService/ListAdmins", Method: "GET", Path: "/api/v1/admin/admins"},
+
+		// ── 前台用户管理（users 表；封禁敏感 → 超管专属）────────
+		Perm{Code: "identity:user_read", Desc: "查看前台用户", Domain: "identity",
+			Op: "zcard.api.admin.v1.AdminUserManageService/ListUsers", Method: "GET", Path: "/api/v1/admin/users"},
+		Perm{Code: "identity:user_read", Desc: "查看前台用户", Domain: "identity",
+			Op: "zcard.api.admin.v1.AdminUserManageService/GetUser", Method: "GET", Path: "/api/v1/admin/users/{id}"},
+		Perm{Code: "identity:user_status", Desc: "封禁/解封用户", Domain: "identity", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUserManageService/SetUserStatus", Method: "POST", Path: "/api/v1/admin/users/{id}/status"},
 		Perm{Code: "identity:admin_write", Desc: "创建/修改员工（超管专属）", Domain: "identity", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUserService/CreateAdmin", Method: "POST", Path: "/api/v1/admin/admins"},
 		Perm{Code: "identity:admin_write", Desc: "创建/修改员工（超管专属）", Domain: "identity", AdminOnly: true,
@@ -232,6 +250,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetReconciliation", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation"},
 		Perm{Code: "dashboard:read", Desc: "历史日结查询", Domain: "dashboard",
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetDailyStats", Method: "GET", Path: "/api/v1/admin/dashboard/daily-stats"},
+		Perm{Code: "dashboard:read", Desc: "流量统计（PV/UV）", Domain: "dashboard",
+			Op: "zcard.api.admin.v1.AdminDashboardService/GetTraffic", Method: "GET", Path: "/api/v1/admin/dashboard/traffic"},
 		Perm{Code: "reconcile:read", Desc: "对账任务详情", Domain: "dashboard",
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetReconciliationJob", Method: "GET", Path: "/api/v1/admin/dashboard/reconciliation-jobs/{id}"},
 		Perm{Code: "reconcile:read", Desc: "对账明细列表", Domain: "dashboard",
@@ -278,6 +298,10 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminSupplyService/CancelSyncTask", Method: "POST", Path: "/api/v1/admin/supply/sync-tasks/{id}/cancel"},
 		Perm{Code: "supply:read", Desc: "连接健康列表", Domain: "supply",
 			Op: "zcard.api.admin.v1.AdminSupplyService/ListHealth", Method: "GET", Path: "/api/v1/admin/supply/health"},
+		Perm{Code: "supply:read", Desc: "上游商品预览", Domain: "supply",
+			Op: "zcard.api.admin.v1.AdminSupplyService/PreviewProducts", Method: "GET", Path: "/api/v1/admin/supply/connections/{connection_id}/preview"},
+		Perm{Code: "supply:write", Desc: "勾选导入商品（超管）", Domain: "supply", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminSupplyService/ImportProducts", Method: "POST", Path: "/api/v1/admin/supply/connections/{connection_id}/import"},
 
 		// ── 采购（procurement，P2-02）────────────────
 		Perm{Code: "procurement:read", Desc: "采购单列表", Domain: "procurement",
@@ -306,6 +330,10 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminSupplierService/Recharge", Method: "POST", Path: "/api/v1/admin/supplier/accounts/{id}/recharge"},
 		Perm{Code: "supplier:read", Desc: "账本流水", Domain: "supplier",
 			Op: "zcard.api.admin.v1.AdminSupplierService/ListLedger", Method: "GET", Path: "/api/v1/admin/supplier/ledger"},
+		Perm{Code: "supplier:read", Desc: "专属价列表", Domain: "supplier",
+			Op: "zcard.api.admin.v1.AdminSupplierService/ListPrices", Method: "GET", Path: "/api/v1/admin/supplier/prices"},
+		Perm{Code: "supplier:write", Desc: "删除专属价（超管）", Domain: "supplier", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminSupplierService/DeletePrice", Method: "DELETE", Path: "/api/v1/admin/supplier/prices/{id}"},
 		Perm{Code: "supplier:write", Desc: "供货定价（超管）", Domain: "supplier", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminSupplierService/UpsertPrice", Method: "POST", Path: "/api/v1/admin/supplier/prices"},
 		Perm{Code: "supplier:read", Desc: "回调记录", Domain: "supplier",

@@ -5,6 +5,7 @@
  * + SKU 规格管理子表格 + 下单控件配置（独立弹窗）。
  */
 import { ref, reactive, computed, onMounted, h } from "vue";
+import { useRoute } from "vue-router";
 import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
@@ -15,19 +16,22 @@ import {
   deleteProduct,
   batchUpdateProductStatus,
   fetchCategories,
-  fetchSupplyConnections,
+  fetchSupplyConnectionOptions,
 } from "@/service/api";
 import { formatMoney, centsToYuan, yuanToFen } from "@/utils/money";
 import { checkAuth } from "@/directives";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import RichEditor from "@/components/common/rich-editor/index.vue";
 import TablePager from "@/components/common/table-pager.vue";
+import FilterTabs from "@/components/common/filter-tabs.vue";
 import SkuPanel from "./components/sku-panel.vue";
 import ControlPanel from "./components/control-panel.vue";
 import CategoryModal from "./components/category-modal.vue";
 import ReviewsDrawer from "./components/reviews-drawer.vue";
 
 defineOptions({ name: "ProductManagement" });
+
+const route = useRoute();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -40,6 +44,16 @@ const supplyConnections = ref<any[]>([]);
 const total = ref(0);
 const page = ref(1);
 const pageSize = ref(20);
+
+// 快捷筛选卡片（后端 status 口径：0=全部 1=上架 2=隐藏 -1=仅下架；low_stock=库存告急）
+const statusFilter = ref<number | "low_stock">(0);
+const statusTabs = [
+  { label: "全部", value: 0, type: "default" as const },
+  { label: "已上架", value: 1, type: "success" as const },
+  { label: "已隐藏", value: 2, type: "warning" as const },
+  { label: "已下架", value: -1, type: "error" as const },
+  { label: "库存告急", value: "low_stock" as const, type: "warning" as const },
+];
 
 // 列表多选（批量上下架）
 const showReviews = ref(false);
@@ -339,17 +353,35 @@ const columns: DataTableColumns<any> = [
   {
     title: "货源",
     key: "upstream_source_id",
-    width: 110,
+    width: 150,
     render: (row) => {
       if (!row.upstream_source_id) {
         return h(NTag, { size: "small", bordered: false }, { default: () => "自营" });
       }
       const conn = supplyConnections.value.find((c: any) => c.id === row.upstream_source_id);
-      return h(
-        NTag,
-        { size: "small", bordered: false, type: "info" },
-        { default: () => `代发 · ${conn?.name || `#${row.upstream_source_id}`}` },
-      );
+      const name = conn?.name || `#${row.upstream_source_id}`;
+      // 上游商品链接（渠道配置 product_url_template：{base}/{code} 占位）
+      let link = "";
+      if (conn) {
+        try {
+          const tpl = JSON.parse(conn.settings || "{}").product_url_template;
+          if (tpl && row.upstream_product_code) {
+            link = tpl.replaceAll("{base}", conn.base_url).replaceAll("{code}", row.upstream_product_code);
+          }
+        } catch {
+          /* 无模板 */
+        }
+      }
+      return h("div", { class: "flex items-center gap-4px" }, [
+        h(NTag, { size: "small", bordered: false, type: "info" }, { default: () => `代发 · ${name}` }),
+        link
+          ? h(
+              "a",
+              { href: link, target: "_blank", rel: "noopener noreferrer", title: link, class: "text-12px text-blue-500 hover:underline" },
+              "↗",
+            )
+          : null,
+      ]);
     },
   },
   {
@@ -442,6 +474,8 @@ async function loadList() {
   try {
     const { data, error } = await fetchProducts({
       keyword: keyword.value || undefined,
+      status: statusFilter.value === "low_stock" ? undefined : statusFilter.value || undefined,
+      low_stock_only: statusFilter.value === "low_stock" || undefined,
       page: page.value,
       page_size: pageSize.value,
     });
@@ -454,13 +488,19 @@ async function loadList() {
   }
 }
 
+// 筛选/搜索变化：回第 1 页重查（停留旧页可能超出范围显示空列表）
+function onSearch() {
+  page.value = 1;
+  loadList();
+}
+
 async function loadCategories() {
   const { data, error } = await fetchCategories();
   if (!error && data) categories.value = (data as any).categories || [];
 }
 
 async function loadConnections() {
-  const { data, error } = await fetchSupplyConnections();
+  const { data, error } = await fetchSupplyConnectionOptions();
   if (!error && data) supplyConnections.value = (data as any).connections || [];
 }
 
@@ -592,6 +632,7 @@ async function handleDelete(id: number) {
 }
 
 onMounted(() => {
+  if (route.query.low_stock === "1") statusFilter.value = "low_stock";
   loadList();
   loadCategories();
   loadConnections();
@@ -617,10 +658,12 @@ onMounted(() => {
           placeholder="搜索商品名"
           clearable
           class="w-200px"
-          @keyup.enter="loadList"
+          @keyup.enter="onSearch"
         />
-        <NButton @click="loadList">搜索</NButton>
+        <NButton @click="onSearch">搜索</NButton>
       </div>
+
+      <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px" @change="onSearch" />
 
       <!-- 批量操作条（勾选后出现） -->
       <div

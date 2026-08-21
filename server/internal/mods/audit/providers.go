@@ -23,6 +23,8 @@ import (
 // notifyport.SettingsReader（settings 适配——经 NotifySettingsBridge 注入）。
 var ProviderSet = wire.NewSet(
 	NewVisitCounter,
+	NewTrackRepo,
+	wire.Bind(new(port.TrafficReader), new(*TrackRepo)),
 	ProvideAuditAlerter,
 	wire.Bind(new(port.Auditor), new(*AuditRepo)),
 	wire.Bind(new(port.RiskGate), new(*AuditRepo)),

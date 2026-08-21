@@ -5,6 +5,7 @@ import (
 	"context"
 	"net"
 	"strings"
+	"time"
 )
 
 // SecurityEntry 安全审计条目（埋点入参）。
@@ -51,4 +52,19 @@ func NormalizeIP(ip string) string {
 	}
 	masked := parsed.Mask(net.CIDRMask(64, 128))
 	return masked.String()
+}
+
+// TrafficDay 单日流量（PV/UV）。
+type TrafficDay struct {
+	Date string
+	PV   int64
+	UV   int64
+}
+
+// TrafficReader 访问统计读取端口（dashboard 工作台消费，通道 A）。
+type TrafficReader interface {
+	// CountOnlineUsers 在线用户数（最近 since 内有活跃心跳；分站隔离）。
+	CountOnlineUsers(ctx context.Context, subsite uint64, since time.Time) (int64, error)
+	// TrafficByDay 近 N 天 PV/UV（不含缺日补零——调用方补齐日期序列）。
+	TrafficByDay(ctx context.Context, subsite uint64, days int) ([]TrafficDay, error)
 }

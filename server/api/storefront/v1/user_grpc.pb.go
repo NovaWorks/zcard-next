@@ -20,13 +20,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreUserService_Register_FullMethodName       = "/zcard.api.storefront.v1.StoreUserService/Register"
-	StoreUserService_Login_FullMethodName          = "/zcard.api.storefront.v1.StoreUserService/Login"
-	StoreUserService_Me_FullMethodName             = "/zcard.api.storefront.v1.StoreUserService/Me"
-	StoreUserService_ForgotPassword_FullMethodName = "/zcard.api.storefront.v1.StoreUserService/ForgotPassword"
-	StoreUserService_ResetPassword_FullMethodName  = "/zcard.api.storefront.v1.StoreUserService/ResetPassword"
-	StoreUserService_ChangePassword_FullMethodName = "/zcard.api.storefront.v1.StoreUserService/ChangePassword"
-	StoreUserService_UpdateProfile_FullMethodName  = "/zcard.api.storefront.v1.StoreUserService/UpdateProfile"
+	StoreUserService_Register_FullMethodName         = "/zcard.api.storefront.v1.StoreUserService/Register"
+	StoreUserService_SendRegisterCode_FullMethodName = "/zcard.api.storefront.v1.StoreUserService/SendRegisterCode"
+	StoreUserService_Login_FullMethodName            = "/zcard.api.storefront.v1.StoreUserService/Login"
+	StoreUserService_Me_FullMethodName               = "/zcard.api.storefront.v1.StoreUserService/Me"
+	StoreUserService_ForgotPassword_FullMethodName   = "/zcard.api.storefront.v1.StoreUserService/ForgotPassword"
+	StoreUserService_ResetPassword_FullMethodName    = "/zcard.api.storefront.v1.StoreUserService/ResetPassword"
+	StoreUserService_ChangePassword_FullMethodName   = "/zcard.api.storefront.v1.StoreUserService/ChangePassword"
+	StoreUserService_UpdateProfile_FullMethodName    = "/zcard.api.storefront.v1.StoreUserService/UpdateProfile"
 )
 
 // StoreUserServiceClient is the client API for StoreUserService service.
@@ -38,7 +39,9 @@ const (
 type StoreUserServiceClient interface {
 	// Register 注册（username+password；invite_code 可选=上级 user_id）。
 	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterReply, error)
-	// Login 登录（返回 user realm JWT）。
+	// SendRegisterCode 发送注册验证码（通道：email|phone——按 security.register_method 校验）。
+	SendRegisterCode(ctx context.Context, in *SendRegisterCodeRequest, opts ...grpc.CallOption) (*SendRegisterCodeReply, error)
+	// Login 登录（返回 user realm JWT；username 混输：用户名/邮箱/手机号）。
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	// Me 我的信息（需登录）。
 	Me(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MeReply, error)
@@ -64,6 +67,16 @@ func (c *storeUserServiceClient) Register(ctx context.Context, in *RegisterReque
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RegisterReply)
 	err := c.cc.Invoke(ctx, StoreUserService_Register_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storeUserServiceClient) SendRegisterCode(ctx context.Context, in *SendRegisterCodeRequest, opts ...grpc.CallOption) (*SendRegisterCodeReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendRegisterCodeReply)
+	err := c.cc.Invoke(ctx, StoreUserService_SendRegisterCode_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +152,9 @@ func (c *storeUserServiceClient) UpdateProfile(ctx context.Context, in *UpdatePr
 type StoreUserServiceServer interface {
 	// Register 注册（username+password；invite_code 可选=上级 user_id）。
 	Register(context.Context, *RegisterRequest) (*RegisterReply, error)
-	// Login 登录（返回 user realm JWT）。
+	// SendRegisterCode 发送注册验证码（通道：email|phone——按 security.register_method 校验）。
+	SendRegisterCode(context.Context, *SendRegisterCodeRequest) (*SendRegisterCodeReply, error)
+	// Login 登录（返回 user realm JWT；username 混输：用户名/邮箱/手机号）。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// Me 我的信息（需登录）。
 	Me(context.Context, *emptypb.Empty) (*MeReply, error)
@@ -163,6 +178,9 @@ type UnimplementedStoreUserServiceServer struct{}
 
 func (UnimplementedStoreUserServiceServer) Register(context.Context, *RegisterRequest) (*RegisterReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedStoreUserServiceServer) SendRegisterCode(context.Context, *SendRegisterCodeRequest) (*SendRegisterCodeReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SendRegisterCode not implemented")
 }
 func (UnimplementedStoreUserServiceServer) Login(context.Context, *LoginRequest) (*LoginReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
@@ -217,6 +235,24 @@ func _StoreUserService_Register_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(StoreUserServiceServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoreUserService_SendRegisterCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendRegisterCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreUserServiceServer).SendRegisterCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreUserService_SendRegisterCode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreUserServiceServer).SendRegisterCode(ctx, req.(*SendRegisterCodeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -339,6 +375,10 @@ var StoreUserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _StoreUserService_Register_Handler,
+		},
+		{
+			MethodName: "SendRegisterCode",
+			Handler:    _StoreUserService_SendRegisterCode_Handler,
 		},
 		{
 			MethodName: "Login",

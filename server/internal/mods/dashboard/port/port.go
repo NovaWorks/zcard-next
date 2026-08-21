@@ -23,3 +23,9 @@ type UpstreamOrderSource interface {
 	// ListOrders 时间窗内上游订单（不支持返回 ErrUpstreamListUnsupported）。
 	ListOrders(ctx context.Context, connectionID uint64, start, end time.Time) ([]UpstreamOrder, error)
 }
+
+// SettingsReader 系统设置读取（通道 A：settings.RepoImpl 适配；工作台低库存阈值等）。
+type SettingsReader interface {
+	// GetJSON 读取分组配置（读取失败返回 nil, nil，调用方走默认值）。
+	GetJSON(ctx context.Context, group, key string) ([]byte, error)
+}

@@ -66,18 +66,25 @@ async function exchange(p: Product) {
     return;
   }
   if (!confirm(`确认用 ${p.points_required} 积分兑换「${p.name}」？`)) return;
+  // 与详情页对齐：积分兑换同样需要查询密码（取货验证用，至少 4 位）
+  const qp = prompt('请设置查询密码（至少 4 位，取货时使用）', '');
+  if (!qp || qp.length < 4) {
+    alert('查询密码至少 4 位');
+    return;
+  }
   exchanging.value = p.id;
   const { data, error: err } = await createOrder({
     items: [{ product_id: p.id, quantity: 1 }],
-    use_points: true
+    use_points: true,
+    query_password: qp,
   });
   exchanging.value = 0;
   if (err || !data) {
     alert(err || '兑换失败（积分不足？）');
     return;
   }
-  alert('兑换成功，请前往取货页领取卡密');
-  router.push('/fetch');
+  alert('兑换成功，订单已支付，请前往取货页领取卡密');
+  router.push({ path: '/fetch', query: { order_no: data.order_no } });
   // 刷新积分
   if (getToken()) {
     const l = await getMyLevel();

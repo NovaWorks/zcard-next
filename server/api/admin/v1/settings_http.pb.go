@@ -9,6 +9,7 @@ package adminv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,23 +19,36 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminSettingsServiceGetSetting = "/zcard.api.admin.v1.AdminSettingsService/GetSetting"
+const OperationAdminSettingsServiceInstallTemplate = "/zcard.api.admin.v1.AdminSettingsService/InstallTemplate"
 const OperationAdminSettingsServiceListSettings = "/zcard.api.admin.v1.AdminSettingsService/ListSettings"
+const OperationAdminSettingsServiceListTemplates = "/zcard.api.admin.v1.AdminSettingsService/ListTemplates"
 const OperationAdminSettingsServiceUpdateSetting = "/zcard.api.admin.v1.AdminSettingsService/UpdateSetting"
+const OperationAdminSettingsServiceUpdateSettings = "/zcard.api.admin.v1.AdminSettingsService/UpdateSettings"
 
 type AdminSettingsServiceHTTPServer interface {
 	// GetSetting GetSetting 读取单个设置项。
 	GetSetting(context.Context, *GetSettingRequest) (*Setting, error)
+	// InstallTemplate InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
+	InstallTemplate(context.Context, *InstallTemplateRequest) (*TemplateItem, error)
 	// ListSettings ListSettings 按分组列出设置项。
 	ListSettings(context.Context, *ListSettingsRequest) (*ListSettingsReply, error)
+	// ListTemplates ListTemplates 可用模板清单（扫描 web/storefront/templates/*/theme.json；
+	// 目录缺失回退内置 classic 清单）。
+	ListTemplates(context.Context, *emptypb.Empty) (*TemplateList, error)
 	// UpdateSetting UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
 	UpdateSetting(context.Context, *UpdateSettingRequest) (*Setting, error)
+	// UpdateSettings UpdateSettings 批量更新（表单级保存；单事务原子写入）。
+	UpdateSettings(context.Context, *UpdateSettingsRequest) (*UpdateSettingsReply, error)
 }
 
 func RegisterAdminSettingsServiceHTTPServer(s *http.Server, srv AdminSettingsServiceHTTPServer) {
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/admin/settings", _AdminSettingsService_ListSettings0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/settings/templates", _AdminSettingsService_ListTemplates1_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/settings/templates/install", _AdminSettingsService_InstallTemplate0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/settings/{group}/{key}", _AdminSettingsService_GetSetting0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/settings/{group}/{key}", _AdminSettingsService_UpdateSetting0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/settings", _AdminSettingsService_UpdateSettings0_HTTP_Handler(srv))
 }
 
 func _AdminSettingsService_ListSettings0_HTTP_Handler(srv AdminSettingsServiceHTTPServer) func(ctx http.Context) error {
@@ -52,6 +66,44 @@ func _AdminSettingsService_ListSettings0_HTTP_Handler(srv AdminSettingsServiceHT
 			return err
 		}
 		reply := out.(*ListSettingsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminSettingsService_ListTemplates1_HTTP_Handler(srv AdminSettingsServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSettingsServiceListTemplates)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListTemplates(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*TemplateList)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminSettingsService_InstallTemplate0_HTTP_Handler(srv AdminSettingsServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in InstallTemplateRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSettingsServiceInstallTemplate)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.InstallTemplate(ctx, req.(*InstallTemplateRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*TemplateItem)
 		return ctx.Result(200, reply)
 	}
 }
@@ -100,13 +152,39 @@ func _AdminSettingsService_UpdateSetting0_HTTP_Handler(srv AdminSettingsServiceH
 	}
 }
 
+func _AdminSettingsService_UpdateSettings0_HTTP_Handler(srv AdminSettingsServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in UpdateSettingsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSettingsServiceUpdateSettings)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.UpdateSettings(ctx, req.(*UpdateSettingsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*UpdateSettingsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminSettingsServiceHTTPClient interface {
 	// GetSetting GetSetting 读取单个设置项。
 	GetSetting(ctx context.Context, req *GetSettingRequest, opts ...http.CallOption) (rsp *Setting, err error)
+	// InstallTemplate InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
+	InstallTemplate(ctx context.Context, req *InstallTemplateRequest, opts ...http.CallOption) (rsp *TemplateItem, err error)
 	// ListSettings ListSettings 按分组列出设置项。
 	ListSettings(ctx context.Context, req *ListSettingsRequest, opts ...http.CallOption) (rsp *ListSettingsReply, err error)
+	// ListTemplates ListTemplates 可用模板清单（扫描 web/storefront/templates/*/theme.json；
+	// 目录缺失回退内置 classic 清单）。
+	ListTemplates(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TemplateList, err error)
 	// UpdateSetting UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
 	UpdateSetting(ctx context.Context, req *UpdateSettingRequest, opts ...http.CallOption) (rsp *Setting, err error)
+	// UpdateSettings UpdateSettings 批量更新（表单级保存；单事务原子写入）。
+	UpdateSettings(ctx context.Context, req *UpdateSettingsRequest, opts ...http.CallOption) (rsp *UpdateSettingsReply, err error)
 }
 
 type AdminSettingsServiceHTTPClientImpl struct {
@@ -134,6 +212,24 @@ func (c *AdminSettingsServiceHTTPClientImpl) GetSetting(ctx context.Context, in 
 	return &out, nil
 }
 
+// InstallTemplate InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
+func (c *AdminSettingsServiceHTTPClientImpl) InstallTemplate(ctx context.Context, in *InstallTemplateRequest, opts ...http.CallOption) (*TemplateItem, error) {
+	var out TemplateItem
+	pattern := "/api/v1/admin/settings/templates/install"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminSettingsServiceInstallTemplate),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListSettings ListSettings 按分组列出设置项。
 func (c *AdminSettingsServiceHTTPClientImpl) ListSettings(ctx context.Context, in *ListSettingsRequest, opts ...http.CallOption) (*ListSettingsReply, error) {
 	var out ListSettingsReply
@@ -142,6 +238,24 @@ func (c *AdminSettingsServiceHTTPClientImpl) ListSettings(ctx context.Context, i
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationAdminSettingsServiceListSettings),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListTemplates ListTemplates 可用模板清单（扫描 web/storefront/templates/*/theme.json；
+// 目录缺失回退内置 classic 清单）。
+func (c *AdminSettingsServiceHTTPClientImpl) ListTemplates(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*TemplateList, error) {
+	var out TemplateList
+	pattern := "/api/v1/admin/settings/templates"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminSettingsServiceListTemplates),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
@@ -160,6 +274,24 @@ func (c *AdminSettingsServiceHTTPClientImpl) UpdateSetting(ctx context.Context, 
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminSettingsServiceUpdateSetting),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UpdateSettings UpdateSettings 批量更新（表单级保存；单事务原子写入）。
+func (c *AdminSettingsServiceHTTPClientImpl) UpdateSettings(ctx context.Context, in *UpdateSettingsRequest, opts ...http.CallOption) (*UpdateSettingsReply, error) {
+	var out UpdateSettingsReply
+	pattern := "/api/v1/admin/settings"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminSettingsServiceUpdateSettings),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)

@@ -40,8 +40,10 @@ type SupplyConnection struct {
 	RetryIntervals string `json:"retry_intervals,omitempty"`
 	// 汇率（上游价 × 汇率 = 本地价）
 	ExchangeRate float64 `json:"exchange_rate,omitempty"`
-	// 加价百分比（100=翻倍）
+	// 加价百分比（100=翻倍；与固定加价可组合）
 	PriceMarkupPercent float64 `json:"price_markup_percent,omitempty"`
+	// 固定加价（分；本地价 = 上游价×汇率×(1+%) + 固定额 → 取整）
+	PriceMarkupAmount int64 `json:"price_markup_amount,omitempty"`
 	// PriceRoundingMode holds the value of the "price_rounding_mode" field.
 	PriceRoundingMode supplyconnection.PriceRoundingMode `json:"price_rounding_mode,omitempty"`
 	// 同步时自动更新本地价（manual 改价保护）
@@ -60,7 +62,17 @@ type SupplyConnection struct {
 	LastError string `json:"last_error,omitempty"`
 	// 上游余额缓存（分）
 	BalanceCache int64 `json:"balance_cache,omitempty"`
-	selectValues sql.SelectValues
+	// LastCollectAt holds the value of the "last_collect_at" field.
+	LastCollectAt time.Time `json:"last_collect_at,omitempty"`
+	// LastPriceSyncAt holds the value of the "last_price_sync_at" field.
+	LastPriceSyncAt time.Time `json:"last_price_sync_at,omitempty"`
+	// LastStatusSyncAt holds the value of the "last_status_sync_at" field.
+	LastStatusSyncAt time.Time `json:"last_status_sync_at,omitempty"`
+	// 节奏器持久状态（当前间隔/连续成功/封锁计数/冷却时长）
+	RateState map[string]interface{} `json:"rate_state,omitempty"`
+	// 熔断冷却截止（非空且未到=调度与出站跳过）
+	RateLimitUntil time.Time `json:"rate_limit_until,omitempty"`
+	selectValues   sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -68,17 +80,17 @@ func (*SupplyConnection) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case supplyconnection.FieldCredentials, supplyconnection.FieldSettings:
+		case supplyconnection.FieldCredentials, supplyconnection.FieldSettings, supplyconnection.FieldRateState:
 			values[i] = new([]byte)
 		case supplyconnection.FieldAutoSyncPrice, supplyconnection.FieldLastPingOk:
 			values[i] = new(sql.NullBool)
 		case supplyconnection.FieldExchangeRate, supplyconnection.FieldPriceMarkupPercent:
 			values[i] = new(sql.NullFloat64)
-		case supplyconnection.FieldID, supplyconnection.FieldRetryMax, supplyconnection.FieldBalanceCache:
+		case supplyconnection.FieldID, supplyconnection.FieldRetryMax, supplyconnection.FieldPriceMarkupAmount, supplyconnection.FieldBalanceCache:
 			values[i] = new(sql.NullInt64)
 		case supplyconnection.FieldName, supplyconnection.FieldDriver, supplyconnection.FieldBaseURL, supplyconnection.FieldStatus, supplyconnection.FieldCallbackURL, supplyconnection.FieldRetryIntervals, supplyconnection.FieldPriceRoundingMode, supplyconnection.FieldStockMode, supplyconnection.FieldLastError:
 			values[i] = new(sql.NullString)
-		case supplyconnection.FieldCreatedAt, supplyconnection.FieldUpdatedAt, supplyconnection.FieldLastPingAt, supplyconnection.FieldLastSyncedAt:
+		case supplyconnection.FieldCreatedAt, supplyconnection.FieldUpdatedAt, supplyconnection.FieldLastPingAt, supplyconnection.FieldLastSyncedAt, supplyconnection.FieldLastCollectAt, supplyconnection.FieldLastPriceSyncAt, supplyconnection.FieldLastStatusSyncAt, supplyconnection.FieldRateLimitUntil:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -173,6 +185,12 @@ func (_m *SupplyConnection) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PriceMarkupPercent = value.Float64
 			}
+		case supplyconnection.FieldPriceMarkupAmount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field price_markup_amount", values[i])
+			} else if value.Valid {
+				_m.PriceMarkupAmount = value.Int64
+			}
 		case supplyconnection.FieldPriceRoundingMode:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field price_rounding_mode", values[i])
@@ -228,6 +246,38 @@ func (_m *SupplyConnection) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field balance_cache", values[i])
 			} else if value.Valid {
 				_m.BalanceCache = value.Int64
+			}
+		case supplyconnection.FieldLastCollectAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_collect_at", values[i])
+			} else if value.Valid {
+				_m.LastCollectAt = value.Time
+			}
+		case supplyconnection.FieldLastPriceSyncAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_price_sync_at", values[i])
+			} else if value.Valid {
+				_m.LastPriceSyncAt = value.Time
+			}
+		case supplyconnection.FieldLastStatusSyncAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_status_sync_at", values[i])
+			} else if value.Valid {
+				_m.LastStatusSyncAt = value.Time
+			}
+		case supplyconnection.FieldRateState:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_state", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.RateState); err != nil {
+					return fmt.Errorf("unmarshal field rate_state: %w", err)
+				}
+			}
+		case supplyconnection.FieldRateLimitUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field rate_limit_until", values[i])
+			} else if value.Valid {
+				_m.RateLimitUntil = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -301,6 +351,9 @@ func (_m *SupplyConnection) String() string {
 	builder.WriteString("price_markup_percent=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PriceMarkupPercent))
 	builder.WriteString(", ")
+	builder.WriteString("price_markup_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PriceMarkupAmount))
+	builder.WriteString(", ")
 	builder.WriteString("price_rounding_mode=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PriceRoundingMode))
 	builder.WriteString(", ")
@@ -327,6 +380,21 @@ func (_m *SupplyConnection) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("balance_cache=")
 	builder.WriteString(fmt.Sprintf("%v", _m.BalanceCache))
+	builder.WriteString(", ")
+	builder.WriteString("last_collect_at=")
+	builder.WriteString(_m.LastCollectAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_price_sync_at=")
+	builder.WriteString(_m.LastPriceSyncAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_status_sync_at=")
+	builder.WriteString(_m.LastStatusSyncAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("rate_state=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RateState))
+	builder.WriteString(", ")
+	builder.WriteString("rate_limit_until=")
+	builder.WriteString(_m.RateLimitUntil.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

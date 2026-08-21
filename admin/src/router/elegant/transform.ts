@@ -166,6 +166,7 @@ const routeMap: RouteMap = {
   "403": "/403",
   "404": "/404",
   "500": "/500",
+  "channel": "/channel",
   "home": "/home",
   "iframe-page": "/iframe-page/:url",
   "inventory": "/inventory",
@@ -176,6 +177,7 @@ const routeMap: RouteMap = {
   "product": "/product",
   "settings": "/settings",
   "staff": "/staff",
+  "user": "/user",
   "wallet": "/wallet"
 };
 

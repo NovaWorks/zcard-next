@@ -12,11 +12,23 @@ import "google/protobuf/timestamp.proto";
 // AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
 // 里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
 service AdminAuthService {
-  // Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
+  // Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
   rpc Login(LoginRequest) returns (LoginReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/auth/login"
       body: "*"
+    };
+  }
+  // GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
+  rpc GetCaptchaImage(google.protobuf.Empty) returns (CaptchaImageReply) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/auth/captcha/image"
+    };
+  }
+  // GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
+  rpc GetCaptchaConfig(google.protobuf.Empty) returns (CaptchaConfigReply) {
+    option (google.api.http) = {
+      get: "/api/v1/admin/auth/captcha-config"
     };
   }
   // Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
@@ -67,6 +79,18 @@ message LoginRequest {
   string password = 2 [(google.api.field_behavior) = REQUIRED];
   // TOTP 六位动态码（员工开启二步验证时必填）
   string totp_code = 3;
+  // 图形验证码 ID/验证码（captcha_admin_login 开启时必填）
+  string captcha_id = 4;
+  string captcha_code = 5;
+}
+
+message CaptchaImageReply {
+  string captcha_id = 1;      // 验证码 ID（提交时回传）
+  string image_base64 = 2;    // base64 PNG 图片（data:image/png;base64, 前缀）
+}
+
+message CaptchaConfigReply {
+  bool enabled = 1; // security.captcha_admin_login 开关
 }
 
 message LogoutRequest {

@@ -1,25 +1,28 @@
 <script setup lang="ts">
 // 支付单流水（payment:read_detail）+ 补单（payment:capture 超管专属）+ 退款单列表。
 import { onMounted, ref, h } from "vue";
-import { NButton, NDataTable, NInput, NPopconfirm, NSelect, NTag } from "naive-ui";
+import { NButton, NDataTable, NInput, NPopconfirm, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchPayments, capturePayment, fetchRefunds } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { formatMoney } from "@/utils/money";
+import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "PaymentsTab" });
 
 const loading = ref(false);
 const payments = ref<any[]>([]);
 const nextCursor = ref(0);
-const statusFilter = ref<string | null>(null);
+const statusFilter = ref<string>("");
 const orderNo = ref("");
 
-const statusOptions = [
-  { label: "待支付", value: "pending" },
-  { label: "成功", value: "success" },
-  { label: "失败", value: "failed" },
-  { label: "已过期", value: "expired" },
+// 快捷筛选卡片（与 statusTag 同色系）
+const statusTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "待支付", value: "pending", type: "warning" as const },
+  { label: "成功", value: "success", type: "success" as const },
+  { label: "失败", value: "failed", type: "error" as const },
+  { label: "已过期", value: "expired", type: "default" as const },
 ];
 
 function statusTag(s: string) {
@@ -148,16 +151,8 @@ onMounted(() => {
     <!-- 支付单 -->
     <div>
       <div class="mb-8px text-13px font-500">支付单流水</div>
+      <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" class="mb-8px" @change="load()" />
       <div class="mb-8px flex items-center gap-8px">
-        <NSelect
-          v-model:value="statusFilter"
-          :options="statusOptions"
-          placeholder="全部状态"
-          clearable
-          class="w-120px"
-          size="small"
-          @update:value="load()"
-        />
         <NInput
           v-model:value="orderNo"
           size="small"

@@ -204,6 +204,26 @@ func (_u *WithdrawalUpdate) ClearReviewedAt() *WithdrawalUpdate {
 	return _u
 }
 
+// SetReceipt sets the "receipt" field.
+func (_u *WithdrawalUpdate) SetReceipt(v string) *WithdrawalUpdate {
+	_u.mutation.SetReceipt(v)
+	return _u
+}
+
+// SetNillableReceipt sets the "receipt" field if the given value is not nil.
+func (_u *WithdrawalUpdate) SetNillableReceipt(v *string) *WithdrawalUpdate {
+	if v != nil {
+		_u.SetReceipt(*v)
+	}
+	return _u
+}
+
+// ClearReceipt clears the value of the "receipt" field.
+func (_u *WithdrawalUpdate) ClearReceipt() *WithdrawalUpdate {
+	_u.mutation.ClearReceipt()
+	return _u
+}
+
 // Mutation returns the WithdrawalMutation object of the builder.
 func (_u *WithdrawalUpdate) Mutation() *WithdrawalMutation {
 	return _u.mutation
@@ -255,6 +275,11 @@ func (_u *WithdrawalUpdate) check() error {
 	if v, ok := _u.mutation.RejectReason(); ok {
 		if err := withdrawal.RejectReasonValidator(v); err != nil {
 			return &ValidationError{Name: "reject_reason", err: fmt.Errorf(`ent: validator failed for field "Withdrawal.reject_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Receipt(); ok {
+		if err := withdrawal.ReceiptValidator(v); err != nil {
+			return &ValidationError{Name: "receipt", err: fmt.Errorf(`ent: validator failed for field "Withdrawal.receipt": %w`, err)}
 		}
 	}
 	return nil
@@ -325,6 +350,12 @@ func (_u *WithdrawalUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.ReviewedAtCleared() {
 		_spec.ClearField(withdrawal.FieldReviewedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Receipt(); ok {
+		_spec.SetField(withdrawal.FieldReceipt, field.TypeString, value)
+	}
+	if _u.mutation.ReceiptCleared() {
+		_spec.ClearField(withdrawal.FieldReceipt, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -522,6 +553,26 @@ func (_u *WithdrawalUpdateOne) ClearReviewedAt() *WithdrawalUpdateOne {
 	return _u
 }
 
+// SetReceipt sets the "receipt" field.
+func (_u *WithdrawalUpdateOne) SetReceipt(v string) *WithdrawalUpdateOne {
+	_u.mutation.SetReceipt(v)
+	return _u
+}
+
+// SetNillableReceipt sets the "receipt" field if the given value is not nil.
+func (_u *WithdrawalUpdateOne) SetNillableReceipt(v *string) *WithdrawalUpdateOne {
+	if v != nil {
+		_u.SetReceipt(*v)
+	}
+	return _u
+}
+
+// ClearReceipt clears the value of the "receipt" field.
+func (_u *WithdrawalUpdateOne) ClearReceipt() *WithdrawalUpdateOne {
+	_u.mutation.ClearReceipt()
+	return _u
+}
+
 // Mutation returns the WithdrawalMutation object of the builder.
 func (_u *WithdrawalUpdateOne) Mutation() *WithdrawalMutation {
 	return _u.mutation
@@ -586,6 +637,11 @@ func (_u *WithdrawalUpdateOne) check() error {
 	if v, ok := _u.mutation.RejectReason(); ok {
 		if err := withdrawal.RejectReasonValidator(v); err != nil {
 			return &ValidationError{Name: "reject_reason", err: fmt.Errorf(`ent: validator failed for field "Withdrawal.reject_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Receipt(); ok {
+		if err := withdrawal.ReceiptValidator(v); err != nil {
+			return &ValidationError{Name: "receipt", err: fmt.Errorf(`ent: validator failed for field "Withdrawal.receipt": %w`, err)}
 		}
 	}
 	return nil
@@ -673,6 +729,12 @@ func (_u *WithdrawalUpdateOne) sqlSave(ctx context.Context) (_node *Withdrawal, 
 	}
 	if _u.mutation.ReviewedAtCleared() {
 		_spec.ClearField(withdrawal.FieldReviewedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Receipt(); ok {
+		_spec.SetField(withdrawal.FieldReceipt, field.TypeString, value)
+	}
+	if _u.mutation.ReceiptCleared() {
+		_spec.ClearField(withdrawal.FieldReceipt, field.TypeString)
 	}
 	_node = &Withdrawal{config: _u.config}
 	_spec.Assign = _node.assignValues

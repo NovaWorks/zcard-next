@@ -70,7 +70,7 @@ async function handleSave() {
   try {
     const { error } = await updateRolePermissions(props.role.id, leafChecked.value);
     if (!error) {
-      window.$message?.success("权限已更新（对该角色在线员工实时生效，菜单重新登录后刷新）");
+      // 成功提示由父组件 handlePermsSaved 统一反馈（含跳转场景），避免双弹窗
       emit("saved");
       emit("update:show", false);
     }

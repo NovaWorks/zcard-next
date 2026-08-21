@@ -18,6 +18,8 @@ var ProviderSet = wire.NewSet(
 	NewSupplyRepoImpl,
 	NewSyncService,
 	NewAdminSupplyService,
+	NewPacer,
+	NewScheduler,
 	NewGateway,
 	wire.Bind(new(port.UpstreamGateway), new(*Gateway)),
 	// P3-07：对账上游数据源端口（dashboard 消费，通道 A）

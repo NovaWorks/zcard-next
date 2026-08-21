@@ -193,6 +193,27 @@ func (_u *SupplyConnectionUpdate) AddPriceMarkupPercent(v float64) *SupplyConnec
 	return _u
 }
 
+// SetPriceMarkupAmount sets the "price_markup_amount" field.
+func (_u *SupplyConnectionUpdate) SetPriceMarkupAmount(v int64) *SupplyConnectionUpdate {
+	_u.mutation.ResetPriceMarkupAmount()
+	_u.mutation.SetPriceMarkupAmount(v)
+	return _u
+}
+
+// SetNillablePriceMarkupAmount sets the "price_markup_amount" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillablePriceMarkupAmount(v *int64) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetPriceMarkupAmount(*v)
+	}
+	return _u
+}
+
+// AddPriceMarkupAmount adds value to the "price_markup_amount" field.
+func (_u *SupplyConnectionUpdate) AddPriceMarkupAmount(v int64) *SupplyConnectionUpdate {
+	_u.mutation.AddPriceMarkupAmount(v)
+	return _u
+}
+
 // SetPriceRoundingMode sets the "price_rounding_mode" field.
 func (_u *SupplyConnectionUpdate) SetPriceRoundingMode(v supplyconnection.PriceRoundingMode) *SupplyConnectionUpdate {
 	_u.mutation.SetPriceRoundingMode(v)
@@ -342,6 +363,98 @@ func (_u *SupplyConnectionUpdate) AddBalanceCache(v int64) *SupplyConnectionUpda
 	return _u
 }
 
+// SetLastCollectAt sets the "last_collect_at" field.
+func (_u *SupplyConnectionUpdate) SetLastCollectAt(v time.Time) *SupplyConnectionUpdate {
+	_u.mutation.SetLastCollectAt(v)
+	return _u
+}
+
+// SetNillableLastCollectAt sets the "last_collect_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableLastCollectAt(v *time.Time) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetLastCollectAt(*v)
+	}
+	return _u
+}
+
+// ClearLastCollectAt clears the value of the "last_collect_at" field.
+func (_u *SupplyConnectionUpdate) ClearLastCollectAt() *SupplyConnectionUpdate {
+	_u.mutation.ClearLastCollectAt()
+	return _u
+}
+
+// SetLastPriceSyncAt sets the "last_price_sync_at" field.
+func (_u *SupplyConnectionUpdate) SetLastPriceSyncAt(v time.Time) *SupplyConnectionUpdate {
+	_u.mutation.SetLastPriceSyncAt(v)
+	return _u
+}
+
+// SetNillableLastPriceSyncAt sets the "last_price_sync_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableLastPriceSyncAt(v *time.Time) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetLastPriceSyncAt(*v)
+	}
+	return _u
+}
+
+// ClearLastPriceSyncAt clears the value of the "last_price_sync_at" field.
+func (_u *SupplyConnectionUpdate) ClearLastPriceSyncAt() *SupplyConnectionUpdate {
+	_u.mutation.ClearLastPriceSyncAt()
+	return _u
+}
+
+// SetLastStatusSyncAt sets the "last_status_sync_at" field.
+func (_u *SupplyConnectionUpdate) SetLastStatusSyncAt(v time.Time) *SupplyConnectionUpdate {
+	_u.mutation.SetLastStatusSyncAt(v)
+	return _u
+}
+
+// SetNillableLastStatusSyncAt sets the "last_status_sync_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableLastStatusSyncAt(v *time.Time) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetLastStatusSyncAt(*v)
+	}
+	return _u
+}
+
+// ClearLastStatusSyncAt clears the value of the "last_status_sync_at" field.
+func (_u *SupplyConnectionUpdate) ClearLastStatusSyncAt() *SupplyConnectionUpdate {
+	_u.mutation.ClearLastStatusSyncAt()
+	return _u
+}
+
+// SetRateState sets the "rate_state" field.
+func (_u *SupplyConnectionUpdate) SetRateState(v map[string]interface{}) *SupplyConnectionUpdate {
+	_u.mutation.SetRateState(v)
+	return _u
+}
+
+// ClearRateState clears the value of the "rate_state" field.
+func (_u *SupplyConnectionUpdate) ClearRateState() *SupplyConnectionUpdate {
+	_u.mutation.ClearRateState()
+	return _u
+}
+
+// SetRateLimitUntil sets the "rate_limit_until" field.
+func (_u *SupplyConnectionUpdate) SetRateLimitUntil(v time.Time) *SupplyConnectionUpdate {
+	_u.mutation.SetRateLimitUntil(v)
+	return _u
+}
+
+// SetNillableRateLimitUntil sets the "rate_limit_until" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableRateLimitUntil(v *time.Time) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetRateLimitUntil(*v)
+	}
+	return _u
+}
+
+// ClearRateLimitUntil clears the value of the "rate_limit_until" field.
+func (_u *SupplyConnectionUpdate) ClearRateLimitUntil() *SupplyConnectionUpdate {
+	_u.mutation.ClearRateLimitUntil()
+	return _u
+}
+
 // Mutation returns the SupplyConnectionMutation object of the builder.
 func (_u *SupplyConnectionUpdate) Mutation() *SupplyConnectionMutation {
 	return _u.mutation
@@ -485,6 +598,12 @@ func (_u *SupplyConnectionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.AddedPriceMarkupPercent(); ok {
 		_spec.AddField(supplyconnection.FieldPriceMarkupPercent, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.PriceMarkupAmount(); ok {
+		_spec.SetField(supplyconnection.FieldPriceMarkupAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPriceMarkupAmount(); ok {
+		_spec.AddField(supplyconnection.FieldPriceMarkupAmount, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.PriceRoundingMode(); ok {
 		_spec.SetField(supplyconnection.FieldPriceRoundingMode, field.TypeEnum, value)
 	}
@@ -526,6 +645,36 @@ func (_u *SupplyConnectionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.AddedBalanceCache(); ok {
 		_spec.AddField(supplyconnection.FieldBalanceCache, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.LastCollectAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastCollectAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastCollectAtCleared() {
+		_spec.ClearField(supplyconnection.FieldLastCollectAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastPriceSyncAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastPriceSyncAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastPriceSyncAtCleared() {
+		_spec.ClearField(supplyconnection.FieldLastPriceSyncAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastStatusSyncAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastStatusSyncAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastStatusSyncAtCleared() {
+		_spec.ClearField(supplyconnection.FieldLastStatusSyncAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RateState(); ok {
+		_spec.SetField(supplyconnection.FieldRateState, field.TypeJSON, value)
+	}
+	if _u.mutation.RateStateCleared() {
+		_spec.ClearField(supplyconnection.FieldRateState, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.RateLimitUntil(); ok {
+		_spec.SetField(supplyconnection.FieldRateLimitUntil, field.TypeTime, value)
+	}
+	if _u.mutation.RateLimitUntilCleared() {
+		_spec.ClearField(supplyconnection.FieldRateLimitUntil, field.TypeTime)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -712,6 +861,27 @@ func (_u *SupplyConnectionUpdateOne) AddPriceMarkupPercent(v float64) *SupplyCon
 	return _u
 }
 
+// SetPriceMarkupAmount sets the "price_markup_amount" field.
+func (_u *SupplyConnectionUpdateOne) SetPriceMarkupAmount(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.ResetPriceMarkupAmount()
+	_u.mutation.SetPriceMarkupAmount(v)
+	return _u
+}
+
+// SetNillablePriceMarkupAmount sets the "price_markup_amount" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillablePriceMarkupAmount(v *int64) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetPriceMarkupAmount(*v)
+	}
+	return _u
+}
+
+// AddPriceMarkupAmount adds value to the "price_markup_amount" field.
+func (_u *SupplyConnectionUpdateOne) AddPriceMarkupAmount(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.AddPriceMarkupAmount(v)
+	return _u
+}
+
 // SetPriceRoundingMode sets the "price_rounding_mode" field.
 func (_u *SupplyConnectionUpdateOne) SetPriceRoundingMode(v supplyconnection.PriceRoundingMode) *SupplyConnectionUpdateOne {
 	_u.mutation.SetPriceRoundingMode(v)
@@ -858,6 +1028,98 @@ func (_u *SupplyConnectionUpdateOne) SetNillableBalanceCache(v *int64) *SupplyCo
 // AddBalanceCache adds value to the "balance_cache" field.
 func (_u *SupplyConnectionUpdateOne) AddBalanceCache(v int64) *SupplyConnectionUpdateOne {
 	_u.mutation.AddBalanceCache(v)
+	return _u
+}
+
+// SetLastCollectAt sets the "last_collect_at" field.
+func (_u *SupplyConnectionUpdateOne) SetLastCollectAt(v time.Time) *SupplyConnectionUpdateOne {
+	_u.mutation.SetLastCollectAt(v)
+	return _u
+}
+
+// SetNillableLastCollectAt sets the "last_collect_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableLastCollectAt(v *time.Time) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetLastCollectAt(*v)
+	}
+	return _u
+}
+
+// ClearLastCollectAt clears the value of the "last_collect_at" field.
+func (_u *SupplyConnectionUpdateOne) ClearLastCollectAt() *SupplyConnectionUpdateOne {
+	_u.mutation.ClearLastCollectAt()
+	return _u
+}
+
+// SetLastPriceSyncAt sets the "last_price_sync_at" field.
+func (_u *SupplyConnectionUpdateOne) SetLastPriceSyncAt(v time.Time) *SupplyConnectionUpdateOne {
+	_u.mutation.SetLastPriceSyncAt(v)
+	return _u
+}
+
+// SetNillableLastPriceSyncAt sets the "last_price_sync_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableLastPriceSyncAt(v *time.Time) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetLastPriceSyncAt(*v)
+	}
+	return _u
+}
+
+// ClearLastPriceSyncAt clears the value of the "last_price_sync_at" field.
+func (_u *SupplyConnectionUpdateOne) ClearLastPriceSyncAt() *SupplyConnectionUpdateOne {
+	_u.mutation.ClearLastPriceSyncAt()
+	return _u
+}
+
+// SetLastStatusSyncAt sets the "last_status_sync_at" field.
+func (_u *SupplyConnectionUpdateOne) SetLastStatusSyncAt(v time.Time) *SupplyConnectionUpdateOne {
+	_u.mutation.SetLastStatusSyncAt(v)
+	return _u
+}
+
+// SetNillableLastStatusSyncAt sets the "last_status_sync_at" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableLastStatusSyncAt(v *time.Time) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetLastStatusSyncAt(*v)
+	}
+	return _u
+}
+
+// ClearLastStatusSyncAt clears the value of the "last_status_sync_at" field.
+func (_u *SupplyConnectionUpdateOne) ClearLastStatusSyncAt() *SupplyConnectionUpdateOne {
+	_u.mutation.ClearLastStatusSyncAt()
+	return _u
+}
+
+// SetRateState sets the "rate_state" field.
+func (_u *SupplyConnectionUpdateOne) SetRateState(v map[string]interface{}) *SupplyConnectionUpdateOne {
+	_u.mutation.SetRateState(v)
+	return _u
+}
+
+// ClearRateState clears the value of the "rate_state" field.
+func (_u *SupplyConnectionUpdateOne) ClearRateState() *SupplyConnectionUpdateOne {
+	_u.mutation.ClearRateState()
+	return _u
+}
+
+// SetRateLimitUntil sets the "rate_limit_until" field.
+func (_u *SupplyConnectionUpdateOne) SetRateLimitUntil(v time.Time) *SupplyConnectionUpdateOne {
+	_u.mutation.SetRateLimitUntil(v)
+	return _u
+}
+
+// SetNillableRateLimitUntil sets the "rate_limit_until" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableRateLimitUntil(v *time.Time) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetRateLimitUntil(*v)
+	}
+	return _u
+}
+
+// ClearRateLimitUntil clears the value of the "rate_limit_until" field.
+func (_u *SupplyConnectionUpdateOne) ClearRateLimitUntil() *SupplyConnectionUpdateOne {
+	_u.mutation.ClearRateLimitUntil()
 	return _u
 }
 
@@ -1034,6 +1296,12 @@ func (_u *SupplyConnectionUpdateOne) sqlSave(ctx context.Context) (_node *Supply
 	if value, ok := _u.mutation.AddedPriceMarkupPercent(); ok {
 		_spec.AddField(supplyconnection.FieldPriceMarkupPercent, field.TypeFloat64, value)
 	}
+	if value, ok := _u.mutation.PriceMarkupAmount(); ok {
+		_spec.SetField(supplyconnection.FieldPriceMarkupAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPriceMarkupAmount(); ok {
+		_spec.AddField(supplyconnection.FieldPriceMarkupAmount, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.PriceRoundingMode(); ok {
 		_spec.SetField(supplyconnection.FieldPriceRoundingMode, field.TypeEnum, value)
 	}
@@ -1075,6 +1343,36 @@ func (_u *SupplyConnectionUpdateOne) sqlSave(ctx context.Context) (_node *Supply
 	}
 	if value, ok := _u.mutation.AddedBalanceCache(); ok {
 		_spec.AddField(supplyconnection.FieldBalanceCache, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.LastCollectAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastCollectAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastCollectAtCleared() {
+		_spec.ClearField(supplyconnection.FieldLastCollectAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastPriceSyncAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastPriceSyncAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastPriceSyncAtCleared() {
+		_spec.ClearField(supplyconnection.FieldLastPriceSyncAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LastStatusSyncAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastStatusSyncAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastStatusSyncAtCleared() {
+		_spec.ClearField(supplyconnection.FieldLastStatusSyncAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RateState(); ok {
+		_spec.SetField(supplyconnection.FieldRateState, field.TypeJSON, value)
+	}
+	if _u.mutation.RateStateCleared() {
+		_spec.ClearField(supplyconnection.FieldRateState, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.RateLimitUntil(); ok {
+		_spec.SetField(supplyconnection.FieldRateLimitUntil, field.TypeTime, value)
+	}
+	if _u.mutation.RateLimitUntilCleared() {
+		_spec.ClearField(supplyconnection.FieldRateLimitUntil, field.TypeTime)
 	}
 	_node = &SupplyConnection{config: _u.config}
 	_spec.Assign = _node.assignValues

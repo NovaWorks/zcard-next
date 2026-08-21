@@ -10,10 +10,11 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
+	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
+	dashboardport "github.com/NovaWorks/zcard-next/server/internal/mods/dashboard/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // AdminDashboardService 服务。
@@ -22,11 +23,13 @@ type AdminDashboardService struct {
 	repo       *DashboardRepoImpl
 	reconciler *Reconciler                    // P3-07 货源对账（job/item 四态）
 	commission affiliateport.CommissionReader // P3-03 佣金列表（通道 A）
+	settings   dashboardport.SettingsReader   // 低库存阈值等（通道 A；nil = 默认值）
+	traffic    auditport.TrafficReader        // T5 访问统计（在线用户/PV/UV，通道 A）
 }
 
 // NewAdminDashboardService 构造。
-func NewAdminDashboardService(repo *DashboardRepoImpl, reconciler *Reconciler, commission affiliateport.CommissionReader) *AdminDashboardService {
-	return &AdminDashboardService{repo: repo, reconciler: reconciler, commission: commission}
+func NewAdminDashboardService(repo *DashboardRepoImpl, reconciler *Reconciler, commission affiliateport.CommissionReader, settings dashboardport.SettingsReader, traffic auditport.TrafficReader) *AdminDashboardService {
+	return &AdminDashboardService{repo: repo, reconciler: reconciler, commission: commission, settings: settings, traffic: traffic}
 }
 
 // ListCommissions 佣金列表（P3-03；port 消费——跨模块零 ent 依赖）。
@@ -57,13 +60,14 @@ func (s *AdminDashboardService) ListCommissions(ctx context.Context, req *adminv
 	return reply, nil
 }
 
-// GetDashboard 工作台指标。
-func (s *AdminDashboardService) GetDashboard(ctx context.Context, _ *emptypb.Empty) (*adminv1.DashboardReply, error) {
-	today, last7d, last30d, err := s.repo.GetOverview(ctx)
+// GetDashboard 工作台指标（6 统计窗口 + 趋势 + 商品/渠道排行 + 待办）。
+func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.GetDashboardRequest) (*adminv1.DashboardReply, error) {
+	today, yesterday, last7d, prev7d, last30d, prev30d, err := s.repo.GetOverview(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "统计失败: "+err.Error())
 	}
-	trend, err := s.repo.GetTrend(ctx)
+	trendDays := int(req.GetTrendDays())
+	trend, err := s.repo.GetTrend(ctx, trendDays)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "趋势失败: "+err.Error())
 	}
@@ -71,21 +75,118 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, _ *emptypb.Emp
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "排行失败: "+err.Error())
 	}
+	channels, err := s.repo.GetTopChannels(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "渠道统计失败: "+err.Error())
+	}
+	withdrawals, refunds, fulfilling, err := s.repo.GetPending(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "待办统计失败: "+err.Error())
+	}
+	lowStock, err := s.repo.GetLowStockCount(ctx, s.lowStockThreshold(ctx))
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "库存统计失败: "+err.Error())
+	}
+	onlineUsers := s.onlineUsers(ctx)
 
 	reply := &adminv1.DashboardReply{
-		Today:   &adminv1.DashboardStat{Orders: today.Orders, Revenue: today.Revenue, PaidOrders: today.PaidOrders},
-		Last7D:  &adminv1.DashboardStat{Orders: last7d.Orders, Revenue: last7d.Revenue, PaidOrders: last7d.PaidOrders},
-		Last30D: &adminv1.DashboardStat{Orders: last30d.Orders, Revenue: last30d.Revenue, PaidOrders: last30d.PaidOrders},
+		Today:       toStatPB(today),
+		Yesterday:   toStatPB(yesterday),
+		Last7D:      toStatPB(last7d),
+		Prev7D:      toStatPB(prev7d),
+		Last30D:     toStatPB(last30d),
+		Prev30D:     toStatPB(prev30d),
+		OnlineUsers: onlineUsers,
+		Pending: &adminv1.DashboardPending{
+			PendingWithdrawals: withdrawals,
+			PendingRefunds:     refunds,
+			FulfillingOrders:   fulfilling,
+			LowStockProducts:   lowStock,
+		},
 	}
 	for _, tp := range trend {
-		reply.Trend = append(reply.Trend, &adminv1.DashboardTrendPoint{Date: tp.Date, Orders: tp.Orders, Revenue: tp.Revenue})
+		reply.Trend = append(reply.Trend, &adminv1.DashboardTrendPoint{
+			Date: tp.Date, Orders: tp.Orders, Revenue: tp.Revenue,
+			PaidCount: tp.PaidCount, Cost: tp.Cost, Profit: tp.Profit,
+		})
 	}
 	for _, p := range top {
 		reply.TopProducts = append(reply.TopProducts, &adminv1.DashboardTopProduct{
 			ProductId: p.ProductID, Name: p.Name, SoldQty: p.SoldQty, Revenue: p.Revenue,
 		})
 	}
+	for _, c := range channels {
+		reply.TopChannels = append(reply.TopChannels, &adminv1.DashboardTopChannel{
+			Channel: c.Channel, TotalCount: c.TotalCount,
+			SuccessCount: c.SuccessCount, FailedCount: c.FailedCount,
+		})
+	}
 	return reply, nil
+}
+
+// onlineUsers 在线用户数（5 分钟活跃窗口；失败回落 0 不阻断主统计）。
+func (s *AdminDashboardService) onlineUsers(ctx context.Context) int64 {
+	if s.traffic == nil {
+		return 0
+	}
+	n, err := s.traffic.CountOnlineUsers(ctx, tenancy.FromContext(ctx).SubsiteID, time.Now().UTC().Add(-5*time.Minute))
+	if err != nil {
+		return 0
+	}
+	return n
+}
+
+// GetTraffic 流量统计（PV/UV 按天；缺日补 0，与趋势图同口径连续日期）。
+func (s *AdminDashboardService) GetTraffic(ctx context.Context, req *adminv1.GetTrafficRequest) (*adminv1.GetTrafficReply, error) {
+	days := int(req.GetDays())
+	if days != 14 && days != 30 {
+		days = 7
+	}
+	if s.traffic == nil {
+		return nil, errors.InternalServer("dashboard.TRAFFIC_UNBOUND", "访问统计未装配")
+	}
+	rows, err := s.traffic.TrafficByDay(ctx, tenancy.FromContext(ctx).SubsiteID, days)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "流量统计失败: "+err.Error())
+	}
+	byDay := make(map[string]*adminv1.TrafficPoint, len(rows))
+	for _, r := range rows {
+		byDay[r.Date] = &adminv1.TrafficPoint{Date: r.Date, Pv: r.PV, Uv: r.UV}
+	}
+	reply := &adminv1.GetTrafficReply{}
+	start := time.Now().UTC().AddDate(0, 0, -(days - 1))
+	for i := 0; i < days; i++ {
+		d := start.AddDate(0, 0, i).Format("2006-01-02")
+		if p, ok := byDay[d]; ok {
+			reply.Points = append(reply.Points, p)
+		} else {
+			reply.Points = append(reply.Points, &adminv1.TrafficPoint{Date: d})
+		}
+	}
+	return reply, nil
+}
+
+func toStatPB(m Metric) *adminv1.DashboardStat {
+	return &adminv1.DashboardStat{
+		Orders: m.Orders, Revenue: m.Revenue, PaidOrders: m.PaidOrders,
+		Cost: m.Cost, Profit: m.Profit, NewUsers: m.NewUsers,
+	}
+}
+
+// lowStockThreshold 库存预警阈值（settings.supply.low_stock_threshold；默认 10）。
+func (s *AdminDashboardService) lowStockThreshold(ctx context.Context) int {
+	if s.settings == nil {
+		return 10
+	}
+	raw, err := s.settings.GetJSON(ctx, "supply", "low_stock_threshold")
+	if err != nil || len(raw) == 0 {
+		return 10
+	}
+	var v int
+	if json.Unmarshal(raw, &v) != nil || v < 1 {
+		return 10
+	}
+	return v
 }
 
 // GetDailyStats 历史日结（分站视角自动隔离：subsite 取自 tenancy 上下文）。

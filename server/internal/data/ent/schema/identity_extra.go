@@ -80,7 +80,8 @@ func (ExternalIdentity) Indexes() []ent.Index {
 	}
 }
 
-// EmailVerification 邮箱验证码（purpose 区分注册/找回；attempt 上限防爆破）。
+// EmailVerification 邮箱/短信验证码（purpose 区分注册/手机注册/找回；attempt 上限防爆破。
+// email 列复用为目标地址：邮箱地址或手机号——purpose 隔离通道）。
 type EmailVerification struct {
 	ent.Schema
 }
@@ -88,9 +89,9 @@ type EmailVerification struct {
 func (EmailVerification) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
-		field.String("email").MaxLen(255),
+		field.String("email").MaxLen(255).Comment("目标地址（邮箱或手机号；purpose 区分通道）"),
 		field.Uint64("user_id").Optional(),
-		field.Enum("purpose").Values("register", "reset"),
+		field.Enum("purpose").Values("register", "phone_register", "reset"),
 		field.String("code_hash").MaxLen(128).Comment("验证码哈希"),
 		field.Time("expires_at").SchemaType(mysqlTime),
 		field.Time("verified_at").SchemaType(mysqlTime).Optional(),

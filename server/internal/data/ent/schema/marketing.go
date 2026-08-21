@@ -308,7 +308,7 @@ func (Ticket) Fields() []ent.Field {
 		field.String("ticket_no").MaxLen(40).Unique().Comment("雪花 T 前缀，不可枚举"),
 		field.Uint64("user_id").Optional().Comment("NULL=游客"),
 		field.String("guest_contact").MaxLen(150).Optional(),
-		field.Enum("type").Values("presale", "aftersale"),
+		field.Enum("type").Values("presale", "aftersale", "withdraw"),
 		field.Enum("priority").Values("low", "normal", "high", "urgent_paid").Default("normal"),
 		field.Uint64("order_id").Optional(),
 		field.Uint64("product_id").Optional(),

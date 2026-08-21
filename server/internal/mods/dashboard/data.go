@@ -10,10 +10,14 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -22,13 +26,19 @@ type Metric struct {
 	Orders     int64
 	Revenue    int64
 	PaidOrders int64
+	Cost       int64
+	Profit     int64
+	NewUsers   int64
 }
 
 // TrendPoint 趋势点。
 type TrendPoint struct {
-	Date    string
-	Orders  int64
-	Revenue int64
+	Date      string
+	Orders    int64
+	Revenue   int64
+	PaidCount int64
+	Cost      int64
+	Profit    int64
 }
 
 // TopProduct 商品排行。
@@ -37,6 +47,14 @@ type TopProduct struct {
 	Name      string
 	SoldQty   int64
 	Revenue   int64
+}
+
+// TopChannel 支付渠道排行。
+type TopChannel struct {
+	Channel      string
+	TotalCount   int64
+	SuccessCount int64
+	FailedCount  int64
 }
 
 // DashboardRepoImpl 报表仓储。
@@ -56,22 +74,32 @@ func paidStatuses() []order.Status {
 	}
 }
 
-// GetOverview 返回 today/last7d/last30d 三项统计（P3-07 M3：分站视角自动隔离——
-// 按 tenancy.Context.SubsiteID 过滤，分站后台只看本站）。
-func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, last7d, last30d Metric, err error) {
+// GetOverview 返回 6 个统计窗口：today/yesterday/last7d/prev7d/last30d/prev30d
+// （后三者为环比基准；P3-07 M3：分站视角自动隔离——按 tenancy.Context.SubsiteID
+// 过滤，分站后台只看本站；new_users 为全局注册用户，用户表不分站）。
+func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, yesterday, last7d, prev7d, last30d, prev30d Metric, err error) {
 	subsite := tenancy.FromContext(ctx).SubsiteID
 	now := time.Now().UTC()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	if m, e := r.metricBetween(ctx, subsite, todayStart, now); e == nil {
 		today = m
 	}
+	if m, e := r.metricBetween(ctx, subsite, todayStart.AddDate(0, 0, -1), todayStart); e == nil {
+		yesterday = m
+	}
 	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -7), now); e == nil {
 		last7d = m
+	}
+	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -14), now.AddDate(0, 0, -7)); e == nil {
+		prev7d = m
 	}
 	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -30), now); e == nil {
 		last30d = m
 	}
-	return today, last7d, last30d, nil
+	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -60), now.AddDate(0, 0, -30)); e == nil {
+		prev30d = m
+	}
+	return today, yesterday, last7d, prev7d, last30d, prev30d, nil
 }
 
 // metricBetweenSubsite 指定租户区段聚合（日结任务用）。
@@ -96,7 +124,13 @@ func (r *DashboardRepoImpl) metricBetweenSubsite(ctx context.Context, subsite ui
 		if paid[o.Status] {
 			m.PaidOrders++
 			m.Revenue += o.TotalAmount
+			m.Cost += o.Cost
 		}
+	}
+	m.Profit = m.Revenue - m.Cost
+	// 新增注册用户（全局表不分站；失败不阻断主统计）
+	if n, e := client.User.Query().Where(user.CreatedAtGTE(start), user.CreatedAtLTE(end)).Count(ctx); e == nil {
+		m.NewUsers = int64(n)
 	}
 	return m, nil
 }
@@ -105,11 +139,15 @@ func (r *DashboardRepoImpl) metricBetween(ctx context.Context, subsite uint64, s
 	return r.metricBetweenSubsite(ctx, subsite, start, end)
 }
 
-// GetTrend 近 7 天每日订单数与营收（含今日，共 7 个桶；分站隔离）。
-func (r *DashboardRepoImpl) GetTrend(ctx context.Context) ([]TrendPoint, error) {
+// GetTrend 近 N 天每日订单数/已支付数/营收/成本/利润（含今日，共 N 个桶；分站隔离）。
+// days 支持 7/14/30，非法值回落 7。
+func (r *DashboardRepoImpl) GetTrend(ctx context.Context, days int) ([]TrendPoint, error) {
+	if days != 14 && days != 30 {
+		days = 7
+	}
 	subsite := tenancy.FromContext(ctx).SubsiteID
 	now := time.Now().UTC()
-	start := now.AddDate(0, 0, -6)
+	start := now.AddDate(0, 0, -(days - 1))
 	client := data.Client(ctx, r.data)
 	rows, err := client.Order.Query().
 		Where(order.CreatedAtGTE(start), order.SubsiteID(subsite)).
@@ -121,9 +159,9 @@ func (r *DashboardRepoImpl) GetTrend(ctx context.Context) ([]TrendPoint, error) 
 	for _, s := range paidStatuses() {
 		paid[s] = true
 	}
-	// 初始化 7 天桶
+	// 初始化 N 天桶
 	buckets := map[string]*TrendPoint{}
-	for i := 0; i < 7; i++ {
+	for i := 0; i < days; i++ {
 		d := start.AddDate(0, 0, i).Format("2006-01-02")
 		buckets[d] = &TrendPoint{Date: d}
 	}
@@ -135,15 +173,117 @@ func (r *DashboardRepoImpl) GetTrend(ctx context.Context) ([]TrendPoint, error) 
 		}
 		bp.Orders++
 		if paid[o.Status] {
+			bp.PaidCount++
 			bp.Revenue += o.TotalAmount
+			bp.Cost += o.Cost
 		}
 	}
-	out := make([]TrendPoint, 0, 7)
-	for i := 0; i < 7; i++ {
+	out := make([]TrendPoint, 0, days)
+	for i := 0; i < days; i++ {
 		d := start.AddDate(0, 0, i).Format("2006-01-02")
-		out = append(out, *buckets[d])
+		bp := buckets[d]
+		bp.Profit = bp.Revenue - bp.Cost
+		out = append(out, *bp)
 	}
 	return out, nil
+}
+
+// GetTopChannels 近 30 天支付渠道排行（分站隔离；按 channel 分组计数）。
+func (r *DashboardRepoImpl) GetTopChannels(ctx context.Context) ([]TopChannel, error) {
+	subsite := tenancy.FromContext(ctx).SubsiteID
+	start := time.Now().UTC().AddDate(0, 0, -30)
+	client := data.Client(ctx, r.data)
+	rows, err := client.Payment.Query().
+		Where(payment.CreatedAtGTE(start), payment.SubsiteID(subsite)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	m := map[string]*TopChannel{}
+	for _, p := range rows {
+		c := m[p.Channel]
+		if c == nil {
+			c = &TopChannel{Channel: p.Channel}
+			m[p.Channel] = c
+		}
+		c.TotalCount++
+		switch p.Status {
+		case payment.StatusSuccess:
+			c.SuccessCount++
+		case payment.StatusFailed:
+			c.FailedCount++
+		}
+	}
+	out := make([]TopChannel, 0, len(m))
+	for _, c := range m {
+		out = append(out, *c)
+	}
+	for i := 0; i < len(out); i++ {
+		for j := i + 1; j < len(out); j++ {
+			if out[j].TotalCount > out[i].TotalCount {
+				out[i], out[j] = out[j], out[i]
+			}
+		}
+	}
+	return out, nil
+}
+
+// GetLowStockCount 库存预警商品数：上架商品（status=1）中可用卡密数 < threshold。
+func (r *DashboardRepoImpl) GetLowStockCount(ctx context.Context, threshold int) (int64, error) {
+	if threshold < 1 {
+		threshold = 10
+	}
+	subsite := tenancy.FromContext(ctx).SubsiteID
+	client := data.Client(ctx, r.data)
+	// 按商品聚合可用卡密数（ent Scan 列映射：字段名小写化 + sql/json tag——见 ent scan.go）
+	var stock []struct {
+		ProductID uint64 `json:"product_id"`
+		Count     int    `json:"count"`
+	}
+	if err := client.Card.Query().
+		Where(card.StatusEQ(card.StatusAvailable), card.SubsiteID(subsite)).
+		GroupBy(card.FieldProductID).
+		Aggregate(ent.Count()).
+		Scan(ctx, &stock); err != nil {
+		return 0, err
+	}
+	counts := make(map[uint64]int, len(stock))
+	for _, s := range stock {
+		counts[s.ProductID] = s.Count
+	}
+	products, err := client.Product.Query().
+		Where(product.StatusEQ(1), product.SubsiteID(subsite)).
+		All(ctx)
+	if err != nil {
+		return 0, err
+	}
+	var low int64
+	for _, p := range products {
+		if counts[p.ID] < threshold {
+			low++
+		}
+	}
+	return low, nil
+}
+
+// GetPending 待办统计：待审核提现（全局）、待处理退款、履约中订单（分站）。
+func (r *DashboardRepoImpl) GetPending(ctx context.Context) (withdrawals, refunds, fulfilling int64, err error) {
+	subsite := tenancy.FromContext(ctx).SubsiteID
+	client := data.Client(ctx, r.data)
+	if n, e := client.Withdrawal.Query().Where(withdrawal.StatusEQ(withdrawal.StatusPending)).Count(ctx); e == nil {
+		withdrawals = int64(n)
+	}
+	if n, e := client.Order.Query().
+		Where(order.StatusEQ(order.StatusRefundPending), order.SubsiteID(subsite)).
+		Count(ctx); e == nil {
+		refunds = int64(n)
+	}
+	if n, e := client.Order.Query().
+		Where(order.StatusEQ(order.StatusFulfilling), order.SubsiteID(subsite)).
+		Count(ctx); e == nil {
+		fulfilling = int64(n)
+	}
+	return withdrawals, refunds, fulfilling, nil
 }
 
 // GetTopProducts 近 30 天销量 Top5（分站隔离）。

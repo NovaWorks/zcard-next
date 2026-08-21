@@ -119,6 +119,20 @@ func (r *ProcureRepo) Get(ctx context.Context, id uint64) (*ent.ProcurementOrder
 	return p, nil
 }
 
+// GetByDownstreamOrderNo 按下游单号查采购单（回调接收定位用；P2-10 E）。
+func (r *ProcureRepo) GetByDownstreamOrderNo(ctx context.Context, downstreamOrderNo string) (*ent.ProcurementOrder, error) {
+	po, err := data.Client(ctx, r.data).ProcurementOrder.Query().
+		Where(procurementorder.DedupeKeyEQ(downstreamOrderNo)).
+		First(ctx)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return po, nil
+}
+
 // GetByOrderItem 按订单项查采购单（幂等判据）。
 func (r *ProcureRepo) GetByOrderItem(ctx context.Context, orderItemID uint64) (*ent.ProcurementOrder, error) {
 	p, err := data.Client(ctx, r.data).ProcurementOrder.Query().

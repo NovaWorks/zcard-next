@@ -19,10 +19,19 @@ const actionFilter = ref("");
 
 const opColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 70 },
-  { title: "操作者", key: "operator_id", width: 76, render: (row) => `${row.operator_type === "admin" ? "员工" : "用户"}#${row.operator_id}` },
+  {
+    title: "操作者",
+    key: "operator_id",
+    width: 130,
+    ellipsis: true,
+    render: (row) =>
+      row.operator_name ||
+      (row.operator_id ? `${row.operator_type === "admin" ? "员工" : "用户"}#${row.operator_id}` : "未知"),
+  },
   { title: "权限点", key: "permission_point", width: 170, ellipsis: true },
   { title: "动作", key: "action", width: 70 },
   { title: "路由", key: "route", width: 220, ellipsis: true },
+  { title: "IP", key: "ip", width: 120, render: (row) => row.ip || "-" },
   {
     title: "时间",
     key: "created_at",
@@ -33,7 +42,13 @@ const opColumns: DataTableColumns<any> = [
 
 const secColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 70 },
-  { title: "主体", key: "actor_id", width: 90, render: (row) => `${row.actor_type}#${row.actor_id}` },
+  {
+    title: "主体",
+    key: "actor_id",
+    width: 130,
+    ellipsis: true,
+    render: (row) => row.actor_name || (row.actor_id ? `${row.actor_type}#${row.actor_id}` : row.actor_type || "-"),
+  },
   {
     title: "动作",
     key: "action",

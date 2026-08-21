@@ -17,6 +17,7 @@ type ProductRepo interface {
 	ListControls(ctx context.Context, productID uint64) ([]port.Control, error)
 	ListProductReviews(ctx context.Context, productID uint64) ([]port.ReviewItem, error)
 	ListSkus(ctx context.Context, productID uint64) ([]port.Sku, error)
+	ListVisibleCategories(ctx context.Context, subsiteID uint64) ([]port.Category, error)
 }
 
 // CatalogUsecase 目录用例。
@@ -36,6 +37,18 @@ func (uc *CatalogUsecase) ListVisible(ctx context.Context, f port.VisibleFilter)
 		f.PageSize = 20
 	}
 	return uc.repo.ListVisible(ctx, f)
+}
+
+// ListAllVisible 全量上架商品（sales 内存排序用；上架商品量可控不分页）。
+func (uc *CatalogUsecase) ListAllVisible(ctx context.Context, f port.VisibleFilter) ([]port.Product, error) {
+	f.Page, f.PageSize = 0, 0
+	items, _, err := uc.repo.ListVisible(ctx, f)
+	return items, err
+}
+
+// ListVisibleCategories 可见分类（导航/筛选用）。
+func (uc *CatalogUsecase) ListVisibleCategories(ctx context.Context, subsiteID uint64) ([]port.Category, error) {
+	return uc.repo.ListVisibleCategories(ctx, subsiteID)
 }
 
 // GetVisible 商品详情；下架/隐藏商品对顾客返回 NOT_FOUND（§5.2 必测项）。

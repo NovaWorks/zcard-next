@@ -504,19 +504,256 @@ func (x *RedeemGiftcardReply) GetBalanceAfterCents() int64 {
 	return 0
 }
 
+type ListMyWithdrawalsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMyWithdrawalsRequest) Reset() {
+	*x = ListMyWithdrawalsRequest{}
+	mi := &file_storefront_v1_wallet_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMyWithdrawalsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMyWithdrawalsRequest) ProtoMessage() {}
+
+func (x *ListMyWithdrawalsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_wallet_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMyWithdrawalsRequest.ProtoReflect.Descriptor instead.
+func (*ListMyWithdrawalsRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ListMyWithdrawalsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListMyWithdrawalsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListMyWithdrawalsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Withdrawals   []*MyWithdrawalItem    `protobuf:"bytes,1,rep,name=withdrawals,proto3" json:"withdrawals,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMyWithdrawalsReply) Reset() {
+	*x = ListMyWithdrawalsReply{}
+	mi := &file_storefront_v1_wallet_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMyWithdrawalsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMyWithdrawalsReply) ProtoMessage() {}
+
+func (x *ListMyWithdrawalsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_wallet_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMyWithdrawalsReply.ProtoReflect.Descriptor instead.
+func (*ListMyWithdrawalsReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListMyWithdrawalsReply) GetWithdrawals() []*MyWithdrawalItem {
+	if x != nil {
+		return x.Withdrawals
+	}
+	return nil
+}
+
+func (x *ListMyWithdrawalsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type MyWithdrawalItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	WithdrawalId  uint64                 `protobuf:"varint,1,opt,name=withdrawal_id,json=withdrawalId,proto3" json:"withdrawal_id,omitempty"`
+	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	FeeCents      int64                  `protobuf:"varint,3,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
+	MethodType    string                 `protobuf:"bytes,4,opt,name=method_type,json=methodType,proto3" json:"method_type,omitempty"`
+	MethodName    string                 `protobuf:"bytes,5,opt,name=method_name,json=methodName,proto3" json:"method_name,omitempty"`
+	Account       string                 `protobuf:"bytes,6,opt,name=account,proto3" json:"account,omitempty"`
+	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"` // pending | approved | paid | rejected
+	RejectReason  string                 `protobuf:"bytes,8,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,omitempty"`
+	ReviewedAt    int64                  `protobuf:"varint,9,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
+	PaidAt        int64                  `protobuf:"varint,10,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Receipt       string                 `protobuf:"bytes,12,opt,name=receipt,proto3" json:"receipt,omitempty"` // 打款回执（流水号/备注）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MyWithdrawalItem) Reset() {
+	*x = MyWithdrawalItem{}
+	mi := &file_storefront_v1_wallet_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MyWithdrawalItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MyWithdrawalItem) ProtoMessage() {}
+
+func (x *MyWithdrawalItem) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_wallet_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MyWithdrawalItem.ProtoReflect.Descriptor instead.
+func (*MyWithdrawalItem) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *MyWithdrawalItem) GetWithdrawalId() uint64 {
+	if x != nil {
+		return x.WithdrawalId
+	}
+	return 0
+}
+
+func (x *MyWithdrawalItem) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
+}
+
+func (x *MyWithdrawalItem) GetFeeCents() int64 {
+	if x != nil {
+		return x.FeeCents
+	}
+	return 0
+}
+
+func (x *MyWithdrawalItem) GetMethodType() string {
+	if x != nil {
+		return x.MethodType
+	}
+	return ""
+}
+
+func (x *MyWithdrawalItem) GetMethodName() string {
+	if x != nil {
+		return x.MethodName
+	}
+	return ""
+}
+
+func (x *MyWithdrawalItem) GetAccount() string {
+	if x != nil {
+		return x.Account
+	}
+	return ""
+}
+
+func (x *MyWithdrawalItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *MyWithdrawalItem) GetRejectReason() string {
+	if x != nil {
+		return x.RejectReason
+	}
+	return ""
+}
+
+func (x *MyWithdrawalItem) GetReviewedAt() int64 {
+	if x != nil {
+		return x.ReviewedAt
+	}
+	return 0
+}
+
+func (x *MyWithdrawalItem) GetPaidAt() int64 {
+	if x != nil {
+		return x.PaidAt
+	}
+	return 0
+}
+
+func (x *MyWithdrawalItem) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *MyWithdrawalItem) GetReceipt() string {
+	if x != nil {
+		return x.Receipt
+	}
+	return ""
+}
+
 // CreateWithdrawalRequest 提现申请（金额/收款方式；method_type 须在白名单内）。
 type CreateWithdrawalRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AmountCents   int64                  `protobuf:"varint,1,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	MethodType    string                 `protobuf:"bytes,2,opt,name=method_type,json=methodType,proto3" json:"method_type,omitempty"` // 白名单 type（alipay/wechat/bank...）
-	Account       string                 `protobuf:"bytes,3,opt,name=account,proto3" json:"account,omitempty"`                         // 收款账号
+	MethodType    string                 `protobuf:"bytes,2,opt,name=method_type,json=methodType,proto3" json:"method_type,omitempty"` // 白名单 type（alipay/wechat/usdt_trc20/bank）
+	Account       string                 `protobuf:"bytes,3,opt,name=account,proto3" json:"account,omitempty"`                         // 收款账号（USDT=TRC20 地址）
+	QrCodeUrl     string                 `protobuf:"bytes,4,opt,name=qr_code_url,json=qrCodeUrl,proto3" json:"qr_code_url,omitempty"`  // 收款码图片 URL（微信/支付宝可选；admin 审核展示）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateWithdrawalRequest) Reset() {
 	*x = CreateWithdrawalRequest{}
-	mi := &file_storefront_v1_wallet_proto_msgTypes[8]
+	mi := &file_storefront_v1_wallet_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -528,7 +765,7 @@ func (x *CreateWithdrawalRequest) String() string {
 func (*CreateWithdrawalRequest) ProtoMessage() {}
 
 func (x *CreateWithdrawalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_wallet_proto_msgTypes[8]
+	mi := &file_storefront_v1_wallet_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -541,7 +778,7 @@ func (x *CreateWithdrawalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateWithdrawalRequest.ProtoReflect.Descriptor instead.
 func (*CreateWithdrawalRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{8}
+	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CreateWithdrawalRequest) GetAmountCents() int64 {
@@ -565,6 +802,13 @@ func (x *CreateWithdrawalRequest) GetAccount() string {
 	return ""
 }
 
+func (x *CreateWithdrawalRequest) GetQrCodeUrl() string {
+	if x != nil {
+		return x.QrCodeUrl
+	}
+	return ""
+}
+
 type CreateWithdrawalReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	WithdrawalId  uint64                 `protobuf:"varint,1,opt,name=withdrawal_id,json=withdrawalId,proto3" json:"withdrawal_id,omitempty"`
@@ -577,7 +821,7 @@ type CreateWithdrawalReply struct {
 
 func (x *CreateWithdrawalReply) Reset() {
 	*x = CreateWithdrawalReply{}
-	mi := &file_storefront_v1_wallet_proto_msgTypes[9]
+	mi := &file_storefront_v1_wallet_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -589,7 +833,7 @@ func (x *CreateWithdrawalReply) String() string {
 func (*CreateWithdrawalReply) ProtoMessage() {}
 
 func (x *CreateWithdrawalReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_wallet_proto_msgTypes[9]
+	mi := &file_storefront_v1_wallet_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -602,7 +846,7 @@ func (x *CreateWithdrawalReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateWithdrawalReply.ProtoReflect.Descriptor instead.
 func (*CreateWithdrawalReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{9}
+	return file_storefront_v1_wallet_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CreateWithdrawalReply) GetWithdrawalId() uint64 {
@@ -673,23 +917,49 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\x04code\x18\x01 \x01(\tB\x03\xe0A\x02R\x04code\"h\n" +
 	"\x13RedeemGiftcardReply\x12!\n" +
 	"\famount_cents\x18\x01 \x01(\x03R\vamountCents\x12.\n" +
-	"\x13balance_after_cents\x18\x02 \x01(\x03R\x11balanceAfterCents\"\x86\x01\n" +
+	"\x13balance_after_cents\x18\x02 \x01(\x03R\x11balanceAfterCents\"K\n" +
+	"\x18ListMyWithdrawalsRequest\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"{\n" +
+	"\x16ListMyWithdrawalsReply\x12K\n" +
+	"\vwithdrawals\x18\x01 \x03(\v2).zcard.api.storefront.v1.MyWithdrawalItemR\vwithdrawals\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\x83\x03\n" +
+	"\x10MyWithdrawalItem\x12#\n" +
+	"\rwithdrawal_id\x18\x01 \x01(\x04R\fwithdrawalId\x12!\n" +
+	"\famount_cents\x18\x02 \x01(\x03R\vamountCents\x12\x1b\n" +
+	"\tfee_cents\x18\x03 \x01(\x03R\bfeeCents\x12\x1f\n" +
+	"\vmethod_type\x18\x04 \x01(\tR\n" +
+	"methodType\x12\x1f\n" +
+	"\vmethod_name\x18\x05 \x01(\tR\n" +
+	"methodName\x12\x18\n" +
+	"\aaccount\x18\x06 \x01(\tR\aaccount\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12#\n" +
+	"\rreject_reason\x18\b \x01(\tR\frejectReason\x12\x1f\n" +
+	"\vreviewed_at\x18\t \x01(\x03R\n" +
+	"reviewedAt\x12\x17\n" +
+	"\apaid_at\x18\n" +
+	" \x01(\x03R\x06paidAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\v \x01(\x03R\tcreatedAt\x12\x18\n" +
+	"\areceipt\x18\f \x01(\tR\areceipt\"\xa6\x01\n" +
 	"\x17CreateWithdrawalRequest\x12&\n" +
 	"\famount_cents\x18\x01 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12$\n" +
 	"\vmethod_type\x18\x02 \x01(\tB\x03\xe0A\x02R\n" +
 	"methodType\x12\x1d\n" +
-	"\aaccount\x18\x03 \x01(\tB\x03\xe0A\x02R\aaccount\"\xa3\x01\n" +
+	"\aaccount\x18\x03 \x01(\tB\x03\xe0A\x02R\aaccount\x12\x1e\n" +
+	"\vqr_code_url\x18\x04 \x01(\tR\tqrCodeUrl\"\xa3\x01\n" +
 	"\x15CreateWithdrawalReply\x12#\n" +
 	"\rwithdrawal_id\x18\x01 \x01(\x04R\fwithdrawalId\x12!\n" +
 	"\famount_cents\x18\x02 \x01(\x03R\vamountCents\x12\x1b\n" +
 	"\tfee_cents\x18\x03 \x01(\x03R\bfeeCents\x12%\n" +
-	"\x0ecredited_cents\x18\x04 \x01(\x03R\rcreditedCents2\x88\x06\n" +
+	"\x0ecredited_cents\x18\x04 \x01(\x03R\rcreditedCents2\xb6\a\n" +
 	"\x12StoreWalletService\x12n\n" +
 	"\n" +
 	"GetBalance\x12\x16.google.protobuf.Empty\x1a%.zcard.api.storefront.v1.BalanceReply\"!\x82\xd3\xe4\x93\x02\x1b\x12\x19/api/v1/storefront/wallet\x12\x90\x01\n" +
 	"\x10ListTransactions\x12&.zcard.api.storefront.v1.ListTxRequest\x1a$.zcard.api.storefront.v1.ListTxReply\".\x82\xd3\xe4\x93\x02(\x12&/api/v1/storefront/wallet/transactions\x12\x9d\x01\n" +
 	"\x0eCreateRecharge\x12..zcard.api.storefront.v1.CreateRechargeRequest\x1a,.zcard.api.storefront.v1.CreateRechargeReply\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/storefront/wallet/recharge\x12\xa5\x01\n" +
-	"\x0eRedeemGiftcard\x12..zcard.api.storefront.v1.RedeemGiftcardRequest\x1a,.zcard.api.storefront.v1.RedeemGiftcardReply\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/api/v1/storefront/wallet/giftcards/redeem\x12\xa6\x01\n" +
+	"\x0eRedeemGiftcard\x12..zcard.api.storefront.v1.RedeemGiftcardRequest\x1a,.zcard.api.storefront.v1.RedeemGiftcardReply\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/api/v1/storefront/wallet/giftcards/redeem\x12\xab\x01\n" +
+	"\x11ListMyWithdrawals\x121.zcard.api.storefront.v1.ListMyWithdrawalsRequest\x1a/.zcard.api.storefront.v1.ListMyWithdrawalsReply\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/storefront/wallet/withdrawals/mine\x12\xa6\x01\n" +
 	"\x10CreateWithdrawal\x120.zcard.api.storefront.v1.CreateWithdrawalRequest\x1a..zcard.api.storefront.v1.CreateWithdrawalReply\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/storefront/wallet/withdrawalsBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
 var (
@@ -704,37 +974,43 @@ func file_storefront_v1_wallet_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_wallet_proto_rawDescData
 }
 
-var file_storefront_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_storefront_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_storefront_v1_wallet_proto_goTypes = []any{
-	(*BalanceReply)(nil),            // 0: zcard.api.storefront.v1.BalanceReply
-	(*ListTxRequest)(nil),           // 1: zcard.api.storefront.v1.ListTxRequest
-	(*ListTxReply)(nil),             // 2: zcard.api.storefront.v1.ListTxReply
-	(*Tx)(nil),                      // 3: zcard.api.storefront.v1.Tx
-	(*CreateRechargeRequest)(nil),   // 4: zcard.api.storefront.v1.CreateRechargeRequest
-	(*CreateRechargeReply)(nil),     // 5: zcard.api.storefront.v1.CreateRechargeReply
-	(*RedeemGiftcardRequest)(nil),   // 6: zcard.api.storefront.v1.RedeemGiftcardRequest
-	(*RedeemGiftcardReply)(nil),     // 7: zcard.api.storefront.v1.RedeemGiftcardReply
-	(*CreateWithdrawalRequest)(nil), // 8: zcard.api.storefront.v1.CreateWithdrawalRequest
-	(*CreateWithdrawalReply)(nil),   // 9: zcard.api.storefront.v1.CreateWithdrawalReply
-	(*emptypb.Empty)(nil),           // 10: google.protobuf.Empty
+	(*BalanceReply)(nil),             // 0: zcard.api.storefront.v1.BalanceReply
+	(*ListTxRequest)(nil),            // 1: zcard.api.storefront.v1.ListTxRequest
+	(*ListTxReply)(nil),              // 2: zcard.api.storefront.v1.ListTxReply
+	(*Tx)(nil),                       // 3: zcard.api.storefront.v1.Tx
+	(*CreateRechargeRequest)(nil),    // 4: zcard.api.storefront.v1.CreateRechargeRequest
+	(*CreateRechargeReply)(nil),      // 5: zcard.api.storefront.v1.CreateRechargeReply
+	(*RedeemGiftcardRequest)(nil),    // 6: zcard.api.storefront.v1.RedeemGiftcardRequest
+	(*RedeemGiftcardReply)(nil),      // 7: zcard.api.storefront.v1.RedeemGiftcardReply
+	(*ListMyWithdrawalsRequest)(nil), // 8: zcard.api.storefront.v1.ListMyWithdrawalsRequest
+	(*ListMyWithdrawalsReply)(nil),   // 9: zcard.api.storefront.v1.ListMyWithdrawalsReply
+	(*MyWithdrawalItem)(nil),         // 10: zcard.api.storefront.v1.MyWithdrawalItem
+	(*CreateWithdrawalRequest)(nil),  // 11: zcard.api.storefront.v1.CreateWithdrawalRequest
+	(*CreateWithdrawalReply)(nil),    // 12: zcard.api.storefront.v1.CreateWithdrawalReply
+	(*emptypb.Empty)(nil),            // 13: google.protobuf.Empty
 }
 var file_storefront_v1_wallet_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.storefront.v1.ListTxReply.transactions:type_name -> zcard.api.storefront.v1.Tx
-	10, // 1: zcard.api.storefront.v1.StoreWalletService.GetBalance:input_type -> google.protobuf.Empty
-	1,  // 2: zcard.api.storefront.v1.StoreWalletService.ListTransactions:input_type -> zcard.api.storefront.v1.ListTxRequest
-	4,  // 3: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:input_type -> zcard.api.storefront.v1.CreateRechargeRequest
-	6,  // 4: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:input_type -> zcard.api.storefront.v1.RedeemGiftcardRequest
-	8,  // 5: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:input_type -> zcard.api.storefront.v1.CreateWithdrawalRequest
-	0,  // 6: zcard.api.storefront.v1.StoreWalletService.GetBalance:output_type -> zcard.api.storefront.v1.BalanceReply
-	2,  // 7: zcard.api.storefront.v1.StoreWalletService.ListTransactions:output_type -> zcard.api.storefront.v1.ListTxReply
-	5,  // 8: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:output_type -> zcard.api.storefront.v1.CreateRechargeReply
-	7,  // 9: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:output_type -> zcard.api.storefront.v1.RedeemGiftcardReply
-	9,  // 10: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:output_type -> zcard.api.storefront.v1.CreateWithdrawalReply
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	10, // 1: zcard.api.storefront.v1.ListMyWithdrawalsReply.withdrawals:type_name -> zcard.api.storefront.v1.MyWithdrawalItem
+	13, // 2: zcard.api.storefront.v1.StoreWalletService.GetBalance:input_type -> google.protobuf.Empty
+	1,  // 3: zcard.api.storefront.v1.StoreWalletService.ListTransactions:input_type -> zcard.api.storefront.v1.ListTxRequest
+	4,  // 4: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:input_type -> zcard.api.storefront.v1.CreateRechargeRequest
+	6,  // 5: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:input_type -> zcard.api.storefront.v1.RedeemGiftcardRequest
+	8,  // 6: zcard.api.storefront.v1.StoreWalletService.ListMyWithdrawals:input_type -> zcard.api.storefront.v1.ListMyWithdrawalsRequest
+	11, // 7: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:input_type -> zcard.api.storefront.v1.CreateWithdrawalRequest
+	0,  // 8: zcard.api.storefront.v1.StoreWalletService.GetBalance:output_type -> zcard.api.storefront.v1.BalanceReply
+	2,  // 9: zcard.api.storefront.v1.StoreWalletService.ListTransactions:output_type -> zcard.api.storefront.v1.ListTxReply
+	5,  // 10: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:output_type -> zcard.api.storefront.v1.CreateRechargeReply
+	7,  // 11: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:output_type -> zcard.api.storefront.v1.RedeemGiftcardReply
+	9,  // 12: zcard.api.storefront.v1.StoreWalletService.ListMyWithdrawals:output_type -> zcard.api.storefront.v1.ListMyWithdrawalsReply
+	12, // 13: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:output_type -> zcard.api.storefront.v1.CreateWithdrawalReply
+	8,  // [8:14] is the sub-list for method output_type
+	2,  // [2:8] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_wallet_proto_init() }
@@ -748,7 +1024,7 @@ func file_storefront_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_wallet_proto_rawDesc), len(file_storefront_v1_wallet_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -36,6 +36,8 @@ const (
 	FieldPaidAt = "paid_at"
 	// FieldReviewedAt holds the string denoting the reviewed_at field in the database.
 	FieldReviewedAt = "reviewed_at"
+	// FieldReceipt holds the string denoting the receipt field in the database.
+	FieldReceipt = "receipt"
 	// Table holds the table name of the withdrawal in the database.
 	Table = "withdrawals"
 )
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldRejectReason,
 	FieldPaidAt,
 	FieldReviewedAt,
+	FieldReceipt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -77,6 +80,8 @@ var (
 	DefaultFee int64
 	// RejectReasonValidator is a validator for the "reject_reason" field. It is called by the builders before save.
 	RejectReasonValidator func(string) error
+	// ReceiptValidator is a validator for the "receipt" field. It is called by the builders before save.
+	ReceiptValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -163,4 +168,9 @@ func ByPaidAt(opts ...sql.OrderTermOption) OrderOption {
 // ByReviewedAt orders the results by the reviewed_at field.
 func ByReviewedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReviewedAt, opts...).ToFunc()
+}
+
+// ByReceipt orders the results by the receipt field.
+func ByReceipt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReceipt, opts...).ToFunc()
 }

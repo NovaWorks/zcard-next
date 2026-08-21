@@ -47,80 +47,14 @@ type AdminWalletServiceHTTPServer interface {
 
 func RegisterAdminWalletServiceHTTPServer(s *http.Server, srv AdminWalletServiceHTTPServer) {
 	r := s.Route("/")
-	r.Handle("GET", "/api/v1/admin/wallet/{user_id}", _AdminWalletService_GetBalance0_HTTP_Handler(srv))
-	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust", _AdminWalletService_Adjust0_HTTP_Handler(srv))
-	r.Handle("GET", "/api/v1/admin/wallet/{user_id}/transactions", _AdminWalletService_ListTransactions0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/withdrawals", _AdminWalletService_ListWithdrawals0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/review", _AdminWalletService_ReviewWithdrawal0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/pay", _AdminWalletService_PayWithdrawal0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_CreateGiftcardBatch0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv))
-}
-
-func _AdminWalletService_GetBalance0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in GetBalanceRequest
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindVars(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAdminWalletServiceGetBalance)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.GetBalance(ctx, req.(*GetBalanceRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*Balance)
-		return ctx.Result(200, reply)
-	}
-}
-
-func _AdminWalletService_Adjust0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in AdjustRequest
-		if err := ctx.Bind(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindVars(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAdminWalletServiceAdjust)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.Adjust(ctx, req.(*AdjustRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*Balance)
-		return ctx.Result(200, reply)
-	}
-}
-
-func _AdminWalletService_ListTransactions0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
-	return func(ctx http.Context) error {
-		var in ListWalletTxRequest
-		if err := ctx.BindQuery(&in); err != nil {
-			return err
-		}
-		if err := ctx.BindVars(&in); err != nil {
-			return err
-		}
-		http.SetOperation(ctx, OperationAdminWalletServiceListTransactions)
-		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.ListTransactions(ctx, req.(*ListWalletTxRequest))
-		})
-		out, err := h(ctx, &in)
-		if err != nil {
-			return err
-		}
-		reply := out.(*ListWalletTxReply)
-		return ctx.Result(200, reply)
-	}
+	r.Handle("GET", "/api/v1/admin/wallet/{user_id}", _AdminWalletService_GetBalance0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust", _AdminWalletService_Adjust0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/wallet/{user_id}/transactions", _AdminWalletService_ListTransactions0_HTTP_Handler(srv))
 }
 
 func _AdminWalletService_ListWithdrawals0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
@@ -220,6 +154,72 @@ func _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv AdminWalletServic
 			return err
 		}
 		reply := out.(*ListGiftcardBatchesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminWalletService_GetBalance0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetBalanceRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceGetBalance)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetBalance(ctx, req.(*GetBalanceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Balance)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminWalletService_Adjust0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AdjustRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceAdjust)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.Adjust(ctx, req.(*AdjustRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*Balance)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminWalletService_ListTransactions0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListWalletTxRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceListTransactions)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListTransactions(ctx, req.(*ListWalletTxRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListWalletTxReply)
 		return ctx.Result(200, reply)
 	}
 }

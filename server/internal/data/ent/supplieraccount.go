@@ -36,7 +36,17 @@ type SupplierAccount struct {
 	// 交付回调地址（HTTPS 强制）
 	NotifyURL string `json:"notify_url,omitempty"`
 	// ReviewedAt holds the value of the "reviewed_at" field.
-	ReviewedAt   time.Time `json:"reviewed_at,omitempty"`
+	ReviewedAt time.Time `json:"reviewed_at,omitempty"`
+	// Protocol holds the value of the "protocol" field.
+	Protocol supplieraccount.Protocol `json:"protocol,omitempty"`
+	// connect/ping 回显的店铺名（shopName/site_name）
+	DisplayName string `json:"display_name,omitempty"`
+	// 申请归属前台用户（0=admin 建号）
+	OwnerUserID uint64 `json:"owner_user_id,omitempty"`
+	// 申请理由（审核用）
+	ApplyReason string `json:"apply_reason,omitempty"`
+	// 审核意见/驳回理由
+	ReviewNote   string `json:"review_note,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -47,9 +57,9 @@ func (*SupplierAccount) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case supplieraccount.FieldAPISecret:
 			values[i] = new([]byte)
-		case supplieraccount.FieldID, supplieraccount.FieldBalanceCache:
+		case supplieraccount.FieldID, supplieraccount.FieldBalanceCache, supplieraccount.FieldOwnerUserID:
 			values[i] = new(sql.NullInt64)
-		case supplieraccount.FieldName, supplieraccount.FieldAPIKey, supplieraccount.FieldContact, supplieraccount.FieldStatus, supplieraccount.FieldNotifyURL:
+		case supplieraccount.FieldName, supplieraccount.FieldAPIKey, supplieraccount.FieldContact, supplieraccount.FieldStatus, supplieraccount.FieldNotifyURL, supplieraccount.FieldProtocol, supplieraccount.FieldDisplayName, supplieraccount.FieldApplyReason, supplieraccount.FieldReviewNote:
 			values[i] = new(sql.NullString)
 		case supplieraccount.FieldCreatedAt, supplieraccount.FieldUpdatedAt, supplieraccount.FieldReviewedAt:
 			values[i] = new(sql.NullTime)
@@ -134,6 +144,36 @@ func (_m *SupplierAccount) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ReviewedAt = value.Time
 			}
+		case supplieraccount.FieldProtocol:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field protocol", values[i])
+			} else if value.Valid {
+				_m.Protocol = supplieraccount.Protocol(value.String)
+			}
+		case supplieraccount.FieldDisplayName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field display_name", values[i])
+			} else if value.Valid {
+				_m.DisplayName = value.String
+			}
+		case supplieraccount.FieldOwnerUserID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field owner_user_id", values[i])
+			} else if value.Valid {
+				_m.OwnerUserID = uint64(value.Int64)
+			}
+		case supplieraccount.FieldApplyReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field apply_reason", values[i])
+			} else if value.Valid {
+				_m.ApplyReason = value.String
+			}
+		case supplieraccount.FieldReviewNote:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field review_note", values[i])
+			} else if value.Valid {
+				_m.ReviewNote = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -199,6 +239,21 @@ func (_m *SupplierAccount) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("reviewed_at=")
 	builder.WriteString(_m.ReviewedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("protocol=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Protocol))
+	builder.WriteString(", ")
+	builder.WriteString("display_name=")
+	builder.WriteString(_m.DisplayName)
+	builder.WriteString(", ")
+	builder.WriteString("owner_user_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OwnerUserID))
+	builder.WriteString(", ")
+	builder.WriteString("apply_reason=")
+	builder.WriteString(_m.ApplyReason)
+	builder.WriteString(", ")
+	builder.WriteString("review_note=")
+	builder.WriteString(_m.ReviewNote)
 	builder.WriteByte(')')
 	return builder.String()
 }

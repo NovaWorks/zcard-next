@@ -22,6 +22,11 @@ type AdminReader interface {
 	Admin(ctx context.Context, id uint64) (*AdminAccount, error)
 }
 
+// UserReader 其他模块读取前台用户账号的窄接口（audit 安全日志主体名称富化）。
+type UserReader interface {
+	Username(ctx context.Context, id uint64) (string, error)
+}
+
 // AdminInput 创建/更新员工参数。
 type AdminInput struct {
 	Username string

@@ -9,6 +9,7 @@ import (
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
@@ -32,6 +33,19 @@ func seedWithdrawSettings(t *testing.T, svc *StoreWalletService) {
 	svc.settings = &fakeSettings{m: m}
 }
 
+// fakeCommission 佣金源（提现校验注入）。
+type fakeCommission struct {
+	available int64
+	frozen    int64
+}
+
+func (f *fakeCommission) StatsByUser(ctx context.Context, userID uint64) (*affiliateport.CommissionStats, error) {
+	return &affiliateport.CommissionStats{AvailableCents: f.available}, nil
+}
+func (f *fakeCommission) FrozenWithdrawAmount(ctx context.Context, userID uint64) (int64, error) {
+	return f.frozen, nil
+}
+
 func seedBalance(t *testing.T, repo *WalletRepoImpl, uid uint64, amount int64) {
 	t.Helper()
 	ctx := context.Background()
@@ -46,7 +60,8 @@ func seedBalance(t *testing.T, repo *WalletRepoImpl, uid uint64, amount int64) {
 func TestWithdrawApply(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewStoreWalletService(repo, d, nil, nil, nil)
+	commission := &fakeCommission{available: 5000}
+	svc := NewStoreWalletService(repo, d, nil, nil, nil, commission)
 	seedWithdrawSettings(t, svc)
 	seedBalance(t, repo, 1, 5000)
 	ctx := userCtx(1)
@@ -60,10 +75,10 @@ func TestWithdrawApply(t *testing.T) {
 	if reply.FeeCents != 30 || reply.CreditedCents != 2970 {
 		t.Fatalf("手续费错误: %+v", reply)
 	}
-	// 锁定：available 2000 / locked 3000
+	// 佣金提现：钱包余额不动（5000/0）
 	avail, locked, _ := repo.GetBalance(ctx, 1)
-	if avail != 2000 || locked != 3000 {
-		t.Fatalf("锁定错误: avail=%d locked=%d", avail, locked)
+	if avail != 5000 || locked != 0 {
+		t.Fatalf("钱包余额不应变化: avail=%d locked=%d", avail, locked)
 	}
 	w, _ := repo.GetWithdrawal(ctx, reply.WithdrawalId)
 	if string(w.Status) != "pending" || w.Fee != 30 {
@@ -82,11 +97,12 @@ func TestWithdrawApply(t *testing.T) {
 	}); !errors.IsBadRequest(err) {
 		t.Fatalf("低于最低额应拒绝: %v", err)
 	}
-	// 超可用余额拒绝
+	// 超可提佣金拒绝（第一笔已占 3000——冻结口径；余 2000 不足再提 3000）
+	commission.frozen = 3000
 	if _, err := svc.CreateWithdrawal(ctx, &storefrontv1.CreateWithdrawalRequest{
 		AmountCents: 3000, MethodType: "alipay", Account: "a",
 	}); !errors.IsBadRequest(err) {
-		t.Fatalf("超余额应拒绝: %v", err)
+		t.Fatalf("超佣金应拒绝: %v", err)
 	}
 	// 停用拒绝
 	raw, _ := json.Marshal(false)
@@ -102,7 +118,8 @@ func TestWithdrawApply(t *testing.T) {
 func TestWithdrawReviewPay(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewStoreWalletService(repo, d, nil, nil, nil)
+	commission := &fakeCommission{available: 5000}
+	svc := NewStoreWalletService(repo, d, nil, nil, nil, commission)
 	admin := NewAdminWalletService(repo, d, nil)
 	seedWithdrawSettings(t, svc)
 	seedBalance(t, repo, 1, 5000)
@@ -130,20 +147,16 @@ func TestWithdrawReviewPay(t *testing.T) {
 	if item.Status != "paid" {
 		t.Fatalf("状态应 paid: %s", item.Status)
 	}
+	// 佣金提现：钱包余额不动（线下人工打款，无 wallet 流水）
 	avail, locked, _ := repo.GetBalance(ctx, 1)
-	if avail != 2000 || locked != 0 {
-		t.Fatalf("打款后余额错误: avail=%d locked=%d", avail, locked)
+	if avail != 5000 || locked != 0 {
+		t.Fatalf("打款后钱包余额错误: avail=%d locked=%d", avail, locked)
 	}
-	// 流水 type=withdraw 一条（幂等键 withdraw:<id>）
 	txs, _, _ := repo.ListTransactions(ctx, 1, 1, 20)
-	var withdrawTx int
 	for _, txn := range txs {
 		if txn.Type == "withdraw" {
-			withdrawTx++
+			t.Fatal("佣金提现不应产生 wallet 流水")
 		}
-	}
-	if withdrawTx != 1 {
-		t.Fatalf("打款流水应一条: %d", withdrawTx)
 	}
 	// 重复打款拒绝（状态机）
 	if _, err := admin.PayWithdrawal(ctx, &adminv1.PayWithdrawalRequest{Id: reply.WithdrawalId}); !errors.IsBadRequest(err) {
@@ -155,7 +168,7 @@ func TestWithdrawReviewPay(t *testing.T) {
 func TestWithdrawRejectUnlock(t *testing.T) {
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
-	svc := NewStoreWalletService(repo, d, nil, nil, nil)
+	svc := NewStoreWalletService(repo, d, nil, nil, nil, nil)
 	admin := NewAdminWalletService(repo, d, nil)
 	seedWithdrawSettings(t, svc)
 	seedBalance(t, repo, 1, 5000)

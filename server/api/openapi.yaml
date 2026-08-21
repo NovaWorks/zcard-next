@@ -483,11 +483,37 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListVisitStatsReply'
+    /api/v1/admin/auth/captcha-config:
+        get:
+            tags:
+                - AdminAuthService
+            description: GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
+            operationId: AdminAuthService_GetCaptchaConfig
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CaptchaConfigReply'
+    /api/v1/admin/auth/captcha/image:
+        get:
+            tags:
+                - AdminAuthService
+            description: GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
+            operationId: AdminAuthService_GetCaptchaImage
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CaptchaImageReply'
     /api/v1/admin/auth/login:
         post:
             tags:
                 - AdminAuthService
-            description: Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
+            description: Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
             operationId: AdminAuthService_Login
             requestBody:
                 content:
@@ -1245,6 +1271,12 @@ paths:
             tags:
                 - AdminDashboardService
             operationId: AdminDashboardService_GetDashboard
+            parameters:
+                - name: trendDays
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -1388,6 +1420,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ReconciliationJobItem'
+    /api/v1/admin/dashboard/traffic:
+        get:
+            tags:
+                - AdminDashboardService
+            description: GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+            operationId: AdminDashboardService_GetTraffic
+            parameters:
+                - name: days
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.GetTrafficReply'
     /api/v1/admin/flash-sales:
         get:
             tags:
@@ -2681,6 +2732,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: lowStockOnly
+                  in: query
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -3251,6 +3306,58 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListSettingsReply'
+        put:
+            tags:
+                - AdminSettingsService
+            description: UpdateSettings 批量更新（表单级保存；单事务原子写入）。
+            operationId: AdminSettingsService_UpdateSettings
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.UpdateSettingsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UpdateSettingsReply'
+    /api/v1/admin/settings/templates:
+        get:
+            tags:
+                - AdminSettingsService
+            description: |-
+                ListTemplates 可用模板清单（扫描 web/storefront/templates/*/theme.json；
+                 目录缺失回退内置 classic 清单）。
+            operationId: AdminSettingsService_ListTemplates
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.TemplateList'
+    /api/v1/admin/settings/templates/install:
+        post:
+            tags:
+                - AdminSettingsService
+            description: InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
+            operationId: AdminSettingsService_InstallTemplate
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.InstallTemplateRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.TemplateItem'
     /api/v1/admin/settings/{group}/{key}:
         get:
             tags:
@@ -3460,7 +3567,7 @@ paths:
         post:
             tags:
                 - AdminSupplierService
-            description: ReviewAccount 审核（applying → approved/disabled）。
+            description: ReviewAccount 审核（applying → approved/rejected；驳回可带意见）。
             operationId: AdminSupplierService_ReviewAccount
             parameters:
                 - name: id
@@ -3585,6 +3692,23 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListSupplierLedgerReply'
     /api/v1/admin/supplier/prices:
+        get:
+            tags:
+                - AdminSupplierService
+            description: ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+            operationId: AdminSupplierService_ListPrices
+            parameters:
+                - name: accountId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListSupplierPricesReply'
         post:
             tags:
                 - AdminSupplierService
@@ -3596,6 +3720,22 @@ paths:
                         schema:
                             $ref: '#/components/schemas/zcard.api.admin.v1.UpsertSupplierPriceRequest'
                 required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/supplier/prices/{id}:
+        delete:
+            tags:
+                - AdminSupplierService
+            description: DeletePrice 删除专属价（恢复基础供货价）。
+            operationId: AdminSupplierService_DeletePrice
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -3642,6 +3782,52 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.SupplyConnection'
+    /api/v1/admin/supply/connections/{connectionId}/import:
+        post:
+            tags:
+                - AdminSupplyService
+            description: ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+            operationId: AdminSupplyService_ImportProducts
+            parameters:
+                - name: connectionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ImportProductsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ImportProductsReply'
+    /api/v1/admin/supply/connections/{connectionId}/preview:
+        get:
+            tags:
+                - AdminSupplyService
+            description: |-
+                ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+                 PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+            operationId: AdminSupplyService_PreviewProducts
+            parameters:
+                - name: connectionId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PreviewProductsReply'
     /api/v1/admin/supply/connections/{id}:
         put:
             tags:
@@ -3711,7 +3897,6 @@ paths:
         get:
             tags:
                 - AdminSupplyService
-            description: ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
             operationId: AdminSupplyService_ListHealth
             responses:
                 "200":
@@ -4038,6 +4223,82 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/users:
+        get:
+            tags:
+                - AdminUserManageService
+            description: ListUsers 用户列表（关键词/状态筛选，分页）。
+            operationId: AdminUserManageService_ListUsers
+            parameters:
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListUsersReply'
+    /api/v1/admin/users/{id}:
+        get:
+            tags:
+                - AdminUserManageService
+            description: GetUser 用户详情。
+            operationId: AdminUserManageService_GetUser
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
+    /api/v1/admin/users/{id}/status:
+        post:
+            tags:
+                - AdminUserManageService
+            description: 'SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。'
+            operationId: AdminUserManageService_SetUserStatus
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetUserStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
     /api/v1/admin/virtual-reviews:
         post:
             tags:
@@ -4337,6 +4598,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListBannersReply'
+    /api/v1/storefront/captcha/image:
+        get:
+            tags:
+                - StoreCaptchaService
+            description: GetImage 生成验证码（{captcha_id, image_base64}；一次性消费）。
+            operationId: StoreCaptchaService_GetImage
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.CaptchaImage'
     /api/v1/storefront/cart:
         get:
             tags:
@@ -4409,6 +4683,19 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/storefront/categories:
+        get:
+            tags:
+                - StoreCatalogService
+            description: ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+            operationId: StoreCatalogService_ListCategories
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListCategoriesReply'
     /api/v1/storefront/config:
         get:
             tags:
@@ -4525,6 +4812,26 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ListFlashSalesReply'
+    /api/v1/storefront/guest-orders:
+        get:
+            tags:
+                - StoreOrderService
+            description: |-
+                ListGuestOrders 游客按下单联系方式查订单列表（邮箱/手机号；精简信息——
+                 卡密仍需逐单查询密码，防枚举：查不到返回空）。
+            operationId: StoreOrderService_ListGuestOrders
+            parameters:
+                - name: contact
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListGuestOrdersReply'
     /api/v1/storefront/license/offer:
         get:
             tags:
@@ -4581,6 +4888,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.PurchaseLicenseReply'
+    /api/v1/storefront/media/upload:
+        post:
+            tags:
+                - StoreMediaService
+            description: Upload base64 上传（图片白名单/魔数/重编码；≤2MB）。
+            operationId: StoreMediaService_Upload
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.StoreUploadRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.StoreUploadReply'
     /api/v1/storefront/member-level:
         get:
             tags:
@@ -4877,6 +5203,11 @@ paths:
                   description: 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
                   schema:
                     type: boolean
+                - name: sort
+                  in: query
+                  description: 排序：newest（默认）| price_asc | price_desc | sales
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -4903,6 +5234,94 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.Product'
+    /api/v1/storefront/supplier/accounts:
+        get:
+            tags:
+                - StoreSupplierService
+            description: ListMySupplierAccounts 我的对接账户（申请中/已通过/已驳回/已禁用全量）。
+            operationId: StoreSupplierService_ListMySupplierAccounts
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListSupplierAccountsReply'
+    /api/v1/storefront/supplier/accounts/{id}/cancel:
+        post:
+            tags:
+                - StoreSupplierService
+            description: CancelSupplierApplication 撤销申请（仅 applying 状态可撤销）。
+            operationId: StoreSupplierService_CancelSupplierApplication
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/storefront/supplier/accounts/{id}/credentials:
+        get:
+            tags:
+                - StoreSupplierService
+            description: GetSupplierCredentials 查看凭据（仅 approved 且归属本人；返回明文 api_secret）。
+            operationId: StoreSupplierService_GetSupplierCredentials
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierCredentialsReply'
+    /api/v1/storefront/supplier/accounts/{id}/regenerate-secret:
+        post:
+            tags:
+                - StoreSupplierService
+            description: RegenerateSupplierSecret 重置密钥（旧 secret 立即失效；新明文仅此一次返回）。
+            operationId: StoreSupplierService_RegenerateSupplierSecret
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierCredentialsReply'
+    /api/v1/storefront/supplier/applications:
+        post:
+            tags:
+                - StoreSupplierService
+            description: |-
+                SubmitSupplierApplication 提交对接申请（服务端生成 api_key/api_secret；
+                 api_secret 不在本响应返回——审核通过后在凭据接口查看）。
+            operationId: StoreSupplierService_SubmitSupplierApplication
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SubmitSupplierApplicationRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierAccountReply'
     /api/v1/storefront/tickets:
         get:
             tags:
@@ -5037,7 +5456,7 @@ paths:
         post:
             tags:
                 - StoreUserService
-            description: Login 登录（返回 user realm JWT）。
+            description: Login 登录（返回 user realm JWT；username 混输：用户名/邮箱/手机号）。
             operationId: StoreUserService_Login
             requestBody:
                 content:
@@ -5160,6 +5579,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.RegisterReply'
+    /api/v1/storefront/user/register/send-code:
+        post:
+            tags:
+                - StoreUserService
+            description: SendRegisterCode 发送注册验证码（通道：email|phone——按 security.register_method 校验）。
+            operationId: StoreUserService_SendRegisterCode
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SendRegisterCodeRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.SendRegisterCodeReply'
     /api/v1/storefront/wallet:
         get:
             tags:
@@ -5239,7 +5677,7 @@ paths:
         post:
             tags:
                 - StoreWalletService
-            description: CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+            description: CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
             operationId: StoreWalletService_CreateWithdrawal
             requestBody:
                 content:
@@ -5254,6 +5692,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.CreateWithdrawalReply'
+    /api/v1/storefront/wallet/withdrawals/mine:
+        get:
+            tags:
+                - StoreWalletService
+            description: ListMyWithdrawals 本人提现记录（状态/驳回原因/时间）。
+            operationId: StoreWalletService_ListMyWithdrawals
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.ListMyWithdrawalsReply'
 components:
     schemas:
         zcard.api.admin.v1.AddSiteRequest:
@@ -5728,6 +6190,18 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.CaptchaConfigReply:
+            type: object
+            properties:
+                enabled:
+                    type: boolean
+        zcard.api.admin.v1.CaptchaImageReply:
+            type: object
+            properties:
+                captchaId:
+                    type: string
+                imageBase64:
+                    type: string
         zcard.api.admin.v1.CapturePaymentRequest:
             required:
                 - id
@@ -6032,6 +6506,8 @@ components:
                 stockMode:
                     type: string
                 settings:
+                    type: string
+                priceMarkupAmount:
                     type: string
         zcard.api.admin.v1.CreateControlRequest:
             required:
@@ -6391,6 +6867,10 @@ components:
                     type: string
                 contact:
                     type: string
+                protocol:
+                    type: string
+                displayName:
+                    type: string
         zcard.api.admin.v1.CreateSyncTaskRequest:
             required:
                 - connectionId
@@ -6476,6 +6956,17 @@ components:
                     type: string
                 paidOrders:
                     type: string
+        zcard.api.admin.v1.DashboardPending:
+            type: object
+            properties:
+                pendingWithdrawals:
+                    type: string
+                pendingRefunds:
+                    type: string
+                fulfillingOrders:
+                    type: string
+                lowStockProducts:
+                    type: string
         zcard.api.admin.v1.DashboardReply:
             type: object
             properties:
@@ -6493,6 +6984,20 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.DashboardTopProduct'
+                yesterday:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardStat'
+                prev7d:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardStat'
+                prev30d:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardStat'
+                topChannels:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DashboardTopChannel'
+                pending:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.DashboardPending'
+                onlineUsers:
+                    type: string
         zcard.api.admin.v1.DashboardStat:
             type: object
             properties:
@@ -6501,6 +7006,23 @@ components:
                 revenue:
                     type: string
                 paidOrders:
+                    type: string
+                cost:
+                    type: string
+                profit:
+                    type: string
+                newUsers:
+                    type: string
+        zcard.api.admin.v1.DashboardTopChannel:
+            type: object
+            properties:
+                channel:
+                    type: string
+                totalCount:
+                    type: string
+                successCount:
+                    type: string
+                failedCount:
                     type: string
         zcard.api.admin.v1.DashboardTopProduct:
             type: object
@@ -6521,6 +7043,12 @@ components:
                 orders:
                     type: string
                 revenue:
+                    type: string
+                paidCount:
+                    type: string
+                cost:
+                    type: string
+                profit:
                     type: string
         zcard.api.admin.v1.DeleteMediaReply:
             type: object
@@ -6706,6 +7234,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.AdminTicketMessage'
+        zcard.api.admin.v1.GetTrafficReply:
+            type: object
+            properties:
+                points:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.TrafficPoint'
         zcard.api.admin.v1.GiftcardBatchItem:
             type: object
             properties:
@@ -6859,6 +7394,45 @@ components:
                         type: string
                 dedup:
                     type: boolean
+        zcard.api.admin.v1.ImportProductsReply:
+            type: object
+            properties:
+                imported:
+                    type: integer
+                    format: int32
+                updated:
+                    type: integer
+                    format: int32
+                failed:
+                    type: integer
+                    format: int32
+                errorContext:
+                    type: string
+        zcard.api.admin.v1.ImportProductsRequest:
+            required:
+                - connectionId
+                - codes
+            type: object
+            properties:
+                connectionId:
+                    type: string
+                codes:
+                    type: array
+                    items:
+                        type: string
+                pricingMode:
+                    type: string
+                markupPercent:
+                    type: number
+                    format: double
+                markupAmountCents:
+                    type: string
+                saveDefault:
+                    type: boolean
+                categoryMap:
+                    type: object
+                    additionalProperties:
+                        type: string
         zcard.api.admin.v1.InstallLicenseRequest:
             required:
                 - content
@@ -6866,6 +7440,14 @@ components:
             properties:
                 content:
                     type: string
+        zcard.api.admin.v1.InstallTemplateRequest:
+            required:
+                - dataBase64
+            type: object
+            properties:
+                dataBase64:
+                    type: string
+            description: InstallTemplateRequest 主题安装（zip base64，对齐 media 上传模式）。
         zcard.api.admin.v1.LedgerEntry:
             type: object
             properties:
@@ -7329,6 +7911,13 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListSupplierPricesReply:
+            type: object
+            properties:
+                prices:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplierPriceItem'
         zcard.api.admin.v1.ListSyncTasksReply:
             type: object
             properties:
@@ -7359,6 +7948,15 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.admin.v1.ListUsersReply:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
+                total:
+                    type: string
         zcard.api.admin.v1.ListVisitStatsReply:
             type: object
             properties:
@@ -7422,6 +8020,11 @@ components:
                 totpCode:
                     type: string
                     description: TOTP 六位动态码（员工开启二步验证时必填）
+                captchaId:
+                    type: string
+                    description: 图形验证码 ID/验证码（captcha_admin_login 开启时必填）
+                captchaCode:
+                    type: string
         zcard.api.admin.v1.LogoutRequest:
             type: object
             properties:
@@ -7640,6 +8243,8 @@ components:
                     type: string
                 createdAt:
                     type: string
+                operatorName:
+                    type: string
         zcard.api.admin.v1.Option:
             type: object
             properties:
@@ -7647,12 +8252,22 @@ components:
                     type: string
                 value:
                     type: string
+        zcard.api.admin.v1.OptionItem:
+            type: object
+            properties:
+                value:
+                    type: string
+                label:
+                    type: string
+            description: OptionItem 枚举选项（value 入库值，label 展示名）。
         zcard.api.admin.v1.PayWithdrawalRequest:
             required:
                 - id
             type: object
             properties:
                 id:
+                    type: string
+                receipt:
                     type: string
         zcard.api.admin.v1.Payment:
             type: object
@@ -7793,6 +8408,49 @@ components:
                 status:
                     type: string
             description: PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
+        zcard.api.admin.v1.PreviewCategory:
+            type: object
+            properties:
+                code:
+                    type: string
+                name:
+                    type: string
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PreviewProduct'
+        zcard.api.admin.v1.PreviewProduct:
+            type: object
+            properties:
+                code:
+                    type: string
+                name:
+                    type: string
+                priceCents:
+                    type: string
+                factoryPriceCents:
+                    type: string
+                categoryCode:
+                    type: string
+                categoryName:
+                    type: string
+                isActive:
+                    type: boolean
+                stock:
+                    type: integer
+                    format: int32
+                alreadyImported:
+                    type: boolean
+        zcard.api.admin.v1.PreviewProductsReply:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.PreviewCategory'
+                total:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.PreviewTemplateReply:
             type: object
             properties:
@@ -8186,6 +8844,8 @@ components:
                     type: string
                 approve:
                     type: boolean
+                reviewNote:
+                    type: string
         zcard.api.admin.v1.ReviewWithdrawalRequest:
             required:
                 - id
@@ -8239,6 +8899,8 @@ components:
                     type: string
                 createdAt:
                     type: string
+                actorName:
+                    type: string
         zcard.api.admin.v1.SetBlacklistRequest:
             required:
                 - entries
@@ -8255,6 +8917,16 @@ components:
                 id:
                     type: string
                 notifyUrl:
+                    type: string
+        zcard.api.admin.v1.SetUserStatusRequest:
+            required:
+                - id
+                - status
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
                     type: string
         zcard.api.admin.v1.SetWhitelabelRequest:
             required:
@@ -8278,7 +8950,31 @@ components:
                     type: string
                 valueJson:
                     type: string
+                label:
+                    type: string
+                    description: 业务显示名称（目录裁决；缺失回落 key 本身）
+                options:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.OptionItem'
+                    description: '枚举选项（如 category_nav_style: list/grid）；非枚举键为空'
+                secret:
+                    type: boolean
+                    description: 敏感键（值已脱敏 ****；前端渲染密码框）
             description: Setting 设置项（value_json 为 JSON 文档字符串）。
+        zcard.api.admin.v1.SettingUpdate:
+            required:
+                - group
+                - key
+                - valueJson
+            type: object
+            properties:
+                group:
+                    type: string
+                key:
+                    type: string
+                valueJson:
+                    type: string
         zcard.api.admin.v1.Sku:
             type: object
             properties:
@@ -8347,6 +9043,16 @@ components:
                     type: string
                 createdAt:
                     type: string
+                protocol:
+                    type: string
+                displayName:
+                    type: string
+                ownerUserId:
+                    type: string
+                applyReason:
+                    type: string
+                reviewNote:
+                    type: string
         zcard.api.admin.v1.SupplierCallback:
             type: object
             properties:
@@ -8390,6 +9096,19 @@ components:
                     type: string
                 createdAt:
                     type: string
+        zcard.api.admin.v1.SupplierPriceItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                price:
+                    type: string
+                updatedAt:
+                    type: string
         zcard.api.admin.v1.SupplyConnection:
             type: object
             properties:
@@ -8426,6 +9145,8 @@ components:
                     type: string
                 settings:
                     type: string
+                priceMarkupAmount:
+                    type: string
                 lastPingAt:
                     type: string
                 lastPingOk:
@@ -8439,6 +9160,17 @@ components:
                 createdAt:
                     type: string
                 updatedAt:
+                    type: string
+                lastCollectAt:
+                    type: string
+                    description: P2-10 S2/S3：调度锚点与限流状态（界面展示/倒计时）
+                lastPriceSyncAt:
+                    type: string
+                lastStatusSyncAt:
+                    type: string
+                rateState:
+                    type: string
+                rateLimitUntil:
                     type: string
         zcard.api.admin.v1.SupplyMapping:
             type: object
@@ -8540,6 +9272,29 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Tag'
+        zcard.api.admin.v1.TemplateItem:
+            type: object
+            properties:
+                key:
+                    type: string
+                name:
+                    type: string
+                desc:
+                    type: string
+                preview:
+                    type: string
+                author:
+                    type: string
+                version:
+                    type: string
+            description: TemplateItem 可用模板。
+        zcard.api.admin.v1.TemplateList:
+            type: object
+            properties:
+                templates:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.TemplateItem'
         zcard.api.admin.v1.TicketNoRequest:
             required:
                 - ticketNo
@@ -8576,6 +9331,15 @@ components:
                     type: string
                 enabled:
                     type: boolean
+        zcard.api.admin.v1.TrafficPoint:
+            type: object
+            properties:
+                date:
+                    type: string
+                pv:
+                    type: string
+                uv:
+                    type: string
         zcard.api.admin.v1.UpdateAdminRequest:
             required:
                 - id
@@ -8690,6 +9454,10 @@ components:
                 stockMode:
                     type: string
                 status:
+                    type: string
+                settings:
+                    type: string
+                priceMarkupAmount:
                     type: string
         zcard.api.admin.v1.UpdateControlRequest:
             required:
@@ -8873,6 +9641,20 @@ components:
                 valueJson:
                     type: string
                     description: 任意 JSON 文档（对象/数组/标量均可），服务端原样存储
+        zcard.api.admin.v1.UpdateSettingsReply:
+            type: object
+            properties:
+                updated:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.UpdateSettingsRequest:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SettingUpdate'
+            description: UpdateSettingsRequest 批量更新项。
         zcard.api.admin.v1.UpdateSkuRequest:
             required:
                 - id
@@ -9012,6 +9794,22 @@ components:
                     type: string
                 price:
                     type: string
+        zcard.api.admin.v1.UserItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                username:
+                    type: string
+                email:
+                    type: string
+                status:
+                    type: string
+                lastLoginAt:
+                    type: string
+                createdAt:
+                    type: string
+            description: UserItem 前台用户（敏感字段如密码哈希绝不外发）。
         zcard.api.admin.v1.VerifySiteReply:
             type: object
             properties:
@@ -9095,13 +9893,19 @@ components:
                     type: string
                 userId:
                     type: string
+                username:
+                    type: string
                 amountCents:
                     type: string
                 feeCents:
                     type: string
                 methodType:
                     type: string
+                methodName:
+                    type: string
                 account:
+                    type: string
+                qrCodeUrl:
                     type: string
                 status:
                     type: string
@@ -9112,6 +9916,8 @@ components:
                 paidAt:
                     type: string
                 createdAt:
+                    type: string
+                receipt:
                     type: string
         zcard.api.storefront.v1.AddCartItemRequest:
             required:
@@ -9144,6 +9950,13 @@ components:
             properties:
                 orderNo:
                     type: string
+        zcard.api.storefront.v1.CaptchaImage:
+            type: object
+            properties:
+                captchaId:
+                    type: string
+                imageBase64:
+                    type: string
         zcard.api.storefront.v1.CartItem:
             type: object
             properties:
@@ -9170,6 +9983,17 @@ components:
                 valid:
                     type: boolean
                 addedAt:
+                    type: string
+        zcard.api.storefront.v1.CategoryItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                icon:
+                    type: string
+                parentId:
                     type: string
         zcard.api.storefront.v1.ChangePasswordReply:
             type: object
@@ -9259,6 +10083,14 @@ components:
                 usePoints:
                     type: boolean
                     description: 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
+                refCode:
+                    type: string
+                    description: 推广归因码（可空）：游客/无链用户下单时实时解析推广者 → 订单级归因快照
+                captchaId:
+                    type: string
+                    description: 图形验证码（captcha_order 开启时游客必填）
+                captchaCode:
+                    type: string
         zcard.api.storefront.v1.CreatePaymentReply:
             type: object
             properties:
@@ -9343,6 +10175,8 @@ components:
                     type: string
                 account:
                     type: string
+                qrCodeUrl:
+                    type: string
             description: CreateWithdrawalRequest 提现申请（金额/收款方式；method_type 须在白名单内）。
         zcard.api.storefront.v1.Currencies:
             type: object
@@ -9411,6 +10245,10 @@ components:
             properties:
                 email:
                     type: string
+                captchaId:
+                    type: string
+                captchaCode:
+                    type: string
         zcard.api.storefront.v1.GetOrderReply:
             type: object
             properties:
@@ -9425,6 +10263,8 @@ components:
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.OrderItemReply'
                 createdAt:
+                    type: string
+                expiresAt:
                     type: string
         zcard.api.storefront.v1.GetPostReply:
             type: object
@@ -9442,6 +10282,19 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.TicketMessage'
+        zcard.api.storefront.v1.GuestOrderItem:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                status:
+                    type: string
+                totalCents:
+                    type: string
+                createdAt:
+                    type: string
+                expiresAt:
+                    type: string
         zcard.api.storefront.v1.LevelBrief:
             type: object
             properties:
@@ -9529,6 +10382,13 @@ components:
                 total:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.ListCategoriesReply:
+            type: object
+            properties:
+                categories:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.CategoryItem'
         zcard.api.storefront.v1.ListFlashSalesReply:
             type: object
             properties:
@@ -9536,6 +10396,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.StoreFlashSale'
+        zcard.api.storefront.v1.ListGuestOrdersReply:
+            type: object
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.GuestOrderItem'
         zcard.api.storefront.v1.ListLicenseOrdersReply:
             type: object
             properties:
@@ -9591,6 +10458,15 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.ListMyWithdrawalsReply:
+            type: object
+            properties:
+                withdrawals:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.MyWithdrawalItem'
+                total:
+                    type: string
         zcard.api.storefront.v1.ListNotificationsReply:
             type: object
             properties:
@@ -9643,6 +10519,13 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+        zcard.api.storefront.v1.ListSupplierAccountsReply:
+            type: object
+            properties:
+                accounts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.SupplierAccountReply'
         zcard.api.storefront.v1.ListTeamReply:
             type: object
             properties:
@@ -9684,6 +10567,10 @@ components:
                     type: string
                 password:
                     type: string
+                captchaId:
+                    type: string
+                captchaCode:
+                    type: string
         zcard.api.storefront.v1.MarkReadRequest:
             type: object
             properties:
@@ -9723,6 +10610,8 @@ components:
                     type: boolean
                 resellerProfileId:
                     type: string
+                promoCode:
+                    type: string
         zcard.api.storefront.v1.MyAffiliateReply:
             type: object
             properties:
@@ -9745,6 +10634,8 @@ components:
                 teamL2:
                     type: string
                 teamL3:
+                    type: string
+                promoCode:
                     type: string
         zcard.api.storefront.v1.MyCoupon:
             type: object
@@ -9805,6 +10696,33 @@ components:
                     type: integer
                     format: int32
             description: MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
+        zcard.api.storefront.v1.MyWithdrawalItem:
+            type: object
+            properties:
+                withdrawalId:
+                    type: string
+                amountCents:
+                    type: string
+                feeCents:
+                    type: string
+                methodType:
+                    type: string
+                methodName:
+                    type: string
+                account:
+                    type: string
+                status:
+                    type: string
+                rejectReason:
+                    type: string
+                reviewedAt:
+                    type: string
+                paidAt:
+                    type: string
+                createdAt:
+                    type: string
+                receipt:
+                    type: string
         zcard.api.storefront.v1.NotificationItem:
             type: object
             properties:
@@ -10017,6 +10935,8 @@ components:
                     type: string
                 expiresAt:
                     type: string
+                promoCode:
+                    type: string
         zcard.api.storefront.v1.RegisterRequest:
             required:
                 - username
@@ -10030,6 +10950,14 @@ components:
                 email:
                     type: string
                 inviteCode:
+                    type: string
+                code:
+                    type: string
+                phone:
+                    type: string
+                captchaId:
+                    type: string
+                captchaCode:
                     type: string
         zcard.api.storefront.v1.ReplyTicketRequest:
             required:
@@ -10082,6 +11010,22 @@ components:
                 isVirtual:
                     type: boolean
             description: ReviewItem 顾客视角评价（真实 approved + 虚拟合并）。
+        zcard.api.storefront.v1.SendRegisterCodeReply:
+            type: object
+            properties: {}
+        zcard.api.storefront.v1.SendRegisterCodeRequest:
+            required:
+                - target
+            type: object
+            properties:
+                target:
+                    type: string
+                channel:
+                    type: string
+                captchaId:
+                    type: string
+                captchaCode:
+                    type: string
         zcard.api.storefront.v1.Sku:
             type: object
             properties:
@@ -10150,6 +11094,71 @@ components:
                 name:
                     type: string
                 slug:
+                    type: string
+        zcard.api.storefront.v1.StoreUploadReply:
+            type: object
+            properties:
+                url:
+                    type: string
+        zcard.api.storefront.v1.StoreUploadRequest:
+            required:
+                - dataBase64
+            type: object
+            properties:
+                dataBase64:
+                    type: string
+        zcard.api.storefront.v1.SubmitSupplierApplicationRequest:
+            required:
+                - protocol
+                - displayName
+            type: object
+            properties:
+                protocol:
+                    type: string
+                    description: 下游面板协议：zcard | dujiao_next | acg_faka
+                displayName:
+                    type: string
+                contact:
+                    type: string
+                applyReason:
+                    type: string
+                notifyUrl:
+                    type: string
+        zcard.api.storefront.v1.SupplierAccountReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                protocol:
+                    type: string
+                status:
+                    type: string
+                displayName:
+                    type: string
+                contact:
+                    type: string
+                applyReason:
+                    type: string
+                reviewNote:
+                    type: string
+                apiKey:
+                    type: string
+                reviewedAt:
+                    type: string
+                createdAt:
+                    type: string
+        zcard.api.storefront.v1.SupplierCredentialsReply:
+            type: object
+            properties:
+                id:
+                    type: string
+                protocol:
+                    type: string
+                status:
+                    type: string
+                apiKey:
+                    type: string
+                apiSecret:
                     type: string
         zcard.api.storefront.v1.TeamMember:
             type: object
@@ -10495,16 +11504,28 @@ tags:
       description: |-
         AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
          认领/回复/内部备注/解决/关闭、筛选。
+    - name: AdminUserManageService
+      description: |-
+        AdminUserManageService 前台用户管理（storefront 注册用户；员工管理见
+         AdminUserService——两者数据域独立，勿混）。
     - name: AdminUserService
       description: AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
     - name: AdminWalletService
-      description: AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+      description: |-
+        AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+
+         路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
+         gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
+         声明在含 {user_id} 通配段的方法之前，否则 /wallet/withdrawals 等会被
+         /wallet/{user_id} 吞掉并误解析为 CODEC 400。
     - name: RoleService
       description: |-
         RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
          权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
     - name: StoreAffiliateService
       description: StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+    - name: StoreCaptchaService
+      description: StoreCaptchaService 图形验证码（免鉴权；4 位数字——settings.security.captcha_* 场景开关）。
     - name: StoreCartService
       description: |-
         StoreCartService 购物车（P1-03b T5 销账）：登录态专属 CRUD；
@@ -10526,6 +11547,8 @@ tags:
         StoreLicenseService 专业套餐在线购买（P3-08 M3：发行侧部署配置签发私钥后开放；
          支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
          文件后在目标实例后台安装激活）。
+    - name: StoreMediaService
+      description: StoreMediaService 前台媒体（登录态；收款码上传——复用 media 安全三件套）。
     - name: StoreMemberLevelService
       description: StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
     - name: StoreNotificationService
@@ -10534,6 +11557,11 @@ tags:
       description: StoreOrderService 顾客下单（P1-03 T2）。
     - name: StorePaymentService
       description: StorePaymentService 顾客支付（P1-04 T2）。
+    - name: StoreSupplierService
+      description: |-
+        StoreSupplierService 前台对接申请（个人中心）：申请成为供货商户 →
+         后台审核 → 凭据管理（app_id + api_secret）。
+         通过后凭据可直接填入 acg-faka/dujiao-next/zcard 三面板（协议由申请时选定）。
     - name: StoreTicketService
       description: |-
         StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。

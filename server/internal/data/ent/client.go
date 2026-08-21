@@ -49,6 +49,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/outboxevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
@@ -91,6 +92,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticketmessage"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usergroup"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usersession"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/v1idmap"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/virtualreview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/visitlog"
@@ -172,6 +174,8 @@ type Client struct {
 	OrderStatusEvent *OrderStatusEventClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PageView is the client for interacting with the PageView builders.
+	PageView *PageViewClient
 	// Payment is the client for interacting with the Payment builders.
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
@@ -256,6 +260,8 @@ type Client struct {
 	User *UserClient
 	// UserGroup is the client for interacting with the UserGroup builders.
 	UserGroup *UserGroupClient
+	// UserSession is the client for interacting with the UserSession builders.
+	UserSession *UserSessionClient
 	// V1IDMap is the client for interacting with the V1IDMap builders.
 	V1IDMap *V1IDMapClient
 	// VirtualReview is the client for interacting with the VirtualReview builders.
@@ -313,6 +319,7 @@ func (c *Client) init() {
 	c.OrderItem = NewOrderItemClient(c.config)
 	c.OrderStatusEvent = NewOrderStatusEventClient(c.config)
 	c.OutboxEvent = NewOutboxEventClient(c.config)
+	c.PageView = NewPageViewClient(c.config)
 	c.Payment = NewPaymentClient(c.config)
 	c.PaymentChannel = NewPaymentChannelClient(c.config)
 	c.PointAccount = NewPointAccountClient(c.config)
@@ -355,6 +362,7 @@ func (c *Client) init() {
 	c.TicketMessage = NewTicketMessageClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.UserGroup = NewUserGroupClient(c.config)
+	c.UserSession = NewUserSessionClient(c.config)
 	c.V1IDMap = NewV1IDMapClient(c.config)
 	c.VirtualReview = NewVirtualReviewClient(c.config)
 	c.VisitLog = NewVisitLogClient(c.config)
@@ -487,6 +495,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		OrderItem:              NewOrderItemClient(cfg),
 		OrderStatusEvent:       NewOrderStatusEventClient(cfg),
 		OutboxEvent:            NewOutboxEventClient(cfg),
+		PageView:               NewPageViewClient(cfg),
 		Payment:                NewPaymentClient(cfg),
 		PaymentChannel:         NewPaymentChannelClient(cfg),
 		PointAccount:           NewPointAccountClient(cfg),
@@ -529,6 +538,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		TicketMessage:          NewTicketMessageClient(cfg),
 		User:                   NewUserClient(cfg),
 		UserGroup:              NewUserGroupClient(cfg),
+		UserSession:            NewUserSessionClient(cfg),
 		V1IDMap:                NewV1IDMapClient(cfg),
 		VirtualReview:          NewVirtualReviewClient(cfg),
 		VisitLog:               NewVisitLogClient(cfg),
@@ -588,6 +598,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		OrderItem:              NewOrderItemClient(cfg),
 		OrderStatusEvent:       NewOrderStatusEventClient(cfg),
 		OutboxEvent:            NewOutboxEventClient(cfg),
+		PageView:               NewPageViewClient(cfg),
 		Payment:                NewPaymentClient(cfg),
 		PaymentChannel:         NewPaymentChannelClient(cfg),
 		PointAccount:           NewPointAccountClient(cfg),
@@ -630,6 +641,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		TicketMessage:          NewTicketMessageClient(cfg),
 		User:                   NewUserClient(cfg),
 		UserGroup:              NewUserGroupClient(cfg),
+		UserSession:            NewUserSessionClient(cfg),
 		V1IDMap:                NewV1IDMapClient(cfg),
 		VirtualReview:          NewVirtualReviewClient(cfg),
 		VisitLog:               NewVisitLogClient(cfg),
@@ -672,17 +684,18 @@ func (c *Client) Use(hooks ...Hook) {
 		c.MediaCategory, c.MemberLevel, c.MemberProductGroup, c.Notification,
 		c.NotificationLog, c.NotifyBroadcast, c.NotifyTemplate, c.Order,
 		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
-		c.OutboxEvent, c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction,
-		c.Post, c.PostCategory, c.ProcessedEvent, c.ProcurementItem,
-		c.ProcurementOrder, c.Product, c.ProductControl, c.ProductSku, c.Promotion,
-		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
-		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
-		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
-		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
-		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
-		c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
+		c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel, c.PointAccount,
+		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductControl,
+		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
+		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
+		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
+		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
+		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
+		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
+		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
+		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
 		c.Withdrawal,
 	} {
 		n.Use(hooks...)
@@ -700,17 +713,18 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.MediaCategory, c.MemberLevel, c.MemberProductGroup, c.Notification,
 		c.NotificationLog, c.NotifyBroadcast, c.NotifyTemplate, c.Order,
 		c.OrderAmountLine, c.OrderDelivery, c.OrderItem, c.OrderStatusEvent,
-		c.OutboxEvent, c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction,
-		c.Post, c.PostCategory, c.ProcessedEvent, c.ProcurementItem,
-		c.ProcurementOrder, c.Product, c.ProductControl, c.ProductSku, c.Promotion,
-		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
-		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
-		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
-		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
-		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
-		c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
+		c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel, c.PointAccount,
+		c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductControl,
+		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
+		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
+		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
+		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
+		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
+		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
+		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
+		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
 		c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
@@ -788,6 +802,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OrderStatusEvent.mutate(ctx, m)
 	case *OutboxEventMutation:
 		return c.OutboxEvent.mutate(ctx, m)
+	case *PageViewMutation:
+		return c.PageView.mutate(ctx, m)
 	case *PaymentMutation:
 		return c.Payment.mutate(ctx, m)
 	case *PaymentChannelMutation:
@@ -872,6 +888,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.User.mutate(ctx, m)
 	case *UserGroupMutation:
 		return c.UserGroup.mutate(ctx, m)
+	case *UserSessionMutation:
+		return c.UserSession.mutate(ctx, m)
 	case *V1IDMapMutation:
 		return c.V1IDMap.mutate(ctx, m)
 	case *VirtualReviewMutation:
@@ -5584,6 +5602,139 @@ func (c *OutboxEventClient) mutate(ctx context.Context, m *OutboxEventMutation) 
 		return (&OutboxEventDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OutboxEvent mutation op: %q", m.Op())
+	}
+}
+
+// PageViewClient is a client for the PageView schema.
+type PageViewClient struct {
+	config
+}
+
+// NewPageViewClient returns a client for the PageView from the given config.
+func NewPageViewClient(c config) *PageViewClient {
+	return &PageViewClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `pageview.Hooks(f(g(h())))`.
+func (c *PageViewClient) Use(hooks ...Hook) {
+	c.hooks.PageView = append(c.hooks.PageView, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `pageview.Intercept(f(g(h())))`.
+func (c *PageViewClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PageView = append(c.inters.PageView, interceptors...)
+}
+
+// Create returns a builder for creating a PageView entity.
+func (c *PageViewClient) Create() *PageViewCreate {
+	mutation := newPageViewMutation(c.config, OpCreate)
+	return &PageViewCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PageView entities.
+func (c *PageViewClient) CreateBulk(builders ...*PageViewCreate) *PageViewCreateBulk {
+	return &PageViewCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *PageViewClient) MapCreateBulk(slice any, setFunc func(*PageViewCreate, int)) *PageViewCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &PageViewCreateBulk{err: fmt.Errorf("calling to PageViewClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*PageViewCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &PageViewCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PageView.
+func (c *PageViewClient) Update() *PageViewUpdate {
+	mutation := newPageViewMutation(c.config, OpUpdate)
+	return &PageViewUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PageViewClient) UpdateOne(_m *PageView) *PageViewUpdateOne {
+	mutation := newPageViewMutation(c.config, OpUpdateOne, withPageView(_m))
+	return &PageViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PageViewClient) UpdateOneID(id uint64) *PageViewUpdateOne {
+	mutation := newPageViewMutation(c.config, OpUpdateOne, withPageViewID(id))
+	return &PageViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PageView.
+func (c *PageViewClient) Delete() *PageViewDelete {
+	mutation := newPageViewMutation(c.config, OpDelete)
+	return &PageViewDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *PageViewClient) DeleteOne(_m *PageView) *PageViewDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *PageViewClient) DeleteOneID(id uint64) *PageViewDeleteOne {
+	builder := c.Delete().Where(pageview.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PageViewDeleteOne{builder}
+}
+
+// Query returns a query builder for PageView.
+func (c *PageViewClient) Query() *PageViewQuery {
+	return &PageViewQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypePageView},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a PageView entity by its id.
+func (c *PageViewClient) Get(ctx context.Context, id uint64) (*PageView, error) {
+	return c.Query().Where(pageview.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PageViewClient) GetX(ctx context.Context, id uint64) *PageView {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *PageViewClient) Hooks() []Hook {
+	return c.hooks.PageView
+}
+
+// Interceptors returns the client interceptors.
+func (c *PageViewClient) Interceptors() []Interceptor {
+	return c.inters.PageView
+}
+
+func (c *PageViewClient) mutate(ctx context.Context, m *PageViewMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&PageViewCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&PageViewUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&PageViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&PageViewDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown PageView mutation op: %q", m.Op())
 	}
 }
 
@@ -11253,6 +11404,139 @@ func (c *UserGroupClient) mutate(ctx context.Context, m *UserGroupMutation) (Val
 	}
 }
 
+// UserSessionClient is a client for the UserSession schema.
+type UserSessionClient struct {
+	config
+}
+
+// NewUserSessionClient returns a client for the UserSession from the given config.
+func NewUserSessionClient(c config) *UserSessionClient {
+	return &UserSessionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `usersession.Hooks(f(g(h())))`.
+func (c *UserSessionClient) Use(hooks ...Hook) {
+	c.hooks.UserSession = append(c.hooks.UserSession, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `usersession.Intercept(f(g(h())))`.
+func (c *UserSessionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserSession = append(c.inters.UserSession, interceptors...)
+}
+
+// Create returns a builder for creating a UserSession entity.
+func (c *UserSessionClient) Create() *UserSessionCreate {
+	mutation := newUserSessionMutation(c.config, OpCreate)
+	return &UserSessionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserSession entities.
+func (c *UserSessionClient) CreateBulk(builders ...*UserSessionCreate) *UserSessionCreateBulk {
+	return &UserSessionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserSessionClient) MapCreateBulk(slice any, setFunc func(*UserSessionCreate, int)) *UserSessionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserSessionCreateBulk{err: fmt.Errorf("calling to UserSessionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserSessionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserSessionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserSession.
+func (c *UserSessionClient) Update() *UserSessionUpdate {
+	mutation := newUserSessionMutation(c.config, OpUpdate)
+	return &UserSessionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserSessionClient) UpdateOne(_m *UserSession) *UserSessionUpdateOne {
+	mutation := newUserSessionMutation(c.config, OpUpdateOne, withUserSession(_m))
+	return &UserSessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserSessionClient) UpdateOneID(id uint64) *UserSessionUpdateOne {
+	mutation := newUserSessionMutation(c.config, OpUpdateOne, withUserSessionID(id))
+	return &UserSessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserSession.
+func (c *UserSessionClient) Delete() *UserSessionDelete {
+	mutation := newUserSessionMutation(c.config, OpDelete)
+	return &UserSessionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserSessionClient) DeleteOne(_m *UserSession) *UserSessionDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserSessionClient) DeleteOneID(id uint64) *UserSessionDeleteOne {
+	builder := c.Delete().Where(usersession.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserSessionDeleteOne{builder}
+}
+
+// Query returns a query builder for UserSession.
+func (c *UserSessionClient) Query() *UserSessionQuery {
+	return &UserSessionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserSession},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserSession entity by its id.
+func (c *UserSessionClient) Get(ctx context.Context, id uint64) (*UserSession, error) {
+	return c.Query().Where(usersession.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserSessionClient) GetX(ctx context.Context, id uint64) *UserSession {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserSessionClient) Hooks() []Hook {
+	return c.hooks.UserSession
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserSessionClient) Interceptors() []Interceptor {
+	return c.inters.UserSession
+}
+
+func (c *UserSessionClient) mutate(ctx context.Context, m *UserSessionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserSessionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserSessionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserSessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserSessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserSession mutation op: %q", m.Op())
+	}
+}
+
 // V1IDMapClient is a client for the V1IDMap schema.
 type V1IDMapClient struct {
 	config
@@ -12060,7 +12344,7 @@ type (
 		GiftcardBatch, LicenseOrder, Media, MediaCategory, MemberLevel,
 		MemberProductGroup, Notification, NotificationLog, NotifyBroadcast,
 		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
-		OrderStatusEvent, OutboxEvent, Payment, PaymentChannel, PointAccount,
+		OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel, PointAccount,
 		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
 		ProcurementOrder, Product, ProductControl, ProductSku, Promotion,
 		RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
@@ -12069,8 +12353,8 @@ type (
 		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
 		SupplierProductPrice, SupplyConnection, SupplyMapping, SupplyNonce,
 		SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup,
-		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
-		Withdrawal []ent.Hook
+		UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
+		WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -12079,7 +12363,7 @@ type (
 		GiftcardBatch, LicenseOrder, Media, MediaCategory, MemberLevel,
 		MemberProductGroup, Notification, NotificationLog, NotifyBroadcast,
 		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
-		OrderStatusEvent, OutboxEvent, Payment, PaymentChannel, PointAccount,
+		OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel, PointAccount,
 		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
 		ProcurementOrder, Product, ProductControl, ProductSku, Promotion,
 		RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
@@ -12088,7 +12372,7 @@ type (
 		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
 		SupplierProductPrice, SupplyConnection, SupplyMapping, SupplyNonce,
 		SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup,
-		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
-		Withdrawal []ent.Interceptor
+		UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
+		WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

@@ -109,6 +109,11 @@ func PriceMarkupPercent(v float64) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldPriceMarkupPercent, v))
 }
 
+// PriceMarkupAmount applies equality check predicate on the "price_markup_amount" field. It's identical to PriceMarkupAmountEQ.
+func PriceMarkupAmount(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldPriceMarkupAmount, v))
+}
+
 // AutoSyncPrice applies equality check predicate on the "auto_sync_price" field. It's identical to AutoSyncPriceEQ.
 func AutoSyncPrice(v bool) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldAutoSyncPrice, v))
@@ -137,6 +142,26 @@ func LastError(v string) predicate.SupplyConnection {
 // BalanceCache applies equality check predicate on the "balance_cache" field. It's identical to BalanceCacheEQ.
 func BalanceCache(v int64) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldBalanceCache, v))
+}
+
+// LastCollectAt applies equality check predicate on the "last_collect_at" field. It's identical to LastCollectAtEQ.
+func LastCollectAt(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLastCollectAt, v))
+}
+
+// LastPriceSyncAt applies equality check predicate on the "last_price_sync_at" field. It's identical to LastPriceSyncAtEQ.
+func LastPriceSyncAt(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLastPriceSyncAt, v))
+}
+
+// LastStatusSyncAt applies equality check predicate on the "last_status_sync_at" field. It's identical to LastStatusSyncAtEQ.
+func LastStatusSyncAt(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLastStatusSyncAt, v))
+}
+
+// RateLimitUntil applies equality check predicate on the "rate_limit_until" field. It's identical to RateLimitUntilEQ.
+func RateLimitUntil(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldRateLimitUntil, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -734,6 +759,46 @@ func PriceMarkupPercentLTE(v float64) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldLTE(FieldPriceMarkupPercent, v))
 }
 
+// PriceMarkupAmountEQ applies the EQ predicate on the "price_markup_amount" field.
+func PriceMarkupAmountEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldPriceMarkupAmount, v))
+}
+
+// PriceMarkupAmountNEQ applies the NEQ predicate on the "price_markup_amount" field.
+func PriceMarkupAmountNEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldPriceMarkupAmount, v))
+}
+
+// PriceMarkupAmountIn applies the In predicate on the "price_markup_amount" field.
+func PriceMarkupAmountIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldPriceMarkupAmount, vs...))
+}
+
+// PriceMarkupAmountNotIn applies the NotIn predicate on the "price_markup_amount" field.
+func PriceMarkupAmountNotIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldPriceMarkupAmount, vs...))
+}
+
+// PriceMarkupAmountGT applies the GT predicate on the "price_markup_amount" field.
+func PriceMarkupAmountGT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldPriceMarkupAmount, v))
+}
+
+// PriceMarkupAmountGTE applies the GTE predicate on the "price_markup_amount" field.
+func PriceMarkupAmountGTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldPriceMarkupAmount, v))
+}
+
+// PriceMarkupAmountLT applies the LT predicate on the "price_markup_amount" field.
+func PriceMarkupAmountLT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldPriceMarkupAmount, v))
+}
+
+// PriceMarkupAmountLTE applies the LTE predicate on the "price_markup_amount" field.
+func PriceMarkupAmountLTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldPriceMarkupAmount, v))
+}
+
 // PriceRoundingModeEQ applies the EQ predicate on the "price_rounding_mode" field.
 func PriceRoundingModeEQ(v PriceRoundingMode) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldPriceRoundingMode, v))
@@ -1017,6 +1082,216 @@ func BalanceCacheLT(v int64) predicate.SupplyConnection {
 // BalanceCacheLTE applies the LTE predicate on the "balance_cache" field.
 func BalanceCacheLTE(v int64) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldLTE(FieldBalanceCache, v))
+}
+
+// LastCollectAtEQ applies the EQ predicate on the "last_collect_at" field.
+func LastCollectAtEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLastCollectAt, v))
+}
+
+// LastCollectAtNEQ applies the NEQ predicate on the "last_collect_at" field.
+func LastCollectAtNEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldLastCollectAt, v))
+}
+
+// LastCollectAtIn applies the In predicate on the "last_collect_at" field.
+func LastCollectAtIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldLastCollectAt, vs...))
+}
+
+// LastCollectAtNotIn applies the NotIn predicate on the "last_collect_at" field.
+func LastCollectAtNotIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldLastCollectAt, vs...))
+}
+
+// LastCollectAtGT applies the GT predicate on the "last_collect_at" field.
+func LastCollectAtGT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldLastCollectAt, v))
+}
+
+// LastCollectAtGTE applies the GTE predicate on the "last_collect_at" field.
+func LastCollectAtGTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldLastCollectAt, v))
+}
+
+// LastCollectAtLT applies the LT predicate on the "last_collect_at" field.
+func LastCollectAtLT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldLastCollectAt, v))
+}
+
+// LastCollectAtLTE applies the LTE predicate on the "last_collect_at" field.
+func LastCollectAtLTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldLastCollectAt, v))
+}
+
+// LastCollectAtIsNil applies the IsNil predicate on the "last_collect_at" field.
+func LastCollectAtIsNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIsNull(FieldLastCollectAt))
+}
+
+// LastCollectAtNotNil applies the NotNil predicate on the "last_collect_at" field.
+func LastCollectAtNotNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotNull(FieldLastCollectAt))
+}
+
+// LastPriceSyncAtEQ applies the EQ predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLastPriceSyncAt, v))
+}
+
+// LastPriceSyncAtNEQ applies the NEQ predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtNEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldLastPriceSyncAt, v))
+}
+
+// LastPriceSyncAtIn applies the In predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldLastPriceSyncAt, vs...))
+}
+
+// LastPriceSyncAtNotIn applies the NotIn predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtNotIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldLastPriceSyncAt, vs...))
+}
+
+// LastPriceSyncAtGT applies the GT predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtGT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldLastPriceSyncAt, v))
+}
+
+// LastPriceSyncAtGTE applies the GTE predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtGTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldLastPriceSyncAt, v))
+}
+
+// LastPriceSyncAtLT applies the LT predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtLT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldLastPriceSyncAt, v))
+}
+
+// LastPriceSyncAtLTE applies the LTE predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtLTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldLastPriceSyncAt, v))
+}
+
+// LastPriceSyncAtIsNil applies the IsNil predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtIsNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIsNull(FieldLastPriceSyncAt))
+}
+
+// LastPriceSyncAtNotNil applies the NotNil predicate on the "last_price_sync_at" field.
+func LastPriceSyncAtNotNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotNull(FieldLastPriceSyncAt))
+}
+
+// LastStatusSyncAtEQ applies the EQ predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldLastStatusSyncAt, v))
+}
+
+// LastStatusSyncAtNEQ applies the NEQ predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtNEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldLastStatusSyncAt, v))
+}
+
+// LastStatusSyncAtIn applies the In predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldLastStatusSyncAt, vs...))
+}
+
+// LastStatusSyncAtNotIn applies the NotIn predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtNotIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldLastStatusSyncAt, vs...))
+}
+
+// LastStatusSyncAtGT applies the GT predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtGT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldLastStatusSyncAt, v))
+}
+
+// LastStatusSyncAtGTE applies the GTE predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtGTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldLastStatusSyncAt, v))
+}
+
+// LastStatusSyncAtLT applies the LT predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtLT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldLastStatusSyncAt, v))
+}
+
+// LastStatusSyncAtLTE applies the LTE predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtLTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldLastStatusSyncAt, v))
+}
+
+// LastStatusSyncAtIsNil applies the IsNil predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtIsNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIsNull(FieldLastStatusSyncAt))
+}
+
+// LastStatusSyncAtNotNil applies the NotNil predicate on the "last_status_sync_at" field.
+func LastStatusSyncAtNotNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotNull(FieldLastStatusSyncAt))
+}
+
+// RateStateIsNil applies the IsNil predicate on the "rate_state" field.
+func RateStateIsNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIsNull(FieldRateState))
+}
+
+// RateStateNotNil applies the NotNil predicate on the "rate_state" field.
+func RateStateNotNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotNull(FieldRateState))
+}
+
+// RateLimitUntilEQ applies the EQ predicate on the "rate_limit_until" field.
+func RateLimitUntilEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldRateLimitUntil, v))
+}
+
+// RateLimitUntilNEQ applies the NEQ predicate on the "rate_limit_until" field.
+func RateLimitUntilNEQ(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldRateLimitUntil, v))
+}
+
+// RateLimitUntilIn applies the In predicate on the "rate_limit_until" field.
+func RateLimitUntilIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldRateLimitUntil, vs...))
+}
+
+// RateLimitUntilNotIn applies the NotIn predicate on the "rate_limit_until" field.
+func RateLimitUntilNotIn(vs ...time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldRateLimitUntil, vs...))
+}
+
+// RateLimitUntilGT applies the GT predicate on the "rate_limit_until" field.
+func RateLimitUntilGT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldRateLimitUntil, v))
+}
+
+// RateLimitUntilGTE applies the GTE predicate on the "rate_limit_until" field.
+func RateLimitUntilGTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldRateLimitUntil, v))
+}
+
+// RateLimitUntilLT applies the LT predicate on the "rate_limit_until" field.
+func RateLimitUntilLT(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldRateLimitUntil, v))
+}
+
+// RateLimitUntilLTE applies the LTE predicate on the "rate_limit_until" field.
+func RateLimitUntilLTE(v time.Time) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldRateLimitUntil, v))
+}
+
+// RateLimitUntilIsNil applies the IsNil predicate on the "rate_limit_until" field.
+func RateLimitUntilIsNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIsNull(FieldRateLimitUntil))
+}
+
+// RateLimitUntilNotNil applies the NotNil predicate on the "rate_limit_until" field.
+func RateLimitUntilNotNil() predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotNull(FieldRateLimitUntil))
 }
 
 // And groups predicates with the AND operator between them.

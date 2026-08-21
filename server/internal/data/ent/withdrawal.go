@@ -39,7 +39,9 @@ type Withdrawal struct {
 	// PaidAt holds the value of the "paid_at" field.
 	PaidAt time.Time `json:"paid_at,omitempty"`
 	// ReviewedAt holds the value of the "reviewed_at" field.
-	ReviewedAt   time.Time `json:"reviewed_at,omitempty"`
+	ReviewedAt time.Time `json:"reviewed_at,omitempty"`
+	// Receipt holds the value of the "receipt" field.
+	Receipt      string `json:"receipt,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -52,7 +54,7 @@ func (*Withdrawal) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case withdrawal.FieldID, withdrawal.FieldUserID, withdrawal.FieldAmount, withdrawal.FieldFee, withdrawal.FieldReviewedBy:
 			values[i] = new(sql.NullInt64)
-		case withdrawal.FieldStatus, withdrawal.FieldRejectReason:
+		case withdrawal.FieldStatus, withdrawal.FieldRejectReason, withdrawal.FieldReceipt:
 			values[i] = new(sql.NullString)
 		case withdrawal.FieldCreatedAt, withdrawal.FieldUpdatedAt, withdrawal.FieldPaidAt, withdrawal.FieldReviewedAt:
 			values[i] = new(sql.NullTime)
@@ -145,6 +147,12 @@ func (_m *Withdrawal) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ReviewedAt = value.Time
 			}
+		case withdrawal.FieldReceipt:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field receipt", values[i])
+			} else if value.Valid {
+				_m.Receipt = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -213,6 +221,9 @@ func (_m *Withdrawal) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("reviewed_at=")
 	builder.WriteString(_m.ReviewedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("receipt=")
+	builder.WriteString(_m.Receipt)
 	builder.WriteByte(')')
 	return builder.String()
 }

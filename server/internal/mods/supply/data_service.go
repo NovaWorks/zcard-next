@@ -50,6 +50,10 @@ func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.
 	if err != nil {
 		return nil, err
 	}
+	exchangeRate := req.GetExchangeRate()
+	if exchangeRate <= 0 {
+		exchangeRate = 1
+	}
 	conn, err := s.repo.CreateConnection(ctx, &ent.SupplyConnection{
 		Name:               req.GetName(),
 		Driver:             req.GetDriver(),
@@ -59,7 +63,7 @@ func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.
 		CallbackURL:        req.GetCallbackUrl(),
 		RetryMax:           req.GetRetryMax(),
 		RetryIntervals:     req.GetRetryIntervals(),
-		ExchangeRate:       req.GetExchangeRate(),
+		ExchangeRate:       exchangeRate,
 		PriceMarkupPercent: req.GetPriceMarkupPercent(),
 		PriceRoundingMode:  supplyconnection.PriceRoundingMode(orDefault(req.GetPriceRoundingMode(), "none")),
 		AutoSyncPrice:      req.GetAutoSyncPrice(),
@@ -83,13 +87,17 @@ func (s *AdminSupplyService) UpdateConnection(ctx context.Context, req *adminv1.
 			return nil, fmt.Errorf("supply.SSRF_REJECTED: %w", err)
 		}
 	}
+	exchangeRate := req.GetExchangeRate()
+	if exchangeRate <= 0 {
+		exchangeRate = 1
+	}
 	upd := &ent.SupplyConnection{
 		Name:               req.GetName(),
 		BaseURL:            req.GetBaseUrl(),
 		CallbackURL:        req.GetCallbackUrl(),
 		RetryMax:           req.GetRetryMax(),
 		RetryIntervals:     req.GetRetryIntervals(),
-		ExchangeRate:       req.GetExchangeRate(),
+		ExchangeRate:       exchangeRate,
 		PriceMarkupPercent: req.GetPriceMarkupPercent(),
 		PriceRoundingMode:  supplyconnection.PriceRoundingMode(req.GetPriceRoundingMode()),
 		AutoSyncPrice:      req.GetAutoSyncPrice(),

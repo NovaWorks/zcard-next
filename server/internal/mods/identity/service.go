@@ -7,6 +7,7 @@ import (
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	authzport "github.com/NovaWorks/zcard-next/server/internal/mods/authz/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
@@ -18,17 +19,23 @@ import (
 // AdminAuthService 管理认证服务。
 type AdminAuthService struct {
 	adminv1.UnimplementedAdminAuthServiceServer
-	uc *IdentityUsecase
-	az authzport.Authorizer
+	uc  *IdentityUsecase
+	az  authzport.Authorizer
+	cap *captcha.Service // 后台登录图形验证码（captcha_admin_login 场景）
 }
 
 // NewAdminAuthService 构造（az 用于 profile 下发权限点清单，前端动态路由消费）。
-func NewAdminAuthService(uc *IdentityUsecase, az authzport.Authorizer) *AdminAuthService {
-	return &AdminAuthService{uc: uc, az: az}
+func NewAdminAuthService(uc *IdentityUsecase, az authzport.Authorizer, cap *captcha.Service) *AdminAuthService {
+	return &AdminAuthService{uc: uc, az: az, cap: cap}
 }
 
-// Login 管理员登录。
+// Login 管理员登录（captcha_admin_login 开启时前置图形验证码；未开启放行）。
 func (s *AdminAuthService) Login(ctx context.Context, req *adminv1.LoginRequest) (*adminv1.LoginReply, error) {
+	if s.cap != nil {
+		if err := s.cap.VerifyScene(ctx, captcha.SceneAdminLogin, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
+			return nil, mapLoginErr(err)
+		}
+	}
 	res, err := s.uc.AdminLogin(ctx, req.GetUsername(), req.GetPassword(), req.GetTotpCode(), clientIP(ctx))
 	if err != nil {
 		return nil, mapLoginErr(err)
@@ -40,6 +47,20 @@ func (s *AdminAuthService) Login(ctx context.Context, req *adminv1.LoginRequest)
 		ExpiresAt:    res.ExpiresAt.Unix(),
 		Admin:        toAdminProfile(res.Admin),
 	}, nil
+}
+
+// GetCaptchaImage 登录图形验证码（免鉴权）。
+func (s *AdminAuthService) GetCaptchaImage(ctx context.Context, _ *emptypb.Empty) (*adminv1.CaptchaImageReply, error) {
+	id, b64, err := s.cap.Get()
+	if err != nil {
+		return nil, errors.InternalServer("identity.CAPTCHA_GEN_FAILED", "生成验证码失败")
+	}
+	return &adminv1.CaptchaImageReply{CaptchaId: id, ImageBase64: b64}, nil
+}
+
+// GetCaptchaConfig 登录验证码开关（免鉴权；登录页条件渲染）。
+func (s *AdminAuthService) GetCaptchaConfig(ctx context.Context, _ *emptypb.Empty) (*adminv1.CaptchaConfigReply, error) {
+	return &adminv1.CaptchaConfigReply{Enabled: s.cap.SceneEnabledFor(ctx, captcha.SceneAdminLogin)}, nil
 }
 
 // Logout 登出（吊销 refresh session）。
@@ -126,6 +147,10 @@ func (s *AdminAuthService) GetProfile(ctx context.Context, _ *emptypb.Empty) (*a
 
 func mapLoginErr(err error) error {
 	switch {
+	case errors.Is(err, captcha.ErrCaptchaRequired):
+		return errors.BadRequest("identity.CAPTCHA_REQUIRED", "请输入图形验证码")
+	case errors.Is(err, captcha.ErrCaptchaInvalid):
+		return errors.BadRequest("identity.CAPTCHA_INVALID", "图形验证码错误或已过期")
 	case errors.Is(err, ErrAdminDisabled):
 		return errors.Forbidden("identity.ADMIN_DISABLED", "账号已禁用")
 	case errors.Is(err, ErrLocked):

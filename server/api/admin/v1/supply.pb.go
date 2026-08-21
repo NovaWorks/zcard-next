@@ -38,8 +38,9 @@ type SupplyConnection struct {
 	PriceMarkupPercent float64                `protobuf:"fixed64,11,opt,name=price_markup_percent,json=priceMarkupPercent,proto3" json:"price_markup_percent,omitempty"`
 	PriceRoundingMode  string                 `protobuf:"bytes,12,opt,name=price_rounding_mode,json=priceRoundingMode,proto3" json:"price_rounding_mode,omitempty"` // none | ceil_int | ceil_tenth
 	AutoSyncPrice      bool                   `protobuf:"varint,13,opt,name=auto_sync_price,json=autoSyncPrice,proto3" json:"auto_sync_price,omitempty"`
-	StockMode          string                 `protobuf:"bytes,14,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"` // real | plenty
-	Settings           string                 `protobuf:"bytes,15,opt,name=settings,proto3" json:"settings,omitempty"`                    // JSON
+	StockMode          string                 `protobuf:"bytes,14,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"`                            // real | plenty
+	Settings           string                 `protobuf:"bytes,15,opt,name=settings,proto3" json:"settings,omitempty"`                                               // JSON
+	PriceMarkupAmount  int64                  `protobuf:"varint,28,opt,name=price_markup_amount,json=priceMarkupAmount,proto3" json:"price_markup_amount,omitempty"` // 固定加价（分；与加价% 组合：×(1+%) 后再加）
 	LastPingAt         int64                  `protobuf:"varint,16,opt,name=last_ping_at,json=lastPingAt,proto3" json:"last_ping_at,omitempty"`
 	LastPingOk         bool                   `protobuf:"varint,17,opt,name=last_ping_ok,json=lastPingOk,proto3" json:"last_ping_ok,omitempty"`
 	LastSyncedAt       int64                  `protobuf:"varint,18,opt,name=last_synced_at,json=lastSyncedAt,proto3" json:"last_synced_at,omitempty"`
@@ -47,8 +48,14 @@ type SupplyConnection struct {
 	BalanceCache       int64                  `protobuf:"varint,20,opt,name=balance_cache,json=balanceCache,proto3" json:"balance_cache,omitempty"`
 	CreatedAt          int64                  `protobuf:"varint,21,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt          int64                  `protobuf:"varint,22,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// P2-10 S2/S3：调度锚点与限流状态（界面展示/倒计时）
+	LastCollectAt    int64  `protobuf:"varint,23,opt,name=last_collect_at,json=lastCollectAt,proto3" json:"last_collect_at,omitempty"`
+	LastPriceSyncAt  int64  `protobuf:"varint,24,opt,name=last_price_sync_at,json=lastPriceSyncAt,proto3" json:"last_price_sync_at,omitempty"`
+	LastStatusSyncAt int64  `protobuf:"varint,25,opt,name=last_status_sync_at,json=lastStatusSyncAt,proto3" json:"last_status_sync_at,omitempty"`
+	RateState        string `protobuf:"bytes,26,opt,name=rate_state,json=rateState,proto3" json:"rate_state,omitempty"`                   // JSON（节奏器状态：当前间隔/封锁计数/冷却时长）
+	RateLimitUntil   int64  `protobuf:"varint,27,opt,name=rate_limit_until,json=rateLimitUntil,proto3" json:"rate_limit_until,omitempty"` // 熔断冷却截止（秒；0=未熔断）
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SupplyConnection) Reset() {
@@ -186,6 +193,13 @@ func (x *SupplyConnection) GetSettings() string {
 	return ""
 }
 
+func (x *SupplyConnection) GetPriceMarkupAmount() int64 {
+	if x != nil {
+		return x.PriceMarkupAmount
+	}
+	return 0
+}
+
 func (x *SupplyConnection) GetLastPingAt() int64 {
 	if x != nil {
 		return x.LastPingAt
@@ -235,6 +249,41 @@ func (x *SupplyConnection) GetUpdatedAt() int64 {
 	return 0
 }
 
+func (x *SupplyConnection) GetLastCollectAt() int64 {
+	if x != nil {
+		return x.LastCollectAt
+	}
+	return 0
+}
+
+func (x *SupplyConnection) GetLastPriceSyncAt() int64 {
+	if x != nil {
+		return x.LastPriceSyncAt
+	}
+	return 0
+}
+
+func (x *SupplyConnection) GetLastStatusSyncAt() int64 {
+	if x != nil {
+		return x.LastStatusSyncAt
+	}
+	return 0
+}
+
+func (x *SupplyConnection) GetRateState() string {
+	if x != nil {
+		return x.RateState
+	}
+	return ""
+}
+
+func (x *SupplyConnection) GetRateLimitUntil() int64 {
+	if x != nil {
+		return x.RateLimitUntil
+	}
+	return 0
+}
+
 type CreateConnectionRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Name               string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -250,6 +299,7 @@ type CreateConnectionRequest struct {
 	AutoSyncPrice      bool                   `protobuf:"varint,11,opt,name=auto_sync_price,json=autoSyncPrice,proto3" json:"auto_sync_price,omitempty"`
 	StockMode          string                 `protobuf:"bytes,12,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"`
 	Settings           string                 `protobuf:"bytes,13,opt,name=settings,proto3" json:"settings,omitempty"`
+	PriceMarkupAmount  int64                  `protobuf:"varint,14,opt,name=price_markup_amount,json=priceMarkupAmount,proto3" json:"price_markup_amount,omitempty"` // 固定加价（分）
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -375,6 +425,13 @@ func (x *CreateConnectionRequest) GetSettings() string {
 	return ""
 }
 
+func (x *CreateConnectionRequest) GetPriceMarkupAmount() int64 {
+	if x != nil {
+		return x.PriceMarkupAmount
+	}
+	return 0
+}
+
 type UpdateConnectionRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Id                 uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -390,6 +447,8 @@ type UpdateConnectionRequest struct {
 	AutoSyncPrice      bool                   `protobuf:"varint,11,opt,name=auto_sync_price,json=autoSyncPrice,proto3" json:"auto_sync_price,omitempty"`
 	StockMode          string                 `protobuf:"bytes,12,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"`
 	Status             string                 `protobuf:"bytes,13,opt,name=status,proto3" json:"status,omitempty"`
+	Settings           string                 `protobuf:"bytes,14,opt,name=settings,proto3" json:"settings,omitempty"`                                               // JSON（定时计划/导入默认价；非空整体替换）
+	PriceMarkupAmount  int64                  `protobuf:"varint,15,opt,name=price_markup_amount,json=priceMarkupAmount,proto3" json:"price_markup_amount,omitempty"` // 固定加价（分）
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -513,6 +572,20 @@ func (x *UpdateConnectionRequest) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *UpdateConnectionRequest) GetSettings() string {
+	if x != nil {
+		return x.Settings
+	}
+	return ""
+}
+
+func (x *UpdateConnectionRequest) GetPriceMarkupAmount() int64 {
+	if x != nil {
+		return x.PriceMarkupAmount
+	}
+	return 0
 }
 
 type DeleteConnectionRequest struct {
@@ -1207,8 +1280,8 @@ type SupplySyncTask struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	ConnectionId      uint64                 `protobuf:"varint,2,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
-	Mode              string                 `protobuf:"bytes,3,opt,name=mode,proto3" json:"mode,omitempty"` // full | incremental
-	Scope             string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"`
+	Mode              string                 `protobuf:"bytes,3,opt,name=mode,proto3" json:"mode,omitempty"`   // full | incremental
+	Scope             string                 `protobuf:"bytes,4,opt,name=scope,proto3" json:"scope,omitempty"` // collect | price | status（空 = collect 兼容历史任务）
 	ForceReprice      bool                   `protobuf:"varint,5,opt,name=force_reprice,json=forceReprice,proto3" json:"force_reprice,omitempty"`
 	Status            string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"` // pending | processing | done | failed | canceled
 	Total             int64                  `protobuf:"varint,7,opt,name=total,proto3" json:"total,omitempty"`
@@ -1418,8 +1491,8 @@ func (x *SupplySyncTask) GetFinishedAt() int64 {
 type CreateSyncTaskRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId  uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
-	Mode          string                 `protobuf:"bytes,2,opt,name=mode,proto3" json:"mode,omitempty"` // full | incremental（默认 full）
-	Scope         string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+	Mode          string                 `protobuf:"bytes,2,opt,name=mode,proto3" json:"mode,omitempty"`   // full | incremental（默认 full；驱动不支持增量时引擎自动回落全量）
+	Scope         string                 `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"` // collect=采集（默认，含删除对账）| price=仅刷价格 | status=仅刷上下架与库存
 	ForceReprice  bool                   `protobuf:"varint,4,opt,name=force_reprice,json=forceReprice,proto3" json:"force_reprice,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1483,6 +1556,430 @@ func (x *CreateSyncTaskRequest) GetForceReprice() bool {
 	return false
 }
 
+type PreviewProductsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId  uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreviewProductsRequest) Reset() {
+	*x = PreviewProductsRequest{}
+	mi := &file_admin_v1_supply_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewProductsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewProductsRequest) ProtoMessage() {}
+
+func (x *PreviewProductsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewProductsRequest.ProtoReflect.Descriptor instead.
+func (*PreviewProductsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *PreviewProductsRequest) GetConnectionId() uint64 {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return 0
+}
+
+type PreviewProduct struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Code              string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	PriceCents        int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"` // 上游价（分）
+	FactoryPriceCents int64                  `protobuf:"varint,4,opt,name=factory_price_cents,json=factoryPriceCents,proto3" json:"factory_price_cents,omitempty"`
+	CategoryCode      string                 `protobuf:"bytes,5,opt,name=category_code,json=categoryCode,proto3" json:"category_code,omitempty"`
+	CategoryName      string                 `protobuf:"bytes,6,opt,name=category_name,json=categoryName,proto3" json:"category_name,omitempty"`
+	IsActive          bool                   `protobuf:"varint,7,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	Stock             int32                  `protobuf:"varint,8,opt,name=stock,proto3" json:"stock,omitempty"`                                            // -1 = 无限/未知
+	AlreadyImported   bool                   `protobuf:"varint,9,opt,name=already_imported,json=alreadyImported,proto3" json:"already_imported,omitempty"` // 已存在映射（勾选导入 = 更新）
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *PreviewProduct) Reset() {
+	*x = PreviewProduct{}
+	mi := &file_admin_v1_supply_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewProduct) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewProduct) ProtoMessage() {}
+
+func (x *PreviewProduct) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewProduct.ProtoReflect.Descriptor instead.
+func (*PreviewProduct) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *PreviewProduct) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *PreviewProduct) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PreviewProduct) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *PreviewProduct) GetFactoryPriceCents() int64 {
+	if x != nil {
+		return x.FactoryPriceCents
+	}
+	return 0
+}
+
+func (x *PreviewProduct) GetCategoryCode() string {
+	if x != nil {
+		return x.CategoryCode
+	}
+	return ""
+}
+
+func (x *PreviewProduct) GetCategoryName() string {
+	if x != nil {
+		return x.CategoryName
+	}
+	return ""
+}
+
+func (x *PreviewProduct) GetIsActive() bool {
+	if x != nil {
+		return x.IsActive
+	}
+	return false
+}
+
+func (x *PreviewProduct) GetStock() int32 {
+	if x != nil {
+		return x.Stock
+	}
+	return 0
+}
+
+func (x *PreviewProduct) GetAlreadyImported() bool {
+	if x != nil {
+		return x.AlreadyImported
+	}
+	return false
+}
+
+type PreviewCategory struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Products      []*PreviewProduct      `protobuf:"bytes,3,rep,name=products,proto3" json:"products,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreviewCategory) Reset() {
+	*x = PreviewCategory{}
+	mi := &file_admin_v1_supply_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewCategory) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewCategory) ProtoMessage() {}
+
+func (x *PreviewCategory) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewCategory.ProtoReflect.Descriptor instead.
+func (*PreviewCategory) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *PreviewCategory) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *PreviewCategory) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PreviewCategory) GetProducts() []*PreviewProduct {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
+type PreviewProductsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Categories    []*PreviewCategory     `protobuf:"bytes,1,rep,name=categories,proto3" json:"categories,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreviewProductsReply) Reset() {
+	*x = PreviewProductsReply{}
+	mi := &file_admin_v1_supply_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewProductsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewProductsReply) ProtoMessage() {}
+
+func (x *PreviewProductsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewProductsReply.ProtoReflect.Descriptor instead.
+func (*PreviewProductsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *PreviewProductsReply) GetCategories() []*PreviewCategory {
+	if x != nil {
+		return x.Categories
+	}
+	return nil
+}
+
+func (x *PreviewProductsReply) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type ImportProductsRequest struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId      uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Codes             []string               `protobuf:"bytes,2,rep,name=codes,proto3" json:"codes,omitempty"`
+	PricingMode       string                 `protobuf:"bytes,3,opt,name=pricing_mode,json=pricingMode,proto3" json:"pricing_mode,omitempty"`                                                                            // percent | fixed | equal | pending（默认 percent）
+	MarkupPercent     float64                `protobuf:"fixed64,4,opt,name=markup_percent,json=markupPercent,proto3" json:"markup_percent,omitempty"`                                                                    // percent 模式加价 %（0 = 用连接默认）
+	MarkupAmountCents int64                  `protobuf:"varint,5,opt,name=markup_amount_cents,json=markupAmountCents,proto3" json:"markup_amount_cents,omitempty"`                                                       // fixed 模式加价金额（分）
+	SaveDefault       bool                   `protobuf:"varint,6,opt,name=save_default,json=saveDefault,proto3" json:"save_default,omitempty"`                                                                           // 把本次策略存为连接默认（settings.import_pricing）
+	CategoryMap       map[string]uint64      `protobuf:"bytes,7,rep,name=category_map,json=categoryMap,proto3" json:"category_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 上游分类 code → 本地分类 id
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ImportProductsRequest) Reset() {
+	*x = ImportProductsRequest{}
+	mi := &file_admin_v1_supply_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportProductsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportProductsRequest) ProtoMessage() {}
+
+func (x *ImportProductsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportProductsRequest.ProtoReflect.Descriptor instead.
+func (*ImportProductsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ImportProductsRequest) GetConnectionId() uint64 {
+	if x != nil {
+		return x.ConnectionId
+	}
+	return 0
+}
+
+func (x *ImportProductsRequest) GetCodes() []string {
+	if x != nil {
+		return x.Codes
+	}
+	return nil
+}
+
+func (x *ImportProductsRequest) GetPricingMode() string {
+	if x != nil {
+		return x.PricingMode
+	}
+	return ""
+}
+
+func (x *ImportProductsRequest) GetMarkupPercent() float64 {
+	if x != nil {
+		return x.MarkupPercent
+	}
+	return 0
+}
+
+func (x *ImportProductsRequest) GetMarkupAmountCents() int64 {
+	if x != nil {
+		return x.MarkupAmountCents
+	}
+	return 0
+}
+
+func (x *ImportProductsRequest) GetSaveDefault() bool {
+	if x != nil {
+		return x.SaveDefault
+	}
+	return false
+}
+
+func (x *ImportProductsRequest) GetCategoryMap() map[string]uint64 {
+	if x != nil {
+		return x.CategoryMap
+	}
+	return nil
+}
+
+type ImportProductsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Imported      int32                  `protobuf:"varint,1,opt,name=imported,proto3" json:"imported,omitempty"` // 新建
+	Updated       int32                  `protobuf:"varint,2,opt,name=updated,proto3" json:"updated,omitempty"`   // 更新（已导入重导）
+	Failed        int32                  `protobuf:"varint,3,opt,name=failed,proto3" json:"failed,omitempty"`
+	ErrorContext  string                 `protobuf:"bytes,4,opt,name=error_context,json=errorContext,proto3" json:"error_context,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportProductsReply) Reset() {
+	*x = ImportProductsReply{}
+	mi := &file_admin_v1_supply_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportProductsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportProductsReply) ProtoMessage() {}
+
+func (x *ImportProductsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportProductsReply.ProtoReflect.Descriptor instead.
+func (*ImportProductsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ImportProductsReply) GetImported() int32 {
+	if x != nil {
+		return x.Imported
+	}
+	return 0
+}
+
+func (x *ImportProductsReply) GetUpdated() int32 {
+	if x != nil {
+		return x.Updated
+	}
+	return 0
+}
+
+func (x *ImportProductsReply) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
+}
+
+func (x *ImportProductsReply) GetErrorContext() string {
+	if x != nil {
+		return x.ErrorContext
+	}
+	return ""
+}
+
 type ListSyncTasksRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId  uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
@@ -1494,7 +1991,7 @@ type ListSyncTasksRequest struct {
 
 func (x *ListSyncTasksRequest) Reset() {
 	*x = ListSyncTasksRequest{}
-	mi := &file_admin_v1_supply_proto_msgTypes[15]
+	mi := &file_admin_v1_supply_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1506,7 +2003,7 @@ func (x *ListSyncTasksRequest) String() string {
 func (*ListSyncTasksRequest) ProtoMessage() {}
 
 func (x *ListSyncTasksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[15]
+	mi := &file_admin_v1_supply_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1519,7 +2016,7 @@ func (x *ListSyncTasksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSyncTasksRequest.ProtoReflect.Descriptor instead.
 func (*ListSyncTasksRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListSyncTasksRequest) GetConnectionId() uint64 {
@@ -1555,7 +2052,7 @@ type ListSyncTasksReply struct {
 
 func (x *ListSyncTasksReply) Reset() {
 	*x = ListSyncTasksReply{}
-	mi := &file_admin_v1_supply_proto_msgTypes[16]
+	mi := &file_admin_v1_supply_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1567,7 +2064,7 @@ func (x *ListSyncTasksReply) String() string {
 func (*ListSyncTasksReply) ProtoMessage() {}
 
 func (x *ListSyncTasksReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[16]
+	mi := &file_admin_v1_supply_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1580,7 +2077,7 @@ func (x *ListSyncTasksReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSyncTasksReply.ProtoReflect.Descriptor instead.
 func (*ListSyncTasksReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *ListSyncTasksReply) GetTasks() []*SupplySyncTask {
@@ -1620,7 +2117,7 @@ type GetSyncTaskRequest struct {
 
 func (x *GetSyncTaskRequest) Reset() {
 	*x = GetSyncTaskRequest{}
-	mi := &file_admin_v1_supply_proto_msgTypes[17]
+	mi := &file_admin_v1_supply_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1632,7 +2129,7 @@ func (x *GetSyncTaskRequest) String() string {
 func (*GetSyncTaskRequest) ProtoMessage() {}
 
 func (x *GetSyncTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[17]
+	mi := &file_admin_v1_supply_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1645,7 +2142,7 @@ func (x *GetSyncTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSyncTaskRequest.ProtoReflect.Descriptor instead.
 func (*GetSyncTaskRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetSyncTaskRequest) GetId() uint64 {
@@ -1664,7 +2161,7 @@ type CancelSyncTaskRequest struct {
 
 func (x *CancelSyncTaskRequest) Reset() {
 	*x = CancelSyncTaskRequest{}
-	mi := &file_admin_v1_supply_proto_msgTypes[18]
+	mi := &file_admin_v1_supply_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1676,7 +2173,7 @@ func (x *CancelSyncTaskRequest) String() string {
 func (*CancelSyncTaskRequest) ProtoMessage() {}
 
 func (x *CancelSyncTaskRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[18]
+	mi := &file_admin_v1_supply_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1689,7 +2186,7 @@ func (x *CancelSyncTaskRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelSyncTaskRequest.ProtoReflect.Descriptor instead.
 func (*CancelSyncTaskRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{18}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CancelSyncTaskRequest) GetId() uint64 {
@@ -1707,7 +2204,7 @@ type ListHealthRequest struct {
 
 func (x *ListHealthRequest) Reset() {
 	*x = ListHealthRequest{}
-	mi := &file_admin_v1_supply_proto_msgTypes[19]
+	mi := &file_admin_v1_supply_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1719,7 +2216,7 @@ func (x *ListHealthRequest) String() string {
 func (*ListHealthRequest) ProtoMessage() {}
 
 func (x *ListHealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[19]
+	mi := &file_admin_v1_supply_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1732,7 +2229,7 @@ func (x *ListHealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHealthRequest.ProtoReflect.Descriptor instead.
 func (*ListHealthRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{19}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{25}
 }
 
 type HealthItem struct {
@@ -1754,7 +2251,7 @@ type HealthItem struct {
 
 func (x *HealthItem) Reset() {
 	*x = HealthItem{}
-	mi := &file_admin_v1_supply_proto_msgTypes[20]
+	mi := &file_admin_v1_supply_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1766,7 +2263,7 @@ func (x *HealthItem) String() string {
 func (*HealthItem) ProtoMessage() {}
 
 func (x *HealthItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[20]
+	mi := &file_admin_v1_supply_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1779,7 +2276,7 @@ func (x *HealthItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthItem.ProtoReflect.Descriptor instead.
 func (*HealthItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{20}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *HealthItem) GetConnectionId() uint64 {
@@ -1868,7 +2365,7 @@ type ListHealthReply struct {
 
 func (x *ListHealthReply) Reset() {
 	*x = ListHealthReply{}
-	mi := &file_admin_v1_supply_proto_msgTypes[21]
+	mi := &file_admin_v1_supply_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1880,7 +2377,7 @@ func (x *ListHealthReply) String() string {
 func (*ListHealthReply) ProtoMessage() {}
 
 func (x *ListHealthReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_supply_proto_msgTypes[21]
+	mi := &file_admin_v1_supply_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1893,7 +2390,7 @@ func (x *ListHealthReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListHealthReply.ProtoReflect.Descriptor instead.
 func (*ListHealthReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_supply_proto_rawDescGZIP(), []int{21}
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ListHealthReply) GetItems() []*HealthItem {
@@ -1907,7 +2404,7 @@ var File_admin_v1_supply_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supply_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/supply.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe9\x05\n" +
+	"\x15admin/v1/supply.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xe6\a\n" +
 	"\x10SupplyConnection\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
@@ -1925,7 +2422,8 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0fauto_sync_price\x18\r \x01(\bR\rautoSyncPrice\x12\x1d\n" +
 	"\n" +
 	"stock_mode\x18\x0e \x01(\tR\tstockMode\x12\x1a\n" +
-	"\bsettings\x18\x0f \x01(\tR\bsettings\x12 \n" +
+	"\bsettings\x18\x0f \x01(\tR\bsettings\x12.\n" +
+	"\x13price_markup_amount\x18\x1c \x01(\x03R\x11priceMarkupAmount\x12 \n" +
 	"\flast_ping_at\x18\x10 \x01(\x03R\n" +
 	"lastPingAt\x12 \n" +
 	"\flast_ping_ok\x18\x11 \x01(\bR\n" +
@@ -1937,7 +2435,13 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x15 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x16 \x01(\x03R\tupdatedAt\"\xe9\x03\n" +
+	"updated_at\x18\x16 \x01(\x03R\tupdatedAt\x12&\n" +
+	"\x0flast_collect_at\x18\x17 \x01(\x03R\rlastCollectAt\x12+\n" +
+	"\x12last_price_sync_at\x18\x18 \x01(\x03R\x0flastPriceSyncAt\x12-\n" +
+	"\x13last_status_sync_at\x18\x19 \x01(\x03R\x10lastStatusSyncAt\x12\x1d\n" +
+	"\n" +
+	"rate_state\x18\x1a \x01(\tR\trateState\x12(\n" +
+	"\x10rate_limit_until\x18\x1b \x01(\x03R\x0erateLimitUntil\"\x99\x04\n" +
 	"\x17CreateConnectionRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1b\n" +
 	"\x06driver\x18\x02 \x01(\tB\x03\xe0A\x02R\x06driver\x12\x1e\n" +
@@ -1953,7 +2457,8 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0fauto_sync_price\x18\v \x01(\bR\rautoSyncPrice\x12\x1d\n" +
 	"\n" +
 	"stock_mode\x18\f \x01(\tR\tstockMode\x12\x1a\n" +
-	"\bsettings\x18\r \x01(\tR\bsettings\"\xce\x03\n" +
+	"\bsettings\x18\r \x01(\tR\bsettings\x12.\n" +
+	"\x13price_markup_amount\x18\x0e \x01(\x03R\x11priceMarkupAmount\"\x9a\x04\n" +
 	"\x17UpdateConnectionRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
@@ -1969,7 +2474,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0fauto_sync_price\x18\v \x01(\bR\rautoSyncPrice\x12\x1d\n" +
 	"\n" +
 	"stock_mode\x18\f \x01(\tR\tstockMode\x12\x16\n" +
-	"\x06status\x18\r \x01(\tR\x06status\".\n" +
+	"\x06status\x18\r \x01(\tR\x06status\x12\x1a\n" +
+	"\bsettings\x18\x0e \x01(\tR\bsettings\x12.\n" +
+	"\x13price_markup_amount\x18\x0f \x01(\x03R\x11priceMarkupAmount\".\n" +
 	"\x17DeleteConnectionRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"I\n" +
 	"\x16ListConnectionsRequest\x12\x12\n" +
@@ -2057,7 +2564,45 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x12\n" +
 	"\x04mode\x18\x02 \x01(\tR\x04mode\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12#\n" +
-	"\rforce_reprice\x18\x04 \x01(\bR\fforceReprice\"l\n" +
+	"\rforce_reprice\x18\x04 \x01(\bR\fforceReprice\"B\n" +
+	"\x16PreviewProductsRequest\x12(\n" +
+	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\"\xb1\x02\n" +
+	"\x0ePreviewProduct\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
+	"\vprice_cents\x18\x03 \x01(\x03R\n" +
+	"priceCents\x12.\n" +
+	"\x13factory_price_cents\x18\x04 \x01(\x03R\x11factoryPriceCents\x12#\n" +
+	"\rcategory_code\x18\x05 \x01(\tR\fcategoryCode\x12#\n" +
+	"\rcategory_name\x18\x06 \x01(\tR\fcategoryName\x12\x1b\n" +
+	"\tis_active\x18\a \x01(\bR\bisActive\x12\x14\n" +
+	"\x05stock\x18\b \x01(\x05R\x05stock\x12)\n" +
+	"\x10already_imported\x18\t \x01(\bR\x0falreadyImported\"y\n" +
+	"\x0fPreviewCategory\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12>\n" +
+	"\bproducts\x18\x03 \x03(\v2\".zcard.api.admin.v1.PreviewProductR\bproducts\"q\n" +
+	"\x14PreviewProductsReply\x12C\n" +
+	"\n" +
+	"categories\x18\x01 \x03(\v2#.zcard.api.admin.v1.PreviewCategoryR\n" +
+	"categories\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\x98\x03\n" +
+	"\x15ImportProductsRequest\x12(\n" +
+	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x19\n" +
+	"\x05codes\x18\x02 \x03(\tB\x03\xe0A\x02R\x05codes\x12!\n" +
+	"\fpricing_mode\x18\x03 \x01(\tR\vpricingMode\x12%\n" +
+	"\x0emarkup_percent\x18\x04 \x01(\x01R\rmarkupPercent\x12.\n" +
+	"\x13markup_amount_cents\x18\x05 \x01(\x03R\x11markupAmountCents\x12!\n" +
+	"\fsave_default\x18\x06 \x01(\bR\vsaveDefault\x12]\n" +
+	"\fcategory_map\x18\a \x03(\v2:.zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntryR\vcategoryMap\x1a>\n" +
+	"\x10CategoryMapEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"\x88\x01\n" +
+	"\x13ImportProductsReply\x12\x1a\n" +
+	"\bimported\x18\x01 \x01(\x05R\bimported\x12\x18\n" +
+	"\aupdated\x18\x02 \x01(\x05R\aupdated\x12\x16\n" +
+	"\x06failed\x18\x03 \x01(\x05R\x06failed\x12#\n" +
+	"\rerror_context\x18\x04 \x01(\tR\ferrorContext\"l\n" +
 	"\x14ListSyncTasksRequest\x12#\n" +
 	"\rconnection_id\x18\x01 \x01(\x04R\fconnectionId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
@@ -2090,7 +2635,7 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	" \x01(\x03R\x0fpingSuccessRate\x12$\n" +
 	"\x0eavg_latency_ms\x18\v \x01(\x03R\favgLatencyMs\"G\n" +
 	"\x0fListHealthReply\x124\n" +
-	"\x05items\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.HealthItemR\x05items2\xcc\x0e\n" +
+	"\x05items\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.HealthItemR\x05items2\xa3\x11\n" +
 	"\x12AdminSupplyService\x12\x92\x01\n" +
 	"\x10CreateConnection\x12+.zcard.api.admin.v1.CreateConnectionRequest\x1a$.zcard.api.admin.v1.SupplyConnection\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/admin/supply/connections\x12\x97\x01\n" +
 	"\x10UpdateConnection\x12+.zcard.api.admin.v1.UpdateConnectionRequest\x1a$.zcard.api.admin.v1.SupplyConnection\"0\x82\xd3\xe4\x93\x02*:\x01*\x1a%/api/v1/admin/supply/connections/{id}\x12\x86\x01\n" +
@@ -2103,7 +2648,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0eCreateSyncTask\x12).zcard.api.admin.v1.CreateSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/supply/sync-tasks\x12\x8a\x01\n" +
 	"\rListSyncTasks\x12(.zcard.api.admin.v1.ListSyncTasksRequest\x1a&.zcard.api.admin.v1.ListSyncTasksReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/supply/sync-tasks\x12\x87\x01\n" +
 	"\vGetSyncTask\x12&.zcard.api.admin.v1.GetSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/admin/supply/sync-tasks/{id}\x12\x97\x01\n" +
-	"\x0eCancelSyncTask\x12).zcard.api.admin.v1.CancelSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/supply/sync-tasks/{id}/cancel\x12}\n" +
+	"\x0eCancelSyncTask\x12).zcard.api.admin.v1.CancelSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/supply/sync-tasks/{id}/cancel\x12\xa9\x01\n" +
+	"\x0fPreviewProducts\x12*.zcard.api.admin.v1.PreviewProductsRequest\x1a(.zcard.api.admin.v1.PreviewProductsReply\"@\x82\xd3\xe4\x93\x02:\x128/api/v1/admin/supply/connections/{connection_id}/preview\x12\xa8\x01\n" +
+	"\x0eImportProducts\x12).zcard.api.admin.v1.ImportProductsRequest\x1a'.zcard.api.admin.v1.ImportProductsReply\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/admin/supply/connections/{connection_id}/import\x12}\n" +
 	"\n" +
 	"ListHealth\x12%.zcard.api.admin.v1.ListHealthRequest\x1a#.zcard.api.admin.v1.ListHealthReply\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/admin/supply/healthB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
@@ -2119,7 +2666,7 @@ func file_admin_v1_supply_proto_rawDescGZIP() []byte {
 	return file_admin_v1_supply_proto_rawDescData
 }
 
-var file_admin_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_admin_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_admin_v1_supply_proto_goTypes = []any{
 	(*SupplyConnection)(nil),        // 0: zcard.api.admin.v1.SupplyConnection
 	(*CreateConnectionRequest)(nil), // 1: zcard.api.admin.v1.CreateConnectionRequest
@@ -2136,51 +2683,65 @@ var file_admin_v1_supply_proto_goTypes = []any{
 	(*DeleteMappingRequest)(nil),    // 12: zcard.api.admin.v1.DeleteMappingRequest
 	(*SupplySyncTask)(nil),          // 13: zcard.api.admin.v1.SupplySyncTask
 	(*CreateSyncTaskRequest)(nil),   // 14: zcard.api.admin.v1.CreateSyncTaskRequest
-	(*ListSyncTasksRequest)(nil),    // 15: zcard.api.admin.v1.ListSyncTasksRequest
-	(*ListSyncTasksReply)(nil),      // 16: zcard.api.admin.v1.ListSyncTasksReply
-	(*GetSyncTaskRequest)(nil),      // 17: zcard.api.admin.v1.GetSyncTaskRequest
-	(*CancelSyncTaskRequest)(nil),   // 18: zcard.api.admin.v1.CancelSyncTaskRequest
-	(*ListHealthRequest)(nil),       // 19: zcard.api.admin.v1.ListHealthRequest
-	(*HealthItem)(nil),              // 20: zcard.api.admin.v1.HealthItem
-	(*ListHealthReply)(nil),         // 21: zcard.api.admin.v1.ListHealthReply
-	(*emptypb.Empty)(nil),           // 22: google.protobuf.Empty
+	(*PreviewProductsRequest)(nil),  // 15: zcard.api.admin.v1.PreviewProductsRequest
+	(*PreviewProduct)(nil),          // 16: zcard.api.admin.v1.PreviewProduct
+	(*PreviewCategory)(nil),         // 17: zcard.api.admin.v1.PreviewCategory
+	(*PreviewProductsReply)(nil),    // 18: zcard.api.admin.v1.PreviewProductsReply
+	(*ImportProductsRequest)(nil),   // 19: zcard.api.admin.v1.ImportProductsRequest
+	(*ImportProductsReply)(nil),     // 20: zcard.api.admin.v1.ImportProductsReply
+	(*ListSyncTasksRequest)(nil),    // 21: zcard.api.admin.v1.ListSyncTasksRequest
+	(*ListSyncTasksReply)(nil),      // 22: zcard.api.admin.v1.ListSyncTasksReply
+	(*GetSyncTaskRequest)(nil),      // 23: zcard.api.admin.v1.GetSyncTaskRequest
+	(*CancelSyncTaskRequest)(nil),   // 24: zcard.api.admin.v1.CancelSyncTaskRequest
+	(*ListHealthRequest)(nil),       // 25: zcard.api.admin.v1.ListHealthRequest
+	(*HealthItem)(nil),              // 26: zcard.api.admin.v1.HealthItem
+	(*ListHealthReply)(nil),         // 27: zcard.api.admin.v1.ListHealthReply
+	nil,                             // 28: zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
+	(*emptypb.Empty)(nil),           // 29: google.protobuf.Empty
 }
 var file_admin_v1_supply_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListConnectionsReply.connections:type_name -> zcard.api.admin.v1.SupplyConnection
 	8,  // 1: zcard.api.admin.v1.ListMappingsReply.mappings:type_name -> zcard.api.admin.v1.SupplyMapping
-	13, // 2: zcard.api.admin.v1.ListSyncTasksReply.tasks:type_name -> zcard.api.admin.v1.SupplySyncTask
-	20, // 3: zcard.api.admin.v1.ListHealthReply.items:type_name -> zcard.api.admin.v1.HealthItem
-	1,  // 4: zcard.api.admin.v1.AdminSupplyService.CreateConnection:input_type -> zcard.api.admin.v1.CreateConnectionRequest
-	2,  // 5: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:input_type -> zcard.api.admin.v1.UpdateConnectionRequest
-	3,  // 6: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:input_type -> zcard.api.admin.v1.DeleteConnectionRequest
-	4,  // 7: zcard.api.admin.v1.AdminSupplyService.ListConnections:input_type -> zcard.api.admin.v1.ListConnectionsRequest
-	6,  // 8: zcard.api.admin.v1.AdminSupplyService.PingConnection:input_type -> zcard.api.admin.v1.PingConnectionRequest
-	9,  // 9: zcard.api.admin.v1.AdminSupplyService.ListMappings:input_type -> zcard.api.admin.v1.ListMappingsRequest
-	11, // 10: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:input_type -> zcard.api.admin.v1.UpsertMappingRequest
-	12, // 11: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:input_type -> zcard.api.admin.v1.DeleteMappingRequest
-	14, // 12: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:input_type -> zcard.api.admin.v1.CreateSyncTaskRequest
-	15, // 13: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:input_type -> zcard.api.admin.v1.ListSyncTasksRequest
-	17, // 14: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:input_type -> zcard.api.admin.v1.GetSyncTaskRequest
-	18, // 15: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:input_type -> zcard.api.admin.v1.CancelSyncTaskRequest
-	19, // 16: zcard.api.admin.v1.AdminSupplyService.ListHealth:input_type -> zcard.api.admin.v1.ListHealthRequest
-	0,  // 17: zcard.api.admin.v1.AdminSupplyService.CreateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
-	0,  // 18: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
-	22, // 19: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:output_type -> google.protobuf.Empty
-	5,  // 20: zcard.api.admin.v1.AdminSupplyService.ListConnections:output_type -> zcard.api.admin.v1.ListConnectionsReply
-	7,  // 21: zcard.api.admin.v1.AdminSupplyService.PingConnection:output_type -> zcard.api.admin.v1.PingConnectionReply
-	10, // 22: zcard.api.admin.v1.AdminSupplyService.ListMappings:output_type -> zcard.api.admin.v1.ListMappingsReply
-	8,  // 23: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:output_type -> zcard.api.admin.v1.SupplyMapping
-	22, // 24: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:output_type -> google.protobuf.Empty
-	13, // 25: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	16, // 26: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:output_type -> zcard.api.admin.v1.ListSyncTasksReply
-	13, // 27: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	13, // 28: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	21, // 29: zcard.api.admin.v1.AdminSupplyService.ListHealth:output_type -> zcard.api.admin.v1.ListHealthReply
-	17, // [17:30] is the sub-list for method output_type
-	4,  // [4:17] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	16, // 2: zcard.api.admin.v1.PreviewCategory.products:type_name -> zcard.api.admin.v1.PreviewProduct
+	17, // 3: zcard.api.admin.v1.PreviewProductsReply.categories:type_name -> zcard.api.admin.v1.PreviewCategory
+	28, // 4: zcard.api.admin.v1.ImportProductsRequest.category_map:type_name -> zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
+	13, // 5: zcard.api.admin.v1.ListSyncTasksReply.tasks:type_name -> zcard.api.admin.v1.SupplySyncTask
+	26, // 6: zcard.api.admin.v1.ListHealthReply.items:type_name -> zcard.api.admin.v1.HealthItem
+	1,  // 7: zcard.api.admin.v1.AdminSupplyService.CreateConnection:input_type -> zcard.api.admin.v1.CreateConnectionRequest
+	2,  // 8: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:input_type -> zcard.api.admin.v1.UpdateConnectionRequest
+	3,  // 9: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:input_type -> zcard.api.admin.v1.DeleteConnectionRequest
+	4,  // 10: zcard.api.admin.v1.AdminSupplyService.ListConnections:input_type -> zcard.api.admin.v1.ListConnectionsRequest
+	6,  // 11: zcard.api.admin.v1.AdminSupplyService.PingConnection:input_type -> zcard.api.admin.v1.PingConnectionRequest
+	9,  // 12: zcard.api.admin.v1.AdminSupplyService.ListMappings:input_type -> zcard.api.admin.v1.ListMappingsRequest
+	11, // 13: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:input_type -> zcard.api.admin.v1.UpsertMappingRequest
+	12, // 14: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:input_type -> zcard.api.admin.v1.DeleteMappingRequest
+	14, // 15: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:input_type -> zcard.api.admin.v1.CreateSyncTaskRequest
+	21, // 16: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:input_type -> zcard.api.admin.v1.ListSyncTasksRequest
+	23, // 17: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:input_type -> zcard.api.admin.v1.GetSyncTaskRequest
+	24, // 18: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:input_type -> zcard.api.admin.v1.CancelSyncTaskRequest
+	15, // 19: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:input_type -> zcard.api.admin.v1.PreviewProductsRequest
+	19, // 20: zcard.api.admin.v1.AdminSupplyService.ImportProducts:input_type -> zcard.api.admin.v1.ImportProductsRequest
+	25, // 21: zcard.api.admin.v1.AdminSupplyService.ListHealth:input_type -> zcard.api.admin.v1.ListHealthRequest
+	0,  // 22: zcard.api.admin.v1.AdminSupplyService.CreateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
+	0,  // 23: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
+	29, // 24: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:output_type -> google.protobuf.Empty
+	5,  // 25: zcard.api.admin.v1.AdminSupplyService.ListConnections:output_type -> zcard.api.admin.v1.ListConnectionsReply
+	7,  // 26: zcard.api.admin.v1.AdminSupplyService.PingConnection:output_type -> zcard.api.admin.v1.PingConnectionReply
+	10, // 27: zcard.api.admin.v1.AdminSupplyService.ListMappings:output_type -> zcard.api.admin.v1.ListMappingsReply
+	8,  // 28: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:output_type -> zcard.api.admin.v1.SupplyMapping
+	29, // 29: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:output_type -> google.protobuf.Empty
+	13, // 30: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	22, // 31: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:output_type -> zcard.api.admin.v1.ListSyncTasksReply
+	13, // 32: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	13, // 33: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	18, // 34: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:output_type -> zcard.api.admin.v1.PreviewProductsReply
+	20, // 35: zcard.api.admin.v1.AdminSupplyService.ImportProducts:output_type -> zcard.api.admin.v1.ImportProductsReply
+	27, // 36: zcard.api.admin.v1.AdminSupplyService.ListHealth:output_type -> zcard.api.admin.v1.ListHealthReply
+	22, // [22:37] is the sub-list for method output_type
+	7,  // [7:22] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_supply_proto_init() }
@@ -2194,7 +2755,7 @@ func file_admin_v1_supply_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_supply_proto_rawDesc), len(file_admin_v1_supply_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

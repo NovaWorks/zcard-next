@@ -6,7 +6,11 @@ const BASE = '/api/v1/storefront';
 const TOKEN_KEY = 'zcard_token';
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null; // 存储不可用（隐私模式等）：视为游客
+  }
 }
 
 export function setToken(token: string) {
@@ -22,7 +26,7 @@ interface ApiResult<T> {
   error: string | null;
 }
 
-async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>): Promise<ApiResult<T>> {
+async function request<T>(method: string, path: string, body?: unknown, params?: Record<string, string | number | boolean | undefined>, silent = false): Promise<ApiResult<T>> {
   let url = `${BASE}${path}`;
   if (params) {
     const q = new URLSearchParams();
@@ -50,11 +54,14 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
       json = text;
     }
     if (!res.ok) {
-      // token 过期/失效：清态跳登录（带回跳）；无 token 的 401 属游客端点误触，不动
+      // token 过期/失效：清态跳登录（带回跳）；silent 模式（购物车等游客可降级
+      // 端点）只清 token 不跳转——由调用方降级游客本地购物车；无 token 的 401 不动
       if (res.status === 401 && token) {
         clearToken();
-        const redirect = encodeURIComponent(location.pathname + location.search);
-        location.href = `/login?redirect=${redirect}`;
+        if (!silent) {
+          const redirect = encodeURIComponent(location.pathname + location.search);
+          location.href = `/login?redirect=${redirect}`;
+        }
       }
       return { data: null, error: json?.message || json?.error || `HTTP ${res.status}` };
     }
@@ -67,7 +74,11 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
 export const api = {
   get: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params),
   post: <T>(path: string, body: unknown) => request<T>('POST', path, body),
-  delete_: <T>(path: string) => request<T>('DELETE', path)
+  delete_: <T>(path: string) => request<T>('DELETE', path),
+  // silent 变体：401 只清 token 不跳登录（游客可降级端点在调用方处理）
+  getSilent: <T>(path: string, params?: Record<string, string | number | boolean | undefined>) => request<T>('GET', path, undefined, params, true),
+  postSilent: <T>(path: string, body: unknown) => request<T>('POST', path, body, undefined, true),
+  deleteSilent: <T>(path: string) => request<T>('DELETE', path, undefined, undefined, true)
 };
 
 // ── 金额工具（铁律 15：API 一律 int64「分」，显示 /100 为元、提交 *100 为分）──
@@ -95,7 +106,9 @@ export function getCurrency(): CurrencyMeta {
 }
 
 // fenToYuan 分 → 元字符串（不含符号；纯整数运算，禁止浮点参与）。
+// undefined/NaN 兜底 0（proto3 零值字段省略 → undefined 传入时显示 0.00 而非 NaN）。
 export function fenToYuan(cents: number): string {
+  if (!Number.isFinite(cents as number)) cents = 0;
   const neg = cents < 0;
   const v = Math.abs(cents);
   const base = 10 ** currencyMeta.precision;
@@ -109,12 +122,12 @@ export function fenToYuan(cents: number): string {
 
 // yuanToFen 元 → 分（提交入口；Math.round 防浮点漂移，如 12.34*100=1233.9999...）。
 export function yuanToFen(yuan: number): number {
-  return Math.round(yuan * 10 ** currencyMeta.precision);
+  return Math.round((yuan || 0) * 10 ** currencyMeta.precision);
 }
 
 // centsToYuan 分 → 元数值（输入框回填/图表数据用；界面展示一律走 formatMoney）。
 export function centsToYuan(cents: number): number {
-  return cents / 10 ** currencyMeta.precision;
+  return (Number.isFinite(cents as number) ? cents : 0) / 10 ** currencyMeta.precision;
 }
 
 // formatMoney 带符号格式化（显示唯一入口；符号位置感知）。

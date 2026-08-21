@@ -98,6 +98,8 @@ func (Withdrawal) Fields() []ent.Field {
 		field.String("reject_reason").MaxLen(255).Optional(),
 		field.Time("paid_at").SchemaType(mysqlTime).Optional(),
 		field.Time("reviewed_at").SchemaType(mysqlTime).Optional(),
+		// 打款回执（交易流水号/凭证备注；打款时填写，客户记录展示）
+		field.String("receipt").MaxLen(255).Optional(),
 	}
 }
 

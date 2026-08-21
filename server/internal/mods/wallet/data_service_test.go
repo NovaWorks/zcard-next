@@ -60,7 +60,7 @@ func newStoreWalletService(t *testing.T, payer paymentport.RechargePayer) (*Stor
 	d := newTestData(t)
 	repo := NewWalletRepoImpl(d)
 	// 支付管线未装配（payer=nil）——充值 fail-closed 测试只验证档位与零入账
-	return NewStoreWalletService(repo, d, nil, payer, nil), repo
+	return NewStoreWalletService(repo, d, nil, payer, nil, nil), repo
 }
 
 func userCtx(uid uint64) context.Context {

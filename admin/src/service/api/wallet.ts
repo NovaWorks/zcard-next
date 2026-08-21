@@ -62,8 +62,8 @@ export function reviewWithdrawal(id: number, approve: boolean, reason?: string) 
   return request({ url: `/api/v1/admin/wallet/withdrawals/${id}/review`, method: "post", data: { approve, reason } });
 }
 
-export function payWithdrawal(id: number) {
-  return request({ url: `/api/v1/admin/wallet/withdrawals/${id}/pay`, method: "post", data: {} });
+export function payWithdrawal(id: number, receipt?: string) {
+  return request({ url: `/api/v1/admin/wallet/withdrawals/${id}/pay`, method: "post", data: { receipt } });
 }
 
 // ── 礼品卡（giftcard:read / write）──

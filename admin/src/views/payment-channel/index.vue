@@ -101,7 +101,7 @@ const form = reactive({
   enabled: true,
   fee_type: "fixed",
   fee: 0,
-  values: {} as Record<string, string | string[]>,
+  values: {} as Record<string, any>,
 });
 
 // 动态选项（epusdt network/token——以网关 supported_assets 为准；失败回落静态 + 提示）
@@ -519,8 +519,7 @@ onMounted(() => {
         <!-- 回调地址（配置到支付平台 webhook/notify） -->
         <template v-if="current?.callback_url">
           <NDivider title-placement="left" style="margin: 4px 0 16px">回调地址</NDivider>
-          <NAlert type="info" :show-icon="true" style="margin-bottom: 16px">
-            <template #title>异步通知回调地址</template>
+          <NAlert type="info" :show-icon="true" title="异步通知回调地址" style="margin-bottom: 16px">
             <div class="text-12px opacity-70 mb-8px">将该地址配置到支付平台的 webhook / 异步通知，用于接收支付结果</div>
             <div class="flex items-center gap-8px">
               <code class="flex-1 text-12px break-all select-all bg-#f1f5f9 dark:bg-#333 rounded-6px px-8px py-6px">

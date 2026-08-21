@@ -9,6 +9,10 @@
         <input class="input" v-model="email" type="email" placeholder="you@example.com" @keyup.enter="sendCode" />
         <div class="muted">若该邮箱已注册，验证码将发送至邮箱（15 分钟内有效）</div>
       </div>
+      <div v-if="captchaCfg.reset" class="field">
+        <label>图形验证码 *</label>
+        <CaptchaInput ref="captchaRef" @update:code="captchaCode = $event" @update:captcha-id="captchaId = $event" />
+      </div>
       <div v-if="error" class="error" style="margin-bottom: 8px;">{{ error }}</div>
       <button class="btn" style="width: 100%; margin-top: 8px;" :disabled="sending" @click="sendCode">
         {{ sending ? '发送中…' : '发送验证码' }}
@@ -48,9 +52,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { forgotPassword, resetPassword } from '@/api';
+import CaptchaInput from '@/components/CaptchaInput.vue';
+import { forgotPassword, resetPassword, fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import { setToken } from '@/api/client';
 import { refreshAuth } from '@/auth';
 
@@ -62,6 +67,14 @@ const newPassword = ref('');
 const confirmPassword = ref('');
 const error = ref('');
 const sending = ref(false);
+const captchaCfg = ref<CaptchaConfig>({ login: false, register: true, order: false, reset: true });
+const captchaId = ref('');
+const captchaCode = ref('');
+const captchaRef = ref<InstanceType<typeof CaptchaInput> | null>(null);
+
+onMounted(async () => {
+  captchaCfg.value = await fetchCaptchaConfig();
+});
 const resetting = ref(false);
 const cooldown = ref(0);
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -83,7 +96,7 @@ async function sendCode() {
   }
   sending.value = true;
   error.value = '';
-  const { error: err } = await forgotPassword(email.value.trim());
+  const { error: err } = await forgotPassword(email.value.trim(), captchaCfg.value.reset ? { captcha_id: captchaId.value, captcha_code: captchaCode.value } : undefined);
   sending.value = false;
   // 防枚举：任何输入都成功——不区分"邮箱不存在"
   if (err) {

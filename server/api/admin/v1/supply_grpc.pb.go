@@ -32,6 +32,8 @@ const (
 	AdminSupplyService_ListSyncTasks_FullMethodName    = "/zcard.api.admin.v1.AdminSupplyService/ListSyncTasks"
 	AdminSupplyService_GetSyncTask_FullMethodName      = "/zcard.api.admin.v1.AdminSupplyService/GetSyncTask"
 	AdminSupplyService_CancelSyncTask_FullMethodName   = "/zcard.api.admin.v1.AdminSupplyService/CancelSyncTask"
+	AdminSupplyService_PreviewProducts_FullMethodName  = "/zcard.api.admin.v1.AdminSupplyService/PreviewProducts"
+	AdminSupplyService_ImportProducts_FullMethodName   = "/zcard.api.admin.v1.AdminSupplyService/ImportProducts"
 	AdminSupplyService_ListHealth_FullMethodName       = "/zcard.api.admin.v1.AdminSupplyService/ListHealth"
 )
 
@@ -69,6 +71,10 @@ type AdminSupplyServiceClient interface {
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(ctx context.Context, in *CancelSyncTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...grpc.CallOption) (*PreviewProductsReply, error)
+	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	ImportProducts(ctx context.Context, in *ImportProductsRequest, opts ...grpc.CallOption) (*ImportProductsReply, error)
 	ListHealth(ctx context.Context, in *ListHealthRequest, opts ...grpc.CallOption) (*ListHealthReply, error)
 }
 
@@ -200,6 +206,26 @@ func (c *adminSupplyServiceClient) CancelSyncTask(ctx context.Context, in *Cance
 	return out, nil
 }
 
+func (c *adminSupplyServiceClient) PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...grpc.CallOption) (*PreviewProductsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PreviewProductsReply)
+	err := c.cc.Invoke(ctx, AdminSupplyService_PreviewProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSupplyServiceClient) ImportProducts(ctx context.Context, in *ImportProductsRequest, opts ...grpc.CallOption) (*ImportProductsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportProductsReply)
+	err := c.cc.Invoke(ctx, AdminSupplyService_ImportProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminSupplyServiceClient) ListHealth(ctx context.Context, in *ListHealthRequest, opts ...grpc.CallOption) (*ListHealthReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListHealthReply)
@@ -244,6 +270,10 @@ type AdminSupplyServiceServer interface {
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(context.Context, *CancelSyncTaskRequest) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
+	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	ImportProducts(context.Context, *ImportProductsRequest) (*ImportProductsReply, error)
 	ListHealth(context.Context, *ListHealthRequest) (*ListHealthReply, error)
 	mustEmbedUnimplementedAdminSupplyServiceServer()
 }
@@ -290,6 +320,12 @@ func (UnimplementedAdminSupplyServiceServer) GetSyncTask(context.Context, *GetSy
 }
 func (UnimplementedAdminSupplyServiceServer) CancelSyncTask(context.Context, *CancelSyncTaskRequest) (*SupplySyncTask, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelSyncTask not implemented")
+}
+func (UnimplementedAdminSupplyServiceServer) PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewProducts not implemented")
+}
+func (UnimplementedAdminSupplyServiceServer) ImportProducts(context.Context, *ImportProductsRequest) (*ImportProductsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportProducts not implemented")
 }
 func (UnimplementedAdminSupplyServiceServer) ListHealth(context.Context, *ListHealthRequest) (*ListHealthReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListHealth not implemented")
@@ -531,6 +567,42 @@ func _AdminSupplyService_CancelSyncTask_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSupplyService_PreviewProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplyServiceServer).PreviewProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplyService_PreviewProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplyServiceServer).PreviewProducts(ctx, req.(*PreviewProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminSupplyService_ImportProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplyServiceServer).ImportProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplyService_ImportProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplyServiceServer).ImportProducts(ctx, req.(*ImportProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminSupplyService_ListHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListHealthRequest)
 	if err := dec(in); err != nil {
@@ -603,6 +675,14 @@ var AdminSupplyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelSyncTask",
 			Handler:    _AdminSupplyService_CancelSyncTask_Handler,
+		},
+		{
+			MethodName: "PreviewProducts",
+			Handler:    _AdminSupplyService_PreviewProducts_Handler,
+		},
+		{
+			MethodName: "ImportProducts",
+			Handler:    _AdminSupplyService_ImportProducts_Handler,
 		},
 		{
 			MethodName: "ListHealth",

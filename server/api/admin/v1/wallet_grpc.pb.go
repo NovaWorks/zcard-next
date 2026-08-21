@@ -19,14 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminWalletService_GetBalance_FullMethodName          = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
-	AdminWalletService_Adjust_FullMethodName              = "/zcard.api.admin.v1.AdminWalletService/Adjust"
-	AdminWalletService_ListTransactions_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
 	AdminWalletService_ListWithdrawals_FullMethodName     = "/zcard.api.admin.v1.AdminWalletService/ListWithdrawals"
 	AdminWalletService_ReviewWithdrawal_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/ReviewWithdrawal"
 	AdminWalletService_PayWithdrawal_FullMethodName       = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
 	AdminWalletService_CreateGiftcardBatch_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch"
 	AdminWalletService_ListGiftcardBatches_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
+	AdminWalletService_GetBalance_FullMethodName          = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
+	AdminWalletService_Adjust_FullMethodName              = "/zcard.api.admin.v1.AdminWalletService/Adjust"
+	AdminWalletService_ListTransactions_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
 )
 
 // AdminWalletServiceClient is the client API for AdminWalletService service.
@@ -34,13 +34,12 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+//
+// 路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
+// gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
+// 声明在含 {user_id} 通配段的方法之前，否则 /wallet/withdrawals 等会被
+// /wallet/{user_id} 吞掉并误解析为 CODEC 400。
 type AdminWalletServiceClient interface {
-	// GetBalance 指定用户余额。
-	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error)
-	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
-	Adjust(ctx context.Context, in *AdjustRequest, opts ...grpc.CallOption) (*Balance, error)
-	// ListTransactions 指定用户流水。
-	ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error)
 	// ListWithdrawals 提现单列表（状态筛选）。
 	ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsReply, error)
 	// ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
@@ -51,6 +50,12 @@ type AdminWalletServiceClient interface {
 	CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*CreateGiftcardBatchReply, error)
 	// ListGiftcardBatches 批次列表。
 	ListGiftcardBatches(ctx context.Context, in *ListGiftcardBatchesRequest, opts ...grpc.CallOption) (*ListGiftcardBatchesReply, error)
+	// GetBalance 指定用户余额。
+	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error)
+	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
+	Adjust(ctx context.Context, in *AdjustRequest, opts ...grpc.CallOption) (*Balance, error)
+	// ListTransactions 指定用户流水。
+	ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error)
 }
 
 type adminWalletServiceClient struct {
@@ -59,36 +64,6 @@ type adminWalletServiceClient struct {
 
 func NewAdminWalletServiceClient(cc grpc.ClientConnInterface) AdminWalletServiceClient {
 	return &adminWalletServiceClient{cc}
-}
-
-func (c *adminWalletServiceClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Balance)
-	err := c.cc.Invoke(ctx, AdminWalletService_GetBalance_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminWalletServiceClient) Adjust(ctx context.Context, in *AdjustRequest, opts ...grpc.CallOption) (*Balance, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Balance)
-	err := c.cc.Invoke(ctx, AdminWalletService_Adjust_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *adminWalletServiceClient) ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListWalletTxReply)
-	err := c.cc.Invoke(ctx, AdminWalletService_ListTransactions_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *adminWalletServiceClient) ListWithdrawals(ctx context.Context, in *ListWithdrawalsRequest, opts ...grpc.CallOption) (*ListWithdrawalsReply, error) {
@@ -141,18 +116,47 @@ func (c *adminWalletServiceClient) ListGiftcardBatches(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *adminWalletServiceClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Balance)
+	err := c.cc.Invoke(ctx, AdminWalletService_GetBalance_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminWalletServiceClient) Adjust(ctx context.Context, in *AdjustRequest, opts ...grpc.CallOption) (*Balance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Balance)
+	err := c.cc.Invoke(ctx, AdminWalletService_Adjust_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminWalletServiceClient) ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWalletTxReply)
+	err := c.cc.Invoke(ctx, AdminWalletService_ListTransactions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminWalletServiceServer is the server API for AdminWalletService service.
 // All implementations must embed UnimplementedAdminWalletServiceServer
 // for forward compatibility.
 //
 // AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+//
+// 路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
+// gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
+// 声明在含 {user_id} 通配段的方法之前，否则 /wallet/withdrawals 等会被
+// /wallet/{user_id} 吞掉并误解析为 CODEC 400。
 type AdminWalletServiceServer interface {
-	// GetBalance 指定用户余额。
-	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
-	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
-	Adjust(context.Context, *AdjustRequest) (*Balance, error)
-	// ListTransactions 指定用户流水。
-	ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error)
 	// ListWithdrawals 提现单列表（状态筛选）。
 	ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsReply, error)
 	// ReviewWithdrawal 审核（通过→approved 保持锁定；驳回→rejected 解锁回余额）。
@@ -163,6 +167,12 @@ type AdminWalletServiceServer interface {
 	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error)
 	// ListGiftcardBatches 批次列表。
 	ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error)
+	// GetBalance 指定用户余额。
+	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
+	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
+	Adjust(context.Context, *AdjustRequest) (*Balance, error)
+	// ListTransactions 指定用户流水。
+	ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error)
 	mustEmbedUnimplementedAdminWalletServiceServer()
 }
 
@@ -173,15 +183,6 @@ type AdminWalletServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminWalletServiceServer struct{}
 
-func (UnimplementedAdminWalletServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*Balance, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetBalance not implemented")
-}
-func (UnimplementedAdminWalletServiceServer) Adjust(context.Context, *AdjustRequest) (*Balance, error) {
-	return nil, status.Error(codes.Unimplemented, "method Adjust not implemented")
-}
-func (UnimplementedAdminWalletServiceServer) ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListTransactions not implemented")
-}
 func (UnimplementedAdminWalletServiceServer) ListWithdrawals(context.Context, *ListWithdrawalsRequest) (*ListWithdrawalsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListWithdrawals not implemented")
 }
@@ -196,6 +197,15 @@ func (UnimplementedAdminWalletServiceServer) CreateGiftcardBatch(context.Context
 }
 func (UnimplementedAdminWalletServiceServer) ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListGiftcardBatches not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*Balance, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBalance not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) Adjust(context.Context, *AdjustRequest) (*Balance, error) {
+	return nil, status.Error(codes.Unimplemented, "method Adjust not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTransactions not implemented")
 }
 func (UnimplementedAdminWalletServiceServer) mustEmbedUnimplementedAdminWalletServiceServer() {}
 func (UnimplementedAdminWalletServiceServer) testEmbeddedByValue()                            {}
@@ -216,60 +226,6 @@ func RegisterAdminWalletServiceServer(s grpc.ServiceRegistrar, srv AdminWalletSe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminWalletService_ServiceDesc, srv)
-}
-
-func _AdminWalletService_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBalanceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminWalletServiceServer).GetBalance(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminWalletService_GetBalance_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminWalletServiceServer).GetBalance(ctx, req.(*GetBalanceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminWalletService_Adjust_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AdjustRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminWalletServiceServer).Adjust(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminWalletService_Adjust_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminWalletServiceServer).Adjust(ctx, req.(*AdjustRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AdminWalletService_ListTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListWalletTxRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AdminWalletServiceServer).ListTransactions(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AdminWalletService_ListTransactions_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminWalletServiceServer).ListTransactions(ctx, req.(*ListWalletTxRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminWalletService_ListWithdrawals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -362,6 +318,60 @@ func _AdminWalletService_ListGiftcardBatches_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminWalletService_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBalanceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).GetBalance(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_GetBalance_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).GetBalance(ctx, req.(*GetBalanceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminWalletService_Adjust_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdjustRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).Adjust(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_Adjust_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).Adjust(ctx, req.(*AdjustRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminWalletService_ListTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWalletTxRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).ListTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_ListTransactions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).ListTransactions(ctx, req.(*ListWalletTxRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminWalletService_ServiceDesc is the grpc.ServiceDesc for AdminWalletService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -369,18 +379,6 @@ var AdminWalletService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminWalletService",
 	HandlerType: (*AdminWalletServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetBalance",
-			Handler:    _AdminWalletService_GetBalance_Handler,
-		},
-		{
-			MethodName: "Adjust",
-			Handler:    _AdminWalletService_Adjust_Handler,
-		},
-		{
-			MethodName: "ListTransactions",
-			Handler:    _AdminWalletService_ListTransactions_Handler,
-		},
 		{
 			MethodName: "ListWithdrawals",
 			Handler:    _AdminWalletService_ListWithdrawals_Handler,
@@ -400,6 +398,18 @@ var AdminWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListGiftcardBatches",
 			Handler:    _AdminWalletService_ListGiftcardBatches_Handler,
+		},
+		{
+			MethodName: "GetBalance",
+			Handler:    _AdminWalletService_GetBalance_Handler,
+		},
+		{
+			MethodName: "Adjust",
+			Handler:    _AdminWalletService_Adjust_Handler,
+		},
+		{
+			MethodName: "ListTransactions",
+			Handler:    _AdminWalletService_ListTransactions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

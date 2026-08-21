@@ -38,6 +38,8 @@ const (
 	FieldExchangeRate = "exchange_rate"
 	// FieldPriceMarkupPercent holds the string denoting the price_markup_percent field in the database.
 	FieldPriceMarkupPercent = "price_markup_percent"
+	// FieldPriceMarkupAmount holds the string denoting the price_markup_amount field in the database.
+	FieldPriceMarkupAmount = "price_markup_amount"
 	// FieldPriceRoundingMode holds the string denoting the price_rounding_mode field in the database.
 	FieldPriceRoundingMode = "price_rounding_mode"
 	// FieldAutoSyncPrice holds the string denoting the auto_sync_price field in the database.
@@ -56,6 +58,16 @@ const (
 	FieldLastError = "last_error"
 	// FieldBalanceCache holds the string denoting the balance_cache field in the database.
 	FieldBalanceCache = "balance_cache"
+	// FieldLastCollectAt holds the string denoting the last_collect_at field in the database.
+	FieldLastCollectAt = "last_collect_at"
+	// FieldLastPriceSyncAt holds the string denoting the last_price_sync_at field in the database.
+	FieldLastPriceSyncAt = "last_price_sync_at"
+	// FieldLastStatusSyncAt holds the string denoting the last_status_sync_at field in the database.
+	FieldLastStatusSyncAt = "last_status_sync_at"
+	// FieldRateState holds the string denoting the rate_state field in the database.
+	FieldRateState = "rate_state"
+	// FieldRateLimitUntil holds the string denoting the rate_limit_until field in the database.
+	FieldRateLimitUntil = "rate_limit_until"
 	// Table holds the table name of the supplyconnection in the database.
 	Table = "supply_connections"
 )
@@ -75,6 +87,7 @@ var Columns = []string{
 	FieldRetryIntervals,
 	FieldExchangeRate,
 	FieldPriceMarkupPercent,
+	FieldPriceMarkupAmount,
 	FieldPriceRoundingMode,
 	FieldAutoSyncPrice,
 	FieldStockMode,
@@ -84,6 +97,11 @@ var Columns = []string{
 	FieldLastSyncedAt,
 	FieldLastError,
 	FieldBalanceCache,
+	FieldLastCollectAt,
+	FieldLastPriceSyncAt,
+	FieldLastStatusSyncAt,
+	FieldRateState,
+	FieldRateLimitUntil,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -121,6 +139,8 @@ var (
 	DefaultExchangeRate float64
 	// DefaultPriceMarkupPercent holds the default value on creation for the "price_markup_percent" field.
 	DefaultPriceMarkupPercent float64
+	// DefaultPriceMarkupAmount holds the default value on creation for the "price_markup_amount" field.
+	DefaultPriceMarkupAmount int64
 	// DefaultAutoSyncPrice holds the default value on creation for the "auto_sync_price" field.
 	DefaultAutoSyncPrice bool
 	// DefaultLastPingOk holds the default value on creation for the "last_ping_ok" field.
@@ -271,6 +291,11 @@ func ByPriceMarkupPercent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriceMarkupPercent, opts...).ToFunc()
 }
 
+// ByPriceMarkupAmount orders the results by the price_markup_amount field.
+func ByPriceMarkupAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPriceMarkupAmount, opts...).ToFunc()
+}
+
 // ByPriceRoundingMode orders the results by the price_rounding_mode field.
 func ByPriceRoundingMode(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPriceRoundingMode, opts...).ToFunc()
@@ -309,4 +334,24 @@ func ByLastError(opts ...sql.OrderTermOption) OrderOption {
 // ByBalanceCache orders the results by the balance_cache field.
 func ByBalanceCache(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBalanceCache, opts...).ToFunc()
+}
+
+// ByLastCollectAt orders the results by the last_collect_at field.
+func ByLastCollectAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastCollectAt, opts...).ToFunc()
+}
+
+// ByLastPriceSyncAt orders the results by the last_price_sync_at field.
+func ByLastPriceSyncAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastPriceSyncAt, opts...).ToFunc()
+}
+
+// ByLastStatusSyncAt orders the results by the last_status_sync_at field.
+func ByLastStatusSyncAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastStatusSyncAt, opts...).ToFunc()
+}
+
+// ByRateLimitUntil orders the results by the rate_limit_until field.
+func ByRateLimitUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRateLimitUntil, opts...).ToFunc()
 }

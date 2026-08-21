@@ -9,22 +9,12 @@ import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
 // AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+//
+// 路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
+// gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
+// 声明在含 {user_id} 通配段的方法之前，否则 /wallet/withdrawals 等会被
+// /wallet/{user_id} 吞掉并误解析为 CODEC 400。
 service AdminWalletService {
-  // GetBalance 指定用户余额。
-  rpc GetBalance(GetBalanceRequest) returns (Balance) {
-    option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}" };
-  }
-  // Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
-  rpc Adjust(AdjustRequest) returns (Balance) {
-    option (google.api.http) = {
-      post: "/api/v1/admin/wallet/{user_id}/adjust"
-      body: "*"
-    };
-  }
-  // ListTransactions 指定用户流水。
-  rpc ListTransactions(ListWalletTxRequest) returns (ListWalletTxReply) {
-    option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}/transactions" };
-  }
   // ListWithdrawals 提现单列表（状态筛选）。
   rpc ListWithdrawals(ListWithdrawalsRequest) returns (ListWithdrawalsReply) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/withdrawals" };
@@ -53,6 +43,21 @@ service AdminWalletService {
   // ListGiftcardBatches 批次列表。
   rpc ListGiftcardBatches(ListGiftcardBatchesRequest) returns (ListGiftcardBatchesReply) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/giftcard-batches" };
+  }
+  // GetBalance 指定用户余额。
+  rpc GetBalance(GetBalanceRequest) returns (Balance) {
+    option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}" };
+  }
+  // Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
+  rpc Adjust(AdjustRequest) returns (Balance) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/wallet/{user_id}/adjust"
+      body: "*"
+    };
+  }
+  // ListTransactions 指定用户流水。
+  rpc ListTransactions(ListWalletTxRequest) returns (ListWalletTxReply) {
+    option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}/transactions" };
   }
 }
 
@@ -103,15 +108,19 @@ message ListWithdrawalsReply {
 message WithdrawalItem {
   uint64 id = 1;
   uint64 user_id = 2;
+  string username = 12;  // 用户名（列表富化）
   int64 amount_cents = 3;
   int64 fee_cents = 4;
   string method_type = 5;
+  string method_name = 13; // 收款方式显示名
   string account = 6;
+  string qr_code_url = 14; // 收款码图片（微信/支付宝；审核展示）
   string status = 7; // pending | approved | paid | rejected
   string reject_reason = 8;
   int64 reviewed_at = 9;
   int64 paid_at = 10;
   int64 created_at = 11;
+  string receipt = 15; // 打款回执（流水号/备注）
 }
 
 message ReviewWithdrawalRequest {
@@ -122,6 +131,7 @@ message ReviewWithdrawalRequest {
 
 message PayWithdrawalRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string receipt = 2; // 打款回执（交易流水号/凭证备注；客户可见）
 }
 
 message GetBalanceRequest {

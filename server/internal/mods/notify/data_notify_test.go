@@ -5,6 +5,7 @@ package notify
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -35,10 +36,18 @@ func newNotifyRepo(t *testing.T) *NotifyRepo {
 	return NewNotifyRepo(&data.Data{Client: client, DB: handle, Dialect: db.SQLite})
 }
 
-// fakeSettings 可编程配置读取器。
-type fakeSettings struct{ raw []byte }
+// fakeSettings 可编程配置读取器（values["group.key"] 优先；未命中回退 raw——兼容旧单键测试）。
+type fakeSettings struct {
+	raw    []byte
+	values map[string]string // "group.key" → JSON 原文
+}
 
-func (f fakeSettings) GetJSON(_ context.Context, _, _ string) ([]byte, error) { return f.raw, nil }
+func (f fakeSettings) GetJSON(_ context.Context, group, key string) ([]byte, error) {
+	if v, ok := f.values[group+"."+key]; ok {
+		return []byte(v), nil
+	}
+	return f.raw, nil
+}
 
 // TestEmailSkipped SMTP 未配置 → ErrSkipped（降级不报错不重试）。
 func TestEmailSkipped(t *testing.T) {
@@ -212,6 +221,85 @@ func TestSMSChannelSkipped(t *testing.T) {
 	ch := NewSMSChannel(fakeSettings{})
 	if err := ch.Deliver(context.Background(), notifyport.Message{Recipient: "13800138000"}); err != ErrSkipped {
 		t.Fatalf("未配置应 skipped: %v", err)
+	}
+	// 仅有服务商无凭据 → 同样 skipped
+	ch2 := NewSMSChannel(fakeSettings{values: map[string]string{"notify.sms_provider": `"tencent"`}})
+	if err := ch2.Deliver(context.Background(), notifyport.Message{Recipient: "13800138000"}); err != ErrSkipped {
+		t.Fatalf("缺凭据应 skipped: %v", err)
+	}
+}
+
+// TestSMSConfigFlatKeys 扁平键配置解析（后台「邮件短信」页保存口径）。
+func TestSMSConfigFlatKeys(t *testing.T) {
+	ch := NewSMSChannel(fakeSettings{values: map[string]string{
+		"notify.sms_provider":     `"tencent"`,
+		"notify.sms_key":          `"test-secret-id"`,
+		"notify.sms_secret":       `"test-secret-key"`,
+		"notify.sms_sign":         `"签名"`,
+		"notify.sms_template_code": `"TPL-1"`,
+		"notify.sms_sdk_app_id":   `"1400000000"`,
+	}})
+	cfg, err := ch.smsConfig(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Provider != "tencent" || cfg.AccessKey != "test-secret-id" ||
+		cfg.SdkAppID != "1400000000" || cfg.TemplateCode != "TPL-1" {
+		t.Fatalf("扁平键解析错误: %+v", cfg)
+	}
+}
+
+// TestSMSConfigLegacyFallback 旧版 notify.sms JSON blob 兼容（无扁平键时回退）。
+func TestSMSConfigLegacyFallback(t *testing.T) {
+	ch := NewSMSChannel(fakeSettings{raw: []byte(
+		`{"enabled":true,"access_key":"legacy-ak","access_secret":"legacy-sk","sign_name":"旧签名","template_code":"OLD"}`,
+	)})
+	cfg, err := ch.smsConfig(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Provider != "aliyun" || cfg.AccessKey != "legacy-ak" || cfg.AccessSecret != "legacy-sk" {
+		t.Fatalf("旧版回退解析错误: %+v", cfg)
+	}
+}
+
+// TestTencentSignGolden 腾讯云 TC3 签名 golden vector（Python 独立计算固化）。
+func TestTencentSignGolden(t *testing.T) {
+	payload, _ := json.Marshal(tencentSendSmsPayload{
+		PhoneNumberSet:   []string{"+8613800138000"},
+		SmsSdkAppId:      "1400000000",
+		SignName:         "测试签名",
+		TemplateId:       "123456",
+		TemplateParamSet: []string{"123456", "5"},
+	})
+	auth, err := tencentSign("AKIDz8krbsJ5yKBZQpn74WFkmLPx3EXAMPLE",
+		"Gu5t9xGARNpq86cd98joQYCN3EXAMPLE", 1551113065, payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "TC3-HMAC-SHA256 Credential=AKIDz8krbsJ5yKBZQpn74WFkmLPx3EXAMPLE/2019-02-25/sms/tc3_request, " +
+		"SignedHeaders=content-type;host, Signature=825c58ddc7c55bf5018a1af4d3b12393b1573c080cec7f54b528f453d1d5256b"
+	if auth != want {
+		t.Fatalf("腾讯云签名向量漂移:\n got %s\nwant %s", auth, want)
+	}
+}
+
+// TestQiniuSignGolden 七牛 QBox 签名 golden vector（Python 独立计算固化）。
+func TestQiniuSignGolden(t *testing.T) {
+	body := `{"signature_id":"sig-001","template_id":"tpl-001","mobiles":["13800138000"],"parameters":{"code":"123456","minutes":"5"}}`
+	auth := qiniuSign("test-access-key", "test-secret-key", body)
+	want := "Qiniu test-access-key:uxYCy-h01vyWBlDzHxacsQe9y0w="
+	if auth != want {
+		t.Fatalf("七牛签名向量漂移: got %s want %s", auth, want)
+	}
+}
+
+// TestTencentParamSet 模板变量位置数组（变量名字典序）。
+func TestTencentParamSet(t *testing.T) {
+	got := tencentParamSet(map[string]string{"minutes": "5", "code": "123456", "site": "ZCard"})
+	want := []string{"123456", "5", "ZCard"}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("位置数组错误: %v", got)
 	}
 }
 

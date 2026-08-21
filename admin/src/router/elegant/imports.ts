@@ -20,6 +20,7 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   500: () => import("@/views/_builtin/500/index.vue"),
   "iframe-page": () => import("@/views/_builtin/iframe-page/[url].vue"),
   login: () => import("@/views/_builtin/login/index.vue"),
+  channel: () => import("@/views/channel/index.vue"),
   home: () => import("@/views/home/index.vue"),
   inventory: () => import("@/views/inventory/index.vue"),
   marketing: () => import("@/views/marketing/index.vue"),
@@ -28,5 +29,6 @@ export const views: Record<LastLevelRouteKey, RouteComponent | (() => Promise<Ro
   product: () => import("@/views/product/index.vue"),
   settings: () => import("@/views/settings/index.vue"),
   staff: () => import("@/views/staff/index.vue"),
+  user: () => import("@/views/user/index.vue"),
   wallet: () => import("@/views/wallet/index.vue"),
 };

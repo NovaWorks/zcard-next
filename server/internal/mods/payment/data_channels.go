@@ -389,6 +389,12 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 		if p.RechargeOrderID > 0 {
 			return r.settleRecharge(txCtx, p, fact)
 		}
+		if fact.OrderNo == "" && p.OrderID > 0 {
+			// 钱包直付等内部路径 fact 不带单号——按支付单回填（MarkPaid 判据）
+			if o, err := client.Order.Get(txCtx, p.OrderID); err == nil {
+				fact.OrderNo = o.OrderNo
+			}
+		}
 		return r.settleOrder(txCtx, p, fact)
 	})
 }

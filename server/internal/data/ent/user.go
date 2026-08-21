@@ -25,6 +25,8 @@ type User struct {
 	Username string `json:"username,omitempty"`
 	// 第三方登录用户可无邮箱
 	Email string `json:"email,omitempty"`
+	// Phone holds the value of the "phone" field.
+	Phone string `json:"phone,omitempty"`
 	// 第三方登录用户可无密码
 	PasswordHash string `json:"password_hash,omitempty"`
 	// Status holds the value of the "status" field.
@@ -36,7 +38,9 @@ type User struct {
 	// InviteL2 holds the value of the "invite_l2" field.
 	InviteL2 uint64 `json:"invite_l2,omitempty"`
 	// InviteL3 holds the value of the "invite_l3" field.
-	InviteL3     uint64 `json:"invite_l3,omitempty"`
+	InviteL3 uint64 `json:"invite_l3,omitempty"`
+	// PromoCode holds the value of the "promo_code" field.
+	PromoCode    string `json:"promo_code,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -47,7 +51,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldID, user.FieldInviteL1, user.FieldInviteL2, user.FieldInviteL3:
 			values[i] = new(sql.NullInt64)
-		case user.FieldUsername, user.FieldEmail, user.FieldPasswordHash, user.FieldStatus:
+		case user.FieldUsername, user.FieldEmail, user.FieldPhone, user.FieldPasswordHash, user.FieldStatus, user.FieldPromoCode:
 			values[i] = new(sql.NullString)
 		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldLastLoginAt:
 			values[i] = new(sql.NullTime)
@@ -96,6 +100,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Email = value.String
 			}
+		case user.FieldPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field phone", values[i])
+			} else if value.Valid {
+				_m.Phone = value.String
+			}
 		case user.FieldPasswordHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
@@ -131,6 +141,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field invite_l3", values[i])
 			} else if value.Valid {
 				_m.InviteL3 = uint64(value.Int64)
+			}
+		case user.FieldPromoCode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field promo_code", values[i])
+			} else if value.Valid {
+				_m.PromoCode = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -180,6 +196,9 @@ func (_m *User) String() string {
 	builder.WriteString("email=")
 	builder.WriteString(_m.Email)
 	builder.WriteString(", ")
+	builder.WriteString("phone=")
+	builder.WriteString(_m.Phone)
+	builder.WriteString(", ")
 	builder.WriteString("password_hash=")
 	builder.WriteString(_m.PasswordHash)
 	builder.WriteString(", ")
@@ -197,6 +216,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("invite_l3=")
 	builder.WriteString(fmt.Sprintf("%v", _m.InviteL3))
+	builder.WriteString(", ")
+	builder.WriteString("promo_code=")
+	builder.WriteString(_m.PromoCode)
 	builder.WriteByte(')')
 	return builder.String()
 }

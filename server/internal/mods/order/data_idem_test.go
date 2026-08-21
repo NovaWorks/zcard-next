@@ -57,6 +57,7 @@ func TestCreateOrderIdempotency(t *testing.T) {
 	d, uc, _ := newIdemEnv(t)
 	ctx := context.Background()
 	in := CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID:         3,
 		Items:          []OrderItemInput{{ProductID: 1, Quantity: 1}},
 		IdempotencyKey: "dup-key-001",
@@ -78,6 +79,7 @@ func TestCreateOrderIdempotency(t *testing.T) {
 	}
 	// 不同 key 正常新单
 	other, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID: 3, Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}, IdempotencyKey: "dup-key-002",
 	})
 	if err != nil {
@@ -100,11 +102,11 @@ func TestExpireSlowChannelDeferral(t *testing.T) {
 	past := time.Now().UTC().Add(-2 * time.Hour)
 
 	// 单 A：epusdt 慢通道 pending 流水（应顺延）；单 B：无流水（应取消）
-	a, err := uc.CreateOrder(ctx, CreateOrderInput{UserID: 3, Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}})
+	a, err := uc.CreateOrder(ctx, CreateOrderInput{UserID: 3, QueryPassword: "test1234", Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := uc.CreateOrder(ctx, CreateOrderInput{UserID: 3, Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}})
+	b, err := uc.CreateOrder(ctx, CreateOrderInput{UserID: 3, QueryPassword: "test1234", Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +145,7 @@ func TestExpireSlowChannelDeferral(t *testing.T) {
 // TestMyOrdersAndOwnerFetch 我的订单列表 + 登录态本人取货免密码 + 用户取消。
 func TestMyOrdersAndOwnerFetch(t *testing.T) {
 	d, uc, _ := newIdemEnv(t)
-	svc := NewStoreOrderService(uc)
+	svc := NewStoreOrderService(uc, nil)
 	ctx := context.Background()
 
 	// 本人单（带查询密码）+ 他人单
@@ -197,6 +199,7 @@ func TestMyOrdersAndOwnerFetch(t *testing.T) {
 
 	// 非本人取消 → NOT_FOUND（不泄露存在性）
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID: 3,
 		Items:  []OrderItemInput{{ProductID: 1, Quantity: 1}},
 	}); err != nil {

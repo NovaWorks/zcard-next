@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 )
@@ -63,6 +64,25 @@ func (r *RepoImpl) Put(ctx context.Context, group, key string, value json.RawMes
 		OnConflict(sql.ConflictColumns(setting.FieldGroup, setting.FieldKey)).
 		UpdateValue().
 		Exec(ctx)
+}
+
+// CurrencyExists 货币是否存在（i18n.base_currency 写入校验）。
+func (r *RepoImpl) CurrencyExists(ctx context.Context, code string) (bool, error) {
+	return data.Client(ctx, r.data).Currency.Query().
+		Where(currency.Code(code)).
+		Exist(ctx)
+}
+
+// PutMany 批量写入（单事务原子；跨方言 upsert 复用 Put）。
+func (r *RepoImpl) PutMany(ctx context.Context, items []port.Item) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		for _, it := range items {
+			if err := r.Put(ctx, it.Group, it.Key, it.Value); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 // ── port.Provider 实现（跨模块读取入口，P0-04）─────────────────────

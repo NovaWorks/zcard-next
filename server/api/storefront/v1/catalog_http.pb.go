@@ -9,6 +9,7 @@ package storefrontv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -18,11 +19,14 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationStoreCatalogServiceGetProduct = "/zcard.api.storefront.v1.StoreCatalogService/GetProduct"
+const OperationStoreCatalogServiceListCategories = "/zcard.api.storefront.v1.StoreCatalogService/ListCategories"
 const OperationStoreCatalogServiceListProducts = "/zcard.api.storefront.v1.StoreCatalogService/ListProducts"
 
 type StoreCatalogServiceHTTPServer interface {
 	// GetProduct GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
+	// ListCategories ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+	ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error)
 	// ListProducts ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
 }
@@ -31,6 +35,7 @@ func RegisterStoreCatalogServiceHTTPServer(s *http.Server, srv StoreCatalogServi
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/storefront/products", _StoreCatalogService_ListProducts0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/storefront/products/{id}", _StoreCatalogService_GetProduct0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/storefront/categories", _StoreCatalogService_ListCategories0_HTTP_Handler(srv))
 }
 
 func _StoreCatalogService_ListProducts0_HTTP_Handler(srv StoreCatalogServiceHTTPServer) func(ctx http.Context) error {
@@ -74,9 +79,30 @@ func _StoreCatalogService_GetProduct0_HTTP_Handler(srv StoreCatalogServiceHTTPSe
 	}
 }
 
+func _StoreCatalogService_ListCategories0_HTTP_Handler(srv StoreCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStoreCatalogServiceListCategories)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListCategories(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListCategoriesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type StoreCatalogServiceHTTPClient interface {
 	// GetProduct GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
 	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *Product, err error)
+	// ListCategories ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListCategoriesReply, err error)
 	// ListProducts ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
 	ListProducts(ctx context.Context, req *ListProductsRequest, opts ...http.CallOption) (rsp *ListProductsReply, err error)
 }
@@ -97,6 +123,23 @@ func (c *StoreCatalogServiceHTTPClientImpl) GetProduct(ctx context.Context, in *
 	opts = append([]http.CallOption{
 		http.Accept("application/protojson"),
 		http.Operation(OperationStoreCatalogServiceGetProduct),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ListCategories ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+func (c *StoreCatalogServiceHTTPClientImpl) ListCategories(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*ListCategoriesReply, error) {
+	var out ListCategoriesReply
+	pattern := "/api/v1/storefront/categories"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationStoreCatalogServiceListCategories),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)

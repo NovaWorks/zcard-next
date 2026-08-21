@@ -4,17 +4,70 @@ package settings
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+// baseCurrencyDefault 基础货币默认 code（与 directory.go i18n.base_currency 默认一致）。
+const baseCurrencyDefault = "CNY"
+
+// EnsureDefaultCurrencies 基础货币种子（幂等；P0-04 T3）：
+// 新装（Install 事务内）与老库升级（serve 启动补种）都调用。
+// 仅缺 CNY 时写入（rate=1 恒等基础货币）；已存在不覆盖——管理员可能
+// 改过 symbol/精度等，尊重存量。
+func EnsureDefaultCurrencies(ctx context.Context, d *data.Data) error {
+	client := data.Client(ctx, d)
+	exists, err := client.Currency.Query().Where(currency.Code(baseCurrencyDefault)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	if err := client.Currency.Create().
+		SetCode(baseCurrencyDefault).
+		SetSymbol("¥").
+		SetPosition(currency.PositionPrefix).
+		SetPrecision(2).
+		SetRate(1).
+		SetEnabled(true).
+		SetSort(0).
+		OnConflictColumns(currency.FieldCode).
+		Ignore().
+		Exec(ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
+// baseCurrencyCode 当前基础货币 code（i18n.base_currency 设置；未设置回落默认）。
+func baseCurrencyCode(ctx context.Context, d *data.Data) string {
+	code := baseCurrencyDefault
+	row, err := data.Client(ctx, d).Setting.Query().
+		Where(setting.Group("i18n"), setting.Key("base_currency")).Only(ctx)
+	if err == nil {
+		_ = json.Unmarshal(row.Value, &code)
+	}
+	return code
+}
+
+// ensureBaseRateOne 基础货币汇率恒为 1（rate 语义：1 基础货币 = rate 目标币）。
+func ensureBaseRateOne(ctx context.Context, d *data.Data, code string, rate float64) error {
+	if code == baseCurrencyCode(ctx, d) && rate != 1 {
+		return errors.BadRequest("settings.CURRENCY_BASE_RATE", "基础货币汇率必须为 1（记账恒为基础货币）")
+	}
+	return nil
+}
 
 // AdminCurrencyService 货币管理（实现 adminv1）。
 type AdminCurrencyService struct {
@@ -46,6 +99,9 @@ func (s *AdminCurrencyService) CreateCurrency(ctx context.Context, req *adminv1.
 	if err != nil {
 		return nil, err
 	}
+	if err := ensureBaseRateOne(ctx, s.data, req.GetCode(), rate); err != nil {
+		return nil, err
+	}
 	pos := req.GetPosition()
 	if pos == "" {
 		pos = "prefix"
@@ -69,6 +125,17 @@ func (s *AdminCurrencyService) CreateCurrency(ctx context.Context, req *adminv1.
 
 // UpdateCurrency 修改。
 func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.UpdateCurrencyRequest) (*adminv1.Currency, error) {
+	var rate float64
+	if req.GetRateJson() != "" {
+		var err error
+		rate, err = parseRate(req.GetRateJson())
+		if err != nil {
+			return nil, err
+		}
+		if err := ensureBaseRateOne(ctx, s.data, req.GetCode(), rate); err != nil {
+			return nil, err
+		}
+	}
 	q := data.Client(ctx, s.data).Currency.Update().Where(currency.Code(req.GetCode()))
 	if req.GetSymbol() != "" {
 		q.SetSymbol(req.GetSymbol())
@@ -80,10 +147,6 @@ func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.
 		q.SetPrecision(req.GetPrecision())
 	}
 	if req.GetRateJson() != "" {
-		rate, err := parseRate(req.GetRateJson())
-		if err != nil {
-			return nil, err
-		}
 		q.SetRate(rate)
 	}
 	q.SetEnabled(req.GetEnabled())

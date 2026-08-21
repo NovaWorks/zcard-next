@@ -9,3 +9,6 @@ export * from "./dashboard";
 export * from "./admin";
 export * from "./marketing";
 export * from "./ops";
+export * from "./supply";
+export * from "./supplier";
+export * from "./procurement";

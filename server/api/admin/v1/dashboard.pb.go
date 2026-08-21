@@ -10,7 +10,6 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -187,18 +186,65 @@ func (x *GetDailyStatsReply) GetPoints() []*DailyStatPoint {
 	return nil
 }
 
+type GetDashboardRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TrendDays     int32                  `protobuf:"varint,1,opt,name=trend_days,json=trendDays,proto3" json:"trend_days,omitempty"` // 趋势天数：7/14/30，默认 7
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDashboardRequest) Reset() {
+	*x = GetDashboardRequest{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDashboardRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDashboardRequest) ProtoMessage() {}
+
+func (x *GetDashboardRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDashboardRequest.ProtoReflect.Descriptor instead.
+func (*GetDashboardRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetDashboardRequest) GetTrendDays() int32 {
+	if x != nil {
+		return x.TrendDays
+	}
+	return 0
+}
+
 type DashboardStat struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Orders        int64                  `protobuf:"varint,1,opt,name=orders,proto3" json:"orders,omitempty"`
 	Revenue       int64                  `protobuf:"varint,2,opt,name=revenue,proto3" json:"revenue,omitempty"` // 分
 	PaidOrders    int64                  `protobuf:"varint,3,opt,name=paid_orders,json=paidOrders,proto3" json:"paid_orders,omitempty"`
+	Cost          int64                  `protobuf:"varint,4,opt,name=cost,proto3" json:"cost,omitempty"`                         // 已支付订单成本（分）
+	Profit        int64                  `protobuf:"varint,5,opt,name=profit,proto3" json:"profit,omitempty"`                     // 利润 = revenue - cost（分）
+	NewUsers      int64                  `protobuf:"varint,6,opt,name=new_users,json=newUsers,proto3" json:"new_users,omitempty"` // 新增注册用户
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DashboardStat) Reset() {
 	*x = DashboardStat{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[3]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -210,7 +256,7 @@ func (x *DashboardStat) String() string {
 func (*DashboardStat) ProtoMessage() {}
 
 func (x *DashboardStat) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[3]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -223,7 +269,7 @@ func (x *DashboardStat) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DashboardStat.ProtoReflect.Descriptor instead.
 func (*DashboardStat) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{3}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *DashboardStat) GetOrders() int64 {
@@ -247,18 +293,42 @@ func (x *DashboardStat) GetPaidOrders() int64 {
 	return 0
 }
 
+func (x *DashboardStat) GetCost() int64 {
+	if x != nil {
+		return x.Cost
+	}
+	return 0
+}
+
+func (x *DashboardStat) GetProfit() int64 {
+	if x != nil {
+		return x.Profit
+	}
+	return 0
+}
+
+func (x *DashboardStat) GetNewUsers() int64 {
+	if x != nil {
+		return x.NewUsers
+	}
+	return 0
+}
+
 type DashboardTrendPoint struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	Orders        int64                  `protobuf:"varint,2,opt,name=orders,proto3" json:"orders,omitempty"`
-	Revenue       int64                  `protobuf:"varint,3,opt,name=revenue,proto3" json:"revenue,omitempty"` // 分
+	Revenue       int64                  `protobuf:"varint,3,opt,name=revenue,proto3" json:"revenue,omitempty"`                      // 分
+	PaidCount     int64                  `protobuf:"varint,4,opt,name=paid_count,json=paidCount,proto3" json:"paid_count,omitempty"` // 已支付单数
+	Cost          int64                  `protobuf:"varint,5,opt,name=cost,proto3" json:"cost,omitempty"`                            // 已支付订单成本（分）
+	Profit        int64                  `protobuf:"varint,6,opt,name=profit,proto3" json:"profit,omitempty"`                        // 利润（分）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DashboardTrendPoint) Reset() {
 	*x = DashboardTrendPoint{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[4]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -270,7 +340,7 @@ func (x *DashboardTrendPoint) String() string {
 func (*DashboardTrendPoint) ProtoMessage() {}
 
 func (x *DashboardTrendPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[4]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -283,7 +353,7 @@ func (x *DashboardTrendPoint) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DashboardTrendPoint.ProtoReflect.Descriptor instead.
 func (*DashboardTrendPoint) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{4}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *DashboardTrendPoint) GetDate() string {
@@ -307,6 +377,27 @@ func (x *DashboardTrendPoint) GetRevenue() int64 {
 	return 0
 }
 
+func (x *DashboardTrendPoint) GetPaidCount() int64 {
+	if x != nil {
+		return x.PaidCount
+	}
+	return 0
+}
+
+func (x *DashboardTrendPoint) GetCost() int64 {
+	if x != nil {
+		return x.Cost
+	}
+	return 0
+}
+
+func (x *DashboardTrendPoint) GetProfit() int64 {
+	if x != nil {
+		return x.Profit
+	}
+	return 0
+}
+
 type DashboardTopProduct struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
@@ -319,7 +410,7 @@ type DashboardTopProduct struct {
 
 func (x *DashboardTopProduct) Reset() {
 	*x = DashboardTopProduct{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[5]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -331,7 +422,7 @@ func (x *DashboardTopProduct) String() string {
 func (*DashboardTopProduct) ProtoMessage() {}
 
 func (x *DashboardTopProduct) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[5]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -344,7 +435,7 @@ func (x *DashboardTopProduct) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DashboardTopProduct.ProtoReflect.Descriptor instead.
 func (*DashboardTopProduct) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{5}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *DashboardTopProduct) GetProductId() uint64 {
@@ -375,6 +466,290 @@ func (x *DashboardTopProduct) GetRevenue() int64 {
 	return 0
 }
 
+type DashboardTopChannel struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Channel       string                 `protobuf:"bytes,1,opt,name=channel,proto3" json:"channel,omitempty"`
+	TotalCount    int64                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
+	SuccessCount  int64                  `protobuf:"varint,3,opt,name=success_count,json=successCount,proto3" json:"success_count,omitempty"`
+	FailedCount   int64                  `protobuf:"varint,4,opt,name=failed_count,json=failedCount,proto3" json:"failed_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DashboardTopChannel) Reset() {
+	*x = DashboardTopChannel{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DashboardTopChannel) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DashboardTopChannel) ProtoMessage() {}
+
+func (x *DashboardTopChannel) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DashboardTopChannel.ProtoReflect.Descriptor instead.
+func (*DashboardTopChannel) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DashboardTopChannel) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *DashboardTopChannel) GetTotalCount() int64 {
+	if x != nil {
+		return x.TotalCount
+	}
+	return 0
+}
+
+func (x *DashboardTopChannel) GetSuccessCount() int64 {
+	if x != nil {
+		return x.SuccessCount
+	}
+	return 0
+}
+
+func (x *DashboardTopChannel) GetFailedCount() int64 {
+	if x != nil {
+		return x.FailedCount
+	}
+	return 0
+}
+
+type DashboardPending struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PendingWithdrawals int64                  `protobuf:"varint,1,opt,name=pending_withdrawals,json=pendingWithdrawals,proto3" json:"pending_withdrawals,omitempty"` // 待审核提现
+	PendingRefunds     int64                  `protobuf:"varint,2,opt,name=pending_refunds,json=pendingRefunds,proto3" json:"pending_refunds,omitempty"`             // 待处理退款（refund_pending）
+	FulfillingOrders   int64                  `protobuf:"varint,3,opt,name=fulfilling_orders,json=fulfillingOrders,proto3" json:"fulfilling_orders,omitempty"`       // 履约中订单
+	LowStockProducts   int64                  `protobuf:"varint,4,opt,name=low_stock_products,json=lowStockProducts,proto3" json:"low_stock_products,omitempty"`     // 库存预警商品数
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *DashboardPending) Reset() {
+	*x = DashboardPending{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DashboardPending) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DashboardPending) ProtoMessage() {}
+
+func (x *DashboardPending) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DashboardPending.ProtoReflect.Descriptor instead.
+func (*DashboardPending) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DashboardPending) GetPendingWithdrawals() int64 {
+	if x != nil {
+		return x.PendingWithdrawals
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetPendingRefunds() int64 {
+	if x != nil {
+		return x.PendingRefunds
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetFulfillingOrders() int64 {
+	if x != nil {
+		return x.FulfillingOrders
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetLowStockProducts() int64 {
+	if x != nil {
+		return x.LowStockProducts
+	}
+	return 0
+}
+
+type GetTrafficRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Days          int32                  `protobuf:"varint,1,opt,name=days,proto3" json:"days,omitempty"` // 7/14/30，默认 7
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTrafficRequest) Reset() {
+	*x = GetTrafficRequest{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTrafficRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTrafficRequest) ProtoMessage() {}
+
+func (x *GetTrafficRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTrafficRequest.ProtoReflect.Descriptor instead.
+func (*GetTrafficRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetTrafficRequest) GetDays() int32 {
+	if x != nil {
+		return x.Days
+	}
+	return 0
+}
+
+type TrafficPoint struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"` // yyyy-mm-dd
+	Pv            int64                  `protobuf:"varint,2,opt,name=pv,proto3" json:"pv,omitempty"`    // 访问量
+	Uv            int64                  `protobuf:"varint,3,opt,name=uv,proto3" json:"uv,omitempty"`    // 独立访客（按 IP 去重）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TrafficPoint) Reset() {
+	*x = TrafficPoint{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TrafficPoint) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TrafficPoint) ProtoMessage() {}
+
+func (x *TrafficPoint) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TrafficPoint.ProtoReflect.Descriptor instead.
+func (*TrafficPoint) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *TrafficPoint) GetDate() string {
+	if x != nil {
+		return x.Date
+	}
+	return ""
+}
+
+func (x *TrafficPoint) GetPv() int64 {
+	if x != nil {
+		return x.Pv
+	}
+	return 0
+}
+
+func (x *TrafficPoint) GetUv() int64 {
+	if x != nil {
+		return x.Uv
+	}
+	return 0
+}
+
+type GetTrafficReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Points        []*TrafficPoint        `protobuf:"bytes,1,rep,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTrafficReply) Reset() {
+	*x = GetTrafficReply{}
+	mi := &file_admin_v1_dashboard_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTrafficReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTrafficReply) ProtoMessage() {}
+
+func (x *GetTrafficReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_dashboard_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTrafficReply.ProtoReflect.Descriptor instead.
+func (*GetTrafficReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *GetTrafficReply) GetPoints() []*TrafficPoint {
+	if x != nil {
+		return x.Points
+	}
+	return nil
+}
+
 type DashboardReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Today         *DashboardStat         `protobuf:"bytes,1,opt,name=today,proto3" json:"today,omitempty"`
@@ -382,13 +757,19 @@ type DashboardReply struct {
 	Last30D       *DashboardStat         `protobuf:"bytes,3,opt,name=last30d,proto3" json:"last30d,omitempty"`
 	Trend         []*DashboardTrendPoint `protobuf:"bytes,4,rep,name=trend,proto3" json:"trend,omitempty"`
 	TopProducts   []*DashboardTopProduct `protobuf:"bytes,5,rep,name=top_products,json=topProducts,proto3" json:"top_products,omitempty"`
+	Yesterday     *DashboardStat         `protobuf:"bytes,6,opt,name=yesterday,proto3" json:"yesterday,omitempty"` // 环比基准（今日 vs 昨日）
+	Prev7D        *DashboardStat         `protobuf:"bytes,7,opt,name=prev7d,proto3" json:"prev7d,omitempty"`       // 环比基准（近7天 vs 前7天）
+	Prev30D       *DashboardStat         `protobuf:"bytes,8,opt,name=prev30d,proto3" json:"prev30d,omitempty"`     // 环比基准（近30天 vs 前30天）
+	TopChannels   []*DashboardTopChannel `protobuf:"bytes,9,rep,name=top_channels,json=topChannels,proto3" json:"top_channels,omitempty"`
+	Pending       *DashboardPending      `protobuf:"bytes,10,opt,name=pending,proto3" json:"pending,omitempty"`
+	OnlineUsers   int64                  `protobuf:"varint,11,opt,name=online_users,json=onlineUsers,proto3" json:"online_users,omitempty"` // 当前在线用户数（5 分钟活跃窗口）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DashboardReply) Reset() {
 	*x = DashboardReply{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[6]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -400,7 +781,7 @@ func (x *DashboardReply) String() string {
 func (*DashboardReply) ProtoMessage() {}
 
 func (x *DashboardReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[6]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -413,7 +794,7 @@ func (x *DashboardReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DashboardReply.ProtoReflect.Descriptor instead.
 func (*DashboardReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{6}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *DashboardReply) GetToday() *DashboardStat {
@@ -451,6 +832,48 @@ func (x *DashboardReply) GetTopProducts() []*DashboardTopProduct {
 	return nil
 }
 
+func (x *DashboardReply) GetYesterday() *DashboardStat {
+	if x != nil {
+		return x.Yesterday
+	}
+	return nil
+}
+
+func (x *DashboardReply) GetPrev7D() *DashboardStat {
+	if x != nil {
+		return x.Prev7D
+	}
+	return nil
+}
+
+func (x *DashboardReply) GetPrev30D() *DashboardStat {
+	if x != nil {
+		return x.Prev30D
+	}
+	return nil
+}
+
+func (x *DashboardReply) GetTopChannels() []*DashboardTopChannel {
+	if x != nil {
+		return x.TopChannels
+	}
+	return nil
+}
+
+func (x *DashboardReply) GetPending() *DashboardPending {
+	if x != nil {
+		return x.Pending
+	}
+	return nil
+}
+
+func (x *DashboardReply) GetOnlineUsers() int64 {
+	if x != nil {
+		return x.OnlineUsers
+	}
+	return 0
+}
+
 // ListCommissions 佣金管理列表（P3-03）。
 type ListCommissionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -463,7 +886,7 @@ type ListCommissionsRequest struct {
 
 func (x *ListCommissionsRequest) Reset() {
 	*x = ListCommissionsRequest{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[7]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -475,7 +898,7 @@ func (x *ListCommissionsRequest) String() string {
 func (*ListCommissionsRequest) ProtoMessage() {}
 
 func (x *ListCommissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[7]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -488,7 +911,7 @@ func (x *ListCommissionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCommissionsRequest.ProtoReflect.Descriptor instead.
 func (*ListCommissionsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{7}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ListCommissionsRequest) GetStatus() string {
@@ -531,7 +954,7 @@ type AdminCommission struct {
 
 func (x *AdminCommission) Reset() {
 	*x = AdminCommission{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[8]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -543,7 +966,7 @@ func (x *AdminCommission) String() string {
 func (*AdminCommission) ProtoMessage() {}
 
 func (x *AdminCommission) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[8]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -556,7 +979,7 @@ func (x *AdminCommission) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminCommission.ProtoReflect.Descriptor instead.
 func (*AdminCommission) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{8}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *AdminCommission) GetId() uint64 {
@@ -648,7 +1071,7 @@ type ListCommissionsReply struct {
 
 func (x *ListCommissionsReply) Reset() {
 	*x = ListCommissionsReply{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[9]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -660,7 +1083,7 @@ func (x *ListCommissionsReply) String() string {
 func (*ListCommissionsReply) ProtoMessage() {}
 
 func (x *ListCommissionsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[9]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -673,7 +1096,7 @@ func (x *ListCommissionsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCommissionsReply.ProtoReflect.Descriptor instead.
 func (*ListCommissionsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{9}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListCommissionsReply) GetCommissions() []*AdminCommission {
@@ -714,7 +1137,7 @@ type GetReconciliationRequest struct {
 
 func (x *GetReconciliationRequest) Reset() {
 	*x = GetReconciliationRequest{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[10]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -726,7 +1149,7 @@ func (x *GetReconciliationRequest) String() string {
 func (*GetReconciliationRequest) ProtoMessage() {}
 
 func (x *GetReconciliationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[10]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -739,7 +1162,7 @@ func (x *GetReconciliationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReconciliationRequest.ProtoReflect.Descriptor instead.
 func (*GetReconciliationRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{10}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetReconciliationRequest) GetDate() string {
@@ -764,7 +1187,7 @@ type ReconciliationSummary struct {
 
 func (x *ReconciliationSummary) Reset() {
 	*x = ReconciliationSummary{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[11]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -776,7 +1199,7 @@ func (x *ReconciliationSummary) String() string {
 func (*ReconciliationSummary) ProtoMessage() {}
 
 func (x *ReconciliationSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[11]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -789,7 +1212,7 @@ func (x *ReconciliationSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReconciliationSummary.ProtoReflect.Descriptor instead.
 func (*ReconciliationSummary) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{11}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ReconciliationSummary) GetDate() string {
@@ -850,7 +1273,7 @@ type GetReconciliationReply struct {
 
 func (x *GetReconciliationReply) Reset() {
 	*x = GetReconciliationReply{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[12]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -862,7 +1285,7 @@ func (x *GetReconciliationReply) String() string {
 func (*GetReconciliationReply) ProtoMessage() {}
 
 func (x *GetReconciliationReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[12]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -875,7 +1298,7 @@ func (x *GetReconciliationReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReconciliationReply.ProtoReflect.Descriptor instead.
 func (*GetReconciliationReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{12}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetReconciliationReply) GetSummary() *ReconciliationSummary {
@@ -896,7 +1319,7 @@ type CreateReconciliationJobRequest struct {
 
 func (x *CreateReconciliationJobRequest) Reset() {
 	*x = CreateReconciliationJobRequest{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[13]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +1331,7 @@ func (x *CreateReconciliationJobRequest) String() string {
 func (*CreateReconciliationJobRequest) ProtoMessage() {}
 
 func (x *CreateReconciliationJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[13]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +1344,7 @@ func (x *CreateReconciliationJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateReconciliationJobRequest.ProtoReflect.Descriptor instead.
 func (*CreateReconciliationJobRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CreateReconciliationJobRequest) GetConnectionId() uint64 {
@@ -963,7 +1386,7 @@ type ReconciliationJobItem struct {
 
 func (x *ReconciliationJobItem) Reset() {
 	*x = ReconciliationJobItem{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[14]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -975,7 +1398,7 @@ func (x *ReconciliationJobItem) String() string {
 func (*ReconciliationJobItem) ProtoMessage() {}
 
 func (x *ReconciliationJobItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[14]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -988,7 +1411,7 @@ func (x *ReconciliationJobItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReconciliationJobItem.ProtoReflect.Descriptor instead.
 func (*ReconciliationJobItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ReconciliationJobItem) GetId() uint64 {
@@ -1070,7 +1493,7 @@ type GetReconciliationJobRequest struct {
 
 func (x *GetReconciliationJobRequest) Reset() {
 	*x = GetReconciliationJobRequest{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[15]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1082,7 +1505,7 @@ func (x *GetReconciliationJobRequest) String() string {
 func (*GetReconciliationJobRequest) ProtoMessage() {}
 
 func (x *GetReconciliationJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[15]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1095,7 +1518,7 @@ func (x *GetReconciliationJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetReconciliationJobRequest.ProtoReflect.Descriptor instead.
 func (*GetReconciliationJobRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetReconciliationJobRequest) GetId() uint64 {
@@ -1114,7 +1537,7 @@ type RunReconciliationJobRequest struct {
 
 func (x *RunReconciliationJobRequest) Reset() {
 	*x = RunReconciliationJobRequest{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[16]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1126,7 +1549,7 @@ func (x *RunReconciliationJobRequest) String() string {
 func (*RunReconciliationJobRequest) ProtoMessage() {}
 
 func (x *RunReconciliationJobRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[16]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1139,7 +1562,7 @@ func (x *RunReconciliationJobRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunReconciliationJobRequest.ProtoReflect.Descriptor instead.
 func (*RunReconciliationJobRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *RunReconciliationJobRequest) GetId() uint64 {
@@ -1161,7 +1584,7 @@ type ListReconciliationItemsRequest struct {
 
 func (x *ListReconciliationItemsRequest) Reset() {
 	*x = ListReconciliationItemsRequest{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[17]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1173,7 +1596,7 @@ func (x *ListReconciliationItemsRequest) String() string {
 func (*ListReconciliationItemsRequest) ProtoMessage() {}
 
 func (x *ListReconciliationItemsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[17]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1186,7 +1609,7 @@ func (x *ListReconciliationItemsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReconciliationItemsRequest.ProtoReflect.Descriptor instead.
 func (*ListReconciliationItemsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ListReconciliationItemsRequest) GetId() uint64 {
@@ -1232,7 +1655,7 @@ type ReconciliationItemDetail struct {
 
 func (x *ReconciliationItemDetail) Reset() {
 	*x = ReconciliationItemDetail{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[18]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1244,7 +1667,7 @@ func (x *ReconciliationItemDetail) String() string {
 func (*ReconciliationItemDetail) ProtoMessage() {}
 
 func (x *ReconciliationItemDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[18]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1257,7 +1680,7 @@ func (x *ReconciliationItemDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReconciliationItemDetail.ProtoReflect.Descriptor instead.
 func (*ReconciliationItemDetail) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{18}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ReconciliationItemDetail) GetId() uint64 {
@@ -1319,7 +1742,7 @@ type ListReconciliationItemsReply struct {
 
 func (x *ListReconciliationItemsReply) Reset() {
 	*x = ListReconciliationItemsReply{}
-	mi := &file_admin_v1_dashboard_proto_msgTypes[19]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1331,7 +1754,7 @@ func (x *ListReconciliationItemsReply) String() string {
 func (*ListReconciliationItemsReply) ProtoMessage() {}
 
 func (x *ListReconciliationItemsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_dashboard_proto_msgTypes[19]
+	mi := &file_admin_v1_dashboard_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1344,7 +1767,7 @@ func (x *ListReconciliationItemsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListReconciliationItemsReply.ProtoReflect.Descriptor instead.
 func (*ListReconciliationItemsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{19}
+	return file_admin_v1_dashboard_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *ListReconciliationItemsReply) GetItems() []*ReconciliationItemDetail {
@@ -1365,7 +1788,7 @@ var File_admin_v1_dashboard_proto protoreflect.FileDescriptor
 
 const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\n" +
-	"\x18admin/v1/dashboard.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"P\n" +
+	"\x18admin/v1/dashboard.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"P\n" +
 	"\x14GetDailyStatsRequest\x12\x1d\n" +
 	"\n" +
 	"start_date\x18\x01 \x01(\tR\tstartDate\x12\x19\n" +
@@ -1377,28 +1800,64 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\vpaid_orders\x18\x04 \x01(\x03R\n" +
 	"paidOrders\"P\n" +
 	"\x12GetDailyStatsReply\x12:\n" +
-	"\x06points\x18\x01 \x03(\v2\".zcard.api.admin.v1.DailyStatPointR\x06points\"b\n" +
+	"\x06points\x18\x01 \x03(\v2\".zcard.api.admin.v1.DailyStatPointR\x06points\"4\n" +
+	"\x13GetDashboardRequest\x12\x1d\n" +
+	"\n" +
+	"trend_days\x18\x01 \x01(\x05R\ttrendDays\"\xab\x01\n" +
 	"\rDashboardStat\x12\x16\n" +
 	"\x06orders\x18\x01 \x01(\x03R\x06orders\x12\x18\n" +
 	"\arevenue\x18\x02 \x01(\x03R\arevenue\x12\x1f\n" +
 	"\vpaid_orders\x18\x03 \x01(\x03R\n" +
-	"paidOrders\"[\n" +
+	"paidOrders\x12\x12\n" +
+	"\x04cost\x18\x04 \x01(\x03R\x04cost\x12\x16\n" +
+	"\x06profit\x18\x05 \x01(\x03R\x06profit\x12\x1b\n" +
+	"\tnew_users\x18\x06 \x01(\x03R\bnewUsers\"\xa6\x01\n" +
 	"\x13DashboardTrendPoint\x12\x12\n" +
 	"\x04date\x18\x01 \x01(\tR\x04date\x12\x16\n" +
 	"\x06orders\x18\x02 \x01(\x03R\x06orders\x12\x18\n" +
-	"\arevenue\x18\x03 \x01(\x03R\arevenue\"}\n" +
+	"\arevenue\x18\x03 \x01(\x03R\arevenue\x12\x1d\n" +
+	"\n" +
+	"paid_count\x18\x04 \x01(\x03R\tpaidCount\x12\x12\n" +
+	"\x04cost\x18\x05 \x01(\x03R\x04cost\x12\x16\n" +
+	"\x06profit\x18\x06 \x01(\x03R\x06profit\"}\n" +
 	"\x13DashboardTopProduct\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
 	"\bsold_qty\x18\x03 \x01(\x03R\asoldQty\x12\x18\n" +
-	"\arevenue\x18\x04 \x01(\x03R\arevenue\"\xcc\x02\n" +
+	"\arevenue\x18\x04 \x01(\x03R\arevenue\"\x98\x01\n" +
+	"\x13DashboardTopChannel\x12\x18\n" +
+	"\achannel\x18\x01 \x01(\tR\achannel\x12\x1f\n" +
+	"\vtotal_count\x18\x02 \x01(\x03R\n" +
+	"totalCount\x12#\n" +
+	"\rsuccess_count\x18\x03 \x01(\x03R\fsuccessCount\x12!\n" +
+	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\"\xc7\x01\n" +
+	"\x10DashboardPending\x12/\n" +
+	"\x13pending_withdrawals\x18\x01 \x01(\x03R\x12pendingWithdrawals\x12'\n" +
+	"\x0fpending_refunds\x18\x02 \x01(\x03R\x0ependingRefunds\x12+\n" +
+	"\x11fulfilling_orders\x18\x03 \x01(\x03R\x10fulfillingOrders\x12,\n" +
+	"\x12low_stock_products\x18\x04 \x01(\x03R\x10lowStockProducts\"'\n" +
+	"\x11GetTrafficRequest\x12\x12\n" +
+	"\x04days\x18\x01 \x01(\x05R\x04days\"B\n" +
+	"\fTrafficPoint\x12\x12\n" +
+	"\x04date\x18\x01 \x01(\tR\x04date\x12\x0e\n" +
+	"\x02pv\x18\x02 \x01(\x03R\x02pv\x12\x0e\n" +
+	"\x02uv\x18\x03 \x01(\x03R\x02uv\"K\n" +
+	"\x0fGetTrafficReply\x128\n" +
+	"\x06points\x18\x01 \x03(\v2 .zcard.api.admin.v1.TrafficPointR\x06points\"\xb4\x05\n" +
 	"\x0eDashboardReply\x127\n" +
 	"\x05today\x18\x01 \x01(\v2!.zcard.api.admin.v1.DashboardStatR\x05today\x129\n" +
 	"\x06last7d\x18\x02 \x01(\v2!.zcard.api.admin.v1.DashboardStatR\x06last7d\x12;\n" +
 	"\alast30d\x18\x03 \x01(\v2!.zcard.api.admin.v1.DashboardStatR\alast30d\x12=\n" +
 	"\x05trend\x18\x04 \x03(\v2'.zcard.api.admin.v1.DashboardTrendPointR\x05trend\x12J\n" +
-	"\ftop_products\x18\x05 \x03(\v2'.zcard.api.admin.v1.DashboardTopProductR\vtopProducts\"a\n" +
+	"\ftop_products\x18\x05 \x03(\v2'.zcard.api.admin.v1.DashboardTopProductR\vtopProducts\x12?\n" +
+	"\tyesterday\x18\x06 \x01(\v2!.zcard.api.admin.v1.DashboardStatR\tyesterday\x129\n" +
+	"\x06prev7d\x18\a \x01(\v2!.zcard.api.admin.v1.DashboardStatR\x06prev7d\x12;\n" +
+	"\aprev30d\x18\b \x01(\v2!.zcard.api.admin.v1.DashboardStatR\aprev30d\x12J\n" +
+	"\ftop_channels\x18\t \x03(\v2'.zcard.api.admin.v1.DashboardTopChannelR\vtopChannels\x12>\n" +
+	"\apending\x18\n" +
+	" \x01(\v2$.zcard.api.admin.v1.DashboardPendingR\apending\x12!\n" +
+	"\fonline_users\x18\v \x01(\x03R\vonlineUsers\"a\n" +
 	"\x16ListCommissionsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
@@ -1476,12 +1935,13 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"created_at\x18\a \x01(\x03R\tcreatedAt\"x\n" +
 	"\x1cListReconciliationItemsReply\x12B\n" +
 	"\x05items\x18\x01 \x03(\v2,.zcard.api.admin.v1.ReconciliationItemDetailR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total2\xa6\n" +
-	"\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total2\xbb\v\n" +
 	"\x15AdminDashboardService\x12\x9d\x01\n" +
 	"\x11GetReconciliation\x12,.zcard.api.admin.v1.GetReconciliationRequest\x1a*.zcard.api.admin.v1.GetReconciliationReply\".\x82\xd3\xe4\x93\x02(\x12&/api/v1/admin/dashboard/reconciliation\x12\x94\x01\n" +
-	"\x0fListCommissions\x12*.zcard.api.admin.v1.ListCommissionsRequest\x1a(.zcard.api.admin.v1.ListCommissionsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/affiliate/commissions\x12k\n" +
-	"\fGetDashboard\x12\x16.google.protobuf.Empty\x1a\".zcard.api.admin.v1.DashboardReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/admin/dashboard\x12\x8e\x01\n" +
+	"\x0fListCommissions\x12*.zcard.api.admin.v1.ListCommissionsRequest\x1a(.zcard.api.admin.v1.ListCommissionsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/affiliate/commissions\x12|\n" +
+	"\fGetDashboard\x12'.zcard.api.admin.v1.GetDashboardRequest\x1a\".zcard.api.admin.v1.DashboardReply\"\x1f\x82\xd3\xe4\x93\x02\x19\x12\x17/api/v1/admin/dashboard\x12\x81\x01\n" +
+	"\n" +
+	"GetTraffic\x12%.zcard.api.admin.v1.GetTrafficRequest\x1a#.zcard.api.admin.v1.GetTrafficReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/dashboard/traffic\x12\x8e\x01\n" +
 	"\rGetDailyStats\x12(.zcard.api.admin.v1.GetDailyStatsRequest\x1a&.zcard.api.admin.v1.GetDailyStatsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/dashboard/daily-stats\x12\xb0\x01\n" +
 	"\x17CreateReconciliationJob\x122.zcard.api.admin.v1.CreateReconciliationJobRequest\x1a).zcard.api.admin.v1.ReconciliationJobItem\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/dashboard/reconciliation-jobs\x12\xac\x01\n" +
 	"\x14GetReconciliationJob\x12/.zcard.api.admin.v1.GetReconciliationJobRequest\x1a).zcard.api.admin.v1.ReconciliationJobItem\"8\x82\xd3\xe4\x93\x022\x120/api/v1/admin/dashboard/reconciliation-jobs/{id}\x12\xb3\x01\n" +
@@ -1500,61 +1960,74 @@ func file_admin_v1_dashboard_proto_rawDescGZIP() []byte {
 	return file_admin_v1_dashboard_proto_rawDescData
 }
 
-var file_admin_v1_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
+var file_admin_v1_dashboard_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_admin_v1_dashboard_proto_goTypes = []any{
 	(*GetDailyStatsRequest)(nil),           // 0: zcard.api.admin.v1.GetDailyStatsRequest
 	(*DailyStatPoint)(nil),                 // 1: zcard.api.admin.v1.DailyStatPoint
 	(*GetDailyStatsReply)(nil),             // 2: zcard.api.admin.v1.GetDailyStatsReply
-	(*DashboardStat)(nil),                  // 3: zcard.api.admin.v1.DashboardStat
-	(*DashboardTrendPoint)(nil),            // 4: zcard.api.admin.v1.DashboardTrendPoint
-	(*DashboardTopProduct)(nil),            // 5: zcard.api.admin.v1.DashboardTopProduct
-	(*DashboardReply)(nil),                 // 6: zcard.api.admin.v1.DashboardReply
-	(*ListCommissionsRequest)(nil),         // 7: zcard.api.admin.v1.ListCommissionsRequest
-	(*AdminCommission)(nil),                // 8: zcard.api.admin.v1.AdminCommission
-	(*ListCommissionsReply)(nil),           // 9: zcard.api.admin.v1.ListCommissionsReply
-	(*GetReconciliationRequest)(nil),       // 10: zcard.api.admin.v1.GetReconciliationRequest
-	(*ReconciliationSummary)(nil),          // 11: zcard.api.admin.v1.ReconciliationSummary
-	(*GetReconciliationReply)(nil),         // 12: zcard.api.admin.v1.GetReconciliationReply
-	(*CreateReconciliationJobRequest)(nil), // 13: zcard.api.admin.v1.CreateReconciliationJobRequest
-	(*ReconciliationJobItem)(nil),          // 14: zcard.api.admin.v1.ReconciliationJobItem
-	(*GetReconciliationJobRequest)(nil),    // 15: zcard.api.admin.v1.GetReconciliationJobRequest
-	(*RunReconciliationJobRequest)(nil),    // 16: zcard.api.admin.v1.RunReconciliationJobRequest
-	(*ListReconciliationItemsRequest)(nil), // 17: zcard.api.admin.v1.ListReconciliationItemsRequest
-	(*ReconciliationItemDetail)(nil),       // 18: zcard.api.admin.v1.ReconciliationItemDetail
-	(*ListReconciliationItemsReply)(nil),   // 19: zcard.api.admin.v1.ListReconciliationItemsReply
-	(*emptypb.Empty)(nil),                  // 20: google.protobuf.Empty
+	(*GetDashboardRequest)(nil),            // 3: zcard.api.admin.v1.GetDashboardRequest
+	(*DashboardStat)(nil),                  // 4: zcard.api.admin.v1.DashboardStat
+	(*DashboardTrendPoint)(nil),            // 5: zcard.api.admin.v1.DashboardTrendPoint
+	(*DashboardTopProduct)(nil),            // 6: zcard.api.admin.v1.DashboardTopProduct
+	(*DashboardTopChannel)(nil),            // 7: zcard.api.admin.v1.DashboardTopChannel
+	(*DashboardPending)(nil),               // 8: zcard.api.admin.v1.DashboardPending
+	(*GetTrafficRequest)(nil),              // 9: zcard.api.admin.v1.GetTrafficRequest
+	(*TrafficPoint)(nil),                   // 10: zcard.api.admin.v1.TrafficPoint
+	(*GetTrafficReply)(nil),                // 11: zcard.api.admin.v1.GetTrafficReply
+	(*DashboardReply)(nil),                 // 12: zcard.api.admin.v1.DashboardReply
+	(*ListCommissionsRequest)(nil),         // 13: zcard.api.admin.v1.ListCommissionsRequest
+	(*AdminCommission)(nil),                // 14: zcard.api.admin.v1.AdminCommission
+	(*ListCommissionsReply)(nil),           // 15: zcard.api.admin.v1.ListCommissionsReply
+	(*GetReconciliationRequest)(nil),       // 16: zcard.api.admin.v1.GetReconciliationRequest
+	(*ReconciliationSummary)(nil),          // 17: zcard.api.admin.v1.ReconciliationSummary
+	(*GetReconciliationReply)(nil),         // 18: zcard.api.admin.v1.GetReconciliationReply
+	(*CreateReconciliationJobRequest)(nil), // 19: zcard.api.admin.v1.CreateReconciliationJobRequest
+	(*ReconciliationJobItem)(nil),          // 20: zcard.api.admin.v1.ReconciliationJobItem
+	(*GetReconciliationJobRequest)(nil),    // 21: zcard.api.admin.v1.GetReconciliationJobRequest
+	(*RunReconciliationJobRequest)(nil),    // 22: zcard.api.admin.v1.RunReconciliationJobRequest
+	(*ListReconciliationItemsRequest)(nil), // 23: zcard.api.admin.v1.ListReconciliationItemsRequest
+	(*ReconciliationItemDetail)(nil),       // 24: zcard.api.admin.v1.ReconciliationItemDetail
+	(*ListReconciliationItemsReply)(nil),   // 25: zcard.api.admin.v1.ListReconciliationItemsReply
 }
 var file_admin_v1_dashboard_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.admin.v1.GetDailyStatsReply.points:type_name -> zcard.api.admin.v1.DailyStatPoint
-	3,  // 1: zcard.api.admin.v1.DashboardReply.today:type_name -> zcard.api.admin.v1.DashboardStat
-	3,  // 2: zcard.api.admin.v1.DashboardReply.last7d:type_name -> zcard.api.admin.v1.DashboardStat
-	3,  // 3: zcard.api.admin.v1.DashboardReply.last30d:type_name -> zcard.api.admin.v1.DashboardStat
-	4,  // 4: zcard.api.admin.v1.DashboardReply.trend:type_name -> zcard.api.admin.v1.DashboardTrendPoint
-	5,  // 5: zcard.api.admin.v1.DashboardReply.top_products:type_name -> zcard.api.admin.v1.DashboardTopProduct
-	8,  // 6: zcard.api.admin.v1.ListCommissionsReply.commissions:type_name -> zcard.api.admin.v1.AdminCommission
-	11, // 7: zcard.api.admin.v1.GetReconciliationReply.summary:type_name -> zcard.api.admin.v1.ReconciliationSummary
-	18, // 8: zcard.api.admin.v1.ListReconciliationItemsReply.items:type_name -> zcard.api.admin.v1.ReconciliationItemDetail
-	10, // 9: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:input_type -> zcard.api.admin.v1.GetReconciliationRequest
-	7,  // 10: zcard.api.admin.v1.AdminDashboardService.ListCommissions:input_type -> zcard.api.admin.v1.ListCommissionsRequest
-	20, // 11: zcard.api.admin.v1.AdminDashboardService.GetDashboard:input_type -> google.protobuf.Empty
-	0,  // 12: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:input_type -> zcard.api.admin.v1.GetDailyStatsRequest
-	13, // 13: zcard.api.admin.v1.AdminDashboardService.CreateReconciliationJob:input_type -> zcard.api.admin.v1.CreateReconciliationJobRequest
-	15, // 14: zcard.api.admin.v1.AdminDashboardService.GetReconciliationJob:input_type -> zcard.api.admin.v1.GetReconciliationJobRequest
-	16, // 15: zcard.api.admin.v1.AdminDashboardService.RunReconciliationJob:input_type -> zcard.api.admin.v1.RunReconciliationJobRequest
-	17, // 16: zcard.api.admin.v1.AdminDashboardService.ListReconciliationItems:input_type -> zcard.api.admin.v1.ListReconciliationItemsRequest
-	12, // 17: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:output_type -> zcard.api.admin.v1.GetReconciliationReply
-	9,  // 18: zcard.api.admin.v1.AdminDashboardService.ListCommissions:output_type -> zcard.api.admin.v1.ListCommissionsReply
-	6,  // 19: zcard.api.admin.v1.AdminDashboardService.GetDashboard:output_type -> zcard.api.admin.v1.DashboardReply
-	2,  // 20: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:output_type -> zcard.api.admin.v1.GetDailyStatsReply
-	14, // 21: zcard.api.admin.v1.AdminDashboardService.CreateReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
-	14, // 22: zcard.api.admin.v1.AdminDashboardService.GetReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
-	14, // 23: zcard.api.admin.v1.AdminDashboardService.RunReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
-	19, // 24: zcard.api.admin.v1.AdminDashboardService.ListReconciliationItems:output_type -> zcard.api.admin.v1.ListReconciliationItemsReply
-	17, // [17:25] is the sub-list for method output_type
-	9,  // [9:17] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	10, // 1: zcard.api.admin.v1.GetTrafficReply.points:type_name -> zcard.api.admin.v1.TrafficPoint
+	4,  // 2: zcard.api.admin.v1.DashboardReply.today:type_name -> zcard.api.admin.v1.DashboardStat
+	4,  // 3: zcard.api.admin.v1.DashboardReply.last7d:type_name -> zcard.api.admin.v1.DashboardStat
+	4,  // 4: zcard.api.admin.v1.DashboardReply.last30d:type_name -> zcard.api.admin.v1.DashboardStat
+	5,  // 5: zcard.api.admin.v1.DashboardReply.trend:type_name -> zcard.api.admin.v1.DashboardTrendPoint
+	6,  // 6: zcard.api.admin.v1.DashboardReply.top_products:type_name -> zcard.api.admin.v1.DashboardTopProduct
+	4,  // 7: zcard.api.admin.v1.DashboardReply.yesterday:type_name -> zcard.api.admin.v1.DashboardStat
+	4,  // 8: zcard.api.admin.v1.DashboardReply.prev7d:type_name -> zcard.api.admin.v1.DashboardStat
+	4,  // 9: zcard.api.admin.v1.DashboardReply.prev30d:type_name -> zcard.api.admin.v1.DashboardStat
+	7,  // 10: zcard.api.admin.v1.DashboardReply.top_channels:type_name -> zcard.api.admin.v1.DashboardTopChannel
+	8,  // 11: zcard.api.admin.v1.DashboardReply.pending:type_name -> zcard.api.admin.v1.DashboardPending
+	14, // 12: zcard.api.admin.v1.ListCommissionsReply.commissions:type_name -> zcard.api.admin.v1.AdminCommission
+	17, // 13: zcard.api.admin.v1.GetReconciliationReply.summary:type_name -> zcard.api.admin.v1.ReconciliationSummary
+	24, // 14: zcard.api.admin.v1.ListReconciliationItemsReply.items:type_name -> zcard.api.admin.v1.ReconciliationItemDetail
+	16, // 15: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:input_type -> zcard.api.admin.v1.GetReconciliationRequest
+	13, // 16: zcard.api.admin.v1.AdminDashboardService.ListCommissions:input_type -> zcard.api.admin.v1.ListCommissionsRequest
+	3,  // 17: zcard.api.admin.v1.AdminDashboardService.GetDashboard:input_type -> zcard.api.admin.v1.GetDashboardRequest
+	9,  // 18: zcard.api.admin.v1.AdminDashboardService.GetTraffic:input_type -> zcard.api.admin.v1.GetTrafficRequest
+	0,  // 19: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:input_type -> zcard.api.admin.v1.GetDailyStatsRequest
+	19, // 20: zcard.api.admin.v1.AdminDashboardService.CreateReconciliationJob:input_type -> zcard.api.admin.v1.CreateReconciliationJobRequest
+	21, // 21: zcard.api.admin.v1.AdminDashboardService.GetReconciliationJob:input_type -> zcard.api.admin.v1.GetReconciliationJobRequest
+	22, // 22: zcard.api.admin.v1.AdminDashboardService.RunReconciliationJob:input_type -> zcard.api.admin.v1.RunReconciliationJobRequest
+	23, // 23: zcard.api.admin.v1.AdminDashboardService.ListReconciliationItems:input_type -> zcard.api.admin.v1.ListReconciliationItemsRequest
+	18, // 24: zcard.api.admin.v1.AdminDashboardService.GetReconciliation:output_type -> zcard.api.admin.v1.GetReconciliationReply
+	15, // 25: zcard.api.admin.v1.AdminDashboardService.ListCommissions:output_type -> zcard.api.admin.v1.ListCommissionsReply
+	12, // 26: zcard.api.admin.v1.AdminDashboardService.GetDashboard:output_type -> zcard.api.admin.v1.DashboardReply
+	11, // 27: zcard.api.admin.v1.AdminDashboardService.GetTraffic:output_type -> zcard.api.admin.v1.GetTrafficReply
+	2,  // 28: zcard.api.admin.v1.AdminDashboardService.GetDailyStats:output_type -> zcard.api.admin.v1.GetDailyStatsReply
+	20, // 29: zcard.api.admin.v1.AdminDashboardService.CreateReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
+	20, // 30: zcard.api.admin.v1.AdminDashboardService.GetReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
+	20, // 31: zcard.api.admin.v1.AdminDashboardService.RunReconciliationJob:output_type -> zcard.api.admin.v1.ReconciliationJobItem
+	25, // 32: zcard.api.admin.v1.AdminDashboardService.ListReconciliationItems:output_type -> zcard.api.admin.v1.ListReconciliationItemsReply
+	24, // [24:33] is the sub-list for method output_type
+	15, // [15:24] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_dashboard_proto_init() }
@@ -1568,7 +2041,7 @@ func file_admin_v1_dashboard_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_dashboard_proto_rawDesc), len(file_admin_v1_dashboard_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   20,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

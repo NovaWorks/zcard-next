@@ -28,7 +28,11 @@ type RegisterRequest struct {
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	InviteCode    string                 `protobuf:"bytes,4,opt,name=invite_code,json=inviteCode,proto3" json:"invite_code,omitempty"` // 上级 user_id（推广码；可空）
+	InviteCode    string                 `protobuf:"bytes,4,opt,name=invite_code,json=inviteCode,proto3" json:"invite_code,omitempty"`    // 推广码（8 位随机或旧数字 ID；可空）
+	Code          string                 `protobuf:"bytes,5,opt,name=code,proto3" json:"code,omitempty"`                                  // 注册验证码（register_method=email/phone 时必填）
+	Phone         string                 `protobuf:"bytes,6,opt,name=phone,proto3" json:"phone,omitempty"`                                // 手机号（register_method=phone 时必填）
+	CaptchaId     string                 `protobuf:"bytes,7,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`       // 图形验证码 ID（captcha_register 开启时必填）
+	CaptchaCode   string                 `protobuf:"bytes,8,opt,name=captcha_code,json=captchaCode,proto3" json:"captcha_code,omitempty"` // 图形验证码（4 位数字）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -91,18 +95,151 @@ func (x *RegisterRequest) GetInviteCode() string {
 	return ""
 }
 
+func (x *RegisterRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetPhone() string {
+	if x != nil {
+		return x.Phone
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetCaptchaId() string {
+	if x != nil {
+		return x.CaptchaId
+	}
+	return ""
+}
+
+func (x *RegisterRequest) GetCaptchaCode() string {
+	if x != nil {
+		return x.CaptchaCode
+	}
+	return ""
+}
+
+type SendRegisterCodeRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Target        string                 `protobuf:"bytes,1,opt,name=target,proto3" json:"target,omitempty"`                              // 邮箱或手机号
+	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`                            // email | phone（空则按 target 格式自动判定）
+	CaptchaId     string                 `protobuf:"bytes,3,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`       // 图形验证码 ID（captcha_register 开启时必填）
+	CaptchaCode   string                 `protobuf:"bytes,4,opt,name=captcha_code,json=captchaCode,proto3" json:"captcha_code,omitempty"` // 图形验证码
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendRegisterCodeRequest) Reset() {
+	*x = SendRegisterCodeRequest{}
+	mi := &file_storefront_v1_user_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendRegisterCodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendRegisterCodeRequest) ProtoMessage() {}
+
+func (x *SendRegisterCodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_user_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendRegisterCodeRequest.ProtoReflect.Descriptor instead.
+func (*SendRegisterCodeRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *SendRegisterCodeRequest) GetTarget() string {
+	if x != nil {
+		return x.Target
+	}
+	return ""
+}
+
+func (x *SendRegisterCodeRequest) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *SendRegisterCodeRequest) GetCaptchaId() string {
+	if x != nil {
+		return x.CaptchaId
+	}
+	return ""
+}
+
+func (x *SendRegisterCodeRequest) GetCaptchaCode() string {
+	if x != nil {
+		return x.CaptchaCode
+	}
+	return ""
+}
+
+type SendRegisterCodeReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SendRegisterCodeReply) Reset() {
+	*x = SendRegisterCodeReply{}
+	mi := &file_storefront_v1_user_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendRegisterCodeReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendRegisterCodeReply) ProtoMessage() {}
+
+func (x *SendRegisterCodeReply) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_user_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SendRegisterCodeReply.ProtoReflect.Descriptor instead.
+func (*SendRegisterCodeReply) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{2}
+}
+
 type RegisterReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	Token         string                 `protobuf:"bytes,2,opt,name=token,proto3" json:"token,omitempty"` // 注册即登录
 	ExpiresAt     int64                  `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	PromoCode     string                 `protobuf:"bytes,4,opt,name=promo_code,json=promoCode,proto3" json:"promo_code,omitempty"` // 自己的推广码（注册成功即拥有）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RegisterReply) Reset() {
 	*x = RegisterReply{}
-	mi := &file_storefront_v1_user_proto_msgTypes[1]
+	mi := &file_storefront_v1_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -114,7 +251,7 @@ func (x *RegisterReply) String() string {
 func (*RegisterReply) ProtoMessage() {}
 
 func (x *RegisterReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[1]
+	mi := &file_storefront_v1_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -127,7 +264,7 @@ func (x *RegisterReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterReply.ProtoReflect.Descriptor instead.
 func (*RegisterReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{1}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *RegisterReply) GetUserId() uint64 {
@@ -151,17 +288,26 @@ func (x *RegisterReply) GetExpiresAt() int64 {
 	return 0
 }
 
+func (x *RegisterReply) GetPromoCode() string {
+	if x != nil {
+		return x.PromoCode
+	}
+	return ""
+}
+
 type LoginRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"` // 用户名/邮箱/手机号混输
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	CaptchaId     string                 `protobuf:"bytes,3,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`       // 图形验证码 ID（captcha_login 开启时必填）
+	CaptchaCode   string                 `protobuf:"bytes,4,opt,name=captcha_code,json=captchaCode,proto3" json:"captcha_code,omitempty"` // 图形验证码
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_storefront_v1_user_proto_msgTypes[2]
+	mi := &file_storefront_v1_user_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -173,7 +319,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[2]
+	mi := &file_storefront_v1_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -186,7 +332,7 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{2}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *LoginRequest) GetUsername() string {
@@ -203,6 +349,20 @@ func (x *LoginRequest) GetPassword() string {
 	return ""
 }
 
+func (x *LoginRequest) GetCaptchaId() string {
+	if x != nil {
+		return x.CaptchaId
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetCaptchaCode() string {
+	if x != nil {
+		return x.CaptchaCode
+	}
+	return ""
+}
+
 type LoginReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
@@ -214,7 +374,7 @@ type LoginReply struct {
 
 func (x *LoginReply) Reset() {
 	*x = LoginReply{}
-	mi := &file_storefront_v1_user_proto_msgTypes[3]
+	mi := &file_storefront_v1_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -226,7 +386,7 @@ func (x *LoginReply) String() string {
 func (*LoginReply) ProtoMessage() {}
 
 func (x *LoginReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[3]
+	mi := &file_storefront_v1_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -239,7 +399,7 @@ func (x *LoginReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginReply.ProtoReflect.Descriptor instead.
 func (*LoginReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{3}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LoginReply) GetAccessToken() string {
@@ -271,13 +431,14 @@ type MeReply struct {
 	CreatedAt         int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	IsReseller        bool                   `protobuf:"varint,5,opt,name=is_reseller,json=isReseller,proto3" json:"is_reseller,omitempty"` // 分站主身份（approved）
 	ResellerProfileId uint64                 `protobuf:"varint,6,opt,name=reseller_profile_id,json=resellerProfileId,proto3" json:"reseller_profile_id,omitempty"`
+	PromoCode         string                 `protobuf:"bytes,7,opt,name=promo_code,json=promoCode,proto3" json:"promo_code,omitempty"` // 推广码（懒生成）
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
 func (x *MeReply) Reset() {
 	*x = MeReply{}
-	mi := &file_storefront_v1_user_proto_msgTypes[4]
+	mi := &file_storefront_v1_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -289,7 +450,7 @@ func (x *MeReply) String() string {
 func (*MeReply) ProtoMessage() {}
 
 func (x *MeReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[4]
+	mi := &file_storefront_v1_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -302,7 +463,7 @@ func (x *MeReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MeReply.ProtoReflect.Descriptor instead.
 func (*MeReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{4}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *MeReply) GetUserId() uint64 {
@@ -347,16 +508,25 @@ func (x *MeReply) GetResellerProfileId() uint64 {
 	return 0
 }
 
+func (x *MeReply) GetPromoCode() string {
+	if x != nil {
+		return x.PromoCode
+	}
+	return ""
+}
+
 type ForgotPasswordRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	CaptchaId     string                 `protobuf:"bytes,2,opt,name=captcha_id,json=captchaId,proto3" json:"captcha_id,omitempty"`       // 图形验证码 ID（captcha_reset 开启时必填）
+	CaptchaCode   string                 `protobuf:"bytes,3,opt,name=captcha_code,json=captchaCode,proto3" json:"captcha_code,omitempty"` // 图形验证码
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ForgotPasswordRequest) Reset() {
 	*x = ForgotPasswordRequest{}
-	mi := &file_storefront_v1_user_proto_msgTypes[5]
+	mi := &file_storefront_v1_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -368,7 +538,7 @@ func (x *ForgotPasswordRequest) String() string {
 func (*ForgotPasswordRequest) ProtoMessage() {}
 
 func (x *ForgotPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[5]
+	mi := &file_storefront_v1_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -381,12 +551,26 @@ func (x *ForgotPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForgotPasswordRequest.ProtoReflect.Descriptor instead.
 func (*ForgotPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{5}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ForgotPasswordRequest) GetEmail() string {
 	if x != nil {
 		return x.Email
+	}
+	return ""
+}
+
+func (x *ForgotPasswordRequest) GetCaptchaId() string {
+	if x != nil {
+		return x.CaptchaId
+	}
+	return ""
+}
+
+func (x *ForgotPasswordRequest) GetCaptchaCode() string {
+	if x != nil {
+		return x.CaptchaCode
 	}
 	return ""
 }
@@ -399,7 +583,7 @@ type ForgotPasswordReply struct {
 
 func (x *ForgotPasswordReply) Reset() {
 	*x = ForgotPasswordReply{}
-	mi := &file_storefront_v1_user_proto_msgTypes[6]
+	mi := &file_storefront_v1_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +595,7 @@ func (x *ForgotPasswordReply) String() string {
 func (*ForgotPasswordReply) ProtoMessage() {}
 
 func (x *ForgotPasswordReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[6]
+	mi := &file_storefront_v1_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +608,7 @@ func (x *ForgotPasswordReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ForgotPasswordReply.ProtoReflect.Descriptor instead.
 func (*ForgotPasswordReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{6}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{8}
 }
 
 type ResetPasswordRequest struct {
@@ -438,7 +622,7 @@ type ResetPasswordRequest struct {
 
 func (x *ResetPasswordRequest) Reset() {
 	*x = ResetPasswordRequest{}
-	mi := &file_storefront_v1_user_proto_msgTypes[7]
+	mi := &file_storefront_v1_user_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -450,7 +634,7 @@ func (x *ResetPasswordRequest) String() string {
 func (*ResetPasswordRequest) ProtoMessage() {}
 
 func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[7]
+	mi := &file_storefront_v1_user_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -463,7 +647,7 @@ func (x *ResetPasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordRequest.ProtoReflect.Descriptor instead.
 func (*ResetPasswordRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{7}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ResetPasswordRequest) GetEmail() string {
@@ -497,7 +681,7 @@ type ResetPasswordReply struct {
 
 func (x *ResetPasswordReply) Reset() {
 	*x = ResetPasswordReply{}
-	mi := &file_storefront_v1_user_proto_msgTypes[8]
+	mi := &file_storefront_v1_user_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -509,7 +693,7 @@ func (x *ResetPasswordReply) String() string {
 func (*ResetPasswordReply) ProtoMessage() {}
 
 func (x *ResetPasswordReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[8]
+	mi := &file_storefront_v1_user_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -522,7 +706,7 @@ func (x *ResetPasswordReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetPasswordReply.ProtoReflect.Descriptor instead.
 func (*ResetPasswordReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{8}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ResetPasswordReply) GetToken() string {
@@ -549,7 +733,7 @@ type ChangePasswordRequest struct {
 
 func (x *ChangePasswordRequest) Reset() {
 	*x = ChangePasswordRequest{}
-	mi := &file_storefront_v1_user_proto_msgTypes[9]
+	mi := &file_storefront_v1_user_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -561,7 +745,7 @@ func (x *ChangePasswordRequest) String() string {
 func (*ChangePasswordRequest) ProtoMessage() {}
 
 func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[9]
+	mi := &file_storefront_v1_user_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -574,7 +758,7 @@ func (x *ChangePasswordRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangePasswordRequest.ProtoReflect.Descriptor instead.
 func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{9}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *ChangePasswordRequest) GetOldPassword() string {
@@ -601,7 +785,7 @@ type ChangePasswordReply struct {
 
 func (x *ChangePasswordReply) Reset() {
 	*x = ChangePasswordReply{}
-	mi := &file_storefront_v1_user_proto_msgTypes[10]
+	mi := &file_storefront_v1_user_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -613,7 +797,7 @@ func (x *ChangePasswordReply) String() string {
 func (*ChangePasswordReply) ProtoMessage() {}
 
 func (x *ChangePasswordReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[10]
+	mi := &file_storefront_v1_user_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -626,7 +810,7 @@ func (x *ChangePasswordReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChangePasswordReply.ProtoReflect.Descriptor instead.
 func (*ChangePasswordReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{10}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ChangePasswordReply) GetToken() string {
@@ -652,7 +836,7 @@ type UpdateProfileRequest struct {
 
 func (x *UpdateProfileRequest) Reset() {
 	*x = UpdateProfileRequest{}
-	mi := &file_storefront_v1_user_proto_msgTypes[11]
+	mi := &file_storefront_v1_user_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -664,7 +848,7 @@ func (x *UpdateProfileRequest) String() string {
 func (*UpdateProfileRequest) ProtoMessage() {}
 
 func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_user_proto_msgTypes[11]
+	mi := &file_storefront_v1_user_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -677,7 +861,7 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_user_proto_rawDescGZIP(), []int{11}
+	return file_storefront_v1_user_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UpdateProfileRequest) GetEmail() string {
@@ -691,28 +875,45 @@ var File_storefront_v1_user_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x18storefront/v1/user.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x8a\x01\n" +
+	"\x18storefront/v1/user.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf6\x01\n" +
 	"\x0fRegisterRequest\x12\x1f\n" +
 	"\busername\x18\x01 \x01(\tB\x03\xe0A\x02R\busername\x12\x1f\n" +
 	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1f\n" +
 	"\vinvite_code\x18\x04 \x01(\tR\n" +
-	"inviteCode\"]\n" +
+	"inviteCode\x12\x12\n" +
+	"\x04code\x18\x05 \x01(\tR\x04code\x12\x14\n" +
+	"\x05phone\x18\x06 \x01(\tR\x05phone\x12\x1d\n" +
+	"\n" +
+	"captcha_id\x18\a \x01(\tR\tcaptchaId\x12!\n" +
+	"\fcaptcha_code\x18\b \x01(\tR\vcaptchaCode\"\x92\x01\n" +
+	"\x17SendRegisterCodeRequest\x12\x1b\n" +
+	"\x06target\x18\x01 \x01(\tB\x03\xe0A\x02R\x06target\x12\x18\n" +
+	"\achannel\x18\x02 \x01(\tR\achannel\x12\x1d\n" +
+	"\n" +
+	"captcha_id\x18\x03 \x01(\tR\tcaptchaId\x12!\n" +
+	"\fcaptcha_code\x18\x04 \x01(\tR\vcaptchaCode\"\x17\n" +
+	"\x15SendRegisterCodeReply\"|\n" +
 	"\rRegisterReply\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x14\n" +
 	"\x05token\x18\x02 \x01(\tR\x05token\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\x03R\texpiresAt\"P\n" +
+	"expires_at\x18\x03 \x01(\x03R\texpiresAt\x12\x1d\n" +
+	"\n" +
+	"promo_code\x18\x04 \x01(\tR\tpromoCode\"\x92\x01\n" +
 	"\fLoginRequest\x12\x1f\n" +
 	"\busername\x18\x01 \x01(\tB\x03\xe0A\x02R\busername\x12\x1f\n" +
-	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\"m\n" +
+	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\x12\x1d\n" +
+	"\n" +
+	"captcha_id\x18\x03 \x01(\tR\tcaptchaId\x12!\n" +
+	"\fcaptcha_code\x18\x04 \x01(\tR\vcaptchaCode\"m\n" +
 	"\n" +
 	"LoginReply\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12\x1d\n" +
 	"\n" +
 	"token_type\x18\x02 \x01(\tR\ttokenType\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\x03R\texpiresAt\"\xc4\x01\n" +
+	"expires_at\x18\x03 \x01(\x03R\texpiresAt\"\xe3\x01\n" +
 	"\aMeReply\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
@@ -721,9 +922,14 @@ const file_storefront_v1_user_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\x03R\tcreatedAt\x12\x1f\n" +
 	"\vis_reseller\x18\x05 \x01(\bR\n" +
 	"isReseller\x12.\n" +
-	"\x13reseller_profile_id\x18\x06 \x01(\x04R\x11resellerProfileId\"2\n" +
+	"\x13reseller_profile_id\x18\x06 \x01(\x04R\x11resellerProfileId\x12\x1d\n" +
+	"\n" +
+	"promo_code\x18\a \x01(\tR\tpromoCode\"t\n" +
 	"\x15ForgotPasswordRequest\x12\x19\n" +
-	"\x05email\x18\x01 \x01(\tB\x03\xe0A\x02R\x05email\"\x15\n" +
+	"\x05email\x18\x01 \x01(\tB\x03\xe0A\x02R\x05email\x12\x1d\n" +
+	"\n" +
+	"captcha_id\x18\x02 \x01(\tR\tcaptchaId\x12!\n" +
+	"\fcaptcha_code\x18\x03 \x01(\tR\vcaptchaCode\"\x15\n" +
 	"\x13ForgotPasswordReply\"r\n" +
 	"\x14ResetPasswordRequest\x12\x19\n" +
 	"\x05email\x18\x01 \x01(\tB\x03\xe0A\x02R\x05email\x12\x17\n" +
@@ -741,9 +947,10 @@ const file_storefront_v1_user_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x02 \x01(\x03R\texpiresAt\",\n" +
 	"\x14UpdateProfileRequest\x12\x14\n" +
-	"\x05email\x18\x01 \x01(\tR\x05email2\xfb\a\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email2\xa9\t\n" +
 	"\x10StoreUserService\x12\x89\x01\n" +
-	"\bRegister\x12(.zcard.api.storefront.v1.RegisterRequest\x1a&.zcard.api.storefront.v1.RegisterReply\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/storefront/user/register\x12}\n" +
+	"\bRegister\x12(.zcard.api.storefront.v1.RegisterRequest\x1a&.zcard.api.storefront.v1.RegisterReply\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/storefront/user/register\x12\xab\x01\n" +
+	"\x10SendRegisterCode\x120.zcard.api.storefront.v1.SendRegisterCodeRequest\x1a..zcard.api.storefront.v1.SendRegisterCodeReply\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/api/v1/storefront/user/register/send-code\x12}\n" +
 	"\x05Login\x12%.zcard.api.storefront.v1.LoginRequest\x1a#.zcard.api.storefront.v1.LoginReply\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/storefront/user/login\x12b\n" +
 	"\x02Me\x12\x16.google.protobuf.Empty\x1a .zcard.api.storefront.v1.MeReply\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/storefront/user/me\x12\xa2\x01\n" +
 	"\x0eForgotPassword\x12..zcard.api.storefront.v1.ForgotPasswordRequest\x1a,.zcard.api.storefront.v1.ForgotPasswordReply\"2\x82\xd3\xe4\x93\x02,:\x01*\"'/api/v1/storefront/user/password/forgot\x12\x9e\x01\n" +
@@ -763,39 +970,43 @@ func file_storefront_v1_user_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_user_proto_rawDescData
 }
 
-var file_storefront_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_storefront_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_storefront_v1_user_proto_goTypes = []any{
-	(*RegisterRequest)(nil),       // 0: zcard.api.storefront.v1.RegisterRequest
-	(*RegisterReply)(nil),         // 1: zcard.api.storefront.v1.RegisterReply
-	(*LoginRequest)(nil),          // 2: zcard.api.storefront.v1.LoginRequest
-	(*LoginReply)(nil),            // 3: zcard.api.storefront.v1.LoginReply
-	(*MeReply)(nil),               // 4: zcard.api.storefront.v1.MeReply
-	(*ForgotPasswordRequest)(nil), // 5: zcard.api.storefront.v1.ForgotPasswordRequest
-	(*ForgotPasswordReply)(nil),   // 6: zcard.api.storefront.v1.ForgotPasswordReply
-	(*ResetPasswordRequest)(nil),  // 7: zcard.api.storefront.v1.ResetPasswordRequest
-	(*ResetPasswordReply)(nil),    // 8: zcard.api.storefront.v1.ResetPasswordReply
-	(*ChangePasswordRequest)(nil), // 9: zcard.api.storefront.v1.ChangePasswordRequest
-	(*ChangePasswordReply)(nil),   // 10: zcard.api.storefront.v1.ChangePasswordReply
-	(*UpdateProfileRequest)(nil),  // 11: zcard.api.storefront.v1.UpdateProfileRequest
-	(*emptypb.Empty)(nil),         // 12: google.protobuf.Empty
+	(*RegisterRequest)(nil),         // 0: zcard.api.storefront.v1.RegisterRequest
+	(*SendRegisterCodeRequest)(nil), // 1: zcard.api.storefront.v1.SendRegisterCodeRequest
+	(*SendRegisterCodeReply)(nil),   // 2: zcard.api.storefront.v1.SendRegisterCodeReply
+	(*RegisterReply)(nil),           // 3: zcard.api.storefront.v1.RegisterReply
+	(*LoginRequest)(nil),            // 4: zcard.api.storefront.v1.LoginRequest
+	(*LoginReply)(nil),              // 5: zcard.api.storefront.v1.LoginReply
+	(*MeReply)(nil),                 // 6: zcard.api.storefront.v1.MeReply
+	(*ForgotPasswordRequest)(nil),   // 7: zcard.api.storefront.v1.ForgotPasswordRequest
+	(*ForgotPasswordReply)(nil),     // 8: zcard.api.storefront.v1.ForgotPasswordReply
+	(*ResetPasswordRequest)(nil),    // 9: zcard.api.storefront.v1.ResetPasswordRequest
+	(*ResetPasswordReply)(nil),      // 10: zcard.api.storefront.v1.ResetPasswordReply
+	(*ChangePasswordRequest)(nil),   // 11: zcard.api.storefront.v1.ChangePasswordRequest
+	(*ChangePasswordReply)(nil),     // 12: zcard.api.storefront.v1.ChangePasswordReply
+	(*UpdateProfileRequest)(nil),    // 13: zcard.api.storefront.v1.UpdateProfileRequest
+	(*emptypb.Empty)(nil),           // 14: google.protobuf.Empty
 }
 var file_storefront_v1_user_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.storefront.v1.StoreUserService.Register:input_type -> zcard.api.storefront.v1.RegisterRequest
-	2,  // 1: zcard.api.storefront.v1.StoreUserService.Login:input_type -> zcard.api.storefront.v1.LoginRequest
-	12, // 2: zcard.api.storefront.v1.StoreUserService.Me:input_type -> google.protobuf.Empty
-	5,  // 3: zcard.api.storefront.v1.StoreUserService.ForgotPassword:input_type -> zcard.api.storefront.v1.ForgotPasswordRequest
-	7,  // 4: zcard.api.storefront.v1.StoreUserService.ResetPassword:input_type -> zcard.api.storefront.v1.ResetPasswordRequest
-	9,  // 5: zcard.api.storefront.v1.StoreUserService.ChangePassword:input_type -> zcard.api.storefront.v1.ChangePasswordRequest
-	11, // 6: zcard.api.storefront.v1.StoreUserService.UpdateProfile:input_type -> zcard.api.storefront.v1.UpdateProfileRequest
-	1,  // 7: zcard.api.storefront.v1.StoreUserService.Register:output_type -> zcard.api.storefront.v1.RegisterReply
-	3,  // 8: zcard.api.storefront.v1.StoreUserService.Login:output_type -> zcard.api.storefront.v1.LoginReply
-	4,  // 9: zcard.api.storefront.v1.StoreUserService.Me:output_type -> zcard.api.storefront.v1.MeReply
-	6,  // 10: zcard.api.storefront.v1.StoreUserService.ForgotPassword:output_type -> zcard.api.storefront.v1.ForgotPasswordReply
-	8,  // 11: zcard.api.storefront.v1.StoreUserService.ResetPassword:output_type -> zcard.api.storefront.v1.ResetPasswordReply
-	10, // 12: zcard.api.storefront.v1.StoreUserService.ChangePassword:output_type -> zcard.api.storefront.v1.ChangePasswordReply
-	4,  // 13: zcard.api.storefront.v1.StoreUserService.UpdateProfile:output_type -> zcard.api.storefront.v1.MeReply
-	7,  // [7:14] is the sub-list for method output_type
-	0,  // [0:7] is the sub-list for method input_type
+	1,  // 1: zcard.api.storefront.v1.StoreUserService.SendRegisterCode:input_type -> zcard.api.storefront.v1.SendRegisterCodeRequest
+	4,  // 2: zcard.api.storefront.v1.StoreUserService.Login:input_type -> zcard.api.storefront.v1.LoginRequest
+	14, // 3: zcard.api.storefront.v1.StoreUserService.Me:input_type -> google.protobuf.Empty
+	7,  // 4: zcard.api.storefront.v1.StoreUserService.ForgotPassword:input_type -> zcard.api.storefront.v1.ForgotPasswordRequest
+	9,  // 5: zcard.api.storefront.v1.StoreUserService.ResetPassword:input_type -> zcard.api.storefront.v1.ResetPasswordRequest
+	11, // 6: zcard.api.storefront.v1.StoreUserService.ChangePassword:input_type -> zcard.api.storefront.v1.ChangePasswordRequest
+	13, // 7: zcard.api.storefront.v1.StoreUserService.UpdateProfile:input_type -> zcard.api.storefront.v1.UpdateProfileRequest
+	3,  // 8: zcard.api.storefront.v1.StoreUserService.Register:output_type -> zcard.api.storefront.v1.RegisterReply
+	2,  // 9: zcard.api.storefront.v1.StoreUserService.SendRegisterCode:output_type -> zcard.api.storefront.v1.SendRegisterCodeReply
+	5,  // 10: zcard.api.storefront.v1.StoreUserService.Login:output_type -> zcard.api.storefront.v1.LoginReply
+	6,  // 11: zcard.api.storefront.v1.StoreUserService.Me:output_type -> zcard.api.storefront.v1.MeReply
+	8,  // 12: zcard.api.storefront.v1.StoreUserService.ForgotPassword:output_type -> zcard.api.storefront.v1.ForgotPasswordReply
+	10, // 13: zcard.api.storefront.v1.StoreUserService.ResetPassword:output_type -> zcard.api.storefront.v1.ResetPasswordReply
+	12, // 14: zcard.api.storefront.v1.StoreUserService.ChangePassword:output_type -> zcard.api.storefront.v1.ChangePasswordReply
+	6,  // 15: zcard.api.storefront.v1.StoreUserService.UpdateProfile:output_type -> zcard.api.storefront.v1.MeReply
+	8,  // [8:16] is the sub-list for method output_type
+	0,  // [0:8] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
@@ -812,7 +1023,7 @@ func file_storefront_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_user_proto_rawDesc), len(file_storefront_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

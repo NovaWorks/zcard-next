@@ -6,7 +6,6 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
-import "google/protobuf/empty.proto";
 
 // AdminDashboardService 工作台指标（P3-07 M1b v1）。
 service AdminDashboardService {
@@ -18,8 +17,12 @@ service AdminDashboardService {
   rpc ListCommissions(ListCommissionsRequest) returns (ListCommissionsReply) {
     option (google.api.http) = { get: "/api/v1/admin/affiliate/commissions" };
   }
-  rpc GetDashboard(google.protobuf.Empty) returns (DashboardReply) {
+  rpc GetDashboard(GetDashboardRequest) returns (DashboardReply) {
     option (google.api.http) = { get: "/api/v1/admin/dashboard" };
+  }
+  // GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+  rpc GetTraffic(GetTrafficRequest) returns (GetTrafficReply) {
+    option (google.api.http) = { get: "/api/v1/admin/dashboard/traffic" };
   }
   // GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
   rpc GetDailyStats(GetDailyStatsRequest) returns (GetDailyStatsReply) {
@@ -65,16 +68,26 @@ message GetDailyStatsReply {
   repeated DailyStatPoint points = 1;
 }
 
+message GetDashboardRequest {
+  int32 trend_days = 1; // 趋势天数：7/14/30，默认 7
+}
+
 message DashboardStat {
   int64 orders = 1;
   int64 revenue = 2;      // 分
   int64 paid_orders = 3;
+  int64 cost = 4;         // 已支付订单成本（分）
+  int64 profit = 5;       // 利润 = revenue - cost（分）
+  int64 new_users = 6;    // 新增注册用户
 }
 
 message DashboardTrendPoint {
   string date = 1;
   int64 orders = 2;
   int64 revenue = 3;      // 分
+  int64 paid_count = 4;   // 已支付单数
+  int64 cost = 5;         // 已支付订单成本（分）
+  int64 profit = 6;       // 利润（分）
 }
 
 message DashboardTopProduct {
@@ -84,12 +97,46 @@ message DashboardTopProduct {
   int64 revenue = 4;      // 分
 }
 
+message DashboardTopChannel {
+  string channel = 1;
+  int64 total_count = 2;
+  int64 success_count = 3;
+  int64 failed_count = 4;
+}
+
+message DashboardPending {
+  int64 pending_withdrawals = 1; // 待审核提现
+  int64 pending_refunds = 2;     // 待处理退款（refund_pending）
+  int64 fulfilling_orders = 3;   // 履约中订单
+  int64 low_stock_products = 4;  // 库存预警商品数
+}
+
+message GetTrafficRequest {
+  int32 days = 1; // 7/14/30，默认 7
+}
+
+message TrafficPoint {
+  string date = 1; // yyyy-mm-dd
+  int64 pv = 2;    // 访问量
+  int64 uv = 3;    // 独立访客（按 IP 去重）
+}
+
+message GetTrafficReply {
+  repeated TrafficPoint points = 1;
+}
+
 message DashboardReply {
   DashboardStat today = 1;
   DashboardStat last7d = 2;
   DashboardStat last30d = 3;
   repeated DashboardTrendPoint trend = 4;
   repeated DashboardTopProduct top_products = 5;
+  DashboardStat yesterday = 6; // 环比基准（今日 vs 昨日）
+  DashboardStat prev7d = 7;    // 环比基准（近7天 vs 前7天）
+  DashboardStat prev30d = 8;   // 环比基准（近30天 vs 前30天）
+  repeated DashboardTopChannel top_channels = 9;
+  DashboardPending pending = 10;
+  int64 online_users = 11;     // 当前在线用户数（5 分钟活跃窗口）
 }
 
 // ListCommissions 佣金管理列表（P3-03）。

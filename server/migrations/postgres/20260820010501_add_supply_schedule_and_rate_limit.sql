@@ -1,0 +1,2 @@
+-- Add columns "last_collect_at", "last_price_sync_at", "last_status_sync_at", "rate_state", "rate_limit_until" to table: "supply_connections"
+ALTER TABLE "supply_connections" ADD COLUMN "last_collect_at" timestamptz NULL, ADD COLUMN "last_price_sync_at" timestamptz NULL, ADD COLUMN "last_status_sync_at" timestamptz NULL, ADD COLUMN "rate_state" jsonb NULL, ADD COLUMN "rate_limit_until" timestamptz NULL;

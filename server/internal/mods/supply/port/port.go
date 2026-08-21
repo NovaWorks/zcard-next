@@ -28,6 +28,23 @@ type PurchaseOrderInfo struct {
 	Cards  []string // delivered 时卡密（内存明文）
 }
 
+// UpstreamCallbackAuth 上游回调验签入参（HTTP 原语；port 零依赖故用 map 传头）。
+type UpstreamCallbackAuth struct {
+	Method    string
+	Path      string // 实际接收路径（zcard 验签用）
+	RawQuery  string
+	Headers   map[string]string
+	Body      []byte
+}
+
+// UpstreamCallbackResult 回调载荷解析结果。
+type UpstreamCallbackResult struct {
+	DownstreamOrderNo string
+	Status            string // delivered | canceled | ...
+	Cards             []string
+	Amount            int64 // 分（0 = 载荷未携带）
+}
+
 // UpstreamGateway 上游采购网关（procurement 模块消费，通道 A）。
 // 实现位于 supply 模块（连接凭据解密 + 适配器装配 + fail-open 库存兜底）。
 type UpstreamGateway interface {
@@ -39,6 +56,13 @@ type UpstreamGateway interface {
 	CheckStock(ctx context.Context, connectionID uint64, productCode string) (int32, error)
 	// Refund 向上游传导退款（可选能力；不支持返回 ErrRefundNotSupported）。
 	Refund(ctx context.Context, connectionID uint64, upstreamOrderID string) error
+	// FailStrategyOf 渠道级失败策略（settings.failure_action：auto_refund 默认 |
+	// manual 转人工；采购建单时读取，P2-10 对齐 1.x failure_action）。
+	FailStrategyOf(ctx context.Context, connectionID uint64) string
+	// VerifyUpstreamCallback 校验并解析上游回调（P2-10 E：按连接驱动验签——
+	// zcard 四头双口径 / dujiao 三头固定 path；acg 无回调返回 ErrCallbackNotSupported）。
+	// 幂等由采购状态机 CAS 兜底（ts+签名摘要 防重放语义见实现）。
+	VerifyUpstreamCallback(ctx context.Context, connectionID uint64, auth *UpstreamCallbackAuth) (*UpstreamCallbackResult, error)
 }
 
 // 哨兵错误（适配器层归一化，procurement 状态机判据）。
@@ -53,6 +77,10 @@ var (
 	ErrUpstreamNoStock = errorsNew("supply: upstream no stock")
 	// ErrRefundNotSupported 上游不支持退款。
 	ErrRefundNotSupported = errorsNew("supply: refund not supported by upstream")
+	// ErrCallbackNotSupported 上游协议无回调（acg-faka；走轮询/巡检兜底）。
+	ErrCallbackNotSupported = errorsNew("supply: callback not supported by upstream")
+	// ErrCallbackVerifyFailed 回调验签失败（统一 401 防枚举口径）。
+	ErrCallbackVerifyFailed = errorsNew("supply: callback verify failed")
 )
 
 func errorsNew(s string) error { return &sentinelError{s} }

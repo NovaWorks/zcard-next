@@ -217,6 +217,7 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		"settings:currency_read",
 		"authz:role_read", "authz:role_read_detail", "authz:tree",
 		"identity:admin_read",
+		"identity:user_read",
 		"catalog:read", "catalog:read_detail", "catalog:category_read", "catalog:tag_read", "catalog:control_read",
 		"catalog:review_read", "catalog:sku_read", "catalog:group_read",
 		"inventory:read",

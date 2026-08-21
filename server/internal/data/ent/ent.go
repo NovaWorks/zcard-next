@@ -46,6 +46,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/outboxevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pointaccount"
@@ -88,6 +89,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticketmessage"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usergroup"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usersession"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/v1idmap"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/virtualreview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/visitlog"
@@ -188,6 +190,7 @@ func checkColumn(t, c string) error {
 			orderitem.Table:              orderitem.ValidColumn,
 			orderstatusevent.Table:       orderstatusevent.ValidColumn,
 			outboxevent.Table:            outboxevent.ValidColumn,
+			pageview.Table:               pageview.ValidColumn,
 			payment.Table:                payment.ValidColumn,
 			paymentchannel.Table:         paymentchannel.ValidColumn,
 			pointaccount.Table:           pointaccount.ValidColumn,
@@ -230,6 +233,7 @@ func checkColumn(t, c string) error {
 			ticketmessage.Table:          ticketmessage.ValidColumn,
 			user.Table:                   user.ValidColumn,
 			usergroup.Table:              usergroup.ValidColumn,
+			usersession.Table:            usersession.ValidColumn,
 			v1idmap.Table:                v1idmap.ValidColumn,
 			virtualreview.Table:          virtualreview.ValidColumn,
 			visitlog.Table:               visitlog.ValidColumn,

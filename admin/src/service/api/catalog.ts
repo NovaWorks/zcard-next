@@ -8,6 +8,7 @@ export function fetchProducts(params?: {
   status?: number;
   page?: number;
   page_size?: number;
+  low_stock_only?: boolean;
 }) {
   return request({
     url: "/api/v1/admin/products",
@@ -177,7 +178,8 @@ export function deleteTag(id: number) {
 
 // ── 货源连接（跨域只读：商品列表展示「自营/代发 + 供应商名」）──
 
-export function fetchSupplyConnections() {
+// 旧只读别名（商品页"自营/代发"展示用）；完整连接管理见 supply.ts。
+export function fetchSupplyConnectionOptions() {
   return request<{ connections: { id: number; name: string; driver: string; status: string }[] }>({
     url: "/api/v1/admin/supply/connections",
   });

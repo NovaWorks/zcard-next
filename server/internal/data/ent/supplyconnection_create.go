@@ -158,6 +158,20 @@ func (_c *SupplyConnectionCreate) SetNillablePriceMarkupPercent(v *float64) *Sup
 	return _c
 }
 
+// SetPriceMarkupAmount sets the "price_markup_amount" field.
+func (_c *SupplyConnectionCreate) SetPriceMarkupAmount(v int64) *SupplyConnectionCreate {
+	_c.mutation.SetPriceMarkupAmount(v)
+	return _c
+}
+
+// SetNillablePriceMarkupAmount sets the "price_markup_amount" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillablePriceMarkupAmount(v *int64) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetPriceMarkupAmount(*v)
+	}
+	return _c
+}
+
 // SetPriceRoundingMode sets the "price_rounding_mode" field.
 func (_c *SupplyConnectionCreate) SetPriceRoundingMode(v supplyconnection.PriceRoundingMode) *SupplyConnectionCreate {
 	_c.mutation.SetPriceRoundingMode(v)
@@ -276,6 +290,68 @@ func (_c *SupplyConnectionCreate) SetNillableBalanceCache(v *int64) *SupplyConne
 	return _c
 }
 
+// SetLastCollectAt sets the "last_collect_at" field.
+func (_c *SupplyConnectionCreate) SetLastCollectAt(v time.Time) *SupplyConnectionCreate {
+	_c.mutation.SetLastCollectAt(v)
+	return _c
+}
+
+// SetNillableLastCollectAt sets the "last_collect_at" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableLastCollectAt(v *time.Time) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetLastCollectAt(*v)
+	}
+	return _c
+}
+
+// SetLastPriceSyncAt sets the "last_price_sync_at" field.
+func (_c *SupplyConnectionCreate) SetLastPriceSyncAt(v time.Time) *SupplyConnectionCreate {
+	_c.mutation.SetLastPriceSyncAt(v)
+	return _c
+}
+
+// SetNillableLastPriceSyncAt sets the "last_price_sync_at" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableLastPriceSyncAt(v *time.Time) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetLastPriceSyncAt(*v)
+	}
+	return _c
+}
+
+// SetLastStatusSyncAt sets the "last_status_sync_at" field.
+func (_c *SupplyConnectionCreate) SetLastStatusSyncAt(v time.Time) *SupplyConnectionCreate {
+	_c.mutation.SetLastStatusSyncAt(v)
+	return _c
+}
+
+// SetNillableLastStatusSyncAt sets the "last_status_sync_at" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableLastStatusSyncAt(v *time.Time) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetLastStatusSyncAt(*v)
+	}
+	return _c
+}
+
+// SetRateState sets the "rate_state" field.
+func (_c *SupplyConnectionCreate) SetRateState(v map[string]interface{}) *SupplyConnectionCreate {
+	_c.mutation.SetRateState(v)
+	return _c
+}
+
+// SetRateLimitUntil sets the "rate_limit_until" field.
+func (_c *SupplyConnectionCreate) SetRateLimitUntil(v time.Time) *SupplyConnectionCreate {
+	_c.mutation.SetRateLimitUntil(v)
+	return _c
+}
+
+// SetNillableRateLimitUntil sets the "rate_limit_until" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableRateLimitUntil(v *time.Time) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetRateLimitUntil(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SupplyConnectionCreate) SetID(v uint64) *SupplyConnectionCreate {
 	_c.mutation.SetID(v)
@@ -344,6 +420,10 @@ func (_c *SupplyConnectionCreate) defaults() {
 	if _, ok := _c.mutation.PriceMarkupPercent(); !ok {
 		v := supplyconnection.DefaultPriceMarkupPercent
 		_c.mutation.SetPriceMarkupPercent(v)
+	}
+	if _, ok := _c.mutation.PriceMarkupAmount(); !ok {
+		v := supplyconnection.DefaultPriceMarkupAmount
+		_c.mutation.SetPriceMarkupAmount(v)
 	}
 	if _, ok := _c.mutation.PriceRoundingMode(); !ok {
 		v := supplyconnection.DefaultPriceRoundingMode
@@ -431,6 +511,9 @@ func (_c *SupplyConnectionCreate) check() error {
 	}
 	if _, ok := _c.mutation.PriceMarkupPercent(); !ok {
 		return &ValidationError{Name: "price_markup_percent", err: errors.New(`ent: missing required field "SupplyConnection.price_markup_percent"`)}
+	}
+	if _, ok := _c.mutation.PriceMarkupAmount(); !ok {
+		return &ValidationError{Name: "price_markup_amount", err: errors.New(`ent: missing required field "SupplyConnection.price_markup_amount"`)}
 	}
 	if _, ok := _c.mutation.PriceRoundingMode(); !ok {
 		return &ValidationError{Name: "price_rounding_mode", err: errors.New(`ent: missing required field "SupplyConnection.price_rounding_mode"`)}
@@ -538,6 +621,10 @@ func (_c *SupplyConnectionCreate) createSpec() (*SupplyConnection, *sqlgraph.Cre
 		_spec.SetField(supplyconnection.FieldPriceMarkupPercent, field.TypeFloat64, value)
 		_node.PriceMarkupPercent = value
 	}
+	if value, ok := _c.mutation.PriceMarkupAmount(); ok {
+		_spec.SetField(supplyconnection.FieldPriceMarkupAmount, field.TypeInt64, value)
+		_node.PriceMarkupAmount = value
+	}
 	if value, ok := _c.mutation.PriceRoundingMode(); ok {
 		_spec.SetField(supplyconnection.FieldPriceRoundingMode, field.TypeEnum, value)
 		_node.PriceRoundingMode = value
@@ -573,6 +660,26 @@ func (_c *SupplyConnectionCreate) createSpec() (*SupplyConnection, *sqlgraph.Cre
 	if value, ok := _c.mutation.BalanceCache(); ok {
 		_spec.SetField(supplyconnection.FieldBalanceCache, field.TypeInt64, value)
 		_node.BalanceCache = value
+	}
+	if value, ok := _c.mutation.LastCollectAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastCollectAt, field.TypeTime, value)
+		_node.LastCollectAt = value
+	}
+	if value, ok := _c.mutation.LastPriceSyncAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastPriceSyncAt, field.TypeTime, value)
+		_node.LastPriceSyncAt = value
+	}
+	if value, ok := _c.mutation.LastStatusSyncAt(); ok {
+		_spec.SetField(supplyconnection.FieldLastStatusSyncAt, field.TypeTime, value)
+		_node.LastStatusSyncAt = value
+	}
+	if value, ok := _c.mutation.RateState(); ok {
+		_spec.SetField(supplyconnection.FieldRateState, field.TypeJSON, value)
+		_node.RateState = value
+	}
+	if value, ok := _c.mutation.RateLimitUntil(); ok {
+		_spec.SetField(supplyconnection.FieldRateLimitUntil, field.TypeTime, value)
+		_node.RateLimitUntil = value
 	}
 	return _node, _spec
 }
@@ -782,6 +889,24 @@ func (u *SupplyConnectionUpsert) AddPriceMarkupPercent(v float64) *SupplyConnect
 	return u
 }
 
+// SetPriceMarkupAmount sets the "price_markup_amount" field.
+func (u *SupplyConnectionUpsert) SetPriceMarkupAmount(v int64) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldPriceMarkupAmount, v)
+	return u
+}
+
+// UpdatePriceMarkupAmount sets the "price_markup_amount" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdatePriceMarkupAmount() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldPriceMarkupAmount)
+	return u
+}
+
+// AddPriceMarkupAmount adds v to the "price_markup_amount" field.
+func (u *SupplyConnectionUpsert) AddPriceMarkupAmount(v int64) *SupplyConnectionUpsert {
+	u.Add(supplyconnection.FieldPriceMarkupAmount, v)
+	return u
+}
+
 // SetPriceRoundingMode sets the "price_rounding_mode" field.
 func (u *SupplyConnectionUpsert) SetPriceRoundingMode(v supplyconnection.PriceRoundingMode) *SupplyConnectionUpsert {
 	u.Set(supplyconnection.FieldPriceRoundingMode, v)
@@ -917,6 +1042,96 @@ func (u *SupplyConnectionUpsert) UpdateBalanceCache() *SupplyConnectionUpsert {
 // AddBalanceCache adds v to the "balance_cache" field.
 func (u *SupplyConnectionUpsert) AddBalanceCache(v int64) *SupplyConnectionUpsert {
 	u.Add(supplyconnection.FieldBalanceCache, v)
+	return u
+}
+
+// SetLastCollectAt sets the "last_collect_at" field.
+func (u *SupplyConnectionUpsert) SetLastCollectAt(v time.Time) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldLastCollectAt, v)
+	return u
+}
+
+// UpdateLastCollectAt sets the "last_collect_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateLastCollectAt() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldLastCollectAt)
+	return u
+}
+
+// ClearLastCollectAt clears the value of the "last_collect_at" field.
+func (u *SupplyConnectionUpsert) ClearLastCollectAt() *SupplyConnectionUpsert {
+	u.SetNull(supplyconnection.FieldLastCollectAt)
+	return u
+}
+
+// SetLastPriceSyncAt sets the "last_price_sync_at" field.
+func (u *SupplyConnectionUpsert) SetLastPriceSyncAt(v time.Time) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldLastPriceSyncAt, v)
+	return u
+}
+
+// UpdateLastPriceSyncAt sets the "last_price_sync_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateLastPriceSyncAt() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldLastPriceSyncAt)
+	return u
+}
+
+// ClearLastPriceSyncAt clears the value of the "last_price_sync_at" field.
+func (u *SupplyConnectionUpsert) ClearLastPriceSyncAt() *SupplyConnectionUpsert {
+	u.SetNull(supplyconnection.FieldLastPriceSyncAt)
+	return u
+}
+
+// SetLastStatusSyncAt sets the "last_status_sync_at" field.
+func (u *SupplyConnectionUpsert) SetLastStatusSyncAt(v time.Time) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldLastStatusSyncAt, v)
+	return u
+}
+
+// UpdateLastStatusSyncAt sets the "last_status_sync_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateLastStatusSyncAt() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldLastStatusSyncAt)
+	return u
+}
+
+// ClearLastStatusSyncAt clears the value of the "last_status_sync_at" field.
+func (u *SupplyConnectionUpsert) ClearLastStatusSyncAt() *SupplyConnectionUpsert {
+	u.SetNull(supplyconnection.FieldLastStatusSyncAt)
+	return u
+}
+
+// SetRateState sets the "rate_state" field.
+func (u *SupplyConnectionUpsert) SetRateState(v map[string]interface{}) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldRateState, v)
+	return u
+}
+
+// UpdateRateState sets the "rate_state" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateRateState() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldRateState)
+	return u
+}
+
+// ClearRateState clears the value of the "rate_state" field.
+func (u *SupplyConnectionUpsert) ClearRateState() *SupplyConnectionUpsert {
+	u.SetNull(supplyconnection.FieldRateState)
+	return u
+}
+
+// SetRateLimitUntil sets the "rate_limit_until" field.
+func (u *SupplyConnectionUpsert) SetRateLimitUntil(v time.Time) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldRateLimitUntil, v)
+	return u
+}
+
+// UpdateRateLimitUntil sets the "rate_limit_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateRateLimitUntil() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldRateLimitUntil)
+	return u
+}
+
+// ClearRateLimitUntil clears the value of the "rate_limit_until" field.
+func (u *SupplyConnectionUpsert) ClearRateLimitUntil() *SupplyConnectionUpsert {
+	u.SetNull(supplyconnection.FieldRateLimitUntil)
 	return u
 }
 
@@ -1153,6 +1368,27 @@ func (u *SupplyConnectionUpsertOne) UpdatePriceMarkupPercent() *SupplyConnection
 	})
 }
 
+// SetPriceMarkupAmount sets the "price_markup_amount" field.
+func (u *SupplyConnectionUpsertOne) SetPriceMarkupAmount(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetPriceMarkupAmount(v)
+	})
+}
+
+// AddPriceMarkupAmount adds v to the "price_markup_amount" field.
+func (u *SupplyConnectionUpsertOne) AddPriceMarkupAmount(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddPriceMarkupAmount(v)
+	})
+}
+
+// UpdatePriceMarkupAmount sets the "price_markup_amount" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdatePriceMarkupAmount() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdatePriceMarkupAmount()
+	})
+}
+
 // SetPriceRoundingMode sets the "price_rounding_mode" field.
 func (u *SupplyConnectionUpsertOne) SetPriceRoundingMode(v supplyconnection.PriceRoundingMode) *SupplyConnectionUpsertOne {
 	return u.Update(func(s *SupplyConnectionUpsert) {
@@ -1311,6 +1547,111 @@ func (u *SupplyConnectionUpsertOne) AddBalanceCache(v int64) *SupplyConnectionUp
 func (u *SupplyConnectionUpsertOne) UpdateBalanceCache() *SupplyConnectionUpsertOne {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateBalanceCache()
+	})
+}
+
+// SetLastCollectAt sets the "last_collect_at" field.
+func (u *SupplyConnectionUpsertOne) SetLastCollectAt(v time.Time) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLastCollectAt(v)
+	})
+}
+
+// UpdateLastCollectAt sets the "last_collect_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateLastCollectAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLastCollectAt()
+	})
+}
+
+// ClearLastCollectAt clears the value of the "last_collect_at" field.
+func (u *SupplyConnectionUpsertOne) ClearLastCollectAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearLastCollectAt()
+	})
+}
+
+// SetLastPriceSyncAt sets the "last_price_sync_at" field.
+func (u *SupplyConnectionUpsertOne) SetLastPriceSyncAt(v time.Time) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLastPriceSyncAt(v)
+	})
+}
+
+// UpdateLastPriceSyncAt sets the "last_price_sync_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateLastPriceSyncAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLastPriceSyncAt()
+	})
+}
+
+// ClearLastPriceSyncAt clears the value of the "last_price_sync_at" field.
+func (u *SupplyConnectionUpsertOne) ClearLastPriceSyncAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearLastPriceSyncAt()
+	})
+}
+
+// SetLastStatusSyncAt sets the "last_status_sync_at" field.
+func (u *SupplyConnectionUpsertOne) SetLastStatusSyncAt(v time.Time) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLastStatusSyncAt(v)
+	})
+}
+
+// UpdateLastStatusSyncAt sets the "last_status_sync_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateLastStatusSyncAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLastStatusSyncAt()
+	})
+}
+
+// ClearLastStatusSyncAt clears the value of the "last_status_sync_at" field.
+func (u *SupplyConnectionUpsertOne) ClearLastStatusSyncAt() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearLastStatusSyncAt()
+	})
+}
+
+// SetRateState sets the "rate_state" field.
+func (u *SupplyConnectionUpsertOne) SetRateState(v map[string]interface{}) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetRateState(v)
+	})
+}
+
+// UpdateRateState sets the "rate_state" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateRateState() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateRateState()
+	})
+}
+
+// ClearRateState clears the value of the "rate_state" field.
+func (u *SupplyConnectionUpsertOne) ClearRateState() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearRateState()
+	})
+}
+
+// SetRateLimitUntil sets the "rate_limit_until" field.
+func (u *SupplyConnectionUpsertOne) SetRateLimitUntil(v time.Time) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetRateLimitUntil(v)
+	})
+}
+
+// UpdateRateLimitUntil sets the "rate_limit_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateRateLimitUntil() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateRateLimitUntil()
+	})
+}
+
+// ClearRateLimitUntil clears the value of the "rate_limit_until" field.
+func (u *SupplyConnectionUpsertOne) ClearRateLimitUntil() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearRateLimitUntil()
 	})
 }
 
@@ -1713,6 +2054,27 @@ func (u *SupplyConnectionUpsertBulk) UpdatePriceMarkupPercent() *SupplyConnectio
 	})
 }
 
+// SetPriceMarkupAmount sets the "price_markup_amount" field.
+func (u *SupplyConnectionUpsertBulk) SetPriceMarkupAmount(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetPriceMarkupAmount(v)
+	})
+}
+
+// AddPriceMarkupAmount adds v to the "price_markup_amount" field.
+func (u *SupplyConnectionUpsertBulk) AddPriceMarkupAmount(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddPriceMarkupAmount(v)
+	})
+}
+
+// UpdatePriceMarkupAmount sets the "price_markup_amount" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdatePriceMarkupAmount() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdatePriceMarkupAmount()
+	})
+}
+
 // SetPriceRoundingMode sets the "price_rounding_mode" field.
 func (u *SupplyConnectionUpsertBulk) SetPriceRoundingMode(v supplyconnection.PriceRoundingMode) *SupplyConnectionUpsertBulk {
 	return u.Update(func(s *SupplyConnectionUpsert) {
@@ -1871,6 +2233,111 @@ func (u *SupplyConnectionUpsertBulk) AddBalanceCache(v int64) *SupplyConnectionU
 func (u *SupplyConnectionUpsertBulk) UpdateBalanceCache() *SupplyConnectionUpsertBulk {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateBalanceCache()
+	})
+}
+
+// SetLastCollectAt sets the "last_collect_at" field.
+func (u *SupplyConnectionUpsertBulk) SetLastCollectAt(v time.Time) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLastCollectAt(v)
+	})
+}
+
+// UpdateLastCollectAt sets the "last_collect_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateLastCollectAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLastCollectAt()
+	})
+}
+
+// ClearLastCollectAt clears the value of the "last_collect_at" field.
+func (u *SupplyConnectionUpsertBulk) ClearLastCollectAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearLastCollectAt()
+	})
+}
+
+// SetLastPriceSyncAt sets the "last_price_sync_at" field.
+func (u *SupplyConnectionUpsertBulk) SetLastPriceSyncAt(v time.Time) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLastPriceSyncAt(v)
+	})
+}
+
+// UpdateLastPriceSyncAt sets the "last_price_sync_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateLastPriceSyncAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLastPriceSyncAt()
+	})
+}
+
+// ClearLastPriceSyncAt clears the value of the "last_price_sync_at" field.
+func (u *SupplyConnectionUpsertBulk) ClearLastPriceSyncAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearLastPriceSyncAt()
+	})
+}
+
+// SetLastStatusSyncAt sets the "last_status_sync_at" field.
+func (u *SupplyConnectionUpsertBulk) SetLastStatusSyncAt(v time.Time) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetLastStatusSyncAt(v)
+	})
+}
+
+// UpdateLastStatusSyncAt sets the "last_status_sync_at" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateLastStatusSyncAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateLastStatusSyncAt()
+	})
+}
+
+// ClearLastStatusSyncAt clears the value of the "last_status_sync_at" field.
+func (u *SupplyConnectionUpsertBulk) ClearLastStatusSyncAt() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearLastStatusSyncAt()
+	})
+}
+
+// SetRateState sets the "rate_state" field.
+func (u *SupplyConnectionUpsertBulk) SetRateState(v map[string]interface{}) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetRateState(v)
+	})
+}
+
+// UpdateRateState sets the "rate_state" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateRateState() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateRateState()
+	})
+}
+
+// ClearRateState clears the value of the "rate_state" field.
+func (u *SupplyConnectionUpsertBulk) ClearRateState() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearRateState()
+	})
+}
+
+// SetRateLimitUntil sets the "rate_limit_until" field.
+func (u *SupplyConnectionUpsertBulk) SetRateLimitUntil(v time.Time) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetRateLimitUntil(v)
+	})
+}
+
+// UpdateRateLimitUntil sets the "rate_limit_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateRateLimitUntil() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateRateLimitUntil()
+	})
+}
+
+// ClearRateLimitUntil clears the value of the "rate_limit_until" field.
+func (u *SupplyConnectionUpsertBulk) ClearRateLimitUntil() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.ClearRateLimitUntil()
 	})
 }
 

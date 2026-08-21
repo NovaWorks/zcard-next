@@ -416,7 +416,7 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "email", Type: field.TypeString, Size: 255},
 		{Name: "user_id", Type: field.TypeUint64, Nullable: true},
-		{Name: "purpose", Type: field.TypeEnum, Enums: []string{"register", "reset"}},
+		{Name: "purpose", Type: field.TypeEnum, Enums: []string{"register", "phone_register", "reset"}},
 		{Name: "code_hash", Type: field.TypeString, Size: 128},
 		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "verified_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -1084,6 +1084,35 @@ var (
 				Name:    "outboxevent_status_created_at",
 				Unique:  false,
 				Columns: []*schema.Column{OutboxEventsColumns[6], OutboxEventsColumns[8]},
+			},
+		},
+	}
+	// PageViewsColumns holds the columns for the "page_views" table.
+	PageViewsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "day", Type: field.TypeString, Size: 8},
+		{Name: "path", Type: field.TypeString, Size: 255},
+		{Name: "user_id", Type: field.TypeUint64, Nullable: true},
+		{Name: "ip", Type: field.TypeString, Size: 64},
+	}
+	// PageViewsTable holds the schema information for the "page_views" table.
+	PageViewsTable = &schema.Table{
+		Name:       "page_views",
+		Columns:    PageViewsColumns,
+		PrimaryKey: []*schema.Column{PageViewsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "pageview_day_ip",
+				Unique:  false,
+				Columns: []*schema.Column{PageViewsColumns[4], PageViewsColumns[7]},
+			},
+			{
+				Name:    "pageview_day_subsite_id",
+				Unique:  false,
+				Columns: []*schema.Column{PageViewsColumns[4], PageViewsColumns[3]},
 			},
 		},
 	}
@@ -1920,16 +1949,28 @@ var (
 		{Name: "api_key", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "api_secret", Type: field.TypeBytes},
 		{Name: "contact", Type: field.TypeString, Nullable: true, Size: 255},
-		{Name: "status", Type: field.TypeEnum, Enums: []string{"applying", "approved", "disabled"}, Default: "applying"},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"applying", "approved", "rejected", "disabled"}, Default: "applying"},
 		{Name: "balance_cache", Type: field.TypeInt64, Default: 0},
 		{Name: "notify_url", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "protocol", Type: field.TypeEnum, Enums: []string{"zcard", "dujiao_next", "acg_faka"}, Default: "zcard"},
+		{Name: "display_name", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "owner_user_id", Type: field.TypeUint64, Nullable: true, Default: 0},
+		{Name: "apply_reason", Type: field.TypeString, Nullable: true, Size: 500},
+		{Name: "review_note", Type: field.TypeString, Nullable: true, Size: 500},
 	}
 	// SupplierAccountsTable holds the schema information for the "supplier_accounts" table.
 	SupplierAccountsTable = &schema.Table{
 		Name:       "supplier_accounts",
 		Columns:    SupplierAccountsColumns,
 		PrimaryKey: []*schema.Column{SupplierAccountsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "supplieraccount_owner_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{SupplierAccountsColumns[13]},
+			},
+		},
 	}
 	// SupplierLedgerEntriesColumns holds the columns for the "supplier_ledger_entries" table.
 	SupplierLedgerEntriesColumns = []*schema.Column{
@@ -1994,6 +2035,7 @@ var (
 		{Name: "retry_intervals", Type: field.TypeString, Size: 200, Default: "[30,60,300]"},
 		{Name: "exchange_rate", Type: field.TypeFloat64, Default: 1, SchemaType: map[string]string{"mysql": "decimal(20,8)", "postgres": "numeric(20,8)", "sqlite3": "real"}},
 		{Name: "price_markup_percent", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"mysql": "decimal(20,8)", "postgres": "numeric(20,8)", "sqlite3": "real"}},
+		{Name: "price_markup_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "price_rounding_mode", Type: field.TypeEnum, Enums: []string{"none", "ceil_int", "ceil_tenth"}, Default: "none"},
 		{Name: "auto_sync_price", Type: field.TypeBool, Default: true},
 		{Name: "stock_mode", Type: field.TypeEnum, Enums: []string{"real", "plenty"}, Default: "real"},
@@ -2003,6 +2045,11 @@ var (
 		{Name: "last_synced_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "last_error", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "balance_cache", Type: field.TypeInt64, Default: 0},
+		{Name: "last_collect_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "last_price_sync_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "last_status_sync_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "rate_state", Type: field.TypeJSON, Nullable: true},
+		{Name: "rate_limit_until", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// SupplyConnectionsTable holds the schema information for the "supply_connections" table.
 	SupplyConnectionsTable = &schema.Table{
@@ -2018,7 +2065,7 @@ var (
 			{
 				Name:    "supplyconnection_last_synced_at",
 				Unique:  false,
-				Columns: []*schema.Column{SupplyConnectionsColumns[19]},
+				Columns: []*schema.Column{SupplyConnectionsColumns[20]},
 			},
 		},
 	}
@@ -2185,7 +2232,7 @@ var (
 		{Name: "ticket_no", Type: field.TypeString, Unique: true, Size: 40},
 		{Name: "user_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "guest_contact", Type: field.TypeString, Nullable: true, Size: 150},
-		{Name: "type", Type: field.TypeEnum, Enums: []string{"presale", "aftersale"}},
+		{Name: "type", Type: field.TypeEnum, Enums: []string{"presale", "aftersale", "withdraw"}},
 		{Name: "priority", Type: field.TypeEnum, Enums: []string{"low", "normal", "high", "urgent_paid"}, Default: "normal"},
 		{Name: "order_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "product_id", Type: field.TypeUint64, Nullable: true},
@@ -2243,12 +2290,14 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 255},
+		{Name: "phone", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
 		{Name: "password_hash", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "banned", "deleted"}, Default: "active"},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "invite_l1", Type: field.TypeUint64, Nullable: true},
 		{Name: "invite_l2", Type: field.TypeUint64, Nullable: true},
 		{Name: "invite_l3", Type: field.TypeUint64, Nullable: true},
+		{Name: "promo_code", Type: field.TypeString, Unique: true, Nullable: true, Size: 16},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -2259,7 +2308,7 @@ var (
 			{
 				Name:    "user_invite_l1",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[8]},
+				Columns: []*schema.Column{UsersColumns[9]},
 			},
 		},
 	}
@@ -2277,6 +2326,34 @@ var (
 		Name:       "user_groups",
 		Columns:    UserGroupsColumns,
 		PrimaryKey: []*schema.Column{UserGroupsColumns[0]},
+	}
+	// UserSessionsColumns holds the columns for the "user_sessions" table.
+	UserSessionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "ip", Type: field.TypeString, Size: 64},
+		{Name: "last_active_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+	}
+	// UserSessionsTable holds the schema information for the "user_sessions" table.
+	UserSessionsTable = &schema.Table{
+		Name:       "user_sessions",
+		Columns:    UserSessionsColumns,
+		PrimaryKey: []*schema.Column{UserSessionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usersession_subsite_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserSessionsColumns[3], UserSessionsColumns[4]},
+			},
+			{
+				Name:    "usersession_last_active_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserSessionsColumns[6]},
+			},
+		},
 	}
 	// V1idMapsColumns holds the columns for the "v1id_maps" table.
 	V1idMapsColumns = []*schema.Column{
@@ -2411,6 +2488,7 @@ var (
 		{Name: "reject_reason", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "reviewed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "receipt", Type: field.TypeString, Nullable: true, Size: 255},
 	}
 	// WithdrawalsTable holds the schema information for the "withdrawals" table.
 	WithdrawalsTable = &schema.Table{
@@ -2466,6 +2544,7 @@ var (
 		OrderItemsTable,
 		OrderStatusEventsTable,
 		OutboxEventsTable,
+		PageViewsTable,
 		PaymentsTable,
 		PaymentChannelsTable,
 		PointAccountsTable,
@@ -2508,6 +2587,7 @@ var (
 		TicketMessagesTable,
 		UsersTable,
 		UserGroupsTable,
+		UserSessionsTable,
 		V1idMapsTable,
 		VirtualReviewsTable,
 		VisitLogsTable,

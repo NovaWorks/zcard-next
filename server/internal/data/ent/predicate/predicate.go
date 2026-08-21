@@ -108,6 +108,9 @@ type OrderStatusEvent func(*sql.Selector)
 // OutboxEvent is the predicate function for outboxevent builders.
 type OutboxEvent func(*sql.Selector)
 
+// PageView is the predicate function for pageview builders.
+type PageView func(*sql.Selector)
+
 // Payment is the predicate function for payment builders.
 type Payment func(*sql.Selector)
 
@@ -233,6 +236,9 @@ type User func(*sql.Selector)
 
 // UserGroup is the predicate function for usergroup builders.
 type UserGroup func(*sql.Selector)
+
+// UserSession is the predicate function for usersession builders.
+type UserSession func(*sql.Selector)
 
 // V1IDMap is the predicate function for v1idmap builders.
 type V1IDMap func(*sql.Selector)

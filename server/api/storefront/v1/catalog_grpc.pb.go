@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreCatalogService_ListProducts_FullMethodName = "/zcard.api.storefront.v1.StoreCatalogService/ListProducts"
-	StoreCatalogService_GetProduct_FullMethodName   = "/zcard.api.storefront.v1.StoreCatalogService/GetProduct"
+	StoreCatalogService_ListProducts_FullMethodName   = "/zcard.api.storefront.v1.StoreCatalogService/ListProducts"
+	StoreCatalogService_GetProduct_FullMethodName     = "/zcard.api.storefront.v1.StoreCatalogService/GetProduct"
+	StoreCatalogService_ListCategories_FullMethodName = "/zcard.api.storefront.v1.StoreCatalogService/ListCategories"
 )
 
 // StoreCatalogServiceClient is the client API for StoreCatalogService service.
@@ -34,6 +36,8 @@ type StoreCatalogServiceClient interface {
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error)
 	// GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*Product, error)
+	// ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+	ListCategories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListCategoriesReply, error)
 }
 
 type storeCatalogServiceClient struct {
@@ -64,6 +68,16 @@ func (c *storeCatalogServiceClient) GetProduct(ctx context.Context, in *GetProdu
 	return out, nil
 }
 
+func (c *storeCatalogServiceClient) ListCategories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListCategoriesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCategoriesReply)
+	err := c.cc.Invoke(ctx, StoreCatalogService_ListCategories_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoreCatalogServiceServer is the server API for StoreCatalogService service.
 // All implementations must embed UnimplementedStoreCatalogServiceServer
 // for forward compatibility.
@@ -75,6 +89,8 @@ type StoreCatalogServiceServer interface {
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
 	// GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
+	// ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
+	ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error)
 	mustEmbedUnimplementedStoreCatalogServiceServer()
 }
 
@@ -90,6 +106,9 @@ func (UnimplementedStoreCatalogServiceServer) ListProducts(context.Context, *Lis
 }
 func (UnimplementedStoreCatalogServiceServer) GetProduct(context.Context, *GetProductRequest) (*Product, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetProduct not implemented")
+}
+func (UnimplementedStoreCatalogServiceServer) ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCategories not implemented")
 }
 func (UnimplementedStoreCatalogServiceServer) mustEmbedUnimplementedStoreCatalogServiceServer() {}
 func (UnimplementedStoreCatalogServiceServer) testEmbeddedByValue()                             {}
@@ -148,6 +167,24 @@ func _StoreCatalogService_GetProduct_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreCatalogService_ListCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreCatalogServiceServer).ListCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreCatalogService_ListCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreCatalogServiceServer).ListCategories(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoreCatalogService_ServiceDesc is the grpc.ServiceDesc for StoreCatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +199,10 @@ var StoreCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProduct",
 			Handler:    _StoreCatalogService_GetProduct_Handler,
+		},
+		{
+			MethodName: "ListCategories",
+			Handler:    _StoreCatalogService_ListCategories_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

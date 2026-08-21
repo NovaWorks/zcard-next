@@ -36,7 +36,8 @@ type Entry struct {
 
 // WalletRepoImpl 钱包仓储。
 type WalletRepoImpl struct {
-	data *data.Data
+	data        *data.Data
+	commissions CommissionConsumer // 佣金 FIFO 消耗（打款；nil=跳过）
 }
 
 // NewWalletRepoImpl 构造。

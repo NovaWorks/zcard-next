@@ -17,7 +17,7 @@ type EmailVerification struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uint64 `json:"id,omitempty"`
-	// Email holds the value of the "email" field.
+	// 目标地址（邮箱或手机号；purpose 区分通道）
 	Email string `json:"email,omitempty"`
 	// UserID holds the value of the "user_id" field.
 	UserID uint64 `json:"user_id,omitempty"`

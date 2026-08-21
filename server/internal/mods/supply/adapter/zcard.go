@@ -134,7 +134,8 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 	if pageSize <= 0 {
 		pageSize = 50
 	}
-	out := &ProductList{Total: resp.Total, HasMore: page*pageSize < resp.Total}
+	// 自家协议 include_inactive 恒生效（服务端 status=-1 全量；协议无回声字段）
+	out := &ProductList{Total: resp.Total, HasMore: page*pageSize < resp.Total, IncludesInactive: includeInactive}
 	for _, p := range resp.Items {
 		out.Items = append(out.Items, p.toProduct())
 	}

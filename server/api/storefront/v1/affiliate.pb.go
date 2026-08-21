@@ -35,6 +35,7 @@ type MyAffiliateReply struct {
 	TeamL1         int64                  `protobuf:"varint,8,opt,name=team_l1,json=teamL1,proto3" json:"team_l1,omitempty"`                         // 直推人数
 	TeamL2         int64                  `protobuf:"varint,9,opt,name=team_l2,json=teamL2,proto3" json:"team_l2,omitempty"`
 	TeamL3         int64                  `protobuf:"varint,10,opt,name=team_l3,json=teamL3,proto3" json:"team_l3,omitempty"`
+	PromoCode      string                 `protobuf:"bytes,11,opt,name=promo_code,json=promoCode,proto3" json:"promo_code,omitempty"` // 推广码（8 位随机）
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -137,6 +138,13 @@ func (x *MyAffiliateReply) GetTeamL3() int64 {
 		return x.TeamL3
 	}
 	return 0
+}
+
+func (x *MyAffiliateReply) GetPromoCode() string {
+	if x != nil {
+		return x.PromoCode
+	}
+	return ""
 }
 
 type ListTeamRequest struct {
@@ -559,7 +567,7 @@ var File_storefront_v1_affiliate_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_affiliate_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorefront/v1/affiliate.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xcc\x02\n" +
+	"\x1dstorefront/v1/affiliate.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xeb\x02\n" +
 	"\x10MyAffiliateReply\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x1d\n" +
 	"\n" +
@@ -574,7 +582,9 @@ const file_storefront_v1_affiliate_proto_rawDesc = "" +
 	"\ateam_l1\x18\b \x01(\x03R\x06teamL1\x12\x17\n" +
 	"\ateam_l2\x18\t \x01(\x03R\x06teamL2\x12\x17\n" +
 	"\ateam_l3\x18\n" +
-	" \x01(\x03R\x06teamL3\"V\n" +
+	" \x01(\x03R\x06teamL3\x12\x1d\n" +
+	"\n" +
+	"promo_code\x18\v \x01(\tR\tpromoCode\"V\n" +
 	"\x0fListTeamRequest\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\x05R\x04tier\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +

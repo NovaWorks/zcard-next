@@ -6,6 +6,7 @@
 import { computed } from "vue";
 import { NButton, NImage } from "naive-ui";
 import { pickMedia } from "@/components/common/media-picker";
+import { resolveMediaUrl } from "@/utils/media";
 
 const props = withDefaults(
   defineProps<{
@@ -38,7 +39,7 @@ function removeUrl(url: string) {
   <div class="flex flex-col gap-8px">
     <div v-if="urls.length" class="flex flex-wrap gap-8px">
       <div v-for="url in urls" :key="url" class="group relative">
-        <NImage :src="url" width="72" height="72" object-fit="cover" class="rounded-4px" />
+        <NImage :src="resolveMediaUrl(url)" width="72" height="72" object-fit="cover" class="rounded-4px" />
         <NButton
           size="tiny"
           type="error"

@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoreWalletService_GetBalance_FullMethodName       = "/zcard.api.storefront.v1.StoreWalletService/GetBalance"
-	StoreWalletService_ListTransactions_FullMethodName = "/zcard.api.storefront.v1.StoreWalletService/ListTransactions"
-	StoreWalletService_CreateRecharge_FullMethodName   = "/zcard.api.storefront.v1.StoreWalletService/CreateRecharge"
-	StoreWalletService_RedeemGiftcard_FullMethodName   = "/zcard.api.storefront.v1.StoreWalletService/RedeemGiftcard"
-	StoreWalletService_CreateWithdrawal_FullMethodName = "/zcard.api.storefront.v1.StoreWalletService/CreateWithdrawal"
+	StoreWalletService_GetBalance_FullMethodName        = "/zcard.api.storefront.v1.StoreWalletService/GetBalance"
+	StoreWalletService_ListTransactions_FullMethodName  = "/zcard.api.storefront.v1.StoreWalletService/ListTransactions"
+	StoreWalletService_CreateRecharge_FullMethodName    = "/zcard.api.storefront.v1.StoreWalletService/CreateRecharge"
+	StoreWalletService_RedeemGiftcard_FullMethodName    = "/zcard.api.storefront.v1.StoreWalletService/RedeemGiftcard"
+	StoreWalletService_ListMyWithdrawals_FullMethodName = "/zcard.api.storefront.v1.StoreWalletService/ListMyWithdrawals"
+	StoreWalletService_CreateWithdrawal_FullMethodName  = "/zcard.api.storefront.v1.StoreWalletService/CreateWithdrawal"
 )
 
 // StoreWalletServiceClient is the client API for StoreWalletService service.
@@ -41,7 +42,9 @@ type StoreWalletServiceClient interface {
 	CreateRecharge(ctx context.Context, in *CreateRechargeRequest, opts ...grpc.CallOption) (*CreateRechargeReply, error)
 	// RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
 	RedeemGiftcard(ctx context.Context, in *RedeemGiftcardRequest, opts ...grpc.CallOption) (*RedeemGiftcardReply, error)
-	// CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+	// ListMyWithdrawals 本人提现记录（状态/驳回原因/时间）。
+	ListMyWithdrawals(ctx context.Context, in *ListMyWithdrawalsRequest, opts ...grpc.CallOption) (*ListMyWithdrawalsReply, error)
+	// CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
 	CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...grpc.CallOption) (*CreateWithdrawalReply, error)
 }
 
@@ -93,6 +96,16 @@ func (c *storeWalletServiceClient) RedeemGiftcard(ctx context.Context, in *Redee
 	return out, nil
 }
 
+func (c *storeWalletServiceClient) ListMyWithdrawals(ctx context.Context, in *ListMyWithdrawalsRequest, opts ...grpc.CallOption) (*ListMyWithdrawalsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMyWithdrawalsReply)
+	err := c.cc.Invoke(ctx, StoreWalletService_ListMyWithdrawals_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *storeWalletServiceClient) CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...grpc.CallOption) (*CreateWithdrawalReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateWithdrawalReply)
@@ -117,7 +130,9 @@ type StoreWalletServiceServer interface {
 	CreateRecharge(context.Context, *CreateRechargeRequest) (*CreateRechargeReply, error)
 	// RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破；余额入账幂等键 giftcard:<id>）。
 	RedeemGiftcard(context.Context, *RedeemGiftcardRequest) (*RedeemGiftcardReply, error)
-	// CreateWithdrawal 提现申请（available→locked + 手续费 + 收款方式白名单；M3 执行）。
+	// ListMyWithdrawals 本人提现记录（状态/驳回原因/时间）。
+	ListMyWithdrawals(context.Context, *ListMyWithdrawalsRequest) (*ListMyWithdrawalsReply, error)
+	// CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
 	CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error)
 	mustEmbedUnimplementedStoreWalletServiceServer()
 }
@@ -140,6 +155,9 @@ func (UnimplementedStoreWalletServiceServer) CreateRecharge(context.Context, *Cr
 }
 func (UnimplementedStoreWalletServiceServer) RedeemGiftcard(context.Context, *RedeemGiftcardRequest) (*RedeemGiftcardReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method RedeemGiftcard not implemented")
+}
+func (UnimplementedStoreWalletServiceServer) ListMyWithdrawals(context.Context, *ListMyWithdrawalsRequest) (*ListMyWithdrawalsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMyWithdrawals not implemented")
 }
 func (UnimplementedStoreWalletServiceServer) CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateWithdrawal not implemented")
@@ -237,6 +255,24 @@ func _StoreWalletService_RedeemGiftcard_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoreWalletService_ListMyWithdrawals_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMyWithdrawalsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoreWalletServiceServer).ListMyWithdrawals(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoreWalletService_ListMyWithdrawals_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoreWalletServiceServer).ListMyWithdrawals(ctx, req.(*ListMyWithdrawalsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _StoreWalletService_CreateWithdrawal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateWithdrawalRequest)
 	if err := dec(in); err != nil {
@@ -277,6 +313,10 @@ var StoreWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RedeemGiftcard",
 			Handler:    _StoreWalletService_RedeemGiftcard_Handler,
+		},
+		{
+			MethodName: "ListMyWithdrawals",
+			Handler:    _StoreWalletService_ListMyWithdrawals_Handler,
 		},
 		{
 			MethodName: "CreateWithdrawal",

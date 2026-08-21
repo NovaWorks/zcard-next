@@ -6,12 +6,13 @@ import type { DataTableColumns } from "naive-ui";
 import { fetchCoupons, createCouponBatch, disableCoupon, grantCoupon } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { formatMoney } from "@/utils/money";
+import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "CouponsTab" });
 
 const loading = ref(false);
 const coupons = ref<any[]>([]);
-const statusFilter = ref<string | null>(null);
+const statusFilter = ref<string>("");
 
 const showBatch = ref(false);
 const saving = ref(false);
@@ -23,11 +24,12 @@ const grantForm = ref({ batch_id: "", user_id: null as number | null, count: 1 }
 
 const canWrite = () => checkAuth("coupon:write");
 
-const statusOptions = [
-  { label: "全部", value: "" },
-  { label: "未使用", value: "unused" },
-  { label: "已使用", value: "used" },
-  { label: "已作废", value: "disabled" },
+// 快捷筛选卡片（与状态列 NTag 同色系）
+const statusTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "未使用", value: "unused", type: "success" as const },
+  { label: "已使用", value: "used", type: "default" as const },
+  { label: "已作废", value: "disabled", type: "error" as const },
 ];
 
 const columns: DataTableColumns<any> = [
@@ -125,9 +127,9 @@ onMounted(load);
 
 <template>
   <div>
-    <div class="mb-8px flex items-center gap-8px">
+    <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
+      <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" @change="load" />
       <NButton v-if="canWrite()" size="small" type="primary" @click="showBatch = true">批量生成</NButton>
-      <NSelect v-model:value="statusFilter" :options="statusOptions" size="small" class="w-110px" @update:value="load" />
     </div>
     <NDataTable :columns="columns" :data="coupons" :loading="loading" size="small" />
 

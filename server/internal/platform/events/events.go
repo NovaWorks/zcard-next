@@ -28,6 +28,7 @@ const (
 	UserRegistered       = "user.registered"
 	RechargeSucceeded    = "recharge.succeeded"
 	SyncCompleted        = "sync.completed"
+	SupplyRateLimited    = "supply.rate_limited"
 	ProcurementFulfilled = "procurement.fulfilled"
 	ProcurementFailed    = "procurement.failed"
 )
@@ -63,7 +64,7 @@ func All() []string {
 		OrderCreated, OrderPaid, OrderDelivered, OrderCompleted, OrderCanceled, OrderRefunded,
 		PaymentSucceeded, PaymentFailed, RefundRequested, RefundSucceeded,
 		WithdrawalReviewed, TicketCreated, TicketReplied,
-		UserRegistered, RechargeSucceeded, SyncCompleted,
+		UserRegistered, RechargeSucceeded, SyncCompleted, SupplyRateLimited,
 		ProcurementFulfilled, ProcurementFailed,
 	}
 }

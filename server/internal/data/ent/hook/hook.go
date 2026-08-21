@@ -417,6 +417,18 @@ func (f OutboxEventFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OutboxEventMutation", m)
 }
 
+// The PageViewFunc type is an adapter to allow the use of ordinary
+// function as PageView mutator.
+type PageViewFunc func(context.Context, *ent.PageViewMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PageViewFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PageViewMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PageViewMutation", m)
+}
+
 // The PaymentFunc type is an adapter to allow the use of ordinary
 // function as Payment mutator.
 type PaymentFunc func(context.Context, *ent.PaymentMutation) (ent.Value, error)
@@ -919,6 +931,18 @@ func (f UserGroupFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserGroupMutation", m)
+}
+
+// The UserSessionFunc type is an adapter to allow the use of ordinary
+// function as UserSession mutator.
+type UserSessionFunc func(context.Context, *ent.UserSessionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserSessionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserSessionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserSessionMutation", m)
 }
 
 // The V1IDMapFunc type is an adapter to allow the use of ordinary

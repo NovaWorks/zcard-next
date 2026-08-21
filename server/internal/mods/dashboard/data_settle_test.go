@@ -108,13 +108,13 @@ func TestDailySettleSubsiteIsolation(t *testing.T) {
 
 	// 主站视角：只见主站 1 单
 	mainCtx := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: 0, IsMain: true})
-	today, _, _, err := repo.GetOverview(mainCtx)
+	today, _, _, _, _, _, err := repo.GetOverview(mainCtx)
 	if err != nil || today.Orders != 1 || today.Revenue != 1000 {
 		t.Fatalf("主站视角隔离错误: %+v %v", today, err)
 	}
 	// 分站视角：只见本站 1 单
 	subCtx := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: 5, IsMain: false})
-	today2, _, _, err := repo.GetOverview(subCtx)
+	today2, _, _, _, _, _, err := repo.GetOverview(subCtx)
 	if err != nil || today2.Orders != 1 || today2.Revenue != 2000 {
 		t.Fatalf("分站视角隔离错误: %+v %v", today2, err)
 	}

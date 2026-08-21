@@ -81,6 +81,7 @@ func TestPointsExchangeOrder(t *testing.T) {
 	ctx := context.Background()
 
 	res, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID: 7, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 2}},
 	})
@@ -124,6 +125,7 @@ func TestPointsExchangeReject(t *testing.T) {
 
 	// 混合购物车（常规商品不可积分兑换）
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID: 7, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 1}, {ProductID: pNormal.ID, Quantity: 1}},
 	}); err == nil || !contains2(err.Error(), "POINTS_MIXED") {
@@ -131,6 +133,7 @@ func TestPointsExchangeReject(t *testing.T) {
 	}
 	// 积分不足（500 分买 6 件=600 分）→ 整单回滚
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID: 7, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 6}},
 	}); err == nil || !contains2(err.Error(), "POINTS_INSUFFICIENT") {
@@ -138,6 +141,7 @@ func TestPointsExchangeReject(t *testing.T) {
 	}
 	// 游客
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		UserID: 0, UsePoints: true,
 		Items: []OrderItemInput{{ProductID: pPoints.ID, Quantity: 1}},
 	}); err == nil || !contains2(err.Error(), "POINTS_LOGIN") {

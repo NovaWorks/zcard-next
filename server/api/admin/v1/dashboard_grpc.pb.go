@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -23,6 +22,7 @@ const (
 	AdminDashboardService_GetReconciliation_FullMethodName       = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliation"
 	AdminDashboardService_ListCommissions_FullMethodName         = "/zcard.api.admin.v1.AdminDashboardService/ListCommissions"
 	AdminDashboardService_GetDashboard_FullMethodName            = "/zcard.api.admin.v1.AdminDashboardService/GetDashboard"
+	AdminDashboardService_GetTraffic_FullMethodName              = "/zcard.api.admin.v1.AdminDashboardService/GetTraffic"
 	AdminDashboardService_GetDailyStats_FullMethodName           = "/zcard.api.admin.v1.AdminDashboardService/GetDailyStats"
 	AdminDashboardService_CreateReconciliationJob_FullMethodName = "/zcard.api.admin.v1.AdminDashboardService/CreateReconciliationJob"
 	AdminDashboardService_GetReconciliationJob_FullMethodName    = "/zcard.api.admin.v1.AdminDashboardService/GetReconciliationJob"
@@ -40,7 +40,9 @@ type AdminDashboardServiceClient interface {
 	GetReconciliation(ctx context.Context, in *GetReconciliationRequest, opts ...grpc.CallOption) (*GetReconciliationReply, error)
 	// ListCommissions 佣金列表（P3-03 affiliate）。
 	ListCommissions(ctx context.Context, in *ListCommissionsRequest, opts ...grpc.CallOption) (*ListCommissionsReply, error)
-	GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DashboardReply, error)
+	GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...grpc.CallOption) (*DashboardReply, error)
+	// GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+	GetTraffic(ctx context.Context, in *GetTrafficRequest, opts ...grpc.CallOption) (*GetTrafficReply, error)
 	// GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
 	GetDailyStats(ctx context.Context, in *GetDailyStatsRequest, opts ...grpc.CallOption) (*GetDailyStatsReply, error)
 	// CreateReconciliationJob 创建货源对账任务（时间窗 ≤31 天）。
@@ -81,10 +83,20 @@ func (c *adminDashboardServiceClient) ListCommissions(ctx context.Context, in *L
 	return out, nil
 }
 
-func (c *adminDashboardServiceClient) GetDashboard(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DashboardReply, error) {
+func (c *adminDashboardServiceClient) GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...grpc.CallOption) (*DashboardReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DashboardReply)
 	err := c.cc.Invoke(ctx, AdminDashboardService_GetDashboard_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminDashboardServiceClient) GetTraffic(ctx context.Context, in *GetTrafficRequest, opts ...grpc.CallOption) (*GetTrafficReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTrafficReply)
+	err := c.cc.Invoke(ctx, AdminDashboardService_GetTraffic_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +163,9 @@ type AdminDashboardServiceServer interface {
 	GetReconciliation(context.Context, *GetReconciliationRequest) (*GetReconciliationReply, error)
 	// ListCommissions 佣金列表（P3-03 affiliate）。
 	ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error)
-	GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error)
+	GetDashboard(context.Context, *GetDashboardRequest) (*DashboardReply, error)
+	// GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
+	GetTraffic(context.Context, *GetTrafficRequest) (*GetTrafficReply, error)
 	// GetDailyStats 历史日结查询（只扫 daily_stats；分站视角自动隔离）。
 	GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error)
 	// CreateReconciliationJob 创建货源对账任务（时间窗 ≤31 天）。
@@ -178,8 +192,11 @@ func (UnimplementedAdminDashboardServiceServer) GetReconciliation(context.Contex
 func (UnimplementedAdminDashboardServiceServer) ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCommissions not implemented")
 }
-func (UnimplementedAdminDashboardServiceServer) GetDashboard(context.Context, *emptypb.Empty) (*DashboardReply, error) {
+func (UnimplementedAdminDashboardServiceServer) GetDashboard(context.Context, *GetDashboardRequest) (*DashboardReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDashboard not implemented")
+}
+func (UnimplementedAdminDashboardServiceServer) GetTraffic(context.Context, *GetTrafficRequest) (*GetTrafficReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTraffic not implemented")
 }
 func (UnimplementedAdminDashboardServiceServer) GetDailyStats(context.Context, *GetDailyStatsRequest) (*GetDailyStatsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetDailyStats not implemented")
@@ -254,7 +271,7 @@ func _AdminDashboardService_ListCommissions_Handler(srv interface{}, ctx context
 }
 
 func _AdminDashboardService_GetDashboard_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(GetDashboardRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -266,7 +283,25 @@ func _AdminDashboardService_GetDashboard_Handler(srv interface{}, ctx context.Co
 		FullMethod: AdminDashboardService_GetDashboard_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminDashboardServiceServer).GetDashboard(ctx, req.(*emptypb.Empty))
+		return srv.(AdminDashboardServiceServer).GetDashboard(ctx, req.(*GetDashboardRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminDashboardService_GetTraffic_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTrafficRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminDashboardServiceServer).GetTraffic(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminDashboardService_GetTraffic_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminDashboardServiceServer).GetTraffic(ctx, req.(*GetTrafficRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -379,6 +414,10 @@ var AdminDashboardService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDashboard",
 			Handler:    _AdminDashboardService_GetDashboard_Handler,
+		},
+		{
+			MethodName: "GetTraffic",
+			Handler:    _AdminDashboardService_GetTraffic_Handler,
 		},
 		{
 			MethodName: "GetDailyStats",

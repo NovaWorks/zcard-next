@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,9 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminSettingsService_ListSettings_FullMethodName  = "/zcard.api.admin.v1.AdminSettingsService/ListSettings"
-	AdminSettingsService_GetSetting_FullMethodName    = "/zcard.api.admin.v1.AdminSettingsService/GetSetting"
-	AdminSettingsService_UpdateSetting_FullMethodName = "/zcard.api.admin.v1.AdminSettingsService/UpdateSetting"
+	AdminSettingsService_ListSettings_FullMethodName    = "/zcard.api.admin.v1.AdminSettingsService/ListSettings"
+	AdminSettingsService_ListTemplates_FullMethodName   = "/zcard.api.admin.v1.AdminSettingsService/ListTemplates"
+	AdminSettingsService_InstallTemplate_FullMethodName = "/zcard.api.admin.v1.AdminSettingsService/InstallTemplate"
+	AdminSettingsService_GetSetting_FullMethodName      = "/zcard.api.admin.v1.AdminSettingsService/GetSetting"
+	AdminSettingsService_UpdateSetting_FullMethodName   = "/zcard.api.admin.v1.AdminSettingsService/UpdateSetting"
+	AdminSettingsService_UpdateSettings_FullMethodName  = "/zcard.api.admin.v1.AdminSettingsService/UpdateSettings"
 )
 
 // AdminSettingsServiceClient is the client API for AdminSettingsService service.
@@ -33,10 +37,17 @@ const (
 type AdminSettingsServiceClient interface {
 	// ListSettings 按分组列出设置项。
 	ListSettings(ctx context.Context, in *ListSettingsRequest, opts ...grpc.CallOption) (*ListSettingsReply, error)
+	// ListTemplates 可用模板清单（扫描 web/storefront/templates/*/theme.json；
+	// 目录缺失回退内置 classic 清单）。
+	ListTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TemplateList, error)
+	// InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
+	InstallTemplate(ctx context.Context, in *InstallTemplateRequest, opts ...grpc.CallOption) (*TemplateItem, error)
 	// GetSetting 读取单个设置项。
 	GetSetting(ctx context.Context, in *GetSettingRequest, opts ...grpc.CallOption) (*Setting, error)
 	// UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
 	UpdateSetting(ctx context.Context, in *UpdateSettingRequest, opts ...grpc.CallOption) (*Setting, error)
+	// UpdateSettings 批量更新（表单级保存；单事务原子写入）。
+	UpdateSettings(ctx context.Context, in *UpdateSettingsRequest, opts ...grpc.CallOption) (*UpdateSettingsReply, error)
 }
 
 type adminSettingsServiceClient struct {
@@ -51,6 +62,26 @@ func (c *adminSettingsServiceClient) ListSettings(ctx context.Context, in *ListS
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListSettingsReply)
 	err := c.cc.Invoke(ctx, AdminSettingsService_ListSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSettingsServiceClient) ListTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TemplateList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TemplateList)
+	err := c.cc.Invoke(ctx, AdminSettingsService_ListTemplates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSettingsServiceClient) InstallTemplate(ctx context.Context, in *InstallTemplateRequest, opts ...grpc.CallOption) (*TemplateItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TemplateItem)
+	err := c.cc.Invoke(ctx, AdminSettingsService_InstallTemplate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,6 +108,16 @@ func (c *adminSettingsServiceClient) UpdateSetting(ctx context.Context, in *Upda
 	return out, nil
 }
 
+func (c *adminSettingsServiceClient) UpdateSettings(ctx context.Context, in *UpdateSettingsRequest, opts ...grpc.CallOption) (*UpdateSettingsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSettingsReply)
+	err := c.cc.Invoke(ctx, AdminSettingsService_UpdateSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminSettingsServiceServer is the server API for AdminSettingsService service.
 // All implementations must embed UnimplementedAdminSettingsServiceServer
 // for forward compatibility.
@@ -86,10 +127,17 @@ func (c *adminSettingsServiceClient) UpdateSetting(ctx context.Context, in *Upda
 type AdminSettingsServiceServer interface {
 	// ListSettings 按分组列出设置项。
 	ListSettings(context.Context, *ListSettingsRequest) (*ListSettingsReply, error)
+	// ListTemplates 可用模板清单（扫描 web/storefront/templates/*/theme.json；
+	// 目录缺失回退内置 classic 清单）。
+	ListTemplates(context.Context, *emptypb.Empty) (*TemplateList, error)
+	// InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
+	InstallTemplate(context.Context, *InstallTemplateRequest) (*TemplateItem, error)
 	// GetSetting 读取单个设置项。
 	GetSetting(context.Context, *GetSettingRequest) (*Setting, error)
 	// UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
 	UpdateSetting(context.Context, *UpdateSettingRequest) (*Setting, error)
+	// UpdateSettings 批量更新（表单级保存；单事务原子写入）。
+	UpdateSettings(context.Context, *UpdateSettingsRequest) (*UpdateSettingsReply, error)
 	mustEmbedUnimplementedAdminSettingsServiceServer()
 }
 
@@ -103,11 +151,20 @@ type UnimplementedAdminSettingsServiceServer struct{}
 func (UnimplementedAdminSettingsServiceServer) ListSettings(context.Context, *ListSettingsRequest) (*ListSettingsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListSettings not implemented")
 }
+func (UnimplementedAdminSettingsServiceServer) ListTemplates(context.Context, *emptypb.Empty) (*TemplateList, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTemplates not implemented")
+}
+func (UnimplementedAdminSettingsServiceServer) InstallTemplate(context.Context, *InstallTemplateRequest) (*TemplateItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method InstallTemplate not implemented")
+}
 func (UnimplementedAdminSettingsServiceServer) GetSetting(context.Context, *GetSettingRequest) (*Setting, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSetting not implemented")
 }
 func (UnimplementedAdminSettingsServiceServer) UpdateSetting(context.Context, *UpdateSettingRequest) (*Setting, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateSetting not implemented")
+}
+func (UnimplementedAdminSettingsServiceServer) UpdateSettings(context.Context, *UpdateSettingsRequest) (*UpdateSettingsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateSettings not implemented")
 }
 func (UnimplementedAdminSettingsServiceServer) mustEmbedUnimplementedAdminSettingsServiceServer() {}
 func (UnimplementedAdminSettingsServiceServer) testEmbeddedByValue()                              {}
@@ -148,6 +205,42 @@ func _AdminSettingsService_ListSettings_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSettingsService_ListTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSettingsServiceServer).ListTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSettingsService_ListTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSettingsServiceServer).ListTemplates(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminSettingsService_InstallTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstallTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSettingsServiceServer).InstallTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSettingsService_InstallTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSettingsServiceServer).InstallTemplate(ctx, req.(*InstallTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminSettingsService_GetSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSettingRequest)
 	if err := dec(in); err != nil {
@@ -184,6 +277,24 @@ func _AdminSettingsService_UpdateSetting_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSettingsService_UpdateSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSettingsServiceServer).UpdateSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSettingsService_UpdateSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSettingsServiceServer).UpdateSettings(ctx, req.(*UpdateSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminSettingsService_ServiceDesc is the grpc.ServiceDesc for AdminSettingsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,12 +307,24 @@ var AdminSettingsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AdminSettingsService_ListSettings_Handler,
 		},
 		{
+			MethodName: "ListTemplates",
+			Handler:    _AdminSettingsService_ListTemplates_Handler,
+		},
+		{
+			MethodName: "InstallTemplate",
+			Handler:    _AdminSettingsService_InstallTemplate_Handler,
+		},
+		{
 			MethodName: "GetSetting",
 			Handler:    _AdminSettingsService_GetSetting_Handler,
 		},
 		{
 			MethodName: "UpdateSetting",
 			Handler:    _AdminSettingsService_UpdateSetting_Handler,
+		},
+		{
+			MethodName: "UpdateSettings",
+			Handler:    _AdminSettingsService_UpdateSettings_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

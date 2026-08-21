@@ -80,6 +80,8 @@ type Tx struct {
 	OrderStatusEvent *OrderStatusEventClient
 	// OutboxEvent is the client for interacting with the OutboxEvent builders.
 	OutboxEvent *OutboxEventClient
+	// PageView is the client for interacting with the PageView builders.
+	PageView *PageViewClient
 	// Payment is the client for interacting with the Payment builders.
 	Payment *PaymentClient
 	// PaymentChannel is the client for interacting with the PaymentChannel builders.
@@ -164,6 +166,8 @@ type Tx struct {
 	User *UserClient
 	// UserGroup is the client for interacting with the UserGroup builders.
 	UserGroup *UserGroupClient
+	// UserSession is the client for interacting with the UserSession builders.
+	UserSession *UserSessionClient
 	// V1IDMap is the client for interacting with the V1IDMap builders.
 	V1IDMap *V1IDMapClient
 	// VirtualReview is the client for interacting with the VirtualReview builders.
@@ -341,6 +345,7 @@ func (tx *Tx) init() {
 	tx.OrderItem = NewOrderItemClient(tx.config)
 	tx.OrderStatusEvent = NewOrderStatusEventClient(tx.config)
 	tx.OutboxEvent = NewOutboxEventClient(tx.config)
+	tx.PageView = NewPageViewClient(tx.config)
 	tx.Payment = NewPaymentClient(tx.config)
 	tx.PaymentChannel = NewPaymentChannelClient(tx.config)
 	tx.PointAccount = NewPointAccountClient(tx.config)
@@ -383,6 +388,7 @@ func (tx *Tx) init() {
 	tx.TicketMessage = NewTicketMessageClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.UserGroup = NewUserGroupClient(tx.config)
+	tx.UserSession = NewUserSessionClient(tx.config)
 	tx.V1IDMap = NewV1IDMapClient(tx.config)
 	tx.VirtualReview = NewVirtualReviewClient(tx.config)
 	tx.VisitLog = NewVisitLogClient(tx.config)

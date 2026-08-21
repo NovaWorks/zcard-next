@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import TablePager from "@/components/common/table-pager.vue";
+import FilterTabs from "@/components/common/filter-tabs.vue";
 import { ref, reactive, onMounted, h } from "vue";
 import {
   NButton,
@@ -34,17 +35,37 @@ const pageSize = ref(20);
 // 游标链：cursors[p-1] = 第 p 页起始游标（next_cursor = 满页时末行 ID；0 = 无更多）
 const cursors = ref<number[]>([0]);
 const hasMore = ref(false);
-const statusFilter = ref<string | null>(null);
+const statusFilter = ref<string>("");
 const showDetail = ref(false);
-const detail = ref<any>(null);
+const detail = ref<{
+  order_no: string;
+  status: string;
+  total_cents: number;
+  cost_cents: number;
+  contact?: string;
+  guest_contact?: string;
+  client_ip?: string;
+  items?: {
+    is_self?: boolean;
+    upstream_source_name?: string;
+    upstream_driver?: string;
+    upstream_product_code?: string;
+    upstream_url?: string;
+  }[];
+  amount_lines?: any[];
+  status_events?: any[];
+} | null>(null);
 
-const statusOptions = [
-  { label: "待支付", value: "pending_payment" },
-  { label: "已支付", value: "paid" },
-  { label: "已发货", value: "delivered" },
-  { label: "已完成", value: "completed" },
-  { label: "已取消", value: "canceled" },
-  { label: "已退款", value: "refunded" },
+// 快捷筛选卡片（statusType 同色系：成功绿/待付黄/取消红/其余蓝）
+const statusTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "待支付", value: "pending_payment", type: "warning" as const },
+  { label: "已支付", value: "paid", type: "success" as const },
+  { label: "履约中", value: "fulfilling", type: "info" as const },
+  { label: "已发货", value: "delivered", type: "success" as const },
+  { label: "已完成", value: "completed", type: "success" as const },
+  { label: "已取消", value: "canceled", type: "error" as const },
+  { label: "已退款", value: "refunded", type: "error" as const },
 ];
 
 function statusText(s: string) {
@@ -400,15 +421,8 @@ onMounted(loadOrders);
     <NCard title="订单管理" class="flex-1">
       <NTabs type="line">
         <NTabPane name="orders" tab="订单列表">
-          <div class="mb-16px flex items-center gap-12px">
-            <NSelect
-              v-model:value="statusFilter"
-              :options="statusOptions"
-              placeholder="全部状态"
-              clearable
-              class="w-160px"
-              @update:value="resetOrderList"
-            />
+          <div class="mb-16px flex flex-wrap items-center justify-between gap-12px">
+            <FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="resetOrderList" />
             <NButton @click="loadOrders">刷新</NButton>
           </div>
 
@@ -513,7 +527,7 @@ onMounted(loadOrders);
         </div>
       </template>
       <template #footer>
-        <div class="flex justify-end gap-8px">
+        <div v-if="detail" class="flex justify-end gap-8px">
           <!-- NPopconfirm 的 trigger 槽必须恰好一个子节点：v-if 放在 Popconfirm 自身（空槽会抛 follower 错误） -->
           <NPopconfirm
             v-if="detail.status === 'pending_payment' && checkAuth('order:cancel')"

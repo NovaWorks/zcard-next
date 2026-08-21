@@ -9,6 +9,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/content"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon"
@@ -43,11 +44,14 @@ var ProviderSet = wire.NewSet(
 	identity.ProviderSet,
 	authz.ProviderSet,
 	settings.ProviderSet,
+	captcha.ProviderSet,
 	catalog.ProviderSet,
 	inventory.ProviderSet,
 	order.ProviderSet,
 	payment.ProviderSet,
 	wallet.ProviderSet,
+	// 佣金提现打通：wallet.CommissionSource ← affiliate.CommissionRepo（通道 A 绑定）
+	wire.Bind(new(wallet.CommissionSource), new(*affiliate.CommissionRepo)),
 	fulfillment.ProviderSet,
 	memberlevel.ProviderSet,
 	coupon.ProviderSet,

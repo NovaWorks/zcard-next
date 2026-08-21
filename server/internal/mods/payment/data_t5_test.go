@@ -13,6 +13,8 @@ import (
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -219,14 +221,33 @@ func TestStorefrontListChannels(t *testing.T) {
 			t.Fatalf("渠道缺显示名: %+v", c)
 		}
 	}
-	if !codes["epay"] || !codes["balance"] {
+	// 游客：真实渠道可下发，wallet（余额）不下发
+	if !codes["epay"] {
 		t.Fatalf("启用渠道缺失: %+v", codes)
+	}
+	if codes["balance"] {
+		t.Fatal("游客不应看到余额渠道")
 	}
 	if codes["disabled1"] {
 		t.Fatal("停用渠道不应下发")
 	}
 	if codes["unconf1"] {
 		t.Fatal("待配置渠道（空凭据）不应下发")
+	}
+	// 登录态：余额渠道可见
+	authCtx := identity.WithClaims(ctx, &authn.Claims{Subject: 1, Realm: authn.RealmUser})
+	reply2, err := svc.ListChannels(authCtx, &emptypb.Empty{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	hasBalance := false
+	for _, c := range reply2.Channels {
+		if c.Code == "balance" {
+			hasBalance = true
+		}
+	}
+	if !hasBalance {
+		t.Fatalf("登录态应可见余额渠道: %+v", reply2.Channels)
 	}
 }
 

@@ -25,6 +25,11 @@ service StoreOrderService {
   rpc ListMyOrders(ListMyOrdersRequest) returns (ListMyOrdersReply) {
     option (google.api.http) = { get: "/api/v1/storefront/my-orders" };
   }
+  // ListGuestOrders 游客按下单联系方式查订单列表（邮箱/手机号；精简信息——
+  // 卡密仍需逐单查询密码，防枚举：查不到返回空）。
+  rpc ListGuestOrders(ListGuestOrdersRequest) returns (ListGuestOrdersReply) {
+    option (google.api.http) = { get: "/api/v1/storefront/guest-orders" };
+  }
   // CancelMyOrder 取消本人待支付订单（pending 可取消；锁卡释放+返券）。
   rpc CancelMyOrder(CancelMyOrderRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
@@ -44,6 +49,11 @@ message CreateOrderRequest {
   map<string, string> control_answers = 6;
   // 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
   bool use_points = 7;
+  // 推广归因码（可空）：游客/无链用户下单时实时解析推广者 → 订单级归因快照
+  string ref_code = 8;
+  // 图形验证码（captcha_order 开启时游客必填）
+  string captcha_id = 9;
+  string captcha_code = 10;
 }
 
 message OrderItemInput {
@@ -69,6 +79,7 @@ message GetOrderReply {
   int64 total_cents = 3;
   repeated OrderItemReply items = 4;
   int64 created_at = 5;
+  int64 expires_at = 6; // 订单过期时间（倒计时；0=无过期）
 }
 
 message OrderItemReply {
@@ -76,6 +87,24 @@ message OrderItemReply {
   string product_name = 2;
   int32 quantity = 3;
   int64 unit_price_cents = 4;
+}
+
+// ── 游客订单查询（联系方式 + 密码取货闭环）──
+
+message ListGuestOrdersRequest {
+  string contact = 1 [(google.api.field_behavior) = REQUIRED]; // 下单时留的邮箱/手机号
+}
+
+message ListGuestOrdersReply {
+  repeated GuestOrderItem orders = 1;
+}
+
+message GuestOrderItem {
+  string order_no = 1;
+  string status = 2;
+  int64 total_cents = 3;
+  int64 created_at = 4;
+  int64 expires_at = 5;
 }
 
 // ── 我的订单（P1-03 补全 2026-08-17）──

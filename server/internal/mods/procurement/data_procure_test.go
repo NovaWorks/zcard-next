@@ -96,6 +96,10 @@ func (f *fakeGW) Query(_ context.Context, _ uint64, _ string) (*supplyport.Purch
 }
 func (f *fakeGW) CheckStock(_ context.Context, _ uint64, _ string) (int32, error) { return 10, nil }
 func (f *fakeGW) Refund(_ context.Context, _ uint64, _ string) error              { return nil }
+func (f *fakeGW) VerifyUpstreamCallback(_ context.Context, _ uint64, _ *supplyport.UpstreamCallbackAuth) (*supplyport.UpstreamCallbackResult, error) {
+	return nil, supplyport.ErrCallbackNotSupported // 测试桩：回调通道不参与断言
+}
+func (f *fakeGW) FailStrategyOf(_ context.Context, _ uint64) string { return "auto_refund" }
 
 // fakeAttach 记录交付调用（断言密文透传）。
 type fakeAttach struct {

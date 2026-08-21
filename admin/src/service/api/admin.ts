@@ -163,6 +163,41 @@ export function updateSetting(group: string, key: string, valueJson: string) {
   });
 }
 
+// 批量更新（表单级保存；后端单事务原子写入）
+export function updateSettings(items: { group: string; key: string; value_json: string }[]) {
+  return request<{ updated: number }>({
+    url: "/api/v1/admin/settings",
+    method: "put",
+    data: { items },
+  });
+}
+
+// 可用模板清单（WP 主题式选择；settings.template.pc_template 等取值）
+export interface TemplateItem {
+  key: string;
+  name: string;
+  desc: string;
+  preview: string;
+  author: string;
+  version: string;
+}
+
+export function fetchTemplates() {
+  return request<{ templates: TemplateItem[] }>({
+    url: "/api/v1/admin/settings/templates",
+    method: "get",
+  });
+}
+
+// 安装主题（zip base64；服务端解压校验后原子落盘）
+export function installTemplate(dataBase64: string) {
+  return request<TemplateItem>({
+    url: "/api/v1/admin/settings/templates/install",
+    method: "post",
+    data: { data_base64: dataBase64 },
+  });
+}
+
 // ── 货币（P0-04；符号/位置/小数位——前端金额格式化统一取默认货币）──
 
 export function fetchCurrencies() {

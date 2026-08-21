@@ -11,6 +11,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -39,8 +40,16 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		Where(
 			product.SubsiteID(f.SubsiteID),
 			product.Status(1),
-		).
-		Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
+		)
+	// 排序（sales 由 service 层全量排序，此处不处理）
+	switch f.Sort {
+	case "price_asc":
+		q = q.Order(ent.Asc(product.FieldPrice))
+	case "price_desc":
+		q = q.Order(ent.Desc(product.FieldPrice))
+	default:
+		q = q.Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
+	}
 	if f.CategoryID > 0 {
 		q = q.Where(product.CategoryID(f.CategoryID))
 	}
@@ -55,10 +64,12 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 	if err != nil {
 		return nil, 0, err
 	}
-	rows, err := q.Clone().
-		Offset((int(f.Page) - 1) * int(f.PageSize)).
-		Limit(int(f.PageSize)).
-		All(ctx)
+	query := q.Clone()
+	// 分页（Page=0 = 全量拉取，sales 排序用）
+	if f.Page > 0 && f.PageSize > 0 {
+		query = query.Offset((int(f.Page) - 1) * int(f.PageSize)).Limit(int(f.PageSize))
+	}
+	rows, err := query.All(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -90,6 +101,7 @@ func toPortProduct(row *ent.Product) port.Product {
 		SubsiteID:    row.SubsiteID,
 		Name:         row.Name,
 		Slug:         row.Slug,
+		Cover:        row.Cover,
 		Price:        money.Cents(row.Price),
 		FactoryPrice: money.Cents(row.FactoryPrice),
 		StockType:    string(row.StockType),
@@ -102,6 +114,38 @@ func toPortProduct(row *ent.Product) port.Product {
 		UpstreamSourceID:    row.UpstreamSourceID,
 		UpstreamProductCode: row.UpstreamProductCode,
 	}
+}
+
+// ListVisibleCategories 可见分类（hide=false + 分站白名单；导航/筛选用）。
+func (r *ProductRepoImpl) ListVisibleCategories(ctx context.Context, subsiteID uint64) ([]port.Category, error) {
+	rows, err := data.Client(ctx, r.data).Category.Query().
+		Where(
+			category.SubsiteID(subsiteID),
+			category.Hide(false),
+		).
+		Order(ent.Asc(category.FieldSort), ent.Asc(category.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]port.Category, 0, len(rows))
+	for _, c := range rows {
+		// 分站可见性白名单（空=全部可见；非空且不含本站 → 跳过）
+		if len(c.VisibleSubsites) > 0 && !containsUint64(c.VisibleSubsites, subsiteID) {
+			continue
+		}
+		out = append(out, port.Category{ID: c.ID, Name: c.Name, Icon: c.Icon, ParentID: c.ParentID})
+	}
+	return out, nil
+}
+
+func containsUint64(list []uint64, v uint64) bool {
+	for _, x := range list {
+		if x == v {
+			return true
+		}
+	}
+	return false
 }
 
 // ListControls 商品自定义控件（按 sort 升序）。

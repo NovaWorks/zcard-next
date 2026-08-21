@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"context"
+	"encoding/json"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -21,14 +22,39 @@ import (
 // AdminCatalogService 管理面目录服务。
 type AdminCatalogService struct {
 	adminv1.UnimplementedAdminCatalogServiceServer
-	repo  *ProductRepoImpl
-	stock inventoryport.StockBatcher // 批量可用库存（nil 容错降级 0）
-	sold  orderport.SoldCounter      // 批量已售数量（nil 容错降级 0）
+	repo     *ProductRepoImpl
+	stock    inventoryport.StockBatcher // 批量可用库存（nil 容错降级 0）
+	sold     orderport.SoldCounter      // 批量已售数量（nil 容错降级 0）
+	settings port.SettingsReader // 低库存阈值等（通道 A；nil = 默认值）
 }
 
 // NewAdminCatalogService 构造。
-func NewAdminCatalogService(repo *ProductRepoImpl, stock inventoryport.StockBatcher, sold orderport.SoldCounter) *AdminCatalogService {
-	return &AdminCatalogService{repo: repo, stock: stock, sold: sold}
+func NewAdminCatalogService(repo *ProductRepoImpl, stock inventoryport.StockBatcher, sold orderport.SoldCounter, settings port.SettingsReader) *AdminCatalogService {
+	return &AdminCatalogService{repo: repo, stock: stock, sold: sold, settings: settings}
+}
+
+// lowStockThresholdFor 低库存筛选阈值（未开启筛选返回 0=不过滤）。
+func (s *AdminCatalogService) lowStockThresholdFor(ctx context.Context, enabled bool) int {
+	if !enabled {
+		return 0
+	}
+	return s.lowStockThreshold(ctx)
+}
+
+// lowStockThreshold 库存预警阈值（settings.supply.low_stock_threshold；默认 10）。
+func (s *AdminCatalogService) lowStockThreshold(ctx context.Context) int {
+	if s.settings == nil {
+		return 10
+	}
+	raw, err := s.settings.GetJSON(ctx, "supply", "low_stock_threshold")
+	if err != nil || len(raw) == 0 {
+		return 10
+	}
+	var v int
+	if json.Unmarshal(raw, &v) != nil || v < 1 {
+		return 10
+	}
+	return v
 }
 
 // fillStats 批量填充库存/已售（列表与详情共用；查询失败降级 0 不阻断列表）。
@@ -74,10 +100,12 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 		size = req.GetPageSize()
 	}
 	rows, total, err := s.repo.ListAdmin(ctx, port.AdminFilter{
-		CategoryID: req.GetCategoryId(),
-		Keyword:    req.GetKeyword(),
-		Status:     int8(req.GetStatus()),
-		Page:       page, PageSize: size,
+		CategoryID:        req.GetCategoryId(),
+		Keyword:           req.GetKeyword(),
+		Status:            int8(req.GetStatus()),
+		Page:              page,
+		PageSize:          size,
+		LowStockThreshold: s.lowStockThresholdFor(ctx, req.GetLowStockOnly()),
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品失败")

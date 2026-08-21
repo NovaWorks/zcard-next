@@ -33,11 +33,13 @@ type StoreWalletService struct {
 	payer paymentport.RechargePayer
 	// giftcards 礼品卡兑换（P1-05 T4；nil = 未装配）
 	giftcards *GiftcardRepo
+	// commissions 佣金读取（提现校验；通道 A；nil = 跳过校验）
+	commissions CommissionSource
 }
 
 // NewStoreWalletService 构造。
-func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader, payer paymentport.RechargePayer, giftcards *GiftcardRepo) *StoreWalletService {
-	return &StoreWalletService{repo: repo, data: d, settings: settings, payer: payer, giftcards: giftcards}
+func NewStoreWalletService(repo *WalletRepoImpl, d *data.Data, settings settingsport.SettingsReader, payer paymentport.RechargePayer, giftcards *GiftcardRepo, commissions CommissionSource) *StoreWalletService {
+	return &StoreWalletService{repo: repo, data: d, settings: settings, payer: payer, giftcards: giftcards, commissions: commissions}
 }
 
 // GetBalance 余额+积分。

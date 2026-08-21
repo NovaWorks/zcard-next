@@ -14,6 +14,7 @@ type Product struct {
 	SubsiteID    uint64
 	Name         string
 	Slug         string
+	Cover        string
 	Price        money.Cents // 售价（分）
 	FactoryPrice money.Cents // 成本价（分）
 	StockType    string      // card / url / code
@@ -35,6 +36,14 @@ type Control struct {
 	Required bool
 	Options  []string
 	Sort     int32
+}
+
+// Category 前台可见分类（导航/筛选用；ParentID 0=根，多级分类树形）。
+type Category struct {
+	ID       uint64
+	Name     string
+	Icon     string
+	ParentID uint64
 }
 
 // ReviewItem 前台评价条目（真实 approved + 虚拟合并；Nickname 真实评价为空）。
@@ -65,6 +74,8 @@ type VisibleFilter struct {
 	PageSize   int32
 	// PointsOnly 积分商城视图（true=仅 points_required>0 商品；P3-01）
 	PointsOnly bool
+	// Sort 排序：newest | price_asc | price_desc | sales（空=newest）
+	Sort string
 }
 
 // ProductReader 商品读取窄接口（storefront service 与 order 模块消费，通道 A）。
@@ -92,6 +103,8 @@ type AdminFilter struct {
 	Status     int8 // -1=全部
 	Page       int32
 	PageSize   int32
+	// LowStockThreshold 低库存过滤阈值（>0 时仅返回卡密类且可用库存 < 阈值的商品）
+	LowStockThreshold int
 }
 
 // ProductInput 商品创建/更新输入（description 已 sanitize）。
@@ -146,6 +159,18 @@ type UpstreamProductWriter interface {
 	UpsertUpstreamProduct(ctx context.Context, in UpstreamProductInput) (productID uint64, created bool, err error)
 }
 
+// UpstreamProductMaintainer 货源轻量维护端口（P2-10 S1：scope=price/status 同步
+// 与删除对账消费，通道 A）。定位判据同上；found=false 表示商品未导入（调用方跳过）。
+type UpstreamProductMaintainer interface {
+	// UpdateUpstreamPrice 仅更新价格（price scope；不动名称/状态/库存）。
+	UpdateUpstreamPrice(ctx context.Context, connectionID uint64, productCode string, priceCents int64) (found bool, err error)
+	// UpdateUpstreamStatus 仅更新上下架状态（status scope；1=上架 2=隐藏 0=下架）。
+	UpdateUpstreamStatus(ctx context.Context, connectionID uint64, productCode string, status int8) (found bool, err error)
+	// ShelveOffMissing 删除对账：将连接下 upstream_product_code ∉ seen 的
+	// 已导入商品批量下架(0)（上游已删除推断；返回下架数）。
+	ShelveOffMissing(ctx context.Context, connectionID uint64, seen []string) (shelved int64, err error)
+}
+
 // SupplierProduct 供货目录商品（P2-03 supplier 消费，通道 A）：
 // 管理面语义（含下架/隐藏），仅下发可公开字段。
 type SupplierProduct struct {
@@ -165,4 +190,18 @@ type SupplierCatalog interface {
 	ListForSupply(ctx context.Context, f AdminFilter) ([]SupplierProduct, int64, error)
 	// GetForSupply 单品（含下架）。
 	GetForSupply(ctx context.Context, productID uint64) (*SupplierProduct, error)
+	// ListSupplyCategories 分类列表（acg-faka 兼容层 items 两级树用；P2-10 C）。
+	ListSupplyCategories(ctx context.Context) ([]SupplyCategory, error)
+}
+
+// SupplyCategory 供货目录分类（兼容层树节点）。
+type SupplyCategory struct {
+	ID   uint64
+	Name string
+}
+
+// SettingsReader 系统设置读取（通道 A：settings.RepoImpl 适配；低库存阈值等）。
+type SettingsReader interface {
+	// GetJSON 读取分组配置（读取失败返回 nil, nil，调用方走默认值）。
+	GetJSON(ctx context.Context, group, key string) ([]byte, error)
 }

@@ -20,13 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminAuthService_Login_FullMethodName        = "/zcard.api.admin.v1.AdminAuthService/Login"
-	AdminAuthService_Logout_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/Logout"
-	AdminAuthService_GetProfile_FullMethodName   = "/zcard.api.admin.v1.AdminAuthService/GetProfile"
-	AdminAuthService_RefreshToken_FullMethodName = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
-	AdminAuthService_EnableTOTP_FullMethodName   = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
-	AdminAuthService_ConfirmTOTP_FullMethodName  = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
-	AdminAuthService_DisableTOTP_FullMethodName  = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
+	AdminAuthService_Login_FullMethodName            = "/zcard.api.admin.v1.AdminAuthService/Login"
+	AdminAuthService_GetCaptchaImage_FullMethodName  = "/zcard.api.admin.v1.AdminAuthService/GetCaptchaImage"
+	AdminAuthService_GetCaptchaConfig_FullMethodName = "/zcard.api.admin.v1.AdminAuthService/GetCaptchaConfig"
+	AdminAuthService_Logout_FullMethodName           = "/zcard.api.admin.v1.AdminAuthService/Logout"
+	AdminAuthService_GetProfile_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/GetProfile"
+	AdminAuthService_RefreshToken_FullMethodName     = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
+	AdminAuthService_EnableTOTP_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
+	AdminAuthService_ConfirmTOTP_FullMethodName      = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
+	AdminAuthService_DisableTOTP_FullMethodName      = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
 )
 
 // AdminAuthServiceClient is the client API for AdminAuthService service.
@@ -36,8 +38,12 @@ const (
 // AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
 // 里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
 type AdminAuthServiceClient interface {
-	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
+	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
+	// GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
+	GetCaptchaImage(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaImageReply, error)
+	// GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
+	GetCaptchaConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaConfigReply, error)
 	// Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
@@ -64,6 +70,26 @@ func (c *adminAuthServiceClient) Login(ctx context.Context, in *LoginRequest, op
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LoginReply)
 	err := c.cc.Invoke(ctx, AdminAuthService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) GetCaptchaImage(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaImageReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CaptchaImageReply)
+	err := c.cc.Invoke(ctx, AdminAuthService_GetCaptchaImage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) GetCaptchaConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaConfigReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CaptchaConfigReply)
+	err := c.cc.Invoke(ctx, AdminAuthService_GetCaptchaConfig_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,8 +163,12 @@ func (c *adminAuthServiceClient) DisableTOTP(ctx context.Context, in *ConfirmTOT
 // AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
 // 里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
 type AdminAuthServiceServer interface {
-	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验 M0 后续补齐。
+	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
+	// GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
+	GetCaptchaImage(context.Context, *emptypb.Empty) (*CaptchaImageReply, error)
+	// GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
+	GetCaptchaConfig(context.Context, *emptypb.Empty) (*CaptchaConfigReply, error)
 	// Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
 	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
 	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
@@ -163,6 +193,12 @@ type UnimplementedAdminAuthServiceServer struct{}
 
 func (UnimplementedAdminAuthServiceServer) Login(context.Context, *LoginRequest) (*LoginReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) GetCaptchaImage(context.Context, *emptypb.Empty) (*CaptchaImageReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCaptchaImage not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) GetCaptchaConfig(context.Context, *emptypb.Empty) (*CaptchaConfigReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCaptchaConfig not implemented")
 }
 func (UnimplementedAdminAuthServiceServer) Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
@@ -217,6 +253,42 @@ func _AdminAuthService_Login_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminAuthServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_GetCaptchaImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).GetCaptchaImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_GetCaptchaImage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).GetCaptchaImage(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_GetCaptchaConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).GetCaptchaConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_GetCaptchaConfig_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).GetCaptchaConfig(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -339,6 +411,14 @@ var AdminAuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Login",
 			Handler:    _AdminAuthService_Login_Handler,
+		},
+		{
+			MethodName: "GetCaptchaImage",
+			Handler:    _AdminAuthService_GetCaptchaImage_Handler,
+		},
+		{
+			MethodName: "GetCaptchaConfig",
+			Handler:    _AdminAuthService_GetCaptchaConfig_Handler,
 		},
 		{
 			MethodName: "Logout",

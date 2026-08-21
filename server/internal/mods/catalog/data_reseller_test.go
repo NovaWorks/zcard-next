@@ -66,7 +66,7 @@ func TestStoreListingSubsitePrice(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr, nil)
+	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr, nil, nil)
 
 	// 分站域名上下文 → 列表分站价 +10%
 	subsiteCtx := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subsite, IsMain: false})
@@ -151,7 +151,7 @@ func TestTenantIsolationMatrix(t *testing.T) {
 		t.Fatalf("分站间应允许同 slug 共存: %s vs %s", prodA.Slug, prodB.Slug)
 	}
 
-	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr, nil)
+	svc := NewStoreCatalogService(NewCatalogUsecase(NewProductRepoImpl(d, nil)), rr, nil, nil)
 	ctxA := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subA, IsMain: false})
 	ctxB := tenancy.WithContext(ctx, tenancy.Context{SubsiteID: subB, IsMain: false})
 
@@ -175,7 +175,7 @@ func TestTenantIsolationMatrix(t *testing.T) {
 	}
 
 	// 更新隔离：A 改名/改价不影响 B 与主站
-	adminSvc := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil)
+	adminSvc := NewAdminCatalogService(NewProductRepoImpl(d, nil), nil, nil, nil)
 	if _, err := adminSvc.UpdateProduct(ctxA, &adminv1.UpdateProductRequest{
 		Id: prodA.ID, Name: "A站改名", PriceCents: 2000,
 	}); err != nil {

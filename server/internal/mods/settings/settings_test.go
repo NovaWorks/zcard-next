@@ -57,10 +57,10 @@ func TestValidateKey(t *testing.T) {
 	}
 }
 
-// TestGroupCatalog 分组目录快照（15 组；P0-04 验收「全部 12+ 分组」；P3-08 加 license）。
+// TestGroupCatalog 分组目录快照（16 组；P0-04 验收「全部 12+ 分组」；P3-08 加 license；客服加 service）。
 func TestGroupCatalog(t *testing.T) {
 	got := GroupsSorted()
-	want := []string{"affiliate", "footer", "i18n", "license", "notify", "ops", "points", "promo", "recharge", "security", "site", "supply", "template", "trade", "withdraw"}
+	want := []string{"affiliate", "footer", "i18n", "license", "notify", "ops", "points", "promo", "recharge", "security", "service", "site", "supply", "template", "trade", "withdraw"}
 	if len(got) != len(want) {
 		t.Fatalf("分组数漂移：got %v", got)
 	}
@@ -79,8 +79,11 @@ func TestIsPublic(t *testing.T) {
 	if IsPublic("notify", "smtp_password") {
 		t.Error("smtp_password 不得公开")
 	}
-	if IsPublic("security", "register_enabled") {
-		t.Error("security.register_enabled 未入白名单（前台不消费）")
+	if !IsPublic("security", "register_enabled") || !IsPublic("security", "register_method") {
+		t.Error("security 注册键应公开（注册页动态表单消费）")
+	}
+	if !IsPublic("security", "captcha_login") {
+		t.Error("captcha_login 应公开（前端条件渲染）")
 	}
 }
 

@@ -120,6 +120,7 @@ func TestResellerOrderJourney(t *testing.T) {
 
 	// 1) 分站价出单：默认加价率 +10% → 单价 1100 × 2 = 2200
 	res, err := uc.CreateOrder(subsiteCtx, CreateOrderInput{
+		QueryPassword: "test1234",
 		SubsiteID: subsite, UserID: 2,
 		Items: []OrderItemInput{{ProductID: prod.ID, Quantity: 2}},
 	})
@@ -149,6 +150,7 @@ func TestResellerOrderJourney(t *testing.T) {
 
 	// 2) 防自购：站主自购 → profit_eligible=false（快照仍记加价基数）
 	res2, err := uc.CreateOrder(subsiteCtx, CreateOrderInput{
+		QueryPassword: "test1234",
 		SubsiteID: subsite, UserID: 1,
 		Items: []OrderItemInput{{ProductID: prod.ID, Quantity: 1}},
 	})
@@ -210,6 +212,7 @@ func TestResellerOrderJourney(t *testing.T) {
 		t.Fatal(err)
 	}
 	res3, err := uc.CreateOrder(subsiteCtx, CreateOrderInput{
+		QueryPassword: "test1234",
 		SubsiteID: subsite, UserID: 2,
 		Items: []OrderItemInput{{ProductID: prod.ID, Quantity: 2}},
 	})
@@ -252,6 +255,7 @@ func TestMainSiteOrderUnaffected(t *testing.T) {
 	}
 	uc := &OrderUsecase{Data: d, Inv: fakeInventory{}, Gen: gen, Reseller: rr}
 	res, err := uc.CreateOrder(ctx, CreateOrderInput{
+		QueryPassword: "test1234",
 		SubsiteID: 0, UserID: 2,
 		Items: []OrderItemInput{{ProductID: prod.ID, Quantity: 1}},
 	})

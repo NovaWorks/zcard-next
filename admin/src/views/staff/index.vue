@@ -22,10 +22,20 @@ import {
   fetchPermissionTree,
 } from "@/service/api";
 import { checkAuth } from "@/directives";
+import { hasRoutePermission } from "@/router/permissions";
+import { useAuthStore } from "@/store/modules/auth";
+import { useRouteStore } from "@/store/modules/route";
+import { useRoute, useRouter } from "vue-router";
 import RoleManageDrawer from "./components/role-manage-drawer.vue";
 import PermsDrawer from "./components/perms-drawer.vue";
+import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "StaffManagement" });
+
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const routeStore = useRouteStore();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -35,6 +45,22 @@ const admins = ref<any[]>([]);
 const roles = ref<any[]>([]);
 const permTree = ref<any[]>([]);
 const editing = ref<any>(null);
+
+// 启用状态快捷筛选（客户端过滤——员工列表全量加载无分页，带实时计数）
+const enabledFilter = ref<"" | "on" | "off">("");
+const enabledTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "已启用", value: "on", type: "success" as const },
+  { label: "已禁用", value: "off", type: "error" as const },
+];
+const enabledCounts = computed(() => ({
+  "": admins.value.length,
+  on: admins.value.filter((a) => a.enabled).length,
+  off: admins.value.filter((a) => !a.enabled).length,
+}));
+const filteredAdmins = computed(() =>
+  enabledFilter.value === "" ? admins.value : admins.value.filter((a) => (enabledFilter.value === "on" ? a.enabled : !a.enabled)),
+);
 
 // 角色管理抽屉 / 权限配置抽屉
 const showRoleDrawer = ref(false);
@@ -229,6 +255,21 @@ function openPerms(row: any) {
   showPermsDrawer.value = true;
 }
 
+// 权限保存后：刷新当前登录者权限点 + 按新权限重建路由/菜单（免手动刷新页面）。
+// 后端 admin 鉴权每请求实时按库中 RoleID 判定，此处仅同步前端表现层。
+async function handlePermsSaved() {
+  await loadList();
+  await authStore.initUserInfo(); // 重新拉取 profile.permissions（后端实时下发）
+  await routeStore.initAuthRoute(); // 重建 authRoutes/菜单（含失去权限页面的移除）
+  if (!hasRoutePermission(String(route.name || ""), authStore.userInfo.buttons)) {
+    // 当前页面权限已被收回 → 跳转到新的首页（initAuthRoute 已重算 routeHome）
+    window.$message?.warning("当前页面权限已变更，已自动跳转");
+    router.push(routeStore.routeHome);
+  } else {
+    window.$message?.success("权限已更新，菜单已同步刷新");
+  }
+}
+
 // ── 员工 CRUD ──────────────────────────────────
 function openEdit(row: any) {
   editing.value = row;
@@ -336,7 +377,8 @@ onMounted(() => {
           行内「权限」= 修改该员工所属角色的权限点（对同角色所有人生效）
         </span>
       </div>
-      <NDataTable :columns="columns" :data="admins" :loading="loading" :row-key="(r: any) => r.id" />
+      <FilterTabs v-model:value="enabledFilter" :options="enabledTabs" :counts="enabledCounts" class="mb-12px" />
+      <NDataTable :columns="columns" :data="filteredAdmins" :loading="loading" :row-key="(r: any) => r.id" />
     </NCard>
 
     <!-- 新增员工 -->
@@ -432,7 +474,7 @@ onMounted(() => {
       v-model:show="showPermsDrawer"
       :role="permsRole"
       :perm-tree="permTree"
-      @saved="loadList"
+      @saved="handlePermsSaved"
     />
   </div>
 </template>

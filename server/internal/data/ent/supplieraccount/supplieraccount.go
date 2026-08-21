@@ -34,6 +34,16 @@ const (
 	FieldNotifyURL = "notify_url"
 	// FieldReviewedAt holds the string denoting the reviewed_at field in the database.
 	FieldReviewedAt = "reviewed_at"
+	// FieldProtocol holds the string denoting the protocol field in the database.
+	FieldProtocol = "protocol"
+	// FieldDisplayName holds the string denoting the display_name field in the database.
+	FieldDisplayName = "display_name"
+	// FieldOwnerUserID holds the string denoting the owner_user_id field in the database.
+	FieldOwnerUserID = "owner_user_id"
+	// FieldApplyReason holds the string denoting the apply_reason field in the database.
+	FieldApplyReason = "apply_reason"
+	// FieldReviewNote holds the string denoting the review_note field in the database.
+	FieldReviewNote = "review_note"
 	// Table holds the table name of the supplieraccount in the database.
 	Table = "supplier_accounts"
 )
@@ -51,6 +61,11 @@ var Columns = []string{
 	FieldBalanceCache,
 	FieldNotifyURL,
 	FieldReviewedAt,
+	FieldProtocol,
+	FieldDisplayName,
+	FieldOwnerUserID,
+	FieldApplyReason,
+	FieldReviewNote,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -80,6 +95,14 @@ var (
 	DefaultBalanceCache int64
 	// NotifyURLValidator is a validator for the "notify_url" field. It is called by the builders before save.
 	NotifyURLValidator func(string) error
+	// DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
+	DisplayNameValidator func(string) error
+	// DefaultOwnerUserID holds the default value on creation for the "owner_user_id" field.
+	DefaultOwnerUserID uint64
+	// ApplyReasonValidator is a validator for the "apply_reason" field. It is called by the builders before save.
+	ApplyReasonValidator func(string) error
+	// ReviewNoteValidator is a validator for the "review_note" field. It is called by the builders before save.
+	ReviewNoteValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -92,6 +115,7 @@ const DefaultStatus = StatusApplying
 const (
 	StatusApplying Status = "applying"
 	StatusApproved Status = "approved"
+	StatusRejected Status = "rejected"
 	StatusDisabled Status = "disabled"
 )
 
@@ -102,10 +126,37 @@ func (s Status) String() string {
 // StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
 func StatusValidator(s Status) error {
 	switch s {
-	case StatusApplying, StatusApproved, StatusDisabled:
+	case StatusApplying, StatusApproved, StatusRejected, StatusDisabled:
 		return nil
 	default:
 		return fmt.Errorf("supplieraccount: invalid enum value for status field: %q", s)
+	}
+}
+
+// Protocol defines the type for the "protocol" enum field.
+type Protocol string
+
+// ProtocolZcard is the default value of the Protocol enum.
+const DefaultProtocol = ProtocolZcard
+
+// Protocol values.
+const (
+	ProtocolZcard      Protocol = "zcard"
+	ProtocolDujiaoNext Protocol = "dujiao_next"
+	ProtocolAcgFaka    Protocol = "acg_faka"
+)
+
+func (pr Protocol) String() string {
+	return string(pr)
+}
+
+// ProtocolValidator is a validator for the "protocol" field enum values. It is called by the builders before save.
+func ProtocolValidator(pr Protocol) error {
+	switch pr {
+	case ProtocolZcard, ProtocolDujiaoNext, ProtocolAcgFaka:
+		return nil
+	default:
+		return fmt.Errorf("supplieraccount: invalid enum value for protocol field: %q", pr)
 	}
 }
 
@@ -160,4 +211,29 @@ func ByNotifyURL(opts ...sql.OrderTermOption) OrderOption {
 // ByReviewedAt orders the results by the reviewed_at field.
 func ByReviewedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReviewedAt, opts...).ToFunc()
+}
+
+// ByProtocol orders the results by the protocol field.
+func ByProtocol(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProtocol, opts...).ToFunc()
+}
+
+// ByDisplayName orders the results by the display_name field.
+func ByDisplayName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisplayName, opts...).ToFunc()
+}
+
+// ByOwnerUserID orders the results by the owner_user_id field.
+func ByOwnerUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOwnerUserID, opts...).ToFunc()
+}
+
+// ByApplyReason orders the results by the apply_reason field.
+func ByApplyReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApplyReason, opts...).ToFunc()
+}
+
+// ByReviewNote orders the results by the review_note field.
+func ByReviewNote(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReviewNote, opts...).ToFunc()
 }

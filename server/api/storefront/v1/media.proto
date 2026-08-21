@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package zcard.api.storefront.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+// StoreMediaService 前台媒体（登录态；收款码上传——复用 media 安全三件套）。
+service StoreMediaService {
+  // Upload base64 上传（图片白名单/魔数/重编码；≤2MB）。
+  rpc Upload(StoreUploadRequest) returns (StoreUploadReply) {
+    option (google.api.http) = {
+      post: "/api/v1/storefront/media/upload"
+      body: "*"
+    };
+  }
+}
+
+message StoreUploadRequest {
+  string data_base64 = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message StoreUploadReply {
+  string url = 1; // /uploads/... 访问路径
+}

@@ -163,6 +163,107 @@ func (_u *SupplierAccountUpdate) ClearReviewedAt() *SupplierAccountUpdate {
 	return _u
 }
 
+// SetProtocol sets the "protocol" field.
+func (_u *SupplierAccountUpdate) SetProtocol(v supplieraccount.Protocol) *SupplierAccountUpdate {
+	_u.mutation.SetProtocol(v)
+	return _u
+}
+
+// SetNillableProtocol sets the "protocol" field if the given value is not nil.
+func (_u *SupplierAccountUpdate) SetNillableProtocol(v *supplieraccount.Protocol) *SupplierAccountUpdate {
+	if v != nil {
+		_u.SetProtocol(*v)
+	}
+	return _u
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_u *SupplierAccountUpdate) SetDisplayName(v string) *SupplierAccountUpdate {
+	_u.mutation.SetDisplayName(v)
+	return _u
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_u *SupplierAccountUpdate) SetNillableDisplayName(v *string) *SupplierAccountUpdate {
+	if v != nil {
+		_u.SetDisplayName(*v)
+	}
+	return _u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (_u *SupplierAccountUpdate) ClearDisplayName() *SupplierAccountUpdate {
+	_u.mutation.ClearDisplayName()
+	return _u
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (_u *SupplierAccountUpdate) SetOwnerUserID(v uint64) *SupplierAccountUpdate {
+	_u.mutation.ResetOwnerUserID()
+	_u.mutation.SetOwnerUserID(v)
+	return _u
+}
+
+// SetNillableOwnerUserID sets the "owner_user_id" field if the given value is not nil.
+func (_u *SupplierAccountUpdate) SetNillableOwnerUserID(v *uint64) *SupplierAccountUpdate {
+	if v != nil {
+		_u.SetOwnerUserID(*v)
+	}
+	return _u
+}
+
+// AddOwnerUserID adds value to the "owner_user_id" field.
+func (_u *SupplierAccountUpdate) AddOwnerUserID(v int64) *SupplierAccountUpdate {
+	_u.mutation.AddOwnerUserID(v)
+	return _u
+}
+
+// ClearOwnerUserID clears the value of the "owner_user_id" field.
+func (_u *SupplierAccountUpdate) ClearOwnerUserID() *SupplierAccountUpdate {
+	_u.mutation.ClearOwnerUserID()
+	return _u
+}
+
+// SetApplyReason sets the "apply_reason" field.
+func (_u *SupplierAccountUpdate) SetApplyReason(v string) *SupplierAccountUpdate {
+	_u.mutation.SetApplyReason(v)
+	return _u
+}
+
+// SetNillableApplyReason sets the "apply_reason" field if the given value is not nil.
+func (_u *SupplierAccountUpdate) SetNillableApplyReason(v *string) *SupplierAccountUpdate {
+	if v != nil {
+		_u.SetApplyReason(*v)
+	}
+	return _u
+}
+
+// ClearApplyReason clears the value of the "apply_reason" field.
+func (_u *SupplierAccountUpdate) ClearApplyReason() *SupplierAccountUpdate {
+	_u.mutation.ClearApplyReason()
+	return _u
+}
+
+// SetReviewNote sets the "review_note" field.
+func (_u *SupplierAccountUpdate) SetReviewNote(v string) *SupplierAccountUpdate {
+	_u.mutation.SetReviewNote(v)
+	return _u
+}
+
+// SetNillableReviewNote sets the "review_note" field if the given value is not nil.
+func (_u *SupplierAccountUpdate) SetNillableReviewNote(v *string) *SupplierAccountUpdate {
+	if v != nil {
+		_u.SetReviewNote(*v)
+	}
+	return _u
+}
+
+// ClearReviewNote clears the value of the "review_note" field.
+func (_u *SupplierAccountUpdate) ClearReviewNote() *SupplierAccountUpdate {
+	_u.mutation.ClearReviewNote()
+	return _u
+}
+
 // Mutation returns the SupplierAccountMutation object of the builder.
 func (_u *SupplierAccountUpdate) Mutation() *SupplierAccountMutation {
 	return _u.mutation
@@ -231,6 +332,26 @@ func (_u *SupplierAccountUpdate) check() error {
 			return &ValidationError{Name: "notify_url", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.notify_url": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Protocol(); ok {
+		if err := supplieraccount.ProtocolValidator(v); err != nil {
+			return &ValidationError{Name: "protocol", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.protocol": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.DisplayName(); ok {
+		if err := supplieraccount.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.display_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ApplyReason(); ok {
+		if err := supplieraccount.ApplyReasonValidator(v); err != nil {
+			return &ValidationError{Name: "apply_reason", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.apply_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ReviewNote(); ok {
+		if err := supplieraccount.ReviewNoteValidator(v); err != nil {
+			return &ValidationError{Name: "review_note", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.review_note": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -284,6 +405,36 @@ func (_u *SupplierAccountUpdate) sqlSave(ctx context.Context) (_node int, err er
 	}
 	if _u.mutation.ReviewedAtCleared() {
 		_spec.ClearField(supplieraccount.FieldReviewedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Protocol(); ok {
+		_spec.SetField(supplieraccount.FieldProtocol, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.DisplayName(); ok {
+		_spec.SetField(supplieraccount.FieldDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.DisplayNameCleared() {
+		_spec.ClearField(supplieraccount.FieldDisplayName, field.TypeString)
+	}
+	if value, ok := _u.mutation.OwnerUserID(); ok {
+		_spec.SetField(supplieraccount.FieldOwnerUserID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerUserID(); ok {
+		_spec.AddField(supplieraccount.FieldOwnerUserID, field.TypeUint64, value)
+	}
+	if _u.mutation.OwnerUserIDCleared() {
+		_spec.ClearField(supplieraccount.FieldOwnerUserID, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.ApplyReason(); ok {
+		_spec.SetField(supplieraccount.FieldApplyReason, field.TypeString, value)
+	}
+	if _u.mutation.ApplyReasonCleared() {
+		_spec.ClearField(supplieraccount.FieldApplyReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReviewNote(); ok {
+		_spec.SetField(supplieraccount.FieldReviewNote, field.TypeString, value)
+	}
+	if _u.mutation.ReviewNoteCleared() {
+		_spec.ClearField(supplieraccount.FieldReviewNote, field.TypeString)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -440,6 +591,107 @@ func (_u *SupplierAccountUpdateOne) ClearReviewedAt() *SupplierAccountUpdateOne 
 	return _u
 }
 
+// SetProtocol sets the "protocol" field.
+func (_u *SupplierAccountUpdateOne) SetProtocol(v supplieraccount.Protocol) *SupplierAccountUpdateOne {
+	_u.mutation.SetProtocol(v)
+	return _u
+}
+
+// SetNillableProtocol sets the "protocol" field if the given value is not nil.
+func (_u *SupplierAccountUpdateOne) SetNillableProtocol(v *supplieraccount.Protocol) *SupplierAccountUpdateOne {
+	if v != nil {
+		_u.SetProtocol(*v)
+	}
+	return _u
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_u *SupplierAccountUpdateOne) SetDisplayName(v string) *SupplierAccountUpdateOne {
+	_u.mutation.SetDisplayName(v)
+	return _u
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_u *SupplierAccountUpdateOne) SetNillableDisplayName(v *string) *SupplierAccountUpdateOne {
+	if v != nil {
+		_u.SetDisplayName(*v)
+	}
+	return _u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (_u *SupplierAccountUpdateOne) ClearDisplayName() *SupplierAccountUpdateOne {
+	_u.mutation.ClearDisplayName()
+	return _u
+}
+
+// SetOwnerUserID sets the "owner_user_id" field.
+func (_u *SupplierAccountUpdateOne) SetOwnerUserID(v uint64) *SupplierAccountUpdateOne {
+	_u.mutation.ResetOwnerUserID()
+	_u.mutation.SetOwnerUserID(v)
+	return _u
+}
+
+// SetNillableOwnerUserID sets the "owner_user_id" field if the given value is not nil.
+func (_u *SupplierAccountUpdateOne) SetNillableOwnerUserID(v *uint64) *SupplierAccountUpdateOne {
+	if v != nil {
+		_u.SetOwnerUserID(*v)
+	}
+	return _u
+}
+
+// AddOwnerUserID adds value to the "owner_user_id" field.
+func (_u *SupplierAccountUpdateOne) AddOwnerUserID(v int64) *SupplierAccountUpdateOne {
+	_u.mutation.AddOwnerUserID(v)
+	return _u
+}
+
+// ClearOwnerUserID clears the value of the "owner_user_id" field.
+func (_u *SupplierAccountUpdateOne) ClearOwnerUserID() *SupplierAccountUpdateOne {
+	_u.mutation.ClearOwnerUserID()
+	return _u
+}
+
+// SetApplyReason sets the "apply_reason" field.
+func (_u *SupplierAccountUpdateOne) SetApplyReason(v string) *SupplierAccountUpdateOne {
+	_u.mutation.SetApplyReason(v)
+	return _u
+}
+
+// SetNillableApplyReason sets the "apply_reason" field if the given value is not nil.
+func (_u *SupplierAccountUpdateOne) SetNillableApplyReason(v *string) *SupplierAccountUpdateOne {
+	if v != nil {
+		_u.SetApplyReason(*v)
+	}
+	return _u
+}
+
+// ClearApplyReason clears the value of the "apply_reason" field.
+func (_u *SupplierAccountUpdateOne) ClearApplyReason() *SupplierAccountUpdateOne {
+	_u.mutation.ClearApplyReason()
+	return _u
+}
+
+// SetReviewNote sets the "review_note" field.
+func (_u *SupplierAccountUpdateOne) SetReviewNote(v string) *SupplierAccountUpdateOne {
+	_u.mutation.SetReviewNote(v)
+	return _u
+}
+
+// SetNillableReviewNote sets the "review_note" field if the given value is not nil.
+func (_u *SupplierAccountUpdateOne) SetNillableReviewNote(v *string) *SupplierAccountUpdateOne {
+	if v != nil {
+		_u.SetReviewNote(*v)
+	}
+	return _u
+}
+
+// ClearReviewNote clears the value of the "review_note" field.
+func (_u *SupplierAccountUpdateOne) ClearReviewNote() *SupplierAccountUpdateOne {
+	_u.mutation.ClearReviewNote()
+	return _u
+}
+
 // Mutation returns the SupplierAccountMutation object of the builder.
 func (_u *SupplierAccountUpdateOne) Mutation() *SupplierAccountMutation {
 	return _u.mutation
@@ -521,6 +773,26 @@ func (_u *SupplierAccountUpdateOne) check() error {
 			return &ValidationError{Name: "notify_url", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.notify_url": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Protocol(); ok {
+		if err := supplieraccount.ProtocolValidator(v); err != nil {
+			return &ValidationError{Name: "protocol", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.protocol": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.DisplayName(); ok {
+		if err := supplieraccount.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.display_name": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ApplyReason(); ok {
+		if err := supplieraccount.ApplyReasonValidator(v); err != nil {
+			return &ValidationError{Name: "apply_reason", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.apply_reason": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ReviewNote(); ok {
+		if err := supplieraccount.ReviewNoteValidator(v); err != nil {
+			return &ValidationError{Name: "review_note", err: fmt.Errorf(`ent: validator failed for field "SupplierAccount.review_note": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -591,6 +863,36 @@ func (_u *SupplierAccountUpdateOne) sqlSave(ctx context.Context) (_node *Supplie
 	}
 	if _u.mutation.ReviewedAtCleared() {
 		_spec.ClearField(supplieraccount.FieldReviewedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Protocol(); ok {
+		_spec.SetField(supplieraccount.FieldProtocol, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.DisplayName(); ok {
+		_spec.SetField(supplieraccount.FieldDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.DisplayNameCleared() {
+		_spec.ClearField(supplieraccount.FieldDisplayName, field.TypeString)
+	}
+	if value, ok := _u.mutation.OwnerUserID(); ok {
+		_spec.SetField(supplieraccount.FieldOwnerUserID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedOwnerUserID(); ok {
+		_spec.AddField(supplieraccount.FieldOwnerUserID, field.TypeUint64, value)
+	}
+	if _u.mutation.OwnerUserIDCleared() {
+		_spec.ClearField(supplieraccount.FieldOwnerUserID, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.ApplyReason(); ok {
+		_spec.SetField(supplieraccount.FieldApplyReason, field.TypeString, value)
+	}
+	if _u.mutation.ApplyReasonCleared() {
+		_spec.ClearField(supplieraccount.FieldApplyReason, field.TypeString)
+	}
+	if value, ok := _u.mutation.ReviewNote(); ok {
+		_spec.SetField(supplieraccount.FieldReviewNote, field.TypeString, value)
+	}
+	if _u.mutation.ReviewNoteCleared() {
+		_spec.ClearField(supplieraccount.FieldReviewNote, field.TypeString)
 	}
 	_node = &SupplierAccount{config: _u.config}
 	_spec.Assign = _node.assignValues

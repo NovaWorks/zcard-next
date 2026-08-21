@@ -15,8 +15,10 @@ export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   order: ["order:read"],
   "payment-channel": ["payment:read"],
   wallet: ["wallet:read"],
+  user: ["identity:user_read"],
   staff: ["identity:admin_read"],
   settings: ["settings:read"],
+  channel: ["supply:read", "supplier:read", "procurement:read"],
 };
 
 /**

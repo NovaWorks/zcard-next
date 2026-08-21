@@ -99,6 +99,11 @@ func ReviewedAt(v time.Time) predicate.Withdrawal {
 	return predicate.Withdrawal(sql.FieldEQ(FieldReviewedAt, v))
 }
 
+// Receipt applies equality check predicate on the "receipt" field. It's identical to ReceiptEQ.
+func Receipt(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldEQ(FieldReceipt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Withdrawal {
 	return predicate.Withdrawal(sql.FieldEQ(FieldCreatedAt, v))
@@ -542,6 +547,81 @@ func ReviewedAtIsNil() predicate.Withdrawal {
 // ReviewedAtNotNil applies the NotNil predicate on the "reviewed_at" field.
 func ReviewedAtNotNil() predicate.Withdrawal {
 	return predicate.Withdrawal(sql.FieldNotNull(FieldReviewedAt))
+}
+
+// ReceiptEQ applies the EQ predicate on the "receipt" field.
+func ReceiptEQ(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldEQ(FieldReceipt, v))
+}
+
+// ReceiptNEQ applies the NEQ predicate on the "receipt" field.
+func ReceiptNEQ(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldNEQ(FieldReceipt, v))
+}
+
+// ReceiptIn applies the In predicate on the "receipt" field.
+func ReceiptIn(vs ...string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldIn(FieldReceipt, vs...))
+}
+
+// ReceiptNotIn applies the NotIn predicate on the "receipt" field.
+func ReceiptNotIn(vs ...string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldNotIn(FieldReceipt, vs...))
+}
+
+// ReceiptGT applies the GT predicate on the "receipt" field.
+func ReceiptGT(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldGT(FieldReceipt, v))
+}
+
+// ReceiptGTE applies the GTE predicate on the "receipt" field.
+func ReceiptGTE(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldGTE(FieldReceipt, v))
+}
+
+// ReceiptLT applies the LT predicate on the "receipt" field.
+func ReceiptLT(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldLT(FieldReceipt, v))
+}
+
+// ReceiptLTE applies the LTE predicate on the "receipt" field.
+func ReceiptLTE(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldLTE(FieldReceipt, v))
+}
+
+// ReceiptContains applies the Contains predicate on the "receipt" field.
+func ReceiptContains(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldContains(FieldReceipt, v))
+}
+
+// ReceiptHasPrefix applies the HasPrefix predicate on the "receipt" field.
+func ReceiptHasPrefix(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldHasPrefix(FieldReceipt, v))
+}
+
+// ReceiptHasSuffix applies the HasSuffix predicate on the "receipt" field.
+func ReceiptHasSuffix(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldHasSuffix(FieldReceipt, v))
+}
+
+// ReceiptIsNil applies the IsNil predicate on the "receipt" field.
+func ReceiptIsNil() predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldIsNull(FieldReceipt))
+}
+
+// ReceiptNotNil applies the NotNil predicate on the "receipt" field.
+func ReceiptNotNil() predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldNotNull(FieldReceipt))
+}
+
+// ReceiptEqualFold applies the EqualFold predicate on the "receipt" field.
+func ReceiptEqualFold(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldEqualFold(FieldReceipt, v))
+}
+
+// ReceiptContainsFold applies the ContainsFold predicate on the "receipt" field.
+func ReceiptContainsFold(v string) predicate.Withdrawal {
+	return predicate.Withdrawal(sql.FieldContainsFold(FieldReceipt, v))
 }
 
 // And groups predicates with the AND operator between them.

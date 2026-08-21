@@ -593,6 +593,148 @@ declare namespace App {
           unFixed: string;
         };
       };
+      settings: {
+        site: {
+          name: string;
+          logo: string;
+          url: string;
+          seo_title: string;
+          seo_keywords: string;
+          seo_desc: string;
+          admin_path: string;
+          top_button: string;
+        };
+        template: {
+          pc_template: string;
+          mobile_template: string;
+          bg_image: string;
+          category_nav_style: string;
+          default_view: string;
+          per_row: string;
+          per_page: string;
+          sort_by: string;
+          show_stock: string;
+          show_sales: string;
+        };
+        footer: {
+          about: string;
+          nav: string;
+          agreement: string;
+          contact: string;
+          social: string;
+          icp: string;
+        };
+        promo: {
+          top_banner_enabled: string;
+          nav_recommend: string;
+        };
+        trade: {
+          guest_checkout: string;
+          contact_required: string;
+          query_password: string;
+          order_ttl_minutes: string;
+          cart_enabled: string;
+          api_order_enabled: string;
+        };
+        security: {
+          register_enabled: string;
+          register_method: string;
+          captcha_register: string;
+          captcha_login: string;
+          captcha_order: string;
+          captcha_reset: string;
+          captcha_admin_login: string;
+          username_min_len: string;
+          max_pending_per_ip: string;
+          risk_enabled: string;
+        };
+        ops: {
+          maintenance: string;
+          maintenance_style: string;
+          announcement_type: string;
+          announcement: string;
+          installed_at: string;
+        };
+        recharge: {
+          enabled: string;
+          min_amount: string;
+          max_amount: string;
+          gift_tiers: string;
+        };
+        license: {
+          file: string;
+          pubkey: string;
+          domain: string;
+          instance_id: string;
+          purchase_monthly_cents: string;
+          purchase_yearly_cents: string;
+          purchase_privkey: string;
+        };
+        withdraw: {
+          enabled: string;
+          min_amount: string;
+          fee_type: string;
+          fee_value: string;
+          methods: string;
+        };
+        points: {
+          enabled: string;
+          deduct_rate: string;
+          max_deduct_pct: string;
+        };
+        affiliate: {
+          enabled: string;
+          levels: string;
+          rate_l1: string;
+          rate_l2: string;
+          rate_l3: string;
+          base: string;
+          confirm_days: string;
+          self_buy: string;
+        };
+        supply: {
+          import_max_lines: string;
+          low_stock_threshold: string;
+          sync_interval_minutes: string;
+        };
+        notify: {
+          smtp_host: string;
+          smtp_port: string;
+          smtp_user: string;
+          smtp_password: string;
+          smtp_name: string;
+          sms_provider: string;
+          sms_key: string;
+          sms_secret: string;
+          sms_sign: string;
+          sms_sdk_app_id: string;
+          sms_template_code: string;
+          sms_template_register: string;
+          sms_template_reset: string;
+        };
+        service: {
+          widget_script: string;
+          stats_script: string;
+        };
+        i18n: {
+          default_locale: string;
+          enabled_locales: string;
+          base_currency: string;
+        };
+      };
+      procurement: {
+        status: {
+          pending: string;
+          submitted: string;
+          polling: string;
+          fulfilled: string;
+          rejected: string;
+          refunding: string;
+          refunded: string;
+          manual: string;
+          failed: string;
+        };
+      };
     };
 
     type GetI18nKey<

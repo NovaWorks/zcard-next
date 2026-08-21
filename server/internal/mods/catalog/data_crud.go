@@ -7,10 +7,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
@@ -33,8 +35,55 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	if f.Keyword != "" {
 		q = q.Where(product.NameHasPrefix(f.Keyword))
 	}
-	if f.Status > 0 { // 0=全部（proto3 默认值）；>0 才过滤
-		q = q.Where(product.Status(int8(f.Status)))
+	if f.Status != 0 { // 0=全部（proto3 默认值）；1=上架 2=隐藏 -1=仅下架（DB status=0）
+		st := f.Status
+		if st == -1 {
+			st = 0
+		}
+		q = q.Where(product.Status(st))
+	}
+	// 低库存过滤（分页前）：与首页预警同口径——仅上架卡密类商品，可用卡密 < 阈值；
+	// 无卡密行视为 0。固定 status=1（下架/隐藏不参与售卖，不预警）。
+	if f.LowStockThreshold > 0 {
+		var candidateIDs []uint64
+		if err := q.Clone().
+			Where(product.StockTypeEQ(product.StockTypeCard), product.Status(1)).
+			Select(product.FieldID).
+			Scan(ctx, &candidateIDs); err != nil {
+			return nil, 0, err
+		}
+		if len(candidateIDs) == 0 {
+			return nil, 0, nil
+		}
+		var counts []struct {
+			ProductID uint64 `json:"product_id"`
+			Count     int    `json:"count"`
+		}
+		if err := data.Client(ctx, r.data).Card.Query().
+			Where(
+				card.ProductIDIn(candidateIDs...),
+				card.StatusEQ(card.StatusAvailable),
+				card.SubsiteID(tc.SubsiteID),
+			).
+			GroupBy(card.FieldProductID).
+			Aggregate(ent.Count()).
+			Scan(ctx, &counts); err != nil {
+			return nil, 0, err
+		}
+		stock := make(map[uint64]int64, len(counts))
+		for _, c := range counts {
+			stock[c.ProductID] = int64(c.Count)
+		}
+		lowIDs := make([]uint64, 0, len(candidateIDs))
+		for _, id := range candidateIDs {
+			if stock[id] < int64(f.LowStockThreshold) {
+				lowIDs = append(lowIDs, id)
+			}
+		}
+		if len(lowIDs) == 0 {
+			return nil, 0, nil
+		}
+		q = q.Where(product.IDIn(lowIDs...))
 	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
@@ -444,6 +493,87 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 		return 0, false, err
 	}
 	return updated.ID, false, nil
+}
+
+// ListSupplyCategories 供货目录分类（port.SupplierCatalog；主站一级分类）。
+func (r *ProductRepoImpl) ListSupplyCategories(ctx context.Context) ([]port.SupplyCategory, error) {
+	tc := tenancy.FromContext(ctx)
+	rows, err := data.Client(ctx, r.data).Category.Query().
+		Where(category.SubsiteID(tc.SubsiteID), category.Hide(false)).
+		Order(ent.Asc(category.FieldSort), ent.Asc(category.FieldID)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]port.SupplyCategory, 0, len(rows))
+	for _, c := range rows {
+		out = append(out, port.SupplyCategory{ID: c.ID, Name: c.Name})
+	}
+	return out, nil
+}
+
+// UpdateUpstreamPrice 仅更新价格（port.UpstreamProductMaintainer；price scope 轻量路径）。
+func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID uint64, productCode string, priceCents int64) (bool, error) {
+	tc := tenancy.FromContext(ctx)
+	n, err := data.Client(ctx, r.data).Product.Update().
+		Where(
+			product.SubsiteID(tc.SubsiteID),
+			product.UpstreamSourceID(connectionID),
+			product.UpstreamProductCode(productCode),
+		).
+		SetPrice(priceCents).
+		SetUpstreamSyncedAt(time.Now().UTC()).
+		Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+// UpdateUpstreamStatus 仅更新上下架状态（port.UpstreamProductMaintainer；status scope 轻量路径）。
+func (r *ProductRepoImpl) UpdateUpstreamStatus(ctx context.Context, connectionID uint64, productCode string, status int8) (bool, error) {
+	tc := tenancy.FromContext(ctx)
+	n, err := data.Client(ctx, r.data).Product.Update().
+		Where(
+			product.SubsiteID(tc.SubsiteID),
+			product.UpstreamSourceID(connectionID),
+			product.UpstreamProductCode(productCode),
+		).
+		SetStatus(status).
+		SetUpstreamSyncedAt(time.Now().UTC()).
+		Save(ctx)
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+// ShelveOffMissing 删除对账：连接下未见商品批量下架（port.UpstreamProductMaintainer）。
+// 只动 status!=0 的（已下架不重复计数）；seen 为空切片时全量下架（引擎侧护栏
+// 保证仅在权威快照完整时调用）。
+func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uint64, seen []string) (int64, error) {
+	tc := tenancy.FromContext(ctx)
+	q := data.Client(ctx, r.data).Product.Query().
+		Where(
+			product.SubsiteID(tc.SubsiteID),
+			product.UpstreamSourceID(connectionID),
+			product.StatusNEQ(0),
+		)
+	if len(seen) > 0 {
+		q = q.Where(product.UpstreamProductCodeNotIn(seen...))
+	}
+	ids, err := q.IDs(ctx)
+	if err != nil || len(ids) == 0 {
+		return 0, err
+	}
+	n, err := data.Client(ctx, r.data).Product.Update().
+		Where(product.IDIn(ids...)).
+		SetStatus(0).
+		Save(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return int64(n), nil
 }
 
 // ListForSupply 供货目录分页（P2-03 supplier 消费；管理面语义含下架）。

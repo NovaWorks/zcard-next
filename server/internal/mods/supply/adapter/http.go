@@ -69,6 +69,9 @@ func newTransportWithClient(baseURL string, retryIntervals []int, log *slog.Logg
 	if len(intervals) == 0 {
 		intervals = []int{30, 60, 300}
 	}
+	if log == nil {
+		log = slog.Default() // 测试注入容错
+	}
 	return &transport{
 		baseURL:        strings.TrimRight(baseURL, "/"),
 		client:         client,
@@ -79,6 +82,9 @@ func newTransportWithClient(baseURL string, retryIntervals []int, log *slog.Logg
 
 // do 发送请求并返回响应体。headers 中的签名头由各协议适配器构造；
 // body 为实际发出的字节（签名哈希 === 实际字节 不变式的发送端）。
+// 重试口径（P2-10 S2 对齐 1.x UpstreamRequestException）：网络错误/5xx/429/非 JSON
+// 网关页可重试（429 间隔加倍）；401/403/404 等其余 4xx 业务错误立即失败。
+// 429 重试耗尽 → 包装 ErrRateLimited（上层节奏器 AIMD 降速判据）。
 func (t *transport) do(ctx context.Context, method, path string, query url.Values, headers map[string]string, body []byte) ([]byte, error) {
 	full := t.baseURL + path
 	if len(query) > 0 {
@@ -89,6 +95,9 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
 			delay := time.Duration(t.retryIntervals[i-1]) * time.Second
+			if isRateLimitedErr(lastErr) {
+				delay *= 2 // 限流退避加倍（AIMD 前的传输层缓冲）
+			}
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
@@ -100,15 +109,25 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 			return resp, nil
 		}
 		lastErr = err
-		// 业务错误（上游明确拒绝）不重试；仅网络错误/5xx 重试
+		// 业务错误（上游明确拒绝）不重试；网络错误/5xx/429/非 JSON 网关页重试
 		var he *httpError
-		if errors.As(err, &he) && he.Status < 500 && he.Status > 0 {
+		if errors.As(err, &he) && he.Status < 500 && he.Status > 0 && he.Status != http.StatusTooManyRequests {
 			return nil, err
 		}
 		t.log.Warn("adapter.http.retry",
 			"method", method, "url", httpx.RedactURL(full), "attempt", i+1, "err", err)
 	}
+	if isRateLimitedErr(lastErr) {
+		return nil, fmt.Errorf("%w: %v", ErrRateLimited, lastErr)
+	}
 	return nil, lastErr
+}
+
+// isRateLimitedErr 限流/WAF 拦判据：429 或 200 但响应体非 JSON（网关/防火墙页面，
+// 1.x「UPSTREAM_INVALID_RESPONSE：可能被 WAF、Cloudflare 或登录页拦截」同款）。
+func isRateLimitedErr(err error) bool {
+	var he *httpError
+	return errors.As(err, &he) && he.Status == http.StatusTooManyRequests
 }
 
 func (t *transport) tryOnce(ctx context.Context, method, full string, headers map[string]string, body []byte) ([]byte, error) {
@@ -137,7 +156,26 @@ func (t *transport) tryOnce(ctx context.Context, method, full string, headers ma
 		code, msg := parseErrorPayload(respBody)
 		return nil, &httpError{Status: resp.StatusCode, Code: code, Message: msg}
 	}
+	// 2xx 但响应体非 JSON：疑似 WAF/Cloudflare/登录页拦截（三协议响应均为 JSON；
+	// 空体放行——zcard ping 等端点允许无体）。归一化为 429 口径参与重试与限流判定。
+	if !looksLikeJSON(respBody) {
+		return nil, &httpError{Status: http.StatusTooManyRequests, Code: "waf_non_json_response", Message: "上游 2xx 返回非 JSON 内容（疑似 WAF/网关页面）"}
+	}
 	return respBody, nil
+}
+
+// looksLikeJSON 响应体是否像 JSON（空体/首字节 { 或 [ 放行）。
+func looksLikeJSON(body []byte) bool {
+	if len(body) == 0 {
+		return true
+	}
+	for _, b := range body { // 跳过前导空白
+		if b == ' ' || b == '\t' || b == '\r' || b == '\n' {
+			continue
+		}
+		return b == '{' || b == '['
+	}
+	return true
 }
 
 // parseErrorPayload 解析上游统一错误体 {error_code, error_message}

@@ -104,7 +104,7 @@ func (a *dujiaoAdapter) ListCategories(ctx context.Context) ([]Category, error) 
 		OK         bool `json:"ok"`
 		Categories []struct {
 			ID       any    `json:"id"`
-			Name     string `json:"name"`
+			Name     any    `json:"name"` // 多语言 JSON 对象（dujiao-next jsonmap.JSON）
 			ParentID any    `json:"parent_id"`
 		} `json:"categories"`
 	}
@@ -113,12 +113,22 @@ func (a *dujiaoAdapter) ListCategories(ctx context.Context) ([]Category, error) 
 	}
 	out := make([]Category, 0, len(resp.Categories))
 	for _, c := range resp.Categories {
-		out = append(out, Category{ID: idString(c.ID), Name: c.Name, ParentID: idString(c.ParentID)})
+		out = append(out, Category{ID: idString(c.ID), Name: LocalizedText(c.Name), ParentID: idString(c.ParentID)})
 	}
 	return out, nil
 }
 
 func (a *dujiaoAdapter) ListProducts(ctx context.Context, page, pageSize int, includeInactive bool) (*ProductList, error) {
+	return a.listProducts(ctx, page, pageSize, includeInactive, nil)
+}
+
+// ListProductsAfter 增量拉取（dujiao-next 支持 ?updated_after=RFC3339）。
+// include_inactive 恒开：增量快照要能看到「变为下架」的商品。
+func (a *dujiaoAdapter) ListProductsAfter(ctx context.Context, page, pageSize int, updatedAfter time.Time) (*ProductList, error) {
+	return a.listProducts(ctx, page, pageSize, true, &updatedAfter)
+}
+
+func (a *dujiaoAdapter) listProducts(ctx context.Context, page, pageSize int, includeInactive bool, updatedAfter *time.Time) (*ProductList, error) {
 	if pageSize <= 0 {
 		pageSize = 50
 	}
@@ -127,6 +137,9 @@ func (a *dujiaoAdapter) ListProducts(ctx context.Context, page, pageSize int, in
 	q.Set("page_size", strconv.Itoa(pageSize))
 	if includeInactive {
 		q.Set("include_inactive", "true")
+	}
+	if updatedAfter != nil {
+		q.Set("updated_after", updatedAfter.UTC().Format(time.RFC3339))
 	}
 	data, err := a.request(ctx, "GET", "/api/v1/upstream/products", q, nil)
 	if err != nil {
@@ -142,8 +155,9 @@ func (a *dujiaoAdapter) ListProducts(ctx context.Context, page, pageSize int, in
 		return nil, fmt.Errorf("adapter.dujiao: 解析商品列表失败: %w", err)
 	}
 	out := &ProductList{
-		Total:   resp.Total,
-		HasMore: page*pageSize < resp.Total,
+		Total:            resp.Total,
+		HasMore:          page*pageSize < resp.Total,
+		IncludesInactive: resp.IncludesInactive,
 	}
 	for _, p := range resp.Items {
 		out.Items = append(out.Items, p.toProduct())
@@ -177,8 +191,14 @@ func (a *dujiaoAdapter) GetStock(ctx context.Context, productCode, _ string) (in
 }
 
 func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*CreateOrderResult, error) {
+	// dujiao sku_id 是数字（uint）：ProductCode 为字符串数字（同步侧商品 ID），
+	// 序列化为 JSON 数字（字符串会 400 cannot unmarshal）
+	skuID, err := strconv.ParseUint(req.ProductCode, 10, 64)
+	if err != nil || skuID == 0 {
+		return nil, fmt.Errorf("adapter.dujiao: ProductCode %q 非数字 sku_id（dujiao 商品 ID/SKU ID 数字语义）", req.ProductCode)
+	}
 	body := map[string]any{
-		"sku_id":              req.ProductCode,
+		"sku_id":              skuID,
 		"quantity":            req.Quantity,
 		"downstream_order_no": req.DownstreamOrderNo,
 		"trace_id":            req.TraceID,
@@ -213,9 +233,10 @@ func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*C
 			return nil, fmt.Errorf("adapter.dujiao: 上游拒绝下单 (%s): %s", resp.ErrorCode, resp.ErrorMessage)
 		}
 	}
-	id := resp.OrderNo
-	if id == "" {
-		id = idString(resp.OrderID)
+	// 查单端点 :id 为数字 ID（order_no 仅展示）——优先取数字，缺省回退 order_no
+	id := idString(resp.OrderID)
+	if id == "" || id == "0" {
+		id = resp.OrderNo
 	}
 	return &CreateOrderResult{
 		UpstreamOrderID: id,
@@ -273,13 +294,16 @@ func (a *dujiaoAdapter) ListOrders(ctx context.Context, start, end time.Time) ([
 	return nil, ErrNotSupported
 }
 
-// dujiaoProduct 上游商品行（字段对齐友商 UpstreamProduct）。
+// dujiaoProduct 上游商品行（字段对齐 dujiao-next upstreamProduct：
+// title/description/content 为多语言 JSON 对象（jsonmap.JSON），非平文字符串）。
 type dujiaoProduct struct {
 	ID          any    `json:"id"`
-	Name        string `json:"name"`
+	Title       any    `json:"title"`       // 多语言对象；旧版兼容平文
+	Description any    `json:"description"` // 多语言对象（短描述）
+	Content     any    `json:"content"`     // 多语言对象（富文本详情，优先）
 	PriceAmount string `json:"price_amount"`
 	CategoryID  any    `json:"category_id"`
-	Description string `json:"description"`
+	Images      []string `json:"images"`
 	IsActive    bool   `json:"is_active"`
 	StockStatus string `json:"stock_status"`
 	SKUs        []struct {
@@ -289,28 +313,74 @@ type dujiaoProduct struct {
 		StockQuantity int32  `json:"stock_quantity"`
 		IsActive      bool   `json:"is_active"`
 	} `json:"skus"`
+	WholesalePrices []struct {
+		UnitPrice string `json:"unit_price"`
+	} `json:"wholesale_prices"`
 }
 
 func (p dujiaoProduct) toProduct() Product {
 	out := Product{
 		ID:          idString(p.ID),
-		Name:        p.Name,
+		Name:        LocalizedText(p.Title),
 		CategoryID:  idString(p.CategoryID),
 		Price:       parseYuanToCents(p.PriceAmount),
-		Description: p.Description,
+		Description: firstNonEmpty(LocalizedText(p.Content), LocalizedText(p.Description)),
 		IsActive:    p.IsActive,
 		Stock:       -1,
+		Cover:       firstNonEmpty(p.Images...),
+	}
+	// 拿货价：批发价第一档 unit_price，缺省回退售价（1.x DujiaoNextDriver 同款）
+	out.FactoryPrice = out.Price
+	if len(p.WholesalePrices) > 0 {
+		out.FactoryPrice = parseYuanToCents(p.WholesalePrices[0].UnitPrice)
 	}
 	for _, s := range p.SKUs {
-		out.SKUs = append(out.SKUs, SKU{
+		if !s.IsActive {
+			continue // 下架 SKU 不同步（1.x 同款）
+		}
+		sku := SKU{
 			ID:       idString(s.ID),
 			Code:     s.SKUCode,
 			Price:    parseYuanToCents(s.PriceAmount),
 			Stock:    s.StockQuantity,
-			IsActive: s.IsActive,
-		})
+			IsActive: true,
+		}
+		if out.Stock == -1 {
+			out.Stock = s.StockQuantity // 商品级库存 = 第一个启用 SKU 的库存
+		}
+		out.SKUs = append(out.SKUs, sku)
 	}
 	return out
+}
+
+// LocalizedText dujiao-next 多语言字段提取（jsonmap.JSON 对象）。
+// 优先级：zh-CN → zh-TW → zh → en-US → en → 任一非空标量；平文字符串直接透传。
+func LocalizedText(v any) string {
+	switch x := v.(type) {
+	case string:
+		return strings.TrimSpace(x)
+	case map[string]any:
+		for _, locale := range []string{"zh-CN", "zh-TW", "zh", "en-US", "en"} {
+			if s, ok := x[locale].(string); ok && strings.TrimSpace(s) != "" {
+				return strings.TrimSpace(s)
+			}
+		}
+		for _, val := range x {
+			if s, ok := val.(string); ok && strings.TrimSpace(s) != "" {
+				return strings.TrimSpace(s)
+			}
+		}
+	}
+	return ""
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // parseYuanToCents 上游金额字符串（元，如 "12.34"）→ 分（铁律 1）。
@@ -360,4 +430,35 @@ func splitLines(s string) []string {
 	}
 	out = append(out, s[start:])
 	return out
+}
+
+// FlexNum 弹性数值（acg-faka 实况：MySQL DECIMAL 经 PDO 有时出字符串 "5.00"、
+// 有时出数字 5——1.x PHP 松散类型无感；Go 侧统一兼容两种 JSON 形态）。
+type FlexNum float64
+
+// UnmarshalJSON 接受带引号字符串与裸数字。
+func (f *FlexNum) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	if s == "null" {
+		*f = 0
+		return nil
+	}
+	if len(s) >= 2 && s[0] == '"' {
+		s = s[1 : len(s)-1]
+	}
+	if s == "" {
+		*f = 0
+		return nil
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return err
+	}
+	*f = FlexNum(v)
+	return nil
+}
+
+// Cents 元（数字或字符串）→ 分。
+func (f FlexNum) Cents() int64 {
+	return int64(float64(f)*100 + 0.5)
 }

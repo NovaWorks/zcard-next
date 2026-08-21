@@ -24,11 +24,13 @@ const OperationAdminSupplyServiceCreateSyncTask = "/zcard.api.admin.v1.AdminSupp
 const OperationAdminSupplyServiceDeleteConnection = "/zcard.api.admin.v1.AdminSupplyService/DeleteConnection"
 const OperationAdminSupplyServiceDeleteMapping = "/zcard.api.admin.v1.AdminSupplyService/DeleteMapping"
 const OperationAdminSupplyServiceGetSyncTask = "/zcard.api.admin.v1.AdminSupplyService/GetSyncTask"
+const OperationAdminSupplyServiceImportProducts = "/zcard.api.admin.v1.AdminSupplyService/ImportProducts"
 const OperationAdminSupplyServiceListConnections = "/zcard.api.admin.v1.AdminSupplyService/ListConnections"
 const OperationAdminSupplyServiceListHealth = "/zcard.api.admin.v1.AdminSupplyService/ListHealth"
 const OperationAdminSupplyServiceListMappings = "/zcard.api.admin.v1.AdminSupplyService/ListMappings"
 const OperationAdminSupplyServiceListSyncTasks = "/zcard.api.admin.v1.AdminSupplyService/ListSyncTasks"
 const OperationAdminSupplyServicePingConnection = "/zcard.api.admin.v1.AdminSupplyService/PingConnection"
+const OperationAdminSupplyServicePreviewProducts = "/zcard.api.admin.v1.AdminSupplyService/PreviewProducts"
 const OperationAdminSupplyServiceUpdateConnection = "/zcard.api.admin.v1.AdminSupplyService/UpdateConnection"
 const OperationAdminSupplyServiceUpsertMapping = "/zcard.api.admin.v1.AdminSupplyService/UpsertMapping"
 
@@ -45,9 +47,10 @@ type AdminSupplyServiceHTTPServer interface {
 	DeleteMapping(context.Context, *DeleteMappingRequest) (*emptypb.Empty, error)
 	// GetSyncTask GetSyncTask 任务详情（心跳/统计/错误上下文）。
 	GetSyncTask(context.Context, *GetSyncTaskRequest) (*SupplySyncTask, error)
+	// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	ImportProducts(context.Context, *ImportProductsRequest) (*ImportProductsReply, error)
 	// ListConnections ListConnections 连接列表（凭据零回显）。
 	ListConnections(context.Context, *ListConnectionsRequest) (*ListConnectionsReply, error)
-	// ListHealth ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 	ListHealth(context.Context, *ListHealthRequest) (*ListHealthReply, error)
 	// ListMappings ListMappings 商品映射列表（按连接过滤）。
 	ListMappings(context.Context, *ListMappingsRequest) (*ListMappingsReply, error)
@@ -55,6 +58,9 @@ type AdminSupplyServiceHTTPServer interface {
 	ListSyncTasks(context.Context, *ListSyncTasksRequest) (*ListSyncTasksReply, error)
 	// PingConnection PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
 	PingConnection(context.Context, *PingConnectionRequest) (*PingConnectionReply, error)
+	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(context.Context, *UpdateConnectionRequest) (*SupplyConnection, error)
 	// UpsertMapping UpsertMapping 创建/更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
@@ -75,6 +81,8 @@ func RegisterAdminSupplyServiceHTTPServer(s *http.Server, srv AdminSupplyService
 	r.Handle("GET", "/api/v1/admin/supply/sync-tasks", _AdminSupplyService_ListSyncTasks0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supply/sync-tasks/{id}", _AdminSupplyService_GetSyncTask0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supply/sync-tasks/{id}/cancel", _AdminSupplyService_CancelSyncTask0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/supply/connections/{connection_id}/preview", _AdminSupplyService_PreviewProducts0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/supply/connections/{connection_id}/import", _AdminSupplyService_ImportProducts0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supply/health", _AdminSupplyService_ListHealth0_HTTP_Handler(srv))
 }
 
@@ -324,6 +332,50 @@ func _AdminSupplyService_CancelSyncTask0_HTTP_Handler(srv AdminSupplyServiceHTTP
 	}
 }
 
+func _AdminSupplyService_PreviewProducts0_HTTP_Handler(srv AdminSupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in PreviewProductsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplyServicePreviewProducts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PreviewProducts(ctx, req.(*PreviewProductsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*PreviewProductsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminSupplyService_ImportProducts0_HTTP_Handler(srv AdminSupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ImportProductsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplyServiceImportProducts)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ImportProducts(ctx, req.(*ImportProductsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ImportProductsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AdminSupplyService_ListHealth0_HTTP_Handler(srv AdminSupplyServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in ListHealthRequest
@@ -356,9 +408,10 @@ type AdminSupplyServiceHTTPClient interface {
 	DeleteMapping(ctx context.Context, req *DeleteMappingRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// GetSyncTask GetSyncTask 任务详情（心跳/统计/错误上下文）。
 	GetSyncTask(ctx context.Context, req *GetSyncTaskRequest, opts ...http.CallOption) (rsp *SupplySyncTask, err error)
+	// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	ImportProducts(ctx context.Context, req *ImportProductsRequest, opts ...http.CallOption) (rsp *ImportProductsReply, err error)
 	// ListConnections ListConnections 连接列表（凭据零回显）。
 	ListConnections(ctx context.Context, req *ListConnectionsRequest, opts ...http.CallOption) (rsp *ListConnectionsReply, err error)
-	// ListHealth ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 	ListHealth(ctx context.Context, req *ListHealthRequest, opts ...http.CallOption) (rsp *ListHealthReply, err error)
 	// ListMappings ListMappings 商品映射列表（按连接过滤）。
 	ListMappings(ctx context.Context, req *ListMappingsRequest, opts ...http.CallOption) (rsp *ListMappingsReply, err error)
@@ -366,6 +419,9 @@ type AdminSupplyServiceHTTPClient interface {
 	ListSyncTasks(ctx context.Context, req *ListSyncTasksRequest, opts ...http.CallOption) (rsp *ListSyncTasksReply, err error)
 	// PingConnection PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
 	PingConnection(ctx context.Context, req *PingConnectionRequest, opts ...http.CallOption) (rsp *PingConnectionReply, err error)
+	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	PreviewProducts(ctx context.Context, req *PreviewProductsRequest, opts ...http.CallOption) (rsp *PreviewProductsReply, err error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(ctx context.Context, req *UpdateConnectionRequest, opts ...http.CallOption) (rsp *SupplyConnection, err error)
 	// UpsertMapping UpsertMapping 创建/更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
@@ -485,6 +541,24 @@ func (c *AdminSupplyServiceHTTPClientImpl) GetSyncTask(ctx context.Context, in *
 	return &out, nil
 }
 
+// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+func (c *AdminSupplyServiceHTTPClientImpl) ImportProducts(ctx context.Context, in *ImportProductsRequest, opts ...http.CallOption) (*ImportProductsReply, error) {
+	var out ImportProductsReply
+	pattern := "/api/v1/admin/supply/connections/{connection_id}/import"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminSupplyServiceImportProducts),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListConnections ListConnections 连接列表（凭据零回显）。
 func (c *AdminSupplyServiceHTTPClientImpl) ListConnections(ctx context.Context, in *ListConnectionsRequest, opts ...http.CallOption) (*ListConnectionsReply, error) {
 	var out ListConnectionsReply
@@ -502,7 +576,6 @@ func (c *AdminSupplyServiceHTTPClientImpl) ListConnections(ctx context.Context, 
 	return &out, nil
 }
 
-// ListHealth ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 func (c *AdminSupplyServiceHTTPClientImpl) ListHealth(ctx context.Context, in *ListHealthRequest, opts ...http.CallOption) (*ListHealthReply, error) {
 	var out ListHealthReply
 	pattern := "/api/v1/admin/supply/health"
@@ -565,6 +638,24 @@ func (c *AdminSupplyServiceHTTPClientImpl) PingConnection(ctx context.Context, i
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
+// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+func (c *AdminSupplyServiceHTTPClientImpl) PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...http.CallOption) (*PreviewProductsReply, error) {
+	var out PreviewProductsReply
+	pattern := "/api/v1/admin/supply/connections/{connection_id}/preview"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminSupplyServicePreviewProducts),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

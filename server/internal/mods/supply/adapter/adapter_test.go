@@ -6,10 +6,12 @@ package adapter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 // ---- 签名 golden vectors（与 Python 独立计算对照）----
@@ -131,13 +133,13 @@ func TestDujiaoAdapterParsing(t *testing.T) {
 		switch r.URL.Path {
 		case "/api/v1/upstream/products":
 			if r.URL.Query().Get("include_inactive") == "true" {
-				// 新版：回声 includes_inactive=true，返回下架商品
+				// 新版：回声 includes_inactive=true，返回下架商品（真实协议：title 为多语言对象）
 				_, _ = w.Write([]byte(`{"ok":true,"total":2,"includes_inactive":true,"items":[
-					{"id":1,"name":"A","price_amount":"12.34","is_active":true,"skus":[{"id":11,"sku_code":"SKU1","price_amount":"12.34","stock_quantity":5,"is_active":true}]},
-					{"id":2,"name":"B","price_amount":"0.50","is_active":false,"skus":[]}]}`))
+					{"id":1,"title":{"zh-CN":"A","en":"A-en"},"description":{"zh-CN":"描述A"},"content":{"zh-CN":"详情A"},"price_amount":"12.34","is_active":true,"images":["https://img/a.png"],"wholesale_prices":[{"min_quantity":1,"unit_price":"10.00"}],"skus":[{"id":11,"sku_code":"SKU1","price_amount":"12.34","stock_quantity":5,"is_active":true}]},
+					{"id":2,"title":{"en":"B-only"},"price_amount":"0.50","is_active":false,"skus":[]}]}`))
 				return
 			}
-			_, _ = w.Write([]byte(`{"ok":true,"total":1,"includes_inactive":false,"items":[{"id":1,"name":"A","price_amount":"12.34","is_active":true}]}`))
+			_, _ = w.Write([]byte(`{"ok":true,"total":1,"includes_inactive":false,"items":[{"id":1,"title":{"zh-CN":"A"},"price_amount":"12.34","is_active":true}]}`))
 		case "/api/v1/upstream/orders":
 			_, _ = w.Write([]byte(`{"ok":false,"error_code":"insufficient_balance","error_message":"余额不足"}`))
 		default:
@@ -157,11 +159,25 @@ func TestDujiaoAdapterParsing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListProducts: %v", err)
 	}
-	if list.Total != 2 || len(list.Items) != 2 {
+	if list.Total != 2 || len(list.Items) != 2 || !list.IncludesInactive {
 		t.Fatalf("include_inactive 列表错误: %+v", list)
 	}
 	if list.Items[0].Price != 1234 {
 		t.Fatalf("元→分转换错误: got %d want 1234", list.Items[0].Price)
+	}
+	// 多语言提取：zh-CN 优先；content 优先于 description；拿货价取批发第一档；封面取 images[0]
+	if list.Items[0].Name != "A" || list.Items[0].Description != "详情A" {
+		t.Fatalf("多语言字段提取错误: %+v", list.Items[0])
+	}
+	if list.Items[0].FactoryPrice != 1000 {
+		t.Fatalf("批发价拿货价错误: got %d want 1000", list.Items[0].FactoryPrice)
+	}
+	if list.Items[0].Cover != "https://img/a.png" {
+		t.Fatalf("封面提取错误: %+v", list.Items[0])
+	}
+	// zh-CN 缺失回退任意语言
+	if list.Items[1].Name != "B-only" {
+		t.Fatalf("多语言回退错误: %+v", list.Items[1])
 	}
 	if list.Items[0].SKUs[0].Stock != 5 || !list.Items[0].SKUs[0].IsActive {
 		t.Fatalf("SKU 解析错误: %+v", list.Items[0].SKUs)
@@ -317,5 +333,151 @@ func TestIDString(t *testing.T) {
 	}
 	if got := idString(arr[3]); got != "" {
 		t.Fatalf("idString(null) = %q", got)
+	}
+}
+
+// ---- P2-10 S1：增量能力（updated_after）与多语言提取 ----
+
+func TestDujiaoIncrementalList(t *testing.T) {
+	var gotAfter, gotIncludeInactive string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAfter = r.URL.Query().Get("updated_after")
+		gotIncludeInactive = r.URL.Query().Get("include_inactive")
+		_, _ = w.Write([]byte(`{"ok":true,"total":1,"includes_inactive":true,"items":[
+			{"id":9,"title":{"zh-CN":"变更商品"},"price_amount":"5.00","is_active":false}]}`))
+	}))
+	defer srv.Close()
+
+	a := &dujiaoAdapter{
+		protocol: "dujiao_next",
+		creds:    Credentials{APIKey: "k", APISecret: "s"},
+		t:        newTransportWithClient(srv.URL, nil, nil, srv.Client()),
+	}
+	var aIfc Adapter = a
+	il, ok := aIfc.(IncrementalLister)
+	if !ok {
+		t.Fatal("dujiao 适配器必须实现 IncrementalLister")
+	}
+	after := time.Date(2026, 8, 20, 10, 0, 0, 0, time.UTC)
+	list, err := il.ListProductsAfter(context.Background(), 1, 50, after)
+	if err != nil {
+		t.Fatalf("ListProductsAfter: %v", err)
+	}
+	if gotAfter != after.Format(time.RFC3339) {
+		t.Fatalf("updated_after 参数错误: %q", gotAfter)
+	}
+	if gotIncludeInactive != "true" {
+		t.Fatalf("增量必须带 include_inactive=true（看到下架变更）: %q", gotIncludeInactive)
+	}
+	if len(list.Items) != 1 || list.Items[0].Name != "变更商品" || list.Items[0].IsActive {
+		t.Fatalf("增量解析错误: %+v", list.Items)
+	}
+}
+
+func TestDujiaoNotIncrementalDrivers(t *testing.T) {
+	// acg/zcard 驱动不实现 IncrementalLister（协议无 updated_after）→ 引擎回落全量
+	var _ Adapter = &acgFakaAdapter{}
+	var _ Adapter = &zCardAdapter{}
+	if _, ok := Adapter(&acgFakaAdapter{}).(IncrementalLister); ok {
+		t.Fatal("acg_faka 不应实现 IncrementalLister")
+	}
+	if _, ok := Adapter(&zCardAdapter{}).(IncrementalLister); ok {
+		t.Fatal("zcard 不应实现 IncrementalLister")
+	}
+}
+
+func TestLocalizedText(t *testing.T) {
+	cases := []struct {
+		name string
+		in   any
+		want string
+	}{
+		{"平文字符串透传", "hello ", "hello"},
+		{"zh_CN 优先", map[string]any{"zh-CN": "中文", "en": "english"}, "中文"},
+		{"zh_TW 次选", map[string]any{"zh-TW": "繁體", "en": "english"}, "繁體"},
+		{"缺失回退任意", map[string]any{"ja": "日本語", "en": "english"}, "english"},
+		{"空值跳过", map[string]any{"zh-CN": "  ", "fr": "français"}, "français"},
+		{"nil 返回空", nil, ""},
+		{"数值返回空", 42, ""},
+	}
+	for _, c := range cases {
+		if got := LocalizedText(c.in); got != c.want {
+			t.Fatalf("%s: got %q want %q", c.name, got, c.want)
+		}
+	}
+}
+
+// ---- P2-10 S2：限流/WAF 识别（传输层）----
+
+func TestTransport429RetriesThenRateLimited(t *testing.T) {
+	var calls int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(429)
+		_, _ = w.Write([]byte(`{"error_code":"too_many_requests"}`))
+	}))
+	defer srv.Close()
+	// retryIntervals [0]（秒）→ 快速重试一次后放弃
+	tr := newTransportWithClient(srv.URL, []int{0}, nil, srv.Client())
+	_, err := tr.do(context.Background(), "GET", "/x", nil, nil, nil)
+	if !errors.Is(err, ErrRateLimited) {
+		t.Fatalf("429 耗尽应包装 ErrRateLimited: %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("应重试一次: %d", calls)
+	}
+}
+
+func TestTransportWAFHTMLDetected(t *testing.T) {
+	var calls int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		_, _ = w.Write([]byte("<html><body>Access Denied. Cloudflare</body></html>")) // 200 但 HTML
+	}))
+	defer srv.Close()
+	tr := newTransportWithClient(srv.URL, []int{0}, nil, srv.Client())
+	_, err := tr.do(context.Background(), "GET", "/x", nil, nil, nil)
+	if !errors.Is(err, ErrRateLimited) {
+		t.Fatalf("WAF HTML 应归类 ErrRateLimited: %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("非 JSON 应可重试: %d", calls)
+	}
+}
+
+func TestTransportBusiness4xxNoRetry(t *testing.T) {
+	var calls int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(404)
+		_, _ = w.Write([]byte(`{"error_code":"not_found"}`))
+	}))
+	defer srv.Close()
+	tr := newTransportWithClient(srv.URL, []int{0}, nil, srv.Client())
+	_, err := tr.do(context.Background(), "GET", "/x", nil, nil, nil)
+	if err == nil || errors.Is(err, ErrRateLimited) {
+		t.Fatalf("404 应是普通业务错误: %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("业务 4xx 不应重试: %d", calls)
+	}
+}
+
+func TestLooksLikeJSON(t *testing.T) {
+	cases := []struct {
+		in   string
+		want bool
+	}{
+		{`{"ok":true}`, true},
+		{`  [1,2]`, true},
+		{"", true},  // 空体放行
+		{"<html>", false},
+		{"\n\r {\"a\":1}", true},
+		{"Access Denied", false},
+	}
+	for _, c := range cases {
+		if got := looksLikeJSON([]byte(c.in)); got != c.want {
+			t.Fatalf("looksLikeJSON(%q) = %v want %v", c.in, got, c.want)
+		}
 	}
 }

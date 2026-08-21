@@ -449,15 +449,19 @@ type WithdrawalItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	UserId        uint64                 `protobuf:"varint,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Username      string                 `protobuf:"bytes,12,opt,name=username,proto3" json:"username,omitempty"` // 用户名（列表富化）
 	AmountCents   int64                  `protobuf:"varint,3,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
 	FeeCents      int64                  `protobuf:"varint,4,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
 	MethodType    string                 `protobuf:"bytes,5,opt,name=method_type,json=methodType,proto3" json:"method_type,omitempty"`
+	MethodName    string                 `protobuf:"bytes,13,opt,name=method_name,json=methodName,proto3" json:"method_name,omitempty"` // 收款方式显示名
 	Account       string                 `protobuf:"bytes,6,opt,name=account,proto3" json:"account,omitempty"`
-	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"` // pending | approved | paid | rejected
+	QrCodeUrl     string                 `protobuf:"bytes,14,opt,name=qr_code_url,json=qrCodeUrl,proto3" json:"qr_code_url,omitempty"` // 收款码图片（微信/支付宝；审核展示）
+	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`                           // pending | approved | paid | rejected
 	RejectReason  string                 `protobuf:"bytes,8,opt,name=reject_reason,json=rejectReason,proto3" json:"reject_reason,omitempty"`
 	ReviewedAt    int64                  `protobuf:"varint,9,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
 	PaidAt        int64                  `protobuf:"varint,10,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Receipt       string                 `protobuf:"bytes,15,opt,name=receipt,proto3" json:"receipt,omitempty"` // 打款回执（流水号/备注）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -506,6 +510,13 @@ func (x *WithdrawalItem) GetUserId() uint64 {
 	return 0
 }
 
+func (x *WithdrawalItem) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
 func (x *WithdrawalItem) GetAmountCents() int64 {
 	if x != nil {
 		return x.AmountCents
@@ -527,9 +538,23 @@ func (x *WithdrawalItem) GetMethodType() string {
 	return ""
 }
 
+func (x *WithdrawalItem) GetMethodName() string {
+	if x != nil {
+		return x.MethodName
+	}
+	return ""
+}
+
 func (x *WithdrawalItem) GetAccount() string {
 	if x != nil {
 		return x.Account
+	}
+	return ""
+}
+
+func (x *WithdrawalItem) GetQrCodeUrl() string {
+	if x != nil {
+		return x.QrCodeUrl
 	}
 	return ""
 }
@@ -567,6 +592,13 @@ func (x *WithdrawalItem) GetCreatedAt() int64 {
 		return x.CreatedAt
 	}
 	return 0
+}
+
+func (x *WithdrawalItem) GetReceipt() string {
+	if x != nil {
+		return x.Receipt
+	}
+	return ""
 }
 
 type ReviewWithdrawalRequest struct {
@@ -632,6 +664,7 @@ func (x *ReviewWithdrawalRequest) GetReason() string {
 type PayWithdrawalRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Receipt       string                 `protobuf:"bytes,2,opt,name=receipt,proto3" json:"receipt,omitempty"` // 打款回执（交易流水号/凭证备注；客户可见）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -671,6 +704,13 @@ func (x *PayWithdrawalRequest) GetId() uint64 {
 		return x.Id
 	}
 	return 0
+}
+
+func (x *PayWithdrawalRequest) GetReceipt() string {
+	if x != nil {
+		return x.Receipt
+	}
+	return ""
 }
 
 type GetBalanceRequest struct {
@@ -1098,15 +1138,19 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"r\n" +
 	"\x14ListWithdrawalsReply\x12D\n" +
 	"\vwithdrawals\x18\x01 \x03(\v2\".zcard.api.admin.v1.WithdrawalItemR\vwithdrawals\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xca\x02\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xc1\x03\n" +
 	"\x0eWithdrawalItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x17\n" +
-	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12!\n" +
+	"\auser_id\x18\x02 \x01(\x04R\x06userId\x12\x1a\n" +
+	"\busername\x18\f \x01(\tR\busername\x12!\n" +
 	"\famount_cents\x18\x03 \x01(\x03R\vamountCents\x12\x1b\n" +
 	"\tfee_cents\x18\x04 \x01(\x03R\bfeeCents\x12\x1f\n" +
 	"\vmethod_type\x18\x05 \x01(\tR\n" +
-	"methodType\x12\x18\n" +
-	"\aaccount\x18\x06 \x01(\tR\aaccount\x12\x16\n" +
+	"methodType\x12\x1f\n" +
+	"\vmethod_name\x18\r \x01(\tR\n" +
+	"methodName\x12\x18\n" +
+	"\aaccount\x18\x06 \x01(\tR\aaccount\x12\x1e\n" +
+	"\vqr_code_url\x18\x0e \x01(\tR\tqrCodeUrl\x12\x16\n" +
 	"\x06status\x18\a \x01(\tR\x06status\x12#\n" +
 	"\rreject_reason\x18\b \x01(\tR\frejectReason\x12\x1f\n" +
 	"\vreviewed_at\x18\t \x01(\x03R\n" +
@@ -1114,13 +1158,15 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\apaid_at\x18\n" +
 	" \x01(\x03R\x06paidAt\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\v \x01(\x03R\tcreatedAt\"`\n" +
+	"created_at\x18\v \x01(\x03R\tcreatedAt\x12\x18\n" +
+	"\areceipt\x18\x0f \x01(\tR\areceipt\"`\n" +
 	"\x17ReviewWithdrawalRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
 	"\aapprove\x18\x02 \x01(\bR\aapprove\x12\x16\n" +
-	"\x06reason\x18\x03 \x01(\tR\x06reason\"+\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\"E\n" +
 	"\x14PayWithdrawalRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"1\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
+	"\areceipt\x18\x02 \x01(\tR\areceipt\"1\n" +
 	"\x11GetBalanceRequest\x12\x1c\n" +
 	"\auser_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06userId\"\x8f\x01\n" +
 	"\aBalance\x12\x17\n" +
@@ -1151,16 +1197,16 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\x06remark\x18\b \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\t \x01(\x03R\tcreatedAt2\xba\t\n" +
-	"\x12AdminWalletService\x12x\n" +
-	"\n" +
-	"GetBalance\x12%.zcard.api.admin.v1.GetBalanceRequest\x1a\x1b.zcard.api.admin.v1.Balance\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/wallet/{user_id}\x12z\n" +
-	"\x06Adjust\x12!.zcard.api.admin.v1.AdjustRequest\x1a\x1b.zcard.api.admin.v1.Balance\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/{user_id}/adjust\x12\x97\x01\n" +
-	"\x10ListTransactions\x12'.zcard.api.admin.v1.ListWalletTxRequest\x1a%.zcard.api.admin.v1.ListWalletTxReply\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/admin/wallet/{user_id}/transactions\x12\x91\x01\n" +
+	"\x12AdminWalletService\x12\x91\x01\n" +
 	"\x0fListWithdrawals\x12*.zcard.api.admin.v1.ListWithdrawalsRequest\x1a(.zcard.api.admin.v1.ListWithdrawalsReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/wallet/withdrawals\x12\x9c\x01\n" +
 	"\x10ReviewWithdrawal\x12+.zcard.api.admin.v1.ReviewWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/wallet/withdrawals/{id}/review\x12\x93\x01\n" +
 	"\rPayWithdrawal\x12(.zcard.api.admin.v1.PayWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"4\x82\xd3\xe4\x93\x02.:\x01*\")/api/v1/admin/wallet/withdrawals/{id}/pay\x12\xa5\x01\n" +
 	"\x13CreateGiftcardBatch\x12..zcard.api.admin.v1.CreateGiftcardBatchRequest\x1a,.zcard.api.admin.v1.CreateGiftcardBatchReply\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/giftcard-batches\x12\xa2\x01\n" +
-	"\x13ListGiftcardBatches\x12..zcard.api.admin.v1.ListGiftcardBatchesRequest\x1a,.zcard.api.admin.v1.ListGiftcardBatchesReply\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/wallet/giftcard-batchesB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\x13ListGiftcardBatches\x12..zcard.api.admin.v1.ListGiftcardBatchesRequest\x1a,.zcard.api.admin.v1.ListGiftcardBatchesReply\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/wallet/giftcard-batches\x12x\n" +
+	"\n" +
+	"GetBalance\x12%.zcard.api.admin.v1.GetBalanceRequest\x1a\x1b.zcard.api.admin.v1.Balance\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/wallet/{user_id}\x12z\n" +
+	"\x06Adjust\x12!.zcard.api.admin.v1.AdjustRequest\x1a\x1b.zcard.api.admin.v1.Balance\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/{user_id}/adjust\x12\x97\x01\n" +
+	"\x10ListTransactions\x12'.zcard.api.admin.v1.ListWalletTxRequest\x1a%.zcard.api.admin.v1.ListWalletTxReply\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/admin/wallet/{user_id}/transactionsB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_wallet_proto_rawDescOnce sync.Once
@@ -1198,22 +1244,22 @@ var file_admin_v1_wallet_proto_depIdxs = []int32{
 	2,  // 1: zcard.api.admin.v1.ListGiftcardBatchesReply.batches:type_name -> zcard.api.admin.v1.GiftcardBatchItem
 	7,  // 2: zcard.api.admin.v1.ListWithdrawalsReply.withdrawals:type_name -> zcard.api.admin.v1.WithdrawalItem
 	15, // 3: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
-	10, // 4: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
-	12, // 5: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
-	13, // 6: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
-	5,  // 7: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:input_type -> zcard.api.admin.v1.ListWithdrawalsRequest
-	8,  // 8: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:input_type -> zcard.api.admin.v1.ReviewWithdrawalRequest
-	9,  // 9: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:input_type -> zcard.api.admin.v1.PayWithdrawalRequest
-	0,  // 10: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:input_type -> zcard.api.admin.v1.CreateGiftcardBatchRequest
-	3,  // 11: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:input_type -> zcard.api.admin.v1.ListGiftcardBatchesRequest
-	11, // 12: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
-	11, // 13: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
-	14, // 14: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
-	6,  // 15: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
-	7,  // 16: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
-	7,  // 17: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
-	1,  // 18: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:output_type -> zcard.api.admin.v1.CreateGiftcardBatchReply
-	4,  // 19: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:output_type -> zcard.api.admin.v1.ListGiftcardBatchesReply
+	5,  // 4: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:input_type -> zcard.api.admin.v1.ListWithdrawalsRequest
+	8,  // 5: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:input_type -> zcard.api.admin.v1.ReviewWithdrawalRequest
+	9,  // 6: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:input_type -> zcard.api.admin.v1.PayWithdrawalRequest
+	0,  // 7: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:input_type -> zcard.api.admin.v1.CreateGiftcardBatchRequest
+	3,  // 8: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:input_type -> zcard.api.admin.v1.ListGiftcardBatchesRequest
+	10, // 9: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
+	12, // 10: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
+	13, // 11: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
+	6,  // 12: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
+	7,  // 13: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	7,  // 14: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	1,  // 15: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:output_type -> zcard.api.admin.v1.CreateGiftcardBatchReply
+	4,  // 16: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:output_type -> zcard.api.admin.v1.ListGiftcardBatchesReply
+	11, // 17: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
+	11, // 18: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
+	14, // 19: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
 	12, // [12:20] is the sub-list for method output_type
 	4,  // [4:12] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name

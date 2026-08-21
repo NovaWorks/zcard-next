@@ -13,6 +13,7 @@ import (
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
@@ -264,4 +265,39 @@ func pageParams(page, pageSize int32) (int, int) {
 		ps = 100
 	}
 	return p, ps
+}
+
+// ── Store 前台媒体（收款码上传；登录态 + 复用三件套；≤2MB）──
+
+// StoreMediaService 前台媒体服务。
+type StoreMediaService struct {
+	storefrontv1.UnimplementedStoreMediaServiceServer
+	repo *MediaRepo
+}
+
+// NewStoreMediaService 构造。
+func NewStoreMediaService(repo *MediaRepo) *StoreMediaService {
+	return &StoreMediaService{repo: repo}
+}
+
+// Upload base64 上传（用户登录态；收款码场景限 2MB——小于 admin 10MB）。
+func (s *StoreMediaService) Upload(ctx context.Context, req *storefrontv1.StoreUploadRequest) (*storefrontv1.StoreUploadReply, error) {
+	claims := identity.ClaimsFromContext(ctx)
+	if claims == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "未登录")
+	}
+	data, err := base64.StdEncoding.DecodeString(req.GetDataBase64())
+	if err != nil {
+		return nil, errors.BadRequest("media.BASE64_INVALID", "data_base64 解码失败")
+	}
+	if len(data) > 2*1024*1024 {
+		return nil, errors.BadRequest("media.TOO_LARGE", "图片超过 2MB 上限")
+	}
+	res, err := s.repo.Upload(ctx, mediaport.UploadInput{
+		Name: "qrcode", ContentType: "", Data: data, UploaderID: claims.Subject,
+	})
+	if err != nil {
+		return nil, mapMediaError(err)
+	}
+	return &storefrontv1.StoreUploadReply{Url: "/uploads/" + res.Path}, nil
 }

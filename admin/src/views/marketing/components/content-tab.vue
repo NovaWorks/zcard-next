@@ -1,12 +1,13 @@
 <script setup lang="ts">
 // 内容管理：横幅（storefront 首页消费）+ 文章/公告（content:read / write）。
-import { onMounted, ref, h } from "vue";
+import { computed, onMounted, ref, h } from "vue";
 import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NPopconfirm, NSelect, NSwitch, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchBanners, createBanner, deleteBanner, fetchPosts, createPost, updatePost, publishPost, deletePost } from "@/service/api";
 import { checkAuth } from "@/directives";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import MdHtmlEditor from "@/components/common/md-html-editor/index.vue";
+import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "ContentTab" });
 
@@ -18,6 +19,22 @@ const banners = ref<any[]>([]);
 const showBanner = ref(false);
 const bannerSaving = ref(false);
 const bannerForm = ref({ name: "", position: "top", title_json: "", image: [] as string[], link_type: "url", link_value: "", is_active: true, sort: 0 });
+
+// 生效状态快捷筛选（客户端过滤，带实时计数）
+const bannerFilter = ref<"" | "on" | "off">("");
+const bannerTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "生效中", value: "on", type: "success" as const },
+  { label: "已停用", value: "off", type: "default" as const },
+];
+const bannerCounts = computed(() => ({
+  "": banners.value.length,
+  on: banners.value.filter((b) => b.is_active).length,
+  off: banners.value.filter((b) => !b.is_active).length,
+}));
+const filteredBanners = computed(() =>
+  bannerFilter.value === "" ? banners.value : banners.value.filter((b) => (bannerFilter.value === "on" ? b.is_active : !b.is_active)),
+);
 
 const bannerColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
@@ -72,6 +89,22 @@ const showPost = ref(false);
 const postSaving = ref(false);
 const postForm = ref({ slug: "", type: "notice", title: "", summary: "", content: "", is_published: true });
 const editingPost = ref<any>(null);
+
+// 发布状态快捷筛选（客户端过滤，带实时计数）
+const postFilter = ref<"" | "published" | "draft">("");
+const postTabs = [
+  { label: "全部", value: "", type: "default" as const },
+  { label: "已发布", value: "published", type: "success" as const },
+  { label: "草稿", value: "draft", type: "warning" as const },
+];
+const postCounts = computed(() => ({
+  "": posts.value.length,
+  published: posts.value.filter((p) => p.is_published).length,
+  draft: posts.value.filter((p) => !p.is_published).length,
+}));
+const filteredPosts = computed(() =>
+  postFilter.value === "" ? posts.value : posts.value.filter((p) => (postFilter.value === "published" ? p.is_published : !p.is_published)),
+);
 
 // title_json/content_json → zh_CN 展示值
 function zhValue(json: string): string {
@@ -236,15 +269,21 @@ onMounted(() => {
 <template>
   <div class="flex flex-col gap-16px">
     <div>
-      <div class="mb-8px flex items-center gap-8px">
-        <span class="text-13px font-500">首页横幅</span>
+      <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
+        <div class="flex flex-wrap items-center gap-12px">
+          <span class="text-13px font-500">首页横幅</span>
+          <FilterTabs v-model:value="bannerFilter" :options="bannerTabs" :counts="bannerCounts" size="small" />
+        </div>
         <NButton v-if="canWrite()" size="tiny" type="primary" @click="showBanner = true">新增横幅</NButton>
       </div>
-      <NDataTable :columns="bannerColumns" :data="banners" :loading="bannerLoading" size="small" />
+      <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small" />
     </div>
     <div>
-      <div class="mb-8px flex items-center gap-8px">
-        <span class="text-13px font-500">公告/文章</span>
+      <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
+        <div class="flex flex-wrap items-center gap-12px">
+          <span class="text-13px font-500">公告/文章</span>
+          <FilterTabs v-model:value="postFilter" :options="postTabs" :counts="postCounts" size="small" />
+        </div>
         <NButton
           v-if="canWrite()"
           size="tiny"
@@ -254,7 +293,7 @@ onMounted(() => {
           新增文章
         </NButton>
       </div>
-      <NDataTable :columns="postColumns" :data="posts" :loading="postLoading" size="small" />
+      <NDataTable :columns="postColumns" :data="filteredPosts" :loading="postLoading" size="small" />
     </div>
 
     <NModal v-model:show="showBanner" preset="dialog" title="新增横幅" style="width: 520px">

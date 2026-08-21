@@ -34,6 +34,7 @@ message MyAffiliateReply {
   int64 team_l1 = 8;           // 直推人数
   int64 team_l2 = 9;
   int64 team_l3 = 10;
+  string promo_code = 11;      // 推广码（8 位随机）
 }
 
 message ListTeamRequest {

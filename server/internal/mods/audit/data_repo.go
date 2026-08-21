@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/visitlog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 )
 
 // 闸门阈值（settings.security 可覆盖——读取侧 M3 接线；默认值与文档一致）。
@@ -124,6 +125,14 @@ func (r *AuditRepo) ListOpLogs(ctx context.Context, operatorID uint64, page, siz
 
 // Security 安全事件埋点（写失败不阻断——1.x 纪律）。
 func (r *AuditRepo) Security(ctx context.Context, e port.SecurityEntry) {
+	// 主体缺省时从请求身份补齐（调用方位于鉴权中间件下游，ctx 内 claims 可用；
+	// 显式 guest/system 的条目不覆盖）。
+	if e.ActorID == 0 && (e.ActorType == "" || e.ActorType == "admin" || e.ActorType == "user") {
+		if claims := identity.ClaimsFromContext(ctx); claims != nil {
+			e.ActorID = claims.Subject
+			e.ActorType = string(claims.Realm)
+		}
+	}
 	create := data.Client(ctx, r.data).SecurityAuditLog.Create().
 		SetActorType(securityauditlog.ActorType(orDefault(e.ActorType, "system"))).
 		SetAction(e.Action)

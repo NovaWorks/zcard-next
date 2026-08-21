@@ -125,8 +125,8 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 		Children []struct {
 			Code         string `json:"code"`
 			Name         string `json:"name"`
-			Price        string `json:"price"`
-			FactoryPrice string `json:"factory_price"`
+			Price        FlexNum `json:"price"`
+			FactoryPrice FlexNum `json:"factory_price"`
 			Description  string `json:"description"`
 			Introduce    string `json:"introduce"`
 			Cover        string `json:"cover"`
@@ -139,7 +139,8 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 	if err := json.Unmarshal(raw, &cats); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析商品列表失败: %w", err)
 	}
-	out := &ProductList{}
+	// items 一次全量（无分页）：快照天然含下架商品（is_active 过滤语义下放）→ 对账权威
+	out := &ProductList{IncludesInactive: true}
 	for _, cat := range cats {
 		catID := idString(cat.ID)
 		for _, p := range cat.Children {
@@ -155,8 +156,8 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 				ID:           p.Code,
 				Name:         p.Name,
 				CategoryID:   catID,
-				Price:        parseYuanToCents(p.Price),
-				FactoryPrice: parseYuanToCents(p.FactoryPrice),
+				Price:        p.Price.Cents(),
+				FactoryPrice: p.FactoryPrice.Cents(),
 				Description:  desc,
 				Cover:        p.Cover,
 				IsActive:     p.Status == 1,
@@ -202,9 +203,9 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 		return nil, err
 	}
 	var d struct {
-		TradeNo string `json:"tradeNo"`
-		Amount  string `json:"amount"` // 元（字符串）
-		Secret  string `json:"secret"` // PHP_EOL 拼的多卡
+		TradeNo string  `json:"tradeNo"`
+		Amount  FlexNum `json:"amount"` // 元（数字或字符串——MySQL DECIMAL 直出实况）
+		Secret  string  `json:"secret"` // PHP_EOL 拼的多卡
 	}
 	if err := json.Unmarshal(raw, &d); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析下单响应失败: %w", err)
@@ -218,7 +219,7 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 		// 必须存上游 tradeNo：query 接口按 trade_no 匹配（1.x 教训 #2）
 		UpstreamOrderID: d.TradeNo,
 		Status:          status,
-		Amount:          parseYuanToCents(d.Amount),
+		Amount:          d.Amount.Cents(),
 		Cards:           cards,
 	}, nil
 }

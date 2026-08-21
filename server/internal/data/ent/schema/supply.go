@@ -33,7 +33,8 @@ func (SupplyConnection) Fields() []ent.Field {
 			Default(1).Comment("汇率（上游价 × 汇率 = 本地价）"),
 		field.Float("price_markup_percent").
 			SchemaType(map[string]string{dialect.MySQL: "decimal(20,8)", dialect.Postgres: "numeric(20,8)", dialect.SQLite: "real"}).
-			Default(0).Comment("加价百分比（100=翻倍）"),
+			Default(0).Comment("加价百分比（100=翻倍；与固定加价可组合）"),
+		field.Int64("price_markup_amount").Default(0).Comment("固定加价（分；本地价 = 上游价×汇率×(1+%) + 固定额 → 取整）"),
 		field.Enum("price_rounding_mode").Values("none", "ceil_int", "ceil_tenth").Default("none"),
 		field.Bool("auto_sync_price").Default(true).Comment("同步时自动更新本地价（manual 改价保护）"),
 		field.Enum("stock_mode").Values("real", "plenty").Default("real"),
@@ -43,6 +44,13 @@ func (SupplyConnection) Fields() []ent.Field {
 		field.Time("last_synced_at").SchemaType(mysqlTime).Optional(),
 		field.Text("last_error").Optional(),
 		field.Int64("balance_cache").Default(0).Comment("上游余额缓存（分）"),
+		// P2-10 S2/S3：定时调度锚点（三类 scope 各自的下次执行判据）
+		field.Time("last_collect_at").SchemaType(mysqlTime).Optional(),
+		field.Time("last_price_sync_at").SchemaType(mysqlTime).Optional(),
+		field.Time("last_status_sync_at").SchemaType(mysqlTime).Optional(),
+		// P2-10 S2：自适应节奏器（AIMD）状态与渠道熔断冷却
+		field.JSON("rate_state", map[string]any{}).Optional().Comment("节奏器持久状态（当前间隔/连续成功/封锁计数/冷却时长）"),
+		field.Time("rate_limit_until").SchemaType(mysqlTime).Optional().Comment("熔断冷却截止（非空且未到=调度与出站跳过）"),
 	}
 }
 

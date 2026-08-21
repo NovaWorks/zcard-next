@@ -27,9 +27,10 @@ type ListProductsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CategoryId    uint64                 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	Keyword       string                 `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
-	Status        int32                  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"` // 0=全部 1=上架 0=下架 2=隐藏
+	Status        int32                  `protobuf:"varint,3,opt,name=status,proto3" json:"status,omitempty"` // 0=全部 1=上架 2=隐藏 -1=仅下架
 	Page          int32                  `protobuf:"varint,4,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	LowStockOnly  bool                   `protobuf:"varint,6,opt,name=low_stock_only,json=lowStockOnly,proto3" json:"low_stock_only,omitempty"` // 仅返回库存不足商品（阈值取 settings.supply.low_stock_threshold）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -97,6 +98,13 @@ func (x *ListProductsRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListProductsRequest) GetLowStockOnly() bool {
+	if x != nil {
+		return x.LowStockOnly
+	}
+	return false
 }
 
 type ListProductsReply struct {
@@ -3085,14 +3093,15 @@ var File_admin_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x99\x01\n" +
+	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xbf\x01\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
 	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\x05R\x06status\x12\x12\n" +
 	"\x04page\x18\x04 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\"\x98\x01\n" +
+	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\x12$\n" +
+	"\x0elow_stock_only\x18\x06 \x01(\bR\flowStockOnly\"\x98\x01\n" +
 	"\x11ListProductsReply\x12<\n" +
 	"\bproducts\x18\x01 \x03(\v2 .zcard.api.admin.v1.AdminProductR\bproducts\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
