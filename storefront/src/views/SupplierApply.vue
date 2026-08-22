@@ -95,7 +95,7 @@
             <div style="margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e5e6e8;">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                 <b style="font-size: 13px;">🔒 IP 白名单</b>
-                <span class="muted" style="font-size: 12px;">{{ (a.ip_whitelist || []).length ? `已限制 ${a.ip_whitelist.length} 条` : '未限制（所有 IP 可调用）' }}</span>
+                <span class="muted" style="font-size: 12px;">{{ (a.ip_whitelist?.length || 0) ? `已限制 ${a.ip_whitelist!.length} 条` : '未限制（所有 IP 可调用）' }}</span>
               </div>
               <div class="muted" style="margin: 6px 0 8px; line-height: 1.7; font-size: 12px;">
                 出于安全考虑，可限制只有指定 IP 的服务器才能调用本账户的对接接口。

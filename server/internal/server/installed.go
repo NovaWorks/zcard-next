@@ -5,35 +5,34 @@ package server
 
 import (
 	"context"
+	"net/http"
 	"strings"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/i18n"
 
 	"github.com/go-kratos/kratos/v3/middleware"
 	"github.com/go-kratos/kratos/v3/transport"
-	khttp "github.com/go-kratos/kratos/v3/transport/http"
 )
 
-// ensureInstalled 构造（installed 判定函数由 settings 注入，避免 server 反向依赖 mods 仓储）。
-func ensureInstalled(isInstalled func() bool) middleware.Middleware {
-	return func(handler middleware.Handler) middleware.Handler {
-		return func(ctx context.Context, req any) (any, error) {
+// installGuard 未安装守门（Filter 层——直接操作 ResponseWriter；
+// middleware 返回 nil reply 会被生成的 handler 类型断言 panic，不可用）。
+// 未安装时业务 API 302 /install（Web 安装向导）；豁免：安装页/健康检查/
+// 安装 API/非 API 静态资源。已安装直通（ops.installed_at 点查）。
+func installGuard(isInstalled func() bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if !isInstalled() {
-				if tr, ok := transport.FromServerContext(ctx); ok {
-					if hc, ok := tr.(khttp.Context); ok {
-						p := hc.Request().URL.Path
-						// 豁免：安装页/健康检查/静态
-						if p == "/install" || p == "/health" || !strings.HasPrefix(p, "/api/") {
-							return handler(ctx, req)
-						}
-						hc.Response().Header().Set("Location", "/install")
-						hc.Response().WriteHeader(302)
-						return nil, nil
-					}
+				p := r.URL.Path
+				if p == "/install" || p == "/health" || strings.HasPrefix(p, "/api/v1/admin/install") || !strings.HasPrefix(p, "/api/") {
+					next.ServeHTTP(w, r)
+					return
 				}
+				w.Header().Set("Location", "/install")
+				w.WriteHeader(http.StatusFound)
+				return
 			}
-			return handler(ctx, req)
-		}
+			next.ServeHTTP(w, r)
+		})
 	}
 }
 

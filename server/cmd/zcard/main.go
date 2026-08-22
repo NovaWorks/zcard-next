@@ -239,6 +239,7 @@ func runServe(args []string) (err error) {
 	logger.Info("zcard.starting", "mode", appMode, "version", Version)
 
 	supplier.ServerVersion = orDev(Version)
+	settings.SetServerVersion(orDev(Version))
 	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Security, logger)
 	if err != nil {
 		return err

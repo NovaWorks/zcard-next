@@ -16,6 +16,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(port.Provider), new(*RepoImpl)),
 	wire.Bind(new(port.CurrencyReader), new(*RepoImpl)),
 	NewAdminSettingsService,
+	NewAdminInstallService,
 	NewStorefrontConfigService,
 	NewAdminCurrencyService,
 )

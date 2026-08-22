@@ -70,6 +70,7 @@ func NewHTTPServer(
 	adminReader identityport.AdminReader,
 	authSvc *identity.AdminAuthService,
 	settingsSvc *settings.AdminSettingsService,
+	installSvc *settings.AdminInstallService,
 	catalogSvc *catalog.StoreCatalogService,
 	supplyAdminSvc *supply.AdminSupplyService,
 	procureAdminSvc *procurement.AdminProcurementService,
@@ -130,6 +131,8 @@ func NewHTTPServer(
 			corsFilter,
 			// P3-04：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
 			tenantFilter(tenancyMainDomain(c), resellerRepo),
+			// 未安装守门（在线安装 Web 向导；Filter 层直写 302）
+			installGuard(func() bool { return settings.Installed(context.Background(), d) }),
 			// P2-03：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
 			// 仅 /api/supply/*，Ping 免签名；不挂 JWT，架构测试规则 9）
 			supplier.SupplyAuthFilter(supplierRepo, 0),
@@ -153,7 +156,6 @@ func NewHTTPServer(
 				return nil
 			}),
 			i18nMiddleware("zh_CN"),
-			ensureInstalled(func() bool { return settings.Installed(context.Background(), d) }),
 			// P3-04：storefront user realm JWT（解析失败放行——游客端点不受影响；
 			// 需登录端点由业务侧 claims==nil 自行 401）
 			userAuthMiddleware(signer),
@@ -190,6 +192,7 @@ func NewHTTPServer(
 
 	// 业务路由（proto 注解生成；静态路由先于参数路由由注册顺序保证，铁律 4）
 	adminv1.RegisterAdminAuthServiceHTTPServer(srv, authSvc)
+	adminv1.RegisterAdminInstallServiceHTTPServer(srv, installSvc)
 	adminv1.RegisterAdminSettingsServiceHTTPServer(srv, settingsSvc)
 	adminv1.RegisterRoleServiceHTTPServer(srv, roleSvc)
 	adminv1.RegisterAdminUserServiceHTTPServer(srv, adminSvc)

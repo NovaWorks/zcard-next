@@ -1571,6 +1571,38 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/install:
+        post:
+            tags:
+                - AdminInstallService
+            description: PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+            operationId: AdminInstallService_PerformInstall
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.PerformInstallRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.InstallStatusReply'
+    /api/v1/admin/install/status:
+        get:
+            tags:
+                - AdminInstallService
+            description: GetInstallStatus 安装状态 + 环境自检（公开）。
+            operationId: AdminInstallService_GetInstallStatus
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.InstallStatusReply'
     /api/v1/admin/inventory/cards:
         get:
             tags:
@@ -7519,6 +7551,21 @@ components:
             properties:
                 content:
                     type: string
+        zcard.api.admin.v1.InstallStatusReply:
+            type: object
+            properties:
+                installed:
+                    type: boolean
+                dialect:
+                    type: string
+                version:
+                    type: string
+                databaseOk:
+                    type: boolean
+                migrationsOk:
+                    type: boolean
+                installedAt:
+                    type: string
         zcard.api.admin.v1.InstallTemplateRequest:
             required:
                 - dataBase64
@@ -8387,6 +8434,20 @@ components:
                     type: integer
                     format: int32
                 createdAt:
+                    type: string
+        zcard.api.admin.v1.PerformInstallRequest:
+            required:
+                - adminUsername
+                - adminPassword
+            type: object
+            properties:
+                adminUsername:
+                    type: string
+                adminPassword:
+                    type: string
+                siteName:
+                    type: string
+                siteUrl:
                     type: string
         zcard.api.admin.v1.Perm:
             type: object
@@ -11598,6 +11659,11 @@ tags:
       description: AdminDashboardService 工作台指标（P3-07 M1b v1）。
     - name: AdminFulfillmentService
       description: AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
+    - name: AdminInstallService
+      description: |-
+        AdminInstallService 在线安装（Public——仅未安装时可用；已安装后 status 只读、install 拒绝）。
+         部署形态：SQLite 零依赖起步（无需数据库/Redis 配置），浏览器打开 → 设管理员 → 完成。
+         数据库/Redis 属部署层配置（config.yaml / env），不进安装向导。
     - name: AdminInventoryService
       description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
     - name: AdminLicenseService

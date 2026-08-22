@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+
+// AdminInstallService 在线安装（Public——仅未安装时可用；已安装后 status 只读、install 拒绝）。
+// 部署形态：SQLite 零依赖起步（无需数据库/Redis 配置），浏览器打开 → 设管理员 → 完成。
+// 数据库/Redis 属部署层配置（config.yaml / env），不进安装向导。
+service AdminInstallService {
+  // GetInstallStatus 安装状态 + 环境自检（公开）。
+  rpc GetInstallStatus(google.protobuf.Empty) returns (InstallStatusReply) {
+    option (google.api.http) = { get: "/api/v1/admin/install/status" };
+  }
+  // PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+  rpc PerformInstall(PerformInstallRequest) returns (InstallStatusReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/install"
+      body: "*"
+    };
+  }
+}
+
+message InstallStatusReply {
+  bool installed = 1;         // 是否已安装
+  string dialect = 2;         // sqlite | mysql | postgres
+  string version = 3;         // 构建版本
+  bool database_ok = 4;       // 数据库连通
+  bool migrations_ok = 5;     // 迁移已应用
+  string installed_at = 6;    // 安装时间（RFC3339；未安装为空）
+}
+
+message PerformInstallRequest {
+  string admin_username = 1 [(google.api.field_behavior) = REQUIRED]; // 管理员用户名
+  string admin_password = 2 [(google.api.field_behavior) = REQUIRED]; // 管理员密码（≥8 位）
+  string site_name = 3;       // 站点名称（默认 ZCard 商店）
+  string site_url = 4;        // 站点网址（可选）
+}

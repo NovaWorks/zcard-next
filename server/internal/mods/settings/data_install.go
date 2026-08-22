@@ -23,6 +23,20 @@ import (
 // ErrAlreadyInstalled 已安装（幂等拒绝）。
 var ErrAlreadyInstalled = errors.New("settings.ALREADY_INSTALLED")
 
+// installedAt 安装时间（未安装返回空串）。
+func installedAt(ctx context.Context, d *data.Data) (string, error) {
+	s, err := data.Client(ctx, d).Setting.Query().
+		Where(setting.Group("ops"), setting.Key("installed_at")).Only(ctx)
+	if err != nil {
+		return "", err
+	}
+	var ts string
+	if err := json.Unmarshal(s.Value, &ts); err != nil {
+		return "", err
+	}
+	return ts, nil
+}
+
 // Installed 是否已安装（ops.installed_at 存在判定）。
 func Installed(ctx context.Context, d *data.Data) bool {
 	_, err := data.Client(ctx, d).Setting.Query().

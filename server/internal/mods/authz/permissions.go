@@ -5,6 +5,12 @@ package authz
 
 func init() {
 	Declare(
+		// ── 在线安装（Public——仅未安装时可写；已安装 install 幂等 409）──
+		Perm{Code: "auth:install", Desc: "安装状态查询（免鉴权）", Domain: "auth", Public: true,
+			Op: "zcard.api.admin.v1.AdminInstallService/GetInstallStatus", Method: "GET", Path: "/api/v1/admin/install/status"},
+		Perm{Code: "auth:install", Desc: "执行安装（免鉴权；已安装 409）", Domain: "auth", Public: true,
+			Op: "zcard.api.admin.v1.AdminInstallService/PerformInstall", Method: "POST", Path: "/api/v1/admin/install"},
+
 		// ── 认证（identity）──────────────────────────────
 		Perm{Code: "auth:login", Desc: "管理员登录", Domain: "auth",
 			Op: "zcard.api.admin.v1.AdminAuthService/Login", Method: "POST", Path: "/api/v1/admin/auth/login", Public: true},
