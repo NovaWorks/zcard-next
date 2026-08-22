@@ -17,9 +17,18 @@ service AdminInstallService {
     option (google.api.http) = { get: "/api/v1/admin/install/status" };
   }
   // PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+  // dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+  // + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
   rpc PerformInstall(PerformInstallRequest) returns (InstallStatusReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/install"
+      body: "*"
+    };
+  }
+  // TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+  rpc TestInstallConnection(TestInstallConnectionRequest) returns (TestInstallConnectionReply) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/install/test"
       body: "*"
     };
   }
@@ -32,6 +41,23 @@ message InstallStatusReply {
   bool database_ok = 4;       // 数据库连通
   bool migrations_ok = 5;     // 迁移已应用
   string installed_at = 6;    // 安装时间（RFC3339；未安装为空）
+  bool restart_required = 7;  // 已提交库切换，服务即将自重启（前端轮询至 installed）
+}
+
+message TestInstallConnectionRequest {
+  string dialect = 1;        // mysql | postgres（sqlite 无需测试）
+  string db_host = 2;
+  int32 db_port = 3;
+  string db_user = 4;
+  string db_password = 5;
+  string db_name = 6;
+  string redis_addr = 7;     // mysql/postgres 必填
+  string redis_password = 8;
+}
+
+message TestInstallConnectionReply {
+  bool ok = 1;
+  string message = 2;        // 失败原因（连接/权限/库创建）
 }
 
 message PerformInstallRequest {
@@ -39,4 +65,13 @@ message PerformInstallRequest {
   string admin_password = 2 [(google.api.field_behavior) = REQUIRED]; // 管理员密码（≥8 位）
   string site_name = 3;       // 站点名称（默认 ZCard 商店）
   string site_url = 4;        // 站点网址（可选）
+  // ── 数据库选择（在线安装库切换）──
+  string dialect = 5;         // sqlite（默认，当前库直装）| mysql | postgres
+  string db_host = 6;
+  int32 db_port = 7;
+  string db_user = 8;
+  string db_password = 9;
+  string db_name = 10;
+  string redis_addr = 11;     // mysql/postgres 必填（SQLite 免 Redis）
+  string redis_password = 12;
 }

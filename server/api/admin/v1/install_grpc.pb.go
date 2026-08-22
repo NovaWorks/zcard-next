@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminInstallService_GetInstallStatus_FullMethodName = "/zcard.api.admin.v1.AdminInstallService/GetInstallStatus"
-	AdminInstallService_PerformInstall_FullMethodName   = "/zcard.api.admin.v1.AdminInstallService/PerformInstall"
+	AdminInstallService_GetInstallStatus_FullMethodName      = "/zcard.api.admin.v1.AdminInstallService/GetInstallStatus"
+	AdminInstallService_PerformInstall_FullMethodName        = "/zcard.api.admin.v1.AdminInstallService/PerformInstall"
+	AdminInstallService_TestInstallConnection_FullMethodName = "/zcard.api.admin.v1.AdminInstallService/TestInstallConnection"
 )
 
 // AdminInstallServiceClient is the client API for AdminInstallService service.
@@ -35,7 +36,11 @@ type AdminInstallServiceClient interface {
 	// GetInstallStatus 安装状态 + 环境自检（公开）。
 	GetInstallStatus(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*InstallStatusReply, error)
 	// PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+	// dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+	// + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
 	PerformInstall(ctx context.Context, in *PerformInstallRequest, opts ...grpc.CallOption) (*InstallStatusReply, error)
+	// TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+	TestInstallConnection(ctx context.Context, in *TestInstallConnectionRequest, opts ...grpc.CallOption) (*TestInstallConnectionReply, error)
 }
 
 type adminInstallServiceClient struct {
@@ -66,6 +71,16 @@ func (c *adminInstallServiceClient) PerformInstall(ctx context.Context, in *Perf
 	return out, nil
 }
 
+func (c *adminInstallServiceClient) TestInstallConnection(ctx context.Context, in *TestInstallConnectionRequest, opts ...grpc.CallOption) (*TestInstallConnectionReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TestInstallConnectionReply)
+	err := c.cc.Invoke(ctx, AdminInstallService_TestInstallConnection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminInstallServiceServer is the server API for AdminInstallService service.
 // All implementations must embed UnimplementedAdminInstallServiceServer
 // for forward compatibility.
@@ -77,7 +92,11 @@ type AdminInstallServiceServer interface {
 	// GetInstallStatus 安装状态 + 环境自检（公开）。
 	GetInstallStatus(context.Context, *emptypb.Empty) (*InstallStatusReply, error)
 	// PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+	// dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+	// + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
 	PerformInstall(context.Context, *PerformInstallRequest) (*InstallStatusReply, error)
+	// TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+	TestInstallConnection(context.Context, *TestInstallConnectionRequest) (*TestInstallConnectionReply, error)
 	mustEmbedUnimplementedAdminInstallServiceServer()
 }
 
@@ -93,6 +112,9 @@ func (UnimplementedAdminInstallServiceServer) GetInstallStatus(context.Context, 
 }
 func (UnimplementedAdminInstallServiceServer) PerformInstall(context.Context, *PerformInstallRequest) (*InstallStatusReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method PerformInstall not implemented")
+}
+func (UnimplementedAdminInstallServiceServer) TestInstallConnection(context.Context, *TestInstallConnectionRequest) (*TestInstallConnectionReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method TestInstallConnection not implemented")
 }
 func (UnimplementedAdminInstallServiceServer) mustEmbedUnimplementedAdminInstallServiceServer() {}
 func (UnimplementedAdminInstallServiceServer) testEmbeddedByValue()                             {}
@@ -151,6 +173,24 @@ func _AdminInstallService_PerformInstall_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminInstallService_TestInstallConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestInstallConnectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminInstallServiceServer).TestInstallConnection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminInstallService_TestInstallConnection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminInstallServiceServer).TestInstallConnection(ctx, req.(*TestInstallConnectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminInstallService_ServiceDesc is the grpc.ServiceDesc for AdminInstallService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -165,6 +205,10 @@ var AdminInstallService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PerformInstall",
 			Handler:    _AdminInstallService_PerformInstall_Handler,
+		},
+		{
+			MethodName: "TestInstallConnection",
+			Handler:    _AdminInstallService_TestInstallConnection_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

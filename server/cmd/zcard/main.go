@@ -182,6 +182,16 @@ func applyMigrationsIfEnabled(ctx context.Context, bc *conf.Bootstrap) error {
 	return nil
 }
 
+// completePendingInstall 在线安装接力（库切换重启后）：待装凭据存在 → 新库安装。
+func completePendingInstall(ctx context.Context, bc *conf.Bootstrap) error {
+	d, cleanup, err := data.NewData(bc.Data)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	return settings.CompletePendingInstall(ctx, d)
+}
+
 // ensureSeeds 启动补种（幂等；独立于迁移开关——表已存在即可）：基础货币
 // 缺失时写入（老库升级自动补 CNY，新库由 Install 事务同源写入）。
 func ensureSeeds(ctx context.Context, bc *conf.Bootstrap) error {
@@ -201,6 +211,7 @@ func runServe(args []string) (err error) {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	settings.SetConfDir(*confDir)
 	bc, err := loadBootstrap(*confDir)
 	if err != nil {
 		return err
@@ -225,6 +236,10 @@ func runServe(args []string) (err error) {
 	}
 
 	if err := applyMigrationsIfEnabled(context.Background(), bc); err != nil {
+		return err
+	}
+	// 在线安装·库切换接力：待装凭据存在 → 在新库上补装（迁移已完成）
+	if err := completePendingInstall(context.Background(), bc); err != nil {
 		return err
 	}
 	if err := ensureSeeds(context.Background(), bc); err != nil {

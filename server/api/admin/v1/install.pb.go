@@ -24,15 +24,16 @@ const (
 )
 
 type InstallStatusReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Installed     bool                   `protobuf:"varint,1,opt,name=installed,proto3" json:"installed,omitempty"`                           // 是否已安装
-	Dialect       string                 `protobuf:"bytes,2,opt,name=dialect,proto3" json:"dialect,omitempty"`                                // sqlite | mysql | postgres
-	Version       string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`                                // 构建版本
-	DatabaseOk    bool                   `protobuf:"varint,4,opt,name=database_ok,json=databaseOk,proto3" json:"database_ok,omitempty"`       // 数据库连通
-	MigrationsOk  bool                   `protobuf:"varint,5,opt,name=migrations_ok,json=migrationsOk,proto3" json:"migrations_ok,omitempty"` // 迁移已应用
-	InstalledAt   string                 `protobuf:"bytes,6,opt,name=installed_at,json=installedAt,proto3" json:"installed_at,omitempty"`     // 安装时间（RFC3339；未安装为空）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Installed       bool                   `protobuf:"varint,1,opt,name=installed,proto3" json:"installed,omitempty"`                                    // 是否已安装
+	Dialect         string                 `protobuf:"bytes,2,opt,name=dialect,proto3" json:"dialect,omitempty"`                                         // sqlite | mysql | postgres
+	Version         string                 `protobuf:"bytes,3,opt,name=version,proto3" json:"version,omitempty"`                                         // 构建版本
+	DatabaseOk      bool                   `protobuf:"varint,4,opt,name=database_ok,json=databaseOk,proto3" json:"database_ok,omitempty"`                // 数据库连通
+	MigrationsOk    bool                   `protobuf:"varint,5,opt,name=migrations_ok,json=migrationsOk,proto3" json:"migrations_ok,omitempty"`          // 迁移已应用
+	InstalledAt     string                 `protobuf:"bytes,6,opt,name=installed_at,json=installedAt,proto3" json:"installed_at,omitempty"`              // 安装时间（RFC3339；未安装为空）
+	RestartRequired bool                   `protobuf:"varint,7,opt,name=restart_required,json=restartRequired,proto3" json:"restart_required,omitempty"` // 已提交库切换，服务即将自重启（前端轮询至 installed）
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *InstallStatusReply) Reset() {
@@ -107,19 +108,187 @@ func (x *InstallStatusReply) GetInstalledAt() string {
 	return ""
 }
 
+func (x *InstallStatusReply) GetRestartRequired() bool {
+	if x != nil {
+		return x.RestartRequired
+	}
+	return false
+}
+
+type TestInstallConnectionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Dialect       string                 `protobuf:"bytes,1,opt,name=dialect,proto3" json:"dialect,omitempty"` // mysql | postgres（sqlite 无需测试）
+	DbHost        string                 `protobuf:"bytes,2,opt,name=db_host,json=dbHost,proto3" json:"db_host,omitempty"`
+	DbPort        int32                  `protobuf:"varint,3,opt,name=db_port,json=dbPort,proto3" json:"db_port,omitempty"`
+	DbUser        string                 `protobuf:"bytes,4,opt,name=db_user,json=dbUser,proto3" json:"db_user,omitempty"`
+	DbPassword    string                 `protobuf:"bytes,5,opt,name=db_password,json=dbPassword,proto3" json:"db_password,omitempty"`
+	DbName        string                 `protobuf:"bytes,6,opt,name=db_name,json=dbName,proto3" json:"db_name,omitempty"`
+	RedisAddr     string                 `protobuf:"bytes,7,opt,name=redis_addr,json=redisAddr,proto3" json:"redis_addr,omitempty"` // mysql/postgres 必填
+	RedisPassword string                 `protobuf:"bytes,8,opt,name=redis_password,json=redisPassword,proto3" json:"redis_password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestInstallConnectionRequest) Reset() {
+	*x = TestInstallConnectionRequest{}
+	mi := &file_admin_v1_install_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestInstallConnectionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestInstallConnectionRequest) ProtoMessage() {}
+
+func (x *TestInstallConnectionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_install_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestInstallConnectionRequest.ProtoReflect.Descriptor instead.
+func (*TestInstallConnectionRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_install_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *TestInstallConnectionRequest) GetDialect() string {
+	if x != nil {
+		return x.Dialect
+	}
+	return ""
+}
+
+func (x *TestInstallConnectionRequest) GetDbHost() string {
+	if x != nil {
+		return x.DbHost
+	}
+	return ""
+}
+
+func (x *TestInstallConnectionRequest) GetDbPort() int32 {
+	if x != nil {
+		return x.DbPort
+	}
+	return 0
+}
+
+func (x *TestInstallConnectionRequest) GetDbUser() string {
+	if x != nil {
+		return x.DbUser
+	}
+	return ""
+}
+
+func (x *TestInstallConnectionRequest) GetDbPassword() string {
+	if x != nil {
+		return x.DbPassword
+	}
+	return ""
+}
+
+func (x *TestInstallConnectionRequest) GetDbName() string {
+	if x != nil {
+		return x.DbName
+	}
+	return ""
+}
+
+func (x *TestInstallConnectionRequest) GetRedisAddr() string {
+	if x != nil {
+		return x.RedisAddr
+	}
+	return ""
+}
+
+func (x *TestInstallConnectionRequest) GetRedisPassword() string {
+	if x != nil {
+		return x.RedisPassword
+	}
+	return ""
+}
+
+type TestInstallConnectionReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"` // 失败原因（连接/权限/库创建）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TestInstallConnectionReply) Reset() {
+	*x = TestInstallConnectionReply{}
+	mi := &file_admin_v1_install_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TestInstallConnectionReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TestInstallConnectionReply) ProtoMessage() {}
+
+func (x *TestInstallConnectionReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_install_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TestInstallConnectionReply.ProtoReflect.Descriptor instead.
+func (*TestInstallConnectionReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_install_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *TestInstallConnectionReply) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *TestInstallConnectionReply) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type PerformInstallRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AdminUsername string                 `protobuf:"bytes,1,opt,name=admin_username,json=adminUsername,proto3" json:"admin_username,omitempty"` // 管理员用户名
 	AdminPassword string                 `protobuf:"bytes,2,opt,name=admin_password,json=adminPassword,proto3" json:"admin_password,omitempty"` // 管理员密码（≥8 位）
 	SiteName      string                 `protobuf:"bytes,3,opt,name=site_name,json=siteName,proto3" json:"site_name,omitempty"`                // 站点名称（默认 ZCard 商店）
 	SiteUrl       string                 `protobuf:"bytes,4,opt,name=site_url,json=siteUrl,proto3" json:"site_url,omitempty"`                   // 站点网址（可选）
+	// ── 数据库选择（在线安装库切换）──
+	Dialect       string `protobuf:"bytes,5,opt,name=dialect,proto3" json:"dialect,omitempty"` // sqlite（默认，当前库直装）| mysql | postgres
+	DbHost        string `protobuf:"bytes,6,opt,name=db_host,json=dbHost,proto3" json:"db_host,omitempty"`
+	DbPort        int32  `protobuf:"varint,7,opt,name=db_port,json=dbPort,proto3" json:"db_port,omitempty"`
+	DbUser        string `protobuf:"bytes,8,opt,name=db_user,json=dbUser,proto3" json:"db_user,omitempty"`
+	DbPassword    string `protobuf:"bytes,9,opt,name=db_password,json=dbPassword,proto3" json:"db_password,omitempty"`
+	DbName        string `protobuf:"bytes,10,opt,name=db_name,json=dbName,proto3" json:"db_name,omitempty"`
+	RedisAddr     string `protobuf:"bytes,11,opt,name=redis_addr,json=redisAddr,proto3" json:"redis_addr,omitempty"` // mysql/postgres 必填（SQLite 免 Redis）
+	RedisPassword string `protobuf:"bytes,12,opt,name=redis_password,json=redisPassword,proto3" json:"redis_password,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PerformInstallRequest) Reset() {
 	*x = PerformInstallRequest{}
-	mi := &file_admin_v1_install_proto_msgTypes[1]
+	mi := &file_admin_v1_install_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -131,7 +300,7 @@ func (x *PerformInstallRequest) String() string {
 func (*PerformInstallRequest) ProtoMessage() {}
 
 func (x *PerformInstallRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_install_proto_msgTypes[1]
+	mi := &file_admin_v1_install_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -144,7 +313,7 @@ func (x *PerformInstallRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PerformInstallRequest.ProtoReflect.Descriptor instead.
 func (*PerformInstallRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_install_proto_rawDescGZIP(), []int{1}
+	return file_admin_v1_install_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *PerformInstallRequest) GetAdminUsername() string {
@@ -175,11 +344,67 @@ func (x *PerformInstallRequest) GetSiteUrl() string {
 	return ""
 }
 
+func (x *PerformInstallRequest) GetDialect() string {
+	if x != nil {
+		return x.Dialect
+	}
+	return ""
+}
+
+func (x *PerformInstallRequest) GetDbHost() string {
+	if x != nil {
+		return x.DbHost
+	}
+	return ""
+}
+
+func (x *PerformInstallRequest) GetDbPort() int32 {
+	if x != nil {
+		return x.DbPort
+	}
+	return 0
+}
+
+func (x *PerformInstallRequest) GetDbUser() string {
+	if x != nil {
+		return x.DbUser
+	}
+	return ""
+}
+
+func (x *PerformInstallRequest) GetDbPassword() string {
+	if x != nil {
+		return x.DbPassword
+	}
+	return ""
+}
+
+func (x *PerformInstallRequest) GetDbName() string {
+	if x != nil {
+		return x.DbName
+	}
+	return ""
+}
+
+func (x *PerformInstallRequest) GetRedisAddr() string {
+	if x != nil {
+		return x.RedisAddr
+	}
+	return ""
+}
+
+func (x *PerformInstallRequest) GetRedisPassword() string {
+	if x != nil {
+		return x.RedisPassword
+	}
+	return ""
+}
+
 var File_admin_v1_install_proto protoreflect.FileDescriptor
 
 const file_admin_v1_install_proto_rawDesc = "" +
 	"\n" +
-	"\x16admin/v1/install.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xcf\x01\n" +
+	"\x16admin/v1/install.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xfa\x01\n" +
 	"\x12InstallStatusReply\x12\x1c\n" +
 	"\tinstalled\x18\x01 \x01(\bR\tinstalled\x12\x18\n" +
 	"\adialect\x18\x02 \x01(\tR\adialect\x12\x18\n" +
@@ -187,15 +412,42 @@ const file_admin_v1_install_proto_rawDesc = "" +
 	"\vdatabase_ok\x18\x04 \x01(\bR\n" +
 	"databaseOk\x12#\n" +
 	"\rmigrations_ok\x18\x05 \x01(\bR\fmigrationsOk\x12!\n" +
-	"\finstalled_at\x18\x06 \x01(\tR\vinstalledAt\"\xa7\x01\n" +
+	"\finstalled_at\x18\x06 \x01(\tR\vinstalledAt\x12)\n" +
+	"\x10restart_required\x18\a \x01(\bR\x0frestartRequired\"\x83\x02\n" +
+	"\x1cTestInstallConnectionRequest\x12\x18\n" +
+	"\adialect\x18\x01 \x01(\tR\adialect\x12\x17\n" +
+	"\adb_host\x18\x02 \x01(\tR\x06dbHost\x12\x17\n" +
+	"\adb_port\x18\x03 \x01(\x05R\x06dbPort\x12\x17\n" +
+	"\adb_user\x18\x04 \x01(\tR\x06dbUser\x12\x1f\n" +
+	"\vdb_password\x18\x05 \x01(\tR\n" +
+	"dbPassword\x12\x17\n" +
+	"\adb_name\x18\x06 \x01(\tR\x06dbName\x12\x1d\n" +
+	"\n" +
+	"redis_addr\x18\a \x01(\tR\tredisAddr\x12%\n" +
+	"\x0eredis_password\x18\b \x01(\tR\rredisPassword\"F\n" +
+	"\x1aTestInstallConnectionReply\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x8c\x03\n" +
 	"\x15PerformInstallRequest\x12*\n" +
 	"\x0eadmin_username\x18\x01 \x01(\tB\x03\xe0A\x02R\radminUsername\x12*\n" +
 	"\x0eadmin_password\x18\x02 \x01(\tB\x03\xe0A\x02R\radminPassword\x12\x1b\n" +
 	"\tsite_name\x18\x03 \x01(\tR\bsiteName\x12\x19\n" +
-	"\bsite_url\x18\x04 \x01(\tR\asiteUrl2\x97\x02\n" +
+	"\bsite_url\x18\x04 \x01(\tR\asiteUrl\x12\x18\n" +
+	"\adialect\x18\x05 \x01(\tR\adialect\x12\x17\n" +
+	"\adb_host\x18\x06 \x01(\tR\x06dbHost\x12\x17\n" +
+	"\adb_port\x18\a \x01(\x05R\x06dbPort\x12\x17\n" +
+	"\adb_user\x18\b \x01(\tR\x06dbUser\x12\x1f\n" +
+	"\vdb_password\x18\t \x01(\tR\n" +
+	"dbPassword\x12\x17\n" +
+	"\adb_name\x18\n" +
+	" \x01(\tR\x06dbName\x12\x1d\n" +
+	"\n" +
+	"redis_addr\x18\v \x01(\tR\tredisAddr\x12%\n" +
+	"\x0eredis_password\x18\f \x01(\tR\rredisPassword2\xba\x03\n" +
 	"\x13AdminInstallService\x12x\n" +
 	"\x10GetInstallStatus\x12\x16.google.protobuf.Empty\x1a&.zcard.api.admin.v1.InstallStatusReply\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/admin/install/status\x12\x85\x01\n" +
-	"\x0ePerformInstall\x12).zcard.api.admin.v1.PerformInstallRequest\x1a&.zcard.api.admin.v1.InstallStatusReply\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/admin/installB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\x0ePerformInstall\x12).zcard.api.admin.v1.PerformInstallRequest\x1a&.zcard.api.admin.v1.InstallStatusReply\" \x82\xd3\xe4\x93\x02\x1a:\x01*\"\x15/api/v1/admin/install\x12\xa0\x01\n" +
+	"\x15TestInstallConnection\x120.zcard.api.admin.v1.TestInstallConnectionRequest\x1a..zcard.api.admin.v1.TestInstallConnectionReply\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/install/testB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_install_proto_rawDescOnce sync.Once
@@ -209,19 +461,23 @@ func file_admin_v1_install_proto_rawDescGZIP() []byte {
 	return file_admin_v1_install_proto_rawDescData
 }
 
-var file_admin_v1_install_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_admin_v1_install_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_admin_v1_install_proto_goTypes = []any{
-	(*InstallStatusReply)(nil),    // 0: zcard.api.admin.v1.InstallStatusReply
-	(*PerformInstallRequest)(nil), // 1: zcard.api.admin.v1.PerformInstallRequest
-	(*emptypb.Empty)(nil),         // 2: google.protobuf.Empty
+	(*InstallStatusReply)(nil),           // 0: zcard.api.admin.v1.InstallStatusReply
+	(*TestInstallConnectionRequest)(nil), // 1: zcard.api.admin.v1.TestInstallConnectionRequest
+	(*TestInstallConnectionReply)(nil),   // 2: zcard.api.admin.v1.TestInstallConnectionReply
+	(*PerformInstallRequest)(nil),        // 3: zcard.api.admin.v1.PerformInstallRequest
+	(*emptypb.Empty)(nil),                // 4: google.protobuf.Empty
 }
 var file_admin_v1_install_proto_depIdxs = []int32{
-	2, // 0: zcard.api.admin.v1.AdminInstallService.GetInstallStatus:input_type -> google.protobuf.Empty
-	1, // 1: zcard.api.admin.v1.AdminInstallService.PerformInstall:input_type -> zcard.api.admin.v1.PerformInstallRequest
-	0, // 2: zcard.api.admin.v1.AdminInstallService.GetInstallStatus:output_type -> zcard.api.admin.v1.InstallStatusReply
-	0, // 3: zcard.api.admin.v1.AdminInstallService.PerformInstall:output_type -> zcard.api.admin.v1.InstallStatusReply
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 0: zcard.api.admin.v1.AdminInstallService.GetInstallStatus:input_type -> google.protobuf.Empty
+	3, // 1: zcard.api.admin.v1.AdminInstallService.PerformInstall:input_type -> zcard.api.admin.v1.PerformInstallRequest
+	1, // 2: zcard.api.admin.v1.AdminInstallService.TestInstallConnection:input_type -> zcard.api.admin.v1.TestInstallConnectionRequest
+	0, // 3: zcard.api.admin.v1.AdminInstallService.GetInstallStatus:output_type -> zcard.api.admin.v1.InstallStatusReply
+	0, // 4: zcard.api.admin.v1.AdminInstallService.PerformInstall:output_type -> zcard.api.admin.v1.InstallStatusReply
+	2, // 5: zcard.api.admin.v1.AdminInstallService.TestInstallConnection:output_type -> zcard.api.admin.v1.TestInstallConnectionReply
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -238,7 +494,7 @@ func file_admin_v1_install_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_install_proto_rawDesc), len(file_admin_v1_install_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

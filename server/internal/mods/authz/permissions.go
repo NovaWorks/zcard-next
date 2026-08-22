@@ -10,6 +10,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminInstallService/GetInstallStatus", Method: "GET", Path: "/api/v1/admin/install/status"},
 		Perm{Code: "auth:install", Desc: "执行安装（免鉴权；已安装 409）", Domain: "auth", Public: true,
 			Op: "zcard.api.admin.v1.AdminInstallService/PerformInstall", Method: "POST", Path: "/api/v1/admin/install"},
+		Perm{Code: "auth:install", Desc: "安装连接测试（免鉴权）", Domain: "auth", Public: true,
+			Op: "zcard.api.admin.v1.AdminInstallService/TestInstallConnection", Method: "POST", Path: "/api/v1/admin/install/test"},
 
 		// ── 认证（identity）──────────────────────────────
 		Perm{Code: "auth:login", Desc: "管理员登录", Domain: "auth",

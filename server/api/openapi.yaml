@@ -1575,7 +1575,10 @@ paths:
         post:
             tags:
                 - AdminInstallService
-            description: PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+            description: |-
+                PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+                 dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+                 + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
             operationId: AdminInstallService_PerformInstall
             requestBody:
                 content:
@@ -1603,6 +1606,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.InstallStatusReply'
+    /api/v1/admin/install/test:
+        post:
+            tags:
+                - AdminInstallService
+            description: TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+            operationId: AdminInstallService_TestInstallConnection
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.TestInstallConnectionRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.TestInstallConnectionReply'
     /api/v1/admin/inventory/cards:
         get:
             tags:
@@ -7566,6 +7588,8 @@ components:
                     type: boolean
                 installedAt:
                     type: string
+                restartRequired:
+                    type: boolean
         zcard.api.admin.v1.InstallTemplateRequest:
             required:
                 - dataBase64
@@ -8448,6 +8472,24 @@ components:
                 siteName:
                     type: string
                 siteUrl:
+                    type: string
+                dialect:
+                    type: string
+                    description: ── 数据库选择（在线安装库切换）──
+                dbHost:
+                    type: string
+                dbPort:
+                    type: integer
+                    format: int32
+                dbUser:
+                    type: string
+                dbPassword:
+                    type: string
+                dbName:
+                    type: string
+                redisAddr:
+                    type: string
+                redisPassword:
                     type: string
         zcard.api.admin.v1.Perm:
             type: object
@@ -9450,6 +9492,33 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.TemplateItem'
+        zcard.api.admin.v1.TestInstallConnectionReply:
+            type: object
+            properties:
+                ok:
+                    type: boolean
+                message:
+                    type: string
+        zcard.api.admin.v1.TestInstallConnectionRequest:
+            type: object
+            properties:
+                dialect:
+                    type: string
+                dbHost:
+                    type: string
+                dbPort:
+                    type: integer
+                    format: int32
+                dbUser:
+                    type: string
+                dbPassword:
+                    type: string
+                dbName:
+                    type: string
+                redisAddr:
+                    type: string
+                redisPassword:
+                    type: string
         zcard.api.admin.v1.TicketNoRequest:
             required:
                 - ticketNo

@@ -113,8 +113,8 @@ func TestInstallTemplateOverwrite(t *testing.T) {
 func TestInstallTemplateZipSlip(t *testing.T) {
 	svc := newTemplateEnv(t)
 	zipData := buildZip(t, map[string]string{
-		"evil/theme.json":    themeJSON,
-		"../escape.txt":      "pwned",
+		"evil/theme.json": themeJSON,
+		"../escape.txt":   "pwned",
 	})
 	_, err := svc.InstallTemplate(context.Background(), &adminv1.InstallTemplateRequest{DataBase64: zipData})
 	if err == nil {

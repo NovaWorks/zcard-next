@@ -20,18 +20,24 @@ const _ = http.SupportPackageIsVersion3
 
 const OperationAdminInstallServiceGetInstallStatus = "/zcard.api.admin.v1.AdminInstallService/GetInstallStatus"
 const OperationAdminInstallServicePerformInstall = "/zcard.api.admin.v1.AdminInstallService/PerformInstall"
+const OperationAdminInstallServiceTestInstallConnection = "/zcard.api.admin.v1.AdminInstallService/TestInstallConnection"
 
 type AdminInstallServiceHTTPServer interface {
 	// GetInstallStatus GetInstallStatus 安装状态 + 环境自检（公开）。
 	GetInstallStatus(context.Context, *emptypb.Empty) (*InstallStatusReply, error)
 	// PerformInstall PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+	// dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+	// + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
 	PerformInstall(context.Context, *PerformInstallRequest) (*InstallStatusReply, error)
+	// TestInstallConnection TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+	TestInstallConnection(context.Context, *TestInstallConnectionRequest) (*TestInstallConnectionReply, error)
 }
 
 func RegisterAdminInstallServiceHTTPServer(s *http.Server, srv AdminInstallServiceHTTPServer) {
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/admin/install/status", _AdminInstallService_GetInstallStatus0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/install", _AdminInstallService_PerformInstall0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/install/test", _AdminInstallService_TestInstallConnection0_HTTP_Handler(srv))
 }
 
 func _AdminInstallService_GetInstallStatus0_HTTP_Handler(srv AdminInstallServiceHTTPServer) func(ctx http.Context) error {
@@ -72,11 +78,34 @@ func _AdminInstallService_PerformInstall0_HTTP_Handler(srv AdminInstallServiceHT
 	}
 }
 
+func _AdminInstallService_TestInstallConnection0_HTTP_Handler(srv AdminInstallServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in TestInstallConnectionRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminInstallServiceTestInstallConnection)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.TestInstallConnection(ctx, req.(*TestInstallConnectionRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*TestInstallConnectionReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminInstallServiceHTTPClient interface {
 	// GetInstallStatus GetInstallStatus 安装状态 + 环境自检（公开）。
 	GetInstallStatus(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *InstallStatusReply, err error)
 	// PerformInstall PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+	// dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+	// + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
 	PerformInstall(ctx context.Context, req *PerformInstallRequest, opts ...http.CallOption) (rsp *InstallStatusReply, err error)
+	// TestInstallConnection TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+	TestInstallConnection(ctx context.Context, req *TestInstallConnectionRequest, opts ...http.CallOption) (rsp *TestInstallConnectionReply, err error)
 }
 
 type AdminInstallServiceHTTPClientImpl struct {
@@ -105,6 +134,8 @@ func (c *AdminInstallServiceHTTPClientImpl) GetInstallStatus(ctx context.Context
 }
 
 // PerformInstall PerformInstall 执行安装（公开；写管理员 + 站点信息 + 种子；已安装返回 409）。
+// dialect=sqlite → 当前库直接装；mysql/postgres → 校验连接后写库切换覆盖配置
+// + 待安装凭据文件，响应 restart_required 并自重启（新库上补装完成）。
 func (c *AdminInstallServiceHTTPClientImpl) PerformInstall(ctx context.Context, in *PerformInstallRequest, opts ...http.CallOption) (*InstallStatusReply, error) {
 	var out InstallStatusReply
 	pattern := "/api/v1/admin/install"
@@ -113,6 +144,24 @@ func (c *AdminInstallServiceHTTPClientImpl) PerformInstall(ctx context.Context, 
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminInstallServicePerformInstall),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// TestInstallConnection TestInstallConnection 测试数据库/Redis 连接（公开；库不存在时自动创建）。
+func (c *AdminInstallServiceHTTPClientImpl) TestInstallConnection(ctx context.Context, in *TestInstallConnectionRequest, opts ...http.CallOption) (*TestInstallConnectionReply, error) {
+	var out TestInstallConnectionReply
+	pattern := "/api/v1/admin/install/test"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminInstallServiceTestInstallConnection),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
