@@ -60,8 +60,10 @@ func Install(ctx context.Context, d *data.Data, in InstallInput) error {
 	if len(in.AdminPassword) < 8 {
 		return errors.New("settings.WEAK_PASSWORD：管理员密码至少 8 位")
 	}
-	client := d.Client
 	return data.Tx(ctx, d, func(ctx context.Context) error {
+		// 事务句柄（通道 B）——旧代码误用闭包外 d.Client：每条语句独立连接自动提交，
+		// 中途失败半提交（settings/roles 已落、管理员缺失）且多连接竞态偶发 SQLITE_BUSY
+		client := data.Client(ctx, d)
 		// 1) 关键业务默认值（站点名/网址 + 安装时间戳）
 		writes := []struct {
 			group, key string

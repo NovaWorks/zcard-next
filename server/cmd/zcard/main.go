@@ -335,12 +335,20 @@ func runInstall(args []string) error {
 	if err != nil {
 		return err
 	}
+	// 全新库先迁移（serve 启动链同款）——否则 CLI 直装报 no such table
+	if err := applyMigrationsIfEnabled(context.Background(), bc); err != nil {
+		return err
+	}
 	d, cleanup, err := data.NewData(bc.Data)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-	return settings.RunInstallCLI(context.Background(), d)
+	if err := settings.RunInstallCLI(context.Background(), d); err != nil {
+		return err
+	}
+	fmt.Println("安装完成：浏览器打开服务地址即可使用（后台 /admin）")
+	return nil
 }
 
 // newApp kratos.App 装配：按模式选择 server 组合（规划 §4.2 单进程多角色）。
