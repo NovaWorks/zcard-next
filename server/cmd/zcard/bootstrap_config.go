@@ -27,8 +27,9 @@ server:
   http:
     addr: 0.0.0.0:8000
     timeout: 30s
+  # gRPC 留空 = 不启用（单机 HTTP 部署；容器环境回环绑定受限时尤其适用）
   grpc:
-    addr: 127.0.0.1:9000
+    addr: ""
     timeout: 30s
   migrate_on_start: true
   admin_base_path: ""

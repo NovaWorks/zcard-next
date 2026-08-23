@@ -51,6 +51,11 @@ func NewGRPCServer(
 	memberLevelStoreSvc *memberlevel.StoreMemberLevelService,
 	licenseStoreSvc *license.StoreLicenseService,
 ) *kgrpc.Server {
+	// addr 为空 = 不启用 gRPC（单机 HTTP 部署形态；部分容器环境回环绑定受限
+	// bind EADDRNOTAVAIL——留空即完全跳过，装配侧过滤 nil）
+	if c == nil || c.Grpc == nil || c.Grpc.Addr == "" {
+		return nil
+	}
 	var opts = []kgrpc.ServerOption{
 		kgrpc.Middleware(
 			recovery.Recovery(),

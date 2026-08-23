@@ -432,13 +432,20 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 		})
 	}
 	var servers []transport.Server
+	// gRPC 可选（配置 addr 为空时不装配）
+	withGRPC := func(list []transport.Server) []transport.Server {
+		if gs == nil {
+			return list
+		}
+		return append([]transport.Server{gs}, list...)
+	}
 	switch server.RunMode(appMode) {
 	case server.ModeAPI:
-		servers = []transport.Server{hs, gs, bs}
+		servers = withGRPC([]transport.Server{hs, bs})
 	case server.ModeWorker:
 		servers = []transport.Server{ws, bs}
 	default:
-		servers = []transport.Server{hs, gs, ws, bs}
+		servers = withGRPC([]transport.Server{hs, ws, bs})
 	}
 	return kratos.New(
 		kratos.ID(id),
