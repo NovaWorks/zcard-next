@@ -206,6 +206,21 @@ func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*C
 	}
 	data, err := a.request(ctx, "POST", "/api/v1/upstream/orders", nil, body)
 	if err != nil {
+		// HTTP 状态层错误分类（dujiao-next 实测契约：402 insufficient_balance /
+		// 409 insufficient_stock / 400 product_unavailable 均以 HTTP 状态 + body
+		// error_code 返回；不分类会被当网络抖动无限重试）
+		switch upstreamErrorCode(err) {
+		case "insufficient_balance", "balance_not_enough", "payment_failed":
+			// payment_failed：HTTP 200 + ok:false + status canceled（钱包扣款失败
+			// 上游已自动取消订单）——同为余额类永久错误
+			return nil, ErrInsufficientBalance
+		case "insufficient_stock", "no_stock", "out_of_stock":
+			return nil, ErrNoStock
+		case "product_unavailable", "sku_unavailable":
+			return nil, ErrProductUnavailable
+		case "product_deleted", "product_not_found":
+			return nil, ErrProductDeleted
+		}
 		return nil, err
 	}
 	var resp struct {
@@ -223,12 +238,14 @@ func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*C
 	if !resp.OK {
 		// 余额不足/无映射等业务拒绝 → 归一化哨兵（T2 状态机判永久错误）
 		switch resp.ErrorCode {
-		case "insufficient_balance", "balance_not_enough":
+		case "insufficient_balance", "balance_not_enough", "payment_failed":
 			return nil, ErrInsufficientBalance
-		case "product_unavailable":
-			return nil, ErrProductUnavailable
-		case "no_stock", "out_of_stock":
+		case "insufficient_stock", "no_stock", "out_of_stock":
 			return nil, ErrNoStock
+		case "product_unavailable", "sku_unavailable":
+			return nil, ErrProductUnavailable
+		case "product_deleted", "product_not_found":
+			return nil, ErrProductDeleted
 		default:
 			return nil, fmt.Errorf("adapter.dujiao: 上游拒绝下单 (%s): %s", resp.ErrorCode, resp.ErrorMessage)
 		}

@@ -192,9 +192,25 @@ func (s *ProcureService) finalizeDelivered(ctx context.Context, poID, orderID, o
 
 // handleSubmitError 提交失败分流：永久错误 → rejected → 失败策略；其余 → 退避重试。
 func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err error) error {
+	// 防重键冲突（acg request_no 重复即报错）：上游可能已受理首请求（响应丢失
+	// 场景），重试永远撞墙、自动退款可能造成上游已成交却退客户款 → 立即转人工核对
+	if errors.Is(err, supplyport.ErrUpstreamDuplicate) {
+		reason := "上游防重键冲突（同键请求已被受理过，可能已成交）——需人工核对上游订单后处置"
+		if merr := s.repo.MarkManual(ctx, poID, reason); merr != nil {
+			return merr
+		}
+		s.log.Warn("procurement.duplicate_submit_manual", "id", poID)
+		s.publish(ctx, events.ProcurementFailed, poID, map[string]any{
+			"procurement_id": poID, "reason": reason, "strategy": "manual_duplicate_submit",
+		})
+		return nil
+	}
 	permanent := errors.Is(err, supplyport.ErrUpstreamDeleted) ||
 		errors.Is(err, supplyport.ErrUpstreamUnavailable) ||
-		errors.Is(err, supplyport.ErrUpstreamBalance)
+		errors.Is(err, supplyport.ErrUpstreamBalance) ||
+		// 上游明确无库存：永久拒绝（否则空 upstream_order_id 进轮询死循环到 24h
+		// 才转人工；即刻走失败策略让付款顾客马上退款，符合 fail-open 补偿语义）
+		errors.Is(err, supplyport.ErrUpstreamNoStock)
 	if permanent {
 		reason := err.Error()
 		if merr := s.repo.MarkRejected(ctx, poID, reason); merr != nil {

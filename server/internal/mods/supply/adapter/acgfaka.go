@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -179,12 +180,38 @@ func (a *acgFakaAdapter) GetStock(ctx context.Context, productCode, _ string) (i
 		return 0, err
 	}
 	var d struct {
-		Stock int32 `json:"stock"`
+		Stock FlexNum `json:"stock"` // PHP 侧 string 直出（{"stock":"990"}），FlexNum 兼容两种形态
 	}
 	if err := json.Unmarshal(raw, &d); err != nil {
 		return 0, fmt.Errorf("adapter.acgfaka: 解析库存失败: %w", err)
 	}
-	return d.Stock, nil
+	return int32(d.Stock), nil
+}
+
+// acgPlaceholderTexts 上游「非真实卡密」文案（手动发货占位 / 付款后库存被抢）。
+// 出现在 secret 里时绝不能当卡密交付（Bind/Order.php:1231/1278 原文）。
+var acgPlaceholderTexts = []string{
+	"正在发货中，请耐心等待，如有疑问，请联系客服。",
+	"很抱歉，有人在你付款之前抢走了商品，请联系客服。",
+}
+
+// dropPlaceholderCards 过滤占位文案行（全等匹配；自定义 delivery_message 无法枚举，
+// 由同步侧 delivery_way 过滤兜底）。
+func dropPlaceholderCards(cards []string) []string {
+	out := make([]string, 0, len(cards))
+	for _, c := range cards {
+		placeholder := false
+		for _, t := range acgPlaceholderTexts {
+			if strings.TrimSpace(c) == t {
+				placeholder = true
+				break
+			}
+		}
+		if !placeholder {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*CreateOrderResult, error) {
@@ -200,6 +227,12 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 	}
 	raw, err := parseResp(data)
 	if err != nil {
+		// request_no 是「重复即报错」的防重键（非幂等回显）：报此错说明同键请求
+		// 已被上游受理过——可能首响应在网络层丢失且上游已扣款发货，绝不能
+		// 重试（会永远撞墙）也不能自动退款（上游可能已成交）→ 哨兵转人工核对
+		if strings.Contains(err.Error(), "request ID already exists") {
+			return nil, ErrDuplicateSubmit
+		}
 		return nil, err
 	}
 	var d struct {
@@ -210,7 +243,7 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 	if err := json.Unmarshal(raw, &d); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析下单响应失败: %w", err)
 	}
-	cards := splitCards(d.Secret)
+	cards := dropPlaceholderCards(splitCards(d.Secret))
 	status := "pending"
 	if len(cards) > 0 {
 		status = "delivered"
@@ -241,7 +274,7 @@ func (a *acgFakaAdapter) GetOrder(ctx context.Context, upstreamOrderID string) (
 	if err := json.Unmarshal(raw, &d); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析订单详情失败: %w", err)
 	}
-	cards := splitCards(d.Secret)
+	cards := dropPlaceholderCards(splitCards(d.Secret))
 	// 必须 status=1 才认发货（1.x 教训：否则凭 fulfillment 就写卡）
 	status := "pending"
 	if d.Status == 1 && len(cards) > 0 {

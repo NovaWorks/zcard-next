@@ -140,6 +140,8 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 			return nil, supplyport.ErrUpstreamBalance
 		case errors.Is(err, adapter.ErrNoStock):
 			return nil, supplyport.ErrUpstreamNoStock
+		case errors.Is(err, adapter.ErrDuplicateSubmit):
+			return nil, supplyport.ErrUpstreamDuplicate
 		}
 		return nil, err
 	}

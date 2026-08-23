@@ -28,6 +28,9 @@ var (
 	ErrInsufficientBalance = errors.New("adapter: upstream balance insufficient")
 	// ErrNoStock 上游明确无库存（fail-open 语义下快速拒绝）。
 	ErrNoStock = errors.New("adapter: upstream no stock")
+	// ErrDuplicateSubmit 防重键冲突（acg-faka request_no 重复即报错——上游可能
+	// 已受理首请求，禁止重试/自动退款，必须人工核对）。
+	ErrDuplicateSubmit = errors.New("adapter: duplicate submit (request_no already exists)")
 	// ErrRateLimited 上游限流或疑似 WAF 拦截（429 / 200 但非 JSON）——
 	// 自适应节奏器的降速信号（P2-10 S2；AIMD 判据）。
 	ErrRateLimited = errors.New("adapter: upstream rate limited")

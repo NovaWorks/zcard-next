@@ -5,6 +5,7 @@ package adapter
 
 import (
 	"context"
+	"io"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -479,5 +480,105 @@ func TestLooksLikeJSON(t *testing.T) {
 		if got := looksLikeJSON([]byte(c.in)); got != c.want {
 			t.Fatalf("looksLikeJSON(%q) = %v want %v", c.in, got, c.want)
 		}
+	}
+}
+
+func TestDujiaoCreateOrderHTTPStatusErrors(t *testing.T) {
+	// dujiao-next 实测契约：业务拒绝以 HTTP 状态 + body error_code 返回
+	// （402 余额 / 409 库存 / 400 商品无效 / 200+payment_failed）——
+	// 必须归一化哨兵而非当网络错误无限重试。body 里的 TraceID 标识驱动分支。
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		var mark struct {
+			TraceID string `json:"trace_id"`
+		}
+		_ = json.Unmarshal(body, &mark)
+		switch mark.TraceID {
+		case "b402":
+			w.WriteHeader(402)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":"insufficient_balance"}`))
+		case "b409":
+			w.WriteHeader(409)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":"insufficient_stock"}`))
+		case "b400":
+			w.WriteHeader(400)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":"sku_unavailable"}`))
+		default:
+			_, _ = w.Write([]byte(`{"ok":false,"status":"canceled","error_code":"payment_failed"}`))
+		}
+	}))
+	defer srv.Close()
+	ctx := context.Background()
+	cases := []struct {
+		traceID string
+		want    error
+	}{
+		{"", ErrInsufficientBalance}, // default → HTTP 200 + payment_failed
+		{"b402", ErrInsufficientBalance},
+		{"b409", ErrNoStock},
+		{"b400", ErrProductUnavailable},
+	}
+	for _, c := range cases {
+		a := &dujiaoAdapter{
+			protocol: "dujiao_next",
+			creds:    Credentials{APIKey: "k", APISecret: "s"},
+			t:        newTransportWithClient(srv.URL, nil, nil, srv.Client()),
+		}
+		if _, err := a.CreateOrder(ctx, CreateOrderReq{ProductCode: "11", Quantity: 1, DownstreamOrderNo: "x", TraceID: c.traceID}); err != c.want {
+			t.Fatalf("traceID=%q 应归一化 %v, got %v", c.traceID, c.want, err)
+		}
+	}
+}
+
+func TestAcgFakaFixes(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		switch r.URL.Path {
+		case "/shared/commodity/stock":
+			// PHP getItemStock(): string → {"stock":"990"}（字符串）
+			_, _ = w.Write([]byte(`{"code":200,"data":{"stock":"990"}}`))
+		case "/shared/commodity/query":
+			// 手动发货占位文案（status=1 但 secret 是占位）+ 真实卡混合
+			_, _ = w.Write([]byte(`{"code":200,"data":{"status":1,"secret":"正在发货中，请耐心等待，如有疑问，请联系客服。\nCARD-REAL-1"}}`))
+		case "/shared/commodity/trade":
+			if r.PostForm.Get("request_no") == "dup" {
+				_, _ = w.Write([]byte(`{"code":0,"msg":"The request ID already exists"}`))
+				return
+			}
+			_, _ = w.Write([]byte(`{"code":200,"data":{"tradeNo":"123","amount":"1.00","secret":"很抱歉，有人在你付款之前抢走了商品，请联系客服。"}}`))
+		}
+	}))
+	defer srv.Close()
+	a := &acgFakaAdapter{
+		protocol: "acg_faka",
+		creds:    Credentials{AppID: "1", AppKey: "K"},
+		t:        newTransportWithClient(srv.URL, nil, nil, srv.Client()),
+	}
+	ctx := context.Background()
+
+	// 1) stock 字符串解析
+	stock, err := a.GetStock(ctx, "C1", "")
+	if err != nil || stock != 990 {
+		t.Fatalf("stock 字符串解析失败: stock=%d err=%v", stock, err)
+	}
+	// 2) 占位文案过滤：混合时只留真实卡 → delivered
+	d, err := a.GetOrder(ctx, "T1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Status != "delivered" || len(d.Cards) != 1 || d.Cards[0] != "CARD-REAL-1" {
+		t.Fatalf("占位过滤错误: %+v", d)
+	}
+	// 3) 纯占位（trade 抢购失败文案）→ pending（不交付）
+	tr, err := a.CreateOrder(ctx, CreateOrderReq{ProductCode: "C1", Quantity: 1, DownstreamOrderNo: "n1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tr.Status != "pending" || len(tr.Cards) != 0 {
+		t.Fatalf("纯占位应 pending 无卡: %+v", tr)
+	}
+	// 4) 防重键冲突 → 哨兵
+	if _, err := a.CreateOrder(ctx, CreateOrderReq{ProductCode: "C1", Quantity: 1, DownstreamOrderNo: "dup"}); err != ErrDuplicateSubmit {
+		t.Fatalf("防重冲突应 ErrDuplicateSubmit, got %v", err)
 	}
 }
