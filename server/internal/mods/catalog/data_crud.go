@@ -534,6 +534,7 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 // syncUpstreamSkus 上游规格组合差量同步到 product_skus（按 name 唯一键）：
 // 新集合有 → 更新价格/规格/上游标识；没有 → 删除（仅删本同步来源的，
 // upstream_sku_id 非空的记录——本地手建 SKU 不受影响）。nil 入参 = 不动。
+// 价格 -1 = 价格保护语义：已有 SKU 跳过改价，新增组合不创建。
 func (r *ProductRepoImpl) syncUpstreamSkus(ctx context.Context, subsiteID, productID uint64, in []port.UpstreamSKUInput) error {
 	if in == nil {
 		return nil
@@ -570,17 +571,24 @@ func (r *ProductRepoImpl) syncUpstreamSkus(ctx context.Context, subsiteID, produ
 			continue
 		}
 		delete(want, e.Name)
-		if err := client.ProductSku.UpdateOneID(e.ID).
+		upd := client.ProductSku.UpdateOneID(e.ID).
 			SetName(w.name).
-			SetPrice(w.price).
 			SetSpecValues(w.spec).
-			SetUpstreamSkuID(w.id).
-			Exec(ctx); err != nil {
+			SetUpstreamSkuID(w.id)
+		if w.price >= 0 { // -1 = 价格保护：SKU 保持现价，仅刷新规格与上游标识
+			upd = upd.SetPrice(w.price)
+		}
+		if err := upd.Exec(ctx); err != nil {
 			return err
 		}
 	}
 	creates := make([]*ent.ProductSkuCreate, 0, len(want))
 	for _, w := range want {
+		if w.price < 0 {
+			// 价格保护期上游新增的组合：无安全价格可写，跳过创建，
+			// 运营解除保护/强制改价后的下一轮同步补齐
+			continue
+		}
 		creates = append(creates, client.ProductSku.Create().
 			SetSubsiteID(subsiteID).
 			SetProductID(productID).

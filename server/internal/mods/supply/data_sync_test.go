@@ -448,3 +448,20 @@ func TestResolveListerIncremental(t *testing.T) {
 	_ = l
 	// dujiao 支持增量（覆盖在 adapter_test 的 TestDujiaoIncrementalList）
 }
+
+func TestCategoryMapFromSettings(t *testing.T) {
+	// 空/缺省安全
+	if m := categoryMapFromSettings(nil); len(m) != 0 {
+		t.Fatal("nil settings 应返回空映射")
+	}
+	if m := categoryMapFromSettings(map[string]any{"category_map": "bad"}); len(m) != 0 {
+		t.Fatal("非法类型应返回空映射")
+	}
+	// JSON 反序列化形态：{code: float64(id)}，过滤非正 id
+	m := categoryMapFromSettings(map[string]any{
+		"category_map": map[string]any{"3": float64(12), "7": float64(99), "8": float64(0), "9": "-1"},
+	})
+	if len(m) != 2 || m["3"] != 12 || m["7"] != 99 {
+		t.Fatalf("映射解析错误: %+v", m)
+	}
+}

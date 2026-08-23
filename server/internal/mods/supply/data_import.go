@@ -158,8 +158,12 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			markupAmount = toInt64(def["markup_amount_cents"])
 		}
 	}
-	// 类目映射（上游分类 code → 本地分类 id；显式 map 优先，其次既有 mapping）
+	// 类目映射（上游分类 code → 本地分类 id；显式 map 优先，其次连接持久化的
+	// settings.category_map，再次既有 mapping 行）
 	categoryMap := map[string]uint64{}
+	for k, v := range categoryMapFromSettings(conn.Settings) {
+		categoryMap[k] = v
+	}
 	for k, v := range req.GetCategoryMap() {
 		if v > 0 {
 			categoryMap[k] = v
@@ -194,16 +198,31 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			reply.Updated++
 		}
 	}
-	// 存为连接默认
+	// 连接级持久化：导入默认价（save_default）+ 类目映射（settings.category_map，
+	// 与本次实际生效的合并结果一并落库——后续全量同步自动套用同一映射）
+	settingsDirty := false
+	settings := conn.Settings
+	if settings == nil {
+		settings = map[string]any{}
+	}
 	if req.GetSaveDefault() {
-		settings := conn.Settings
-		if settings == nil {
-			settings = map[string]any{}
-		}
 		settings["import_pricing"] = map[string]any{
 			"mode": mode, "markup_percent": markupPercent, "markup_amount_cents": markupAmount,
 		}
-		_, _ = s.repo.entClient(ctx).SupplyConnection.UpdateOneID(conn.ID).SetSettings(settings).Save(ctx)
+		settingsDirty = true
+	}
+	if len(req.GetCategoryMap()) > 0 {
+		merged := map[string]any{}
+		for k, v := range categoryMap {
+			merged[k] = v
+		}
+		settings["category_map"] = merged
+		settingsDirty = true
+	}
+	if settingsDirty {
+		if _, err := s.repo.entClient(ctx).SupplyConnection.UpdateOneID(conn.ID).SetSettings(settings).Save(ctx); err != nil {
+			return nil, fmt.Errorf("supply: 保存连接默认失败: %w", err)
+		}
 	}
 	// 预览缓存失效（导入后 already_imported 标注需刷新）
 	previewCache.Lock()

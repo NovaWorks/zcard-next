@@ -131,15 +131,28 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			Description  string `json:"description"`
 			Introduce    string `json:"introduce"`
 			Cover        string `json:"cover"`
-			Status       int    `json:"status"` // 1=上架 0=下架
+			Status       *int   `json:"status"` // 1=上架 0=下架；皮肤站可能缺省（接口语义为可对接商品）→ 指针区分缺失与显式 0
 			Stock        *int32 `json:"stock"`  // 仅自动发货商品有；手动发货缺省
 			CategoryID   any    `json:"category_id"`
 			DeliveryWay  int    `json:"delivery_way"`
-			Config       string `json:"config"` // INI 字符串（items 直出原始 INI；item 接口为数组——本适配器只消费 items）
+			DraftStatus  int    `json:"draft_status"`
+			Config       string `json:"config"` // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
 		} `json:"children"`
 	}
 	if err := json.Unmarshal(raw, &cats); err != nil {
 		return nil, fmt.Errorf("adapter.acgfaka: 解析商品列表失败: %w", err)
+	}
+	// 站点级探测：items 只要有任一商品带 config，即说明该站 items 直出规格 INI
+	// （空 config = 真无规格，不兜底）；全部为空才视为皮肤站（如 tghao）缺省该字段，
+	// 逐品走 inventory 兜底——避免标准站为无规格品白白多打 N 次接口
+	siteHasConfig := false
+	for _, cat := range cats {
+		for _, p := range cat.Children {
+			if p.Config != "" {
+				siteHasConfig = true
+				break
+			}
+		}
 	}
 	// items 一次全量（无分页）：快照天然含下架商品（is_active 过滤语义下放）→ 对账权威
 	out := &ProductList{IncludesInactive: true}
@@ -154,15 +167,34 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			if desc == "" {
 				desc = p.Introduce
 			}
+			// 皮肤站（如 tghao）items 不直出 config/拿货价：inventory 兜底拿
+			// 规格 INI + 当前对接身份的 factory_price（失败不致命，按无规格品继续）
+			cfg, factory := p.Config, p.FactoryPrice.Cents()
+			draftStatus := p.DraftStatus
+			if cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
+				if inv, err := a.fetchInventory(ctx, p.Code); err == nil {
+					if inv.Config != "" {
+						cfg = inv.Config
+					}
+					if fp := inv.FactoryPrice.Cents(); fp > 0 {
+						factory = fp
+					}
+					draftStatus = inv.DraftStatus
+				}
+			}
 			// 手动发货商品（delivery_way=1）不随 API 上架：其订单查询恒返回
 			// 占位文案（Bind/Order.php:1231 delivery_message/「正在发货中…」），
-			// API 通道永远拿不到真实卡密——同步为下架，需售卖请本地建品人工发货
-			active := p.Status == 1 && p.DeliveryWay == 0
+			// API 通道永远拿不到真实卡密——同步为下架，需售卖请本地建品人工发货。
+			// draft_status=1 预选商品必须走 draftCard 选卡流程，API 直下单不可靠 → 同下架。
+			// status 缺省（nil）视为在售：items 语义为「当前分类下可对接商品」；
+			// 显式 0 = 下架（标准 acg-faka 返回显式 status）。
+			statusOK := p.Status == nil || *p.Status == 1
+			active := statusOK && p.DeliveryWay == 0 && draftStatus == 0
 
 			// 多规格（[category] race + [sku] 加价规格）→ 笛卡尔积组合 SKU
 			// （组合超护栏/含编码保留字符 → 整品隐藏防误售，价格语义不完整）
 			var skus []SKU
-			ini, _ := parseAcgINI(p.Config)
+			ini, _ := parseAcgINI(cfg)
 			combos, comboErr := buildAcgCombos(ini, p.Price.Cents())
 			if comboErr != nil {
 				active = false
@@ -184,7 +216,7 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 				Name:         p.Name,
 				CategoryID:   catID,
 				Price:        p.Price.Cents(),
-				FactoryPrice: p.FactoryPrice.Cents(),
+				FactoryPrice: factory,
 				Description:  desc,
 				Cover:        p.Cover,
 				IsActive:     active,
@@ -195,6 +227,36 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 	}
 	out.Total = len(out.Items)
 	return out, nil
+}
+
+// acgInventory /shared/commodity/inventory 响应（参数 sharedCode 驼峰）：
+// 单品库存/发货方式/预选状态/价格 + 规格 INI 原文（标准站 items 已直出 config，
+// 此接口仅作皮肤站 items 缺 config 时的兜底数据源）。
+type acgInventory struct {
+	Count        FlexNum `json:"count"`
+	DeliveryWay  int     `json:"delivery_way"`
+	DraftStatus  int     `json:"draft_status"`
+	Price        FlexNum `json:"price"`
+	FactoryPrice FlexNum `json:"factory_price"` // 当前对接身份的拿货价
+	Config       string  `json:"config"`        // INI 文本
+	IsCategory   int     `json:"is_category"`
+}
+
+// fetchInventory 拉单品库存与规格配置（ListProducts 兜底用；调用方 fail-open）。
+func (a *acgFakaAdapter) fetchInventory(ctx context.Context, code string) (*acgInventory, error) {
+	data, err := a.signedPost(ctx, "/shared/commodity/inventory", map[string]string{"sharedCode": code})
+	if err != nil {
+		return nil, err
+	}
+	raw, err := parseResp(data)
+	if err != nil {
+		return nil, err
+	}
+	var inv acgInventory
+	if err := json.Unmarshal(raw, &inv); err != nil {
+		return nil, fmt.Errorf("adapter.acgfaka: 解析单品库存失败: %w", err)
+	}
+	return &inv, nil
 }
 
 func (a *acgFakaAdapter) GetStock(ctx context.Context, productCode, skuCode string) (int32, error) {

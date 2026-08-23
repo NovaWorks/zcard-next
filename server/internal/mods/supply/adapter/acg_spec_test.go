@@ -172,7 +172,9 @@ func TestAcgSpecListProductsAndTrade(t *testing.T) {
 				`{"code":"SP1","name":"规格品","price":9.9,"factory_price":5.0,"status":1,"delivery_way":0,` +
 				`"stock":100,"config":"[category]\n1天=1.00\n7天=5.00\n[sku]\n区域.微信区=0\n区域.QQ区=2\n"},` +
 				`{"code":"PLN","name":"无规格品","price":3.0,"factory_price":1.0,"status":1,"delivery_way":0,"stock":50,"config":""},` +
-				`{"code":"MAN","name":"手动发货品","price":2.0,"factory_price":1.0,"status":1,"delivery_way":1,"stock":10,"config":""}` +
+				`{"code":"MAN","name":"手动发货品","price":2.0,"factory_price":1.0,"status":1,"delivery_way":1,"stock":10,"config":""},` +
+				`{"code":"DRF","name":"预选商品","price":6.0,"factory_price":3.0,"status":1,"delivery_way":0,"stock":8,"draft_status":1,"config":""},` +
+				`{"code":"NST","name":"缺status品","price":4.0,"factory_price":2.0,"delivery_way":0,"stock":7,"config":""}` +
 				`]}]}`))
 		case "/shared/commodity/trade":
 			gotTrade = r.PostForm
@@ -195,24 +197,35 @@ func TestAcgSpecListProductsAndTrade(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var spec, plain, manual *Product
+	var spec, plain, manual, draft, nostatus *Product
 	for i := range list.Items {
-		if list.Items[i].ID == "SP1" {
+		switch list.Items[i].ID {
+		case "SP1":
 			spec = &list.Items[i]
-		}
-		if list.Items[i].ID == "PLN" {
+		case "PLN":
 			plain = &list.Items[i]
-		}
-		if list.Items[i].ID == "MAN" {
+		case "MAN":
 			manual = &list.Items[i]
+		case "DRF":
+			draft = &list.Items[i]
+		case "NST":
+			nostatus = &list.Items[i]
 		}
 	}
-	if spec == nil || plain == nil || manual == nil {
+	if spec == nil || plain == nil || manual == nil || draft == nil || nostatus == nil {
 		t.Fatal("商品缺失")
 	}
 	// 手动发货商品（delivery_way=1）同步为下架（订单查询恒占位文案，API 无法交付）
 	if manual.IsActive {
 		t.Fatal("手动发货商品应同步为下架")
+	}
+	// 预选商品（draft_status=1）必须走 draftCard 流程，API 直下单不可靠 → 下架
+	if draft.IsActive {
+		t.Fatal("预选商品应同步为下架")
+	}
+	// 皮肤站 items 可能不返回 status：缺省（nil）应视为在售
+	if !nostatus.IsActive {
+		t.Fatal("缺省 status 的商品应视为在售")
 	}
 	if len(spec.SKUs) != 4 {
 		t.Fatalf("规格品组合数 = %d, want 4", len(spec.SKUs))
@@ -305,4 +318,81 @@ func TestAcgSpecFormOrderMatchesSignature(t *testing.T) {
 		t.Fatal("表单键未排序")
 	}
 	_ = json.Marshal
+}
+
+// TestAcgSkinSiteInventoryFallback 皮肤站（如 tghao）items 不直出 config：
+// 站内全部商品 config 为空 → 逐品走 /shared/commodity/inventory 兜底拿
+// 规格 INI / 拿货价 / draft_status；标准站（任一商品带 config）零兜底请求。
+func TestAcgSkinSiteInventoryFallback(t *testing.T) {
+	invCalls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_ = r.ParseForm()
+		switch r.URL.Path {
+		case "/shared/commodity/items":
+			// 全站无 config、无 status、无 factory_price（皮肤站最小字段形态）
+			_, _ = w.Write([]byte(`{"code":200,"data":[{"id":1,"name":"TG","children":[` +
+				`{"code":"TG1","name":"规格品","price":9.9,"delivery_way":0,"stock":100},` +
+				`{"code":"TGP","name":"无规格品","price":3.0,"delivery_way":0,"stock":50},` +
+				`{"code":"TGD","name":"预选品","price":6.0,"delivery_way":0,"stock":8},` +
+				`{"code":"TGM","name":"手动品","price":2.0,"delivery_way":1,"stock":10}` +
+				`]}]}`))
+		case "/shared/commodity/inventory":
+			invCalls++
+			if r.PostForm.Get("sharedCode") == "" {
+				t.Error("inventory 参数应为 sharedCode（驼峰）")
+			}
+			switch r.PostForm.Get("sharedCode") {
+			case "TG1": // 规格品：inventory 直出 INI + 对接身份拿货价
+				_, _ = w.Write([]byte(`{"code":200,"data":{"count":100,"delivery_way":0,"draft_status":0,` +
+					`"price":9.9,"factory_price":5.5,"is_category":1,` +
+					`"config":"[category]\n1天=1.00\n7天=5.00\n[sku]\n区域.微信区=0\n区域.QQ区=2\n"}}`))
+			case "TGP": // 无规格品：空 config
+				_, _ = w.Write([]byte(`{"code":200,"data":{"count":50,"delivery_way":0,"draft_status":0,` +
+					`"price":3.0,"factory_price":1.5,"config":""}}`))
+			case "TGD": // 预选品：draft_status 只能从 inventory 拿到
+				_, _ = w.Write([]byte(`{"code":200,"data":{"count":8,"delivery_way":0,"draft_status":1,` +
+					`"price":6.0,"factory_price":3.0,"config":""}}`))
+			default:
+				_, _ = w.Write([]byte(`{"code":200,"data":{"count":0,"config":""}}`))
+			}
+		}
+	}))
+	defer srv.Close()
+	a := &acgFakaAdapter{
+		protocol: "acg_faka",
+		creds:    Credentials{AppID: "1", AppKey: "K"},
+		t:        newTransportWithClient(srv.URL, nil, nil, srv.Client()),
+	}
+
+	list, err := a.ListProducts(context.Background(), 1, 50, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]*Product{}
+	for i := range list.Items {
+		got[list.Items[i].ID] = &list.Items[i]
+	}
+	// 规格品：规格 INI 从 inventory 兜底解析 → 4 组合；拿货价取 inventory 的 5.5
+	tg1 := got["TG1"]
+	if len(tg1.SKUs) != 4 {
+		t.Fatalf("inventory 兜底规格组合数 = %d, want 4", len(tg1.SKUs))
+	}
+	if tg1.FactoryPrice != 550 {
+		t.Fatalf("拿货价应取 inventory 对接身份价: %d", tg1.FactoryPrice)
+	}
+	if !tg1.IsActive {
+		t.Fatal("缺省 status + 自动发货 + 非预选 → 应在售")
+	}
+	// 无规格品：inventory 空 config → 保持无规格
+	if len(got["TGP"].SKUs) != 0 {
+		t.Fatal("无规格品不应有组合")
+	}
+	// 预选品：draft_status 由 inventory 提供 → 下架
+	if got["TGD"].IsActive {
+		t.Fatal("inventory 报 draft_status=1 的预选品应下架")
+	}
+	// 手动发货品不触发 inventory（delivery_way=1 短路）→ 恰好 3 次（TG1/TGP/TGD）
+	if invCalls != 3 {
+		t.Fatalf("inventory 兜底请求数 = %d, want 3", invCalls)
+	}
 }

@@ -73,6 +73,17 @@ async function loadPreview() {
       } catch {
         /* 无默认 */
       }
+      // 已持久化的类目映射回填（保存后全量同步沿用同一映射）
+      try {
+        const saved = JSON.parse(props.connection.settings || "{}").category_map;
+        if (saved) {
+          for (const [k, v] of Object.entries(saved)) {
+            if (Number(v) > 0) categoryMapDraft[k] = Number(v);
+          }
+        }
+      } catch {
+        /* 无映射 */
+      }
     }
   } finally {
     loading.value = false;
@@ -192,7 +203,7 @@ async function submit() {
                 <span class="text-12px text-gray-400">下次导入自动回填</span>
               </NSpace>
             </NFormItem>
-            <NFormItem label="类目映射（上游分类 → 本地分类）">
+            <NFormItem label="类目映射（上游分类 → 本地分类，保存后全量同步沿用）">
               <div class="flex w-full flex-col gap-6px">
                 <div v-for="cat in categories" :key="cat.code" class="flex items-center gap-6px">
                   <span class="w-90px shrink-0 truncate text-12px" :title="cat.name">{{ cat.name }}</span>

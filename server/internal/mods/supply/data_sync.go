@@ -235,7 +235,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 	// 分类映射缓存：upstream_category → local_category_id（仅 collect 写分类）
 	categoryMap := map[string]uint64{}
 	if scope == ScopeCollect {
-		if err := s.cacheCategoryMappings(ctx, a, conn.ID, categoryMap); err != nil {
+		if err := s.cacheCategoryMappings(ctx, a, conn, categoryMap); err != nil {
 			s.log.Warn("supply.sync.categories_failed", "connection_id", conn.ID, "err", err)
 		}
 	}
@@ -431,17 +431,20 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		}
 	}
 	// 规格组合 SKU（acg race×sku 笛卡尔积 / dujiao SKU）：组合价套用同一定价管线；
-	// 价格保护关闭（writePrice=false）时 SKU 价保持现值（-1 语义由差量同步的「更新」跳过实现——
-	// 此处直接不下发 SKUs，避免覆盖运营改价）
-	if writePrice {
-		for _, sk := range p.SKUs {
-			write.SKUs = append(write.SKUs, catalogport.UpstreamSKUInput{
-				Code:       sk.Code,
-				Name:       sk.Name,
-				PriceCents: ApplyPricing(sk.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode)),
-				SpecValues: sk.SpecValues,
-			})
+	// 恒下发 SKUs 保证规格/组合与上游对齐（缺了会导致规格品无法下单），
+	// 价格保护开启（writePrice=false）时组合价传 -1 —— 差量同步对已有 SKU
+	// 跳过改价（保护运营改价）、对新增组合不创建（无安全价格），解除保护后补齐
+	for _, sk := range p.SKUs {
+		skuPrice := ApplyPricing(sk.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
+		if !writePrice {
+			skuPrice = -1
 		}
+		write.SKUs = append(write.SKUs, catalogport.UpstreamSKUInput{
+			Code:       sk.Code,
+			Name:       sk.Name,
+			PriceCents: skuPrice,
+			SpecValues: sk.SpecValues,
+		})
 	}
 	productID, created, err := s.writer.UpsertUpstreamProduct(ctx, write)
 	if err != nil {
@@ -597,25 +600,49 @@ func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg
 	return nil
 }
 
-// cacheCategoryMappings 构建 上游分类标识 → 本地分类 id 映射
-// （mapping.upstream_category 记录了运营手工映射；无映射分类不自动建）。
-func (s *SyncService) cacheCategoryMappings(ctx context.Context, a adapter.Adapter, connectionID uint64, out map[string]uint64) error {
+// cacheCategoryMappings 构建 上游分类标识 → 本地分类 id 映射。
+// 优先级：连接 settings.category_map（导入弹窗持久化的运营选择，后续同步
+// 自动沿用）→ mapping 行（upstream_category 手工映射）；无映射分类不自动建。
+func (s *SyncService) cacheCategoryMappings(ctx context.Context, a adapter.Adapter, conn *ent.SupplyConnection, out map[string]uint64) error {
 	cats, err := a.ListCategories(ctx)
 	if err != nil {
 		return err
 	}
 	_ = cats
+	for k, v := range categoryMapFromSettings(conn.Settings) {
+		out[k] = v
+	}
 	// 本地分类映射表：扫描本连接全部 mapping，收集 upstream_category → local_category_id
-	ms, _, err := s.repo.ListMappings(ctx, connectionID, 1, 100000)
+	ms, _, err := s.repo.ListMappings(ctx, conn.ID, 1, 100000)
 	if err != nil {
 		return err
 	}
 	for _, m := range ms {
 		if m.LocalCategoryID > 0 && m.UpstreamCategory != "" {
-			out[m.UpstreamCategory] = m.LocalCategoryID
+			if _, ok := out[m.UpstreamCategory]; !ok {
+				out[m.UpstreamCategory] = m.LocalCategoryID
+			}
 		}
 	}
 	return nil
+}
+
+// categoryMapFromSettings 连接 settings.category_map（JSON {上游分类code: 本地分类id}）。
+func categoryMapFromSettings(settings map[string]any) map[string]uint64 {
+	out := map[string]uint64{}
+	if settings == nil {
+		return out
+	}
+	raw, ok := settings["category_map"].(map[string]any)
+	if !ok {
+		return out
+	}
+	for k, v := range raw {
+		if id := toInt64(v); id > 0 {
+			out[k] = uint64(id)
+		}
+	}
+	return out
 }
 
 // currentProductPrice 读本地商品当前价（价格保护判据）。
