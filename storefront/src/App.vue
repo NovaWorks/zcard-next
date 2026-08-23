@@ -42,7 +42,12 @@
     </header>
 
     <main class="main">
-      <router-view />
+      <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
+      <router-view v-slot="{ Component }">
+        <Suspense>
+          <component :is="Component" />
+        </Suspense>
+      </router-view>
     </main>
 
     <!-- 页脚 -->
@@ -110,13 +115,16 @@ import ServiceWidget from '@/components/ServiceWidget.vue';
 
 const router = useRouter();
 
+// 站点名（config 下发；失败回退）
+const siteName = ref('ZCard 商店');
+
+// SEO 默认 head 由 main.ts 处理（客户端拉取后更新；SSR 渲染后输出到静态 HTML）
+
 // 启动加载默认货币（i18n.base_currency → 符号/小数位；失败回退默认符号）
 initCurrency();
 // 登录态恢复（token 存在则拉用户名；失败静默——401 层统一处理）
 refreshAuth();
 
-// 站点名（config 下发；失败回退）
-const siteName = ref('ZCard 商店');
 const year = new Date().getFullYear();
 
 // 购物车角标：共享响应式状态（商品页加购/删除实时联动；:key 变化触发弹跳动画）
@@ -187,15 +195,11 @@ function openNotice() {
 
 onMounted(async () => {
   captureRefCode(); // 推广归因捕获（任何页面 ?ref= 进站即记 30 天）
-  // 站点配置（site.name / site.url / service.stats_script 统计代码）
+  // 站点配置（service.stats_script 统计代码；SEO 配置已在 setup 顶层消费）
   try {
     const resp = await fetch('/api/v1/storefront/config');
     const json = await resp.json();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
-    const name = find('site.name');
-    if (name) {
-      try { siteName.value = JSON.parse(name); } catch { /* 保留默认 */ }
-    }
     const stats = find('service.stats_script');
     if (stats) {
       let script = '';

@@ -22,6 +22,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getPost, listPostCategories, type StorePost, type PostCategory } from '@/api';
+import { fetchSiteSeo, applySeo, stripHtml, truncate } from '@/seo';
 
 const route = useRoute();
 const post = ref<StorePost | null>(null);
@@ -43,14 +44,57 @@ function formatDate(unix?: number): string {
   return new Date(unix * 1000).toLocaleDateString('zh-CN');
 }
 
-onMounted(async () => {
-  const { data } = await listPostCategories();
-  categories.value = data?.categories || [];
-  const { data: d, error: err } = await getPost(route.params.slug as string);
-  if (err) { error.value = '文章不存在或未发布'; return; }
-  post.value = d?.post || null;
-  content.value = d?.content || '';
-});
+// 文章数据预取（setup 顶层：SSG 静态化文章页内容 + 输出 SEO head）
+const { data: catData } = await listPostCategories();
+categories.value = catData?.categories || [];
+const { data: detail, error: postErr } = await getPost(route.params.slug as string);
+if (postErr) {
+  error.value = '文章不存在或未发布';
+} else {
+  post.value = detail?.post || null;
+  content.value = detail?.content || '';
+  applyPostSeo(detail);
+}
+
+/** 文章页 SEO：title/description/canonical + Article/Breadcrumb JSON-LD */
+async function applyPostSeo(detail: { post: StorePost; content: string } | null) {
+  const site = await fetchSiteSeo();
+  const base = site.url || (typeof window !== "undefined" ? window.location.origin : "");
+  const origin = typeof window !== "undefined" ? window.location.origin : site.url;
+  const slug = route.params.slug as string;
+  const postTitle = detail?.post?.title || '';
+  const desc = detail?.post?.summary ? truncate(stripHtml(detail.post.summary)) : truncate(stripHtml(detail?.content || ''));
+  const date = detail?.post?.published_at ? new Date(detail.post.published_at * 1000).toISOString() : undefined;
+  applySeo(
+    {
+      title: postTitle ? `${postTitle} - ${site.name}` : `${site.name} - 文章`,
+      description: desc || undefined,
+      keywords: [postTitle, site.name].filter(Boolean).join(','),
+      canonical: `${origin}/posts/${slug}`,
+      ogType: 'article',
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: postTitle,
+          ...(date ? { datePublished: date, dateModified: date } : {}),
+          author: { '@type': 'Organization', name: site.name },
+          publisher: { '@type': 'Organization', name: site.name },
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: site.name, item: base + '/' },
+            { '@type': 'ListItem', position: 2, name: '文章', item: base + '/posts' },
+            { '@type': 'ListItem', position: 3, name: postTitle, item: `${base}/posts/${slug}` },
+          ],
+        },
+      ],
+    },
+    site,
+  );
+}
 </script>
 
 <style scoped>

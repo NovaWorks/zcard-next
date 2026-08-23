@@ -49,6 +49,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { listProducts, listCategories, type Product, type CategoryItem } from '@/api';
+import { fetchSiteSeo, applySeo } from '@/seo';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
 
@@ -97,16 +98,27 @@ function onSearch() {
   load();
 }
 
-onMounted(async () => {
-  // 路由参数（分类/关键词/排序）
+// 列表数据预取（setup 顶层：SSG 静态化列表页 + 输出 SEO head）
+{
   const q = route.query;
   if (q.category_id) categoryId.value = Number(q.category_id);
   if (typeof q.keyword === 'string') keyword.value = q.keyword;
   if (typeof q.sort === 'string') sort.value = q.sort;
   const { data } = await listCategories();
   categories.value = data?.categories || [];
-  load();
-});
+  await load();
+  await applyListSeo();
+}
+
+/** 列表页 SEO：分类名优先（canonical 保留分类参数、剔除排序/分页/关键词） */
+async function applyListSeo() {
+  const site = await fetchSiteSeo();
+  const origin = typeof window !== "undefined" ? window.location.origin : site.url;
+  const catName = categories.value.find((c) => c.id === categoryId.value)?.name;
+  const title = catName ? `${catName} - ${site.name}` : `全部商品 - ${site.name}`;
+  const canonical = categoryId.value ? `${origin}/products?category_id=${categoryId.value}` : `${origin}/products`;
+  applySeo({ title, canonical, ogType: 'website' }, site);
+}
 </script>
 
 <style scoped>

@@ -39,6 +39,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { listPosts, listPostCategories, type StorePost, type PostCategory } from '@/api';
+import { fetchSiteSeo, applySeo } from '@/seo';
 
 const route = useRoute();
 const router = useRouter();
@@ -95,11 +96,21 @@ async function load(p = 1) {
   page.value = p;
 }
 
-onMounted(async () => {
+// 文章列表数据预取（setup 顶层：SSG 静态化 + 输出 SEO head）
+{
   const { data } = await listPostCategories();
   categories.value = data?.categories || [];
-  load(1);
-});
+  await load(1);
+  await applyListSeo();
+}
+
+/** 文章列表页 SEO：canonical 剔除筛选参数（只保留 type） */
+async function applyListSeo() {
+  const site = await fetchSiteSeo();
+  const origin = typeof window !== "undefined" ? window.location.origin : site.url;
+  const canonical = type.value ? `${origin}/posts?type=${type.value}` : `${origin}/posts`;
+  applySeo({ title: `文章公告 - ${site.name}`, canonical, ogType: 'website' }, site);
+}
 </script>
 
 <style scoped>

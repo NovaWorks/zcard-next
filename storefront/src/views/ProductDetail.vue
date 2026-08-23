@@ -195,6 +195,7 @@ import { authState } from '@/auth';
 import { addToCart as addToCartStore, removeCartItem, cartItemOf } from '@/cart';
 import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
+import { fetchSiteSeo, applySeo, stripHtml, truncate, type SiteSeoConfig } from '@/seo';
 import CaptchaInput from '@/components/CaptchaInput.vue';
 
 const route = useRoute();
@@ -285,14 +286,68 @@ const captchaCode = ref('');
 const captchaRef = ref<InstanceType<typeof CaptchaInput> | null>(null);
 const isGuest = computed(() => !authState.loggedIn);
 
+// 商品数据预取（setup 顶层：SSG 静态化商品页内容 + 输出 SEO head）
+const productResp = await getProduct(Number(route.params.id));
+if (productResp.error) {
+  error.value = productResp.error;
+} else {
+  p.value = productResp.data;
+  applyProductSeo(productResp.data);
+}
+
 onMounted(async () => {
-  const id = Number(route.params.id);
-  const [resp, cfg, capCfg] = await Promise.all([getProduct(id), fetchTradeConfig(), fetchCaptchaConfig()]);
+  // 交易配置/验证码（客户端交互能力；SSG 不需要）
+  const [cfg, capCfg] = await Promise.all([fetchTradeConfig(), fetchCaptchaConfig()]);
   captchaCfg.value = capCfg;
-  if (resp.error) { error.value = resp.error; return; }
-  p.value = resp.data;
   trade.value = cfg;
 });
+
+/** 商品页 SEO：title/description/keywords/canonical/og + Product/Breadcrumb JSON-LD */
+async function applyProductSeo(product: Product) {
+  const site = await fetchSiteSeo();
+  const base = site.url || (typeof window !== "undefined" ? window.location.origin : "");
+  const desc = truncate(stripHtml(product.description || ''));
+  const origin = typeof window !== "undefined" ? window.location.origin : site.url;
+  applySeo(
+    {
+      title: `${product.name} - ${site.name}`,
+      description: desc || undefined,
+      keywords: [product.name, site.name].filter(Boolean).join(','),
+      canonical: `${origin}/product/${product.id}`,
+      ogType: 'product',
+      ogImage: product.cover || undefined,
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          name: product.name,
+          image: product.cover || undefined,
+          description: desc || undefined,
+          ...(product.price_cents > 0
+            ? {
+                offers: {
+                  '@type': 'Offer',
+                  price: (product.price_cents / 100).toFixed(2),
+                  priceCurrency: 'CNY',
+                  availability: 'https://schema.org/InStock',
+                },
+              }
+            : {}),
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: site.name, item: base + '/' },
+            { '@type': 'ListItem', position: 2, name: '全部商品', item: base + '/products' },
+            { '@type': 'ListItem', position: 3, name: product.name, item: `${base}/product/${product.id}` },
+          ],
+        },
+      ],
+    },
+    site,
+  );
+}
 
 /** 下单前校验（与后端 validateTradeRequirements 同口径） */
 function validateTradeFields(): boolean {

@@ -58,6 +58,8 @@ func newHandler(root fs.FS, prefix string) *Handler {
 }
 
 // ServeHTTP 静态资源优先；未匹配回落 index.html（SPA 前端路由）。
+// SSG 产物（vite-ssg）：/product/1 命中 product/1/index.html 静态页（SEO 完整 HTML）；
+// 无静态页的路径回落 index.html 由前端路由接管。
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.NotFound(w, r)
@@ -88,7 +90,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = f.Close()
 	}
+	// SSG 静态页（vite-ssg 扁平产物）：路径 + .html（/product/1 → product/1.html）
+	if f, err := h.root.Open(up + ".html"); err == nil {
+		st, statErr := f.Stat()
+		if statErr == nil && !st.IsDir() {
+			defer f.Close()
+			h.serveStaticHTML(w, r, f, st)
+			return
+		}
+		_ = f.Close()
+	}
 	h.serveIndex(w, r)
+}
+
+// serveStaticHTML SSG 静态页：短缓存（内容随发布更新）。
+func (h *Handler) serveStaticHTML(w http.ResponseWriter, r *http.Request, f fs.File, st fs.FileInfo) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=300")
+	http.ServeContent(w, r, st.Name(), st.ModTime(), f.(io.ReadSeeker))
 }
 
 // serveIndex SPA 回落：index.html 永不缓存（新版本发布即生效）。

@@ -17,5 +17,10 @@ export default defineConfig({
         changeOrigin: true
       }
     }
+  },
+  ssgOptions: {
+    // 串行渲染：并发下 unhead 2 的渲染队列与 seo.ts 模块级 head 引用会跨路由串扰
+    // （详见 src/seo.ts 注释）。串行后 unhead renderDOMHead 输出完整 head。
+    concurrency: 1,
   }
 });

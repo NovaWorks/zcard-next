@@ -125,6 +125,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
+import { fetchSiteSeo, applyDefaultSeo, applyVerification } from '@/seo';
 import { formatMoney } from '@/api/client';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
@@ -208,7 +209,8 @@ function stopHero() {
 }
 
 function bannerImg(b: Banner): string {
-  const isMobile = window.innerWidth < 640;
+  // SSR 构建期无 window：PC 图（移动端图由客户端水合后按视口切换）
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   return (isMobile && b.mobile_image) ? b.mobile_image : b.image;
 }
 
@@ -253,18 +255,21 @@ async function load() {
   total.value = data?.total || 0;
 }
 
-onMounted(async () => {
-  load();
-  const [b, n, c, a] = await Promise.all([
-    listBanners('top'),
-    listPosts('notice', 1, 1),
-    listCategories(),
-    fetchAnnouncement(),
-  ]);
-  banners.value = b?.data?.banners || [];
-  latestNotice.value = n?.data?.posts?.[0] || null;
-  categories.value = c?.data?.categories || [];
-  announcement.value = a;
+// 首页数据预取（setup 顶层：SSG 构建时渲染完整内容；客户端水合复用后由 onMounted 启动轮播）
+await Promise.all([
+  load(),
+  listBanners('top').then((b) => { banners.value = b?.data?.banners || []; }),
+  listPosts('notice', 1, 1).then((n) => { latestNotice.value = n?.data?.posts?.[0] || null; }),
+  listCategories().then((c) => { categories.value = c?.data?.categories || []; }),
+  fetchAnnouncement().then((a) => { announcement.value = a; }),
+  // 首页默认 SEO（仅首页；页面级 SEO 由各自页面组件负责）
+  fetchSiteSeo().then((site) => {
+    applyDefaultSeo(site);
+    applyVerification(site);
+  }),
+]);
+
+onMounted(() => {
   startHero();
 });
 onUnmounted(stopHero);

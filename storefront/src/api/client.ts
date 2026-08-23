@@ -2,10 +2,15 @@
 // 认证（P3-09 T1）：user realm JWT 存 localStorage，请求自动带 Bearer；
 // 401 且本地有 token → 判定过期，清 token 跳登录（游客端点 401 不误伤）。
 
-const BASE = '/api/v1/storefront';
+// SSG 构建（vite-ssg）时服务端无同源 API：经 VITE_SSG_API 指向构建机可达的 API
+// （如 http://127.0.0.1:8000）；客户端恒用同源相对路径。
+const BASE = import.meta.env.SSR
+  ? `${import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000'}/api/v1/storefront`
+  : '/api/v1/storefront';
 const TOKEN_KEY = 'zcard_token';
 
 export function getToken(): string | null {
+  if (import.meta.env.SSR) return null;
   try {
     return localStorage.getItem(TOKEN_KEY);
   } catch {
