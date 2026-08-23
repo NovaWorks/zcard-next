@@ -41,7 +41,7 @@ const groups = [
 // ── 长文本/JSON 类设置键：渲染 textarea（JSON 键格式化展示 + 解析校验）──
 const TEXTAREA_KEYS: Record<string, string[]> = {
   service: ["widget_script", "stats_script"],
-  site: ["top_button"],
+  site: ["top_button", "robots_custom"],
   footer: ["nav", "social"],
   notify: ["sms_template_register", "sms_template_reset"],
 };
@@ -87,6 +87,7 @@ function setTextareaValue(item: any, text: string) {
 function textareaPlaceholderOf(item: any) {
   if (item.key === "widget_script") return "粘贴 Chatwoot/Crisp 等第三方客服完整嵌入代码（含 <script> 标签）——前台右下角悬浮球";
   if (item.key === "stats_script") return "粘贴百度统计/Google Analytics/51la 等统计代码（含 <script> 标签）——前台页面最底部注入";
+  if (item.key === "robots_custom") return "追加到 robots.txt 的规则（每行一条，如 Disallow: /member）；默认已放行全站并指向 sitemap";
   if (item.group === "ops" && item.key === "announcement") return "公告文本：显示在首页顶部公告条与公告弹窗；留空则回落最新公告文章";
   if (item.key === "sms_template_register" || item.key === "sms_template_reset") {
     return "短信模板内容（需与短信服务商控制台的模板一致）；变量：{code} 验证码 {minutes} 有效分钟 {site} 站点名";

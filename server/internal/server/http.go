@@ -38,6 +38,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/seo"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
@@ -122,6 +123,7 @@ func NewHTTPServer(
 	enq queue.Enqueuer,
 	dir *authz.Directory,
 	tracker *audit.TrackRepo,
+	seoSvc *seo.SeoService,
 ) *khttp.Server {
 	// ⚠️ Kratos khttp.Filter 是整体替换（o.filters = filters）非追加——
 	// 多次调用只有最后一次生效（曾致 supplier HMAC/CORS/租户被 audit 静默覆盖）。
@@ -261,6 +263,9 @@ func NewHTTPServer(
 	buildAuditOpMap(dir)
 	registerPaymentCallback(srv, payRepo, d)
 
+	// SEO 基础（robots.txt / sitemap.xml）：动态生成，须在 SPA 兜底前注册
+	registerSEO(srv, seoSvc)
+
 	// fullstack SPA（§10.1）：storefront 兜底根 + admin 独立前缀；未匹配回落
 	// index.html 由前端路由接管。保留前缀（/api /uploads /health /payments
 	// /install）已注册的业务/静态路由优先命中，回落仅在未匹配时发生。
@@ -275,6 +280,25 @@ func NewHTTPServer(
 		srv.HandlePrefix("/", web.NewStorefrontHandler())
 	}
 	return srv
+}
+
+// registerSEO robots.txt + sitemap.xml（SPA 兜底前注册；均免鉴权）。
+func registerSEO(srv *khttp.Server, seoSvc *seo.SeoService) {
+	srv.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		_, _ = w.Write([]byte(seoSvc.RobotsTXT(r.Context(), r.Host)))
+	})
+	srv.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, r *http.Request) {
+		body, err := seoSvc.SitemapXML(r.Context(), r.Host)
+		if err != nil {
+			http.Error(w, "sitemap generate failed", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		_, _ = w.Write([]byte(body))
+	})
 }
 
 // registerHealth 健康检查（DB 连通 + 队列模式 + 版本；/metrics Prometheus M1 接入内网口）。

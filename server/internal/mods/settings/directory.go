@@ -32,6 +32,8 @@ var groups = map[string]*GroupDef{
 		Labels: map[string]string{
 			"name": "站点名称", "logo": "站点 Logo", "url": "站点地址",
 			"seo_title": "SEO 标题", "seo_keywords": "SEO 关键词", "seo_desc": "SEO 描述",
+			"verification_google": "Google 站长验证码", "verification_bing": "Bing 站长验证码",
+			"robots_custom": "robots.txt 自定义规则",
 			"admin_path": "后台安全路径", "top_button": "顶部自定义按钮",
 		},
 		Defaults: map[string]any{
@@ -41,10 +43,13 @@ var groups = map[string]*GroupDef{
 			"seo_title":    "",
 			"seo_keywords": "",
 			"seo_desc":     "",
+			"verification_google": "",
+			"verification_bing":    "",
+			"robots_custom":        "",
 			"admin_path":   "",
 			"top_button":   nil, // 顶部自定义按钮 {text,url}
 		},
-		PublicKeys: map[string]bool{"name": true, "logo": true, "url": true, "seo_title": true, "seo_keywords": true, "seo_desc": true},
+		PublicKeys: map[string]bool{"name": true, "logo": true, "url": true, "seo_title": true, "seo_keywords": true, "seo_desc": true, "verification_google": true, "verification_bing": true, "robots_custom": true},
 	},
 	"template": {
 		Name: "template", Desc: "模板",
