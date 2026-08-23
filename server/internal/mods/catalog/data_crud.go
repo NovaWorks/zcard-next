@@ -467,9 +467,11 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 				slug = fmt.Sprintf("%s-%d", baseSlug, i+1)
 			}
 		}
-		status := int8(0)
-		if in.AutoOnshelf {
-			status = 1
+		// 上游不可售（手动发货/预选/停售，in.Status=0）恒下架；
+		// 在售且允许自动上架才 1（待定价导入 AutoOnshelf=false → 0）
+		status := in.Status
+		if in.Status == 1 && !in.AutoOnshelf {
+			status = 0
 		}
 		create := data.Client(ctx, r.data).Product.Create().
 			SetSubsiteID(tc.SubsiteID).
@@ -509,9 +511,8 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	if in.Price >= 0 {
 		upd.SetPrice(in.Price)
 	}
-	if in.Status != 0 {
-		upd.SetStatus(in.Status)
-	}
+	// 两个调用方（collect 同步/交互导入）恒发送显式状态：镜像上游可售性
+	upd.SetStatus(in.Status)
 	if in.CategoryID > 0 {
 		upd.SetCategoryID(in.CategoryID)
 	}

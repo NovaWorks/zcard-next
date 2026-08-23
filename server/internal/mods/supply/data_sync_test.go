@@ -1,7 +1,7 @@
 package supply
 
 // P2-01 T3 必测项：价格保护三级判定（auto_sync_price 关 / 固定覆盖价 /
-// 运营已改价不覆盖）+ 状态语义（inactive → 隐藏）。
+// 运营已改价不覆盖）+ 状态语义（inactive → 下架：API 不可履约品必须对全员下架而非会员可见的隐藏）。
 // P2-10 S1：三类 scope 轻量路径 / 删除对账护栏 / 库存补查 / 增量列表决策。
 
 import (
@@ -202,13 +202,13 @@ func TestSyncStatusSemantics(t *testing.T) {
 	svc, repo, fw, _ := newTestSyncService(t)
 	conn := seedConnAndMapping(t, repo, true, nil)
 
-	t.Run("上游inactive_本地隐藏", func(t *testing.T) {
+	t.Run("上游inactive_本地下架", func(t *testing.T) {
 		up := &adapter.Product{ID: "P2", Name: "下架商品", Price: 500, IsActive: false}
 		if _, err := svc.syncOne(ctx, 0, collectTask(), conn, up, nil, &TaskProgress{}); err != nil {
 			t.Fatal(err)
 		}
-		if fw.calls[0].Status != 2 {
-			t.Fatalf("inactive 应隐藏(status=2): %+v", fw.calls[0])
+		if fw.calls[0].Status != 0 {
+			t.Fatalf("inactive 应下架(status=0): %+v", fw.calls[0])
 		}
 	})
 }
@@ -304,13 +304,13 @@ func TestStatusScopeLightPath(t *testing.T) {
 	conn := seedConnAndMapping(t, repo, true, nil)
 	task := &ent.SupplySyncTask{Scope: ScopeStatus}
 
-	t.Run("上游inactive_本地隐藏", func(t *testing.T) {
+	t.Run("上游inactive_本地下架", func(t *testing.T) {
 		up := &adapter.Product{ID: "P1", IsActive: false}
 		if _, err := svc.syncOne(ctx, 0, task, conn, up, nil, &TaskProgress{}); err != nil {
 			t.Fatal(err)
 		}
-		if fm.statusCalls["P1"] != 2 {
-			t.Fatalf("inactive 应写 status=2: %v", fm.statusCalls)
+		if fm.statusCalls["P1"] != 0 {
+			t.Fatalf("inactive 应写 status=0: %v", fm.statusCalls)
 		}
 		if len(fw.calls) != 0 {
 			t.Fatalf("status scope 不得走全量 upsert: %+v", fw.calls)

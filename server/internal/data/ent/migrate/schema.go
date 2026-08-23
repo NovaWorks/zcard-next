@@ -1379,7 +1379,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "category_id", Type: field.TypeUint64, Nullable: true},
-		{Name: "name", Type: field.TypeString, Size: 150},
+		{Name: "name", Type: field.TypeString, Size: 1024},
 		{Name: "slug", Type: field.TypeString, Size: 150},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "cover", Type: field.TypeString, Nullable: true, Size: 255},

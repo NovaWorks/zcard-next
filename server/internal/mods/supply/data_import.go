@@ -185,6 +185,11 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			reply.Failed++
 			continue
 		}
+		// 新建/更新的判定必须在导入前取（导入后映射必存在，恒误报「更新」）
+		isNew := false
+		if _, err := s.repo.GetMapping(ctx, conn.ID, code, ""); err == ErrNotFound {
+			isNew = true
+		}
 		if _, err := s.sync.ImportOne(ctx, conn, &p, categoryMap, mode, markupPercent, markupAmount); err != nil {
 			reply.Failed++
 			if reply.ErrorContext == "" {
@@ -192,7 +197,7 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			}
 			continue
 		}
-		if _, err := s.repo.GetMapping(ctx, conn.ID, code, ""); err == ErrNotFound {
+		if isNew {
 			reply.Imported++
 		} else {
 			reply.Updated++

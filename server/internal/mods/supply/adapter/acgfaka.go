@@ -106,8 +106,28 @@ func (a *acgFakaAdapter) Ping(ctx context.Context) (*PingResult, error) {
 }
 
 func (a *acgFakaAdapter) ListCategories(ctx context.Context) ([]Category, error) {
-	// 1.x 已知限制：listCategories 返回 []，分类只能靠 items 的 cat.id 反推。
-	return []Category{}, nil
+	// 协议无独立分类端点：items 树的顶层节点即分类（id+name 直出）。
+	// 一次全量 items 只抽树干（不触发 config 的 inventory 兜底）。
+	data, err := a.signedPost(ctx, "/shared/commodity/items", nil)
+	if err != nil {
+		return nil, err
+	}
+	raw, err := parseResp(data)
+	if err != nil {
+		return nil, err
+	}
+	var cats []struct {
+		ID   any    `json:"id"`
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(raw, &cats); err != nil {
+		return nil, fmt.Errorf("adapter.acgfaka: 解析分类树失败: %w", err)
+	}
+	out := make([]Category, 0, len(cats))
+	for _, c := range cats {
+		out = append(out, Category{ID: idString(c.ID), Name: c.Name})
+	}
+	return out, nil
 }
 
 func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeInactive bool) (*ProductList, error) {
@@ -136,6 +156,7 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			CategoryID   any    `json:"category_id"`
 			DeliveryWay  int    `json:"delivery_way"`
 			DraftStatus  int    `json:"draft_status"`
+			OnlyUser     int    `json:"only_user"` // 1=货主专属（Order.php:878 非货主下单报「请先登录后再购买哦」）
 			Config       string `json:"config"` // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
 		} `json:"children"`
 	}
@@ -186,10 +207,11 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			// 占位文案（Bind/Order.php:1231 delivery_message/「正在发货中…」），
 			// API 通道永远拿不到真实卡密——同步为下架，需售卖请本地建品人工发货。
 			// draft_status=1 预选商品必须走 draftCard 选卡流程，API 直下单不可靠 → 同下架。
+			// only_user=1 货主专属：共享 API 以下游身份购买（owner=0）必被拒 → 同下架。
 			// status 缺省（nil）视为在售：items 语义为「当前分类下可对接商品」；
 			// 显式 0 = 下架（标准 acg-faka 返回显式 status）。
 			statusOK := p.Status == nil || *p.Status == 1
-			active := statusOK && p.DeliveryWay == 0 && draftStatus == 0
+			active := statusOK && p.DeliveryWay == 0 && draftStatus == 0 && p.OnlyUser == 0
 
 			// 多规格（[category] race + [sku] 加价规格）→ 笛卡尔积组合 SKU
 			// （组合超护栏/含编码保留字符 → 整品隐藏防误售，价格语义不完整）
@@ -232,6 +254,8 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 // acgInventory /shared/commodity/inventory 响应（参数 sharedCode 驼峰）：
 // 单品库存/发货方式/预选状态/价格 + 规格 INI 原文（标准站 items 已直出 config，
 // 此接口仅作皮肤站 items 缺 config 时的兜底数据源）。
+// is_category 站点间类型不定（int/bool 混用——tghao 实测 bool）→ any 兼容，
+// 仅调试用不参与逻辑。
 type acgInventory struct {
 	Count        FlexNum `json:"count"`
 	DeliveryWay  int     `json:"delivery_way"`
@@ -239,7 +263,7 @@ type acgInventory struct {
 	Price        FlexNum `json:"price"`
 	FactoryPrice FlexNum `json:"factory_price"` // 当前对接身份的拿货价
 	Config       string  `json:"config"`        // INI 文本
-	IsCategory   int     `json:"is_category"`
+	IsCategory   any     `json:"is_category"`
 }
 
 // fetchInventory 拉单品库存与规格配置（ListProducts 兜底用；调用方 fail-open）。
@@ -344,6 +368,12 @@ func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*
 		// 重试（会永远撞墙）也不能自动退款（上游可能已成交）→ 哨兵转人工核对
 		if strings.Contains(err.Error(), "request ID already exists") {
 			return nil, ErrDuplicateSubmit
+		}
+		// 起购/单次限量（Order.php:882/885「本商品最少购买X个」「单次最多购买X个」）：
+		// 数量不满足再试多少次都一样 → 永久错误哨兵（rejected + 按失败策略退款），
+		// 避免占满重试档位后转人工
+		if strings.Contains(err.Error(), "最少购买") || strings.Contains(err.Error(), "最多购买") {
+			return nil, fmt.Errorf("%w: %v", ErrProductUnavailable, err)
 		}
 		return nil, err
 	}

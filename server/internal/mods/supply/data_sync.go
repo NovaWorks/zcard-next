@@ -396,10 +396,11 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		mapping = &ent.SupplyMapping{ConnectionID: conn.ID, UpstreamProduct: p.ID}
 	}
 
-	// 状态语义：上游 inactive → 本地隐藏(2)；deleted 哨兵 → 本地下架(0)
+	// 状态语义：上游不可售（手动发货/预选/停售）→ 本地下架(0)。
+	// （曾用隐藏(2)——但隐藏商品会员可见可买，此类品 API 无法履约，必须全员下架）
 	status := int8(1)
 	if !p.IsActive {
-		status = 2
+		status = 0
 	}
 
 	// 定价（价格保护三级判定；force_reprice 覆盖运营改价保护）
@@ -496,7 +497,7 @@ func (s *SyncService) syncPriceOnly(ctx context.Context, conn *ent.SupplyConnect
 func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, stats *TaskProgress) error {
 	status := int8(1)
 	if !p.IsActive {
-		status = 2
+		status = 0 // 上游不可售 → 下架（同 syncOne 语义）
 	}
 	if s.maintainer != nil {
 		if _, err := s.maintainer.UpdateUpstreamStatus(ctx, conn.ID, p.ID, status); err != nil {
@@ -737,6 +738,9 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	if mode == PriceModePending {
 		status = 0 // 待定价：导入后不上架
 		writePrice = -1
+	}
+	if !p.IsActive {
+		status = 0 // 上游不可售品导入即下架
 	}
 	write := catalogport.UpstreamProductInput{
 		ConnectionID:        conn.ID,
