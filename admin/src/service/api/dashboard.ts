@@ -39,6 +39,7 @@ export interface DashboardPending {
   pending_refunds: number;
   fulfilling_orders: number;
   low_stock_products: number;
+  pending_supplier_applications: number;
 }
 
 export interface DashboardData {
