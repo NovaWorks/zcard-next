@@ -41,16 +41,19 @@ type Handler struct {
 	root       fs.FS
 	prefix     string // 挂载前缀（如 /admin；strip 后再查 FS）
 	indexBytes []byte
+	bot        BotRenderer // 爬虫动态渲染（storefront 专属；admin 为 nil）
 }
 
-// NewStorefrontHandler 前台 SPA（兜底根，无前缀）。
-func NewStorefrontHandler() *Handler { return newHandler(storefrontFS, "") }
+// NewStorefrontHandler 前台 SPA（兜底根，无前缀；botRenderer 可为 nil）。
+func NewStorefrontHandler(botRenderer BotRenderer) *Handler {
+	return newHandler(storefrontFS, "", botRenderer)
+}
 
 // NewAdminHandler 管理后台 SPA（挂 /admin 前缀；请求路径剥前缀后查 FS）。
-func NewAdminHandler() *Handler { return newHandler(adminFS, "/admin") }
+func NewAdminHandler() *Handler { return newHandler(adminFS, "/admin", nil) }
 
-func newHandler(root fs.FS, prefix string) *Handler {
-	h := &Handler{root: root, prefix: prefix}
+func newHandler(root fs.FS, prefix string, bot BotRenderer) *Handler {
+	h := &Handler{root: root, prefix: prefix, bot: bot}
 	if b, err := fs.ReadFile(root, "index.html"); err == nil {
 		h.indexBytes = b
 	}
@@ -58,11 +61,16 @@ func newHandler(root fs.FS, prefix string) *Handler {
 }
 
 // ServeHTTP 静态资源优先；未匹配回落 index.html（SPA 前端路由）。
-// SSG 产物（vite-ssg）：/product/1 命中 product/1/index.html 静态页（SEO 完整 HTML）；
-// 无静态页的路径回落 index.html 由前端路由接管。
+// 爬虫（UA 识别）+ 动态渲染器命中 SEO 路由时先行分流：商品/文章详情实时渲染
+// 完整 SEO HTML（内容永远新鲜、删除即真 404），优先于静态页/SPA 兜底。
+// SSG 静态页（vite-ssg 扁平产物）：/product/1 命中 product/1.html。
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.NotFound(w, r)
+		return
+	}
+	// 爬虫动态渲染（仅 storefront；详情页实时渲染优先，保证内容新鲜）
+	if h.bot != nil && h.prefix == "" && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
 		return
 	}
 	p := r.URL.Path

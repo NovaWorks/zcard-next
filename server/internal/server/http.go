@@ -277,7 +277,7 @@ func NewHTTPServer(
 		}
 		srv.HandlePrefix(adminBase, web.NewAdminHandler())
 		// storefront 兜底根（最后注册，最广匹配、最低优先）
-		srv.HandlePrefix("/", web.NewStorefrontHandler())
+		srv.HandlePrefix("/", web.NewStorefrontHandler(seoSvc))
 	}
 	return srv
 }

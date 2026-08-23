@@ -12,7 +12,7 @@ import "net/http"
 type Handler struct{}
 
 // NewStorefrontHandler fullstack 专属——默认形态调用即 panic（编程错误）。
-func NewStorefrontHandler() *Handler {
+func NewStorefrontHandler(_ BotRenderer) *Handler {
 	panic("web: 非 fullstack 构建（-tags fullstack 才嵌入前端）")
 }
 
