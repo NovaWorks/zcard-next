@@ -214,10 +214,19 @@ func runServe(args []string) (err error) {
 		return err
 	}
 	settings.SetConfDir(*confDir)
+	// 零配置首启：配置缺失时生成 SQLite 引导配置（仅作向导载体，Web 里再选库）
+	if created, cerr := ensureBootstrapConfig(*confDir); cerr != nil {
+		return cerr
+	} else if created {
+		abs, _ := filepath.Abs(*confDir)
+		fmt.Printf("zcard: 未发现配置，已生成引导配置 %s/config.yaml（0600，含随机密钥）\n", abs)
+		fmt.Printf("zcard: 浏览器打开 http://<本机IP>:8000/install 选择数据库（PG 推荐/MySQL/SQLite）完成安装\n")
+	}
 	bc, err := loadBootstrap(*confDir)
 	if err != nil {
 		return err
 	}
+	ensureSQLiteDir(bc)
 	logger := newLogger(bc)
 	log.SetDefault(logger)
 
@@ -361,10 +370,14 @@ func runInstall(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	if _, err := ensureBootstrapConfig(*confDir); err != nil {
+		return err
+	}
 	bc, err := loadBootstrap(*confDir)
 	if err != nil {
 		return err
 	}
+	ensureSQLiteDir(bc)
 	// 全新库先迁移（serve 启动链同款）——否则 CLI 直装报 no such table
 	if err := applyMigrationsIfEnabled(context.Background(), bc); err != nil {
 		return err
