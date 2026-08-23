@@ -46,6 +46,7 @@ import { useRouter } from 'vue-router';
 import { listProducts, getMyLevel, createOrder, type Product, type MyLevelReply } from '@/api';
 import { getToken } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
+import { fetchSiteSeo, applySeo } from '@/seo';
 
 const router = useRouter();
 const products = ref<Product[]>([]);
@@ -54,11 +55,19 @@ const loaded = ref(false);
 const error = ref('');
 const exchanging = ref<number>(0);
 
-onMounted(async () => {
+// 数据预取（setup 顶层：SSG 静态化积分商城内容 + 输出 SEO head）
+{
   const { data, error: err } = await listProducts({ points_only: true, page: 1, page_size: 48 });
   products.value = data?.items || [];
   error.value = err || '';
   loaded.value = true;
+  const site = await fetchSiteSeo();
+  const origin = typeof window !== 'undefined' ? window.location.origin : site.url;
+  applySeo({ title: `积分商城 - ${site.name}`, canonical: `${origin}/points`, ogType: 'website' }, site);
+}
+
+onMounted(async () => {
+  // 会员等级（登录态专属；SSG 不渲染）
   if (getToken()) {
     const l = await getMyLevel();
     level.value = l.data;

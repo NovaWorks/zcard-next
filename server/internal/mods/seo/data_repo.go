@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/post"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 )
@@ -21,11 +20,6 @@ type SitemapProduct struct {
 type SitemapPost struct {
 	Slug        string
 	PublishedAt int64
-}
-
-// SitemapCategory 分类 sitemap 条目。
-type SitemapCategory struct {
-	ID uint64
 }
 
 // SeoRepo sitemap 数据仓储。
@@ -70,21 +64,6 @@ func (r *SeoRepo) ListSitemapPosts(ctx context.Context) ([]SitemapPost, error) {
 			ts = p.PublishedAt.Unix()
 		}
 		out = append(out, SitemapPost{Slug: p.Slug, PublishedAt: ts})
-	}
-	return out, nil
-}
-
-// ListSitemapCategories 商品分类（列表页 /products?category_id= 收录）。
-func (r *SeoRepo) ListSitemapCategories(ctx context.Context) ([]SitemapCategory, error) {
-	rows, err := data.Client(ctx, r.data).Category.Query().
-		Select(category.FieldID).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]SitemapCategory, 0, len(rows))
-	for _, c := range rows {
-		out = append(out, SitemapCategory{ID: c.ID})
 	}
 	return out, nil
 }

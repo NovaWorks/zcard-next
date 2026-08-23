@@ -110,14 +110,14 @@ function onSearch() {
   await applyListSeo();
 }
 
-/** 列表页 SEO：分类名优先（canonical 保留分类参数、剔除排序/分页/关键词） */
+/** 列表页 SEO：分类名进 title；canonical 恒为 /products（分类筛选是同一列表的
+ 变体，服务端静态页与爬虫视图均为 /products——水合后保持一致避免规范信号打架） */
 async function applyListSeo() {
   const site = await fetchSiteSeo();
   const origin = typeof window !== "undefined" ? window.location.origin : site.url;
   const catName = categories.value.find((c) => c.id === categoryId.value)?.name;
   const title = catName ? `${catName} - ${site.name}` : `全部商品 - ${site.name}`;
-  const canonical = categoryId.value ? `${origin}/products?category_id=${categoryId.value}` : `${origin}/products`;
-  applySeo({ title, canonical, ogType: 'website' }, site);
+  applySeo({ title, canonical: `${origin}/products`, ogType: 'website' }, site);
 }
 </script>
 

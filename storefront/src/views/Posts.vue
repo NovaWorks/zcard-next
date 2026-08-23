@@ -104,12 +104,12 @@ async function load(p = 1) {
   await applyListSeo();
 }
 
-/** 文章列表页 SEO：canonical 剔除筛选参数（只保留 type） */
+/** 文章列表页 SEO：canonical 恒为 /posts（公告/博客筛选是同一列表变体，
+ 与静态壳 canonical 一致） */
 async function applyListSeo() {
   const site = await fetchSiteSeo();
   const origin = typeof window !== "undefined" ? window.location.origin : site.url;
-  const canonical = type.value ? `${origin}/posts?type=${type.value}` : `${origin}/posts`;
-  applySeo({ title: `文章公告 - ${site.name}`, canonical, ogType: 'website' }, site);
+  applySeo({ title: `文章公告 - ${site.name}`, canonical: `${origin}/posts`, ogType: 'website' }, site);
 }
 </script>
 

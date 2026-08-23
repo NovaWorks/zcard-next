@@ -38,10 +38,22 @@ func (s *SeoService) siteURL(ctx context.Context, host string) string {
 	return "https://" + host
 }
 
-// RobotsTXT robots.txt：全站放行 + 自定义规则追加 + Sitemap 指向。
+// robotsDisallows 私有/工具页默认禁抓（登录注册、会员中心、安装向导等——
+// 无收录价值且静态壳 canonical 指向首页，放行只会制造重复信号）。
+var robotsDisallows = []string{
+	"/login", "/register", "/forgot-password",
+	"/member", "/cart", "/order", "/payment",
+	"/tickets", "/withdraw", "/affiliate", "/fetch", "/install",
+}
+
+// RobotsTXT robots.txt：私有页禁抓 + 自定义规则追加 + Sitemap 指向。
 func (s *SeoService) RobotsTXT(ctx context.Context, host string) string {
 	var b strings.Builder
-	b.WriteString("User-agent: *\nAllow: /\n")
+	b.WriteString("User-agent: *\n")
+	for _, p := range robotsDisallows {
+		b.WriteString("Disallow: " + p + "\n")
+	}
+	b.WriteString("Allow: /\n")
 	if raw, err := s.cfg.GetDefault(ctx, "site", "robots_custom", nil); err == nil && len(raw) > 0 {
 		var v string
 		if json.Unmarshal(raw, &v) == nil && v != "" {
@@ -82,6 +94,7 @@ func (s *SeoService) SitemapXML(ctx context.Context, host string) (string, error
 		{Loc: base + "/"},
 		{Loc: base + "/products"},
 		{Loc: base + "/posts"},
+		{Loc: base + "/points"},
 	}
 
 	products, err := s.repo.ListSitemapProducts(ctx)
@@ -105,14 +118,9 @@ func (s *SeoService) SitemapXML(ctx context.Context, host string) (string, error
 			Lastmod: lastmodOf(p.PublishedAt),
 		})
 	}
-
-	cats, err := s.repo.ListSitemapCategories(ctx)
-	if err != nil {
-		return "", err
-	}
-	for _, c := range cats {
-		entries = append(entries, sitemapEntry{Loc: fmt.Sprintf("%s/products?category_id=%d", base, c.ID)})
-	}
+	// 注：分类筛选 URL（/products?category_id=N）不进 sitemap——查询串不参与
+	// 静态页匹配，服务端返回与 /products 相同的静态页（canonical 也指向 /products），
+	// 提交这些 URL 只会制造「重复网页，未选定规范网页」的 GSC 报错。
 
 	out, err := xml.MarshalIndent(sitemapURLSet{Xmlns: sitemapNS, URLs: entries}, "", "  ")
 	if err != nil {
