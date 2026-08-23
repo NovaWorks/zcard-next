@@ -420,22 +420,51 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 
 	if ent.IsNotFound(err) {
-		// 新建：slug 用上游标识（稳定、幂等）；状态按 auto_onshelf 开关
+		// 新建：slug 用上游标识（稳定、幂等）；状态按 auto_onshelf 开关。
+		// 候选 slug（base、base-2 … base-21）一次 IN 查询判重——替代逐个
+		// Exist 最多 100 次点查（大数量同步的热点）
 		slug := slugify(in.UpstreamProductCode)
 		if slug == "" {
 			slug = fmt.Sprintf("up-%d-%s", in.ConnectionID, in.UpstreamProductCode)
 		}
 		baseSlug := slug
-		for i := 0; i < 100; i++ {
-			exists, err2 := data.Client(ctx, r.data).Product.Query().
-				Where(product.SubsiteID(tc.SubsiteID), product.Slug(slug)).Exist(ctx)
-			if err2 != nil {
-				return 0, false, err2
-			}
-			if !exists {
+		candidates := make([]string, 0, 20)
+		candidates = append(candidates, baseSlug)
+		for i := 2; i <= 21; i++ {
+			candidates = append(candidates, fmt.Sprintf("%s-%d", baseSlug, i))
+		}
+		takenRows, err2 := data.Client(ctx, r.data).Product.Query().
+			Where(product.SubsiteID(tc.SubsiteID), product.SlugIn(candidates...)).
+			Select(product.FieldSlug).
+			Strings(ctx)
+		if err2 != nil {
+			return 0, false, err2
+		}
+		taken := make(map[string]bool, len(takenRows))
+		for _, s := range takenRows {
+			taken[s] = true
+		}
+		slug = ""
+		for _, c := range candidates {
+			if !taken[c] {
+				slug = c
 				break
 			}
-			slug = fmt.Sprintf("%s-%d", baseSlug, i+2)
+		}
+		if slug == "" {
+			// 前 21 个候选全撞（极端）：从 22 起逐个 Exist 兜底
+			slug = fmt.Sprintf("%s-%d", baseSlug, 22)
+			for i := 22; i < 100; i++ {
+				exists, err3 := data.Client(ctx, r.data).Product.Query().
+					Where(product.SubsiteID(tc.SubsiteID), product.Slug(slug)).Exist(ctx)
+				if err3 != nil {
+					return 0, false, err3
+				}
+				if !exists {
+					break
+				}
+				slug = fmt.Sprintf("%s-%d", baseSlug, i+1)
+			}
 		}
 		status := int8(0)
 		if in.AutoOnshelf {

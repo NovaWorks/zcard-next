@@ -446,7 +446,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 	mapping.UpstreamCategory = p.CategoryID
 	mapping.UpStock = p.Stock
 	mapping.PricingOverride = override
-	if _, err := s.repo.UpsertMapping(ctx, mapping); err != nil {
+	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return false, err
 	}
 
@@ -469,7 +469,7 @@ func (s *SyncService) syncPriceOnly(ctx context.Context, conn *ent.SupplyConnect
 		stats.ManualSkipped++
 	}
 	mapping.PricingOverride = override
-	if _, err := s.repo.UpsertMapping(ctx, mapping); err != nil {
+	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return err
 	}
 	stats.Processed++
@@ -490,7 +490,7 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 	if p.Stock >= 0 {
 		mapping.UpStock = p.Stock
 	}
-	if _, err := s.repo.UpsertMapping(ctx, mapping); err != nil {
+	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return err
 	}
 	stats.Updated++
@@ -733,7 +733,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	mapping.UpstreamCategory = p.CategoryID
 	mapping.UpStock = p.Stock
 	mapping.PricingOverride = override
-	if _, err := s.repo.UpsertMapping(ctx, mapping); err != nil {
+	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return created, err
 	}
 	return created, nil

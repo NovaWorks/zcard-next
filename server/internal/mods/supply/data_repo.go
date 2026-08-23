@@ -14,6 +14,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 )
@@ -259,39 +260,31 @@ func toInt64(v any) int64 {
 
 // ── 映射 CRUD ──────────────────────────────────────────────
 
-// UpsertMapping 创建或更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
-func (r *SupplyRepoImpl) UpsertMapping(ctx context.Context, m *ent.SupplyMapping) (*ent.SupplyMapping, error) {
-	existing, err := data.Client(ctx, r.data).SupplyMapping.Query().
-		Where(
-			supplymapping.ConnectionID(m.ConnectionID),
-			supplymapping.UpstreamProductEQ(m.UpstreamProduct),
-			supplymapping.UpstreamSkuEQ(m.UpstreamSku),
-		).
-		First(ctx)
-	if ent.IsNotFound(err) {
-		return data.Client(ctx, r.data).SupplyMapping.Create().
-			SetConnectionID(m.ConnectionID).
-			SetUpstreamCategory(m.UpstreamCategory).
-			SetLocalCategoryID(m.LocalCategoryID).
-			SetUpstreamProduct(m.UpstreamProduct).
-			SetLocalProductID(m.LocalProductID).
-			SetUpstreamSku(m.UpstreamSku).
-			SetLocalSkuID(m.LocalSkuID).
-			SetUpStock(m.UpStock).
-			SetPricingOverride(m.PricingOverride).
-			Save(ctx)
-	}
-	if err != nil {
-		return nil, err
-	}
-	return data.Client(ctx, r.data).SupplyMapping.UpdateOneID(existing.ID).
+// UpsertMapping 创建或更新映射（单语句 ON CONFLICT，命中
+// UNIQUE(connection_id, upstream_product, upstream_sku)；旧实现先查后写
+// 2 次往返且并发可重复创建——PG/MySQL 走原生 upsert 消除竞态。
+// 同步热路径调用（每商品一次），只回报 error；需要实体由调用方回读。
+func (r *SupplyRepoImpl) UpsertMapping(ctx context.Context, m *ent.SupplyMapping) error {
+	return data.Client(ctx, r.data).SupplyMapping.Create().
+		SetConnectionID(m.ConnectionID).
 		SetUpstreamCategory(m.UpstreamCategory).
 		SetLocalCategoryID(m.LocalCategoryID).
+		SetUpstreamProduct(m.UpstreamProduct).
 		SetLocalProductID(m.LocalProductID).
+		SetUpstreamSku(m.UpstreamSku).
 		SetLocalSkuID(m.LocalSkuID).
 		SetUpStock(m.UpStock).
 		SetPricingOverride(m.PricingOverride).
-		Save(ctx)
+		OnConflict(
+			entsql.ConflictColumns(
+				supplymapping.FieldConnectionID,
+				supplymapping.FieldUpstreamProduct,
+				supplymapping.FieldUpstreamSku,
+			),
+			// 冲突时全列取新值（含 TimeMixin 的 updated_at 提议值）
+			entsql.ResolveWithNewValues(),
+		).
+		Exec(ctx)
 }
 
 // ListMappings 映射列表（按连接过滤）。

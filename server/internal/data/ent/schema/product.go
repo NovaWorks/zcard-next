@@ -50,6 +50,8 @@ func (Product) Indexes() []ent.Index {
 		index.Fields("subsite_id", "category_id"),
 		index.Fields("subsite_id", "status"),
 		index.Fields("upstream_source_id"),
+		// 货源同步幂等判据（UpsertUpstreamProduct 唯一索引兜底，防并发重复）
+		index.Fields("subsite_id", "upstream_source_id", "upstream_product_code").Unique(),
 	}
 }
 

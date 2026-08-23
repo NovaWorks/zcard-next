@@ -145,7 +145,7 @@ func TestConnectionCRUD(t *testing.T) {
 	}
 
 	// 有映射 → 删除拒绝
-	_, err = r.UpsertMapping(ctx, &ent.SupplyMapping{
+	err = r.UpsertMapping(ctx, &ent.SupplyMapping{
 		ConnectionID:    conn.ID,
 		UpstreamProduct: "P1",
 	})
@@ -172,7 +172,7 @@ func TestMappingUpsertIdempotent(t *testing.T) {
 	conn := mustConn(t, r, d, "幂等测试")
 
 	for i := 0; i < 2; i++ {
-		_, err := r.UpsertMapping(ctx, &ent.SupplyMapping{
+		err := r.UpsertMapping(ctx, &ent.SupplyMapping{
 			ConnectionID:    conn.ID,
 			UpstreamProduct: "P1",
 			UpstreamSku:     "",

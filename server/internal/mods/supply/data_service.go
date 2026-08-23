@@ -176,7 +176,7 @@ func (s *AdminSupplyService) ListMappings(ctx context.Context, req *adminv1.List
 
 // UpsertMapping 创建/更新映射。
 func (s *AdminSupplyService) UpsertMapping(ctx context.Context, req *adminv1.UpsertMappingRequest) (*adminv1.SupplyMapping, error) {
-	m, err := s.repo.UpsertMapping(ctx, &ent.SupplyMapping{
+	if err := s.repo.UpsertMapping(ctx, &ent.SupplyMapping{
 		ConnectionID:     req.GetConnectionId(),
 		UpstreamCategory: req.GetUpstreamCategory(),
 		LocalCategoryID:  req.GetLocalCategoryId(),
@@ -185,7 +185,10 @@ func (s *AdminSupplyService) UpsertMapping(ctx context.Context, req *adminv1.Ups
 		UpstreamSku:      req.GetUpstreamSku(),
 		LocalSkuID:       req.GetLocalSkuId(),
 		PricingOverride:  mustJSONMap(req.GetPricingOverride()),
-	})
+	}); err != nil {
+		return nil, err
+	}
+	m, err := s.repo.GetMapping(ctx, req.GetConnectionId(), req.GetUpstreamProduct(), req.GetUpstreamSku())
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-h1:ZgeZ7P4j8MXSrY3HtC7X6JIhzKxDP3BBs39JZ5HdBOA=
+h1:xY4DwNz1muVL0uHt2Wa3SGuGqD6uWMOe8KK1+sXLzrU=
 20260815190733_init.sql h1:aTI2MMPniza4QyrpCy0f3vnBpQNott2wpRT9w4UF7Y0=
 20260815195921_add_failed_tasks.sql h1:Nnr87jsjSLxKmhYvtqAcTPXw8qPMrZ4WP0UG9h3r0qg=
 20260815201551_v1_full_schema.sql h1:/iBXYqYVfieY/o73I07xmhjaYwlzY98ujJGY9EdWl+Y=
@@ -12,3 +12,4 @@ h1:ZgeZ7P4j8MXSrY3HtC7X6JIhzKxDP3BBs39JZ5HdBOA=
 20260820012901_add_supplier_protocol.sql h1:CRCZxQgfOZ42qeZ9tUu7G+ODmuuZ3vb34ChOLOVx2ck=
 20260820020514_add_supply_markup_amount.sql h1:VkwyOXyenStDeIeoBXnZ8Bek3gBIvBUXoOuVsX2F9ak=
 20260821180636_add_visit_promo_phone_withdrawal_supplier_e2e.sql h1:1zwst2FbMalgGbd7vLuUxwiD/m5/Zbqe69EahS18DvA=
+20260823120000_add_product_upstream_identity_unique.sql h1:zqR2m5o0pNLKAHTNDxCPC35X40X5OW6weAmk+S0ewmc=

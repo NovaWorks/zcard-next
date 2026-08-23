@@ -1,7 +1,10 @@
 package inventory
 
-// T2 导入管线（P1-02 任务书 T2）：预览 → 确认 → 分片写入 → 批次追踪。
-// 1.x CardImportService 模式平移：块内+库内双重去重、>5000 转队列、批次撤销。
+// T2 导入管线（P1-02 任务书 T2）：预览 → 确认 → 分片批量写入 → 批次追踪。
+// 性能纪律（PG/MySQL 大数量优化）：去重一律 content_hash 分组 IN 批查
+// （预览全量一次、确认每分片一次，杜绝逐行 Exist 的 N+1）；写入走
+// CreateBulk + ON CONFLICT DO NOTHING（唯一索引 (subsite_id, product_id,
+// content_hash) 兜底，并发导入窗口的重复行静默跳过）。
 
 import (
 	"context"
@@ -11,6 +14,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cardimport"
+
+	entsql "entgo.io/ent/dialect/sql"
 )
 
 // ImportPreview 预览结果（确认前端步展示）。
@@ -32,14 +37,47 @@ type ImportInput struct {
 	Operator  uint64
 }
 
+// dedupChunk IN 批查单批上限（500：IN 列表与唯一索引扫描的平衡点）。
+const dedupChunk = 500
+
+// existingHashes 批查库内已存在的 content_hash 集合（分组 IN，替代逐行 Exist）。
+func (r *CardRepoImpl) existingHashes(ctx context.Context, client *ent.Client, productID uint64, hashes []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(hashes))
+	for i := 0; i < len(hashes); i += dedupChunk {
+		end := i + dedupChunk
+		if end > len(hashes) {
+			end = len(hashes)
+		}
+		rows, err := client.Card.Query().
+			Where(card.ProductID(productID), card.ContentHashIn(hashes[i:end]...)).
+			Select(card.FieldContentHash).
+			Strings(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, h := range rows {
+			out[h] = true
+		}
+	}
+	return out, nil
+}
+
 // ParseLines 解析原始行（靓号三段式检测 + 去重 + 预览统计）。
 func (r *CardRepoImpl) ParseLines(ctx context.Context, in ImportInput) (*ImportPreview, error) {
 	p := &ImportPreview{Sample: make([]string, 0, 50)}
 	seen := map[string]bool{}
 	client := data.Client(ctx, r.data)
 
-	for i, line := range in.Lines {
-		line = strings.TrimSpace(line)
+	// 第一遍：文件内去重 + 收集待查 hash
+	type pending struct {
+		hash  string
+		line  string
+		parts []string
+	}
+	uniq := make([]pending, 0, len(in.Lines))
+	hashes := make([]string, 0, len(in.Lines))
+	for _, raw := range in.Lines {
+		line := strings.TrimSpace(raw)
 		if line == "" {
 			continue
 		}
@@ -59,31 +97,33 @@ func (r *CardRepoImpl) ParseLines(ctx context.Context, in ImportInput) (*ImportP
 		}
 		seen[line] = true
 
-		// 库内去重（content_hash 比对）
 		hash := r.Cipher.ContentHash(line)
-		exists, err := client.Card.Query().
-			Where(card.ProductID(in.ProductID), card.ContentHash(hash)).Exist(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if exists {
+		hashes = append(hashes, hash)
+		uniq = append(uniq, pending{hash: hash, line: line, parts: parts})
+	}
+
+	// 第二遍：库内去重（一次批查全部 hash）
+	exists, err := r.existingHashes(ctx, client, in.ProductID, hashes)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range uniq {
+		if exists[u.hash] {
 			p.DupInDB++
 			continue
 		}
-
 		if len(p.Sample) < 50 {
-			if len(parts) >= 2 {
-				p.Sample = append(p.Sample, strings.TrimSpace(parts[0])+"---"+strings.Join(parts[1:], "---"))
+			if len(u.parts) >= 2 {
+				p.Sample = append(p.Sample, u.line+"---"+strings.Join(u.parts[1:], "---"))
 			} else {
-				p.Sample = append(p.Sample, line)
+				p.Sample = append(p.Sample, u.line)
 			}
 		}
-		_ = i
 	}
 	return p, nil
 }
 
-// ImportConfirm 确认导入（创建批次 + 分片写入）。
+// ImportConfirm 确认导入（创建批次 + 分片批量写入）。
 func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.CardImport, error) {
 	client := data.Client(ctx, r.data)
 
@@ -99,7 +139,7 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 		return nil, err
 	}
 
-	// 分片写入（1000/批）
+	// 分片写入（1000/批；每片一次 IN 批查去重 + 一次批量 INSERT）
 	var imported, skipped, failed int32
 	seen := map[string]bool{}
 	batchSize := 1000
@@ -111,6 +151,7 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 		chunk := in.Lines[i:end]
 
 		creates := make([]*ent.CardCreate, 0, len(chunk))
+		pendingHashes := make([]string, 0, len(chunk))
 		for _, line := range chunk {
 			line = strings.TrimSpace(line)
 			if line == "" {
@@ -140,14 +181,7 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 				continue
 			}
 			hash := r.Cipher.ContentHash(number)
-
-			// 检查是否已存在（批次间去重）
-			exists, _ := client.Card.Query().
-				Where(card.ProductID(in.ProductID), card.ContentHash(hash)).Exist(ctx)
-			if exists {
-				skipped++
-				continue
-			}
+			pendingHashes = append(pendingHashes, hash)
 
 			create := client.Card.Create().
 				SetProductID(in.ProductID).
@@ -168,19 +202,31 @@ func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.
 			creates = append(creates, create)
 		}
 
-		if len(creates) > 0 {
-			if err := client.Card.CreateBulk(creates...).Exec(ctx); err != nil {
-				// 部分冲突——逐行重试
-				for _, c := range creates {
-					if _, err := c.Save(ctx); err == nil {
-						imported++
-					} else {
-						skipped++
-					}
-				}
-			} else {
-				imported += int32(len(creates))
+		// 分片内批查去重（批次间/与库内重复；并发窗口漏网的由 ON CONFLICT 兜底）
+		if len(pendingHashes) > 0 {
+			exists, err := r.existingHashes(ctx, client, in.ProductID, pendingHashes)
+			if err != nil {
+				return nil, err
 			}
+			kept := creates[:0]
+			for idx, c := range creates {
+				if exists[pendingHashes[idx]] {
+					skipped++
+					continue
+				}
+				kept = append(kept, c)
+			}
+			creates = kept
+		}
+
+		// 批量写入：冲突（并发导入竞态）静默跳过，不退化为逐行
+		if len(creates) > 0 {
+			if err := client.Card.CreateBulk(creates...).
+				OnConflict(entsql.DoNothing()).
+				Exec(ctx); err != nil {
+				return nil, err
+			}
+			imported += int32(len(creates))
 		}
 	}
 
@@ -254,5 +300,3 @@ func (r *CardRepoImpl) ExportCards(ctx context.Context, productID uint64) ([]str
 	}
 	return out, nil
 }
-
-// 保持 time 引用

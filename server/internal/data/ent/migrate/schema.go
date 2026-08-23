@@ -1426,6 +1426,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{ProductsColumns[22]},
 			},
+			{
+				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
+				Unique:  true,
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[22], ProductsColumns[23]},
+			},
 		},
 	}
 	// ProductControlsColumns holds the columns for the "product_controls" table.

@@ -72,7 +72,7 @@ func seedConnAndMapping(t *testing.T, repo *SupplyRepoImpl, autoSync bool, overr
 	conn := mustConn(t, repo, nil, "保护测试")
 	conn.AutoSyncPrice = autoSync
 	ctx := context.Background()
-	if _, err := repo.UpsertMapping(ctx, &ent.SupplyMapping{
+	if err := repo.UpsertMapping(ctx, &ent.SupplyMapping{
 		ConnectionID:    conn.ID,
 		UpstreamProduct: "P1",
 		LocalProductID:  50,
@@ -142,7 +142,7 @@ func TestPriceProtection(t *testing.T) {
 		conn := mustConn(t, repo, nil, "保护测试")
 		conn.AutoSyncPrice = true
 		// 上次同步价 1000（映射记录）；本地商品已被运营改为 9999
-		if _, err := repo.UpsertMapping(ctx, &ent.SupplyMapping{
+		if err := repo.UpsertMapping(ctx, &ent.SupplyMapping{
 			ConnectionID:    conn.ID,
 			UpstreamProduct: "P1",
 			LocalProductID:  local.ID,
