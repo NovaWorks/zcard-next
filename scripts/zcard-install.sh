@@ -3,9 +3,14 @@
 #
 # 用法：
 #   curl -fsSL https://raw.githubusercontent.com/NovaWorks/zcard-next/main/scripts/zcard-install.sh -o /tmp/zcard-install.sh
-#   sudo bash /tmp/zcard-install.sh install                    # 从 GitHub Releases 下载最新版
+#   sudo bash /tmp/zcard-install.sh install                    # 交互式（选数据库：PostgreSQL 推荐/MySQL/SQLite）
+#   sudo bash /tmp/zcard-install.sh install --db postgres --db-host 127.0.0.1 --db-port 5432 \
+#        --db-user postgres --db-pass xxx --db-name zcard --redis 127.0.0.1:6379   # 免交互直装 PG
 #   sudo bash /tmp/zcard-install.sh install --bin ./bin/zcard  # 本地二进制安装（无 Releases 时）
 #   sudo bash /tmp/zcard-install.sh update / status / start / stop / restart / uninstall / logs
+#
+# 数据库规则（与 Web 安装向导一致）：PostgreSQL（推荐·生产首选）/ MySQL 需配 Redis，
+# 库不存在自动创建（安装前用 zcard dbtest 真实校验）；SQLite 免一切依赖（本地测试模式）。
 #
 # 安装内容：/opt/zcard/{zcard,configs/config.yaml,data/} + systemd 服务（自动重启/开机自启）。
 # 安装后浏览器打开 http://服务器IP:8000 → 在线安装向导（选 PostgreSQL 推荐 / SQLite 本地测试）。
@@ -79,11 +84,22 @@ download_bin() {
 write_config() {
   mkdir -p "$CONF_DIR" "$DATA_DIR"
   if [ -f "${CONF_DIR}/config.yaml" ]; then
-    warn "配置已存在，保留不动（${CONF_DIR}/config.yaml）"
+    warn "配置已存在，保留不动（${CONF_DIR}/config.yaml）——如需更换数据库请删除后重装"
     return
   fi
+  local db_driver=sqlite db_source="file:${DATA_DIR}/zcard.db"
+  local redis_addr="127.0.0.1:6379" redis_pass=""
+  if [ "${DB_DIALECT:-sqlite}" = "mysql" ]; then
+    db_driver=mysql
+    db_source="${DB_USER}:${DB_PASS}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=True&loc=UTC&charset=utf8mb4"
+    redis_addr="$REDIS_ADDR"; redis_pass="$REDIS_PASS"
+  elif [ "${DB_DIALECT:-sqlite}" = "postgres" ]; then
+    db_driver=postgres
+    db_source="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
+    redis_addr="$REDIS_ADDR"; redis_pass="$REDIS_PASS"
+  fi
   cat > "${CONF_DIR}/config.yaml" <<EOF
-# ZCard 在线安装生成（SQLite 起步；正式库可在 /install 向导切换 PostgreSQL/MySQL）
+# ZCard 一键安装生成（数据库：${DB_DIALECT:-sqlite}）
 # 结构对齐 config.example.yaml：http/grpc 须嵌套在 server 段下（漏包裹=端口配置失效）
 server:
   http:
@@ -96,16 +112,16 @@ server:
   admin_base_path: ""
 data:
   database:
-    driver: sqlite
-    source: file:${DATA_DIR}/zcard.db
+    driver: ${db_driver}
+    source: "${db_source}"
     max_open_conns: 20
     max_idle_conns: 5
   redis:
-    addr: 127.0.0.1:6379
-    password: ""
+    addr: ${redis_addr}
+    password: "${redis_pass}"
     read_timeout: 0.2s
 EOF
-  log "已生成配置 ${CONF_DIR}/config.yaml（端口 ${PORT}；SQLite 数据在 ${DATA_DIR}）"
+  log "已生成配置 ${CONF_DIR}/config.yaml（端口 ${PORT}；数据库 ${DB_DIALECT:-sqlite}$([ "${DB_DIALECT:-sqlite}" != sqlite ] && echo " @ ${DB_HOST}:${DB_PORT}/${DB_NAME}")）"
 }
 
 write_unit() {
@@ -130,10 +146,98 @@ EOF
 
 svc() { systemctl "$1" "${SERVICE}" 2>/dev/null || true; }
 
+# ask <提示> <默认值>：TTY 交互读入（无 TTY 返回默认）
+ask() {
+  local def="$2" ans=""
+  if [ -t 0 ]; then
+    printf '\033[36m[?]\033[0m %s [%s]: ' "$1" "$def" >&2
+    read -r ans || true
+  fi
+  echo "${ans:-$def}"
+}
+
+ask_secret() {
+  local def="$2" ans=""
+  if [ -t 0 ]; then
+    printf '\033[36m[?]\033[0m %s%s: ' "$1" "$([ -n "$def" ] && echo " [${def}]" || echo '（无则留空）')" >&2
+    read -r ans || true
+  fi
+  echo "${ans:-$def}"
+}
+
+# resolve_db：决定 DB 选择（参数优先 → 交互菜单 → sqlite 默认）
+resolve_db() {
+  DB_DIALECT="${DB_ARGS_DIALECT:-}"
+  if [ -z "$DB_DIALECT" ] && [ -t 0 ]; then
+    echo ""
+    echo "  ┌─────────────── 选择数据库 ───────────────┐"
+    echo "  │ 1) PostgreSQL   推荐 · 生产首选          │"
+    echo "  │ 2) MySQL        自托管标准形态           │"
+    echo "  │ 3) SQLite       本地测试（免配置免Redis）│"
+    echo "  └──────────────────────────────────────────┘"
+    DB_DIALECT="$(ask '请选择数据库（1/2/3）' '1')"
+    case "$DB_DIALECT" in
+      1|postgres|postgresql|pg) DB_DIALECT=postgres ;;
+      2|mysql) DB_DIALECT=mysql ;;
+      3|sqlite) DB_DIALECT=sqlite ;;
+      *) die "无效选择：$DB_DIALECT" ;;
+    esac
+  fi
+  [ -z "$DB_DIALECT" ] && DB_DIALECT=sqlite
+  case "$DB_DIALECT" in postgres|mysql|sqlite) ;; *) die "无效数据库类型：$DB_DIALECT（postgres|mysql|sqlite）";; esac
+
+  if [ "$DB_DIALECT" = "sqlite" ]; then
+    if [ -t 0 ]; then
+      echo ""
+      warn "SQLite 为本地测试模式：不支持分站多租户等高级功能，生产环境建议 PostgreSQL。"
+    fi
+    return
+  fi
+
+  local def_host="127.0.0.1" def_port=5432 def_user="postgres"
+  [ "$DB_DIALECT" = "mysql" ] && { def_port=3306; def_user="root"; }
+  DB_HOST="${DB_ARGS_HOST:-$(ask '数据库主机' "$def_host")}"
+  DB_PORT="${DB_ARGS_PORT:-$(ask '数据库端口' "$def_port")}"
+  DB_USER="${DB_ARGS_USER:-$(ask '数据库用户' "$def_user")}"
+  DB_PASS="${DB_ARGS_PASS:-$(ask_secret '数据库密码' '')}"
+  DB_NAME="${DB_ARGS_NAME:-$(ask '数据库名（不存在自动创建）' 'zcard')}"
+  REDIS_ADDR="${REDIS_ARGS_ADDR:-$(ask 'Redis 地址（必配）' '127.0.0.1:6379')}"
+  REDIS_PASS="${REDIS_ARGS_PASS:-$(ask_secret 'Redis 密码' '')}"
+  [ -n "$DB_PASS" ] || die "数据库密码不能为空（${DB_DIALECT} 模式）"
+}
+
+# db_validate：zcard dbtest 真实校验（连接/权限/自动建库/Redis ping）
+db_validate() {
+  log "校验 ${DB_DIALECT} 与 Redis 连接（库不存在将自动创建）..."
+  if ! "${BIN}" dbtest -dialect "$DB_DIALECT" -host "$DB_HOST" -port "$DB_PORT" \
+      -user "$DB_USER" -password "$DB_PASS" -name "$DB_NAME" \
+      -redis "$REDIS_ADDR" -redis-password "$REDIS_PASS" 2>&1; then
+    die "数据库/Redis 校验失败（检查地址、账号密码与权限）"
+  fi
+}
+
 do_install() {
   need_root
   local bin_src=""
-  if [ "${1:-}" = "--bin" ] && [ -n "${2:-}" ]; then bin_src="$2"; fi
+  local args=("$@")
+  local i=0
+  # 解析预置参数（--db*/--redis* 免交互；--bin 本地二进制）
+  while [ $((i + 1)) -le ${#args[@]} ]; do
+    case "${args[$i]}" in
+      --db)      DB_ARGS_DIALECT="${args[$((i + 1))]}"; i=$((i + 2)) ;;
+      --db-host) DB_ARGS_HOST="${args[$((i + 1))]}";    i=$((i + 2)) ;;
+      --db-port) DB_ARGS_PORT="${args[$((i + 1))]}";    i=$((i + 2)) ;;
+      --db-user) DB_ARGS_USER="${args[$((i + 1))]}";    i=$((i + 2)) ;;
+      --db-pass) DB_ARGS_PASS="${args[$((i + 1))]}";    i=$((i + 2)) ;;
+      --db-name) DB_ARGS_NAME="${args[$((i + 1))]}";    i=$((i + 2)) ;;
+      --redis)   REDIS_ARGS_ADDR="${args[$((i + 1))]}"; i=$((i + 2)) ;;
+      --redis-pass) REDIS_ARGS_PASS="${args[$((i + 1))]}"; i=$((i + 2)) ;;
+      --bin)     bin_src="${args[$((i + 1))]}";         i=$((i + 2)) ;;
+      *)         i=$((i + 1)) ;;
+    esac
+  done
+
+  resolve_db
   mkdir -p "$INSTALL_DIR"
   # 二进制：本地 or Releases（先落临时位，校验可执行后启用——失败不影响在跑服务）
   if [ -n "$bin_src" ]; then
@@ -144,6 +248,8 @@ do_install() {
   fi
   "${BIN}.new" -h >/dev/null 2>&1 || { rm -f "${BIN}.new"; die "二进制不可执行（架构不匹配？）"; }
   mv "${BIN}.new" "$BIN"
+
+  [ "$DB_DIALECT" != "sqlite" ] && db_validate
   write_config
   if have_systemd; then
     write_unit
@@ -155,8 +261,9 @@ do_install() {
     warn "未检测到 systemd——文件已就绪，手动启动：cd ${INSTALL_DIR} && ${BIN} serve -conf ${CONF_DIR}"
   fi
   echo ""
+  echo "  ➜ 数据库: $([ "$DB_DIALECT" = "sqlite" ] && echo "SQLite（本地测试模式）" || echo "${DB_DIALECT} @ ${DB_HOST}:${DB_PORT}/${DB_NAME}")"
   echo "  ➜ 浏览器打开: http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 服务器IP):${PORT}"
-  echo "  ➜ 在线安装向导自动进入（推荐 PostgreSQL；SQLite 为本地测试模式）"
+  echo "  ➜ 在线安装向导自动进入（设置管理员即完成）"
   echo "  ➜ 管理命令: bash $0 {status|logs|restart|update|uninstall}"
 }
 

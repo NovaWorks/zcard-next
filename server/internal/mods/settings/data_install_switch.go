@@ -53,6 +53,14 @@ type dbSwitchInput struct {
 	RedisPassword string
 }
 
+// ValidateSwitchInput 校验目标库/Redis（安装脚本 dbtest 子命令复用；库不存在自动创建）。
+func ValidateSwitchInput(dialect, host string, port int32, user, password, name, redisAddr, redisPassword string) error {
+	return validateSwitch(context.Background(), dbSwitchInput{
+		Dialect: dialect, Host: host, Port: port, User: user, Password: password,
+		Name: name, RedisAddr: redisAddr, RedisPassword: redisPassword,
+	})
+}
+
 // buildDSN 按方言拼 DSN（与 config.example 口径一致）。
 func buildDSN(in dbSwitchInput) (string, error) {
 	switch in.Dialect {

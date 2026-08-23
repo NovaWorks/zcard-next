@@ -89,6 +89,8 @@ func main() {
 		err = admincmd.RunReencrypt(args)
 	case "install":
 		err = runInstall(args)
+	case "dbtest":
+		err = runDBTest(args)
 	case "self-update":
 		err = runSelfUpdate(args)
 	case "version":
@@ -304,6 +306,34 @@ func healthURL(bc *conf.Bootstrap) string {
 	}
 	parts := strings.Split(addr, ":")
 	return "http://127.0.0.1:" + parts[len(parts)-1] + "/health"
+}
+
+// runDBTest 安装脚本配套：目标库/Redis 连接校验（库不存在自动创建；成功 exit 0）。
+func runDBTest(args []string) error {
+	fs := flag.NewFlagSet("dbtest", flag.ExitOnError)
+	dialect := fs.String("dialect", "", "postgres | mysql")
+	host := fs.String("host", "127.0.0.1", "数据库主机")
+	port := fs.Int("port", 0, "数据库端口（0=按方言默认 5432/3306）")
+	user := fs.String("user", "", "数据库用户")
+	password := fs.String("password", "", "数据库密码")
+	name := fs.String("name", "", "数据库名")
+	redisAddr := fs.String("redis", "", "Redis 地址（mysql/postgres 必填）")
+	redisPassword := fs.String("redis-password", "", "Redis 密码")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *port == 0 {
+		if *dialect == "mysql" {
+			*port = 3306
+		} else {
+			*port = 5432
+		}
+	}
+	if err := settings.ValidateSwitchInput(*dialect, *host, int32(*port), *user, *password, *name, *redisAddr, *redisPassword); err != nil {
+		return err
+	}
+	fmt.Println("连接成功：数据库与 Redis 验证通过（库已就绪）")
+	return nil
 }
 
 // runMigrate 仅执行迁移。
