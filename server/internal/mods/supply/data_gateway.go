@@ -124,6 +124,7 @@ func (g *Gateway) Submit(ctx context.Context, req supplyport.PurchaseRequest) (*
 	}
 	res, err := a.CreateOrder(ctx, adapter.CreateOrderReq{
 		ProductCode:       req.ProductCode,
+		UpstreamSKU:       req.UpstreamSKU,
 		Quantity:          req.Quantity,
 		DownstreamOrderNo: req.DownstreamOrderNo,
 		TraceID:           req.TraceID,

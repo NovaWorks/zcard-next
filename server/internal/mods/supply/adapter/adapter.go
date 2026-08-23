@@ -63,11 +63,13 @@ type Category struct {
 
 // SKU 上游 SKU。
 type SKU struct {
-	ID       string
-	Code     string
-	Price    int64 // 分
-	Stock    int32 // -1 = 无限
-	IsActive bool
+	ID          string
+	Code        string // 上游 SKU 标识（acg=规格选择编码；dujiao=sku_id；zcard=sku code）
+	Name        string // 展示名（acg 组合名；缺省回退 Code）
+	Price       int64  // 分
+	Stock       int32  // -1 = 无限
+	IsActive    bool
+	SpecValues  map[string]string // 结构化规格（acg race+sku / dujiao spec_values）
 }
 
 // Product 上游商品（统一输出分）。
@@ -100,6 +102,7 @@ type ProductList struct {
 // CreateOrderReq 采购提交请求（DownstreamOrderNo 即幂等键，随请求发送）。
 type CreateOrderReq struct {
 	ProductCode       string // 上游商品标识（acg-faka: shared_code；dujiao: sku_id；zcard: product_id）
+	UpstreamSKU       string // 规格 SKU 标识（本地 product_skus.upstream_sku_id；acg=race|k=v 编码、dujiao=sku_id 覆盖 ProductCode；空=无规格）
 	Quantity          int
 	DownstreamOrderNo string // 幂等键（防重复下单；acg-faka 作 request_no 防重）
 	TraceID           string

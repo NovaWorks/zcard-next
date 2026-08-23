@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
@@ -494,6 +495,9 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 		if err != nil {
 			return 0, false, err
 		}
+		if err := r.syncUpstreamSkus(ctx, tc.SubsiteID, created.ID, in.SKUs); err != nil {
+			return 0, false, err
+		}
 		return created.ID, true, nil
 	}
 
@@ -521,7 +525,74 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	if err != nil {
 		return 0, false, err
 	}
+	if err := r.syncUpstreamSkus(ctx, tc.SubsiteID, updated.ID, in.SKUs); err != nil {
+		return 0, false, err
+	}
 	return updated.ID, false, nil
+}
+
+// syncUpstreamSkus 上游规格组合差量同步到 product_skus（按 name 唯一键）：
+// 新集合有 → 更新价格/规格/上游标识；没有 → 删除（仅删本同步来源的，
+// upstream_sku_id 非空的记录——本地手建 SKU 不受影响）。nil 入参 = 不动。
+func (r *ProductRepoImpl) syncUpstreamSkus(ctx context.Context, subsiteID, productID uint64, in []port.UpstreamSKUInput) error {
+	if in == nil {
+		return nil
+	}
+	client := data.Client(ctx, r.data)
+	existing, err := client.ProductSku.Query().
+		Where(productsku.ProductID(productID)).
+		All(ctx)
+	if err != nil {
+		return err
+	}
+	type wanted struct {
+		id, name string
+		price    int64
+		spec     map[string]string
+	}
+	want := make(map[string]wanted, len(in))
+	for _, s := range in {
+		name := s.Name
+		if name == "" {
+			name = s.Code
+		}
+		want[name] = wanted{id: s.Code, name: name, price: s.PriceCents, spec: s.SpecValues}
+	}
+	for _, e := range existing {
+		w, ok := want[e.Name]
+		if !ok {
+			// 上游已无此组合：仅删同步来源的 SKU（本地手建 upstream_sku_id 为空）
+			if e.UpstreamSkuID != "" {
+				if err := client.ProductSku.DeleteOneID(e.ID).Exec(ctx); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		delete(want, e.Name)
+		if err := client.ProductSku.UpdateOneID(e.ID).
+			SetName(w.name).
+			SetPrice(w.price).
+			SetSpecValues(w.spec).
+			SetUpstreamSkuID(w.id).
+			Exec(ctx); err != nil {
+			return err
+		}
+	}
+	creates := make([]*ent.ProductSkuCreate, 0, len(want))
+	for _, w := range want {
+		creates = append(creates, client.ProductSku.Create().
+			SetSubsiteID(subsiteID).
+			SetProductID(productID).
+			SetName(w.name).
+			SetPrice(w.price).
+			SetSpecValues(w.spec).
+			SetUpstreamSkuID(w.id))
+	}
+	if len(creates) > 0 {
+		return client.ProductSku.CreateBulk(creates...).Exec(ctx)
+	}
+	return nil
 }
 
 // ListSupplyCategories 供货目录分类（port.SupplierCatalog；主站一级分类）。

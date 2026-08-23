@@ -129,10 +129,17 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	traceID := fmt.Sprintf("po-%d-%s", po.ID, payload.OrderNo)
 	_ = s.repo.EnsureTraceID(ctx, po.ID, traceID)
 
+	// 规格选择：客户所选本地 SKU 的上游标识（acg=race|k=v 编码 / dujiao=sku_id）
+	upstreamSKU := ""
+	if skuID > 0 {
+		upstreamSKU = s.reader.SkuUpstreamCode(ctx, payload.SubsiteID, skuID)
+	}
+
 	// 提交
 	res, err := s.gw.Submit(ctx, supplyport.PurchaseRequest{
 		ConnectionID:      p.UpstreamSourceID,
 		ProductCode:       p.UpstreamProductCode,
+		UpstreamSKU:       upstreamSKU,
 		Quantity:          int(quantity),
 		DownstreamOrderNo: fmt.Sprintf("order_item:%d", orderItemID),
 		TraceID:           traceID,

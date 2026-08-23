@@ -191,11 +191,16 @@ func (a *dujiaoAdapter) GetStock(ctx context.Context, productCode, _ string) (in
 }
 
 func (a *dujiaoAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*CreateOrderResult, error) {
-	// dujiao sku_id 是数字（uint）：ProductCode 为字符串数字（同步侧商品 ID），
-	// 序列化为 JSON 数字（字符串会 400 cannot unmarshal）
-	skuID, err := strconv.ParseUint(req.ProductCode, 10, 64)
+	// dujiao 下单对象是 SKU ID（数字 uint）。规格化下单：UpstreamSKU 优先
+	// （同步侧 SKU 级 upstream_sku_id=dujiao sku_id）；无规格回退 ProductCode
+	// （商品级映射的历史语义——多 SKU 商品应配 SKU 售卖）。序列化为 JSON 数字。
+	code := req.UpstreamSKU
+	if code == "" {
+		code = req.ProductCode
+	}
+	skuID, err := strconv.ParseUint(code, 10, 64)
 	if err != nil || skuID == 0 {
-		return nil, fmt.Errorf("adapter.dujiao: ProductCode %q 非数字 sku_id（dujiao 商品 ID/SKU ID 数字语义）", req.ProductCode)
+		return nil, fmt.Errorf("adapter.dujiao: 下单标识 %q 非数字 sku_id（dujiao 商品 ID/SKU ID 数字语义）", code)
 	}
 	body := map[string]any{
 		"sku_id":              skuID,
@@ -324,11 +329,12 @@ type dujiaoProduct struct {
 	IsActive    bool   `json:"is_active"`
 	StockStatus string `json:"stock_status"`
 	SKUs        []struct {
-		ID            any    `json:"id"`
-		SKUCode       string `json:"sku_code"`
-		PriceAmount   string `json:"price_amount"`
-		StockQuantity int32  `json:"stock_quantity"`
-		IsActive      bool   `json:"is_active"`
+		ID            any               `json:"id"`
+		SKUCode       string            `json:"sku_code"`
+		PriceAmount   string            `json:"price_amount"`
+		StockQuantity int32             `json:"stock_quantity"`
+		IsActive      bool              `json:"is_active"`
+		SpecValues    map[string]string `json:"spec_values"` // 规格（jsonmap.JSON）
 	} `json:"skus"`
 	WholesalePrices []struct {
 		UnitPrice string `json:"unit_price"`
@@ -355,12 +361,15 @@ func (p dujiaoProduct) toProduct() Product {
 		if !s.IsActive {
 			continue // 下架 SKU 不同步（1.x 同款）
 		}
+		skuID := idString(s.ID)
 		sku := SKU{
-			ID:       idString(s.ID),
-			Code:     s.SKUCode,
-			Price:    parseYuanToCents(s.PriceAmount),
-			Stock:    s.StockQuantity,
+			ID:     skuID,
+			Code:   skuID, // 下单反解键：dujiao sku_id（数字）→ product_skus.upstream_sku_id
+			Name:   firstNonEmpty(s.SKUCode, skuID),
+			Price:  parseYuanToCents(s.PriceAmount),
+			Stock:  s.StockQuantity,
 			IsActive: true,
+			SpecValues: s.SpecValues,
 		}
 		if out.Stock == -1 {
 			out.Stock = s.StockQuantity // 商品级库存 = 第一个启用 SKU 的库存

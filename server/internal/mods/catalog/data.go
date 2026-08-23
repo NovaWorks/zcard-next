@@ -81,6 +81,15 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 }
 
 // Get 单个商品。
+// SkuUpstreamCode 本地 SKU 的上游标识（procurement 规格采购还原；不存在 → 空串）。
+func (r *ProductRepoImpl) SkuUpstreamCode(ctx context.Context, subsiteID, skuID uint64) string {
+	sku, err := data.Client(ctx, r.data).ProductSku.Get(ctx, skuID)
+	if err != nil || sku.SubsiteID != subsiteID {
+		return ""
+	}
+	return sku.UpstreamSkuID
+}
+
 func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.Product, error) {
 	row, err := data.Client(ctx, r.data).Product.Query().
 		Where(product.ID(id), product.SubsiteID(subsiteID)).

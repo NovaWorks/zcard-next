@@ -7,6 +7,7 @@ import "context"
 type PurchaseRequest struct {
 	ConnectionID      uint64
 	ProductCode       string // 上游商品标识（映射后的上游键）
+	UpstreamSKU       string // 规格 SKU 上游标识（本地 product_skus.upstream_sku_id：acg=规格选择编码、dujiao=sku_id；空=无规格）
 	Quantity          int
 	DownstreamOrderNo string // 幂等键（防重复下单）
 	TraceID           string

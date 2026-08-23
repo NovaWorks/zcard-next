@@ -84,6 +84,9 @@ type ProductReader interface {
 	ListVisible(ctx context.Context, f VisibleFilter) (items []Product, total int64, err error)
 	// Get 取单个商品（含下架/隐藏，调用方决定可见性语义）。
 	Get(ctx context.Context, subsiteID, id uint64) (*Product, error)
+	// SkuUpstreamCode 本地 SKU 的上游标识（product_skus.upstream_sku_id；
+	// 采购提交时还原规格选择。不存在/未同步来源 → 空串）。
+	SkuUpstreamCode(ctx context.Context, subsiteID, skuID uint64) string
 }
 
 // PricingResolver 商品定价解析（order 价格管线消费，通道 A）：
@@ -150,6 +153,15 @@ type UpstreamProductInput struct {
 	FactoryPrice        int64  // 分（上游成本快照）
 	Status              int8   // 1=上架 2=隐藏 0=下架
 	AutoOnshelf         bool   // 新建商品时是否上架（settings.auto_onshelf）
+	SKUs                []UpstreamSKUInput // 上游规格组合（空=不动现有 SKU；显式空切片语义同空——上游无规格时不清理本地手建 SKU）
+}
+
+// UpstreamSKUInput 上游规格组合（acg 笛卡尔积 / dujiao SKU）。
+type UpstreamSKUInput struct {
+	Code        string            // 上游 SKU 标识（acg 规格选择编码；dujiao sku_id）→ product_skus.upstream_sku_id
+	Name        string            // 展示名（缺省回退 Code）
+	PriceCents  int64             // 组合价（已过定价管线）
+	SpecValues  map[string]string // 结构化规格 {规格: 值}
 }
 
 // UpstreamProductWriter 货源同步商品 upsert 端口（supply 模块消费，通道 A）。

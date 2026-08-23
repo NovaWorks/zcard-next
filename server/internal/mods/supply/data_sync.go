@@ -430,6 +430,19 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 			stats.PriceUpdated++
 		}
 	}
+	// 规格组合 SKU（acg race×sku 笛卡尔积 / dujiao SKU）：组合价套用同一定价管线；
+	// 价格保护关闭（writePrice=false）时 SKU 价保持现值（-1 语义由差量同步的「更新」跳过实现——
+	// 此处直接不下发 SKUs，避免覆盖运营改价）
+	if writePrice {
+		for _, sk := range p.SKUs {
+			write.SKUs = append(write.SKUs, catalogport.UpstreamSKUInput{
+				Code:       sk.Code,
+				Name:       sk.Name,
+				PriceCents: ApplyPricing(sk.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode)),
+				SpecValues: sk.SpecValues,
+			})
+		}
+	}
 	productID, created, err := s.writer.UpsertUpstreamProduct(ctx, write)
 	if err != nil {
 		return false, err

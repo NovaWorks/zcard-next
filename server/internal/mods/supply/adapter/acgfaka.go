@@ -135,6 +135,7 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			Stock        *int32 `json:"stock"`  // 仅自动发货商品有；手动发货缺省
 			CategoryID   any    `json:"category_id"`
 			DeliveryWay  int    `json:"delivery_way"`
+			Config       string `json:"config"` // INI 字符串（items 直出原始 INI；item 接口为数组——本适配器只消费 items）
 		} `json:"children"`
 	}
 	if err := json.Unmarshal(raw, &cats); err != nil {
@@ -153,6 +154,31 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			if desc == "" {
 				desc = p.Introduce
 			}
+			// 手动发货商品（delivery_way=1）不随 API 上架：其订单查询恒返回
+			// 占位文案（Bind/Order.php:1231 delivery_message/「正在发货中…」），
+			// API 通道永远拿不到真实卡密——同步为下架，需售卖请本地建品人工发货
+			active := p.Status == 1 && p.DeliveryWay == 0
+
+			// 多规格（[category] race + [sku] 加价规格）→ 笛卡尔积组合 SKU
+			// （组合超护栏/含编码保留字符 → 整品隐藏防误售，价格语义不完整）
+			var skus []SKU
+			ini, _ := parseAcgINI(p.Config)
+			combos, comboErr := buildAcgCombos(ini, p.Price.Cents())
+			if comboErr != nil {
+				active = false
+			} else {
+				for _, c := range combos {
+					skus = append(skus, SKU{
+						ID:         c.Code,
+						Code:       c.Code,
+						Name:       c.Name,
+						Price:      c.BaseCents + c.AddCents,
+						Stock:      -1,
+						IsActive:   true,
+						SpecValues: specValuesOf(c),
+					})
+				}
+			}
 			out.Items = append(out.Items, Product{
 				ID:           p.Code,
 				Name:         p.Name,
@@ -161,8 +187,9 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 				FactoryPrice: p.FactoryPrice.Cents(),
 				Description:  desc,
 				Cover:        p.Cover,
-				IsActive:     p.Status == 1,
+				IsActive:     active,
 				Stock:        stock,
+				SKUs:         skus,
 			})
 		}
 	}
@@ -170,8 +197,18 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 	return out, nil
 }
 
-func (a *acgFakaAdapter) GetStock(ctx context.Context, productCode, _ string) (int32, error) {
-	data, err := a.signedPost(ctx, "/shared/commodity/stock", map[string]string{"code": productCode})
+func (a *acgFakaAdapter) GetStock(ctx context.Context, productCode, skuCode string) (int32, error) {
+	params := map[string]string{"code": productCode}
+	if skuCode != "" {
+		fields, err := AcgSpecFormFields(skuCode)
+		if err != nil {
+			return 0, fmt.Errorf("adapter.acgfaka: 规格编码非法: %w", err)
+		}
+		for k, v := range fields {
+			params[k] = v
+		}
+	}
+	data, err := a.signedPost(ctx, "/shared/commodity/stock", params)
 	if err != nil {
 		return 0, err
 	}
@@ -215,13 +252,26 @@ func dropPlaceholderCards(cards []string) []string {
 }
 
 func (a *acgFakaAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*CreateOrderResult, error) {
-	data, err := a.signedPost(ctx, "/shared/commodity/trade", map[string]string{
+	params := map[string]string{
 		"shared_code": req.ProductCode,
 		"num":         strconv.Itoa(req.Quantity),
 		"contact":     req.TraceID,
 		"request_no":  req.DownstreamOrderNo, // 防重键（上游重复即报错，窗口见 doc.go）
 		"card_id":     "0",
-	})
+	}
+	// 多规格：本地 SKU 携带的选择编码 → race + sku[规格名] 表单字段
+	// （PHP 侧把 sku[名] 解析回嵌套数组；我方按字母序发送 == 签名 ksort 序，
+	//  与服务端 http_build_query 输出字节一致——黄金向量锁死）
+	if req.UpstreamSKU != "" {
+		fields, err := AcgSpecFormFields(req.UpstreamSKU)
+		if err != nil {
+			return nil, fmt.Errorf("adapter.acgfaka: 规格编码非法: %w", err)
+		}
+		for k, v := range fields {
+			params[k] = v
+		}
+	}
+	data, err := a.signedPost(ctx, "/shared/commodity/trade", params)
 	if err != nil {
 		return nil, err
 	}
@@ -295,4 +345,16 @@ func (a *acgFakaAdapter) RefundOrder(ctx context.Context, _ string) error {
 // ListOrders 对账列表能力：协议未开放订单列表端点。
 func (a *acgFakaAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error) {
 	return nil, ErrNotSupported
+}
+
+// specValuesOf 组合 → 结构化规格值（种类 + 各规格名=选项）。
+func specValuesOf(c acgCombo) map[string]string {
+	out := make(map[string]string, len(c.Choices)+1)
+	if c.Race != "" {
+		out["种类"] = c.Race
+	}
+	for k, v := range c.Choices {
+		out[k] = v
+	}
+	return out
 }
