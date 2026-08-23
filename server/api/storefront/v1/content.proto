@@ -51,6 +51,7 @@ message ListPostsRequest {
   string locale = 2;
   int32 page = 3;
   int32 page_size = 4;
+  uint64 category_id = 5; // 栏目过滤；0 = 全部
 }
 
 message StorePost {

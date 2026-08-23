@@ -69,7 +69,7 @@ export function upsertPromotion(data: { id?: number; name: string; scope_json?: 
   return request({ url: "/api/v1/admin/promotions", method: "post", data });
 }
 
-// ── 内容管理（content:read / write）：横幅 + 文章 ──
+// ── 内容管理（content:read / write）：横幅 + 文章 + 文章栏目 ──
 
 export function fetchBanners(params?: { position?: string; page?: number; page_size?: number }) {
   return request({ url: "/api/v1/admin/content/banners", params });
@@ -91,7 +91,7 @@ export function fetchPosts(params?: { page?: number; page_size?: number }) {
   return request({ url: "/api/v1/admin/content/posts", params });
 }
 
-export function createPost(data: { slug: string; type: string; title_json: string; summary_json?: string; content_json: string; is_published?: boolean }) {
+export function createPost(data: { slug: string; type: string; title_json: string; summary_json?: string; content_json: string; category_id?: number; is_published?: boolean }) {
   return request({ url: "/api/v1/admin/content/posts", method: "post", data });
 }
 
@@ -105,4 +105,22 @@ export function publishPost(id: number, publish: boolean) {
 
 export function deletePost(id: number) {
   return request({ url: `/api/v1/admin/content/posts/${id}`, method: "delete" });
+}
+
+// ── 文章栏目（content:read / write）──
+
+export function fetchPostCategories() {
+  return request({ url: "/api/v1/admin/content/categories" });
+}
+
+export function createPostCategory(data: { name: string; slug: string; sort?: number }) {
+  return request({ url: "/api/v1/admin/content/categories", method: "post", data });
+}
+
+export function updatePostCategory(id: number, data: { name?: string; sort?: number }) {
+  return request({ url: `/api/v1/admin/content/categories/${id}`, method: "put", data });
+}
+
+export function deletePostCategory(id: number) {
+  return request({ url: `/api/v1/admin/content/categories/${id}`, method: "delete" });
 }

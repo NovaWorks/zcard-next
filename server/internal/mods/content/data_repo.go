@@ -337,13 +337,16 @@ func (r *ContentRepo) ListPosts(ctx context.Context, typ string, page, pageSize 
 	return rows, total, err
 }
 
-// ListPublishedPosts 已发布文章分页。
-func (r *ContentRepo) ListPublishedPosts(ctx context.Context, typ string, page, pageSize int) ([]*ent.Post, int, error) {
+// ListPublishedPosts 已发布文章分页（type + 栏目过滤；0 栏目 = 全部）。
+func (r *ContentRepo) ListPublishedPosts(ctx context.Context, typ string, categoryID uint64, page, pageSize int) ([]*ent.Post, int, error) {
 	q := data.Client(ctx, r.data).Post.Query().
 		Where(post.IsPublished(true)).
 		Order(ent.Desc(post.FieldPublishedAt))
 	if typ != "" {
 		q = q.Where(post.TypeEQ(post.Type(typ)))
+	}
+	if categoryID > 0 {
+		q = q.Where(post.CategoryID(categoryID))
 	}
 	total, err := q.Count(ctx)
 	if err != nil {

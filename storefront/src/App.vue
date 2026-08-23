@@ -92,8 +92,8 @@
     <!-- 右下角客服（第三方脚本原生气泡 / 本站链接浮窗） -->
     <ServiceWidget />
 
-    <!-- 公告弹窗（首次访问自动弹出 + 导航喇叭入口） -->
-    <NoticeModal :show="noticeShow" :post="noticePost" :content="noticeContent" @update:show="(v: boolean) => (noticeShow = v)" />
+    <!-- 公告弹窗（首次访问自动弹出 + 导航喇叭/首页公告轮播入口） -->
+    <NoticeModal :show="noticeShow" :post="noticePost" :content="noticeContent" :announcement="noticeAnnouncement" @update:show="(v: boolean) => (noticeShow = v)" />
   </div>
 </template>
 
@@ -102,7 +102,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
-import { listPosts, getPost, type StorePost } from '@/api';
+import { listPosts, getPost, fetchAnnouncement, type StorePost, type AnnouncementConfig } from '@/api';
 import { mergeGuestCart, refreshCartState, cartState } from '@/cart';
 import { captureRefCode } from '@/ref';
 import NoticeModal from '@/components/NoticeModal.vue';
@@ -153,12 +153,22 @@ function scrollTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// ── 公告弹窗（首次访问自动弹出；导航喇叭随时重开）──
+// ── 公告弹窗（设置公告优先；回落最新公告文章；首次访问自动弹出 + 导航喇叭/首页轮播随时重开）──
 const noticeShow = ref(false);
 const noticePost = ref<StorePost | null>(null);
 const noticeContent = ref('');
+const noticeAnnouncement = ref<AnnouncementConfig | null>(null);
 
 async function loadNotice() {
+  // 设置公告（ops.announcement）：text/image/carousel 任一配置生效即优先
+  const ann = await fetchAnnouncement();
+  if ((ann.type === 'text' && ann.text) || ann.images.length) {
+    noticeAnnouncement.value = ann;
+    noticePost.value = null;
+    noticeContent.value = '';
+    return;
+  }
+  noticeAnnouncement.value = null;
   const { data } = await listPosts('notice', 1, 1);
   const post = data?.posts?.[0];
   if (!post) return;
@@ -168,7 +178,7 @@ async function loadNotice() {
 }
 
 function openNotice() {
-  if (noticePost.value) noticeShow.value = true;
+  if (noticePost.value || noticeAnnouncement.value) noticeShow.value = true;
   else {
     // 尚未加载（或失败）：静默拉一次再弹
     loadNotice().then(() => { noticeShow.value = true; });
@@ -201,12 +211,17 @@ onMounted(async () => {
   }
   // 公告：每会话首次访问自动弹出（sessionStorage 标记）
   await loadNotice();
-  if (noticePost.value && !sessionStorage.getItem('zc_notice_shown')) {
+  if ((noticePost.value || noticeAnnouncement.value) && !sessionStorage.getItem('zc_notice_shown')) {
     sessionStorage.setItem('zc_notice_shown', '1');
     noticeShow.value = true;
   }
+  // 首页公告轮播点击 → 打开弹窗
+  window.addEventListener('zcard-open-notice', openNotice);
 });
-onUnmounted(() => window.removeEventListener('scroll', onScroll));
+onUnmounted(() => {
+  window.removeEventListener('scroll', onScroll);
+  window.removeEventListener('zcard-open-notice', openNotice);
+});
 
 function onLogout() {
   logout();

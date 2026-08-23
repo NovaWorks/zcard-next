@@ -208,6 +208,7 @@ type ListPostsRequest struct {
 	Locale        string                 `protobuf:"bytes,2,opt,name=locale,proto3" json:"locale,omitempty"`
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	CategoryId    uint64                 `protobuf:"varint,5,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"` // 栏目过滤；0 = 全部
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -266,6 +267,13 @@ func (x *ListPostsRequest) GetPage() int32 {
 func (x *ListPostsRequest) GetPageSize() int32 {
 	if x != nil {
 		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListPostsRequest) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
 	}
 	return 0
 }
@@ -699,12 +707,14 @@ const file_storefront_v1_content_proto_rawDesc = "" +
 	"\n" +
 	"link_value\x18\x06 \x01(\tR\tlinkValue\"R\n" +
 	"\x10ListBannersReply\x12>\n" +
-	"\abanners\x18\x01 \x03(\v2$.zcard.api.storefront.v1.StoreBannerR\abanners\"o\n" +
+	"\abanners\x18\x01 \x03(\v2$.zcard.api.storefront.v1.StoreBannerR\abanners\"\x90\x01\n" +
 	"\x10ListPostsRequest\x12\x12\n" +
 	"\x04type\x18\x01 \x01(\tR\x04type\x12\x16\n" +
 	"\x06locale\x18\x02 \x01(\tR\x06locale\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xd5\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1f\n" +
+	"\vcategory_id\x18\x05 \x01(\x04R\n" +
+	"categoryId\"\xd5\x01\n" +
 	"\tStorePost\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x12\n" +

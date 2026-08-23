@@ -72,11 +72,11 @@ func (s *StoreContentService) ListBanners(ctx context.Context, req *storefrontv1
 	return &storefrontv1.ListBannersReply{Banners: out}, nil
 }
 
-// ListPosts 已发布文章分页。
+// ListPosts 已发布文章分页（type + 栏目过滤）。
 func (s *StoreContentService) ListPosts(ctx context.Context, req *storefrontv1.ListPostsRequest) (*storefrontv1.ListPostsReply, error) {
 	locale := orDefault(req.GetLocale(), "zh_CN")
 	page, size := pageParams(req.GetPage(), req.GetPageSize())
-	rows, total, err := s.repo.ListPublishedPosts(ctx, req.GetType(), page, size)
+	rows, total, err := s.repo.ListPublishedPosts(ctx, req.GetType(), req.GetCategoryId(), page, size)
 	if err != nil {
 		return nil, err
 	}

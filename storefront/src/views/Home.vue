@@ -1,17 +1,17 @@
 <template>
   <div class="home">
-    <!-- Hero 轮播（banners 数据；无图回退渐变品牌区） -->
-    <div v-if="banners.length" class="hero-slider">
+    <!-- Hero 轮播（公告设置 image/carousel 优先；回落横幅；无图回退渐变品牌区） -->
+    <div v-if="heroItems.length" class="hero-slider" @mouseenter="stopHero" @mouseleave="startHero">
       <div class="hero-track" :style="{ transform: `translateX(-${heroIndex * 100}%)` }">
-        <div v-for="b in banners" :key="b.id" class="hero-slide" @click="openBanner(b)">
-          <img :src="bannerImg(b)" :alt="b.title" />
-          <div v-if="b.title" class="hero-title">{{ b.title }}</div>
+        <div v-for="item in heroItems" :key="item.key" class="hero-slide" @click="item.onClick">
+          <img :src="item.img" :alt="item.title" />
+          <div v-if="item.title" class="hero-title">{{ item.title }}</div>
         </div>
       </div>
-      <div v-if="banners.length > 1" class="hero-dots">
+      <div v-if="heroItems.length > 1" class="hero-dots">
         <span
-          v-for="(b, i) in banners"
-          :key="b.id"
+          v-for="(item, i) in heroItems"
+          :key="item.key"
           class="hero-dot"
           :class="{ active: i === heroIndex }"
           @click="heroIndex = i"
@@ -31,11 +31,11 @@
       <span class="hero-icon">🎁</span>
     </div>
 
-    <!-- 公告条 -->
-    <div v-if="latestNotice" class="notice-bar" @click="$router.push('/posts?type=notice')">
+    <!-- 公告条（设置文本优先；回落最新公告文章） -->
+    <div v-if="noticeBarText" class="notice-bar" @click="$router.push('/posts?type=notice')">
       <span class="tag">公告</span>
-      <span class="notice-title">{{ latestNotice.title }}</span>
-      <span class="muted">{{ formatDate(latestNotice.published_at) }}</span>
+      <span class="notice-title">{{ noticeBarText }}</span>
+      <span v-if="latestNotice && !announcementText" class="muted">{{ formatDate(latestNotice.published_at) }}</span>
     </div>
 
     <!-- 左右布局：PC 左侧多级分类树 + 右侧内容；移动端横向胶囊兜底 -->
@@ -124,7 +124,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { listProducts, listBanners, listPosts, listCategories, type Product, type Banner, type StorePost, type CategoryItem } from '@/api';
+import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
 import { formatMoney } from '@/api/client';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
@@ -142,6 +142,7 @@ const viewMode = ref<'grid' | 'list'>('grid');
 const page = ref(1);
 const pageSize = ref(12);
 const total = ref(0);
+const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [] });
 
 const siteName = 'ZCard 商店';
 const sectionTitle = computed(() =>
@@ -172,14 +173,33 @@ function goPage(p: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Hero 轮播
+// Hero 轮播：公告设置 image/carousel 优先；否则用生效横幅；点击行为跟随来源
+const heroItems = computed(() => {
+  const items: { key: string; img: string; title: string; onClick?: () => void }[] = [];
+  const ann = announcement.value;
+  if ((ann.type === 'image' || ann.type === 'carousel') && ann.images.length) {
+    ann.images.forEach((img, i) => items.push({ key: `ann-${i}`, img, title: '', onClick: openAnnouncement }));
+  } else {
+    banners.value.forEach((b) => items.push({ key: `bn-${b.id}`, img: bannerImg(b), title: b.title, onClick: () => openBanner(b) }));
+  }
+  return items;
+});
+// 公告条：设置文本优先，回落最新公告文章标题
+const announcementText = computed(() => (announcement.value.type === 'text' ? announcement.value.text : ''));
+const noticeBarText = computed(() => announcementText.value || latestNotice.value?.title || '');
+
+// 点击公告轮播 → 打开全局公告弹窗（App.vue 监听）
+function openAnnouncement() {
+  window.dispatchEvent(new CustomEvent('zcard-open-notice'));
+}
+
 const heroIndex = ref(0);
 let heroTimer: ReturnType<typeof setInterval> | null = null;
 function startHero() {
   stopHero();
-  if (banners.value.length > 1) {
+  if (heroItems.value.length > 1) {
     heroTimer = setInterval(() => {
-      heroIndex.value = (heroIndex.value + 1) % banners.value.length;
+      heroIndex.value = (heroIndex.value + 1) % heroItems.value.length;
     }, 4500);
   }
 }
@@ -235,14 +255,16 @@ async function load() {
 
 onMounted(async () => {
   load();
-  const [{ data: b }, { data: n }, { data: c }] = await Promise.all([
+  const [b, n, c, a] = await Promise.all([
     listBanners('top'),
     listPosts('notice', 1, 1),
     listCategories(),
+    fetchAnnouncement(),
   ]);
-  banners.value = b?.banners || [];
-  latestNotice.value = n?.posts?.[0] || null;
-  categories.value = c?.categories || [];
+  banners.value = b?.data?.banners || [];
+  latestNotice.value = n?.data?.posts?.[0] || null;
+  categories.value = c?.data?.categories || [];
+  announcement.value = a;
   startHero();
 });
 onUnmounted(stopHero);

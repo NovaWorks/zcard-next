@@ -652,7 +652,7 @@ declare namespace App {
           maintenance: string;
           maintenance_style: string;
           announcement_type: string;
-          announcement: string;
+          announcement: string | string[]; // text/image 为字符串；carousel 为图片数组
           installed_at: string;
         };
         recharge: {

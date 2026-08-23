@@ -707,16 +707,72 @@ export interface StorePost {
   published_at?: number;
 }
 
+export interface PostCategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 export function listBanners(position?: string, locale?: string) {
   return api.get<{ banners: Banner[] }>('/banners', { position, locale });
 }
 
-export function listPosts(type?: string, page = 1, pageSize = 20, locale?: string) {
-  return api.get<{ posts: StorePost[]; total: number; page: number; page_size: number }>('/posts', { type, page, page_size: pageSize, locale });
+export function listPosts(type?: string, page = 1, pageSize = 20, locale?: string, categoryId = 0) {
+  return api.get<{ posts: StorePost[]; total: number; page: number; page_size: number }>('/posts', {
+    type,
+    page,
+    page_size: pageSize,
+    locale,
+    category_id: categoryId || undefined,
+  });
 }
 
 export function getPost(slug: string, locale?: string) {
   return api.get<{ post: StorePost; content: string }>(`/posts/${slug}`, { locale });
+}
+
+export function listPostCategories(locale?: string) {
+  return api.get<{ categories: PostCategory[] }>('/post-categories', { locale });
+}
+
+/** 公告设置（config 公开下发：ops.announcement_type + ops.announcement） */
+export interface AnnouncementConfig {
+  type: string;     // text | image | carousel
+  text: string;     // text 类型内容
+  images: string[]; // image/carousel 图片列表
+}
+export async function fetchAnnouncement(): Promise<AnnouncementConfig> {
+  const def: AnnouncementConfig = { type: "text", text: "", images: [] };
+  try {
+    const resp = await fetch("/api/v1/storefront/config");
+    const json = await resp.json();
+    const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
+    let type = "text";
+    const typeRaw = find("ops.announcement_type");
+    if (typeRaw !== undefined) {
+      try {
+        const v = JSON.parse(typeRaw);
+        if (typeof v === "string") type = v;
+      } catch { /* 保留默认 */ }
+    }
+    const text = "";
+    const images: string[] = [];
+    const raw = find("ops.announcement");
+    if (raw) {
+      try {
+        const v = JSON.parse(raw);
+        if (typeof v === "string") {
+          if (type === "text") return { type, text: v, images: [] };
+          images.push(v);
+        } else if (Array.isArray(v)) {
+          images.push(...v.filter((x): x is string => typeof x === "string" && !!x));
+        }
+      } catch { /* 保留默认 */ }
+    }
+    return { type, text, images };
+  } catch {
+    return def;
+  }
 }
 
 // ── 供货对接申请（个人中心）：申请 → 后台审核 → 凭据管理 ──
