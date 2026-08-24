@@ -117,7 +117,7 @@ async function handleCreate() {
 
 async function handleRename() {
   if (!renaming.value || !renameText.value.trim()) return;
-  const { error } = await updateCategory(renaming.value.id, { name: renameText.value.trim() });
+  const { error } = await updateCategory(renaming.value.id, { name: renameText.value.trim(), parent_id: -1 });
   if (!error) {
     window.$message?.success("已重命名");
     renaming.value = null;
@@ -157,6 +157,72 @@ function handleMenu(key: string | number, cat: any) {
     deleteConfirm.show = true;
   }
 }
+
+// ── 拖拽调层级（HTML5 DnD）：拖到分类行 = 设为该分类子级；拖到顶部释放区 = 顶级 ──
+const dragId = ref<number | null>(null);
+const dragOverId = ref<number | null>(null);
+const dropToRoot = ref(false);
+
+function onDragStart(cat: any) {
+  dragId.value = cat.id;
+}
+
+function onDragOver(cat: any) {
+  dragOverId.value = cat.id;
+}
+
+function onDragLeave() {
+  dragOverId.value = null;
+}
+
+// 目标是否非法（自身/自身后代）
+function invalidTarget(draggedId: number, targetId: number) {
+  if (draggedId === targetId) return true;
+  const byId = new Map<number, any>();
+  for (const c of categories.value) byId.set(c.id, { ...c, children: [] as any[] });
+  for (const node of byId.values()) {
+    if (node.parent_id && byId.has(node.parent_id)) byId.get(node.parent_id)!.children.push(node);
+  }
+  const stack = [draggedId];
+  while (stack.length) {
+    const cur = stack.pop()!;
+    if (cur === targetId) return true;
+    for (const child of byId.get(cur)?.children || []) stack.push(child.id);
+  }
+  return false;
+}
+
+async function onDrop(target: any) {
+  const from = dragId.value;
+  dragId.value = null;
+  dragOverId.value = null;
+  dropToRoot.value = false;
+  if (!from || !target) return;
+  if (invalidTarget(from, target.id)) {
+    window.$message?.warning("不能把分类移到自身或它的子分类下");
+    return;
+  }
+  const { error } = await updateCategory(from, { parent_id: target.id });
+  if (!error) {
+    window.$message?.success(`已移到「${target.name}」下`);
+    load();
+    emit("refresh");
+  }
+}
+
+async function onDropToRoot() {
+  const from = dragId.value;
+  dragId.value = null;
+  dragOverId.value = null;
+  dropToRoot.value = false;
+  if (!from) return;
+  const { error } = await updateCategory(from, { parent_id: 0 });
+  if (!error) {
+    window.$message?.success("已设为顶级分类");
+    load();
+    emit("refresh");
+  }
+}
 </script>
 
 <template>
@@ -187,8 +253,17 @@ function handleMenu(key: string | number, cat: any) {
       <NButton size="small" type="primary" :loading="creating" @click="handleCreate">创建</NButton>
     </div>
 
-    <!-- 树列表 -->
-    <NScrollbar class="max-h-360px rounded-4px border border-gray-200 dark:border-gray-700">
+    <!-- 树列表（行可拖拽调层级：拖到分类行=设为子级；拖到顶部释放区=顶级） -->
+    <div
+      class="mb-4px rounded-4px border border-dashed px-10px py-6px text-center text-12px"
+      :class="dropToRoot ? 'border-blue-400 bg-blue-50 text-blue-500' : 'border-gray-300 text-gray-400 dark:border-gray-600'"
+      @dragover.prevent="dropToRoot = true"
+      @dragleave="dropToRoot = false"
+      @drop.prevent="onDropToRoot"
+    >
+      {{ dropToRoot ? '松开设为顶级分类' : '拖拽分类到此处 = 设为顶级' }}
+    </div>
+    <NScrollbar class="max-h-340px rounded-4px border border-gray-200 dark:border-gray-700">
       <NEmpty
         v-if="!flatTree.length && !loading"
         size="small"
@@ -198,8 +273,14 @@ function handleMenu(key: string | number, cat: any) {
       <div
         v-for="cat in flatTree"
         :key="cat.id"
-        class="group flex cursor-default items-center justify-between py-7px pr-10px text-13px hover:bg-gray-100 dark:hover:bg-gray-800"
+        draggable="true"
+        class="group flex cursor-grab items-center justify-between py-7px pr-10px text-13px hover:bg-gray-100 dark:hover:bg-gray-800 active:cursor-grabbing"
+        :class="dragId === cat.id ? 'opacity-40' : dragOverId === cat.id ? 'bg-blue-50 dark:bg-blue-900/30' : ''"
         :style="{ paddingLeft: `${10 + cat.depth * 16}px` }"
+        @dragstart="onDragStart(cat)"
+        @dragover.prevent="onDragOver(cat)"
+        @dragleave="onDragLeave"
+        @drop.prevent="onDrop(cat)"
       >
         <span class="flex items-center gap-6px">
           <NTag v-if="cat.hide" size="tiny" :bordered="false">隐藏</NTag>

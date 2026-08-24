@@ -6,7 +6,7 @@ import {
   NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInput, NInputNumber,
   NModal, NSelect, NSpace, NSpin, NTag,
 } from "naive-ui";
-import { previewSupplyProducts, importSupplyProducts } from "@/service/api";
+import { previewSupplyProducts, importSupplyProducts, createCategory } from "@/service/api";
 import { fetchCategories } from "@/service/api";
 import { formatMoney, yuanToFen } from "@/utils/money";
 
@@ -93,6 +93,39 @@ async function loadPreview() {
 async function loadLocalCategories() {
   const { data, error } = await fetchCategories();
   if (!error && data) localCategories.value = (data as any).categories || [];
+}
+
+// ── 一键创建上游分类：上游有哪些分类就建哪些（同名复用已有分类）；创建后自动填入映射 ──
+const creatingCats = ref(false);
+
+async function createUpstreamCategories() {
+  if (!categories.value.length) return;
+  creatingCats.value = true;
+  try {
+    let created = 0;
+    let reused = 0;
+    for (const cat of categories.value) {
+      // 已映射的直接跳过
+      if (categoryMapDraft[cat.code]) continue;
+      // 同名复用（本地分类按名字匹配）
+      const exist = localCategories.value.find((c: any) => c.name === cat.name);
+      let id = exist?.id;
+      if (!id) {
+        const { data, error } = await createCategory({ name: cat.name });
+        if (error) continue;
+        id = (data as any)?.id;
+        if (!id) continue;
+        created++;
+        localCategories.value.push({ id, name: cat.name });
+      } else {
+        reused++;
+      }
+      categoryMapDraft[cat.code] = id;
+    }
+    window.$message?.success(`分类就绪：新建 ${created} 个，复用 ${reused} 个`);
+  } finally {
+    creatingCats.value = false;
+  }
 }
 
 function checkedInCat(cat: PreviewCategory): string[] {
@@ -203,7 +236,20 @@ async function submit() {
                 <span class="text-12px text-gray-400">下次导入自动回填</span>
               </NSpace>
             </NFormItem>
-            <NFormItem label="类目映射（上游分类 → 本地分类，保存后全量同步沿用）">
+            <NFormItem>
+              <template #label>
+                <span class="mr-8px">类目映射（上游分类 → 本地分类，保存后全量同步沿用）</span>
+                <NButton
+                  v-auth="'catalog:category_write'"
+                  size="tiny"
+                  type="primary"
+                  quaternary
+                  :loading="creatingCats"
+                  @click="createUpstreamCategories"
+                >
+                  一键创建上游分类
+                </NButton>
+              </template>
               <div class="flex w-full flex-col gap-6px">
                 <div v-for="cat in categories" :key="cat.code" class="flex items-center gap-6px">
                   <span class="w-90px shrink-0 truncate text-12px" :title="cat.name">{{ cat.name }}</span>

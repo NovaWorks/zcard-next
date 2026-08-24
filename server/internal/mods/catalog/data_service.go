@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"context"
+	"strings"
 	"encoding/json"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -232,8 +233,14 @@ func (s *AdminCatalogService) CreateCategory(ctx context.Context, req *adminv1.C
 
 // UpdateCategory 更新分类。
 func (s *AdminCatalogService) UpdateCategory(ctx context.Context, req *adminv1.UpdateCategoryRequest) (*adminv1.Category, error) {
-	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.GetIcon(), req.GetHide(), req.GetSort())
+	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.GetIcon(), req.GetHide(), req.GetSort(), req.GetParentId())
 	if err != nil {
+		if strings.Contains(err.Error(), "CATEGORY_CYCLE") {
+			return nil, errors.BadRequest("catalog.CATEGORY_CYCLE", "不能把分类移到自身或它的子分类下")
+		}
+		if strings.Contains(err.Error(), "CATEGORY_CANNOT_PARENT_SELF") {
+			return nil, errors.BadRequest("catalog.CATEGORY_CANNOT_PARENT_SELF", "分类不能设为自身的子级")
+		}
 		return nil, errors.InternalServer("catalog.CATEGORY_UPDATE_FAILED", "更新失败")
 	}
 	return toCategoryPB(c), nil

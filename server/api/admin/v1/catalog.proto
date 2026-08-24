@@ -245,6 +245,8 @@ message UpdateCategoryRequest {
   string icon = 3;
   bool hide = 4;
   int32 sort = 5;
+  // 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
+  int64 parent_id = 6;
 }
 
 message DeleteCategoryRequest {

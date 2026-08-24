@@ -290,8 +290,11 @@ func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, paren
 }
 
 // UpdateCategory 更新分类。
-func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, icon string, hide bool, sort int32) (*ent.Category, error) {
-	q := data.Client(ctx, r.data).Category.UpdateOneID(id)
+// parentId 层级语义（拖拽调级）：-1 = 不变；0 = 置顶级；>0 = 指定父（防环：
+// 不能把分类设为自身或自身的后代，否则树成环）。
+func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, icon string, hide bool, sort int32, parentID int64) (*ent.Category, error) {
+	client := data.Client(ctx, r.data)
+	q := client.Category.UpdateOneID(id)
 	if name != "" {
 		q.SetName(name)
 	}
@@ -302,7 +305,46 @@ func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, i
 	if sort >= 0 {
 		q.SetSort(sort)
 	}
+	if parentID >= 0 {
+		if parentID > 0 {
+			if uint64(parentID) == id {
+				return nil, fmt.Errorf("catalog.CATEGORY_CANNOT_PARENT_SELF")
+			}
+			// 防环：新父不能是自身后代
+			desc, err := descendantCategoryIDs(ctx, client, id)
+			if err != nil {
+				return nil, err
+			}
+			if desc[uint64(parentID)] {
+				return nil, fmt.Errorf("catalog.CATEGORY_CYCLE")
+			}
+			q.SetParentID(uint64(parentID))
+		} else {
+			q.ClearParentID() // 置顶级
+		}
+	}
 	return q.Save(ctx)
+}
+
+// descendantCategoryIDs 收集分类的全部子孙 id（含自身）——防环判据。
+func descendantCategoryIDs(ctx context.Context, client *ent.Client, id uint64) (map[uint64]bool, error) {
+	out := map[uint64]bool{id: true}
+	frontier := []uint64{id}
+	for len(frontier) > 0 {
+		kids, err := client.Category.Query().Where(category.ParentIDIn(frontier...)).IDs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		next := make([]uint64, 0, len(kids))
+		for _, k := range kids {
+			if !out[k] {
+				out[k] = true
+				next = append(next, k)
+			}
+		}
+		frontier = next
+	}
+	return out, nil
 }
 
 // DeleteCategory 删除（有子分类或有商品时拒删）。

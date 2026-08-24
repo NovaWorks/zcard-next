@@ -653,6 +653,12 @@ onMounted(() => {
         >
           新增商品
         </NButton>
+        <NButton
+          v-auth="'catalog:category_write'"
+          @click="showCategory = true"
+        >
+          分类管理
+        </NButton>
         <NInput
           v-model:value="keyword"
           placeholder="搜索商品名"
