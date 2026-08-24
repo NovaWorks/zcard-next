@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -107,6 +108,7 @@ type SyncService struct {
 	// 封面采集去重缓存（url → 本地 /uploads/ 路径或完整上游 URL；mutex 保护并发任务）
 	coverMu    sync.Mutex
 	coverCache map[string]string
+	coverDirs  map[uint64]string // connectionID → 渠道封面目录名（ensureCoverDir 缓存）
 }
 
 // NewSyncService 构造。
@@ -402,9 +404,14 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 
 	// 状态语义：上游不可售（手动发货/预选/停售）→ 本地下架(0)。
 	// （曾用隐藏(2)——但隐藏商品会员可见可买，此类品 API 无法履约，必须全员下架）
+	// 下架同时删除本地采集封面（cover 清空；上架后重新下载）
 	status := int8(1)
 	if !p.IsActive {
 		status = 0
+		if old := s.currentProductCover(ctx, mapping.LocalProductID); old != "" {
+			deleteLocalCover(old)
+		}
+		p.Cover = ""
 	}
 
 	// 定价（价格保护三级判定；force_reprice 覆盖运营改价保护）
@@ -418,7 +425,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
-		Cover:               s.downloadCover(ctx, conn.BaseURL, p.Cover), // 上游图采集落本地（fail-open）
+		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         autoOnshelf(conn.Settings),
@@ -663,6 +670,73 @@ func (s *SyncService) currentProductPrice(ctx context.Context, productID uint64)
 	return p.Price, nil
 }
 
+// currentProductCover 读本地商品当前封面（下架删图判据；无本地商品返回空）。
+func (s *SyncService) currentProductCover(ctx context.Context, productID uint64) string {
+	if productID == 0 {
+		return ""
+	}
+	p, err := s.repo.entClient(ctx).Product.Get(ctx, productID)
+	if err != nil {
+		return ""
+	}
+	return p.Cover
+}
+
+// ensureCoverDir 渠道封面目录名（连接级缓存 + settings.cover_dir 持久化）：
+//   - settings.cover_dir 已有 → 沿用（重启稳定）
+//   - 否则扫描 uploads/ 一级目录：渠道名净化后取首个空闲名（重名加 2/3……），
+//     并写入 settings.cover_dir（落库失败仅告警，下次重新解析）
+func (s *SyncService) ensureCoverDir(ctx context.Context, conn *ent.SupplyConnection) string {
+	s.coverMu.Lock()
+	if dir, ok := s.coverDirs[conn.ID]; ok {
+		s.coverMu.Unlock()
+		return dir
+	}
+	s.coverMu.Unlock()
+
+	dir := ""
+	if conn.Settings != nil {
+		if v, ok := conn.Settings["cover_dir"].(string); ok && v != "" {
+			dir = v
+		}
+	}
+	if dir == "" {
+		dir = allocateCoverDir(listUploadSubDirs(), sanitizeSubDir(conn.Name))
+		if dir != "" {
+			settings := conn.Settings
+			if settings == nil {
+				settings = map[string]any{}
+			}
+			settings["cover_dir"] = dir
+			if _, err := s.repo.entClient(ctx).SupplyConnection.UpdateOneID(conn.ID).SetSettings(settings).Save(ctx); err != nil {
+				s.log.Warn("supply.cover_dir_save_failed", "connection_id", conn.ID, "err", err)
+			}
+		}
+	}
+	s.coverMu.Lock()
+	if s.coverDirs == nil {
+		s.coverDirs = map[uint64]string{}
+	}
+	s.coverDirs[conn.ID] = dir
+	s.coverMu.Unlock()
+	return dir
+}
+
+// coverFor 解析封面并落本地：下载（fail-open）→ 与旧 cover 比对，本地旧文件
+// 换图/清空时删除（防泄漏）。mapping 可为 nil（新建）。
+func (s *SyncService) coverFor(ctx context.Context, mapping *ent.SupplyMapping, conn *ent.SupplyConnection, cover string) string {
+	old := ""
+	if mapping != nil {
+		old = s.currentProductCover(ctx, mapping.LocalProductID)
+	}
+	dir := s.ensureCoverDir(ctx, conn)
+	newCover := s.downloadCover(ctx, conn.BaseURL, cover, dir)
+	if newCover != old && strings.HasPrefix(old, "/uploads/") {
+		deleteLocalCover(old)
+	}
+	return newCover
+}
+
 // readSyncAnchor 读取 scope 增量锚点（优先专用列；回退 settings.sync_anchors
 // ——S1 过渡期写入的兼容；collect 再回退旧列 last_synced_at）。
 func readSyncAnchor(conn *ent.SupplyConnection, scope string) time.Time {
@@ -746,13 +820,18 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	if !p.IsActive {
 		status = 0 // 上游不可售品导入即下架
 	}
+	// 既有映射（旧 cover 清理判据；新导入为 NotFound）
+	mapping, merr := s.repo.GetMapping(ctx, conn.ID, p.ID, "")
+	if merr != nil && merr != ErrNotFound {
+		return false, merr
+	}
 	write := catalogport.UpstreamProductInput{
 		ConnectionID:        conn.ID,
 		UpstreamProductCode: p.ID,
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
-		Cover:               s.downloadCover(ctx, conn.BaseURL, p.Cover), // 上游图采集落本地（fail-open）
+		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,
@@ -770,7 +849,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	if price > 0 {
 		override["last_synced_price"] = price
 	}
-	mapping, err := s.repo.GetMapping(ctx, conn.ID, p.ID, "")
+	mapping, err = s.repo.GetMapping(ctx, conn.ID, p.ID, "")
 	if err != nil {
 		if err != ErrNotFound {
 			return created, err

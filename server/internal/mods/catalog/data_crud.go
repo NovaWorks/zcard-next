@@ -19,6 +19,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	mediamods "github.com/NovaWorks/zcard-next/server/internal/mods/media"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -203,6 +204,10 @@ func (r *ProductRepoImpl) BatchUpdateStatus(ctx context.Context, ids []uint64, s
 
 // DeleteProduct 删除（软外键约束：有卡密时拒删）。
 func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
+	// 删除前清理本地采集封面（失败不阻断删除）
+	if p, err := data.Client(ctx, r.data).Product.Get(ctx, id); err == nil {
+		deleteProductCover(p.Cover)
+	}
 	n, err := data.Client(ctx, r.data).Product.Delete().Where(product.ID(id)).Exec(ctx)
 	if err != nil {
 		return err
@@ -519,9 +524,8 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	if in.Description != "" {
 		upd.SetDescription(in.Description)
 	}
-	if in.Cover != "" {
-		upd.SetCover(in.Cover)
-	}
+	// cover 恒设（空 = 清空：上游下架/删图时镜像清空，同时调用方已删本地文件）
+	upd.SetCover(in.Cover)
 	updated, err := upd.Save(ctx)
 	if err != nil {
 		return 0, false, err
@@ -671,9 +675,14 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 	if len(seen) > 0 {
 		q = q.Where(product.UpstreamProductCodeNotIn(seen...))
 	}
-	ids, err := q.IDs(ctx)
-	if err != nil || len(ids) == 0 {
+	rows, err := q.Select(product.FieldID, product.FieldCover).All(ctx)
+	if err != nil || len(rows) == 0 {
 		return 0, err
+	}
+	ids := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, row.ID)
+		deleteProductCover(row.Cover) // 上游已消失 → 本地封面同步清理
 	}
 	n, err := data.Client(ctx, r.data).Product.Update().
 		Where(product.IDIn(ids...)).
@@ -683,6 +692,16 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 		return 0, err
 	}
 	return int64(n), nil
+}
+
+// deleteProductCover 删除本地采集封面文件（/uploads/ 路径；其余忽略）。
+func deleteProductCover(cover string) {
+	if !strings.HasPrefix(cover, "/uploads/") {
+		return
+	}
+	rel := strings.TrimPrefix(cover, "/uploads/")
+	rel = strings.ReplaceAll(rel, "\\", "/")
+	_ = mediamods.DeleteLocal(rel)
 }
 
 // ListForSupply 供货目录分页（P2-03 supplier 消费；管理面语义含下架）。
