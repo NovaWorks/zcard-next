@@ -1,13 +1,20 @@
 <template>
   <div class="install-page">
     <div class="install-card">
-      <!-- 头部 -->
-      <div class="install-hero">
-        <span class="install-logo">ZC</span>
-        <div>
-          <h1>ZCard 商城系统</h1>
-          <div class="muted">在线安装向导 · {{ status?.version || '...' }}</div>
-        </div>
+      <!-- 头部：无商城品牌，纯安装向导 + 步骤条 -->
+      <div class="install-head">
+        <h1 class="install-title">安装向导</h1>
+        <ol class="steps">
+          <li :class="{ active: step === 1, done: step > 1 }">
+            <span class="step-no">{{ step > 1 ? '✓' : '1' }}</span> 数据库配置
+          </li>
+          <li :class="{ active: step === 2, done: step > 2 }">
+            <span class="step-no">{{ step > 2 ? '✓' : '2' }}</span> 管理员设置
+          </li>
+          <li :class="{ active: step === 3 }">
+            <span class="step-no">3</span> 完成
+          </li>
+        </ol>
       </div>
 
       <!-- 加载中 -->
@@ -53,16 +60,16 @@
         </div>
       </div>
 
-      <!-- 未安装：向导 -->
+      <!-- 未安装：分步向导 -->
       <div v-else class="install-body">
-        <!-- ① 数据库选择 -->
-        <div class="section">
-          <div class="section-title">① 选择数据库</div>
+        <!-- 步骤① 数据库配置 -->
+        <div v-if="step === 1" class="section">
+          <div class="section-title">选择数据库</div>
           <div class="dialect-grid">
             <div class="dialect-card" :class="{ active: form.dialect === 'postgres' }" @click="pickDialect('postgres')">
               <div class="dialect-head">
                 <b>PostgreSQL</b>
-                <span class="rec-badge">推荐 · 生产首选</span>
+                <span class="rec-badge">推荐</span>
               </div>
               <div class="dialect-desc">完整高级能力：分站多租户 / Schema 隔离 / 高并发稳定，适合正式运营。</div>
             </div>
@@ -123,11 +130,15 @@
             </button>
             <div v-if="testMsg" class="test-msg" :class="testOk ? 'ok' : 'bad'">{{ testMsg }}</div>
           </div>
+
+          <div class="nav-row">
+            <button class="btn install-btn" :disabled="!canNext" @click="step = 2">下一步</button>
+          </div>
         </div>
 
-        <!-- ② 管理员 -->
-        <div class="section">
-          <div class="section-title">② 设置管理员</div>
+        <!-- 步骤② 管理员设置 -->
+        <div v-else class="section">
+          <div class="section-title">设置管理员</div>
           <div class="form-row">
             <label>管理员用户名</label>
             <input v-model="form.admin_username" class="input" placeholder="admin" maxlength="32" />
@@ -142,28 +153,31 @@
           </div>
           <div class="form-row">
             <label>站点名称</label>
-            <input v-model="form.site_name" class="input" placeholder="ZCard 商店" maxlength="50" />
+            <input v-model="form.site_name" class="input" placeholder="站点名称" maxlength="50" />
           </div>
           <div class="form-row">
             <label>站点网址（选填）</label>
             <input v-model="form.site_url" class="input" :placeholder="origin" maxlength="200" />
           </div>
           <div v-if="error" class="error">{{ error }}</div>
-          <button class="btn install-btn" :disabled="submitting || !form.admin_username || !form.admin_password" @click="submit">
-            {{ submitting ? '提交中…' : form.dialect === 'sqlite' ? '开始安装' : `切换到 ${dialectLabel(form.dialect)} 并安装` }}
-          </button>
+          <div class="nav-row">
+            <button class="btn secondary" @click="step = 1">上一步</button>
+            <button class="btn install-btn" :disabled="submitting || !form.admin_username || !form.admin_password" @click="submit">
+              {{ submitting ? '提交中…' : form.dialect === 'sqlite' ? '开始安装' : `切换到 ${dialectLabel(form.dialect)} 并安装` }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-    <div class="install-foot muted">© ZCard · 单二进制部署 · PostgreSQL 推荐 / SQLite 本地测试</div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 const loading = ref(true);
 const status = ref<{ installed: boolean; dialect: string; version: string; database_ok: boolean; migrations_ok: boolean; installed_at: string } | null>(null);
+const step = ref(1);
 const form = ref({
   dialect: 'postgres', admin_username: 'admin', admin_password: '', site_name: '', site_url: '',
   db_host: '127.0.0.1', db_port: 5432, db_user: '', db_password: '', db_name: 'zcard',
@@ -182,6 +196,11 @@ const testMsg = ref('');
 const restarting = ref(false);
 const waited = ref(0);
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+
+// 下一步可点：PG/MySQL 需已填主机与库名；SQLite 恒可
+const canNext = computed(() =>
+  form.value.dialect === 'sqlite' || (!!form.value.db_host && !!form.value.db_name),
+);
 
 function pickDialect(d: string) {
   form.value.dialect = d;
@@ -266,6 +285,7 @@ async function submit() {
     }
     if (json.restart_required) {
       // 库切换：服务即将自重启 → 轮询直到新库装完
+      step.value = 3;
       restarting.value = true;
       waited.value = 0;
       pollTimer = setInterval(async () => {
@@ -288,6 +308,7 @@ async function submit() {
       }, 2000);
       return;
     }
+    step.value = 3;
     doneDialect.value = form.value.dialect;
     done.value = true;
   } catch (e: any) {
@@ -319,22 +340,32 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   box-shadow: 0 24px 64px rgba(15, 23, 42, 0.12);
   overflow: hidden;
 }
-.install-hero {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 26px 28px 18px;
-  border-bottom: 1px solid #f1f5f9;
+/* 头部：无品牌，仅标题 + 步骤条 */
+.install-head { padding: 24px 28px 0; }
+.install-title {
+  font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 16px;
+  text-align: center;
 }
-.install-logo {
-  width: 52px; height: 52px; border-radius: 14px;
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  color: #fff; font-weight: 800; font-size: 22px;
-  display: flex; align-items: center; justify-content: center;
+.steps {
+  list-style: none; display: flex; justify-content: center; gap: 8px;
+  margin: 0 0 4px; padding: 0;
 }
-.install-hero h1 { font-size: 20px; margin: 0 0 2px; color: #0f172a; }
-.install-body { padding: 22px 28px 28px; max-height: 74vh; overflow-y: auto; }
-.section { margin-bottom: 20px; }
+.steps li {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: #94a3b8; font-weight: 600;
+  padding: 8px 12px; border-radius: 999px; transition: all 0.15s;
+}
+.steps li.active { color: #2563eb; background: #eff6ff; }
+.steps li.done { color: #15803d; }
+.step-no {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #e2e8f0; color: #64748b; font-size: 12px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.steps li.active .step-no { background: #2563eb; color: #fff; }
+.steps li.done .step-no { background: #bbf7d0; color: #15803d; }
+.install-body { padding: 20px 28px 28px; max-height: 74vh; overflow-y: auto; }
+.section { margin-bottom: 4px; }
 .section-title { font-weight: 700; font-size: 14px; color: #1f2937; margin-bottom: 10px; }
 /* 数据库选择卡片 */
 .dialect-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -383,7 +414,11 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
   font-size: 12.5px; cursor: pointer; padding: 0;
 }
 .pw-gen:hover { text-decoration: underline; }
-.install-btn { width: 100%; margin-top: 6px; padding: 12px; font-size: 15px; }
+/* 分步导航 */
+.nav-row { display: flex; gap: 10px; margin-top: 16px; }
+.nav-row .install-btn { flex: 1; }
+.nav-row .btn.secondary { flex: 1; }
+.install-btn { padding: 12px; font-size: 15px; }
 .error { color: #dc2626; font-size: 13px; margin: 8px 0; }
 .done-icon { font-size: 46px; text-align: center; margin-top: 8px; }
 .done-icon.spin { animation: pulse 1.2s ease-in-out infinite; }
@@ -391,7 +426,6 @@ onUnmounted(() => { if (pollTimer) clearInterval(pollTimer); });
 .done-title { text-align: center; font-size: 18px; font-weight: 700; color: #0f172a; margin: 8px 0 10px; }
 .done-actions { display: flex; gap: 10px; justify-content: center; margin-top: 18px; }
 .pw-hint { color: #b45309; font-size: 12.5px; }
-.install-foot { margin-top: 18px; font-size: 12px; }
 code { background: #f1f5f9; border-radius: 4px; padding: 1px 6px; }
 @media (max-width: 520px) { .form-grid { grid-template-columns: 1fr; } .span2 { grid-column: span 1; } }
 </style>
