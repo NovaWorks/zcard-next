@@ -13,7 +13,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 )
 
@@ -59,11 +58,11 @@ func TestDownloadCover(t *testing.T) {
 	defer srv.Close()
 
 	svc := &SyncService{log: slog.Default()}
-	conn := &ent.SupplyConnection{BaseURL: srv.URL}
+	baseURL := srv.URL
 	ctx := context.Background()
 
 	// 1) 完整 URL 成功 → 本地 /uploads/ 路径 + 文件存在
-	got := svc.downloadCover(ctx, conn, "/ok.png")
+	got := svc.downloadCover(ctx, baseURL, "/ok.png")
 	if !strings.HasPrefix(got, "/uploads/") {
 		t.Fatalf("成功下载应返回本地路径: %q", got)
 	}
@@ -73,31 +72,31 @@ func TestDownloadCover(t *testing.T) {
 	}
 
 	// 2) 相对路径 → 拼接完整 URL 下载成功
-	got2 := svc.downloadCover(ctx, conn, "ok-relative.jpg")
+	got2 := svc.downloadCover(ctx, baseURL, "ok-relative.jpg")
 	if !strings.HasPrefix(got2, "/uploads/") {
 		t.Fatalf("相对路径下载应成功: %q", got2)
 	}
 
 	// 3) 失败 fail-open：404 → 完整上游 URL
-	got3 := svc.downloadCover(ctx, conn, "/missing")
+	got3 := svc.downloadCover(ctx, baseURL, "/missing")
 	if got3 != srv.URL+"/missing" {
 		t.Fatalf("404 应 fail-open 返回完整 URL: %q", got3)
 	}
 
 	// 4) 非图片类型 → fail-open
-	got4 := svc.downloadCover(ctx, conn, "/bad-type")
+	got4 := svc.downloadCover(ctx, baseURL, "/bad-type")
 	if got4 != srv.URL+"/bad-type" {
 		t.Fatalf("非图片应 fail-open: %q", got4)
 	}
 
 	// 5) 空封面 → 空
-	if got5 := svc.downloadCover(ctx, conn, ""); got5 != "" {
+	if got5 := svc.downloadCover(ctx, baseURL, ""); got5 != "" {
 		t.Fatalf("空封面应返回空: %q", got5)
 	}
 
 	// 6) 去重：同 URL 再请求一次 → 命中缓存，不新增请求
 	before := hits.Load()
-	_ = svc.downloadCover(ctx, conn, "/ok.png")
+	_ = svc.downloadCover(ctx, baseURL, "/ok.png")
 	if hits.Load() != before {
 		t.Fatal("同 URL 应命中去重缓存（不重复请求）")
 	}

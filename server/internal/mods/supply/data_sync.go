@@ -418,7 +418,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
-		Cover:               s.downloadCover(ctx, conn, p.Cover), // 上游图采集落本地（fail-open）
+		Cover:               s.downloadCover(ctx, conn.BaseURL, p.Cover), // 上游图采集落本地（fail-open）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         autoOnshelf(conn.Settings),
@@ -752,7 +752,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
-		Cover:               s.downloadCover(ctx, conn, p.Cover), // 上游图采集落本地（fail-open）
+		Cover:               s.downloadCover(ctx, conn.BaseURL, p.Cover), // 上游图采集落本地（fail-open）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,

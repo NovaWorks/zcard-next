@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 )
 
@@ -35,11 +34,11 @@ func resolveUpstreamURL(baseURL, cover string) string {
 
 // downloadCover 下载上游封面到本地 uploads；返回本地 URL（/uploads/...）。
 // 任何失败均 fail-open：返回完整上游 URL（记录 warn，不阻断同步）。
-func (s *SyncService) downloadCover(ctx context.Context, conn *ent.SupplyConnection, cover string) string {
+func (s *SyncService) downloadCover(ctx context.Context, baseURL, cover string) string {
 	if cover == "" {
 		return ""
 	}
-	src := resolveUpstreamURL(conn.BaseURL, cover)
+	src := resolveUpstreamURL(baseURL, cover)
 	// 去重缓存（并发任务加锁）
 	s.coverMu.Lock()
 	if s.coverCache == nil {
