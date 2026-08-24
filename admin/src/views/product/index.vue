@@ -47,6 +47,7 @@ const pageSize = ref(20);
 
 // 快捷筛选卡片（后端 status 口径：0=全部 1=上架 2=隐藏 -1=仅下架；low_stock=库存告急）
 const statusFilter = ref<number | "low_stock">(0);
+const categoryFilter = ref<number | null>(null); // 分类筛选（null=全部）
 const statusTabs = [
   { label: "全部", value: 0, type: "default" as const },
   { label: "已上架", value: 1, type: "success" as const },
@@ -476,6 +477,7 @@ async function loadList() {
       keyword: keyword.value || undefined,
       status: statusFilter.value === "low_stock" ? undefined : statusFilter.value || undefined,
       low_stock_only: statusFilter.value === "low_stock" || undefined,
+      category_id: categoryFilter.value || undefined,
       page: page.value,
       page_size: pageSize.value,
     });
@@ -659,6 +661,14 @@ onMounted(() => {
         >
           分类管理
         </NButton>
+        <NTreeSelect
+          v-model:value="categoryFilter"
+          :options="categoryTreeOptions"
+          placeholder="按分类筛选（全部）"
+          clearable
+          class="w-180px"
+          @update:value="onSearch"
+        />
         <NInput
           v-model:value="keyword"
           placeholder="搜索商品名"
