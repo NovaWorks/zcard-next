@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -144,6 +145,39 @@ func validateSwitch(ctx context.Context, in dbSwitchInput) error {
 	if err := db.PingContext(ctx); err != nil {
 		return fmt.Errorf("数据库连接失败: %v", err)
 	}
+	// 建表权限探测：能连 ≠ 能建表（PG 15+ 默认 public schema 不开放 CREATE，
+	// MySQL 用户也可能无 CREATE）——早报错优于切库自重启后迁移失败
+	return probeCreateTable(ctx, db, in.Dialect, in.User, in.Name)
+}
+
+// probeCreateTable 建表权限探测：建一张随机名临时表再删除（不留痕迹）。
+// 失败返回带授权指引的错误——「测试连接」阶段即暴露权限问题。
+func probeCreateTable(ctx context.Context, db *sql.DB, dialect, user, dbName string) error {
+	name := fmt.Sprintf("zcard_perm_probe_%d", time.Now().UnixNano())
+	var create, drop string
+	switch dialect {
+	case "postgres":
+		create = fmt.Sprintf(`CREATE TABLE %s (id bigint)`, name)
+		drop = fmt.Sprintf(`DROP TABLE %s`, name)
+	case "mysql":
+		create = fmt.Sprintf("CREATE TABLE `%s` (`id` bigint)", name)
+		drop = fmt.Sprintf("DROP TABLE `%s`", name)
+	default:
+		return nil
+	}
+	if _, err := db.ExecContext(ctx, create); err != nil {
+		if strings.Contains(err.Error(), "denied") || strings.Contains(err.Error(), "permission") {
+			var hint string
+			if dialect == "postgres" {
+				hint = fmt.Sprintf("GRANT ALL ON SCHEMA public TO \"%s\"", user)
+			} else {
+				hint = fmt.Sprintf("GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%%'", dbName, user)
+			}
+			return fmt.Errorf("数据库账号无建表权限（%v）——请使用数据库超级用户/owner 账号，或执行授权：%s", err, hint)
+		}
+		return fmt.Errorf("建表权限探测失败: %v", err)
+	}
+	_, _ = db.ExecContext(ctx, drop)
 	return nil
 }
 
