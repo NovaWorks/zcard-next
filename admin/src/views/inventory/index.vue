@@ -441,7 +441,7 @@ onMounted(() => {
             description="先在上方选择商品查看卡密"
           />
           <template v-else>
-            <NDataTable :columns="cardColumns" :data="cards" :loading="loading" />
+            <NDataTable :columns="cardColumns" :data="cards" :loading="loading"  :max-height="540" />
             <TablePager
               v-model:page="cardPage"
               v-model:page-size="pageSize"
@@ -451,7 +451,7 @@ onMounted(() => {
           </template>
         </NTabPane>
         <NTabPane name="batches" tab="导入批次">
-          <NDataTable :columns="batchColumns" :data="batches" :loading="batchLoading" />
+          <NDataTable :columns="batchColumns" :data="batches" :loading="batchLoading"  :max-height="540" />
         </NTabPane>
         <NTabPane name="premium" tab="靓号库" @update:appears="loadPremium">
           <NEmpty
@@ -461,7 +461,7 @@ onMounted(() => {
             description="先在上方选择商品查看靓号卡"
           />
           <template v-else>
-            <NDataTable :columns="premiumColumns" :data="premiumCards" :loading="premiumLoading" />
+            <NDataTable :columns="premiumColumns" :data="premiumCards" :loading="premiumLoading"  :max-height="540" />
             <div v-if="premiumTotal" class="mt-8px text-12px text-gray-400">共 {{ premiumTotal }} 张</div>
           </template>
         </NTabPane>

@@ -426,7 +426,7 @@ onMounted(loadOrders);
             <NButton @click="loadOrders">刷新</NButton>
           </div>
 
-          <NDataTable :columns="columns" :data="orders" :loading="loading" />
+          <NDataTable :columns="columns" :data="orders" :loading="loading"  :max-height="540" />
 
           <TablePager
             v-model:page="page"
@@ -489,9 +489,9 @@ onMounted(loadOrders);
           </NDescriptions>
         </template>
         <NDivider>商品明细</NDivider>
-        <NDataTable :data="detail.items || []" :columns="itemColumns" size="small" />
+        <NDataTable :data="detail.items || []" :columns="itemColumns" size="small"  :max-height="540" />
         <NDivider>金额明细（{{ (detail.amount_lines || []).length }} 行）</NDivider>
-        <NDataTable :data="detail.amount_lines || []" :columns="amountColumns" size="small" />
+        <NDataTable :data="detail.amount_lines || []" :columns="amountColumns" size="small"  :max-height="540" />
         <NDivider>状态事件（{{ (detail.status_events || []).length }} 条）</NDivider>
         <!-- 横向时间线（大厂订单详情风格：圆点节点 + 连线 + 时间，可横向滚动） -->
         <div style="display:flex;align-items:flex-start;overflow-x:auto;padding:4px 4px 8px;">

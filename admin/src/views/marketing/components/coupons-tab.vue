@@ -131,7 +131,7 @@ onMounted(load);
       <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" @change="load" />
       <NButton v-if="canWrite()" size="small" type="primary" @click="showBatch = true">批量生成</NButton>
     </div>
-    <NDataTable :columns="columns" :data="coupons" :loading="loading" size="small" />
+    <NDataTable :columns="columns" :data="coupons" :loading="loading" size="small"  :max-height="540" />
 
     <!-- 批量生成 -->
     <NModal v-model:show="showBatch" preset="dialog" title="批量生成优惠券" style="width: 460px">

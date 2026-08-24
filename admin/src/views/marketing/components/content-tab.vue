@@ -419,7 +419,7 @@ onMounted(() => {
         </div>
         <NButton v-if="canWrite()" size="tiny" type="primary" @click="showBanner = true">新增横幅</NButton>
       </div>
-      <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small" />
+      <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small"  :max-height="540" />
     </div>
     <div>
       <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
@@ -436,7 +436,7 @@ onMounted(() => {
           新增文章
         </NButton>
       </div>
-      <NDataTable :columns="postColumns" :data="filteredPosts" :loading="postLoading" size="small" />
+      <NDataTable :columns="postColumns" :data="filteredPosts" :loading="postLoading" size="small"  :max-height="540" />
     </div>
     <div>
       <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
@@ -446,7 +446,7 @@ onMounted(() => {
         </div>
         <NButton v-if="canWrite()" size="tiny" type="primary" @click="openCreateCategory">新增栏目</NButton>
       </div>
-      <NDataTable :columns="categoryColumns" :data="categories" :loading="categoryLoading" size="small" />
+      <NDataTable :columns="categoryColumns" :data="categories" :loading="categoryLoading" size="small"  :max-height="540" />
     </div>
 
     <NModal v-model:show="showBanner" preset="dialog" title="新增横幅" style="width: 520px">

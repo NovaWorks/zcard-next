@@ -255,7 +255,7 @@ async function handleAdjust() {
       </NGrid>
 
       <!-- 流水 -->
-      <NDataTable :columns="columns" :data="transactions" :loading="loading" />
+      <NDataTable :columns="columns" :data="transactions" :loading="loading"  :max-height="540" />
 
       <TablePager
         v-model:page="page"

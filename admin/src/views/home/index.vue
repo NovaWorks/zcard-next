@@ -322,7 +322,7 @@ onMounted(loadDashboard);
       <NGrid :x-gap="16" :y-gap="16" cols="s:1 l:3" responsive="screen">
         <NGi span="2">
           <NCard title="商品销量 Top5（近30天）" :bordered="false">
-            <NDataTable :columns="topColumns" :data="topProducts" size="small" :bordered="false" />
+            <NDataTable :columns="topColumns" :data="topProducts" size="small" :bordered="false"  :max-height="540" />
           </NCard>
         </NGi>
         <NGi>

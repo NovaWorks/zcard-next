@@ -163,7 +163,7 @@ onMounted(() => {
         />
         <NButton size="small" @click="load()">查询</NButton>
       </div>
-      <NDataTable :columns="columns" :data="payments" :loading="loading" size="small" />
+      <NDataTable :columns="columns" :data="payments" :loading="loading" size="small"  :max-height="540" />
       <div v-if="nextCursor" class="mt-8px text-center">
         <NButton size="small" quaternary @click="load(false)">加载更多</NButton>
       </div>
@@ -172,7 +172,7 @@ onMounted(() => {
     <!-- 退款单 -->
     <div>
       <div class="mb-8px text-13px font-500">退款单</div>
-      <NDataTable :columns="refundColumns" :data="refunds" :loading="refundLoading" size="small" />
+      <NDataTable :columns="refundColumns" :data="refunds" :loading="refundLoading" size="small"  :max-height="540" />
     </div>
   </div>
 </template>

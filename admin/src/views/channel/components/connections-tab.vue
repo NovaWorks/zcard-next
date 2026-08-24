@@ -625,7 +625,7 @@ onMounted(load);
       <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增渠道</NButton>
     </div>
 
-    <NDataTable :columns="columns" :data="connections" :loading="loading" size="small" :row-key="(r: any) => r.id" />
+    <NDataTable :columns="columns" :data="connections" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" />
     <div class="mt-12px flex justify-end">
       <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />
     </div>
@@ -783,6 +783,7 @@ onMounted(load);
     <NDrawer v-model:show="showTasks" :width="720">
       <NDrawerContent title="同步任务" closable>
         <NDataTable
+        :max-height="540"
           size="small"
           :data="tasks"
           :loading="tasksLoading"

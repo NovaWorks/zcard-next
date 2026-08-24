@@ -186,7 +186,7 @@ onMounted(load);
       <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" @change="(page = 1), load()" />
       <span class="text-12px text-gray-400">共 {{ total }} 单</span>
     </div>
-    <NDataTable :columns="columns" :data="withdrawals" :loading="loading" size="small" />
+    <NDataTable :columns="columns" :data="withdrawals" :loading="loading" size="small"  :max-height="540" />
     <div class="mt-8px flex items-center justify-end gap-8px">
       <NButton size="small" :disabled="page <= 1" @click="page--, load()">上一页</NButton>
       <NButton size="small" :disabled="withdrawals.length < 20" @click="page++, load()">下一页</NButton>

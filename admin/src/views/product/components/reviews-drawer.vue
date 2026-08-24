@@ -192,7 +192,7 @@ onMounted(load);
           新增虚拟评价
         </NButton>
       </div>
-      <NDataTable :columns="columns" :data="reviews" :loading="loading" size="small" />
+      <NDataTable :columns="columns" :data="reviews" :loading="loading" size="small"  :max-height="540" />
       <div class="mt-8px flex items-center justify-between">
         <span class="text-12px text-gray-400">第 {{ page }} 页</span>
         <div class="flex gap-8px">

@@ -207,7 +207,7 @@ async function handleDelete(id: number) {
         </NForm>
       </div>
 
-      <NDataTable :columns="columns" :data="roles" :row-key="(r: any) => r.id" size="small" />
+      <NDataTable :columns="columns" :data="roles" :row-key="(r: any) => r.id" :max-height="540" size="small" />
     </NDrawerContent>
   </NDrawer>
 

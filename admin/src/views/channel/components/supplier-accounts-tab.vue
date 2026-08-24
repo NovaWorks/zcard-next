@@ -410,7 +410,7 @@ onMounted(load);
       </NSpace>
     </div>
 
-    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" />
+    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" />
 
     <!-- 密钥一次性回显 -->
     <NModal :show="!!secretOnce" preset="dialog" title="密钥（仅此一次展示，请立即保存）" style="width: 520px" @update:show="secretOnce = ''">
@@ -555,6 +555,7 @@ onMounted(load);
     <!-- 回调记录 -->
     <NModal v-model:show="showCallbacks" preset="card" title="下游回调记录（失败可重发）" style="width: 760px">
       <NDataTable
+        :max-height="540"
         size="small"
         :loading="callbacksLoading"
         :data="callbacks"
@@ -623,6 +624,7 @@ onMounted(load);
     <!-- 账本 -->
     <NModal v-model:show="showLedger" preset="card" :title="`账本：${ledgerTarget?.name || ''}`" style="width: 720px">
       <NDataTable
+        :max-height="540"
         size="small"
         :loading="ledgerLoading"
         :data="ledgerRows"

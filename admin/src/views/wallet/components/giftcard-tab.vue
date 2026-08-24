@@ -85,7 +85,7 @@ onMounted(load);
       <NButton v-if="checkAuth('giftcard:write')" size="small" type="primary" @click="showCreate = true">新建批次</NButton>
       <span class="ml-8px text-12px text-gray-400">兑换码明文仅创建时一次性展示，库内无明文（安全铁律）</span>
     </div>
-    <NDataTable :columns="columns" :data="batches" :loading="loading" size="small" />
+    <NDataTable :columns="columns" :data="batches" :loading="loading" size="small"  :max-height="540" />
     <div class="mt-8px flex items-center justify-end gap-8px">
       <NButton size="small" :disabled="page <= 1" @click="page--, load()">上一页</NButton>
       <NButton size="small" :disabled="batches.length < 20" @click="page++, load()">下一页</NButton>

@@ -705,6 +705,7 @@ onMounted(() => {
       </div>
 
       <NDataTable
+        :max-height="540"
         :columns="columns"
         :data="products"
         :loading="loading"

@@ -189,7 +189,7 @@ onMounted(() => {
         <span class="ml-8px text-12px text-gray-400">基础货币汇率恒为 1；汇率 decimal 字符串，展示换算在下单时快照</span>
       </div>
     </div>
-    <NDataTable :columns="columns" :data="filteredCurrencies" :loading="loading" size="small" />
+    <NDataTable :columns="columns" :data="filteredCurrencies" :loading="loading" size="small"  :max-height="540" />
 
     <NModal v-model:show="showModal" preset="dialog" :title="editing ? `编辑货币 ${editing}` : '新增货币'" style="width: 440px">
       <NForm :model="form" label-placement="left" label-width="72">

@@ -99,7 +99,7 @@ onMounted(() => {
         <NInputNumber v-model:value="operatorFilter" size="small" placeholder="操作者ID" class="w-110px" clearable @update:value="(opPage = 1), loadOp()" />
         <NButton size="tiny" @click="loadOp">刷新</NButton>
       </div>
-      <NDataTable :columns="opColumns" :data="opLogs" :loading="opLoading" size="small" />
+      <NDataTable :columns="opColumns" :data="opLogs" :loading="opLoading" size="small"  :max-height="540" />
       <div class="mt-8px flex justify-end gap-8px">
         <NButton size="small" :disabled="opPage <= 1" @click="opPage--, loadOp()">上一页</NButton>
         <NButton size="small" :disabled="opLogs.length < 20" @click="opPage++, loadOp()">下一页</NButton>
@@ -111,7 +111,7 @@ onMounted(() => {
         <NInput v-model:value="actionFilter" size="small" placeholder="动作模糊搜索" class="w-160px" clearable @keyup.enter="(secPage = 1), loadSec()" />
         <NButton size="tiny" @click="loadSec">刷新</NButton>
       </div>
-      <NDataTable :columns="secColumns" :data="secLogs" :loading="secLoading" size="small" />
+      <NDataTable :columns="secColumns" :data="secLogs" :loading="secLoading" size="small"  :max-height="540" />
       <div class="mt-8px flex justify-end gap-8px">
         <NButton size="small" :disabled="secPage <= 1" @click="secPage--, loadSec()">上一页</NButton>
         <NButton size="small" :disabled="secLogs.length < 20" @click="secPage++, loadSec()">下一页</NButton>

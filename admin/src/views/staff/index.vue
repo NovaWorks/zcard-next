@@ -378,7 +378,7 @@ onMounted(() => {
         </span>
       </div>
       <FilterTabs v-model:value="enabledFilter" :options="enabledTabs" :counts="enabledCounts" class="mb-12px" />
-      <NDataTable :columns="columns" :data="filteredAdmins" :loading="loading" :row-key="(r: any) => r.id" />
+      <NDataTable :columns="columns" :data="filteredAdmins" :loading="loading" :row-key="(r: any) => r.id" :max-height="540" />
     </NCard>
 
     <!-- 新增员工 -->

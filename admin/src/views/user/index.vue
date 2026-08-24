@@ -198,7 +198,7 @@ onMounted(load);
 
       <FilterTabs v-model:value="query.status" :options="statusTabs" class="mb-12px" @change="onSearch" />
 
-      <NDataTable :columns="columns" :data="users" :loading="loading" size="small" :row-key="(row: any) => row.id" />
+      <NDataTable :columns="columns" :data="users" :loading="loading" size="small" :row-key="(row: any) => row.id" :max-height="540" />
 
       <div class="mt-12px flex justify-end">
         <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />

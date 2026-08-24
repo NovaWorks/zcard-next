@@ -56,7 +56,10 @@ function go(p: number) {
 </script>
 
 <template>
-  <div class="mt-12px flex flex-wrap items-center justify-between gap-8px">
+  <div
+    class="mt-12px flex flex-wrap items-center justify-between gap-8px"
+    style="position: sticky; bottom: 0; z-index: 5; padding-top: 8px; background: var(--n-color, #fff);"
+  >
     <span class="text-12px text-gray-400">
       {{ mode === "offset" ? `共 ${total} 条 · ${pageCount} 页` : `第 ${page} 页` }}
     </span>

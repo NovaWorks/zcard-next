@@ -154,14 +154,14 @@ onMounted(() => {
         <span class="text-13px font-500">限时秒杀</span>
         <NButton v-if="checkAuth('coupon:write')" size="tiny" type="primary" @click="showFlash = true">新建秒杀</NButton>
       </div>
-      <NDataTable :columns="flashColumns" :data="flashes" :loading="flashLoading" size="small" />
+      <NDataTable :columns="flashColumns" :data="flashes" :loading="flashLoading" size="small"  :max-height="540" />
     </div>
     <div>
       <div class="mb-8px flex items-center gap-8px">
         <span class="text-13px font-500">满减/折扣促销（与会员折扣、券按管线顺序叠加）</span>
         <NButton v-if="checkAuth('coupon:write')" size="tiny" type="primary" @click="showPromo = true">新建促销</NButton>
       </div>
-      <NDataTable :columns="promoColumns" :data="promos" :loading="promoLoading" size="small" />
+      <NDataTable :columns="promoColumns" :data="promos" :loading="promoLoading" size="small"  :max-height="540" />
     </div>
 
     <NModal v-model:show="showFlash" preset="dialog" title="新建秒杀" style="width: 480px">

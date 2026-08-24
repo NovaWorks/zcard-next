@@ -247,6 +247,7 @@ async function handleDelete(id: number) {
     </NCard>
 
     <NDataTable
+        :max-height="540"
       :columns="columns"
       :data="controls"
       :loading="loading"

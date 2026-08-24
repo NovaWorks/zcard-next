@@ -236,7 +236,7 @@ onMounted(load);
         <span class="ml-8px text-12px text-gray-400">折扣按支付比例百分比填写（100=无折扣，95=9.5 折）；阈值在创建时设定</span>
       </div>
     </div>
-    <NDataTable :columns="columns" :data="filteredLevels" :loading="loading" size="small" />
+    <NDataTable :columns="columns" :data="filteredLevels" :loading="loading" size="small"  :max-height="540" />
 
     <NModal v-model:show="showForm" preset="dialog" :title="editing ? `编辑等级：${editing.name}` : '新增等级'" style="width: 480px">
       <NForm :model="form" label-placement="left" label-width="88">

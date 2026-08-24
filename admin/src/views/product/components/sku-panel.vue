@@ -389,6 +389,7 @@ const columns: DataTableColumns<SkuRow> = [
 
     <!-- ② 组合表格（行内编辑；scroll-x 兜底不截断） -->
     <NDataTable
+        :max-height="540"
       :columns="columns"
       :data="rows"
       :loading="loading"
