@@ -46,10 +46,56 @@ func installGuard(isInstalled func() bool) func(http.Handler) http.Handler {
 				w.WriteHeader(http.StatusFound)
 				return
 			}
+			// 已安装：/install 返回静态提示页（不依赖前端 JS——SPA 未加载
+			// 也能看到提示）；其余路径直通
+			if r.URL.Path == "/install" {
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(installedPage))
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	}
 }
+
+// installedPage 已安装提示页（服务端直出静态页；样式与新项目 UI 一致）。
+const installedPage = `<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>系统已安装</title>
+<style>
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(160deg,#eff6ff 0%,#f8fafc 60%,#eef2ff 100%);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;padding:24px}
+  .card{width:100%;max-width:420px;background:#fff;border-radius:18px;box-shadow:0 24px 64px rgba(15,23,42,.12);
+    padding:36px 32px;text-align:center;box-sizing:border-box}
+  .icon{font-size:44px;margin-bottom:10px}
+  h1{font-size:20px;font-weight:800;color:#0f172a;margin:0 0 8px}
+  p{font-size:14px;color:#64748b;line-height:1.7;margin:0 0 22px}
+  .links{display:flex;gap:10px;justify-content:center}
+  a{display:inline-block;text-decoration:none;font-size:14px;font-weight:600;
+    border-radius:10px;padding:10px 20px;transition:background .12s}
+  a.primary{background:#2563eb;color:#fff}
+  a.primary:hover{background:#1d4ed8}
+  a.secondary{border:1px solid #e2e8f0;color:#334155}
+  a.secondary:hover{background:#f8fafc}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">🔒</div>
+    <h1>系统已安装</h1>
+    <p>安装已完成，本页为安装向导入口，无需重复安装。</p>
+    <div class="links">
+      <a class="primary" href="/">进入前台</a>
+      <a class="secondary" href="/admin/">后台管理</a>
+    </div>
+  </div>
+</body>
+</html>`
 
 // isStaticAsset 静态资源判定：/assets/ 目录（vite 产物）或常见资源扩展名放行；
 // .html 视为 SPA 页面（vite-ssg 扁平页），未安装时也跳安装向导。
