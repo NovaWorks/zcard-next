@@ -61,14 +61,14 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
 }>();
 
-// 一级分类（parent_id=0 为根）
-const roots = computed(() => props.categories.filter((c) => c.parent_id === 0));
+// 一级分类（parent_id 缺失/0 为根——proto3 JSON 省略 0 值字段，须用 falsy 判断）
+const roots = computed(() => props.categories.filter((c) => !c.parent_id));
 function childrenOf(id: number) {
   return props.categories.filter((c) => c.parent_id === id);
 }
 
 // 展开状态（默认全展开）
-const expanded = ref<Set<number>>(new Set(props.categories.filter((c) => c.parent_id !== 0).map((c) => c.parent_id)));
+const expanded = ref<Set<number>>(new Set(props.categories.filter((c) => !!c.parent_id).map((c) => c.parent_id)));
 
 function toggle(id: number) {
   const s = new Set(expanded.value);

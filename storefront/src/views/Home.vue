@@ -50,7 +50,7 @@
         <div v-if="categories.length" class="cat-nav mobile-only">
           <button class="cat-chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
           <button
-            v-for="c in categories.filter((x) => x.parent_id === 0)"
+            v-for="c in categories.filter((x) => !x.parent_id)"
             :key="c.id"
             class="cat-chip"
             :class="{ active: activeCategory === c.id }"

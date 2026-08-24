@@ -7,7 +7,7 @@
       <div v-if="categories.length" class="card mobile-only" style="margin-bottom: 12px;">
         <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
-          <button v-for="c in categories.filter((x) => x.parent_id === 0)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
+          <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
             {{ c.name }}
           </button>
         </div>
