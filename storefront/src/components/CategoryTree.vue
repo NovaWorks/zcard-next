@@ -16,32 +16,17 @@
           <span>🏠</span>
           <span class="flex-1 text-left">全部商品</span>
         </button>
-        <!-- 一级分类（含子分类折叠） -->
-        <div v-for="c in roots" :key="c.id">
-          <button class="tree-parent" :class="{ active: modelValue === c.id }" @click="select(c.id)">
-            <span class="tree-icon">{{ c.icon || '📦' }}</span>
-            <span class="flex-1 text-left truncate">{{ c.name }}</span>
-            <span
-              v-if="childrenOf(c.id).length"
-              class="tree-arrow"
-              :class="{ open: expanded.has(c.id) }"
-              @click.stop="toggle(c.id)"
-            >▶</span>
-          </button>
-          <!-- 子分类：缩进 + 左侧连接线 -->
-          <div v-if="childrenOf(c.id).length && expanded.has(c.id)" class="tree-children">
-            <button
-              v-for="ch in childrenOf(c.id)"
-              :key="ch.id"
-              class="tree-child"
-              :class="{ active: modelValue === ch.id }"
-              @click="select(ch.id)"
-            >
-              <span class="tree-dot" :class="{ active: modelValue === ch.id }"></span>
-              <span class="truncate">{{ ch.icon ? ch.icon + ' ' : '' }}{{ ch.name }}</span>
-            </button>
-          </div>
-        </div>
+        <!-- 分类树：递归渲染任意层级（三级/四级均可展开） -->
+        <CategoryTreeNode
+          v-for="c in tree"
+          :key="c.id"
+          :node="c"
+          :depth="0"
+          :expanded="expanded"
+          :model-value="modelValue"
+          @select="select"
+          @toggle="toggle"
+        />
         <div v-if="!roots.length" class="tree-empty muted">暂无分类</div>
       </div>
     </div>
@@ -50,6 +35,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import CategoryTreeNode from './CategoryTreeNode.vue';
 import type { CategoryItem } from '@/api';
 
 const props = defineProps<{
@@ -61,11 +47,19 @@ const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
 }>();
 
+// 分类树（任意层级：parent_id 链构建 children；一级为根）
+const tree = computed(() => {
+  const map = new Map<number, any>();
+  for (const c of props.categories) map.set(c.id, { ...c, children: [] });
+  const rootsArr: any[] = [];
+  for (const node of map.values()) {
+    if (node.parent_id && map.has(node.parent_id)) map.get(node.parent_id)!.children.push(node);
+    else rootsArr.push(node);
+  }
+  return rootsArr;
+});
 // 一级分类（parent_id 缺失/0 为根——proto3 JSON 省略 0 值字段，须用 falsy 判断）
 const roots = computed(() => props.categories.filter((c) => !c.parent_id));
-function childrenOf(id: number) {
-  return props.categories.filter((c) => c.parent_id === id);
-}
 
 // 展开状态（默认全展开）
 const expanded = ref<Set<number>>(new Set(props.categories.filter((c) => !!c.parent_id).map((c) => c.parent_id)));
@@ -124,28 +118,5 @@ function select(id: number) {
   font-size: 10px; opacity: 0.6; transition: transform 0.2s;
 }
 .tree-arrow.open { transform: rotate(90deg); }
-
-.tree-children {
-  margin: 2px 0 6px 14px;
-  padding-left: 10px;
-  border-left: 1px solid #e5e7eb;
-  display: flex; flex-direction: column; gap: 2px;
-}
-.tree-child {
-  width: 100%;
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 8px;
-  border: none; background: none; cursor: pointer;
-  border-radius: 8px; font-size: 12px; color: #6b7280;
-  transition: all 0.15s; font-family: inherit;
-  text-align: left;
-}
-.tree-child:hover { color: #2563eb; background: #eff6ff; }
-.tree-child.active { color: #2563eb; font-weight: 600; background: #eff6ff; }
-.tree-dot {
-  width: 5px; height: 5px; border-radius: 999px; flex-shrink: 0;
-  background: #d1d5db;
-}
-.tree-dot.active { background: #2563eb; }
 .tree-empty { padding: 16px 0; text-align: center; }
 </style>
