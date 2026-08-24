@@ -497,6 +497,23 @@ function onSearch() {
   loadList();
 }
 
+// ── 左侧分类树（含「全部分类」根节点；大厂交互：左树右列表）──
+const filterCategoryTree = computed(() => [
+  { key: 0, label: "全部分类", children: categoryTreeOptions.value },
+]);
+const selectedCatKeys = ref<Array<string | number>>([0]);
+
+function onTreeSelect(keys: Array<string | number>) {
+  const k = keys[0];
+  categoryFilter.value = typeof k === "number" && k > 0 ? k : null;
+  onSearch();
+}
+
+// 悬停显示完整分类名（长名不截断可读）
+function catNodeProps({ option }: { option: any }) {
+  return { title: option.label || "" };
+}
+
 async function loadCategories() {
   const { data, error } = await fetchCategories();
   if (!error && data) categories.value = (data as any).categories || [];
@@ -643,7 +660,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-500px flex-col gap-16px overflow-hidden">
+  <div class="min-h-500px flex gap-16px overflow-hidden">
+    <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
+    <NCard title="商品分类" class="w-230px shrink-0">
+      <template #header-extra>
+        <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
+      </template>
+      <NTree
+        block-line
+        default-expand-all
+        :data="filterCategoryTree"
+        :selected-keys="selectedCatKeys"
+        :node-props="catNodeProps"
+        @update:selected-keys="onTreeSelect"
+      />
+    </NCard>
+    <!-- 右侧：商品列表 -->
     <NCard title="商品管理" class="flex-1">
       <div class="mb-16px flex items-center gap-12px">
         <NButton
@@ -662,14 +694,6 @@ onMounted(() => {
         >
           分类管理
         </NButton>
-        <NTreeSelect
-          v-model:value="categoryFilter"
-          :options="categoryTreeOptions"
-          placeholder="按分类筛选（全部）"
-          clearable
-          class="w-180px"
-          @update:value="onSearch"
-        />
         <NInput
           v-model:value="keyword"
           placeholder="搜索商品名"
