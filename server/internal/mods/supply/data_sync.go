@@ -569,7 +569,9 @@ func (s *SyncService) resolvePrice(ctx context.Context, conn *ent.SupplyConnecti
 func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg scheduleSettings, items []adapter.Product, taskID uint64) error {
 	var missing []int
 	for i := range items {
-		if items[i].Stock == -1 {
+		// 缺失（-1）或为 0 都补查实时值：部分渠道（acg-faka 皮肤站）items 的
+		// stock 字段不可靠恒 0（真实库存需 GetStock），0 会误导「缺货」判断
+		if items[i].Stock <= 0 {
 			missing = append(missing, i)
 		}
 	}

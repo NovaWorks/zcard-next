@@ -78,7 +78,28 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 	if s.sold != nil {
 		solds, _ = s.sold.SoldBatch(ctx, ids)
 	}
+	// 代发商品（上游货源）：库存 = 上游库存缓存（mapping.up_stock，同步时写入），
+	// 非本地卡池数（代发本地无卡密恒 0——曾误导运营以为缺货）
+	var upstreamIDs []uint64
 	for _, p := range items {
+		if p.UpstreamSourceId > 0 {
+			upstreamIDs = append(upstreamIDs, p.Id)
+		}
+	}
+	var upStocks map[uint64]int32
+	if len(upstreamIDs) > 0 {
+		upStocks = s.repo.UpStockBatch(ctx, upstreamIDs)
+	}
+	for _, p := range items {
+		if p.UpstreamSourceId > 0 {
+			if v, ok := upStocks[p.Id]; ok {
+				p.Stock = int64(v) // -1 = 上游无限
+			} else {
+				p.Stock = -1 // 无缓存（未同步过）：视为未知/不限
+			}
+			p.SoldCount = solds[p.Id]
+			continue
+		}
 		if p.StockType == "card" {
 			p.Stock = stocks[p.Id]
 		} else {

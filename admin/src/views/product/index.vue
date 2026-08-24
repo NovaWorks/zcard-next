@@ -205,15 +205,16 @@ function priceCell(row: any) {
 // statsCell 库存/已售块：两行，标签定宽 + 数值紧邻（与价格块视觉一致）
 function statsCell(row: any) {
   const isCard = row.stock_type === "card";
-  const stock = row.stock ?? 0; // -1 = 不限（链接/兑换码类不入卡池）
+  const isUpstream = (row.upstream_source_id ?? 0) > 0; // 代发：库存=上游缓存
+  const stock = row.stock ?? 0; // -1 = 不限（链接/兑换码类不入卡池；代发上游无限）
   const sold = row.sold_count ?? 0;
   const line = (label: string, value: any) =>
     h("div", { class: "flex items-center gap-6px leading-20px" }, [
       h("span", { class: "w-30px shrink-0 text-12px text-gray-400" }, label),
       value,
     ]);
-  // 库存颜色：卡密类 0=红（缺货）、≤10=橙（低库存预警）、其余常规；链接/兑换码=不限
-  const stockNode = !isCard
+  // 库存颜色：卡密类 0=红（缺货）、≤10=橙（低库存预警）；代发/链接/兑换码 -1=不限
+  const stockNode = !isCard || (isUpstream && stock < 0)
     ? h("span", {}, "不限")
     : stock <= 0
       ? h("span", { class: "font-medium text-red-500" }, "0 件")

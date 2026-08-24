@@ -22,8 +22,15 @@ func ApplyPricing(upstreamCents int64, rate, markupPercent float64, markupAmount
 	if rate <= 0 {
 		rate = 1 // 未配置/非法汇率按 1（连接创建缺省值防御）
 	}
-	raw := float64(upstreamCents)*rate*(1+markupPercent/100) + float64(markupAmountCents)
-	return roundByMode(raw, mode)
+	base := float64(upstreamCents) * rate
+	raw := base*(1+markupPercent/100) + float64(markupAmountCents)
+	result := roundByMode(raw, mode)
+	// 低价商品百分比加价被分钱取整吃掉（如 2 分 ×10% = 2.2 → 2 = 成本价）：
+	// 存在加价意图时至少 +1 分，保证渠道加价始终生效
+	if (markupPercent > 0 || markupAmountCents > 0) && result <= roundByMode(base, mode) {
+		result = roundByMode(base, mode) + 1
+	}
+	return result
 }
 
 // 导入定价模式（P2-10 D：交互式导入的策略选择；对齐 1.x computeInitialPrice）。

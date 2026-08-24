@@ -23,6 +23,9 @@ func TestApplyPricing(t *testing.T) {
 		{"none_固定加价汇率后", 1000, 0.5, 0, 300, RoundingNone, 800}, // 500+300
 		{"ceil_int_固定加价进位", 1001, 1, 0, 100, RoundingCeilInt, 1200}, // 1101 → 1200
 		{"none_四舍五入", 1, 1, 0, 0, RoundingNone, 1},
+		{"none_低价百分比加价至少1分", 2, 1, 10, 0, RoundingNone, 3}, // 2.2 → round 2 会被加价吃掉 → 至少 3
+		{"none_低价固定加价至少1分", 2, 1, 0, 1, RoundingNone, 3},   // 3 本就生效
+		{"none_汇率低价加价至少1分", 1, 1, 50, 0, RoundingNone, 2},  // 1.5 → 1 被吃 → 2
 		{"none_精确到分", 105, 1.0 / 3, 0, 0, RoundingNone, 35}, // 35.0
 		{"ceil_int_整元", 1001, 1, 0, 0, RoundingCeilInt, 1100},
 		{"ceil_int_整元边界", 1000, 1, 0, 0, RoundingCeilInt, 1000},

@@ -17,6 +17,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	mediamods "github.com/NovaWorks/zcard-next/server/internal/mods/media"
@@ -96,6 +97,28 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	}
 	rows, err := q.All(ctx)
 	return rows, int64(total), err
+}
+
+// UpStockBatch 上游库存缓存批量查询（代发商品列表库存口径；缺省 -1=未知/无限）。
+func (r *ProductRepoImpl) UpStockBatch(ctx context.Context, productIDs []uint64) map[uint64]int32 {
+	out := map[uint64]int32{}
+	if len(productIDs) == 0 {
+		return out
+	}
+	var rows []struct {
+		LocalProductID uint64 `json:"local_product_id"`
+		UpStock        int32  `json:"up_stock"`
+	}
+	if err := data.Client(ctx, r.data).SupplyMapping.Query().
+		Where(supplymapping.LocalProductIDIn(productIDs...)).
+		Select(supplymapping.FieldLocalProductID, supplymapping.FieldUpStock).
+		Scan(ctx, &rows); err != nil {
+		return out
+	}
+	for _, r := range rows {
+		out[r.LocalProductID] = r.UpStock
+	}
+	return out
 }
 
 // GetAdmin 管理面商品详情。
