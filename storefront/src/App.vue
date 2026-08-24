@@ -1,5 +1,7 @@
 <template>
   <div class="app">
+    <!-- 安装页：无商城布局（头部/尾部/客服/公告全隐藏，仅渲染向导自身） -->
+    <template v-if="!isInstall">
     <!-- 顶部品牌条（深蓝渐变；信任点可后台配置） -->
     <div class="brand-bar">
       <span class="brand-slogan">🎁 {{ siteName }} · 自动发货 秒速到账</span>
@@ -40,8 +42,9 @@
         </template>
       </div>
     </header>
+    </template>
 
-    <main class="main">
+    <main class="main" :class="{ 'install-main': isInstall }">
       <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
       <router-view v-slot="{ Component }">
         <Suspense>
@@ -50,7 +53,8 @@
       </router-view>
     </main>
 
-    <!-- 页脚 -->
+    <!-- 页脚（安装页隐藏） -->
+    <template v-if="!isInstall">
     <footer class="footer">
       <div class="footer-trust">
         <div class="trust-item"><span class="trust-icon">⚡</span><div><b>极速发货</b><span class="muted">下单即自动发货</span></div></div>
@@ -99,12 +103,13 @@
 
     <!-- 公告弹窗（首次访问自动弹出 + 导航喇叭/首页公告轮播入口） -->
     <NoticeModal :show="noticeShow" :post="noticePost" :content="noticeContent" :announcement="noticeAnnouncement" @update:show="(v: boolean) => (noticeShow = v)" />
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
 import { listPosts, getPost, fetchAnnouncement, type StorePost, type AnnouncementConfig } from '@/api';
@@ -114,6 +119,10 @@ import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
 
 const router = useRouter();
+const route = useRoute();
+
+// 安装页：无商城布局（头部/尾部/客服/公告等全部不渲染，见模板 v-if）
+const isInstall = computed(() => route.path === '/install');
 
 // 站点名（config 下发；失败回退）
 const siteName = ref('ZCard 商店');
@@ -194,6 +203,8 @@ function openNotice() {
 }
 
 onMounted(async () => {
+  // 安装页：不加载商城业务（购物车/公告/统计/回顶监听等）
+  if (isInstall.value) return;
   captureRefCode(); // 推广归因捕获（任何页面 ?ref= 进站即记 30 天）
   // 站点配置（service.stats_script 统计代码；SEO 配置已在 setup 顶层消费）
   try {

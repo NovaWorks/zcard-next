@@ -2,6 +2,8 @@
 body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; color: #1f2329; background: #f5f6f7; }
 .app { min-height: 100vh; display: flex; flex-direction: column; }
 .main { max-width: 1120px; margin: 0 auto; padding: 20px 16px; width: 100%; flex: 1; }
+/* 安装页：去掉容器约束，Install 组件自身全屏 */
+.main.install-main { max-width: none; padding: 0; }
 
 /* ── 品牌条（深蓝渐变）── */
 .brand-bar {
