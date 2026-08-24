@@ -1078,12 +1078,14 @@ func (x *CreateCategoryRequest) GetSort() int32 {
 }
 
 type UpdateCategoryRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Icon          string                 `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"`
-	Hide          bool                   `protobuf:"varint,4,opt,name=hide,proto3" json:"hide,omitempty"`
-	Sort          int32                  `protobuf:"varint,5,opt,name=sort,proto3" json:"sort,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Icon  string                 `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"`
+	Hide  bool                   `protobuf:"varint,4,opt,name=hide,proto3" json:"hide,omitempty"`
+	Sort  int32                  `protobuf:"varint,5,opt,name=sort,proto3" json:"sort,omitempty"`
+	// 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
+	ParentId      int64 `protobuf:"varint,6,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1149,6 +1151,13 @@ func (x *UpdateCategoryRequest) GetHide() bool {
 func (x *UpdateCategoryRequest) GetSort() int32 {
 	if x != nil {
 		return x.Sort
+	}
+	return 0
+}
+
+func (x *UpdateCategoryRequest) GetParentId() int64 {
+	if x != nil {
+		return x.ParentId
 	}
 	return 0
 }
@@ -3199,13 +3208,14 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1b\n" +
 	"\tparent_id\x18\x02 \x01(\x04R\bparentId\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
-	"\x04sort\x18\x04 \x01(\x05R\x04sort\"|\n" +
+	"\x04sort\x18\x04 \x01(\x05R\x04sort\"\x99\x01\n" +
 	"\x15UpdateCategoryRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
 	"\x04hide\x18\x04 \x01(\bR\x04hide\x12\x12\n" +
-	"\x04sort\x18\x05 \x01(\x05R\x04sort\",\n" +
+	"\x04sort\x18\x05 \x01(\x05R\x04sort\x12\x1b\n" +
+	"\tparent_id\x18\x06 \x01(\x03R\bparentId\",\n" +
 	"\x15DeleteCategoryRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"6\n" +
 	"\aTagList\x12+\n" +

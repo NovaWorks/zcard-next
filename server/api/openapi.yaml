@@ -9629,6 +9629,9 @@ components:
                 sort:
                     type: integer
                     format: int32
+                parentId:
+                    type: string
+                    description: 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
         zcard.api.admin.v1.UpdateChannelRequest:
             required:
                 - id
