@@ -103,6 +103,10 @@ type SyncService struct {
 	enq        queue.Enqueuer
 	outbox     events.Writer // sync.completed 发布
 	log        *slog.Logger
+
+	// 封面采集去重缓存（url → 本地 /uploads/ 路径或完整上游 URL；mutex 保护并发任务）
+	coverMu    sync.Mutex
+	coverCache map[string]string
 }
 
 // NewSyncService 构造。
@@ -414,7 +418,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
-		Cover:               p.Cover,
+		Cover:               s.downloadCover(ctx, conn, p.Cover), // 上游图采集落本地（fail-open）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         autoOnshelf(conn.Settings),
@@ -748,7 +752,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
-		Cover:               p.Cover,
+		Cover:               s.downloadCover(ctx, conn, p.Cover), // 上游图采集落本地（fail-open）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,
