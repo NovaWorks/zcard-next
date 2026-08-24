@@ -82,6 +82,13 @@ const installedPage = `<!doctype html>
   a.primary:hover{background:#1d4ed8}
   a.secondary{border:1px solid #e2e8f0;color:#334155}
   a.secondary:hover{background:#f8fafc}
+  details{margin-top:22px;text-align:left;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+  summary{cursor:pointer;font-size:13.5px;font-weight:700;color:#334155;padding:10px 14px;background:#f8fafc;list-style:none}
+  summary::before{content:"⚙ "}
+  details[open] summary{border-bottom:1px solid #e2e8f0}
+  details ol{margin:0;padding:12px 14px 12px 34px;font-size:13px;color:#475569;line-height:1.9}
+  code{background:#f1f5f9;border-radius:4px;padding:1px 6px;font-size:12px}
+  .warn{color:#b45309;font-size:12.5px;padding:0 14px 12px;margin:0}
 </style>
 </head>
 <body>
@@ -93,6 +100,16 @@ const installedPage = `<!doctype html>
       <a class="primary" href="/">进入前台</a>
       <a class="secondary" href="/admin/">后台管理</a>
     </div>
+    <details>
+      <summary>如何重新安装？</summary>
+      <p class="warn">⚠️ 重新安装会清空当前全部数据（商品/订单/用户），请先备份数据库！</p>
+      <ol>
+        <li><b>SQLite</b>：删除数据库文件 <code>data/zcard.db</code></li>
+        <li><b>PostgreSQL / MySQL</b>：清空数据库（重建或执行 <code>DROP DATABASE</code>；安装标记在库内，仅删配置不会回到未安装）</li>
+        <li>若曾用在线向导切换过数据库：删除 <code>configs/database.yaml</code> 与 <code>data/.install-pending.json</code></li>
+        <li>重启服务后访问 <code>/install</code> 即回到安装向导</li>
+      </ol>
+    </details>
   </div>
 </body>
 </html>`
