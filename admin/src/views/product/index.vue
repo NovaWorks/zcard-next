@@ -514,9 +514,33 @@ function catNodeProps({ option }: { option: any }) {
   return { title: option.label || "" };
 }
 
+// ── 展开/收缩全部（分类多时快速导航）──
+const expandedCatKeys = ref<Array<string | number>>([]);
+
+function collectAllKeys(nodes: any[]): Array<string | number> {
+  const keys: Array<string | number> = [];
+  const walk = (list: any[]) => {
+    for (const n of list) {
+      keys.push(n.key);
+      if (n.children?.length) walk(n.children);
+    }
+  };
+  walk(nodes);
+  return keys;
+}
+
+function expandAllCats() {
+  expandedCatKeys.value = collectAllKeys(filterCategoryTree.value);
+}
+
+function collapseAllCats() {
+  expandedCatKeys.value = [];
+}
+
 async function loadCategories() {
   const { data, error } = await fetchCategories();
   if (!error && data) categories.value = (data as any).categories || [];
+  expandAllCats(); // 分类加载完默认全部展开
 }
 
 async function loadConnections() {
@@ -664,16 +688,22 @@ onMounted(() => {
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard title="商品分类" class="w-230px shrink-0">
       <template #header-extra>
-        <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
+        <NSpace :size="2">
+          <NButton size="tiny" quaternary @click="expandAllCats">展开</NButton>
+          <NButton size="tiny" quaternary @click="collapseAllCats">收缩</NButton>
+          <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
+        </NSpace>
       </template>
-      <NTree
-        block-line
-        default-expand-all
-        :data="filterCategoryTree"
-        :selected-keys="selectedCatKeys"
-        :node-props="catNodeProps"
-        @update:selected-keys="onTreeSelect"
-      />
+      <NScrollbar class="max-h-[calc(100vh-200px)]">
+        <NTree
+          block-line
+          :data="filterCategoryTree"
+          :selected-keys="selectedCatKeys"
+          v-model:expanded-keys="expandedCatKeys"
+          :node-props="catNodeProps"
+          @update:selected-keys="onTreeSelect"
+        />
+      </NScrollbar>
     </NCard>
     <!-- 右侧：商品列表 -->
     <NCard title="商品管理" class="flex-1">
