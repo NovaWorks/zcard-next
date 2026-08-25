@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
@@ -153,6 +154,29 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 		}
 	}
 
+	// 直发商品（url/code）：同一链接/兑换码反复发货——写直发交付记录
+	// （CardID=0，取货时从商品 direct_content 现场解密）。每订单项一条。
+	for _, it := range items {
+		p, err := client.Product.Get(ctx, it.ProductID)
+		if err != nil || p.StockType == product.StockTypeCard || p.UpstreamSourceID > 0 {
+			continue // 卡密类走上方逐卡；上游项由 procurement 回填
+		}
+		token := randomToken()
+		_, err = client.OrderDelivery.Create().
+			SetOrderID(o.ID).
+			SetItemID(it.ID).
+			SetCardID(0).
+			SetDeliveryTokenHash(hashToken(token)).
+			SetDeliveredMode(orderdelivery.DeliveredModeDirect).
+			SetDeliveredBy(0).
+			SetFetchCount(0).
+			SetDeliveredAt(deliveredAt).
+			Save(ctx)
+		if err != nil {
+			return fmt.Errorf("fulfillment.DIRECT_CREATE_FAILED: %w", err)
+		}
+	}
+
 	// 更新订单状态 → delivered
 	_, err = client.Order.Update().
 		Where(order.ID(o.ID), order.StatusEQ(order.StatusPaid)).
@@ -251,6 +275,33 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 		if d.FetchCount > 0 {
 			isFirstFetch = false
 		}
+
+		// 直发交付（url/code 商品）：内容在商品 direct_content（CardID=0 无卡）
+		if d.DeliveredMode == orderdelivery.DeliveredModeDirect {
+			var productID uint64
+			if d.ItemID > 0 {
+				if it, e := client.OrderItem.Get(ctx, d.ItemID); e == nil {
+					productID = it.ProductID
+				}
+			}
+			p, perr := client.Product.Get(ctx, productID)
+			if perr != nil || len(p.DirectContent) == 0 {
+				result.Items = append(result.Items, FetchItem{CardID: 0, Content: "****（直发内容未配置）", Masked: true})
+				continue
+			}
+			plain, derr := r.cipher.Open(p.DirectContent, p.ID, p.SubsiteID)
+			if derr != nil {
+				result.Items = append(result.Items, FetchItem{CardID: 0, Content: "****（解密失败）", Masked: true})
+				continue
+			}
+			if isFirstFetch {
+				result.Items = append(result.Items, FetchItem{CardID: 0, Content: string(plain), Masked: false})
+			} else {
+				result.Items = append(result.Items, FetchItem{CardID: 0, Content: maskContent(string(plain)), Masked: true})
+			}
+			continue
+		}
+
 		// 取卡密
 		c, err := client.Card.Get(ctx, d.CardID)
 		if ent.IsNotFound(err) {

@@ -32,6 +32,7 @@ func (Product) Fields() []ent.Field {
 		field.JSON("member_price", map[string]int64{}).Optional().Comment("按会员等级价 {level_id: 分}"),
 		field.Int64("points_required").Default(0).Comment("积分兑换价（分单位积分；0=不参与积分商城，P3-01）"),
 		field.Enum("stock_type").Values("card", "url", "code").Default("card").Comment("卡密/链接/兑换码"),
+		field.Bytes("direct_content").Optional().Comment("直发内容密文（url/code 商品：网盘链接/兑换码，AES-GCM AAD=product/subsite；同一内容发给每个买家"),
 		field.Bool("stock_visible").Default(true).Comment("是否显示库存"),
 		field.Enum("delivery_mode").Values("status", "delete").Default("status").Comment("发货模式：标记/即删"),
 		field.JSON("control_config", map[string]any{}).Optional().Comment("自定义控件配置（结构化控件走 product_controls 表，M1）"),

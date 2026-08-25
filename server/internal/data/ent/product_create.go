@@ -202,6 +202,12 @@ func (_c *ProductCreate) SetNillableStockType(v *product.StockType) *ProductCrea
 	return _c
 }
 
+// SetDirectContent sets the "direct_content" field.
+func (_c *ProductCreate) SetDirectContent(v []byte) *ProductCreate {
+	_c.mutation.SetDirectContent(v)
+	return _c
+}
+
 // SetStockVisible sets the "stock_visible" field.
 func (_c *ProductCreate) SetStockVisible(v bool) *ProductCreate {
 	_c.mutation.SetStockVisible(v)
@@ -615,6 +621,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 		_spec.SetField(product.FieldStockType, field.TypeEnum, value)
 		_node.StockType = value
 	}
+	if value, ok := _c.mutation.DirectContent(); ok {
+		_spec.SetField(product.FieldDirectContent, field.TypeBytes, value)
+		_node.DirectContent = value
+	}
 	if value, ok := _c.mutation.StockVisible(); ok {
 		_spec.SetField(product.FieldStockVisible, field.TypeBool, value)
 		_node.StockVisible = value
@@ -966,6 +976,24 @@ func (u *ProductUpsert) SetStockType(v product.StockType) *ProductUpsert {
 // UpdateStockType sets the "stock_type" field to the value that was provided on create.
 func (u *ProductUpsert) UpdateStockType() *ProductUpsert {
 	u.SetExcluded(product.FieldStockType)
+	return u
+}
+
+// SetDirectContent sets the "direct_content" field.
+func (u *ProductUpsert) SetDirectContent(v []byte) *ProductUpsert {
+	u.Set(product.FieldDirectContent, v)
+	return u
+}
+
+// UpdateDirectContent sets the "direct_content" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateDirectContent() *ProductUpsert {
+	u.SetExcluded(product.FieldDirectContent)
+	return u
+}
+
+// ClearDirectContent clears the value of the "direct_content" field.
+func (u *ProductUpsert) ClearDirectContent() *ProductUpsert {
+	u.SetNull(product.FieldDirectContent)
 	return u
 }
 
@@ -1440,6 +1468,27 @@ func (u *ProductUpsertOne) SetStockType(v product.StockType) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateStockType() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateStockType()
+	})
+}
+
+// SetDirectContent sets the "direct_content" field.
+func (u *ProductUpsertOne) SetDirectContent(v []byte) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetDirectContent(v)
+	})
+}
+
+// UpdateDirectContent sets the "direct_content" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateDirectContent() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateDirectContent()
+	})
+}
+
+// ClearDirectContent clears the value of the "direct_content" field.
+func (u *ProductUpsertOne) ClearDirectContent() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearDirectContent()
 	})
 }
 
@@ -2105,6 +2154,27 @@ func (u *ProductUpsertBulk) SetStockType(v product.StockType) *ProductUpsertBulk
 func (u *ProductUpsertBulk) UpdateStockType() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateStockType()
+	})
+}
+
+// SetDirectContent sets the "direct_content" field.
+func (u *ProductUpsertBulk) SetDirectContent(v []byte) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetDirectContent(v)
+	})
+}
+
+// UpdateDirectContent sets the "direct_content" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateDirectContent() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateDirectContent()
+	})
+}
+
+// ClearDirectContent clears the value of the "direct_content" field.
+func (u *ProductUpsertBulk) ClearDirectContent() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearDirectContent()
 	})
 }
 

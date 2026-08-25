@@ -944,7 +944,7 @@ var (
 		{Name: "item_id", Type: field.TypeUint64},
 		{Name: "card_id", Type: field.TypeUint64},
 		{Name: "delivery_token_hash", Type: field.TypeString, Size: 64},
-		{Name: "delivered_mode", Type: field.TypeEnum, Enums: []string{"status", "delete"}},
+		{Name: "delivered_mode", Type: field.TypeEnum, Enums: []string{"status", "delete", "direct"}},
 		{Name: "delivered_by", Type: field.TypeUint64, Default: 0},
 		{Name: "logistics", Type: field.TypeJSON, Nullable: true},
 		{Name: "fetch_count", Type: field.TypeInt32, Default: 0},
@@ -1390,6 +1390,7 @@ var (
 		{Name: "member_price", Type: field.TypeJSON, Nullable: true},
 		{Name: "points_required", Type: field.TypeInt64, Default: 0},
 		{Name: "stock_type", Type: field.TypeEnum, Enums: []string{"card", "url", "code"}, Default: "card"},
+		{Name: "direct_content", Type: field.TypeBytes, Nullable: true},
 		{Name: "stock_visible", Type: field.TypeBool, Default: true},
 		{Name: "delivery_mode", Type: field.TypeEnum, Enums: []string{"status", "delete"}, Default: "status"},
 		{Name: "control_config", Type: field.TypeJSON, Nullable: true},
@@ -1419,17 +1420,17 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[21]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[22]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[22]},
+				Columns: []*schema.Column{ProductsColumns[23]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[22], ProductsColumns[23]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[23], ProductsColumns[24]},
 			},
 		},
 	}

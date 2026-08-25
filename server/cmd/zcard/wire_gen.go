@@ -153,7 +153,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	storeMediaService := media.NewStoreMediaService(mediaRepo)
 	adminCurrencyService := settings.NewAdminCurrencyService(dataData)
 	portSettingsReader := catalog.ProvideSettingsReader(repoImpl)
-	adminCatalogService := catalog.NewAdminCatalogService(productRepoImpl, cardRepoImpl, orderUsecase, portSettingsReader)
+	adminCatalogService := catalog.NewAdminCatalogService(productRepoImpl, cardRepoImpl, orderUsecase, portSettingsReader, cardCipher)
 	adminMemberLevelService := memberlevel.NewAdminMemberLevelService(memberLevelRepoImpl)
 	pointsReader := wallet.ProvidePortPointsReader(walletRepoImpl)
 	storeMemberLevelService := memberlevel.NewStoreMemberLevelService(memberLevelRepoImpl, pointsReader)

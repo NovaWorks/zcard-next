@@ -128,6 +128,9 @@ type ProductInput struct {
 	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，P3-01）
 	PointsRequired    int64
 	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）
+	// 直发内容密文（url/code 商品；nil=不动。service 层已用 CardCipher 加密，
+	// AAD=product_id+subsite_id——创建时商品尚无 ID，由 repo 建后回填）
+	DirectContent []byte
 }
 
 // ProductAdminRepo 管理面仓储端口（service 层消费）。
@@ -136,6 +139,7 @@ type ProductAdminRepo interface {
 	GetAdmin(ctx context.Context, subsiteID, id uint64) (any, error)
 	CreateProduct(ctx context.Context, in ProductInput) (any, error)
 	UpdateProduct(ctx context.Context, id uint64, in ProductInput) (any, error)
+	SetDirectContent(ctx context.Context, id uint64, ciphered []byte) error
 	DeleteProduct(ctx context.Context, id uint64) error
 }
 
@@ -148,20 +152,20 @@ type UpstreamProductInput struct {
 	Name                string
 	Description         string
 	Cover               string
-	CategoryID          uint64 // 0 = 不设置分类
-	Price               int64  // 分；-1 = 保持现有价
-	FactoryPrice        int64  // 分（上游成本快照）
-	Status              int8   // 1=上架 2=隐藏 0=下架
-	AutoOnshelf         bool   // 新建商品时是否上架（settings.auto_onshelf）
+	CategoryID          uint64             // 0 = 不设置分类
+	Price               int64              // 分；-1 = 保持现有价
+	FactoryPrice        int64              // 分（上游成本快照）
+	Status              int8               // 1=上架 2=隐藏 0=下架
+	AutoOnshelf         bool               // 新建商品时是否上架（settings.auto_onshelf）
 	SKUs                []UpstreamSKUInput // 上游规格组合（空=不动现有 SKU；显式空切片语义同空——上游无规格时不清理本地手建 SKU）
 }
 
 // UpstreamSKUInput 上游规格组合（acg 笛卡尔积 / dujiao SKU）。
 type UpstreamSKUInput struct {
-	Code        string            // 上游 SKU 标识（acg 规格选择编码；dujiao sku_id）→ product_skus.upstream_sku_id
-	Name        string            // 展示名（缺省回退 Code）
-	PriceCents  int64             // 组合价（已过定价管线）
-	SpecValues  map[string]string // 结构化规格 {规格: 值}
+	Code       string            // 上游 SKU 标识（acg 规格选择编码；dujiao sku_id）→ product_skus.upstream_sku_id
+	Name       string            // 展示名（缺省回退 Code）
+	PriceCents int64             // 组合价（已过定价管线）
+	SpecValues map[string]string // 结构化规格 {规格: 值}
 }
 
 // UpstreamProductWriter 货源同步商品 upsert 端口（supply 模块消费，通道 A）。

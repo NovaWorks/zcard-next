@@ -86,6 +86,12 @@ function productOpts(catId: number | null) {
 const productOptions = computed(() => productOpts(filterCatId.value));
 const importProductOptions = computed(() => productOpts(importCatId.value));
 
+// 导入弹窗选中商品是否链接/兑换码直发类型（直发内容在商品编辑维护，不走卡池）
+const importProductIsDirect = computed(() => {
+  const p = products.value.find((x) => x.id === importProductId.value);
+  return !!p && p.stock_type && p.stock_type !== "card";
+});
+
 // 顶部/导入分类变化：当前商品不在新分类下则清空
 function onFilterCatChange() {
   if (
@@ -491,7 +497,12 @@ onMounted(() => {
             />
           </div>
         </NFormItem>
-        <NFormItem label="卡密内容">
+        <!-- 链接/兑换码直发商品：无卡池概念，引导去商品编辑设置直发内容 -->
+        <NAlert v-if="importProductIsDirect" type="warning" :bordered="false" class="mb-8px">
+          该商品是「链接/兑换码」直发类型——无需导入卡密。请到 商品管理 → 编辑该商品 →
+          填写「直发内容」（同一内容会自动发给每个买家，可反复售卖）。
+        </NAlert>
+        <NFormItem v-if="!importProductIsDirect" label="卡密内容">
           <NInput
             v-model:value="importContent"
             type="textarea"
@@ -506,7 +517,7 @@ onMounted(() => {
         <NButton
           type="primary"
           :loading="importing"
-          :disabled="!importProductId || !importContent.trim()"
+          :disabled="!importProductId || importProductIsDirect || !importContent.trim()"
           @click="handleImport"
         >
           确认导入{{ previewResult ? "（可导入 " + previewImportable() + " 条）" : "" }}

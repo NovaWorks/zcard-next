@@ -4,12 +4,13 @@ package catalog
 
 import (
 	"context"
-	"strings"
 	"encoding/json"
+	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	inventoryport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -26,12 +27,19 @@ type AdminCatalogService struct {
 	repo     *ProductRepoImpl
 	stock    inventoryport.StockBatcher // 批量可用库存（nil 容错降级 0）
 	sold     orderport.SoldCounter      // 批量已售数量（nil 容错降级 0）
-	settings port.SettingsReader // 低库存阈值等（通道 A；nil = 默认值）
+	settings port.SettingsReader        // 低库存阈值等（通道 A；nil = 默认值）
+	cipher   *inventory.CardCipher      // 直发内容加密（url/code 商品；nil = 直发不可用）
 }
 
 // NewAdminCatalogService 构造。
-func NewAdminCatalogService(repo *ProductRepoImpl, stock inventoryport.StockBatcher, sold orderport.SoldCounter, settings port.SettingsReader) *AdminCatalogService {
-	return &AdminCatalogService{repo: repo, stock: stock, sold: sold, settings: settings}
+func NewAdminCatalogService(repo *ProductRepoImpl, stock inventoryport.StockBatcher, sold orderport.SoldCounter, settings port.SettingsReader, cipher *inventory.CardCipher) *AdminCatalogService {
+	return &AdminCatalogService{repo: repo, stock: stock, sold: sold, settings: settings, cipher: cipher}
+}
+
+// sealDirect 直发内容加密（AAD 绑定 product+subsite）。
+func (s *AdminCatalogService) sealDirect(ctx context.Context, plain string, productID uint64) ([]byte, error) {
+	tc := tenancy.FromContext(ctx)
+	return s.cipher.Seal(plain, productID, tc.SubsiteID)
 }
 
 // lowStockThresholdFor 低库存筛选阈值（未开启筛选返回 0=不过滤）。
@@ -177,6 +185,20 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 	if err != nil {
 		return nil, errors.InternalServer("catalog.CREATE_FAILED", "创建失败: "+err.Error())
 	}
+	// 直发内容（url/code）：AAD 绑定 product_id，须在商品落库拿到 ID 后加密回填
+	if req.GetStockType() != "card" && req.GetDirectContent() != "" {
+		if s.cipher == nil {
+			return nil, errors.InternalServer("catalog.CIPHER_UNAVAILABLE", "直发加密不可用")
+		}
+		ciphered, serr := s.sealDirect(ctx, req.GetDirectContent(), p.ID)
+		if serr != nil {
+			return nil, errors.InternalServer("catalog.DIRECT_SEAL_FAILED", "直发内容加密失败")
+		}
+		if err := s.repo.SetDirectContent(ctx, p.ID, ciphered); err != nil {
+			return nil, errors.InternalServer("catalog.DIRECT_SAVE_FAILED", "直发内容保存失败")
+		}
+		p.DirectContent = ciphered
+	}
 	// 素材引用：封面 + 图集（新建全为引用）
 	s.repo.AdjustCoverRefs(ctx, nil, append([]string{in.Cover}, in.Images...))
 	return ToAdminPB(p), nil
@@ -198,6 +220,23 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
 	}
 	old, _ := s.repo.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, req.GetId())
+	// 直发内容（url/code）：空=保持不变；非空且商品非卡密类 → 加密更新
+	if req.GetDirectContent() != "" {
+		if s.cipher == nil {
+			return nil, errors.InternalServer("catalog.CIPHER_UNAVAILABLE", "直发加密不可用")
+		}
+		var stockType string
+		if old != nil {
+			stockType = string(old.StockType)
+		}
+		if stockType != "card" {
+			ciphered, serr := s.sealDirect(ctx, req.GetDirectContent(), req.GetId())
+			if serr != nil {
+				return nil, errors.InternalServer("catalog.DIRECT_SEAL_FAILED", "直发内容加密失败")
+			}
+			in.DirectContent = ciphered
+		}
+	}
 	p, err := s.repo.UpdateProduct(ctx, req.GetId(), in)
 	if err != nil {
 		return nil, errors.InternalServer("catalog.UPDATE_FAILED", "更新失败")

@@ -173,6 +173,12 @@ func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInpu
 	return create.Save(ctx)
 }
 
+// SetDirectContent 回填直发内容密文（创建后由 service 按真实 productID 加密调用）。
+func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphered []byte) error {
+	return data.Client(ctx, r.data).Product.UpdateOneID(id).
+		SetDirectContent(ciphered).Exec(ctx)
+}
+
 // UpdateProduct 更新（nil/零值字段不动）。
 func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
 	q := data.Client(ctx, r.data).Product.UpdateOneID(id)
@@ -199,6 +205,9 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 	}
 	if in.DeliveryMode != "" {
 		q.SetDeliveryMode(product.DeliveryMode(in.DeliveryMode))
+	}
+	if in.DirectContent != nil {
+		q.SetDirectContent(in.DirectContent)
 	}
 	q.SetStockVisible(in.StockVisible)
 	if in.Sort >= 0 {
@@ -506,7 +515,8 @@ func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 		DeliveryMode: string(p.DeliveryMode), Dedup: p.Dedup,
 		Sort: p.Sort, Status: int32(p.Status),
 		UpstreamSourceId: p.UpstreamSourceID, UpstreamProductCode: p.UpstreamProductCode,
-		PointsRequired: p.PointsRequired,
+		PointsRequired:   p.PointsRequired,
+		HasDirectContent: len(p.DirectContent) > 0,
 	}
 	if !p.CreatedAt.IsZero() {
 		out.CreatedAt = p.CreatedAt.Unix()

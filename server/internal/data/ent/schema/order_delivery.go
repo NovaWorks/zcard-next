@@ -27,7 +27,7 @@ func (OrderDelivery) Fields() []ent.Field {
 		field.Uint64("item_id").Comment("订单子项"),
 		field.Uint64("card_id").Comment("卡密引用（现场解密，绝不存明文）"),
 		field.String("delivery_token_hash").MaxLen(64).Comment("一次性取货令牌哈希"),
-		field.Enum("delivered_mode").Values("status", "delete").Comment("标记/即删（即删 = 卡密物理删除）"),
+		field.Enum("delivered_mode").Values("status", "delete", "direct").Comment("标记/即删/直发（direct = 商品级直发内容，无卡密）"),
 		field.Uint64("delivered_by").Default(0).Comment("人工发货管理员（auto 为 0）"),
 		field.JSON("logistics", map[string]any{}).Optional().Comment("结构化交付信息（物流单号/追踪链接）"),
 		field.Int32("fetch_count").Default(0).Comment("已取货次数（默认 1 次后掩码）"),

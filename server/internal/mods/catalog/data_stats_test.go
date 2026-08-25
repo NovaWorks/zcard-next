@@ -39,7 +39,7 @@ func newStatsEnv(t *testing.T) (*data.Data, *AdminCatalogService) {
 	gen, _ := id.NewGenerator(1)
 	cardRepo := inventory.NewCardRepoImpl(d, nil)
 	uc := &ordermod.OrderUsecase{Data: d, Gen: gen}
-	svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), cardRepo, uc, nil)
+	svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), cardRepo, uc, nil, nil)
 	return d, svc
 }
 

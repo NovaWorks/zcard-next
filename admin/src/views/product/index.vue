@@ -190,7 +190,7 @@ function priceCell(row: any) {
     line("售价", priceLine(row, "price")),
     line("成本", priceLine(row, "cost")),
     line(
-      "加价",
+      "毛利",
       markup === null
         ? h("span", { class: "text-gray-300" }, "-")
         : h(
@@ -242,17 +242,19 @@ const formData = reactive({
   factory_price_yuan: 0,
   points_required: 0,
   stock_type: "card",
+  direct_content: "",
   delivery_mode: "status",
   stock_visible: true,
   dedup: true,
   sort: 0,
   status: 1,
 });
+const directContentSet = ref(false); // 编辑时已配置直发内容（不回显明文，留空=不变）
 
 const stockTypeOptions = [
-  { label: "卡密", value: "card" },
-  { label: "链接", value: "url" },
-  { label: "兑换码", value: "code" },
+  { label: "卡密（一卡一卖，导入卡池发货）", value: "card" },
+  { label: "链接（直发 · 同一链接反复卖，如网盘资源）", value: "url" },
+  { label: "兑换码（直发 · 同一码反复卖，如口令/激活指引）", value: "code" },
 ];
 const deliveryModeOptions = [
   { label: "标记发货（卡密保留）", value: "status" },
@@ -572,12 +574,14 @@ function resetForm() {
     factory_price_yuan: 0,
     points_required: 0,
     stock_type: "card",
+    direct_content: "",
     delivery_mode: "status",
     stock_visible: true,
     dedup: true,
     sort: 0,
     status: 1,
   });
+  directContentSet.value = false;
 }
 
 async function handleEdit(row: any) {
@@ -595,12 +599,15 @@ async function handleEdit(row: any) {
     factory_price_yuan: p.factory_price_cents ? Number(centsToYuan(p.factory_price_cents)) : 0,
     points_required: p.points_required || 0,
     stock_type: p.stock_type,
+    direct_content: "",
+    directContentSet: undefined,
     delivery_mode: p.delivery_mode || "status",
     stock_visible: p.stock_visible !== false,
     dedup: p.dedup !== false,
     sort: p.sort || 0,
     status: p.status,
   });
+  directContentSet.value = !!p.has_direct_content;
   step.value = 1; // 编辑也从第一步进入
   showCreate.value = true;
 }
@@ -617,6 +624,7 @@ function buildPayload() {
     factory_price_cents: yuanToFen(formData.factory_price_yuan || 0),
     points_required: formData.points_required || 0,
     stock_type: formData.stock_type,
+    ...(formData.direct_content ? { direct_content: formData.direct_content } : {}),
     delivery_mode: formData.delivery_mode,
     stock_visible: formData.stock_visible,
     dedup: formData.dedup,
@@ -830,6 +838,19 @@ onMounted(() => {
           </NFormItem>
           <NFormItem label="库存类型">
             <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />
+          </NFormItem>
+          <NFormItem v-if="formData.stock_type !== 'card'" label="直发内容">
+            <div class="w-full">
+              <NInput
+                v-model:value="formData.direct_content"
+                type="textarea"
+                :rows="3"
+                :placeholder="directContentSet ? '已设置（加密存储不回显）——留空保持不变，填写则覆盖' : '买家支付后直接收到的内容，例如网盘链接、兑换码、资源口令等。同一内容会发给每个买家，可反复售卖。'"
+              />
+              <div class="mt-4px text-11px text-gray-400">
+                链接/兑换码商品无需导入卡密，买家付款后系统自动把该内容直接交付（库存显示「不限」）
+              </div>
+            </div>
           </NFormItem>
           <NFormItem label="状态">
             <NRadioGroup v-model:value="formData.status">

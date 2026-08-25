@@ -30,6 +30,7 @@ export function createProduct(data: {
   price_cents: number;
   factory_price_cents?: number;
   stock_type: string;
+  direct_content?: string;
   delivery_mode?: string;
   stock_visible?: boolean;
   dedup?: boolean;

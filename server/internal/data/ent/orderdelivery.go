@@ -31,7 +31,7 @@ type OrderDelivery struct {
 	CardID uint64 `json:"card_id,omitempty"`
 	// 一次性取货令牌哈希
 	DeliveryTokenHash string `json:"delivery_token_hash,omitempty"`
-	// 标记/即删（即删 = 卡密物理删除）
+	// 标记/即删/直发（direct = 商品级直发内容，无卡密）
 	DeliveredMode orderdelivery.DeliveredMode `json:"delivered_mode,omitempty"`
 	// 人工发货管理员（auto 为 0）
 	DeliveredBy uint64 `json:"delivered_by,omitempty"`

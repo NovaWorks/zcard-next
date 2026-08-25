@@ -115,6 +115,11 @@ func PointsRequired(v int64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldPointsRequired, v))
 }
 
+// DirectContent applies equality check predicate on the "direct_content" field. It's identical to DirectContentEQ.
+func DirectContent(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldDirectContent, v))
+}
+
 // StockVisible applies equality check predicate on the "stock_visible" field. It's identical to StockVisibleEQ.
 func StockVisible(v bool) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldStockVisible, v))
@@ -798,6 +803,56 @@ func StockTypeIn(vs ...StockType) predicate.Product {
 // StockTypeNotIn applies the NotIn predicate on the "stock_type" field.
 func StockTypeNotIn(vs ...StockType) predicate.Product {
 	return predicate.Product(sql.FieldNotIn(FieldStockType, vs...))
+}
+
+// DirectContentEQ applies the EQ predicate on the "direct_content" field.
+func DirectContentEQ(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldDirectContent, v))
+}
+
+// DirectContentNEQ applies the NEQ predicate on the "direct_content" field.
+func DirectContentNEQ(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldDirectContent, v))
+}
+
+// DirectContentIn applies the In predicate on the "direct_content" field.
+func DirectContentIn(vs ...[]byte) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldDirectContent, vs...))
+}
+
+// DirectContentNotIn applies the NotIn predicate on the "direct_content" field.
+func DirectContentNotIn(vs ...[]byte) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldDirectContent, vs...))
+}
+
+// DirectContentGT applies the GT predicate on the "direct_content" field.
+func DirectContentGT(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldDirectContent, v))
+}
+
+// DirectContentGTE applies the GTE predicate on the "direct_content" field.
+func DirectContentGTE(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldDirectContent, v))
+}
+
+// DirectContentLT applies the LT predicate on the "direct_content" field.
+func DirectContentLT(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldDirectContent, v))
+}
+
+// DirectContentLTE applies the LTE predicate on the "direct_content" field.
+func DirectContentLTE(v []byte) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldDirectContent, v))
+}
+
+// DirectContentIsNil applies the IsNil predicate on the "direct_content" field.
+func DirectContentIsNil() predicate.Product {
+	return predicate.Product(sql.FieldIsNull(FieldDirectContent))
+}
+
+// DirectContentNotNil applies the NotNil predicate on the "direct_content" field.
+func DirectContentNotNil() predicate.Product {
+	return predicate.Product(sql.FieldNotNull(FieldDirectContent))
 }
 
 // StockVisibleEQ applies the EQ predicate on the "stock_visible" field.

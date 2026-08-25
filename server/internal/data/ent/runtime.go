@@ -1532,23 +1532,23 @@ func init() {
 	// product.DefaultPointsRequired holds the default value on creation for the points_required field.
 	product.DefaultPointsRequired = productDescPointsRequired.Default.(int64)
 	// productDescStockVisible is the schema descriptor for stock_visible field.
-	productDescStockVisible := productFields[13].Descriptor()
+	productDescStockVisible := productFields[14].Descriptor()
 	// product.DefaultStockVisible holds the default value on creation for the stock_visible field.
 	product.DefaultStockVisible = productDescStockVisible.Default.(bool)
 	// productDescDedup is the schema descriptor for dedup field.
-	productDescDedup := productFields[16].Descriptor()
+	productDescDedup := productFields[17].Descriptor()
 	// product.DefaultDedup holds the default value on creation for the dedup field.
 	product.DefaultDedup = productDescDedup.Default.(bool)
 	// productDescSort is the schema descriptor for sort field.
-	productDescSort := productFields[17].Descriptor()
+	productDescSort := productFields[18].Descriptor()
 	// product.DefaultSort holds the default value on creation for the sort field.
 	product.DefaultSort = productDescSort.Default.(int32)
 	// productDescStatus is the schema descriptor for status field.
-	productDescStatus := productFields[18].Descriptor()
+	productDescStatus := productFields[19].Descriptor()
 	// product.DefaultStatus holds the default value on creation for the status field.
 	product.DefaultStatus = productDescStatus.Default.(int8)
 	// productDescUpstreamProductCode is the schema descriptor for upstream_product_code field.
-	productDescUpstreamProductCode := productFields[20].Descriptor()
+	productDescUpstreamProductCode := productFields[21].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
 	productcontrolMixin := schema.ProductControl{}.Mixin()

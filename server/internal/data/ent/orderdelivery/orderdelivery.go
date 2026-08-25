@@ -103,6 +103,7 @@ type DeliveredMode string
 const (
 	DeliveredModeStatus DeliveredMode = "status"
 	DeliveredModeDelete DeliveredMode = "delete"
+	DeliveredModeDirect DeliveredMode = "direct"
 )
 
 func (dm DeliveredMode) String() string {
@@ -112,7 +113,7 @@ func (dm DeliveredMode) String() string {
 // DeliveredModeValidator is a validator for the "delivered_mode" field enum values. It is called by the builders before save.
 func DeliveredModeValidator(dm DeliveredMode) error {
 	switch dm {
-	case DeliveredModeStatus, DeliveredModeDelete:
+	case DeliveredModeStatus, DeliveredModeDelete, DeliveredModeDirect:
 		return nil
 	default:
 		return fmt.Errorf("orderdelivery: invalid enum value for delivered_mode field: %q", dm)

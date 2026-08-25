@@ -1,4 +1,4 @@
-h1:evm/Maa5QLrwFPmX/NHaRce/RrkypwcMWy2yQLy/BdI=
+h1:Kz2Vz/bUAGCSI1BOl1qtByW494iW6EzZumc8VX0J/io=
 20260815190726_init.sql h1:GXVlyZMy8rSWuQjzK1/sNKrbne6jIvQO3XNHN/eXhU0=
 20260815195912_add_failed_tasks.sql h1:wu1QwVZdSy5uW3lMD8TAej8SwE2sGL2dQbpw8udAXk4=
 20260815201554_v1_full_schema.sql h1:bP/kFN9FpThTsu1cQPXp3l7zAvafT2DRWypR1MuLYDQ=
@@ -13,3 +13,4 @@ h1:evm/Maa5QLrwFPmX/NHaRce/RrkypwcMWy2yQLy/BdI=
 20260820020514_add_supply_markup_amount.sql h1:F8Yq/r7vusLPF+/1EvwsZ2RIWOIQy/GJF2JqL6QY7UQ=
 20260821180643_add_visit_promo_phone_withdrawal_supplier_e2e.sql h1:FNDZLXNOdum+2h87KOHVdWJjFiDAxxDMDYEiJbHPYG8=
 20260823120000_add_product_upstream_identity_unique.sql h1:BlWjVYT9xbiRsbCT/YAzQ1vP0dnXinlOarnfIDR8PxE=
+20260825130000_product_direct_content.sql h1:lSFaiXyYSYMRvYe6AEDwfYuh4ksK35ph7hryMuPy5qA=

@@ -157,7 +157,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 
 		// 1) 锁卡（库存不足整批回滚）。上游代发商品跳过本地锁卡——卡密在
 		// 支付后由 procurement 向上游采购回填（P2-02 链路；本地池无其卡）。
+		// url/code 直发商品同样跳过——直发内容商品级共享（同一链接/兑换码
+		// 反复发货，无卡池概念），支付后由 fulfillment 直写交付记录。
 		upstreamItem := map[uint64]bool{} // product_id → 是否上游项
+		directItem := map[uint64]bool{}   // product_id → 是否直发项（url/code）
 		var reserveItems []port.ReserveItem
 		for _, item := range in.Items {
 			if item.Quantity <= 0 {
@@ -172,6 +175,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if p.UpstreamSourceID > 0 {
 				upstreamItem[item.ProductID] = true
 				continue
+			}
+			if p.StockType != product.StockTypeCard {
+				directItem[item.ProductID] = true
+				continue // 链接/兑换码直发：不占卡池
 			}
 			reserveItems = append(reserveItems, port.ReserveItem{
 				ProductID: item.ProductID,
@@ -417,9 +424,12 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			return fmt.Errorf("order.CREATE_FAILED: %w", err)
 		}
 
-		// 6) 绑定订单到卡（Reserve 后回填 order_id；上游项无本地卡可绑）
+		// 6) 绑定订单到卡（Reserve 后回填 order_id；上游/直发项无本地卡可绑）
 		for _, item := range in.Items {
 			if upstreamItem[item.ProductID] {
+				continue
+			}
+			if directItem[item.ProductID] {
 				continue
 			}
 			if err := uc.Inv.BindOrder(txCtx, in.SubsiteID, item.ProductID, o.ID, item.Quantity); err != nil {

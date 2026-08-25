@@ -48,6 +48,8 @@ type Product struct {
 	PointsRequired int64 `json:"points_required,omitempty"`
 	// 卡密/链接/兑换码
 	StockType product.StockType `json:"stock_type,omitempty"`
+	// 直发内容密文（url/code 商品：网盘链接/兑换码，AES-GCM AAD=product/subsite；同一内容发给每个买家
+	DirectContent []byte `json:"direct_content,omitempty"`
 	// 是否显示库存
 	StockVisible bool `json:"stock_visible,omitempty"`
 	// 发货模式：标记/即删
@@ -106,7 +108,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case product.FieldImages, product.FieldMemberPrice, product.FieldControlConfig:
+		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
 		case product.FieldStockVisible, product.FieldDedup:
 			values[i] = new(sql.NullBool)
@@ -230,6 +232,12 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field stock_type", values[i])
 			} else if value.Valid {
 				_m.StockType = product.StockType(value.String)
+			}
+		case product.FieldDirectContent:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field direct_content", values[i])
+			} else if value != nil {
+				_m.DirectContent = *value
 			}
 		case product.FieldStockVisible:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -377,6 +385,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("stock_type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StockType))
+	builder.WriteString(", ")
+	builder.WriteString("direct_content=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DirectContent))
 	builder.WriteString(", ")
 	builder.WriteString("stock_visible=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StockVisible))

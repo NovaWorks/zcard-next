@@ -45,6 +45,8 @@ const (
 	FieldPointsRequired = "points_required"
 	// FieldStockType holds the string denoting the stock_type field in the database.
 	FieldStockType = "stock_type"
+	// FieldDirectContent holds the string denoting the direct_content field in the database.
+	FieldDirectContent = "direct_content"
 	// FieldStockVisible holds the string denoting the stock_visible field in the database.
 	FieldStockVisible = "stock_visible"
 	// FieldDeliveryMode holds the string denoting the delivery_mode field in the database.
@@ -103,6 +105,7 @@ var Columns = []string{
 	FieldMemberPrice,
 	FieldPointsRequired,
 	FieldStockType,
+	FieldDirectContent,
 	FieldStockVisible,
 	FieldDeliveryMode,
 	FieldControlConfig,

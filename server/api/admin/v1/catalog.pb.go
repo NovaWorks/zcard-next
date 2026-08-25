@@ -245,9 +245,11 @@ type AdminProduct struct {
 	// 积分兑换价（0=不参与积分商城；P3-01）
 	PointsRequired int64 `protobuf:"varint,21,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
-	SoldCount     int64 `protobuf:"varint,22,opt,name=sold_count,json=soldCount,proto3" json:"sold_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	SoldCount int64 `protobuf:"varint,22,opt,name=sold_count,json=soldCount,proto3" json:"sold_count,omitempty"`
+	// 直发内容已设置（url/code 商品；明文永不回传）
+	HasDirectContent bool `protobuf:"varint,23,opt,name=has_direct_content,json=hasDirectContent,proto3" json:"has_direct_content,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *AdminProduct) Reset() {
@@ -434,6 +436,13 @@ func (x *AdminProduct) GetSoldCount() int64 {
 	return 0
 }
 
+func (x *AdminProduct) GetHasDirectContent() bool {
+	if x != nil {
+		return x.HasDirectContent
+	}
+	return false
+}
+
 type CreateProductRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -451,8 +460,10 @@ type CreateProductRequest struct {
 	Status            int32                  `protobuf:"varint,13,opt,name=status,proto3" json:"status,omitempty"`
 	// 积分兑换价（0=不参与积分商城；P3-01）
 	PointsRequired int64 `protobuf:"varint,14,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
+	DirectContent string `protobuf:"bytes,15,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateProductRequest) Reset() {
@@ -583,6 +594,13 @@ func (x *CreateProductRequest) GetPointsRequired() int64 {
 	return 0
 }
 
+func (x *CreateProductRequest) GetDirectContent() string {
+	if x != nil {
+		return x.DirectContent
+	}
+	return ""
+}
+
 type UpdateProductRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -599,8 +617,10 @@ type UpdateProductRequest struct {
 	Status            int32                  `protobuf:"varint,12,opt,name=status,proto3" json:"status,omitempty"`
 	// 积分兑换价（0=不参与积分商城；P3-01）
 	PointsRequired int64 `protobuf:"varint,13,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 直发内容明文（空=保持不变；url/code 商品加密存储）
+	DirectContent string `protobuf:"bytes,14,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateProductRequest) Reset() {
@@ -722,6 +742,13 @@ func (x *UpdateProductRequest) GetPointsRequired() int64 {
 		return x.PointsRequired
 	}
 	return 0
+}
+
+func (x *UpdateProductRequest) GetDirectContent() string {
+	if x != nil {
+		return x.DirectContent
+	}
+	return ""
 }
 
 type DeleteProductRequest struct {
@@ -3172,7 +3199,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb1\x05\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xdf\x05\n" +
 	"\fAdminProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +
@@ -3202,7 +3229,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"updated_at\x18\x14 \x01(\x03R\tupdatedAt\x12'\n" +
 	"\x0fpoints_required\x18\x15 \x01(\x03R\x0epointsRequired\x12\x1d\n" +
 	"\n" +
-	"sold_count\x18\x16 \x01(\x03R\tsoldCount\"\xcf\x03\n" +
+	"sold_count\x18\x16 \x01(\x03R\tsoldCount\x12,\n" +
+	"\x12has_direct_content\x18\x17 \x01(\bR\x10hasDirectContent\"\xf6\x03\n" +
 	"\x14CreateProductRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +
@@ -3221,7 +3249,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x05dedup\x18\v \x01(\bR\x05dedup\x12\x12\n" +
 	"\x04sort\x18\f \x01(\x05R\x04sort\x12\x16\n" +
 	"\x06status\x18\r \x01(\x05R\x06status\x12'\n" +
-	"\x0fpoints_required\x18\x0e \x01(\x03R\x0epointsRequired\"\xa0\x03\n" +
+	"\x0fpoints_required\x18\x0e \x01(\x03R\x0epointsRequired\x12%\n" +
+	"\x0edirect_content\x18\x0f \x01(\tR\rdirectContent\"\xc7\x03\n" +
 	"\x14UpdateProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -3238,7 +3267,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	" \x01(\bR\fstockVisible\x12\x12\n" +
 	"\x04sort\x18\v \x01(\x05R\x04sort\x12\x16\n" +
 	"\x06status\x18\f \x01(\x05R\x06status\x12'\n" +
-	"\x0fpoints_required\x18\r \x01(\x03R\x0epointsRequired\"+\n" +
+	"\x0fpoints_required\x18\r \x01(\x03R\x0epointsRequired\x12%\n" +
+	"\x0edirect_content\x18\x0e \x01(\tR\rdirectContent\"+\n" +
 	"\x14DeleteProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"U\n" +
 	"\x1fBatchUpdateProductStatusRequest\x12\x15\n" +

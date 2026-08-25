@@ -6146,6 +6146,9 @@ components:
                 soldCount:
                     type: string
                     description: 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
+                hasDirectContent:
+                    type: boolean
+                    description: 直发内容已设置（url/code 商品；明文永不回传）
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -6973,6 +6976,9 @@ components:
                 pointsRequired:
                     type: string
                     description: 积分兑换价（0=不参与积分商城；P3-01）
+                directContent:
+                    type: string
+                    description: 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
         zcard.api.admin.v1.CreateReconciliationJobRequest:
             required:
                 - connectionId
@@ -9954,6 +9960,9 @@ components:
                 pointsRequired:
                     type: string
                     description: 积分兑换价（0=不参与积分商城；P3-01）
+                directContent:
+                    type: string
+                    description: 直发内容明文（空=保持不变；url/code 商品加密存储）
         zcard.api.admin.v1.UpdateRolePermissionsRequest:
             required:
                 - id

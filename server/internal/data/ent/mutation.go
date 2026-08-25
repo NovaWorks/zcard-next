@@ -46038,6 +46038,7 @@ type ProductMutation struct {
 	points_required       *int64
 	addpoints_required    *int64
 	stock_type            *product.StockType
+	direct_content        *[]byte
 	stock_visible         *bool
 	delivery_mode         *product.DeliveryMode
 	control_config        *map[string]interface{}
@@ -46908,6 +46909,55 @@ func (m *ProductMutation) ResetStockType() {
 	m.stock_type = nil
 }
 
+// SetDirectContent sets the "direct_content" field.
+func (m *ProductMutation) SetDirectContent(b []byte) {
+	m.direct_content = &b
+}
+
+// DirectContent returns the value of the "direct_content" field in the mutation.
+func (m *ProductMutation) DirectContent() (r []byte, exists bool) {
+	v := m.direct_content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDirectContent returns the old "direct_content" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldDirectContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDirectContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDirectContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDirectContent: %w", err)
+	}
+	return oldValue.DirectContent, nil
+}
+
+// ClearDirectContent clears the value of the "direct_content" field.
+func (m *ProductMutation) ClearDirectContent() {
+	m.direct_content = nil
+	m.clearedFields[product.FieldDirectContent] = struct{}{}
+}
+
+// DirectContentCleared returns if the "direct_content" field was cleared in this mutation.
+func (m *ProductMutation) DirectContentCleared() bool {
+	_, ok := m.clearedFields[product.FieldDirectContent]
+	return ok
+}
+
+// ResetDirectContent resets all changes to the "direct_content" field.
+func (m *ProductMutation) ResetDirectContent() {
+	m.direct_content = nil
+	delete(m.clearedFields, product.FieldDirectContent)
+}
+
 // SetStockVisible sets the "stock_visible" field.
 func (m *ProductMutation) SetStockVisible(b bool) {
 	m.stock_visible = &b
@@ -47487,7 +47537,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -47532,6 +47582,9 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.stock_type != nil {
 		fields = append(fields, product.FieldStockType)
+	}
+	if m.direct_content != nil {
+		fields = append(fields, product.FieldDirectContent)
 	}
 	if m.stock_visible != nil {
 		fields = append(fields, product.FieldStockVisible)
@@ -47598,6 +47651,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.PointsRequired()
 	case product.FieldStockType:
 		return m.StockType()
+	case product.FieldDirectContent:
+		return m.DirectContent()
 	case product.FieldStockVisible:
 		return m.StockVisible()
 	case product.FieldDeliveryMode:
@@ -47655,6 +47710,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldPointsRequired(ctx)
 	case product.FieldStockType:
 		return m.OldStockType(ctx)
+	case product.FieldDirectContent:
+		return m.OldDirectContent(ctx)
 	case product.FieldStockVisible:
 		return m.OldStockVisible(ctx)
 	case product.FieldDeliveryMode:
@@ -47786,6 +47843,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStockType(v)
+		return nil
+	case product.FieldDirectContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDirectContent(v)
 		return nil
 	case product.FieldStockVisible:
 		v, ok := value.(bool)
@@ -48006,6 +48070,9 @@ func (m *ProductMutation) ClearedFields() []string {
 	if m.FieldCleared(product.FieldMemberPrice) {
 		fields = append(fields, product.FieldMemberPrice)
 	}
+	if m.FieldCleared(product.FieldDirectContent) {
+		fields = append(fields, product.FieldDirectContent)
+	}
 	if m.FieldCleared(product.FieldControlConfig) {
 		fields = append(fields, product.FieldControlConfig)
 	}
@@ -48046,6 +48113,9 @@ func (m *ProductMutation) ClearField(name string) error {
 		return nil
 	case product.FieldMemberPrice:
 		m.ClearMemberPrice()
+		return nil
+	case product.FieldDirectContent:
+		m.ClearDirectContent()
 		return nil
 	case product.FieldControlConfig:
 		m.ClearControlConfig()
@@ -48111,6 +48181,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldStockType:
 		m.ResetStockType()
+		return nil
+	case product.FieldDirectContent:
+		m.ResetDirectContent()
 		return nil
 	case product.FieldStockVisible:
 		m.ResetStockVisible()

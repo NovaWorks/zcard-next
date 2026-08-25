@@ -281,6 +281,18 @@ func (_u *ProductUpdate) SetNillableStockType(v *product.StockType) *ProductUpda
 	return _u
 }
 
+// SetDirectContent sets the "direct_content" field.
+func (_u *ProductUpdate) SetDirectContent(v []byte) *ProductUpdate {
+	_u.mutation.SetDirectContent(v)
+	return _u
+}
+
+// ClearDirectContent clears the value of the "direct_content" field.
+func (_u *ProductUpdate) ClearDirectContent() *ProductUpdate {
+	_u.mutation.ClearDirectContent()
+	return _u
+}
+
 // SetStockVisible sets the "stock_visible" field.
 func (_u *ProductUpdate) SetStockVisible(v bool) *ProductUpdate {
 	_u.mutation.SetStockVisible(v)
@@ -683,6 +695,12 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.StockType(); ok {
 		_spec.SetField(product.FieldStockType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.DirectContent(); ok {
+		_spec.SetField(product.FieldDirectContent, field.TypeBytes, value)
+	}
+	if _u.mutation.DirectContentCleared() {
+		_spec.ClearField(product.FieldDirectContent, field.TypeBytes)
 	}
 	if value, ok := _u.mutation.StockVisible(); ok {
 		_spec.SetField(product.FieldStockVisible, field.TypeBool, value)
@@ -1089,6 +1107,18 @@ func (_u *ProductUpdateOne) SetNillableStockType(v *product.StockType) *ProductU
 	if v != nil {
 		_u.SetStockType(*v)
 	}
+	return _u
+}
+
+// SetDirectContent sets the "direct_content" field.
+func (_u *ProductUpdateOne) SetDirectContent(v []byte) *ProductUpdateOne {
+	_u.mutation.SetDirectContent(v)
+	return _u
+}
+
+// ClearDirectContent clears the value of the "direct_content" field.
+func (_u *ProductUpdateOne) ClearDirectContent() *ProductUpdateOne {
+	_u.mutation.ClearDirectContent()
 	return _u
 }
 
@@ -1524,6 +1554,12 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.StockType(); ok {
 		_spec.SetField(product.FieldStockType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.DirectContent(); ok {
+		_spec.SetField(product.FieldDirectContent, field.TypeBytes, value)
+	}
+	if _u.mutation.DirectContentCleared() {
+		_spec.ClearField(product.FieldDirectContent, field.TypeBytes)
 	}
 	if value, ok := _u.mutation.StockVisible(); ok {
 		_spec.SetField(product.FieldStockVisible, field.TypeBool, value)
