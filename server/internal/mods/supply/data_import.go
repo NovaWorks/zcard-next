@@ -37,7 +37,7 @@ type previewEntry struct {
 
 const (
 	previewTTL      = 60 * time.Second
-	previewMaxPages = 20 // ×50/页 = 1000 商品上限
+	previewMaxPages = 100 // ×50/页 = 5000 商品上限（导入预览须覆盖目标站全部分类与商品）
 )
 
 // PreviewProducts 上游商品预览（缓存 60s）。

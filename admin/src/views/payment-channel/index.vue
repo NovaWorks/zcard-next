@@ -137,6 +137,15 @@ function fieldOptionsOf(f: ConfigFieldSchema) {
   return f.options || [];
 }
 
+/** 输入框占位提示：帮助文字/已配置提醒并入 placeholder（输入后自然消失，不再占行） */
+function fieldHint(f: ConfigFieldSchema) {
+  const parts: string[] = [];
+  if (f.sensitive && configuredKeys.value.has(f.key)) parts.push("已配置，留空保持不变");
+  if (f.placeholder) parts.push(f.placeholder);
+  if (f.help) parts.push(f.help);
+  return parts.join(" · ") || undefined;
+}
+
 const driverOf = (code: string) => drivers.value.find((d) => d.code === code);
 const isConfigured = (ch: ChannelRow) => (ch.configured_fields || []).length > 0;
 
@@ -496,23 +505,19 @@ onMounted(() => {
               </div>
             </template>
             <template v-else-if="f.type === 'textarea'">
-              <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="f.placeholder || ''" />
+              <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="fieldHint(f)" />
             </template>
             <template v-else-if="f.type === 'number'">
-              <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" />
+              <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" :placeholder="fieldHint(f)" />
             </template>
             <template v-else>
               <NInput
                 v-model:value="form.values[f.key]"
                 :type="f.sensitive ? 'password' : 'text'"
                 show-password-on="click"
-                :placeholder="f.sensitive && configuredKeys.has(f.key) ? '留空表示不修改' : f.placeholder"
+                :placeholder="fieldHint(f)"
               />
             </template>
-            <div v-if="f.help" class="text-12px opacity-50 mt-4px">{{ f.help }}</div>
-            <div v-else-if="f.sensitive && configuredKeys.has(f.key)" class="text-12px opacity-50 mt-4px">
-              已配置，留空保持不变
-            </div>
           </NFormItem>
         </template>
 

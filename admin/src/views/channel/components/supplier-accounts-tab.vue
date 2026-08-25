@@ -410,7 +410,7 @@ onMounted(load);
       </NSpace>
     </div>
 
-    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" />
+    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" :scroll-x="1300" />
 
     <!-- 密钥一次性回显 -->
     <NModal :show="!!secretOnce" preset="dialog" title="密钥（仅此一次展示，请立即保存）" style="width: 520px" @update:show="secretOnce = ''">

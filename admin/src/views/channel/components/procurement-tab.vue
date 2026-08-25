@@ -128,7 +128,7 @@ onMounted(load);
 <template>
   <div>
     <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px" @change="onSearch" />
-    <NDataTable :columns="columns" :data="rows" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" />
+    <NDataTable :columns="columns" :data="rows" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" :scroll-x="1200" />
     <div class="mt-12px flex justify-end">
       <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />
     </div>

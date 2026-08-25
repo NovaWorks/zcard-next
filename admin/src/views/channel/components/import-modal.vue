@@ -173,7 +173,7 @@ async function submit() {
     :show="props.show"
     preset="card"
     :title="`导入上游商品：${props.connection?.name || ''}`"
-    style="width: 860px"
+    style="width: 920px"
     @update:show="emit('update:show', $event)"
   >
     <NSpin :show="loading">
@@ -181,9 +181,9 @@ async function submit() {
         上游未返回商品（检查连接凭据或先「测试连接」）
       </NAlert>
 
-      <!-- 左：分类树勾选；右：定价与映射 -->
-      <div class="grid grid-cols-[1fr_300px] gap-16px">
-        <div class="max-h-420px overflow-auto pr-8px">
+      <!-- 左：分类树勾选；右：定价与映射（左列 min-w-0：长分类/商品名截断不撑破弹窗） -->
+      <div class="grid grid-cols-[minmax(0,1fr)_310px] gap-16px">
+        <div class="max-h-480px min-w-0 overflow-auto pr-8px">
           <div v-for="cat in categories" :key="cat.code" class="mb-12px">
             <div class="mb-4px flex items-center gap-8px">
               <NCheckbox
@@ -191,14 +191,14 @@ async function submit() {
                 :indeterminate="checkedInCat(cat).length > 0 && checkedInCat(cat).length < cat.products.length"
                 @update:checked="(v: boolean) => toggleCat(cat, v)"
               >
-                <b>{{ cat.name }}</b>
+                <b class="min-w-0 truncate" :title="cat.name">{{ cat.name }}</b>
               </NCheckbox>
-              <NTag size="tiny" :bordered="false">{{ cat.products.length }} 件</NTag>
+              <NTag size="tiny" :bordered="false" class="shrink-0">{{ cat.products.length }} 件</NTag>
             </div>
             <NCheckboxGroup v-model:value="checked">
               <div class="grid grid-cols-1 gap-2px pl-24px">
-                <NCheckbox v-for="p in cat.products" :key="p.code" :value="p.code">
-                  <span :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}</span>
+                <NCheckbox v-for="p in cat.products" :key="p.code" :value="p.code" class="py-1px">
+                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }" :title="p.name">{{ p.name }}</span>
                   <span class="ml-4px text-12px text-gray-400">
                     {{ formatMoney(p.price_cents) }}
                     <template v-if="p.stock >= 0">· 库存 {{ p.stock }}</template>
@@ -252,11 +252,13 @@ async function submit() {
               </template>
               <div class="flex w-full flex-col gap-6px">
                 <div v-for="cat in categories" :key="cat.code" class="flex items-center gap-6px">
-                  <span class="w-90px shrink-0 truncate text-12px" :title="cat.name">{{ cat.name }}</span>
+                  <span class="w-110px shrink-0 truncate text-12px" :title="cat.name">{{ cat.name }}</span>
                   <NSelect
                     v-model:value="categoryMapDraft[cat.code]"
                     size="small"
                     clearable
+                    filterable
+                    placement="bottom-start"
                     class="flex-1"
                     placeholder="本地分类（空=不设置）"
                     :options="localCategoryOptions"

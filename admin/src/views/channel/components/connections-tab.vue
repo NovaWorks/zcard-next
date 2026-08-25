@@ -625,7 +625,15 @@ onMounted(load);
       <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增渠道</NButton>
     </div>
 
-    <NDataTable :columns="columns" :data="connections" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" />
+    <NDataTable
+      :columns="columns"
+      :data="connections"
+      :loading="loading"
+      size="small"
+      :row-key="(r: any) => r.id"
+      :max-height="540"
+      :scroll-x="1400"
+    />
     <div class="mt-12px flex justify-end">
       <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />
     </div>
@@ -656,17 +664,23 @@ onMounted(load);
         <NFormItem label="汇率">
           <NInputNumber v-model:value="form.exchange_rate" :min="0.00000001" class="w-full" />
         </NFormItem>
-        <NFormItem label="加价方式">
-          <NSpace align="center" class="w-full">
-            <NInputNumber v-model:value="form.price_markup_percent" :min="0" size="small" class="w-110px" placeholder="0">
-              <template #suffix>%</template>
-            </NInputNumber>
-            <span class="text-12px text-gray-400">+</span>
-            <NInputNumber v-model:value="form.markupAmountYuan" :min="0" :precision="2" size="small" class="w-120px" placeholder="0.00">
-              <template #suffix>元</template>
-            </NInputNumber>
-          </NSpace>
-          <span class="text-11px text-gray-400">本地价 = 上游价 × 汇率 × (1 + %) + 固定额，两者可组合</span>
+        <NFormItem label="加价规则">
+          <div class="w-full">
+            <div class="flex items-center gap-8px">
+              <span class="w-64px shrink-0 text-13px">比例上浮</span>
+              <NInputNumber v-model:value="form.price_markup_percent" :min="0" size="small" class="w-110px" placeholder="0">
+                <template #suffix>%</template>
+              </NInputNumber>
+              <span class="text-12px text-gray-400">＋</span>
+              <span class="w-64px shrink-0 text-13px">固定加价</span>
+              <NInputNumber v-model:value="form.markupAmountYuan" :min="0" :precision="2" size="small" class="w-120px" placeholder="0.00">
+                <template #suffix>元</template>
+              </NInputNumber>
+            </div>
+            <div class="mt-4px text-11px text-gray-400">
+              本店售价 = 上游价 × 汇率 ×（1 + 比例上浮%）＋ 固定加价；两项可只填其一（0 = 不启用）
+            </div>
+          </div>
         </NFormItem>
         <NFormItem label="商品链接模板">
           <NInput v-model:value="form.productUrlTemplate" placeholder="如 {base}/product/{code}（商品列表跳上游）" />
