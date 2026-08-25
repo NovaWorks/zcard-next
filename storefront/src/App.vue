@@ -12,6 +12,11 @@
       </span>
     </div>
 
+    <!-- 维护模式：横幅样式（ops.maintenance_style=banner） -->
+    <div v-if="maintenance && maintenanceStyle === 'banner'" class="maint-banner">
+      🔧 站点维护中，下单与支付可能间歇性不可用，请稍后再试
+    </div>
+
     <!-- 主导航（sticky） -->
     <header class="topbar">
       <router-link to="/" class="logo">
@@ -24,6 +29,13 @@
         <router-link to="/points">积分商城</router-link>
         <button class="nav-horn" @click="openNotice" title="系统公告">📢 公告</button>
         <router-link to="/fetch">取货查询</router-link>
+        <a
+          v-if="topButton"
+          :href="topButton.url || '#'"
+          :target="topButton.url ? '_blank' : undefined"
+          rel="noopener"
+          class="nav-custom-btn"
+        >{{ topButton.text }}</a>
       </nav>
       <div class="nav-right">
         <router-link to="/cart" class="cart-link" title="查看购物车">
@@ -170,6 +182,11 @@ function scrollTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ── 顶部自定义按钮（site.top_button 公开下发）+ 维护模式（ops.maintenance[_style]）──
+const topButton = ref<{ text: string; url: string } | null>(null);
+const maintenance = ref(false);
+const maintenanceStyle = ref('modal'); // modal=全屏遮罩 | banner=顶部横幅
+
 // ── 公告弹窗（设置公告优先；回落最新公告文章；首次访问自动弹出 + 导航喇叭/首页轮播随时重开）──
 const noticeShow = ref(false);
 const noticePost = ref<StorePost | null>(null);
@@ -211,6 +228,21 @@ onMounted(async () => {
     const resp = await fetch('/api/v1/storefront/config');
     const json = await resp.json();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
+    // 顶部自定义按钮 {text,url}
+    const tb = find('site.top_button');
+    if (tb) {
+      try {
+        const v = JSON.parse(tb);
+        if (v && typeof v.text === 'string' && v.text.trim()) {
+          topButton.value = { text: v.text.trim(), url: typeof v.url === 'string' ? v.url.trim() : '' };
+        }
+      } catch { /* 非法配置忽略 */ }
+    }
+    // 维护模式与样式（modal=遮罩弹窗 / banner=顶部横幅）
+    const mt = find('ops.maintenance');
+    if (mt) { try { maintenance.value = JSON.parse(mt) === true; } catch { /* ignore */ } }
+    const ms = find('ops.maintenance_style');
+    if (ms) { try { const v = JSON.parse(ms); if (v === 'banner' || v === 'modal') maintenanceStyle.value = v; } catch { /* ignore */ } }
     const stats = find('service.stats_script');
     if (stats) {
       let script = '';

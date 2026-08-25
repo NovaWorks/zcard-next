@@ -219,7 +219,10 @@ func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *
 	if s.payer == nil {
 		return nil, errors.InternalServer("supplier.PAYMENT_UNBOUND", "支付管线未装配")
 	}
-	ro, err := s.repo.CreateSupplyRechargeOrder(ctx, uid, acc.ID, amount)
+	// 赠送档位（settings.supplier_recharge.gift_tiers：充满 X 分赠 Y 分供货余额；
+	// 服务端裁决，客户端不可指定——与钱包充值 giftFor 同口径）
+	giftAmount := s.giftFor(ctx, amount)
+	ro, err := s.repo.CreateSupplyRechargeOrder(ctx, uid, acc.ID, amount, giftAmount)
 	if err != nil {
 		return nil, errors.InternalServer("supplier.RECHARGE_FAILED", "创建充值单失败")
 	}
@@ -231,6 +234,30 @@ func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *
 		RechargeId: ro.ID, PaymentId: info.PaymentID,
 		Type: info.Type, Payload: info.Payload,
 	}, nil
+}
+
+// giftFor 供货充值赠送（supplier_recharge.gift_tiers 精确匹配充值金额）。
+func (s *StoreSupplierService) giftFor(ctx context.Context, amount int64) int64 {
+	if s.settings == nil {
+		return 0
+	}
+	raw, err := s.settings.GetJSON(ctx, "supplier_recharge", "gift_tiers")
+	if err != nil || len(raw) == 0 {
+		return 0
+	}
+	var tiers []struct {
+		Amount      int64 `json:"amount"`
+		GiftBalance int64 `json:"gift_balance"`
+	}
+	if json.Unmarshal(raw, &tiers) != nil {
+		return 0
+	}
+	for _, t := range tiers {
+		if t.Amount == amount {
+			return t.GiftBalance
+		}
+	}
+	return 0
 }
 
 // rechargePolicy 供货充值档位（settings.supplier_recharge 组——独立于钱包

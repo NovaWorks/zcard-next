@@ -49,7 +49,7 @@ var groups = map[string]*GroupDef{
 			"admin_path":   "",
 			"top_button":   nil, // 顶部自定义按钮 {text,url}
 		},
-		PublicKeys: map[string]bool{"name": true, "logo": true, "url": true, "seo_title": true, "seo_keywords": true, "seo_desc": true, "verification_google": true, "verification_bing": true, "robots_custom": true},
+		PublicKeys: map[string]bool{"name": true, "logo": true, "url": true, "seo_title": true, "seo_keywords": true, "seo_desc": true, "verification_google": true, "verification_bing": true, "robots_custom": true, "top_button": true},
 	},
 	"template": {
 		Name: "template", Desc: "模板",
@@ -186,7 +186,7 @@ var groups = map[string]*GroupDef{
 			"announcement":      "",
 			"installed_at":      nil, // 安装时间（install 写入，业务只读）
 		},
-		PublicKeys: map[string]bool{"maintenance": true, "announcement_type": true, "announcement": true},
+		PublicKeys: map[string]bool{"maintenance": true, "maintenance_style": true, "announcement_type": true, "announcement": true},
 	},
 	"recharge": {
 		Name: "recharge", Desc: "充值",
@@ -208,14 +208,16 @@ var groups = map[string]*GroupDef{
 		Labels: map[string]string{
 			"enabled": "供货充值功能", "min_amount": "最小充值金额（分）",
 			"max_amount": "最大充值金额（分）",
+			"gift_tiers": "充值赠送档位",
 		},
 		Defaults: map[string]any{
 			"enabled":    true,
 			"min_amount": 1000, // 分（独立于钱包充值档位）
 			"max_amount": 500000,
+			"gift_tiers": nil, // [{amount,gift_balance}] 充满 amount 分赠 gift_balance 分供货余额
 		},
-		// 前台公开：对接账户充值弹窗限额展示（金额裁决仍在服务端）
-		PublicKeys: map[string]bool{"enabled": true, "min_amount": true, "max_amount": true},
+		// 前台公开：对接账户充值弹窗限额与赠送档位展示（金额裁决仍在服务端）
+		PublicKeys: map[string]bool{"enabled": true, "min_amount": true, "max_amount": true, "gift_tiers": true},
 	},
 	"license": {
 		Name: "license", Desc: "订阅许可证",

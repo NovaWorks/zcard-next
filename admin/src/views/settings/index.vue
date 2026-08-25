@@ -7,6 +7,8 @@ import { NCheckbox, NCheckboxGroup, NRadioButton, NRadioGroup, NSpace, NTabs as 
 import { checkAuth } from "@/directives";
 import { resolveMediaUrl } from "@/utils/media";
 import CurrencyTab from "./components/currency-tab.vue";
+import TopButtonField from "./components/top-button-field.vue";
+import GiftTiersField from "./components/gift-tiers-field.vue";
 import AuditTab from "./components/audit-tab.vue";
 import ThemePickerModal from "./components/theme-picker-modal.vue";
 
@@ -41,7 +43,7 @@ const groups = [
 // ── 长文本/JSON 类设置键：渲染 textarea（JSON 键格式化展示 + 解析校验）──
 const TEXTAREA_KEYS: Record<string, string[]> = {
   service: ["widget_script", "stats_script"],
-  site: ["top_button", "robots_custom"],
+  site: ["robots_custom"],
   footer: ["nav", "social"],
   notify: ["sms_template_register", "sms_template_reset"],
 };
@@ -293,7 +295,13 @@ onMounted(() => {
             <NForm label-placement="left" label-width="140" class="mt-16px max-w-640px">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
-                  <template v-if="isTemplateKey(item)">
+                  <template v-if="item.group === 'site' && item.key === 'top_button'">
+                    <TopButtonField class="flex-1" :value="item.value_json" @update="(v: any) => setVal(item, v)" />
+                  </template>
+                  <template v-else-if="(item.group === 'recharge' || item.group === 'supplier_recharge') && item.key === 'gift_tiers'">
+                    <GiftTiersField class="flex-1" :supplier="item.group === 'supplier_recharge'" :value="item.value_json" @update="(v: any) => setVal(item, v)" />
+                  </template>
+                  <template v-else-if="isTemplateKey(item)">
                     <div class="flex w-full items-center gap-8px">
                       <span class="min-w-0 flex-1 truncate text-13px">{{ currentTemplateName(item) }}</span>
                       <NButton size="small" @click="openThemePicker(item)">选择主题</NButton>

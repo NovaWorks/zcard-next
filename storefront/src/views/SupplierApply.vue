@@ -177,7 +177,8 @@
                   :class="{ active: rechargeYuan === t }"
                   @click="rechargeYuan = t; focusCustom = false"
                 >
-                  {{ formatMoney(t * 100) }}
+                  <div>{{ formatMoney(t * 100) }}</div>
+                  <div v-if="supplierGiftOf(t)" style="font-size: 11px; margin-top: 2px; color: #16a34a;">送 {{ formatMoney(supplierGiftOf(t)) }}</div>
                 </button>
                 <button class="tier-card custom" :class="{ active: !presetTiers.includes(rechargeYuan as number) && rechargeYuan !== null }" @click="focusCustom = true">
                   自定义
@@ -187,6 +188,9 @@
                 <input class="input" v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="输入金额" autofocus />
               </div>
               <div class="muted" style="margin-top: 6px;">限额 {{ formatMoney(rechargeMeta?.min_amount || 1000) }} ~ {{ formatMoney(rechargeMeta?.max_amount || 500000) }}</div>
+              <div v-if="supplierGiftOf(rechargeYuan) > 0" style="margin-top: 6px; font-size: 13px; color: #16a34a; font-weight: 600;">
+                本单到账 {{ formatMoney(Math.round((rechargeYuan || 0) * 100) + supplierGiftOf(rechargeYuan)) }}（本金 + 赠送）
+              </div>
             </div>
 
             <!-- 支付方式 -->
@@ -360,6 +364,28 @@ async function openRecharge(a: SupplierAccount) {
   if (min && max) {
     rechargeMeta.value = { min_amount: Number(JSON.parse(min)), max_amount: Number(JSON.parse(max)) };
   }
+  const gt = find('supplier_recharge.gift_tiers');
+  if (gt) {
+    try {
+      const arr = JSON.parse(gt);
+      if (Array.isArray(arr) && arr.length) {
+        supplierGiftTiers.value = arr
+          .filter((t: any) => Number(t?.amount) > 0)
+          .map((t: any) => ({ amount: Number(t.amount), gift_balance: Number(t.gift_balance) || 0 }))
+          .sort((a: { amount: number }, b: { amount: number }) => a.amount - b.amount);
+        // 配置了赠送档位：预设档位对齐配置（买家按档位充值享赠送）
+        presetTiers.value = supplierGiftTiers.value.map((t) => t.amount / 100);
+        rechargeYuan.value = presetTiers.value[1] ?? presetTiers.value[0];
+      }
+    } catch { /* 非法配置忽略 */ }
+  }
+}
+
+// 当前金额命中的赠送（精确匹配档位；自定义金额未命中 = 无赠送）
+function supplierGiftOf(yuan: number | null): number {
+  if (yuan === null || !supplierGiftTiers.value.length) return 0;
+  const cents = Math.round(yuan * 100);
+  return supplierGiftTiers.value.find((t) => t.amount === cents)?.gift_balance || 0;
 }
 
 function closeRecharge() {

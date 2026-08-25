@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 审计日志（audit:read）：操作审计（谁在何时动了什么）+ 安全审计（取货/登录/敏感操作）。
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { NDataTable, NInput, NInputNumber, NButton, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchOpLogs, fetchSecurityLogs } from "@/service/api";
@@ -75,6 +75,18 @@ async function loadOp() {
   }
 }
 
+// 操作员选项：从已加载日志去重（ID/姓名/类型一目了然，替代手填数字 ID）
+const operatorOptions = computed(() => {
+  const map = new Map<number, { label: string; value: number }>();
+  for (const r of opLogs.value as any[]) {
+    const id = r.operator_id;
+    if (!id || map.has(id)) continue;
+    const name = r.operator_name || `${r.operator_type === "admin" ? "员工" : "用户"}#${id}`;
+    map.set(id, { label: `${name}（#${id}）`, value: id });
+  }
+  return [...map.values()];
+});
+
 async function loadSec() {
   secLoading.value = true;
   try {
@@ -96,7 +108,16 @@ onMounted(() => {
     <div>
       <div class="mb-8px flex items-center gap-8px">
         <span class="text-13px font-500">操作审计（变更类管理操作）</span>
-        <NInputNumber v-model:value="operatorFilter" size="small" placeholder="操作者ID" class="w-110px" clearable @update:value="(opPage = 1), loadOp()" />
+        <NSelect
+          v-model:value="operatorFilter"
+          size="small"
+          filterable
+          clearable
+          placeholder="按操作员筛选"
+          class="w-200px"
+          :options="operatorOptions"
+          @update:value="(opPage = 1), loadOp()"
+        />
         <NButton size="tiny" @click="loadOp">刷新</NButton>
       </div>
       <NDataTable :columns="opColumns" :data="opLogs" :loading="opLoading" size="small"  :max-height="540" />

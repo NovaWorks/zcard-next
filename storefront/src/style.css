@@ -141,3 +141,33 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
 .topbar .user-box { margin-left: auto; display: flex; gap: 12px; align-items: center; font-size: 14px; }
 .topbar .user-box a, .topbar .user-box button { color: #4b5563; text-decoration: none; background: none; border: none; cursor: pointer; font-size: 14px; }
 
+
+/* ── 顶部自定义按钮（site.top_button 公开下发）── */
+.nav-custom-btn {
+  color: inherit; text-decoration: none; font-size: 14px; padding: 4px 2px;
+  border: 1px solid rgba(37, 99, 235, 0.35); border-radius: 999px; padding: 3px 12px;
+  transition: all 0.15s; background: rgba(37, 99, 235, 0.06);
+}
+.nav-custom-btn:hover { background: rgba(37, 99, 235, 0.14); border-color: #2563eb; color: #2563eb; }
+
+/* ── 维护模式（ops.maintenance：banner=横幅 / modal=全屏遮罩）── */
+.maint-banner {
+  background: linear-gradient(90deg, #f59e0b, #f97316); color: #fff;
+  text-align: center; font-size: 13px; padding: 8px 16px; letter-spacing: 0.3px;
+}
+.maint-overlay {
+  position: fixed; inset: 0; z-index: 3000; background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(2px); display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.maint-card {
+  background: #fff; border-radius: 14px; max-width: 420px; width: 100%;
+  padding: 36px 32px; text-align: center; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+.maint-icon { font-size: 44px; margin-bottom: 12px; }
+.maint-card h2 { font-size: 20px; margin: 0 0 10px; color: #111827; }
+.maint-card p { font-size: 14px; color: #6b7280; line-height: 1.7; margin: 0 0 20px; }
+.maint-btn {
+  border: none; background: #2563eb; color: #fff; font-size: 14px;
+  padding: 9px 28px; border-radius: 8px; cursor: pointer;
+}
+.maint-btn:hover { background: #1d4ed8; }

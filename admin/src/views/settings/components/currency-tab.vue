@@ -184,31 +184,37 @@ onMounted(() => {
   <div>
     <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
       <FilterTabs v-model:value="enabledFilter" :options="enabledTabs" :counts="enabledCounts" size="small" />
-      <div>
-        <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增货币</NButton>
-        <span class="ml-8px text-12px text-gray-400">基础货币汇率恒为 1；汇率 decimal 字符串，展示换算在下单时快照</span>
-      </div>
+      <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增货币</NButton>
+    </div>
+    <div class="mb-8px rounded-4px bg-gray-50 px-10px py-6px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+      全站统一按基础货币 <b>{{ baseCurrency }}</b> 结算（汇率恒为 1）；其他货币填「1 基础货币可兑换的本币数量」，下单时按当时汇率快照换算
     </div>
     <NDataTable :columns="columns" :data="filteredCurrencies" :loading="loading" size="small"  :max-height="540" />
 
-    <NModal v-model:show="showModal" preset="dialog" :title="editing ? `编辑货币 ${editing}` : '新增货币'" style="width: 440px">
+    <NModal v-model:show="showModal" preset="dialog" :title="editing ? `编辑货币 ${editing}` : '新增货币'" style="width: 520px">
       <NForm :model="form" label-placement="left" label-width="72">
-        <NFormItem label="代码" required>
-          <NInput v-model:value="form.code" :disabled="!!editing" placeholder="如 USD" />
-        </NFormItem>
-        <NFormItem label="符号" required>
-          <NInput v-model:value="form.symbol" placeholder="如 $" />
-        </NFormItem>
-        <NFormItem label="符号位置">
-          <NSelect v-model:value="form.position" :options="[{ label: '前缀', value: 'prefix' }, { label: '后缀', value: 'suffix' }]" />
-        </NFormItem>
-        <NFormItem label="小数位">
-          <NInputNumber v-model:value="form.precision" :min="0" :max="4" class="w-full" />
-        </NFormItem>
+        <div class="flex gap-12px">
+          <NFormItem label="代码" required class="flex-1">
+            <NInput v-model:value="form.code" :disabled="!!editing" placeholder="如 USD" />
+          </NFormItem>
+          <NFormItem label="符号" required class="w-120px">
+            <NInput v-model:value="form.symbol" placeholder="如 $" />
+          </NFormItem>
+        </div>
+        <div class="flex gap-12px">
+          <NFormItem label="符号位置" class="flex-1">
+            <NSelect v-model:value="form.position" :options="[{ label: '前缀（$10）', value: 'prefix' }, { label: '后缀（10$）', value: 'suffix' }]" />
+          </NFormItem>
+          <NFormItem label="小数位" class="w-120px">
+            <NInputNumber v-model:value="form.precision" :min="0" :max="4" class="w-full" />
+          </NFormItem>
+        </div>
         <NFormItem label="汇率" required>
-          <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" placeholder='如 "0.14"' />
-          <div class="text-12px text-gray-400 mt-4px">{{ rateHint }}</div>
+          <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" :placeholder="isBaseCurrency ? '基础货币，固定为 1' : '如 0.14（1 基础货币 = 0.14 本币）'" />
         </NFormItem>
+        <div class="mb-4px rounded-4px bg-gray-50 px-10px py-6px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+          {{ rateHint }}
+        </div>
       </NForm>
       <template #action>
         <NButton @click="showModal = false">取消</NButton>

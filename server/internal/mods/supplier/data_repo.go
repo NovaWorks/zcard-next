@@ -143,11 +143,11 @@ func (r *SupplierRepoImpl) SetIPWhitelist(ctx context.Context, id uint64, ips []
 
 // CreateSupplyRechargeOrder 落供货充值单（pending；target=supply）。
 // 入账只发生在支付回调成功后（铁律 16）；供货预存无赠送。
-func (r *SupplierRepoImpl) CreateSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount int64) (*ent.RechargeOrder, error) {
+func (r *SupplierRepoImpl) CreateSupplyRechargeOrder(ctx context.Context, userID, accountID uint64, amount, giftAmount int64) (*ent.RechargeOrder, error) {
 	return data.Client(ctx, r.data).RechargeOrder.Create().
 		SetUserID(userID).
 		SetAmount(amount).
-		SetGiftAmount(0).
+		SetGiftAmount(giftAmount).
 		SetGiftPoints(0).
 		SetTarget(rechargeorder.TargetSupply).
 		SetSupplierAccountID(accountID).

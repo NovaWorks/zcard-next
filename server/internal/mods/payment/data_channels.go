@@ -454,9 +454,9 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 	total := ro.Amount + ro.GiftAmount
 	if ro.Target == rechargeorder.TargetSupply {
 		if ro.SupplierAccountID > 0 && r.supplier != nil {
-			if err := r.supplier.Recharge(ctx, ro.SupplierAccountID, ro.Amount,
+			if err := r.supplier.Recharge(ctx, ro.SupplierAccountID, total,
 				fmt.Sprintf("recharge:%d", p.ID),
-				fmt.Sprintf("对接账户自助充值到账（用户 #%d）", ro.UserID)); err != nil {
+				fmt.Sprintf("对接账户自助充值到账（用户 #%d，本金 %d 分 + 赠送 %d 分）", ro.UserID, ro.Amount, ro.GiftAmount)); err != nil {
 				return fmt.Errorf("payment.SUPPLY_RECHARGE_FAILED: %w", err)
 			}
 		}
