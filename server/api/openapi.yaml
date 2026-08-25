@@ -782,6 +782,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+    /api/v1/admin/categories/reorder:
+        post:
+            tags:
+                - AdminCatalogService
+            description: ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+            operationId: AdminCatalogService_ReorderCategories
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ReorderCategoriesRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/categories/{id}:
         put:
             tags:
@@ -1136,6 +1152,20 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: batchId
+                  in: query
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
             responses:
                 "200":
                     description: OK
@@ -1161,6 +1191,25 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.CreateCouponBatchReply'
+    /api/v1/admin/coupons/delete:
+        post:
+            tags:
+                - AdminCouponService
+            description: DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+            operationId: AdminCouponService_DeleteCoupons
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.DeleteCouponsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DeleteCouponsReply'
     /api/v1/admin/coupons/disable:
         post:
             tags:
@@ -1176,6 +1225,28 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/coupons/export:
+        get:
+            tags:
+                - AdminCouponService
+            description: ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+            operationId: AdminCouponService_ExportCoupons
+            parameters:
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: batchId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ExportCouponsReply'
     /api/v1/admin/coupons/grant:
         post:
             tags:
@@ -6494,6 +6565,18 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Coupon'
+                total:
+                    type: string
+                page:
+                    type: integer
+                    format: int32
+                pageSize:
+                    type: integer
+                    format: int32
+                batches:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.CreateAdminRequest:
             required:
                 - username
@@ -7187,6 +7270,22 @@ components:
                     type: string
                 profit:
                     type: string
+        zcard.api.admin.v1.DeleteCouponsReply:
+            type: object
+            properties:
+                deleted:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.DeleteCouponsRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                batchId:
+                    type: string
+            description: DeleteCoupons：ids 非空按 id 删；batch_id 非空删该批次全部未使用。两者只生效其一（ids 优先）。
         zcard.api.admin.v1.DeleteMediaReply:
             type: object
             properties:
@@ -7299,6 +7398,13 @@ components:
             type: object
             properties:
                 productId:
+                    type: string
+        zcard.api.admin.v1.ExportCouponsReply:
+            type: object
+            properties:
+                filename:
+                    type: string
+                csv:
                     type: string
         zcard.api.admin.v1.FieldOptionsReply:
             type: object
@@ -8860,6 +8966,18 @@ components:
                     type: string
                 name:
                     type: string
+        zcard.api.admin.v1.ReorderCategoriesRequest:
+            type: object
+            properties:
+                parentId:
+                    type: string
+                ids:
+                    type: array
+                    items:
+                        type: string
+            description: |-
+                ReorderCategoriesRequest 分类排序：把 parent_id 层级下的分类按 ids 顺序重排，
+                 sort 归一化为 0..n-1；ids 需包含该层级的全部兄弟（拖拽跨层级时含被移动分类）。
         zcard.api.admin.v1.ResellerProduct:
             type: object
             properties:
@@ -9626,6 +9744,7 @@ components:
                     type: string
                 hide:
                     type: boolean
+                    description: 隐藏状态（optional：未传保持不变，避免只改排序/名称时误取消隐藏）
                 sort:
                     type: integer
                     format: int32

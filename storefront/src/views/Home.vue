@@ -214,12 +214,16 @@ function bannerImg(b: Banner): string {
   return (isMobile && b.mobile_image) ? b.mobile_image : b.image;
 }
 
-// Banner 点击：product → 详情；category → 分类列表；url → 外链；ad 无跳转
+// Banner 点击：product → 详情；category → 分类列表；post → 文章详情；notice → 公告弹窗；url → 外链
 function openBanner(b: Banner) {
   if (b.link_type === 'product' && b.link_value) {
     router.push(`/product/${b.link_value}`);
   } else if (b.link_type === 'category' && b.link_value) {
     router.push(`/products?category_id=${b.link_value}`);
+  } else if (b.link_type === 'post' && b.link_value) {
+    router.push(`/posts/${b.link_value}`);
+  } else if (b.link_type === 'notice') {
+    openAnnouncement();
   } else if (b.link_type === 'url' && b.link_value) {
     window.open(b.link_value, '_blank', 'noopener');
   }
@@ -295,10 +299,14 @@ onUnmounted(stopHero);
 }
 .hero-track { display: flex; transition: transform 0.5s ease; }
 .hero-slide { flex: 0 0 100%; position: relative; cursor: pointer; }
-.hero-slide img { width: 100%; height: 260px; object-fit: cover; display: block; }
+.hero-slide img { width: 100%; height: clamp(240px, 32vw, 360px); object-fit: cover; display: block; }
 .hero-title {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 16px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.55)); color: #fff; font-size: 15px;
+  position: absolute; left: 0; right: 0; bottom: 0;
+  padding: 30px 22px 16px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.65));
+  color: #fff; font-size: clamp(17px, 2.4vw, 26px); font-weight: 700;
+  letter-spacing: 0.5px; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hero-dots {
   position: absolute; bottom: 10px; right: 16px; display: flex; gap: 6px;

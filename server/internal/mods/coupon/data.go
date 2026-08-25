@@ -5,6 +5,7 @@ package coupon
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -26,13 +27,110 @@ func NewCouponRepoImpl(d *data.Data) *CouponRepoImpl {
 
 var _ port.CouponResolver = (*CouponRepoImpl)(nil)
 
-// ListCoupons 券列表。
-func (r *CouponRepoImpl) ListCoupons(ctx context.Context, status string) ([]*ent.Coupon, error) {
-	q := data.Client(ctx, r.data).Coupon.Query().Order(ent.Desc(coupon.FieldID)).Limit(100)
+// ListCoupons 券列表（状态/批次筛选 + 分页；total 与批次去重列表供前端筛选）。
+func (r *CouponRepoImpl) ListCoupons(ctx context.Context, status, batchID string, page, size int) ([]*ent.Coupon, int, []string, error) {
+	client := data.Client(ctx, r.data)
+	q := client.Coupon.Query()
 	if status != "" {
 		q = q.Where(coupon.StatusEQ(coupon.Status(status)))
 	}
-	return q.All(ctx)
+	if batchID != "" {
+		q = q.Where(coupon.BatchID(batchID))
+	}
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	if page < 1 {
+		page = 1
+	}
+	if size < 1 || size > 200 {
+		size = 20
+	}
+	rows, err := q.Clone().Order(ent.Desc(coupon.FieldID)).Offset((page - 1) * size).Limit(size).All(ctx)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	// 批次去重列表（供筛选下拉；batch_id 建有索引）
+	all, err := client.Coupon.Query().Select(coupon.FieldBatchID).All(ctx)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	seen := make(map[string]struct{}, len(all))
+	batches := make([]string, 0, len(all))
+	for _, c := range all {
+		if c.BatchID != "" {
+			if _, ok := seen[c.BatchID]; !ok {
+				seen[c.BatchID] = struct{}{}
+				batches = append(batches, c.BatchID)
+			}
+		}
+	}
+	return rows, total, batches, nil
+}
+
+// DeleteCoupons 按 id 批量删除（仅未使用；已使用/已作废跳过保审计痕迹）。
+func (r *CouponRepoImpl) DeleteCoupons(ctx context.Context, ids []uint64) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	return data.Client(ctx, r.data).Coupon.Delete().
+		Where(coupon.IDIn(ids...), coupon.StatusEQ(coupon.StatusUnused)).
+		Exec(ctx)
+}
+
+// DeleteBatchUnused 删除整批次全部未使用券。
+func (r *CouponRepoImpl) DeleteBatchUnused(ctx context.Context, batchID string) (int, error) {
+	if batchID == "" {
+		return 0, nil
+	}
+	return data.Client(ctx, r.data).Coupon.Delete().
+		Where(coupon.BatchID(batchID), coupon.StatusEQ(coupon.StatusUnused)).
+		Exec(ctx)
+}
+
+// ExportCSV 导出券码 CSV（状态/批次筛选；含 BOM + 表头，Excel 直开）。
+func (r *CouponRepoImpl) ExportCSV(ctx context.Context, status, batchID string) (string, error) {
+	q := data.Client(ctx, r.data).Coupon.Query()
+	if status != "" {
+		q = q.Where(coupon.StatusEQ(coupon.Status(status)))
+	}
+	if batchID != "" {
+		q = q.Where(coupon.BatchID(batchID))
+	}
+	rows, err := q.Order(ent.Asc(coupon.FieldID)).Limit(50000).All(ctx)
+	if err != nil {
+		return "", err
+	}
+	var b strings.Builder
+	b.WriteString("\uFEFF批次,名称,类型,面值,券码,状态,过期时间\n")
+	for _, c := range rows {
+		typ := "满减"
+		val := fmt.Sprintf("%d分", c.Value)
+		if c.Type == coupon.TypePercent {
+			typ = "折扣"
+			val = fmt.Sprintf("%g折", float64(c.Value)/1000) // 万分比 → 折
+		}
+		statusZh := map[string]string{"unused": "未使用", "used": "已使用", "disabled": "已作废"}[string(c.Status)]
+		if statusZh == "" {
+			statusZh = string(c.Status)
+		}
+		expire := ""
+		if !c.ExpireAt.IsZero() {
+			expire = c.ExpireAt.Local().Format("2006-01-02 15:04")
+		}
+		// 名称/批次含逗号时加引号转义（RFC 4180）
+		fmt.Fprintf(&b, "%s,%s,%s,%s,%s,%s,%s\n", csvEscape(c.BatchID), csvEscape(c.Name), typ, val, c.Code, statusZh, expire)
+	}
+	return b.String(), nil
+}
+
+// csvEscape CSV 字段含逗号/引号/换行时按 RFC 4180 加引号。
+func csvEscape(s string) string {
+	if strings.ContainsAny(s, ",\"\n\r") {
+		return `"` + strings.ReplaceAll(s, `"`, `""`) + `"`
+	}
+	return s
 }
 
 // CreateBatch 批量生成券码。

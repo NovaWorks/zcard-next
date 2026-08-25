@@ -54,6 +54,14 @@ service AdminCouponService {
   rpc DisableCoupon(DisableCouponRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { post: "/api/v1/admin/coupons/disable" body: "*" };
   }
+  // DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+  rpc DeleteCoupons(DeleteCouponsRequest) returns (DeleteCouponsReply) {
+    option (google.api.http) = { post: "/api/v1/admin/coupons/delete" body: "*" };
+  }
+  // ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+  rpc ExportCoupons(ExportCouponsRequest) returns (ExportCouponsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/coupons/export" };
+  }
 }
 
 message Coupon {
@@ -68,10 +76,17 @@ message Coupon {
 
 message CouponList {
   repeated Coupon coupons = 1;
+  int64 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  repeated string batches = 5; // 去重批次列表（筛选下拉用）
 }
 
 message ListCouponsRequest {
   string status = 1;
+  string batch_id = 2;  // 按批次筛选
+  int32 page = 3;
+  int32 page_size = 4;
 }
 
 message CreateCouponBatchRequest {
@@ -88,6 +103,26 @@ message CreateCouponBatchReply {
 
 message DisableCouponRequest {
   string batch_id = 1;
+}
+
+// DeleteCoupons：ids 非空按 id 删；batch_id 非空删该批次全部未使用。两者只生效其一（ids 优先）。
+message DeleteCouponsRequest {
+  repeated uint64 ids = 1;
+  string batch_id = 2;
+}
+
+message DeleteCouponsReply {
+  int32 deleted = 1;
+}
+
+message ExportCouponsRequest {
+  string status = 1;   // 空=全部
+  string batch_id = 2; // 空=全部批次
+}
+
+message ExportCouponsReply {
+  string filename = 1;
+  string csv = 2; // 含 BOM + 表头，前端直接落盘
 }
 
 // ── M3 扩展：领取/秒杀/促销 ───────────────────────────────

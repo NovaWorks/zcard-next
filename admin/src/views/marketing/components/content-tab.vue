@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 内容管理：横幅（storefront 首页消费）+ 文章/公告（content:read / write）。
-import { computed, onMounted, ref, h } from "vue";
+import { computed, onMounted, ref, watch, h } from "vue";
 import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NPopconfirm, NSelect, NSwitch, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchBanners, createBanner, deleteBanner, fetchPosts, createPost, updatePost, publishPost, deletePost, fetchPostCategories, createPostCategory, updatePostCategory, deletePostCategory } from "@/service/api";
@@ -36,6 +36,25 @@ const filteredBanners = computed(() =>
   bannerFilter.value === "" ? banners.value : banners.value.filter((b) => (bannerFilter.value === "on" ? b.is_active : !b.is_active)),
 );
 
+// 跳转类型：post=文章详情、notice=点击打开公告弹窗（无需跳转目标）
+const linkTypeOptions = [
+  { label: "文章（/posts/:slug）", value: "post" },
+  { label: "公告弹窗（点击弹出全局公告）", value: "notice" },
+  { label: "外部链接", value: "url" },
+  { label: "商品", value: "product" },
+  { label: "分类", value: "category" },
+];
+const postSlugOptions = computed(() =>
+  posts.value.map((p) => ({ label: `[${p.type === "notice" ? "公告" : "博客"}] ${zhValue(p.title_json)}`, value: p.slug })),
+);
+watch(
+  () => bannerForm.value.link_type,
+  (t) => {
+    // 切换类型时清掉旧值，避免把商品 ID 当 slug 用
+    if (t !== "url" && t !== "product" && t !== "category" && t !== "post") bannerForm.value.link_value = "";
+  },
+);
+
 const bannerColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
   { title: "名称", key: "name", width: 120 },
@@ -63,7 +82,13 @@ const bannerColumns: DataTableColumns<any> = [
           )
         : "-",
   },
-  { title: "跳转", key: "link_value", width: 140, ellipsis: true, render: (row) => row.link_value || "-" },
+  { title: "跳转", key: "link_value", width: 150, ellipsis: true, render: (row) => {
+    const label = ({ url: "外链", product: "商品", category: "分类", post: "文章", notice: "公告弹窗", ad: "广告" } as Record<string, string>)[row.link_type] || row.link_type;
+    return h("span", { class: "flex items-center gap-4px" }, [
+      h(NTag, { size: "tiny", bordered: false, type: row.link_type === "notice" ? "warning" : "info" }, { default: () => label }),
+      h("span", { class: "truncate" }, row.link_value || (row.link_type === "notice" ? "—" : "-")),
+    ]);
+  } },
   { title: "排序", key: "sort", width: 56 },
   {
     title: "状态",
@@ -461,9 +486,17 @@ onMounted(() => {
           <MediaField v-model:value="bannerForm.image" />
         </NFormItem>
         <NFormItem label="跳转类型">
-          <NSelect v-model:value="bannerForm.link_type" :options="[{ label: '外部链接', value: 'url' }, { label: '商品', value: 'product' }, { label: '分类', value: 'category' }]" />
+          <NSelect v-model:value="bannerForm.link_type" :options="linkTypeOptions" />
         </NFormItem>
-        <NFormItem label="跳转目标">
+        <NFormItem v-if="bannerForm.link_type === 'post'" label="跳转文章">
+          <NSelect
+            v-model:value="bannerForm.link_value"
+            :options="postSlugOptions"
+            filterable
+            placeholder="选择点击横幅后打开的文章"
+          />
+        </NFormItem>
+        <NFormItem v-else-if="bannerForm.link_type !== 'notice'" label="跳转目标">
           <NInput v-model:value="bannerForm.link_value" placeholder="URL 或商品/分类 ID" />
         </NFormItem>
         <NFormItem label="排序">

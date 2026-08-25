@@ -108,6 +108,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCatalogService/UpdateCategory", Method: "PUT", Path: "/api/v1/admin/categories/{id}"},
 		Perm{Code: "catalog:category_delete", Desc: "删除分类", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteCategory", Method: "DELETE", Path: "/api/v1/admin/categories/{id}"},
+		Perm{Code: "catalog:category_write", Desc: "分类排序（超管）", Domain: "catalog", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCatalogService/ReorderCategories", Method: "POST", Path: "/api/v1/admin/categories/reorder"},
 		Perm{Code: "catalog:tag_read", Desc: "查看标签", Domain: "catalog",
 			Op: "zcard.api.admin.v1.AdminCatalogService/ListTags", Method: "GET", Path: "/api/v1/admin/tags"},
 		Perm{Code: "catalog:tag_write", Desc: "创建标签（超管）", Domain: "catalog", AdminOnly: true,
@@ -248,6 +250,10 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCouponService/CreateCouponBatch", Method: "POST", Path: "/api/v1/admin/coupons/batch"},
 		Perm{Code: "coupon:write", Desc: "作废优惠券（超管）", Domain: "coupon", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCouponService/DisableCoupon", Method: "POST", Path: "/api/v1/admin/coupons/disable"},
+		Perm{Code: "coupon:write", Desc: "删除优惠券（超管）", Domain: "coupon", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCouponService/DeleteCoupons", Method: "POST", Path: "/api/v1/admin/coupons/delete"},
+		Perm{Code: "coupon:read", Desc: "导出优惠券 CSV", Domain: "coupon",
+			Op: "zcard.api.admin.v1.AdminCouponService/ExportCoupons", Method: "GET", Path: "/api/v1/admin/coupons/export"},
 
 		// ── 工作台（dashboard，P3-07 M1b）──────────────
 		Perm{Code: "dashboard:read", Desc: "查看工作台指标", Domain: "dashboard",

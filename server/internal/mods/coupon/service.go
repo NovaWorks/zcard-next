@@ -25,13 +25,18 @@ func NewAdminCouponService(repo *CouponRepoImpl) *AdminCouponService {
 	return &AdminCouponService{repo: repo}
 }
 
-// ListCoupons 券列表。
+// ListCoupons 券列表（状态/批次 + 分页）。
 func (s *AdminCouponService) ListCoupons(ctx context.Context, req *adminv1.ListCouponsRequest) (*adminv1.CouponList, error) {
-	rows, err := s.repo.ListCoupons(ctx, req.GetStatus())
+	rows, total, batches, err := s.repo.ListCoupons(ctx, req.GetStatus(), req.GetBatchId(), int(req.GetPage()), int(req.GetPageSize()))
 	if err != nil {
 		return nil, errors.InternalServer("coupon.LIST_FAILED", "读取券失败")
 	}
-	reply := &adminv1.CouponList{}
+	reply := &adminv1.CouponList{
+		Total:    int64(total),
+		Page:     req.GetPage(),
+		PageSize: req.GetPageSize(),
+		Batches:  batches,
+	}
 	for _, c := range rows {
 		reply.Coupons = append(reply.Coupons, &adminv1.Coupon{
 			Id: c.ID, BatchId: c.BatchID, Name: c.Name, Type: string(c.Type),
@@ -64,6 +69,41 @@ func (s *AdminCouponService) DisableCoupon(ctx context.Context, req *adminv1.Dis
 		return nil, errors.InternalServer("coupon.DISABLE_FAILED", "作废失败")
 	}
 	return &emptypb.Empty{}, nil
+}
+
+// DeleteCoupons 批量删除（ids 优先；否则删整批次未使用）。已使用/已作废的跳过保审计。
+func (s *AdminCouponService) DeleteCoupons(ctx context.Context, req *adminv1.DeleteCouponsRequest) (*adminv1.DeleteCouponsReply, error) {
+	var (
+		n   int
+		err error
+	)
+	if len(req.GetIds()) > 0 {
+		n, err = s.repo.DeleteCoupons(ctx, req.GetIds())
+	} else {
+		n, err = s.repo.DeleteBatchUnused(ctx, req.GetBatchId())
+	}
+	if err != nil {
+		return nil, errors.InternalServer("coupon.DELETE_FAILED", "删除失败")
+	}
+	if n == 0 && len(req.GetIds()) == 0 && req.GetBatchId() == "" {
+		return nil, errors.BadRequest("coupon.NO_TARGET", "未选择要删除的券")
+	}
+	return &adminv1.DeleteCouponsReply{Deleted: int32(n)}, nil
+}
+
+// ExportCoupons 导出券码 CSV。
+func (s *AdminCouponService) ExportCoupons(ctx context.Context, req *adminv1.ExportCouponsRequest) (*adminv1.ExportCouponsReply, error) {
+	csv, err := s.repo.ExportCSV(ctx, req.GetStatus(), req.GetBatchId())
+	if err != nil {
+		return nil, errors.InternalServer("coupon.EXPORT_FAILED", "导出失败")
+	}
+	name := time.Now().Format("20060102_150405")
+	if b := req.GetBatchId(); b != "" {
+		name = b + "_" + name
+	} else if st := req.GetStatus(); st != "" {
+		name = st + "_" + name
+	}
+	return &adminv1.ExportCouponsReply{Filename: "coupons_" + name + ".csv", Csv: csv}, nil
 }
 
 // ── M3 扩展 ────────────────────────────────────────────────

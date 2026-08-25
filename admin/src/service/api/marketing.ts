@@ -31,8 +31,11 @@ export function deleteMemberLevel(id: number) {
 
 // ── 优惠券（coupon:read / write）──
 
-export function fetchCoupons(status?: string) {
-  return request({ url: "/api/v1/admin/coupons", params: status ? { status } : {} });
+export function fetchCoupons(status?: string, batchId?: string, page = 1, pageSize = 20) {
+  const params: Record<string, unknown> = { page, page_size: pageSize };
+  if (status) params.status = status;
+  if (batchId) params.batch_id = batchId;
+  return request({ url: "/api/v1/admin/coupons", params });
 }
 
 export function createCouponBatch(data: { name: string; type: string; value: number; count: number; expire_at?: number }) {
@@ -45,6 +48,21 @@ export function disableCoupon(batchId: string) {
 
 export function grantCoupon(batchId: string, userId: number, count: number) {
   return request({ url: "/api/v1/admin/coupons/grant", method: "post", data: { batch_id: batchId, user_id: userId, count } });
+}
+
+/** 批量删除券（ids 或整批未使用；服务端仅删未使用，已使用/已作废跳过） */
+export function deleteCoupons(ids: number[], batchId?: string) {
+  const data: Record<string, unknown> = { ids };
+  if (batchId) data.batch_id = batchId;
+  return request({ url: "/api/v1/admin/coupons/delete", method: "post", data });
+}
+
+/** 导出券码 CSV（按当前筛选：状态 + 批次），返回 { filename, csv } */
+export function exportCoupons(status?: string, batchId?: string) {
+  const params: Record<string, unknown> = {};
+  if (status) params.status = status;
+  if (batchId) params.batch_id = batchId;
+  return request({ url: "/api/v1/admin/coupons/export", params });
 }
 
 // ── 秒杀 / 促销 ──

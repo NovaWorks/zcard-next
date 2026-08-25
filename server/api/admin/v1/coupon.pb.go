@@ -118,6 +118,10 @@ func (x *Coupon) GetStatus() string {
 type CouponList struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Coupons       []*Coupon              `protobuf:"bytes,1,rep,name=coupons,proto3" json:"coupons,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	Batches       []string               `protobuf:"bytes,5,rep,name=batches,proto3" json:"batches,omitempty"` // 去重批次列表（筛选下拉用）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -159,9 +163,40 @@ func (x *CouponList) GetCoupons() []*Coupon {
 	return nil
 }
 
+func (x *CouponList) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+func (x *CouponList) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *CouponList) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *CouponList) GetBatches() []string {
+	if x != nil {
+		return x.Batches
+	}
+	return nil
+}
+
 type ListCouponsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	BatchId       string                 `protobuf:"bytes,2,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"` // 按批次筛选
+	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -201,6 +236,27 @@ func (x *ListCouponsRequest) GetStatus() string {
 		return x.Status
 	}
 	return ""
+}
+
+func (x *ListCouponsRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+func (x *ListCouponsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListCouponsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
 }
 
 type CreateCouponBatchRequest struct {
@@ -367,6 +423,207 @@ func (x *DisableCouponRequest) GetBatchId() string {
 	return ""
 }
 
+// DeleteCoupons：ids 非空按 id 删；batch_id 非空删该批次全部未使用。两者只生效其一（ids 优先）。
+type DeleteCouponsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ids           []uint64               `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+	BatchId       string                 `protobuf:"bytes,2,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteCouponsRequest) Reset() {
+	*x = DeleteCouponsRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteCouponsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteCouponsRequest) ProtoMessage() {}
+
+func (x *DeleteCouponsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteCouponsRequest.ProtoReflect.Descriptor instead.
+func (*DeleteCouponsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *DeleteCouponsRequest) GetIds() []uint64 {
+	if x != nil {
+		return x.Ids
+	}
+	return nil
+}
+
+func (x *DeleteCouponsRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+type DeleteCouponsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Deleted       int32                  `protobuf:"varint,1,opt,name=deleted,proto3" json:"deleted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteCouponsReply) Reset() {
+	*x = DeleteCouponsReply{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteCouponsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteCouponsReply) ProtoMessage() {}
+
+func (x *DeleteCouponsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteCouponsReply.ProtoReflect.Descriptor instead.
+func (*DeleteCouponsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DeleteCouponsReply) GetDeleted() int32 {
+	if x != nil {
+		return x.Deleted
+	}
+	return 0
+}
+
+type ExportCouponsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`                  // 空=全部
+	BatchId       string                 `protobuf:"bytes,2,opt,name=batch_id,json=batchId,proto3" json:"batch_id,omitempty"` // 空=全部批次
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportCouponsRequest) Reset() {
+	*x = ExportCouponsRequest{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportCouponsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportCouponsRequest) ProtoMessage() {}
+
+func (x *ExportCouponsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportCouponsRequest.ProtoReflect.Descriptor instead.
+func (*ExportCouponsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ExportCouponsRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ExportCouponsRequest) GetBatchId() string {
+	if x != nil {
+		return x.BatchId
+	}
+	return ""
+}
+
+type ExportCouponsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Filename      string                 `protobuf:"bytes,1,opt,name=filename,proto3" json:"filename,omitempty"`
+	Csv           string                 `protobuf:"bytes,2,opt,name=csv,proto3" json:"csv,omitempty"` // 含 BOM + 表头，前端直接落盘
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportCouponsReply) Reset() {
+	*x = ExportCouponsReply{}
+	mi := &file_admin_v1_coupon_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportCouponsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportCouponsReply) ProtoMessage() {}
+
+func (x *ExportCouponsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_coupon_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportCouponsReply.ProtoReflect.Descriptor instead.
+func (*ExportCouponsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ExportCouponsReply) GetFilename() string {
+	if x != nil {
+		return x.Filename
+	}
+	return ""
+}
+
+func (x *ExportCouponsReply) GetCsv() string {
+	if x != nil {
+		return x.Csv
+	}
+	return ""
+}
+
 // GrantCoupon 批次赠送指定用户（领取）。
 type GrantCouponRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -379,7 +636,7 @@ type GrantCouponRequest struct {
 
 func (x *GrantCouponRequest) Reset() {
 	*x = GrantCouponRequest{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[6]
+	mi := &file_admin_v1_coupon_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -391,7 +648,7 @@ func (x *GrantCouponRequest) String() string {
 func (*GrantCouponRequest) ProtoMessage() {}
 
 func (x *GrantCouponRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[6]
+	mi := &file_admin_v1_coupon_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -404,7 +661,7 @@ func (x *GrantCouponRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GrantCouponRequest.ProtoReflect.Descriptor instead.
 func (*GrantCouponRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{6}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GrantCouponRequest) GetBatchId() string {
@@ -437,7 +694,7 @@ type GrantCouponReply struct {
 
 func (x *GrantCouponReply) Reset() {
 	*x = GrantCouponReply{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[7]
+	mi := &file_admin_v1_coupon_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -449,7 +706,7 @@ func (x *GrantCouponReply) String() string {
 func (*GrantCouponReply) ProtoMessage() {}
 
 func (x *GrantCouponReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[7]
+	mi := &file_admin_v1_coupon_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -462,7 +719,7 @@ func (x *GrantCouponReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GrantCouponReply.ProtoReflect.Descriptor instead.
 func (*GrantCouponReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{7}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GrantCouponReply) GetGranted() int32 {
@@ -488,7 +745,7 @@ type CreateFlashSaleRequest struct {
 
 func (x *CreateFlashSaleRequest) Reset() {
 	*x = CreateFlashSaleRequest{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[8]
+	mi := &file_admin_v1_coupon_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -500,7 +757,7 @@ func (x *CreateFlashSaleRequest) String() string {
 func (*CreateFlashSaleRequest) ProtoMessage() {}
 
 func (x *CreateFlashSaleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[8]
+	mi := &file_admin_v1_coupon_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,7 +770,7 @@ func (x *CreateFlashSaleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateFlashSaleRequest.ProtoReflect.Descriptor instead.
 func (*CreateFlashSaleRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{8}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CreateFlashSaleRequest) GetProductId() uint64 {
@@ -582,7 +839,7 @@ type FlashSaleItem struct {
 
 func (x *FlashSaleItem) Reset() {
 	*x = FlashSaleItem{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[9]
+	mi := &file_admin_v1_coupon_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -594,7 +851,7 @@ func (x *FlashSaleItem) String() string {
 func (*FlashSaleItem) ProtoMessage() {}
 
 func (x *FlashSaleItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[9]
+	mi := &file_admin_v1_coupon_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -607,7 +864,7 @@ func (x *FlashSaleItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlashSaleItem.ProtoReflect.Descriptor instead.
 func (*FlashSaleItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{9}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *FlashSaleItem) GetId() uint64 {
@@ -683,7 +940,7 @@ type ListFlashSalesRequest struct {
 
 func (x *ListFlashSalesRequest) Reset() {
 	*x = ListFlashSalesRequest{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[10]
+	mi := &file_admin_v1_coupon_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -695,7 +952,7 @@ func (x *ListFlashSalesRequest) String() string {
 func (*ListFlashSalesRequest) ProtoMessage() {}
 
 func (x *ListFlashSalesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[10]
+	mi := &file_admin_v1_coupon_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -708,7 +965,7 @@ func (x *ListFlashSalesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFlashSalesRequest.ProtoReflect.Descriptor instead.
 func (*ListFlashSalesRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{10}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListFlashSalesRequest) GetPage() int32 {
@@ -737,7 +994,7 @@ type ListFlashSalesReply struct {
 
 func (x *ListFlashSalesReply) Reset() {
 	*x = ListFlashSalesReply{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[11]
+	mi := &file_admin_v1_coupon_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -749,7 +1006,7 @@ func (x *ListFlashSalesReply) String() string {
 func (*ListFlashSalesReply) ProtoMessage() {}
 
 func (x *ListFlashSalesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[11]
+	mi := &file_admin_v1_coupon_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -762,7 +1019,7 @@ func (x *ListFlashSalesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFlashSalesReply.ProtoReflect.Descriptor instead.
 func (*ListFlashSalesReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{11}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListFlashSalesReply) GetItems() []*FlashSaleItem {
@@ -802,7 +1059,7 @@ type DeleteFlashSaleRequest struct {
 
 func (x *DeleteFlashSaleRequest) Reset() {
 	*x = DeleteFlashSaleRequest{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[12]
+	mi := &file_admin_v1_coupon_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -814,7 +1071,7 @@ func (x *DeleteFlashSaleRequest) String() string {
 func (*DeleteFlashSaleRequest) ProtoMessage() {}
 
 func (x *DeleteFlashSaleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[12]
+	mi := &file_admin_v1_coupon_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -827,7 +1084,7 @@ func (x *DeleteFlashSaleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFlashSaleRequest.ProtoReflect.Descriptor instead.
 func (*DeleteFlashSaleRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{12}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *DeleteFlashSaleRequest) GetId() uint64 {
@@ -856,7 +1113,7 @@ type UpsertPromotionRequest struct {
 
 func (x *UpsertPromotionRequest) Reset() {
 	*x = UpsertPromotionRequest{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[13]
+	mi := &file_admin_v1_coupon_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -868,7 +1125,7 @@ func (x *UpsertPromotionRequest) String() string {
 func (*UpsertPromotionRequest) ProtoMessage() {}
 
 func (x *UpsertPromotionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[13]
+	mi := &file_admin_v1_coupon_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -881,7 +1138,7 @@ func (x *UpsertPromotionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpsertPromotionRequest.ProtoReflect.Descriptor instead.
 func (*UpsertPromotionRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *UpsertPromotionRequest) GetId() uint64 {
@@ -972,7 +1229,7 @@ type PromotionItem struct {
 
 func (x *PromotionItem) Reset() {
 	*x = PromotionItem{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[14]
+	mi := &file_admin_v1_coupon_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -984,7 +1241,7 @@ func (x *PromotionItem) String() string {
 func (*PromotionItem) ProtoMessage() {}
 
 func (x *PromotionItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[14]
+	mi := &file_admin_v1_coupon_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -997,7 +1254,7 @@ func (x *PromotionItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PromotionItem.ProtoReflect.Descriptor instead.
 func (*PromotionItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *PromotionItem) GetId() uint64 {
@@ -1080,7 +1337,7 @@ type ListPromotionsRequest struct {
 
 func (x *ListPromotionsRequest) Reset() {
 	*x = ListPromotionsRequest{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[15]
+	mi := &file_admin_v1_coupon_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1092,7 +1349,7 @@ func (x *ListPromotionsRequest) String() string {
 func (*ListPromotionsRequest) ProtoMessage() {}
 
 func (x *ListPromotionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[15]
+	mi := &file_admin_v1_coupon_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1105,7 +1362,7 @@ func (x *ListPromotionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPromotionsRequest.ProtoReflect.Descriptor instead.
 func (*ListPromotionsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListPromotionsRequest) GetPage() int32 {
@@ -1134,7 +1391,7 @@ type ListPromotionsReply struct {
 
 func (x *ListPromotionsReply) Reset() {
 	*x = ListPromotionsReply{}
-	mi := &file_admin_v1_coupon_proto_msgTypes[16]
+	mi := &file_admin_v1_coupon_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1146,7 +1403,7 @@ func (x *ListPromotionsReply) String() string {
 func (*ListPromotionsReply) ProtoMessage() {}
 
 func (x *ListPromotionsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_coupon_proto_msgTypes[16]
+	mi := &file_admin_v1_coupon_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1159,7 +1416,7 @@ func (x *ListPromotionsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPromotionsReply.ProtoReflect.Descriptor instead.
 func (*ListPromotionsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_coupon_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListPromotionsReply) GetItems() []*PromotionItem {
@@ -1202,12 +1459,19 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\x04type\x18\x04 \x01(\tR\x04type\x12\x14\n" +
 	"\x05value\x18\x05 \x01(\x03R\x05value\x12\x12\n" +
 	"\x04code\x18\x06 \x01(\tR\x04code\x12\x16\n" +
-	"\x06status\x18\a \x01(\tR\x06status\"B\n" +
+	"\x06status\x18\a \x01(\tR\x06status\"\xa3\x01\n" +
 	"\n" +
 	"CouponList\x124\n" +
-	"\acoupons\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.CouponR\acoupons\",\n" +
+	"\acoupons\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.CouponR\acoupons\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x18\n" +
+	"\abatches\x18\x05 \x03(\tR\abatches\"x\n" +
 	"\x12ListCouponsRequest\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status\"\x8b\x01\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x19\n" +
+	"\bbatch_id\x18\x02 \x01(\tR\abatchId\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\x8b\x01\n" +
 	"\x18CreateCouponBatchRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x14\n" +
@@ -1217,7 +1481,18 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\x16CreateCouponBatchReply\x12\x14\n" +
 	"\x05count\x18\x01 \x01(\x05R\x05count\"1\n" +
 	"\x14DisableCouponRequest\x12\x19\n" +
-	"\bbatch_id\x18\x01 \x01(\tR\abatchId\"m\n" +
+	"\bbatch_id\x18\x01 \x01(\tR\abatchId\"C\n" +
+	"\x14DeleteCouponsRequest\x12\x10\n" +
+	"\x03ids\x18\x01 \x03(\x04R\x03ids\x12\x19\n" +
+	"\bbatch_id\x18\x02 \x01(\tR\abatchId\".\n" +
+	"\x12DeleteCouponsReply\x12\x18\n" +
+	"\adeleted\x18\x01 \x01(\x05R\adeleted\"I\n" +
+	"\x14ExportCouponsRequest\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\x12\x19\n" +
+	"\bbatch_id\x18\x02 \x01(\tR\abatchId\"B\n" +
+	"\x12ExportCouponsReply\x12\x1a\n" +
+	"\bfilename\x18\x01 \x01(\tR\bfilename\x12\x10\n" +
+	"\x03csv\x18\x02 \x01(\tR\x03csv\"m\n" +
 	"\x12GrantCouponRequest\x12\x1e\n" +
 	"\bbatch_id\x18\x01 \x01(\tB\x03\xe0A\x02R\abatchId\x12\x1c\n" +
 	"\auser_id\x18\x02 \x01(\x04B\x03\xe0A\x02R\x06userId\x12\x19\n" +
@@ -1289,7 +1564,7 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\x05items\x18\x01 \x03(\v2!.zcard.api.admin.v1.PromotionItemR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize2\xc8\t\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize2\xdf\v\n" +
 	"\x12AdminCouponService\x12\x83\x01\n" +
 	"\vGrantCoupon\x12&.zcard.api.admin.v1.GrantCouponRequest\x1a$.zcard.api.admin.v1.GrantCouponReply\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/coupons/grant\x12\x86\x01\n" +
 	"\x0fCreateFlashSale\x12*.zcard.api.admin.v1.CreateFlashSaleRequest\x1a!.zcard.api.admin.v1.FlashSaleItem\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/flash-sales\x12\x87\x01\n" +
@@ -1299,7 +1574,9 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\x0eListPromotions\x12).zcard.api.admin.v1.ListPromotionsRequest\x1a'.zcard.api.admin.v1.ListPromotionsReply\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/promotions\x12t\n" +
 	"\vListCoupons\x12&.zcard.api.admin.v1.ListCouponsRequest\x1a\x1e.zcard.api.admin.v1.CouponList\"\x1d\x82\xd3\xe4\x93\x02\x17\x12\x15/api/v1/admin/coupons\x12\x95\x01\n" +
 	"\x11CreateCouponBatch\x12,.zcard.api.admin.v1.CreateCouponBatchRequest\x1a*.zcard.api.admin.v1.CreateCouponBatchReply\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/coupons/batch\x12{\n" +
-	"\rDisableCoupon\x12(.zcard.api.admin.v1.DisableCouponRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/coupons/disableB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\rDisableCoupon\x12(.zcard.api.admin.v1.DisableCouponRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/coupons/disable\x12\x8a\x01\n" +
+	"\rDeleteCoupons\x12(.zcard.api.admin.v1.DeleteCouponsRequest\x1a&.zcard.api.admin.v1.DeleteCouponsReply\"'\x82\xd3\xe4\x93\x02!:\x01*\"\x1c/api/v1/admin/coupons/delete\x12\x87\x01\n" +
+	"\rExportCoupons\x12(.zcard.api.admin.v1.ExportCouponsRequest\x1a&.zcard.api.admin.v1.ExportCouponsReply\"$\x82\xd3\xe4\x93\x02\x1e\x12\x1c/api/v1/admin/coupons/exportB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_coupon_proto_rawDescOnce sync.Once
@@ -1313,7 +1590,7 @@ func file_admin_v1_coupon_proto_rawDescGZIP() []byte {
 	return file_admin_v1_coupon_proto_rawDescData
 }
 
-var file_admin_v1_coupon_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_admin_v1_coupon_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_admin_v1_coupon_proto_goTypes = []any{
 	(*Coupon)(nil),                   // 0: zcard.api.admin.v1.Coupon
 	(*CouponList)(nil),               // 1: zcard.api.admin.v1.CouponList
@@ -1321,43 +1598,51 @@ var file_admin_v1_coupon_proto_goTypes = []any{
 	(*CreateCouponBatchRequest)(nil), // 3: zcard.api.admin.v1.CreateCouponBatchRequest
 	(*CreateCouponBatchReply)(nil),   // 4: zcard.api.admin.v1.CreateCouponBatchReply
 	(*DisableCouponRequest)(nil),     // 5: zcard.api.admin.v1.DisableCouponRequest
-	(*GrantCouponRequest)(nil),       // 6: zcard.api.admin.v1.GrantCouponRequest
-	(*GrantCouponReply)(nil),         // 7: zcard.api.admin.v1.GrantCouponReply
-	(*CreateFlashSaleRequest)(nil),   // 8: zcard.api.admin.v1.CreateFlashSaleRequest
-	(*FlashSaleItem)(nil),            // 9: zcard.api.admin.v1.FlashSaleItem
-	(*ListFlashSalesRequest)(nil),    // 10: zcard.api.admin.v1.ListFlashSalesRequest
-	(*ListFlashSalesReply)(nil),      // 11: zcard.api.admin.v1.ListFlashSalesReply
-	(*DeleteFlashSaleRequest)(nil),   // 12: zcard.api.admin.v1.DeleteFlashSaleRequest
-	(*UpsertPromotionRequest)(nil),   // 13: zcard.api.admin.v1.UpsertPromotionRequest
-	(*PromotionItem)(nil),            // 14: zcard.api.admin.v1.PromotionItem
-	(*ListPromotionsRequest)(nil),    // 15: zcard.api.admin.v1.ListPromotionsRequest
-	(*ListPromotionsReply)(nil),      // 16: zcard.api.admin.v1.ListPromotionsReply
-	(*emptypb.Empty)(nil),            // 17: google.protobuf.Empty
+	(*DeleteCouponsRequest)(nil),     // 6: zcard.api.admin.v1.DeleteCouponsRequest
+	(*DeleteCouponsReply)(nil),       // 7: zcard.api.admin.v1.DeleteCouponsReply
+	(*ExportCouponsRequest)(nil),     // 8: zcard.api.admin.v1.ExportCouponsRequest
+	(*ExportCouponsReply)(nil),       // 9: zcard.api.admin.v1.ExportCouponsReply
+	(*GrantCouponRequest)(nil),       // 10: zcard.api.admin.v1.GrantCouponRequest
+	(*GrantCouponReply)(nil),         // 11: zcard.api.admin.v1.GrantCouponReply
+	(*CreateFlashSaleRequest)(nil),   // 12: zcard.api.admin.v1.CreateFlashSaleRequest
+	(*FlashSaleItem)(nil),            // 13: zcard.api.admin.v1.FlashSaleItem
+	(*ListFlashSalesRequest)(nil),    // 14: zcard.api.admin.v1.ListFlashSalesRequest
+	(*ListFlashSalesReply)(nil),      // 15: zcard.api.admin.v1.ListFlashSalesReply
+	(*DeleteFlashSaleRequest)(nil),   // 16: zcard.api.admin.v1.DeleteFlashSaleRequest
+	(*UpsertPromotionRequest)(nil),   // 17: zcard.api.admin.v1.UpsertPromotionRequest
+	(*PromotionItem)(nil),            // 18: zcard.api.admin.v1.PromotionItem
+	(*ListPromotionsRequest)(nil),    // 19: zcard.api.admin.v1.ListPromotionsRequest
+	(*ListPromotionsReply)(nil),      // 20: zcard.api.admin.v1.ListPromotionsReply
+	(*emptypb.Empty)(nil),            // 21: google.protobuf.Empty
 }
 var file_admin_v1_coupon_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.CouponList.coupons:type_name -> zcard.api.admin.v1.Coupon
-	9,  // 1: zcard.api.admin.v1.ListFlashSalesReply.items:type_name -> zcard.api.admin.v1.FlashSaleItem
-	14, // 2: zcard.api.admin.v1.ListPromotionsReply.items:type_name -> zcard.api.admin.v1.PromotionItem
-	6,  // 3: zcard.api.admin.v1.AdminCouponService.GrantCoupon:input_type -> zcard.api.admin.v1.GrantCouponRequest
-	8,  // 4: zcard.api.admin.v1.AdminCouponService.CreateFlashSale:input_type -> zcard.api.admin.v1.CreateFlashSaleRequest
-	10, // 5: zcard.api.admin.v1.AdminCouponService.ListFlashSales:input_type -> zcard.api.admin.v1.ListFlashSalesRequest
-	12, // 6: zcard.api.admin.v1.AdminCouponService.DeleteFlashSale:input_type -> zcard.api.admin.v1.DeleteFlashSaleRequest
-	13, // 7: zcard.api.admin.v1.AdminCouponService.UpsertPromotion:input_type -> zcard.api.admin.v1.UpsertPromotionRequest
-	15, // 8: zcard.api.admin.v1.AdminCouponService.ListPromotions:input_type -> zcard.api.admin.v1.ListPromotionsRequest
+	13, // 1: zcard.api.admin.v1.ListFlashSalesReply.items:type_name -> zcard.api.admin.v1.FlashSaleItem
+	18, // 2: zcard.api.admin.v1.ListPromotionsReply.items:type_name -> zcard.api.admin.v1.PromotionItem
+	10, // 3: zcard.api.admin.v1.AdminCouponService.GrantCoupon:input_type -> zcard.api.admin.v1.GrantCouponRequest
+	12, // 4: zcard.api.admin.v1.AdminCouponService.CreateFlashSale:input_type -> zcard.api.admin.v1.CreateFlashSaleRequest
+	14, // 5: zcard.api.admin.v1.AdminCouponService.ListFlashSales:input_type -> zcard.api.admin.v1.ListFlashSalesRequest
+	16, // 6: zcard.api.admin.v1.AdminCouponService.DeleteFlashSale:input_type -> zcard.api.admin.v1.DeleteFlashSaleRequest
+	17, // 7: zcard.api.admin.v1.AdminCouponService.UpsertPromotion:input_type -> zcard.api.admin.v1.UpsertPromotionRequest
+	19, // 8: zcard.api.admin.v1.AdminCouponService.ListPromotions:input_type -> zcard.api.admin.v1.ListPromotionsRequest
 	2,  // 9: zcard.api.admin.v1.AdminCouponService.ListCoupons:input_type -> zcard.api.admin.v1.ListCouponsRequest
 	3,  // 10: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:input_type -> zcard.api.admin.v1.CreateCouponBatchRequest
 	5,  // 11: zcard.api.admin.v1.AdminCouponService.DisableCoupon:input_type -> zcard.api.admin.v1.DisableCouponRequest
-	7,  // 12: zcard.api.admin.v1.AdminCouponService.GrantCoupon:output_type -> zcard.api.admin.v1.GrantCouponReply
-	9,  // 13: zcard.api.admin.v1.AdminCouponService.CreateFlashSale:output_type -> zcard.api.admin.v1.FlashSaleItem
-	11, // 14: zcard.api.admin.v1.AdminCouponService.ListFlashSales:output_type -> zcard.api.admin.v1.ListFlashSalesReply
-	17, // 15: zcard.api.admin.v1.AdminCouponService.DeleteFlashSale:output_type -> google.protobuf.Empty
-	14, // 16: zcard.api.admin.v1.AdminCouponService.UpsertPromotion:output_type -> zcard.api.admin.v1.PromotionItem
-	16, // 17: zcard.api.admin.v1.AdminCouponService.ListPromotions:output_type -> zcard.api.admin.v1.ListPromotionsReply
-	1,  // 18: zcard.api.admin.v1.AdminCouponService.ListCoupons:output_type -> zcard.api.admin.v1.CouponList
-	4,  // 19: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:output_type -> zcard.api.admin.v1.CreateCouponBatchReply
-	17, // 20: zcard.api.admin.v1.AdminCouponService.DisableCoupon:output_type -> google.protobuf.Empty
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
+	6,  // 12: zcard.api.admin.v1.AdminCouponService.DeleteCoupons:input_type -> zcard.api.admin.v1.DeleteCouponsRequest
+	8,  // 13: zcard.api.admin.v1.AdminCouponService.ExportCoupons:input_type -> zcard.api.admin.v1.ExportCouponsRequest
+	11, // 14: zcard.api.admin.v1.AdminCouponService.GrantCoupon:output_type -> zcard.api.admin.v1.GrantCouponReply
+	13, // 15: zcard.api.admin.v1.AdminCouponService.CreateFlashSale:output_type -> zcard.api.admin.v1.FlashSaleItem
+	15, // 16: zcard.api.admin.v1.AdminCouponService.ListFlashSales:output_type -> zcard.api.admin.v1.ListFlashSalesReply
+	21, // 17: zcard.api.admin.v1.AdminCouponService.DeleteFlashSale:output_type -> google.protobuf.Empty
+	18, // 18: zcard.api.admin.v1.AdminCouponService.UpsertPromotion:output_type -> zcard.api.admin.v1.PromotionItem
+	20, // 19: zcard.api.admin.v1.AdminCouponService.ListPromotions:output_type -> zcard.api.admin.v1.ListPromotionsReply
+	1,  // 20: zcard.api.admin.v1.AdminCouponService.ListCoupons:output_type -> zcard.api.admin.v1.CouponList
+	4,  // 21: zcard.api.admin.v1.AdminCouponService.CreateCouponBatch:output_type -> zcard.api.admin.v1.CreateCouponBatchReply
+	21, // 22: zcard.api.admin.v1.AdminCouponService.DisableCoupon:output_type -> google.protobuf.Empty
+	7,  // 23: zcard.api.admin.v1.AdminCouponService.DeleteCoupons:output_type -> zcard.api.admin.v1.DeleteCouponsReply
+	9,  // 24: zcard.api.admin.v1.AdminCouponService.ExportCoupons:output_type -> zcard.api.admin.v1.ExportCouponsReply
+	14, // [14:25] is the sub-list for method output_type
+	3,  // [3:14] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -1374,7 +1659,7 @@ func file_admin_v1_coupon_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_coupon_proto_rawDesc), len(file_admin_v1_coupon_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

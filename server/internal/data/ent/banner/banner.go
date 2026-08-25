@@ -137,6 +137,8 @@ const (
 	LinkTypeCategory LinkType = "category"
 	LinkTypeURL      LinkType = "url"
 	LinkTypeAd       LinkType = "ad"
+	LinkTypePost     LinkType = "post"
+	LinkTypeNotice   LinkType = "notice"
 )
 
 func (lt LinkType) String() string {
@@ -146,7 +148,7 @@ func (lt LinkType) String() string {
 // LinkTypeValidator is a validator for the "link_type" field enum values. It is called by the builders before save.
 func LinkTypeValidator(lt LinkType) error {
 	switch lt {
-	case LinkTypeProduct, LinkTypeCategory, LinkTypeURL, LinkTypeAd:
+	case LinkTypeProduct, LinkTypeCategory, LinkTypeURL, LinkTypeAd, LinkTypePost, LinkTypeNotice:
 		return nil
 	default:
 		return fmt.Errorf("banner: invalid enum value for link_type field: %q", lt)

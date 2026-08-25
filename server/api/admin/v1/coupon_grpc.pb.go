@@ -29,6 +29,8 @@ const (
 	AdminCouponService_ListCoupons_FullMethodName       = "/zcard.api.admin.v1.AdminCouponService/ListCoupons"
 	AdminCouponService_CreateCouponBatch_FullMethodName = "/zcard.api.admin.v1.AdminCouponService/CreateCouponBatch"
 	AdminCouponService_DisableCoupon_FullMethodName     = "/zcard.api.admin.v1.AdminCouponService/DisableCoupon"
+	AdminCouponService_DeleteCoupons_FullMethodName     = "/zcard.api.admin.v1.AdminCouponService/DeleteCoupons"
+	AdminCouponService_ExportCoupons_FullMethodName     = "/zcard.api.admin.v1.AdminCouponService/ExportCoupons"
 )
 
 // AdminCouponServiceClient is the client API for AdminCouponService service.
@@ -52,6 +54,10 @@ type AdminCouponServiceClient interface {
 	ListCoupons(ctx context.Context, in *ListCouponsRequest, opts ...grpc.CallOption) (*CouponList, error)
 	CreateCouponBatch(ctx context.Context, in *CreateCouponBatchRequest, opts ...grpc.CallOption) (*CreateCouponBatchReply, error)
 	DisableCoupon(ctx context.Context, in *DisableCouponRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+	DeleteCoupons(ctx context.Context, in *DeleteCouponsRequest, opts ...grpc.CallOption) (*DeleteCouponsReply, error)
+	// ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+	ExportCoupons(ctx context.Context, in *ExportCouponsRequest, opts ...grpc.CallOption) (*ExportCouponsReply, error)
 }
 
 type adminCouponServiceClient struct {
@@ -152,6 +158,26 @@ func (c *adminCouponServiceClient) DisableCoupon(ctx context.Context, in *Disabl
 	return out, nil
 }
 
+func (c *adminCouponServiceClient) DeleteCoupons(ctx context.Context, in *DeleteCouponsRequest, opts ...grpc.CallOption) (*DeleteCouponsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteCouponsReply)
+	err := c.cc.Invoke(ctx, AdminCouponService_DeleteCoupons_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCouponServiceClient) ExportCoupons(ctx context.Context, in *ExportCouponsRequest, opts ...grpc.CallOption) (*ExportCouponsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExportCouponsReply)
+	err := c.cc.Invoke(ctx, AdminCouponService_ExportCoupons_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminCouponServiceServer is the server API for AdminCouponService service.
 // All implementations must embed UnimplementedAdminCouponServiceServer
 // for forward compatibility.
@@ -173,6 +199,10 @@ type AdminCouponServiceServer interface {
 	ListCoupons(context.Context, *ListCouponsRequest) (*CouponList, error)
 	CreateCouponBatch(context.Context, *CreateCouponBatchRequest) (*CreateCouponBatchReply, error)
 	DisableCoupon(context.Context, *DisableCouponRequest) (*emptypb.Empty, error)
+	// DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+	DeleteCoupons(context.Context, *DeleteCouponsRequest) (*DeleteCouponsReply, error)
+	// ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+	ExportCoupons(context.Context, *ExportCouponsRequest) (*ExportCouponsReply, error)
 	mustEmbedUnimplementedAdminCouponServiceServer()
 }
 
@@ -209,6 +239,12 @@ func (UnimplementedAdminCouponServiceServer) CreateCouponBatch(context.Context, 
 }
 func (UnimplementedAdminCouponServiceServer) DisableCoupon(context.Context, *DisableCouponRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DisableCoupon not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) DeleteCoupons(context.Context, *DeleteCouponsRequest) (*DeleteCouponsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteCoupons not implemented")
+}
+func (UnimplementedAdminCouponServiceServer) ExportCoupons(context.Context, *ExportCouponsRequest) (*ExportCouponsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExportCoupons not implemented")
 }
 func (UnimplementedAdminCouponServiceServer) mustEmbedUnimplementedAdminCouponServiceServer() {}
 func (UnimplementedAdminCouponServiceServer) testEmbeddedByValue()                            {}
@@ -393,6 +429,42 @@ func _AdminCouponService_DisableCoupon_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminCouponService_DeleteCoupons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCouponsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).DeleteCoupons(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_DeleteCoupons_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).DeleteCoupons(ctx, req.(*DeleteCouponsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCouponService_ExportCoupons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportCouponsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCouponServiceServer).ExportCoupons(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCouponService_ExportCoupons_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCouponServiceServer).ExportCoupons(ctx, req.(*ExportCouponsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminCouponService_ServiceDesc is the grpc.ServiceDesc for AdminCouponService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -435,6 +507,14 @@ var AdminCouponService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DisableCoupon",
 			Handler:    _AdminCouponService_DisableCoupon_Handler,
+		},
+		{
+			MethodName: "DeleteCoupons",
+			Handler:    _AdminCouponService_DeleteCoupons_Handler,
+		},
+		{
+			MethodName: "ExportCoupons",
+			Handler:    _AdminCouponService_ExportCoupons_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -24,7 +24,7 @@ func (Banner) Fields() []ent.Field {
 		field.JSON("title_json", map[string]string{}).Optional().Comment("多语言标题"),
 		field.String("image").MaxLen(255),
 		field.String("mobile_image").MaxLen(255).Optional().Comment("缺省回落 PC 图"),
-		field.Enum("link_type").Values("product", "category", "url", "ad").Default("url"),
+		field.Enum("link_type").Values("product", "category", "url", "ad", "post", "notice").Default("url"),
 		field.String("link_value").MaxLen(500).Optional(),
 		field.Bool("is_active").Default(true),
 		field.Time("start_at").SchemaType(mysqlTime).Optional(),

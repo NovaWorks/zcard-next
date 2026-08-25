@@ -20,8 +20,10 @@ const _ = http.SupportPackageIsVersion3
 
 const OperationAdminCouponServiceCreateCouponBatch = "/zcard.api.admin.v1.AdminCouponService/CreateCouponBatch"
 const OperationAdminCouponServiceCreateFlashSale = "/zcard.api.admin.v1.AdminCouponService/CreateFlashSale"
+const OperationAdminCouponServiceDeleteCoupons = "/zcard.api.admin.v1.AdminCouponService/DeleteCoupons"
 const OperationAdminCouponServiceDeleteFlashSale = "/zcard.api.admin.v1.AdminCouponService/DeleteFlashSale"
 const OperationAdminCouponServiceDisableCoupon = "/zcard.api.admin.v1.AdminCouponService/DisableCoupon"
+const OperationAdminCouponServiceExportCoupons = "/zcard.api.admin.v1.AdminCouponService/ExportCoupons"
 const OperationAdminCouponServiceGrantCoupon = "/zcard.api.admin.v1.AdminCouponService/GrantCoupon"
 const OperationAdminCouponServiceListCoupons = "/zcard.api.admin.v1.AdminCouponService/ListCoupons"
 const OperationAdminCouponServiceListFlashSales = "/zcard.api.admin.v1.AdminCouponService/ListFlashSales"
@@ -32,9 +34,13 @@ type AdminCouponServiceHTTPServer interface {
 	CreateCouponBatch(context.Context, *CreateCouponBatchRequest) (*CreateCouponBatchReply, error)
 	// CreateFlashSale CreateFlashSale 创建秒杀。
 	CreateFlashSale(context.Context, *CreateFlashSaleRequest) (*FlashSaleItem, error)
+	// DeleteCoupons DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+	DeleteCoupons(context.Context, *DeleteCouponsRequest) (*DeleteCouponsReply, error)
 	// DeleteFlashSale DeleteFlashSale 删除秒杀。
 	DeleteFlashSale(context.Context, *DeleteFlashSaleRequest) (*emptypb.Empty, error)
 	DisableCoupon(context.Context, *DisableCouponRequest) (*emptypb.Empty, error)
+	// ExportCoupons ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+	ExportCoupons(context.Context, *ExportCouponsRequest) (*ExportCouponsReply, error)
 	// GrantCoupon GrantCoupon 批次赠送指定用户。
 	GrantCoupon(context.Context, *GrantCouponRequest) (*GrantCouponReply, error)
 	ListCoupons(context.Context, *ListCouponsRequest) (*CouponList, error)
@@ -57,6 +63,8 @@ func RegisterAdminCouponServiceHTTPServer(s *http.Server, srv AdminCouponService
 	r.Handle("GET", "/api/v1/admin/coupons", _AdminCouponService_ListCoupons0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/coupons/batch", _AdminCouponService_CreateCouponBatch0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/coupons/disable", _AdminCouponService_DisableCoupon0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/coupons/delete", _AdminCouponService_DeleteCoupons0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/coupons/export", _AdminCouponService_ExportCoupons0_HTTP_Handler(srv))
 }
 
 func _AdminCouponService_GrantCoupon0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
@@ -233,13 +241,55 @@ func _AdminCouponService_DisableCoupon0_HTTP_Handler(srv AdminCouponServiceHTTPS
 	}
 }
 
+func _AdminCouponService_DeleteCoupons0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteCouponsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceDeleteCoupons)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteCoupons(ctx, req.(*DeleteCouponsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*DeleteCouponsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCouponService_ExportCoupons0_HTTP_Handler(srv AdminCouponServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ExportCouponsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCouponServiceExportCoupons)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ExportCoupons(ctx, req.(*ExportCouponsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ExportCouponsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminCouponServiceHTTPClient interface {
 	CreateCouponBatch(ctx context.Context, req *CreateCouponBatchRequest, opts ...http.CallOption) (rsp *CreateCouponBatchReply, err error)
 	// CreateFlashSale CreateFlashSale 创建秒杀。
 	CreateFlashSale(ctx context.Context, req *CreateFlashSaleRequest, opts ...http.CallOption) (rsp *FlashSaleItem, err error)
+	// DeleteCoupons DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+	DeleteCoupons(ctx context.Context, req *DeleteCouponsRequest, opts ...http.CallOption) (rsp *DeleteCouponsReply, err error)
 	// DeleteFlashSale DeleteFlashSale 删除秒杀。
 	DeleteFlashSale(ctx context.Context, req *DeleteFlashSaleRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DisableCoupon(ctx context.Context, req *DisableCouponRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// ExportCoupons ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+	ExportCoupons(ctx context.Context, req *ExportCouponsRequest, opts ...http.CallOption) (rsp *ExportCouponsReply, err error)
 	// GrantCoupon GrantCoupon 批次赠送指定用户。
 	GrantCoupon(ctx context.Context, req *GrantCouponRequest, opts ...http.CallOption) (rsp *GrantCouponReply, err error)
 	ListCoupons(ctx context.Context, req *ListCouponsRequest, opts ...http.CallOption) (rsp *CouponList, err error)
@@ -294,6 +344,24 @@ func (c *AdminCouponServiceHTTPClientImpl) CreateFlashSale(ctx context.Context, 
 	return &out, nil
 }
 
+// DeleteCoupons DeleteCoupons 批量删除券（仅未使用；可按 id 列表或整批未使用）。
+func (c *AdminCouponServiceHTTPClientImpl) DeleteCoupons(ctx context.Context, in *DeleteCouponsRequest, opts ...http.CallOption) (*DeleteCouponsReply, error) {
+	var out DeleteCouponsReply
+	pattern := "/api/v1/admin/coupons/delete"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCouponServiceDeleteCoupons),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // DeleteFlashSale DeleteFlashSale 删除秒杀。
 func (c *AdminCouponServiceHTTPClientImpl) DeleteFlashSale(ctx context.Context, in *DeleteFlashSaleRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
@@ -322,6 +390,23 @@ func (c *AdminCouponServiceHTTPClientImpl) DisableCoupon(ctx context.Context, in
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ExportCoupons ExportCoupons 导出券码 CSV（按状态/批次，含表头）。
+func (c *AdminCouponServiceHTTPClientImpl) ExportCoupons(ctx context.Context, in *ExportCouponsRequest, opts ...http.CallOption) (*ExportCouponsReply, error) {
+	var out ExportCouponsReply
+	pattern := "/api/v1/admin/coupons/export"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCouponServiceExportCoupons),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

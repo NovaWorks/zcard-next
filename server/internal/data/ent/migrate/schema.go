@@ -134,7 +134,7 @@ var (
 		{Name: "title_json", Type: field.TypeJSON, Nullable: true},
 		{Name: "image", Type: field.TypeString, Size: 255},
 		{Name: "mobile_image", Type: field.TypeString, Nullable: true, Size: 255},
-		{Name: "link_type", Type: field.TypeEnum, Enums: []string{"product", "category", "url", "ad"}, Default: "url"},
+		{Name: "link_type", Type: field.TypeEnum, Enums: []string{"product", "category", "url", "ad", "post", "notice"}, Default: "url"},
 		{Name: "link_value", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "is_active", Type: field.TypeBool, Default: true},
 		{Name: "start_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
