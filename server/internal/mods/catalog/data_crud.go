@@ -33,7 +33,16 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		Where(product.SubsiteID(tc.SubsiteID)).
 		Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
 	if f.CategoryID > 0 {
-		q = q.Where(product.CategoryID(f.CategoryID))
+		// 选择父分类时递归包含全部子分类商品
+		desc, err := descendantCategoryIDs(ctx, data.Client(ctx, r.data), f.CategoryID)
+		if err != nil {
+			return nil, 0, err
+		}
+		ids := make([]uint64, 0, len(desc))
+		for id := range desc {
+			ids = append(ids, id)
+		}
+		q = q.Where(product.CategoryIDIn(ids...))
 	}
 	if f.Keyword != "" {
 		q = q.Where(product.NameHasPrefix(f.Keyword))
@@ -315,7 +324,8 @@ func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, paren
 // UpdateCategory 更新分类。
 // parentId 层级语义（拖拽调级）：-1 = 不变；0 = 置顶级；>0 = 指定父（防环：
 // 不能把分类设为自身或自身的后代，否则树成环）。
-func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, icon string, hide bool, sort int32, parentID int64) (*ent.Category, error) {
+// hide 指针语义：nil = 不更新（只改名称/sort/层级时隐藏状态保持不变）。
+func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, icon string, hide *bool, sort int32, parentID int64) (*ent.Category, error) {
 	client := data.Client(ctx, r.data)
 	q := client.Category.UpdateOneID(id)
 	if name != "" {
@@ -324,7 +334,9 @@ func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, i
 	if icon != "" {
 		q.SetIcon(icon)
 	}
-	q.SetHide(hide)
+	if hide != nil {
+		q.SetHide(*hide)
+	}
 	if sort >= 0 {
 		q.SetSort(sort)
 	}
@@ -395,6 +407,44 @@ func (r *ProductRepoImpl) DeleteCategory(ctx context.Context, id uint64) error {
 		return fmt.Errorf("catalog.CATEGORY_NOT_FOUND")
 	}
 	return nil
+}
+
+// ReorderCategories 分类排序（拖拽重排）：把 parent_id 层级下全部兄弟按 ids 顺序
+// 重排，sort 归一化为 0..n-1；跨层级移动时一并改父级。事务原子提交。
+func (r *ProductRepoImpl) ReorderCategories(ctx context.Context, parentID uint64, ids []uint64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	client := data.Client(ctx, r.data)
+	// 防环：目标父级不能是任一被移动分类自身或其后代
+	if parentID > 0 {
+		for _, id := range ids {
+			desc, err := descendantCategoryIDs(ctx, client, id)
+			if err != nil {
+				return err
+			}
+			if desc[parentID] {
+				return fmt.Errorf("catalog.CATEGORY_CYCLE")
+			}
+		}
+	}
+	tx, err := client.Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	for i, id := range ids {
+		upd := tx.Category.UpdateOneID(id).SetSort(int32(i))
+		if parentID > 0 {
+			upd = upd.SetParentID(parentID)
+		} else {
+			upd = upd.ClearParentID() // 置顶级
+		}
+		if err := upd.Exec(ctx); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (r *ProductRepoImpl) checkCategoryTree(ctx context.Context, id, parentID uint64) error {

@@ -254,7 +254,7 @@ func (s *AdminCatalogService) CreateCategory(ctx context.Context, req *adminv1.C
 
 // UpdateCategory 更新分类。
 func (s *AdminCatalogService) UpdateCategory(ctx context.Context, req *adminv1.UpdateCategoryRequest) (*adminv1.Category, error) {
-	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.GetIcon(), req.GetHide(), req.GetSort(), req.GetParentId())
+	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.GetIcon(), req.Hide, req.GetSort(), req.GetParentId())
 	if err != nil {
 		if strings.Contains(err.Error(), "CATEGORY_CYCLE") {
 			return nil, errors.BadRequest("catalog.CATEGORY_CYCLE", "不能把分类移到自身或它的子分类下")
@@ -265,6 +265,17 @@ func (s *AdminCatalogService) UpdateCategory(ctx context.Context, req *adminv1.U
 		return nil, errors.InternalServer("catalog.CATEGORY_UPDATE_FAILED", "更新失败")
 	}
 	return toCategoryPB(c), nil
+}
+
+// ReorderCategories 分类排序（拖拽重排：某层级兄弟按 ids 顺序归一化 sort）。
+func (s *AdminCatalogService) ReorderCategories(ctx context.Context, req *adminv1.ReorderCategoriesRequest) (*emptypb.Empty, error) {
+	if err := s.repo.ReorderCategories(ctx, req.GetParentId(), req.GetIds()); err != nil {
+		if strings.Contains(err.Error(), "CATEGORY_CYCLE") {
+			return nil, errors.BadRequest("catalog.CATEGORY_CYCLE", "不能把分类移到自身或它的子分类下")
+		}
+		return nil, errors.InternalServer("catalog.CATEGORY_REORDER_FAILED", "排序失败")
+	}
+	return &emptypb.Empty{}, nil
 }
 
 // DeleteCategory 删除分类。

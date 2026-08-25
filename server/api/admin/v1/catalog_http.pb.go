@@ -42,6 +42,7 @@ const OperationAdminCatalogServiceListReviews = "/zcard.api.admin.v1.AdminCatalo
 const OperationAdminCatalogServiceListSkus = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
 const OperationAdminCatalogServiceListTags = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
 const OperationAdminCatalogServiceRejectReview = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
+const OperationAdminCatalogServiceReorderCategories = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
 const OperationAdminCatalogServiceUpdateCategory = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
 const OperationAdminCatalogServiceUpdateControl = "/zcard.api.admin.v1.AdminCatalogService/UpdateControl"
 const OperationAdminCatalogServiceUpdateMemberGroup = "/zcard.api.admin.v1.AdminCatalogService/UpdateMemberGroup"
@@ -81,6 +82,8 @@ type AdminCatalogServiceHTTPServer interface {
 	// ListTags ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
 	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
+	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*emptypb.Empty, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Category, error)
 	UpdateControl(context.Context, *UpdateControlRequest) (*AdminControl, error)
 	UpdateMemberGroup(context.Context, *UpdateMemberGroupRequest) (*MemberGroup, error)
@@ -100,6 +103,7 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("POST", "/api/v1/admin/categories", _AdminCatalogService_CreateCategory0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/categories/{id}", _AdminCatalogService_UpdateCategory0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/categories/{id}", _AdminCatalogService_DeleteCategory0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/categories/reorder", _AdminCatalogService_ReorderCategories0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/tags", _AdminCatalogService_ListTags0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/tags", _AdminCatalogService_CreateTag0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/tags/{id}", _AdminCatalogService_DeleteTag0_HTTP_Handler(srv))
@@ -316,6 +320,25 @@ func _AdminCatalogService_DeleteCategory0_HTTP_Handler(srv AdminCatalogServiceHT
 		http.SetOperation(ctx, OperationAdminCatalogServiceDeleteCategory)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.DeleteCategory(ctx, req.(*DeleteCategoryRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_ReorderCategories0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ReorderCategoriesRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceReorderCategories)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ReorderCategories(ctx, req.(*ReorderCategoriesRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -759,6 +782,8 @@ type AdminCatalogServiceHTTPClient interface {
 	// ListTags ── 标签 ──
 	ListTags(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TagList, err error)
 	RejectReview(ctx context.Context, req *RejectReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
+	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+	ReorderCategories(ctx context.Context, req *ReorderCategoriesRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
 	UpdateControl(ctx context.Context, req *UpdateControlRequest, opts ...http.CallOption) (rsp *AdminControl, err error)
 	UpdateMemberGroup(ctx context.Context, req *UpdateMemberGroupRequest, opts ...http.CallOption) (rsp *MemberGroup, err error)
@@ -1167,6 +1192,24 @@ func (c *AdminCatalogServiceHTTPClientImpl) RejectReview(ctx context.Context, in
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceRejectReview),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+func (c *AdminCatalogServiceHTTPClientImpl) ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/categories/reorder"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceReorderCategories),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

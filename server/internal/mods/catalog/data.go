@@ -51,7 +51,16 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		q = q.Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
 	}
 	if f.CategoryID > 0 {
-		q = q.Where(product.CategoryID(f.CategoryID))
+		// 选择父分类时递归包含全部子分类商品（与后台列表同口径）
+		desc, err := descendantCategoryIDs(ctx, client, f.CategoryID)
+		if err != nil {
+			return nil, 0, err
+		}
+		ids := make([]uint64, 0, len(desc))
+		for id := range desc {
+			ids = append(ids, id)
+		}
+		q = q.Where(product.CategoryIDIn(ids...))
 	}
 	if f.Keyword != "" {
 		// 关键词仅等值/前缀匹配（禁止 %xxx% 前缀模糊扫全表，§8.2.5）；全文搜索 M3 走外置

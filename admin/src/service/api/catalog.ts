@@ -102,6 +102,15 @@ export function deleteCategory(id: number) {
   });
 }
 
+// 分类排序（拖拽重排：把 parent_id 层级下全部兄弟按 ids 顺序重排并归一化 sort）
+export function reorderCategories(parent_id: number, ids: number[]) {
+  return request({
+    url: "/api/v1/admin/categories/reorder",
+    method: "post",
+    data: { parent_id, ids },
+  });
+}
+
 // ── SKU 多规格（P1-01 M1b；price_cents 0=继承商品价）──
 
 export function fetchSkus(productId: number) {

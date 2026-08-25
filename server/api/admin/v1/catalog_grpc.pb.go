@@ -30,6 +30,7 @@ const (
 	AdminCatalogService_CreateCategory_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
 	AdminCatalogService_UpdateCategory_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
 	AdminCatalogService_DeleteCategory_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/DeleteCategory"
+	AdminCatalogService_ReorderCategories_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
 	AdminCatalogService_ListTags_FullMethodName                 = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
 	AdminCatalogService_CreateTag_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/CreateTag"
 	AdminCatalogService_DeleteTag_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
@@ -70,6 +71,8 @@ type AdminCatalogServiceClient interface {
 	CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*Category, error)
 	UpdateCategory(ctx context.Context, in *UpdateCategoryRequest, opts ...grpc.CallOption) (*Category, error)
 	DeleteCategory(ctx context.Context, in *DeleteCategoryRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+	ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ── 标签 ──
 	ListTags(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TagList, error)
 	CreateTag(ctx context.Context, in *CreateTagRequest, opts ...grpc.CallOption) (*Tag, error)
@@ -198,6 +201,16 @@ func (c *adminCatalogServiceClient) DeleteCategory(ctx context.Context, in *Dele
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminCatalogService_DeleteCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) ReorderCategories(ctx context.Context, in *ReorderCategoriesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ReorderCategories_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -413,6 +426,8 @@ type AdminCatalogServiceServer interface {
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Category, error)
 	DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error)
+	// ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*emptypb.Empty, error)
 	// ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
 	CreateTag(context.Context, *CreateTagRequest) (*Tag, error)
@@ -476,6 +491,9 @@ func (UnimplementedAdminCatalogServiceServer) UpdateCategory(context.Context, *U
 }
 func (UnimplementedAdminCatalogServiceServer) DeleteCategory(context.Context, *DeleteCategoryRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteCategory not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) ReorderCategories(context.Context, *ReorderCategoriesRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReorderCategories not implemented")
 }
 func (UnimplementedAdminCatalogServiceServer) ListTags(context.Context, *emptypb.Empty) (*TagList, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTags not implemented")
@@ -731,6 +749,24 @@ func _AdminCatalogService_DeleteCategory_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminCatalogServiceServer).DeleteCategory(ctx, req.(*DeleteCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_ReorderCategories_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReorderCategoriesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ReorderCategories(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ReorderCategories_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ReorderCategories(ctx, req.(*ReorderCategoriesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1123,6 +1159,10 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCategory",
 			Handler:    _AdminCatalogService_DeleteCategory_Handler,
+		},
+		{
+			MethodName: "ReorderCategories",
+			Handler:    _AdminCatalogService_ReorderCategories_Handler,
 		},
 		{
 			MethodName: "ListTags",

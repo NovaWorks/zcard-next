@@ -47,6 +47,10 @@ service AdminCatalogService {
   rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { delete: "/api/v1/admin/categories/{id}" };
   }
+  // ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
+  rpc ReorderCategories(ReorderCategoriesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/admin/categories/reorder" body: "*" };
+  }
 
   // ── 标签 ──
   rpc ListTags(google.protobuf.Empty) returns (TagList) {
@@ -243,10 +247,18 @@ message UpdateCategoryRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;
   string icon = 3;
-  bool hide = 4;
+  // 隐藏状态（optional：未传保持不变，避免只改排序/名称时误取消隐藏）
+  optional bool hide = 4;
   int32 sort = 5;
   // 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
   int64 parent_id = 6;
+}
+
+// ReorderCategoriesRequest 分类排序：把 parent_id 层级下的分类按 ids 顺序重排，
+// sort 归一化为 0..n-1；ids 需包含该层级的全部兄弟（拖拽跨层级时含被移动分类）。
+message ReorderCategoriesRequest {
+  uint64 parent_id = 1; // 目标层级（0=顶级）
+  repeated uint64 ids = 2;
 }
 
 message DeleteCategoryRequest {
