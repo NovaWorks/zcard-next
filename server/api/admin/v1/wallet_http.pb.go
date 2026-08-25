@@ -18,6 +18,7 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminWalletServiceAdjust = "/zcard.api.admin.v1.AdminWalletService/Adjust"
+const OperationAdminWalletServiceAdjustPoints = "/zcard.api.admin.v1.AdminWalletService/AdjustPoints"
 const OperationAdminWalletServiceCreateGiftcardBatch = "/zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch"
 const OperationAdminWalletServiceGetBalance = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
 const OperationAdminWalletServiceListGiftcardBatches = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
@@ -29,6 +30,8 @@ const OperationAdminWalletServiceReviewWithdrawal = "/zcard.api.admin.v1.AdminWa
 type AdminWalletServiceHTTPServer interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(context.Context, *AdjustRequest) (*Balance, error)
+	// AdjustPoints AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+	AdjustPoints(context.Context, *AdjustPointsRequest) (*PointsBalance, error)
 	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
 	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error)
 	// GetBalance GetBalance 指定用户余额。
@@ -54,6 +57,7 @@ func RegisterAdminWalletServiceHTTPServer(s *http.Server, srv AdminWalletService
 	r.Handle("GET", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/{user_id}", _AdminWalletService_GetBalance0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust", _AdminWalletService_Adjust0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust-points", _AdminWalletService_AdjustPoints0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/{user_id}/transactions", _AdminWalletService_ListTransactions0_HTTP_Handler(srv))
 }
 
@@ -202,6 +206,28 @@ func _AdminWalletService_Adjust0_HTTP_Handler(srv AdminWalletServiceHTTPServer) 
 	}
 }
 
+func _AdminWalletService_AdjustPoints0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AdjustPointsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceAdjustPoints)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AdjustPoints(ctx, req.(*AdjustPointsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*PointsBalance)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AdminWalletService_ListTransactions0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in ListWalletTxRequest
@@ -227,6 +253,8 @@ func _AdminWalletService_ListTransactions0_HTTP_Handler(srv AdminWalletServiceHT
 type AdminWalletServiceHTTPClient interface {
 	// Adjust Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(ctx context.Context, req *AdjustRequest, opts ...http.CallOption) (rsp *Balance, err error)
+	// AdjustPoints AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+	AdjustPoints(ctx context.Context, req *AdjustPointsRequest, opts ...http.CallOption) (rsp *PointsBalance, err error)
 	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
 	CreateGiftcardBatch(ctx context.Context, req *CreateGiftcardBatchRequest, opts ...http.CallOption) (rsp *CreateGiftcardBatchReply, err error)
 	// GetBalance GetBalance 指定用户余额。
@@ -260,6 +288,24 @@ func (c *AdminWalletServiceHTTPClientImpl) Adjust(ctx context.Context, in *Adjus
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminWalletServiceAdjust),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// AdjustPoints AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+func (c *AdminWalletServiceHTTPClientImpl) AdjustPoints(ctx context.Context, in *AdjustPointsRequest, opts ...http.CallOption) (*PointsBalance, error) {
+	var out PointsBalance
+	pattern := "/api/v1/admin/wallet/{user_id}/adjust-points"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminWalletServiceAdjustPoints),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

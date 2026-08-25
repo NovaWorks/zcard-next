@@ -9,6 +9,8 @@ export function fetchProducts(params?: {
   page?: number;
   page_size?: number;
   low_stock_only?: boolean;
+  upstream_source_id?: number;
+  local_only?: boolean;
 }) {
   return request({
     url: "/api/v1/admin/products",

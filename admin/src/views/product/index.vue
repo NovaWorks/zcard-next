@@ -48,6 +48,7 @@ const pageSize = ref(20);
 // 快捷筛选卡片（后端 status 口径：0=全部 1=上架 2=隐藏 -1=仅下架；low_stock=库存告急）
 const statusFilter = ref<number | "low_stock">(0);
 const categoryFilter = ref<number | null>(null); // 分类筛选（null=全部）
+const supplyFilter = ref<number | null>(null); // 渠道筛选（null=全部 0=自营 >0=渠道ID）
 const statusTabs = [
   { label: "全部", value: 0, type: "default" as const },
   { label: "已上架", value: 1, type: "success" as const },
@@ -481,6 +482,8 @@ async function loadList() {
       status: statusFilter.value === "low_stock" ? undefined : statusFilter.value || undefined,
       low_stock_only: statusFilter.value === "low_stock" || undefined,
       category_id: categoryFilter.value || undefined,
+      upstream_source_id: (supplyFilter.value ?? 0) > 0 ? supplyFilter.value! : undefined,
+      local_only: supplyFilter.value === 0 || undefined,
       page: page.value,
       page_size: pageSize.value,
     });
@@ -546,9 +549,15 @@ async function loadCategories() {
 }
 
 async function loadConnections() {
+  // catalog.ts 只读别名；无权限时静默降级为空（货源列回落渠道 #ID，下拉仅剩「自营」）
   const { data, error } = await fetchSupplyConnectionOptions();
   if (!error && data) supplyConnections.value = (data as any).connections || [];
 }
+
+// 渠道筛选下拉选项（自营 + 各供货渠道）
+const supplyOptions = computed(() => [
+  ...supplyConnections.value.map((c: any) => ({ label: c.name, value: c.id })),
+]);
 
 // 批量上下架（多选工具栏与行内切换共用；status 1=上架 0=下架）
 async function handleBatchStatus(ids: number[], status: number, label: string) {
@@ -739,6 +748,22 @@ onMounted(() => {
           class="w-200px"
           @keyup.enter="onSearch"
         />
+        <NSelect
+          v-model:value="supplyFilter"
+          :options="supplyOptions"
+          placeholder="全部渠道"
+          clearable
+          class="w-170px"
+          @update:value="onSearch"
+        />
+        <NButton
+          size="small"
+          quaternary
+          :type="supplyFilter === 0 ? 'primary' : 'default'"
+          @click="((supplyFilter = supplyFilter === 0 ? null : 0), onSearch())"
+        >
+          {{ supplyFilter === 0 ? "✓ 仅自营" : "仅自营" }}
+        </NButton>
         <NButton @click="onSearch">搜索</NButton>
       </div>
 

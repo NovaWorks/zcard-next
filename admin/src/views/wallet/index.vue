@@ -5,9 +5,9 @@ import { checkAuth } from "@/directives";
 import WithdrawTab from "./components/withdraw-tab.vue";
 import GiftcardTab from "./components/giftcard-tab.vue";
 import { ref, reactive, h } from "vue";
-import { NTag, NSelect } from "naive-ui";
+import { NTag, NSelect, NRadioGroup, NRadioButton, NRadio } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
-import { fetchWalletBalance, adjustWalletBalance, fetchWalletTransactions, fetchUsers } from "@/service/api";
+import { fetchWalletBalance, adjustWalletBalance, adjustWalletPoints, fetchWalletTransactions, fetchUsers, fetchCoupons, grantCoupon } from "@/service/api";
 import { formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "WalletManagement" });
@@ -27,6 +27,13 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = ref(20);
 
+const adjustTab = ref<"balance" | "points" | "coupon">("balance");
+const adjustDir = ref<"add" | "sub">("add"); // 增/扣 单选（免手输正负号）
+const couponBatches = ref<any[]>([]);
+const couponBatchId = ref<string | null>(null);
+const couponCount = ref(1);
+const couponLoading = ref(false);
+const grantingCoupon = ref(false);
 const adjustForm = reactive<{ amount_yuan: number | null; reason: string }>({
   amount_yuan: null,
   reason: "",
@@ -172,29 +179,99 @@ async function loadTransactions() {
   }
 }
 
+async function openAdjust() {
+  adjustTab.value = "balance";
+  adjustDir.value = "add";
+  couponBatchId.value = null;
+  couponCount.value = 1;
+  showAdjust.value = true;
+  if (!couponBatches.value.length) {
+    couponLoading.value = true;
+    try {
+      const { data, error } = await fetchCoupons("unused", undefined, 1, 50);
+      if (!error && data) {
+        const seen = new Set<string>();
+        const opts: any[] = [];
+        for (const c of (data as any).coupons || []) {
+          if (!seen.has(c.batch_id)) {
+            seen.add(c.batch_id);
+            opts.push({ label: `${c.name}（${c.batch_id}）`, value: c.batch_id });
+          }
+        }
+        couponBatches.value = opts;
+      }
+    } finally {
+      couponLoading.value = false;
+    }
+  }
+}
+
 async function handleAdjust() {
-  const amountYuan = adjustForm.amount_yuan;
-  if (!userId.value || amountYuan === null || amountYuan === 0 || !adjustForm.reason.trim()) {
-    window.$message?.warning("请填写金额和原因");
+  if (!userId.value) return;
+  if (adjustTab.value !== "coupon" && !adjustForm.reason.trim()) {
+    window.$message?.warning("请填写调整原因（用于审计）");
     return;
   }
-  adjusting.value = true;
+  if (adjustTab.value === "balance") {
+    const amountYuan = adjustForm.amount_yuan;
+    if (amountYuan === null || amountYuan <= 0) {
+      window.$message?.warning("请填写金额");
+      return;
+    }
+    // 增/扣单选 → 服务端正负语义（铁律 15：元→分防浮点）
+    const cents = yuanToFen(amountYuan) * (adjustDir.value === "sub" ? -1 : 1);
+    adjusting.value = true;
+    try {
+      const { data, error } = await adjustWalletBalance(userId.value, {
+        amount_cents: cents,
+        reason: adjustForm.reason,
+      });
+      if (!error) {
+        window.$message?.success(adjustDir.value === "add" ? "已增加余额" : "已扣减余额");
+        showAdjust.value = false;
+        Object.assign(adjustForm, { amount_yuan: null, reason: "" });
+        balance.value = data || balance.value;
+        page.value = 1;
+        loadTransactions();
+      }
+    } finally {
+      adjusting.value = false;
+    }
+    return;
+  }
+  if (adjustTab.value === "points") {
+    const pts = adjustForm.amount_yuan;
+    if (pts === null || pts <= 0 || !Number.isInteger(pts)) {
+      window.$message?.warning("请填写整数积分数量");
+      return;
+    }
+    adjusting.value = true;
+    try {
+      const { error } = await adjustWalletPoints(userId.value, pts * (adjustDir.value === "sub" ? -1 : 1), adjustForm.reason);
+      if (!error) {
+        window.$message?.success(adjustDir.value === "add" ? "已增加积分" : "已扣减积分");
+        showAdjust.value = false;
+        Object.assign(adjustForm, { amount_yuan: null, reason: "" });
+      }
+    } finally {
+      adjusting.value = false;
+    }
+    return;
+  }
+  // 优惠券赠送
+  if (!couponBatchId.value) {
+    window.$message?.warning("请选择优惠券批次");
+    return;
+  }
+  grantingCoupon.value = true;
   try {
-    // 元 → 分（铁律 15：提交统一 *100，经 utils/money 防浮点）
-    const { data, error } = await adjustWalletBalance(userId.value, {
-      amount_cents: yuanToFen(amountYuan),
-      reason: adjustForm.reason,
-    });
+    const { data, error } = await grantCoupon(couponBatchId.value, userId.value, couponCount.value || 1);
     if (!error) {
-      window.$message?.success("调账成功");
+      window.$message?.success(`已赠送 ${(data as any)?.granted ?? 0} 张券`);
       showAdjust.value = false;
-      Object.assign(adjustForm, { amount_yuan: null, reason: "" });
-      balance.value = data || balance.value;
-      page.value = 1;
-      loadTransactions();
     }
   } finally {
-    adjusting.value = false;
+    grantingCoupon.value = false;
   }
 }
 </script>
@@ -219,7 +296,7 @@ async function handleAdjust() {
           @update:value="onUserChange"
         />
         <NButton type="primary" :loading="balanceLoading" @click="loadBalance">查询余额</NButton>
-        <NButton v-auth="'wallet:adjust'" :disabled="!balance" @click="showAdjust = true">调账</NButton>
+        <NButton v-auth="'wallet:adjust'" :disabled="!balance" @click="openAdjust">调整（余额/积分/券）</NButton>
         <span v-if="selectedUser" class="text-13px text-gray-500">
           当前用户：#{{ selectedUser.id }} {{ selectedUser.username }}<template v-if="selectedUser.email">（{{ selectedUser.email }}）</template>
         </span>
@@ -273,30 +350,64 @@ async function handleAdjust() {
       </NTabs>
     </NCard>
 
-    <!-- 调账弹窗 -->
-    <NModal v-model:show="showAdjust" preset="dialog" title="手动调账" style="width: 480px">
+    <!-- 调整弹窗：余额 / 积分 / 优惠券（增扣单选，免手输正负号） -->
+    <NModal v-model:show="showAdjust" preset="dialog" title="账户调整" style="width: 520px">
+      <NRadioGroup v-model:value="adjustTab" size="small" class="mb-16px">
+        <NRadioButton value="balance">余额</NRadioButton>
+        <NRadioButton value="points">积分</NRadioButton>
+        <NRadioButton value="coupon">赠送优惠券</NRadioButton>
+      </NRadioGroup>
       <NForm label-placement="left" label-width="90">
-        <NFormItem label="金额（元）" required>
-          <NInputNumber
-            v-model:value="adjustForm.amount_yuan"
-            class="w-full"
-            placeholder="正数入账，负数扣减"
-            :precision="2"
-            :step="0.01"
-          />
-        </NFormItem>
-        <NFormItem label="原因" required>
-          <NInput
-            v-model:value="adjustForm.reason"
-            type="textarea"
-            :rows="3"
-            placeholder="必填，用于审计"
-          />
-        </NFormItem>
+        <template v-if="adjustTab !== 'coupon'">
+          <NFormItem :label="adjustTab === 'balance' ? '方向' : '方向'">
+            <NRadioGroup v-model:value="adjustDir">
+              <NRadio value="add">增加</NRadio>
+              <NRadio value="sub">扣减</NRadio>
+            </NRadioGroup>
+          </NFormItem>
+          <NFormItem :label="adjustTab === 'balance' ? '金额（元）' : '积分数量'" required>
+            <NInputNumber
+              v-model:value="adjustForm.amount_yuan"
+              class="w-full"
+              :precision="adjustTab === 'balance' ? 2 : 0"
+              :step="adjustTab === 'balance' ? 0.01 : 1"
+              :min="0"
+              :placeholder="adjustTab === 'balance' ? `要${adjustDir === 'add' ? '增加' : '扣减'}的金额` : `要${adjustDir === 'add' ? '增加' : '扣减'}的积分`"
+            />
+          </NFormItem>
+          <NFormItem label="原因" required>
+            <NInput v-model:value="adjustForm.reason" type="textarea" :rows="3" placeholder="必填，用于审计" />
+          </NFormItem>
+        </template>
+        <template v-else>
+          <NFormItem label="优惠券批次" required>
+            <NSelect
+              v-model:value="couponBatchId"
+              :options="couponBatches"
+              :loading="couponLoading"
+              filterable
+              placeholder="选择批次（仅显示未使用券的批次）"
+            />
+            <div v-if="!couponLoading && !couponBatches.length" class="mt-4px text-12px text-gray-400">
+              暂无可赠送的批次——先到 营销管理 → 优惠券 批量生成
+            </div>
+          </NFormItem>
+          <NFormItem label="赠送数量" required>
+            <NInputNumber v-model:value="couponCount" :min="1" :max="1000" class="w-full" />
+          </NFormItem>
+          <div class="text-12px text-gray-400">赠送后券立即出现在买家「我的优惠券」中</div>
+        </template>
       </NForm>
       <template #action>
         <NButton @click="showAdjust = false">取消</NButton>
-        <NButton v-auth="'wallet:adjust'" type="primary" :loading="adjusting" @click="handleAdjust">确定</NButton>
+        <NButton
+          v-auth="'wallet:adjust'"
+          type="primary"
+          :loading="adjustTab === 'coupon' ? grantingCoupon : adjusting"
+          @click="handleAdjust"
+        >
+          {{ adjustTab === 'coupon' ? '赠送' : `确定${adjustDir === 'add' ? '增加' : '扣减'}` }}
+        </NButton>
       </template>
     </NModal>
   </div>

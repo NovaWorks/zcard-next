@@ -202,6 +202,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminWalletService/GetBalance", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}"},
 		Perm{Code: "wallet:adjust", Desc: "手动调账（超管）", Domain: "wallet", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminWalletService/Adjust", Method: "POST", Path: "/api/v1/admin/wallet/{user_id}/adjust"},
+		Perm{Code: "wallet:adjust", Desc: "积分调整（超管）", Domain: "wallet", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminWalletService/AdjustPoints", Method: "POST", Path: "/api/v1/admin/wallet/{user_id}/adjust-points"},
 		Perm{Code: "wallet:read", Desc: "查用户流水", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/ListTransactions", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}/transactions"},
 		Perm{Code: "wallet:withdraw", Desc: "提现单列表", Domain: "wallet",

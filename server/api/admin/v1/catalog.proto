@@ -129,6 +129,8 @@ message ListProductsRequest {
   int32 page = 4;
   int32 page_size = 5;
   bool low_stock_only = 6; // 仅返回库存不足商品（阈值取 settings.supply.low_stock_threshold）
+  uint64 upstream_source_id = 7; // 按供货渠道筛选（0=全部；商品列表渠道商下拉）
+  bool local_only = 8;           // 仅看自营（无上游渠道）
 }
 
 message ListProductsReply {

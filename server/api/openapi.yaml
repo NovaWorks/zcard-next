@@ -2861,6 +2861,14 @@ paths:
                   in: query
                   schema:
                     type: boolean
+                - name: upstreamSourceId
+                  in: query
+                  schema:
+                    type: string
+                - name: localOnly
+                  in: query
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -4631,6 +4639,31 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Balance'
+    /api/v1/admin/wallet/{userId}/adjust-points:
+        post:
+            tags:
+                - AdminWalletService
+            description: AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+            operationId: AdminWalletService_AdjustPoints
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AdjustPointsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.PointsBalance'
     /api/v1/admin/wallet/{userId}/transactions:
         get:
             tags:
@@ -5935,6 +5968,19 @@ components:
                     type: string
                 isPrimary:
                     type: boolean
+        zcard.api.admin.v1.AdjustPointsRequest:
+            required:
+                - userId
+                - points
+                - reason
+            type: object
+            properties:
+                userId:
+                    type: string
+                points:
+                    type: string
+                reason:
+                    type: string
         zcard.api.admin.v1.AdjustRequest:
             required:
                 - userId
@@ -8646,6 +8692,13 @@ components:
             type: object
             properties:
                 id:
+                    type: string
+        zcard.api.admin.v1.PointsBalance:
+            type: object
+            properties:
+                userId:
+                    type: string
+                points:
                     type: string
         zcard.api.admin.v1.Post:
             type: object

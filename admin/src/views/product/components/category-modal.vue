@@ -4,7 +4,7 @@
  * 新建/变更后向父组件抛 refresh 事件（表单下拉联动刷新）。
  */
 import { ref, reactive, computed, watch } from "vue";
-import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip } from "naive-ui";
+import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm } from "naive-ui";
 import type { DropdownOption } from "naive-ui";
 import {
   fetchCategories,
@@ -300,6 +300,43 @@ async function onDropToRoot() {
   }
 }
 
+// ── 批量删除：选择模式（逆序删除保证子分类先于父分类）──
+const batchMode = ref(false);
+const batchChecked = ref<Set<number>>(new Set());
+
+function toggleBatchMode() {
+  batchMode.value = !batchMode.value;
+  batchChecked.value.clear();
+}
+
+function toggleBatchCheck(id: number, on: boolean) {
+  if (on) batchChecked.value.add(id);
+  else batchChecked.value.delete(id);
+  // 触发 Set 响应（替换引用）
+  batchChecked.value = new Set(batchChecked.value);
+}
+
+async function handleBatchDelete() {
+  const ids = [...batchChecked.value];
+  if (!ids.length) return;
+  // flatTree 是先序（父在前）——逆序后子分类先删，父分类随后可删
+  const order = [...flatTree.value].reverse();
+  const sorted = order.filter((c) => batchChecked.value.has(c.id));
+  let ok = 0;
+  const failed: string[] = [];
+  for (const cat of sorted) {
+    const { error } = await deleteCategory(cat.id);
+    if (!error) ok++;
+    else failed.push(cat.name);
+  }
+  if (ok) window.$message?.success(`已删除 ${ok} 个分类`);
+  if (failed.length) window.$message?.warning(`${failed.length} 个未删除（有商品或子分类）：${failed.slice(0, 3).join("、")}${failed.length > 3 ? "…" : ""}`);
+  batchMode.value = false;
+  batchChecked.value.clear();
+  load();
+  emit("refresh");
+}
+
 // 名称截断时悬浮显示全名（scrollWidth > clientWidth 即溢出）
 function onNameEnter(cat: any, e: MouseEvent) {
   const el = e.target as HTMLElement;
@@ -325,10 +362,28 @@ async function onSortBlur(cat: any) {
 <template>
   <NModal v-model:show="visible" preset="card" title="分类管理" style="width: 640px">
     <div class="mb-12px flex items-center justify-between">
-      <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类</span>
-      <NButton v-auth="'catalog:category_write'" size="small" type="primary" @click="showCreate = !showCreate">
-        {{ showCreate ? "收起" : "新建分类" }}
-      </NButton>
+      <div class="flex items-center gap-8px">
+        <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类</span>
+        <template v-if="batchMode">
+          <NTag size="small" :bordered="false">已选 {{ batchChecked.size }}</NTag>
+          <NPopconfirm @positive-click="handleBatchDelete">
+            <template #trigger>
+              <NButton v-auth="'catalog:category_delete'" size="tiny" type="error" :disabled="!batchChecked.size">
+                删除所选（{{ batchChecked.size }}）
+              </NButton>
+            </template>
+            删除选中的 {{ batchChecked.size }} 个分类？有商品或子分类的会自动跳过。
+          </NPopconfirm>
+        </template>
+      </div>
+      <div class="flex items-center gap-8px">
+        <NButton v-auth="'catalog:category_write'" size="small" quaternary @click="toggleBatchMode">
+          {{ batchMode ? "退出批量" : "批量删除" }}
+        </NButton>
+        <NButton v-auth="'catalog:category_write'" size="small" type="primary" @click="showCreate = !showCreate">
+          {{ showCreate ? "收起" : "新建分类" }}
+        </NButton>
+      </div>
     </div>
 
     <!-- 新建 -->
@@ -380,6 +435,13 @@ async function onSortBlur(cat: any) {
         @dragleave="onDragLeave"
         @drop.prevent="onDrop(cat)"
       >
+        <!-- 批量模式勾选框 -->
+        <NCheckbox
+          v-if="batchMode"
+          :checked="batchChecked.has(cat.id)"
+          class="shrink-0"
+          @update:checked="(v: boolean) => toggleBatchCheck(cat.id, v)"
+        />
         <!-- 名称列：占满剩余宽度，超长截断不撑破行；悬浮显示全名 -->
         <div class="flex min-w-0 flex-1 items-center gap-6px">
           <NTag v-if="cat.hide" size="tiny" :bordered="false" class="shrink-0">隐藏</NTag>

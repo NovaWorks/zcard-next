@@ -26,6 +26,7 @@ const (
 	AdminWalletService_ListGiftcardBatches_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
 	AdminWalletService_GetBalance_FullMethodName          = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
 	AdminWalletService_Adjust_FullMethodName              = "/zcard.api.admin.v1.AdminWalletService/Adjust"
+	AdminWalletService_AdjustPoints_FullMethodName        = "/zcard.api.admin.v1.AdminWalletService/AdjustPoints"
 	AdminWalletService_ListTransactions_FullMethodName    = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
 )
 
@@ -54,6 +55,8 @@ type AdminWalletServiceClient interface {
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error)
 	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(ctx context.Context, in *AdjustRequest, opts ...grpc.CallOption) (*Balance, error)
+	// AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+	AdjustPoints(ctx context.Context, in *AdjustPointsRequest, opts ...grpc.CallOption) (*PointsBalance, error)
 	// ListTransactions 指定用户流水。
 	ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error)
 }
@@ -136,6 +139,16 @@ func (c *adminWalletServiceClient) Adjust(ctx context.Context, in *AdjustRequest
 	return out, nil
 }
 
+func (c *adminWalletServiceClient) AdjustPoints(ctx context.Context, in *AdjustPointsRequest, opts ...grpc.CallOption) (*PointsBalance, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PointsBalance)
+	err := c.cc.Invoke(ctx, AdminWalletService_AdjustPoints_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminWalletServiceClient) ListTransactions(ctx context.Context, in *ListWalletTxRequest, opts ...grpc.CallOption) (*ListWalletTxReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListWalletTxReply)
@@ -171,6 +184,8 @@ type AdminWalletServiceServer interface {
 	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
 	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
 	Adjust(context.Context, *AdjustRequest) (*Balance, error)
+	// AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+	AdjustPoints(context.Context, *AdjustPointsRequest) (*PointsBalance, error)
 	// ListTransactions 指定用户流水。
 	ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error)
 	mustEmbedUnimplementedAdminWalletServiceServer()
@@ -203,6 +218,9 @@ func (UnimplementedAdminWalletServiceServer) GetBalance(context.Context, *GetBal
 }
 func (UnimplementedAdminWalletServiceServer) Adjust(context.Context, *AdjustRequest) (*Balance, error) {
 	return nil, status.Error(codes.Unimplemented, "method Adjust not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) AdjustPoints(context.Context, *AdjustPointsRequest) (*PointsBalance, error) {
+	return nil, status.Error(codes.Unimplemented, "method AdjustPoints not implemented")
 }
 func (UnimplementedAdminWalletServiceServer) ListTransactions(context.Context, *ListWalletTxRequest) (*ListWalletTxReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTransactions not implemented")
@@ -354,6 +372,24 @@ func _AdminWalletService_Adjust_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminWalletService_AdjustPoints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdjustPointsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).AdjustPoints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_AdjustPoints_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).AdjustPoints(ctx, req.(*AdjustPointsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminWalletService_ListTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListWalletTxRequest)
 	if err := dec(in); err != nil {
@@ -406,6 +442,10 @@ var AdminWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Adjust",
 			Handler:    _AdminWalletService_Adjust_Handler,
+		},
+		{
+			MethodName: "AdjustPoints",
+			Handler:    _AdminWalletService_AdjustPoints_Handler,
 		},
 		{
 			MethodName: "ListTransactions",

@@ -885,6 +885,118 @@ func (x *AdjustRequest) GetReason() string {
 	return ""
 }
 
+type AdjustPointsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Points        int64                  `protobuf:"varint,2,opt,name=points,proto3" json:"points,omitempty"` // 正=增加 负=扣减
+	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AdjustPointsRequest) Reset() {
+	*x = AdjustPointsRequest{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdjustPointsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdjustPointsRequest) ProtoMessage() {}
+
+func (x *AdjustPointsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdjustPointsRequest.ProtoReflect.Descriptor instead.
+func (*AdjustPointsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *AdjustPointsRequest) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *AdjustPointsRequest) GetPoints() int64 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
+func (x *AdjustPointsRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type PointsBalance struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Points        int64                  `protobuf:"varint,2,opt,name=points,proto3" json:"points,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PointsBalance) Reset() {
+	*x = PointsBalance{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PointsBalance) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PointsBalance) ProtoMessage() {}
+
+func (x *PointsBalance) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PointsBalance.ProtoReflect.Descriptor instead.
+func (*PointsBalance) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *PointsBalance) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *PointsBalance) GetPoints() int64 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
 type ListWalletTxRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -896,7 +1008,7 @@ type ListWalletTxRequest struct {
 
 func (x *ListWalletTxRequest) Reset() {
 	*x = ListWalletTxRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[13]
+	mi := &file_admin_v1_wallet_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +1020,7 @@ func (x *ListWalletTxRequest) String() string {
 func (*ListWalletTxRequest) ProtoMessage() {}
 
 func (x *ListWalletTxRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[13]
+	mi := &file_admin_v1_wallet_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +1033,7 @@ func (x *ListWalletTxRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWalletTxRequest.ProtoReflect.Descriptor instead.
 func (*ListWalletTxRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListWalletTxRequest) GetUserId() uint64 {
@@ -955,7 +1067,7 @@ type ListWalletTxReply struct {
 
 func (x *ListWalletTxReply) Reset() {
 	*x = ListWalletTxReply{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[14]
+	mi := &file_admin_v1_wallet_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -967,7 +1079,7 @@ func (x *ListWalletTxReply) String() string {
 func (*ListWalletTxReply) ProtoMessage() {}
 
 func (x *ListWalletTxReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[14]
+	mi := &file_admin_v1_wallet_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -980,7 +1092,7 @@ func (x *ListWalletTxReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWalletTxReply.ProtoReflect.Descriptor instead.
 func (*ListWalletTxReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListWalletTxReply) GetTransactions() []*WalletTx {
@@ -1014,7 +1126,7 @@ type WalletTx struct {
 
 func (x *WalletTx) Reset() {
 	*x = WalletTx{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[15]
+	mi := &file_admin_v1_wallet_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1026,7 +1138,7 @@ func (x *WalletTx) String() string {
 func (*WalletTx) ProtoMessage() {}
 
 func (x *WalletTx) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[15]
+	mi := &file_admin_v1_wallet_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1039,7 +1151,7 @@ func (x *WalletTx) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WalletTx.ProtoReflect.Descriptor instead.
 func (*WalletTx) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *WalletTx) GetId() uint64 {
@@ -1178,7 +1290,14 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\rAdjustRequest\x12\x1c\n" +
 	"\auser_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06userId\x12&\n" +
 	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1b\n" +
-	"\x06reason\x18\x03 \x01(\tB\x03\xe0A\x02R\x06reason\"d\n" +
+	"\x06reason\x18\x03 \x01(\tB\x03\xe0A\x02R\x06reason\"m\n" +
+	"\x13AdjustPointsRequest\x12\x1c\n" +
+	"\auser_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06userId\x12\x1b\n" +
+	"\x06points\x18\x02 \x01(\x03B\x03\xe0A\x02R\x06points\x12\x1b\n" +
+	"\x06reason\x18\x03 \x01(\tB\x03\xe0A\x02R\x06reason\"@\n" +
+	"\rPointsBalance\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x16\n" +
+	"\x06points\x18\x02 \x01(\x03R\x06points\"d\n" +
 	"\x13ListWalletTxRequest\x12\x1c\n" +
 	"\auser_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06userId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
@@ -1196,7 +1315,8 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\treference\x18\a \x01(\tR\treference\x12\x16\n" +
 	"\x06remark\x18\b \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\x03R\tcreatedAt2\xba\t\n" +
+	"created_at\x18\t \x01(\x03R\tcreatedAt2\xd0\n" +
+	"\n" +
 	"\x12AdminWalletService\x12\x91\x01\n" +
 	"\x0fListWithdrawals\x12*.zcard.api.admin.v1.ListWithdrawalsRequest\x1a(.zcard.api.admin.v1.ListWithdrawalsReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/wallet/withdrawals\x12\x9c\x01\n" +
 	"\x10ReviewWithdrawal\x12+.zcard.api.admin.v1.ReviewWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/wallet/withdrawals/{id}/review\x12\x93\x01\n" +
@@ -1205,7 +1325,8 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\x13ListGiftcardBatches\x12..zcard.api.admin.v1.ListGiftcardBatchesRequest\x1a,.zcard.api.admin.v1.ListGiftcardBatchesReply\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/wallet/giftcard-batches\x12x\n" +
 	"\n" +
 	"GetBalance\x12%.zcard.api.admin.v1.GetBalanceRequest\x1a\x1b.zcard.api.admin.v1.Balance\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/wallet/{user_id}\x12z\n" +
-	"\x06Adjust\x12!.zcard.api.admin.v1.AdjustRequest\x1a\x1b.zcard.api.admin.v1.Balance\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/{user_id}/adjust\x12\x97\x01\n" +
+	"\x06Adjust\x12!.zcard.api.admin.v1.AdjustRequest\x1a\x1b.zcard.api.admin.v1.Balance\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/{user_id}/adjust\x12\x93\x01\n" +
+	"\fAdjustPoints\x12'.zcard.api.admin.v1.AdjustPointsRequest\x1a!.zcard.api.admin.v1.PointsBalance\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/wallet/{user_id}/adjust-points\x12\x97\x01\n" +
 	"\x10ListTransactions\x12'.zcard.api.admin.v1.ListWalletTxRequest\x1a%.zcard.api.admin.v1.ListWalletTxReply\"3\x82\xd3\xe4\x93\x02-\x12+/api/v1/admin/wallet/{user_id}/transactionsB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
@@ -1220,7 +1341,7 @@ func file_admin_v1_wallet_proto_rawDescGZIP() []byte {
 	return file_admin_v1_wallet_proto_rawDescData
 }
 
-var file_admin_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_admin_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_admin_v1_wallet_proto_goTypes = []any{
 	(*CreateGiftcardBatchRequest)(nil), // 0: zcard.api.admin.v1.CreateGiftcardBatchRequest
 	(*CreateGiftcardBatchReply)(nil),   // 1: zcard.api.admin.v1.CreateGiftcardBatchReply
@@ -1235,15 +1356,17 @@ var file_admin_v1_wallet_proto_goTypes = []any{
 	(*GetBalanceRequest)(nil),          // 10: zcard.api.admin.v1.GetBalanceRequest
 	(*Balance)(nil),                    // 11: zcard.api.admin.v1.Balance
 	(*AdjustRequest)(nil),              // 12: zcard.api.admin.v1.AdjustRequest
-	(*ListWalletTxRequest)(nil),        // 13: zcard.api.admin.v1.ListWalletTxRequest
-	(*ListWalletTxReply)(nil),          // 14: zcard.api.admin.v1.ListWalletTxReply
-	(*WalletTx)(nil),                   // 15: zcard.api.admin.v1.WalletTx
+	(*AdjustPointsRequest)(nil),        // 13: zcard.api.admin.v1.AdjustPointsRequest
+	(*PointsBalance)(nil),              // 14: zcard.api.admin.v1.PointsBalance
+	(*ListWalletTxRequest)(nil),        // 15: zcard.api.admin.v1.ListWalletTxRequest
+	(*ListWalletTxReply)(nil),          // 16: zcard.api.admin.v1.ListWalletTxReply
+	(*WalletTx)(nil),                   // 17: zcard.api.admin.v1.WalletTx
 }
 var file_admin_v1_wallet_proto_depIdxs = []int32{
 	2,  // 0: zcard.api.admin.v1.CreateGiftcardBatchReply.batch:type_name -> zcard.api.admin.v1.GiftcardBatchItem
 	2,  // 1: zcard.api.admin.v1.ListGiftcardBatchesReply.batches:type_name -> zcard.api.admin.v1.GiftcardBatchItem
 	7,  // 2: zcard.api.admin.v1.ListWithdrawalsReply.withdrawals:type_name -> zcard.api.admin.v1.WithdrawalItem
-	15, // 3: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
+	17, // 3: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
 	5,  // 4: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:input_type -> zcard.api.admin.v1.ListWithdrawalsRequest
 	8,  // 5: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:input_type -> zcard.api.admin.v1.ReviewWithdrawalRequest
 	9,  // 6: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:input_type -> zcard.api.admin.v1.PayWithdrawalRequest
@@ -1251,17 +1374,19 @@ var file_admin_v1_wallet_proto_depIdxs = []int32{
 	3,  // 8: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:input_type -> zcard.api.admin.v1.ListGiftcardBatchesRequest
 	10, // 9: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
 	12, // 10: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
-	13, // 11: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
-	6,  // 12: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
-	7,  // 13: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
-	7,  // 14: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
-	1,  // 15: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:output_type -> zcard.api.admin.v1.CreateGiftcardBatchReply
-	4,  // 16: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:output_type -> zcard.api.admin.v1.ListGiftcardBatchesReply
-	11, // 17: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
-	11, // 18: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
-	14, // 19: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
-	12, // [12:20] is the sub-list for method output_type
-	4,  // [4:12] is the sub-list for method input_type
+	13, // 11: zcard.api.admin.v1.AdminWalletService.AdjustPoints:input_type -> zcard.api.admin.v1.AdjustPointsRequest
+	15, // 12: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
+	6,  // 13: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
+	7,  // 14: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	7,  // 15: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	1,  // 16: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:output_type -> zcard.api.admin.v1.CreateGiftcardBatchReply
+	4,  // 17: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:output_type -> zcard.api.admin.v1.ListGiftcardBatchesReply
+	11, // 18: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
+	11, // 19: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
+	14, // 20: zcard.api.admin.v1.AdminWalletService.AdjustPoints:output_type -> zcard.api.admin.v1.PointsBalance
+	16, // 21: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
+	13, // [13:22] is the sub-list for method output_type
+	4,  // [4:13] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1278,7 +1403,7 @@ func file_admin_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_wallet_proto_rawDesc), len(file_admin_v1_wallet_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

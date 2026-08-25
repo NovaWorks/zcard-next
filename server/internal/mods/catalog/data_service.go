@@ -136,6 +136,8 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 		Page:              page,
 		PageSize:          size,
 		LowStockThreshold: s.lowStockThresholdFor(ctx, req.GetLowStockOnly()),
+		ConnectionID:      req.GetUpstreamSourceId(),
+		LocalOnly:         req.GetLocalOnly(),
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品失败")

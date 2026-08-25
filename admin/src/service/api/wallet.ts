@@ -40,6 +40,15 @@ export function adjustWalletBalance(
   });
 }
 
+/** 积分调整（正=增加 负=扣减），返回调整后积分余额 */
+export function adjustWalletPoints(userId: number, points: number, reason: string) {
+  return request({
+    url: `/api/v1/admin/wallet/${userId}/adjust-points`,
+    method: "post",
+    data: { user_id: userId, points, reason },
+  });
+}
+
 /** 查询指定用户流水（分页） */
 export function fetchWalletTransactions(
   userId: number,

@@ -55,6 +55,13 @@ service AdminWalletService {
       body: "*"
     };
   }
+  // AdjustPoints 积分调整（正=增加 负=扣减；复用积分账本与审计）。
+  rpc AdjustPoints(AdjustPointsRequest) returns (PointsBalance) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/wallet/{user_id}/adjust-points"
+      body: "*"
+    };
+  }
   // ListTransactions 指定用户流水。
   rpc ListTransactions(ListWalletTxRequest) returns (ListWalletTxReply) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}/transactions" };
@@ -149,6 +156,17 @@ message AdjustRequest {
   uint64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
   int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED]; // 正=入账 负=扣减
   string reason = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message AdjustPointsRequest {
+  uint64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+  int64 points = 2 [(google.api.field_behavior) = REQUIRED]; // 正=增加 负=扣减
+  string reason = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message PointsBalance {
+  uint64 user_id = 1;
+  int64 points = 2;
 }
 
 message ListWalletTxRequest {

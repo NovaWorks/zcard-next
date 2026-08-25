@@ -46,19 +46,6 @@
         @update:model-value="pickCategory"
       />
       <div class="home-content">
-        <!-- 移动端分类胶囊 -->
-        <div v-if="categories.length" class="cat-nav mobile-only">
-          <button class="cat-chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
-          <button
-            v-for="c in categories.filter((x) => !x.parent_id)"
-            :key="c.id"
-            class="cat-chip"
-            :class="{ active: activeCategory === c.id }"
-            @click="pickCategory(c.id)"
-          >{{ c.name }}</button>
-          <router-link class="cat-more" to="/products">全部分类 →</router-link>
-        </div>
-
         <!-- 搜索 -->
         <div class="search-bar">
           <input
@@ -338,25 +325,6 @@ onUnmounted(stopHero);
 .notice-title {
   flex: 1; font-size: 14px; color: #1f2329;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-
-/* ── 分类导航 ── */
-.cat-nav {
-  display: flex; gap: 8px; align-items: center; overflow-x: auto;
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 10px 14px;
-  scrollbar-width: none;
-}
-.cat-nav::-webkit-scrollbar { display: none; }
-.cat-chip {
-  flex-shrink: 0; padding: 6px 16px; border-radius: 999px; font-size: 13px;
-  color: #374151; background: #f3f4f6; border: 1px solid transparent;
-  cursor: pointer; transition: all 0.15s; white-space: nowrap;
-}
-.cat-chip:hover { border-color: rgba(37, 99, 235, 0.5); color: #2563eb; }
-.cat-chip.active { background: #2563eb; color: #fff; }
-.cat-more {
-  margin-left: auto; flex-shrink: 0; font-size: 13px; color: #2563eb;
-  text-decoration: none; white-space: nowrap;
 }
 
 /* ── 搜索 ── */

@@ -108,6 +108,9 @@ type AdminFilter struct {
 	PageSize   int32
 	// LowStockThreshold 低库存过滤阈值（>0 时仅返回卡密类且可用库存 < 阈值的商品）
 	LowStockThreshold int
+	// 渠道筛选（商品列表按供货渠道/自营过滤）
+	ConnectionID uint64 // products.upstream_source_id
+	LocalOnly    bool   // 仅自营（上游渠道为空）
 }
 
 // ProductInput 商品创建/更新输入（description 已 sanitize）。

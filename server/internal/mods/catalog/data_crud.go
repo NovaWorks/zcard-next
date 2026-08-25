@@ -47,6 +47,12 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	if f.Keyword != "" {
 		q = q.Where(product.NameHasPrefix(f.Keyword))
 	}
+	if f.ConnectionID > 0 {
+		q = q.Where(product.UpstreamSourceID(f.ConnectionID))
+	}
+	if f.LocalOnly {
+		q = q.Where(product.UpstreamSourceIDIsNil())
+	}
 	if f.Status != 0 { // 0=全部（proto3 默认值）；1=上架 2=隐藏 -1=仅下架（DB status=0）
 		st := f.Status
 		if st == -1 {

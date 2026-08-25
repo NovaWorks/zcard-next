@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -230,6 +231,41 @@ func (s *AdminWalletService) GetBalance(ctx context.Context, req *adminv1.GetBal
 		UserId: req.GetUserId(), AvailableCents: avail, LockedCents: locked,
 		TotalCents: avail + locked,
 	}, nil
+}
+
+// AdjustPoints 积分调整（正=增加 负=扣减；走积分账本，幂等键带时间戳防同额去重误伤）。
+func (s *AdminWalletService) AdjustPoints(ctx context.Context, req *adminv1.AdjustPointsRequest) (*adminv1.PointsBalance, error) {
+	if req.GetReason() == "" {
+		return nil, errors.BadRequest("wallet.REASON_REQUIRED", "调账原因必填")
+	}
+	if req.GetPoints() == 0 {
+		return nil, errors.BadRequest("wallet.INVALID_POINTS", "积分调整数量必须非零")
+	}
+	pts := req.GetPoints()
+	direction := "in"
+	if pts < 0 {
+		direction = "out"
+		pts = -pts
+	}
+	ref := fmt.Sprintf("adjust-points:%d:%d:%d", req.GetUserId(), req.GetPoints(), time.Now().UnixNano())
+	entry := PointEntry{
+		UserID: req.GetUserId(), Direction: direction, Type: "adjust",
+		Amount: pts, Reference: ref, Remark: req.GetReason(),
+	}
+	var err error
+	if direction == "in" {
+		err = s.repo.PointCreditInTx(ctx, entry)
+	} else {
+		err = s.repo.PointDebitInTx(ctx, entry)
+	}
+	if err != nil {
+		return nil, errors.InternalServer("wallet.POINTS_ADJUST_FAILED", "积分调整失败: "+err.Error())
+	}
+	balance, err := s.repo.GetPoints(ctx, req.GetUserId())
+	if err != nil {
+		balance = 0
+	}
+	return &adminv1.PointsBalance{UserId: req.GetUserId(), Points: balance}, nil
 }
 
 // Adjust 手动调账（管理面唯一合法「客户端提交金额」路径——RBAC 权限 + 服务端
