@@ -41,11 +41,19 @@ const turndown = new TurndownService({
 });
 marked.setOptions({ breaks: true, gfm: true });
 
-// 外部值变化仅同步富文本态（避免 MD/HTML 编辑中被打断）
+// 外部值变化同步：
+// - 与 html 一致 = 编辑器自身 emit 回流，忽略（避免打断 MD/HTML 编辑态）
+// - 不一致 = 弹窗重开加载新内容（display-directive=show 下编辑器不销毁重建，
+//   须在此重置模式与草稿，否则停留在上次的 MD/HTML 模式看到旧草稿——
+//   「编辑内容丢失」的根因之一）
 watch(
   () => props.modelValue,
   (v) => {
-    if (mode.value === "wysiwyg") html.value = v || "";
+    if (v === html.value) return;
+    mode.value = "wysiwyg";
+    html.value = v || "";
+    mdDraft.value = "";
+    htmlDraft.value = "";
   },
 );
 
@@ -147,7 +155,7 @@ const defToolbars = h(Fragment, [h(MediaToolbar, { title: "素材库图片" })])
       @on-change="onMdChange"
     />
     <NInput
-      v-else
+      v-else-if="mode === 'html'"
       :value="htmlDraft"
       type="textarea"
       :style="{ height }"

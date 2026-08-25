@@ -103,10 +103,14 @@ function handleCreated(editor: IDomEditor) {
   editorRef.value = editor;
 }
 
-// 销毁（wangEditor 强纪律：不销毁会内存泄漏）
+// 销毁（wangEditor 强纪律：不销毁会内存泄漏；防御性包裹——Slate 实例
+// 异常时不让卸载钩子抛错中断组件树）
 onBeforeUnmount(() => {
-  const editor = editorRef.value;
-  if (editor) editor.destroy();
+  try {
+    editorRef.value?.destroy();
+  } catch {
+    // 忽略销毁异常（重复销毁/实例已失效）
+  }
 });
 </script>
 

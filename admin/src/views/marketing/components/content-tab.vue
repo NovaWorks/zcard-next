@@ -512,7 +512,13 @@ onMounted(() => {
       </template>
     </NModal>
 
-    <NModal v-model:show="showPost" preset="dialog" :title="editingPost ? `编辑文章：${editingPost.slug}` : '新增公告/文章'" style="width: 680px">
+    <NModal
+      v-model:show="showPost"
+      preset="dialog"
+      :title="editingPost ? `编辑文章：${editingPost.slug}` : '新增公告/文章'"
+      style="width: 680px"
+      display-directive="show"
+    >
       <NForm :model="postForm" label-placement="left" label-width="72">
         <NFormItem label="slug" required>
           <NInput v-model:value="postForm.slug" placeholder="如 notice-0818" :disabled="!!editingPost" />

@@ -80,7 +80,7 @@
         <div class="footer-col">
           <h4>帮助中心</h4>
           <router-link to="/posts?type=notice">系统公告</router-link>
-          <router-link to="/posts?type=article">使用帮助</router-link>
+          <router-link to="/posts?type=blog">使用帮助</router-link>
           <router-link to="/tickets">提交工单</router-link>
           <router-link to="/fetch">订单取货</router-link>
         </div>
