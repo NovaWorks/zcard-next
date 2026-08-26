@@ -311,13 +311,13 @@ async function handleRerunTask(row: any) {
 }
 
 const taskColumns: DataTableColumns<any> = [
-  { title: "ID", key: "id", width: 60 },
-  { title: "范围", key: "scope", width: 70, render: (r) => ({ collect: "采集", price: "价格", status: "状态" } as any)[r.scope || "collect"] || r.scope },
-  { title: "模式", key: "mode", width: 76 },
+  { title: "ID", key: "id", width: 48 },
+  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态" } as any)[r.scope || "collect"] || r.scope },
+  { title: "模式", key: "mode", width: 64, ellipsis: { tooltip: true } },
   {
     title: "状态",
     key: "status",
-    width: 92,
+    width: 84,
     render: (r) =>
       h(
         NTag,
@@ -328,7 +328,7 @@ const taskColumns: DataTableColumns<any> = [
   {
     title: "进度",
     key: "processed",
-    width: 150,
+    width: 140,
     render: (r) =>
       h("div", { class: "flex flex-col" }, [
         h("span", `${r.processed || 0}/${r.total || 0} 件`),
@@ -340,7 +340,7 @@ const taskColumns: DataTableColumns<any> = [
   {
     title: "统计",
     key: "stats",
-    width: 210,
+    width: 200,
     render: (r) =>
       h(
         "div",
@@ -366,7 +366,7 @@ const taskColumns: DataTableColumns<any> = [
   {
     title: "上游调用",
     key: "error_code",
-    minWidth: 170,
+    minWidth: 150,
     ellipsis: { tooltip: true },
     render: (r) =>
       r.error_code
@@ -376,7 +376,7 @@ const taskColumns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 110,
+    width: 96,
     render: (r) =>
       h("div", { class: "flex gap-4px" }, [
         r.status === "processing" || r.status === "pending"
@@ -876,8 +876,8 @@ onMounted(load);
     <!-- 交互式导入 -->
     <ImportModal v-model:show="showImport" :connection="importConn" @imported="load" />
 
-    <!-- 同步任务抽屉（宽 720 兜底小屏；内部固定列表保留横向滚动） -->
-    <NDrawer v-model:show="showTasks" width="min(720px, 100%)">
+    <!-- 同步任务抽屉：桌面端加宽到 960 让全列一屏可见；小屏回退 100%，窄屏内部横向滚动 -->
+    <NDrawer v-model:show="showTasks" width="min(960px, 100%)">
       <NDrawerContent title="同步任务" closable>
         <NDataTable
           :max-height="540"
@@ -885,7 +885,7 @@ onMounted(load);
           :data="tasks"
           :loading="tasksLoading"
           :columns="taskColumns"
-          :scroll-x="940"
+          :scroll-x="840"
         />
       </NDrawerContent>
     </NDrawer>

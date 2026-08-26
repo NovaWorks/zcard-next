@@ -58,6 +58,7 @@ watch(
 async function loadPreview() {
   loading.value = true;
   checked.value = [];
+  expandedCats.value = new Set();
   try {
     const { data, error } = await previewSupplyProducts(props.connection.id);
     if (!error && data) {
@@ -140,6 +141,24 @@ function toggleCat(cat: PreviewCategory, on: boolean) {
   checked.value = [...set];
 }
 
+// ── 分类折叠（默认全收起，点行展开/收起；勾选不受折叠影响）──
+const expandedCats = ref<Set<string>>(new Set());
+
+function toggleExpand(code: string) {
+  const next = new Set(expandedCats.value);
+  if (next.has(code)) next.delete(code);
+  else next.add(code);
+  expandedCats.value = next;
+}
+
+const allExpanded = computed(
+  () => categories.value.length > 0 && categories.value.every((c) => expandedCats.value.has(c.code)),
+);
+
+function toggleAllExpand() {
+  expandedCats.value = new Set(allExpanded.value ? [] : categories.value.map((c) => c.code));
+}
+
 async function submit() {
   if (!checked.value.length) {
     window.$message?.warning("请先勾选要导入的商品");
@@ -184,19 +203,42 @@ async function submit() {
       <!-- 左：分类树勾选；右：定价与映射（左列 min-w-0：长分类/商品名截断不撑破弹窗） -->
       <div class="grid grid-cols-[minmax(0,1fr)_310px] gap-16px">
         <div class="max-h-480px min-w-0 overflow-auto pr-8px">
-          <div v-for="cat in categories" :key="cat.code" class="mb-12px">
-            <div class="mb-4px flex items-center gap-8px">
-              <NCheckbox
-                :checked="checkedInCat(cat).length === cat.products.length && cat.products.length > 0"
-                :indeterminate="checkedInCat(cat).length > 0 && checkedInCat(cat).length < cat.products.length"
-                @update:checked="(v: boolean) => toggleCat(cat, v)"
-              >
-                <b class="min-w-0 truncate" :title="cat.name">{{ cat.name }}</b>
-              </NCheckbox>
+          <div class="sticky top-0 z-1 mb-4px flex items-center justify-between bg-white py-2px dark:bg-[#101014]">
+            <span class="text-11px text-gray-400">分类默认折叠 · 点行展开，勾选整类无须展开</span>
+            <NButton size="tiny" quaternary @click="toggleAllExpand">
+              {{ allExpanded ? "全部收起" : "全部展开" }}
+            </NButton>
+          </div>
+          <div v-for="cat in categories" :key="cat.code" class="mb-4px">
+            <div
+              class="flex cursor-pointer select-none items-center gap-4px rounded-4px px-4px py-3px hover:bg-gray-100 dark:hover:bg-gray-800"
+              @click="toggleExpand(cat.code)"
+            >
+              <span
+                class="w-12px shrink-0 text-10px text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-90': expandedCats.has(cat.code) }"
+              >▶</span>
+              <span @click.stop>
+                <NCheckbox
+                  :checked="checkedInCat(cat).length === cat.products.length && cat.products.length > 0"
+                  :indeterminate="checkedInCat(cat).length > 0 && checkedInCat(cat).length < cat.products.length"
+                  @update:checked="(v: boolean) => toggleCat(cat, v)"
+                />
+              </span>
+              <b class="min-w-0 truncate" :title="cat.name">{{ cat.name }}</b>
               <NTag size="tiny" :bordered="false" class="shrink-0">{{ cat.products.length }} 件</NTag>
+              <NTag
+                v-if="!expandedCats.has(cat.code) && checkedInCat(cat).length"
+                size="tiny"
+                type="primary"
+                :bordered="false"
+                class="shrink-0"
+              >
+                已选 {{ checkedInCat(cat).length }}
+              </NTag>
             </div>
-            <NCheckboxGroup v-model:value="checked">
-              <div class="grid grid-cols-1 gap-2px pl-24px">
+            <NCheckboxGroup v-if="expandedCats.has(cat.code)" v-model:value="checked">
+              <div class="grid grid-cols-1 gap-2px py-2px pl-28px">
                 <NCheckbox v-for="p in cat.products" :key="p.code" :value="p.code" class="py-1px">
                   <span class="break-all" :class="{ 'text-gray-400': !p.is_active }" :title="p.name">{{ p.name }}</span>
                   <span class="ml-4px text-12px text-gray-400">
@@ -230,11 +272,13 @@ async function submit() {
             <NFormItem v-if="pricing.mode === 'fixed'" label="加价金额（元）">
               <NInputNumber v-model:value="pricing.markupAmountYuan" :min="0.01" :precision="2" class="w-full" />
             </NFormItem>
-            <NFormItem label="存为该渠道默认">
-              <NSpace align="center">
-                <NCheckbox v-model:checked="pricing.saveDefault" />
-                <span class="text-12px text-gray-400">下次导入自动回填</span>
-              </NSpace>
+            <NFormItem>
+              <div class="flex w-full flex-col gap-2px">
+                <NCheckbox v-model:checked="pricing.saveDefault">存为该渠道默认</NCheckbox>
+                <span class="text-12px text-gray-400">
+                  勾选后本次加价规则将保存为渠道默认，下次打开本弹窗自动回填（只影响这里的勾选导入，不改渠道本身的加价设置）
+                </span>
+              </div>
             </NFormItem>
             <NFormItem>
               <template #label>

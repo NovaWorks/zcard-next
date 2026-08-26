@@ -52,9 +52,13 @@ function clear() {
     </div>
     <div class="flex items-center gap-8px">
       <span class="text-11px text-gray-400">
-        {{ enabled ? "将显示在 storefront 顶部导航（新窗口打开）：" : "文字留空 = 不显示；填写后显示在 storefront 顶部导航" }}
+        {{ enabled ? "效果预览（将显示在 storefront 顶部导航，新窗口打开）：" : "文字留空 = 不显示；填写后显示在 storefront 顶部导航" }}
       </span>
-      <span v-if="enabled" class="rounded-4px border border-gray-300 px-8px py-2px text-12px dark:border-gray-600">
+      <span
+        v-if="enabled"
+        class="rounded-4px border border-primary px-8px py-2px text-12px font-500 text-primary"
+        :title="`按钮「${text}」在 storefront 顶部导航的显示效果`"
+      >
         {{ text }}
       </span>
     </div>

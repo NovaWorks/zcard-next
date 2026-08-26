@@ -83,6 +83,11 @@ function productOpts(catId: number | null) {
     .filter((p) => !catId || p.category_id === catId)
     .map((p) => ({ label: `${p.name}（${formatMoney(p.price_cents)}）`, value: p.id }));
 }
+// 商品下拉：菜单最宽不超过视口（超长商品名自动省略），title 悬停看全名
+const productMenuProps = { style: { maxWidth: "min(640px, calc(100vw - 48px))" } };
+function renderProductLabel(o: { label?: string }) {
+  return h("span", { title: o.label }, o.label);
+}
 const productOptions = computed(() => productOpts(filterCatId.value));
 const importProductOptions = computed(() => productOpts(importCatId.value));
 
@@ -434,6 +439,8 @@ onMounted(() => {
           filterable
           clearable
           :consistent-menu-width="false"
+          :menu-props="productMenuProps"
+          :render-label="renderProductLabel"
           @update:value="resetCards"
         />
       </div>
@@ -494,6 +501,8 @@ onMounted(() => {
               filterable
               clearable
               :consistent-menu-width="false"
+              :menu-props="productMenuProps"
+              :render-label="renderProductLabel"
             />
           </div>
         </NFormItem>
