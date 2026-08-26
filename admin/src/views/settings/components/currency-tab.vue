@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 货币管理（settings:currency_read / currency_write / currency_delete 超管专属）。
 import { onMounted, ref, h, computed, watch } from "vue";
-import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NPopconfirm, NSelect, NSwitch, NTag } from "naive-ui";
+import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NPopconfirm, NRadio, NRadioGroup, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { listCurrencies, createCurrency, updateCurrency, deleteCurrency, fetchSettings } from "@/service/api";
 import { checkAuth } from "@/directives";
@@ -43,6 +43,13 @@ const rateHint = computed(() =>
       : `全站统一按基础货币 ${form.value.code} 结算，汇率固定为 1`
     : "汇率 = 1 基础货币可兑换的本币数量，如 1 CNY = 0.14 USD",
 );
+
+// 展示效果预览（符号 + 位置 + 小数位实时联动，以 10 元为例）
+const moneyPreview = computed(() => {
+  const sym = form.value.symbol || "¥";
+  const num = (10).toFixed(form.value.precision ?? 2);
+  return form.value.position === "suffix" ? `${num}${sym}` : `${sym}${num}`;
+});
 
 const canWrite = () => checkAuth("settings:currency_write");
 
@@ -191,29 +198,40 @@ onMounted(() => {
     </div>
     <NDataTable :columns="columns" :data="filteredCurrencies" :loading="loading" size="small"  :max-height="540" />
 
-    <NModal v-model:show="showModal" preset="dialog" :title="editing ? `编辑货币 ${editing}` : '新增货币'" style="width: 520px">
+    <NModal v-model:show="showModal" preset="dialog" :title="editing ? `编辑货币 ${editing}` : '新增货币'" style="width: 540px; max-width: 96vw">
       <NForm :model="form" label-placement="left" label-width="72">
-        <div class="flex gap-12px">
-          <NFormItem label="代码" required class="flex-1">
-            <NInput v-model:value="form.code" :disabled="!!editing" placeholder="如 USD" />
+        <!-- 等宽两列栅格（大厂表单模式：代码/符号、位置/小数位各占一列，控件不再长短不齐） -->
+        <div class="grid grid-cols-2 gap-x-16px">
+          <NFormItem label="代码" required>
+            <NInput
+              :value="form.code"
+              :disabled="!!editing"
+              :maxlength="8"
+              placeholder="如 USD"
+              @update:value="(v: string) => (form.code = v.toUpperCase())"
+            />
           </NFormItem>
-          <NFormItem label="符号" required class="w-120px">
-            <NInput v-model:value="form.symbol" placeholder="如 $" />
+          <NFormItem label="符号" required>
+            <NInput v-model:value="form.symbol" :maxlength="8" placeholder="如 $" />
           </NFormItem>
-        </div>
-        <div class="flex gap-12px">
-          <NFormItem label="符号位置" class="flex-1">
-            <NSelect v-model:value="form.position" :options="[{ label: '前缀（$10）', value: 'prefix' }, { label: '后缀（10$）', value: 'suffix' }]" />
+          <NFormItem label="符号位置">
+            <NRadioGroup v-model:value="form.position">
+              <div class="flex items-center gap-12px">
+                <NRadio value="prefix">前缀 $10</NRadio>
+                <NRadio value="suffix">后缀 10$</NRadio>
+              </div>
+            </NRadioGroup>
           </NFormItem>
-          <NFormItem label="小数位" class="w-120px">
+          <NFormItem label="小数位">
             <NInputNumber v-model:value="form.precision" :min="0" :max="4" class="w-full" />
           </NFormItem>
         </div>
         <NFormItem label="汇率" required>
           <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" :placeholder="isBaseCurrency ? '基础货币，固定为 1' : '如 0.14（1 基础货币 = 0.14 本币）'" />
         </NFormItem>
-        <div class="mb-4px rounded-4px bg-gray-50 px-10px py-6px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-          {{ rateHint }}
+        <div class="mb-4px flex items-center justify-between rounded-4px bg-gray-50 px-10px py-6px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+          <span>展示效果（以 10 元为例）：<b class="text-13px">{{ moneyPreview }}</b></span>
+          <span class="max-w-260px text-right">{{ rateHint }}</span>
         </div>
       </NForm>
       <template #action>

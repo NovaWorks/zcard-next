@@ -570,6 +570,27 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
   }
 }
 
+// ── 批量删除（并发逐条调删除接口；被订单/卡密引用的商品后端会拒绝，成功失败分别计数）──
+const batchDeleting = ref(false);
+async function handleBatchDelete() {
+  if (!checkedKeys.value.length) return;
+  batchDeleting.value = true;
+  try {
+    const results = await Promise.all(checkedKeys.value.map((id) => deleteProduct(id)));
+    const ok = results.filter((r) => !r.error).length;
+    const fail = results.length - ok;
+    if (fail > 0) {
+      window.$message?.warning(`已删除 ${ok} 件，${fail} 件失败（可能仍被订单/规格引用）`);
+    } else {
+      window.$message?.success(`已删除 ${ok} 件商品`);
+    }
+    checkedKeys.value = [];
+    loadList();
+  } finally {
+    batchDeleting.value = false;
+  }
+}
+
 function resetForm() {
   editingId.value = 0;
   step.value = 1; // 新开弹窗回到第一步
@@ -705,13 +726,14 @@ onMounted(() => {
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard title="商品分类" class="w-230px shrink-0">
       <template #header-extra>
-        <NSpace :size="2">
-          <NButton size="tiny" quaternary @click="expandAllCats">展开</NButton>
-          <NButton size="tiny" quaternary @click="collapseAllCats">收缩</NButton>
-          <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
-        </NSpace>
+        <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
       </template>
-      <NScrollbar class="max-h-[calc(100vh-200px)]">
+      <!-- 展开/收起独立成行（放 header 时窄屏与标题/管理按钮挤在一行会换行错位） -->
+      <div class="mb-8px flex items-center gap-8px">
+        <NButton size="tiny" quaternary class="flex-1" @click="expandAllCats">展开全部</NButton>
+        <NButton size="tiny" quaternary class="flex-1" @click="collapseAllCats">收起全部</NButton>
+      </div>
+      <NScrollbar class="max-h-[calc(100vh-240px)]">
         <NTree
           block-line
           :data="filterCategoryTree"
@@ -788,6 +810,12 @@ onMounted(() => {
             <NButton v-auth="'catalog:write'" size="small" type="warning">批量下架</NButton>
           </template>
           确定下架选中的 {{ checkedKeys.length }} 件商品？
+        </NPopconfirm>
+        <NPopconfirm @positive-click="handleBatchDelete">
+          <template #trigger>
+            <NButton v-auth="'catalog:delete'" size="small" type="error" :loading="batchDeleting">批量删除</NButton>
+          </template>
+          确定删除选中的 {{ checkedKeys.length }} 件商品？被订单/规格引用的商品会删除失败，不影响其余。
         </NPopconfirm>
         <NButton size="small" quaternary @click="checkedKeys = []">取消选择</NButton>
       </div>

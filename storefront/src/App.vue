@@ -17,6 +17,17 @@
       🔧 站点维护中，下单与支付可能间歇性不可用，请稍后再试
     </div>
 
+    <!-- 维护模式：弹窗样式（ops.maintenance_style=modal；ops.maintenance_modal_freq 控制频率
+         every=每次进入都弹 / daily=24 小时内只弹一次，关闭后本次会话不再打扰） -->
+    <div v-if="maintenance && maintenanceStyle === 'modal' && maintModalVisible" class="maint-overlay">
+      <div class="maint-card">
+        <div class="maint-icon">🔧</div>
+        <h2>站点维护中</h2>
+        <p>我们正在升级系统，下单与支付可能间歇性不可用。<br />给您带来不便敬请谅解，请稍后再试。</p>
+        <button class="maint-btn" @click="closeMaintModal">我知道了，继续浏览</button>
+      </div>
+    </div>
+
     <!-- 主导航（sticky） -->
     <header class="topbar">
       <router-link to="/" class="logo">
@@ -186,6 +197,27 @@ function scrollTop() {
 const topButton = ref<{ text: string; url: string } | null>(null);
 const maintenance = ref(false);
 const maintenanceStyle = ref('modal'); // modal=全屏遮罩 | banner=顶部横幅
+const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=24 小时一次
+
+// 维护弹窗显隐：daily 频率下 24 小时窗口用 localStorage 标记；关闭即记时间戳
+const maintModalVisible = ref(false);
+const MAINT_SHOWN_KEY = 'zc_maint_shown_at';
+
+function maintShownRecently(): boolean {
+  try {
+    const ts = Number(localStorage.getItem(MAINT_SHOWN_KEY) || 0);
+    return ts > 0 && Date.now() - ts < 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
+
+function closeMaintModal() {
+  maintModalVisible.value = false;
+  try {
+    localStorage.setItem(MAINT_SHOWN_KEY, String(Date.now()));
+  } catch { /* 隐私模式忽略 */ }
+}
 
 // ── 公告弹窗（设置公告优先；回落最新公告文章；首次访问自动弹出 + 导航喇叭/首页轮播随时重开）──
 const noticeShow = ref(false);
@@ -238,11 +270,20 @@ onMounted(async () => {
         }
       } catch { /* 非法配置忽略 */ }
     }
-    // 维护模式与样式（modal=遮罩弹窗 / banner=顶部横幅）
+    // 维护模式与样式（modal=遮罩弹窗 / banner=顶部横幅）；弹窗频率 daily=24h 一次
     const mt = find('ops.maintenance');
     if (mt) { try { maintenance.value = JSON.parse(mt) === true; } catch { /* ignore */ } }
     const ms = find('ops.maintenance_style');
     if (ms) { try { const v = JSON.parse(ms); if (v === 'banner' || v === 'modal') maintenanceStyle.value = v; } catch { /* ignore */ } }
+    const mf = find('ops.maintenance_modal_freq');
+    if (mf) { try { const v = JSON.parse(mf); if (v === 'every' || v === 'daily') maintenanceModalFreq.value = v; } catch { /* ignore */ } }
+    if (maintenance.value && maintenanceStyle.value === 'modal') {
+      if (maintenanceModalFreq.value === 'daily' && maintShownRecently()) {
+        maintModalVisible.value = false; // 24 小时内已弹过：本次不再打扰
+      } else {
+        maintModalVisible.value = true;
+      }
+    }
     const stats = find('service.stats_script');
     if (stats) {
       let script = '';

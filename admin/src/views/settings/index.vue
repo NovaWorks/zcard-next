@@ -373,9 +373,10 @@ onMounted(() => {
                     <NSwitch :value="getVal(item)" @update:value="(v: boolean) => setVal(item, v)" />
                   </template>
                   <template v-else-if="typeof getVal(item) === 'number'">
+                    <!-- 数字类设置：紧凑定宽输入（大厂模式——数值框不占满整行，标签后短输入即可） -->
                     <NInputNumber
                       :value="getVal(item)"
-                      class="flex-1"
+                      class="w-200px"
                       @update:value="(v: number | null) => v !== null && setVal(item, v)"
                     />
                   </template>

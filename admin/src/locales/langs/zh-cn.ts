@@ -428,6 +428,7 @@ const local: App.I18n.Schema = {
     ops: {
       maintenance: "维护模式",
       maintenance_style: "维护提示样式",
+      maintenance_modal_freq: "维护弹窗频率",
       announcement_type: "公告类型",
       announcement: "公告内容",
       installed_at: "安装时间（只读）",

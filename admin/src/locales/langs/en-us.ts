@@ -435,6 +435,7 @@ const local: App.I18n.Schema = {
     ops: {
       maintenance: "Maintenance Mode",
       maintenance_style: "Maintenance Style",
+      maintenance_modal_freq: "Maintenance Modal Frequency",
       announcement_type: "Announcement Type",
       announcement: "Announcement",
       installed_at: "Installed At (read-only)",

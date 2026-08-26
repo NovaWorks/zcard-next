@@ -651,6 +651,7 @@ declare namespace App {
         ops: {
           maintenance: string;
           maintenance_style: string;
+          maintenance_modal_freq: string;
           announcement_type: string;
           announcement: string | string[]; // text/image 为字符串；carousel 为图片数组
           installed_at: string;

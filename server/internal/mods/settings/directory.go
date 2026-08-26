@@ -172,21 +172,28 @@ var groups = map[string]*GroupDef{
 		Name: "ops", Desc: "运维",
 		Labels: map[string]string{
 			"maintenance": "维护模式", "maintenance_style": "维护提示样式",
+			"maintenance_modal_freq": "维护弹窗频率",
 			"announcement_type": "公告类型", "announcement": "公告内容",
 			"installed_at": "安装时间（只读）",
 		},
 		Options: map[string]map[string]string{
 			"maintenance_style": {"modal": "弹窗", "banner": "顶部横幅"},
-			"announcement_type": {"text": "文本", "image": "图片", "carousel": "轮播"},
+			// 弹窗样式下的自动弹出频率（banner 样式不生效）
+			"maintenance_modal_freq": {"every": "每次进入都弹", "daily": "24 小时内只弹一次"},
+			"announcement_type":      {"text": "文本", "image": "图片", "carousel": "轮播"},
 		},
 		Defaults: map[string]any{
-			"maintenance":       false,
-			"maintenance_style": "modal", // modal | banner
-			"announcement_type": "text",  // text | image | carousel
-			"announcement":      "",
-			"installed_at":      nil, // 安装时间（install 写入，业务只读）
+			"maintenance":             false,
+			"maintenance_style":       "modal", // modal | banner
+			"maintenance_modal_freq":  "every", // every | daily（仅 modal 样式生效）
+			"announcement_type":       "text",  // text | image | carousel
+			"announcement":            "",
+			"installed_at":            nil, // 安装时间（install 写入，业务只读）
 		},
-		PublicKeys: map[string]bool{"maintenance": true, "maintenance_style": true, "announcement_type": true, "announcement": true},
+		PublicKeys: map[string]bool{
+			"maintenance": true, "maintenance_style": true, "maintenance_modal_freq": true,
+			"announcement_type": true, "announcement": true,
+		},
 	},
 	"recharge": {
 		Name: "recharge", Desc: "充值",
