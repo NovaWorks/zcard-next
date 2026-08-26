@@ -3,7 +3,7 @@
 // 类目映射（上游分类 → 本地分类）→ 存为连接默认。已导入商品标注（重导 = 更新）。
 import { computed, reactive, ref, watch } from "vue";
 import {
-  NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInput, NInputNumber,
+  NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInputNumber,
   NModal, NSelect, NSpace, NSpin, NTag,
 } from "naive-ui";
 import { previewSupplyProducts, importSupplyProducts, createCategory } from "@/service/api";
@@ -173,7 +173,7 @@ async function submit() {
     :show="props.show"
     preset="card"
     :title="`导入上游商品：${props.connection?.name || ''}`"
-    style="width: 920px"
+    style="width: 920px; max-width: 96vw"
     @update:show="emit('update:show', $event)"
   >
     <NSpin :show="loading">

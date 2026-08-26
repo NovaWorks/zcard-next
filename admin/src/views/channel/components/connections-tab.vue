@@ -5,8 +5,8 @@
 // 同步任务抽屉（进度统计与取消）。
 import { computed, h, onMounted, onUnmounted, reactive, ref } from "vue";
 import {
-  NButton, NCard, NDataTable, NDropdown, NInput, NInputNumber, NModal, NForm, NFormItem,
-  NPopconfirm, NSelect, NSpace, NSwitch, NTag, NDrawer, NDescriptions, NDescriptionsItem, NAlert,
+  NButton, NDataTable, NDropdown, NInput, NInputNumber, NModal, NForm, NFormItem,
+  NSelect, NSpace, NSwitch, NTag, NDrawer, NAlert,
 } from "naive-ui";
 import type { DataTableColumns, DropdownOption } from "naive-ui";
 import {
@@ -18,6 +18,7 @@ import { formatMoney, yuanToFen } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import TablePager from "@/components/common/table-pager.vue";
 import ImportModal from "./import-modal.vue";
+import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
 
 defineOptions({ name: "SupplyConnectionsTab" });
 
@@ -41,6 +42,10 @@ const driverMeta: Record<string, { label: string; tag: "success" | "info" | "war
 };
 
 const canWrite = () => checkAuth("supply:write");
+
+// ── 容器宽分档（full ≥1080 / mid ≥720 / compact）：任意屏宽下操作列完整可见，不依赖横向滚动 ──
+const wrapRef = ref<HTMLElement | null>(null);
+const { tier } = useResponsiveTier(wrapRef);
 
 function fmtTime(ts?: number) {
   if (!ts) return "-";
@@ -404,10 +409,6 @@ function syncActions(row: any): DropdownOption[] {
     { label: "仅同步上下架/库存", key: "status:incremental", disabled: !canWrite() },
   ];
 }
-function onSyncAction(row: any, key: string) {
-  const [scope, mode] = key.split(":");
-  handleSync(row, scope, mode);
-}
 
 // ── 交互式导入（P2-10 D）──
 const showImport = ref(false);
@@ -516,49 +517,50 @@ async function submitSchedule() {
   }
 }
 
-const columns: DataTableColumns<any> = [
-  { title: "ID", key: "id", width: 56 },
-  {
+// ── 响应式列集：compact 只留 名称/限流/操作；mid 去掉 ID/余额/最近采集；full 全列 ──
+// 文本列只设 minWidth 不设 width（即弹性列，富余宽度自动分摊），maxWidth 封顶防宽屏上游地址无限膨胀留白。
+function nameCol(t: TableTier) {
+  return {
     title: "名称",
     key: "name",
-    width: 150,
-    ellipsis: true,
-    render: (row) => {
+    minWidth: t === "compact" ? 96 : 120,
+    maxWidth: t === "compact" ? 220 : 300,
+    render: (row: any) => {
       const sch = scheduleSummary(row);
-      return h("div", { class: "flex items-center gap-4px" }, [
-        h("span", { title: sch.tip }, row.name),
-        sch.on
-          ? h("span", { title: sch.tip, class: "cursor-help" }, "⏰")
-          : null,
+      // compact 下被裁掉的列信息并入悬停提示
+      const tip =
+        t === "compact"
+          ? `${row.name}${sch.on ? ` · ${sch.tip}` : ""}\n${driverMeta[row.driver]?.label || row.driver} · ${row.base_url}`
+          : sch.tip;
+      return h("div", { class: "flex min-w-0 items-center gap-4px" }, [
+        h("span", { class: "truncate", title: tip }, row.name),
+        sch.on ? h("span", { title: sch.tip, class: "cursor-help shrink-0" }, "⏰") : null,
       ]);
     },
-  },
-  {
+  };
+}
+
+function typeCol() {
+  return {
     title: "类型",
     key: "driver",
-    width: 92,
-    render: (row) => h(NTag, { size: "small", type: driverMeta[row.driver]?.tag || "default", bordered: false }, { default: () => driverMeta[row.driver]?.label || row.driver }),
-  },
-  { title: "上游地址", key: "base_url", minWidth: 200, ellipsis: true },
-  {
-    title: "余额",
-    key: "balance_cache",
-    width: 100,
-    render: (row) => formatMoney(row.balance_cache),
-  },
-  {
-    title: "最近采集",
-    key: "last_collect_at",
-    width: 150,
-    render: (row) => fmtTime(row.last_collect_at || row.last_synced_at),
-  },
-  {
+    width: 84,
+    render: (row: any) => h(NTag, { size: "small", type: driverMeta[row.driver]?.tag || "default", bordered: false }, { default: () => driverMeta[row.driver]?.label || row.driver }),
+  };
+}
+
+function rateCol(t: TableTier) {
+  return {
     title: "限流状态",
     key: "rate",
-    width: 170,
-    render: (row) => {
+    width: t === "compact" ? 100 : t === "mid" ? 150 : 158,
+    render: (row: any) => {
       const rl = rateLimitView(row);
       const delay = adaptiveDelayMs(row);
+      if (t === "compact") {
+        const label = !rl ? "正常" : rl.type === "warning" ? "半开探测" : rl.label.replace("限流熔断", "熔断");
+        return h(NTag, { size: "tiny", type: rl?.type || "success", bordered: false }, { default: () => label });
+      }
       return h("div", { class: "flex flex-col gap-2px" }, [
         rl
           ? h(NTag, { size: "tiny", type: rl.type, bordered: false }, { default: () => rl.label })
@@ -568,44 +570,125 @@ const columns: DataTableColumns<any> = [
           : null,
       ]);
     },
-  },
-  {
+  };
+}
+
+// 操作列：full/mid 为「测试 + 同步▾ + 任务 + 更多▾」；compact 收进单个「操作▾」（功能不减）
+function moreMenu(): DropdownOption[] {
+  const opts: DropdownOption[] = [{ label: "⏰ 定时计划", key: "schedule" }];
+  if (canWrite())
+    opts.push(
+      { label: "导入商品", key: "import" },
+      { label: "编辑", key: "edit" },
+      { type: "divider", key: "dv" },
+      { label: "删除", key: "delete" },
+    );
+  return opts;
+}
+
+function compactMenu(row: any): DropdownOption[] {
+  const opts: DropdownOption[] = [{ label: "测试连接", key: "ping" }];
+  if (canWrite()) opts.push({ label: "同步", key: "sync", children: syncActions(row) });
+  opts.push({ label: "同步任务", key: "tasks" }, { label: "⏰ 定时计划", key: "schedule" });
+  if (canWrite())
+    opts.push(
+      { label: "导入商品", key: "import" },
+      { label: "编辑", key: "edit" },
+      { type: "divider", key: "dv" },
+      { label: "删除", key: "delete" },
+    );
+  return opts;
+}
+
+// 统一分发：形如 collect:incremental 的是同步子项，其余按 key 走 switch
+function onRowAction(row: any, key: string) {
+  if (key.includes(":")) {
+    const [scope, mode] = key.split(":");
+    handleSync(row, scope, mode);
+    return;
+  }
+  switch (key) {
+    case "ping":
+      handlePing(row);
+      break;
+    case "tasks":
+      openTasks(row.id);
+      break;
+    case "schedule":
+      openSchedule(row);
+      break;
+    case "import":
+      openImport(row);
+      break;
+    case "edit":
+      openEdit(row);
+      break;
+    case "delete":
+      window.$dialog?.warning({
+        title: "删除渠道",
+        content: "存在商品映射时不可删除，确定删除？",
+        positiveText: "删除",
+        negativeText: "取消",
+        onPositiveClick: () => handleDelete(row.id),
+      });
+      break;
+  }
+}
+
+function actionsCol(t: TableTier) {
+  return {
     title: "操作",
     key: "actions",
-    width: 290,
-    render: (row) =>
-      h("div", { class: "flex gap-4px" }, [
-        h(NButton, { size: "tiny", loading: pinging[row.id], onClick: () => handlePing(row) }, { default: () => "测试" }),
-        canWrite()
-          ? h(
+    width: t === "compact" ? 96 : 216,
+    render: (row: any) =>
+      t === "compact"
+        ? h(
+            NDropdown,
+            { options: compactMenu(row), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
+            { default: () => h(NButton, { size: "tiny", secondary: true }, { default: () => "操作 ▾" }) },
+          )
+        : h("div", { class: "flex flex-wrap items-center gap-4px" }, [
+            h(NButton, { size: "tiny", loading: pinging[row.id], onClick: () => handlePing(row) }, { default: () => "测试" }),
+            canWrite()
+              ? h(
+                  NDropdown,
+                  { options: syncActions(row), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
+                  { default: () => h(NButton, { size: "tiny", type: "primary", quaternary: true }, { default: () => "同步 ▾" }) },
+                )
+              : null,
+            h(NButton, { size: "tiny", quaternary: true, onClick: () => openTasks(row.id) }, { default: () => "任务" }),
+            h(
               NDropdown,
-              {
-                options: syncActions(row),
-                onSelect: (key: string) => onSyncAction(row, key),
-                trigger: "click",
-              },
-              { default: () => h(NButton, { size: "tiny", type: "primary", quaternary: true }, { default: () => "同步 ▾" }) },
-            )
-          : null,
-        h(NButton, { size: "tiny", quaternary: true, onClick: () => openTasks(row.id) }, { default: () => "任务" }),
-        h(NButton, { size: "tiny", type: "warning", secondary: true, onClick: () => openSchedule(row) }, { default: () => "⏰ 定时" }),
-        canWrite()
-          ? h(NButton, { size: "tiny", type: "primary", secondary: true, onClick: () => openImport(row) }, { default: () => "导入" })
-          : null,
-        canWrite() ? h(NButton, { size: "tiny", quaternary: true, onClick: () => openEdit(row) }, { default: () => "编辑" }) : null,
-        canWrite()
-          ? h(
-              NPopconfirm,
-              { onPositiveClick: () => handleDelete(row.id) },
-              {
-                trigger: () => h(NButton, { size: "tiny", type: "error", quaternary: true }, { default: () => "删除" }),
-                default: () => "存在商品映射时不可删除，确定？",
-              },
-            )
-          : null,
-      ]),
-  },
-];
+              { options: moreMenu(), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
+              { default: () => h(NButton, { size: "tiny", quaternary: true }, { default: () => "更多 ▾" }) },
+            ),
+          ]),
+  };
+}
+
+const columns = computed<DataTableColumns<any>>(() => {
+  const t = tier.value;
+  const cols: DataTableColumns<any> = [];
+  if (t !== "compact") cols.push({ title: "ID", key: "id", width: 48 });
+  cols.push(nameCol(t));
+  if (t !== "compact") {
+    cols.push(typeCol());
+    cols.push({
+      title: "上游地址",
+      key: "base_url",
+      minWidth: t === "mid" ? 130 : 150,
+      maxWidth: 420,
+      ellipsis: { tooltip: true },
+    });
+  }
+  if (t === "full") {
+    cols.push({ title: "余额", key: "balance_cache", width: 96, render: (row: any) => formatMoney(row.balance_cache) });
+    cols.push({ title: "最近采集", key: "last_collect_at", width: 146, render: (row: any) => fmtTime(row.last_collect_at || row.last_synced_at) });
+  }
+  cols.push(rateCol(t));
+  cols.push(actionsCol(t));
+  return cols;
+});
 
 async function handleDelete(id: number) {
   const { error } = await deleteSupplyConnection(id);
@@ -619,7 +702,7 @@ onMounted(load);
 </script>
 
 <template>
-  <div>
+  <div ref="wrapRef">
     <div class="mb-12px flex flex-wrap items-center justify-between gap-8px">
       <FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="onSearch" />
       <NButton v-if="canWrite()" size="small" type="primary" @click="openCreate">新增渠道</NButton>
@@ -632,14 +715,14 @@ onMounted(load);
       size="small"
       :row-key="(r: any) => r.id"
       :max-height="540"
-      :scroll-x="1400"
+      :scroll-x="300"
     />
     <div class="mt-12px flex justify-end">
       <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />
     </div>
 
     <!-- 新增/编辑 -->
-    <NModal v-model:show="showForm" preset="card" :title="editingId ? '编辑渠道' : '新增渠道'" style="width: 560px">
+    <NModal v-model:show="showForm" preset="card" :title="editingId ? '编辑渠道' : '新增渠道'" style="width: 560px; max-width: 96vw">
       <NForm label-placement="left" label-width="110">
         <NFormItem label="名称" required>
           <NInput v-model:value="form.name" placeholder="如：主站独角" />
@@ -720,7 +803,7 @@ onMounted(load);
     </NModal>
 
     <!-- 定时计划 -->
-    <NModal v-model:show="showSchedule" preset="card" title="定时同步计划" style="width: 620px">
+    <NModal v-model:show="showSchedule" preset="card" title="定时同步计划" style="width: 620px; max-width: 96vw">
       <!-- 执行状态（锚点来自连接行数据；下次 = 上次 + 间隔，窗口内生效） -->
       <div v-if="scheduleConn" class="mb-12px rounded-6px bg-gray-50 p-10px dark:bg-gray-800">
         <div class="mb-6px text-13px font-500">自动任务执行状态</div>
@@ -793,15 +876,16 @@ onMounted(load);
     <!-- 交互式导入 -->
     <ImportModal v-model:show="showImport" :connection="importConn" @imported="load" />
 
-    <!-- 同步任务抽屉 -->
-    <NDrawer v-model:show="showTasks" :width="720">
+    <!-- 同步任务抽屉（宽 720 兜底小屏；内部固定列表保留横向滚动） -->
+    <NDrawer v-model:show="showTasks" width="min(720px, 100%)">
       <NDrawerContent title="同步任务" closable>
         <NDataTable
-        :max-height="540"
+          :max-height="540"
           size="small"
           :data="tasks"
           :loading="tasksLoading"
           :columns="taskColumns"
+          :scroll-x="940"
         />
       </NDrawerContent>
     </NDrawer>

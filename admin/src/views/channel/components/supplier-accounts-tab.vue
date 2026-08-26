@@ -7,10 +7,10 @@
 import { h, computed, onMounted, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 import {
-  NButton, NCard, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem,
+  NButton, NDataTable, NDropdown, NInput, NInputNumber, NModal, NForm, NFormItem,
   NPopconfirm, NSelect, NSpace, NTag, NAlert, NDescriptions, NDescriptionsItem,
 } from "naive-ui";
-import type { DataTableColumns } from "naive-ui";
+import type { DataTableColumns, DropdownOption } from "naive-ui";
 import {
   fetchSupplierAccounts, createSupplierAccount, reviewSupplierAccount, toggleSupplierAccount,
   resetSupplierSecret, rechargeSupplierAccount, fetchSupplierLedger,
@@ -20,6 +20,7 @@ import {
 import { checkAuth } from "@/directives";
 import { formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
+import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
 
 defineOptions({ name: "SupplierAccountsTab" });
 
@@ -52,6 +53,10 @@ const protocolMeta: Record<string, { label: string; tag: "success" | "info" | "w
 };
 
 const canWrite = () => checkAuth("supplier:write");
+
+// ── 容器宽分档（full ≥1080 / mid ≥720 / compact）：任意屏宽下操作列完整可见，不依赖横向滚动 ──
+const wrapRef = ref<HTMLElement | null>(null);
+const { tier } = useResponsiveTier(wrapRef);
 
 async function load() {
   loading.value = true;
@@ -252,62 +257,157 @@ async function openLedger(row: any) {
   }
 }
 
-const columns: DataTableColumns<any> = [
-  { title: "ID", key: "id", width: 56 },
-  { title: "名称", key: "name", width: 120, ellipsis: true },
-  {
+// ── 响应式列集：compact 只留 名称/状态/操作；mid 去掉 ID/余额/申请信息保留核心；full 全列 ──
+// 操作原为 7~8 个平铺按钮（360px），收纳为「详情/审核/充值 + 更多▾」；compact 单「操作▾」下拉（功能不减）。
+function nameCol(t: TableTier) {
+  return {
+    title: "名称",
+    key: "name",
+    minWidth: t === "compact" ? 96 : 110,
+    maxWidth: t === "compact" ? 200 : 260,
+    render: (row: any) => {
+      // 非全档时把协议/余额并入悬停提示
+      const tip =
+        t === "full"
+          ? row.name
+          : `${row.name}\n${protocolMeta[row.protocol]?.label || row.protocol} · 余额 ${formatMoney(row.balance_cache)}`;
+      return h("span", { class: "truncate", title: tip }, row.name);
+    },
+  };
+}
+
+function protocolCol() {
+  return {
     title: "协议",
     key: "protocol",
-    width: 96,
-    render: (row) => h(NTag, { size: "small", type: protocolMeta[row.protocol]?.tag || "default", bordered: false }, { default: () => protocolMeta[row.protocol]?.label || row.protocol }),
-  },
-  { title: "余额", key: "balance_cache", width: 90, render: (row) => formatMoney(row.balance_cache) },
-  {
+    width: 92,
+    render: (row: any) => h(NTag, { size: "small", type: protocolMeta[row.protocol]?.tag || "default", bordered: false }, { default: () => protocolMeta[row.protocol]?.label || row.protocol }),
+  };
+}
+
+function statusCol() {
+  return {
     title: "状态",
     key: "status",
-    width: 80,
-    render: (row) =>
+    width: 78,
+    render: (row: any) =>
       h(NTag, { size: "small", type: row.status === "approved" ? "success" : row.status === "applying" ? "warning" : row.status === "rejected" ? "error" : "default", bordered: false }, { default: () => ({ approved: "已通过", applying: "待审核", rejected: "已驳回", disabled: "已禁用" } as any)[row.status] || row.status }),
-  },
-  {
+  };
+}
+
+function applyInfoCol() {
+  return {
     title: "申请/审核信息",
     key: "apply_info",
-    minWidth: 180,
-    ellipsis: true,
-    render: (row) => {
+    minWidth: 150,
+    maxWidth: 420,
+    ellipsis: { tooltip: true },
+    render: (row: any) => {
       const parts: string[] = [];
       if (row.owner_user_id) parts.push(`申请人 #${row.owner_user_id}`);
       if (row.apply_reason) parts.push(`理由：${row.apply_reason}`);
       if (row.review_note) parts.push(`意见：${row.review_note}`);
       return parts.length ? parts.join(" ｜ ") : "-";
     },
-  },
-  {
+  };
+}
+
+function confirmResetSecret(row: any) {
+  window.$dialog?.warning({
+    title: "重置密钥",
+    content: "重置后旧密钥立即失效，确定？",
+    positiveText: "重置",
+    negativeText: "取消",
+    onPositiveClick: () => handleResetSecret(row),
+  });
+}
+
+function moreMenu(row: any): DropdownOption[] {
+  const opts: DropdownOption[] = [];
+  if (canWrite()) opts.push({ label: "充值", key: "recharge" });
+  opts.push({ label: "账本", key: "ledger" });
+  if (canWrite()) opts.push({ label: "专属价", key: "price" }, { label: "重置密钥", key: "reset" });
+  if (row.status !== "applying" && canWrite())
+    opts.push({ type: "divider", key: "dv" }, { label: row.status === "disabled" ? "启用" : "禁用", key: "toggle" });
+  return opts;
+}
+
+function compactMenu(row: any): DropdownOption[] {
+  const opts: DropdownOption[] = [{ label: "详情", key: "detail" }];
+  if (row.status === "applying" && canWrite()) opts.push({ label: "审核", key: "review" });
+  opts.push(...moreMenu(row));
+  return opts;
+}
+
+function onRowAction(row: any, key: string) {
+  switch (key) {
+    case "detail":
+      openDetail(row);
+      break;
+    case "review":
+      openReview(row);
+      break;
+    case "recharge":
+      openRecharge(row);
+      break;
+    case "ledger":
+      openLedger(row);
+      break;
+    case "price":
+      openPrice(row);
+      break;
+    case "reset":
+      confirmResetSecret(row);
+      break;
+    case "toggle":
+      handleToggle(row);
+      break;
+  }
+}
+
+function actionsCol(t: TableTier) {
+  return {
     title: "操作",
     key: "actions",
-    width: 360,
-    render: (row) =>
-      h("div", { class: "flex flex-wrap gap-4px" }, [
-        h(NButton, { size: "tiny", quaternary: true, onClick: () => openDetail(row) }, { default: () => "📄 详情" }),
-        row.status === "applying" && canWrite()
-          ? h(NButton, { size: "tiny", type: "warning", secondary: true, onClick: () => openReview(row) }, { default: () => "🔍 审核" })
-          : null,
-        row.status !== "applying" && canWrite()
-          ? h(NButton, { size: "tiny", quaternary: true, onClick: () => handleToggle(row) }, { default: () => (row.status === "disabled" ? "启用" : "禁用") })
-          : null,
-        canWrite()
-          ? h(NPopconfirm, { onPositiveClick: () => handleResetSecret(row) }, { trigger: () => h(NButton, { size: "tiny", type: "warning", quaternary: true }, { default: () => "重置密钥" }), default: () => "重置后旧密钥立即失效，确定？" })
-          : null,
-        canWrite()
-          ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => openRecharge(row) }, { default: () => "充值" })
-          : null,
-        h(NButton, { size: "tiny", quaternary: true, onClick: () => openLedger(row) }, { default: () => "账本" }),
-        canWrite()
-          ? h(NButton, { size: "tiny", quaternary: true, onClick: () => openPrice(row) }, { default: () => "专属价" })
-          : null,
-      ]),
-  },
-];
+    width: t === "compact" ? 92 : 200,
+    render: (row: any) =>
+      t === "compact"
+        ? h(
+            NDropdown,
+            { options: compactMenu(row), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
+            { default: () => h(NButton, { size: "tiny", secondary: true }, { default: () => "操作 ▾" }) },
+          )
+        : h("div", { class: "flex flex-wrap items-center gap-4px" }, [
+            h(NButton, { size: "tiny", quaternary: true, onClick: () => openDetail(row) }, { default: () => "详情" }),
+            row.status === "applying" && canWrite()
+              ? h(NButton, { size: "tiny", type: "warning", secondary: true, onClick: () => openReview(row) }, { default: () => "审核" })
+              : null,
+            canWrite()
+              ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => openRecharge(row) }, { default: () => "充值" })
+              : null,
+            h(
+              NDropdown,
+              { options: moreMenu(row), trigger: "click", onSelect: (key: string) => onRowAction(row, key) },
+              { default: () => h(NButton, { size: "tiny", quaternary: true }, { default: () => "更多 ▾" }) },
+            ),
+          ]),
+  };
+}
+
+const columns = computed<DataTableColumns<any>>(() => {
+  const t = tier.value;
+  const cols: DataTableColumns<any> = [];
+  if (t === "full") cols.push({ title: "ID", key: "id", width: 48 });
+  cols.push(nameCol(t));
+  if (t !== "compact") {
+    cols.push(protocolCol());
+    if (t === "full") cols.push({ title: "余额", key: "balance_cache", width: 88, render: (row: any) => formatMoney(row.balance_cache) });
+  }
+  cols.push(statusCol());
+  if (t !== "compact") cols.push(applyInfoCol());
+  cols.push(actionsCol(t));
+  return cols;
+});
 
 // ── 回调记录（死信重发）──
 const showCallbacks = ref(false);
@@ -391,7 +491,7 @@ onMounted(load);
 </script>
 
 <template>
-  <div>
+  <div ref="wrapRef">
     <!-- 待审提醒（有待审申请时置顶；一键切到审核视图） -->
     <NAlert v-if="applyingCount > 0 && statusFilter !== 'applying'" type="warning" :bordered="false" class="mb-12px">
       <template #default>
@@ -410,16 +510,16 @@ onMounted(load);
       </NSpace>
     </div>
 
-    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" :scroll-x="1300" />
+    <NDataTable :columns="columns" :data="accounts" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" :scroll-x="300" />
 
     <!-- 密钥一次性回显 -->
-    <NModal :show="!!secretOnce" preset="dialog" title="密钥（仅此一次展示，请立即保存）" style="width: 520px" @update:show="secretOnce = ''">
+    <NModal :show="!!secretOnce" preset="dialog" title="密钥（仅此一次展示，请立即保存）" style="width: 520px; max-width: 96vw" @update:show="secretOnce = ''">
       <NAlert type="warning" :bordered="false" class="mb-8px">关闭后无法再次查看，丢失只能重置。</NAlert>
       <NInput :value="secretOnce" readonly type="textarea" :rows="2" />
     </NModal>
 
     <!-- 审核工作台：申请资料 + 意见 + 通过并开通 / 驳回 -->
-    <NModal v-model:show="reviewModal" preset="card" :title="`对接申请审核 #${reviewTarget?.id || ''}`" style="width: 560px">
+    <NModal v-model:show="reviewModal" preset="card" :title="`对接申请审核 #${reviewTarget?.id || ''}`" style="width: 560px; max-width: 96vw">
       <NDescriptions v-if="reviewTarget" :column="2" size="small" bordered label-placement="left" class="mb-12px">
         <NDescriptionsItem label="站点名" :span="2">{{ reviewTarget.display_name || reviewTarget.name }}</NDescriptionsItem>
         <NDescriptionsItem label="对接协议">
@@ -450,7 +550,7 @@ onMounted(load);
     </NModal>
 
     <!-- 账户详情：对接信息（api_key 仅在此展示）+ IP 白名单管理 -->
-    <NModal v-model:show="detailModal" preset="card" :title="`对接账户详情 #${detailTarget?.id || ''}`" style="width: 620px">
+    <NModal v-model:show="detailModal" preset="card" :title="`对接账户详情 #${detailTarget?.id || ''}`" style="width: 620px; max-width: 96vw">
       <NDescriptions v-if="detailTarget" :column="2" size="small" bordered label-placement="left" class="mb-12px">
         <NDescriptionsItem label="站点名" :span="2">{{ detailTarget.display_name || detailTarget.name }}</NDescriptionsItem>
         <NDescriptionsItem label="对接协议">
@@ -482,7 +582,7 @@ onMounted(load);
       <NAlert type="info" :bordered="false" class="mb-8px">
         IP 白名单：不填 = 所有 IP 都可以请求本账户接口；填写后仅白名单内 IP 可调用（精确 IP 或 CIDR 网段，最多 20 条）。
       </NAlert>
-      <div class="flex flex-wrap gap-6px mb-8px" v-if="detailWhitelist.length">
+      <div v-if="detailWhitelist.length" class="flex flex-wrap gap-6px mb-8px">
         <NTag v-for="ip in detailWhitelist" :key="ip" closable size="small" @close="detailWhitelist = detailWhitelist.filter((x: string) => x !== ip)">
           {{ ip }}
         </NTag>
@@ -496,7 +596,7 @@ onMounted(load);
     </NModal>
 
     <!-- 新增 -->
-    <NModal v-model:show="showForm" preset="card" title="新增供货账号" style="width: 540px">
+    <NModal v-model:show="showForm" preset="card" title="新增供货账号" style="width: 540px; max-width: 96vw">
       <NForm label-placement="left" label-width="110">
         <NFormItem label="名称" required>
           <NInput v-model:value="form.name" placeholder="下游客户标识" />
@@ -534,7 +634,7 @@ onMounted(load);
     </NModal>
 
     <!-- 充值 -->
-    <NModal v-model:show="showRecharge" preset="dialog" :title="`充值：${rechargeTarget?.name || ''}`" style="width: 420px">
+    <NModal v-model:show="showRecharge" preset="dialog" :title="`充值：${rechargeTarget?.name || ''}`" style="width: 420px; max-width: 96vw">
       <NForm label-placement="top">
         <NFormItem label="当前余额">
           <span>{{ fenToYuan(rechargeTarget?.balance_cache || 0) }} 元</span>
@@ -553,10 +653,11 @@ onMounted(load);
     </NModal>
 
     <!-- 回调记录 -->
-    <NModal v-model:show="showCallbacks" preset="card" title="下游回调记录（失败可重发）" style="width: 760px">
+    <NModal v-model:show="showCallbacks" preset="card" title="下游回调记录（失败可重发）" style="width: 760px; max-width: 96vw">
       <NDataTable
         :max-height="540"
         size="small"
+        :scroll-x="580"
         :loading="callbacksLoading"
         :data="callbacks"
         :columns="[
@@ -579,7 +680,7 @@ onMounted(load);
     </NModal>
 
     <!-- 专属价 -->
-    <NModal v-model:show="showPrice" preset="dialog" :title="`专属价：${priceTarget?.name || ''}`" style="width: 440px">
+    <NModal v-model:show="showPrice" preset="dialog" :title="`专属价：${priceTarget?.name || ''}`" style="width: 440px; max-width: 96vw">
       <NForm label-placement="top">
         <NAlert type="info" :bordered="false" class="mb-8px">专属价优先于商品基础供货价（该账号下单按此价扣款）。</NAlert>
         <NFormItem label="商品 ID" required>
@@ -622,10 +723,11 @@ onMounted(load);
     </NModal>
 
     <!-- 账本 -->
-    <NModal v-model:show="showLedger" preset="card" :title="`账本：${ledgerTarget?.name || ''}`" style="width: 720px">
+    <NModal v-model:show="showLedger" preset="card" :title="`账本：${ledgerTarget?.name || ''}`" style="width: 720px; max-width: 96vw">
       <NDataTable
         :max-height="540"
         size="small"
+        :scroll-x="460"
         :loading="ledgerLoading"
         :data="ledgerRows"
         :columns="[
