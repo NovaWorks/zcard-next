@@ -5,19 +5,24 @@ package identity
 
 import (
 	"context"
-	"errors"
+	stdErrors "errors"
+	"strings"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/resellerprofile"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 
+	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
+
+// stdErr 便捷别名（本文件 stdErrors 与 kratos errors 双包共存）
+
 
 // StoreUserService 用户中心服务。
 type StoreUserService struct {
@@ -63,10 +68,10 @@ type RegisterInput struct {
 // Register 注册（归因链写入；username 唯一）。
 func (r *UserRepo) Register(ctx context.Context, in RegisterInput) (*ent.User, error) {
 	if len(in.Username) < 3 || len(in.Username) > 30 {
-		return nil, errors.New("identity.USERNAME_INVALID: 3-30 字符")
+		return nil, stdErrors.New("identity.USERNAME_INVALID: 3-30 字符")
 	}
 	if len(in.Password) < 6 {
-		return nil, errors.New("identity.PASSWORD_TOO_SHORT: 至少 6 位")
+		return nil, stdErrors.New("identity.PASSWORD_TOO_SHORT: 至少 6 位")
 	}
 	hash, err := crypto.HashPassword(in.Password)
 	if err != nil {
@@ -77,7 +82,7 @@ func (r *UserRepo) Register(ctx context.Context, in RegisterInput) (*ent.User, e
 	if in.InviteCode != "" {
 		inviter := r.ResolvePromoCode(ctx, in.InviteCode)
 		if inviter == nil || inviter.ID == 0 {
-			return nil, errors.New("identity.INVITER_NOT_FOUND")
+			return nil, stdErrors.New("identity.INVITER_NOT_FOUND")
 		}
 		l1 = inviter.ID
 		l2 = inviter.InviteL1
@@ -100,7 +105,7 @@ func (r *UserRepo) Register(ctx context.Context, in RegisterInput) (*ent.User, e
 		// 用户名冲突为主；推广码碰撞（概率极低）重试一次换码
 		u, err = create.SetPromoCode(genPromoCode()).Save(ctx)
 		if ent.IsConstraintError(err) {
-			return nil, errors.New("identity.USERNAME_TAKEN")
+			return nil, stdErrors.New("identity.USERNAME_TAKEN")
 		}
 	}
 	return u, err
@@ -112,7 +117,7 @@ func (r *UserRepo) FindByUsername(ctx context.Context, username string) (*ent.Us
 		Where(user.Username(username)).Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return nil, errors.New("identity.BAD_CREDENTIALS")
+			return nil, stdErrors.New("identity.BAD_CREDENTIALS")
 		}
 		return nil, err
 	}
@@ -132,7 +137,7 @@ func (r *UserRepo) FindByLoginIdentifier(ctx context.Context, identifier string)
 		).Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return nil, errors.New("identity.BAD_CREDENTIALS")
+			return nil, stdErrors.New("identity.BAD_CREDENTIALS")
 		}
 		return nil, err
 	}
@@ -149,13 +154,13 @@ func (s *StoreUserService) Register(ctx context.Context, req *storefrontv1.Regis
 	}
 	// 注册开关（security.register_enabled）
 	if s.regCfg != nil && !s.regCfg.RegisterEnabled(ctx) {
-		return nil, errors.New("identity.REGISTER_DISABLED: 站点暂未开放注册")
+		return nil, stdErrors.New("identity.REGISTER_DISABLED: 站点暂未开放注册")
 	}
 	// 注册方式（多选）：email/phone 通道启用时对应目标必填 + 验码（一次性）
 	if s.regCfg != nil {
 		if s.regCfg.MethodEnabled(ctx, "email") {
 			if req.GetEmail() == "" {
-				return nil, errors.New("identity.EMAIL_REQUIRED: 请填写邮箱并完成验证")
+				return nil, stdErrors.New("identity.EMAIL_REQUIRED: 请填写邮箱并完成验证")
 			}
 			if err := s.regCode.VerifyRegisterCode(ctx, req.GetEmail(), req.GetCode(), "email"); err != nil {
 				return nil, err
@@ -163,7 +168,7 @@ func (s *StoreUserService) Register(ctx context.Context, req *storefrontv1.Regis
 		}
 		if s.regCfg.MethodEnabled(ctx, "phone") {
 			if req.GetPhone() == "" {
-				return nil, errors.New("identity.PHONE_REQUIRED: 请填写手机号并完成验证")
+				return nil, stdErrors.New("identity.PHONE_REQUIRED: 请填写手机号并完成验证")
 			}
 			if err := s.regCode.VerifyRegisterCode(ctx, req.GetPhone(), req.GetCode(), "phone"); err != nil {
 				return nil, err
@@ -198,27 +203,55 @@ func (s *StoreUserService) SendRegisterCode(ctx context.Context, req *storefront
 	return &storefrontv1.SendRegisterCodeReply{}, nil
 }
 
+// mapStoreAuthErr storefront 认证错误映射（登录/找回密码/改密）：
+// 普通 error → kratos 带状态码与中文 message（前端直接展示 message）。
+func mapStoreAuthErr(err error) error {
+	msg := err.Error()
+	switch {
+	case msg == "identity.BAD_CREDENTIALS":
+		return errors.Unauthorized("identity.BAD_CREDENTIALS", "用户名或密码错误")
+	case msg == "identity.USER_DISABLED":
+		return errors.Forbidden("identity.USER_DISABLED", "账号已被禁用，请联系管理员")
+	case msg == "identity.USERNAME_TAKEN":
+		return errors.BadRequest("identity.USERNAME_TAKEN", "用户名已被注册")
+	case msg == "identity.PASSWORD_TOO_SHORT" || strings.HasPrefix(msg, "identity.PASSWORD_TOO_SHORT"):
+		return errors.BadRequest("identity.PASSWORD_TOO_SHORT", "密码至少 6 位")
+	case msg == "identity.UNAUTHORIZED" || msg == "identity.SESSION_INVALID":
+		return errors.Unauthorized("identity.UNAUTHORIZED", "登录状态已失效，请重新登录")
+	case msg == "identity.USER_NOT_FOUND":
+		return errors.NotFound("identity.USER_NOT_FOUND", "账号不存在")
+	case msg == "identity.RESET_CODE_INVALID" || msg == "identity.CODE_INVALID":
+		return errors.BadRequest("identity.CODE_INVALID", "验证码错误或已过期")
+	default:
+		// 已是 kratos errors（验证码等）原样透传
+		if se, ok := err.(*errors.Error); ok {
+			return se
+		}
+		return errors.InternalServer("identity.FAILED", msg)
+	}
+}
+
 // Login API（username 字段混输：用户名/邮箱/手机号）。
 func (s *StoreUserService) Login(ctx context.Context, req *storefrontv1.LoginRequest) (*storefrontv1.LoginReply, error) {
 	// 图形验证码（captcha_login 开启时前置；未启用直接放行）
 	if s.captcha != nil {
 		if err := s.captcha.VerifyScene(ctx, captcha.SceneLogin, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
-			return nil, err
+			return nil, mapStoreAuthErr(err)
 		}
 	}
 	u, err := s.repo.FindByLoginIdentifier(ctx, req.GetUsername())
 	if err != nil {
-		return nil, err
+		return nil, mapStoreAuthErr(err)
 	}
 	if !crypto.VerifyPassword(u.PasswordHash, req.GetPassword()) {
-		return nil, errors.New("identity.BAD_CREDENTIALS")
+		return nil, mapStoreAuthErr(stdErrors.New("identity.BAD_CREDENTIALS"))
 	}
 	if string(u.Status) != "active" {
-		return nil, errors.New("identity.USER_DISABLED")
+		return nil, mapStoreAuthErr(stdErrors.New("identity.USER_DISABLED"))
 	}
 	token, exp, err := s.signer.Issue(authn.RealmUser, u.ID, u.Username, 0)
 	if err != nil {
-		return nil, err
+		return nil, mapStoreAuthErr(err)
 	}
 	return &storefrontv1.LoginReply{
 		AccessToken: token, TokenType: "Bearer", ExpiresAt: exp.Unix(),
@@ -229,11 +262,11 @@ func (s *StoreUserService) Login(ctx context.Context, req *storefrontv1.LoginReq
 func (s *StoreUserService) Me(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.MeReply, error) {
 	claims := ClaimsFromContext(ctx)
 	if claims == nil {
-		return nil, errors.New("identity.UNAUTHORIZED")
+		return nil, stdErrors.New("identity.UNAUTHORIZED")
 	}
 	u, err := data.Client(ctx, s.data).User.Get(ctx, claims.Subject)
 	if err != nil {
-		return nil, errors.New("identity.UNAUTHORIZED")
+		return nil, stdErrors.New("identity.UNAUTHORIZED")
 	}
 	promoCode := u.PromoCode
 	if promoCode == "" {
@@ -264,7 +297,7 @@ func (s *StoreUserService) ForgotPassword(ctx context.Context, req *storefrontv1
 		}
 	}
 	if err := s.pwd.ForgotPassword(ctx, req.GetEmail()); err != nil {
-		return nil, err
+		return nil, mapStoreAuthErr(err)
 	}
 	return &storefrontv1.ForgotPasswordReply{}, nil
 }
@@ -273,7 +306,7 @@ func (s *StoreUserService) ForgotPassword(ctx context.Context, req *storefrontv1
 func (s *StoreUserService) ResetPassword(ctx context.Context, req *storefrontv1.ResetPasswordRequest) (*storefrontv1.ResetPasswordReply, error) {
 	u, err := s.pwd.ResetPassword(ctx, req.GetEmail(), req.GetCode(), req.GetNewPassword())
 	if err != nil {
-		return nil, err
+		return nil, mapStoreAuthErr(err)
 	}
 	token, exp, err := s.signer.Issue(authn.RealmUser, u.ID, u.Username, 0)
 	if err != nil {
@@ -286,11 +319,11 @@ func (s *StoreUserService) ResetPassword(ctx context.Context, req *storefrontv1.
 func (s *StoreUserService) ChangePassword(ctx context.Context, req *storefrontv1.ChangePasswordRequest) (*storefrontv1.ChangePasswordReply, error) {
 	claims := ClaimsFromContext(ctx)
 	if claims == nil {
-		return nil, errors.New("identity.UNAUTHORIZED")
+		return nil, stdErrors.New("identity.UNAUTHORIZED")
 	}
 	u, err := s.pwd.ChangePassword(ctx, claims.Subject, req.GetOldPassword(), req.GetNewPassword())
 	if err != nil {
-		return nil, err
+		return nil, mapStoreAuthErr(err)
 	}
 	token, exp, err := s.signer.Issue(authn.RealmUser, u.ID, u.Username, 0)
 	if err != nil {
@@ -303,7 +336,7 @@ func (s *StoreUserService) ChangePassword(ctx context.Context, req *storefrontv1
 func (s *StoreUserService) UpdateProfile(ctx context.Context, req *storefrontv1.UpdateProfileRequest) (*storefrontv1.MeReply, error) {
 	claims := ClaimsFromContext(ctx)
 	if claims == nil {
-		return nil, errors.New("identity.UNAUTHORIZED")
+		return nil, stdErrors.New("identity.UNAUTHORIZED")
 	}
 	if err := s.pwd.UpdateProfile(ctx, claims.Subject, req.GetEmail()); err != nil {
 		return nil, err
