@@ -4673,6 +4673,7 @@ paths:
             parameters:
                 - name: userId
                   in: path
+                  description: 指定用户流水；0 = 全站流水（账单管理）。不能标 REQUIRED——proto3 零值 0 会被网关判缺失。
                   required: true
                   schema:
                     type: string
@@ -10297,6 +10298,10 @@ components:
                 remark:
                     type: string
                 createdAt:
+                    type: string
+                userId:
+                    type: string
+                username:
                     type: string
         zcard.api.admin.v1.WithdrawalItem:
             type: object

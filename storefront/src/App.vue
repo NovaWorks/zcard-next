@@ -40,11 +40,17 @@
         <router-link to="/points">积分商城</router-link>
         <button class="nav-horn" @click="openNotice" title="系统公告">📢 公告</button>
         <router-link to="/fetch">取货查询</router-link>
+        <!-- 顶部自定义按钮：外部链接新窗口；文章/公告站内路由（site.top_button {text,type,url|slug}） -->
+        <router-link
+          v-if="topButton && topButton.type !== 'link' && topButton.slug"
+          :to="`/posts/${topButton.slug}`"
+          class="nav-custom-btn"
+        >{{ topButton.text }}</router-link>
         <a
-          v-if="topButton"
+          v-else-if="topButton"
           :href="topButton.url || '#'"
           :target="topButton.url ? '_blank' : undefined"
-          rel="noopener"
+          rel="noopener noreferrer"
           class="nav-custom-btn"
         >{{ topButton.text }}</a>
       </nav>
@@ -76,7 +82,7 @@
       </router-view>
     </main>
 
-    <!-- 页脚（安装页隐藏） -->
+    <!-- 页脚（安装页隐藏；页脚配置 footer.* 可覆盖关于/导航/联系/社交/备案） -->
     <template v-if="!isInstall">
     <footer class="footer">
       <div class="footer-trust">
@@ -91,14 +97,23 @@
             <span class="logo-mark">ZC</span>
             <span class="footer-name">{{ siteName }}</span>
           </div>
-          <p class="muted">专业的自动发卡商城系统，为你的数字商品交易保驾护航。</p>
+          <p class="muted">{{ footerAbout || '专业的自动发卡商城系统，为你的数字商品交易保驾护航。' }}</p>
+          <!-- 社交链接（footer.social = [{icon,url}]，配置后显示） -->
+          <div v-if="footerSocial.length" class="footer-social">
+            <a v-for="(s, i) in footerSocial" :key="i" :href="s.url || '#'" target="_blank" rel="noopener noreferrer" class="footer-social-link" :title="s.url">{{ s.icon }}</a>
+          </div>
         </div>
         <div class="footer-col">
           <h4>快速导航</h4>
-          <router-link to="/products">全部商品</router-link>
-          <router-link to="/points">积分商城</router-link>
-          <router-link to="/coupons">优惠券</router-link>
-          <router-link to="/affiliate">推广中心</router-link>
+          <template v-if="footerNav.length">
+            <a v-for="(n, i) in footerNav" :key="i" :href="n.url || '#'">{{ n.text }}</a>
+          </template>
+          <template v-else>
+            <router-link to="/products">全部商品</router-link>
+            <router-link to="/points">积分商城</router-link>
+            <router-link to="/coupons">优惠券</router-link>
+            <router-link to="/affiliate">推广中心</router-link>
+          </template>
         </div>
         <div class="footer-col">
           <h4>帮助中心</h4>
@@ -114,8 +129,16 @@
           <router-link to="/member?tab=recharge">余额充值</router-link>
           <router-link to="/member?tab=giftcard">礼品卡兑换</router-link>
         </div>
+        <div v-if="footerContact" class="footer-col">
+          <h4>联系我们</h4>
+          <p class="muted" style="white-space: pre-line;">{{ footerContact }}</p>
+        </div>
       </div>
-      <div class="footer-copy">© {{ year }} {{ siteName }} · 保留所有权利</div>
+      <div class="footer-copy">
+        © {{ year }} {{ siteName }} · 保留所有权利
+        <a v-if="agreementHref" :href="agreementHref" :target="agreementHref.startsWith('http') ? '_blank' : undefined" rel="noopener noreferrer" class="footer-copy-link">用户协议</a>
+        <a v-if="footerIcp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="footer-copy-link">{{ footerIcp }}</a>
+      </div>
     </footer>
 
     <!-- 回到顶部悬浮球 -->
@@ -194,10 +217,26 @@ function scrollTop() {
 }
 
 // ── 顶部自定义按钮（site.top_button 公开下发）+ 维护模式（ops.maintenance[_style]）──
-const topButton = ref<{ text: string; url: string } | null>(null);
+// top_button：{text, type: link|post|notice, url?|slug?}——link 外链新窗口；post/notice 站内文章路由
+const topButton = ref<{ text: string; type?: string; url?: string; slug?: string } | null>(null);
 const maintenance = ref(false);
 const maintenanceStyle = ref('modal'); // modal=全屏遮罩 | banner=顶部横幅
 const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=24 小时一次
+
+// ── 页脚配置（footer.* 公开下发：about/nav/social/contact/agreement/icp，空值回落默认）──
+const footerAbout = ref('');
+const footerNav = ref<{ text: string; url: string }[]>([]);
+const footerSocial = ref<{ icon: string; url: string }[]>([]);
+const footerContact = ref('');
+const footerAgreement = ref('');
+const footerIcp = ref('');
+// 协议链接：http(s) 外链原样；非空文本视为文章 slug → /posts/<slug>
+const agreementHref = computed(() => {
+  const v = footerAgreement.value.trim();
+  if (!v) return '';
+  if (/^https?:\/\//.test(v)) return v;
+  return `/posts/${v}`;
+});
 
 // 维护弹窗显隐：daily 频率下 24 小时窗口用 localStorage 标记；关闭即记时间戳
 const maintModalVisible = ref(false);
@@ -260,16 +299,44 @@ onMounted(async () => {
     const resp = await fetch('/api/v1/storefront/config');
     const json = await resp.json();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
-    // 顶部自定义按钮 {text,url}
+    // 顶部自定义按钮 {text,type,url|slug}
     const tb = find('site.top_button');
     if (tb) {
       try {
         const v = JSON.parse(tb);
         if (v && typeof v.text === 'string' && v.text.trim()) {
-          topButton.value = { text: v.text.trim(), url: typeof v.url === 'string' ? v.url.trim() : '' };
+          topButton.value = {
+            text: v.text.trim(),
+            type: v.type === 'post' || v.type === 'notice' ? v.type : 'link',
+            url: typeof v.url === 'string' ? v.url.trim() : '',
+            slug: typeof v.slug === 'string' ? v.slug.trim() : '',
+          };
         }
       } catch { /* 非法配置忽略 */ }
     }
+    // 页脚配置（footer.*：空值回落模板默认）
+    const fa = find('footer.about');
+    if (fa) { try { footerAbout.value = String(JSON.parse(fa) || ''); } catch { /* ignore */ } }
+    const fn = find('footer.nav');
+    if (fn) {
+      try {
+        const v = JSON.parse(fn);
+        if (Array.isArray(v)) footerNav.value = v.filter((x: any) => x && typeof x.text === 'string' && typeof x.url === 'string');
+      } catch { /* ignore */ }
+    }
+    const fs = find('footer.social');
+    if (fs) {
+      try {
+        const v = JSON.parse(fs);
+        if (Array.isArray(v)) footerSocial.value = v.filter((x: any) => x && typeof x.icon === 'string' && typeof x.url === 'string');
+      } catch { /* ignore */ }
+    }
+    const fc = find('footer.contact');
+    if (fc) { try { footerContact.value = String(JSON.parse(fc) || ''); } catch { /* ignore */ } }
+    const fag = find('footer.agreement');
+    if (fag) { try { footerAgreement.value = String(JSON.parse(fag) || ''); } catch { /* ignore */ } }
+    const ficp = find('footer.icp');
+    if (ficp) { try { footerIcp.value = String(JSON.parse(ficp) || ''); } catch { /* ignore */ } }
     // 维护模式与样式（modal=遮罩弹窗 / banner=顶部横幅）；弹窗频率 daily=24h 一次
     const mt = find('ops.maintenance');
     if (mt) { try { maintenance.value = JSON.parse(mt) === true; } catch { /* ignore */ } }

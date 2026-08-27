@@ -30,11 +30,17 @@ const templates = ref<TemplateItem[]>([]);
 const groups = [
   { key: "site", label: "站点基础" },
   { key: "template", label: "模板" },
+  { key: "promo", label: "推荐位" },
+  { key: "footer", label: "页脚配置" },
   { key: "trade", label: "交易" },
   { key: "security", label: "安全" },
   { key: "ops", label: "运维" },
   { key: "recharge", label: "充值" },
   { key: "supplier_recharge", label: "供货充值" },
+  { key: "points", label: "积分" },
+  { key: "withdraw", label: "提现" },
+  { key: "affiliate", label: "分销设置" },
+  { key: "supply", label: "货源" },
   { key: "notify", label: "邮件短信" },
   { key: "service", label: "客户代码" },
   { key: "i18n", label: "语言货币" },
@@ -52,6 +58,26 @@ const TEXTAREA_KEYS: Record<string, string[]> = {
 const MULTI_KEYS: Record<string, string[]> = {
   security: ["register_method"],
 };
+
+// ── 输入框占位提示（大厂模式：标签保持简短，填写说明放进框内 placeholder）──
+const INPUT_PLACEHOLDERS: Record<string, Record<string, string>> = {
+  notify: {
+    sms_sign: "阿里云/腾讯云填签名名称；七牛填签名 ID",
+    sms_sdk_app_id: "腾讯云必填，其余通道忽略",
+    sms_template_code: "阿里云/腾讯云/七牛均需填写",
+    smtp_host: "如 smtp.exmail.qq.com",
+  },
+  footer: {
+    about: "页脚关于我们文案（留空不显示该栏）",
+    contact: "如 邮箱 support@example.com · QQ 群 123456",
+    icp: "如 京ICP备2026000000号-1（留空不显示）",
+    agreement: "用户协议内容或指向文章的 slug",
+  },
+};
+
+function inputPlaceholderOf(item: any) {
+  return INPUT_PLACEHOLDERS[item.group]?.[item.key];
+}
 
 function isTextareaKey(item: any) {
   if (TEXTAREA_KEYS[item.group]?.includes(item.key)) return true;
@@ -386,6 +412,7 @@ onMounted(() => {
                       class="flex-1"
                       :type="item.secret ? 'password' : 'text'"
                       :show-password-on="item.secret ? 'click' : undefined"
+                      :placeholder="inputPlaceholderOf(item)"
                       @update:value="(v: string) => setVal(item, v)"
                     />
                   </template>

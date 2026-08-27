@@ -98,7 +98,7 @@ var groups = map[string]*GroupDef{
 			"social":    nil, // [{icon,url}]
 			"icp":       "",
 		},
-		PublicKeys: map[string]bool{"about": true, "agreement": true, "contact": true, "icp": true},
+		PublicKeys: map[string]bool{"about": true, "nav": true, "agreement": true, "contact": true, "social": true, "icp": true},
 	},
 	"promo": {
 		Name: "promo", Desc: "推荐位（落地行为 content/banners）",
@@ -317,9 +317,9 @@ var groups = map[string]*GroupDef{
 			"smtp_password": "SMTP 密码", "smtp_name": "发件人名称",
 			"sms_provider": "短信服务商", "sms_key": "短信 AccessKey",
 			"sms_secret":            "短信 SecretKey",
-			"sms_sign":              "短信签名（阿里云/腾讯云填签名名称；七牛填签名 ID）",
-			"sms_sdk_app_id":        "短信 SDK AppID（腾讯云必需，其余通道忽略）",
-			"sms_template_code":     "短信模板 ID（阿里云/腾讯云/七牛一致）",
+			"sms_sign":              "短信签名",
+			"sms_sdk_app_id":        "短信 SDK AppID",
+			"sms_template_code":     "短信模板 ID",
 			"sms_template_register": "注册验证码短信模板（内容需与通道模板一致；变量 {code}{minutes}{site}）",
 			"sms_template_reset":    "找回密码短信模板（内容需与通道模板一致；变量 {code}{minutes}{site}）",
 		},

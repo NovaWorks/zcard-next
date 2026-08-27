@@ -1,10 +1,10 @@
 <template>
   <div class="products-layout">
-    <!-- PC 左侧多级分类树 -->
-    <CategoryTree :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
+    <!-- PC 左侧多级分类树（template.category_nav_style=list 时显示） -->
+    <CategoryTree v-if="navStyle !== 'grid'" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
     <div class="products-content">
-      <!-- 移动端分类胶囊 -->
-      <div v-if="categories.length" class="card mobile-only" style="margin-bottom: 12px;">
+      <!-- 分类胶囊：category_nav_style=grid 时全断点显示（顶部横向导航）；list 时仅移动端 -->
+      <div v-if="categories.length" class="card category-chips" :class="{ 'mobile-only': navStyle !== 'grid' }" style="margin-bottom: 12px;">
         <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
@@ -13,7 +13,7 @@
         </div>
       </div>
 
-      <!-- 排序 + 搜索 -->
+      <!-- 排序 + 搜索 + 视图切换 -->
       <div class="card" style="margin-bottom: 16px;">
         <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
           <input v-model="keyword" class="input" placeholder="搜索商品名" @keyup.enter="onSearch" style="max-width: 240px;" />
@@ -25,13 +25,21 @@
             <option value="price_asc">价格从低到高</option>
             <option value="price_desc">价格从高到低</option>
           </select>
+          <span style="flex: 1;"></span>
+          <div class="view-toggle">
+            <button class="vt-btn" :class="{ active: viewMode === 'grid' }" title="网格视图" @click="viewMode = 'grid'">▦</button>
+            <button class="vt-btn" :class="{ active: viewMode === 'list' }" title="列表视图" @click="viewMode = 'list'">☰</button>
+          </div>
         </div>
       </div>
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-      <div class="grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));">
+      <div v-if="viewMode === 'grid'" class="grid" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx}px, 1fr))` }">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" />
+      </div>
+      <div v-else class="list-rows">
+        <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" />
       </div>
       <div v-if="products.length === 0 && !loading" class="muted" style="margin-top: 24px; text-align: center;">暂无商品</div>
 
@@ -46,25 +54,62 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import { listProducts, listCategories, type Product, type CategoryItem } from '@/api';
 import { fetchSiteSeo, applySeo } from '@/seo';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
 
 const route = useRoute();
-const router = useRouter();
 const products = ref<Product[]>([]);
 const categories = ref<CategoryItem[]>([]);
 const keyword = ref('');
 const categoryId = ref(0);
 const sort = ref('newest');
 const page = ref(1);
-const pageSize = 12;
+const pageSize = ref(12);
 const total = ref(0);
 const loading = ref(false);
 const error = ref('');
+
+// ── 模板设置（后台 系统设置 → 模板；公开配置下发，客户端生效）──
+const viewMode = ref<'grid' | 'list'>('grid'); // template.default_view（big 归入网格+更宽卡片）
+const bigGrid = ref(false); // default_view=big：大图卡片（更宽的列）
+const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
+const gridMinPx = computed(() => (bigGrid.value ? 300 : 200)); // per_row 微调列宽
+
+onMounted(async () => {
+  try {
+    const resp = await fetch('/api/v1/storefront/config');
+    const json = await resp.json();
+    const val = (k: string) => {
+      const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
+      if (raw === undefined) return undefined;
+      try { return JSON.parse(raw); } catch { return raw; }
+    };
+    // 商品默认视图：list=列表行 | grid=网格 | big=大图（网格加宽）
+    const dv = val('template.default_view');
+    if (dv === 'list') viewMode.value = 'list';
+    else if (dv === 'big') { viewMode.value = 'grid'; bigGrid.value = true; }
+    else viewMode.value = 'grid';
+    // 每页商品数（防滥用夹在 6~60）
+    const pp = Number(val('template.per_page'));
+    if (Number.isInteger(pp) && pp >= 6 && pp <= 60) {
+      pageSize.value = pp;
+      load();
+    }
+    // 默认排序方式（settings 的 default 对应前端综合排序 newest）
+    const sb = val('template.sort_by');
+    if (['newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort) {
+      sort.value = sb;
+      load();
+    }
+    // 分类导航样式：grid=顶部胶囊（隐藏左侧树）
+    const ns = val('template.category_nav_style');
+    if (ns === 'grid' || ns === 'list') navStyle.value = ns;
+  } catch { /* 配置拉取失败保持默认 */ }
+});
 
 async function load() {
   loading.value = true;
@@ -74,7 +119,7 @@ async function load() {
     category_id: categoryId.value || undefined,
     sort: sort.value,
     page: page.value,
-    page_size: pageSize,
+    page_size: pageSize.value,
   });
   loading.value = false;
   if (err) { error.value = err; return; }
@@ -134,4 +179,13 @@ async function applyListSeo() {
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; }
 .chip.active { background: #2563eb; color: #fff; }
+.view-toggle { display: inline-flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.vt-btn {
+  border: none; background: #fff; color: #6b7280; font-size: 14px;
+  padding: 6px 12px; cursor: pointer; transition: all .15s;
+}
+.vt-btn + .vt-btn { border-left: 1px solid #e5e7eb; }
+.vt-btn:hover { color: #2563eb; }
+.vt-btn.active { background: #2563eb; color: #fff; }
+.list-rows { display: flex; flex-direction: column; gap: 10px; }
 </style>

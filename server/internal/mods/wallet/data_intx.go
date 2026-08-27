@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/walletaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 )
@@ -202,18 +203,38 @@ func (r *WalletRepoImpl) GetBalance(ctx context.Context, userID uint64) (availab
 	return acc.Available, acc.Locked, nil
 }
 
-// ListTransactions 流水列表。
+// ListTransactions 流水列表（userID = 0 表示全站——账单管理场景，按时间倒序）。
 func (r *WalletRepoImpl) ListTransactions(ctx context.Context, userID uint64, page, size int) ([]*ent.WalletTransaction, int64, error) {
 	client := data.Client(ctx, r.data)
-	q := client.WalletTransaction.Query().
-		Where(wallettransaction.UserID(userID)).
-		Order(ent.Desc(wallettransaction.FieldCreatedAt))
+	q := client.WalletTransaction.Query()
+	if userID > 0 {
+		q = q.Where(wallettransaction.UserID(userID))
+	}
+	q = q.Order(ent.Desc(wallettransaction.FieldCreatedAt))
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 	rows, err := q.Clone().Offset((page - 1) * size).Limit(size).All(ctx)
 	return rows, int64(total), err
+}
+
+// UsernamesByIDs 批量取用户名（全站流水回填归属人；缺失的 id 不出现在结果里）。
+func (r *WalletRepoImpl) UsernamesByIDs(ctx context.Context, ids []uint64) (map[uint64]string, error) {
+	if len(ids) == 0 {
+		return map[uint64]string{}, nil
+	}
+	rows, err := data.Client(ctx, r.data).User.Query().
+		Where(user.IDIn(ids...)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uint64]string, len(rows))
+	for _, u := range rows {
+		out[u.ID] = u.Username
+	}
+	return out, nil
 }
 
 // RebuildBalance 余额重算（对账用——从流水重放验证余额一致）。

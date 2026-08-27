@@ -322,12 +322,28 @@ func (s *AdminWalletService) ListTransactions(ctx context.Context, req *adminv1.
 	if err != nil {
 		return nil, errors.InternalServer("wallet.TX_FAILED", "查询流水失败")
 	}
+	// 全站流水（user_id=0）：批量回填归属用户名
+	names := map[uint64]string{}
+	if req.GetUserId() == 0 && len(rows) > 0 {
+		ids := make([]uint64, 0, len(rows))
+		seen := map[uint64]bool{}
+		for _, r := range rows {
+			if !seen[r.UserID] {
+				seen[r.UserID] = true
+				ids = append(ids, r.UserID)
+			}
+		}
+		if names, err = s.repo.UsernamesByIDs(ctx, ids); err != nil {
+			names = map[uint64]string{} // 用户名回填失败不阻断流水列表
+		}
+	}
 	reply := &adminv1.ListWalletTxReply{Total: total}
 	for _, r := range rows {
 		reply.Transactions = append(reply.Transactions, &adminv1.WalletTx{
 			Id: r.ID, Direction: r.Direction, Type: r.Type,
 			AmountCents: r.Amount, BalanceBeforeCents: r.BalanceBefore,
 			BalanceAfterCents: r.BalanceAfter, Reference: r.Reference, Remark: r.Remark,
+			UserId: r.UserID, Username: names[r.UserID],
 		})
 	}
 	return reply, nil

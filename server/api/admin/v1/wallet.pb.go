@@ -998,10 +998,11 @@ func (x *PointsBalance) GetPoints() int64 {
 }
 
 type ListWalletTxRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        uint64                 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
-	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 指定用户流水；0 = 全站流水（账单管理）。不能标 REQUIRED——proto3 零值 0 会被网关判缺失。
+	UserId        uint64 `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Page          int32  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1120,6 +1121,8 @@ type WalletTx struct {
 	Reference          string                 `protobuf:"bytes,7,opt,name=reference,proto3" json:"reference,omitempty"`
 	Remark             string                 `protobuf:"bytes,8,opt,name=remark,proto3" json:"remark,omitempty"`
 	CreatedAt          int64                  `protobuf:"varint,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UserId             uint64                 `protobuf:"varint,10,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // 归属用户（全站流水场景展示）
+	Username           string                 `protobuf:"bytes,11,opt,name=username,proto3" json:"username,omitempty"`            // 归属用户名（全站流水批量回填，可空）
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1217,6 +1220,20 @@ func (x *WalletTx) GetCreatedAt() int64 {
 	return 0
 }
 
+func (x *WalletTx) GetUserId() uint64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *WalletTx) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
 var File_admin_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_admin_v1_wallet_proto_rawDesc = "" +
@@ -1297,14 +1314,14 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\x06reason\x18\x03 \x01(\tB\x03\xe0A\x02R\x06reason\"@\n" +
 	"\rPointsBalance\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x16\n" +
-	"\x06points\x18\x02 \x01(\x03R\x06points\"d\n" +
-	"\x13ListWalletTxRequest\x12\x1c\n" +
-	"\auser_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x06userId\x12\x12\n" +
+	"\x06points\x18\x02 \x01(\x03R\x06points\"_\n" +
+	"\x13ListWalletTxRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x04R\x06userId\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"k\n" +
 	"\x11ListWalletTxReply\x12@\n" +
 	"\ftransactions\x18\x01 \x03(\v2\x1c.zcard.api.admin.v1.WalletTxR\ftransactions\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xa6\x02\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xdb\x02\n" +
 	"\bWalletTx\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1c\n" +
 	"\tdirection\x18\x02 \x01(\tR\tdirection\x12\x12\n" +
@@ -1315,7 +1332,10 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\treference\x18\a \x01(\tR\treference\x12\x16\n" +
 	"\x06remark\x18\b \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\x03R\tcreatedAt2\xd0\n" +
+	"created_at\x18\t \x01(\x03R\tcreatedAt\x12\x17\n" +
+	"\auser_id\x18\n" +
+	" \x01(\x04R\x06userId\x12\x1a\n" +
+	"\busername\x18\v \x01(\tR\busername2\xd0\n" +
 	"\n" +
 	"\x12AdminWalletService\x12\x91\x01\n" +
 	"\x0fListWithdrawals\x12*.zcard.api.admin.v1.ListWithdrawalsRequest\x1a(.zcard.api.admin.v1.ListWithdrawalsReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/wallet/withdrawals\x12\x9c\x01\n" +

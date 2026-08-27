@@ -78,6 +78,16 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .footer-col h4 { font-size: 14px; margin-bottom: 10px; color: #111827; }
 .footer-col a { display: block; color: #6b7280; text-decoration: none; font-size: 13px; padding: 3px 0; }
 .footer-col a:hover { color: #2563eb; }
+/* ── 页脚配置渲染（footer.social / 协议·备案链接）── */
+.footer-social { display: flex; gap: 10px; margin-top: 10px; }
+.footer-social-link {
+  display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  border-radius: 8px; background: #f3f4f6; font-size: 15px; text-decoration: none; transition: all .15s;
+}
+.footer-social-link:hover { background: #2563eb; }
+.footer-copy-link { color: inherit; margin-left: 10px; text-decoration: none; }
+.footer-copy-link:hover { color: #2563eb; }
+
 .footer-copy { border-top: 1px solid #f3f4f6; text-align: center; padding: 12px; color: #9ca3af; font-size: 12px; }
 
 /* ── 回到顶部 ── */

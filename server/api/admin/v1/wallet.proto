@@ -170,7 +170,8 @@ message PointsBalance {
 }
 
 message ListWalletTxRequest {
-  uint64 user_id = 1 [(google.api.field_behavior) = REQUIRED];
+  // 指定用户流水；0 = 全站流水（账单管理）。不能标 REQUIRED——proto3 零值 0 会被网关判缺失。
+  uint64 user_id = 1;
   int32 page = 2;
   int32 page_size = 3;
 }
@@ -190,4 +191,6 @@ message WalletTx {
   string reference = 7;
   string remark = 8;
   int64 created_at = 9;
+  uint64 user_id = 10;  // 归属用户（全站流水场景展示）
+  string username = 11; // 归属用户名（全站流水批量回填，可空）
 }

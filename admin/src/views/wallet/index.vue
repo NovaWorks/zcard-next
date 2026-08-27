@@ -4,6 +4,7 @@ import { NTabs, NTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
 import WithdrawTab from "./components/withdraw-tab.vue";
 import GiftcardTab from "./components/giftcard-tab.vue";
+import BillsTab from "./components/bills-tab.vue";
 import { ref, reactive, h } from "vue";
 import { NTag, NSelect, NRadioGroup, NRadioButton, NRadio } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
@@ -280,6 +281,9 @@ async function handleAdjust() {
   <div class="min-h-500px flex-col gap-16px overflow-hidden">
     <NCard title="钱包管理" class="flex-1">
       <NTabs type="line">
+      <NTabPane name="bills" tab="账单流水">
+        <BillsTab />
+      </NTabPane>
       <NTabPane name="balance" tab="余额/流水">
       <!-- 查询 -->
       <div class="mb-16px flex items-center gap-12px">
