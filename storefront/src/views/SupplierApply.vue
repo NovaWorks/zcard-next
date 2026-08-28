@@ -14,33 +14,47 @@
     </div>
 
     <!-- 申请表单 -->
-    <div class="card" style="margin-bottom: 16px;">
-      <div style="font-weight: 600; margin-bottom: 12px;">提交新申请</div>
-      <div class="protocol-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px;">
+    <div class="card apply-card">
+      <div class="apply-title">提交新申请</div>
+      <div class="muted" style="margin: -6px 0 16px;">选择对接协议并填写站点信息，审核通过后即可获得凭据</div>
+      <div class="field-label">对接协议</div>
+      <div class="protocol-grid">
         <label
           v-for="p in protocols"
           :key="p.value"
           class="protocol-option"
           :class="{ active: form.protocol === p.value }"
-          style="border: 1px solid #e5e6e8; border-radius: 10px; padding: 10px 12px; cursor: pointer; display: block;"
         >
-          <input v-model="form.protocol" type="radio" :value="p.value" style="margin-right: 6px;" />
-          <b>{{ p.label }}</b>
-          <div class="muted" style="margin-top: 4px; line-height: 1.6;">{{ p.desc }}</div>
+          <input v-model="form.protocol" type="radio" :value="p.value" class="protocol-radio" />
+          <span class="protocol-dot" aria-hidden="true"></span>
+          <span class="protocol-head">
+            <b>{{ p.label }}</b>
+          </span>
+          <span class="muted protocol-desc">{{ p.desc }}</span>
         </label>
       </div>
-      <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px;">
-        <input v-model="form.display_name" class="input" placeholder="站点/店铺名（必填）" maxlength="100" />
-        <input v-model="form.contact" class="input" placeholder="联系方式：QQ / 邮箱 / 手机" maxlength="255" />
+      <div class="apply-form-grid">
+        <div class="field">
+          <label>站点 / 店铺名 <i class="req">*</i></label>
+          <input v-model="form.display_name" class="input" placeholder="如：星空卡商城" maxlength="100" />
+        </div>
+        <div class="field">
+          <label>联系方式</label>
+          <input v-model="form.contact" class="input" placeholder="QQ / 邮箱 / 手机" maxlength="255" />
+        </div>
       </div>
-      <div style="margin-top: 10px;">
-        <input v-model="form.notify_url" class="input" placeholder="交付回调地址（选填；直接填域名即可，支持 http/https）" maxlength="500" />
-        <div class="muted" style="margin-top: 4px;">示例：shop.example.com/callback 或 http(s)://shop.example.com/callback（不填则无回调）</div>
+      <div class="field">
+        <label>交付回调地址（选填）</label>
+        <input v-model="form.notify_url" class="input" placeholder="直接填域名即可，支持 http/https" maxlength="500" />
+        <div class="muted field-hint">示例：shop.example.com/callback 或 http(s)://shop.example.com/callback（不填则无回调）</div>
       </div>
-      <textarea v-model="form.apply_reason" class="input" style="margin-top: 10px; width: 100%; min-height: 64px;" placeholder="申请理由（可选，审核时参考）" maxlength="500"></textarea>
-      <div class="actions" style="margin-top: 12px;">
-        <button class="btn" :disabled="submitting" @click="submit">{{ submitting ? '提交中…' : '提交申请' }}</button>
-        <span v-if="formError" style="color: #dc2626; margin-left: 10px; font-size: 13px;">{{ formError }}</span>
+      <div class="field">
+        <label>申请理由（选填）</label>
+        <textarea v-model="form.apply_reason" class="input" style="min-height: 80px;" placeholder="审核时参考，可简述站点规模与主营类目" maxlength="500"></textarea>
+      </div>
+      <div class="apply-footer">
+        <button class="btn apply-submit" :disabled="submitting" @click="submit">{{ submitting ? '提交中…' : '提交申请' }}</button>
+        <span v-if="formError" class="error">{{ formError }}</span>
       </div>
     </div>
 
@@ -574,6 +588,52 @@ onMounted(load);
 </script>
 
 <style scoped>
+/* ── 提交新申请表单（大厂表单规范：分区标签 + 卡片式单选 + 16px 节奏）── */
+.apply-card { margin-bottom: 16px; }
+.apply-title { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 12px; }
+.field-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.req { color: #ef4444; font-style: normal; margin-left: 2px; }
+.field { margin-bottom: 16px; }
+.field:last-of-type { margin-bottom: 0; }
+.field label { display: block; font-size: 13px; color: #6b7280; margin-bottom: 6px; }
+.field-hint { margin-top: 6px; }
+.apply-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0 16px; }
+
+/* 协议卡片：隐藏原生 radio，自定义圆点 + 选中蓝框 */
+.protocol-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.protocol-option {
+  position: relative;
+  display: flex; flex-direction: column; gap: 4px;
+  border: 1.5px solid #e5e6e8; border-radius: 10px;
+  padding: 14px 16px; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  background: #fff;
+}
+.protocol-option:hover { border-color: #93c5fd; }
+.protocol-option.active {
+  border-color: #2563eb; background: #f5f9ff;
+  box-shadow: 0 0 0 1px #2563eb inset;
+}
+.protocol-radio { position: absolute; opacity: 0; pointer-events: none; }
+.protocol-dot {
+  position: absolute; top: 16px; right: 14px;
+  width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid #d1d5db; background: #fff;
+  transition: border-color 0.15s;
+}
+.protocol-dot::after {
+  content: ''; position: absolute; inset: 2px;
+  border-radius: 50%; background: #2563eb;
+  transform: scale(0); transition: transform 0.12s;
+}
+.protocol-option.active .protocol-dot { border-color: #2563eb; }
+.protocol-option.active .protocol-dot::after { transform: scale(1); }
+.protocol-head { font-size: 14px; color: #1f2329; padding-right: 22px; }
+.protocol-desc { line-height: 1.6; }
+
+.apply-footer { display: flex; align-items: center; gap: 12px; margin-top: 4px; flex-wrap: wrap; }
+.apply-submit { padding: 10px 32px; font-size: 15px; }
+
 /* 充值收银弹窗（大厂交互：蒙层 + 圆角卡片 + 余额卡 + 档位网格 + 主按钮） */
 .recharge-mask {
   position: fixed;

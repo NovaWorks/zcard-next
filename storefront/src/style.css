@@ -144,9 +144,10 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
 .msg.user { align-self: flex-end; background: #2563eb; color: #fff; }
 .msg.admin { align-self: flex-start; background: #f3f4f6; color: #1f2329; }
 .msg.system { align-self: center; background: none; color: #9ca3af; font-size: 12px; }
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.stat-grid .card { padding: 12px; }
-.stat-num { font-size: 20px; font-weight: 700; margin-top: 4px; }
+/* auto-fit：卡片数不足一行时折叠空轨道均分铺满（auto-fill 会留空列导致整体偏左） */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat-grid .card { padding: 14px 16px; }
+.stat-num { font-size: 22px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
 .actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .topbar .user-box { margin-left: auto; display: flex; gap: 12px; align-items: center; font-size: 14px; }
 .topbar .user-box a, .topbar .user-box button { color: #4b5563; text-decoration: none; background: none; border: none; cursor: pointer; font-size: 14px; }

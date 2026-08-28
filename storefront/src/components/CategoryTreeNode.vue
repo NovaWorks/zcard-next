@@ -51,9 +51,9 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
 .tree-node {
   width: 100%;
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 10px;
+  padding: 9px 12px;
   border: none; background: none; cursor: pointer;
-  border-radius: 8px; font-size: 13px; color: #4b5563;
+  border-radius: 8px; font-size: 14px; color: #374151;
   transition: all 0.15s; font-family: inherit;
   text-align: left;
 }
@@ -64,7 +64,7 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
   background: #d1d5db;
 }
 .tree-dot.active { background: #fff; opacity: 0.9; }
-.tree-icon { font-size: 14px; }
-.tree-arrow { font-size: 10px; opacity: 0.6; transition: transform 0.2s; }
+.tree-icon { font-size: 15px; }
+.tree-arrow { font-size: 11px; opacity: 0.6; transition: transform 0.2s; }
 .tree-arrow.open { transform: rotate(90deg); }
 </style>

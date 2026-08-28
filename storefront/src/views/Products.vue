@@ -174,7 +174,7 @@ async function applyListSeo() {
   .mobile-only { display: none; }
 }
 .chip {
-  padding: 4px 14px; border-radius: 999px; font-size: 13px; color: #374151;
+  padding: 6px 16px; border-radius: 999px; font-size: 14px; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; }

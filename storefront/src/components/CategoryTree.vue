@@ -79,7 +79,7 @@ function select(id: number) {
 <style scoped>
 .cat-tree {
   display: none;
-  width: 208px;
+  width: 216px;
   flex-shrink: 0;
 }
 @media (min-width: 768px) {
@@ -95,27 +95,29 @@ function select(id: number) {
 }
 .cat-tree-head {
   display: flex; align-items: center; gap: 6px;
-  padding: 12px 14px;
+  padding: 13px 16px;
   border-bottom: 1px solid #e5e7eb;
   background: #f8fafc;
-  font-size: 14px; font-weight: 700; color: #111827;
+  font-size: 15px; font-weight: 700; color: #111827;
 }
+.cat-tree-head > span:first-child { font-size: 16px; }
 .cat-tree-body { padding: 10px; max-height: calc(100vh - 220px); overflow-y: auto; }
 
 .tree-all, .tree-parent {
   width: 100%;
   display: flex; align-items: center; gap: 8px;
-  padding: 9px 10px;
+  padding: 10px 12px;
   border: none; background: none; cursor: pointer;
-  border-radius: 8px; font-size: 13px; color: #4b5563;
+  border-radius: 8px; font-size: 14px; color: #374151;
   transition: all 0.15s; font-family: inherit;
   text-align: left;
 }
 .tree-all:hover, .tree-parent:hover { background: #eff6ff; color: #2563eb; }
 .tree-all.active, .tree-parent.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25); }
-.tree-icon { font-size: 14px; }
+.tree-all > span:first-child { font-size: 16px; }
+.tree-icon { font-size: 15px; }
 .tree-arrow {
-  font-size: 10px; opacity: 0.6; transition: transform 0.2s;
+  font-size: 11px; opacity: 0.6; transition: transform 0.2s;
 }
 .tree-arrow.open { transform: rotate(90deg); }
 .tree-empty { padding: 16px 0; text-align: center; }

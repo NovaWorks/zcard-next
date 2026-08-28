@@ -33,16 +33,15 @@ async function onPick() {
       <path d="M896 128H128c-35.3 0-64 28.7-64 64v640c0 35.3 28.7 64 64 64h768c35.3 0 64-28.7 64-64V192c0-35.3-28.7-64-64-64z m0 704H128V192h768v640z" />
       <path d="M320 480m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0zM208 768h608v-64l-160-192-128 160-96-96z" />
     </svg>
-    <span class="zc-md-media-btn-label">{{ title }}</span>
   </button>
 </template>
 
 <style scoped>
+/* 纯图标按钮：与 md-editor-v3 内置工具栏按钮同尺寸（24×28），悬停 title 提示「素材库图片」 */
 .zc-md-media-btn {
-  display: inline-flex; align-items: center; gap: 4px;
-  height: 28px; padding: 0 8px; border: none; background: transparent;
-  color: #595959; border-radius: 4px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 28px; padding: 0; border: none; background: transparent;
+  color: #595959; cursor: pointer;
 }
-.zc-md-media-btn:hover { background: #f0f0f0; color: #2563eb; }
-.zc-md-media-btn-label { font-size: 12px; }
+.zc-md-media-btn:hover { color: #2563eb; }
 </style>

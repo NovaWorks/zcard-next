@@ -41,6 +41,7 @@
     <!-- 左右布局：PC 左侧多级分类树 + 右侧内容；移动端横向胶囊兜底 -->
     <div class="home-layout">
       <CategoryTree
+        v-if="navStyle !== 'grid'"
         :categories="categories"
         :model-value="activeCategory"
         @update:model-value="pickCategory"
@@ -57,6 +58,16 @@
           <button class="btn btn-primary" @click="goSearch">搜索</button>
         </div>
 
+        <!-- 分类胶囊：category_nav_style=grid 时全断点显示；list 时仅移动端兜底 -->
+        <div v-if="categories.length" class="card cat-chips" :class="{ 'mobile-only': navStyle !== 'grid' }">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+            <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
+            <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
+              {{ c.name }}
+            </button>
+          </div>
+        </div>
+
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
         <!-- 商品区标题 + 视图切换 -->
@@ -69,7 +80,7 @@
         </div>
 
         <!-- 商品列表（网格/列表双视图） -->
-        <div v-if="viewMode === 'grid'" class="product-grid">
+        <div v-if="viewMode === 'grid'" class="product-grid" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx}px, 1fr))` }">
           <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" />
         </div>
         <div v-else class="product-list">
@@ -133,6 +144,11 @@ const total = ref(0);
 const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [] });
 
 const siteName = 'ZCard 商店';
+
+// ── 模板设置（后台 系统设置 → 模板；与商品列表页同源消费，保证全站一致）──
+const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
+const bigGrid = ref(false); // template.default_view=big：大图卡片（更宽的列）
+const gridMinPx = computed(() => (bigGrid.value ? 300 : 200));
 const sectionTitle = computed(() =>
   activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
@@ -260,8 +276,26 @@ await Promise.all([
   }),
 ]);
 
-onMounted(() => {
+// 模板设置读取（onMounted：SSG 构建期不拉取，水合后客户端实时应用）
+onMounted(async () => {
   startHero();
+  try {
+    const resp = await fetch('/api/v1/storefront/config');
+    const json = await resp.json();
+    const val = (k: string) => {
+      const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
+      if (raw === undefined) return undefined;
+      try { return JSON.parse(raw); } catch { return raw; }
+    };
+    // 分类导航样式：grid=顶部胶囊（隐藏左侧树）
+    const ns = val('template.category_nav_style');
+    if (ns === 'grid' || ns === 'list') navStyle.value = ns;
+    // 商品默认视图：list=列表行 | grid=网格 | big=大图（网格加宽）
+    const dv = val('template.default_view');
+    if (dv === 'list') viewMode.value = 'list';
+    else if (dv === 'big') { viewMode.value = 'grid'; bigGrid.value = true; }
+    else viewMode.value = 'grid';
+  } catch { /* 配置拉取失败保持默认 */ }
 });
 onUnmounted(stopHero);
 </script>
@@ -276,6 +310,14 @@ onUnmounted(stopHero);
 @media (min-width: 768px) {
   .mobile-only { display: none; }
 }
+/* 分类胶囊（category_nav_style=grid 顶部导航 / list 移动端兜底） */
+.cat-chips { padding: 12px 14px; }
+.chip {
+  padding: 6px 16px; border-radius: 999px; font-size: 14px; color: #374151;
+  background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
+}
+.chip:hover { border-color: #2563eb; color: #2563eb; }
+.chip.active { background: #2563eb; color: #fff; }
 
 /* ── Hero ── */
 .hero-slider {

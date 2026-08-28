@@ -1,45 +1,63 @@
 <template>
-  <div class="card" style="max-width: 640px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-      <h2 style="margin: 0;">订单详情</h2>
-      <router-link class="btn secondary" to="/member?tab=orders">返回订单列表</router-link>
+  <div class="order-detail">
+    <!-- 页头：返回 + 标题 -->
+    <div class="od-head">
+      <router-link class="od-back" to="/member?tab=orders">← 返回订单列表</router-link>
+      <h2 class="od-title">订单详情</h2>
     </div>
 
-    <div v-if="loading" class="muted">加载中…</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
+    <div v-if="loading" class="card muted" style="padding: 48px; text-align: center;">加载中…</div>
+    <div v-else-if="error" class="card error" style="padding: 48px; text-align: center;">{{ error }}</div>
 
     <template v-else-if="order">
-      <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 16px;">
-        <span :class="statusBadge(order.status)">{{ statusText(order.status) }}</span>
-        <span class="muted">订单号：{{ order.order_no }}</span>
+      <!-- 状态条：状态徽章 + 订单号 + 下单时间（铺满全宽） -->
+      <div class="card od-status-bar">
+        <span :class="statusBadge(order.status)" class="od-status-badge">{{ statusText(order.status) }}</span>
+        <div class="od-status-meta">
+          <div class="od-order-no">订单号：{{ order.order_no }}</div>
+          <div class="muted">下单时间：{{ fmtTime(order.created_at) }}</div>
+        </div>
       </div>
 
-      <table class="list" style="margin-bottom: 16px;">
-        <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead>
-        <tbody>
-          <tr v-for="(it, i) in order.items" :key="i">
-            <td>{{ it.product_name }}</td>
-            <td class="price">{{ formatMoney(it.unit_price_cents) }}</td>
-            <td>{{ it.quantity }}</td>
-            <td class="price">{{ formatMoney(it.unit_price_cents * it.quantity) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="od-body">
+        <!-- 左列：商品清单 -->
+        <div class="card od-items">
+          <div class="od-section-title">商品清单（{{ order.items.length }}）</div>
+          <table class="list od-table">
+            <thead><tr><th>商品</th><th class="ta-r">单价</th><th class="ta-c">数量</th><th class="ta-r">小计</th></tr></thead>
+            <tbody>
+              <tr v-for="(it, i) in order.items" :key="i">
+                <td class="od-product">{{ it.product_name }}</td>
+                <td class="price ta-r">{{ formatMoney(it.unit_price_cents) }}</td>
+                <td class="ta-c">×{{ it.quantity }}</td>
+                <td class="price ta-r od-subtotal">{{ formatMoney(it.unit_price_cents * it.quantity) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
-        <div>合计：<b>{{ formatMoney(order.total_cents) }}</b></div>
-      </div>
-
-      <div class="muted" style="margin-bottom: 16px;">下单时间：{{ fmtTime(order.created_at) }}</div>
-
-      <div class="actions">
-        <router-link class="btn" :to="`/payment/${order.order_no}`" v-if="order.status === 'pending_payment'">去支付</router-link>
-        <router-link
-          class="btn secondary"
-          :to="`/fetch?order_no=${order.order_no}`"
-          v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
-        >取货</router-link>
-        <button class="btn secondary" v-if="order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
+        <!-- 右列：订单摘要（金额 + 操作） -->
+        <div class="od-side">
+          <div class="card">
+            <div class="od-section-title">订单金额</div>
+            <div class="od-amount-row">
+              <span>实付合计</span>
+              <b class="od-amount">{{ formatMoney(order.total_cents) }}</b>
+            </div>
+          </div>
+          <div class="card">
+            <div class="od-section-title">可用操作</div>
+            <div class="od-actions">
+              <router-link class="btn od-action-btn" :to="`/payment/${order.order_no}`" v-if="order.status === 'pending_payment'">去支付</router-link>
+              <router-link
+                class="btn secondary od-action-btn"
+                :to="`/fetch?order_no=${order.order_no}`"
+                v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
+              >取货</router-link>
+              <button class="btn secondary od-action-btn" v-if="order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
+            </div>
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -47,12 +65,11 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { getOrder, cancelMyOrder, type OrderDetail } from '@/api';
 import { formatMoney } from '@/api/client';
 
 const route = useRoute();
-const router = useRouter();
 const orderNo = String(route.params.orderNo || '');
 const loading = ref(false);
 const error = ref('');
@@ -93,3 +110,46 @@ function fmtTime(ts: number): string {
   return ts ? new Date(ts * 1000).toLocaleString() : '';
 }
 </script>
+
+<style scoped>
+.order-detail { display: flex; flex-direction: column; gap: 16px; }
+
+/* 页头 */
+.od-head { display: flex; align-items: center; gap: 14px; }
+.od-back { font-size: 13px; color: #6b7280; text-decoration: none; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
+.od-back:hover { color: #2563eb; background: #eff6ff; }
+.od-title { font-size: 20px; margin: 0; color: #111827; }
+
+/* 状态条：全宽卡片 */
+.od-status-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.od-status-badge { font-size: 13px; padding: 3px 12px; }
+.od-status-meta { display: flex; flex-direction: column; gap: 2px; }
+.od-order-no { font-size: 14px; font-weight: 600; color: #1f2329; }
+
+/* 主体：左清单 + 右摘要（大厂订单详情经典两栏；窄屏堆叠） */
+.od-body { display: flex; gap: 16px; align-items: flex-start; }
+.od-items { flex: 1; min-width: 0; }
+.od-side { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+@media (max-width: 860px) {
+  .od-body { flex-direction: column; }
+  .od-side { width: 100%; }
+}
+
+.od-section-title { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 12px; }
+.od-table { font-size: 14px; }
+.od-table th { padding: 10px 12px; background: #f9fafb; }
+.od-table td { padding: 12px; }
+.od-product { font-weight: 500; color: #1f2329; }
+.od-subtotal { font-size: 15px; }
+.ta-r { text-align: right; }
+.ta-c { text-align: center; }
+
+/* 摘要卡 */
+.od-amount-row {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 4px 0 8px; font-size: 13px; color: #6b7280;
+}
+.od-amount { font-size: 24px; font-weight: 800; color: #ff5722; font-variant-numeric: tabular-nums; }
+.od-actions { display: flex; flex-direction: column; gap: 10px; }
+.od-action-btn { text-align: center; }
+</style>
