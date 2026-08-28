@@ -1314,6 +1314,12 @@ func init() {
 	paymentchannelDescEnabled := paymentchannelFields[9].Descriptor()
 	// paymentchannel.DefaultEnabled holds the default value on creation for the enabled field.
 	paymentchannel.DefaultEnabled = paymentchannelDescEnabled.Default.(bool)
+	// paymentchannelDescIcon is the schema descriptor for icon field.
+	paymentchannelDescIcon := paymentchannelFields[10].Descriptor()
+	// paymentchannel.DefaultIcon holds the default value on creation for the icon field.
+	paymentchannel.DefaultIcon = paymentchannelDescIcon.Default.(string)
+	// paymentchannel.IconValidator is a validator for the "icon" field. It is called by the builders before save.
+	paymentchannel.IconValidator = paymentchannelDescIcon.Validators[0].(func(string) error)
 	pointaccountFields := schema.PointAccount{}.Fields()
 	_ = pointaccountFields
 	// pointaccountDescBalance is the schema descriptor for balance field.

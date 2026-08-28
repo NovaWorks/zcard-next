@@ -1183,6 +1183,8 @@ var (
 		{Name: "fee_bearer", Type: field.TypeEnum, Enums: []string{"merchant", "user"}, Default: "merchant"},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "icon", Type: field.TypeString, Size: 500, Default: ""},
+		{Name: "methods", Type: field.TypeJSON, Nullable: true},
 	}
 	// PaymentChannelsTable holds the schema information for the "payment_channels" table.
 	PaymentChannelsTable = &schema.Table{

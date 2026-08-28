@@ -38,6 +38,10 @@ const (
 	FieldSort = "sort"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
+	// FieldIcon holds the string denoting the icon field in the database.
+	FieldIcon = "icon"
+	// FieldMethods holds the string denoting the methods field in the database.
+	FieldMethods = "methods"
 	// Table holds the table name of the paymentchannel in the database.
 	Table = "payment_channels"
 )
@@ -57,6 +61,8 @@ var Columns = []string{
 	FieldFeeBearer,
 	FieldSort,
 	FieldEnabled,
+	FieldIcon,
+	FieldMethods,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -90,6 +96,10 @@ var (
 	DefaultSort int32
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
+	// DefaultIcon holds the default value on creation for the "icon" field.
+	DefaultIcon string
+	// IconValidator is a validator for the "icon" field. It is called by the builders before save.
+	IconValidator func(string) error
 )
 
 // FeeType defines the type for the "fee_type" enum field.
@@ -205,4 +215,9 @@ func BySort(opts ...sql.OrderTermOption) OrderOption {
 // ByEnabled orders the results by the enabled field.
 func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
+}
+
+// ByIcon orders the results by the icon field.
+func ByIcon(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIcon, opts...).ToFunc()
 }

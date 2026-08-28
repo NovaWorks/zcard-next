@@ -33,6 +33,12 @@ func (PaymentChannel) Fields() []ent.Field {
 		field.Enum("fee_bearer").Values("merchant", "user").Default("merchant").Comment("手续费承担方"),
 		field.Int32("sort").Default(0),
 		field.Bool("enabled").Default(true),
+		// 方式级收银台（大厂模式：渠道=网关凭据单位，支付方式=顾客看到的选项）：
+		// icon 渠道级自定义图标（素材库 URL，空=回落内置徽标）；methods 方式列表
+		// [{code,name,icon,enabled,params}]——params 承载网关参数（易支付 type / USDT network+token）。
+		// 空 methods = 单方式渠道（旧语义，收银台显示渠道本身）。
+		field.String("icon").MaxLen(500).Default(""),
+		field.JSON("methods", []map[string]any{}).Optional(),
 	}
 }
 

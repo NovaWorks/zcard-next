@@ -108,13 +108,59 @@ func (r *PaymentRepoImpl) ListChannels(ctx context.Context) ([]*ent.PaymentChann
 		All(ctx)
 }
 
-// CreateChannel 创建渠道（凭据加密入库）。
-func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32) (*ent.PaymentChannel, error) {
+// ChannelMethod 支付方式（收银台顾客看到的选项；params 承载网关路由参数）。
+type ChannelMethod struct {
+	Code    string            `json:"code"`
+	Name    string            `json:"name"`
+	Icon    string            `json:"icon,omitempty"`
+	Enabled bool              `json:"enabled"`
+	Params  map[string]string `json:"params,omitempty"`
+}
+
+// parseMethods 渠道方式列表解析（methods JSON 空 → nil = 单方式渠道旧语义）。
+func parseMethods(ch *ent.PaymentChannel) []ChannelMethod {
+	if len(ch.Methods) == 0 {
+		return nil
+	}
+	b, err := json.Marshal(ch.Methods)
+	if err != nil {
+		return nil
+	}
+	var out []ChannelMethod
+	if json.Unmarshal(b, &out) != nil {
+		return nil
+	}
+	return out
+}
+
+// methodsJSON 校验并归一化方式列表 JSON（空串 → nil）。
+func methodsJSON(raw string) ([]map[string]any, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	var ms []ChannelMethod
+	if err := json.Unmarshal([]byte(raw), &ms); err != nil {
+		return nil, fmt.Errorf("payment.METHODS_INVALID: 支付方式列表格式错误: %w", err)
+	}
+	for _, m := range ms {
+		if m.Code == "" || m.Name == "" {
+			return nil, fmt.Errorf("payment.METHODS_INVALID: 方式的 code/name 必填")
+		}
+	}
+	b, _ := json.Marshal(ms)
+	var out []map[string]any
+	_ = json.Unmarshal(b, &out)
+	return out, nil
+}
+
+// CreateChannel 创建渠道（凭据加密入库；methodsJSON=支付方式列表）。
+func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32, icon string, methods []map[string]any) (*ent.PaymentChannel, error) {
 	enc, err := r.Cipher.Seal([]byte(configJSON), []byte("payment_channel:"+code))
 	if err != nil {
 		return nil, fmt.Errorf("payment: 凭据加密失败: %w", err)
 	}
-	return data.Client(ctx, r.data).PaymentChannel.Create().
+	q := data.Client(ctx, r.data).PaymentChannel.Create().
 		SetName(name).
 		SetCode(code).
 		SetDriver(driver).
@@ -123,11 +169,16 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 		SetFeeType(paymentchannel.FeeType(feeType)).
 		SetEnabled(enabled).
 		SetSort(sort).
-		Save(ctx)
+		SetIcon(icon)
+	if methods != nil {
+		q = q.SetMethods(methods)
+	}
+	return q.Save(ctx)
 }
 
-// UpdateChannel 更新渠道（config_json=**** 跳过凭据修改；feeType 空=不修改）。
-func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32) (*ent.PaymentChannel, error) {
+// UpdateChannel 更新渠道（config_json=**** 跳过凭据修改；feeType 空=不修改；
+// setIcon/setMethods=false 保持原值——proto optional 语义）。
+func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32, setIcon bool, icon string, setMethods bool, methods []map[string]any) (*ent.PaymentChannel, error) {
 	q := data.Client(ctx, r.data).PaymentChannel.UpdateOneID(id)
 	if name != "" {
 		q.SetName(name)
@@ -152,6 +203,16 @@ func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, co
 	q.SetEnabled(enabled)
 	if sort >= 0 {
 		q.SetSort(sort)
+	}
+	if setIcon {
+		q.SetIcon(icon)
+	}
+	if setMethods {
+		if methods != nil {
+			q.SetMethods(methods)
+		} else {
+			q.ClearMethods()
+		}
 	}
 	return q.Save(ctx)
 }
@@ -537,14 +598,21 @@ func (r *PaymentRepoImpl) ListRefunds(ctx context.Context, status string) ([]*en
 
 // ── DTO 转换 ────────────────────────────────────────────────
 
-// ToChannelPB 转 admin 协议（凭据脱敏）。
+// ToChannelPB 转 admin 协议（凭据脱敏；icon/methods_json 原样下发）。
 func ToChannelPB(ch *ent.PaymentChannel) *adminv1.Channel {
-	return &adminv1.Channel{
+	pb := &adminv1.Channel{
 		Id: ch.ID, Name: ch.Name, Code: ch.Code, Driver: ch.Driver,
 		ConfigJson: `"****"`, // 凭据永不明文下发
 		Fee:        ch.Fee, FeeType: string(ch.FeeType),
 		Enabled: ch.Enabled, Sort: ch.Sort,
+		Icon: ch.Icon,
 	}
+	if ms := parseMethods(ch); len(ms) > 0 {
+		if b, err := json.Marshal(ms); err == nil {
+			pb.MethodsJson = string(b)
+		}
+	}
+	return pb
 }
 
 // ToPaymentPB 转支付单协议。

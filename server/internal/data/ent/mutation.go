@@ -39194,6 +39194,9 @@ type PaymentChannelMutation struct {
 	sort          *int32
 	addsort       *int32
 	enabled       *bool
+	icon          *string
+	methods       *[]map[string]interface{}
+	appendmethods []map[string]interface{}
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*PaymentChannel, error)
@@ -39796,6 +39799,107 @@ func (m *PaymentChannelMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetIcon sets the "icon" field.
+func (m *PaymentChannelMutation) SetIcon(s string) {
+	m.icon = &s
+}
+
+// Icon returns the value of the "icon" field in the mutation.
+func (m *PaymentChannelMutation) Icon() (r string, exists bool) {
+	v := m.icon
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIcon returns the old "icon" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldIcon(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIcon is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIcon requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIcon: %w", err)
+	}
+	return oldValue.Icon, nil
+}
+
+// ResetIcon resets all changes to the "icon" field.
+func (m *PaymentChannelMutation) ResetIcon() {
+	m.icon = nil
+}
+
+// SetMethods sets the "methods" field.
+func (m *PaymentChannelMutation) SetMethods(value []map[string]interface{}) {
+	m.methods = &value
+	m.appendmethods = nil
+}
+
+// Methods returns the value of the "methods" field in the mutation.
+func (m *PaymentChannelMutation) Methods() (r []map[string]interface{}, exists bool) {
+	v := m.methods
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMethods returns the old "methods" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldMethods(ctx context.Context) (v []map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMethods is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMethods requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMethods: %w", err)
+	}
+	return oldValue.Methods, nil
+}
+
+// AppendMethods adds value to the "methods" field.
+func (m *PaymentChannelMutation) AppendMethods(value []map[string]interface{}) {
+	m.appendmethods = append(m.appendmethods, value...)
+}
+
+// AppendedMethods returns the list of values that were appended to the "methods" field in this mutation.
+func (m *PaymentChannelMutation) AppendedMethods() ([]map[string]interface{}, bool) {
+	if len(m.appendmethods) == 0 {
+		return nil, false
+	}
+	return m.appendmethods, true
+}
+
+// ClearMethods clears the value of the "methods" field.
+func (m *PaymentChannelMutation) ClearMethods() {
+	m.methods = nil
+	m.appendmethods = nil
+	m.clearedFields[paymentchannel.FieldMethods] = struct{}{}
+}
+
+// MethodsCleared returns if the "methods" field was cleared in this mutation.
+func (m *PaymentChannelMutation) MethodsCleared() bool {
+	_, ok := m.clearedFields[paymentchannel.FieldMethods]
+	return ok
+}
+
+// ResetMethods resets all changes to the "methods" field.
+func (m *PaymentChannelMutation) ResetMethods() {
+	m.methods = nil
+	m.appendmethods = nil
+	delete(m.clearedFields, paymentchannel.FieldMethods)
+}
+
 // Where appends a list predicates to the PaymentChannelMutation builder.
 func (m *PaymentChannelMutation) Where(ps ...predicate.PaymentChannel) {
 	m.predicates = append(m.predicates, ps...)
@@ -39830,7 +39934,7 @@ func (m *PaymentChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentChannelMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, paymentchannel.FieldCreatedAt)
 	}
@@ -39867,6 +39971,12 @@ func (m *PaymentChannelMutation) Fields() []string {
 	if m.enabled != nil {
 		fields = append(fields, paymentchannel.FieldEnabled)
 	}
+	if m.icon != nil {
+		fields = append(fields, paymentchannel.FieldIcon)
+	}
+	if m.methods != nil {
+		fields = append(fields, paymentchannel.FieldMethods)
+	}
 	return fields
 }
 
@@ -39899,6 +40009,10 @@ func (m *PaymentChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.Sort()
 	case paymentchannel.FieldEnabled:
 		return m.Enabled()
+	case paymentchannel.FieldIcon:
+		return m.Icon()
+	case paymentchannel.FieldMethods:
+		return m.Methods()
 	}
 	return nil, false
 }
@@ -39932,6 +40046,10 @@ func (m *PaymentChannelMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldSort(ctx)
 	case paymentchannel.FieldEnabled:
 		return m.OldEnabled(ctx)
+	case paymentchannel.FieldIcon:
+		return m.OldIcon(ctx)
+	case paymentchannel.FieldMethods:
+		return m.OldMethods(ctx)
 	}
 	return nil, fmt.Errorf("unknown PaymentChannel field %s", name)
 }
@@ -40025,6 +40143,20 @@ func (m *PaymentChannelMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetEnabled(v)
 		return nil
+	case paymentchannel.FieldIcon:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIcon(v)
+		return nil
+	case paymentchannel.FieldMethods:
+		v, ok := value.([]map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMethods(v)
+		return nil
 	}
 	return fmt.Errorf("unknown PaymentChannel field %s", name)
 }
@@ -40093,7 +40225,11 @@ func (m *PaymentChannelMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PaymentChannelMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(paymentchannel.FieldMethods) {
+		fields = append(fields, paymentchannel.FieldMethods)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -40106,6 +40242,11 @@ func (m *PaymentChannelMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PaymentChannelMutation) ClearField(name string) error {
+	switch name {
+	case paymentchannel.FieldMethods:
+		m.ClearMethods()
+		return nil
+	}
 	return fmt.Errorf("unknown PaymentChannel nullable field %s", name)
 }
 
@@ -40148,6 +40289,12 @@ func (m *PaymentChannelMutation) ResetField(name string) error {
 		return nil
 	case paymentchannel.FieldEnabled:
 		m.ResetEnabled()
+		return nil
+	case paymentchannel.FieldIcon:
+		m.ResetIcon()
+		return nil
+	case paymentchannel.FieldMethods:
+		m.ResetMethods()
 		return nil
 	}
 	return fmt.Errorf("unknown PaymentChannel field %s", name)

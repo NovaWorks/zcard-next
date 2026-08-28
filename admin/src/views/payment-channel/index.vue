@@ -26,6 +26,7 @@ import {
 } from "naive-ui";
 import { fetchChannels, fetchDrivers, fetchFieldOptions, createChannel, updateChannel, deleteChannel } from "@/service/api";
 import PaymentsTab from "./components/payments-tab.vue";
+import MediaField from "@/components/common/media-picker/media-field.vue";
 import { checkAuth } from "@/directives";
 
 defineOptions({ name: "PaymentChannelManagement" });
@@ -63,6 +64,18 @@ interface ChannelRow {
   enabled: boolean;
   fee: number;
   fee_type: string;
+  icon?: string;
+  methods_json?: string;
+}
+
+// 支付方式（收银台顾客看到的选项；params=网关路由参数）
+interface MethodRow {
+  code: string;
+  name: string;
+  icon: string;
+  iconArr: string[]; // 编辑态（MediaField 数组绑定；保存收成 icon）
+  enabled: boolean;
+  params: Record<string, string>;
 }
 
 // ── 品牌徽标（品牌色字母徽章；未知驱动回落通用卡标）──
@@ -102,7 +115,63 @@ const form = reactive({
   fee_type: "fixed",
   fee: 0,
   values: {} as Record<string, any>,
+  icon: [] as string[], // 渠道图标（MediaField 单图；空=回落内置徽标）
+  methods: [] as MethodRow[], // 支付方式列表（聚合网关按方式收银）
 });
+
+// 聚合网关（一个渠道多种支付方式）：epay 协议 type 路由 / USDT 按链选择
+const isAggregateDriver = computed(() => ["epay", "epusdt"].includes(current.value?.driver || ""));
+
+// 方式参数选项（易支付协议 type / USDT network——网关参数域，静态即可）
+const EPAY_TYPES = [
+  { label: "支付宝", value: "alipay" },
+  { label: "微信支付", value: "wxpay" },
+  { label: "QQ 钱包", value: "qqpay" },
+  { label: "京东支付", value: "jdpay" },
+  { label: "银行", value: "bank" },
+];
+const USDT_NETWORKS = [
+  { label: "TRC20（推荐，手续费最低）", value: "tron" },
+  { label: "ERC20（以太坊）", value: "erc20" },
+  { label: "BEP20（BSC）", value: "bep20" },
+  { label: "Polygon", value: "polygon" },
+];
+
+function addMethod() {
+  form.methods.push({
+    code: current.value?.driver === "epusdt" ? `usdt-trc20` : "alipay",
+    name: "",
+    icon: "",
+    iconArr: [],
+    enabled: true,
+    params: current.value?.driver === "epusdt" ? { network: "tron", token: "USDT" } : { type: "alipay" },
+  });
+}
+
+/** 按模板生成默认方式：epay → 支付宝+微信；epusdt → 按凭据已选 network 逐链生成 */
+function genDefaultMethods() {
+  if (current.value?.driver === "epay") {
+    form.methods = [
+      { code: "alipay", name: "支付宝", icon: "", iconArr: [], enabled: true, params: { type: "alipay" } },
+      { code: "wxpay", name: "微信支付", icon: "", iconArr: [], enabled: true, params: { type: "wxpay" } },
+    ];
+  } else if (current.value?.driver === "epusdt") {
+    const networks: string[] = Array.isArray(form.values.network) ? form.values.network : [];
+    const list = networks.length ? networks : ["tron"];
+    form.methods = list.map((nw: string) => {
+      const opt = USDT_NETWORKS.find((o) => o.value === nw);
+      const label = (opt?.label || nw).split("（")[0];
+      return {
+        code: `usdt-${nw}`,
+        name: `USDT · ${label}`,
+        icon: "",
+        iconArr: [],
+        enabled: true,
+        params: { network: nw, token: "USDT" },
+      };
+    });
+  }
+}
 
 // 动态选项（epusdt network/token——以网关 supported_assets 为准；失败回落静态 + 提示）
 const dynamicOpts = reactive<Record<string, { options: { label: string; value: string }[]; fallback: boolean }>>({});
@@ -193,6 +262,14 @@ async function handleAdd() {
       enabled: true,
       fee: 0,
       fee_type: "fixed",
+      // 易支付默认挂支付宝+微信两方式（配置弹窗可增删改）
+      methods_json:
+        d.code === "epay"
+          ? JSON.stringify([
+              { code: "alipay", name: "支付宝", icon: "", enabled: true, params: { type: "alipay" } },
+              { code: "wxpay", name: "微信支付", icon: "", enabled: true, params: { type: "wxpay" } },
+            ])
+          : "",
     });
     if (!error && data) created.push(data);
   }
@@ -238,6 +315,16 @@ function openConfig(ch: ChannelRow) {
   for (const f of currentFields.value) {
     if (f.dynamic) loadFieldOptions(f);
   }
+  // 图标与支付方式回填
+  form.icon = ch.icon ? [ch.icon] : [];
+  try {
+    form.methods = (JSON.parse(ch.methods_json || "[]") as MethodRow[]).map((m) => ({
+      code: m.code, name: m.name, icon: m.icon || "", iconArr: m.icon ? [m.icon] : [],
+      enabled: m.enabled !== false, params: m.params || {},
+    }));
+  } catch {
+    form.methods = [];
+  }
   configVisible.value = true;
 }
 
@@ -265,11 +352,33 @@ function handleConfigSave() {
       if (sv && sv !== "****") cfg[f.key] = sv;
     }
   }
+  // 支付方式校验（聚合网关）：code/name 必填且 code 不重复
+  if (isAggregateDriver.value) {
+    const seen = new Set<string>();
+    for (const m of form.methods) {
+      if (!m.code.trim() || !m.name.trim()) {
+        message.warning("支付方式的标识与名称必填");
+        return;
+      }
+      if (seen.has(m.code.trim())) {
+        message.warning(`支付方式标识「${m.code}」重复`);
+        return;
+      }
+      seen.add(m.code.trim());
+    }
+  }
   const payload: Record<string, any> = {
     name: form.name.trim(),
     enabled: form.enabled,
     fee_type: form.fee_type,
     fee: Math.round(form.fee * (form.fee_type === "percent" ? 100 : 100)),
+    icon: form.icon[0] || "",
+    methods_json: isAggregateDriver.value
+      ? JSON.stringify(form.methods.map((m) => ({
+          code: m.code.trim(), name: m.name.trim(), icon: (m.iconArr && m.iconArr[0]) || m.icon || "",
+          enabled: m.enabled, params: m.params,
+        })))
+      : "",
   };
   if (Object.keys(cfg).length > 0) payload.config_json = JSON.stringify(cfg);
   saving.value = true;
@@ -447,9 +556,67 @@ onMounted(() => {
         <NFormItem label="渠道名称">
           <NInput v-model:value="form.name" placeholder="渠道显示名称" />
         </NFormItem>
+        <NFormItem label="渠道图标">
+          <div class="w-full">
+            <MediaField v-model:value="form.icon" tip="收银台渠道/方式图标（建议 1:1 透明 PNG）；留空使用内置徽标" />
+          </div>
+        </NFormItem>
         <NFormItem label="启用">
           <NSwitch v-model:value="form.enabled" />
         </NFormItem>
+
+        <!-- 支付方式（聚合网关）：易支付按支付宝/微信分开收、USDT 按链选择 -->
+        <template v-if="isAggregateDriver">
+          <NDivider title-placement="left" style="margin: 4px 0 16px">
+            支付方式（顾客在收银台看到的选项）
+          </NDivider>
+          <div class="flex items-center justify-between mb-8px">
+            <span class="text-12px opacity-60">
+              {{ current?.driver === "epay" ? "同一易支付网关可分开接入支付宝/微信等，顾客按方式下单" : "每条链一个方式，顾客支付时自选收款链" }}
+            </span>
+            <div class="flex gap-8px">
+              <NButton size="tiny" secondary @click="genDefaultMethods">按模板生成</NButton>
+              <NButton size="tiny" type="primary" secondary @click="addMethod">添加方式</NButton>
+            </div>
+          </div>
+          <div class="flex flex-col gap-8px mb-8px">
+            <div
+              v-for="(m, i) in form.methods"
+              :key="i"
+              class="rounded-8px border border-#e5e7eb dark:border-#333 p-10px flex flex-wrap items-center gap-8px"
+              :class="{ 'opacity-50': !m.enabled }"
+            >
+              <NSwitch v-model:value="m.enabled" size="small" />
+              <NInput v-model:value="m.name" size="small" placeholder="方式名称（如 支付宝）" style="width: 150px" />
+              <NInput v-model:value="m.code" size="small" placeholder="标识（如 alipay）" style="width: 120px" />
+              <NSelect
+                v-if="current?.driver === 'epay'"
+                v-model:value="m.params.type"
+                size="small"
+                :options="EPAY_TYPES"
+                placeholder="网关支付类型"
+                style="width: 130px"
+              />
+              <template v-else>
+                <NSelect
+                  v-model:value="m.params.network"
+                  size="small"
+                  :options="USDT_NETWORKS"
+                  placeholder="收款链"
+                  style="width: 170px"
+                />
+                <NInput v-model:value="m.params.token" size="small" placeholder="代币" style="width: 90px" />
+              </template>
+              <div class="w-80px">
+                <MediaField v-model:value="m.iconArr" />
+              </div>
+              <NButton size="tiny" type="error" quaternary @click="form.methods.splice(i, 1)">删除</NButton>
+            </div>
+            <div v-if="form.methods.length === 0" class="text-12px opacity-50 py-4px">
+              尚未配置支付方式——顾客将看到渠道本身（或点「按模板生成」快速创建）
+            </div>
+          </div>
+        </template>
 
         <!-- 手续费 -->
         <NDivider title-placement="left" style="margin: 4px 0 16px">手续费</NDivider>

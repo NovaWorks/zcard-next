@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -40,7 +41,11 @@ type PaymentChannel struct {
 	// Sort holds the value of the "sort" field.
 	Sort int32 `json:"sort,omitempty"`
 	// Enabled holds the value of the "enabled" field.
-	Enabled      bool `json:"enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+	// Icon holds the value of the "icon" field.
+	Icon string `json:"icon,omitempty"`
+	// Methods holds the value of the "methods" field.
+	Methods      []map[string]interface{} `json:"methods,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -49,13 +54,13 @@ func (*PaymentChannel) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case paymentchannel.FieldConfig:
+		case paymentchannel.FieldConfig, paymentchannel.FieldMethods:
 			values[i] = new([]byte)
 		case paymentchannel.FieldEnabled:
 			values[i] = new(sql.NullBool)
 		case paymentchannel.FieldID, paymentchannel.FieldSubsiteID, paymentchannel.FieldFee, paymentchannel.FieldSort:
 			values[i] = new(sql.NullInt64)
-		case paymentchannel.FieldName, paymentchannel.FieldCode, paymentchannel.FieldDriver, paymentchannel.FieldFeeType, paymentchannel.FieldFeeBearer:
+		case paymentchannel.FieldName, paymentchannel.FieldCode, paymentchannel.FieldDriver, paymentchannel.FieldFeeType, paymentchannel.FieldFeeBearer, paymentchannel.FieldIcon:
 			values[i] = new(sql.NullString)
 		case paymentchannel.FieldCreatedAt, paymentchannel.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -152,6 +157,20 @@ func (_m *PaymentChannel) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Enabled = value.Bool
 			}
+		case paymentchannel.FieldIcon:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field icon", values[i])
+			} else if value.Valid {
+				_m.Icon = value.String
+			}
+		case paymentchannel.FieldMethods:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field methods", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.Methods); err != nil {
+					return fmt.Errorf("unmarshal field methods: %w", err)
+				}
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -223,6 +242,12 @@ func (_m *PaymentChannel) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
+	builder.WriteString(", ")
+	builder.WriteString("icon=")
+	builder.WriteString(_m.Icon)
+	builder.WriteString(", ")
+	builder.WriteString("methods=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Methods))
 	builder.WriteByte(')')
 	return builder.String()
 }

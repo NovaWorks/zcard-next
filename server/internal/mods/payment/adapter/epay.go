@@ -68,9 +68,15 @@ func (a *EpayAdapter) CreatePayment(_ context.Context, req port.CreatePaymentReq
 		returnURL = c.ReturnURL
 	}
 
+	// 方式级参数（收银台顾客选「微信/支付宝…」）：method.params.type 覆写协议支付类型；
+	// 未选（旧单方式语义）回落 alipay。
+	payType := "alipay"
+	if t := req.MethodParams["type"]; t != "" {
+		payType = t
+	}
 	params := map[string]string{
 		"pid":          c.PID,
-		"type":         "alipay",
+		"type":         payType,
 		"out_trade_no": req.OrderNo,
 		"notify_url":   notifyURL,
 		"return_url":   returnURL,

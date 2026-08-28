@@ -13,6 +13,8 @@ export function createChannel(data: {
   config_json: string;
   fee?: number;
   fee_type?: string;
+  icon?: string;
+  methods_json?: string;
   enabled?: boolean;
 }) {
   return request({

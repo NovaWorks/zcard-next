@@ -32,11 +32,21 @@ message ChannelItem {
   string code = 1;
   string name = 2;   // 渠道名称（管理端配置）
   string driver = 3;
+  string icon = 4;   // 渠道自定义图标 URL（空=前端回落内置徽标）
+  repeated MethodItem methods = 5; // 支付方式列表（聚合网关；空=单方式渠道）
+}
+
+// MethodItem 支付方式（收银台顾客看到的选项：支付宝/微信/USDT-TRC20…）。
+message MethodItem {
+  string code = 1;
+  string name = 2;
+  string icon = 3; // 方式级自定义图标（空=回落渠道图标/内置徽标）
 }
 
 message CreatePaymentRequest {
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   string channel = 2 [(google.api.field_behavior) = REQUIRED];
+  string method = 3; // 支付方式 code（多方式渠道必选；单方式渠道可空）
 }
 
 message CreatePaymentReply {

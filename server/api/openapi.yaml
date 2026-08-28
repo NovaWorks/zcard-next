@@ -6541,6 +6541,10 @@ components:
                         type: string
                 callbackUrl:
                     type: string
+                icon:
+                    type: string
+                methodsJson:
+                    type: string
             description: Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
         zcard.api.admin.v1.ChannelList:
             type: object
@@ -6738,6 +6742,10 @@ components:
                 sort:
                     type: integer
                     format: int32
+                icon:
+                    type: string
+                methodsJson:
+                    type: string
         zcard.api.admin.v1.CreateConnectionRequest:
             required:
                 - name
@@ -9831,6 +9839,10 @@ components:
                 sort:
                     type: integer
                     format: int32
+                icon:
+                    type: string
+                methodsJson:
+                    type: string
         zcard.api.admin.v1.UpdateConnectionRequest:
             required:
                 - id
@@ -10440,6 +10452,12 @@ components:
                     type: string
                 driver:
                     type: string
+                icon:
+                    type: string
+                methods:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.MethodItem'
         zcard.api.storefront.v1.ChannelListReply:
             type: object
             properties:
@@ -10528,6 +10546,8 @@ components:
                 orderNo:
                     type: string
                 channel:
+                    type: string
+                method:
                     type: string
         zcard.api.storefront.v1.CreateRechargeReply:
             type: object
@@ -11055,6 +11075,16 @@ components:
                     type: string
                 promoCode:
                     type: string
+        zcard.api.storefront.v1.MethodItem:
+            type: object
+            properties:
+                code:
+                    type: string
+                name:
+                    type: string
+                icon:
+                    type: string
+            description: MethodItem 支付方式（收银台顾客看到的选项：支付宝/微信/USDT-TRC20…）。
         zcard.api.storefront.v1.MyAffiliateReply:
             type: object
             properties:

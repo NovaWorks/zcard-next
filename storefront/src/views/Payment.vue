@@ -64,7 +64,7 @@
     <div v-else-if="phase === 'qrcode'" class="pay-qr-layout">
       <div class="pay-qr-main">
         <div class="pay-qr-head">
-          <span class="pay-channel-icon">{{ channelIcon(payingChannel) }}</span>
+          <span class="pay-channel-icon">{{ payingChannel ? emojiOf(selected.method || payingChannel.code, payingChannel.driver) : '💳' }}</span>
           <div>
             <div class="pay-qr-title">{{ payingChannel?.name || '扫码支付' }}</div>
             <div class="muted">请使用手机扫一扫完成支付</div>
@@ -128,18 +128,21 @@
       <!-- 渠道网格 -->
       <div class="pay-channels">
         <div class="pay-channels-title">选择支付方式</div>
-        <div v-if="channels.length" class="pay-channel-grid">
+        <div v-if="payOptions.length" class="pay-channel-grid">
           <button
-            v-for="c in channels"
-            :key="c.code"
+            v-for="o in payOptions"
+            :key="o.channel + ':' + o.method"
             class="pay-channel"
-            :class="{ active: channel === c.code }"
-            @click="channel = c.code"
+            :class="{ active: selected.channel === o.channel && selected.method === o.method }"
+            @click="selected = { channel: o.channel, method: o.method }"
           >
-            <span class="pay-channel-icon">{{ channelIcon(c) }}</span>
-            <span class="pay-channel-name">{{ c.name }}</span>
-            <span class="pay-channel-sub">{{ c.driver === 'wallet' ? '使用账户余额' : '在线支付' }}</span>
-            <span v-if="channel === c.code" class="pay-channel-check">✓</span>
+            <span class="pay-channel-icon">
+              <img v-if="o.icon" :src="o.icon" :alt="o.name" class="pay-channel-img" />
+              <template v-else>{{ o.emoji }}</template>
+            </span>
+            <span class="pay-channel-name">{{ o.name }}</span>
+            <span class="pay-channel-sub">{{ o.sub }}</span>
+            <span v-if="selected.channel === o.channel && selected.method === o.method" class="pay-channel-check">✓</span>
           </button>
         </div>
         <div v-else class="pay-no-channel">暂无可用的支付渠道，请联系客服</div>
@@ -147,7 +150,7 @@
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-      <button class="pay-submit" :disabled="!channel || submitting" @click="pay">
+      <button class="pay-submit" :disabled="!selected.channel || submitting" @click="pay">
         {{ submitting ? '创建支付中…' : `立即支付 ${formatMoney(order?.total_cents || 0)}` }}
       </button>
       <div class="pay-assure">🔒 支付过程安全加密 · 支付成功后自动发放卡密</div>
@@ -172,7 +175,8 @@ const phase = ref<Phase>('loading');
 
 const order = ref<OrderDetail | null>(null);
 const channels = ref<ChannelItem[]>([]);
-const channel = ref('');
+// 方式级选择：channel=渠道码 + method=方式 code（单方式渠道 method 为空串）
+const selected = ref<{ channel: string; method: string }>({ channel: '', method: '' });
 const payingChannel = ref<ChannelItem | null>(null);
 const submitting = ref(false);
 const error = ref('');
@@ -206,11 +210,39 @@ const countdownDanger = computed(() => countdown.value !== null && countdown.val
 
 const itemCount = computed(() => order.value?.items?.reduce((s, i) => s + i.quantity, 0) || 0);
 
-function channelIcon(c?: ChannelItem | null): string {
-  if (!c) return '💳';
-  const map: Record<string, string> = { wallet: '💰', alipay: '🅰️', wechat: '💬', epay: '⚡', epusdt: '₮', stripe: '🟦', paypal: '🅿️' };
-  return map[c.driver] || c.name.slice(0, 1);
+// 方式/渠道内置 emoji 回落（未配置自定义图标时）
+const EMOJI: Record<string, string> = {
+  wallet: '💰', alipay: '🅰️', wxpay: '💬', wechat: '💬', qqpay: '🐧',
+  epay: '⚡', epusdt: '₮', stripe: '🟦', paypal: '🅿️',
+};
+function emojiOf(code: string, driver: string) {
+  return EMOJI[code] || EMOJI[driver] || '💳';
 }
+
+// 渠道 → 收银台方式级选项展平：多方式渠道（易支付/USDT 网关）每个方式一个选项，
+// 顾客看到的是「支付宝 / 微信 / USDT·TRC20」而不是网关本身；单方式渠道保持原样。
+const payOptions = computed(() => {
+  const out: { channel: string; method: string; name: string; icon?: string; emoji: string; sub: string }[] = [];
+  for (const c of channels.value) {
+    const methods = (c.methods || []).filter((m) => m.name);
+    if (methods.length > 0) {
+      for (const m of methods) {
+        out.push({
+          channel: c.code, method: m.code, name: m.name,
+          icon: m.icon || c.icon || undefined, emoji: emojiOf(m.code, c.driver),
+          sub: c.driver === 'epusdt' ? 'USDT 链上收款' : '在线支付',
+        });
+      }
+    } else {
+      out.push({
+        channel: c.code, method: '', name: c.name,
+        icon: c.icon || undefined, emoji: emojiOf(c.code, c.driver),
+        sub: c.driver === 'wallet' ? '使用账户余额' : '在线支付',
+      });
+    }
+  }
+  return out;
+});
 
 onMounted(async () => {
   // 支付回跳/分享兜底：?pwd= 直填会话记忆（不落 URL 历史——replace 清参）
@@ -227,7 +259,8 @@ onMounted(async () => {
   }
   const { data } = await fetchPaymentChannels();
   channels.value = data?.channels || [];
-  channel.value = channels.value[0]?.code || '';
+  const first = payOptions.value[0];
+  selected.value = first ? { channel: first.channel, method: first.method } : { channel: '', method: '' };
   if (phase.value === 'success') loadDelivery();
   if (phase.value === 'select' || phase.value === 'qrcode' || phase.value === 'redirect') startPolling();
 });
@@ -310,13 +343,13 @@ function stopCountdown() {
 
 // ── 支付创建 ──
 async function pay() {
-  if (!channel.value) return;
+  if (!selected.value.channel) return;
   submitting.value = true;
   error.value = '';
   qrDataUrl.value = '';
   redirectUrl.value = '';
-  payingChannel.value = channels.value.find((c) => c.code === channel.value) || null;
-  const { data, error: err } = await createPayment(orderNo, channel.value);
+  payingChannel.value = channels.value.find((c) => c.code === selected.value.channel) || null;
+  const { data, error: err } = await createPayment(orderNo, selected.value.channel, selected.value.method);
   submitting.value = false;
   if (err || !data) { error.value = err || '创建支付失败'; return; }
 
@@ -341,7 +374,7 @@ async function pay() {
     phase.value = 'redirect';
     openRedirect();
   }
-  if (channel.value === 'wallet') {
+  if (selected.value.channel === 'wallet') {
     // 余额支付同步扣款：直接刷新订单进成功态
     await refreshOrder();
     decidePhase();
@@ -540,6 +573,7 @@ function fmtTime(ts?: number): string {
 .pay-channels { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; }
 .pay-channels-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 14px; }
 .pay-channel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.pay-channel-img { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; display: block; }
 @media (max-width: 520px) { .pay-channel-grid { grid-template-columns: 1fr; } }
 .pay-channel {
   position: relative; display: flex; align-items: center; gap: 12px;

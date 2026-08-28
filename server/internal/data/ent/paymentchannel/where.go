@@ -104,6 +104,11 @@ func Enabled(v bool) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldEQ(FieldEnabled, v))
 }
 
+// Icon applies equality check predicate on the "icon" field. It's identical to IconEQ.
+func Icon(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldIcon, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldEQ(FieldCreatedAt, v))
@@ -587,6 +592,81 @@ func EnabledEQ(v bool) predicate.PaymentChannel {
 // EnabledNEQ applies the NEQ predicate on the "enabled" field.
 func EnabledNEQ(v bool) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldNEQ(FieldEnabled, v))
+}
+
+// IconEQ applies the EQ predicate on the "icon" field.
+func IconEQ(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldIcon, v))
+}
+
+// IconNEQ applies the NEQ predicate on the "icon" field.
+func IconNEQ(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldIcon, v))
+}
+
+// IconIn applies the In predicate on the "icon" field.
+func IconIn(vs ...string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldIn(FieldIcon, vs...))
+}
+
+// IconNotIn applies the NotIn predicate on the "icon" field.
+func IconNotIn(vs ...string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNotIn(FieldIcon, vs...))
+}
+
+// IconGT applies the GT predicate on the "icon" field.
+func IconGT(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldGT(FieldIcon, v))
+}
+
+// IconGTE applies the GTE predicate on the "icon" field.
+func IconGTE(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldGTE(FieldIcon, v))
+}
+
+// IconLT applies the LT predicate on the "icon" field.
+func IconLT(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldLT(FieldIcon, v))
+}
+
+// IconLTE applies the LTE predicate on the "icon" field.
+func IconLTE(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldLTE(FieldIcon, v))
+}
+
+// IconContains applies the Contains predicate on the "icon" field.
+func IconContains(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldContains(FieldIcon, v))
+}
+
+// IconHasPrefix applies the HasPrefix predicate on the "icon" field.
+func IconHasPrefix(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldHasPrefix(FieldIcon, v))
+}
+
+// IconHasSuffix applies the HasSuffix predicate on the "icon" field.
+func IconHasSuffix(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldHasSuffix(FieldIcon, v))
+}
+
+// IconEqualFold applies the EqualFold predicate on the "icon" field.
+func IconEqualFold(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEqualFold(FieldIcon, v))
+}
+
+// IconContainsFold applies the ContainsFold predicate on the "icon" field.
+func IconContainsFold(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldContainsFold(FieldIcon, v))
+}
+
+// MethodsIsNil applies the IsNil predicate on the "methods" field.
+func MethodsIsNil() predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldIsNull(FieldMethods))
+}
+
+// MethodsNotNil applies the NotNil predicate on the "methods" field.
+func MethodsNotNil() predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNotNull(FieldMethods))
 }
 
 // And groups predicates with the AND operator between them.

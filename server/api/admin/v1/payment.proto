@@ -71,6 +71,8 @@ message Channel {
   int32 sort = 9;
   repeated string configured_fields = 10; // 已配置字段名（仅名不显值——脱敏）
   string callback_url = 11; // 回调地址（站点 URL 拼接；未配置站点时为相对路径）
+  string icon = 12;         // 渠道自定义图标（素材库 URL，空=回落内置徽标）
+  string methods_json = 13; // 支付方式列表 JSON [{code,name,icon,enabled,params}]（空=单方式渠道）
 }
 
 // DriverList 驱动元数据列表。
@@ -127,6 +129,8 @@ message CreateChannelRequest {
   string fee_type = 6;
   bool enabled = 7;
   int32 sort = 8;
+  string icon = 9;
+  string methods_json = 10; // 支付方式列表 JSON（聚合网关按方式收银）
 }
 
 message UpdateChannelRequest {
@@ -137,6 +141,8 @@ message UpdateChannelRequest {
   string fee_type = 5; // percent | fixed；空=不修改
   bool enabled = 6;
   int32 sort = 7;
+  optional string icon = 8;         // 有值=更新（空串=清除）；缺省=不修改
+  optional string methods_json = 9; // 支付方式列表 JSON；缺省=不修改
 }
 
 message DeleteChannelRequest {

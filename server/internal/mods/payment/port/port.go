@@ -26,6 +26,11 @@ type CreatePaymentRequest struct {
 	// 非 0 时适配器以 ChargedUnits/ChargedCurrency 构造协议金额，回调亦以此口径核对。
 	ChargedUnits    int64
 	ChargedCurrency string // ISO 码（USD/EUR…；空=CNY）
+	// ── 方式级参数（收银台顾客选择的支付方式；空 = 渠道默认/旧单方式语义）──
+	// MethodCode 方式标识（alipay/wxpay/usdt-trc20…，透传网关时按 params 展开）；
+	// MethodParams 网关参数：易支付 {"type":"wxpay"}、USDT {"network":"tron","token":"USDT"}。
+	MethodCode  string
+	MethodParams map[string]string
 }
 
 // RedirectInfo 支付发起结果（收银台/二维码/参数包）。

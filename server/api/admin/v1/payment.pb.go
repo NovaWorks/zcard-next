@@ -81,6 +81,8 @@ type Channel struct {
 	Sort             int32                  `protobuf:"varint,9,opt,name=sort,proto3" json:"sort,omitempty"`
 	ConfiguredFields []string               `protobuf:"bytes,10,rep,name=configured_fields,json=configuredFields,proto3" json:"configured_fields,omitempty"` // 已配置字段名（仅名不显值——脱敏）
 	CallbackUrl      string                 `protobuf:"bytes,11,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`                // 回调地址（站点 URL 拼接；未配置站点时为相对路径）
+	Icon             string                 `protobuf:"bytes,12,opt,name=icon,proto3" json:"icon,omitempty"`                                                 // 渠道自定义图标（素材库 URL，空=回落内置徽标）
+	MethodsJson      string                 `protobuf:"bytes,13,opt,name=methods_json,json=methodsJson,proto3" json:"methods_json,omitempty"`                // 支付方式列表 JSON [{code,name,icon,enabled,params}]（空=单方式渠道）
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -188,6 +190,20 @@ func (x *Channel) GetConfiguredFields() []string {
 func (x *Channel) GetCallbackUrl() string {
 	if x != nil {
 		return x.CallbackUrl
+	}
+	return ""
+}
+
+func (x *Channel) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *Channel) GetMethodsJson() string {
+	if x != nil {
+		return x.MethodsJson
 	}
 	return ""
 }
@@ -613,6 +629,8 @@ type CreateChannelRequest struct {
 	FeeType       string                 `protobuf:"bytes,6,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
 	Enabled       bool                   `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	Sort          int32                  `protobuf:"varint,8,opt,name=sort,proto3" json:"sort,omitempty"`
+	Icon          string                 `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
+	MethodsJson   string                 `protobuf:"bytes,10,opt,name=methods_json,json=methodsJson,proto3" json:"methods_json,omitempty"` // 支付方式列表 JSON（聚合网关按方式收银）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -703,6 +721,20 @@ func (x *CreateChannelRequest) GetSort() int32 {
 	return 0
 }
 
+func (x *CreateChannelRequest) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *CreateChannelRequest) GetMethodsJson() string {
+	if x != nil {
+		return x.MethodsJson
+	}
+	return ""
+}
+
 type UpdateChannelRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -712,6 +744,8 @@ type UpdateChannelRequest struct {
 	FeeType       string                 `protobuf:"bytes,5,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"` // percent | fixed；空=不修改
 	Enabled       bool                   `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	Sort          int32                  `protobuf:"varint,7,opt,name=sort,proto3" json:"sort,omitempty"`
+	Icon          *string                `protobuf:"bytes,8,opt,name=icon,proto3,oneof" json:"icon,omitempty"`                                  // 有值=更新（空串=清除）；缺省=不修改
+	MethodsJson   *string                `protobuf:"bytes,9,opt,name=methods_json,json=methodsJson,proto3,oneof" json:"methods_json,omitempty"` // 支付方式列表 JSON；缺省=不修改
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -793,6 +827,20 @@ func (x *UpdateChannelRequest) GetSort() int32 {
 		return x.Sort
 	}
 	return 0
+}
+
+func (x *UpdateChannelRequest) GetIcon() string {
+	if x != nil && x.Icon != nil {
+		return *x.Icon
+	}
+	return ""
+}
+
+func (x *UpdateChannelRequest) GetMethodsJson() string {
+	if x != nil && x.MethodsJson != nil {
+		return *x.MethodsJson
+	}
+	return ""
 }
 
 type DeleteChannelRequest struct {
@@ -1443,7 +1491,7 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"\x16admin/v1/payment.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"F\n" +
 	"\vChannelList\x127\n" +
-	"\bchannels\x18\x01 \x03(\v2\x1b.zcard.api.admin.v1.ChannelR\bchannels\"\xa5\x02\n" +
+	"\bchannels\x18\x01 \x03(\v2\x1b.zcard.api.admin.v1.ChannelR\bchannels\"\xdc\x02\n" +
 	"\aChannel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1457,7 +1505,9 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x04sort\x18\t \x01(\x05R\x04sort\x12+\n" +
 	"\x11configured_fields\x18\n" +
 	" \x03(\tR\x10configuredFields\x12!\n" +
-	"\fcallback_url\x18\v \x01(\tR\vcallbackUrl\"B\n" +
+	"\fcallback_url\x18\v \x01(\tR\vcallbackUrl\x12\x12\n" +
+	"\x04icon\x18\f \x01(\tR\x04icon\x12!\n" +
+	"\fmethods_json\x18\r \x01(\tR\vmethodsJson\"B\n" +
 	"\n" +
 	"DriverList\x124\n" +
 	"\adrivers\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.DriverR\adrivers\"\x9f\x01\n" +
@@ -1490,7 +1540,7 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"configJson\"e\n" +
 	"\x11FieldOptionsReply\x124\n" +
 	"\aoptions\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.OptionR\aoptions\x12\x1a\n" +
-	"\bfallback\x18\x02 \x01(\bR\bfallback\"\xe6\x01\n" +
+	"\bfallback\x18\x02 \x01(\bR\bfallback\"\x9d\x02\n" +
 	"\x14CreateChannelRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x17\n" +
 	"\x04code\x18\x02 \x01(\tB\x03\xe0A\x02R\x04code\x12\x1b\n" +
@@ -1500,7 +1550,10 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x03fee\x18\x05 \x01(\x03R\x03fee\x12\x19\n" +
 	"\bfee_type\x18\x06 \x01(\tR\afeeType\x12\x18\n" +
 	"\aenabled\x18\a \x01(\bR\aenabled\x12\x12\n" +
-	"\x04sort\x18\b \x01(\x05R\x04sort\"\xbb\x01\n" +
+	"\x04sort\x18\b \x01(\x05R\x04sort\x12\x12\n" +
+	"\x04icon\x18\t \x01(\tR\x04icon\x12!\n" +
+	"\fmethods_json\x18\n" +
+	" \x01(\tR\vmethodsJson\"\x96\x02\n" +
 	"\x14UpdateChannelRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -1509,7 +1562,11 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x03fee\x18\x04 \x01(\x03R\x03fee\x12\x19\n" +
 	"\bfee_type\x18\x05 \x01(\tR\afeeType\x12\x18\n" +
 	"\aenabled\x18\x06 \x01(\bR\aenabled\x12\x12\n" +
-	"\x04sort\x18\a \x01(\x05R\x04sort\"+\n" +
+	"\x04sort\x18\a \x01(\x05R\x04sort\x12\x17\n" +
+	"\x04icon\x18\b \x01(\tH\x00R\x04icon\x88\x01\x01\x12&\n" +
+	"\fmethods_json\x18\t \x01(\tH\x01R\vmethodsJson\x88\x01\x01B\a\n" +
+	"\x05_iconB\x0f\n" +
+	"\r_methods_json\"+\n" +
 	"\x14DeleteChannelRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"v\n" +
 	"\x13ListPaymentsRequest\x12\x16\n" +
@@ -1651,6 +1708,7 @@ func file_admin_v1_payment_proto_init() {
 	if File_admin_v1_payment_proto != nil {
 		return
 	}
+	file_admin_v1_payment_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -158,6 +158,26 @@ func (_c *PaymentChannelCreate) SetNillableEnabled(v *bool) *PaymentChannelCreat
 	return _c
 }
 
+// SetIcon sets the "icon" field.
+func (_c *PaymentChannelCreate) SetIcon(v string) *PaymentChannelCreate {
+	_c.mutation.SetIcon(v)
+	return _c
+}
+
+// SetNillableIcon sets the "icon" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableIcon(v *string) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetIcon(*v)
+	}
+	return _c
+}
+
+// SetMethods sets the "methods" field.
+func (_c *PaymentChannelCreate) SetMethods(v []map[string]interface{}) *PaymentChannelCreate {
+	_c.mutation.SetMethods(v)
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PaymentChannelCreate) SetID(v uint64) *PaymentChannelCreate {
 	_c.mutation.SetID(v)
@@ -231,6 +251,10 @@ func (_c *PaymentChannelCreate) defaults() {
 		v := paymentchannel.DefaultEnabled
 		_c.mutation.SetEnabled(v)
 	}
+	if _, ok := _c.mutation.Icon(); !ok {
+		v := paymentchannel.DefaultIcon
+		_c.mutation.SetIcon(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -295,6 +319,14 @@ func (_c *PaymentChannelCreate) check() error {
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "PaymentChannel.enabled"`)}
+	}
+	if _, ok := _c.mutation.Icon(); !ok {
+		return &ValidationError{Name: "icon", err: errors.New(`ent: missing required field "PaymentChannel.icon"`)}
+	}
+	if v, ok := _c.mutation.Icon(); ok {
+		if err := paymentchannel.IconValidator(v); err != nil {
+			return &ValidationError{Name: "icon", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.icon": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -376,6 +408,14 @@ func (_c *PaymentChannelCreate) createSpec() (*PaymentChannel, *sqlgraph.CreateS
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
 		_node.Enabled = value
+	}
+	if value, ok := _c.mutation.Icon(); ok {
+		_spec.SetField(paymentchannel.FieldIcon, field.TypeString, value)
+		_node.Icon = value
+	}
+	if value, ok := _c.mutation.Methods(); ok {
+		_spec.SetField(paymentchannel.FieldMethods, field.TypeJSON, value)
+		_node.Methods = value
 	}
 	return _node, _spec
 }
@@ -576,6 +616,36 @@ func (u *PaymentChannelUpsert) SetEnabled(v bool) *PaymentChannelUpsert {
 // UpdateEnabled sets the "enabled" field to the value that was provided on create.
 func (u *PaymentChannelUpsert) UpdateEnabled() *PaymentChannelUpsert {
 	u.SetExcluded(paymentchannel.FieldEnabled)
+	return u
+}
+
+// SetIcon sets the "icon" field.
+func (u *PaymentChannelUpsert) SetIcon(v string) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldIcon, v)
+	return u
+}
+
+// UpdateIcon sets the "icon" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateIcon() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldIcon)
+	return u
+}
+
+// SetMethods sets the "methods" field.
+func (u *PaymentChannelUpsert) SetMethods(v []map[string]interface{}) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldMethods, v)
+	return u
+}
+
+// UpdateMethods sets the "methods" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateMethods() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldMethods)
+	return u
+}
+
+// ClearMethods clears the value of the "methods" field.
+func (u *PaymentChannelUpsert) ClearMethods() *PaymentChannelUpsert {
+	u.SetNull(paymentchannel.FieldMethods)
 	return u
 }
 
@@ -802,6 +872,41 @@ func (u *PaymentChannelUpsertOne) SetEnabled(v bool) *PaymentChannelUpsertOne {
 func (u *PaymentChannelUpsertOne) UpdateEnabled() *PaymentChannelUpsertOne {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetIcon sets the "icon" field.
+func (u *PaymentChannelUpsertOne) SetIcon(v string) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetIcon(v)
+	})
+}
+
+// UpdateIcon sets the "icon" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateIcon() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateIcon()
+	})
+}
+
+// SetMethods sets the "methods" field.
+func (u *PaymentChannelUpsertOne) SetMethods(v []map[string]interface{}) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetMethods(v)
+	})
+}
+
+// UpdateMethods sets the "methods" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateMethods() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateMethods()
+	})
+}
+
+// ClearMethods clears the value of the "methods" field.
+func (u *PaymentChannelUpsertOne) ClearMethods() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.ClearMethods()
 	})
 }
 
@@ -1194,6 +1299,41 @@ func (u *PaymentChannelUpsertBulk) SetEnabled(v bool) *PaymentChannelUpsertBulk 
 func (u *PaymentChannelUpsertBulk) UpdateEnabled() *PaymentChannelUpsertBulk {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetIcon sets the "icon" field.
+func (u *PaymentChannelUpsertBulk) SetIcon(v string) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetIcon(v)
+	})
+}
+
+// UpdateIcon sets the "icon" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateIcon() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateIcon()
+	})
+}
+
+// SetMethods sets the "methods" field.
+func (u *PaymentChannelUpsertBulk) SetMethods(v []map[string]interface{}) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetMethods(v)
+	})
+}
+
+// UpdateMethods sets the "methods" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateMethods() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateMethods()
+	})
+}
+
+// ClearMethods clears the value of the "methods" field.
+func (u *PaymentChannelUpsertBulk) ClearMethods() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.ClearMethods()
 	})
 }
 

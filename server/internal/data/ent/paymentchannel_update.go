@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
@@ -187,6 +188,38 @@ func (_u *PaymentChannelUpdate) SetNillableEnabled(v *bool) *PaymentChannelUpdat
 	return _u
 }
 
+// SetIcon sets the "icon" field.
+func (_u *PaymentChannelUpdate) SetIcon(v string) *PaymentChannelUpdate {
+	_u.mutation.SetIcon(v)
+	return _u
+}
+
+// SetNillableIcon sets the "icon" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableIcon(v *string) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetIcon(*v)
+	}
+	return _u
+}
+
+// SetMethods sets the "methods" field.
+func (_u *PaymentChannelUpdate) SetMethods(v []map[string]interface{}) *PaymentChannelUpdate {
+	_u.mutation.SetMethods(v)
+	return _u
+}
+
+// AppendMethods appends value to the "methods" field.
+func (_u *PaymentChannelUpdate) AppendMethods(v []map[string]interface{}) *PaymentChannelUpdate {
+	_u.mutation.AppendMethods(v)
+	return _u
+}
+
+// ClearMethods clears the value of the "methods" field.
+func (_u *PaymentChannelUpdate) ClearMethods() *PaymentChannelUpdate {
+	_u.mutation.ClearMethods()
+	return _u
+}
+
 // Mutation returns the PaymentChannelMutation object of the builder.
 func (_u *PaymentChannelUpdate) Mutation() *PaymentChannelMutation {
 	return _u.mutation
@@ -255,6 +288,11 @@ func (_u *PaymentChannelUpdate) check() error {
 			return &ValidationError{Name: "fee_bearer", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.fee_bearer": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Icon(); ok {
+		if err := paymentchannel.IconValidator(v); err != nil {
+			return &ValidationError{Name: "icon", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.icon": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -311,6 +349,20 @@ func (_u *PaymentChannelUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Icon(); ok {
+		_spec.SetField(paymentchannel.FieldIcon, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Methods(); ok {
+		_spec.SetField(paymentchannel.FieldMethods, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedMethods(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, paymentchannel.FieldMethods, value)
+		})
+	}
+	if _u.mutation.MethodsCleared() {
+		_spec.ClearField(paymentchannel.FieldMethods, field.TypeJSON)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -491,6 +543,38 @@ func (_u *PaymentChannelUpdateOne) SetNillableEnabled(v *bool) *PaymentChannelUp
 	return _u
 }
 
+// SetIcon sets the "icon" field.
+func (_u *PaymentChannelUpdateOne) SetIcon(v string) *PaymentChannelUpdateOne {
+	_u.mutation.SetIcon(v)
+	return _u
+}
+
+// SetNillableIcon sets the "icon" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableIcon(v *string) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetIcon(*v)
+	}
+	return _u
+}
+
+// SetMethods sets the "methods" field.
+func (_u *PaymentChannelUpdateOne) SetMethods(v []map[string]interface{}) *PaymentChannelUpdateOne {
+	_u.mutation.SetMethods(v)
+	return _u
+}
+
+// AppendMethods appends value to the "methods" field.
+func (_u *PaymentChannelUpdateOne) AppendMethods(v []map[string]interface{}) *PaymentChannelUpdateOne {
+	_u.mutation.AppendMethods(v)
+	return _u
+}
+
+// ClearMethods clears the value of the "methods" field.
+func (_u *PaymentChannelUpdateOne) ClearMethods() *PaymentChannelUpdateOne {
+	_u.mutation.ClearMethods()
+	return _u
+}
+
 // Mutation returns the PaymentChannelMutation object of the builder.
 func (_u *PaymentChannelUpdateOne) Mutation() *PaymentChannelMutation {
 	return _u.mutation
@@ -572,6 +656,11 @@ func (_u *PaymentChannelUpdateOne) check() error {
 			return &ValidationError{Name: "fee_bearer", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.fee_bearer": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Icon(); ok {
+		if err := paymentchannel.IconValidator(v); err != nil {
+			return &ValidationError{Name: "icon", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.icon": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -645,6 +734,20 @@ func (_u *PaymentChannelUpdateOne) sqlSave(ctx context.Context) (_node *PaymentC
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.Icon(); ok {
+		_spec.SetField(paymentchannel.FieldIcon, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Methods(); ok {
+		_spec.SetField(paymentchannel.FieldMethods, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedMethods(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, paymentchannel.FieldMethods, value)
+		})
+	}
+	if _u.mutation.MethodsCleared() {
+		_spec.ClearField(paymentchannel.FieldMethods, field.TypeJSON)
 	}
 	_node = &PaymentChannel{config: _u.config}
 	_spec.Assign = _node.assignValues

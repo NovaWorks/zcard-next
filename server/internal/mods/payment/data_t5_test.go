@@ -203,11 +203,11 @@ func TestStorefrontListChannels(t *testing.T) {
 	ctx := context.Background()
 
 	// 建一个停用渠道
-	if _, err := svc.repo.CreateChannel(ctx, "停用", "disabled1", "epay", `{"pid":"1","key":"k"}`, 0, "fixed", false, 0); err != nil {
+	if _, err := svc.repo.CreateChannel(ctx, "停用", "disabled1", "epay", `{"pid":"1","key":"k"}`, 0, "fixed", false, 0, "", nil); err != nil {
 		t.Fatal(err)
 	}
 	// 建一个启用但未配置的渠道（待配置——不应下发）
-	if _, err := svc.repo.CreateChannel(ctx, "待配置", "unconf1", "stripe", `{}`, 0, "fixed", true, 0); err != nil {
+	if _, err := svc.repo.CreateChannel(ctx, "待配置", "unconf1", "stripe", `{}`, 0, "fixed", true, 0, "", nil); err != nil {
 		t.Fatal(err)
 	}
 	reply, err := svc.ListChannels(ctx, &emptypb.Empty{})

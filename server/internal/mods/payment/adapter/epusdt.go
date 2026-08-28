@@ -139,9 +139,14 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		"redirect_url": req.ReturnURL,
 		"name":         req.Subject,
 	}
-	// 占位订单模式：恰好一币一链 → 锁定收款方式；多选/未选 → 不传（收银台自选）
-	// （GMPay 协议：token/network 可缺省创建占位订单——官方收银台按 supported_assets 展示）
-	if tks, nws := epusdtTokens(c), epusdtNetworks(c); len(tks) == 1 && len(nws) == 1 {
+	// 收款方式锁定优先级：① 收银台顾客所选方式（method.params.network/token——按链选择）
+	// ② 渠道凭据恰好一币一链 → 锁定；③ 多选/未选 → 不传（GMPay 占位订单，官方收银台自选）
+	if nw := req.MethodParams["network"]; nw != "" {
+		params["network"] = strings.ToLower(nw)
+		if tk := req.MethodParams["token"]; tk != "" {
+			params["token"] = tk
+		}
+	} else if tks, nws := epusdtTokens(c), epusdtNetworks(c); len(tks) == 1 && len(nws) == 1 {
 		params["token"] = tks[0]
 		params["network"] = strings.ToLower(nws[0]) // 协议 network 小写（tron/erc20…）
 	}

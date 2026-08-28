@@ -139,18 +139,26 @@ export function createOrder(body: {
   return api.post<CreateOrderReply>('/orders', body);
 }
 
+export interface MethodItem {
+  code: string;
+  name: string;
+  icon?: string;
+}
+
 export interface ChannelItem {
   code: string;
   name: string;
   driver: string;
+  icon?: string;
+  methods?: MethodItem[];
 }
 
 export function fetchPaymentChannels() {
   return api.get<{ channels: ChannelItem[] }>('/payment/channels');
 }
 
-export function createPayment(order_no: string, channel: string) {
-  return api.post<CreatePaymentReply>('/payments', { order_no, channel });
+export function createPayment(order_no: string, channel: string, method?: string) {
+  return api.post<CreatePaymentReply>('/payments', { order_no, channel, method: method || '' });
 }
 
 export function fetchDelivery(order_no: string, query_password: string) {

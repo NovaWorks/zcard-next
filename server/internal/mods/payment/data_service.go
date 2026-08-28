@@ -80,8 +80,13 @@ func (s *AdminPaymentService) CreateChannel(ctx context.Context, req *adminv1.Cr
 	if feeType == "" {
 		feeType = string(paymentchannel.FeeTypeFixed) // ent enum 拒绝空值——默认固定费率
 	}
+	methods, err := methodsJSON(req.GetMethodsJson())
+	if err != nil {
+		return nil, errors.BadRequest("payment.METHODS_INVALID", "支付方式列表格式错误")
+	}
 	ch, err := s.repo.CreateChannel(ctx, req.GetName(), req.GetCode(), req.GetDriver(),
-		req.GetConfigJson(), req.GetFee(), feeType, req.GetEnabled(), req.GetSort())
+		req.GetConfigJson(), req.GetFee(), feeType, req.GetEnabled(), req.GetSort(),
+		req.GetIcon(), methods)
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建失败（code 可能重复）")
 	}
@@ -208,8 +213,17 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 			}
 		}
 	}
+	var methods []map[string]any
+	if req.MethodsJson != nil { // optional：缺省=不修改
+		var mErr error
+		methods, mErr = methodsJSON(req.GetMethodsJson())
+		if mErr != nil {
+			return nil, errors.BadRequest("payment.METHODS_INVALID", "支付方式列表格式错误")
+		}
+	}
 	ch, err := s.repo.UpdateChannel(ctx, req.GetId(), req.GetName(), req.GetConfigJson(),
-		req.GetFee(), req.GetFeeType(), req.GetEnabled(), req.GetSort())
+		req.GetFee(), req.GetFeeType(), req.GetEnabled(), req.GetSort(),
+		req.Icon != nil, req.GetIcon(), req.MethodsJson != nil, methods)
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
@@ -368,7 +382,14 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 		if ch.Driver != "wallet" && len(s.repo.ConfiguredFields(ch)) == 0 {
 			continue // 待配置渠道不下发
 		}
-		reply.Channels = append(reply.Channels, &storefrontv1.ChannelItem{Code: ch.Code, Name: ch.Name, Driver: ch.Driver})
+		item := &storefrontv1.ChannelItem{Code: ch.Code, Name: ch.Name, Driver: ch.Driver, Icon: ch.Icon}
+		for _, m := range parseMethods(ch) {
+			if !m.Enabled {
+				continue
+			}
+			item.Methods = append(item.Methods, &storefrontv1.MethodItem{Code: m.Code, Name: m.Name, Icon: m.Icon})
+		}
+		reply.Channels = append(reply.Channels, item)
 	}
 	return reply, nil
 }
@@ -430,6 +451,24 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	if err := provider.ValidateConfig(cfg); err != nil {
 		return nil, errors.InternalServer("payment.CHANNEL_CONFIG_INVALID", "渠道配置无效: "+err.Error())
 	}
+	// 方式级参数（收银台顾客所选支付方式：易支付支付宝/微信、USDT 选链）：
+	// 渠道配置了 methods 时 method 必填且须在启用列表内；params 透传适配器路由网关。
+	var methodCode string
+	var methodParams map[string]string
+	if ms := parseMethods(ch); len(ms) > 0 {
+		found := false
+		for _, m := range ms {
+			if m.Enabled && m.Code == req.GetMethod() {
+				found = true
+				methodCode = m.Code
+				methodParams = m.Params
+				break
+			}
+		}
+		if !found {
+			return nil, errors.BadRequest("payment.METHOD_INVALID", "请选择该渠道支持的支付方式")
+		}
+	}
 	p, err := s.repo.CreatePayment(ctx, o.ID, ch.Code, o.TotalAmount, "")
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建支付失败")
@@ -445,6 +484,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		NotifyBaseURL: "/payments/callback/" + ch.Code,
 		Config:        cfg,
 		ChargedUnits:  snap.Units, ChargedCurrency: snap.Currency,
+		MethodCode:    methodCode, MethodParams: methodParams,
 	})
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "发起支付失败: "+err.Error())
