@@ -133,8 +133,9 @@ const columns = computed<DataTableColumns<any>>(() => {
   const cols: DataTableColumns<any> = [];
   if (tr !== "compact") cols.push({ title: "ID", key: "id", width: 48 });
   if (tr === "full") {
-    cols.push({ title: "订单项", key: "order_item_id", width: 64 });
-    cols.push({ title: "渠道", key: "connection_id", width: 56, render: (row: any) => `#${row.connection_id}` });
+    // 订单项 ID 为长数字（雪花位），定宽 + 悬停全文防换行
+    cols.push({ title: "订单项", key: "order_item_id", width: 110, render: (row: any) => h("span", { class: "whitespace-nowrap", title: String(row.order_item_id ?? "") }, String(row.order_item_id ?? "-")) });
+    cols.push({ title: "渠道", key: "connection_id", width: 72, render: (row: any) => `#${row.connection_id}` });
   }
   cols.push(orderNoCol(tr));
   cols.push({
@@ -145,8 +146,9 @@ const columns = computed<DataTableColumns<any>>(() => {
       h(NTag, { size: "small", type: statusTag[row.status] || "default", bordered: false }, { default: () => statusText(row.status) }),
   });
   if (tr === "full") {
-    cols.push({ title: "卡密行数", key: "received_cards", width: 64, render: (row: any) => String(row.received_cards ?? row.received_count ?? "-") });
-    cols.push({ title: "重试", key: "retry_count", width: 52 });
+    // 数字列（卡密行数可达十万级）加宽 + 右对齐，杜绝逐字换行
+    cols.push({ title: "卡密行数", key: "received_cards", width: 88, align: "right" as const, render: (row: any) => h("span", { class: "whitespace-nowrap tabular-nums" }, String(row.received_cards ?? row.received_count ?? "-")) });
+    cols.push({ title: "重试", key: "retry_count", width: 64, align: "right" as const, render: (row: any) => h("span", { class: "whitespace-nowrap tabular-nums" }, String(row.retry_count ?? 0)) });
   }
   if (tr !== "compact") cols.push(errorCol());
   if (tr !== "compact") cols.push({ title: "更新时间", key: "updated_at", width: 142, render: (row: any) => fmtTime(row.updated_at || row.created_at) });

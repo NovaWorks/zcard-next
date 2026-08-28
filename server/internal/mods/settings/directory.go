@@ -107,7 +107,7 @@ var groups = map[string]*GroupDef{
 			"top_banner_enabled": true,
 			"nav_recommend":      nil,
 		},
-		PublicKeys: map[string]bool{"top_banner_enabled": true},
+		PublicKeys: map[string]bool{"top_banner_enabled": true, "nav_recommend": true},
 	},
 	// 客户代码（service）：第三方 JS 嵌入——客服代码（悬浮球）与统计代码（页面底部）
 	"service": {

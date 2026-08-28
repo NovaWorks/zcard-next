@@ -53,6 +53,11 @@
           rel="noopener noreferrer"
           class="nav-custom-btn"
         >{{ topButton.text }}</a>
+        <!-- 导航推荐位（promo.nav_recommend [{text,url}]）：站内路径走路由，外链新窗口 -->
+        <template v-for="r in navRecommend" :key="r.text + r.url">
+          <router-link v-if="r.url.startsWith('/')" :to="r.url" class="nav-recommend-btn">🔥 {{ r.text }}</router-link>
+          <a v-else :href="r.url" target="_blank" rel="noopener noreferrer" class="nav-recommend-btn">🔥 {{ r.text }}</a>
+        </template>
       </nav>
       <div class="nav-right">
         <router-link to="/cart" class="cart-link" title="查看购物车">
@@ -219,6 +224,7 @@ function scrollTop() {
 // ── 顶部自定义按钮（site.top_button 公开下发）+ 维护模式（ops.maintenance[_style]）──
 // top_button：{text, type: link|post|notice, url?|slug?}——link 外链新窗口；post/notice 站内文章路由
 const topButton = ref<{ text: string; type?: string; url?: string; slug?: string } | null>(null);
+const navRecommend = ref<{ text: string; url: string }[]>([]);
 const maintenance = ref(false);
 const maintenanceStyle = ref('modal'); // modal=全屏遮罩 | banner=顶部横幅
 const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=24 小时一次
@@ -311,6 +317,19 @@ onMounted(async () => {
             url: typeof v.url === 'string' ? v.url.trim() : '',
             slug: typeof v.slug === 'string' ? v.slug.trim() : '',
           };
+        }
+      } catch { /* 非法配置忽略 */ }
+    }
+    // 导航推荐位（promo.nav_recommend [{text,url}]：最多取 3 条，非法结构忽略）
+    const nr = find('promo.nav_recommend');
+    if (nr) {
+      try {
+        const v = JSON.parse(nr);
+        if (Array.isArray(v)) {
+          navRecommend.value = v
+            .filter((x: any) => x && typeof x.text === 'string' && x.text.trim() && typeof x.url === 'string' && x.url.trim())
+            .slice(0, 3)
+            .map((x: any) => ({ text: x.text.trim(), url: x.url.trim() }));
         }
       } catch { /* 非法配置忽略 */ }
     }

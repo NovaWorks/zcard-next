@@ -9,6 +9,7 @@ import { resolveMediaUrl } from "@/utils/media";
 import CurrencyTab from "./components/currency-tab.vue";
 import TopButtonField from "./components/top-button-field.vue";
 import GiftTiersField from "./components/gift-tiers-field.vue";
+import LinkListField from "./components/link-list-field.vue";
 import AuditTab from "./components/audit-tab.vue";
 import ThemePickerModal from "./components/theme-picker-modal.vue";
 
@@ -50,9 +51,20 @@ const groups = [
 const TEXTAREA_KEYS: Record<string, string[]> = {
   service: ["widget_script", "stats_script"],
   site: ["robots_custom"],
-  footer: ["nav", "social"],
+  footer: ["about", "contact"],
   notify: ["sms_template_register", "sms_template_reset"],
 };
+
+// ── 结构化链接列表键：[{text,url}] / [{icon,url}]（LinkListField 行编辑，杜绝手写 JSON）──
+const LINK_LIST_KEYS: Record<string, { icon?: boolean; textPlaceholder?: string; urlPlaceholder?: string; max?: number }> = {
+  "footer.nav": { textPlaceholder: "导航文字", urlPlaceholder: "跳转链接 https://… 或站内路径 /products", max: 8 },
+  "footer.social": { icon: true, urlPlaceholder: "主页链接 https://…", max: 8 },
+  "promo.nav_recommend": { textPlaceholder: "推荐文字", urlPlaceholder: "跳转链接 https://… 或站内路径 /products", max: 3 },
+};
+
+function linkListOf(item: any) {
+  return LINK_LIST_KEYS[`${item.group}.${item.key}`];
+}
 
 // ── 多选类设置键：渲染 checkbox 勾选（数组值；其余 options 键为单选）──
 const MULTI_KEYS: Record<string, string[]> = {
@@ -318,10 +330,30 @@ onMounted(() => {
           </div>
 
           <template v-else>
-            <NForm label-placement="left" label-width="140" class="mt-16px max-w-640px">
+            <!-- 页脚配置分区说明：每个设置项对应前台页脚的哪个区块（大厂模式：先给全局地图再进表单） -->
+            <div v-if="activeGroup === 'footer'" class="footer-map mt-12px">
+              <div class="text-13px font-600 text-gray-700">页脚设置 ↔ 前台位置对照</div>
+              <div class="mt-6px grid gap-x-24px gap-y-4px text-12px text-gray-500 sm:grid-cols-2">
+                <span>· <b>页脚关于 / 社交链接</b> → 品牌栏（Logo 下方文案与图标）</span>
+                <span>· <b>页脚导航</b> → 快速导航栏（未配置时显示默认链接）</span>
+                <span>· <b>联系方式</b> → 「联系我们」栏（留空整栏隐藏）</span>
+                <span>· <b>用户协议 / ICP 备案号</b> → 底部版权行</span>
+                <span class="sm:col-span-2 text-gray-400">· 「帮助中心」「会员服务」两栏为系统内置导航，暂不支持自定义</span>
+              </div>
+            </div>
+
+            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
-                  <template v-if="item.group === 'site' && item.key === 'top_button'">
+                  <template v-if="linkListOf(item)">
+                    <LinkListField
+                      class="flex-1"
+                      v-bind="linkListOf(item)"
+                      :value="item.value_json"
+                      @update="(v: any) => setVal(item, v)"
+                    />
+                  </template>
+                  <template v-else-if="item.group === 'site' && item.key === 'top_button'">
                     <TopButtonField class="flex-1" :value="item.value_json" @update="(v: any) => setVal(item, v)" />
                   </template>
                   <template v-else-if="(item.group === 'recharge' || item.group === 'supplier_recharge') && item.key === 'gift_tiers'">
@@ -420,7 +452,7 @@ onMounted(() => {
               </NFormItem>
             </NForm>
 
-            <div class="mt-24px flex items-center justify-end gap-8px border-t pt-16px max-w-640px">
+            <div class="mt-24px flex items-center justify-end gap-8px border-t pt-16px max-w-760px">
               <span v-if="hasDirty()" class="text-12px text-gray-400">{{ dirtyKeys.size }} 项修改未保存</span>
               <NButton
                 v-auth="'settings:update'"
@@ -452,3 +484,26 @@ onMounted(() => {
     />
   </div>
 </template>
+
+<style scoped>
+/* 页脚分区说明卡（浅蓝信息底，与 naive 信息-alert 同语系） */
+.footer-map {
+  max-width: 760px;
+  padding: 10px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+/* 长标签（如「单 IP 待付款订单上限」）换行时保持舒适行高并顶部对齐控件，
+   避免默认垂直居中导致的多行标签上下悬空 */
+.settings-form :deep(.n-form-item-label) {
+  white-space: normal;
+  line-height: 1.5;
+  padding-top: 9px;
+  align-items: flex-start;
+}
+.settings-form :deep(.n-form-item-label__text) {
+  white-space: normal;
+}
+</style>

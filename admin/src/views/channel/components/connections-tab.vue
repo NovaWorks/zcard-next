@@ -553,6 +553,7 @@ function rateCol(t: TableTier) {
   return {
     title: "限流状态",
     key: "rate",
+    align: "center" as const,
     width: t === "compact" ? 100 : t === "mid" ? 150 : 158,
     render: (row: any) => {
       const rl = rateLimitView(row);
@@ -561,12 +562,13 @@ function rateCol(t: TableTier) {
         const label = !rl ? "正常" : rl.type === "warning" ? "半开探测" : rl.label.replace("限流熔断", "熔断");
         return h(NTag, { size: "tiny", type: rl?.type || "success", bordered: false }, { default: () => label });
       }
-      return h("div", { class: "flex flex-col gap-2px" }, [
+      // 居中栈：状态徽章 + 自适应间隔说明（大厂表格徽章列惯例）
+      return h("div", { class: "flex flex-col items-center justify-center gap-2px" }, [
         rl
           ? h(NTag, { size: "tiny", type: rl.type, bordered: false }, { default: () => rl.label })
           : h(NTag, { size: "tiny", type: "success", bordered: false }, { default: () => "正常" }),
         delay > 0
-          ? h("span", { class: "text-11px text-gray-400" }, `自适应间隔 ${(delay / 1000).toFixed(0)}s`)
+          ? h("span", { class: "text-11px whitespace-nowrap text-gray-400" }, `自适应间隔 ${(delay / 1000).toFixed(0)}s`)
           : null,
       ]);
     },

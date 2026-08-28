@@ -487,8 +487,8 @@ const local: App.I18n.Schema = {
       sms_sign: "短信签名",
       sms_sdk_app_id: "短信 SDK AppID",
       sms_template_code: "短信模板 ID",
-      sms_template_register: "注册验证码短信模板（内容需与通道模板一致；变量 {code}{minutes}{site}）",
-      sms_template_reset: "找回密码短信模板（内容需与通道模板一致；变量 {code}{minutes}{site}）",
+      sms_template_register: "注册验证码短信模板",
+      sms_template_reset: "找回密码短信模板",
     },
     service: {
       widget_script: "客服代码（Chatwoot/Crisp 等嵌入代码）",

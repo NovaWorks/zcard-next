@@ -161,6 +161,16 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
 }
 .nav-custom-btn:hover { background: rgba(37, 99, 235, 0.14); border-color: #2563eb; color: #2563eb; }
 
+/* ── 导航推荐位（promo.nav_recommend）：暖色胶囊，与蓝色自定义按钮形成主次区分 ── */
+.nav-recommend-btn {
+  display: inline-flex; align-items: center; gap: 2px;
+  text-decoration: none; font-size: 13px; font-weight: 600;
+  color: #c2410c; background: #fff7ed; border: 1px solid #fed7aa;
+  border-radius: 999px; padding: 3px 12px; transition: all 0.15s;
+  white-space: nowrap;
+}
+.nav-recommend-btn:hover { background: #ffedd5; border-color: #fb923c; color: #9a3412; }
+
 /* ── 维护模式（ops.maintenance：banner=横幅 / modal=全屏遮罩）── */
 .maint-banner {
   background: linear-gradient(90deg, #f59e0b, #f97316); color: #fff;

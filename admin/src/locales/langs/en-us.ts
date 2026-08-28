@@ -494,8 +494,8 @@ const local: App.I18n.Schema = {
       sms_sign: "SMS Signature",
       sms_sdk_app_id: "SMS SDK AppID",
       sms_template_code: "SMS Template ID",
-      sms_template_register: "Register SMS Template (match provider template; vars {code}{minutes}{site})",
-      sms_template_reset: "Password Reset SMS Template (match provider template; vars {code}{minutes}{site})",
+      sms_template_register: "Register SMS Template",
+      sms_template_reset: "Password Reset SMS Template",
     },
     service: {
       widget_script: "Customer Service Code (Chatwoot/Crisp embed)",
