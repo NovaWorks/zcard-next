@@ -118,7 +118,7 @@ func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefront
 	if s.payer == nil {
 		return nil, errors.InternalServer("wallet.PAYMENT_UNBOUND", "支付管线未装配")
 	}
-	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), money.Cents(amount))
+	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), req.GetMethod(), money.Cents(amount))
 	if err != nil {
 		return nil, mapRechargeErr(err)
 	}
@@ -140,6 +140,8 @@ func mapRechargeErr(err error) error {
 		return errors.BadRequest("wallet.CHANNEL_UNSUPPORTED", "支付渠道驱动未实现")
 	case containsStr(msg, "CHANNEL_CONFIG_INVALID"):
 		return errors.InternalServer("wallet.CHANNEL_CONFIG_INVALID", "支付渠道配置无效")
+	case containsStr(msg, "METHOD_INVALID"):
+		return errors.BadRequest("wallet.METHOD_INVALID", "请选择该渠道支持的支付方式")
 	case containsStr(msg, "RECHARGE_NOT_FOUND"):
 		return errors.NotFound("wallet.RECHARGE_NOT_FOUND", "充值单不存在")
 	default:

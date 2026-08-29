@@ -226,7 +226,7 @@ func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *
 	if err != nil {
 		return nil, errors.InternalServer("supplier.RECHARGE_FAILED", "创建充值单失败")
 	}
-	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), money.Cents(amount))
+	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), req.GetMethod(), money.Cents(amount))
 	if err != nil {
 		return nil, mapSupplierRechargeErr(err)
 	}

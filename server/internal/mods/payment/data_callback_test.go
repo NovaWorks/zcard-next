@@ -355,7 +355,7 @@ func TestCreateRechargePaymentFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	info, err := repo.CreateRechargePayment(ctx, ro.ID, "epay", 10000)
+	info, err := repo.CreateRechargePayment(ctx, ro.ID, "epay", "alipay", 10000)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -373,7 +373,7 @@ func TestCreateRechargePaymentFlow(t *testing.T) {
 		t.Fatalf("充值到账错误: %d", avail)
 	}
 	// 余额渠道充值拒绝
-	if _, err := repo.CreateRechargePayment(ctx, ro.ID, "balance", 10000); err == nil {
+	if _, err := repo.CreateRechargePayment(ctx, ro.ID, "balance", "", 10000); err == nil {
 		t.Fatal("充值不应支持余额渠道")
 	}
 }

@@ -409,10 +409,12 @@ func (x *CancelSupplierApplicationRequest) GetId() uint64 {
 }
 
 type CreateSupplierRechargeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                      // 对接账户（须 approved 且归属本人）
-	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"` // 意向金额（分；服务端按档位裁决）
-	Channel       string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`                             // 支付渠道 code
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                      // 对接账户（须 approved 且归属本人）
+	AmountCents int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"` // 意向金额（分；服务端按档位裁决）
+	Channel     string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`                             // 支付渠道 code
+	// 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
+	Method        *string `protobuf:"bytes,4,opt,name=method,proto3,oneof" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -464,6 +466,13 @@ func (x *CreateSupplierRechargeRequest) GetAmountCents() int64 {
 func (x *CreateSupplierRechargeRequest) GetChannel() string {
 	if x != nil {
 		return x.Channel
+	}
+	return ""
+}
+
+func (x *CreateSupplierRechargeRequest) GetMethod() string {
+	if x != nil && x.Method != nil {
+		return *x.Method
 	}
 	return ""
 }
@@ -700,11 +709,13 @@ const file_storefront_v1_supplier_proto_rawDesc = "" +
 	"\x1fRegenerateSupplierSecretRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\"2\n" +
 	" CancelSupplierApplicationRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\"{\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\"\xa3\x01\n" +
 	"\x1dCreateSupplierRechargeRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12&\n" +
 	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
-	"\achannel\x18\x03 \x01(\tB\x03\xe0A\x02R\achannel\"F\n" +
+	"\achannel\x18\x03 \x01(\tB\x03\xe0A\x02R\achannel\x12\x1b\n" +
+	"\x06method\x18\x04 \x01(\tH\x00R\x06method\x88\x01\x01B\t\n" +
+	"\a_method\"F\n" +
 	"\x1dSetSupplierIPWhitelistRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x10\n" +
 	"\x03ips\x18\x02 \x03(\tR\x03ips\"\x8b\x01\n" +
@@ -786,6 +797,7 @@ func file_storefront_v1_supplier_proto_init() {
 	if File_storefront_v1_supplier_proto != nil {
 		return
 	}
+	file_storefront_v1_supplier_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

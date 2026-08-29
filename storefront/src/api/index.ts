@@ -471,8 +471,8 @@ export interface CreateRechargeReply {
   payload: string;
 }
 
-export function createRecharge(amountCents: number, channel: string) {
-  return api.post<CreateRechargeReply>('/wallet/recharge', { amount_cents: amountCents, channel });
+export function createRecharge(amountCents: number, channel: string, method?: string) {
+  return api.post<CreateRechargeReply>('/wallet/recharge', { amount_cents: amountCents, channel, method: method || '' });
 }
 
 export function redeemGiftcard(code: string) {

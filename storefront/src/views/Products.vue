@@ -20,8 +20,9 @@
           <button class="btn secondary" @click="onSearch">搜索</button>
           <span class="muted" style="font-size: 13px;">排序：</span>
           <select v-model="sort" class="input" style="max-width: 160px;" @change="onSearch">
-            <option value="newest">综合排序</option>
+            <option value="default">综合排序</option>
             <option value="sales">销量优先</option>
+            <option value="newest">最新上架</option>
             <option value="price_asc">价格从低到高</option>
             <option value="price_desc">价格从高到低</option>
           </select>
@@ -36,10 +37,10 @@
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
       <div v-if="viewMode === 'grid'" class="grid" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx}px, 1fr))` }">
-        <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" />
+        <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
       </div>
       <div v-else class="list-rows">
-        <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" />
+        <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" :show-sales="showSales" :show-stock="showStock" />
       </div>
       <div v-if="products.length === 0 && !loading" class="muted" style="margin-top: 24px; text-align: center;">暂无商品</div>
 
@@ -66,7 +67,8 @@ const products = ref<Product[]>([]);
 const categories = ref<CategoryItem[]>([]);
 const keyword = ref('');
 const categoryId = ref(0);
-const sort = ref('newest');
+// 排序：default=综合（运营权重）| sales | newest | price_asc | price_desc（与后台 sort_by 同值域）
+const sort = ref('default');
 const page = ref(1);
 const pageSize = ref(12);
 const total = ref(0);
@@ -78,6 +80,8 @@ const viewMode = ref<'grid' | 'list'>('grid'); // template.default_view（big �
 const bigGrid = ref(false); // default_view=big：大图卡片（更宽的列）
 const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
 const gridMinPx = computed(() => (bigGrid.value ? 300 : 200)); // per_row 微调列宽
+const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
+const showStock = ref(true); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
 
 onMounted(async () => {
   try {
@@ -99,12 +103,15 @@ onMounted(async () => {
       pageSize.value = pp;
       load();
     }
-    // 默认排序方式（settings 的 default 对应前端综合排序 newest）
+    // 默认排序方式（与后台 sort_by 同值域；default=综合）
     const sb = val('template.sort_by');
-    if (['newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort) {
+    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort) {
       sort.value = sb;
       load();
     }
+    // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
+    if (val('template.show_sales') === false) showSales.value = false;
+    if (val('template.show_stock') === false) showStock.value = false;
     // 分类导航样式：grid=顶部胶囊（隐藏左侧树）
     const ns = val('template.category_nav_style');
     if (ns === 'grid' || ns === 'list') navStyle.value = ns;

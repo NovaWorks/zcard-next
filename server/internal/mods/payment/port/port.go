@@ -50,7 +50,7 @@ type RechargePaymentInfo struct {
 // 充值单落 pending 后创建支付单（关联 recharge_order_id）+ 渠道发起，
 // 余额入账只发生在回调成功后（铁律 16）。
 type RechargePayer interface {
-	CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel string, amount money.Cents) (*RechargePaymentInfo, error)
+	CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel, method string, amount money.Cents) (*RechargePaymentInfo, error)
 }
 
 // SupplierRecharger 供货账户余额入账端口（payment 回调消费；wire 绑定 supplier repo）：

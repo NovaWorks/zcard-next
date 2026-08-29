@@ -81,10 +81,10 @@
 
         <!-- 商品列表（网格/列表双视图） -->
         <div v-if="viewMode === 'grid'" class="product-grid" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx}px, 1fr))` }">
-          <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" />
+          <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
         </div>
         <div v-else class="product-list">
-          <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" />
+          <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" :show-sales="showSales" :show-stock="showStock" />
         </div>
         <div v-if="products.length === 0 && !loading" class="empty-state">
           <div class="empty-icon">📦</div>
@@ -149,6 +149,9 @@ const siteName = 'ZCard 商店';
 const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
 const bigGrid = ref(false); // template.default_view=big：大图卡片（更宽的列）
 const gridMinPx = computed(() => (bigGrid.value ? 300 : 200));
+const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
+const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
+const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
 const sectionTitle = computed(() =>
   activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
@@ -177,13 +180,13 @@ function goPage(p: number) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Hero 轮播：公告设置 image/carousel 优先；否则用生效横幅；点击行为跟随来源
+// Hero 轮播：公告设置 image/carousel 优先；顶部横幅开启时用生效横幅；点击行为跟随来源
 const heroItems = computed(() => {
   const items: { key: string; img: string; title: string; onClick?: () => void }[] = [];
   const ann = announcement.value;
   if ((ann.type === 'image' || ann.type === 'carousel') && ann.images.length) {
     ann.images.forEach((img, i) => items.push({ key: `ann-${i}`, img, title: '', onClick: openAnnouncement }));
-  } else {
+  } else if (topBannerEnabled.value) {
     banners.value.forEach((b) => items.push({ key: `bn-${b.id}`, img: bannerImg(b), title: b.title, onClick: () => openBanner(b) }));
   }
   return items;
@@ -295,6 +298,11 @@ onMounted(async () => {
     if (dv === 'list') viewMode.value = 'list';
     else if (dv === 'big') { viewMode.value = 'grid'; bigGrid.value = true; }
     else viewMode.value = 'grid';
+    // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
+    if (val('template.show_sales') === false) showSales.value = false;
+    if (val('template.show_stock') === false) showStock.value = false;
+    // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
+    if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }
 });
 onUnmounted(stopHero);

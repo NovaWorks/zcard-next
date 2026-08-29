@@ -38,7 +38,7 @@ func NewStoreCatalogService(uc *CatalogUsecase, pricer resellerport.Pricer, stoc
 
 // ListProducts 商品列表（游客可访问；隐藏商品不出现在列表）。
 // 分页参数缺省：page=1 / page_size=20（嵌套 message 的 query 绑定为 page.page=1 形式）。
-// 排序：newest（默认）/ price_asc / price_desc 走 SQL；sales 全量拉取后按销量内存排序分页。
+// 排序：default（综合）/ newest / price_asc / price_desc 走 SQL；sales 全量拉取后按销量内存排序分页。
 func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv1.ListProductsRequest) (*storefrontv1.ListProductsReply, error) {
 	tc := tenancy.FromContext(ctx)
 	page := req.GetPage()

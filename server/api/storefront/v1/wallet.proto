@@ -75,6 +75,8 @@ message Tx {
 message CreateRechargeRequest {
   int64 amount_cents = 1 [(google.api.field_behavior) = REQUIRED];
   string channel = 2 [(google.api.field_behavior) = REQUIRED];
+  // 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
+  optional string method = 3;
 }
 
 message CreateRechargeReply {

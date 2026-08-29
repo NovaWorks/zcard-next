@@ -12,10 +12,10 @@
     <div class="pc-body">
       <div class="pc-name">{{ p.name }}</div>
       <div class="pc-price">{{ formatMoney(p.price_cents) }}</div>
-      <div class="pc-meta">
-        <span>已售 {{ p.sales_count || 0 }}</span>
-        <span v-if="p.stock_visible && p.stock_type === 'card' && p.stock >= 0">库存 {{ p.stock }}</span>
-        <span v-else-if="p.stock_type !== 'card'" class="pc-stock-free">不限库存</span>
+      <div v-if="showSales || showStock" class="pc-meta">
+        <span v-if="showSales">已售 {{ p.sales_count || 0 }}</span>
+        <span v-if="showStock && p.stock_visible && p.stock_type === 'card' && p.stock >= 0">库存 {{ p.stock }}</span>
+        <span v-else-if="showStock && p.stock_type !== 'card'" class="pc-stock-free">不限库存</span>
       </div>
       <button class="btn btn-primary pc-buy" @click.stop="$router.push(`/product/${p.id}`)">查看详情</button>
     </div>
@@ -30,6 +30,10 @@ import { NO_IMAGE, onImgError } from '@/no-image';
 defineProps<{
   p: Product;
   mode?: 'grid' | 'list';
+  /** 卡片「已售」显示（template.show_sales；缺省显示） */
+  showSales?: boolean;
+  /** 卡片「库存」显示（template.show_stock；叠加商品级 stock_visible；缺省显示） */
+  showStock?: boolean;
 }>();
 </script>
 

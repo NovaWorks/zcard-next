@@ -22,7 +22,7 @@ type fakePayer struct {
 	calls int
 }
 
-func (f *fakePayer) CreateRechargePayment(_ context.Context, rechargeOrderID uint64, channel string, _ money.Cents) (*paymentport.RechargePaymentInfo, error) {
+func (f *fakePayer) CreateRechargePayment(_ context.Context, rechargeOrderID uint64, channel, method string, _ money.Cents) (*paymentport.RechargePaymentInfo, error) {
 	f.calls++
 	return &paymentport.RechargePaymentInfo{PaymentID: 900 + uint64(f.calls), Type: "redirect", Payload: "https://pay.example/1"}, nil
 }

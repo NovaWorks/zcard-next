@@ -288,9 +288,11 @@ func (x *Tx) GetCreatedAt() int64 {
 }
 
 type CreateRechargeRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AmountCents   int64                  `protobuf:"varint,1,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	AmountCents int64                  `protobuf:"varint,1,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Channel     string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	// 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
+	Method        *string `protobuf:"bytes,3,opt,name=method,proto3,oneof" json:"method,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -335,6 +337,13 @@ func (x *CreateRechargeRequest) GetAmountCents() int64 {
 func (x *CreateRechargeRequest) GetChannel() string {
 	if x != nil {
 		return x.Channel
+	}
+	return ""
+}
+
+func (x *CreateRechargeRequest) GetMethod() string {
+	if x != nil && x.Method != nil {
+		return *x.Method
 	}
 	return ""
 }
@@ -902,10 +911,12 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\treference\x18\x06 \x01(\tR\treference\x12\x16\n" +
 	"\x06remark\x18\a \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\x03R\tcreatedAt\"^\n" +
+	"created_at\x18\b \x01(\x03R\tcreatedAt\"\x86\x01\n" +
 	"\x15CreateRechargeRequest\x12&\n" +
 	"\famount_cents\x18\x01 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
-	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\"\x83\x01\n" +
+	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\x12\x1b\n" +
+	"\x06method\x18\x03 \x01(\tH\x00R\x06method\x88\x01\x01B\t\n" +
+	"\a_method\"\x83\x01\n" +
 	"\x13CreateRechargeReply\x12\x1f\n" +
 	"\vrecharge_id\x18\x01 \x01(\x04R\n" +
 	"rechargeId\x12\x1d\n" +
@@ -1018,6 +1029,7 @@ func file_storefront_v1_wallet_proto_init() {
 	if File_storefront_v1_wallet_proto != nil {
 		return
 	}
+	file_storefront_v1_wallet_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -10570,6 +10570,9 @@ components:
                     type: string
                 channel:
                     type: string
+                method:
+                    type: string
+                    description: 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
         zcard.api.storefront.v1.CreateSupplierRechargeReply:
             type: object
             properties:
@@ -10594,6 +10597,9 @@ components:
                     type: string
                 channel:
                     type: string
+                method:
+                    type: string
+                    description: 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
         zcard.api.storefront.v1.CreateTicketRequest:
             required:
                 - type

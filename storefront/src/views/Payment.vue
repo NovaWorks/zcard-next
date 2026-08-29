@@ -125,27 +125,15 @@
         </div>
       </div>
 
-      <!-- 渠道网格 -->
+      <!-- 渠道网格（方式级收银台，与充值页共用组件） -->
       <div class="pay-channels">
         <div class="pay-channels-title">选择支付方式</div>
-        <div v-if="payOptions.length" class="pay-channel-grid">
-          <button
-            v-for="o in payOptions"
-            :key="o.channel + ':' + o.method"
-            class="pay-channel"
-            :class="{ active: selected.channel === o.channel && selected.method === o.method }"
-            @click="selected = { channel: o.channel, method: o.method }"
-          >
-            <span class="pay-channel-icon">
-              <img v-if="o.icon" :src="o.icon" :alt="o.name" class="pay-channel-img" />
-              <template v-else>{{ o.emoji }}</template>
-            </span>
-            <span class="pay-channel-name">{{ o.name }}</span>
-            <span class="pay-channel-sub">{{ o.sub }}</span>
-            <span v-if="selected.channel === o.channel && selected.method === o.method" class="pay-channel-check">✓</span>
-          </button>
-        </div>
-        <div v-else class="pay-no-channel">暂无可用的支付渠道，请联系客服</div>
+        <PayChannelGrid
+          :options="payOptions"
+          :channel="selected.channel"
+          :method="selected.method"
+          @select="(ch, m) => (selected = { channel: ch, method: m })"
+        />
       </div>
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
@@ -164,6 +152,8 @@ import { useRoute, useRouter } from 'vue-router';
 import QRCode from 'qrcode';
 import { createPayment, fetchPaymentChannels, getOrder, fetchDelivery, getOrderPassword, rememberOrderPassword, type ChannelItem, type OrderDetail, type FetchDeliveryReply } from '@/api';
 import { formatMoney } from '@/api/client';
+import { flattenPayOptions, emojiOf } from '@/composables/pay-options';
+import PayChannelGrid from '@/components/PayChannelGrid.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -210,39 +200,8 @@ const countdownDanger = computed(() => countdown.value !== null && countdown.val
 
 const itemCount = computed(() => order.value?.items?.reduce((s, i) => s + i.quantity, 0) || 0);
 
-// 方式/渠道内置 emoji 回落（未配置自定义图标时）
-const EMOJI: Record<string, string> = {
-  wallet: '💰', alipay: '🅰️', wxpay: '💬', wechat: '💬', qqpay: '🐧',
-  epay: '⚡', epusdt: '₮', stripe: '🟦', paypal: '🅿️',
-};
-function emojiOf(code: string, driver: string) {
-  return EMOJI[code] || EMOJI[driver] || '💳';
-}
-
-// 渠道 → 收银台方式级选项展平：多方式渠道（易支付/USDT 网关）每个方式一个选项，
-// 顾客看到的是「支付宝 / 微信 / USDT·TRC20」而不是网关本身；单方式渠道保持原样。
-const payOptions = computed(() => {
-  const out: { channel: string; method: string; name: string; icon?: string; emoji: string; sub: string }[] = [];
-  for (const c of channels.value) {
-    const methods = (c.methods || []).filter((m) => m.name);
-    if (methods.length > 0) {
-      for (const m of methods) {
-        out.push({
-          channel: c.code, method: m.code, name: m.name,
-          icon: m.icon || c.icon || undefined, emoji: emojiOf(m.code, c.driver),
-          sub: c.driver === 'epusdt' ? 'USDT 链上收款' : '在线支付',
-        });
-      }
-    } else {
-      out.push({
-        channel: c.code, method: '', name: c.name,
-        icon: c.icon || undefined, emoji: emojiOf(c.code, c.driver),
-        sub: c.driver === 'wallet' ? '使用账户余额' : '在线支付',
-      });
-    }
-  }
-  return out;
-});
+// 渠道 → 收银台方式级选项（共享逻辑见 composables/pay-options.ts）
+const payOptions = computed(() => flattenPayOptions(channels.value));
 
 onMounted(async () => {
   // 支付回跳/分享兜底：?pwd= 直填会话记忆（不落 URL 历史——replace 清参）
@@ -572,26 +531,6 @@ function fmtTime(ts?: number): string {
 
 .pay-channels { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; }
 .pay-channels-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 14px; }
-.pay-channel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.pay-channel-img { width: 28px; height: 28px; object-fit: contain; border-radius: 6px; display: block; }
-@media (max-width: 520px) { .pay-channel-grid { grid-template-columns: 1fr; } }
-.pay-channel {
-  position: relative; display: flex; align-items: center; gap: 12px;
-  border: 2px solid #e5e7eb; border-radius: 12px; padding: 14px;
-  background: #fff; cursor: pointer; text-align: left; transition: all 0.15s;
-  font-family: inherit;
-}
-.pay-channel:hover { border-color: rgba(37, 99, 235, 0.4); }
-.pay-channel.active { border-color: #2563eb; background: #eff6ff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12); }
-.pay-channel-name { font-size: 14px; font-weight: 600; color: #111827; }
-.pay-channel-sub { display: block; font-size: 12px; color: #9ca3af; margin-top: 2px; }
-.pay-channel-check {
-  position: absolute; top: 8px; right: 8px;
-  width: 20px; height: 20px; border-radius: 999px;
-  background: #2563eb; color: #fff; font-size: 12px;
-  display: flex; align-items: center; justify-content: center;
-}
-.pay-no-channel { padding: 24px; text-align: center; color: #9ca3af; font-size: 14px; }
 
 .pay-submit {
   width: 100%; padding: 14px 0; border: none; cursor: pointer;

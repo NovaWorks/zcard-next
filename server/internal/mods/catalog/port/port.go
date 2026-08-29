@@ -74,7 +74,7 @@ type VisibleFilter struct {
 	PageSize   int32
 	// PointsOnly 积分商城视图（true=仅 points_required>0 商品；P3-01）
 	PointsOnly bool
-	// Sort 排序：newest | price_asc | price_desc | sales（空=newest）
+	// Sort 排序：default（综合）| newest（最新上架）| price_asc | price_desc | sales（空=default）
 	Sort string
 }
 

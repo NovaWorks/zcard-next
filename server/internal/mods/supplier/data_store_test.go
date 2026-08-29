@@ -30,7 +30,7 @@ type fakeRechargePayer struct {
 	calls int
 }
 
-func (f *fakeRechargePayer) CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel string, amount money.Cents) (*port.RechargePaymentInfo, error) {
+func (f *fakeRechargePayer) CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel, method string, amount money.Cents) (*port.RechargePaymentInfo, error) {
 	f.calls++
 	return &port.RechargePaymentInfo{PaymentID: 900 + uint64(f.calls), Type: "redirect", Payload: "https://pay.example.com/"}, nil
 }

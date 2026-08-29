@@ -291,7 +291,7 @@ func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, cha
 
 // CreateRechargePayment 充值支付单（RechargePayer 端口实现）：
 // 建单（关联 recharge_order_id）→ 渠道发起（金额=服务端落库值）→ 返回跳转信息。
-func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel string, amount money.Cents) (*port.RechargePaymentInfo, error) {
+func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrderID uint64, channel, method string, amount money.Cents) (*port.RechargePaymentInfo, error) {
 	client := data.Client(ctx, r.data)
 	ro, err := client.RechargeOrder.Get(ctx, rechargeOrderID)
 	if err != nil {
@@ -307,6 +307,20 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	}
 	if ch.Driver == "wallet" {
 		return nil, fmt.Errorf("payment.RECHARGE_CHANNEL_INVALID: 充值不支持余额渠道")
+	}
+	// 方式级路由（与订单支付同口径）：多方式渠道 method 必填且须在启用列表内
+	var methodCode string
+	var methodParams map[string]string
+	if ms := parseMethods(ch); len(ms) > 0 {
+		for _, m := range ms {
+			if m.Enabled && m.Code == method {
+				methodCode, methodParams = m.Code, m.Params
+				break
+			}
+		}
+		if methodCode == "" {
+			return nil, fmt.Errorf("payment.METHOD_INVALID: 请选择该渠道支持的支付方式")
+		}
 	}
 	p, err := client.Payment.Create().
 		SetRechargeOrderID(ro.ID).
@@ -334,6 +348,7 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 		ChargedUnits: snap.Units, ChargedCurrency: snap.Currency,
 		NotifyBaseURL: "/payments/callback/" + channel,
 		Config:        cfg,
+		MethodCode:    methodCode, MethodParams: methodParams,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("payment.CREATE_FAILED: %w", err)

@@ -47,7 +47,11 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		q = q.Order(ent.Asc(product.FieldPrice))
 	case "price_desc":
 		q = q.Order(ent.Desc(product.FieldPrice))
+	case "newest":
+		// 最新上架：创建先后降序（区别于综合排序的运营权重 FieldSort 优先）
+		q = q.Order(ent.Desc(product.FieldID))
 	default:
+		// 综合排序（default）：运营权重优先，同权重内新商品在前
 		q = q.Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
 	}
 	if f.CategoryID > 0 {
