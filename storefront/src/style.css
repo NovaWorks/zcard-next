@@ -91,8 +91,10 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .footer-copy { border-top: 1px solid #f3f4f6; text-align: center; padding: 12px; color: #9ca3af; font-size: 12px; }
 
 /* ── 回到顶部 ── */
+/* bottom 让开客服悬浮球（service.widget_script 第三方气泡固定右下角 ~20px 且 z-index 极高，
+ 同位会把它整个盖住）：竖向排一档，客服球在上、回到顶部在其上方 */
 .back-top {
-  position: fixed; right: 24px; bottom: 40px; width: 44px; height: 44px;
+  position: fixed; right: 24px; bottom: 96px; width: 44px; height: 44px;
   border-radius: 999px; border: none; cursor: pointer; font-size: 18px; color: #fff;
   background: rgba(37, 99, 235, 0.9); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
   transition: all 0.2s; z-index: 99;
