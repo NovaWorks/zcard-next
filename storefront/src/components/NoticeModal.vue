@@ -141,4 +141,17 @@ function formatDate(unix?: number): string {
   display: flex; justify-content: flex-end; gap: 10px;
   padding: 12px 18px; border-top: 1px solid #f3f4f6;
 }
+
+/* 移动端：弹窗收紧不铺满屏——图片限高、按钮整宽纵排（主按钮靠拇指） */
+@media (max-width: 640px) {
+  .notice-mask { padding: 12px; }
+  .notice-modal { max-height: 76vh; }
+  .notice-head { padding: 12px 14px; }
+  .notice-head-title { font-size: 14px; }
+  .notice-body { padding: 12px 14px; }
+  .ann-slide img { max-height: 34vh; }
+  .notice-foot { flex-direction: column; gap: 8px; padding: 12px 14px; }
+  .notice-foot .btn { width: 100%; text-align: center; padding: 10px 16px; }
+  .notice-foot a.btn.secondary { background: #fff; border: 1px solid #e5e7eb; }
+}
 </style>

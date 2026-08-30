@@ -107,3 +107,10 @@ async function exchange(p: Product) {
   }
 }
 </script>
+
+<style scoped>
+/* 移动端：兑换商品网格双列（与首页/列表页一致） */
+@media (max-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+}
+</style>

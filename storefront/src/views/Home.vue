@@ -60,7 +60,7 @@
 
         <!-- 分类胶囊：category_nav_style=grid 时全断点显示；list 时仅移动端兜底 -->
         <div v-if="categories.length" class="card cat-chips" :class="{ 'mobile-only': navStyle !== 'grid' }">
-          <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+          <div class="cat-chips-row">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               {{ c.name }}
@@ -320,6 +320,7 @@ onUnmounted(stopHero);
 }
 /* 分类胶囊（category_nav_style=grid 顶部导航 / list 移动端兜底） */
 .cat-chips { padding: 12px 14px; }
+.cat-chips-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .chip {
   padding: 6px 16px; border-radius: 999px; font-size: 14px; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
@@ -431,4 +432,26 @@ onUnmounted(stopHero);
   font-size: 13px; outline: none; background: #fff;
 }
 .pager-total { font-size: 13px; }
+
+/* ── 移动端（≤768px）：轮播限高、分类胶囊单行横滑、商品双列 ── */
+@media (max-width: 768px) {
+  .home { gap: 12px; }
+  .home-layout { gap: 12px; }
+  /* 轮播高度按视口收窄（桌面 clamp 240-360px 在手机上过高） */
+  .hero-slide img { height: clamp(110px, 30vw, 170px); }
+  .hero-title { padding: 22px 14px 10px; font-size: 15px; }
+  .hero-banner { padding: 22px 18px; }
+  .hero-banner h1 { font-size: 20px; }
+  .hero-icon { font-size: 48px; }
+  /* 分类胶囊：单行横向滑动（对齐主流电商分类栏），不折行占屏 */
+  .cat-chips { padding: 10px 12px; }
+  .cat-chips-row {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cat-chips-row::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; white-space: nowrap; }
+  /* 商品网格：双列瀑布（auto-fill minmax(200px) 在手机只能出 1 列） */
+  .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+}
 </style>

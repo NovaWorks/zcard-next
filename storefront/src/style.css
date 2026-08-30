@@ -173,6 +173,39 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
 }
 .nav-recommend-btn:hover { background: #ffedd5; border-color: #fb923c; color: #9a3412; }
 
+/* ── 移动端适配（≤768px，对齐主流电商 App：两行头部 + 横滑导航 + 紧凑页脚）── */
+@media (max-width: 768px) {
+  /* 品牌条：只留口号居中（信任点在移动端省略） */
+  .brand-bar { justify-content: center; padding: 4px 12px; }
+  .brand-trust { display: none; }
+
+  /* 头部两行：第一行 logo + 购物车/登录注册；第二行导航胶囊横向滑动（不逐字换行） */
+  .topbar { flex-wrap: wrap; gap: 0 8px; padding: 8px 12px; }
+  .topbar .logo { order: 1; }
+  .logo-name { font-size: 16px; }
+  .nav-right { order: 2; margin-left: auto; gap: 2px; }
+  .nav-links {
+    order: 3; flex: 1 1 100%; width: 100%;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; gap: 2px; padding: 4px 0 2px;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links a, .nav-horn { white-space: nowrap; flex-shrink: 0; padding: 6px 10px; }
+  .nav-custom-btn, .nav-recommend-btn { flex-shrink: 0; }
+  /* 购物车只留图标角标；用户名与「个人中心」重复，移动端隐藏 */
+  .cart-label { display: none; }
+  .cart-link { padding: 6px 8px; }
+  .user-link { display: none; }
+
+  /* 页脚：信任点/栏目双列紧凑 */
+  .footer-trust { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 16px; }
+  .trust-icon { font-size: 18px; }
+  .footer-cols { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; padding: 8px 16px 16px; }
+  .footer-copy { padding: 10px 12px; }
+
+  .back-top { right: 16px; }
+}
+
 /* ── 维护模式（ops.maintenance：banner=横幅 / modal=全屏遮罩）── */
 .maint-banner {
   background: linear-gradient(90deg, #f59e0b, #f97316); color: #fff;

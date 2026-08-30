@@ -128,4 +128,11 @@ defineProps<{
 @media (min-width: 640px) {
   .grid-mode:hover .pc-buy { display: flex; }
 }
+
+/* 移动端双列窄卡：收紧留白，字号保持 ≥14px */
+@media (max-width: 640px) {
+  .grid-mode .pc-body { padding: 10px; gap: 5px; }
+  .grid-mode .pc-price { font-size: 16px; }
+  .grid-mode .pc-name { min-height: 38px; }
+}
 </style>

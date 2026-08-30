@@ -192,6 +192,11 @@ async function applyListSeo() {
   padding: 6px 12px; cursor: pointer; transition: all .15s;
 }
 .vt-btn + .vt-btn { border-left: 1px solid #e5e7eb; }
+
+/* 移动端：商品网格双列（与首页一致；auto-fill minmax 在手机只能出 1 列） */
+@media (max-width: 768px) {
+  .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+}
 .vt-btn:hover { color: #2563eb; }
 .vt-btn.active { background: #2563eb; color: #fff; }
 .list-rows { display: flex; flex-direction: column; gap: 10px; }
