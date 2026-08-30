@@ -23,7 +23,7 @@
 
     <div class="card">
       <h2 style="margin-bottom: 12px;">我的工单</h2>
-      <table class="list">
+      <table class="list table-desktop">
         <thead><tr><th>工单号</th><th>类型</th><th>优先级</th><th>状态</th><th>创建时间</th><th></th></tr></thead>
         <tbody>
           <tr v-for="t in tickets" :key="t.id">
@@ -41,6 +41,24 @@
           <tr v-if="!tickets.length"><td colspan="6" class="muted" style="text-align: center;">暂无工单</td></tr>
         </tbody>
       </table>
+      <!-- 移动端工单卡片 -->
+      <div class="table-cards">
+        <div v-for="t in tickets" :key="t.id" class="mcard">
+          <div class="mcard-row">
+            <span class="mcard-title">{{ t.ticket_no }}</span>
+            <span :class="ticketBadge(t.status)">{{ statusText(t.status) }}</span>
+          </div>
+          <div class="mcard-row">
+            <span class="muted">
+              {{ t.type === 'presale' ? '售前' : '售后' }} ·
+              <span :class="t.priority === 'urgent_paid' ? 'badge red' : t.priority === 'high' ? 'badge orange' : 'badge gray'">{{ priorityText(t.priority) }}</span>
+              · {{ fmtTime(t.created_at) }}
+            </span>
+            <router-link class="btn secondary" :to="`/tickets/${t.ticket_no}`">查看</router-link>
+          </div>
+        </div>
+        <div v-if="!tickets.length" class="muted" style="text-align: center; padding: 16px 0;">暂无工单</div>
+      </div>
       <div class="actions" style="margin-top: 12px;" v-if="total > pageSize">
         <button class="btn secondary" :disabled="page <= 1" @click="load(page - 1)">上一页</button>
         <span class="muted">{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
@@ -115,3 +133,19 @@ function fmtTime(ts: number): string {
   return ts ? new Date(ts * 1000).toLocaleString() : '';
 }
 </script>
+
+<style scoped>
+/* ── 移动端表格→卡片（桌面表格不受影响）── */
+.table-cards { display: none; }
+.mcard {
+  border: 1px solid #f3f4f6; border-radius: 10px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px; background: #fafbfc;
+}
+.mcard-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mcard-title { font-weight: 600; font-size: 14px; color: #111827; word-break: break-all; text-align: left; }
+.mcard .btn { padding: 6px 12px; font-size: 13px; }
+@media (max-width: 768px) {
+  .table-desktop { display: none; }
+  .table-cards { display: flex; flex-direction: column; gap: 10px; }
+}
+</style>

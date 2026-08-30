@@ -351,4 +351,21 @@ const queryPwd = ref('');
 .cart-controls-group { border-bottom: 1px solid #f3f4f6; padding: 10px 0; }
 .cart-controls-group:last-child { border-bottom: none; }
 .cart-controls-name { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+
+/* ── 移动端：商品行两行化（第一行 勾选+封面+名称，第二行 单价+数量+小计+删除）── */
+@media (max-width: 768px) {
+  .cart-item { flex-wrap: wrap; row-gap: 10px; gap: 10px; padding: 12px; }
+  /* 第一行占满剩余宽，把价格组挤到第二行 */
+  .cart-item-info { flex: 1 1 calc(100% - 16px - 56px - 40px); }
+  .cart-item-price { order: 1; width: auto; text-align: left; }
+  .cart-item-qty { order: 2; margin-left: auto; }
+  .cart-item-subtotal { order: 3; width: auto; text-align: right; }
+  .cart-item-del { order: 4; }
+  /* 结算栏：合计一行、输入与按钮整行铺满（sticky 条不再挤压） */
+  .cart-checkout { padding: 12px; }
+  .cart-checkout-fields { width: 100%; }
+  .cart-checkout-fields .input { max-width: none !important; flex: 1 1 150px; min-width: 0; }
+  .cart-checkout-btn { flex: 1 1 100%; }
+  .cart-controls { padding: 14px; }
+}
 </style>

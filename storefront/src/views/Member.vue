@@ -47,7 +47,7 @@
 
     <!-- 我的订单 -->
     <div v-if="tab === 'orders'" class="card">
-      <table class="list">
+      <table class="list table-desktop">
         <thead><tr><th>订单号</th><th>状态</th><th>金额</th><th>件数</th><th>时间</th><th>操作</th></tr></thead>
         <tbody>
           <tr v-for="o in orders" :key="o.order_no">
@@ -70,6 +70,33 @@
           <tr v-if="!orders.length"><td colspan="6" class="muted" style="text-align: center;">暂无订单</td></tr>
         </tbody>
       </table>
+      <!-- 移动端订单卡片（大厂「我的订单」样式） -->
+      <div class="table-cards">
+        <div v-for="o in orders" :key="o.order_no" class="mcard">
+          <div class="mcard-row">
+            <span class="mcard-title">{{ o.order_no }}</span>
+            <span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span>
+          </div>
+          <div class="mcard-row">
+            <span class="muted">{{ fmtTime(o.created_at) }} · {{ o.item_count }} 件</span>
+            <span class="price">{{ formatMoney(o.total_cents) }}</span>
+          </div>
+          <div class="mcard-row">
+            <span></span>
+            <span class="actions">
+              <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">去支付</router-link>
+              <router-link
+                class="btn secondary"
+                :to="`/fetch?order_no=${o.order_no}`"
+                v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
+              >取货</router-link>
+              <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
+              <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
+            </span>
+          </div>
+        </div>
+        <div v-if="!orders.length" class="muted" style="text-align: center; padding: 16px 0;">暂无订单</div>
+      </div>
       <div class="actions" style="margin-top: 12px;" v-if="ordersTotal > ordersPageSize">
         <button class="btn secondary" :disabled="ordersPage <= 1" @click="loadOrders(ordersPage - 1)">上一页</button>
         <span class="muted">{{ ordersPage }} / {{ Math.ceil(ordersTotal / ordersPageSize) }}</span>
@@ -79,7 +106,7 @@
 
     <!-- 余额流水 -->
     <div v-if="tab === 'transactions'" class="card">
-      <table class="list">
+      <table class="list table-desktop">
         <thead><tr><th>时间</th><th>类型</th><th>金额</th><th>余额</th><th>备注</th></tr></thead>
         <tbody>
           <tr v-for="t in transactions" :key="t.id">
@@ -92,6 +119,23 @@
           <tr v-if="!transactions.length"><td colspan="5" class="muted" style="text-align: center;">暂无流水</td></tr>
         </tbody>
       </table>
+      <!-- 移动端流水卡片 -->
+      <div class="table-cards">
+        <div v-for="t in transactions" :key="t.id" class="mcard">
+          <div class="mcard-row">
+            <span class="mcard-title">{{ t.type }}</span>
+            <span :class="t.amount_cents >= 0 ? 'success' : 'error'" style="font-weight: 700;">{{ formatSignedMoney(t.amount_cents) }}</span>
+          </div>
+          <div class="mcard-row">
+            <span class="muted">{{ fmtTime(t.created_at) }}</span>
+            <span class="muted">余额 {{ formatMoney(t.balance_after_cents) }}</span>
+          </div>
+          <div class="mcard-row" v-if="t.remark || t.reference">
+            <span class="muted" style="word-break: break-all;">{{ t.remark || t.reference }}</span>
+          </div>
+        </div>
+        <div v-if="!transactions.length" class="muted" style="text-align: center; padding: 16px 0;">暂无流水</div>
+      </div>
       <div class="actions" style="margin-top: 12px;" v-if="txTotal > txPageSize">
         <button class="btn secondary" :disabled="txPage <= 1" @click="loadTx(txPage - 1)">上一页</button>
         <span class="muted">{{ txPage }} / {{ Math.ceil(txTotal / txPageSize) }}</span>
@@ -595,6 +639,20 @@ function fmtTime(ts: number): string {
 </script>
 
 <style scoped>
+/* ── 移动端表格→卡片（订单/流水；桌面表格不受影响）── */
+.table-cards { display: none; }
+.mcard {
+  border: 1px solid #f3f4f6; border-radius: 10px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px; background: #fafbfc;
+}
+.mcard-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mcard-title { font-weight: 600; font-size: 14px; color: #111827; word-break: break-all; text-align: left; }
+.mcard .btn { padding: 6px 12px; font-size: 13px; }
+@media (max-width: 768px) {
+  .table-desktop { display: none; }
+  .table-cards { display: flex; flex-direction: column; gap: 10px; }
+}
+
 /* ── 充值（方式级收银台，与支付页同视觉语言）── */
 .recharge-page { max-width: 760px; display: flex; flex-direction: column; gap: 16px; }
 .rc-balance {

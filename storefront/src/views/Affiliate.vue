@@ -78,7 +78,7 @@
 
     <!-- 佣金流水 -->
     <div v-if="tab === 'commissions'" class="card">
-      <table class="list">
+      <table class="list table-desktop">
         <thead><tr><th>时间</th><th>订单</th><th>层级</th><th>基数</th><th>佣金</th><th>状态</th></tr></thead>
         <tbody>
           <tr v-for="c in commissions" :key="c.id">
@@ -92,6 +92,20 @@
           <tr v-if="!commissions.length"><td colspan="6" class="muted" style="text-align: center;">暂无佣金记录</td></tr>
         </tbody>
       </table>
+      <!-- 移动端佣金卡片 -->
+      <div class="table-cards">
+        <div v-for="c in commissions" :key="c.id" class="mcard">
+          <div class="mcard-row">
+            <span class="mcard-title">#{{ c.order_id }} · L{{ c.tier }}</span>
+            <span :class="commissionBadge(c.status)">{{ commissionText(c.status) }}</span>
+          </div>
+          <div class="mcard-row">
+            <span class="muted">{{ fmtTime(c.created_at) }} · 基数 {{ formatMoney(c.base_amount) }}</span>
+            <span :class="c.amount >= 0 ? 'success' : 'error'" style="font-weight: 700;">{{ formatSignedMoney(c.amount) }}</span>
+          </div>
+        </div>
+        <div v-if="!commissions.length" class="muted" style="text-align: center; padding: 16px 0;">暂无佣金记录</div>
+      </div>
       <div class="actions" style="margin-top: 12px;" v-if="commissionsTotal > pageSize">
         <button class="btn secondary" :disabled="commissionsPage <= 1" @click="loadCommissions(commissionsPage - 1)">上一页</button>
         <span class="muted">{{ commissionsPage }} / {{ Math.ceil(commissionsTotal / pageSize) }}</span>
@@ -245,6 +259,19 @@ function fmtTime(ts: number): string {
 </script>
 
 <style scoped>
+/* ── 移动端表格→卡片（佣金流水；桌面表格不受影响）── */
+.table-cards { display: none; }
+.mcard {
+  border: 1px solid #f3f4f6; border-radius: 10px; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px; background: #fafbfc;
+}
+.mcard-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mcard-title { font-weight: 600; font-size: 14px; color: #111827; word-break: break-all; text-align: left; }
+@media (max-width: 768px) {
+  .table-desktop { display: none; }
+  .table-cards { display: flex; flex-direction: column; gap: 10px; }
+}
+
 /* 推广头部：左（码+链接）/ 右（二维码）经典两栏；窄屏纵向堆叠 */
 .promo-hero {
   display: flex; gap: 24px; align-items: center;
