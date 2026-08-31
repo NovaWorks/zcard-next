@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- 个人中心共用导航（积分商城高亮；顶部导航已收敛，此页从个人中心进入） -->
+    <MemberTabs active="points" />
     <div class="card" style="margin-bottom: 16px;" v-if="level">
       <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
         <div>
@@ -45,6 +47,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { listProducts, getMyLevel, createOrder, type Product, type MyLevelReply } from '@/api';
 import { getToken } from '@/api/client';
+import MemberTabs from '@/components/MemberTabs.vue';
 import { NO_IMAGE, onImgError } from '@/no-image';
 import { fetchSiteSeo, applySeo } from '@/seo';
 

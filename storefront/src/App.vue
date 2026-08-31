@@ -37,7 +37,6 @@
       <nav class="nav-links">
         <router-link to="/" exact>首页</router-link>
         <router-link to="/products">全部商品</router-link>
-        <router-link to="/points">积分商城</router-link>
         <button class="nav-horn" @click="openNotice" title="系统公告">📢 公告</button>
         <router-link to="/fetch">取货查询</router-link>
         <!-- 顶部自定义按钮：外部链接新窗口；文章/公告站内路由（site.top_button {text,type,url|slug}） -->

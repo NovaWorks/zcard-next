@@ -25,6 +25,7 @@ const tabs = [
   { key: 'transactions', label: '余额流水' },
   { key: 'recharge', label: '充值' },
   { key: 'giftcard', label: '礼品卡' },
+  { key: 'points', label: '积分商城' },
   { key: 'promo', label: '推广营销' },
   { key: 'supplier', label: '对接申请' },
   { key: 'withdraw', label: '提现' },
@@ -34,6 +35,11 @@ const tabs = [
 function go(key: string) {
   if (key === 'withdraw') {
     router.push('/withdraw');
+    return;
+  }
+  // 积分商城同为独立路由页（/points），不占 /member 页内 tab
+  if (key === 'points') {
+    router.push('/points');
     return;
   }
   router.push(key === 'overview' ? '/member' : { path: '/member', query: { tab: key } });
