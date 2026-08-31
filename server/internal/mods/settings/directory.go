@@ -57,7 +57,7 @@ var groups = map[string]*GroupDef{
 			"pc_template": "PC 端模板", "mobile_template": "移动端模板", "bg_image": "背景图",
 			"category_nav_style": "分类导航样式", "default_view": "商品默认视图",
 			"per_row": "每行商品数", "per_page": "每页商品数", "sort_by": "默认排序方式",
-			"show_stock": "显示库存", "show_sales": "显示销量",
+			"show_stock": "显示库存", "show_sales": "显示销量", "show_reviews": "显示评价",
 		},
 		Options: map[string]map[string]string{
 			"category_nav_style": {"list": "列表", "grid": "网格"},
@@ -81,8 +81,9 @@ var groups = map[string]*GroupDef{
 			"sort_by":            "default",
 			"show_stock":         true,
 			"show_sales":         true,
+			"show_reviews":       true,
 		},
-		PublicKeys: map[string]bool{"pc_template": true, "mobile_template": true, "bg_image": true, "category_nav_style": true, "default_view": true, "per_row": true, "per_page": true, "sort_by": true, "show_stock": true, "show_sales": true},
+		PublicKeys: map[string]bool{"pc_template": true, "mobile_template": true, "bg_image": true, "category_nav_style": true, "default_view": true, "per_row": true, "per_page": true, "sort_by": true, "show_stock": true, "show_sales": true, "show_reviews": true},
 	},
 	"footer": {
 		Name: "footer", Desc: "页脚",

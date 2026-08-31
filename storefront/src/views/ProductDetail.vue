@@ -80,6 +80,13 @@
           <div class="pd-stock-track"><div class="pd-stock-fill" :style="{ width: stockPct }"></div></div>
         </div>
 
+        <!-- 评价入口（锚点；大厂电商：评分摘要卡 → 点击滚动到评价区） -->
+        <button v-if="showReviews && p.reviews?.length" class="pd-review-entry" @click="scrollToReviews">
+          <span class="pd-review-entry-score">⭐ {{ reviewAvg }}</span>
+          <span class="pd-review-entry-count">{{ p.reviews.length }} 条评价</span>
+          <span class="pd-review-entry-go">查看 ›</span>
+        </button>
+
         <!-- 自定义控件（下单收集） -->
         <div v-for="c in p.controls" :key="c.id" class="pd-field">
           <label class="pd-label">{{ c.name }}{{ c.required ? ' <span class="pd-req">*</span>' : '' }}</label>
@@ -160,10 +167,10 @@
       <div class="pd-desc" v-html="p.description"></div>
     </div>
 
-    <!-- 评价区 -->
-    <div v-if="p.reviews?.length" class="pd-section">
+    <!-- 评价区（template.show_reviews 开关控制；默认展示 3 条可展开） -->
+    <div v-if="showReviews && p.reviews?.length" id="pd-reviews" class="pd-section">
       <h3 class="pd-section-title">用户评价（{{ p.reviews.length }}）</h3>
-      <div v-for="r in p.reviews" :key="`${r.is_virtual}-${r.id}`" class="pd-review">
+      <div v-for="r in visibleReviews" :key="`${r.is_virtual}-${r.id}`" class="pd-review">
         <span class="pd-avatar">{{ (r.nickname || '匿')[0] }}</span>
         <div class="pd-review-body">
           <div class="pd-review-head">
@@ -173,6 +180,9 @@
           <div class="pd-review-content">{{ r.content }}</div>
         </div>
       </div>
+      <button v-if="p.reviews.length > reviewCollapsed" class="pd-review-more" @click="reviewsExpanded = !reviewsExpanded">
+        {{ reviewsExpanded ? '收起评价 ↑' : `查看全部 ${p.reviews.length} 条评价 ↓` }}
+      </button>
     </div>
 
     <!-- Lightbox 大图 -->
@@ -244,6 +254,22 @@ const soldOut = computed(() => {
   if (!p.value || p.value.stock_type !== 'card') return false;
   return (p.value.stock ?? 0) === 0;
 });
+
+// ── 评价（template.show_reviews 后台开关；入口锚点 + 折叠展开）──
+const showReviews = ref(true);
+const reviewsExpanded = ref(false);
+const reviewCollapsed = 3;
+const visibleReviews = computed(() =>
+  reviewsExpanded.value ? (p.value?.reviews || []) : (p.value?.reviews || []).slice(0, reviewCollapsed),
+);
+const reviewAvg = computed(() => {
+  const list = p.value?.reviews || [];
+  if (!list.length) return '5.0';
+  return (list.reduce((s, r) => s + (r.rating || 5), 0) / list.length).toFixed(1);
+});
+function scrollToReviews() {
+  document.getElementById('pd-reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 const stockPct = computed(() => {
   const s = p.value?.stock;
   if (s == null || s <= 0) return '4%';
@@ -304,10 +330,18 @@ if (productResp.error) {
 }
 
 onMounted(async () => {
-  // 交易配置/验证码（客户端交互能力；SSG 不需要）
-  const [cfg, capCfg] = await Promise.all([fetchTradeConfig(), fetchCaptchaConfig()]);
+  // 交易配置/验证码（客户端交互能力；SSG 不需要）+ 评价显示开关
+  const [cfg, capCfg, tplResp] = await Promise.all([
+    fetchTradeConfig(),
+    fetchCaptchaConfig(),
+    fetch('/api/v1/storefront/config').then((r) => r.json()).catch(() => null),
+  ]);
   captchaCfg.value = capCfg;
   trade.value = cfg;
+  const raw = tplResp?.entries?.find((e: any) => e.key === 'template.show_reviews')?.value_json;
+  if (raw !== undefined) {
+    try { showReviews.value = JSON.parse(raw) !== false; } catch { /* ignore */ }
+  }
 });
 
 /** 商品页 SEO：title/description/keywords/canonical/og + Product/Breadcrumb JSON-LD */
@@ -568,6 +602,23 @@ async function exchangePoints() {
 
 .pd-review { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
 .pd-review:last-child { border-bottom: none; }
+/* 评价入口（评分摘要锚点卡） */
+.pd-review-entry {
+  display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 12px;
+  padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: 10px;
+  background: #fafbfc; cursor: pointer; font-family: inherit; font-size: 13px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.pd-review-entry:hover { border-color: rgba(37, 99, 235, 0.45); background: #f0f6ff; }
+.pd-review-entry-score { font-weight: 700; color: #b45309; }
+.pd-review-entry-count { color: #374151; }
+.pd-review-entry-go { margin-left: auto; color: #2563eb; font-weight: 600; }
+.pd-review-more {
+  display: block; width: 100%; margin-top: 10px; padding: 9px 0;
+  border: 1px dashed #d1d5db; border-radius: 8px; background: none;
+  color: #2563eb; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.pd-review-more:hover { border-color: #2563eb; background: #f0f6ff; }
 .pd-avatar {
   width: 36px; height: 36px; border-radius: 999px; flex-shrink: 0;
   background: #eff6ff; color: #2563eb; font-size: 14px; font-weight: 700;

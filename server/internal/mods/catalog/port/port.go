@@ -15,6 +15,7 @@ type Product struct {
 	Name         string
 	Slug         string
 	Cover        string
+	Description  string // 商品详情（sanitize 后富文本；storefront 详情页下发）
 	Price        money.Cents // 售价（分）
 	FactoryPrice money.Cents // 成本价（分）
 	StockType    string      // card / url / code

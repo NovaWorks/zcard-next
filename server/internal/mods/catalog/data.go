@@ -124,6 +124,7 @@ func toPortProduct(row *ent.Product) port.Product {
 		Name:         row.Name,
 		Slug:         row.Slug,
 		Cover:        row.Cover,
+		Description:  row.Description,
 		Price:        money.Cents(row.Price),
 		FactoryPrice: money.Cents(row.FactoryPrice),
 		StockType:    string(row.StockType),

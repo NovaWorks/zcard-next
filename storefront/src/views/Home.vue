@@ -80,7 +80,7 @@
         </div>
 
         <!-- 商品列表（网格/列表双视图） -->
-        <div v-if="viewMode === 'grid'" class="product-grid" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx}px, 1fr))` }">
+        <div v-if="viewMode === 'grid'" class="product-grid" :style="gridStyle">
           <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
         </div>
         <div v-else class="product-list">
@@ -148,7 +148,13 @@ const siteName = 'ZCard 商店';
 // ── 模板设置（后台 系统设置 → 模板；与商品列表页同源消费，保证全站一致）──
 const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
 const bigGrid = ref(false); // template.default_view=big：大图卡片（更宽的列）
+const perRow = ref(0); // template.per_row：每行商品数（2-8 固定列数；0=按容器宽度自适应）
 const gridMinPx = computed(() => (bigGrid.value ? 300 : 200));
+const gridStyle = computed(() =>
+  perRow.value
+    ? { gridTemplateColumns: `repeat(${perRow.value}, 1fr)` }
+    : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
+);
 const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
@@ -301,6 +307,9 @@ onMounted(async () => {
     // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
     if (val('template.show_sales') === false) showSales.value = false;
     if (val('template.show_stock') === false) showStock.value = false;
+    // 每行商品数（2-8）：显式固定列数，替代 auto-fill 的"装几个算几个"
+    const pr = val('template.per_row');
+    if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
     if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }
@@ -318,15 +327,15 @@ onUnmounted(stopHero);
 @media (min-width: 768px) {
   .mobile-only { display: none; }
 }
-/* 分类胶囊（category_nav_style=grid 顶部导航 / list 移动端兜底） */
-.cat-chips { padding: 12px 14px; }
-.cat-chips-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* 分类胶囊（category_nav_style=grid 顶部导航 / list 移动端兜底）——饱满大尺寸 */
+.cat-chips { padding: 14px 16px; }
+.cat-chips-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .chip {
-  padding: 6px 16px; border-radius: 999px; font-size: 14px; color: #374151;
+  padding: 9px 22px; border-radius: 999px; font-size: 15px; font-weight: 500; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
 }
-.chip:hover { border-color: #2563eb; color: #2563eb; }
-.chip.active { background: #2563eb; color: #fff; }
+.chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+.chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
 
 /* ── Hero ── */
 .hero-slider {

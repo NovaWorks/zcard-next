@@ -225,10 +225,11 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
 	}
 	return &storefrontv1.Product{
-		Id:             p.ID,
+		Id: p.ID,
 		Name:           p.Name,
 		Slug:           p.Slug,
 		Cover:          p.Cover,
+		Description:    p.Description, // 商品详情（上游采集/后台编辑；P3-09 漏映射导致前台全部无描述）
 		PriceCents:     int64(p.Price),
 		StockType:      p.StockType,
 		Stock:          stock,

@@ -36,7 +36,7 @@
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-      <div v-if="viewMode === 'grid'" class="grid" :style="{ gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx}px, 1fr))` }">
+      <div v-if="viewMode === 'grid'" class="grid" :style="gridStyle">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
       </div>
       <div v-else class="list-rows">
@@ -79,7 +79,13 @@ const error = ref('');
 const viewMode = ref<'grid' | 'list'>('grid'); // template.default_view（big 归入网格+更宽卡片）
 const bigGrid = ref(false); // default_view=big：大图卡片（更宽的列）
 const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
-const gridMinPx = computed(() => (bigGrid.value ? 300 : 200)); // per_row 微调列宽
+const gridMinPx = computed(() => (bigGrid.value ? 300 : 200)); // per_row 未设置时的自适应列宽
+const perRow = ref(0); // template.per_row：每行商品数（2-8 固定列数；0=自适应）
+const gridStyle = computed(() =>
+  perRow.value
+    ? { gridTemplateColumns: `repeat(${perRow.value}, 1fr)` }
+    : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
+);
 const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
 
@@ -115,6 +121,9 @@ onMounted(async () => {
     // 分类导航样式：grid=顶部胶囊（隐藏左侧树）
     const ns = val('template.category_nav_style');
     if (ns === 'grid' || ns === 'list') navStyle.value = ns;
+    // 每行商品数（2-8）：显式固定列数
+    const pr = val('template.per_row');
+    if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
   } catch { /* 配置拉取失败保持默认 */ }
 });
 
@@ -181,11 +190,11 @@ async function applyListSeo() {
   .mobile-only { display: none; }
 }
 .chip {
-  padding: 6px 16px; border-radius: 999px; font-size: 14px; color: #374151;
+  padding: 9px 22px; border-radius: 999px; font-size: 15px; font-weight: 500; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
 }
-.chip:hover { border-color: #2563eb; color: #2563eb; }
-.chip.active { background: #2563eb; color: #fff; }
+.chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+.chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
 .view-toggle { display: inline-flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
 .vt-btn {
   border: none; background: #fff; color: #6b7280; font-size: 14px;

@@ -8,6 +8,7 @@ const BASE = import.meta.env.SSR
   ? `${import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000'}/api/v1/storefront`
   : '/api/v1/storefront';
 const TOKEN_KEY = 'zcard_token';
+const CURRENCY_KEY = 'zcard_currency';
 
 export function getToken(): string | null {
   if (import.meta.env.SSR) return null;
@@ -95,9 +96,11 @@ export interface CurrencyMeta {
   symbol: string;
   position: string; // prefix | suffix
   precision: number; // 小数位（CNY=2、JPY=0）
+  code: string; // 币种代码（CNY/USD…；切换器展示与本地存储键）
+  rate: string; // 换算率（decimal 字符串：1 基准货币 = rate 该币；基准币 = "1"）
 }
 
-const DEFAULT_META: CurrencyMeta = { symbol: '¥', position: 'prefix', precision: 2 };
+const DEFAULT_META: CurrencyMeta = { symbol: '¥', position: 'prefix', precision: 2, code: 'CNY', rate: '1' };
 
 let currencyMeta: CurrencyMeta = { ...DEFAULT_META };
 
@@ -135,21 +138,44 @@ export function centsToYuan(cents: number): number {
   return (Number.isFinite(cents as number) ? cents : 0) / 10 ** currencyMeta.precision;
 }
 
+// displayAmount 显示层金额（已按所选币种 rate 换算 + 精度格式化，不含符号）。
+// rate="1"（基准币）走 fenToYuan 整数拆位原路；换算币用浮点乘 rate 后按精度取整
+// （展示层可接受；提交链路 yuanToFen 恒为基准货币，不受切换影响）。
+function displayAmount(cents: number): string {
+  if (currencyMeta.rate === '1') return fenToYuan(cents);
+  const base = 10 ** currencyMeta.precision;
+  const amount = ((Number.isFinite(cents) ? cents : 0) / 100) * Number(currencyMeta.rate || '1');
+  return (Math.round(amount * base) / base).toFixed(currencyMeta.precision);
+}
+
 // formatMoney 带符号格式化（显示唯一入口；符号位置感知）。
 export function formatMoney(cents: number): string {
-  const v = fenToYuan(cents);
+  const v = displayAmount(cents);
   return currencyMeta.position === 'suffix' ? `${v}${currencyMeta.symbol}` : `${currencyMeta.symbol}${v}`;
 }
 
-// formatSignedMoney 有符号金额（流水：正数带 +，负数 fenToYuan 自带 -）。
+// formatSignedMoney 有符号金额（流水：正数带 +，负数自带 -）。
 export function formatSignedMoney(cents: number): string {
-  const v = fenToYuan(cents);
+  const v = displayAmount(cents);
   const body = cents > 0 ? `+${v}` : v;
   return currencyMeta.position === 'suffix' ? `${body}${currencyMeta.symbol}` : `${currencyMeta.symbol}${body}`;
 }
 
-// initCurrency 启动加载默认货币（公开配置 i18n.base_currency + 货币表符号；失败回退 ¥）。
+// initCurrency 启动加载货币（公开配置 i18n.base_currency + 启用货币表；
+// 用户本地选择 zcard_currency 优先——多币种展示换算；失败回退 ¥）。
+// 选择集 listCurrencies() 供顶部切换器渲染；selectCurrency 切换后刷新生效。
 let initPromise: Promise<void> | null = null;
+let currencyList: (CurrencyMeta & { code: string })[] = [];
+
+export function listCurrencies(): CurrencyMeta[] {
+  return currencyList;
+}
+
+export function selectCurrency(code: string) {
+  if (!code) return;
+  localStorage.setItem(CURRENCY_KEY, code);
+  if (code !== currencyMeta.code) window.location.reload(); // 低频操作：整页刷新保证全站一致
+}
 
 export function initCurrency(): Promise<void> {
   if (!initPromise) {
@@ -170,10 +196,17 @@ export function initCurrency(): Promise<void> {
             /* 非法配置回退默认 */
           }
         }
-        const cur = (curRes.data?.currencies || []).find((c: any) => c.code === baseCode);
-        if (cur) {
-          setCurrency({ symbol: cur.symbol, position: cur.position, precision: cur.precision });
-        }
+        const all = (curRes.data?.currencies || []) as any[];
+        currencyList = all.map((c) => ({
+          code: c.code, symbol: c.symbol, position: c.position,
+          precision: Number(c.precision) || 2, rate: String(c.rate_json ?? '1'),
+        }));
+        const stored = localStorage.getItem(CURRENCY_KEY);
+        const picked =
+          currencyList.find((c) => c.code === stored) ||
+          currencyList.find((c) => c.code === baseCode) ||
+          { code: baseCode, symbol: '¥', position: 'prefix', precision: 2, rate: '1' };
+        setCurrency(picked);
       } catch {
         /* 加载失败回退默认 ¥/2 */
       }

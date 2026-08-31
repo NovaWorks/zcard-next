@@ -436,43 +436,51 @@ onMounted(() => {
 
 <template>
   <div class="flex flex-col gap-16px">
-    <div>
-      <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
-        <div class="flex flex-wrap items-center gap-12px">
-          <span class="text-13px font-500">首页横幅</span>
+    <!-- 首页横幅 -->
+    <section class="ct-section">
+      <div class="ct-head">
+        <div class="ct-title">
+          <span class="ct-icon">🖼️</span>
+          <span class="ct-name">首页横幅</span>
           <FilterTabs v-model:value="bannerFilter" :options="bannerTabs" :counts="bannerCounts" size="small" />
         </div>
-        <NButton v-if="canWrite()" size="tiny" type="primary" @click="showBanner = true">新增横幅</NButton>
+        <NButton v-if="canWrite()" size="small" type="primary" @click="showBanner = true">新增横幅</NButton>
       </div>
-      <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small"  :max-height="540" />
-    </div>
-    <div>
-      <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
-        <div class="flex flex-wrap items-center gap-12px">
-          <span class="text-13px font-500">公告/文章</span>
+      <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small" :max-height="540" />
+    </section>
+
+    <!-- 公告/文章 -->
+    <section class="ct-section">
+      <div class="ct-head">
+        <div class="ct-title">
+          <span class="ct-icon">📝</span>
+          <span class="ct-name">公告 / 文章</span>
           <FilterTabs v-model:value="postFilter" :options="postTabs" :counts="postCounts" size="small" />
         </div>
         <NButton
           v-if="canWrite()"
-          size="tiny"
+          size="small"
           type="primary"
           @click="((editingPost = null), (postForm = { slug: '', type: 'notice', title: '', summary: '', content: '', category_id: 0, is_published: true }), (showPost = true))"
         >
           新增文章
         </NButton>
       </div>
-      <NDataTable :columns="postColumns" :data="filteredPosts" :loading="postLoading" size="small"  :max-height="540" />
-    </div>
-    <div>
-      <div class="mb-8px flex flex-wrap items-center justify-between gap-8px">
-        <div class="flex flex-wrap items-center gap-12px">
-          <span class="text-13px font-500">文章栏目</span>
-          <span class="text-12px color-gray">用于前台文章页筛选；栏目下有文章时不可删除</span>
+      <NDataTable :columns="postColumns" :data="filteredPosts" :loading="postLoading" size="small" :max-height="540" />
+    </section>
+
+    <!-- 文章栏目 -->
+    <section class="ct-section">
+      <div class="ct-head">
+        <div class="ct-title">
+          <span class="ct-icon">📂</span>
+          <span class="ct-name">文章栏目</span>
+          <span class="ct-sub">用于前台文章页筛选；栏目下有文章时不可删除</span>
         </div>
-        <NButton v-if="canWrite()" size="tiny" type="primary" @click="openCreateCategory">新增栏目</NButton>
+        <NButton v-if="canWrite()" size="small" type="primary" @click="openCreateCategory">新增栏目</NButton>
       </div>
-      <NDataTable :columns="categoryColumns" :data="categories" :loading="categoryLoading" size="small"  :max-height="540" />
-    </div>
+      <NDataTable :columns="categoryColumns" :data="categories" :loading="categoryLoading" size="small" :max-height="540" />
+    </section>
 
     <NModal v-model:show="showBanner" preset="dialog" title="新增横幅" style="width: 520px">
       <NForm :model="bannerForm" label-placement="left" label-width="72">
@@ -571,6 +579,23 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* 内容管理分区卡片（大厂后台：图标标题 + 说明 + 操作右置，区块卡片化） */
+.ct-section {
+  background: var(--n-color, #fff);
+  border: 1px solid #efeff5;
+  border-radius: 10px;
+  padding: 14px 16px 16px;
+}
+.dark .ct-section { border-color: rgba(255, 255, 255, 0.08); }
+.ct-head {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+}
+.ct-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ct-icon { font-size: 17px; line-height: 1; }
+.ct-name { font-size: 15px; font-weight: 600; color: var(--n-text-color, #1f2329); }
+.ct-sub { font-size: 12px; color: #9ca3af; }
+
 /* 横幅图片悬停预览（原生 :hover 命中测试，无 JS 依赖） */
 :deep(.img-preview-trigger:hover .img-preview-pop) {
   display: block !important;

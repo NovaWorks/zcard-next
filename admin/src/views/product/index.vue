@@ -514,9 +514,15 @@ function onTreeSelect(keys: Array<string | number>) {
   onSearch();
 }
 
-// 悬停显示完整分类名（长名不截断可读）
+// 悬停显示完整分类名（长名不截断可读）+ 单行省略 class（CSS 收口）
 function catNodeProps({ option }: { option: any }) {
-  return { title: option.label || "" };
+  return { title: option.label || "", class: "cat-node" };
+}
+
+// 分类节点图标（大厂树形导航：根/含子级/叶子三级图标，一眼区分层级）
+function catRenderPrefix({ option }: { option: any }) {
+  const icon = option.key === 0 ? "🏠" : option.children?.length ? "📁" : "🏷️";
+  return h("span", { class: "cat-prefix" }, icon);
 }
 
 // ── 展开/收缩全部（分类多时快速导航）──
@@ -740,6 +746,7 @@ onMounted(() => {
           :selected-keys="selectedCatKeys"
           v-model:expanded-keys="expandedCatKeys"
           :node-props="catNodeProps"
+          :render-prefix="catRenderPrefix"
           @update:selected-keys="onTreeSelect"
         />
       </NScrollbar>
@@ -1046,5 +1053,15 @@ onMounted(() => {
 /* 商品描述步（第 3 步）：编辑器整高展开后弹窗整体上移，保证底部按钮可见 */
 .product-editor-step-modal {
   transform: translateY(-4vh);
+}
+
+/* 分类树：图标前缀对齐 + 长名单行省略（悬停 title 看全名），多分类不眼花 */
+.cat-node .n-tree-node-content__prefix {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+}
+.cat-prefix { font-size: 13px; line-height: 1; }
+.cat-node .n-tree-node-content__text {
+  display: inline-block; max-width: 150px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
 }
 </style>

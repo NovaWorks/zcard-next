@@ -59,6 +59,7 @@
         </template>
       </nav>
       <div class="nav-right">
+        <CurrencySwitcher />
         <router-link to="/cart" class="cart-link" title="查看购物车">
           <span class="cart-icon">🛒</span>
           <span class="cart-label">购物车</span>
@@ -167,6 +168,7 @@ import { mergeGuestCart, refreshCartState, cartState } from '@/cart';
 import { captureRefCode } from '@/ref';
 import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
+import CurrencySwitcher from '@/components/CurrencySwitcher.vue';
 
 const router = useRouter();
 const route = useRoute();
