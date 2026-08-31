@@ -94,7 +94,7 @@ func (f *fakeGW) Submit(_ context.Context, _ supplyport.PurchaseRequest) (*suppl
 func (f *fakeGW) Query(_ context.Context, _ uint64, _ string) (*supplyport.PurchaseOrderInfo, error) {
 	return f.queryRes, f.queryErr
 }
-func (f *fakeGW) CheckStock(_ context.Context, _ uint64, _ string) (int32, error) { return 10, nil }
+func (f *fakeGW) CheckStock(_ context.Context, _ uint64, _, _ string) (int32, error) { return 10, nil }
 func (f *fakeGW) Refund(_ context.Context, _ uint64, _ string) error              { return nil }
 func (f *fakeGW) VerifyUpstreamCallback(_ context.Context, _ uint64, _ *supplyport.UpstreamCallbackAuth) (*supplyport.UpstreamCallbackResult, error) {
 	return nil, supplyport.ErrCallbackNotSupported // 测试桩：回调通道不参与断言

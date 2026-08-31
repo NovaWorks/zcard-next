@@ -31,9 +31,9 @@
         <div style="margin: 8px 0; color: #4338ca; font-weight: 700;">
           {{ p.points_required }} 积分
         </div>
-        <div class="muted" style="margin-bottom: 8px;">库存 {{ p.stock > 0 ? p.stock : 0 }} 件</div>
-        <button class="btn" :disabled="exchanging === p.id || p.stock <= 0" @click="exchange(p)">
-          {{ exchanging === p.id ? '兑换中…' : p.stock <= 0 ? '已兑完' : '积分兑换' }}
+        <div class="muted" style="margin-bottom: 8px;">{{ stockLabel(p) }}</div>
+        <button class="btn" :disabled="exchanging === p.id || soldOut(p)" @click="exchange(p)">
+          {{ exchanging === p.id ? '兑换中…' : soldOut(p) ? '已兑完' : '积分兑换' }}
         </button>
       </div>
     </div>
@@ -57,6 +57,16 @@ const level = ref<MyLevelReply | null>(null);
 const loaded = ref(false);
 const error = ref('');
 const exchanging = ref<number>(0);
+
+// 库存口径（与后端 DTO 对齐）：-1=不限（上游代发/直发），>=0=有限库存；
+// proto3 零值省略 → undefined 视同 0（有限库存售罄）。仅有限 0 库存售罄。
+function soldOut(p: Product): boolean {
+  return (p.stock ?? 0) === 0;
+}
+function stockLabel(p: Product): string {
+  const s = p.stock ?? 0;
+  return s < 0 ? '库存充足' : `库存 ${s} 件`;
+}
 
 // 数据预取（setup 顶层：SSG 静态化积分商城内容 + 输出 SEO head）
 {

@@ -109,7 +109,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	syncService := supply.NewSyncService(supplyRepoImpl, productRepoImpl, productRepoImpl, pacer, enqueuer, outboxWriter, logger)
 	adminSupplyService := supply.NewAdminSupplyService(supplyRepoImpl, syncService)
 	procureRepo := procurement.NewProcureRepo(dataData)
-	gateway := supply.NewGateway(supplyRepoImpl, pacer)
+	gateway := supply.NewGateway(supplyRepoImpl, pacer, productRepoImpl)
 	deliveryRepoImpl := fulfillment.NewDeliveryRepoImpl(dataData, cardCipher, auditRepo, auditRepo)
 	registry := payment.NewRegistry()
 	orderLifecycle := order.ProvideOrderLifecycle(orderUsecase)
@@ -190,7 +190,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
 	settleService := reseller.NewSettleService(resellerRepo, logger)
 	pointsService := memberlevel.NewPointsService(memberLevelRepoImpl, points, logger)
-	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway)
 	return app, func() {
 		cleanup2()
 		cleanup()

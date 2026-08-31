@@ -147,7 +147,7 @@ func TestGatewayCooldownGate(t *testing.T) {
 	ctx := context.Background()
 	repo, _ := newTestRepo(t)
 	p := NewPacer(repo, nil, slog.Default())
-	gw := NewGateway(repo, p)
+	gw := NewGateway(repo, p, nil)
 	conn := mustConn(t, repo, nil, "网关熔断")
 
 	// 未熔断：正常放行到适配器层（base_url 置为非法值令装配快速失败——

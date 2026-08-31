@@ -130,16 +130,16 @@
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-        <!-- 操作按钮 -->
+        <!-- 操作按钮（本地卡密 0 库存禁购：soldOut；-1=不限（上游代发/直发）不禁） -->
         <div class="pd-actions">
-          <button class="pd-btn-buy" :disabled="submitting" @click="buy">
-            {{ submitting ? '提交中…' : '立即购买' }}
+          <button class="pd-btn-buy" :disabled="submitting || soldOut" @click="buy">
+            {{ submitting ? '提交中…' : soldOut ? '暂时缺货' : '立即购买' }}
           </button>
           <button
             v-if="canCart"
             class="pd-btn-cart"
             :class="{ 'is-in': inCartNow }"
-            :disabled="submitting || cartBusy"
+            :disabled="submitting || cartBusy || soldOut"
             :title="inCartNow ? '从购物车移除' : '加入购物车'"
             @click="inCartNow ? removeFromCart() : addToCart()"
           >
@@ -147,8 +147,8 @@
             <template v-else-if="inCartNow">🗑️ 移除购物车</template>
             <template v-else>🛒 加入购物车</template>
           </button>
-          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting" @click="exchangePoints">
-            积分兑换（{{ p.points_required }} 分）
+          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut" @click="exchangePoints">
+            {{ soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
           </button>
         </div>
       </div>
@@ -234,7 +234,15 @@ const displayPrice = computed(() => {
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
   if (p.value.stock_type !== 'card') return '不限';
-  return p.value.stock >= 0 ? String(p.value.stock) : '-';
+  const s = p.value.stock ?? 0;
+  if (s < 0) return '充足'; // 上游代发：库存在上游，本地卡池口径不适用
+  return String(s);
+});
+// 售罄判定：仅本地卡密有限库存的 0 库存（proto3 零值省略 → undefined 视同 0）；
+// -1/undefined 以外负值为不限口径不禁
+const soldOut = computed(() => {
+  if (!p.value || p.value.stock_type !== 'card') return false;
+  return (p.value.stock ?? 0) === 0;
 });
 const stockPct = computed(() => {
   const s = p.value?.stock;

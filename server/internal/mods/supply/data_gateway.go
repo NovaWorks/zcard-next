@@ -10,7 +10,10 @@ import (
 	"fmt"
 	"time"
 
+	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	dashboardport "github.com/NovaWorks/zcard-next/server/internal/mods/dashboard/port"
+	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
+
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
@@ -19,16 +22,19 @@ import (
 // ErrCooldownActive 渠道熔断冷却中（可重试口径：procurement 退避轮询自然吸收）。
 var ErrCooldownActive = errors.New("supply: rate limit cooldown active")
 
-// Gateway supply 采购网关（实现 supplyport.UpstreamGateway）。
+// Gateway supply 采购网关（实现 supplyport.UpstreamGateway 与 orderport.UpstreamStockGate）。
 // P2-10 S2：出站共享自适应节奏器——熔断冷却中直接拒绝（可重试口径），
 // 限流信号反馈降速、成功反馈回升（采购请求量小，主要防持续撞墙）。
 type Gateway struct {
-	repo  *SupplyRepoImpl
-	pacer *Pacer // nil = 不节流（测试）
+	repo   *SupplyRepoImpl
+	pacer  *Pacer // nil = 不节流（测试）
+	reader catalogport.ProductReader // 商品/SKU 上游映射（CheckOrderItems 预检用）
 }
 
 // NewGateway 构造。
-func NewGateway(repo *SupplyRepoImpl, pacer *Pacer) *Gateway { return &Gateway{repo: repo, pacer: pacer} }
+func NewGateway(repo *SupplyRepoImpl, pacer *Pacer, reader catalogport.ProductReader) *Gateway {
+	return &Gateway{repo: repo, pacer: pacer, reader: reader}
+}
 
 // FailStrategyOf 渠道级失败策略（port 实现；读连接 settings.failure_action）。
 func (g *Gateway) FailStrategyOf(ctx context.Context, connectionID uint64) string {
@@ -177,16 +183,56 @@ func (g *Gateway) Query(ctx context.Context, connectionID uint64, upstreamOrderI
 }
 
 // CheckStock 实时库存（fail-open：查询失败返回 -1 放行，日志留痕由调用方）。
-func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCode string) (int32, error) {
+// skuCode 为上游规格标识（acg=race|k=v 编码 / dujiao=sku_id），可空走商品级口径。
+func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCode, skuCode string) (int32, error) {
 	a, err := g.adapterFor(ctx, connectionID)
 	if err != nil {
 		return -1, nil // fail-open：凭据/连接问题不阻断下单（转采购环节处理）
 	}
-	stock, err := a.GetStock(ctx, productCode, "")
+	stock, err := a.GetStock(ctx, productCode, skuCode)
 	if err != nil {
 		return -1, nil // fail-open：上游抖动放行
 	}
 	return stock, nil
+}
+
+// CheckOrderItems 下单前上游代发项实时库存预检（实现 orderport.UpstreamStockGate 接口，
+// order 创建订单消费）：把上游明确无货的单挡在付款前；fail-open——商品不可读/
+// 非上游项/查询失败/库存未知(-1) 一律放行，支付后采购环节仍有 ErrUpstreamNoStock 兜底。
+func (g *Gateway) CheckItems(ctx context.Context, subsiteID uint64, items []orderport.UpstreamStockItem) error {
+	return checkOrderItems(ctx, g.reader, func(connectionID uint64, productCode, skuCode string) (int32, error) {
+		return g.CheckStock(ctx, connectionID, productCode, skuCode)
+	}, subsiteID, items)
+}
+
+// checkOrderItems 预检纯逻辑（reader/stock 可注入——单测覆盖决策矩阵）。
+func checkOrderItems(ctx context.Context, reader catalogport.ProductReader,
+	stock func(connectionID uint64, productCode, skuCode string) (int32, error),
+	subsiteID uint64, items []orderport.UpstreamStockItem) error {
+	if reader == nil {
+		return nil
+	}
+	for _, it := range items {
+		p, err := reader.Get(ctx, subsiteID, it.ProductID)
+		if err != nil {
+			continue // 商品不可读：交由订单主流程判定（PRODUCT_NOT_FOUND）
+		}
+		if p.UpstreamSourceID == 0 || p.UpstreamProductCode == "" {
+			continue // 非上游项：本地卡密走事务内锁卡，直发无库存概念
+		}
+		skuCode := ""
+		if it.SkuID > 0 {
+			skuCode = reader.SkuUpstreamCode(ctx, subsiteID, it.SkuID)
+		}
+		n, err := stock(p.UpstreamSourceID, p.UpstreamProductCode, skuCode)
+		if err != nil || n < 0 {
+			continue // fail-open：连接/凭据/上游抖动/库存未知 → 放行
+		}
+		if n < int32(it.Quantity) {
+			return fmt.Errorf("supply: 商品「%s」上游库存不足（余 %d 需 %d）: %w", p.Name, n, it.Quantity, supplyport.ErrUpstreamNoStock)
+		}
+	}
+	return nil
 }
 
 // Refund 向上游传导退款（acg_faka 等不支持 → ErrRefundNotSupported）。

@@ -32,6 +32,7 @@ import (
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
+	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
@@ -61,6 +62,7 @@ type OrderUsecase struct {
 	Reseller   resellerport.Pricer            // P3-04：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
 	Points     walletport.PointsDebiter       // P3-01：积分兑换下单扣分（nil = 积分单不可用）
 	SlowPay    paymentport.SlowPaymentChecker // P1-03：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
+	StockGate  orderport.UpstreamStockGate         // P2-02 T4：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
@@ -74,6 +76,12 @@ func NewOrderUsecaseDep(d *data.Data, inv port.Inventory, gen *id.Generator, mem
 // order/port.OrderLifecycle → OrderUsecase，故走 newApp 手工装配点）。
 func (uc *OrderUsecase) SetSlowPaymentChecker(c paymentport.SlowPaymentChecker) {
 	uc.SlowPay = c
+}
+
+// SetStockGate 上游库存预检闸门注入（装配期一次；supply 网关实现，
+// order → supply 无 wire 依赖，同走 newApp 手工装配点）。
+func (uc *OrderUsecase) SetStockGate(g orderport.UpstreamStockGate) {
+	uc.StockGate = g
 }
 
 // CreateOrderInput 下单输入。
@@ -122,6 +130,23 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	if uc.Gate != nil && in.ClientIP != "" {
 		if err := uc.Gate.Check(ctx, auditport.GateInput{RiskIP: in.ClientIP, UserID: in.UserID}); err != nil {
 			return nil, err
+		}
+	}
+
+	// P2-02 T4：上游代发项实时库存预检（fail-open 闸门，事务前快速失败——
+	// 上游明确无货直接拒单，不再让顾客"下单付款后等采购失败退款"。
+	// 本地卡密项的强校验在下方事务内锁卡 Reserve；闸门自身查询失败/库存未知放行）
+	if uc.StockGate != nil && len(in.Items) > 0 {
+		gateItems := make([]orderport.UpstreamStockItem, 0, len(in.Items))
+		for _, item := range in.Items {
+			if item.Quantity > 0 {
+				gateItems = append(gateItems, orderport.UpstreamStockItem{ProductID: item.ProductID, SkuID: item.SkuID, Quantity: item.Quantity})
+			}
+		}
+		if len(gateItems) > 0 {
+			if err := uc.StockGate.CheckItems(ctx, in.SubsiteID, gateItems); err != nil {
+				return nil, fmt.Errorf("order.INSUFFICIENT_STOCK: %w", err)
+			}
 		}
 	}
 

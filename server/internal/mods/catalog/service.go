@@ -209,14 +209,19 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 // toStorefrontProduct DTO 映射。stocks 为批量可用库存（nil = 未注入/失败降级）：
 // card 类商品取真实值（stock_visible=false 时仍返回真实值——展示与否由前端
 // 按 stock_visible 决定；P3-09 冒烟修复：此前写死 0）；非 card 类 -1=不限。
+// 上游代发商品恒 -1：库存在上游，本地空卡池的 0 会误显"缺货/已兑完"（前端
+// 以负数=不限口径渲染；下单拦截由 order 侧上游库存闸门负责）。
 // soldCount 为该商品已售数（0 = 未注入/无销量）。
 func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int64) *storefrontv1.Product {
 	var stock int64
-	if p.StockType == "card" {
+	switch {
+	case p.UpstreamSourceID > 0:
+		stock = -1 // 上游代发：本地卡池口径不适用
+	case p.StockType == "card":
 		if stocks != nil {
 			stock = stocks[p.ID]
 		}
-	} else {
+	default:
 		stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
 	}
 	return &storefrontv1.Product{
