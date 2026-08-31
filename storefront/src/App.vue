@@ -1,9 +1,9 @@
 <template>
-  <div class="app">
+  <div class="app" :style="bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' } : undefined">
     <!-- 安装页：无商城布局（头部/尾部/客服/公告全隐藏，仅渲染向导自身） -->
     <template v-if="!isInstall">
-    <!-- 顶部品牌条（深蓝渐变；信任点可后台配置） -->
-    <div class="brand-bar">
+    <!-- 顶部品牌条（深蓝渐变；promo.top_banner_enabled 可关） -->
+    <div v-if="topBannerEnabled" class="brand-bar">
       <span class="brand-slogan">🎁 {{ siteName }} · 自动发货 秒速到账</span>
       <span class="brand-trust">
         <span>✓ 安全支付</span>
@@ -227,6 +227,10 @@ const navRecommend = ref<{ text: string; url: string }[]>([]);
 const maintenance = ref(false);
 const maintenanceStyle = ref('modal'); // modal=全屏遮罩 | banner=顶部横幅
 const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=24 小时一次
+// promo.top_banner_enabled：顶部品牌条开关（false 隐藏，缺省显示）
+const topBannerEnabled = ref(true);
+// template.bg_image：全站背景图（空=默认纯色背景）
+const bgImage = ref('');
 
 // ── 页脚配置（footer.* 公开下发：about/nav/social/contact/agreement/icp，空值回落默认）──
 const footerAbout = ref('');
@@ -358,6 +362,12 @@ onMounted(async () => {
     // 维护模式与样式（modal=遮罩弹窗 / banner=顶部横幅）；弹窗频率 daily=24h 一次
     const mt = find('ops.maintenance');
     if (mt) { try { maintenance.value = JSON.parse(mt) === true; } catch { /* ignore */ } }
+    // 顶部品牌条开关（promo.top_banner_enabled；缺省/解析失败=显示）
+    const tbe = find('promo.top_banner_enabled');
+    if (tbe) { try { topBannerEnabled.value = JSON.parse(tbe) !== false; } catch { /* ignore */ } }
+    // 全站背景图（template.bg_image；空=默认纯色）
+    const bi = find('template.bg_image');
+    if (bi) { try { const v = JSON.parse(bi); if (typeof v === 'string') bgImage.value = v; } catch { /* ignore */ } }
     const ms = find('ops.maintenance_style');
     if (ms) { try { const v = JSON.parse(ms); if (v === 'banner' || v === 'modal') maintenanceStyle.value = v; } catch { /* ignore */ } }
     const mf = find('ops.maintenance_modal_freq');

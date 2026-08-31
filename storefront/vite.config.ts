@@ -15,6 +15,11 @@ export default defineConfig({
       '/api': {
         target: 'http://127.0.0.1:8000',
         changeOrigin: true
+      },
+      // 素材/上传文件（商品封面、背景图等）——产物环境由 Go 直接服务
+      '/uploads': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true
       }
     }
   },

@@ -216,7 +216,7 @@ onMounted(() => {
           </NFormItem>
           <NFormItem label="符号位置">
             <NRadioGroup v-model:value="form.position">
-              <div class="flex items-center gap-12px">
+              <div class="flex items-center gap-16px whitespace-nowrap">
                 <NRadio value="prefix">前缀 $10</NRadio>
                 <NRadio value="suffix">后缀 10$</NRadio>
               </div>
@@ -229,9 +229,13 @@ onMounted(() => {
         <NFormItem label="汇率" required>
           <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" :placeholder="isBaseCurrency ? '基础货币，固定为 1' : '如 0.14（1 基础货币 = 0.14 本币）'" />
         </NFormItem>
-        <div class="mb-4px flex items-center justify-between rounded-4px bg-gray-50 px-10px py-6px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-          <span>展示效果（以 10 元为例）：<b class="text-13px">{{ moneyPreview }}</b></span>
-          <span class="max-w-260px text-right">{{ rateHint }}</span>
+        <!-- 提示区：上下两行（展示效果 / 汇率说明），避免左右两块基线错乱 -->
+        <div class="mb-4px rounded-4px bg-gray-50 px-10px py-8px text-12px text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+          <div class="flex items-center gap-8px">
+            <span>展示效果（以 10 元为例）</span>
+            <b class="text-13px text-gray-900 dark:text-gray-100">{{ moneyPreview }}</b>
+          </div>
+          <div class="mt-2px leading-16px">{{ rateHint }}</div>
         </div>
       </NForm>
       <template #action>

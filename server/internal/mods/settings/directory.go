@@ -82,7 +82,7 @@ var groups = map[string]*GroupDef{
 			"show_stock":         true,
 			"show_sales":         true,
 		},
-		PublicKeys: map[string]bool{"pc_template": true, "mobile_template": true, "category_nav_style": true, "default_view": true, "per_row": true, "per_page": true, "sort_by": true, "show_stock": true, "show_sales": true},
+		PublicKeys: map[string]bool{"pc_template": true, "mobile_template": true, "bg_image": true, "category_nav_style": true, "default_view": true, "per_row": true, "per_page": true, "sort_by": true, "show_stock": true, "show_sales": true},
 	},
 	"footer": {
 		Name: "footer", Desc: "页脚",

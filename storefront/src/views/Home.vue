@@ -453,5 +453,9 @@ onUnmounted(stopHero);
   .chip { flex-shrink: 0; white-space: nowrap; }
   /* 商品网格：双列瀑布（auto-fill minmax(200px) 在手机只能出 1 列） */
   .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+  /* 分页器：整体居中换行、「下一页」不孤行左偏、「每页 N 条」单行不折 */
+  .pager { gap: 10px; }
+  .pager-btns { justify-content: center; row-gap: 8px; }
+  .pager-size { justify-content: center; white-space: nowrap; }
 }
 </style>

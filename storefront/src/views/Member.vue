@@ -23,7 +23,7 @@
           <span v-else class="muted">已满级</span>
         </div>
         <div class="progress"><div :style="{ width: `${level.progress?.percent ?? 100}%` }"></div></div>
-        <div class="actions" style="margin-top: 16px;">
+        <div class="actions ov-actions" style="margin-top: 16px;">
           <button class="btn" @click="switchTab('recharge')">去充值</button>
           <router-link class="btn secondary" to="/points">积分商城</router-link>
           <router-link class="btn secondary" to="/fetch">去取货</router-link>
@@ -230,16 +230,17 @@
       </div>
     </div>
 
-    <!-- 礼品卡兑换 -->
-    <div v-if="tab === 'giftcard'" class="card" style="max-width: 480px;">
+    <!-- 礼品卡兑换（gc-card：桌面 720px 居中，输入/按钮放大——大厂表单比例） -->
+    <div v-if="tab === 'giftcard'" class="card gc-card">
+      <div class="gc-title">礼品卡兑换</div>
       <div class="field">
         <label>礼品卡兑换码</label>
-        <input class="input" v-model="giftCode" type="text" placeholder="卡密兑换码" @keyup.enter="doRedeem" />
+        <input class="input gc-input" v-model="giftCode" type="text" placeholder="输入卡密兑换码" @keyup.enter="doRedeem" />
         <div class="muted">兑换后余额即时到账；连续失败将临时锁定（防爆破）</div>
       </div>
       <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ giftError }}</div>
       <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
-      <button class="btn" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '兑换' }}</button>
+      <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '立即兑换' }}</button>
     </div>
 
     <!-- 推广营销（内嵌推广中心：推广码/二维码/团队/佣金） -->
@@ -742,4 +743,25 @@ function fmtTime(ts: number): string {
 .rc-change:hover { text-decoration: underline; }
 .rc-redirect-icon { font-size: 40px; margin-bottom: 10px; }
 .rc-btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+
+/* ── 礼品卡兑换（放大：桌面 720px 大输入 + 大按钮，替代原 480px 小卡）── */
+.gc-card { max-width: 720px; margin: 0 auto; padding: 26px 28px; }
+.gc-title { font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 16px; }
+.gc-input { height: 48px; font-size: 16px; letter-spacing: 1px; }
+.gc-submit {
+  width: 100%; margin-top: 18px; padding: 13px 0; border: none; cursor: pointer;
+  border-radius: 12px; font-size: 16px; font-weight: 700; color: #fff;
+  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3); transition: all 0.15s;
+  font-family: inherit;
+}
+.gc-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); }
+.gc-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 总览快捷入口：移动端两列等宽（对齐大厂宫格按钮） */
+@media (max-width: 768px) {
+  .ov-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ov-actions .btn { width: 100%; text-align: center; margin: 0; padding: 11px 0; }
+  .gc-card { padding: 20px 16px; }
+}
 </style>

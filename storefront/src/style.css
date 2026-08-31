@@ -130,6 +130,12 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid #e5e6e8; margin-bottom: 16px; flex-wrap: wrap; }
 .tabs button { padding: 8px 14px; border: none; background: none; cursor: pointer; font-size: 14px; color: #6b7280; border-bottom: 2px solid transparent; }
 .tabs button.active { color: #2563eb; border-bottom-color: #2563eb; font-weight: 600; }
+/* 移动端：单行横滑（大厂交互——tab 不换行堆叠，横向滚动 + 隐藏滚动条） */
+@media (max-width: 768px) {
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 0; margin-bottom: 12px; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs button { flex: 0 0 auto; white-space: nowrap; padding: 10px 13px; }
+}
 table.list { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.list th { text-align: left; color: #6b7280; font-weight: 500; padding: 8px; border-bottom: 1px solid #e5e6e8; }
 table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
