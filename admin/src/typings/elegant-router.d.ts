@@ -31,6 +31,7 @@ declare module "@elegant-router/types" {
     "product": "/product";
     "settings": "/settings";
     "staff": "/staff";
+    "ticket": "/ticket";
     "user": "/user";
     "wallet": "/wallet";
   };
@@ -78,6 +79,7 @@ declare module "@elegant-router/types" {
     | "product"
     | "settings"
     | "staff"
+    | "ticket"
     | "user"
     | "wallet"
   >;
@@ -110,6 +112,7 @@ declare module "@elegant-router/types" {
     | "product"
     | "settings"
     | "staff"
+    | "ticket"
     | "user"
     | "wallet"
   >;

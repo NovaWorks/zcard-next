@@ -236,6 +236,7 @@ const local: App.I18n.Schema = {
     settings: "系统设置",
     user: "用户管理",
     wallet: "钱包管理",
+    ticket: "工单管理",
   },
   page: {
     login: {

@@ -164,6 +164,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'ticket',
+    path: '/ticket',
+    component: 'layout.base$view.ticket',
+    meta: {
+      title: '工单管理',
+      i18nKey: 'route.ticket',
+      icon: 'mdi:face-agent',
+      order: 5.5
+    }
+  },
+  {
     name: 'user',
     path: '/user',
     component: 'layout.base$view.user',

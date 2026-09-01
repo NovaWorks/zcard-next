@@ -58,13 +58,24 @@
           <button class="btn btn-primary" @click="goSearch">搜索</button>
         </div>
 
-        <!-- 分类胶囊：category_nav_style=grid 时全断点显示；list 时仅移动端兜底 -->
-        <div v-if="categories.length" class="card cat-chips" :class="{ 'mobile-only': navStyle !== 'grid' }">
+        <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级，替代胶囊） -->
+        <div v-if="navStyle === 'grid' && categories.length" class="card cat-chips">
           <div class="cat-chips-row">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               {{ c.name }}
             </button>
+          </div>
+        </div>
+        <div v-else-if="categories.length" class="card mobile-cat mobile-only">
+          <button class="mobile-cat-head" @click="mobileCatOpen = !mobileCatOpen">
+            <span class="mcb-bar"></span>
+            <span class="mcb-title">全部分类</span>
+            <span class="mcb-count">{{ categories.length }} 类</span>
+            <span class="mcb-arrow" :class="{ open: mobileCatOpen }"></span>
+          </button>
+          <div v-show="mobileCatOpen" class="mobile-cat-body">
+            <CategoryTree variant="panel" :categories="categories" :model-value="activeCategory" @update:model-value="pickCategory" />
           </div>
         </div>
 
@@ -107,9 +118,7 @@
           <div class="pager-size">
             <span class="muted">每页</span>
             <select v-model.number="pageSize" class="pager-select" @change="goPage(1)">
-              <option :value="12">12</option>
-              <option :value="24">24</option>
-              <option :value="48">48</option>
+              <option v-for="s in pageSizeOptions" :key="s" :value="s">{{ s }}</option>
             </select>
             <span class="muted">条</span>
           </div>
@@ -139,9 +148,11 @@ const categories = ref<CategoryItem[]>([]);
 const activeCategory = ref(0);
 const viewMode = ref<'grid' | 'list'>('grid');
 const page = ref(1);
-const pageSize = ref(12);
+const pageSize = ref(20);
 const total = ref(0);
 const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [] });
+// 每页选项跟随后台 template.per_page（默认 20 → 20/40/60），前台不再写死档位
+const pageSizeOptions = computed(() => [pageSize.value, pageSize.value * 2, pageSize.value * 3]);
 
 const siteName = 'ZCard 商店';
 
@@ -158,6 +169,7 @@ const gridStyle = computed(() =>
 const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
+const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
 const sectionTitle = computed(() =>
   activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
@@ -248,6 +260,7 @@ function goSearch() {
 function pickCategory(id: number) {
   activeCategory.value = id;
   page.value = 1;
+  mobileCatOpen.value = false;
   load();
 }
 
@@ -310,6 +323,13 @@ onMounted(async () => {
     // 每行商品数（2-8）：显式固定列数，替代 auto-fill 的"装几个算几个"
     const pr = val('template.per_row');
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
+    // 每页商品数（防滥用夹在 6~60；与 /products 页同源消费）
+    const pp = Number(val('template.per_page'));
+    if (Number.isInteger(pp) && pp >= 6 && pp <= 60 && pp !== pageSize.value) {
+      pageSize.value = Math.floor(pp);
+      page.value = 1;
+      load();
+    }
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
     if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }
@@ -336,6 +356,29 @@ onUnmounted(stopHero);
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
+
+/* ── 移动端「全部分类」折叠面板（PC 左树的移动端等价物；含全部层级） ── */
+/* mobile-only 会给容器 display:flex，这里必须转纵向，防止头/体横排挤压树体 */
+.mobile-cat { padding: 0; overflow: hidden; flex-direction: column; }
+.mobile-cat-head {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 13px 16px; background: #f8fafc; border: none;
+  cursor: pointer; font-family: inherit; text-align: left;
+}
+.mcb-bar { width: 4px; height: 16px; border-radius: 999px; background: #ff5722; flex-shrink: 0; }
+.mcb-title { font-size: 15px; font-weight: 700; color: #111827; letter-spacing: 0.5px; }
+.mcb-count {
+  margin-left: auto; font-size: 12px; color: #2563eb;
+  background: rgba(37, 99, 235, 0.08); padding: 2px 9px; border-radius: 999px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.mcb-arrow {
+  width: 7px; height: 7px; flex-shrink: 0; margin-left: 8px;
+  border-right: 1.5px solid #6b7280; border-bottom: 1.5px solid #6b7280;
+  transform: rotate(45deg); transition: transform 0.2s;
+}
+.mcb-arrow.open { transform: rotate(-135deg); }
+.mobile-cat-body { border-top: 1px solid #e5e7eb; padding: 6px; }
 
 /* ── Hero ── */
 .hero-slider {

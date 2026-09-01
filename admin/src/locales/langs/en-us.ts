@@ -243,6 +243,7 @@ const local: App.I18n.Schema = {
     settings: "Settings",
     user: "Users",
     wallet: "Wallet",
+    ticket: "Tickets",
   },
   page: {
     login: {

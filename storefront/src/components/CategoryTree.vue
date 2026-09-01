@@ -1,5 +1,5 @@
 <template>
-  <aside class="cat-tree">
+  <aside class="cat-tree" :class="{ 'cat-tree--panel': variant === 'panel' }">
     <div class="cat-tree-card">
       <!-- 标题栏：品牌竖条 + 标题 + 分类数（与右侧「全部商品」区标题同一设计语言） -->
       <div class="cat-tree-head">
@@ -39,11 +39,16 @@ import { ref, computed } from 'vue';
 import CategoryTreeNode from './CategoryTreeNode.vue';
 import type { CategoryItem } from '@/api';
 
-const props = defineProps<{
-  categories: CategoryItem[];
-  /** 当前选中分类 id（0=全部） */
-  modelValue: number;
-}>();
+// variant：sidebar=PC 左侧栏（默认）；panel=移动端折叠面板（全宽、无头部、限高滚动）
+const props = withDefaults(
+  defineProps<{
+    categories: CategoryItem[];
+    /** 当前选中分类 id（0=全部） */
+    modelValue: number;
+    variant?: 'sidebar' | 'panel';
+  }>(),
+  { variant: 'sidebar' },
+);
 const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
 }>();
@@ -128,4 +133,11 @@ function select(id: number) {
 .tree-all.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25); }
 .tree-all > span:first-child { font-size: 16px; }
 .tree-empty { padding: 16px 0; text-align: center; }
+
+/* 面板变体（移动端折叠面板内嵌）：全宽平铺、隐藏自带头部、限高滚动。
+   双类名提升优先级，覆盖基础 .cat-tree 的移动端 display:none */
+.cat-tree.cat-tree--panel { display: block; width: 100%; }
+.cat-tree--panel .cat-tree-card { position: static; border: none; border-radius: 0; }
+.cat-tree--panel .cat-tree-head { display: none; }
+.cat-tree--panel .cat-tree-body { max-height: 56vh; padding: 4px 4px 8px; }
 </style>

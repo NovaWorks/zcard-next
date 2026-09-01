@@ -3,13 +3,24 @@
     <!-- PC 左侧多级分类树（template.category_nav_style=list 时显示） -->
     <CategoryTree v-if="navStyle !== 'grid'" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
     <div class="products-content">
-      <!-- 分类胶囊：category_nav_style=grid 时全断点显示（顶部横向导航）；list 时仅移动端 -->
-      <div v-if="categories.length" class="card category-chips" :class="{ 'mobile-only': navStyle !== 'grid' }" style="margin-bottom: 12px;">
+      <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级） -->
+      <div v-if="navStyle === 'grid' && categories.length" class="card category-chips" style="margin-bottom: 12px;">
         <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
             {{ c.name }}
           </button>
+        </div>
+      </div>
+      <div v-else-if="categories.length" class="card mobile-cat mobile-only" style="margin-bottom: 12px;">
+        <button class="mobile-cat-head" @click="mobileCatOpen = !mobileCatOpen">
+          <span class="mcb-bar"></span>
+          <span class="mcb-title">全部分类</span>
+          <span class="mcb-count">{{ categories.length }} 类</span>
+          <span class="mcb-arrow" :class="{ open: mobileCatOpen }"></span>
+        </button>
+        <div v-show="mobileCatOpen" class="mobile-cat-body">
+          <CategoryTree variant="panel" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
         </div>
       </div>
 
@@ -70,10 +81,11 @@ const categoryId = ref(0);
 // 排序：default=综合（运营权重）| sales | newest | price_asc | price_desc（与后台 sort_by 同值域）
 const sort = ref('default');
 const page = ref(1);
-const pageSize = ref(12);
+const pageSize = ref(20);
 const total = ref(0);
 const loading = ref(false);
 const error = ref('');
+const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
 
 // ── 模板设置（后台 系统设置 → 模板；公开配置下发，客户端生效）──
 const viewMode = ref<'grid' | 'list'>('grid'); // template.default_view（big 归入网格+更宽卡片）
@@ -103,10 +115,10 @@ onMounted(async () => {
     if (dv === 'list') viewMode.value = 'list';
     else if (dv === 'big') { viewMode.value = 'grid'; bigGrid.value = true; }
     else viewMode.value = 'grid';
-    // 每页商品数（防滥用夹在 6~60）
+    // 每页商品数（防滥用夹在 6~60；与首页同源消费，默认 20 一致时免重查）
     const pp = Number(val('template.per_page'));
-    if (Number.isInteger(pp) && pp >= 6 && pp <= 60) {
-      pageSize.value = pp;
+    if (Number.isInteger(pp) && pp >= 6 && pp <= 60 && pp !== pageSize.value) {
+      pageSize.value = Math.floor(pp);
       load();
     }
     // 默认排序方式（与后台 sort_by 同值域；default=综合）
@@ -151,6 +163,7 @@ function go(p: number) {
 
 function pickCategory(id: number) {
   categoryId.value = id;
+  mobileCatOpen.value = false;
   onSearch();
 }
 
@@ -195,6 +208,29 @@ async function applyListSeo() {
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
+
+/* 移动端「全部分类」折叠面板（与首页同款：橙竖条标题 + 层级树） */
+/* mobile-only 会给容器 display:flex，这里必须转纵向，防止头/体横排挤压树体 */
+.mobile-cat { padding: 0; overflow: hidden; flex-direction: column; }
+.mobile-cat-head {
+  width: 100%; display: flex; align-items: center; gap: 8px;
+  padding: 13px 16px; background: #f8fafc; border: none;
+  cursor: pointer; font-family: inherit; text-align: left;
+}
+.mcb-bar { width: 4px; height: 16px; border-radius: 999px; background: #ff5722; flex-shrink: 0; }
+.mcb-title { font-size: 15px; font-weight: 700; color: #111827; letter-spacing: 0.5px; }
+.mcb-count {
+  margin-left: auto; font-size: 12px; color: #2563eb;
+  background: rgba(37, 99, 235, 0.08); padding: 2px 9px; border-radius: 999px;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.mcb-arrow {
+  width: 7px; height: 7px; flex-shrink: 0; margin-left: 8px;
+  border-right: 1.5px solid #6b7280; border-bottom: 1.5px solid #6b7280;
+  transform: rotate(45deg); transition: transform 0.2s;
+}
+.mcb-arrow.open { transform: rotate(-135deg); }
+.mobile-cat-body { border-top: 1px solid #e5e7eb; padding: 6px; }
 .view-toggle { display: inline-flex; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
 .vt-btn {
   border: none; background: #fff; color: #6b7280; font-size: 14px;

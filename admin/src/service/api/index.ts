@@ -12,3 +12,4 @@ export * from "./ops";
 export * from "./supply";
 export * from "./supplier";
 export * from "./procurement";
+export * from "./ticket";
