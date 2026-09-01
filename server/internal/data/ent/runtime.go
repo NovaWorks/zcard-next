@@ -1549,12 +1549,16 @@ func init() {
 	productDescSort := productFields[18].Descriptor()
 	// product.DefaultSort holds the default value on creation for the sort field.
 	product.DefaultSort = productDescSort.Default.(int32)
+	// productDescIsRecommend is the schema descriptor for is_recommend field.
+	productDescIsRecommend := productFields[19].Descriptor()
+	// product.DefaultIsRecommend holds the default value on creation for the is_recommend field.
+	product.DefaultIsRecommend = productDescIsRecommend.Default.(bool)
 	// productDescStatus is the schema descriptor for status field.
-	productDescStatus := productFields[19].Descriptor()
+	productDescStatus := productFields[20].Descriptor()
 	// product.DefaultStatus holds the default value on creation for the status field.
 	product.DefaultStatus = productDescStatus.Default.(int8)
 	// productDescUpstreamProductCode is the schema descriptor for upstream_product_code field.
-	productDescUpstreamProductCode := productFields[21].Descriptor()
+	productDescUpstreamProductCode := productFields[22].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
 	productcontrolMixin := schema.ProductControl{}.Mixin()

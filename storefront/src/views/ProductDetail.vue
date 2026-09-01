@@ -467,14 +467,14 @@ async function exchangePoints() {
 </script>
 
 <style scoped>
-.pd-page { max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.pd-page { max-width: 1024px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 .pd-crumb { font-size: 13px; color: #9ca3af; display: flex; gap: 6px; align-items: center; }
 .pd-crumb a { color: #6b7280; text-decoration: none; }
 .pd-crumb a:hover { color: #2563eb; }
 .pd-crumb-current { color: #374151; }
 
-.pd-main { display: grid; grid-template-columns: 1fr; gap: 24px; }
-@media (min-width: 768px) { .pd-main { grid-template-columns: 1fr 1fr; } }
+.pd-main { display: grid; grid-template-columns: 1fr; gap: 20px; align-items: start; }
+@media (min-width: 768px) { .pd-main { grid-template-columns: 1.05fr 1fr; } }
 
 /* ── 左栏图 ── */
 .pd-cover {
@@ -495,7 +495,13 @@ async function exchangePoints() {
   background: rgba(255,255,255,0.85); color: #6b7280;
 }
 
-/* ── 右栏购买区 ── */
+/* ── 右栏购买区（独立白卡：固定白底，不受全站背景图影响）── */
+.pd-buy {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px 20px;
+}
 .pd-name { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.4; }
 .pd-sub { display: flex; gap: 8px; margin-top: 8px; }
 .pd-points-tag { background: #eef2ff; color: #4338ca; }

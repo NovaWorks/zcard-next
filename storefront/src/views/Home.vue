@@ -81,6 +81,22 @@
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
+        <!-- 推荐商品（后台商品「首页推荐」开关；横滑一行，无推荐时整块隐藏） -->
+        <div v-if="recommended.length" class="rec-section">
+          <h2 class="section-title"><span class="title-bar"></span>推荐商品</h2>
+          <div class="rec-row">
+            <ProductCard
+              v-for="p in recommended"
+              :key="p.id"
+              :p="p"
+              mode="grid"
+              :show-sales="showSales"
+              :show-stock="showStock"
+              class="rec-card"
+            />
+          </div>
+        </div>
+
         <!-- 商品区标题 + 视图切换 -->
         <div class="section-head">
           <h2 class="section-title"><span class="title-bar"></span>{{ sectionTitle }}</h2>
@@ -145,6 +161,7 @@ const error = ref('');
 const banners = ref<Banner[]>([]);
 const latestNotice = ref<StorePost | null>(null);
 const categories = ref<CategoryItem[]>([]);
+const recommended = ref<Product[]>([]); // 首页推荐位（后台商品 is_recommend）
 const activeCategory = ref(0);
 const viewMode = ref<'grid' | 'list'>('grid');
 const page = ref(1);
@@ -290,6 +307,8 @@ await Promise.all([
   listBanners('top').then((b) => { banners.value = b?.data?.banners || []; }),
   listPosts('notice', 1, 1).then((n) => { latestNotice.value = n?.data?.posts?.[0] || null; }),
   listCategories().then((c) => { categories.value = c?.data?.categories || []; }),
+  // 推荐位：失败静默（区块隐藏，不影响主列表）
+  listProducts({ recommend_only: true, page: 1, page_size: 8 }).then((r) => { recommended.value = r?.data?.items || []; }).catch(() => {}),
   fetchAnnouncement().then((a) => { announcement.value = a; }),
   // 首页默认 SEO（仅首页；页面级 SEO 由各自页面组件负责）
   fetchSiteSeo().then((site) => {
@@ -443,6 +462,15 @@ onUnmounted(stopHero);
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 4px;
 }
+/* 推荐位：横滑一行（大厂猜你喜欢；卡片定宽不随容器压缩） */
+.rec-section { display: flex; flex-direction: column; gap: 10px; }
+.rec-row {
+  display: flex; gap: 12px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.rec-card { flex: 0 0 184px; width: 184px; }
 .section-title {
   display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: #111827;
 }

@@ -135,6 +135,11 @@ func Sort(v int32) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldSort, v))
 }
 
+// IsRecommend applies equality check predicate on the "is_recommend" field. It's identical to IsRecommendEQ.
+func IsRecommend(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldIsRecommend, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v int8) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldStatus, v))
@@ -943,6 +948,16 @@ func SortLT(v int32) predicate.Product {
 // SortLTE applies the LTE predicate on the "sort" field.
 func SortLTE(v int32) predicate.Product {
 	return predicate.Product(sql.FieldLTE(FieldSort, v))
+}
+
+// IsRecommendEQ applies the EQ predicate on the "is_recommend" field.
+func IsRecommendEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldIsRecommend, v))
+}
+
+// IsRecommendNEQ applies the NEQ predicate on the "is_recommend" field.
+func IsRecommendNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldIsRecommend, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

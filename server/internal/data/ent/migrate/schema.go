@@ -1398,6 +1398,7 @@ var (
 		{Name: "control_config", Type: field.TypeJSON, Nullable: true},
 		{Name: "dedup", Type: field.TypeBool, Default: true},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
+		{Name: "is_recommend", Type: field.TypeBool, Default: false},
 		{Name: "status", Type: field.TypeInt8, Default: 1},
 		{Name: "upstream_source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "upstream_product_code", Type: field.TypeString, Nullable: true, Size: 128},
@@ -1422,17 +1423,17 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[22]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[23]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[23]},
+				Columns: []*schema.Column{ProductsColumns[24]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[23], ProductsColumns[24]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[24], ProductsColumns[25]},
 			},
 		},
 	}

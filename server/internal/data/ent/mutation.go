@@ -46192,6 +46192,7 @@ type ProductMutation struct {
 	dedup                 *bool
 	sort                  *int32
 	addsort               *int32
+	is_recommend          *bool
 	status                *int8
 	addstatus             *int8
 	upstream_source_id    *uint64
@@ -47318,6 +47319,42 @@ func (m *ProductMutation) ResetSort() {
 	m.addsort = nil
 }
 
+// SetIsRecommend sets the "is_recommend" field.
+func (m *ProductMutation) SetIsRecommend(b bool) {
+	m.is_recommend = &b
+}
+
+// IsRecommend returns the value of the "is_recommend" field in the mutation.
+func (m *ProductMutation) IsRecommend() (r bool, exists bool) {
+	v := m.is_recommend
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsRecommend returns the old "is_recommend" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldIsRecommend(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsRecommend is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsRecommend requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsRecommend: %w", err)
+	}
+	return oldValue.IsRecommend, nil
+}
+
+// ResetIsRecommend resets all changes to the "is_recommend" field.
+func (m *ProductMutation) ResetIsRecommend() {
+	m.is_recommend = nil
+}
+
 // SetStatus sets the "status" field.
 func (m *ProductMutation) SetStatus(i int8) {
 	m.status = &i
@@ -47684,7 +47721,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 25)
+	fields := make([]string, 0, 26)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -47748,6 +47785,9 @@ func (m *ProductMutation) Fields() []string {
 	if m.sort != nil {
 		fields = append(fields, product.FieldSort)
 	}
+	if m.is_recommend != nil {
+		fields = append(fields, product.FieldIsRecommend)
+	}
 	if m.status != nil {
 		fields = append(fields, product.FieldStatus)
 	}
@@ -47810,6 +47850,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.Dedup()
 	case product.FieldSort:
 		return m.Sort()
+	case product.FieldIsRecommend:
+		return m.IsRecommend()
 	case product.FieldStatus:
 		return m.Status()
 	case product.FieldUpstreamSourceID:
@@ -47869,6 +47911,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldDedup(ctx)
 	case product.FieldSort:
 		return m.OldSort(ctx)
+	case product.FieldIsRecommend:
+		return m.OldIsRecommend(ctx)
 	case product.FieldStatus:
 		return m.OldStatus(ctx)
 	case product.FieldUpstreamSourceID:
@@ -48032,6 +48076,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSort(v)
+		return nil
+	case product.FieldIsRecommend:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsRecommend(v)
 		return nil
 	case product.FieldStatus:
 		v, ok := value.(int8)
@@ -48346,6 +48397,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldSort:
 		m.ResetSort()
+		return nil
+	case product.FieldIsRecommend:
+		m.ResetIsRecommend()
 		return nil
 	case product.FieldStatus:
 		m.ResetStatus()

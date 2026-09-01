@@ -148,7 +148,9 @@ type ListProductsRequest struct {
 	// 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
 	PointsOnly bool `protobuf:"varint,5,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"`
 	// 排序：newest（默认）| price_asc | price_desc | sales
-	Sort          string `protobuf:"bytes,6,opt,name=sort,proto3" json:"sort,omitempty"`
+	Sort string `protobuf:"bytes,6,opt,name=sort,proto3" json:"sort,omitempty"`
+	// 推荐位视图（true=仅运营推荐商品 is_recommend；首页「推荐商品」区块）
+	RecommendOnly bool `protobuf:"varint,7,opt,name=recommend_only,json=recommendOnly,proto3" json:"recommend_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -223,6 +225,13 @@ func (x *ListProductsRequest) GetSort() string {
 		return x.Sort
 	}
 	return ""
+}
+
+func (x *ListProductsRequest) GetRecommendOnly() bool {
+	if x != nil {
+		return x.RecommendOnly
+	}
+	return false
 }
 
 type ListProductsReply struct {
@@ -364,8 +373,10 @@ type Product struct {
 	Skus []*Sku `protobuf:"bytes,14,rep,name=skus,proto3" json:"skus,omitempty"`
 	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
 	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// 运营推荐（首页推荐位标记）
+	IsRecommend   bool `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
@@ -501,6 +512,13 @@ func (x *Product) GetPointsRequired() int64 {
 		return x.PointsRequired
 	}
 	return 0
+}
+
+func (x *Product) GetIsRecommend() bool {
+	if x != nil {
+		return x.IsRecommend
+	}
+	return false
 }
 
 // ProductControl 自定义控件定义（下单表单渲染）。
@@ -747,7 +765,7 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x1b\n" +
-	"\tparent_id\x18\x04 \x01(\x04R\bparentId\"\xb6\x01\n" +
+	"\tparent_id\x18\x04 \x01(\x04R\bparentId\"\xdd\x01\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
@@ -756,14 +774,15 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1f\n" +
 	"\vpoints_only\x18\x05 \x01(\bR\n" +
 	"pointsOnly\x12\x12\n" +
-	"\x04sort\x18\x06 \x01(\tR\x04sort\"\x92\x01\n" +
+	"\x04sort\x18\x06 \x01(\tR\x04sort\x12%\n" +
+	"\x0erecommend_only\x18\a \x01(\bR\rrecommendOnly\"\x92\x01\n" +
 	"\x11ListProductsReply\x126\n" +
 	"\x05items\x18\x01 \x03(\v2 .zcard.api.storefront.v1.ProductR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x95\x04\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb8\x04\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -784,7 +803,8 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\bcontrols\x18\f \x03(\v2'.zcard.api.storefront.v1.ProductControlR\bcontrols\x12=\n" +
 	"\areviews\x18\r \x03(\v2#.zcard.api.storefront.v1.ReviewItemR\areviews\x120\n" +
 	"\x04skus\x18\x0e \x03(\v2\x1c.zcard.api.storefront.v1.SkuR\x04skus\x12'\n" +
-	"\x0fpoints_required\x18\x0f \x01(\x03R\x0epointsRequired\"\x92\x01\n" +
+	"\x0fpoints_required\x18\x0f \x01(\x03R\x0epointsRequired\x12!\n" +
+	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\"\x92\x01\n" +
 	"\x0eProductControl\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +

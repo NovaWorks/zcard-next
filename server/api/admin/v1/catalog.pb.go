@@ -264,8 +264,10 @@ type AdminProduct struct {
 	SoldCount int64 `protobuf:"varint,22,opt,name=sold_count,json=soldCount,proto3" json:"sold_count,omitempty"`
 	// 直发内容已设置（url/code 商品；明文永不回传）
 	HasDirectContent bool `protobuf:"varint,23,opt,name=has_direct_content,json=hasDirectContent,proto3" json:"has_direct_content,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// 运营推荐（storefront 首页推荐位）
+	IsRecommend   bool `protobuf:"varint,24,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *AdminProduct) Reset() {
@@ -459,6 +461,13 @@ func (x *AdminProduct) GetHasDirectContent() bool {
 	return false
 }
 
+func (x *AdminProduct) GetIsRecommend() bool {
+	if x != nil {
+		return x.IsRecommend
+	}
+	return false
+}
+
 type CreateProductRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -478,6 +487,8 @@ type CreateProductRequest struct {
 	PointsRequired int64 `protobuf:"varint,14,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
 	DirectContent string `protobuf:"bytes,15,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`
+	// 运营推荐（storefront 首页推荐位）
+	IsRecommend   bool `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -617,6 +628,13 @@ func (x *CreateProductRequest) GetDirectContent() string {
 	return ""
 }
 
+func (x *CreateProductRequest) GetIsRecommend() bool {
+	if x != nil {
+		return x.IsRecommend
+	}
+	return false
+}
+
 type UpdateProductRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -635,6 +653,8 @@ type UpdateProductRequest struct {
 	PointsRequired int64 `protobuf:"varint,13,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 直发内容明文（空=保持不变；url/code 商品加密存储）
 	DirectContent string `protobuf:"bytes,14,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`
+	// 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
+	IsRecommend   bool `protobuf:"varint,15,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -765,6 +785,13 @@ func (x *UpdateProductRequest) GetDirectContent() string {
 		return x.DirectContent
 	}
 	return ""
+}
+
+func (x *UpdateProductRequest) GetIsRecommend() bool {
+	if x != nil {
+		return x.IsRecommend
+	}
+	return false
 }
 
 type DeleteProductRequest struct {
@@ -3218,7 +3245,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xdf\x05\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x82\x06\n" +
 	"\fAdminProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +
@@ -3249,7 +3276,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0fpoints_required\x18\x15 \x01(\x03R\x0epointsRequired\x12\x1d\n" +
 	"\n" +
 	"sold_count\x18\x16 \x01(\x03R\tsoldCount\x12,\n" +
-	"\x12has_direct_content\x18\x17 \x01(\bR\x10hasDirectContent\"\xf6\x03\n" +
+	"\x12has_direct_content\x18\x17 \x01(\bR\x10hasDirectContent\x12!\n" +
+	"\fis_recommend\x18\x18 \x01(\bR\visRecommend\"\x99\x04\n" +
 	"\x14CreateProductRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +
@@ -3269,7 +3297,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04sort\x18\f \x01(\x05R\x04sort\x12\x16\n" +
 	"\x06status\x18\r \x01(\x05R\x06status\x12'\n" +
 	"\x0fpoints_required\x18\x0e \x01(\x03R\x0epointsRequired\x12%\n" +
-	"\x0edirect_content\x18\x0f \x01(\tR\rdirectContent\"\xc7\x03\n" +
+	"\x0edirect_content\x18\x0f \x01(\tR\rdirectContent\x12!\n" +
+	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\"\xea\x03\n" +
 	"\x14UpdateProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -3287,7 +3316,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04sort\x18\v \x01(\x05R\x04sort\x12\x16\n" +
 	"\x06status\x18\f \x01(\x05R\x06status\x12'\n" +
 	"\x0fpoints_required\x18\r \x01(\x03R\x0epointsRequired\x12%\n" +
-	"\x0edirect_content\x18\x0e \x01(\tR\rdirectContent\"+\n" +
+	"\x0edirect_content\x18\x0e \x01(\tR\rdirectContent\x12!\n" +
+	"\fis_recommend\x18\x0f \x01(\bR\visRecommend\"+\n" +
 	"\x14DeleteProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"U\n" +
 	"\x1fBatchUpdateProductStatusRequest\x12\x15\n" +

@@ -73,6 +73,9 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 	if f.PointsOnly {
 		q = q.Where(product.PointsRequiredGT(0)) // 积分商城视图（P3-01）
 	}
+	if f.RecommendOnly {
+		q = q.Where(product.IsRecommend(true)) // 推荐位视图（首页推荐区块）
+	}
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -136,6 +139,7 @@ func toPortProduct(row *ent.Product) port.Product {
 		// P2-02：货源信息（procurement 判定上游项）
 		UpstreamSourceID:    row.UpstreamSourceID,
 		UpstreamProductCode: row.UpstreamProductCode,
+		IsRecommend:         row.IsRecommend,
 	}
 }
 

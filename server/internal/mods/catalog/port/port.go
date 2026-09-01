@@ -15,7 +15,7 @@ type Product struct {
 	Name         string
 	Slug         string
 	Cover        string
-	Description  string // 商品详情（sanitize 后富文本；storefront 详情页下发）
+	Description  string      // 商品详情（sanitize 后富文本；storefront 详情页下发）
 	Price        money.Cents // 售价（分）
 	FactoryPrice money.Cents // 成本价（分）
 	StockType    string      // card / url / code
@@ -27,6 +27,8 @@ type Product struct {
 	// 货源信息（P2-02 procurement 消费：判定上游项与提交采购）
 	UpstreamSourceID    uint64 // 0 = 自营
 	UpstreamProductCode string
+	// 运营推荐（storefront 首页推荐位）
+	IsRecommend bool
 }
 
 // Control 自定义控件 DTO（下单表单渲染）。
@@ -75,6 +77,8 @@ type VisibleFilter struct {
 	PageSize   int32
 	// PointsOnly 积分商城视图（true=仅 points_required>0 商品；P3-01）
 	PointsOnly bool
+	// RecommendOnly 推荐位视图（true=仅 is_recommend 商品；首页推荐区块）
+	RecommendOnly bool
 	// Sort 排序：default（综合）| newest（最新上架）| price_asc | price_desc | sales（空=default）
 	Sort string
 }
@@ -132,6 +136,8 @@ type ProductInput struct {
 	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，P3-01）
 	PointsRequired    int64
 	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）
+	// 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
+	IsRecommend bool
 	// 直发内容密文（url/code 商品；nil=不动。service 层已用 CardCipher 加密，
 	// AAD=product_id+subsite_id——创建时商品尚无 ID，由 repo 建后回填）
 	DirectContent []byte

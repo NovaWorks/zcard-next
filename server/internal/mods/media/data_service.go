@@ -95,12 +95,26 @@ func (s *AdminMediaService) ImportFromURL(ctx context.Context, req *adminv1.Impo
 	if err != nil {
 		return nil, errors.BadRequest("media.FETCH_FAILED", err.Error())
 	}
+	// 内容嗅探：CDN 直链常见「URL 扩展名/响应头 ≠ 实际编码」（.png 实为 JPEG/WebP、
+	// 无扩展名短链、binary/octet-stream 等），校验按文件名白名单三分会误杀。
+	// 以魔数实测为准重写扩展名与 Content-Type，再走统一校验（校验本身不放宽）。
 	name := path.Base(strings.Split(req.GetUrl(), "?")[0])
 	if name == "" || name == "/" || !strings.Contains(name, ".") {
 		name = "import.png" // 无扩展名兜底（魔数校验仍把关）
 	}
+	contentType := resp.Header.Get("Content-Type")
+	if ext, sniffedMime, ok := SniffImage(data); ok {
+		stem := strings.TrimSuffix(name, path.Ext(name))
+		if stem == "" {
+			stem = "import"
+		}
+		name = stem + ext
+		contentType = sniffedMime
+	} else {
+		return nil, errors.BadRequest("media.NOT_IMAGE", "外链内容不是可识别的图片（支持 jpg/png/webp/gif；AVIF/HEIC 等请先转换格式）")
+	}
 	res, err := s.repo.Upload(ctx, mediaport.UploadInput{
-		Name: name, ContentType: resp.Header.Get("Content-Type"), Data: data,
+		Name: name, ContentType: contentType, Data: data,
 		CategoryID: req.GetCategoryId(), UploaderID: adminUID(ctx),
 	})
 	if err != nil {

@@ -55,6 +55,8 @@ message ListProductsRequest {
   bool points_only = 5;
   // 排序：newest（默认）| price_asc | price_desc | sales
   string sort = 6;
+  // 推荐位视图（true=仅运营推荐商品 is_recommend；首页「推荐商品」区块）
+  bool recommend_only = 7;
 }
 
 message ListProductsReply {
@@ -94,6 +96,8 @@ message Product {
   repeated Sku skus = 14;
   // 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
   int64 points_required = 15;
+  // 运营推荐（首页推荐位标记）
+  bool is_recommend = 16;
 }
 
 // ProductControl 自定义控件定义（下单表单渲染）。

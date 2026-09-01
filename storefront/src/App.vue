@@ -1,5 +1,5 @@
 <template>
-  <div class="app" :style="bgImage ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' } : undefined">
+  <div class="app" :style="appBgStyle">
     <!-- 安装页：无商城布局（头部/尾部/客服/公告全隐藏，仅渲染向导自身） -->
     <template v-if="!isInstall">
     <!-- 顶部品牌条（深蓝渐变；promo.top_banner_enabled 可关） -->
@@ -233,6 +233,11 @@ const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=2
 const topBannerEnabled = ref(true);
 // template.bg_image：全站背景图（空=默认纯色背景）
 const bgImage = ref('');
+// 商品详情页排除全站背景图（详情页为白卡布局，重背景图会压过内容可读性）
+const appBgStyle = computed(() => {
+  if (!bgImage.value || route.path.startsWith('/product/')) return undefined;
+  return { backgroundImage: `url(${bgImage.value})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' };
+});
 
 // ── 页脚配置（footer.* 公开下发：about/nav/social/contact/agreement/icp，空值回落默认）──
 const footerAbout = ref('');

@@ -5396,6 +5396,11 @@ paths:
                   description: 排序：newest（默认）| price_asc | price_desc | sales
                   schema:
                     type: string
+                - name: recommendOnly
+                  in: query
+                  description: 推荐位视图（true=仅运营推荐商品 is_recommend；首页「推荐商品」区块）
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -6196,6 +6201,9 @@ components:
                 hasDirectContent:
                     type: boolean
                     description: 直发内容已设置（url/code 商品；明文永不回传）
+                isRecommend:
+                    type: boolean
+                    description: 运营推荐（storefront 首页推荐位）
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -7034,6 +7042,9 @@ components:
                 directContent:
                     type: string
                     description: 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
+                isRecommend:
+                    type: boolean
+                    description: 运营推荐（storefront 首页推荐位）
         zcard.api.admin.v1.CreateReconciliationJobRequest:
             required:
                 - connectionId
@@ -10029,6 +10040,9 @@ components:
                 directContent:
                     type: string
                     description: 直发内容明文（空=保持不变；url/code 商品加密存储）
+                isRecommend:
+                    type: boolean
+                    description: 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
         zcard.api.admin.v1.UpdateRolePermissionsRequest:
             required:
                 - id
@@ -11310,6 +11324,9 @@ components:
                 pointsRequired:
                     type: string
                     description: 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
+                isRecommend:
+                    type: boolean
+                    description: 运营推荐（首页推荐位标记）
             description: Product 顾客视角商品（管理字段与成本价绝不下发）。
         zcard.api.storefront.v1.ProductControl:
             type: object

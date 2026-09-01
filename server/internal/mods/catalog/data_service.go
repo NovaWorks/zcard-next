@@ -182,6 +182,7 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		StockVisible: req.GetStockVisible(), Dedup: req.GetDedup(),
 		Sort: req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
+		IsRecommend: req.GetIsRecommend(),
 	}
 	p, err := s.repo.CreateProduct(ctx, in)
 	if err != nil {
@@ -220,6 +221,7 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		StockVisible: req.GetStockVisible(),
 		Sort:         req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
+		IsRecommend: req.GetIsRecommend(), // PUT 全量语义（含 false=取消推荐）
 	}
 	old, _ := s.repo.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, req.GetId())
 	// 直发内容（url/code）：空=保持不变；非空且商品非卡密类 → 加密更新

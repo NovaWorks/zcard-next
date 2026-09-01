@@ -21,8 +21,8 @@ func TestListAdminLowStock(t *testing.T) {
 	p1 := d.Client.Product.Create().SetSubsiteID(0).SetName("P1").SetSlug("p1").SetPrice(1000).SetStockType("card").SetStatus(1).SaveX(ctx)
 	p2 := d.Client.Product.Create().SetSubsiteID(0).SetName("P2").SetSlug("p2").SetPrice(1000).SetStockType("card").SetStatus(1).SaveX(ctx)
 	p3 := d.Client.Product.Create().SetSubsiteID(0).SetName("P3").SetSlug("p3").SetPrice(1000).SetStockType("card").SetStatus(1).SaveX(ctx) // 无卡密
-	d.Client.Product.Create().SetSubsiteID(0).SetName("P4").SetSlug("p4").SetPrice(1000).SetStockType("url").SetStatus(1).SaveX(ctx)  // 链接类忽略
-	d.Client.Product.Create().SetSubsiteID(0).SetName("P5").SetSlug("p5").SetPrice(1000).SetStockType("card").SetStatus(0).SaveX(ctx) // 下架不参与
+	d.Client.Product.Create().SetSubsiteID(0).SetName("P4").SetSlug("p4").SetPrice(1000).SetStockType("url").SetStatus(1).SaveX(ctx)        // 链接类忽略
+	d.Client.Product.Create().SetSubsiteID(0).SetName("P5").SetSlug("p5").SetPrice(1000).SetStockType("card").SetStatus(0).SaveX(ctx)       // 下架不参与
 	for i := 0; i < 3; i++ {
 		d.Client.Card.Create().SetProductID(p1.ID).SetSubsiteID(0).SetContent([]byte("x")).SetContentHash(fmt.Sprintf("p1-%d", i)).SaveX(ctx)
 	}

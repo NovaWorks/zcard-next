@@ -60,6 +60,8 @@ type Product struct {
 	Dedup bool `json:"dedup,omitempty"`
 	// Sort holds the value of the "sort" field.
 	Sort int32 `json:"sort,omitempty"`
+	// 运营推荐（storefront 首页推荐位 recommend_only 过滤；admin 商品表单可标）
+	IsRecommend bool `json:"is_recommend,omitempty"`
 	// 1=上架 0=下架 2=隐藏（游客不可见会员可见）
 	Status int8 `json:"status,omitempty"`
 	// 货源连接（NULL=自营；M2）
@@ -110,7 +112,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
-		case product.FieldStockVisible, product.FieldDedup:
+		case product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend:
 			values[i] = new(sql.NullBool)
 		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
 			values[i] = new(sql.NullInt64)
@@ -271,6 +273,12 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Sort = int32(value.Int64)
 			}
+		case product.FieldIsRecommend:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_recommend", values[i])
+			} else if value.Valid {
+				_m.IsRecommend = value.Bool
+			}
 		case product.FieldStatus:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
@@ -403,6 +411,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sort=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sort))
+	builder.WriteString(", ")
+	builder.WriteString("is_recommend=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsRecommend))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))

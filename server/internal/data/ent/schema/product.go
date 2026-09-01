@@ -38,6 +38,7 @@ func (Product) Fields() []ent.Field {
 		field.JSON("control_config", map[string]any{}).Optional().Comment("自定义控件配置（结构化控件走 product_controls 表，M1）"),
 		field.Bool("dedup").Default(true).Comment("导入去重开关"),
 		field.Int32("sort").Default(0),
+		field.Bool("is_recommend").Default(false).Comment("运营推荐（storefront 首页推荐位 recommend_only 过滤；admin 商品表单可标）"),
 		field.Int8("status").Default(1).Comment("1=上架 0=下架 2=隐藏（游客不可见会员可见）"),
 		field.Uint64("upstream_source_id").Optional().Comment("货源连接（NULL=自营；M2）"),
 		field.String("upstream_product_code").MaxLen(128).Optional().Comment("上游商品标识（M2）"),

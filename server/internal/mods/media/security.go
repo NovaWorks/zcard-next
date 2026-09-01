@@ -125,3 +125,19 @@ func ValidateAndReencode(filename, contentType string, data []byte) (out []byte,
 
 // SniffContentType 便捷（http.DetectContentType 标准库）。
 func SniffContentType(data []byte) string { return http.DetectContentType(data) }
+
+// SniffImage 魔数实测图片类型（外链导入用：URL 名/响应头都可能说谎，内容不会）。
+// ok=false 表示不是白名单内格式（AVIF/HEIC/BMP/HTML…）。
+func SniffImage(data []byte) (ext, mime string, ok bool) {
+	switch {
+	case bytes.HasPrefix(data, []byte{0xFF, 0xD8, 0xFF}):
+		return ".jpg", "image/jpeg", true
+	case bytes.HasPrefix(data, []byte{0x89, 'P', 'N', 'G'}):
+		return ".png", "image/png", true
+	case bytes.HasPrefix(data, []byte{'G', 'I', 'F', '8'}):
+		return ".gif", "image/gif", true
+	case len(data) >= 12 && bytes.HasPrefix(data, []byte{'R', 'I', 'F', 'F'}) && string(data[8:12]) == "WEBP":
+		return ".webp", "image/webp", true
+	}
+	return "", "", false
+}

@@ -1,4 +1,4 @@
-h1:4iQONoY7qc81+TvVLoTIIiBrtSq9m5kSYaKvlqMePtE=
+h1:YgpEOnzItUfkuqO18OamI0qDSPqcxvjN36cKETj/ybk=
 20260815190733_init.sql h1:aTI2MMPniza4QyrpCy0f3vnBpQNott2wpRT9w4UF7Y0=
 20260815195921_add_failed_tasks.sql h1:Nnr87jsjSLxKmhYvtqAcTPXw8qPMrZ4WP0UG9h3r0qg=
 20260815201551_v1_full_schema.sql h1:/iBXYqYVfieY/o73I07xmhjaYwlzY98ujJGY9EdWl+Y=
@@ -17,3 +17,4 @@ h1:4iQONoY7qc81+TvVLoTIIiBrtSq9m5kSYaKvlqMePtE=
 20260825120000_banner_link_type_post_notice.sql h1:5R8E5naDTv9hHpFPfD6BAUBWdqacaGt6HeaSsDrYE1c=
 20260825130000_product_direct_content.sql h1:/W8JEJxeqt94A6YBAz9E3CWxCquHs4hWdPbMwVrvK7s=
 20260828114635_payment_methods.sql h1:ij0DuzUDYY8kI4n3Ra/g71iBEt2QYrx3oVi4oI2E13M=
+20260901154529_product_is_recommend.sql h1:EHNMHMTxRBFXBswlH0GyW20wRi63ELQ5S+Bj+aMZZOw=

@@ -50,13 +50,14 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		pageSize = 20
 	}
 	filter := port.VisibleFilter{
-		SubsiteID:  tc.SubsiteID,
-		CategoryID: req.GetCategoryId(),
-		Keyword:    req.GetKeyword(),
-		Page:       page,
-		PageSize:   pageSize,
-		PointsOnly: req.GetPointsOnly(),
-		Sort:       req.GetSort(),
+		SubsiteID:     tc.SubsiteID,
+		CategoryID:    req.GetCategoryId(),
+		Keyword:       req.GetKeyword(),
+		Page:          page,
+		PageSize:      pageSize,
+		PointsOnly:    req.GetPointsOnly(),
+		RecommendOnly: req.GetRecommendOnly(),
+		Sort:          req.GetSort(),
 	}
 	salesSort := req.GetSort() == "sales"
 	var items []port.Product
@@ -225,7 +226,7 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
 	}
 	return &storefrontv1.Product{
-		Id: p.ID,
+		Id:             p.ID,
 		Name:           p.Name,
 		Slug:           p.Slug,
 		Cover:          p.Cover,
@@ -236,5 +237,6 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		StockVisible:   p.StockVisible,
 		PointsRequired: p.PointsRequired, // 积分商城（P3-01；0=常规商品）
 		SalesCount:     soldCount,
+		IsRecommend:    p.IsRecommend, // 运营推荐（首页推荐位）
 	}
 }

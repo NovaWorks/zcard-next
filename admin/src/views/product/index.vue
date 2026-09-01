@@ -249,6 +249,7 @@ const formData = reactive({
   dedup: true,
   sort: 0,
   status: 1,
+  is_recommend: false,
 });
 const directContentSet = ref(false); // 编辑时已配置直发内容（不回显明文，留空=不变）
 
@@ -334,7 +335,18 @@ const columns: DataTableColumns<any> = [
             ],
           ),
   },
-  { title: "商品名", key: "name", minWidth: 140 },
+  {
+    title: "商品名",
+    key: "name",
+    minWidth: 140,
+    render: (row) =>
+      row.is_recommend
+        ? h("span", { class: "inline-flex items-center gap-4px" }, [
+            h("span", null, row.name),
+            h(NTag, { size: "tiny", type: "warning", bordered: false }, { default: () => "推荐" }),
+          ])
+        : row.name,
+  },
   {
     title: "分类",
     key: "category_id",
@@ -616,6 +628,7 @@ function resetForm() {
     dedup: true,
     sort: 0,
     status: 1,
+    is_recommend: false,
   });
   directContentSet.value = false;
 }
@@ -642,6 +655,7 @@ async function handleEdit(row: any) {
     dedup: p.dedup !== false,
     sort: p.sort || 0,
     status: p.status,
+    is_recommend: !!p.is_recommend,
   });
   directContentSet.value = !!p.has_direct_content;
   step.value = 1; // 编辑也从第一步进入
@@ -666,6 +680,7 @@ function buildPayload() {
     dedup: formData.dedup,
     sort: formData.sort || 0,
     status: formData.status,
+    is_recommend: formData.is_recommend,
   };
 }
 
@@ -955,6 +970,10 @@ onMounted(() => {
           <NFormItem label="库存可见">
             <NSwitch v-model:value="formData.stock_visible" />
             <span class="ml-8px text-12px text-gray-400">关闭后前台不显示剩余库存</span>
+          </NFormItem>
+          <NFormItem label="首页推荐">
+            <NSwitch v-model:value="formData.is_recommend" />
+            <span class="ml-8px text-12px text-gray-400">开启后商品进入 storefront 首页「推荐商品」区块</span>
           </NFormItem>
           <NFormItem label="排序">
             <NInputNumber v-model:value="formData.sort" :precision="0" class="w-full" />

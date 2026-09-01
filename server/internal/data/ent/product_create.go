@@ -270,6 +270,20 @@ func (_c *ProductCreate) SetNillableSort(v *int32) *ProductCreate {
 	return _c
 }
 
+// SetIsRecommend sets the "is_recommend" field.
+func (_c *ProductCreate) SetIsRecommend(v bool) *ProductCreate {
+	_c.mutation.SetIsRecommend(v)
+	return _c
+}
+
+// SetNillableIsRecommend sets the "is_recommend" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableIsRecommend(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetIsRecommend(*v)
+	}
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *ProductCreate) SetStatus(v int8) *ProductCreate {
 	_c.mutation.SetStatus(v)
@@ -445,6 +459,10 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultSort
 		_c.mutation.SetSort(v)
 	}
+	if _, ok := _c.mutation.IsRecommend(); !ok {
+		v := product.DefaultIsRecommend
+		_c.mutation.SetIsRecommend(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := product.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -519,6 +537,9 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.Sort(); !ok {
 		return &ValidationError{Name: "sort", err: errors.New(`ent: missing required field "Product.sort"`)}
+	}
+	if _, ok := _c.mutation.IsRecommend(); !ok {
+		return &ValidationError{Name: "is_recommend", err: errors.New(`ent: missing required field "Product.is_recommend"`)}
 	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Product.status"`)}
@@ -644,6 +665,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Sort(); ok {
 		_spec.SetField(product.FieldSort, field.TypeInt32, value)
 		_node.Sort = value
+	}
+	if value, ok := _c.mutation.IsRecommend(); ok {
+		_spec.SetField(product.FieldIsRecommend, field.TypeBool, value)
+		_node.IsRecommend = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(product.FieldStatus, field.TypeInt8, value)
@@ -1066,6 +1091,18 @@ func (u *ProductUpsert) UpdateSort() *ProductUpsert {
 // AddSort adds v to the "sort" field.
 func (u *ProductUpsert) AddSort(v int32) *ProductUpsert {
 	u.Add(product.FieldSort, v)
+	return u
+}
+
+// SetIsRecommend sets the "is_recommend" field.
+func (u *ProductUpsert) SetIsRecommend(v bool) *ProductUpsert {
+	u.Set(product.FieldIsRecommend, v)
+	return u
+}
+
+// UpdateIsRecommend sets the "is_recommend" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateIsRecommend() *ProductUpsert {
+	u.SetExcluded(product.FieldIsRecommend)
 	return u
 }
 
@@ -1573,6 +1610,20 @@ func (u *ProductUpsertOne) AddSort(v int32) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateSort() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateSort()
+	})
+}
+
+// SetIsRecommend sets the "is_recommend" field.
+func (u *ProductUpsertOne) SetIsRecommend(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetIsRecommend(v)
+	})
+}
+
+// UpdateIsRecommend sets the "is_recommend" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateIsRecommend() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateIsRecommend()
 	})
 }
 
@@ -2259,6 +2310,20 @@ func (u *ProductUpsertBulk) AddSort(v int32) *ProductUpsertBulk {
 func (u *ProductUpsertBulk) UpdateSort() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateSort()
+	})
+}
+
+// SetIsRecommend sets the "is_recommend" field.
+func (u *ProductUpsertBulk) SetIsRecommend(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetIsRecommend(v)
+	})
+}
+
+// UpdateIsRecommend sets the "is_recommend" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateIsRecommend() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateIsRecommend()
 	})
 }
 

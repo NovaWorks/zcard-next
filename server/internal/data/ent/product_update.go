@@ -368,6 +368,20 @@ func (_u *ProductUpdate) AddSort(v int32) *ProductUpdate {
 	return _u
 }
 
+// SetIsRecommend sets the "is_recommend" field.
+func (_u *ProductUpdate) SetIsRecommend(v bool) *ProductUpdate {
+	_u.mutation.SetIsRecommend(v)
+	return _u
+}
+
+// SetNillableIsRecommend sets the "is_recommend" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableIsRecommend(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetIsRecommend(*v)
+	}
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *ProductUpdate) SetStatus(v int8) *ProductUpdate {
 	_u.mutation.ResetStatus()
@@ -722,6 +736,9 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSort(); ok {
 		_spec.AddField(product.FieldSort, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.IsRecommend(); ok {
+		_spec.SetField(product.FieldIsRecommend, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(product.FieldStatus, field.TypeInt8, value)
@@ -1197,6 +1214,20 @@ func (_u *ProductUpdateOne) AddSort(v int32) *ProductUpdateOne {
 	return _u
 }
 
+// SetIsRecommend sets the "is_recommend" field.
+func (_u *ProductUpdateOne) SetIsRecommend(v bool) *ProductUpdateOne {
+	_u.mutation.SetIsRecommend(v)
+	return _u
+}
+
+// SetNillableIsRecommend sets the "is_recommend" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableIsRecommend(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetIsRecommend(*v)
+	}
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *ProductUpdateOne) SetStatus(v int8) *ProductUpdateOne {
 	_u.mutation.ResetStatus()
@@ -1581,6 +1612,9 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.AddedSort(); ok {
 		_spec.AddField(product.FieldSort, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.IsRecommend(); ok {
+		_spec.SetField(product.FieldIsRecommend, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(product.FieldStatus, field.TypeInt8, value)

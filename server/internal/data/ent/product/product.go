@@ -57,6 +57,8 @@ const (
 	FieldDedup = "dedup"
 	// FieldSort holds the string denoting the sort field in the database.
 	FieldSort = "sort"
+	// FieldIsRecommend holds the string denoting the is_recommend field in the database.
+	FieldIsRecommend = "is_recommend"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldUpstreamSourceID holds the string denoting the upstream_source_id field in the database.
@@ -111,6 +113,7 @@ var Columns = []string{
 	FieldControlConfig,
 	FieldDedup,
 	FieldSort,
+	FieldIsRecommend,
 	FieldStatus,
 	FieldUpstreamSourceID,
 	FieldUpstreamProductCode,
@@ -156,6 +159,8 @@ var (
 	DefaultDedup bool
 	// DefaultSort holds the default value on creation for the "sort" field.
 	DefaultSort int32
+	// DefaultIsRecommend holds the default value on creation for the "is_recommend" field.
+	DefaultIsRecommend bool
 	// DefaultStatus holds the default value on creation for the "status" field.
 	DefaultStatus int8
 	// UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
@@ -306,6 +311,11 @@ func ByDedup(opts ...sql.OrderTermOption) OrderOption {
 // BySort orders the results by the sort field.
 func BySort(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSort, opts...).ToFunc()
+}
+
+// ByIsRecommend orders the results by the is_recommend field.
+func ByIsRecommend(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsRecommend, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

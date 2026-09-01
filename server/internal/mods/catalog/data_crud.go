@@ -160,7 +160,7 @@ func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInpu
 	if in.DeliveryMode != "" {
 		create = create.SetDeliveryMode(product.DeliveryMode(in.DeliveryMode))
 	}
-	create = create.SetStockVisible(in.StockVisible).SetDedup(in.Dedup).SetSort(in.Sort).SetStatus(in.Status)
+	create = create.SetStockVisible(in.StockVisible).SetDedup(in.Dedup).SetSort(in.Sort).SetStatus(in.Status).SetIsRecommend(in.IsRecommend)
 	if in.CategoryID > 0 {
 		create.SetCategoryID(in.CategoryID)
 	}
@@ -216,6 +216,7 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 		q.SetDirectContent(in.DirectContent)
 	}
 	q.SetStockVisible(in.StockVisible)
+	q.SetIsRecommend(in.IsRecommend) // PUT 全量语义（含 false=取消推荐）
 	if in.Sort >= 0 {
 		q.SetSort(in.Sort)
 	}
@@ -523,6 +524,7 @@ func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 		UpstreamSourceId: p.UpstreamSourceID, UpstreamProductCode: p.UpstreamProductCode,
 		PointsRequired:   p.PointsRequired,
 		HasDirectContent: len(p.DirectContent) > 0,
+		IsRecommend:      p.IsRecommend,
 	}
 	if !p.CreatedAt.IsZero() {
 		out.CreatedAt = p.CreatedAt.Unix()

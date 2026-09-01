@@ -96,12 +96,14 @@ export function listProducts(params?: {
   page?: number;
   page_size?: number;
   points_only?: boolean;
+  recommend_only?: boolean;
   category_id?: number;
   sort?: string;
 }) {
   return api.get<ListProductsReply>('/products', {
     keyword: params?.keyword,
     points_only: params?.points_only,
+    recommend_only: params?.recommend_only,
     page: params?.page,
     page_size: params?.page_size,
     category_id: params?.category_id,
