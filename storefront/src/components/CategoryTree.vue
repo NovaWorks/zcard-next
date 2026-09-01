@@ -1,10 +1,11 @@
 <template>
   <aside class="cat-tree">
     <div class="cat-tree-card">
-      <!-- 标题栏 -->
+      <!-- 标题栏：品牌竖条 + 标题 + 分类数（与右侧「全部商品」区标题同一设计语言） -->
       <div class="cat-tree-head">
-        <span>📁</span>
+        <span class="head-bar"></span>
         <span class="cat-tree-title">全部分类</span>
+        <span v-if="categories.length" class="cat-tree-count">{{ categories.length }} 类</span>
       </div>
       <div class="cat-tree-body">
         <!-- 全部商品入口 -->
@@ -79,7 +80,7 @@ function select(id: number) {
 <style scoped>
 .cat-tree {
   display: none;
-  width: 216px;
+  width: 240px;
   flex-shrink: 0;
 }
 @media (min-width: 768px) {
@@ -94,31 +95,37 @@ function select(id: number) {
   top: 72px; /* 品牌条 + 主导航之下 */
 }
 .cat-tree-head {
-  display: flex; align-items: center; gap: 6px;
-  padding: 13px 16px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   background: #f8fafc;
-  font-size: 15px; font-weight: 700; color: #111827;
 }
-.cat-tree-head > span:first-child { font-size: 16px; }
-.cat-tree-body { padding: 10px; max-height: calc(100vh - 220px); overflow-y: auto; }
+.head-bar {
+  width: 4px; height: 16px; border-radius: 999px;
+  background: #ff5722; display: inline-block; flex-shrink: 0;
+}
+.cat-tree-title { font-size: 16px; font-weight: 700; color: #111827; letter-spacing: 0.5px; }
+.cat-tree-count {
+  margin-left: auto;
+  font-size: 12px; font-weight: 500; color: #2563eb;
+  background: rgba(37, 99, 235, 0.08);
+  padding: 2px 9px; border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cat-tree-body { padding: 12px 10px; max-height: calc(100vh - 220px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
 
-.tree-all, .tree-parent {
+.tree-all {
   width: 100%;
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px;
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 12px;
   border: none; background: none; cursor: pointer;
-  border-radius: 8px; font-size: 14px; color: #374151;
+  border-radius: 8px; font-size: 15px; color: #374151;
   transition: all 0.15s; font-family: inherit;
   text-align: left;
 }
-.tree-all:hover, .tree-parent:hover { background: #eff6ff; color: #2563eb; }
-.tree-all.active, .tree-parent.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25); }
+.tree-all:hover { background: #eff6ff; color: #2563eb; }
+.tree-all.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25); }
 .tree-all > span:first-child { font-size: 16px; }
-.tree-icon { font-size: 15px; }
-.tree-arrow {
-  font-size: 11px; opacity: 0.6; transition: transform 0.2s;
-}
-.tree-arrow.open { transform: rotate(90deg); }
 .tree-empty { padding: 16px 0; text-align: center; }
 </style>

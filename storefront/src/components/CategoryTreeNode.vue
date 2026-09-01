@@ -18,8 +18,9 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
   <div>
     <button
       class="tree-node"
-      :class="{ active: modelValue === node.id }"
+      :class="{ active: modelValue === node.id, 'tree-node--root': depth === 0 }"
       :style="{ paddingLeft: `${12 + depth * 16}px` }"
+      :title="node.name"
       @click="emit('select', node.id)"
     >
       <span class="tree-dot" :class="{ active: modelValue === node.id }"></span>
@@ -30,7 +31,7 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
         class="tree-arrow"
         :class="{ open: expanded.has(node.id) }"
         @click.stop="emit('toggle', node.id)"
-      >▶</span>
+      ></span>
     </button>
     <template v-if="hasChildren && expanded.has(node.id)">
       <CategoryTreeNode
@@ -50,21 +51,33 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
 <style scoped>
 .tree-node {
   width: 100%;
-  display: flex; align-items: center; gap: 6px;
-  padding: 9px 12px;
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 12px;
   border: none; background: none; cursor: pointer;
   border-radius: 8px; font-size: 14px; color: #374151;
   transition: all 0.15s; font-family: inherit;
   text-align: left;
 }
+/* 一级分类与「全部商品」同字号（15px），子级 14px 递进——层级一眼可辨 */
+.tree-node--root { font-size: 15px; font-weight: 500; }
+.tree-node--root.active,
+.tree-node.active { font-weight: 600; }
 .tree-node:hover { background: #eff6ff; color: #2563eb; }
-.tree-node.active { background: #2563eb; color: #fff; font-weight: 600; }
+.tree-node.active { background: #2563eb; color: #fff; }
 .tree-dot {
   width: 5px; height: 5px; border-radius: 999px; flex-shrink: 0;
   background: #d1d5db;
 }
 .tree-dot.active { background: #fff; opacity: 0.9; }
-.tree-icon { font-size: 15px; }
-.tree-arrow { font-size: 11px; opacity: 0.6; transition: transform 0.2s; }
-.tree-arrow.open { transform: rotate(90deg); }
+.tree-icon { font-size: 16px; }
+/* 纯 CSS 旋钮箭头（Ant Design chevron 惯例）：右向 → 展开时转下向 */
+.tree-arrow {
+  width: 6px; height: 6px; flex-shrink: 0;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  opacity: 0.55;
+  transform: rotate(-45deg);
+  transition: transform 0.2s;
+}
+.tree-arrow.open { transform: rotate(45deg); }
 </style>

@@ -442,9 +442,11 @@ onMounted(() => {
         <div class="ct-title">
           <span class="ct-icon">🖼️</span>
           <span class="ct-name">首页横幅</span>
-          <FilterTabs v-model:value="bannerFilter" :options="bannerTabs" :counts="bannerCounts" size="small" />
         </div>
-        <NButton v-if="canWrite()" size="small" type="primary" @click="showBanner = true">新增横幅</NButton>
+        <div class="ct-actions">
+          <FilterTabs v-model:value="bannerFilter" :options="bannerTabs" :counts="bannerCounts" size="small" />
+          <NButton v-if="canWrite()" size="small" type="primary" @click="showBanner = true">新增横幅</NButton>
+        </div>
       </div>
       <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small" :max-height="540" />
     </section>
@@ -455,16 +457,18 @@ onMounted(() => {
         <div class="ct-title">
           <span class="ct-icon">📝</span>
           <span class="ct-name">公告 / 文章</span>
-          <FilterTabs v-model:value="postFilter" :options="postTabs" :counts="postCounts" size="small" />
         </div>
-        <NButton
-          v-if="canWrite()"
-          size="small"
-          type="primary"
-          @click="((editingPost = null), (postForm = { slug: '', type: 'notice', title: '', summary: '', content: '', category_id: 0, is_published: true }), (showPost = true))"
-        >
-          新增文章
-        </NButton>
+        <div class="ct-actions">
+          <FilterTabs v-model:value="postFilter" :options="postTabs" :counts="postCounts" size="small" />
+          <NButton
+            v-if="canWrite()"
+            size="small"
+            type="primary"
+            @click="((editingPost = null), (postForm = { slug: '', type: 'notice', title: '', summary: '', content: '', category_id: 0, is_published: true }), (showPost = true))"
+          >
+            新增文章
+          </NButton>
+        </div>
       </div>
       <NDataTable :columns="postColumns" :data="filteredPosts" :loading="postLoading" size="small" :max-height="540" />
     </section>
@@ -477,7 +481,9 @@ onMounted(() => {
           <span class="ct-name">文章栏目</span>
           <span class="ct-sub">用于前台文章页筛选；栏目下有文章时不可删除</span>
         </div>
-        <NButton v-if="canWrite()" size="small" type="primary" @click="openCreateCategory">新增栏目</NButton>
+        <div class="ct-actions">
+          <NButton v-if="canWrite()" size="small" type="primary" @click="openCreateCategory">新增栏目</NButton>
+        </div>
       </div>
       <NDataTable :columns="categoryColumns" :data="categories" :loading="categoryLoading" size="small" :max-height="540" />
     </section>
@@ -588,13 +594,25 @@ onMounted(() => {
 }
 .dark .ct-section { border-color: rgba(255, 255, 255, 0.08); }
 .ct-head {
+  /* 三个区块共用同一头部骨架：左标题簇(flex:1) + 右操作组，定高底线对齐（Stripe/AntD Pro 卡片规范） */
   display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+  gap: 12px; min-height: 32px;
+  padding-bottom: 10px; margin-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
 }
-.ct-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.ct-icon { font-size: 17px; line-height: 1; }
-.ct-name { font-size: 15px; font-weight: 600; color: var(--n-text-color, #1f2329); }
-.ct-sub { font-size: 12px; color: #9ca3af; }
+.dark .ct-head { border-bottom-color: rgba(255, 255, 255, 0.06); }
+.ct-title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+.ct-icon {
+  /* 图标定尺寸 chip：消除 emoji 字形基线抖动（Notion 图标块惯例） */
+  width: 26px; height: 26px; border-radius: 7px;
+  background: #f1f5f9;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; line-height: 1; flex-shrink: 0;
+}
+.dark .ct-icon { background: rgba(255, 255, 255, 0.08); }
+.ct-name { font-size: 15px; font-weight: 600; color: var(--n-text-color, #1f2329); white-space: nowrap; }
+.ct-sub { font-size: 12px; color: #9ca3af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ct-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
 /* 横幅图片悬停预览（原生 :hover 命中测试，无 JS 依赖） */
 :deep(.img-preview-trigger:hover .img-preview-pop) {
