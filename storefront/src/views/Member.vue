@@ -746,7 +746,7 @@ function fmtTime(ts: number): string {
 .rc-btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
 
 /* ── 礼品卡兑换（放大：桌面 720px 大输入 + 大按钮，替代原 480px 小卡）── */
-.gc-card { max-width: 720px; margin: 0 auto; padding: 26px 28px; }
+.gc-card { max-width: 760px; margin: 0 auto; padding: 26px 28px; }
 .gc-title { font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 16px; }
 .gc-input { height: 48px; font-size: 16px; letter-spacing: 1px; }
 .gc-submit {
