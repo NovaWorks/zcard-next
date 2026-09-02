@@ -166,8 +166,9 @@
             <button v-for="tier in giftTiers" :key="tier.amount" type="button" class="rc-tier"
                     :class="{ active: pickedTier === tier.amount }" @click="pickTier(tier)">
               <span class="rc-tier-amount">{{ formatMoney(tier.amount) }}</span>
+              <!-- 余额/积分赠送并列展示（此前 v-else-if 两者都配时积分被吞） -->
               <span v-if="tier.gift_balance" class="rc-tier-gift">送 {{ formatMoney(tier.gift_balance) }}</span>
-              <span v-else-if="tier.gift_points" class="rc-tier-gift">送 {{ tier.gift_points }} 积分</span>
+              <span v-if="tier.gift_points" class="rc-tier-gift">送 {{ tier.gift_points }} 积分</span>
             </button>
           </div>
           <div class="rc-custom">
@@ -655,7 +656,7 @@ function fmtTime(ts: number): string {
 }
 
 /* ── 充值（方式级收银台，与支付页同视觉语言）── */
-.recharge-page { max-width: 760px; display: flex; flex-direction: column; gap: 16px; }
+.recharge-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
 .rc-balance {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   background: linear-gradient(135deg, #eff6ff, #fff);
