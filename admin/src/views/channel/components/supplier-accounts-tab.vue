@@ -270,7 +270,7 @@ function nameCol(t: TableTier) {
       const tip =
         t === "full"
           ? row.name
-          : `${row.name}\n${protocolMeta[row.protocol]?.label || row.protocol} · 余额 ${formatMoney(row.balance_cache)}`;
+          : `${row.name}\n${protocolMeta[row.protocol]?.label || row.protocol} · 余额 ${row.balance_cache == null || row.balance_cache < 0 ? "—" : formatMoney(row.balance_cache)}`;
       return h("span", { class: "truncate", title: tip }, row.name);
     },
   };
@@ -401,7 +401,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   cols.push(nameCol(t));
   if (t !== "compact") {
     cols.push(protocolCol());
-    if (t === "full") cols.push({ title: "余额", key: "balance_cache", width: 88, render: (row: any) => formatMoney(row.balance_cache) });
+    if (t === "full") cols.push({ title: "余额", key: "balance_cache", width: 88, render: (row: any) => (row.balance_cache == null || row.balance_cache < 0 ? "—" : formatMoney(row.balance_cache)) });
   }
   cols.push(statusCol());
   if (t !== "compact") cols.push(applyInfoCol());
@@ -571,7 +571,7 @@ onMounted(load);
         </NDescriptionsItem>
         <NDescriptionsItem label="申请人">用户 #{{ detailTarget.owner_user_id || '—（后台建号）' }}</NDescriptionsItem>
         <NDescriptionsItem label="联系方式">{{ detailTarget.contact || '—' }}</NDescriptionsItem>
-        <NDescriptionsItem label="余额">{{ formatMoney(detailTarget.balance_cache) }}</NDescriptionsItem>
+        <NDescriptionsItem label="余额">{{ detailTarget.balance_cache == null || detailTarget.balance_cache < 0 ? "—" : formatMoney(detailTarget.balance_cache) }}</NDescriptionsItem>
         <NDescriptionsItem label="创建时间">{{ fmtTime(detailTarget.created_at) }}</NDescriptionsItem>
         <NDescriptionsItem label="回调地址" :span="2">{{ detailTarget.notify_url || '—（未配置）' }}</NDescriptionsItem>
         <NDescriptionsItem v-if="detailTarget.apply_reason" label="申请理由" :span="2">{{ detailTarget.apply_reason }}</NDescriptionsItem>

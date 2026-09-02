@@ -89,7 +89,8 @@ func parseResp(raw []byte) (json.RawMessage, error) {
 }
 
 func (a *acgFakaAdapter) Ping(ctx context.Context) (*PingResult, error) {
-	// connect 端点：返回 {site_name, ...}
+	// connect 端点：acg-faka 返回 {shopName, balance}（商户余额，浮点元）——
+	// 参考实现 app/Controller/Shared/Authentication.php@connect。
 	data, err := a.signedPost(ctx, "/shared/authentication/connect", nil)
 	if err != nil {
 		return nil, err
@@ -99,10 +100,21 @@ func (a *acgFakaAdapter) Ping(ctx context.Context) (*PingResult, error) {
 		return nil, err
 	}
 	var d struct {
-		SiteName string `json:"site_name"`
+		SiteName string `json:"shopName"`
+		Balance  any    `json:"balance"` // 数字或字符串（浮点元）；缺省=未知
 	}
 	_ = json.Unmarshal(raw, &d)
-	return &PingResult{SiteName: d.SiteName, Balance: -1}, nil // acg-faka 无余额口径
+	balance := int64(-1) // 无字段=未知哨兵
+	switch v := d.Balance.(type) {
+	case float64:
+		balance = int64(v*100 + 0.5) // 元→分，四舍五入（dujiao 同款 round 语义）
+	case string:
+		var f float64
+		if _, err := fmt.Sscanf(v, "%f", &f); err == nil {
+			balance = int64(f*100 + 0.5)
+		}
+	}
+	return &PingResult{SiteName: d.SiteName, Balance: balance}, nil
 }
 
 func (a *acgFakaAdapter) ListCategories(ctx context.Context) ([]Category, error) {

@@ -256,7 +256,7 @@ async function handlePing(row: any) {
     const { data, error } = await pingSupplyConnection(row.id);
     if (!error && data) {
       const d = data as any;
-      window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${formatMoney(d.balance_cents ?? d.balance ?? 0)}`);
+      window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${(d.balance_cents ?? d.balance ?? 0) < 0 ? "未知" : formatMoney(d.balance_cents ?? d.balance ?? 0)}`);
       load();
     }
   } finally {
@@ -684,7 +684,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     });
   }
   if (t === "full") {
-    cols.push({ title: "余额", key: "balance_cache", width: 96, render: (row: any) => formatMoney(row.balance_cache) });
+    cols.push({ title: "余额", key: "balance_cache", width: 96, render: (row: any) => (row.balance_cache == null || row.balance_cache < 0 ? "—（未取到）" : formatMoney(row.balance_cache)) });
     cols.push({ title: "最近采集", key: "last_collect_at", width: 146, render: (row: any) => fmtTime(row.last_collect_at || row.last_synced_at) });
   }
   cols.push(rateCol(t));

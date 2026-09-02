@@ -396,3 +396,50 @@ func TestAcgSkinSiteInventoryFallback(t *testing.T) {
 		t.Fatalf("inventory 兜底请求数 = %d, want 3", invCalls)
 	}
 }
+
+// TestAcgSpecPingBalance connect 响应解析商户余额（shopName/balance；参考实现
+// app/Controller/Shared/Authentication.php@connect）——此前写死 -1 导致渠道
+// 余额恒显示未知/-0.01。
+func TestAcgSpecPingBalance(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/shared/authentication/connect":
+			_, _ = w.Write([]byte(`{"code":200,"msg":"success","data":{"shopName":"测试上游","balance":"88.50"}}`))
+		default:
+			w.WriteHeader(404)
+		}
+	}))
+	defer srv.Close()
+	a := &acgFakaAdapter{
+		protocol: "acg_faka",
+		creds:    Credentials{AppID: "1", AppKey: "K"},
+		t:        newTransportWithClient(srv.URL, nil, nil, srv.Client()),
+	}
+	ping, err := a.Ping(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ping.SiteName != "测试上游" || ping.Balance != 8850 {
+		t.Fatalf("Ping 解析错误: %+v（期望 site=测试上游 balance=8850 分）", ping)
+	}
+}
+
+// TestAcgSpecPingNoBalance 旧版上游 connect 无 balance 字段 → -1 未知哨兵。
+func TestAcgSpecPingNoBalance(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"code":200,"msg":"success","data":{"shopName":"老版上游"}}`))
+	}))
+	defer srv.Close()
+	a := &acgFakaAdapter{
+		protocol: "acg_faka",
+		creds:    Credentials{AppID: "1", AppKey: "K"},
+		t:        newTransportWithClient(srv.URL, nil, nil, srv.Client()),
+	}
+	ping, err := a.Ping(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ping.Balance != -1 {
+		t.Fatalf("缺 balance 字段应回落 -1，got %d", ping.Balance)
+	}
+}
