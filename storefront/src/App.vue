@@ -159,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
@@ -305,6 +305,8 @@ function openNotice() {
     loadNotice().then(() => { noticeShow.value = true; });
   }
 }
+// 供页面内公告入口（首页滚动公告条等）复用同一弹窗
+provide('openNotice', openNotice);
 
 onMounted(async () => {
   // 安装页：不加载商城业务（购物车/公告/统计/回顶监听等）

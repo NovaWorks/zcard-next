@@ -349,13 +349,15 @@ var groups = map[string]*GroupDef{
 		Name: "i18n", Desc: "语言货币",
 		Labels: map[string]string{
 			"default_locale": "默认语言", "enabled_locales": "启用语言列表", "base_currency": "基础货币",
+			"display_currency": "前端显示货币",
 		},
 		Defaults: map[string]any{
-			"default_locale":  "zh_CN",
-			"enabled_locales": []string{"zh_CN"},
-			"base_currency":   "CNY",
+			"default_locale":   "zh_CN",
+			"enabled_locales":  []string{"zh_CN"},
+			"base_currency":    "CNY",
+			"display_currency": "", // 空=跟随基础货币；多币种站可设 USD 等（展示层换算，结算仍以基础币）
 		},
-		PublicKeys: map[string]bool{"default_locale": true, "enabled_locales": true, "base_currency": true},
+		PublicKeys: map[string]bool{"default_locale": true, "enabled_locales": true, "base_currency": true, "display_currency": true},
 	},
 }
 

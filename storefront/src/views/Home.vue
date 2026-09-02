@@ -31,8 +31,8 @@
       <span class="hero-icon">🎁</span>
     </div>
 
-    <!-- 公告条（设置文本优先；回落最新公告文章） -->
-    <div v-if="noticeBarText" class="notice-bar" @click="$router.push('/posts?type=notice')">
+    <!-- 公告条（设置文本优先；回落最新公告文章；点击弹公告弹窗，与导航📢同源） -->
+    <div v-if="noticeBarText" class="notice-bar" @click="openNoticeModal()">
       <span class="tag">公告</span>
       <span class="notice-title">{{ noticeBarText }}</span>
       <span v-if="latestNotice && !announcementText" class="muted">{{ formatDate(latestNotice.published_at) }}</span>
@@ -147,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
 import { fetchSiteSeo, applyDefaultSeo, applyVerification } from '@/seo';
@@ -160,6 +160,10 @@ const products = ref<Product[]>([]);
 const keyword = ref('');
 const loading = ref(false);
 const error = ref('');
+// 公告弹窗开启动词由 App.vue 提供（与导航📢公告同一弹窗；缺失时回退文章列表页）
+const openNoticeModal: () => void = inject('openNotice', () => {
+  window.location.href = '/posts?type=notice';
+});
 const banners = ref<Banner[]>([]);
 const latestNotice = ref<StorePost | null>(null);
 const categories = ref<CategoryItem[]>([]);

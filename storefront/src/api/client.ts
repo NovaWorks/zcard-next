@@ -161,9 +161,9 @@ export function formatSignedMoney(cents: number): string {
   return currencyMeta.position === 'suffix' ? `${body}${currencyMeta.symbol}` : `${currencyMeta.symbol}${body}`;
 }
 
-// initCurrency 启动加载货币（公开配置 i18n.base_currency + 启用货币表；
-// 用户本地选择 zcard_currency 优先——多币种展示换算；失败回退 ¥）。
-// 选择集 listCurrencies() 供顶部切换器渲染；selectCurrency 切换后刷新生效。
+// initCurrency 启动加载货币（公开配置 i18n.base_currency + i18n.display_currency + 启用货币表；
+// 用户本地选择 zcard_currency 优先，其次站点显示货币，再基础货币——多币种展示换算，结算恒基准币；
+// 失败回退 ¥）。选择集 listCurrencies() 供顶部切换器渲染；selectCurrency 切换后刷新生效。
 let initPromise: Promise<void> | null = null;
 let currencyList: (CurrencyMeta & { code: string })[] = [];
 
@@ -186,12 +186,16 @@ export function initCurrency(): Promise<void> {
           api.get<{ currencies: CurrencyMeta[] }>('/currencies')
         ]);
         let baseCode = 'CNY';
+        let displayCode = '';
         const entries: { key: string; value_json: string }[] = cfgRes.data?.entries || [];
-        const entry = entries.find((e) => e.key === 'i18n.base_currency');
-        if (entry?.value_json) {
+        for (const entry of entries) {
+          if (entry.key !== 'i18n.base_currency' && entry.key !== 'i18n.display_currency') continue;
           try {
-            const v = JSON.parse(entry.value_json);
-            if (typeof v === 'string' && v) baseCode = v;
+            const v = JSON.parse(entry.value_json ?? '');
+            if (typeof v === 'string' && v) {
+              if (entry.key === 'i18n.base_currency') baseCode = v;
+              else displayCode = v;
+            }
           } catch {
             /* 非法配置回退默认 */
           }
@@ -204,6 +208,7 @@ export function initCurrency(): Promise<void> {
         const stored = localStorage.getItem(CURRENCY_KEY);
         const picked =
           currencyList.find((c) => c.code === stored) ||
+          currencyList.find((c) => c.code === displayCode) || // 站点默认展示货币（结算仍基准币）
           currencyList.find((c) => c.code === baseCode) ||
           { code: baseCode, symbol: '¥', position: 'prefix', precision: 2, rate: '1' };
         setCurrency(picked);

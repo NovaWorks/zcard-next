@@ -418,12 +418,12 @@ onMounted(() => {
                       </NSpace>
                     </NRadioGroup>
                   </template>
-                  <template v-else-if="activeGroup === 'i18n' && item.key === 'base_currency' && currencyOptions.length">
+                  <template v-else-if="activeGroup === 'i18n' && (item.key === 'base_currency' || item.key === 'display_currency') && currencyOptions.length">
                     <NSelect
                       :value="String(getVal(item) ?? '')"
                       class="flex-1"
                       filterable
-                      :options="currencyOptions"
+                      :options="item.key === 'display_currency' ? [{ label: '跟随基础货币（结算币）', value: '' }, ...currencyOptions] : currencyOptions"
                       @update:value="(v: string) => setVal(item, v)"
                     />
                   </template>

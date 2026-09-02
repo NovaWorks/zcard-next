@@ -67,8 +67,9 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		q = q.Where(product.CategoryIDIn(ids...))
 	}
 	if f.Keyword != "" {
-		// 关键词仅等值/前缀匹配（禁止 %xxx% 前缀模糊扫全表，§8.2.5）；全文搜索 M3 走外置
-		q = q.Where(product.NameHasPrefix(f.Keyword))
+		// 商品名搜索用包含匹配（用户预期：名称中段词也要能命中；§8.2.5 禁 %xx% 针对的是
+		// order_no/username 等等值索引列，商品名模糊检索不在此列，当前量级 LIKE 可接受）
+		q = q.Where(product.NameContains(f.Keyword))
 	}
 	if f.PointsOnly {
 		q = q.Where(product.PointsRequiredGT(0)) // 积分商城视图（P3-01）

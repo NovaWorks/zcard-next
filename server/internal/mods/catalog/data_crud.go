@@ -45,7 +45,7 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		q = q.Where(product.CategoryIDIn(ids...))
 	}
 	if f.Keyword != "" {
-		q = q.Where(product.NameHasPrefix(f.Keyword))
+		q = q.Where(product.NameContains(f.Keyword)) // 与前台一致：包含匹配（搜名称中段词可命中）
 	}
 	if f.ConnectionID > 0 {
 		q = q.Where(product.UpstreamSourceID(f.ConnectionID))
