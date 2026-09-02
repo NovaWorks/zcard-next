@@ -122,14 +122,16 @@
         <div v-if="totalPage > 1" class="pager">
           <span class="pager-total muted">共 {{ total }} 件</span>
           <div class="pager-btns">
-            <button class="pager-btn" :disabled="page <= 1" title="首页" @click="goPage(1)">«</button>
+            <button class="pager-btn pager-jump" :disabled="page <= 1" title="首页" @click="goPage(1)">«</button>
             <button class="pager-btn" :disabled="page <= 1" @click="goPage(page - 1)">上一页</button>
+            <!-- 手机端页码砖收起后的当前位置指示（桌面隐藏） -->
+            <span class="pager-now">{{ page }} / {{ totalPage }}</span>
             <template v-for="p in pageList" :key="p">
               <span v-if="p === 0" class="pager-ellipsis">…</span>
-              <button v-else class="pager-btn" :class="{ active: p === page }" @click="goPage(p)">{{ p }}</button>
+              <button v-else class="pager-btn num" :class="{ active: p === page }" @click="goPage(p)">{{ p }}</button>
             </template>
             <button class="pager-btn" :disabled="page >= totalPage" @click="goPage(page + 1)">下一页</button>
-            <button class="pager-btn" :disabled="page >= totalPage" title="末页" @click="goPage(totalPage)">»</button>
+            <button class="pager-btn pager-jump" :disabled="page >= totalPage" title="末页" @click="goPage(totalPage)">»</button>
           </div>
           <div class="pager-size">
             <span class="muted">每页</span>
@@ -506,7 +508,9 @@ onUnmounted(stopHero);
 .pager-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
 .pager-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 .pager-ellipsis { color: #9ca3af; padding: 0 2px; }
-.pager-size { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+/* 手机端当前位置指示（桌面隐藏，页码砖即位置） */
+.pager-now { display: none; align-items: center; justify-content: center; min-width: 56px; height: 34px; font-size: 14px; font-weight: 600; color: #374151; font-variant-numeric: tabular-nums; }
+.pager-size { display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; flex-shrink: 0; }
 .pager-select {
   padding: 5px 8px; border: 1px solid #d1d5db; border-radius: 8px;
   font-size: 13px; outline: none; background: #fff;
@@ -533,9 +537,14 @@ onUnmounted(stopHero);
   .chip { flex-shrink: 0; white-space: nowrap; }
   /* 商品网格：双列瀑布（auto-fill minmax(200px) 在手机只能出 1 列） */
   .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
-  /* 分页器：整体居中换行、「下一页」不孤行左偏、「每页 N 条」单行不折 */
+  /* 分页器：手机紧凑单行（上一页 · 当前/总页 · 下一页）——页码砖/省略号/首末跳转收起，
+     flex 不折行保证一行放得下；「每页 N 条」独占一行居中。淡灰文字压深一档保可读 */
   .pager { gap: 10px; }
-  .pager-btns { justify-content: center; row-gap: 8px; }
+  .pager-btns { flex-wrap: nowrap; justify-content: center; }
+  .pager-jump, .pager-ellipsis { display: none; }
+  .pager-btn.num { display: none; }
+  .pager-now { display: inline-flex; }
+  .pager-total, .pager-size .muted { color: #6b7280; }
   .pager-size { justify-content: center; white-space: nowrap; }
 }
 </style>
