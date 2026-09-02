@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// 营销管理（中优先级接入）：会员等级 / 优惠券 / 秒杀促销 / 内容管理。
+// 营销管理：会员等级 / 优惠券 / 秒杀促销（内容管理已独立为一级菜单 /content）。
 import { NTabs, NTabPane, NCard } from "naive-ui";
 import LevelsTab from "./components/levels-tab.vue";
 import CouponsTab from "./components/coupons-tab.vue";
 import FlashTab from "./components/flash-tab.vue";
-import ContentTab from "./components/content-tab.vue";
 import { checkAuth } from "@/directives";
 
 defineOptions({ name: "MarketingManagement", route: "marketing" });
@@ -22,9 +21,6 @@ defineOptions({ name: "MarketingManagement", route: "marketing" });
         </NTabPane>
         <NTabPane v-if="checkAuth('coupon:read')" name="flash" tab="秒杀/促销">
           <FlashTab />
-        </NTabPane>
-        <NTabPane v-if="checkAuth('content:read')" name="content" tab="内容管理">
-          <ContentTab />
         </NTabPane>
       </NTabs>
     </NCard>

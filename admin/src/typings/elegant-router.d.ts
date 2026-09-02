@@ -21,6 +21,7 @@ declare module "@elegant-router/types" {
     "404": "/404";
     "500": "/500";
     "channel": "/channel";
+    "content": "/content";
     "home": "/home";
     "iframe-page": "/iframe-page/:url";
     "inventory": "/inventory";
@@ -69,6 +70,7 @@ declare module "@elegant-router/types" {
     | "404"
     | "500"
     | "channel"
+    | "content"
     | "home"
     | "iframe-page"
     | "inventory"
@@ -104,6 +106,7 @@ declare module "@elegant-router/types" {
     | "iframe-page"
     | "login"
     | "channel"
+    | "content"
     | "home"
     | "inventory"
     | "marketing"

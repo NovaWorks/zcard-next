@@ -51,6 +51,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'content',
+    path: '/content',
+    component: 'layout.base$view.content',
+    meta: {
+      title: '内容管理',
+      i18nKey: 'route.content',
+      icon: 'mdi:book-open-variant',
+      order: 2.5
+    }
+  },
+  {
     name: 'home',
     path: '/home',
     component: 'layout.base$view.home',
