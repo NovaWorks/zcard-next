@@ -107,6 +107,26 @@ async function commitCellEdit(row: any, field: "price" | "cost") {
   }
 }
 
+// 推荐开关（列表快速设置）：同改价套路——携带行内既有字段防全量语义清零
+// （status/sort/factory_price/points_required/stock_visible 在服务端恒写入，缺省即被置零）
+async function toggleRecommend(row: any) {
+  const v = !row.is_recommend;
+  const payload: Record<string, any> = {
+    factory_price_cents: row.factory_price_cents || 0,
+    points_required: row.points_required || 0,
+    status: row.status,
+    sort: row.sort || 0,
+    stock_visible: row.stock_visible !== false,
+    delivery_mode: row.delivery_mode || "",
+    is_recommend: v,
+  };
+  const { error } = await updateProduct(row.id, payload);
+  if (!error) {
+    window.$message?.success(`「${row.name}」已${v ? "设为首页推荐" : "取消推荐"}`);
+    loadList();
+  }
+}
+
 // priceLine 单条价格行：金额文本 + 铅笔（点击弹气泡输入改价）
 function priceLine(row: any, field: "price" | "cost") {
   const centsKey = field === "price" ? "price_cents" : "factory_price_cents";
@@ -444,6 +464,41 @@ const columns: DataTableColumns<any> = [
           default: () => `是否${row.status === 1 ? "下架" : "上架"}「${row.name}」？`,
         },
       ),
+  },
+  {
+    // 推荐列（标签即开关，与状态列同款）：点击切换首页推荐——列表直接可设，无需进编辑表单
+    title: "推荐",
+    key: "is_recommend",
+    width: 84,
+    render: (row) => {
+      if (!checkAuth("catalog:write")) {
+        return h(
+          NTag,
+          { type: row.is_recommend ? "warning" : "default", size: "small", bordered: false },
+          { default: () => (row.is_recommend ? "已推荐" : "-") },
+        );
+      }
+      return h(
+        NPopconfirm,
+        { onPositiveClick: () => toggleRecommend(row) },
+        {
+          trigger: () =>
+            h(
+              NTag,
+              {
+                type: row.is_recommend ? "warning" : "default",
+                size: "small",
+                bordered: !!row.is_recommend,
+                class: "cursor-pointer",
+                style: "cursor: pointer",
+              },
+              { default: () => (row.is_recommend ? "⭐ 已推荐" : "设推荐") },
+            ),
+          default: () =>
+            row.is_recommend ? `取消「${row.name}」的首页推荐？` : `将「${row.name}」设为首页推荐（storefront 首页推荐位展示）？`,
+        },
+      );
+    },
   },
   {
     title: "操作",

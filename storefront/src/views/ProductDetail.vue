@@ -474,7 +474,7 @@ async function exchangePoints() {
 </script>
 
 <style scoped>
-.pd-page { max-width: 1024px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.pd-page { max-width: 1024px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
 .pd-crumb { font-size: 13px; color: #9ca3af; display: flex; gap: 6px; align-items: center; }
 .pd-crumb a { color: #6b7280; text-decoration: none; }
 .pd-crumb a:hover { color: #2563eb; }
