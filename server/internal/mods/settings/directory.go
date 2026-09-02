@@ -147,7 +147,7 @@ var groups = map[string]*GroupDef{
 		Name: "security", Desc: "安全",
 		Labels: map[string]string{
 			"register_enabled": "开放注册", "register_method": "注册方式（多选）",
-			"captcha_register": "注册验证码", "captcha_login": "登录验证码", "captcha_order": "下单验证码",
+			"captcha_register": "注册验证码", "captcha_login": "登录验证码", "captcha_order": "下单验证码（仅游客）",
 			"captcha_reset": "重置密码验证码", "captcha_admin_login": "后台登录验证码",
 			"username_min_len":   "用户名最小长度",
 			"max_pending_per_ip": "单 IP 待付款订单上限", "risk_enabled": "风控拦截",

@@ -55,14 +55,16 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 	}
 	// 登录态绑定买家（userAuthMiddleware 注入的 claims；0=游客单）
 	var userID uint64
-	// 图形验证码（captcha_order 开启时前置——游客下单防机器人）
-	if s.captcha != nil {
+	claims := identity.ClaimsFromContext(ctx)
+	if claims != nil {
+		userID = claims.Subject
+	}
+	// 图形验证码（captcha_order 开启时仅校验游客——防机器人；登录用户有账号体系不挡，
+	// 前台也只对游客渲染验证码框，此前未判登录态会把登录用户全部卡死在 captcha.REQUIRED）
+	if s.captcha != nil && claims == nil {
 		if err := s.captcha.VerifyScene(ctx, captcha.SceneOrder, req.GetCaptchaId(), req.GetCaptchaCode()); err != nil {
 			return nil, err
 		}
-	}
-	if claims := identity.ClaimsFromContext(ctx); claims != nil {
-		userID = claims.Subject
 	}
 	res, err := s.uc.CreateOrder(ctx, CreateOrderInput{
 		Items: items, UserID: userID, GuestContact: req.GetGuestContact(),
