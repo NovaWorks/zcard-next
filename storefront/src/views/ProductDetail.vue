@@ -35,10 +35,10 @@
           </div>
         </div>
 
-        <!-- 汇总条：销量/库存 -->
-        <div class="pd-stats">
-          <div class="pd-stat"><b>{{ p.sales_count || 0 }}</b><span>销量</span></div>
-          <div class="pd-stat"><b>{{ stockDisplay }}</b><span>库存</span></div>
+        <!-- 汇总条：销量/库存（template.show_sales/show_stock 后台开关可关） -->
+        <div v-if="showSales || showStock" class="pd-stats">
+          <div v-if="showSales" class="pd-stat"><b>{{ p.sales_count || 0 }}</b><span>销量</span></div>
+          <div v-if="showStock" class="pd-stat"><b>{{ stockDisplay }}</b><span>库存</span></div>
         </div>
 
         <!-- 服务保障 -->
@@ -76,7 +76,7 @@
         </div>
 
         <!-- 库存进度条 -->
-        <div v-if="p.stock_visible && p.stock_type === 'card' && p.stock >= 0" class="pd-stock-bar">
+        <div v-if="showStock && p.stock_visible && p.stock_type === 'card' && p.stock >= 0" class="pd-stock-bar">
           <div class="pd-stock-track"><div class="pd-stock-fill" :style="{ width: stockPct }"></div></div>
         </div>
 
@@ -258,6 +258,9 @@ const soldOut = computed(() => {
 // ── 评价（template.show_reviews 后台开关；入口锚点 + 折叠展开）──
 const showReviews = ref(true);
 const reviewsExpanded = ref(false);
+// 销量/库存显示（template.show_sales / show_stock；缺省显示，与商品卡片同源）
+const showSales = ref(true);
+const showStock = ref(true);
 const reviewCollapsed = 3;
 const visibleReviews = computed(() =>
   reviewsExpanded.value ? (p.value?.reviews || []) : (p.value?.reviews || []).slice(0, reviewCollapsed),
@@ -330,7 +333,7 @@ if (productResp.error) {
 }
 
 onMounted(async () => {
-  // 交易配置/验证码（客户端交互能力；SSG 不需要）+ 评价显示开关
+  // 交易配置/验证码（客户端交互能力；SSG 不需要）+ 评价/销量/库存显示开关
   const [cfg, capCfg, tplResp] = await Promise.all([
     fetchTradeConfig(),
     fetchCaptchaConfig(),
@@ -338,10 +341,14 @@ onMounted(async () => {
   ]);
   captchaCfg.value = capCfg;
   trade.value = cfg;
-  const raw = tplResp?.entries?.find((e: any) => e.key === 'template.show_reviews')?.value_json;
-  if (raw !== undefined) {
-    try { showReviews.value = JSON.parse(raw) !== false; } catch { /* ignore */ }
-  }
+  const pick = (key: string) => tplResp?.entries?.find((e: any) => e.key === key)?.value_json;
+  const parseFlag = (raw: string | undefined) => {
+    if (raw === undefined) return true;
+    try { return JSON.parse(raw) !== false; } catch { return true; }
+  };
+  showReviews.value = parseFlag(pick('template.show_reviews'));
+  showSales.value = parseFlag(pick('template.show_sales'));
+  showStock.value = parseFlag(pick('template.show_stock'));
 });
 
 /** 商品页 SEO：title/description/keywords/canonical/og + Product/Breadcrumb JSON-LD */
