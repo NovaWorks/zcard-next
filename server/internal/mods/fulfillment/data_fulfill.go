@@ -156,6 +156,7 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 
 	// 直发商品（url/code）：同一链接/兑换码反复发货——写直发交付记录
 	// （CardID=0，取货时从商品 direct_content 现场解密）。每订单项一条。
+	localDelivered := len(cards) > 0 // 本地卡密项已同步交付
 	for _, it := range items {
 		p, err := client.Product.Get(ctx, it.ProductID)
 		if err != nil || p.StockType == product.StockTypeCard || p.UpstreamSourceID > 0 {
@@ -175,12 +176,40 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 		if err != nil {
 			return fmt.Errorf("fulfillment.DIRECT_CREATE_FAILED: %w", err)
 		}
+		localDelivered = true
 	}
 
-	// 更新订单状态 → delivered
+	// 状态推进：含「未到卡上游项」的订单不得落 delivered——procurement 采购仍在途
+	// 或失败，订单却显示已发货，客户/后台均无卡密可看（曾无条件 paid→delivered，
+	// 线上实测即症状）。全项已交付 → delivered；本地已交 + 上游在途 →
+	// partially_delivered；纯上游在途 → fulfilling（前台 PAID_STATES 均按成功展示，
+	// 到卡后由 AttachUpstreamDelivery 推进终态）。
+	upstreamPending := false
+	for _, it := range items {
+		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream {
+			continue
+		}
+		ok, err := client.OrderDelivery.Query().Where(orderdelivery.ItemID(it.ID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			upstreamPending = true
+			break
+		}
+	}
+	nextStatus := order.StatusDelivered
+	if upstreamPending {
+		nextStatus = order.StatusFulfilling
+		if localDelivered {
+			nextStatus = order.StatusPartiallyDelivered
+		}
+	}
+
+	// 更新订单状态（paid → 终态/在途态）
 	_, err = client.Order.Update().
 		Where(order.ID(o.ID), order.StatusEQ(order.StatusPaid)).
-		SetStatus(order.StatusDelivered).
+		SetStatus(nextStatus).
 		SetVersion(o.Version + 1).
 		Save(ctx)
 	if err != nil {
@@ -191,7 +220,7 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 	_, _ = client.OrderStatusEvent.Create().
 		SetOrderID(o.ID).
 		SetFromStatus(string(o.Status)).
-		SetToStatus(string(order.StatusDelivered)).
+		SetToStatus(string(nextStatus)).
 		SetEvent("delivered").
 		SetOperator("system").
 		Save(ctx)
@@ -579,6 +608,37 @@ func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, 
 			Save(ctx)
 		if err != nil {
 			return fmt.Errorf("fulfillment.UPSTREAM_DELIVERY_CREATE_FAILED: %w", err)
+		}
+	}
+
+	// 到卡推进终态：全部上游项已交付 → delivered（FulfillOrder 曾把含上游项的
+	// 订单提前标 delivered，本方法此前不推进状态——上游到卡前后状态口径由
+	// 此收口；paid/fulfilling/partially_delivered → delivered，幂等）
+	ups, err := client.OrderItem.Query().Where(orderitem.OrderID(orderID)).All(ctx)
+	if err != nil {
+		return err
+	}
+	allAttached := true
+	for _, it := range ups {
+		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream {
+			continue
+		}
+		ok, err := client.OrderDelivery.Query().Where(orderdelivery.ItemID(it.ID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			allAttached = false
+			break
+		}
+	}
+	if allAttached {
+		if _, err := client.Order.Update().
+			Where(order.ID(orderID),
+				order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered)).
+			SetStatus(order.StatusDelivered).
+			Save(ctx); err != nil {
+			return fmt.Errorf("fulfillment.UPSTREAM_STATUS_FAILED: %w", err)
 		}
 	}
 	return nil

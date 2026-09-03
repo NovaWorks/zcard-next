@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
@@ -171,3 +172,96 @@ func TestOnOrderPaidConsumer(t *testing.T) {
 }
 
 var _ = time.Now
+
+// TestFulfillUpstreamPendingNotDelivered 含上游项订单：未到卡不得落 delivered。
+// 纯上游 → fulfilling；本地已交+上游在途 → partially_delivered；上游到卡
+// （AttachUpstreamDelivery）→ delivered。曾无条件 paid→delivered 致客户/后台
+// 均无卡密可看（线上实测症状）。
+func TestFulfillUpstreamPendingNotDelivered(t *testing.T) {
+	d, cipher, repo := newFulfillData(t)
+	ctx := context.Background()
+
+	// 商品 A：本地卡密（2 张 reserved）；商品 B：上游项（无卡池）
+	prodA, _ := d.Client.Product.Create().
+		SetSubsiteID(0).SetName("本地卡").SetSlug("local-a").
+		SetPrice(1000).SetStockType(product.StockTypeCard).
+		SetDeliveryMode(product.DeliveryMode("status")).
+		SetStatus(1).Save(ctx)
+	prodB, _ := d.Client.Product.Create().
+		SetSubsiteID(0).SetName("上游品").SetSlug("up-b").
+		SetPrice(2000).SetStockType(product.StockTypeCard).
+		SetUpstreamSourceID(9).
+		SetStatus(1).Save(ctx)
+
+	o, _ := d.Client.Order.Create().
+		SetOrderNo("F20001").SetSubsiteID(0).SetUserID(1).
+		SetStatus(order.StatusPaid).SetTotalAmount(4000).
+		SetBaseCurrency("CNY").SetVersion(0).Save(ctx)
+	itA, _ := d.Client.OrderItem.Create().
+		SetOrderID(o.ID).SetSubsiteID(0).SetProductID(prodA.ID).
+		SetUnitPrice(1000).SetQuantity(2).SetAmount(2000).
+		SetFulfillmentType("auto").SetFulfillmentStatus("pending").Save(ctx)
+	_ = itA
+	itB, _ := d.Client.OrderItem.Create().
+		SetOrderID(o.ID).SetSubsiteID(0).SetProductID(prodB.ID).
+		SetUnitPrice(2000).SetQuantity(1).SetAmount(2000).
+		SetFulfillmentType("upstream").SetFulfillmentStatus("pending").Save(ctx)
+
+	for i := 0; i < 2; i++ {
+		plain := fmt.Sprintf("LOCAL-%d", i)
+		sealed, err := cipher.Seal(plain, prodA.ID, 0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := d.Client.Card.Create().
+			SetProductID(prodA.ID).SetSubsiteID(0).
+			SetContent(sealed).SetContentHash(cipher.ContentHash(plain)).
+			SetStatus(card.StatusReserved).SetOrderID(o.ID).Save(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// 1) 本地交付 + 上游在途 → partially_delivered（非 delivered）
+	if err := repo.FulfillOrder(ctx, o.OrderNo); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := d.Client.Order.Get(ctx, o.ID)
+	if string(got.Status) != "partially_delivered" {
+		t.Fatalf("混合单上游未到卡应为 partially_delivered: %s", got.Status)
+	}
+
+	// 2) 上游到卡 → delivered
+	plain := "UP-SECRET-1"
+	sealed, err := cipher.Seal(plain, prodB.ID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.AttachUpstreamDelivery(ctx, o.ID, itB.ID, prodB.ID, []port.UpstreamDeliveryItem{
+		{SealedContent: sealed, ContentHash: cipher.ContentHash(plain)},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = d.Client.Order.Get(ctx, o.ID)
+	if string(got.Status) != "delivered" {
+		t.Fatalf("上游到卡后应 delivered: %s", got.Status)
+	}
+
+	// 3) 纯上游单：FulfillOrder 不落 delivered → fulfilling
+	o2, _ := d.Client.Order.Create().
+		SetOrderNo("F20002").SetSubsiteID(0).SetUserID(1).
+		SetStatus(order.StatusPaid).SetTotalAmount(2000).
+		SetBaseCurrency("CNY").SetVersion(0).Save(ctx)
+	if _, err := d.Client.OrderItem.Create().
+		SetOrderID(o2.ID).SetSubsiteID(0).SetProductID(prodB.ID).
+		SetUnitPrice(2000).SetQuantity(1).SetAmount(2000).
+		SetFulfillmentType("upstream").SetFulfillmentStatus("pending").Save(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.FulfillOrder(ctx, o2.OrderNo); err != nil {
+		t.Fatal(err)
+	}
+	got2, _ := d.Client.Order.Get(ctx, o2.ID)
+	if string(got2.Status) != "fulfilling" {
+		t.Fatalf("纯上游单未到卡应为 fulfilling: %s", got2.Status)
+	}
+}
