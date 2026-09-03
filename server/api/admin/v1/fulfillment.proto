@@ -61,7 +61,8 @@ message ListDeliveriesReply {
   repeated DeliveryRecord deliveries = 1;
 }
 
-// DeliveryRecord 交付记录（掩码默认；card:view_content 权限才可见完整内容）。
+// DeliveryRecord 交付记录（content=完整卡密，服务端现场解密；路由受
+// order:view_delivery 权限门控 + 查看审计留痕）。
 message DeliveryRecord {
   uint64 id = 1;
   string order_no = 2;
@@ -72,4 +73,5 @@ message DeliveryRecord {
   int32 fetch_count = 7;
   int64 delivered_at = 8;
   string fetched_ip = 9;
+  string content = 10; // 完整卡密（管理端明文）
 }

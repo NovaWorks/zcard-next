@@ -8,7 +8,10 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
@@ -107,7 +110,8 @@ func (s *AdminFulfillmentService) ManualDeliver(ctx context.Context, req *adminv
 	return &emptypb.Empty{}, nil
 }
 
-// ListDeliveries 交付记录列表（掩码默认）。
+// ListDeliveries 交付记录列表（含完整卡密——现场解密不落库；路由受
+// order:view_delivery 权限门控，查看行为审计留痕）。
 func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *adminv1.ListDeliveriesRequest) (*adminv1.ListDeliveriesReply, error) {
 	page := int(req.GetPage())
 	size := int(req.GetPageSize())
@@ -121,12 +125,29 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 	if err != nil {
 		return nil, errors.InternalServer("fulfillment.LIST_FAILED", "读取交付失败")
 	}
+	// 明文查看审计（管理端看卡密是敏感操作——谁/何时看了哪单）
+	if s.repo.auditor != nil && len(rows) > 0 {
+		adminID := uint64(0)
+		if claims := identity.ClaimsFromContext(ctx); claims != nil {
+			adminID = claims.Subject
+		}
+		s.repo.auditor.Security(ctx, auditport.SecurityEntry{
+			ActorType: "admin", ActorID: adminID,
+			Action:   "delivery.view_content",
+			Metadata: map[string]any{"order_no": req.GetOrderNo(), "count": len(rows)},
+		})
+	}
 	reply := &adminv1.ListDeliveriesReply{}
 	for _, d := range rows {
 		orderNo := s.getOrderNo(ctx, d.OrderID)
+		content := s.decryptDelivery(ctx, d)
+		masked := "****"
+		if len(content) > 4 {
+			masked = "****" + content[len(content)-4:]
+		}
 		reply.Deliveries = append(reply.Deliveries, &adminv1.DeliveryRecord{
 			Id: d.ID, OrderNo: orderNo, CardId: d.CardID,
-			ContentMasked: "****", // 掩码默认（card:view_content 权限才可见完整）
+			Content: content, ContentMasked: masked,
 			DeliveredMode: string(d.DeliveredMode), DeliveredBy: d.DeliveredBy,
 			FetchCount: d.FetchCount, FetchedIp: d.FetchedIP,
 		})
@@ -135,6 +156,41 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 		}
 	}
 	return reply, nil
+}
+
+// decryptDelivery 交付记录明文（卡密现场解密；直发取商品 direct_content；
+// 即删模式卡密已物理删除）。
+func (s *AdminFulfillmentService) decryptDelivery(ctx context.Context, d *ent.OrderDelivery) string {
+	client := data.Client(ctx, s.data)
+	if d.DeliveredMode == orderdelivery.DeliveredModeDirect && d.CardID == 0 {
+		var productID uint64
+		if d.ItemID > 0 {
+			if it, e := client.OrderItem.Get(ctx, d.ItemID); e == nil {
+				productID = it.ProductID
+			}
+		}
+		p, err := client.Product.Get(ctx, productID)
+		if err != nil || len(p.DirectContent) == 0 {
+			return "（直发内容未配置）"
+		}
+		plain, err := s.repo.cipher.Open(p.DirectContent, p.ID, p.SubsiteID)
+		if err != nil {
+			return "（解密失败）"
+		}
+		return string(plain)
+	}
+	c, err := client.Card.Get(ctx, d.CardID)
+	if ent.IsNotFound(err) {
+		return "（卡密已删除）"
+	}
+	if err != nil {
+		return ""
+	}
+	plain, err := s.repo.cipher.Open(c.Content, c.ProductID, c.SubsiteID)
+	if err != nil {
+		return "（解密失败）"
+	}
+	return string(plain)
 }
 
 func (s *AdminFulfillmentService) getOrderNo(ctx context.Context, orderID uint64) string {

@@ -22,6 +22,7 @@ import {
   createRefund,
   fetchPendingDeliveries,
   manualDeliver,
+  fetchDeliveries,
 } from "@/service/api";
 import PendingDeliverTab from "./components/pending-deliver-tab.vue";
 import { formatMoney, formatSignedMoney } from "@/utils/money";
@@ -358,12 +359,37 @@ function onPagerChange(p: number) {
   loadOrders();
 }
 
+// ── 卡密交付（订单详情弹窗：完整明文 + 复制；服务端现场解密 + 审计）──
+const deliveries = ref<any[]>([]);
+const copiedCard = ref<number | null>(null);
+
 async function handleDetail(orderNo: string) {
   const { data, error } = await fetchOrder(orderNo);
   if (!error && data) {
     detail.value = data;
     showDetail.value = true;
   }
+  deliveries.value = [];
+  const dres = await fetchDeliveries(orderNo, 1, 100);
+  if (!dres.error && dres.data) {
+    deliveries.value = (dres.data as any).deliveries || [];
+  }
+}
+
+async function copyCard(content: string, idx: number) {
+  try {
+    await navigator.clipboard.writeText(content);
+    copiedCard.value = idx;
+    setTimeout(() => {
+      if (copiedCard.value === idx) copiedCard.value = null;
+    }, 1500);
+  } catch {
+    window.$message?.error("复制失败");
+  }
+}
+
+function deliverModeText(mode: string): string {
+  return { status: "标记模式", delete: "即删模式", direct: "直发" }[mode] || mode;
 }
 
 // ── 订单退款（order:refund 超管专属；渠道钱包/网关/上游三路）──
@@ -490,6 +516,24 @@ onMounted(loadOrders);
         </template>
         <NDivider>商品明细</NDivider>
         <NDataTable :data="detail.items || []" :columns="itemColumns" size="small"  :max-height="540" />
+        <!-- 卡密交付（完整明文；含取货次数/IP——客服核对场景） -->
+        <NDivider>卡密交付（{{ deliveries.length }} 条）</NDivider>
+        <div v-if="deliveries.length" class="flex flex-col gap-8px">
+          <div
+            v-for="(d, i) in deliveries"
+            :key="d.id"
+            class="flex items-center gap-10px rounded-6px border border-gray-200 px-12px py-8px dark:border-gray-700"
+          >
+            <span class="w-24px shrink-0 text-12px text-gray-400">#{{ i + 1 }}</span>
+            <code class="min-w-0 flex-1 break-all font-mono text-13px">{{ d.content }}</code>
+            <NTag size="small" :bordered="false" class="shrink-0">{{ deliverModeText(d.delivered_mode) }}</NTag>
+            <span class="shrink-0 text-11px text-gray-400">取货 {{ d.fetch_count || 0 }} 次</span>
+            <NButton size="tiny" tertiary type="primary" class="shrink-0" @click="copyCard(d.content, i)">
+              {{ copiedCard === i ? "已复制" : "复制" }}
+            </NButton>
+          </div>
+        </div>
+        <div v-else class="text-12px opacity-50" style="padding: 4px 0;">暂无卡密交付记录</div>
         <NDivider>金额明细（{{ (detail.amount_lines || []).length }} 行）</NDivider>
         <NDataTable :data="detail.amount_lines || []" :columns="amountColumns" size="small"  :max-height="540" />
         <NDivider>状态事件（{{ (detail.status_events || []).length }} 条）</NDivider>

@@ -367,7 +367,8 @@ func (x *ListDeliveriesReply) GetDeliveries() []*DeliveryRecord {
 	return nil
 }
 
-// DeliveryRecord 交付记录（掩码默认；card:view_content 权限才可见完整内容）。
+// DeliveryRecord 交付记录（content=完整卡密，服务端现场解密；路由受
+// order:view_delivery 权限门控 + 查看审计留痕）。
 type DeliveryRecord struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -379,6 +380,7 @@ type DeliveryRecord struct {
 	FetchCount    int32                  `protobuf:"varint,7,opt,name=fetch_count,json=fetchCount,proto3" json:"fetch_count,omitempty"`
 	DeliveredAt   int64                  `protobuf:"varint,8,opt,name=delivered_at,json=deliveredAt,proto3" json:"delivered_at,omitempty"`
 	FetchedIp     string                 `protobuf:"bytes,9,opt,name=fetched_ip,json=fetchedIp,proto3" json:"fetched_ip,omitempty"`
+	Content       string                 `protobuf:"bytes,10,opt,name=content,proto3" json:"content,omitempty"` // 完整卡密（管理端明文）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -476,6 +478,13 @@ func (x *DeliveryRecord) GetFetchedIp() string {
 	return ""
 }
 
+func (x *DeliveryRecord) GetContent() string {
+	if x != nil {
+		return x.Content
+	}
+	return ""
+}
+
 var File_admin_v1_fulfillment_proto protoreflect.FileDescriptor
 
 const file_admin_v1_fulfillment_proto_rawDesc = "" +
@@ -506,7 +515,7 @@ const file_admin_v1_fulfillment_proto_rawDesc = "" +
 	"\x13ListDeliveriesReply\x12B\n" +
 	"\n" +
 	"deliveries\x18\x01 \x03(\v2\".zcard.api.admin.v1.DeliveryRecordR\n" +
-	"deliveries\"\xa8\x02\n" +
+	"deliveries\"\xc2\x02\n" +
 	"\x0eDeliveryRecord\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x17\n" +
@@ -518,7 +527,9 @@ const file_admin_v1_fulfillment_proto_rawDesc = "" +
 	"fetchCount\x12!\n" +
 	"\fdelivered_at\x18\b \x01(\x03R\vdeliveredAt\x12\x1d\n" +
 	"\n" +
-	"fetched_ip\x18\t \x01(\tR\tfetchedIp2\xb9\x03\n" +
+	"fetched_ip\x18\t \x01(\tR\tfetchedIp\x12\x18\n" +
+	"\acontent\x18\n" +
+	" \x01(\tR\acontent2\xb9\x03\n" +
 	"\x17AdminFulfillmentService\x12\x86\x01\n" +
 	"\vListPending\x12&.zcard.api.admin.v1.ListPendingRequest\x1a$.zcard.api.admin.v1.ListPendingReply\")\x82\xd3\xe4\x93\x02#\x12!/api/v1/admin/fulfillment/pending\x12\x8a\x01\n" +
 	"\rManualDeliver\x12(.zcard.api.admin.v1.ManualDeliverRequest\x1a\x16.google.protobuf.Empty\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/fulfillment/{order_no}/deliver\x12\x87\x01\n" +
