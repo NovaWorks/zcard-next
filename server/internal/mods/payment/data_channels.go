@@ -340,13 +340,16 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 		return nil, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: %w", err)
 	}
 	snap := r.computeCharge(ctx, cfg, amount)
+	// 回跳/回调绝对化（同订单支付口径）：return 回充值 tab——曾不传，
+	// 网关回跳空地址即 404；notify 走 site/url 或请求 Host
 	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
 		OrderNo:      fmt.Sprintf("RCH%d", ro.ID),
 		Channel:      channel,
 		Amount:       amount,
 		Subject:      "余额充值",
 		ChargedUnits: snap.Units, ChargedCurrency: snap.Currency,
-		NotifyBaseURL: "/payments/callback/" + channel,
+		ReturnURL:     absolutePayURL(ctx, "/member?tab=recharge"),
+		NotifyBaseURL: absolutePayURL(ctx, r.CallbackURL(ctx, channel)),
 		Config:        cfg,
 		MethodCode:    methodCode, MethodParams: methodParams,
 	})

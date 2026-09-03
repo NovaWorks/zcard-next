@@ -347,6 +347,44 @@ func (s *AdminPaymentService) getOrderNo(ctx context.Context, orderID uint64) st
 	return o.OrderNo
 }
 
+// requestBaseURL 从 kratos transport 取 scheme://host（支付回跳/回调绝对化：
+// 外部网关只认绝对地址）。scheme 优先 X-Forwarded-Proto（反代 https），host 优先
+// Host 回落 X-Forwarded-Host。用 RequestFromServerContext 而非断言 khttp.Context
+// 巨型接口（同 affiliate requestHost 教训）。
+func requestBaseURL(ctx context.Context) string {
+	r, ok := khttp.RequestFromServerContext(ctx)
+	if !ok {
+		return ""
+	}
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	if proto := r.Header.Get("X-Forwarded-Proto"); proto != "" {
+		scheme = proto
+	}
+	host := r.Host
+	if host == "" {
+		host = r.Header.Get("X-Forwarded-Host")
+	}
+	if host == "" {
+		return ""
+	}
+	return scheme + "://" + host
+}
+
+// absolutePayURL 相对支付 URL 绝对化（已绝对原样返回；无请求上下文时保持相对
+// ——此时适配器回落值/渠道显式配置兜底）。
+func absolutePayURL(ctx context.Context, path string) string {
+	if path == "" || strings.HasPrefix(path, "http") {
+		return path
+	}
+	if base := requestBaseURL(ctx); base != "" {
+		return base + path
+	}
+	return path
+}
+
 // ── Storefront ──
 
 // StorePaymentService 顾客支付服务。
@@ -477,13 +515,17 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	}
 	// 币种快照（P2-09 T2）：target_currency → currency 表换算 → 适配器收渠道金额
 	snap := s.repo.computeCharge(ctx, cfg, money.Cents(o.TotalAmount))
+	// 回跳/回调绝对化（易支付/Stripe/PayPal 等外部网关只认绝对地址）：
+	// notify 用 site/url 前缀（CallbackURL；未配置时请求 Host 兜底）；
+	// return 回支付页（轮询出结果并展示卡密）——曾传空值，客户付完被
+	// 网关回跳到空地址弹 404
 	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
 		OrderNo:       o.OrderNo,
 		Channel:       ch.Code,
 		Amount:        money.Cents(o.TotalAmount),
 		Subject:       "订单 " + o.OrderNo,
-		ReturnURL:     "",
-		NotifyBaseURL: "/payments/callback/" + ch.Code,
+		ReturnURL:     absolutePayURL(ctx, "/payment/"+o.OrderNo),
+		NotifyBaseURL: absolutePayURL(ctx, s.repo.CallbackURL(ctx, ch.Code)),
 		Config:        cfg,
 		ChargedUnits:  snap.Units, ChargedCurrency: snap.Currency,
 		MethodCode:    methodCode, MethodParams: methodParams,
@@ -505,7 +547,9 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 // 系统错误 500 触发重试。
 func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.Data) {
 	payments := srv.Route("/payments")
-	payments.POST("/callback/{channel}", func(ctx khttp.Context) error {
+	// GET+POST 双注册：易支付族网关异步通知多为 GET（query 参数），ParseForm
+	// 本就合并 query/body，同一 handler 即可
+	handler := func(ctx khttp.Context) error {
 		channelCode := ctx.Vars().Get("channel")
 		r := ctx.Request()
 
@@ -595,7 +639,9 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 			return ctx.String(http.StatusOK, acker.SuccessAck())
 		}
 		return ctx.JSON(http.StatusOK, map[string]string{"status": "ok"})
-	})
+	}
+	payments.POST("/callback/{channel}", handler)
+	payments.GET("/callback/{channel}", handler)
 	// PayPal return 同步捕获（P2-09 T4）：买家在 PayPal 授权后跳回
 	// return_url（PayPal 追加 token=<order_id>，1.x 生产依赖）——
 	// 先查后捕（Capturer），成功后走回调管线 markPaid，302 回店铺页。

@@ -43,6 +43,9 @@ func (a *EpayAdapter) ValidateConfig(cfg json.RawMessage) error {
 	if c.PID == "" || c.Key == "" {
 		return fmt.Errorf("epay: pid/key 必填")
 	}
+	if c.APIURL != "" && !strings.HasPrefix(c.APIURL, "http") {
+		return fmt.Errorf("epay: api_url 须为完整地址（含协议头，如 https://xxx/submit.php）")
+	}
 	return nil
 }
 
@@ -69,10 +72,13 @@ func (a *EpayAdapter) CreatePayment(_ context.Context, req port.CreatePaymentReq
 	}
 
 	// 方式级参数（收银台顾客选「微信/支付宝…」）：method.params.type 覆写协议支付类型；
-	// 未选（旧单方式语义）回落 alipay。
+	// 未覆写时回落方式 code（wxpay/alipay 同名直映射）；连 code 也无（旧单方式
+	// 语义）回落 alipay
 	payType := "alipay"
 	if t := req.MethodParams["type"]; t != "" {
 		payType = t
+	} else if req.MethodCode != "" {
+		payType = req.MethodCode
 	}
 	params := map[string]string{
 		"pid":          c.PID,
