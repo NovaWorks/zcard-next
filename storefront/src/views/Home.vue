@@ -60,10 +60,14 @@
 
         <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级，替代胶囊） -->
         <div v-if="navStyle === 'grid' && categories.length" class="card cat-chips">
-          <div class="cat-chips-row">
+          <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               {{ c.name }}
+            </button>
+            <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类 -->
+            <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
+              {{ chipsExpanded ? '收起 ⌃' : '更多 ⌄' }}
             </button>
           </div>
         </div>
@@ -193,6 +197,7 @@ const showSales = ref(true); // template.show_sales：卡片「已售」显示�
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
 const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
+const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 const sectionTitle = computed(() =>
   activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
@@ -284,6 +289,7 @@ function pickCategory(id: number) {
   activeCategory.value = id;
   page.value = 1;
   mobileCatOpen.value = false;
+  chipsExpanded.value = false; // 选完即收起，回紧凑单行
   load();
 }
 
@@ -381,6 +387,11 @@ onUnmounted(stopHero);
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
+/* 「更多」按钮：仅移动端显示；sticky 贴滚动行右缘（底色遮住下层滑过的胶囊） */
+.chip-more {
+  display: none; position: sticky; right: 0; flex-shrink: 0;
+  background: #fff; border-color: #e5e7eb; box-shadow: -8px 0 12px -6px rgba(15, 23, 42, 0.18);
+}
 
 /* ── 移动端「全部分类」折叠面板（PC 左树的移动端等价物；含全部层级） ── */
 /* mobile-only 会给容器 display:flex，这里必须转纵向，防止头/体横排挤压树体 */
@@ -531,14 +542,18 @@ onUnmounted(stopHero);
   .hero-banner { padding: 22px 18px; }
   .hero-banner h1 { font-size: 20px; }
   .hero-icon { font-size: 48px; }
-  /* 分类胶囊：单行横向滑动（对齐主流电商分类栏），不折行占屏 */
+  /* 分类胶囊：单行横向滑动（对齐主流电商分类栏），不折行占屏；
+     「更多」贴右悬浮——点开整片 wrap 平铺，免逐个滑找分类 */
   .cat-chips { padding: 10px 12px; }
   .cat-chips-row {
     flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
   }
+  .cat-chips-row.expanded { flex-wrap: wrap; overflow-x: visible; }
   .cat-chips-row::-webkit-scrollbar { display: none; }
   .chip { flex-shrink: 0; white-space: nowrap; }
+  .chip-more { display: inline-flex; }
+  .cat-chips-row.expanded .chip-more { margin-left: auto; position: static; box-shadow: none; }
   /* 商品网格：双列瀑布（auto-fill minmax(200px) 在手机只能出 1 列） */
   .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
   /* 分页器：手机紧凑单行（上一页 · 当前/总页 · 下一页）——页码砖/省略号/首末跳转收起，

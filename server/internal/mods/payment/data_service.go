@@ -437,8 +437,10 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		if err := s.repo.HandleCallback(ctx, p.ID, fact); err != nil {
 			return nil, errors.InternalServer("payment.WALLET_FAILED", "余额支付失败: "+err.Error())
 		}
+		// 余额支付同步完成：payload 指向支付页（该页会呈现成功态/卡密）——
+		// 曾返回 /order/success?no=（前端无此路由，弹窗即 404）
 		return &storefrontv1.CreatePaymentReply{
-			PaymentId: p.ID, Type: "redirect", Payload: "/order/success?no=" + o.OrderNo,
+			PaymentId: p.ID, Type: "redirect", Payload: "/payment/" + o.OrderNo,
 		}, nil
 	}
 

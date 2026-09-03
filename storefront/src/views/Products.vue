@@ -5,10 +5,14 @@
     <div class="products-content">
       <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级） -->
       <div v-if="navStyle === 'grid' && categories.length" class="card category-chips" style="margin-bottom: 12px;">
-        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+        <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
             {{ c.name }}
+          </button>
+          <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类（与首页同款） -->
+          <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
+            {{ chipsExpanded ? '收起 ⌃' : '更多 ⌄' }}
           </button>
         </div>
       </div>
@@ -86,6 +90,7 @@ const total = ref(0);
 const loading = ref(false);
 const error = ref('');
 const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
+const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
 // ── 模板设置（后台 系统设置 → 模板；公开配置下发，客户端生效）──
 const viewMode = ref<'grid' | 'list'>('grid'); // template.default_view（big 归入网格+更宽卡片）
@@ -164,6 +169,7 @@ function go(p: number) {
 function pickCategory(id: number) {
   categoryId.value = id;
   mobileCatOpen.value = false;
+  chipsExpanded.value = false; // 选完即收起，回紧凑单行
   onSearch();
 }
 
@@ -208,6 +214,24 @@ async function applyListSeo() {
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
+/* 胶囊行：桌面多行 wrap；移动端单行横滑 + 「更多」展开（与首页同款） */
+.cat-chips-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* 「更多」按钮：仅移动端显示；sticky 贴滚动行右缘 */
+.chip-more {
+  display: none; position: sticky; right: 0; flex-shrink: 0;
+  background: #fff; border-color: #e5e7eb; box-shadow: -8px 0 12px -6px rgba(15, 23, 42, 0.18);
+}
+@media (max-width: 768px) {
+  .cat-chips-row {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .cat-chips-row.expanded { flex-wrap: wrap; overflow-x: visible; }
+  .cat-chips-row::-webkit-scrollbar { display: none; }
+  .chip { flex-shrink: 0; white-space: nowrap; }
+  .chip-more { display: inline-flex; }
+  .cat-chips-row.expanded .chip-more { margin-left: auto; position: static; box-shadow: none; }
+}
 
 /* 移动端「全部分类」折叠面板（与首页同款：橙竖条标题 + 层级树） */
 /* mobile-only 会给容器 display:flex，这里必须转纵向，防止头/体横排挤压树体 */

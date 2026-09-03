@@ -47,6 +47,7 @@ defineProps<{
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* 网格/flex 子项防长词撑爆列宽（grid item 默认 min-width:auto） */
 }
 .product-card:hover {
   border-color: rgba(37, 99, 235, 0.45);
@@ -103,6 +104,8 @@ defineProps<{
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 40px;
+  word-break: break-word; /* 不可断长词（连续英文/URL）换行，防横向溢出 */
+  overflow-wrap: anywhere;
 }
 .pc-price { color: #ff5722; font-size: 18px; font-weight: 700; }
 .pc-meta {
@@ -120,7 +123,7 @@ defineProps<{
 .list-mode .pc-cover { width: 64px; height: 64px; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0; }
 .list-mode .pc-cover-placeholder { font-size: 20px; }
 .list-mode .pc-body { padding: 0; flex-direction: row; align-items: center; gap: 14px; flex: 1; }
-.list-mode .pc-name { min-height: auto; flex: 1; -webkit-line-clamp: 1; }
+.list-mode .pc-name { min-height: auto; flex: 1; -webkit-line-clamp: 1; min-width: 0; }
 .list-mode .pc-price { font-size: 16px; }
 .list-mode .pc-meta { margin-top: 0; gap: 12px; }
 .list-mode .pc-buy { display: inline-flex; width: auto; margin-top: 0; padding: 6px 14px; font-size: 13px; }

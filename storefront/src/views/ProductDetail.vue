@@ -509,7 +509,7 @@ async function exchangePoints() {
   border-radius: 14px;
   padding: 18px 20px;
 }
-.pd-name { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.4; }
+.pd-name { font-size: 20px; font-weight: 700; color: #111827; line-height: 1.4; word-break: break-word; overflow-wrap: anywhere; }
 .pd-sub { display: flex; gap: 8px; margin-top: 8px; }
 .pd-points-tag { background: #eef2ff; color: #4338ca; }
 
@@ -551,10 +551,11 @@ async function exchangePoints() {
   border: 2px solid #e5e7eb; border-radius: 10px; padding: 8px 14px;
   background: #fff; cursor: pointer; text-align: center; transition: all 0.15s;
   min-width: 90px;
+  max-width: 100%; /* 超长规格名不撑破容器（配合 name 断词） */
 }
 .pd-sku:hover { border-color: rgba(37, 99, 235, 0.4); }
 .pd-sku.active { border-color: #2563eb; background: #eff6ff; }
-.pd-sku-name { display: block; font-size: 13px; font-weight: 600; color: #111827; }
+.pd-sku-name { display: block; font-size: 13px; font-weight: 600; color: #111827; word-break: break-word; overflow-wrap: anywhere; }
 .pd-sku-price { display: block; font-size: 12px; color: #ff5722; margin-top: 2px; }
 
 .pd-qty { display: inline-flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; }
@@ -609,7 +610,7 @@ async function exchangePoints() {
   font-size: 15px; font-weight: 700; color: #111827;
   border-left: 3px solid #2563eb; padding-left: 10px; margin-bottom: 14px;
 }
-.pd-desc { font-size: 14px; line-height: 1.8; color: #374151; word-break: break-word; }
+.pd-desc { font-size: 14px; line-height: 1.8; color: #374151; word-break: break-word; overflow-wrap: anywhere; }
 .pd-desc :deep(img) { max-width: 100%; border-radius: 8px; }
 .pd-desc :deep(p) { margin: 8px 0; }
 

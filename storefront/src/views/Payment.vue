@@ -313,6 +313,13 @@ async function pay() {
   if (err || !data) { error.value = err || '创建支付失败'; return; }
 
   const payload = data.payload || '';
+  // 余额支付：同步扣款即完成，不走收银台跳转（后端 payload 为本页地址，避免弹窗）
+  if (selected.value.channel === 'wallet') {
+    await refreshOrder();
+    decidePhase();
+    if (phase.value === 'success') loadDelivery();
+    return;
+  }
   if (data.type === 'qrcode') {
     let content = payload;
     try { const parsed = JSON.parse(payload); content = parsed.code_url || payload; } catch { /* 原文即内容 */ }
@@ -332,13 +339,6 @@ async function pay() {
     redirectUrl.value = url;
     phase.value = 'redirect';
     openRedirect();
-  }
-  if (selected.value.channel === 'wallet') {
-    // 余额支付同步扣款：直接刷新订单进成功态
-    await refreshOrder();
-    decidePhase();
-    if (phase.value === 'success') loadDelivery();
-    return;
   }
   startPolling();
 }
