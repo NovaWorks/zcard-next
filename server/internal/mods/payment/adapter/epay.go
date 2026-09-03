@@ -44,16 +44,23 @@ func (a *EpayAdapter) ValidateConfig(cfg json.RawMessage) error {
 	if c.PID == "" || c.Key == "" {
 		return fmt.Errorf("epay: pid/key 必填")
 	}
-	if c.APIURL != "" {
-		if !strings.HasPrefix(c.APIURL, "http") {
-			return fmt.Errorf("epay: api_url 须为完整地址（含协议头，如 https://xxx/submit.php）")
-		}
-		// 裸域名（无提交端点路径）POST 即 404——曾致线上点「立即支付」收银台弹 404
-		if u, err := url.Parse(c.APIURL); err != nil || u.Path == "" || u.Path == "/" {
-			return fmt.Errorf("epay: api_url 须含提交端点路径（如 https://xxx/submit.php），当前是裸域名")
-		}
+	if c.APIURL != "" && !strings.HasPrefix(c.APIURL, "http") {
+		return fmt.Errorf("epay: api_url 须为完整地址（含协议头，如 https://xxx/submit.php）")
 	}
 	return nil
+}
+
+// submitURL 下单提交端点：完整路径（含 /submit.php 等）原样使用；裸域名自动
+// 补默认端点 /submit.php（易支付商户面板的「网关地址」只给根地址，照抄填入
+// 是高频误配——POST 到根路径网关即 404）。
+func epaySubmitURL(apiURL string) string {
+	if apiURL == "" {
+		return "https://pay.epay.com/submit.php"
+	}
+	if u, err := url.Parse(apiURL); err == nil && (u.Path == "" || u.Path == "/") {
+		return strings.TrimRight(apiURL, "/") + "/submit.php"
+	}
+	return apiURL
 }
 
 // CreatePayment 构造跳转参数（type=params，前端 POST 到 api_url）。
@@ -65,10 +72,7 @@ func (a *EpayAdapter) CreatePayment(_ context.Context, req port.CreatePaymentReq
 	if c.PID == "" || c.Key == "" {
 		return nil, fmt.Errorf("epay: pid/key 必填")
 	}
-	apiURL := c.APIURL
-	if apiURL == "" {
-		apiURL = "https://pay.epay.com/submit.php"
-	}
+	apiURL := epaySubmitURL(c.APIURL)
 	notifyURL := req.NotifyBaseURL
 	if c.NotifyURL != "" {
 		notifyURL = c.NotifyURL
