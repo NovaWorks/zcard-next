@@ -231,17 +231,37 @@
       </div>
     </div>
 
-    <!-- 礼品卡兑换（gc-card：桌面 720px 居中，输入/按钮放大——大厂表单比例） -->
-    <div v-if="tab === 'giftcard'" class="card gc-card">
-      <div class="gc-title">礼品卡兑换</div>
-      <div class="field">
-        <label>礼品卡兑换码</label>
-        <input class="input gc-input" v-model="giftCode" type="text" placeholder="输入卡密兑换码" @keyup.enter="doRedeem" />
-        <div class="muted">兑换后余额即时到账；连续失败将临时锁定（防爆破）</div>
+    <!-- 礼品卡兑换（与充值页同构：余额条 + 主卡 + 说明，视觉节奏一致） -->
+    <div v-if="tab === 'giftcard'" class="recharge-page">
+      <div class="card rc-balance">
+        <div>
+          <div class="muted rc-label">当前可用余额</div>
+          <div class="rc-balance-num">{{ formatMoney(balance?.available_cents ?? 0) }}</div>
+        </div>
+        <div class="rc-balance-side muted">
+          <span>冻结中 {{ formatMoney(balance?.locked_cents ?? 0) }}</span>
+          <span>积分 {{ level?.points ?? balance?.points ?? 0 }}</span>
+        </div>
       </div>
-      <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ giftError }}</div>
-      <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
-      <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '立即兑换' }}</button>
+      <div class="card gc-card">
+        <div class="gc-title">礼品卡兑换</div>
+        <div class="field">
+          <label>礼品卡兑换码</label>
+          <input class="input gc-input" v-model="giftCode" type="text" placeholder="输入卡密兑换码" @keyup.enter="doRedeem" />
+          <div class="muted">兑换后余额即时到账；连续失败将临时锁定（防爆破）</div>
+        </div>
+        <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ giftError }}</div>
+        <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
+        <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '立即兑换' }}</button>
+      </div>
+      <div class="card gc-tips">
+        <div class="rc-title">兑换说明</div>
+        <ul class="gc-tips-list">
+          <li>在「礼品卡/卡密」渠道购买后获得兑换码，粘贴到上方输入框即可兑换</li>
+          <li>兑换金额即时进入账户余额，可用于下单与充值</li>
+          <li>兑换码连续输错将临时锁定；遇到问题请联系在线客服处理</li>
+        </ul>
+      </div>
     </div>
 
     <!-- 推广营销（内嵌推广中心：推广码/二维码/团队/佣金） -->
@@ -745,10 +765,11 @@ function fmtTime(ts: number): string {
 .rc-redirect-icon { font-size: 40px; margin-bottom: 10px; }
 .rc-btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
 
-/* ── 礼品卡兑换（放大：桌面 720px 大输入 + 大按钮，替代原 480px 小卡）── */
-.gc-card { max-width: 760px; margin: 0 auto; padding: 26px 28px; }
+/* ── 礼品卡兑换（嵌于 recharge-page 容器内与充值页同构：余额条 + 主卡 + 说明）── */
+.gc-card { padding: 26px 28px; }
 .gc-title { font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 16px; }
 .gc-input { height: 48px; font-size: 16px; letter-spacing: 1px; }
+.gc-tips-list { margin: 0; padding-left: 18px; color: #6b7280; font-size: 13px; line-height: 2; }
 .gc-submit {
   width: 100%; margin-top: 18px; padding: 13px 0; border: none; cursor: pointer;
   border-radius: 12px; font-size: 16px; font-weight: 700; color: #fff;

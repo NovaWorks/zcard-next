@@ -539,9 +539,12 @@ onUnmounted(stopHero);
   /* 轮播高度按视口收窄（桌面 clamp 240-360px 在手机上过高） */
   .hero-slide img { height: clamp(110px, 30vw, 170px); }
   .hero-title { padding: 22px 14px 10px; font-size: 15px; }
-  .hero-banner { padding: 22px 18px; }
-  .hero-banner h1 { font-size: 20px; }
-  .hero-icon { font-size: 48px; }
+  /* 回退品牌横幅（无图时）移动端收紧：省首屏空间——隐藏大图标、压行距 */
+  .hero-banner { padding: 14px 16px; }
+  .hero-banner h1 { font-size: 18px; margin-bottom: 4px; }
+  .hero-banner p { margin-bottom: 8px; font-size: 12px; }
+  .hero-points { font-size: 12px; gap: 10px; flex-wrap: wrap; }
+  .hero-icon { display: none; }
   /* 分类胶囊：单行横向滑动（对齐主流电商分类栏），不折行占屏；
      「更多」贴右悬浮——点开整片 wrap 平铺，免逐个滑找分类 */
   .cat-chips { padding: 10px 12px; }

@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
@@ -43,8 +44,14 @@ func (a *EpayAdapter) ValidateConfig(cfg json.RawMessage) error {
 	if c.PID == "" || c.Key == "" {
 		return fmt.Errorf("epay: pid/key 必填")
 	}
-	if c.APIURL != "" && !strings.HasPrefix(c.APIURL, "http") {
-		return fmt.Errorf("epay: api_url 须为完整地址（含协议头，如 https://xxx/submit.php）")
+	if c.APIURL != "" {
+		if !strings.HasPrefix(c.APIURL, "http") {
+			return fmt.Errorf("epay: api_url 须为完整地址（含协议头，如 https://xxx/submit.php）")
+		}
+		// 裸域名（无提交端点路径）POST 即 404——曾致线上点「立即支付」收银台弹 404
+		if u, err := url.Parse(c.APIURL); err != nil || u.Path == "" || u.Path == "/" {
+			return fmt.Errorf("epay: api_url 须含提交端点路径（如 https://xxx/submit.php），当前是裸域名")
+		}
 	}
 	return nil
 }
