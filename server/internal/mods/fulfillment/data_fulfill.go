@@ -245,7 +245,9 @@ type FetchItem struct {
 	Masked  bool
 }
 
-// FetchDelivery 取货（三重门：单号+密码+限流；首次返回明文，之后掩码）。
+// FetchDelivery 取货（三重门：单号+密码+限流；凭正确密码始终返回明文——
+// 2026-09-03 修订，原「首次明文、后续掩码」致支付页自动取货消耗首次后客户
+// 再查只见尾 4 位掩码，客诉率高）。
 func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPassword, clientIP string) (*FetchResult, error) {
 	client := data.Client(ctx, r.data)
 
@@ -323,11 +325,10 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 				result.Items = append(result.Items, FetchItem{CardID: 0, Content: "****（解密失败）", Masked: true})
 				continue
 			}
-			if isFirstFetch {
-				result.Items = append(result.Items, FetchItem{CardID: 0, Content: string(plain), Masked: false})
-			} else {
-				result.Items = append(result.Items, FetchItem{CardID: 0, Content: maskContent(string(plain)), Masked: true})
-			}
+			// 明文规则（2026-09-03 修订）：单号+查询密码取货始终明文——密码即门。
+			// 曾「首次明文、后续掩码」：支付成功页的自动取货即消耗首次，客户
+			// 再查只见尾 4 位，客诉率高（发卡平台通行做法均为凭密码可反复查看）。
+			result.Items = append(result.Items, FetchItem{CardID: 0, Content: string(plain), Masked: false})
 			continue
 		}
 
@@ -344,7 +345,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 			return nil, err
 		}
 
-		// 现场解密（不落库明文）
+		// 现场解密（不落库明文）；凭密码取货始终明文（同直发分支注释）
 		plain, err := r.cipher.Open(c.Content, c.ProductID, c.SubsiteID)
 		if err != nil {
 			result.Items = append(result.Items, FetchItem{
@@ -353,29 +354,22 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 			continue
 		}
 
-		if isFirstFetch {
-			// 首次取货：返回明文
-			result.Items = append(result.Items, FetchItem{
-				CardID: c.ID, Content: string(plain), Masked: false,
-			})
-		} else {
-			// 后续取货：掩码（尾4位）
-			result.Items = append(result.Items, FetchItem{
-				CardID: c.ID, Content: maskContent(string(plain)), Masked: true,
-			})
-		}
+		result.Items = append(result.Items, FetchItem{
+			CardID: c.ID, Content: string(plain), Masked: false,
+		})
 	}
 
-	// 更新取货计数 + IP（审计）
+	// 取货计数 + IP：每次取货均记（审计）；首次取货推进订单 → completed
+	for _, d := range deliveries {
+		_, _ = client.OrderDelivery.UpdateOne(d).
+			SetFetchCount(d.FetchCount + 1).
+			SetFetchedIP(clientIP).
+			Save(ctx)
+	}
+	if len(deliveries) > 0 {
+		result.FetchCnt = deliveries[0].FetchCount + 1
+	}
 	if isFirstFetch && len(deliveries) > 0 {
-		for _, d := range deliveries {
-			_, _ = client.OrderDelivery.UpdateOne(d).
-				SetFetchCount(d.FetchCount + 1).
-				SetFetchedIP(clientIP).
-				Save(ctx)
-		}
-		result.FetchCnt = 1
-
 		// 订单状态 → completed
 		_, _ = client.Order.Update().
 			Where(order.ID(o.ID), order.StatusEQ(order.StatusDelivered)).
@@ -390,8 +384,6 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 			SetOperator("user").
 			SetClientIP(clientIP).
 			Save(ctx)
-	} else if len(deliveries) > 0 {
-		result.FetchCnt = deliveries[0].FetchCount + 1
 	}
 
 	return result, nil
@@ -549,13 +541,6 @@ func randomToken() string {
 func hashToken(t string) string {
 	h := sha256.Sum256([]byte(t))
 	return hex.EncodeToString(h[:])
-}
-
-func maskContent(plain string) string {
-	if len(plain) <= 4 {
-		return "****"
-	}
-	return "****" + plain[len(plain)-4:]
 }
 
 // ── T5（P2-02）上游采购交付出口 ─────────────────────────────

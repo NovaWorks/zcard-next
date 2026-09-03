@@ -110,7 +110,6 @@
             <div class="card-content">
               <template v-if="it.masked">
                 <span class="card-masked">{{ it.content }}</span>
-                <span class="card-mask-tip">内容已掩码（仅首次查询可见）</span>
               </template>
               <code v-else class="card-code">{{ it.content }}</code>
             </div>
