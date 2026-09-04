@@ -305,6 +305,13 @@ function stockTypeLabel(t: string) {
   return ({ card: '卡密', url: '链接', code: '兑换码' } as Record<string, string>)[t] || t;
 }
 
+// 手机端吸底操作栏点击后，表单校验失败要能看到错误提示：滚动到购买卡内的 error
+function scrollToFormError() {
+  requestAnimationFrame(() => {
+    document.querySelector('.pd-buy .error')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
+
 function toggleCheck(id: number, val: string) {
   const key = String(id);
   const cur = (controlAnswers.value[key] || '').split(',').filter(Boolean);
@@ -420,11 +427,12 @@ function validateTradeFields(): boolean {
 async function buy() {
   if (!p.value) return;
   // 交易设置校验（查询密码 / 游客联系方式）
-  if (!validateTradeFields()) return;
+  if (!validateTradeFields()) { scrollToFormError(); return; }
   // 必填控件校验（proto3 空数组省略 → undefined 兜底空数组）
   for (const c of p.value.controls || []) {
     if (c.required && !controlAnswers.value[String(c.id)]?.trim()) {
       error.value = `请填写「${c.name}」`;
+      scrollToFormError();
       return;
     }
   }
@@ -656,4 +664,21 @@ async function exchangePoints() {
   background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px; cursor: pointer;
 }
 .pd-lightbox-close:hover { background: rgba(255, 255, 255, 0.3); }
+/* ── 手机端（大厂商品页范式：无面包屑、紧凑留白、底部吸底操作栏）── */
+@media (max-width: 768px) {
+  .pd-page { padding: 0 12px calc(76px + env(safe-area-inset-bottom)); gap: 12px; }
+  .pd-crumb { display: none; }
+  .pd-buy { padding: 14px; border-radius: 12px; }
+  .pd-name { font-size: 17px; }
+  .pd-price { font-size: 24px; }
+  .pd-price-card { margin-top: 12px; padding: 12px 14px; }
+  .pd-section { padding: 14px; border-radius: 12px; }
+  .pd-actions {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
+    margin: 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: #fff; border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.06);
+  }
+  .pd-actions button { min-width: 0; flex: 1; }
+}
 </style>
