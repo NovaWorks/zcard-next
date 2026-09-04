@@ -10,19 +10,26 @@
         <div class="card"><div class="muted">积分</div><div class="stat-num">{{ level?.points ?? balance?.points ?? 0 }}</div></div>
         <div class="card"><div class="muted">累计消费</div><div class="stat-num">{{ formatMoney(level?.consumed_cents ?? 0) }}</div></div>
       </div>
-      <div class="card" v-if="level">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-          <span>当前等级：<b>{{ level.current?.name || '普通会员' }}</b>
-            <span v-if="level.current?.discount" class="tag" style="margin-left: 6px;">{{ (level.current.discount / 100).toFixed(0) }} 折</span>
-          </span>
-          <span v-if="level.next" class="muted">距 {{ level.next.name }}：
-            <template v-if="level.progress?.recharge_gap_cents">还需充值 {{ formatMoney(level.progress.recharge_gap_cents) }}</template>
-            <template v-if="level.progress?.recharge_gap_cents && level.progress?.consume_gap_cents"> / </template>
-            <template v-if="level.progress?.consume_gap_cents">还需消费 {{ formatMoney(level.progress.consume_gap_cents) }}</template>
-          </span>
-          <span v-else class="muted">已满级</span>
+      <div class="card lv-card" v-if="level">
+        <div class="lv-head">
+          <div class="lv-cur">
+            <div class="muted lv-label">当前等级</div>
+            <div class="lv-name-row">
+              <span class="lv-name">{{ level.current?.name || '普通会员' }}</span>
+              <span v-if="level.current?.discount" class="tag">{{ (level.current.discount / 100).toFixed(0) }} 折</span>
+            </div>
+          </div>
+          <span v-if="level.next" class="lv-next">距 {{ level.next.name }} <span class="lv-arrow">›</span></span>
+          <span v-else class="lv-max">已满级 🏆</span>
         </div>
-        <div class="progress"><div :style="{ width: `${level.progress?.percent ?? 100}%` }"></div></div>
+        <div class="lv-bar">
+          <div class="progress"><div :style="{ width: `${levelPercent}%` }"></div></div>
+          <span class="lv-percent">{{ levelPercent }}%</span>
+        </div>
+        <div class="lv-gaps" v-if="rechargeGapCents > 0 || consumeGapCents > 0">
+          <span v-if="rechargeGapCents > 0" class="lv-gap">还需充值 <b>{{ formatMoney(rechargeGapCents) }}</b></span>
+          <span v-if="consumeGapCents > 0" class="lv-gap">还需消费 <b>{{ formatMoney(consumeGapCents) }}</b></span>
+        </div>
         <div class="actions ov-actions" style="margin-top: 16px;">
           <button class="btn" @click="switchTab('recharge')">去充值</button>
           <router-link class="btn secondary" to="/points">积分商城</router-link>
@@ -338,6 +345,11 @@ const tab = ref<Tab>(normalizeTab(route.query.tab));
 watch(() => route.query.tab, (v) => switchTab(normalizeTab(v)));
 const balance = ref<BalanceReply | null>(null);
 const level = ref<MyLevelReply | null>(null);
+
+// 等级进度（proto3 零值省略/-1 未配置均归一为不展示；>0 才渲染差额胶囊）
+const levelPercent = computed(() => level.value?.progress?.percent ?? 100);
+const rechargeGapCents = computed(() => Math.max(level.value?.progress?.recharge_gap_cents ?? 0, 0));
+const consumeGapCents = computed(() => Math.max(level.value?.progress?.consume_gap_cents ?? 0, 0));
 
 // 订单
 const orders = ref<MyOrderItem[]>([]);
@@ -674,6 +686,32 @@ function fmtTime(ts: number): string {
   .table-desktop { display: none; }
   .table-cards { display: flex; flex-direction: column; gap: 10px; }
 }
+
+/* ── 会员等级卡（移动端优先：等级名独占一行、进度条满宽带百分比、差额拆独立胶囊）── */
+.lv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.lv-cur { min-width: 0; }
+.lv-label { font-size: 13px; margin-bottom: 4px; }
+.lv-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lv-name { font-size: 20px; font-weight: 800; color: #111827; line-height: 1.25; }
+.lv-next {
+  flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;
+  font-size: 13px; font-weight: 600; color: #2563eb; background: #eff6ff;
+  padding: 4px 10px; border-radius: 999px; margin-top: 2px;
+}
+.lv-arrow { font-size: 15px; line-height: 1; }
+.lv-max {
+  flex-shrink: 0; white-space: nowrap; font-size: 13px; font-weight: 600;
+  color: #b45309; background: #fef3c7; padding: 4px 12px; border-radius: 999px; margin-top: 2px;
+}
+.lv-bar { display: flex; align-items: center; gap: 10px; }
+.lv-bar .progress { flex: 1; min-width: 0; }
+.lv-percent { flex-shrink: 0; font-size: 13px; font-weight: 700; color: #2563eb; font-variant-numeric: tabular-nums; }
+.lv-gaps { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.lv-gap {
+  font-size: 13px; color: #6b7280; background: #f9fafb; border: 1px solid #f3f4f6;
+  padding: 5px 12px; border-radius: 999px;
+}
+.lv-gap b { color: #ff5722; font-weight: 700; }
 
 /* ── 充值（方式级收银台，与支付页同视觉语言）── */
 .recharge-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
