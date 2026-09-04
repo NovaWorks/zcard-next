@@ -1150,13 +1150,15 @@ func (x *CreateCategoryRequest) GetSort() int32 {
 type UpdateCategoryRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Icon  string                 `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"`
+	Name  string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // 非空才更新
+	// 图标（optional：缺省=不变；显式空串=清除）
+	Icon *string `protobuf:"bytes,3,opt,name=icon,proto3,oneof" json:"icon,omitempty"`
 	// 隐藏状态（optional：未传保持不变，避免只改排序/名称时误取消隐藏）
 	Hide *bool `protobuf:"varint,4,opt,name=hide,proto3,oneof" json:"hide,omitempty"`
-	Sort int32 `protobuf:"varint,5,opt,name=sort,proto3" json:"sort,omitempty"`
-	// 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
-	ParentId      int64 `protobuf:"varint,6,opt,name=parent_id,json=parentId,proto3" json:"parent_id,omitempty"`
+	// 排序（optional：缺省不变——曾用 int32「>=0 即更新」把只改名的请求重置排序）
+	Sort *int32 `protobuf:"varint,5,opt,name=sort,proto3,oneof" json:"sort,omitempty"`
+	// 父分类（optional：缺省不变；0 = 顶级；>0 = 指定父，防环校验）
+	ParentId      *int64 `protobuf:"varint,6,opt,name=parent_id,json=parentId,proto3,oneof" json:"parent_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1206,8 +1208,8 @@ func (x *UpdateCategoryRequest) GetName() string {
 }
 
 func (x *UpdateCategoryRequest) GetIcon() string {
-	if x != nil {
-		return x.Icon
+	if x != nil && x.Icon != nil {
+		return *x.Icon
 	}
 	return ""
 }
@@ -1220,15 +1222,15 @@ func (x *UpdateCategoryRequest) GetHide() bool {
 }
 
 func (x *UpdateCategoryRequest) GetSort() int32 {
-	if x != nil {
-		return x.Sort
+	if x != nil && x.Sort != nil {
+		return *x.Sort
 	}
 	return 0
 }
 
 func (x *UpdateCategoryRequest) GetParentId() int64 {
-	if x != nil {
-		return x.ParentId
+	if x != nil && x.ParentId != nil {
+		return *x.ParentId
 	}
 	return 0
 }
@@ -3342,15 +3344,19 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1b\n" +
 	"\tparent_id\x18\x02 \x01(\x04R\bparentId\x12\x12\n" +
 	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x12\n" +
-	"\x04sort\x18\x04 \x01(\x05R\x04sort\"\xa7\x01\n" +
+	"\x04sort\x18\x04 \x01(\x05R\x04sort\"\xd6\x01\n" +
 	"\x15UpdateCategoryRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04icon\x18\x03 \x01(\tR\x04icon\x12\x17\n" +
-	"\x04hide\x18\x04 \x01(\bH\x00R\x04hide\x88\x01\x01\x12\x12\n" +
-	"\x04sort\x18\x05 \x01(\x05R\x04sort\x12\x1b\n" +
-	"\tparent_id\x18\x06 \x01(\x03R\bparentIdB\a\n" +
-	"\x05_hide\"I\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
+	"\x04icon\x18\x03 \x01(\tH\x00R\x04icon\x88\x01\x01\x12\x17\n" +
+	"\x04hide\x18\x04 \x01(\bH\x01R\x04hide\x88\x01\x01\x12\x17\n" +
+	"\x04sort\x18\x05 \x01(\x05H\x02R\x04sort\x88\x01\x01\x12 \n" +
+	"\tparent_id\x18\x06 \x01(\x03H\x03R\bparentId\x88\x01\x01B\a\n" +
+	"\x05_iconB\a\n" +
+	"\x05_hideB\a\n" +
+	"\x05_sortB\f\n" +
+	"\n" +
+	"_parent_id\"I\n" +
 	"\x18ReorderCategoriesRequest\x12\x1b\n" +
 	"\tparent_id\x18\x01 \x01(\x04R\bparentId\x12\x10\n" +
 	"\x03ids\x18\x02 \x03(\x04R\x03ids\",\n" +

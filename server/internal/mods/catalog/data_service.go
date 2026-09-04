@@ -297,7 +297,7 @@ func (s *AdminCatalogService) CreateCategory(ctx context.Context, req *adminv1.C
 
 // UpdateCategory 更新分类。
 func (s *AdminCatalogService) UpdateCategory(ctx context.Context, req *adminv1.UpdateCategoryRequest) (*adminv1.Category, error) {
-	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.GetIcon(), req.Hide, req.GetSort(), req.GetParentId())
+	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.Icon, req.Hide, req.Sort, req.ParentId)
 	if err != nil {
 		if strings.Contains(err.Error(), "CATEGORY_CYCLE") {
 			return nil, errors.BadRequest("catalog.CATEGORY_CYCLE", "不能把分类移到自身或它的子分类下")

@@ -9825,15 +9825,17 @@ components:
                     type: string
                 icon:
                     type: string
+                    description: 图标（optional：缺省=不变；显式空串=清除）
                 hide:
                     type: boolean
                     description: 隐藏状态（optional：未传保持不变，避免只改排序/名称时误取消隐藏）
                 sort:
                     type: integer
+                    description: 排序（optional：缺省不变——曾用 int32「>=0 即更新」把只改名的请求重置排序）
                     format: int32
                 parentId:
                     type: string
-                    description: 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
+                    description: 父分类（optional：缺省不变；0 = 顶级；>0 = 指定父，防环校验）
         zcard.api.admin.v1.UpdateChannelRequest:
             required:
                 - id

@@ -4,7 +4,7 @@
  * 新建/变更后向父组件抛 refresh 事件（表单下拉联动刷新）。
  */
 import { ref, reactive, computed, watch } from "vue";
-import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm } from "naive-ui";
+import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm, NPopover } from "naive-ui";
 import type { DropdownOption } from "naive-ui";
 import {
   fetchCategories,
@@ -28,12 +28,35 @@ const categories = ref<any[]>([]);
 const showCreate = ref(false);
 const newName = ref("");
 const newParent = ref<number | null>(null);
+const newIcon = ref("");
 const creating = ref(false);
 
 // 重命名 / 删除确认
 const renaming = ref<any | null>(null);
 const renameText = ref("");
 const deleteConfirm = reactive({ show: false, cat: null as any });
+
+// ── 图标（本地图标库：内置 emoji 分组，即选即用；前台分类树/胶囊展示）──
+const ICON_GROUPS: { label: string; icons: string[] }[] = [
+  { label: "常用", icons: ["🏷️", "🛒", "🎁", "⭐", "🔥", "💼", "📦", "💰", "🆕", "💡"] },
+  { label: "游戏", icons: ["🎮", "🕹️", "🎰", "🏆", "🎯", "🃏", "🎲", "👾", "🤖", "⚔️"] },
+  { label: "影音", icons: ["🎬", "🎵", "📺", "🎧", "📷", "🎤", "🎨", "📚", "🎹", "🎬"] },
+  { label: "软件", icons: ["💻", "🖥️", "⌨️", "⚙️", "🔧", "🧩", "💾", "📀", "🧠", "🛡️"] },
+  { label: "通讯", icons: ["📱", "☎️", "📞", "💬", "📧", "📡", "🌐", "✉️", "📮", "📡"] },
+  { label: "生活", icons: ["🏠", "🚗", "✈️", "🍔", "👕", "💊", "🎓", "⚽", "🐾", "🌸"] },
+  { label: "金融", icons: ["💳", "💵", "🏦", "📈", "🪙", "💎", "🧾", "💹", "🤑", "📉"] },
+];
+const iconPicking = ref<any | null>(null); // 正在选图标的分类（null=面板关闭）
+
+async function applyIcon(cat: any, icon: string) {
+  const { error } = await updateCategory(cat.id, { icon }); // 空串=清除（服务端 optional 语义）
+  if (!error) {
+    cat.icon = icon;
+    window.$message?.success(icon ? "图标已更新" : "图标已清除");
+    iconPicking.value = null;
+    emit("refresh");
+  }
+}
 
 const visible = computed({
   get: () => props.show,
@@ -97,6 +120,7 @@ watch(
 function resetCreate() {
   newName.value = "";
   newParent.value = null;
+  newIcon.value = "";
   showCreate.value = false;
 }
 
@@ -112,6 +136,7 @@ async function handleCreate() {
     const { data, error } = await createCategory({
       name: newName.value.trim(),
       parent_id: newParent.value || undefined,
+      icon: newIcon.value || undefined,
       sort: maxSort + 1,
     });
     if (!error) {
@@ -129,7 +154,7 @@ async function handleCreate() {
 
 async function handleRename() {
   if (!renaming.value || !renameText.value.trim()) return;
-  const { error } = await updateCategory(renaming.value.id, { name: renameText.value.trim(), parent_id: -1 });
+  const { error } = await updateCategory(renaming.value.id, { name: renameText.value.trim() });
   if (!error) {
     window.$message?.success("已重命名");
     renaming.value = null;
@@ -388,6 +413,38 @@ async function onSortBlur(cat: any) {
 
     <!-- 新建 -->
     <div v-if="showCreate" class="mb-12px flex items-center gap-8px">
+      <NPopover trigger="manual" :show="iconPicking === 'new'" placement="bottom-start" style="max-width: 360px">
+        <template #trigger>
+          <button
+            type="button"
+            class="cat-icon-btn shrink-0"
+            title="选择图标（可选）"
+            @click="iconPicking = iconPicking === 'new' ? null : 'new'"
+          >
+            {{ newIcon || "➕" }}
+          </button>
+        </template>
+        <div class="w-320px">
+          <div v-for="g in ICON_GROUPS" :key="g.label" class="mb-6px">
+            <div class="mb-2px text-11px text-gray-400">{{ g.label }}</div>
+            <div class="flex flex-wrap gap-4px">
+              <button
+                v-for="ic in g.icons"
+                :key="ic"
+                type="button"
+                class="icon-cell"
+                :class="{ active: newIcon === ic }"
+                @click="newIcon = ic; iconPicking = null"
+              >
+                {{ ic }}
+              </button>
+            </div>
+          </div>
+          <div class="flex justify-end border-t border-gray-100 pt-6px dark:border-gray-700">
+            <NButton size="tiny" quaternary @click="newIcon = ''; iconPicking = null">不使用图标</NButton>
+          </div>
+        </div>
+      </NPopover>
       <NInput
         v-model:value="newName"
         size="small"
@@ -442,6 +499,42 @@ async function onSortBlur(cat: any) {
           class="shrink-0"
           @update:checked="(v: boolean) => toggleBatchCheck(cat.id, v)"
         />
+        <!-- 图标槽：点击开本地图标库（选择即存；支持清除）；前台分类树/胶囊同源展示 -->
+        <NPopover v-if="!batchMode" trigger="manual" :show="iconPicking === cat.id" placement="right" style="max-width: 360px">
+          <template #trigger>
+            <button
+              type="button"
+              class="cat-icon-btn shrink-0"
+              :title="cat.icon ? '更换图标' : '设置图标'"
+              @click.stop="iconPicking = iconPicking === cat.id ? null : cat.id"
+            >
+              {{ cat.icon || "➕" }}
+            </button>
+          </template>
+          <div class="w-320px">
+            <div v-for="g in ICON_GROUPS" :key="g.label" class="mb-6px">
+              <div class="mb-2px text-11px text-gray-400">{{ g.label }}</div>
+              <div class="flex flex-wrap gap-4px">
+                <button
+                  v-for="ic in g.icons"
+                  :key="ic"
+                  type="button"
+                  class="icon-cell"
+                  :class="{ active: cat.icon === ic }"
+                  @click="applyIcon(cat, ic)"
+                >
+                  {{ ic }}
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between border-t border-gray-100 pt-6px dark:border-gray-700">
+              <NButton v-auth="'catalog:category_write'" size="tiny" quaternary type="error" @click="applyIcon(cat, '')">
+                🗑 清除图标
+              </NButton>
+              <NButton size="tiny" quaternary @click="iconPicking = null">关闭</NButton>
+            </div>
+          </div>
+        </NPopover>
         <!-- 名称列：占满剩余宽度，超长截断不撑破行；悬浮显示全名 -->
         <div class="flex min-w-0 flex-1 items-center gap-6px">
           <NTag v-if="cat.hide" size="tiny" :bordered="false" class="shrink-0">隐藏</NTag>
@@ -506,3 +599,45 @@ async function onSortBlur(cat: any) {
     </NModal>
   </NModal>
 </template>
+
+<style scoped>
+/* 图标槽：行内小按钮（空=虚框加号提示可设置） */
+.cat-icon-btn {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  border-radius: 6px;
+  border: 1px dashed var(--n-border-color, #d9d9d9);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cat-icon-btn:hover {
+  border-color: #4098ff;
+  background: rgba(64, 152, 255, 0.08);
+}
+/* 图标库网格格仔 */
+.icon-cell {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.icon-cell:hover {
+  background: rgba(64, 152, 255, 0.1);
+}
+.icon-cell.active {
+  background: rgba(64, 152, 255, 0.16);
+  border-color: #4098ff;
+}
+</style>

@@ -338,27 +338,27 @@ func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, paren
 }
 
 // UpdateCategory 更新分类。
-// parentId 层级语义（拖拽调级）：-1 = 不变；0 = 置顶级；>0 = 指定父（防环：
+// 指针语义（缺省不变）：icon nil=不变（空串=清除）；hide nil=不变；
+// sort nil=不变；parentId nil=不变（0=置顶级；>0=指定父，防环：
 // 不能把分类设为自身或自身的后代，否则树成环）。
-// hide 指针语义：nil = 不更新（只改名称/sort/层级时隐藏状态保持不变）。
-func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, icon string, hide *bool, sort int32, parentID int64) (*ent.Category, error) {
+func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (*ent.Category, error) {
 	client := data.Client(ctx, r.data)
 	q := client.Category.UpdateOneID(id)
 	if name != "" {
 		q.SetName(name)
 	}
-	if icon != "" {
-		q.SetIcon(icon)
+	if icon != nil {
+		q.SetIcon(*icon)
 	}
 	if hide != nil {
 		q.SetHide(*hide)
 	}
-	if sort >= 0 {
-		q.SetSort(sort)
+	if sort != nil && *sort >= 0 {
+		q.SetSort(*sort)
 	}
-	if parentID >= 0 {
-		if parentID > 0 {
-			if uint64(parentID) == id {
+	if parentID != nil {
+		if *parentID > 0 {
+			if uint64(*parentID) == id {
 				return nil, fmt.Errorf("catalog.CATEGORY_CANNOT_PARENT_SELF")
 			}
 			// 防环：新父不能是自身后代
@@ -366,10 +366,10 @@ func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name, i
 			if err != nil {
 				return nil, err
 			}
-			if desc[uint64(parentID)] {
+			if desc[uint64(*parentID)] {
 				return nil, fmt.Errorf("catalog.CATEGORY_CYCLE")
 			}
-			q.SetParentID(uint64(parentID))
+			q.SetParentID(uint64(*parentID))
 		} else {
 			q.ClearParentID() // 置顶级
 		}

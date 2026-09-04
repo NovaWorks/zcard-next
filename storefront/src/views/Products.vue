@@ -8,7 +8,7 @@
         <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
-            {{ c.name }}
+            <span v-if="c.icon" class="chip-icon">{{ c.icon }}</span>{{ c.name }}
           </button>
           <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类（与首页同款） -->
           <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
@@ -214,6 +214,7 @@ async function applyListSeo() {
 }
 .chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
+.chip-icon { margin-right: 5px; }
 /* 胶囊行：桌面多行 wrap；移动端单行横滑 + 「更多」展开（与首页同款） */
 .cat-chips-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 /* 「更多」按钮：仅移动端显示；sticky 贴滚动行右缘 */

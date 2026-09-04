@@ -259,13 +259,15 @@ message CreateCategoryRequest {
 
 message UpdateCategoryRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
-  string name = 2;
-  string icon = 3;
+  string name = 2; // 非空才更新
+  // 图标（optional：缺省=不变；显式空串=清除）
+  optional string icon = 3;
   // 隐藏状态（optional：未传保持不变，避免只改排序/名称时误取消隐藏）
   optional bool hide = 4;
-  int32 sort = 5;
-  // 父分类（拖拽调层级）：-1 = 不变；0 = 顶级；>0 = 指定父（防环校验）
-  int64 parent_id = 6;
+  // 排序（optional：缺省不变——曾用 int32「>=0 即更新」把只改名的请求重置排序）
+  optional int32 sort = 5;
+  // 父分类（optional：缺省不变；0 = 顶级；>0 = 指定父，防环校验）
+  optional int64 parent_id = 6;
 }
 
 // ReorderCategoriesRequest 分类排序：把 parent_id 层级下的分类按 ids 顺序重排，
