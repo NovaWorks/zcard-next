@@ -20,20 +20,20 @@
       </div>
 
       <div class="od-body">
-        <!-- 左列：商品清单 -->
+        <!-- 左列：商品清单（grid 行式：PC 四列对齐表头；移动端每行两行块状——大厂订单详情同构） -->
         <div class="card od-items">
           <div class="od-section-title">商品清单（{{ order.items.length }}）</div>
-          <table class="list od-table">
-            <thead><tr><th>商品</th><th class="ta-r">单价</th><th class="ta-c">数量</th><th class="ta-r">小计</th></tr></thead>
-            <tbody>
-              <tr v-for="(it, i) in order.items" :key="i">
-                <td class="od-product">{{ it.product_name }}</td>
-                <td class="price ta-r">{{ formatMoney(it.unit_price_cents) }}</td>
-                <td class="ta-c">×{{ it.quantity }}</td>
-                <td class="price ta-r od-subtotal">{{ formatMoney(it.unit_price_cents * it.quantity) }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="od-item-list">
+            <div class="od-item-head">
+              <span>商品</span><span class="od-ta-r">单价</span><span class="od-ta-c">数量</span><span class="od-ta-r">小计</span>
+            </div>
+            <div v-for="(it, i) in order.items" :key="i" class="od-item">
+              <div class="od-item-name">{{ it.product_name }}</div>
+              <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
+              <div class="od-item-qty">×{{ it.quantity }}</div>
+              <div class="od-item-sub">{{ formatMoney(it.unit_price_cents * it.quantity) }}</div>
+            </div>
+          </div>
         </div>
 
         <!-- 右列：订单摘要（金额 + 操作） -->
@@ -124,7 +124,7 @@ function fmtTime(ts: number): string {
 .od-status-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .od-status-badge { font-size: 13px; padding: 3px 12px; }
 .od-status-meta { display: flex; flex-direction: column; gap: 2px; }
-.od-order-no { font-size: 14px; font-weight: 600; color: #1f2329; }
+.od-order-no { font-size: 14px; font-weight: 600; color: #1f2329; word-break: break-all; }
 
 /* 主体：左清单 + 右摘要（大厂订单详情经典两栏；窄屏堆叠） */
 .od-body { display: flex; gap: 16px; align-items: flex-start; }
@@ -132,17 +132,48 @@ function fmtTime(ts: number): string {
 .od-side { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 860px) {
   .od-body { flex-direction: column; }
-  .od-side { width: 100%; }
+  .od-side { width: 100%; order: -1; } /* 摘要+操作置顶：先看到金额与操作再看清单（大厂移动端订单详情） */
 }
 
 .od-section-title { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 12px; }
-.od-table { font-size: 14px; }
-.od-table th { padding: 10px 12px; background: #f9fafb; }
-.od-table td { padding: 12px; }
-.od-product { font-weight: 500; color: #1f2329; }
-.od-subtotal { font-size: 15px; }
-.ta-r { text-align: right; }
-.ta-c { text-align: center; }
+
+/* 商品清单：行式 grid（PC 四列带表头；表头列宽与商品行同模板保证对齐） */
+.od-item-head, .od-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 64px 104px;
+  gap: 8px; align-items: center;
+}
+.od-item-head {
+  font-size: 12px; color: #6b7280;
+  padding: 8px 12px; background: #f9fafb; border-radius: 8px 8px 0 0;
+}
+.od-item { padding: 14px 12px; border-bottom: 1px solid #f3f4f6; }
+.od-item:last-child { border-bottom: none; }
+.od-item-name { font-size: 14px; font-weight: 500; color: #1f2329; line-height: 1.5; min-width: 0; }
+.od-item-price { text-align: right; color: #6b7280; font-size: 13px; font-variant-numeric: tabular-nums; }
+.od-item-qty { text-align: center; color: #6b7280; font-size: 13px; }
+.od-item-sub {
+  text-align: right; font-weight: 700; color: #111827; font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.od-ta-r { text-align: right; }
+.od-ta-c { text-align: center; }
+
+/* 移动端：表头隐藏，每行两行块状（名称+数量 / 单价+小计——大厂订单详情商品行） */
+@media (max-width: 768px) {
+  .od-item-head { display: none; }
+  .od-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name qty"
+      "price sub";
+    row-gap: 6px; padding: 12px 2px;
+  }
+  .od-item-name { grid-area: name; }
+  .od-item-qty { grid-area: qty; text-align: right; color: #9ca3af; }
+  .od-item-price { grid-area: price; text-align: left; }
+  .od-item-sub { grid-area: sub; }
+}
 
 /* 摘要卡 */
 .od-amount-row {
