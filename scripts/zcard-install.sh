@@ -216,6 +216,27 @@ db_validate() {
   fi
 }
 
+
+# ensure_backup_tools 预装数据库备份工具（在线更新前强制 DB 备份依赖 pg_dump/mysqldump；
+# 缺失则更新会被 fail-closed 中止——安装时装好比事后踩坑好）。按预置方言精准装，
+# 未指定（交互向导后选）则两个都尽力；非 Debian 系降级为提示。
+ensure_backup_tools() {
+  local want_pg=0 want_my=0
+  case "$DB_ARGS_DIALECT" in
+    postgres) want_pg=1 ;;
+    mysql)    want_my=1 ;;
+    *)        want_pg=1; want_my=1 ;;
+  esac
+  if [ "$want_pg" = 1 ] && ! command -v pg_dump >/dev/null; then
+    apt-get install -y postgresql-client >/dev/null 2>&1 \
+      && c_green "已预装 postgresql-client（更新前备份依赖）" \
+      || c_yellow "pg_dump 未就绪：选 PostgreSQL 时在线更新前需自行安装 postgresql-client"
+  fi
+  if [ "$want_my" = 1 ] && ! command -v mysqldump >/dev/null; then
+    apt-get install -y default-mysql-client >/dev/null 2>&1 || true
+  fi
+}
+
 do_install() {
   need_root
   local bin_src=""
@@ -236,6 +257,7 @@ do_install() {
       *)         i=$((i + 1)) ;;
     esac
   done
+  ensure_backup_tools
 
   resolve_db
   mkdir -p "$INSTALL_DIR"

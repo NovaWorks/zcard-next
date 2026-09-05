@@ -41,12 +41,20 @@ detect_arch() {
 
 # ── 安装 ────────────────────────────────────────────────────────
 
+# 预装数据库备份工具（在线更新前强制 DB 备份依赖；缺失更新会被 fail-closed 中止）
+ensure_backup_tools() {
+  command -v pg_dump >/dev/null || apt-get install -y postgresql-client >/dev/null 2>&1 \
+    && c_green "pg_dump 就绪" || c_yellow "pg_dump 未就绪：PG 站点在线更新前需 apt install postgresql-client"
+  command -v mysqldump >/dev/null || apt-get install -y default-mysql-client >/dev/null 2>&1 || true
+}
+
 do_install() {
   require_root
   detect_arch >/dev/null
   local arch; arch="$(detect_arch)"
   c_yellow "=== ZCard 2.0 安装（linux/$arch）==="
 
+  ensure_backup_tools
   # 1. 二进制：优先本地 ./zcard（离线安装），否则下载 latest release
   local src_bin=""
   if [ -x "./zcard" ] && [ ! -d "./zcard" ]; then

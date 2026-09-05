@@ -106,10 +106,12 @@ type UpdateStatus struct {
 	HasUpdate       bool                `protobuf:"varint,9,opt,name=has_update,json=hasUpdate,proto3" json:"has_update,omitempty"`
 	Notes           string              `protobuf:"bytes,10,opt,name=notes,proto3" json:"notes,omitempty"` // 最近一次 check 的 changelog markdown
 	LatestVersion   string              `protobuf:"bytes,11,opt,name=latest_version,json=latestVersion,proto3" json:"latest_version,omitempty"`
-	CheckedAt       string              `protobuf:"bytes,12,opt,name=checked_at,json=checkedAt,proto3" json:"checked_at,omitempty"` // RFC3339
-	BackupDir       string              `protobuf:"bytes,13,opt,name=backup_dir,json=backupDir,proto3" json:"backup_dir,omitempty"` // 本次更新备份目录
-	Busy            bool                `protobuf:"varint,14,opt,name=busy,proto3" json:"busy,omitempty"`                           // 更新链进行中（apply 单飞互斥）
-	History         []*ReleaseNoteEntry `protobuf:"bytes,15,rep,name=history,proto3" json:"history,omitempty"`                      // 历史版本 changelog（manifest 权威源）
+	CheckedAt       string              `protobuf:"bytes,12,opt,name=checked_at,json=checkedAt,proto3" json:"checked_at,omitempty"`        // RFC3339
+	BackupDir       string              `protobuf:"bytes,13,opt,name=backup_dir,json=backupDir,proto3" json:"backup_dir,omitempty"`        // 本次更新备份目录
+	Busy            bool                `protobuf:"varint,14,opt,name=busy,proto3" json:"busy,omitempty"`                                  // 更新链进行中（apply 单飞互斥）
+	History         []*ReleaseNoteEntry `protobuf:"bytes,15,rep,name=history,proto3" json:"history,omitempty"`                             // 历史版本 changelog（manifest 权威源）
+	BackupReady     bool                `protobuf:"varint,16,opt,name=backup_ready,json=backupReady,proto3" json:"backup_ready,omitempty"` // 备份工具就绪（缺 pg_dump/mysqldump 时 false）
+	BackupHint      string              `protobuf:"bytes,17,opt,name=backup_hint,json=backupHint,proto3" json:"backup_hint,omitempty"`     // 缺失时的事前安装指引
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -249,6 +251,20 @@ func (x *UpdateStatus) GetHistory() []*ReleaseNoteEntry {
 	return nil
 }
 
+func (x *UpdateStatus) GetBackupReady() bool {
+	if x != nil {
+		return x.BackupReady
+	}
+	return false
+}
+
+func (x *UpdateStatus) GetBackupHint() string {
+	if x != nil {
+		return x.BackupHint
+	}
+	return ""
+}
+
 type UpdateCheckResult struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	CurrentVersion string                 `protobuf:"bytes,1,opt,name=current_version,json=currentVersion,proto3" json:"current_version,omitempty"`
@@ -350,7 +366,7 @@ const file_admin_v1_update_proto_rawDesc = "" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12\x18\n" +
 	"\achannel\x18\x02 \x01(\tR\achannel\x12\x14\n" +
 	"\x05notes\x18\x03 \x01(\tR\x05notes\x12\x1b\n" +
-	"\tissued_at\x18\x04 \x01(\tR\bissuedAt\"\x87\x04\n" +
+	"\tissued_at\x18\x04 \x01(\tR\bissuedAt\"\xcb\x04\n" +
 	"\fUpdateStatus\x12\x14\n" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12'\n" +
 	"\x0fcurrent_version\x18\x02 \x01(\tR\x0ecurrentVersion\x12%\n" +
@@ -370,7 +386,10 @@ const file_admin_v1_update_proto_rawDesc = "" +
 	"\n" +
 	"backup_dir\x18\r \x01(\tR\tbackupDir\x12\x12\n" +
 	"\x04busy\x18\x0e \x01(\bR\x04busy\x12>\n" +
-	"\ahistory\x18\x0f \x03(\v2$.zcard.api.admin.v1.ReleaseNoteEntryR\ahistory\"\x8a\x02\n" +
+	"\ahistory\x18\x0f \x03(\v2$.zcard.api.admin.v1.ReleaseNoteEntryR\ahistory\x12!\n" +
+	"\fbackup_ready\x18\x10 \x01(\bR\vbackupReady\x12\x1f\n" +
+	"\vbackup_hint\x18\x11 \x01(\tR\n" +
+	"backupHint\"\x8a\x02\n" +
 	"\x11UpdateCheckResult\x12'\n" +
 	"\x0fcurrent_version\x18\x01 \x01(\tR\x0ecurrentVersion\x12%\n" +
 	"\x0elatest_version\x18\x02 \x01(\tR\rlatestVersion\x12\x1d\n" +

@@ -10254,6 +10254,10 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.ReleaseNoteEntry'
+                backupReady:
+                    type: boolean
+                backupHint:
+                    type: string
         zcard.api.admin.v1.UploadMediaRequest:
             required:
                 - name

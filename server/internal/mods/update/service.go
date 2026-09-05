@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -47,21 +48,23 @@ const probeCacheTTL = 10 * time.Minute
 
 // Status 状态快照（admin API 下发；Current/Supervisor 每次现算——重启后即新值）。
 type Status struct {
-	Phase      string
-	Current    string
-	Target     string
-	Progress   int32
-	Err        string
-	Source     string // 生效源展示（github | <accel> | static:<base>）
-	Mode       string // 配置模式
-	Supervisor string
-	HasUpdate  bool
-	Notes      string
-	Latest     string
-	CheckedAt  time.Time
-	BackupDir  string
-	Busy       bool
-	History    []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
+	Phase       string
+	Current     string
+	Target      string
+	Progress    int32
+	Err         string
+	Source      string // 生效源展示（github | <accel> | static:<base>）
+	Mode        string // 配置模式
+	Supervisor  string
+	HasUpdate   bool
+	Notes       string
+	Latest      string
+	CheckedAt   time.Time
+	BackupDir   string
+	Busy        bool
+	History     []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
+	BackupReady bool                  // 备份工具就绪（pg_dump/mysqldump 按方言；缺失则更新会被 fail-closed 中止）
+	BackupHint  string                // 缺失时的安装指引（事前警示，不等更新失败才报）
 }
 
 // Service 更新编排。
@@ -357,6 +360,7 @@ func (s *Service) Snapshot(ctx context.Context) Status {
 	st.Current = cur()
 	st.Busy = busy
 	st.Supervisor = s.supervisorKind(ctx)
+	st.BackupReady, st.BackupHint = s.backupToolStatus()
 	if s.binPath != "" {
 		if state, err := updater.LoadState(s.binPath); err == nil && state != nil {
 			// 新进程延续目标版本（exec 重启后内存态清零，磁盘 state 是唯一延续源——
@@ -392,6 +396,25 @@ func (s *Service) fail(err error) {
 	s.mu.Lock()
 	s.st.Phase, s.st.Err = PhaseFailed, err.Error()
 	s.mu.Unlock()
+}
+
+// backupToolStatus 备份工具就绪检测（方言感知）：更新前强制 DB 备份依赖
+// pg_dump/mysqldump——缺失时提前在面板警示安装指引，而非等更新失败才暴露。
+func (s *Service) backupToolStatus() (bool, string) {
+	if s.dataCfg == nil || s.dataCfg.Database == nil {
+		return true, ""
+	}
+	switch s.dataCfg.Database.Driver {
+	case "postgres":
+		if _, err := exec.LookPath("pg_dump"); err != nil {
+			return false, "当前数据库为 PostgreSQL，服务器缺少 pg_dump——在线更新将因无法备份数据库而中止。请在服务器执行：apt install -y postgresql-client"
+		}
+	case "mysql":
+		if _, err := exec.LookPath("mysqldump"); err != nil {
+			return false, "当前数据库为 MySQL，服务器缺少 mysqldump——在线更新将因无法备份数据库而中止。请在服务器执行：apt install -y default-mysql-client"
+		}
+	}
+	return true, ""
 }
 
 // cur 当前版本（settings 注入的内存值——重启后自然为新版本号）。

@@ -306,6 +306,12 @@ watch(
         </div>
       </div>
 
+      <NAlert v-if="status && status.backup_ready === false" type="warning" class="mb-3" :bordered="false">
+        <b>备份工具未就绪</b>
+        <div class="mt-1">{{ status.backup_hint }}</div>
+        <div class="mt-1 text-xs opacity-70">更新前会强制备份数据库（数据安全优先，不可跳过）；装好工具后本提示自动消失。</div>
+      </NAlert>
+
       <NAlert v-if="statusError" type="error" class="mb-3" :bordered="false">
         <b>状态获取失败（{{ statusError }}）</b>
         <div class="mt-1 text-xs opacity-70">

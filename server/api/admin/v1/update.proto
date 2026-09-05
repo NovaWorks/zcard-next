@@ -63,6 +63,8 @@ message UpdateStatus {
   string backup_dir = 13; // 本次更新备份目录
   bool busy = 14; // 更新链进行中（apply 单飞互斥）
   repeated ReleaseNoteEntry history = 15; // 历史版本 changelog（manifest 权威源）
+  bool backup_ready = 16;                 // 备份工具就绪（缺 pg_dump/mysqldump 时 false）
+  string backup_hint = 17;                // 缺失时的事前安装指引
 }
 
 message UpdateCheckResult {

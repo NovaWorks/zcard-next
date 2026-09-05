@@ -25,6 +25,8 @@ export interface UpdateStatus {
   backup_dir: string;
   busy: boolean;
   history?: ReleaseNoteEntry[];
+  backup_ready?: boolean;
+  backup_hint?: string;
 }
 
 export interface UpdateCheckResult {
