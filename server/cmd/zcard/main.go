@@ -314,7 +314,36 @@ func runServe(args []string) (err error) {
 			_ = app.Stop()
 		}()
 	}
-	return app.Run()
+	runErr := app.Run()
+	if restarting.Load() {
+		doCleanup() // exec 前显式收口（exec 不走 defer 链）
+		if err := restartAfterUpdate(binPath, logger); err != nil {
+			// exec 失败：旧进程内存映像仍在服务，磁盘已是新版——复位更新态允许重试，
+			// 返回 nil 保持 exit 0（非零会误触 systemd OnFailure 回滚掉刚落位的新版）
+			logger.Error("update.restart.failed", "error", err)
+			if updateSvc != nil {
+				updateSvc.OnRestartFailed(err)
+			}
+		}
+		return nil
+	}
+	return runErr
+}
+
+// restartAfterUpdate 更新后重启三分支（方案 §5）：systemd/supervisord → exit 0
+// 交管理器拉起新版；裸跑 → syscall.Exec 同进程替换（PID/父子关系/env/cwd 全保留）。
+func restartAfterUpdate(binPath string, logger *slog.Logger) error {
+	if binPath == "" {
+		return fmt.Errorf("无法定位二进制路径")
+	}
+	switch updater.DetectSupervisor() {
+	case "none":
+		logger.Info("update.restart.exec_self", "bin", binPath)
+		return updater.RestartSelf(binPath)
+	default:
+		logger.Info("update.restart.exit_to_supervisor", "supervisor", updater.DetectSupervisor())
+		return nil
+	}
 }
 
 // currentBinaryPath 当前二进制绝对路径（失败返回空串，更新态检查跳过）。

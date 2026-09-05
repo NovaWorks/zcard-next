@@ -97,6 +97,16 @@ func (s *Service) SetRestartFn(f func()) { s.restartFn = f }
 // Disable 禁用面板更新链（serve 层注入：-mode != all 时调用，方案 §12）。
 func (s *Service) Disable(reason string) { s.disabled = reason }
 
+// OnRestartFailed 重启失败复位（serve 层 exec 失败分支调用）：新版本已落盘但进程
+// 未能重启——恢复 busy 允许重试，phase 转 failed 附手动指引（磁盘已是新版）。
+func (s *Service) OnRestartFailed(err error) {
+	s.mu.Lock()
+	s.busy = false
+	s.st.Phase = PhaseFailed
+	s.st.Err = fmt.Sprintf("重启失败（新版本已落盘，请手动重启服务生效）: %v", err)
+	s.mu.Unlock()
+}
+
 // DisabledErr 禁用态错误（空=启用）。
 func (s *Service) DisabledErr() error {
 	if s.disabled == "" {
@@ -151,7 +161,10 @@ type CheckResult struct {
 func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 	s.setPhase(PhaseChecking)
 	defer func() {
-		if s.st.Phase == PhaseChecking {
+		s.mu.Lock()
+		p := s.st.Phase
+		s.mu.Unlock()
+		if p == PhaseChecking {
 			s.setPhase(PhaseIdle)
 		}
 	}()
@@ -335,6 +348,11 @@ func (s *Service) Snapshot(ctx context.Context) Status {
 	st.Supervisor = updater.DetectSupervisor()
 	if s.binPath != "" {
 		if state, err := updater.LoadState(s.binPath); err == nil && state != nil {
+			// 新进程延续目标版本（exec 重启后内存态清零，磁盘 state 是唯一延续源——
+			// 前端「等待恢复」以 current==target 判成功，target 断档会假性超时）
+			if st.Target == "" && state.ToVer != "" {
+				st.Target = state.ToVer
+			}
 			if st.Phase == PhaseIdle {
 				if state.Status == updater.StatePending {
 					st.Phase = PhaseVerifying

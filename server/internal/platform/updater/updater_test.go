@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -401,10 +402,10 @@ func TestHealthGate(t *testing.T) {
 	if err := Apply(bin, "v1.0.0", "v1.2.0", []byte("v2")); err != nil {
 		t.Fatal(err)
 	}
-	dbOK := false
+	var dbOK atomic.Bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"status": map[string]bool{"server": true, "database": dbOK},
+			"status": map[string]bool{"server": true, "database": dbOK.Load()},
 		})
 	}))
 	defer srv.Close()
@@ -421,7 +422,7 @@ func TestHealthGate(t *testing.T) {
 	// 路径二：就绪后通过 → MarkOK
 	go func() {
 		time.Sleep(1 * time.Second)
-		dbOK = true
+		dbOK.Store(true)
 	}()
 	if err := HealthGate(context.Background(), srv.URL, bin, 10*time.Second); err != nil {
 		t.Fatalf("健康门应通过: %v", err)
