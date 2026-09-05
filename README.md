@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="storefront/src/assets/logo.png" width="120" alt="ZCard" />
+  <img src=".github/logo.png" width="120" alt="ZCard" />
 </p>
 
 # ZCard 2.0（zcard-next）
@@ -11,7 +11,7 @@
 ![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go)
 ![Kratos](https://img.shields.io/badge/Kratos-v3-00B5AD)
 ![Vue](https://img.shields.io/badge/Vue-3-42B883?logo=vue.js)
-![SQLite](https://img.shields.io/badge/SQLite-内嵌-003B57?logo=sqlite)
+![SQLite](https://img.shields.io/badge/SQLite-embedded-003B57?logo=sqlite)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?logo=mysql)
 
