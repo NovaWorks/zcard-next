@@ -1,7 +1,7 @@
 package settings
 
-// 安装向导（P0-04 T2）：CLI 交互式 + 事务原子（初始 settings + 内置角色种子 + 管理员）。
-// 幂等：ops.installed_at 已存在即拒绝。Web /install 表单入口 M1b 前端补齐（后端逻辑同源）。
+// 安装向导（）：CLI 交互式 + 事务原子（初始 settings + 内置角色种子 + 管理员）。
+// 幂等：ops.installed_at 已存在即拒绝。Web /install 表单入口 前端补齐（后端逻辑同源）。
 
 import (
 	"bufio"

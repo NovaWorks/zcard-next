@@ -33,7 +33,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
+// RoleService 角色与权限管理（自建 RBAC，规划 ；）。
 // 权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
 type RoleServiceClient interface {
 	// ListRoles 角色列表（含权限点数量）。
@@ -134,7 +134,7 @@ func (c *roleServiceClient) GetPermissionTree(ctx context.Context, in *emptypb.E
 // All implementations must embed UnimplementedRoleServiceServer
 // for forward compatibility.
 //
-// RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
+// RoleService 角色与权限管理（自建 RBAC，规划 ；）。
 // 权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
 type RoleServiceServer interface {
 	// ListRoles 角色列表（含权限点数量）。
@@ -383,7 +383,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+// AdminUserService 员工管理（数据层归 identity，API 面在此；）。
 type AdminUserServiceClient interface {
 	// ListAdmins 员工列表。
 	ListAdmins(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListAdminsReply, error)
@@ -483,7 +483,7 @@ func (c *adminUserServiceClient) DeleteAdmin(ctx context.Context, in *DeleteAdmi
 // All implementations must embed UnimplementedAdminUserServiceServer
 // for forward compatibility.
 //
-// AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+// AdminUserService 员工管理（数据层归 identity，API 面在此；）。
 type AdminUserServiceServer interface {
 	// ListAdmins 员工列表。
 	ListAdmins(context.Context, *emptypb.Empty) (*ListAdminsReply, error)

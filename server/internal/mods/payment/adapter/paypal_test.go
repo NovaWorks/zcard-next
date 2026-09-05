@@ -1,6 +1,6 @@
 package adapter
 
-// paypal 契约测试（P2-09 T4）：
+// paypal 契约测试（）：
 // golden vector（token 序列/金额两位小数/capture 状态机/验签体字节拼接）+
 // httptest 假 PayPal API 全流程（下单→验签→先查后捕→退款）。
 
@@ -126,7 +126,7 @@ func TestPaypalCreatePaymentMock(t *testing.T) {
 		`"intent":"CAPTURE"`,
 		`"reference_id":"` + ppBusinessNo + `"`,
 		`"invoice_id":"` + ppBusinessNo + `"`,
-		`"value":"1.40"`, // 金额两位小数字符串（任务书 §3.1 钉死）
+		`"value":"1.40"`, // 金额两位小数字符串（ 钉死）
 		`"currency_code":"USD"`,
 		`"return_url":"/payments/return/paypal"`,
 		`"user_action":"PAY_NOW"`,

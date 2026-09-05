@@ -8,9 +8,9 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StorePaymentService 顾客支付（P1-04 T2）。
+// StorePaymentService 顾客支付。
 service StorePaymentService {
-  // ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+  // ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
   rpc ListChannels(google.protobuf.Empty) returns (ChannelListReply) {
     option (google.api.http) = { get: "/api/v1/storefront/payment/channels" };
   }
@@ -30,9 +30,9 @@ message ChannelListReply {
 
 message ChannelItem {
   string code = 1;
-  string name = 2;   // 渠道名称（管理端配置）
+  string name = 2; // 渠道名称（管理端配置）
   string driver = 3;
-  string icon = 4;   // 渠道自定义图标 URL（空=前端回落内置徽标）
+  string icon = 4; // 渠道自定义图标 URL（空=前端回落内置徽标）
   repeated MethodItem methods = 5; // 支付方式列表（聚合网关；空=单方式渠道）
 }
 
@@ -51,6 +51,6 @@ message CreatePaymentRequest {
 
 message CreatePaymentReply {
   uint64 payment_id = 1;
-  string type = 2;    // redirect | qrcode | params
+  string type = 2; // redirect | qrcode | params
   string payload = 3; // URL / 二维码内容 / 参数 JSON
 }

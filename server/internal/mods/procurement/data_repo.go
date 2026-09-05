@@ -1,14 +1,14 @@
 package procurement
 
-// 采购单仓储（P2-02 T1/T2）：两表 CRUD + 状态机 CAS（非法迁移拒绝）。
+// 采购单仓储（/）：两表 CRUD + 状态机 CAS（非法迁移拒绝）。
 //
-// 状态机（§5.7.2）：
-//   pending → submitted（受理，记 upstream_order_id）
-//   pending → fulfilled（同步拿货成功）
-//   pending → rejected（永久错误：无映射/下架/余额不足）
-//   submitted → polling → fulfilled / rejected
-//   rejected → refunding → refunded（auto_refund 失败策略）| manual（人工终态）
-//   polling → manual（24h 卡死转人工）
+// 状态机（）：
+// pending → submitted（受理，记 upstream_order_id）
+// pending → fulfilled（同步拿货成功）
+// pending → rejected（永久错误：无映射/下架/余额不足）
+// submitted → polling → fulfilled / rejected
+// rejected → refunding → refunded（auto_refund 失败策略）| manual（人工终态）
+// polling → manual（24h 卡死转人工）
 
 import (
 	"context"
@@ -119,7 +119,7 @@ func (r *ProcureRepo) Get(ctx context.Context, id uint64) (*ent.ProcurementOrder
 	return p, nil
 }
 
-// GetByDownstreamOrderNo 按下游单号查采购单（回调接收定位用；P2-10 E）。
+// GetByDownstreamOrderNo 按下游单号查采购单（回调接收定位用； E）。
 func (r *ProcureRepo) GetByDownstreamOrderNo(ctx context.Context, downstreamOrderNo string) (*ent.ProcurementOrder, error) {
 	po, err := data.Client(ctx, r.data).ProcurementOrder.Query().
 		Where(procurementorder.DedupeKeyEQ(downstreamOrderNo)).
@@ -257,7 +257,7 @@ func (r *ProcureRepo) BumpRetry(ctx context.Context, id uint64, nextRetryAt time
 	return err
 }
 
-// AttachReceivedContent 落采购项密文（到手即加密 T4：received_content 全密文）。
+// AttachReceivedContent 落采购项密文（到手即加密 ：received_content 全密文）。
 func (r *ProcureRepo) AttachReceivedContent(ctx context.Context, procurementID uint64, contents [][]byte) error {
 	item, err := data.Client(ctx, r.data).ProcurementItem.Query().
 		Where(procurementitem.ProcurementID(procurementID)).

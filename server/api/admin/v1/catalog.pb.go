@@ -258,7 +258,7 @@ type AdminProduct struct {
 	UpstreamProductCode string                 `protobuf:"bytes,18,opt,name=upstream_product_code,json=upstreamProductCode,proto3" json:"upstream_product_code,omitempty"`
 	CreatedAt           int64                  `protobuf:"varint,19,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt           int64                  `protobuf:"varint,20,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	// 积分兑换价（0=不参与积分商城；P3-01）
+	// 积分兑换价（0=不参与积分商城；）
 	PointsRequired int64 `protobuf:"varint,21,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
 	SoldCount int64 `protobuf:"varint,22,opt,name=sold_count,json=soldCount,proto3" json:"sold_count,omitempty"`
@@ -483,7 +483,7 @@ type CreateProductRequest struct {
 	Dedup             bool                   `protobuf:"varint,11,opt,name=dedup,proto3" json:"dedup,omitempty"`
 	Sort              int32                  `protobuf:"varint,12,opt,name=sort,proto3" json:"sort,omitempty"`
 	Status            int32                  `protobuf:"varint,13,opt,name=status,proto3" json:"status,omitempty"`
-	// 积分兑换价（0=不参与积分商城；P3-01）
+	// 积分兑换价（0=不参与积分商城；）
 	PointsRequired int64 `protobuf:"varint,14,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
 	DirectContent string `protobuf:"bytes,15,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`
@@ -649,7 +649,7 @@ type UpdateProductRequest struct {
 	StockVisible      bool                   `protobuf:"varint,10,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`
 	Sort              int32                  `protobuf:"varint,11,opt,name=sort,proto3" json:"sort,omitempty"`
 	Status            int32                  `protobuf:"varint,12,opt,name=status,proto3" json:"status,omitempty"`
-	// 积分兑换价（0=不参与积分商城；P3-01）
+	// 积分兑换价（0=不参与积分商城；）
 	PointsRequired int64 `protobuf:"varint,13,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 直发内容明文（空=保持不变；url/code 商品加密存储）
 	DirectContent string `protobuf:"bytes,14,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`

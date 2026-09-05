@@ -1,6 +1,6 @@
 package inventory
 
-// admin API（P1-02；薄 transport——导入预览/确认/导出/列表/操作）。
+// admin API（；薄 transport——导入预览/确认/导出/列表/操作）。
 
 import (
 	"context"

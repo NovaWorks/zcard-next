@@ -1,9 +1,9 @@
 package bootstrap
 
-// 队列/事件/周期任务装配（P0-01 任务书 T2/T3/T4 的 wiring）：
-//   - Enqueuer：Redis 配置存在 → AsynqQueue；否则 SyncQueue（Dispatcher 直连 + 死信落库）
-//   - Dispatcher：消费分发（processed_events 幂等）；M0 处理器目录为空，M1 随交易闭环注册
-//   - Cron：周期任务注册表（M0 空目录；订单超时取消/佣金确认等随 M1+ 在此追加）
+// 队列/事件/周期任务装配（ // 的 wiring）：
+// - Enqueuer：Redis 配置存在 → AsynqQueue；否则 SyncQueue（Dispatcher 直连 + 死信落库）
+// - Dispatcher：消费分发（processed_events 幂等）； 处理器目录为空， 随交易闭环注册
+// - Cron：周期任务注册表（ 空目录；订单超时取消/佣金确认等随 + 在此追加）
 
 import (
 	"context"
@@ -68,35 +68,35 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 // NewCron 进程内周期任务（注册表）。
 func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService) *queue.Cron {
 	c := queue.NewCron()
-	// M2：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，P2-01 T5）
+	// ：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
 		supplySync.PingAllActive(ctx)
 	})
-	// P2-10 S3：定时同步调度（每分钟扫描 settings.schedule 到期任务）+ 看门狗（僵死任务回收）
+	// S3：定时同步调度（每分钟扫描 settings.schedule 到期任务）+ 看门狗（僵死任务回收）
 	c.AddEvery("supply.schedule_scan", time.Minute, supplyScheduler.Scan)
 	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)
-	// M2：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
+	// ：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
 	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
-	// M2：供货 nonce 过期清理（每小时）
+	// ：供货 nonce 过期清理（每小时）
 	c.AddEvery("supplier.nonce_cleanup", time.Hour, func(ctx context.Context) {
 		_ = supplierRepo.CleanupExpiredNonces(ctx)
 	})
-	// M2：风控锁过期清理（每 5 分钟）+ 访问统计批量落库（每分钟）
+	// ：风控锁过期清理（每 5 分钟）+ 访问统计批量落库（每分钟）
 	c.AddEvery("audit.lock_cleanup", 5*time.Minute, func(ctx context.Context) {
 		_ = auditRepo.CleanupExpiredLocks(ctx)
 	})
 	c.AddEvery("audit.visit_flush", time.Minute, func(ctx context.Context) {
 		visitCounter.Flush()
 	})
-	// T5：访问明细/在线心跳清理（每小时——明细保留 90 天，心跳保留 24 小时）
+	// ：访问明细/在线心跳清理（每小时——明细保留 90 天，心跳保留 24 小时）
 	c.AddEvery("audit.visit_cleanup", time.Hour, func(ctx context.Context) {
 		_ = trackRepo.CleanupVisitData(ctx)
 	})
-	// M3：定时群发扫描（到期 pending → 入队）
+	// ：定时群发扫描（到期 pending → 入队）
 	c.AddEvery("notify.broadcast_scan", time.Minute, broadcastSvc.ScanDue)
-	// M3：工单 resolved 超 7 天自动关闭
+	// ：工单 resolved 超 7 天自动关闭
 	c.AddEvery("ticket.autoclose", time.Hour, ticketAdmin.AutoCloseResolved)
-	// M3：佣金到期确认（冻结期过 → wallet 入账；负债行重试抵扣）
+	// ：佣金到期确认（冻结期过 → wallet 入账；负债行重试抵扣）
 	c.AddEvery("affiliate.confirm", time.Hour, affiliateSvc.ConfirmDue)
 	return c
 }

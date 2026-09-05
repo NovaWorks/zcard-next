@@ -1,5 +1,5 @@
 // 货源渠道 API（supply:read / supply:write）：连接 CRUD、探活、映射、同步任务、健康度。
-// P2-10：settings 携带 schedule（定时计划）与限流参数；连接响应含调度锚点与熔断状态。
+// ：settings 携带 schedule（定时计划）与限流参数；连接响应含调度锚点与熔断状态。
 
 import { request } from "../request";
 
@@ -79,7 +79,7 @@ export function fetchSupplyHealth() {
   return request({ url: "/api/v1/admin/supply/health" });
 }
 
-// ── 交互式导入（P2-10 D）──
+// ── 交互式导入（ D）──
 
 export function previewSupplyProducts(connectionId: number) {
   return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview` });

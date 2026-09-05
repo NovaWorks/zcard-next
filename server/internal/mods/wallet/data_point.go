@@ -1,8 +1,8 @@
 package wallet
 
-// 积分账本（P1-05 M1b，与余额 InTx 同构）：
-//   point_accounts(balance, version) + point_transactions(reference 幂等键)；
-//   非负校验 + 乐观锁 CAS + 流水快照——余额永可由流水重算。
+// 积分账本（ ，与余额 InTx 同构）：
+// point_accounts(balance, version) + point_transactions(reference 幂等键)；
+// 非负校验 + 乐观锁 CAS + 流水快照——余额永可由流水重算。
 // 产生口径：充值赠送（earn_recharge）/消费（earn_consume）/兑换（redeem）/调账（adjust）。
 
 import (
@@ -134,7 +134,7 @@ func (r *WalletRepoImpl) GetPoints(ctx context.Context, userID uint64) (int64, e
 }
 
 // CumulativeRecharge 累计充值（countAsRecharge 口径：仅 type=recharge 入账流水；
-// P3-01 等级阈值消费——互转/调账/佣金/退款均不计，防刷）。
+// 等级阈值消费——互转/调账/佣金/退款均不计，防刷）。
 func (r *WalletRepoImpl) CumulativeRecharge(ctx context.Context, userID uint64) (int64, error) {
 	sum, err := data.Client(ctx, r.data).WalletTransaction.Query().
 		Where(

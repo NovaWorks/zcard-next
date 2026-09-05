@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
+// StoreNotificationService 站内信铃铛：未读数/列表/已读。
 type StoreNotificationServiceClient interface {
 	// UnreadCount 未读数。
 	UnreadCount(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*UnreadCountReply, error)
@@ -81,7 +81,7 @@ func (c *storeNotificationServiceClient) MarkRead(ctx context.Context, in *MarkR
 // All implementations must embed UnimplementedStoreNotificationServiceServer
 // for forward compatibility.
 //
-// StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
+// StoreNotificationService 站内信铃铛：未读数/列表/已读。
 type StoreNotificationServiceServer interface {
 	// UnreadCount 未读数。
 	UnreadCount(context.Context, *emptypb.Empty) (*UnreadCountReply, error)

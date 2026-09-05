@@ -1,13 +1,13 @@
 package affiliate
 
-// 佣金引擎（P3-03 T2/T3/T4）：
-//   订阅 order.paid → 归因快照判定 → 三级计算入账（pending_confirm + available_at）
-//   cron 到期确认 → available + wallet 入账（幂等键 commission:<id>）
-//   order.refunded → 逆向：pending 作废 / available 扣回 / 已提现不足 → 负债行
+// 佣金引擎（//）：
+// 订阅 order.paid → 归因快照判定 → 三级计算入账（pending_confirm + available_at）
+// cron 到期确认 → available + wallet 入账（幂等键 commission:<id>）
+// order.refunded → 逆向：pending 作废 / available 扣回 / 已提现不足 → 负债行
 //
 // 不发佣清单（1.x 继承）：自购（buyer∈三级链）、无归因（链空）、supply_orders
-// （独立表非 orders——天然排除）、分站自购（profit_eligible M3 reseller 联动）。
-// 冻结期在佣金表自身状态机，不占用 wallet.locked（口径 §4.6）。
+// （独立表非 orders——天然排除）、分站自购（profit_eligible reseller 联动）。
+// 冻结期在佣金表自身状态机，不占用 wallet.locked（口径 ）。
 
 import (
 	"context"

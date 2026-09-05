@@ -1,6 +1,6 @@
 package identity
 
-// StoreUserService 用户中心（P3-04 前置）：注册/登录/Me（user realm JWT）。
+// StoreUserService 用户中心（ 前置）：注册/登录/Me（user realm JWT）。
 // 归因链：invite_code=<user_id> → l1=邀请人 l2=邀请人.l1 l3=邀请人.l2（环状拒绝）。
 
 import (
@@ -30,7 +30,7 @@ type StoreUserService struct {
 	repo     *UserRepo
 	signer   *authn.Signer
 	data     *data.Data
-	pwd      *PasswordService      // P3-10 自服务（找回/改密/改资料）
+	pwd      *PasswordService      // 自服务（找回/改密/改资料）
 	regCode  *RegisterCodeService  // 注册验证码（email/phone 通道）
 	regCfg   *RegisterCodeSettings // security 组注册开关/方式
 	captcha  *captcha.Service      // 图形验证码（scene: login/register/reset）
@@ -286,7 +286,7 @@ func (s *StoreUserService) Me(ctx context.Context, _ *emptypb.Empty) (*storefron
 	return reply, nil
 }
 
-// ── P3-10 自服务 API（薄 transport：委托 PasswordService）──────────
+// ── 自服务 API（薄 transport：委托 PasswordService）──────────
 
 // ForgotPassword 发送找回密码验证码（防枚举：任何输入都成功）。
 func (s *StoreUserService) ForgotPassword(ctx context.Context, req *storefrontv1.ForgotPasswordRequest) (*storefrontv1.ForgotPasswordReply, error) {

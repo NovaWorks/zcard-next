@@ -1,8 +1,8 @@
 package supply
 
-// P2-01 T3 必测项：价格保护三级判定（auto_sync_price 关 / 固定覆盖价 /
+// 必测项：价格保护三级判定（auto_sync_price 关 / 固定覆盖价 /
 // 运营已改价不覆盖）+ 状态语义（inactive → 下架：API 不可履约品必须对全员下架而非会员可见的隐藏）。
-// P2-10 S1：三类 scope 轻量路径 / 删除对账护栏 / 库存补查 / 增量列表决策。
+// S1：三类 scope 轻量路径 / 删除对账护栏 / 库存补查 / 增量列表决策。
 
 import (
 	"context"
@@ -213,7 +213,7 @@ func TestSyncStatusSemantics(t *testing.T) {
 	})
 }
 
-// ---- P2-10 S1：scope 轻量路径 / 对账护栏 / 库存补查 / 增量决策 ----
+// ---- S1：scope 轻量路径 / 对账护栏 / 库存补查 / 增量决策 ----
 
 // fakeUpstream 最小适配器（runLoop/backfill 测试用）。
 type fakeUpstream struct {

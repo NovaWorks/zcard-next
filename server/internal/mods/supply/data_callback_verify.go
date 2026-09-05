@@ -1,12 +1,12 @@
 package supply
 
-// P2-10 E：上游回调接收验签（采购三通道之回调通道的服务端侧）。
+// E：上游回调接收验签（采购三通道之回调通道的服务端侧）。
 //
 // 我们作为下游时，上游（zcard / dujiao-next）交付后会主动 POST 回调：
-//   zcard  四头 X-Supply-*（双口径验签，与自家协议同源；supplier/signing.go）
-//   dujiao 三头 Dujiao-Next-*（签名 path 固定为协议常量 /api/v1/upstream/callback，
-//          非实际接收路径——dujiao-next downstreamcallback 客户端口径）
-//   acg    协议无回调（同步交付），返回 ErrCallbackNotSupported
+// zcard 四头 X-Supply-*（双口径验签，与自家协议同源；supplier/signing.go）
+// dujiao 三头 Dujiao-Next-*（签名 path 固定为协议常量 /api/v1/upstream/callback，
+// 非实际接收路径——dujiao-next downstreamcallback 客户端口径）
+// acg 协议无回调（同步交付），返回 ErrCallbackNotSupported
 //
 // 防重放：时间窗 + 「ts+签名摘要」组合键进程内去重（短窗内同一签名只接受一次；
 // 跨窗重放与并发重放由采购状态机 CAS 幂等兜底——confirmResult 只生效一次）。

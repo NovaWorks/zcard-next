@@ -1,15 +1,15 @@
-// zcard 入口（规划 §4.3 / §10.2–10.3）。
+// zcard 入口（规划 / –10.3）。
 //
 // 用法：
 //
-//	zcard serve [-conf configs] [-mode all|api|worker]   # 启动服务（默认 all）
-//	zcard migrate [-conf configs]                        # 应用待执行迁移后退出
-//	zcard admin create|list|reset-password ...           # 运维子命令（同二进制，容器免工具）
-//	zcard install                                        # 安装向导（M1）
-//	zcard version                                        # 版本信息
+//	zcard serve [-conf configs] [-mode all|api|worker] # 启动服务（默认 all）
+//	zcard migrate [-conf configs] # 应用待执行迁移后退出
+//	zcard admin create|list|reset-password ... # 运维子命令（同二进制，容器免工具）
+//	zcard install # 安装向导（）
+//	zcard version # 版本信息
 //
 // 运行模式：api 与 worker 共享全部代码，靠 -mode 选择装配的 server（worker 模式
-// 的 asynq 消费者与周期任务 M1 随交易闭环交付；M0 仅 api/all）。
+// 的 asynq 消费者与周期任务 随交易闭环交付； 仅 api/all）。
 package main
 
 import (
@@ -148,7 +148,7 @@ func loadBootstrap(confDir string) (*conf.Bootstrap, error) {
 	return bc, nil
 }
 
-// newLogger slog 构造（text/json + 级别；结构化：事件名 + 关键 ID，§10.5）。
+// newLogger slog 构造（text/json + 级别；结构化：事件名 + 关键 ID，）。
 func newLogger(bc *conf.Bootstrap) *slog.Logger {
 	level := slog.LevelInfo
 	format := "text"
@@ -171,7 +171,7 @@ func newLogger(bc *conf.Bootstrap) *slog.Logger {
 	return slog.New(h).With(slog.String("service.id", id), slog.String("service.name", Name), slog.String("service.version", Version))
 }
 
-// applyMigrationsIfEnabled 启动迁移（§10.4：加锁串行，失败拒绝启动）。
+// applyMigrationsIfEnabled 启动迁移（：加锁串行，失败拒绝启动）。
 func applyMigrationsIfEnabled(ctx context.Context, bc *conf.Bootstrap) error {
 	if bc.Server != nil && !bc.Server.MigrateOnStart {
 		return nil
@@ -234,7 +234,7 @@ func runServe(args []string) (err error) {
 	log.SetDefault(logger)
 
 	// 更新 pending 态：serve 任何启动失败（配置/迁移/装配）自动回滚二进制，
-	// systemd 重启即旧版本（§10.4 自动回滚；DB 只前滚，靠备份恢复）。
+	// systemd 重启即旧版本（ 自动回滚；DB 只前滚，靠备份恢复）。
 	binPath := currentBinaryPath()
 	pending := false
 	if binPath != "" {
@@ -275,7 +275,7 @@ func runServe(args []string) (err error) {
 		return err
 	}
 	app, updateSvc := deps.App, deps.Update
-	// 多进程形态禁用面板更新（方案 §12）：api/worker 分进程会撞 update.state，
+	// 多进程形态禁用面板更新（方案 ）：api/worker 分进程会撞 update.state，
 	// 且面板只重启 api 进程 → worker 旧代码 + 新 schema。滚动更新走 CLI。
 	if appMode != string(server.ModeAll) && updateSvc != nil {
 		updateSvc.Disable(fmt.Sprintf("多进程模式（%s）面板在线更新已禁用——请用 zcard self-update 逐进程滚动", appMode))
@@ -285,7 +285,7 @@ func runServe(args []string) (err error) {
 	doCleanup := func() { cleanupOnce.Do(cleanup) }
 	defer doCleanup()
 
-	// 更新重启 hook（doc/在线更新方案.md §5 三分支）：置位标记 + 异步优雅停机；
+	// 更新重启 hook（三分支）：置位标记 + 异步优雅停机；
 	// app.Run 返回后按 supervisor 分流——管理器环境 exit 0 交拉起，裸跑 exec 自替换
 	var restarting atomic.Bool
 	var supAtRestart atomic.Value // 停机前预取的 supervisor 判定（doCleanup 关 DB 后配置读不到）
@@ -310,7 +310,7 @@ func runServe(args []string) (err error) {
 		})
 	}
 
-	// 更新健康门（§10.4）：HTTP 就绪 + DB 连通自检通过 → pending 转 ok；
+	// 更新健康门（）：HTTP 就绪 + DB 连通自检通过 → pending 转 ok；
 	// 超时 → 回滚并优雅退出，systemd 重启旧版本。
 	if pending {
 		go func() {
@@ -342,7 +342,7 @@ func runServe(args []string) (err error) {
 	return runErr
 }
 
-// restartAfterUpdate 更新后重启分流（方案 §5）：仅 systemd 走 exit 0 交拉起
+// restartAfterUpdate 更新后重启分流（方案 ）：仅 systemd 走 exit 0 交拉起
 // （Restart=always 由 install.sh 保证）；supervisord/宝塔/pm2/裸跑一律 exec 同进程
 // 替换（PID 不变管理器零感知，规避 autorestart 配置不可控）。sup 由调用方在
 // 停机前预取（doCleanup 关 DB 后配置读不到，回落探测会产生意图漂移）。
@@ -434,7 +434,7 @@ func runMigrate(args []string) error {
 	return nil
 }
 
-// runInstall 安装向导（P0-04：CLI 交互式；Web /install M1b 前端补齐）。
+// runInstall 安装向导（：CLI 交互式；Web /install 前端补齐）。
 func runInstall(args []string) error {
 	fs := flag.NewFlagSet("install", flag.ExitOnError)
 	confDir := fs.String("conf", "configs", "配置目录")
@@ -465,37 +465,37 @@ func runInstall(args []string) error {
 	return nil
 }
 
-// newApp kratos.App 装配：按模式选择 server 组合（规划 §4.2 单进程多角色）。
+// newApp kratos.App 装配：按模式选择 server 组合（规划 单进程多角色）。
 //
-//	all    = HTTP + gRPC + worker + 后台（默认，单机形态）
-//	api    = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
+//	all = HTTP + gRPC + worker + 后台（默认，单机形态）
+//	api = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
 //	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
 func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService, fulfillRepo *fulfillment.DeliveryRepoImpl, pointsSvc *memberlevel.PointsService, orderUC *order.OrderUsecase, payRepo *payment.PaymentRepoImpl, walletRepo *wallet.WalletRepoImpl, stockGate orderport.UpstreamStockGate) *kratos.App {
-	// P1-03 破环点：order 超时取消慢通道顺延探测 ← payment 实现
+	// 破环点：order 超时取消慢通道顺延探测 ← payment 实现
 	// （wire 环 OrderUsecase ↔ PaymentRepoImpl，装配期手工注入——同 dp.Register 模式）
 	orderUC.SetSlowPaymentChecker(payRepo)
-	// P2-02 T4 破环点：上游代发项下单前实时库存预检 ← supply 网关实现
+	// 破环点：上游代发项下单前实时库存预检 ← supply 网关实现
 	orderUC.SetStockGate(stockGate)
 	// 佣金提现打通：打款 FIFO 消耗佣金（affiliate → wallet 注入，装配期一次）
 	walletRepo.SetCommissionConsumer(affiliateSvc.Repo())
-	// 事件订阅注册（P2-02）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
+	// 事件订阅注册（）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）
 	dp.Register(data.HandlerReg{
 		Consumer: "procurement.order_paid",
 		Type:     events.OrderPaid,
 		Fn:       procureSvc.OnOrderPaid,
 	})
-	// 事件订阅注册（P3-03）：order.paid → 三级佣金入账；order.refunded → 逆向扣回
+	// 事件订阅注册（）：order.paid → 三级佣金入账；order.refunded → 逆向扣回
 	dp.Register(data.HandlerReg{Consumer: "affiliate.settle", Type: events.OrderPaid, Fn: affiliateSvc.OnOrderPaid})
 	dp.Register(data.HandlerReg{Consumer: "affiliate.reversal", Type: events.OrderRefunded, Fn: affiliateSvc.OnOrderRefunded})
-	// 事件订阅注册（P3-04）：order.paid → 分站利润入账（订单快照 subsite_profit/profit_eligible）
+	// 事件订阅注册（）：order.paid → 分站利润入账（订单快照 subsite_profit/profit_eligible）
 	dp.Register(data.HandlerReg{Consumer: "reseller.settle", Type: events.OrderPaid, Fn: resellerSettleSvc.OnOrderPaid})
-	// 事件订阅注册（P1-06 M1b）：order.paid → 自动交付（reserved→used/即删 + 交付记录；幂等由 FulfillOrder 兜底）
+	// 事件订阅注册（ ）：order.paid → 自动交付（reserved→used/即删 + 交付记录；幂等由 FulfillOrder 兜底）
 	dp.Register(data.HandlerReg{Consumer: "fulfillment.deliver", Type: events.OrderPaid, Fn: fulfillRepo.OnOrderPaid})
-	// 事件订阅注册（P3-04）：order.refunded → 分站利润扣回（refund_deduct 负行/负债态）
+	// 事件订阅注册（）：order.refunded → 分站利润扣回（refund_deduct 负行/负债态）
 	dp.Register(data.HandlerReg{Consumer: "reseller.reversal", Type: events.OrderRefunded, Fn: resellerSettleSvc.OnOrderRefunded})
-	// 事件订阅注册（P3-01）：order.paid → 积分产生（等级 points_rule；幂等键 points:<orderID>）
+	// 事件订阅注册（）：order.paid → 积分产生（等级 points_rule；幂等键 points:<orderID>）
 	dp.Register(data.HandlerReg{Consumer: "memberlevel.points_earn", Type: events.OrderPaid, Fn: pointsSvc.OnOrderPaid})
-	// 事件订阅注册（P2-05）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
+	// 事件订阅注册（）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
 	for _, typ := range notify.SubscribedEvents() {
 		t := typ
 		dp.Register(data.HandlerReg{

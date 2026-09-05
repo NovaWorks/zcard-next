@@ -1,6 +1,6 @@
 name: Release
 
-# 发版流水线（P2-07 T5）：tag push → 双架构构建（版本/更新公钥 -X 注入）
+# 发版流水线（）：tag push → 双架构构建（版本/更新公钥 -X 注入）
 # → self-update sign 生成签名清单 → GitHub Release 上传。
 # 私钥在 Secrets（ZCARD_SIGN_KEY，hex）；泄露即换钥发版，旧版本 -pubkey 过渡。
 on:

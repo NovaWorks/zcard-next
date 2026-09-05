@@ -1,12 +1,12 @@
-// updater 应用层：rename 舞步（原子替换）+ 状态机 + 回滚 + 健康门（P2-07 T1）。
+// updater 应用层：rename 舞步（原子替换）+ 状态机 + 回滚 + 健康门（）。
 //
 // 磁盘布局（同目录，保证 rename 原子性——跨文件系统 rename 退化为 copy 即拒绝）：
 //
-//	<dir>/zcard        当前二进制（新版本落位后由进程管理器/exec 拉起，方案 §5）
-//	<dir>/zcard.prev   上一代（回滚位，仅保留一代）
-//	<dir>/zcard.new    下载临时文件（验证通过后 rename 落位，失败即删）
+//	<dir>/zcard 当前二进制（新版本落位后由进程管理器/exec 拉起，方案 ）
+//	<dir>/zcard.prev 上一代（回滚位，仅保留一代）
+//	<dir>/zcard.new 下载临时文件（验证通过后 rename 落位，失败即删）
 //	<dir>/update.state 状态机文件（pending → ok）
-//	<dir>/backups/     更新前备份（二进制+DB，MarkOK 后保留最近 N 代）
+//	<dir>/backups/ 更新前备份（二进制+DB，MarkOK 后保留最近 N 代）
 package updater
 
 import (
@@ -84,7 +84,7 @@ func saveState(binaryPath string, s *State) error {
 }
 
 // Apply 原子替换（内存版薄包装——小产物/测试用；生产更新链走 ApplyFile，
-// 124MB 大二进制禁止整包进内存，方案 §8）。
+// 124MB 大二进制禁止整包进内存，方案 ）。
 func Apply(binaryPath, fromVer, toVer string, newBin []byte) error {
 	tmp := filepath.Join(filepath.Dir(binaryPath), newName)
 	if err := os.WriteFile(tmp, newBin, 0o755); err != nil {
@@ -267,7 +267,7 @@ func RestartService(unit string) error {
 
 func fileExists(p string) bool { _, err := os.Stat(p); return err == nil }
 
-// CheckDiskSpace 磁盘预检（方案 §8）：dir 所在文件系统可用空间不足 need 即报错
+// CheckDiskSpace 磁盘预检（方案 ）：dir 所在文件系统可用空间不足 need 即报错
 // （124MB 下载 + GB 级 DB 备份，写一半 ENOSPC 远劣于提前拒绝）。
 func CheckDiskSpace(dir string, need int64) error {
 	var st syscall.Statfs_t
@@ -281,14 +281,14 @@ func CheckDiskSpace(dir string, need int64) error {
 	return nil
 }
 
-// DetectSupervisor 探测进程管理器（方案 §5 重启三分支依据），判据按可靠度排序：
-//  1. ZCARD_SUPERVISOR（install.sh unit 显式声明）
-//  2. systemd 运行时注入 env（INVOCATION_ID）
-//  3. supervisord 标准注入 env（SUPERVISOR_*）
-//  4. 父进程链 comm（宝塔「进程守护管理器」等封装不透传标准 env——实测有
-//     env 缺失场景；父链出现 supervisord/pm2 是强判据，不可能误报）
-//  5. /proc/self/cgroup 含 supervisord（supervisord 被 systemd 托管时子进程
-//     同 cgroup 的兜底）
+// DetectSupervisor 探测进程管理器（方案 重启三分支依据），判据按可靠度排序：
+// 1. ZCARD_SUPERVISOR（install.sh unit 显式声明）
+// 2. systemd 运行时注入 env（INVOCATION_ID）
+// 3. supervisord 标准注入 env（SUPERVISOR_*）
+// 4. 父进程链 comm（宝塔「进程守护管理器」等封装不透传标准 env——实测有
+// env 缺失场景；父链出现 supervisord/pm2 是强判据，不可能误报）
+// 5. /proc/self/cgroup 含 supervisord（supervisord 被 systemd 托管时子进程
+// 同 cgroup 的兜底）
 //
 // 注意 cgroup 仍不能用于判 systemd——systemd 系统上 nohup 裸跑进程同样落在
 // systemd slice 内（误判即「优雅退出等拉起」而实际无人拉起，服务死透）。
@@ -354,7 +354,7 @@ func parentPID(pid int) (int, bool) {
 	return 0, false
 }
 
-// RestartSelf 裸跑降级路径：syscall.Exec 同进程映像替换（方案 §5）。
+// RestartSelf 裸跑降级路径：syscall.Exec 同进程映像替换（方案 ）。
 // PID/父子关系/env/cwd 全保留——systemd 主进程无感、nohup 挂载关系不变；
 // 成功不返回；失败则旧进程内存映像仍在（磁盘已换新，返回错误提示手动重启）。
 // 调用前必须已完成优雅停机（serve 层 app.Stop 后调用）。

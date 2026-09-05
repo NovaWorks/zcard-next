@@ -1,6 +1,6 @@
-// Package port 为 identity 模块对外契约（零依赖包，跨模块引用的唯一合法入口，规划 §4.4）。
+// Package port 为 identity 模块对外契约（零依赖包，跨模块引用的唯一合法入口，规划 ）。
 //
-// 只允许 import 标准库 / platform/* / api 生成类型；违反即架构测试红灯（§4.10-11）。
+// 只允许 import 标准库 / platform/* / api 生成类型；违反即架构测试红灯（-11）。
 package port
 
 import "context"
@@ -38,7 +38,7 @@ type AdminInput struct {
 	Enabled  *bool // 仅更新（Toggle）
 }
 
-// AdminMutator 员工管理窄接口（authz API 面消费，数据层在 identity 模块；P0-03 T2）。
+// AdminMutator 员工管理窄接口（authz API 面消费，数据层在 identity 模块；）。
 type AdminMutator interface {
 	List(ctx context.Context) ([]AdminAccount, error)
 	Create(ctx context.Context, in AdminInput) (*AdminAccount, error)

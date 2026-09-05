@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+// AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 type AdminProcurementServiceClient interface {
 	// ListProcurements 采购单列表（按状态过滤）。
 	ListProcurements(ctx context.Context, in *ListProcurementsRequest, opts ...grpc.CallOption) (*ListProcurementsReply, error)
@@ -93,7 +93,7 @@ func (c *adminProcurementServiceClient) MarkProcurementManual(ctx context.Contex
 // All implementations must embed UnimplementedAdminProcurementServiceServer
 // for forward compatibility.
 //
-// AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+// AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 type AdminProcurementServiceServer interface {
 	// ListProcurements 采购单列表（按状态过滤）。
 	ListProcurements(context.Context, *ListProcurementsRequest) (*ListProcurementsReply, error)

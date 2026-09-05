@@ -190,7 +190,7 @@ func (x *PageResp) GetPageSize() int32 {
 	return 0
 }
 
-// TimeRange 时间范围（今日/7天/30天/自定义，规划 §5.18）。
+// TimeRange 时间范围（今日/7天/30天/自定义，规划)。
 type TimeRange struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Start         int64                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"` // unix 秒（含）

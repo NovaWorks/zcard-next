@@ -1,6 +1,6 @@
 package fulfillment
 
-// 履约 API（P1-06；storefront 取货 + admin 手动发货/列表）。
+// 履约 API（；storefront 取货 + admin 手动发货/列表）。
 
 import (
 	"context"
@@ -54,7 +54,7 @@ func (s *StoreDeliveryService) FetchDelivery(ctx context.Context, req *storefron
 
 // MaskedDeliveries 我的订单掩码列表（登录用户）。
 func (s *StoreDeliveryService) MaskedDeliveries(ctx context.Context, req *storefrontv1.MaskedDeliveriesRequest) (*storefrontv1.MaskedDeliveriesReply, error) {
-	return &storefrontv1.MaskedDeliveriesReply{}, nil // M1b：接用户订单列表
+	return &storefrontv1.MaskedDeliveriesReply{}, nil // ：接用户订单列表
 }
 
 // ── Admin ──

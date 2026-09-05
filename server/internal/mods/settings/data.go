@@ -85,7 +85,7 @@ func (r *RepoImpl) PutMany(ctx context.Context, items []port.Item) error {
 	})
 }
 
-// ── port.Provider 实现（跨模块读取入口，P0-04）─────────────────────
+// ── port.Provider 实现（跨模块读取入口，）─────────────────────
 
 // GetDefault 读取单项，不存在返回 def。
 func (r *RepoImpl) GetDefault(ctx context.Context, group, key string, def json.RawMessage) (json.RawMessage, error) {

@@ -200,13 +200,13 @@ export function installTemplate(dataBase64: string) {
   });
 }
 
-// ── 货币（P0-04；符号/位置/小数位——前端金额格式化统一取默认货币）──
+// ── 货币（；符号/位置/小数位——前端金额格式化统一取默认货币）──
 
 export function fetchCurrencies() {
   return request({ url: "/api/v1/admin/currencies", method: "get" });
 }
 
-// ── 支付驱动元数据（P2-09 T5：配置面动态表单渲染）──
+// ── 支付驱动元数据（：配置面动态表单渲染）──
 
 // ── 支付单（payment:read_detail / payment:capture）──
 

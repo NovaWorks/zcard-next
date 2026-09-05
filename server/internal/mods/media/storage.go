@@ -1,9 +1,9 @@
 package media
 
-// 本地存储 + 静态服务（P3-06 T1）：
-//   存储根 data/uploads/YYYY/MM/<随机名>.<ext>（1.x 年月目录惯例）；
-//   静态路由 /uploads/：扩展名 Content-Type + ETag（sha256 前 16 位）+
-//   Cache-Control；目录列表禁用（仅精确文件路径）；路径穿越拒绝。
+// 本地存储 + 静态服务（）：
+// 存储根 data/uploads/YYYY/MM/<随机名>.<ext>（1.x 年月目录惯例）；
+// 静态路由 /uploads/：扩展名 Content-Type + ETag（sha256 前 16 位）+
+// Cache-Control；目录列表禁用（仅精确文件路径）；路径穿越拒绝。
 
 import (
 	"crypto/rand"

@@ -32,7 +32,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
+// StoreWalletService 顾客钱包：余额/积分/流水/充值。
 type StoreWalletServiceClient interface {
 	// GetBalance 余额+积分。
 	GetBalance(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*BalanceReply, error)
@@ -44,7 +44,7 @@ type StoreWalletServiceClient interface {
 	RedeemGiftcard(ctx context.Context, in *RedeemGiftcardRequest, opts ...grpc.CallOption) (*RedeemGiftcardReply, error)
 	// ListMyWithdrawals 本人提现记录（状态/驳回原因/时间）。
 	ListMyWithdrawals(ctx context.Context, in *ListMyWithdrawalsRequest, opts ...grpc.CallOption) (*ListMyWithdrawalsReply, error)
-	// CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+	// CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
 	CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...grpc.CallOption) (*CreateWithdrawalReply, error)
 }
 
@@ -120,7 +120,7 @@ func (c *storeWalletServiceClient) CreateWithdrawal(ctx context.Context, in *Cre
 // All implementations must embed UnimplementedStoreWalletServiceServer
 // for forward compatibility.
 //
-// StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
+// StoreWalletService 顾客钱包：余额/积分/流水/充值。
 type StoreWalletServiceServer interface {
 	// GetBalance 余额+积分。
 	GetBalance(context.Context, *emptypb.Empty) (*BalanceReply, error)
@@ -132,7 +132,7 @@ type StoreWalletServiceServer interface {
 	RedeemGiftcard(context.Context, *RedeemGiftcardRequest) (*RedeemGiftcardReply, error)
 	// ListMyWithdrawals 本人提现记录（状态/驳回原因/时间）。
 	ListMyWithdrawals(context.Context, *ListMyWithdrawalsRequest) (*ListMyWithdrawalsReply, error)
-	// CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+	// CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
 	CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error)
 	mustEmbedUnimplementedStoreWalletServiceServer()
 }

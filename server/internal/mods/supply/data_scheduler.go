@@ -1,22 +1,22 @@
 package supply
 
-// 定时调度器（P2-10 S3）：cron 每分钟扫描 active 连接，按 settings.schedule 派发
+// 定时调度器（ S3）：cron 每分钟扫描 active 连接，按 settings.schedule 派发
 // collect/price/status 三类同步任务。
 //
-//   - 到期判定：enabled && interval>0 && 当前时间在窗口内 && 距锚点 ≥ 间隔
-//   - 熔断冷却中的渠道跳过（rate_limit_until 列；节奏器半开探测由出站路径负责）
-//   - 防重入：同连接存在 pending/processing 任务时本轮跳过（任务状态机兜底）
-//   - 锚点在派发时即回写（宁可晚一轮也绝不密集双发；任务失败下轮重试）
-//   - 看门狗：心跳超 10 分钟的 processing 任务置 failed（防僵死饿死调度）
+// - 到期判定：enabled && interval>0 && 当前时间在窗口内 && 距锚点 ≥ 间隔
+// - 熔断冷却中的渠道跳过（rate_limit_until 列；节奏器半开探测由出站路径负责）
+// - 防重入：同连接存在 pending/processing 任务时本轮跳过（任务状态机兜底）
+// - 锚点在派发时即回写（宁可晚一轮也绝不密集双发；任务失败下轮重试）
+// - 看门狗：心跳超 10 分钟的 processing 任务置 failed（防僵死饿死调度）
 //
 // settings.schedule 结构（界面可编辑，对齐 1.x SupplyScheduleService）：
 //
 //	{
-//	  "enabled": true, "request_delay": 1, "stock_concurrency": 3,
-//	  "stock_request_delay_ms": 200,
-//	  "collect": {"enabled":true,"mode":"incremental","interval":360,"windows":[]},
-//	  "price":   {"enabled":true,"interval":30,"windows":[]},
-//	  "status":  {"enabled":true,"interval":60,"windows":[]}
+// "enabled": true, "request_delay": 1, "stock_concurrency": 3,
+// "stock_request_delay_ms": 200,
+// "collect": {"enabled":true,"mode":"incremental","interval":360,"windows":[]},
+// "price": {"enabled":true,"interval":30,"windows":[]},
+// "status": {"enabled":true,"interval":60,"windows":[]}
 //	}
 //
 // windows 元素 {"start":"09:00","end":"18:00"}；空 = 全天；start>end 视为跨午夜。

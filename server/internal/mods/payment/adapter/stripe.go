@@ -1,19 +1,19 @@
 package adapter
 
-// stripe 适配器（P2-09 T3）：官方 stripe-go SDK（用户决策——验签/tolerance/重试由 SDK 承担）。
+// stripe 适配器（）：官方 stripe-go SDK（用户决策——验签/tolerance/重试由 SDK 承担）。
 //
 // 能力位：Provider（Checkout Session）+ Webhooker（Stripe-Signature 构造验证）
 // + Capturer（session 查单补单）+ Refunder（Refunds API——三参考项目均缺位，本仓自建）。
 //
-// 协议要点（dujiao/1.x 对拍 + T2 快照）：
-//   - 下单：mode=payment Checkout Session；跨币金额走 ChargedUnits/ChargedCurrency
-//     （T2 服务端快照口径），同币回落 Amount；metadata[order_no] 与
-//     client_reference_id 双写（回调双定位）
-//   - 回调：checkout.session.completed / async_payment_succeeded → 成功；
-//     expired / async_payment_failed → 失败（Success=false 管线忽略）
-//   - 查单：cs_ 前缀查 session（expand payment_intent）
-//   - 退款：Refunder amount 语义 = 渠道币种最小单位（charged_units 快照口径——
-//     跨境退款按实收原币退，杜绝二次换算；调用方从支付单快照取数）
+// 协议要点（dujiao/1.x 对拍 + 快照）：
+// - 下单：mode=payment Checkout Session；跨币金额走 ChargedUnits/ChargedCurrency
+// （ 服务端快照口径），同币回落 Amount；metadata[order_no] 与
+// client_reference_id 双写（回调双定位）
+// - 回调：checkout.session.completed / async_payment_succeeded → 成功；
+// expired / async_payment_failed → 失败（Success=false 管线忽略）
+// - 查单：cs_ 前缀查 session（expand payment_intent）
+// - 退款：Refunder amount 语义 = 渠道币种最小单位（charged_units 快照口径——
+// 跨境退款按实收原币退，杜绝二次换算；调用方从支付单快照取数）
 //
 // SDK 使用纪律：client.New(key, backends) 每调用构造（无全局 stripe.Key 突变——
 // 适配器无状态并发安全）；测试注入 httptest backend（NewBackendsWithConfig.URL）。
@@ -80,7 +80,7 @@ func (a *StripeAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	if c.SecretKey == "" {
 		return nil, fmt.Errorf("stripe: secret_key 必填")
 	}
-	// 金额口径（T2 快照）：跨币用 ChargedUnits/ChargedCurrency；同币直收回落 Amount
+	// 金额口径（ 快照）：跨币用 ChargedUnits/ChargedCurrency；同币直收回落 Amount
 	units := int64(req.Amount)
 	currency := "cny"
 	if req.ChargedUnits > 0 {
@@ -169,7 +169,7 @@ func (a *StripeAdapter) ParseWebhook(headers map[string]string, body []byte, cfg
 		Provider:       "stripe",
 		ChannelOrderNo: channelNo,
 		OrderNo:        orderNo,
-		Amount:         amount, // 渠道币种最小单位（T2 快照核对口径）
+		Amount:         amount, // 渠道币种最小单位（ 快照核对口径）
 		Currency:       currency,
 		Success:        success,
 		Raw:            body,

@@ -35,7 +35,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
+// AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 type AdminNotifyServiceClient interface {
 	// UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(ctx context.Context, in *UpsertNotifyTemplateRequest, opts ...grpc.CallOption) (*NotifyTemplate, error)
@@ -159,7 +159,7 @@ func (c *adminNotifyServiceClient) CancelBroadcast(ctx context.Context, in *Canc
 // All implementations must embed UnimplementedAdminNotifyServiceServer
 // for forward compatibility.
 //
-// AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
+// AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 type AdminNotifyServiceServer interface {
 	// UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error)

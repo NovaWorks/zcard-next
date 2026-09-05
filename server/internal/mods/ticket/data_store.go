@@ -1,6 +1,6 @@
 package ticket
 
-// 工单服务（P3-05）：storefront + admin 双面 + 付费加急（余额）+ 通知双侧。
+// 工单服务（）：storefront + admin 双面 + 付费加急（余额）+ 通知双侧。
 
 import (
 	"context"

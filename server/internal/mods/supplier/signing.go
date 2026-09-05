@@ -1,8 +1,8 @@
 package supplier
 
-// 签名原语（对外供货协议，§5.8 口径钉死）：
-//   签名串 = METHOD\nPATH(不含query)\ntimestamp\nnonce\nmd5(body)      —— 旧口径
-//   签名串 = ...\nmd5(body)\nmd5(rawQuery)                              —— 新口径（v1.12.90+）
+// 签名原语（对外供货协议， 口径钉死）：
+// 签名串 = METHOD\nPATH(不含query)\ntimestamp\nnonce\nmd5(body) —— 旧口径
+// 签名串 = ...\nmd5(body)\nmd5(rawQuery) —— 新口径（v1.12.90+）
 // 服务端双口径验签（先旧后新）；客户端一律新口径。
 // hex_lower(HMAC_SHA256(api_secret, 签名串))；常数时间比较（hash_equals 语义）。
 
@@ -51,7 +51,7 @@ func verifyDual(secret, method, path, rawQuery, timestamp, nonce string, body []
 		subtle.ConstantTimeCompare([]byte(new), []byte(signature)) == 1
 }
 
-// ── P2-10 B/C 兼容层签名原语（golden 向量见 data_compat_test.go）──
+// ── B/C 兼容层签名原语（golden 向量见 data_compat_test.go）──
 
 // dujiaoSign dujiao-next 3 头协议签名：
 // hex_lower(HMAC_SHA256(secret, "METHOD\nPATH(不含query)\nts\nmd5(body)"))。

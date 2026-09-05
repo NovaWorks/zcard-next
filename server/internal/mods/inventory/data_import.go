@@ -1,6 +1,6 @@
 package inventory
 
-// T2 导入管线（P1-02 任务书 T2）：预览 → 确认 → 分片批量写入 → 批次追踪。
+// 导入管线（ ）：预览 → 确认 → 分片批量写入 → 批次追踪。
 // 性能纪律（PG/MySQL 大数量优化）：去重一律 content_hash 分组 IN 批查
 // （预览全量一次、确认每分片一次，杜绝逐行 Exist 的 N+1）；写入走
 // CreateBulk + ON CONFLICT DO NOTHING（唯一索引 (subsite_id, product_id,
@@ -270,7 +270,7 @@ func (r *CardRepoImpl) CancelImport(ctx context.Context, importID uint64) error 
 	return err
 }
 
-// ── 导出（T3）────────────────────────────────────────────────
+// ── 导出（）────────────────────────────────────────────────
 
 // CsvSafe 防 Excel 注入（= + - @ 开头前缀 '）。
 func CsvSafe(s string) string {

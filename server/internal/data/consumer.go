@@ -1,8 +1,8 @@
 package data
 
-// 事件/任务消费分发器（P0-01 任务书 T2/T3 消费侧）：
+// 事件/任务消费分发器（ / 消费侧）：
 // asynq worker 与 SyncQueue 共用同一入口；消费幂等经 processed_events(event_id, consumer)。
-// M0 注册空目录（事件消费方 M1 随交易闭环接入）；进程内处理器供单机模式直连分发。
+// 注册空目录（事件消费方 随交易闭环接入）；进程内处理器供单机模式直连分发。
 
 import (
 	"context"
@@ -103,7 +103,7 @@ func (dp *Dispatcher) runOnce(ctx context.Context, env events.Envelope, sub Hand
 		return err
 	}
 	if err := sub.Fn(ctx, env); err != nil {
-		return err // 处理失败：processed_events 已写入——M1 引入补偿删除或改「先执行后记录」策略前，以日志告警
+		return err // 处理失败：processed_events 已写入—— 引入补偿删除或改「先执行后记录」策略前，以日志告警
 	}
 	if dp.log != nil {
 		dp.log.Debug("consumer.dispatched", "type", env.Type, "consumer", sub.Consumer, "event_id", env.EventID)

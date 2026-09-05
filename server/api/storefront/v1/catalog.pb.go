@@ -140,12 +140,12 @@ type ListProductsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 分类过滤（可选）
 	CategoryId uint64 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	// 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
+	// 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 走外置）
 	Keyword string `protobuf:"bytes,2,opt,name=keyword,proto3" json:"keyword,omitempty"`
 	// 扁平分页（query 绑定：?page=1&page_size=20）
 	Page     int32 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize int32 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	// 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
+	// 积分商城视图（true=仅积分兑换商品 points_required>0；）
 	PointsOnly bool `protobuf:"varint,5,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"`
 	// 排序：newest（默认）| price_asc | price_desc | sales
 	Sort string `protobuf:"bytes,6,opt,name=sort,proto3" json:"sort,omitempty"`
@@ -371,7 +371,7 @@ type Product struct {
 	Reviews []*ReviewItem `protobuf:"bytes,13,rep,name=reviews,proto3" json:"reviews,omitempty"`
 	// 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
 	Skus []*Sku `protobuf:"bytes,14,rep,name=skus,proto3" json:"skus,omitempty"`
-	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
+	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；）
 	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 运营推荐（首页推荐位标记）
 	IsRecommend   bool `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`

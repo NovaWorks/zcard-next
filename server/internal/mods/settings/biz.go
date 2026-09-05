@@ -1,8 +1,8 @@
-// Package settings 设置中心（M0）：settings 表 = 运行时业务开关真理源。
+// Package settings 设置中心（）：settings 表 = 运行时业务开关真理源。
 //
-// 分组目录（规划 §5.15）：site（基础）/template（模板）/trade（交易）/security（安全）/
+// 分组目录（规划 ）：site（基础）/template（模板）/trade（交易）/security（安全）/
 // ops（运维）/notify（邮件短信）/recharge（充值提现）/points（积分）/affiliate（分销）/
-// supply（货源）/i18n（语言货币）。安装向导 /install M1 交付。
+// supply（货源）/i18n（语言货币）。安装向导 /install 交付。
 package settings
 
 import (
@@ -102,7 +102,7 @@ func (uc *SettingsUsecase) PutMany(ctx context.Context, items []port.Item) error
 	return uc.repo.PutMany(ctx, valid)
 }
 
-// GetStruct 泛型读取（P0-04 T1）：JSON 绑定到调用方结构体，DB 缺省回落目录默认值。
+// GetStruct 泛型读取（）：JSON 绑定到调用方结构体，DB 缺省回落目录默认值。
 // 用法：var cfg TradeConfig; uc.GetStruct(ctx, "trade", "guest_checkout", &cfg)
 func GetStruct[T any](ctx context.Context, uc *SettingsUsecase, group, key string, out *T) error {
 	raw, err := uc.GetDefault(ctx, group, key, nil)

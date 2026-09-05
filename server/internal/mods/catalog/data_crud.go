@@ -1,6 +1,6 @@
 package catalog
 
-// 商品/分类/标签管理 CRUD 数据层（P1-01；ent import 收口：data 前缀文件）。
+// 商品/分类/标签管理 CRUD 数据层（；ent import 收口：data 前缀文件）。
 // sanitize 在 service 层调用后传入；slug 唯一校验在 biz。
 
 import (
@@ -232,7 +232,7 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 	return r.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, id)
 }
 
-// BatchUpdateStatus 批量上下架（P1-01 T2 列表多选；status 1/0/2）。
+// BatchUpdateStatus 批量上下架（ 列表多选；status 1/0/2）。
 func (r *ProductRepoImpl) BatchUpdateStatus(ctx context.Context, ids []uint64, status int8) (int, error) {
 	if len(ids) == 0 {
 		return 0, fmt.Errorf("catalog.EMPTY_IDS")
@@ -542,7 +542,7 @@ func nilOrZero(v uint64) *uint64 {
 	return &v
 }
 
-// UpsertUpstreamProduct 货源同步商品 upsert（P2-01 T3，supply 模块经 port 消费）。
+// UpsertUpstreamProduct 货源同步商品 upsert（，supply 模块经 port 消费）。
 // 判据：subsite_id + upstream_source_id + upstream_product_code 幂等。
 // Price=-1 保持现有价（价格保护由 supply 侧决策后传入）。
 func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (uint64, bool, error) {
@@ -837,7 +837,7 @@ func deleteProductCover(cover string) {
 	_ = mediamods.DeleteLocal(rel)
 }
 
-// ListForSupply 供货目录分页（P2-03 supplier 消费；管理面语义含下架）。
+// ListForSupply 供货目录分页（ supplier 消费；管理面语义含下架）。
 func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter) ([]port.SupplierProduct, int64, error) {
 	q := data.Client(ctx, r.data).Product.Query()
 	if f.Status >= 0 {

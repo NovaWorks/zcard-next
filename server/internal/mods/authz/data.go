@@ -1,6 +1,6 @@
 package authz
 
-// 角色/权限仓储（P0-03）：只读鉴权组 + 管理组 CRUD + 内置角色种子。
+// 角色/权限仓储（）：只读鉴权组 + 管理组 CRUD + 内置角色种子。
 
 import (
 	"context"
@@ -198,13 +198,13 @@ func (r *RoleRepoImpl) replaceAll(ctx context.Context, roleID uint64, perms []st
 	})
 }
 
-// EnsureBuiltinRoles 落内置角色种子（幂等；P0-03 起 operator/support 覆盖 authz 只读
+// EnsureBuiltinRoles 落内置角色种子（幂等； 起 operator/support 覆盖 authz 只读
 // 与员工只读两个基础权限点，rbac_coverage_test 据此断言目录覆盖）。
 //
 // 种子语义（2026-08-18 修订）：
-//   - 仅在角色**新建**时写入权限点——已有角色（含被后台改过权限的内置角色）不覆盖，
-//     后台的 UpdateRolePermissions 编辑因此跨重启/重装保留；
-//   - 例外：super_admin 的 * 通配是系统不变量，每次执行强制恢复（防误操作锁死超管）。
+// - 仅在角色**新建**时写入权限点——已有角色（含被后台改过权限的内置角色）不覆盖，
+// 后台的 UpdateRolePermissions 编辑因此跨重启/重装保留；
+// - 例外：super_admin 的 * 通配是系统不变量，每次执行强制恢复（防误操作锁死超管）。
 func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 	builtin := []struct{ code, name, desc string }{
 		{code: "super_admin", name: "超级管理员", desc: "全部权限（* 通配）"},
@@ -229,7 +229,7 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		"memberlevel:read",
 		"coupon:read",
 		"dashboard:read",
-		// M2：货源/采购/供货读权限（写操作超管专属）
+		// ：货源/采购/供货读权限（写操作超管专属）
 		"supply:read",
 		"procurement:read",
 		"supplier:read",

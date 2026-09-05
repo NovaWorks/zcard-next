@@ -1,6 +1,6 @@
 package ticket
 
-// wire providers（P3-05）。
+// wire providers（）。
 
 import "github.com/google/wire"
 

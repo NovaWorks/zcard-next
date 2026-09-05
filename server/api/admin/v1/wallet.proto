@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+// AdminWalletService 钱包管理：调账/充值单/流水查询。
 //
 // 路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
 // gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
@@ -76,7 +76,7 @@ message CreateGiftcardBatchRequest {
 }
 
 // CreateGiftcardBatchReply 批次 + 明文码（仅创建响应一次性返回；此后任何端点
-// 不可再取——库内无明文，铁律 11；同 P1-06 一次性明文交付纪律）。
+// 不可再取——库内无明文，铁律 11；同 一次性明文交付纪律）。
 message CreateGiftcardBatchReply {
   GiftcardBatchItem batch = 1;
   repeated string codes = 2; // 明文兑换码（当次响应后仅存于管理员侧）
@@ -115,7 +115,7 @@ message ListWithdrawalsReply {
 message WithdrawalItem {
   uint64 id = 1;
   uint64 user_id = 2;
-  string username = 12;  // 用户名（列表富化）
+  string username = 12; // 用户名（列表富化）
   int64 amount_cents = 3;
   int64 fee_cents = 4;
   string method_type = 5;
@@ -191,6 +191,6 @@ message WalletTx {
   string reference = 7;
   string remark = 8;
   int64 created_at = 9;
-  uint64 user_id = 10;  // 归属用户（全站流水场景展示）
+  uint64 user_id = 10; // 归属用户（全站流水场景展示）
   string username = 11; // 归属用户名（全站流水批量回填，可空）
 }

@@ -1,6 +1,6 @@
 package dashboard
 
-// P3-07 T2 日结任务：daily_stats 落表（报表只扫此表不扫大表）。
+// 日结任务：daily_stats 落表（报表只扫此表不扫大表）。
 // 幂等：唯一索引 (subsite_id, stat_date, metric, dimension_key) 重跑覆盖。
 // 调度：每小时检查 + 当日标记（00:10–01:00 窗口跑昨日聚合，防漏跑/重复跑）。
 

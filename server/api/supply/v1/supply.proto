@@ -8,10 +8,10 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
-// 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
-// ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
+// 里程碑 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
+// ±300s 时间窗、Nonce 防重放、按 key 限流（规划)。
 // Ping 免签名（连通性探测）；其余端点全部需要签名。
-// 金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
+// 金额口径：一律「分」（int64）——与 zcard 适配器对偶。
 service SupplyService {
   // Ping 连通性与协议版本探测（免签名）。
   rpc Ping(google.protobuf.Empty) returns (PingReply) {
@@ -78,12 +78,12 @@ service SupplyService {
 }
 
 message PingReply {
-  string protocol = 1;   // 固定 "zcard-supply-v2"
-  string version = 2;    // 服务端版本
+  string protocol = 1; // 固定 "zcard-supply-v2"
+  string version = 2; // 服务端版本
   int64 server_time = 3; // unix 秒
   bool ok = 4;
-  string name = 5;       // 站点名
-  int64 balance = 6;     // 下游余额（分，鉴权后）
+  string name = 5; // 站点名
+  int64 balance = 6; // 下游余额（分，鉴权后）
   string currency = 7;
 }
 
@@ -131,7 +131,7 @@ message GetStockReply {
 message SupplyProduct {
   string id = 1;
   string name = 2;
-  int64 price = 3;         // 分（供货价口径：定价覆盖 > 基础价）
+  int64 price = 3; // 分（供货价口径：定价覆盖 > 基础价）
   int64 factory_price = 4; // 分（成本快照）
   string category_id = 5;
   string description = 6;
@@ -152,18 +152,18 @@ message SupplySku {
 // ---- 订单 ----
 
 message CreateSupplyOrderRequest {
-  string product_id = 1;           // 商品标识（本地商品 id）
-  string sku_id = 2;               // 可选
+  string product_id = 1; // 商品标识（本地商品 id）
+  string sku_id = 2; // 可选
   int32 quantity = 3;
-  string downstream_order_no = 4;  // 幂等键（必填）
-  string callback_url = 5;         // 可选（交付完成回调）
+  string downstream_order_no = 4; // 幂等键（必填）
+  string callback_url = 5; // 可选（交付完成回调）
   string trace_id = 6;
 }
 
 message CreateSupplyOrderReply {
   string supply_order_id = 1;
   string status = 2; // pending | fulfilled | rejected
-  int64 amount = 3;  // 分
+  int64 amount = 3; // 分
   SupplyFulfillment fulfillment = 4;
   string error_code = 5;
   string error_message = 6;
@@ -172,15 +172,15 @@ message CreateSupplyOrderReply {
 // ListSupplyOrdersRequest 订单列表（时间窗；对账数据源）。
 message ListSupplyOrdersRequest {
   int64 start = 1; // 创建时间起点（unix 秒）
-  int64 end = 2;   // 创建时间终点（unix 秒）
+  int64 end = 2; // 创建时间终点（unix 秒）
 }
 
 message SupplyOrderItem {
   uint64 id = 1;
   string downstream_order_no = 2;
-  int64 amount = 3;      // 分
-  string status = 4;     // pending | paid | delivered | refunded | canceled
-  int64 created_at = 5;  // unix 秒
+  int64 amount = 3; // 分
+  string status = 4; // pending | paid | delivered | refunded | canceled
+  int64 created_at = 5; // unix 秒
 }
 
 message ListSupplyOrdersReply {

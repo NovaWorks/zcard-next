@@ -1,6 +1,6 @@
 package adapter
 
-// epusdt golden vector 契约测试（P2-09 T1）：
+// epusdt golden vector 契约测试（）：
 // 签名向量由独立工具（Python hmac）预计算——与实现零耦合（dujiao 同纪律）。
 // 覆盖：签名确定性/剔 signature+空值/伪签名拒绝/金额两位小数格式化/
 // httptest mock 网关下单全流程/回调验签（含 JSON 数字字面保持）。
@@ -174,7 +174,7 @@ func TestEpusdtAckerAndValidate(t *testing.T) {
 	}
 }
 
-// TestEpusdtFieldOptions 动态选项（P2-09 T5 修复）：网关 supported_assets 为准；
+// TestEpusdtFieldOptions 动态选项（ 修复）：网关 supported_assets 为准；
 // 网关不可达/api_url 缺失 → 静态矩阵回落；token 按 network 级联过滤。
 func TestEpusdtFieldOptions(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -255,7 +255,7 @@ func TestEpusdtFieldOptions(t *testing.T) {
 	}
 }
 
-// TestEpusdtMultiTokenPlaceholder 多选收款（P2-09 T5）：
+// TestEpusdtMultiTokenPlaceholder 多选收款（）：
 // 恰好一币一链 → 下单锁定该方式；多选/未选 → 占位订单（不传 token/network）。
 func TestEpusdtMultiTokenPlaceholder(t *testing.T) {
 	capture := func(cfg json.RawMessage) map[string]string {

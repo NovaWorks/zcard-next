@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 商品分类管理（P1-01 T2 前端面）：树形列表 + 新建（含父分类）/重命名/删除（非空拒绝）。
+ * 商品分类管理（ 前端面）：树形列表 + 新建（含父分类）/重命名/删除（非空拒绝）。
  * 新建/变更后向父组件抛 refresh 事件（表单下拉联动刷新）。
  */
 import { ref, reactive, computed, watch } from "vue";

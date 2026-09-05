@@ -22,9 +22,9 @@ type Product struct {
 	DeliveryMode string      // status / delete
 	Status       int8        // 1=上架 0=下架 2=隐藏
 	StockVisible bool
-	// 积分兑换价（0=常规商品；>0=积分商城商品——order 兑换分支判定，P3-01）
+	// 积分兑换价（0=常规商品；>0=积分商城商品——order 兑换分支判定，）
 	PointsRequired int64
-	// 货源信息（P2-02 procurement 消费：判定上游项与提交采购）
+	// 货源信息（ procurement 消费：判定上游项与提交采购）
 	UpstreamSourceID    uint64 // 0 = 自营
 	UpstreamProductCode string
 	// 运营推荐（storefront 首页推荐位）
@@ -75,7 +75,7 @@ type VisibleFilter struct {
 	Keyword    string
 	Page       int32
 	PageSize   int32
-	// PointsOnly 积分商城视图（true=仅 points_required>0 商品；P3-01）
+	// PointsOnly 积分商城视图（true=仅 points_required>0 商品；）
 	PointsOnly bool
 	// RecommendOnly 推荐位视图（true=仅 is_recommend 商品；首页推荐区块）
 	RecommendOnly bool
@@ -133,7 +133,7 @@ type ProductInput struct {
 	Dedup        bool
 	Sort         int32
 	Status       int8
-	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，P3-01）
+	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，）
 	PointsRequired    int64
 	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）
 	// 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
@@ -153,7 +153,7 @@ type ProductAdminRepo interface {
 	DeleteProduct(ctx context.Context, id uint64) error
 }
 
-// UpstreamProductInput 货源同步 upsert 输入（P2-01 T3）。
+// UpstreamProductInput 货源同步 upsert 输入（）。
 // Price=-1 表示「不更新价格」（价格保护：auto_sync_price=false 或运营已改价）。
 type UpstreamProductInput struct {
 	ConnectionID        uint64 // products.upstream_source_id
@@ -185,7 +185,7 @@ type UpstreamProductWriter interface {
 	UpsertUpstreamProduct(ctx context.Context, in UpstreamProductInput) (productID uint64, created bool, err error)
 }
 
-// UpstreamProductMaintainer 货源轻量维护端口（P2-10 S1：scope=price/status 同步
+// UpstreamProductMaintainer 货源轻量维护端口（ S1：scope=price/status 同步
 // 与删除对账消费，通道 A）。定位判据同上；found=false 表示商品未导入（调用方跳过）。
 type UpstreamProductMaintainer interface {
 	// UpdateUpstreamPrice 仅更新价格（price scope；不动名称/状态/库存）。
@@ -197,7 +197,7 @@ type UpstreamProductMaintainer interface {
 	ShelveOffMissing(ctx context.Context, connectionID uint64, seen []string) (shelved int64, err error)
 }
 
-// SupplierProduct 供货目录商品（P2-03 supplier 消费，通道 A）：
+// SupplierProduct 供货目录商品（ supplier 消费，通道 A）：
 // 管理面语义（含下架/隐藏），仅下发可公开字段。
 type SupplierProduct struct {
 	ID           uint64
@@ -216,7 +216,7 @@ type SupplierCatalog interface {
 	ListForSupply(ctx context.Context, f AdminFilter) ([]SupplierProduct, int64, error)
 	// GetForSupply 单品（含下架）。
 	GetForSupply(ctx context.Context, productID uint64) (*SupplierProduct, error)
-	// ListSupplyCategories 分类列表（acg-faka 兼容层 items 两级树用；P2-10 C）。
+	// ListSupplyCategories 分类列表（acg-faka 兼容层 items 两级树用； C）。
 	ListSupplyCategories(ctx context.Context) ([]SupplyCategory, error)
 }
 

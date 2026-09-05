@@ -1,10 +1,10 @@
 package order
 
-// T1 PriceCalculator 价格管线（P1-03 任务书 T1，规划 §5.2）。
+// PriceCalculator 价格管线（ ，规划 ）。
 //
 // 顺序钉死：基础价 → 会员折扣 → 商品组折扣 → 秒杀 → 优惠券 → 积分抵扣 → 分站定价 → 数量×单价 → rounding
 // 每一步产出一条 order_amount_lines 行（有符号分；折扣为负、加价为正）。
-// 管线为纯函数——M1a 中 member/coupon/points/reseller 四 port 返回中性值，M1b/M3 接真实现。
+// 管线为纯函数——M1a 中 member/coupon/points/reseller 四 port 返回中性值，/ 接真实现。
 //
 // 不变量：total == SUM(lines.amount)；seq 单调递增对应管线顺序。
 
@@ -34,7 +34,7 @@ type PriceInput struct {
 	CouponValue   money.Cents // 优惠券面额（分；0=无券）
 	PointsValue   money.Cents // 积分抵扣额（分）
 	SubsiteMarkup money.Cents // 分站加价（分）
-	DisplayRate   float64     // 展示币汇率（换算 rounding 用，M1 接入）
+	DisplayRate   float64     // 展示币汇率（换算 rounding 用， 接入）
 }
 
 // PriceResult 管线输出。
@@ -66,7 +66,7 @@ func PriceCalculator(in PriceInput) PriceResult {
 		seq++
 	}
 
-	// 3) 会员商品组折扣（叠加规则判定 M1b）
+	// 3) 会员商品组折扣（叠加规则判定 ）
 	if in.GroupRate > 0 && in.GroupRate < 10000 {
 		discount := int64(current) * int64(in.GroupRate) / 10000
 		lines = append(lines, AmountLine{
@@ -142,7 +142,7 @@ func PriceCalculator(in PriceInput) PriceResult {
 	unitTotal := current
 	total := unitTotal.Mul(in.Quantity)
 
-	// 9) rounding_adjust（多币种快照，M1 接入）
+	// 9) rounding_adjust（多币种快照， 接入）
 	// M1a：基础货币直通，rounding 恒 0
 
 	return PriceResult{Lines: lines, Total: total}

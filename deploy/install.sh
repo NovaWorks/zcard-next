@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# ZCard 2.0 一键安装 + 菜单式管理（P2-07 T4，主文档 §10.1「一键脚本」）
+# ZCard 2.0 一键安装 + 菜单式管理（， 「一键脚本」）
 #
-# 安装：  curl -fsSL <repo>/deploy/install.sh | bash    （或下载后 sudo ./install.sh）
-# 管理：  zcard-manager                                     （菜单：状态/日志/重启/更新/域名/改密/卸载）
+# 安装： curl -fsSL <repo>/deploy/install.sh | bash （或下载后 sudo ./install.sh）
+# 管理： zcard-manager （菜单：状态/日志/重启/更新/域名/改密/卸载）
 #
-# 布局（任务书 §3.4，migrate-from-v1 复用同一路径约定）：
-#   /opt/zcard/zcard            单二进制（self-update rename 舞步同目录）
-#   /opt/zcard/configs/         config.yaml（SQLite 起步，零依赖）
-#   /opt/zcard/data/zcard.db    SQLite（WAL）
-#   /opt/zcard/uploads/         媒体库
+# 布局（ ，migrate-from-v1 复用同一路径约定）：
+# /opt/zcard/zcard 单二进制（self-update rename 舞步同目录）
+# /opt/zcard/configs/ config.yaml（SQLite 起步，零依赖）
+# /opt/zcard/data/zcard.db SQLite（WAL）
+# /opt/zcard/uploads/ 媒体库
 # systemd：zcard.service（Restart=always）+ zcard-rollback.service（OnFailure 自动回滚位）
 # Nginx：80/443 反代 127.0.0.1:8000（SPA 保留路径透传）；certbot --nginx 签证书。
 
@@ -119,7 +119,7 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 User=$SERVICE_USER
-# 在线更新重启三分支探测标记（doc/在线更新方案.md §5）
+# 在线更新重启三分支探测标记（）
 Environment=ZCARD_SUPERVISOR=systemd
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$INSTALL_DIR/zcard serve -conf $INSTALL_DIR/configs

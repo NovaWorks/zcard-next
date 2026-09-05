@@ -1,6 +1,6 @@
 package catalog
 
-// 自定义控件 admin CRUD 数据层（P1-01 T2；ent import 收口：data 前缀文件）。
+// 自定义控件 admin CRUD 数据层（；ent import 收口：data 前缀文件）。
 
 import (
 	"context"

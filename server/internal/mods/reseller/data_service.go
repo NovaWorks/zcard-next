@@ -1,6 +1,6 @@
 package reseller
 
-// 管理面 API（P3-04 主站面）。
+// 管理面 API（ 主站面）。
 
 import (
 	"context"

@@ -1,10 +1,10 @@
 package fulfillment
 
-// T1 自动交付管线 + T2 取货三重门 + T3 人工发货（P1-06 最后一个 M1a 模块）。
+// 自动交付管线 + 取货三重门 + 人工发货（ 最后一个 M1a 模块）。
 //
-// 核心安全设计（§5.20.2 无明文快照）：
-//   交付记录 = card_id 引用 + 一次性 delivery_token_hash——不存明文。
-//   取货时现场解密返回，绝不落库明文（区别于 1.x card_content / 友商 Payload text）。
+// 核心安全设计（ 无明文快照）：
+// 交付记录 = card_id 引用 + 一次性 delivery_token_hash——不存明文。
+// 取货时现场解密返回，绝不落库明文（区别于 1.x card_content / 友商 Payload text）。
 
 import (
 	"context"
@@ -33,8 +33,8 @@ type DeliveryRepoImpl struct {
 	data    *data.Data
 	cipher  *inventory.CardCipher
 	inv     inventory.CardRepo
-	gate    auditport.RiskGate // P2-06 取货失败锁定（nil = 未装配跳过）
-	auditor auditport.Auditor  // P2-06 取货安全审计（nil = 未装配跳过）
+	gate    auditport.RiskGate // 取货失败锁定（nil = 未装配跳过）
+	auditor auditport.Auditor  // 取货安全审计（nil = 未装配跳过）
 }
 
 // actorTypeOf 订单归属（游客 user_id=0 → guest）。
@@ -50,7 +50,7 @@ func NewDeliveryRepoImpl(d *data.Data, cipher *inventory.CardCipher, gate auditp
 	return &DeliveryRepoImpl{data: d, cipher: cipher, gate: gate, auditor: auditor}
 }
 
-// ── T1 自动交付管线 ─────────────────────────────────────────
+// ── 自动交付管线 ─────────────────────────────────────────
 
 // FulfillOrder 自动交付（order.paid 事件触发）：
 // 1) 取订单 reserved 卡密 → 2) MarkUsed/即删 → 3) 写交付记录（card_id + 令牌）
@@ -228,7 +228,7 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 	return nil
 }
 
-// ── T2 取货三重门 ─────────────────────────────────────────
+// ── 取货三重门 ─────────────────────────────────────────
 
 // FetchResult 取货结果。
 type FetchResult struct {
@@ -259,7 +259,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	if err != nil {
 		return nil, err
 	}
-	// P2-06 取货锁定检查（连续失败 N 次锁 IP+订单组合；锁定期内正确密码也拒绝）
+	// 取货锁定检查（连续失败 N 次锁 IP+订单组合；锁定期内正确密码也拒绝）
 	if r.gate != nil {
 		lockKey := "fetch:" + auditport.NormalizeIP(clientIP) + ":" + orderNo
 		if locked, _ := r.gate.IsLocked(ctx, lockKey); locked {
@@ -270,7 +270,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	// 密码校验（constant-time；密码错与单号错对外表现一致）
 	if o.QueryPasswordHash != "" {
 		if !crypto.VerifyPassword(o.QueryPasswordHash, queryPassword) {
-			// P2-06 失败计数锁定（达到阈值即锁）
+			// 失败计数锁定（达到阈值即锁）
 			if r.gate != nil {
 				_ = r.gate.LockFetchFailure(ctx, "fetch:"+auditport.NormalizeIP(clientIP)+":"+orderNo)
 			}
@@ -292,7 +292,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 		Status:   string(o.Status),
 		FetchCnt: 0,
 	}
-	// 取货审计（P2-06 T3：谁/何时/IP/订单——不含明文卡密）
+	// 取货审计（：谁/何时/IP/订单——不含明文卡密）
 	if r.auditor != nil {
 		r.auditor.Security(ctx, auditport.SecurityEntry{
 			ActorType: actorTypeOf(o), ActorID: o.UserID,
@@ -389,7 +389,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	return result, nil
 }
 
-// ── T3 人工发货 ───────────────────────────────────────────
+// ── 人工发货 ───────────────────────────────────────────
 
 // ManualDeliver 手动交付（卡密内容或物流单号）。
 func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, logisticsNo, remark string, adminID uint64) error {
@@ -543,12 +543,12 @@ func hashToken(t string) string {
 	return hex.EncodeToString(h[:])
 }
 
-// ── T5（P2-02）上游采购交付出口 ─────────────────────────────
+// ── （）上游采购交付出口 ─────────────────────────────
 
-// AttachUpstreamDelivery 上游卡密交付（P2-02 T4 交付出口）：
+// AttachUpstreamDelivery 上游卡密交付（ 交付出口）：
 // 入参已是密文（procurement 侧 CardCipher.Seal 后透传），本层只负责：
-//  1. 写 cards（status=used，order_id 绑定——前台取货按 order 关联，与本地卡密同链路）
-//  2. 写 order_deliveries（card_id 引用 + 一次性令牌 + 掩码，无明文快照）
+// 1. 写 cards（status=used，order_id 绑定——前台取货按 order 关联，与本地卡密同链路）
+// 2. 写 order_deliveries（card_id 引用 + 一次性令牌 + 掩码，无明文快照）
 //
 // 幂等：同 order_item 已交付直接返回（procurement 侧也以采购单状态机兜底）。
 func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []port.UpstreamDeliveryItem) error {

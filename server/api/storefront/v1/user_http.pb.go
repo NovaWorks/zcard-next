@@ -30,7 +30,7 @@ const OperationStoreUserServiceUpdateProfile = "/zcard.api.storefront.v1.StoreUs
 type StoreUserServiceHTTPServer interface {
 	// ChangePassword ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
 	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordReply, error)
-	// ForgotPassword ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	// ForgotPassword ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordReply, error)
 	// Login Login 登录（返回 user realm JWT；username 混输：用户名/邮箱/手机号）。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
@@ -213,7 +213,7 @@ func _StoreUserService_UpdateProfile0_HTTP_Handler(srv StoreUserServiceHTTPServe
 type StoreUserServiceHTTPClient interface {
 	// ChangePassword ChangePassword 登录态改密（旧密码校验；吊销全部 session、响应携带新 token 保当前会话）。
 	ChangePassword(ctx context.Context, req *ChangePasswordRequest, opts ...http.CallOption) (rsp *ChangePasswordReply, err error)
-	// ForgotPassword ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	// ForgotPassword ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
 	ForgotPassword(ctx context.Context, req *ForgotPasswordRequest, opts ...http.CallOption) (rsp *ForgotPasswordReply, err error)
 	// Login Login 登录（返回 user realm JWT；username 混输：用户名/邮箱/手机号）。
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
@@ -255,7 +255,7 @@ func (c *StoreUserServiceHTTPClientImpl) ChangePassword(ctx context.Context, in 
 	return &out, nil
 }
 
-// ForgotPassword ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+// ForgotPassword ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
 func (c *StoreUserServiceHTTPClientImpl) ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...http.CallOption) (*ForgotPasswordReply, error) {
 	var out ForgotPasswordReply
 	pattern := "/api/v1/storefront/user/password/forgot"

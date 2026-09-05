@@ -1,6 +1,6 @@
 package license
 
-// StoreLicenseService 专业套餐购买 storefront 面（P3-08 M3）。
+// StoreLicenseService 专业套餐购买 storefront 面（ ）。
 
 import (
 	"context"

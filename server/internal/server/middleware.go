@@ -2,13 +2,13 @@ package server
 
 // 中间件：租户解析（Host → tenancy.Context）与 admin realm JWT 鉴权（双 realm 防串用）。
 //
-// 权限判定经 authz.Directory（模块声明式目录，P0-03 T1）——本文件不再手工维护映射；
+// 权限判定经 authz.Directory（模块声明式目录，）——本文件不再手工维护映射；
 // 目录 miss = fail-closed：403 + 错误日志（新增路由漏声明会在启动对账时直接失败，
 // 运行时 miss 属异常路径，绝不默认放行）。
 //
 // operation 形态（Kratos v3）：
-//   - HTTP：生成的 pb 路由 operation = proto 方法全名（带前导斜杠）
-//   - gRPC：同构
+// - HTTP：生成的 pb 路由 operation = proto 方法全名（带前导斜杠）
+// - gRPC：同构
 
 import (
 	"context"
@@ -69,7 +69,7 @@ func (c *domainCache) put(host string, subsiteID uint64, siteName string) {
 	c.mu.Unlock()
 }
 
-// tenantFilter 域名解析过滤器（§6.5）。
+// tenantFilter 域名解析过滤器（）。
 // http.Filter 层实现（Kratos 中间件的 Transporter 是内部 *khttp.Transport——
 // 拿不到 Host 字段，恒主站；与 audit/supplier 同款 Filter 模式）。
 // Host → verified 分站域名 → 分站上下文；未匹配/未验证 → 主站兜底（fail-open 绝不 5xx）。
@@ -179,7 +179,7 @@ func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Di
 	}
 }
 
-// storefrontVisitMiddleware storefront 访问埋点（T5）：PV/UV 明细 + 登录用户在线心跳。
+// storefrontVisitMiddleware storefront 访问埋点（）：PV/UV 明细 + 登录用户在线心跳。
 // 注册在 userAuthMiddleware 之后（需已解析 claims）；仅 selector 匹配 storefront
 // operation；埋点写失败忽略——统计性质绝不阻断业务请求。
 func storefrontVisitMiddleware(tracker *audit.TrackRepo) middleware.Middleware {
@@ -210,7 +210,7 @@ func bearerToken(header string) string {
 	return ""
 }
 
-// reconcileRoutes 启动对账（P0-03 fail-fast）：真实路由表逐条核对 admin 前缀必须已声明权限点。
+// reconcileRoutes 启动对账（ fail-fast）：真实路由表逐条核对 admin 前缀必须已声明权限点。
 func reconcileRoutes(srv *khttp.Server, dir *authz.Directory) error {
 	var routes []authz.RouteInfo
 	err := srv.WalkRoute(func(ri khttp.RouteInfo) error {

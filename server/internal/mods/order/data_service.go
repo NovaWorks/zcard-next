@@ -1,6 +1,6 @@
 package order
 
-// 订单 API（P1-03；storefront 下单 + admin 管理，薄 transport）。
+// 订单 API（；storefront 下单 + admin 管理，薄 transport）。
 
 import (
 	"context"
@@ -72,7 +72,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),
 		UsePoints: req.GetUsePoints(),
 		RefCode: req.GetRefCode(),
-		// P1-03：Idempotency-Key 头（同 key 双击返回首单，§7.3）
+		// ：Idempotency-Key 头（同 key 双击返回首单，）
 		IdempotencyKey: idempotencyKeyFromContext(ctx),
 	})
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 }
 
 // GetOrder 查单（单号+密码）。
-// 取货三重门之一二（P1-03 补全）：查询密码 或 登录态本人——登录态本人免密码。
+// 取货三重门之一二（ 补全）：查询密码 或 登录态本人——登录态本人免密码。
 func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetOrderRequest) (*storefrontv1.GetOrderReply, error) {
 	o, err := s.uc.GetByOrderNo(ctx, req.GetOrderNo())
 	if ent.IsNotFound(err) {
@@ -121,7 +121,7 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 	return reply, nil
 }
 
-// ListMyOrders 我的订单（登录态；P1-03 补全）。
+// ListMyOrders 我的订单（登录态； 补全）。
 func (s *StoreOrderService) ListMyOrders(ctx context.Context, req *storefrontv1.ListMyOrdersRequest) (*storefrontv1.ListMyOrdersReply, error) {
 	claims := identity.ClaimsFromContext(ctx)
 	if claims == nil {
@@ -179,7 +179,7 @@ func (s *StoreOrderService) ListGuestOrders(ctx context.Context, req *storefront
 	return reply, nil
 }
 
-// CancelMyOrder 取消本人待支付订单（P1-03 补全；锁卡释放 + 返券）。
+// CancelMyOrder 取消本人待支付订单（ 补全；锁卡释放 + 返券）。
 func (s *StoreOrderService) CancelMyOrder(ctx context.Context, req *storefrontv1.CancelMyOrderRequest) (*emptypb.Empty, error) {
 	claims := identity.ClaimsFromContext(ctx)
 	if claims == nil {
@@ -201,7 +201,7 @@ func (s *StoreOrderService) CancelMyOrder(ctx context.Context, req *storefrontv1
 	return &emptypb.Empty{}, nil
 }
 
-// idempotencyKeyFromContext 读 Idempotency-Key 头（§7.3）。
+// idempotencyKeyFromContext 读 Idempotency-Key 头（）。
 func idempotencyKeyFromContext(ctx context.Context) string {
 	if tr, ok := transport.FromServerContext(ctx); ok {
 		return tr.RequestHeader().Get("Idempotency-Key")
@@ -259,7 +259,7 @@ func (s *AdminOrderService) GetOrder(ctx context.Context, req *adminv1.GetAdminO
 		Order(ent.Asc(orderamountline.FieldSeq)).All(ctx)
 	events, _ := client.OrderStatusEvent.Query().Where(orderstatusevent.OrderID(o.ID)).
 		Order(ent.Asc(orderstatusevent.FieldCreatedAt), ent.Asc(orderstatusevent.FieldID)).All(ctx)
-	// 商品/上游联查（P2-09 T5 修复：订单详情展示自营/上游渠道/链接/成本——老项目同款信息区）
+	// 商品/上游联查（ 修复：订单详情展示自营/上游渠道/链接/成本——老项目同款信息区）
 	products, connections := s.loadItemUpstream(ctx, items)
 	return toAdminOrderPB(o, items, lines, events, products, connections), nil
 }

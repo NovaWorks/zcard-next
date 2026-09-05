@@ -17,11 +17,11 @@ var ProviderSet = wire.NewSet(
 	NewGiftcardRepo,
 	NewStoreWalletService,
 	NewAdminWalletService,
-	// P3-05：钱包端口适配器（Entry 字段口径转换：port.Entry → 本地 Entry）
+	// ：钱包端口适配器（Entry 字段口径转换：port.Entry → 本地 Entry）
 	ProvidePortWallet,
-	// P1-05 M1b：积分账本端口（payment 充值赠送消费）
+	// ：积分账本端口（payment 充值赠送消费）
 	ProvidePortPoints,
-	// P3-01：积分扣减/读取 + 累计充值口径端口（order 兑换下单、memberlevel 等级进度消费）
+	// ：积分扣减/读取 + 累计充值口径端口（order 兑换下单、memberlevel 等级进度消费）
 	ProvidePortPointsDebiter,
 	ProvidePortPointsReader,
 	ProvidePortRechargeReader,
@@ -78,17 +78,17 @@ func ProvidePortPoints(repo *WalletRepoImpl) port.Points {
 	return portPointsAdapter{repo: repo}
 }
 
-// ProvidePortPointsDebiter 积分扣减端口（P3-01 order 积分兑换下单消费）。
+// ProvidePortPointsDebiter 积分扣减端口（ order 积分兑换下单消费）。
 func ProvidePortPointsDebiter(repo *WalletRepoImpl) port.PointsDebiter {
 	return portPointsAdapter{repo: repo}
 }
 
-// ProvidePortPointsReader 积分余额端口（P3-01 memberlevel 等级进度消费）。
+// ProvidePortPointsReader 积分余额端口（ memberlevel 等级进度消费）。
 func ProvidePortPointsReader(repo *WalletRepoImpl) port.PointsReader {
 	return portPointsAdapter{repo: repo}
 }
 
-// ProvidePortRechargeReader 累计充值口径端口（P3-01 memberlevel 升级阈值消费）。
+// ProvidePortRechargeReader 累计充值口径端口（ memberlevel 升级阈值消费）。
 func ProvidePortRechargeReader(repo *WalletRepoImpl) port.RechargeReader {
 	return portPointsAdapter{repo: repo}
 }

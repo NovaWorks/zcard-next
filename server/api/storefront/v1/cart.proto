@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StoreCartService 购物车（P1-03b T5 销账）：登录态专属 CRUD；
+// StoreCartService 购物车(销账）：登录态专属 CRUD；
 // 结算复用 StoreOrderService.CreateOrder（多商品一单支付，零下单改动）。
 service StoreCartService {
   // AddCartItem 加购（同 user+product+sku 合并数量；商品须上架）。
@@ -39,7 +39,7 @@ service StoreCartService {
 
 message AddCartItemRequest {
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
-  uint64 sku_id = 2;                                      // 0=默认规格
+  uint64 sku_id = 2; // 0=默认规格
   int32 quantity = 3 [(google.api.field_behavior) = REQUIRED]; // 1-99
 }
 
@@ -59,13 +59,13 @@ message CartItem {
   int32 quantity = 4;
   // 商品快照（联查现值——结算前端展示用）
   string product_name = 5;
-  int64 price_cents = 6;       // 现价（SKU 解析后）
-  int64 stock = 7;             // 可用库存（-1 不限）
-  bool points_only = 8;        // 积分兑换商品（不可混合结算）
+  int64 price_cents = 6; // 现价（SKU 解析后）
+  int64 stock = 7; // 可用库存（-1 不限）
+  bool points_only = 8; // 积分兑换商品（不可混合结算）
   int64 points_required = 9;
-  bool valid = 10;             // false=已下架/隐藏（列表打标不可选）
+  bool valid = 10; // false=已下架/隐藏（列表打标不可选）
   int64 added_at = 11;
-  string product_cover = 12;   // 商品封面（无图时前端显示默认占位）
+  string product_cover = 12; // 商品封面（无图时前端显示默认占位）
 }
 
 message ListCartReply {

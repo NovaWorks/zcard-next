@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminOrderService 订单管理（P1-03 T7）。
+// AdminOrderService 订单管理。
 type AdminOrderServiceClient interface {
 	// ListOrders 订单列表（游标分页）。
 	ListOrders(ctx context.Context, in *ListOrdersRequest, opts ...grpc.CallOption) (*ListOrdersReply, error)
@@ -81,7 +81,7 @@ func (c *adminOrderServiceClient) CancelOrder(ctx context.Context, in *CancelOrd
 // All implementations must embed UnimplementedAdminOrderServiceServer
 // for forward compatibility.
 //
-// AdminOrderService 订单管理（P1-03 T7）。
+// AdminOrderService 订单管理。
 type AdminOrderServiceServer interface {
 	// ListOrders 订单列表（游标分页）。
 	ListOrders(context.Context, *ListOrdersRequest) (*ListOrdersReply, error)

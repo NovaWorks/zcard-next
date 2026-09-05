@@ -1,6 +1,6 @@
 package catalog
 
-// 管理面商品目录 API（P1-01；薄 transport——校验+sanitize+DTO 映射，业务在 data_crud.go）。
+// 管理面商品目录 API（；薄 transport——校验+sanitize+DTO 映射，业务在 data_crud.go）。
 
 import (
 	"context"

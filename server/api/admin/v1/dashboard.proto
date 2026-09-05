@@ -7,13 +7,13 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 
-// AdminDashboardService 工作台指标（P3-07 M1b v1）。
+// AdminDashboardService 工作台指标(v1）。
 service AdminDashboardService {
   // GetReconciliation 对账总览。
   rpc GetReconciliation(GetReconciliationRequest) returns (GetReconciliationReply) {
     option (google.api.http) = { get: "/api/v1/admin/dashboard/reconciliation" };
   }
-  // ListCommissions 佣金列表（P3-03 affiliate）。
+  // ListCommissions 佣金列表(affiliate）。
   rpc ListCommissions(ListCommissionsRequest) returns (ListCommissionsReply) {
     option (google.api.http) = { get: "/api/v1/admin/affiliate/commissions" };
   }
@@ -74,27 +74,27 @@ message GetDashboardRequest {
 
 message DashboardStat {
   int64 orders = 1;
-  int64 revenue = 2;      // 分
+  int64 revenue = 2; // 分
   int64 paid_orders = 3;
-  int64 cost = 4;         // 已支付订单成本（分）
-  int64 profit = 5;       // 利润 = revenue - cost（分）
-  int64 new_users = 6;    // 新增注册用户
+  int64 cost = 4; // 已支付订单成本（分）
+  int64 profit = 5; // 利润 = revenue - cost（分）
+  int64 new_users = 6; // 新增注册用户
 }
 
 message DashboardTrendPoint {
   string date = 1;
   int64 orders = 2;
-  int64 revenue = 3;      // 分
-  int64 paid_count = 4;   // 已支付单数
-  int64 cost = 5;         // 已支付订单成本（分）
-  int64 profit = 6;       // 利润（分）
+  int64 revenue = 3; // 分
+  int64 paid_count = 4; // 已支付单数
+  int64 cost = 5; // 已支付订单成本（分）
+  int64 profit = 6; // 利润（分）
 }
 
 message DashboardTopProduct {
   uint64 product_id = 1;
   string name = 2;
   int64 sold_qty = 3;
-  int64 revenue = 4;      // 分
+  int64 revenue = 4; // 分
 }
 
 message DashboardTopChannel {
@@ -106,9 +106,9 @@ message DashboardTopChannel {
 
 message DashboardPending {
   int64 pending_withdrawals = 1; // 待审核提现
-  int64 pending_refunds = 2;     // 待处理退款（refund_pending）
-  int64 fulfilling_orders = 3;   // 履约中订单
-  int64 low_stock_products = 4;  // 库存预警商品数
+  int64 pending_refunds = 2; // 待处理退款（refund_pending）
+  int64 fulfilling_orders = 3; // 履约中订单
+  int64 low_stock_products = 4; // 库存预警商品数
   int64 pending_supplier_applications = 5; // 待审对接申请（supplier_accounts applying）
 }
 
@@ -118,8 +118,8 @@ message GetTrafficRequest {
 
 message TrafficPoint {
   string date = 1; // yyyy-mm-dd
-  int64 pv = 2;    // 访问量
-  int64 uv = 3;    // 独立访客（按 IP 去重）
+  int64 pv = 2; // 访问量
+  int64 uv = 3; // 独立访客（按 IP 去重）
 }
 
 message GetTrafficReply {
@@ -133,14 +133,14 @@ message DashboardReply {
   repeated DashboardTrendPoint trend = 4;
   repeated DashboardTopProduct top_products = 5;
   DashboardStat yesterday = 6; // 环比基准（今日 vs 昨日）
-  DashboardStat prev7d = 7;    // 环比基准（近7天 vs 前7天）
-  DashboardStat prev30d = 8;   // 环比基准（近30天 vs 前30天）
+  DashboardStat prev7d = 7; // 环比基准（近7天 vs 前7天）
+  DashboardStat prev30d = 8; // 环比基准（近30天 vs 前30天）
   repeated DashboardTopChannel top_channels = 9;
   DashboardPending pending = 10;
-  int64 online_users = 11;     // 当前在线用户数（5 分钟活跃窗口）
+  int64 online_users = 11; // 当前在线用户数（5 分钟活跃窗口）
 }
 
-// ListCommissions 佣金管理列表（P3-03）。
+// ListCommissions 佣金管理列表。
 message ListCommissionsRequest {
   string status = 1; // pending_confirm | available | withdrawn | reversed；空=全部
   int32 page = 2;
@@ -168,19 +168,19 @@ message ListCommissionsReply {
   int32 page_size = 4;
 }
 
-// GetReconciliation 对账总览（P3-07：订单×支付×佣金三向核对基础报表）。
+// GetReconciliation 对账总览（：订单×支付×佣金三向核对基础报表）。
 message GetReconciliationRequest {
   string date = 1; // yyyymmdd；空 = 最新
 }
 
 message ReconciliationSummary {
   string date = 1;
-  int64 order_paid_total = 2;     // 当日已支付订单额（分）
+  int64 order_paid_total = 2; // 当日已支付订单额（分）
   int64 payment_success_total = 3; // 当日支付单成功额（分）
   int64 wallet_recharge_total = 4; // 当日钱包充值（分）
-  int64 commission_total = 5;      // 当日佣金计提（分）
+  int64 commission_total = 5; // 当日佣金计提（分）
   int64 order_count = 6;
-  int64 mismatch_count = 7;        // 订单/支付额差异数（>0 需人工）
+  int64 mismatch_count = 7; // 订单/支付额差异数（>0 需人工）
 }
 
 message GetReconciliationReply {
@@ -190,7 +190,7 @@ message GetReconciliationReply {
 message CreateReconciliationJobRequest {
   uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
   int64 start = 2 [(google.api.field_behavior) = REQUIRED]; // unix 秒
-  int64 end = 3 [(google.api.field_behavior) = REQUIRED];   // unix 秒
+  int64 end = 3 [(google.api.field_behavior) = REQUIRED]; // unix 秒
 }
 
 message ReconciliationJobItem {

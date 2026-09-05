@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // 供货账号管理（supplier:read / supplier:write）：下游客户账户 + 对接申请审核工作台。
-// protocol 三选一：ZCard 自有协议 / dujiao-next 兼容 / acg-faka 兼容（P2-10 B/C）——
+// protocol 三选一：ZCard 自有协议 / dujiao-next 兼容 / acg-faka 兼容（ B/C）——
 // 兼容账号让对应平台不改代码即可对接本站；创建后展示「对接配置说明」。
 // 前台个人中心提交的申请（owner_user_id>0）在「待审核」筛选下集中处理：
 // 审核弹窗展示完整申请资料，「通过并开通」即生效（用户前台可查凭据），驳回须填意见。

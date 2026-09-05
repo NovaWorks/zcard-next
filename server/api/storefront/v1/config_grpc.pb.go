@@ -28,7 +28,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StorefrontConfigService 前台公开配置（P0-04 T3）。
+// StorefrontConfigService 前台公开配置。
 // 输出经 PUBLIC_KEYS 白名单过滤（SECRET 键绝不外泄——快照测试守护）；
 // storefront 前端模板参数、交易开关、启用语言/货币由此驱动。
 type StorefrontConfigServiceClient interface {
@@ -70,7 +70,7 @@ func (c *storefrontConfigServiceClient) ListCurrencies(ctx context.Context, in *
 // All implementations must embed UnimplementedStorefrontConfigServiceServer
 // for forward compatibility.
 //
-// StorefrontConfigService 前台公开配置（P0-04 T3）。
+// StorefrontConfigService 前台公开配置。
 // 输出经 PUBLIC_KEYS 白名单过滤（SECRET 键绝不外泄——快照测试守护）；
 // storefront 前端模板参数、交易开关、启用语言/货币由此驱动。
 type StorefrontConfigServiceServer interface {

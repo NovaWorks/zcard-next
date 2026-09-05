@@ -1,6 +1,6 @@
 package content
 
-// P2-04 必测项：banner 时间窗三态、sanitize XSS 剥离、slug 唯一、
+// 必测项：banner 时间窗三态、sanitize XSS 剥离、slug 唯一、
 // 发布状态机（published_at 首发回填）、多语言回落、移动端图回落。
 
 import (

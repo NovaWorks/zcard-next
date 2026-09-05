@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+// StoreAffiliateService 我的分销：推广码/团队/佣金流水/统计。
 type StoreAffiliateServiceClient interface {
 	// MyAffiliate 推广码 + 统计（登录用户）。
 	MyAffiliate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MyAffiliateReply, error)
@@ -81,7 +81,7 @@ func (c *storeAffiliateServiceClient) ListCommissions(ctx context.Context, in *L
 // All implementations must embed UnimplementedStoreAffiliateServiceServer
 // for forward compatibility.
 //
-// StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+// StoreAffiliateService 我的分销：推广码/团队/佣金流水/统计。
 type StoreAffiliateServiceServer interface {
 	// MyAffiliate 推广码 + 统计（登录用户）。
 	MyAffiliate(context.Context, *emptypb.Empty) (*MyAffiliateReply, error)

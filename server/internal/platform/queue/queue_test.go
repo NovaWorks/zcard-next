@@ -1,6 +1,6 @@
 package queue
 
-// P0-01 验收：三队列常量与降级矩阵、cron 周期触发、SyncQueue 失败路径。
+// 验收：三队列常量与降级矩阵、cron 周期触发、SyncQueue 失败路径。
 
 import (
 	"context"

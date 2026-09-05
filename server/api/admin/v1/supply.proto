@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
+// AdminSupplyService 货源连接管理：上游连接 CRUD + Ping 探活、
 // 商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
 // 凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
 // （列表/详情只给 credentials_set 布尔，铁律 11）。
@@ -84,11 +84,11 @@ service AdminSupplyService {
     };
   }
   // ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-  // PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+  // PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
   rpc PreviewProducts(PreviewProductsRequest) returns (PreviewProductsReply) {
     option (google.api.http) = { get: "/api/v1/admin/supply/connections/{connection_id}/preview" };
   }
-  // ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+  // ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
   rpc ImportProducts(ImportProductsRequest) returns (ImportProductsReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/supply/connections/{connection_id}/import"
@@ -108,7 +108,7 @@ message SupplyConnection {
   string driver = 3; // zcard | dujiao_next | acg_faka
   string base_url = 4;
   bool credentials_set = 5; // 凭据已配置（密文不回显）
-  string status = 6;        // active | disabled
+  string status = 6; // active | disabled
   string callback_url = 7;
   int32 retry_max = 8;
   string retry_intervals = 9; // JSON 数组 [30,60,300]
@@ -117,7 +117,7 @@ message SupplyConnection {
   string price_rounding_mode = 12; // none | ceil_int | ceil_tenth
   bool auto_sync_price = 13;
   string stock_mode = 14; // real | plenty
-  string settings = 15;   // JSON
+  string settings = 15; // JSON
   int64 price_markup_amount = 28; // 固定加价（分；与加价% 组合：×(1+%) 后再加）
   int64 last_ping_at = 16;
   bool last_ping_ok = 17;
@@ -126,11 +126,11 @@ message SupplyConnection {
   int64 balance_cache = 20;
   int64 created_at = 21;
   int64 updated_at = 22;
-  // P2-10 S2/S3：调度锚点与限流状态（界面展示/倒计时）
+  // S2/S3：调度锚点与限流状态（界面展示/倒计时）
   int64 last_collect_at = 23;
   int64 last_price_sync_at = 24;
   int64 last_status_sync_at = 25;
-  string rate_state = 26;      // JSON（节奏器状态：当前间隔/封锁计数/冷却时长）
+  string rate_state = 26; // JSON（节奏器状态：当前间隔/封锁计数/冷却时长）
   int64 rate_limit_until = 27; // 熔断冷却截止（秒；0=未熔断）
 }
 
@@ -247,8 +247,8 @@ message DeleteMappingRequest {
 message SupplySyncTask {
   uint64 id = 1;
   uint64 connection_id = 2;
-  string mode = 3;   // full | incremental
-  string scope = 4;  // collect | price | status（空 = collect 兼容历史任务）
+  string mode = 3; // full | incremental
+  string scope = 4; // collect | price | status（空 = collect 兼容历史任务）
   bool force_reprice = 5;
   string status = 6; // pending | processing | done | failed | canceled
   int64 total = 7;
@@ -306,16 +306,16 @@ message PreviewProductsReply {
 message ImportProductsRequest {
   uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
   repeated string codes = 2 [(google.api.field_behavior) = REQUIRED];
-  string pricing_mode = 3;      // percent | fixed | equal | pending（默认 percent）
-  double markup_percent = 4;   // percent 模式加价 %（0 = 用连接默认）
+  string pricing_mode = 3; // percent | fixed | equal | pending（默认 percent）
+  double markup_percent = 4; // percent 模式加价 %（0 = 用连接默认）
   int64 markup_amount_cents = 5; // fixed 模式加价金额（分）
-  bool save_default = 6;       // 把本次策略存为连接默认（settings.import_pricing）
+  bool save_default = 6; // 把本次策略存为连接默认（settings.import_pricing）
   map<string, uint64> category_map = 7; // 上游分类 code → 本地分类 id
 }
 
 message ImportProductsReply {
-  int32 imported = 1;   // 新建
-  int32 updated = 2;    // 更新（已导入重导）
+  int32 imported = 1; // 新建
+  int32 updated = 2; // 更新（已导入重导）
   int32 failed = 3;
   string error_context = 4;
 }

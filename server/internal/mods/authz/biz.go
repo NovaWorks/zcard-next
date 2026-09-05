@@ -1,6 +1,6 @@
-// Package authz 自建 RBAC（M0）：admin_roles + role_permissions，权限目录自动生成。
+// Package authz 自建 RBAC（）：admin_roles + role_permissions，权限目录自动生成。
 //
-// 发卡系统权限模型简单，自建 RBAC 比 Casbin 更轻可控（规划 §3.1）；
+// 发卡系统权限模型简单，自建 RBAC 比 Casbin 更轻可控（规划 ）；
 // 「域内角色」（分站主只见自己分站）由 subsite_id 租户隔离实现，不做双套权限源。
 package authz
 
@@ -27,7 +27,7 @@ type RoleRepo interface {
 }
 
 // RbacUsecase 鉴权用例：权限点进程内缓存（30s TTL，角色变更后自然过期；
-// M3 多员工实时吊销走 sessions/版本号）。
+// 多员工实时吊销走 sessions/版本号）。
 type RbacUsecase struct {
 	repo RoleRepo
 
@@ -97,7 +97,7 @@ func (uc *RbacUsecase) codes(ctx context.Context, roleID uint64) []string {
 	return codes
 }
 
-// Invalidate 失效角色缓存（权限变更后实时生效，P0-03 T2）。
+// Invalidate 失效角色缓存（权限变更后实时生效，）。
 func (uc *RbacUsecase) Invalidate(roleID uint64) {
 	uc.mu.Lock()
 	defer uc.mu.Unlock()

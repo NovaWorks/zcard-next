@@ -1,16 +1,16 @@
 package procurement
 
-// P2-02 T2/T4：采购提交与到手即加密。
+// /：采购提交与到手即加密。
 //
 // 流程（订阅 order.paid → 逐 upstream 项）：
-//   1. 幂等建单（order_item_id 唯一）pending
-//   2. fail-open 库存校验（stock_mode=real 且缓存不足时实时查；失败放行）
-//   3. Gateway.Submit（幂等键 = 采购单 dedupe_key，随请求发送）
-//      - delivered → 卡密到手即加密（CardCipher.Seal）→ 落 procurement_items
-//        → MarkFulfilled → 交付出口（fulfillment.AttachUpstreamDelivery）→ 发布 fulfilled
-//      - pending   → MarkSubmitted（记 upstream_order_id + 退避调度）
-//      - 永久错误  → MarkRejected → 失败策略分流（auto_refund / manual）
-//      - 可重试    → BumpRetry（退避后由轮询/巡检再试）
+// 1. 幂等建单（order_item_id 唯一）pending
+// 2. fail-open 库存校验（stock_mode=real 且缓存不足时实时查；失败放行）
+// 3. Gateway.Submit（幂等键 = 采购单 dedupe_key，随请求发送）
+// - delivered → 卡密到手即加密（CardCipher.Seal）→ 落 procurement_items
+// → MarkFulfilled → 交付出口（fulfillment.AttachUpstreamDelivery）→ 发布 fulfilled
+// - pending → MarkSubmitted（记 upstream_order_id + 退避调度）
+// - 永久错误 → MarkRejected → 失败策略分流（auto_refund / manual）
+// - 可重试 → BumpRetry（退避后由轮询/巡检再试）
 //
 // 铁律 11（采购侧）：上游卡密内存态 → 立即 Seal → 密文落库；全程零明文落盘零日志。
 
@@ -45,7 +45,7 @@ type orderPaidPayload struct {
 	} `json:"items"`
 }
 
-// ProcureService 采购服务（T2 提交 / T3 三通道 / T5 失败策略）。
+// ProcureService 采购服务（ 提交 / 三通道 / 失败策略）。
 type ProcureService struct {
 	repo   *ProcureRepo
 	gw     supplyport.UpstreamGateway
@@ -167,7 +167,7 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 
 // finalizeDelivered 同步拿货成功：到手即加密 → 落库 → 交付出口 → 事件。
 func (s *ProcureService) finalizeDelivered(ctx context.Context, poID, orderID, orderItemID, productID, subsiteID uint64, cards []string, amount int64) error {
-	// T4 到手即加密：内存明文 → Seal（AAD 绑定本地商品/租户）→ 密文
+	// 到手即加密：内存明文 → Seal（AAD 绑定本地商品/租户）→ 密文
 	sealed := make([][]byte, 0, len(cards))
 	deliveryItems := make([]fulfillmentport.UpstreamDeliveryItem, 0, len(cards))
 	for _, plain := range cards {
@@ -234,7 +234,7 @@ func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err
 	return s.schedulePoll(ctx, poID, 30*time.Second)
 }
 
-// applyFailStrategy T5 失败策略：auto_refund → 退款编排；manual → 人工终态 + 事件。
+// applyFailStrategy 失败策略：auto_refund → 退款编排；manual → 人工终态 + 事件。
 func (s *ProcureService) applyFailStrategy(ctx context.Context, poID uint64, reason string) error {
 	po, err := s.repo.Get(ctx, poID)
 	if err != nil {

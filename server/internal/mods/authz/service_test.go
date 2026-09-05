@@ -1,6 +1,6 @@
 package authz
 
-// 员工重置类 API 面测试（P0-03 补全：重置密码/解绑 TOTP）。
+// 员工重置类 API 面测试（ 补全：重置密码/解绑 TOTP）。
 // service 层用 fake AdminMutator/AdminReader + 真实 Directory——
 // 校验参数基线、会话吊销调用次序、目录对新 op 的权限点声明。
 

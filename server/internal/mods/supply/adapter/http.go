@@ -82,7 +82,7 @@ func newTransportWithClient(baseURL string, retryIntervals []int, log *slog.Logg
 
 // do 发送请求并返回响应体。headers 中的签名头由各协议适配器构造；
 // body 为实际发出的字节（签名哈希 === 实际字节 不变式的发送端）。
-// 重试口径（P2-10 S2 对齐 1.x UpstreamRequestException）：网络错误/5xx/429/非 JSON
+// 重试口径（ S2 对齐 1.x UpstreamRequestException）：网络错误/5xx/429/非 JSON
 // 网关页可重试（429 间隔加倍）；401/403/404 等其余 4xx 业务错误立即失败。
 // 429 重试耗尽 → 包装 ErrRateLimited（上层节奏器 AIMD 降速判据）。
 func (t *transport) do(ctx context.Context, method, path string, query url.Values, headers map[string]string, body []byte) ([]byte, error) {

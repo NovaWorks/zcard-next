@@ -1,6 +1,6 @@
 package audit
 
-// 操作审计过滤器（P2-06 T2）：变更类 admin 操作（POST/PUT/DELETE）自动落 audit_logs。
+// 操作审计过滤器（）：变更类 admin 操作（POST/PUT/DELETE）自动落 audit_logs。
 //
 // 实现为 http.Filter（非 Kratos middleware）——中间件层的 Transporter 是内部
 // *khttp.Transport 类型，拿不到原始 *http.Request（method/path/body）；

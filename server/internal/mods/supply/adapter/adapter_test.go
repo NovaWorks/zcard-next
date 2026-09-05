@@ -337,7 +337,7 @@ func TestIDString(t *testing.T) {
 	}
 }
 
-// ---- P2-10 S1：增量能力（updated_after）与多语言提取 ----
+// ---- S1：增量能力（updated_after）与多语言提取 ----
 
 func TestDujiaoIncrementalList(t *testing.T) {
 	var gotAfter, gotIncludeInactive string
@@ -408,7 +408,7 @@ func TestLocalizedText(t *testing.T) {
 	}
 }
 
-// ---- P2-10 S2：限流/WAF 识别（传输层）----
+// ---- S2：限流/WAF 识别（传输层）----
 
 func TestTransport429RetriesThenRateLimited(t *testing.T) {
 	var calls int

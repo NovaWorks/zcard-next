@@ -454,7 +454,7 @@ async function buy() {
   router.push(`/payment/${data!.order_no}`);
 }
 
-// 积分兑换（P3-01：use_points → 服务端同事务扣积分 → 订单直落 paid → 取货页交付）
+// 积分兑换（：use_points → 服务端同事务扣积分 → 订单直落 paid → 取货页交付）
 async function exchangePoints() {
   if (!p.value) return;
   if (!getToken()) {

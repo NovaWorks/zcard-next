@@ -1,6 +1,6 @@
 package settings
 
-// 前台公开配置服务 + 多币种读取（P0-04 T3）。
+// 前台公开配置服务 + 多币种读取（）。
 // 白名单输出（SECRET 键物理隔离）；admin 货币 CRUD 在 service.go（AdminCurrencyService）。
 
 import (
@@ -104,7 +104,7 @@ func (r *RepoImpl) Currencies(ctx context.Context) ([]CurrencyView, error) {
 	return out, nil
 }
 
-// CurrencyByCode 按 code 取（P0-01 exchange 的取数端；port.CurrencyReader）。
+// CurrencyByCode 按 code 取（ exchange 的取数端；port.CurrencyReader）。
 func (r *RepoImpl) CurrencyByCode(ctx context.Context, code string) (string, int32, error) {
 	row, err := data.Client(ctx, r.data).Currency.Query().Where(currency.Code(code)).Only(ctx)
 	if ent.IsNotFound(err) {

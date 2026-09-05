@@ -1,6 +1,6 @@
 import { request } from "../request";
 
-// ── 素材库（P3-06：上传 base64 JSON；ref_count 引用计数；删除被引用需 confirm）──
+// ── 素材库（：上传 base64 JSON；ref_count 引用计数；删除被引用需 confirm）──
 
 export interface MediaItem {
   id: number;

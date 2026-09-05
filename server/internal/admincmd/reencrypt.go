@@ -1,6 +1,6 @@
 package admincmd
 
-// reencrypt-cards 密钥轮换子命令（P1-02 T5 骨架）：
+// reencrypt-cards 密钥轮换子命令（ 骨架）：
 // 旧 key 解密 → 新 key 重加密 → 同事务重算 content_hash（+ 靓号 number_hash），分批 1000。
 // 幂等：旧 key 解不开但新 key 能解的行视为已轮换跳过（中断可续跑）。
 

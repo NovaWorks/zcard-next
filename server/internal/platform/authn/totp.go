@@ -1,6 +1,6 @@
 package authn
 
-// TOTP 两步验证（P0-02 T1）：密钥 AES-GCM 加密存储（ZCARD_DATA_KEY），
+// TOTP 两步验证（）：密钥 AES-GCM 加密存储（ZCARD_DATA_KEY），
 // 验证窗口 ±1（30s 步长）。启用流程：生成密钥 → 管理员扫码/手输 → 验证一次确认。
 
 import (

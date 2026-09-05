@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
+// AdminTicketService 客服工单工作台：urgent_paid 置顶持续高亮、
 // 认领/回复/内部备注/解决/关闭、筛选。
 service AdminTicketService {
   // ListTickets 工作台列表（urgent_paid 置顶 → 高 → 中 → 低；状态/类型/订单筛选）。
@@ -43,8 +43,8 @@ service AdminTicketService {
 }
 
 message ListTicketsRequest {
-  string status = 1;   // open | processing | resolved | closed；空=未关闭（open+processing）
-  string type = 2;     // presale | aftersale
+  string status = 1; // open | processing | resolved | closed；空=未关闭（open+processing）
+  string type = 2; // presale | aftersale
   string order_no = 3; // 关联订单号（精确）
   int32 page = 4;
   int32 page_size = 5;

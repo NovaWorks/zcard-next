@@ -1,6 +1,6 @@
 package order
 
-// 购物车（P1-03b T5 销账）：登录态 CRUD + 商品快照联查。
+// 购物车（ 销账）：登录态 CRUD + 商品快照联查。
 // 结算复用 CreateOrder（前端组装 items/coupon/control_answers）——本文件无下单逻辑。
 // 语义：同 (user, product, sku) 合并数量（唯一索引 upsert）；下架/隐藏商品 valid=false 打标。
 

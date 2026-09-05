@@ -87,7 +87,7 @@ onMounted(async () => {
   }
 });
 
-// 积分兑换（P3-01：use_points 下单 → 服务端同事务扣积分 → 直落 paid → 取货页交付）
+// 积分兑换（：use_points 下单 → 服务端同事务扣积分 → 直落 paid → 取货页交付）
 async function exchange(p: Product) {
   if (!getToken()) {
     router.push({ path: '/login', query: { redirect: '/points' } });

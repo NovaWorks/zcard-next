@@ -28,7 +28,7 @@ const OperationStoreWalletServiceRedeemGiftcard = "/zcard.api.storefront.v1.Stor
 type StoreWalletServiceHTTPServer interface {
 	// CreateRecharge CreateRecharge 充值（走支付管线）。
 	CreateRecharge(context.Context, *CreateRechargeRequest) (*CreateRechargeReply, error)
-	// CreateWithdrawal CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+	// CreateWithdrawal CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
 	CreateWithdrawal(context.Context, *CreateWithdrawalRequest) (*CreateWithdrawalReply, error)
 	// GetBalance GetBalance 余额+积分。
 	GetBalance(context.Context, *emptypb.Empty) (*BalanceReply, error)
@@ -167,7 +167,7 @@ func _StoreWalletService_CreateWithdrawal0_HTTP_Handler(srv StoreWalletServiceHT
 type StoreWalletServiceHTTPClient interface {
 	// CreateRecharge CreateRecharge 充值（走支付管线）。
 	CreateRecharge(ctx context.Context, req *CreateRechargeRequest, opts ...http.CallOption) (rsp *CreateRechargeReply, err error)
-	// CreateWithdrawal CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+	// CreateWithdrawal CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
 	CreateWithdrawal(ctx context.Context, req *CreateWithdrawalRequest, opts ...http.CallOption) (rsp *CreateWithdrawalReply, err error)
 	// GetBalance GetBalance 余额+积分。
 	GetBalance(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *BalanceReply, err error)
@@ -205,7 +205,7 @@ func (c *StoreWalletServiceHTTPClientImpl) CreateRecharge(ctx context.Context, i
 	return &out, nil
 }
 
-// CreateWithdrawal CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+// CreateWithdrawal CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
 func (c *StoreWalletServiceHTTPClientImpl) CreateWithdrawal(ctx context.Context, in *CreateWithdrawalRequest, opts ...http.CallOption) (*CreateWithdrawalReply, error) {
 	var out CreateWithdrawalReply
 	pattern := "/api/v1/storefront/wallet/withdrawals"

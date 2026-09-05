@@ -1,5 +1,5 @@
 // 前台 API 客户端：fetch 封装，金额一律「分」int64。
-// 认证（P3-09 T1）：user realm JWT 存 localStorage，请求自动带 Bearer；
+// 认证（）：user realm JWT 存 localStorage，请求自动带 Bearer；
 // 401 且本地有 token → 判定过期，清 token 跳登录（游客端点 401 不误伤）。
 
 // SSG 构建（vite-ssg）时服务端无同源 API：经 VITE_SSG_API 指向构建机可达的 API

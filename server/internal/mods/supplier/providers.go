@@ -1,6 +1,6 @@
 package supplier
 
-// wire providers（P2-03）。
+// wire providers（）。
 
 import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"

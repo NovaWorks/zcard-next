@@ -34,11 +34,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminDashboardService 工作台指标（P3-07 M1b v1）。
+// AdminDashboardService 工作台指标(v1）。
 type AdminDashboardServiceClient interface {
 	// GetReconciliation 对账总览。
 	GetReconciliation(ctx context.Context, in *GetReconciliationRequest, opts ...grpc.CallOption) (*GetReconciliationReply, error)
-	// ListCommissions 佣金列表（P3-03 affiliate）。
+	// ListCommissions 佣金列表(affiliate）。
 	ListCommissions(ctx context.Context, in *ListCommissionsRequest, opts ...grpc.CallOption) (*ListCommissionsReply, error)
 	GetDashboard(ctx context.Context, in *GetDashboardRequest, opts ...grpc.CallOption) (*DashboardReply, error)
 	// GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
@@ -157,11 +157,11 @@ func (c *adminDashboardServiceClient) ListReconciliationItems(ctx context.Contex
 // All implementations must embed UnimplementedAdminDashboardServiceServer
 // for forward compatibility.
 //
-// AdminDashboardService 工作台指标（P3-07 M1b v1）。
+// AdminDashboardService 工作台指标(v1）。
 type AdminDashboardServiceServer interface {
 	// GetReconciliation 对账总览。
 	GetReconciliation(context.Context, *GetReconciliationRequest) (*GetReconciliationReply, error)
-	// ListCommissions 佣金列表（P3-03 affiliate）。
+	// ListCommissions 佣金列表(affiliate）。
 	ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error)
 	GetDashboard(context.Context, *GetDashboardRequest) (*DashboardReply, error)
 	// GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。

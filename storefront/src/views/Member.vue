@@ -281,7 +281,7 @@
       <SupplierApply />
     </div>
 
-    <!-- 账户安全（P3-10：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
+    <!-- 账户安全（：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
     <div v-if="tab === 'security'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 420px)); gap: 16px;">
       <div class="card">
         <h3 style="margin-bottom: 12px;">修改密码</h3>
@@ -407,7 +407,7 @@ onMounted(async () => {
   const [b, l] = await Promise.all([getBalance(), getMyLevel()]);
   balance.value = b.data;
   level.value = l.data;
-  // 充值档位（T0 公开下发：recharge.enabled/min_amount/max_amount/gift_tiers）
+  // 充值档位（ 公开下发：recharge.enabled/min_amount/max_amount/gift_tiers）
   const cfg = await api.get<{ entries: { key: string; value_json: string }[] }>('/config');
   const find = (k: string) => cfg.data?.entries?.find((e) => e.key === k)?.value_json;
   const min = find('recharge.min_amount');
@@ -605,7 +605,7 @@ async function doRedeem() {
   balance.value = b.data;
 }
 
-// security（P3-10）
+// security（）
 const oldPwd = ref('');
 const newPwd = ref('');
 const newPwd2 = ref('');

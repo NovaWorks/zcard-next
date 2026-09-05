@@ -1,6 +1,6 @@
 package ticket
 
-// 工单仓储（P3-05）：生命周期状态机 + 消息流（内部备注双过滤）+ 自动关闭。
+// 工单仓储（）：生命周期状态机 + 消息流（内部备注双过滤）+ 自动关闭。
 
 import (
 	"context"
@@ -39,7 +39,7 @@ type TicketRepo struct {
 	mediaRef mediaport.Referencer // 附件引用计数（nil 跳过）
 }
 
-// NewTicketRepo 构造（mediaRef 素材引用计数，P3-06）。
+// NewTicketRepo 构造（mediaRef 素材引用计数，）。
 func NewTicketRepo(d *data.Data, mediaRef mediaport.Referencer) *TicketRepo {
 	return &TicketRepo{data: d, mediaRef: mediaRef}
 }

@@ -1,6 +1,6 @@
 package memberlevel
 
-// P3-01 M3 测试：积分产生（order.paid → points_rule 入账幂等）+ 等级进度
+// 测试：积分产生（order.paid → points_rule 入账幂等）+ 等级进度
 // （阈值全矩阵 + countAsRecharge 防刷口径）。
 
 import (

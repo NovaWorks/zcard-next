@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
+// StoreCouponService 前台营销：我的券/兑换码领券/秒杀营销位。
 type StoreCouponServiceClient interface {
 	// ListMyCoupons 我的可用券（登录用户）。
 	ListMyCoupons(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListMyCouponsReply, error)
@@ -81,7 +81,7 @@ func (c *storeCouponServiceClient) ListFlashSales(ctx context.Context, in *ListF
 // All implementations must embed UnimplementedStoreCouponServiceServer
 // for forward compatibility.
 //
-// StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
+// StoreCouponService 前台营销：我的券/兑换码领券/秒杀营销位。
 type StoreCouponServiceServer interface {
 	// ListMyCoupons 我的可用券（登录用户）。
 	ListMyCoupons(context.Context, *emptypb.Empty) (*ListMyCouponsReply, error)

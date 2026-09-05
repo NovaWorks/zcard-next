@@ -1,6 +1,6 @@
 package wallet
 
-// P1-05 验收核心：InTx 账务内核测试（并发幂等/非负/重算一致性）。
+// 验收核心：InTx 账务内核测试（并发幂等/非负/重算一致性）。
 
 import (
 	"context"

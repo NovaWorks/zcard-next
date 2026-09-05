@@ -35,7 +35,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+// AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
 type AdminInventoryServiceClient interface {
 	// ImportPreview 上传预览（去重统计 + 样本预览）。
 	ImportPreview(ctx context.Context, in *ImportPreviewRequest, opts ...grpc.CallOption) (*ImportPreviewReply, error)
@@ -159,7 +159,7 @@ func (c *adminInventoryServiceClient) ListPremiumCards(ctx context.Context, in *
 // All implementations must embed UnimplementedAdminInventoryServiceServer
 // for forward compatibility.
 //
-// AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+// AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
 type AdminInventoryServiceServer interface {
 	// ImportPreview 上传预览（去重统计 + 样本预览）。
 	ImportPreview(context.Context, *ImportPreviewRequest) (*ImportPreviewReply, error)

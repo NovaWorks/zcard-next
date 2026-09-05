@@ -39,7 +39,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminContentService 内容管理（P2-04）：横幅/文章/分类 CRUD。
+// AdminContentService 内容管理：横幅/文章/分类 CRUD。
 // content_json 入库前经 sanitize（与商品描述同一策略）；slug 唯一。
 type AdminContentServiceClient interface {
 	// CreateBanner 创建横幅（时间窗/跳转类型）。
@@ -212,7 +212,7 @@ func (c *adminContentServiceClient) ListCategories(ctx context.Context, in *List
 // All implementations must embed UnimplementedAdminContentServiceServer
 // for forward compatibility.
 //
-// AdminContentService 内容管理（P2-04）：横幅/文章/分类 CRUD。
+// AdminContentService 内容管理：横幅/文章/分类 CRUD。
 // content_json 入库前经 sanitize（与商品描述同一策略）；slug 唯一。
 type AdminContentServiceServer interface {
 	// CreateBanner 创建横幅（时间窗/跳转类型）。

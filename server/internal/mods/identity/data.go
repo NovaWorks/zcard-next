@@ -1,6 +1,6 @@
 package identity
 
-// 员工仓储 Ent 实现（Ent 收口边界内：data.go 允许 import ent，架构测试 §4.10-5）。
+// 员工仓储 Ent 实现（Ent 收口边界内：data.go 允许 import ent，架构测试 -5）。
 
 import (
 	"context"
@@ -60,7 +60,7 @@ func (r *AdminUserRepoImpl) TouchLogin(ctx context.Context, id uint64, ip string
 	return err
 }
 
-// ── 员工管理（port.AdminMutator 实现，authz API 面消费；P0-03 T2）────────────
+// ── 员工管理（port.AdminMutator 实现，authz API 面消费；）────────────
 
 // Admin 按 ID 取员工账户（port.AdminReader 实现——admin 鉴权中间件每请求
 // 校验 enabled 与当前 RoleID，禁用/换角色即时生效）。
@@ -187,7 +187,7 @@ func (r *AdminUserRepoImpl) Delete(ctx context.Context, id uint64) error {
 	})
 }
 
-// ── TOTP 仓储方法（P0-02 T1）────────────────────────────────────
+// ── TOTP 仓储方法（）────────────────────────────────────
 
 // SetTOTPSecret 存储 TOTP 密钥密文。
 func (r *AdminUserRepoImpl) SetTOTPSecret(ctx context.Context, id uint64, secret []byte) error {

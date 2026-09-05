@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 上游商品导入弹窗（P2-10 D）：预览分类树 → 勾选商品 → 定价策略（四模式）→
+// 上游商品导入弹窗（ D）：预览分类树 → 勾选商品 → 定价策略（四模式）→
 // 类目映射（上游分类 → 本地分类）→ 存为连接默认。已导入商品标注（重导 = 更新）。
 import { computed, reactive, ref, watch } from "vue";
 import {

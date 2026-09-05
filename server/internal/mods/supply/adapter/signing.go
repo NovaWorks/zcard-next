@@ -32,7 +32,7 @@ func HmacSHA256Hex(secret, message string) string {
 
 // ZCardSignString 组装签名串（v1.12.90+ 新口径，含 query md5 段）。
 // 签名串 = METHOD\nPATH(不含query)\ntimestamp\nnonce\nmd5(body)\nmd5(rawQuery)
-// 服务端（P2-03 authware）双口径兼容验签：先旧口径（无第 6 段）后新口径。
+// 服务端（ authware）双口径兼容验签：先旧口径（无第 6 段）后新口径。
 func ZCardSignString(method, path, rawQuery, timestamp, nonce string, body []byte) string {
 	return strings.Join([]string{
 		method,

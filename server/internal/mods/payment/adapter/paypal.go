@@ -1,24 +1,24 @@
 package adapter
 
-// paypal 适配器（P2-09 T4）：Orders v2 手写 HTTP（PayPal 无官方 Go SDK——官方 SDK 仅
-// Java/.NET/Node/PHP/Python/Ruby；任务书 T4 行为描述即手写规格，dujiao-next 主参照）。
+// paypal 适配器（）：Orders v2 手写 HTTP（PayPal 无官方 Go SDK——官方 SDK 仅
+// Java/.NET/Node/PHP/Python/Ruby； 行为描述即手写规格，dujiao-next 主参照）。
 //
 // 能力位：Provider（Orders v2，intent=CAPTURE）+ Webhooker（官方 verify-webhook-signature
 // API——5 头 + webhook_id）+ Capturer（先查后捕：GET order APPROVED→capture，COMPLETED→
 // 直成功）+ Refunder（captures/{id}/refund——三参考项目均缺位，按 API 文档自建）。
 //
-// 协议要点（1.x PaypalDriver 对拍 + 任务书 §3.1）：
-//   - 金额：value 两位小数字符串（"10.00"，1.x bcdiv/dujiao Round(2) 同口径；零小数币种
-//     JPY 未适配——现阶段目标币种仅 precision=2，联调锁定）
-//   - 幂等：reference_id/invoice_id 双写 OrderNo（1.x 用 reference_id，任务书钉 invoice_id）
-//   - return 同步捕获：PayPal 跳回 return_url 时追加 token=<order_id>（1.x 生产依赖）；
-//     return 端点复用 Capturer 先查后捕
-//   - 验签：POST /v1/notifications/verify-webhook-signature，请求体 = 元数据 JSON 拼接
-//     原始事件字节（签名覆盖原文——字节必须原样透传，禁止重排/重序列化）
-//   - token 缓存：包级并发安全缓存（key=base_url|client_id），expires_in 提前 5 分钟失效
-//     （1.x M-11：匿名回调端点触发 token 换发可被打满商户 API 速率配额）
-//   - 退款锚点：支付单 channel_order_no 存 PayPal order id（Capturer/return 同锚点），
-//     Refund 内先 GET order 解析 capture id（退款锚定实收捕获）
+// 协议要点（1.x PaypalDriver 对拍 + ）：
+// - 金额：value 两位小数字符串（"10.00"，1.x bcdiv/dujiao Round(2) 同口径；零小数币种
+// JPY 未适配——现阶段目标币种仅 precision=2，联调锁定）
+// - 幂等：reference_id/invoice_id 双写 OrderNo（1.x 用 reference_id，钉 invoice_id）
+// - return 同步捕获：PayPal 跳回 return_url 时追加 token=<order_id>（1.x 生产依赖）；
+// return 端点复用 Capturer 先查后捕
+// - 验签：POST /v1/notifications/verify-webhook-signature，请求体 = 元数据 JSON 拼接
+// 原始事件字节（签名覆盖原文——字节必须原样透传，禁止重排/重序列化）
+// - token 缓存：包级并发安全缓存（key=base_url|client_id），expires_in 提前 5 分钟失效
+// （1.x M-11：匿名回调端点触发 token 换发可被打满商户 API 速率配额）
+// - 退款锚点：支付单 channel_order_no 存 PayPal order id（Capturer/return 同锚点），
+// Refund 内先 GET order 解析 capture id（退款锚定实收捕获）
 //
 // 安全纪律：匿名端点（return/webhook）出站 token 白名单约束（1.x M-11 速率配额放大器）；
 // 验签失败 401 与单号错误 400 语义分离（回调管线契约）。
@@ -213,7 +213,7 @@ func (a *PaypalAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	if c.ClientID == "" || c.ClientSecret == "" {
 		return nil, fmt.Errorf("paypal: client_id/client_secret 必填")
 	}
-	// 金额口径（T2 快照）：跨币用 ChargedUnits/ChargedCurrency；同币直收回落 Amount
+	// 金额口径（ 快照）：跨币用 ChargedUnits/ChargedCurrency；同币直收回落 Amount
 	units := int64(req.Amount)
 	currency := "CNY"
 	if req.ChargedUnits > 0 {
@@ -236,11 +236,11 @@ func (a *PaypalAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		"intent": "CAPTURE",
 		"purchase_units": []any{map[string]any{
 			"reference_id": req.OrderNo, // 1.x 定位口径（捕获响应回读）
-			"invoice_id":   req.OrderNo, // 幂等（任务书 §3.1）
+			"invoice_id":   req.OrderNo, // 幂等（ ）
 			"description":  req.Subject,
 			"amount": paypalMoney{
 				CurrencyCode: currency,
-				Value:        centsToYuan(units), // 两位小数字符串（任务书 §3.1 钉死）
+				Value:        centsToYuan(units), // 两位小数字符串（ 钉死）
 			},
 		}},
 		"application_context": paypalAppContext(c, returnURL),
@@ -411,9 +411,9 @@ type paypalWebhookEvent struct {
 }
 
 // factFromEvent 事件 → CallbackFact。成功事件：
-//   - PAYMENT.CAPTURE.COMPLETED：capture 资源无 invoice_id——经 related_ids.order_id
-//     出站拉订单解析（resolve 失败 → 错误 → 网关重试）
-//   - CHECKOUT.ORDER.COMPLETED：订单资源自带 reference_id/invoice_id，零出站
+// - PAYMENT.CAPTURE.COMPLETED：capture 资源无 invoice_id——经 related_ids.order_id
+// 出站拉订单解析（resolve 失败 → 错误 → 网关重试）
+// - CHECKOUT.ORDER.COMPLETED：订单资源自带 reference_id/invoice_id，零出站
 //
 // 其余状态事件（pending/denied/declined/failed…）Success=false——管线忽略，
 // 仅成功事件推进支付。
@@ -498,7 +498,7 @@ func paypalGetOrder(ctx context.Context, c paypalConfig, orderID string) (*paypa
 	return &order, nil
 }
 
-// QueryPayment 先查后捕：GET order → APPROVED 才 capture（任务书 §3.1 幂等——
+// QueryPayment 先查后捕：GET order → APPROVED 才 capture（ 幂等——
 // 重复 capture 报错，先查避免）；COMPLETED 直成功（已捕获，幂等短路）；其余未付。
 func (a *PaypalAdapter) QueryPayment(ctx context.Context, gatewayOrderNo string, cfg json.RawMessage) (*port.CallbackFact, error) {
 	var c paypalConfig
@@ -552,7 +552,7 @@ func (a *PaypalAdapter) factFromOrder(o paypalOrder, success bool) *port.Callbac
 	if fact.OrderNo == "" {
 		fact.OrderNo = u.InvoiceID
 	}
-	// 金额取实收捕获（回显下单金额——T2 快照核对口径）；捕获缺席回落订单金额
+	// 金额取实收捕获（回显下单金额—— 快照核对口径）；捕获缺席回落订单金额
 	if len(u.Payments.Captures) > 0 {
 		cap := u.Payments.Captures[0]
 		if cents, err := yuanToCents(cap.Amount.Value); err == nil {

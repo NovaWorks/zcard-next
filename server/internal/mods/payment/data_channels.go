@@ -1,6 +1,6 @@
 package payment
 
-// T1 渠道管理 + T4 回调管线 + T6 退款 v1（P1-04 核心交易支付）。
+// 渠道管理 + 回调管线 + 退款 v1（ 核心交易支付）。
 //
 // 渠道凭据 AES-256-GCM 加密存储（ZCARD_DATA_KEY），解密失败降级为空——列表绝不 500。
 // 回调管线：四重校验（渠道/单号/金额/币种）→ 幂等三层 → markPaid → 事务后事件。
@@ -36,13 +36,13 @@ type PaymentRepoImpl struct {
 	data   *data.Data
 	Cipher *crypto.Box // ZCARD_DATA_KEY
 	reg    *Registry   // 渠道 adapter 注册表
-	// M1b 回调管线依赖（wire 注入，§4.6 破环点）：
+	// 回调管线依赖（wire 注入， 破环点）：
 	lifecycle orderport.OrderLifecycle    // 订单型回调 → 状态机推进 + order.paid 事件（同事务）
 	wallet    walletport.Wallet           // 余额支付扣款 / 充值到账入账（通道 B 同事务）
 	points    walletport.Points           // 充值赠送积分（积分账本；nil = 未装配跳过）
 	outbox    events.Writer               // recharge.succeeded 等事件
-	currency  settingsport.CurrencyReader // 币种快照换算（P2-09 T2；nil = 同币直收）
-	settings  settingsport.Provider       // site/url 等（P2-09 T5 回调地址拼接；nil = 相对路径）
+	currency  settingsport.CurrencyReader // 币种快照换算（；nil = 同币直收）
+	settings  settingsport.Provider       // site/url 等（ 回调地址拼接；nil = 相对路径）
 	supplier  port.SupplierRecharger      // target=supply 充值入账（供货账户余额；nil = 未装配跳过）
 }
 
@@ -51,7 +51,7 @@ func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle 
 	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency, settings: settings, supplier: supplier}
 }
 
-// ChargeSnapshot 币种快照换算（P2-09 T2）：
+// ChargeSnapshot 币种快照换算（）：
 // 渠道凭据 target_currency（空/CNY）→ 同币直收（units=amount, rate=1, currency=CNY）；
 // 否则 currency 表 rate/precision → money.ToDisplay（decimal 精确、四舍五入）。
 // rate 缺失/非法 → 1:1 直通（safeRate 语义——宁可同币直收不错换）。
@@ -99,7 +99,7 @@ func (r *PaymentRepoImpl) snapshotCharge(ctx context.Context, paymentID uint64, 
 		Save(ctx)
 }
 
-// ── 渠道管理（T1）────────────────────────────────────────────
+// ── 渠道管理（）────────────────────────────────────────────
 
 // ListChannels 渠道列表（凭据脱敏）。
 func (r *PaymentRepoImpl) ListChannels(ctx context.Context) ([]*ent.PaymentChannel, error) {
@@ -232,7 +232,7 @@ func (r *PaymentRepoImpl) DecryptConfig(ch *ent.PaymentChannel) json.RawMessage 
 }
 
 // CallbackURL 渠道回调地址（站点 URL 拼接；site/url 未配置回落相对路径——
-// P2-09 T5：admin 配置面板展示复制，填到支付平台 webhook/notify 配置）。
+// ：admin 配置面板展示复制，填到支付平台 webhook/notify 配置）。
 func (r *PaymentRepoImpl) CallbackURL(ctx context.Context, code string) string {
 	base := ""
 	if r.settings != nil {
@@ -276,7 +276,7 @@ func (r *PaymentRepoImpl) ConfiguredFields(ch *ent.PaymentChannel) []string {
 	return out
 }
 
-// ── 支付单（T4）────────────────────────────────────────────
+// ── 支付单（）────────────────────────────────────────────
 
 // CreatePayment 创建支付单。
 func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, channel string, amount int64, idemKey string) (*ent.Payment, error) {
@@ -391,13 +391,13 @@ func (r *PaymentRepoImpl) ListPayments(ctx context.Context, status, orderNo stri
 	return q.All(ctx)
 }
 
-// HandleCallback 回调处理管线（P1-04 核心——四重校验+幂等+业务推进）。
+// HandleCallback 回调处理管线（ 核心——四重校验+幂等+业务推进）。
 // 事务内：行锁 payment → 幂等三层 → 按支付单类型分流：
 //
 //	订单型（order_id>0）：余额渠道先扣款（wallet.DebitInTx，同事务）→
-//	  OrderLifecycle.MarkPaid（状态机 CAS + 状态事件 + outbox order.paid，§4.6 破环点）
+// OrderLifecycle.MarkPaid（状态机 CAS + 状态事件 + outbox order.paid， 破环点）
 //	充值型（recharge_order_id>0）：充值单 pending→success → 余额入账
-//	  （amount+gift，reference=recharge:<paymentID> 幂等）→ outbox recharge.succeeded
+// （amount+gift，reference=recharge:<paymentID> 幂等）→ outbox recharge.succeeded
 //
 // 支付确认前零入账（铁律 16）；事件与入账同事务，回滚不残留。
 func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, fact CallbackFact) error {
@@ -419,9 +419,9 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 		}
 
 		// 3) 四重校验（渠道/单号/金额/币种——金额永远对服务端权威值）
-		//    跨币路径（P2-09 T2 快照）：回调金额=渠道币种最小单位，对 charged_units
-		//    精确核对（网关回显下单金额，零二次换算）；实收换算回基础货币分落 charged_amount。
-		//    同币路径（charged_units=0）：旧口径 fact.Amount==amount + CNY。
+		// 跨币路径（ 快照）：回调金额=渠道币种最小单位，对 charged_units
+		// 精确核对（网关回显下单金额，零二次换算）；实收换算回基础货币分落 charged_amount。
+		// 同币路径（charged_units=0）：旧口径 fact.Amount==amount + CNY。
 		if fact.Channel != p.Channel {
 			return fmt.Errorf("payment.CHANNEL_MISMATCH")
 		}
@@ -528,8 +528,8 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 		return err
 	}
 	// 入账分支（target 由建单时定；金额全部取服务端落库值，铁律 16）：
-	//   balance → 用户钱包余额（本金+赠送）+ 赠送积分；
-	//   supply  → 对接账户供货余额（本金；供货预存无赠送）。
+	// balance → 用户钱包余额（本金+赠送）+ 赠送积分；
+	// supply → 对接账户供货余额（本金；供货预存无赠送）。
 	total := ro.Amount + ro.GiftAmount
 	if ro.Target == rechargeorder.TargetSupply {
 		if ro.SupplierAccountID > 0 && r.supplier != nil {
@@ -550,7 +550,7 @@ func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fa
 			return fmt.Errorf("payment.RECHARGE_CREDIT_FAILED: %w", err)
 		}
 	}
-	// 赠送积分（幂等键 points:recharge:<paymentID>；积分账本 M1b）
+	// 赠送积分（幂等键 points:recharge:<paymentID>；积分账本 ）
 	if ro.GiftPoints > 0 && r.points != nil {
 		if err := r.points.PointCreditInTx(ctx, walletport.PointEntry{
 			UserID: ro.UserID, Direction: "in", Type: "earn_recharge",
@@ -590,7 +590,7 @@ type CallbackFact struct {
 	Raw            json.RawMessage
 }
 
-// ── 退款（T6）───────────────────────────────────────────────
+// ── 退款（）───────────────────────────────────────────────
 
 // CreateRefund 创建退款单。
 func (r *PaymentRepoImpl) CreateRefund(ctx context.Context, orderID uint64, amount int64, channel, reason string) (*ent.RefundOrder, error) {
@@ -660,7 +660,7 @@ func ToRefundPB(rf *ent.RefundOrder, orderNo string) *adminv1.RefundOrder {
 	}
 }
 
-// RefundOrder 订单退款入口（P2-02 procurement 失败策略消费，通道 A）：
+// RefundOrder 订单退款入口（ procurement 失败策略消费，通道 A）：
 // 按订单创建退款单（channel=upstream），订单 refund 流转由 payment 现有编排驱动。
 func (r *PaymentRepoImpl) RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error {
 	if amount <= 0 {

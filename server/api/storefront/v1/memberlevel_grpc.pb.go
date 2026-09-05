@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
+// StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
 type StoreMemberLevelServiceClient interface {
 	// GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
 	GetMyLevel(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MyLevelReply, error)
@@ -55,7 +55,7 @@ func (c *storeMemberLevelServiceClient) GetMyLevel(ctx context.Context, in *empt
 // All implementations must embed UnimplementedStoreMemberLevelServiceServer
 // for forward compatibility.
 //
-// StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
+// StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
 type StoreMemberLevelServiceServer interface {
 	// GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
 	GetMyLevel(context.Context, *emptypb.Empty) (*MyLevelReply, error)

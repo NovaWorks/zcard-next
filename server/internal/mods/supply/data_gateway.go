@@ -1,7 +1,7 @@
 package supply
 
-// 采购网关实现（P2-02 消费方端口）：连接凭据解密 → 适配器装配 → 提交/查询/退款。
-// fail-open 语义（T4）：CheckStock 查询失败返回 -1（放行），由 procurement 决定处理。
+// 采购网关实现（ 消费方端口）：连接凭据解密 → 适配器装配 → 提交/查询/退款。
+// fail-open 语义（）：CheckStock 查询失败返回 -1（放行），由 procurement 决定处理。
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 var ErrCooldownActive = errors.New("supply: rate limit cooldown active")
 
 // Gateway supply 采购网关（实现 supplyport.UpstreamGateway 与 orderport.UpstreamStockGate）。
-// P2-10 S2：出站共享自适应节奏器——熔断冷却中直接拒绝（可重试口径），
+// S2：出站共享自适应节奏器——熔断冷却中直接拒绝（可重试口径），
 // 限流信号反馈降速、成功反馈回升（采购请求量小，主要防持续撞墙）。
 type Gateway struct {
 	repo   *SupplyRepoImpl
@@ -91,7 +91,7 @@ func (g *Gateway) adapterFor(ctx context.Context, connectionID uint64) (adapter.
 	return adapter.New(conn.Driver, conn.BaseURL, creds, parseRetryIntervals(conn.RetryIntervals))
 }
 
-// ListOrders 上游订单列表（P3-07 对账数据源；dashboard port 消费——类型转换收口在此）。
+// ListOrders 上游订单列表（ 对账数据源；dashboard port 消费——类型转换收口在此）。
 // 协议不支持 → ErrUpstreamListUnsupported（对账 job failed 可查）。
 func (g *Gateway) ListOrders(ctx context.Context, connectionID uint64, start, end time.Time) ([]dashboardport.UpstreamOrder, error) {
 	a, err := g.adapterFor(ctx, connectionID)
@@ -249,7 +249,7 @@ func (g *Gateway) Refund(ctx context.Context, connectionID uint64, upstreamOrder
 }
 
 // submitCallbackURL 回调地址决策：请求显式指定 > 连接配置 callback_url（运营在
-// 渠道管理里登记的本站公网回调地址；P2-10 E 提交时自动携带给上游）。
+// 渠道管理里登记的本站公网回调地址； E 提交时自动携带给上游）。
 func (g *Gateway) submitCallbackURL(ctx context.Context, connectionID uint64, explicit string) string {
 	if explicit != "" {
 		return explicit

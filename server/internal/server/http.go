@@ -133,14 +133,14 @@ func NewHTTPServer(
 	var opts = []khttp.ServerOption{
 		khttp.Filter(
 			corsFilter,
-			// P3-04：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
+			// ：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
 			tenantFilter(tenancyMainDomain(c), resellerRepo),
 			// 未安装守门（在线安装 Web 向导；Filter 层直写 302）
 			installGuard(func() bool { return settings.Installed(context.Background(), d) }),
-			// P2-03：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
+			// ：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
 			// 仅 /api/supply/*，Ping 免签名；不挂 JWT，架构测试规则 9）
 			supplier.SupplyAuthFilter(supplierRepo, 0),
-			// P2-06：变更类 admin 操作审计（Filter 层——中间件拿不到原始请求；
+			// ：变更类 admin 操作审计（Filter 层——中间件拿不到原始请求；
 			// POST/PUT/DELETE 且 2xx；异步落库失败不阻断）
 			audit.OpAuditFilter(auditRepo, signer,
 				func(op string) (string, bool) {
@@ -160,10 +160,10 @@ func NewHTTPServer(
 				return nil
 			}),
 			i18nMiddleware("zh_CN"),
-			// P3-04：storefront user realm JWT（解析失败放行——游客端点不受影响；
+			// ：storefront user realm JWT（解析失败放行——游客端点不受影响；
 			// 需登录端点由业务侧 claims==nil 自行 401）
 			userAuthMiddleware(signer),
-			// T5：storefront 访问埋点（PV/UV 明细 + 在线心跳；游客/登录均记，
+			// ：storefront 访问埋点（PV/UV 明细 + 在线心跳；游客/登录均记，
 			// 失败忽略）。仅挂 storefront operation，admin/supply/回调不埋。
 			selector.Server(storefrontVisitMiddleware(tracker)).
 				Match(func(_ context.Context, operation string) bool {
@@ -240,42 +240,42 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreUserServiceHTTPServer(srv, userStoreSvc)
 	storefrontv1.RegisterStoreSupplierServiceHTTPServer(srv, supplierStoreSvc)
 	adminv1.RegisterAdminUserManageServiceHTTPServer(srv, userManageSvc)
-	// P3-06：素材静态服务（ETag + 白名单扩展；目录列表禁用）
+	// ：素材静态服务（ETag + 白名单扩展；目录列表禁用）
 	media.RegisterStatic(srv)
 	// 主题模板静态服务（预览图；白名单图片扩展 + 防穿越）
 	settings.RegisterTemplateStatic(srv)
 
-	// P2-10 B/C：协议兼容层（对外供货——让 dujiao-next / acg-faka 平台不改代码
+	// B/C：协议兼容层（对外供货——让 dujiao-next / acg-faka 平台不改代码
 	// 即可对接本站）。原生 handler 挂载（外部协议契约不进我们的 proto/OpenAPI）；
 	// 不挂 JWT（架构测试规则 9）；须在 SPA 兜底前注册。
 	supplier.RegisterDujiaoCompat(srv, supplyAPISvc)
 	supplier.RegisterAcgFakaCompat(srv, supplyAPISvc)
 
-	// P2-10 E：上游回调接收（采购三通道之回调；不挂 JWT，验签在 handler 内按驱动分支）
+	// E：上游回调接收（采购三通道之回调；不挂 JWT，验签在 handler 内按驱动分支）
 	procurement.RegisterUpstreamCallback(srv, procureSvc, upstreamGW)
 
-	// 在线更新管理面（doc/在线更新方案.md §9；system:update 超管专属）
+	// 在线更新管理面（；system:update 超管专属）
 	adminv1.RegisterAdminUpdateServiceHTTPServer(srv, updateSvc)
 
-	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
+	// 保留路径（规划 ：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)
 
-	// 启动对账（P0-03 fail-fast）：管理路由未声明权限点 → 拒绝启动
+	// 启动对账（ fail-fast）：管理路由未声明权限点 → 拒绝启动
 	if err := reconcileRoutes(srv, dir); err != nil {
 		panic(err)
 	}
-	// P2-06：审计过滤器路径 → operation 映射缓存（对账通过后必命中）
+	// ：审计过滤器路径 → operation 映射缓存（对账通过后必命中）
 	buildAuditOpMap(dir)
 	registerPaymentCallback(srv, payRepo, d)
 
 	// SEO 基础（robots.txt / sitemap.xml）：动态生成，须在 SPA 兜底前注册
 	registerSEO(srv, seoSvc)
 
-	// fullstack SPA（§10.1）：storefront 兜底根 + admin 独立前缀；未匹配回落
+	// fullstack SPA（）：storefront 兜底根 + admin 独立前缀；未匹配回落
 	// index.html 由前端路由接管。保留前缀（/api /uploads /health /payments
 	// /install）已注册的业务/静态路由优先命中，回落仅在未匹配时发生。
 	if web.Available() {
-		// admin 前缀：配置 admin_base_path（§7.3 安全入口可配），默认 /admin
+		// admin 前缀：配置 admin_base_path（ 安全入口可配），默认 /admin
 		adminBase := "/admin"
 		if c != nil && c.AdminBasePath != "" {
 			adminBase = c.AdminBasePath
@@ -306,7 +306,7 @@ func registerSEO(srv *khttp.Server, seoSvc *seo.SeoService) {
 	})
 }
 
-// registerHealth 健康检查（DB 连通 + 队列模式 + 版本；/metrics Prometheus M1 接入内网口）。
+// registerHealth 健康检查（DB 连通 + 队列模式 + 版本；/metrics Prometheus 接入内网口）。
 func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 	srv.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := contextWithTimeout(r)
@@ -323,8 +323,8 @@ func registerHealth(srv *khttp.Server, d *data.Data, enq queue.Enqueuer) {
 	})
 }
 
-// registerPaymentCallback 支付回调（§5.5.3 统一入口——四重校验+幂等+markPaid）。
-// 不挂 JWT（架构测试规则 9）；验签由渠道适配器完成（M1b 接真实渠道）。
+// registerPaymentCallback 支付回调（ 统一入口——四重校验+幂等+markPaid）。
+// 不挂 JWT（架构测试规则 9）；验签由渠道适配器完成（ 接真实渠道）。
 func registerPaymentCallback(srv *khttp.Server, payRepo *payment.PaymentRepoImpl, d *data.Data) {
 	payment.RegisterPaymentCallback(srv, payRepo, d)
 }
@@ -364,7 +364,7 @@ func contextWithTimeout(r *http.Request) (ctx context.Context, cancel context.Ca
 	return context.WithTimeout(r.Context(), 3*time.Second)
 }
 
-// corsFilter CORS 过滤器（开发阶段前后端联调；生产同源部署无此问题——M1b 按环境开关化）。
+// corsFilter CORS 过滤器（开发阶段前后端联调；生产同源部署无此问题—— 按环境开关化）。
 func corsFilter(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")

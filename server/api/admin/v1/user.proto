@@ -29,7 +29,7 @@ service AdminUserManageService {
 
 message ListUsersRequest {
   string keyword = 1; // 用户名/邮箱模糊匹配
-  string status = 2;  // active | banned（空 = 全部）
+  string status = 2; // active | banned（空 = 全部）
   int32 page = 3;
   int32 page_size = 4;
 }

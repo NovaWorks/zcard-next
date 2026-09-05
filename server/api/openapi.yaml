@@ -347,7 +347,7 @@ paths:
         get:
             tags:
                 - AdminDashboardService
-            description: ListCommissions 佣金列表（P3-03 affiliate）。
+            description: ListCommissions 佣金列表(affiliate）。
             operationId: AdminDashboardService_ListCommissions
             parameters:
                 - name: status
@@ -532,7 +532,7 @@ paths:
         post:
             tags:
                 - AdminAuthService
-            description: Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+            description: Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
             operationId: AdminAuthService_Logout
             requestBody:
                 content:
@@ -548,7 +548,7 @@ paths:
         get:
             tags:
                 - AdminAuthService
-            description: GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+            description: GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
             operationId: AdminAuthService_GetProfile
             responses:
                 "200":
@@ -3853,7 +3853,7 @@ paths:
         get:
             tags:
                 - AdminSupplierService
-            description: ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+            description: ListPrices 账号的专属价列表(补齐：浏览/管理覆盖价）。
             operationId: AdminSupplierService_ListPrices
             parameters:
                 - name: accountId
@@ -3944,7 +3944,7 @@ paths:
         post:
             tags:
                 - AdminSupplyService
-            description: ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+            description: ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
             operationId: AdminSupplyService_ImportProducts
             parameters:
                 - name: connectionId
@@ -3971,7 +3971,7 @@ paths:
                 - AdminSupplyService
             description: |-
                 ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-                 PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+                 PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
             operationId: AdminSupplyService_PreviewProducts
             parameters:
                 - name: connectionId
@@ -5322,7 +5322,7 @@ paths:
         get:
             tags:
                 - StorePaymentService
-            description: ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+            description: ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
             operationId: StorePaymentService_ListChannels
             responses:
                 "200":
@@ -5436,7 +5436,7 @@ paths:
                     type: string
                 - name: keyword
                   in: query
-                  description: 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 M3 走外置）
+                  description: 搜索关键词（可选，仅商品名等值/前缀匹配；全文搜索 走外置）
                   schema:
                     type: string
                 - name: page
@@ -5452,7 +5452,7 @@ paths:
                     format: int32
                 - name: pointsOnly
                   in: query
-                  description: 积分商城视图（true=仅积分兑换商品 points_required>0；P3-01）
+                  description: 积分商城视图（true=仅积分兑换商品 points_required>0；）
                   schema:
                     type: boolean
                 - name: sort
@@ -5816,7 +5816,7 @@ paths:
         post:
             tags:
                 - StoreUserService
-            description: ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+            description: ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
             operationId: StoreUserService_ForgotPassword
             requestBody:
                 content:
@@ -5986,7 +5986,7 @@ paths:
         post:
             tags:
                 - StoreWalletService
-            description: CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+            description: CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
             operationId: StoreWalletService_CreateWithdrawal
             requestBody:
                 content:
@@ -6258,7 +6258,7 @@ components:
                     type: string
                 pointsRequired:
                     type: string
-                    description: 积分兑换价（0=不参与积分商城；P3-01）
+                    description: 积分兑换价（0=不参与积分商城；）
                 soldCount:
                     type: string
                     description: 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
@@ -6954,7 +6954,7 @@ components:
                         type: string
             description: |-
                 CreateGiftcardBatchReply 批次 + 明文码（仅创建响应一次性返回；此后任何端点
-                 不可再取——库内无明文，铁律 11；同 P1-06 一次性明文交付纪律）。
+                 不可再取——库内无明文，铁律 11；同 一次性明文交付纪律）。
         zcard.api.admin.v1.CreateGiftcardBatchRequest:
             required:
                 - batchNo
@@ -7102,7 +7102,7 @@ components:
                     format: int32
                 pointsRequired:
                     type: string
-                    description: 积分兑换价（0=不参与积分商城；P3-01）
+                    description: 积分兑换价（0=不参与积分商城；）
                 directContent:
                     type: string
                     description: 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
@@ -9641,7 +9641,7 @@ components:
                     type: string
                 lastCollectAt:
                     type: string
-                    description: P2-10 S2/S3：调度锚点与限流状态（界面展示/倒计时）
+                    description: S2/S3：调度锚点与限流状态（界面展示/倒计时）
                 lastPriceSyncAt:
                     type: string
                 lastStatusSyncAt:
@@ -10137,7 +10137,7 @@ components:
                     format: int32
                 pointsRequired:
                     type: string
-                    description: 积分兑换价（0=不参与积分商城；P3-01）
+                    description: 积分兑换价（0=不参与积分商城；）
                 directContent:
                     type: string
                     description: 直发内容明文（空=保持不变；url/code 商品加密存储）
@@ -10671,7 +10671,7 @@ components:
                     description: 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
                 usePoints:
                     type: boolean
-                    description: 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
+                    description: 积分兑换下单（：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
                 refCode:
                     type: string
                     description: 推广归因码（可空）：游客/无链用户下单时实时解析推广者 → 订单级归因快照
@@ -11461,7 +11461,7 @@ components:
                     description: 多规格 SKU（下单可选；Sku.price_cents > 商品价时下单按 SKU 价）
                 pointsRequired:
                     type: string
-                    description: 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；P3-01）
+                    description: 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；）
                 isRecommend:
                     type: boolean
                     description: 运营推荐（首页推荐位标记）
@@ -12093,76 +12093,76 @@ components:
                     type: boolean
 tags:
     - name: AdminAuditService
-      description: AdminAuditService 审计与风控管理（P2-06）：三类日志查询、黑名单管理。
+      description: AdminAuditService 审计与风控管理：三类日志查询、黑名单管理。
     - name: AdminAuthService
       description: |-
         AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
-         里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+         登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
     - name: AdminCatalogService
-      description: AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
+      description: AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
     - name: AdminContentService
       description: |-
-        AdminContentService 内容管理（P2-04）：横幅/文章/分类 CRUD。
+        AdminContentService 内容管理：横幅/文章/分类 CRUD。
          content_json 入库前经 sanitize（与商品描述同一策略）；slug 唯一。
     - name: AdminCouponService
-      description: AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
+      description: AdminCouponService 优惠券管理(基础版：批量生成/列表/作废）。
     - name: AdminCurrencyService
-      description: AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+      description: AdminCurrencyService 货币管理（；多币种展示，记账永远基础货币）。
     - name: AdminDashboardService
-      description: AdminDashboardService 工作台指标（P3-07 M1b v1）。
+      description: AdminDashboardService 工作台指标(v1）。
     - name: AdminFulfillmentService
-      description: AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
+      description: AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
     - name: AdminInstallService
       description: |-
         AdminInstallService 在线安装（Public——仅未安装时可用；已安装后 status 只读、install 拒绝）。
          部署形态：SQLite 零依赖起步（无需数据库/Redis 配置），浏览器打开 → 设管理员 → 完成。
          数据库/Redis 属部署层配置（config.yaml / env），不进安装向导。
     - name: AdminInventoryService
-      description: AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+      description: AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
     - name: AdminLicenseService
       description: |-
-        AdminLicenseService 订阅许可证管理（M3，主文档 §11）：安装/查询/清除。
+        AdminLicenseService 订阅许可证管理：安装/查询/清除。
          校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
     - name: AdminMediaService
       description: |-
-        AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除
+        AdminMediaService 素材库管理：分类/上传/列表/改名/移动/批量删除
          （ref_count>0 需 confirm）/外链导入/复制链接。
          上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
     - name: AdminMemberLevelService
-      description: AdminMemberLevelService 会员等级管理（P3-01）。
+      description: AdminMemberLevelService 会员等级管理。
     - name: AdminNotifyService
-      description: AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
+      description: AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
     - name: AdminOrderService
-      description: AdminOrderService 订单管理（P1-03 T7）。
+      description: AdminOrderService 订单管理。
     - name: AdminPaymentService
-      description: AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
+      description: AdminPaymentService 支付管理：渠道 CRUD + 支付单 + 退款。
     - name: AdminProcurementService
-      description: AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+      description: AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
     - name: AdminResellerService
       description: |-
-        AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
+        AdminResellerService 分站管理(主站面核心）：申请审核/列表/定价/账本/余额。
          域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
     - name: AdminSettingsService
       description: |-
         AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
-         里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+         读写 API；起补齐安装向导状态与分组目录。
     - name: AdminSupplierService
       description: |-
-        AdminSupplierService 对外供货管理（P2-03 T6）：下游账户申请/审核/启停/重置密钥、
+        AdminSupplierService 对外供货管理：下游账户申请/审核/启停/重置密钥、
          供货定价 CRUD、账本流水、回调记录查询与手动重发。
     - name: AdminSupplyService
       description: |-
-        AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
+        AdminSupplyService 货源连接管理：上游连接 CRUD + Ping 探活、
          商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
          凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
          （列表/详情只给 credentials_set 布尔，铁律 11）。
     - name: AdminTicketService
       description: |-
-        AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
+        AdminTicketService 客服工单工作台：urgent_paid 置顶持续高亮、
          认领/回复/内部备注/解决/关闭、筛选。
     - name: AdminUpdateService
       description: |-
-        AdminUpdateService 在线更新（doc/在线更新方案.md §9；system:update 超管专属）。
+        AdminUpdateService 在线更新（doc/在线更新方案.md ；system:update 超管专属）。
          更新链：备份 DB → 落盘下载（流式哈希+进度）→ 原子替换 → 重启三分支；
          重启后本接口随新进程复活——前端轮询 status 直到 current==target 即成功。
     - name: AdminUserManageService
@@ -12170,10 +12170,10 @@ tags:
         AdminUserManageService 前台用户管理（storefront 注册用户；员工管理见
          AdminUserService——两者数据域独立，勿混）。
     - name: AdminUserService
-      description: AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+      description: AdminUserService 员工管理（数据层归 identity，API 面在此；）。
     - name: AdminWalletService
       description: |-
-        AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+        AdminWalletService 钱包管理：调账/充值单/流水查询。
 
          路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
          gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
@@ -12181,43 +12181,43 @@ tags:
          /wallet/{user_id} 吞掉并误解析为 CODEC 400。
     - name: RoleService
       description: |-
-        RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
+        RoleService 角色与权限管理（自建 RBAC，规划 ；）。
          权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
     - name: StoreAffiliateService
-      description: StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+      description: StoreAffiliateService 我的分销：推广码/团队/佣金流水/统计。
     - name: StoreCaptchaService
       description: StoreCaptchaService 图形验证码（免鉴权；4 位数字——settings.security.captcha_* 场景开关）。
     - name: StoreCartService
       description: |-
-        StoreCartService 购物车（P1-03b T5 销账）：登录态专属 CRUD；
+        StoreCartService 购物车(销账）：登录态专属 CRUD；
          结算复用 StoreOrderService.CreateOrder（多商品一单支付，零下单改动）。
     - name: StoreCatalogService
       description: |-
-        StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划 §5.2）。
-         里程碑 M1a；M0 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
+        StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划)。
+         ； 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
     - name: StoreContentService
       description: |-
-        StoreContentService 前台内容（P2-04）：横幅（生效时间窗）、文章（公告/博客）、分类。
+        StoreContentService 前台内容：横幅（生效时间窗）、文章（公告/博客）、分类。
          多语言字段按请求语言回落（zh_CN 默认）。
     - name: StoreCouponService
-      description: StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
+      description: StoreCouponService 前台营销：我的券/兑换码领券/秒杀营销位。
     - name: StoreDeliveryService
-      description: StoreDeliveryService 顾客取货（P1-06 T2 三重门：单号+密码+限流）。
+      description: StoreDeliveryService 顾客取货(三重门：单号+密码+限流）。
     - name: StoreLicenseService
       description: |-
-        StoreLicenseService 专业套餐在线购买（P3-08 M3：发行侧部署配置签发私钥后开放；
+        StoreLicenseService 专业套餐在线购买(：发行侧部署配置签发私钥后开放；
          支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
          文件后在目标实例后台安装激活）。
     - name: StoreMediaService
       description: StoreMediaService 前台媒体（登录态；收款码上传——复用 media 安全三件套）。
     - name: StoreMemberLevelService
-      description: StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
+      description: StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
     - name: StoreNotificationService
-      description: StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
+      description: StoreNotificationService 站内信铃铛：未读数/列表/已读。
     - name: StoreOrderService
-      description: StoreOrderService 顾客下单（P1-03 T2）。
+      description: StoreOrderService 顾客下单。
     - name: StorePaymentService
-      description: StorePaymentService 顾客支付（P1-04 T2）。
+      description: StorePaymentService 顾客支付。
     - name: StoreSupplierService
       description: |-
         StoreSupplierService 前台对接申请（个人中心）：申请成为供货商户 →
@@ -12225,23 +12225,23 @@ tags:
          通过后凭据可直接填入 acg-faka/dujiao-next/zcard 三面板（协议由申请时选定）。
     - name: StoreTicketService
       description: |-
-        StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
+        StoreTicketService 用户工单：创建/列表/详情/回复/评价/付费加急。
          游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
     - name: StoreUserService
       description: |-
-        StoreUserService 用户中心（P3-04 前置）：注册/登录（user realm JWT）/我的信息。
+        StoreUserService 用户中心(前置）：注册/登录（user realm JWT）/我的信息。
          注册可带邀请码（ref=<user_id>）——三级分销归因链写入（环状拒绝）。
     - name: StoreWalletService
-      description: StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
+      description: StoreWalletService 顾客钱包：余额/积分/流水/充值。
     - name: StorefrontConfigService
       description: |-
-        StorefrontConfigService 前台公开配置（P0-04 T3）。
+        StorefrontConfigService 前台公开配置。
          输出经 PUBLIC_KEYS 白名单过滤（SECRET 键绝不外泄——快照测试守护）；
          storefront 前端模板参数、交易开关、启用语言/货币由此驱动。
     - name: SupplyService
       description: |-
         SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
-         里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
-         ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
+         里程碑 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
+         ±300s 时间窗、Nonce 防重放、按 key 限流（规划)。
          Ping 免签名（连通性探测）；其余端点全部需要签名。
-         金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
+         金额口径：一律「分」（int64）——与 zcard 适配器对偶。

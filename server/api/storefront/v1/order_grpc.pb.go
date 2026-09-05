@@ -31,7 +31,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreOrderService 顾客下单（P1-03 T2）。
+// StoreOrderService 顾客下单。
 type StoreOrderServiceClient interface {
 	// CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*CreateOrderReply, error)
@@ -108,7 +108,7 @@ func (c *storeOrderServiceClient) CancelMyOrder(ctx context.Context, in *CancelM
 // All implementations must embed UnimplementedStoreOrderServiceServer
 // for forward compatibility.
 //
-// StoreOrderService 顾客下单（P1-03 T2）。
+// StoreOrderService 顾客下单。
 type StoreOrderServiceServer interface {
 	// CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
 	CreateOrder(context.Context, *CreateOrderRequest) (*CreateOrderReply, error)

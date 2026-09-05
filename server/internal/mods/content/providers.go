@@ -1,6 +1,6 @@
 package content
 
-// wire providers（P2-04）。
+// wire providers（）。
 
 import "github.com/google/wire"
 

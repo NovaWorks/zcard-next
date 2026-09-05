@@ -30,7 +30,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminUpdateService 在线更新（doc/在线更新方案.md §9；system:update 超管专属）。
+// AdminUpdateService 在线更新（doc/在线更新方案.md ；system:update 超管专属）。
 // 更新链：备份 DB → 落盘下载（流式哈希+进度）→ 原子替换 → 重启三分支；
 // 重启后本接口随新进程复活——前端轮询 status 直到 current==target 即成功。
 type AdminUpdateServiceClient interface {
@@ -96,7 +96,7 @@ func (c *adminUpdateServiceClient) RollbackUpdate(ctx context.Context, in *empty
 // All implementations must embed UnimplementedAdminUpdateServiceServer
 // for forward compatibility.
 //
-// AdminUpdateService 在线更新（doc/在线更新方案.md §9；system:update 超管专属）。
+// AdminUpdateService 在线更新（doc/在线更新方案.md ；system:update 超管专属）。
 // 更新链：备份 DB → 落盘下载（流式哈希+进度）→ 原子替换 → 重启三分支；
 // 重启后本接口随新进程复活——前端轮询 status 直到 current==target 即成功。
 type AdminUpdateServiceServer interface {

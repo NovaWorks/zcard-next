@@ -60,7 +60,7 @@ web-dist:
 	cp -R ../admin/dist/ web/admin/
 
 .PHONY: build-fullstack
-# 完整交付形态（§10.1）：单二进制嵌入 admin+storefront（dist 缺失即编译失败）。
+# 完整交付形态（）：单二进制嵌入 admin+storefront（dist 缺失即编译失败）。
 # 首次/前端有变更时自动重建产物；SKIP_WEB_DIST=1 跳过（产物已就绪时加速）。
 build-fullstack:
 ifndef SKIP_WEB_DIST
@@ -74,20 +74,20 @@ run: build
 	./bin/zcard serve -conf configs
 
 .PHONY: test
-# 全量测试（单元 + 架构守护；SQLite 线。MySQL/PG 集成线 M1 起进 CI）
+# 全量测试（单元 + 架构守护；SQLite 线。MySQL/PG 集成线 起进 CI）
 test:
 	go test ./...
 
 .PHONY: test-integration
-# 集成线（P0-05）：真 MySQL/PG。-tags=integration + DSN 环境变量
+# 集成线（）：真 MySQL/PG。-tags=integration + DSN 环境变量
 # （ZCARD_TEST_MYSQL_DSN / ZCARD_TEST_PG_DSN），未配置的方言自动 Skip。
 # 本地起库：docker run -d -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql:8
-#           docker run -d -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres:16
+# docker run -d -e POSTGRES_PASSWORD=pass -p 5432:5432 postgres:16
 test-integration:
 	go test -tags=integration -count=1 -timeout 15m ./internal/testint/...
 
 .PHONY: lint
-# 静态检查（gofmt：生成物豁免；CI M1 起接 golangci-lint）
+# 静态检查（gofmt：生成物豁免；CI 起接 golangci-lint）
 lint:
 	@out=$$(gofmt -l . | grep -v -e '^internal/data/ent/' -e '\.pb\.go$$' -e 'wire_gen.go' || true); \
 	if [ -n "$$out" ]; then echo "存在未格式化文件:"; echo "$$out"; exit 1; fi
@@ -97,7 +97,7 @@ lint:
 clean:
 	rm -rf bin/ data/ dist/
 
-# ---------------- 在线更新发行（doc/在线更新方案.md §11） ----------------
+# ---------------- 在线更新发行（） ----------------
 
 NOTES?=CHANGELOG.md
 
@@ -184,7 +184,7 @@ help:
 
 .PHONY: git-hooks
 # 启用仓库管理的 git 钩子（新机器克隆后执行一次）
-# pre-push：开源红线——禁止 local/* 与含 saas 的分支推送远端（doc/plan/P4-00 §0）
+# pre-push：开源红线——禁止 local/* 与含 saas 的分支推送远端（ ）
 git-hooks:
 	git config core.hooksPath ../.githooks
 	@echo "git 钩子已启用（core.hooksPath=.githooks）"

@@ -33,7 +33,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
-// 里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+// 读写 API；起补齐安装向导状态与分组目录。
 type AdminSettingsServiceClient interface {
 	// ListSettings 按分组列出设置项。
 	ListSettings(ctx context.Context, in *ListSettingsRequest, opts ...grpc.CallOption) (*ListSettingsReply, error)
@@ -123,7 +123,7 @@ func (c *adminSettingsServiceClient) UpdateSettings(ctx context.Context, in *Upd
 // for forward compatibility.
 //
 // AdminSettingsService 设置中心（settings 表 = 运行时业务开关真理源，铁律 7）。
-// 里程碑 M0：读写 API；M1 起补齐安装向导状态与分组目录。
+// 读写 API；起补齐安装向导状态与分组目录。
 type AdminSettingsServiceServer interface {
 	// ListSettings 按分组列出设置项。
 	ListSettings(context.Context, *ListSettingsRequest) (*ListSettingsReply, error)

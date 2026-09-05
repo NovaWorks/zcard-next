@@ -1,6 +1,6 @@
 package catalog
 
-// 商品仓储 Ent 实现（租户过滤经 tenancy.Context；M1 交付 Ent interceptor 后
+// 商品仓储 Ent 实现（租户过滤经 tenancy.Context； 交付 Ent interceptor 后
 // 本处显式条件作为双保险保留——interceptor 负责注入，业务不依赖「忘了写」）。
 
 import (
@@ -28,7 +28,7 @@ type ProductRepoImpl struct {
 	mediaRef mediaport.Referencer // 封面/图集引用计数（nil 跳过）
 }
 
-// NewProductRepoImpl 构造（mediaRef 素材引用计数，P3-06）。
+// NewProductRepoImpl 构造（mediaRef 素材引用计数，）。
 func NewProductRepoImpl(d *data.Data, mediaRef mediaport.Referencer) *ProductRepoImpl {
 	return &ProductRepoImpl{data: d, mediaRef: mediaRef}
 }
@@ -67,12 +67,12 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		q = q.Where(product.CategoryIDIn(ids...))
 	}
 	if f.Keyword != "" {
-		// 商品名搜索用包含匹配（用户预期：名称中段词也要能命中；§8.2.5 禁 %xx% 针对的是
+		// 商品名搜索用包含匹配（用户预期：名称中段词也要能命中； 禁 %xx% 针对的是
 		// order_no/username 等等值索引列，商品名模糊检索不在此列，当前量级 LIKE 可接受）
 		q = q.Where(product.NameContains(f.Keyword))
 	}
 	if f.PointsOnly {
-		q = q.Where(product.PointsRequiredGT(0)) // 积分商城视图（P3-01）
+		q = q.Where(product.PointsRequiredGT(0)) // 积分商城视图（）
 	}
 	if f.RecommendOnly {
 		q = q.Where(product.IsRecommend(true)) // 推荐位视图（首页推荐区块）
@@ -135,9 +135,9 @@ func toPortProduct(row *ent.Product) port.Product {
 		DeliveryMode: string(row.DeliveryMode),
 		Status:       row.Status,
 		StockVisible: row.StockVisible,
-		// P3-01：积分兑换价（积分商城商品判定）
+		// ：积分兑换价（积分商城商品判定）
 		PointsRequired: row.PointsRequired,
-		// P2-02：货源信息（procurement 判定上游项）
+		// ：货源信息（procurement 判定上游项）
 		UpstreamSourceID:    row.UpstreamSourceID,
 		UpstreamProductCode: row.UpstreamProductCode,
 		IsRecommend:         row.IsRecommend,
@@ -195,4 +195,4 @@ func (r *ProductRepoImpl) ListControls(ctx context.Context, productID uint64) ([
 	return out, nil
 }
 
-var _ = tenancy.Main // M1 interceptor 接入后移除占位引用
+var _ = tenancy.Main // interceptor 接入后移除占位引用

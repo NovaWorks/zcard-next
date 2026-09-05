@@ -1,8 +1,8 @@
 package notify
 
-// 事件订阅分发器（P2-05 T2）：
-//   outbox 事件 → 路由表（事件 → 通道集合）→ 模板渲染（白名单变量 + HTML escape）
-//   → 逐通道投递（独立 enabled；skipped 降级不报错）→ 每条落 notification_logs。
+// 事件订阅分发器（）：
+// outbox 事件 → 路由表（事件 → 通道集合）→ 模板渲染（白名单变量 + HTML escape）
+// → 逐通道投递（独立 enabled；skipped 降级不报错）→ 每条落 notification_logs。
 //
 // 幂等：processed_events(event_id, consumer) 由 Dispatcher 统一兜底。
 // 白名单变量：模板只允许引用 Variables 里登记的键；未知 {{.xxx}} 渲染为空（防注入：
@@ -24,7 +24,7 @@ import (
 type Dispatcher struct {
 	repo     *NotifyRepo
 	channels map[string]Channel       // name → channel
-	brand    notifyport.BrandResolver // P3-04 白标（nil = 未装配，跳过品牌注入）
+	brand    notifyport.BrandResolver // 白标（nil = 未装配，跳过品牌注入）
 }
 
 // NewDispatcher 构造（注册通道）。
@@ -52,7 +52,7 @@ var defaultChannels = map[string][]string{
 	"payment.failed":     {"inbox"},
 	"recharge.succeeded": {"email", "inbox"},
 	"user.registered":    {"email", "inbox"},
-	// P3-05：工单通知（用户侧新回复；客服侧新工单经 telegram 管理员通道）
+	// ：工单通知（用户侧新回复；客服侧新工单经 telegram 管理员通道）
 	"ticket.created": {"inbox"},
 	"ticket.replied": {"email", "inbox"},
 }
@@ -69,7 +69,7 @@ func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error
 	}
 	// 白名单变量（事件载荷扁平化；值统一字符串化 + HTML escape 在渲染期）
 	vars := FlattenVars(payload)
-	// P3-04 品牌隔离 fail-closed：分站上下文邮件注入分站白标；
+	// 品牌隔离 fail-closed：分站上下文邮件注入分站白标；
 	// 无白标 → 品牌变量留空（绝不回退主站品牌）
 	if env.SubsiteID > 0 && d.brand != nil {
 		if brand, ok := d.brand.ResolveBrand(ctx, env.SubsiteID); ok {
@@ -87,7 +87,7 @@ func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error
 	for _, ch := range channels {
 		channel, ok := d.channels[ch]
 		if !ok {
-			continue // 通道未注册（SMS/Telegram M3）
+			continue // 通道未注册（SMS/Telegram ）
 		}
 		// 模板（事件 × 通道 × 语言；无模板 → 该通道跳过——不算错误）
 		tpl, err := d.repo.Template(ctx, env.Type, ch, locale)

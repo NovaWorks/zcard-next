@@ -1,6 +1,6 @@
 package supplier
 
-// 供货仓储（P2-03）：下游账户（secret AES-GCM）、供货账本（幂等键 append-only）、
+// 供货仓储（）：下游账户（secret AES-GCM）、供货账本（幂等键 append-only）、
 // 供货订单、nonce 防重放、差异化定价、回调记录。
 
 import (
@@ -241,7 +241,7 @@ func (r *SupplierRepoImpl) SetNotifyURL(ctx context.Context, id uint64, notifyUR
 	return err
 }
 
-// ── 账本（T4：append-only + 幂等键 + balance_cache）───────
+// ── 账本（：append-only + 幂等键 + balance_cache）───────
 
 // LedgerEntry 账本流水。
 func (r *SupplierRepoImpl) LedgerEntry(ctx context.Context, accountID, supplyOrderID uint64, typ string, amount int64, reference, remark string) error {
@@ -467,7 +467,7 @@ func (r *SupplierRepoImpl) PriceOf(ctx context.Context, accountID, productID, sk
 	return row.Price, nil
 }
 
-// ── 回调记录（T5）─────────────────────────────────────────
+// ── 回调记录（）─────────────────────────────────────────
 
 // CreateCallback 创建回调任务（supply_order_id UNIQUE）。
 func (r *SupplierRepoImpl) CreateCallback(ctx context.Context, supplyOrderID, accountID uint64, downstreamOrderNo, callbackURL, traceID string) (*ent.DownstreamCallback, error) {
@@ -564,7 +564,7 @@ func (r *SupplierRepoImpl) CredentialsOf(ctx context.Context, accountID uint64) 
 	return key, secret, err
 }
 
-// CredentialsWithProtocolOf 凭据 + 账号协议（兼容层回调签名器分支用；P2-10 B）。
+// CredentialsWithProtocolOf 凭据 + 账号协议（兼容层回调签名器分支用； B）。
 func (r *SupplierRepoImpl) CredentialsWithProtocolOf(ctx context.Context, accountID uint64) (apiKey, apiSecret, protocol string, err error) {
 	acc, err := r.GetAccount(ctx, accountID)
 	if err != nil {
@@ -577,7 +577,7 @@ func (r *SupplierRepoImpl) CredentialsWithProtocolOf(ctx context.Context, accoun
 	return acc.APIKey, string(plain), string(acc.Protocol), nil
 }
 
-// ListPrices 账号的专属价列表（P2-10：浏览/管理覆盖价）。
+// ListPrices 账号的专属价列表（：浏览/管理覆盖价）。
 func (r *SupplierRepoImpl) ListPrices(ctx context.Context, accountID uint64) ([]*ent.SupplierProductPrice, error) {
 	return data.Client(ctx, r.data).SupplierProductPrice.Query().
 		Where(supplierproductprice.SupplierAccountID(accountID)).

@@ -1,6 +1,6 @@
 package notify
 
-// 管理面 + 前台铃铛 API（P2-05）：模板 CRUD/预览、日志查询/重发、站内信。
+// 管理面 + 前台铃铛 API（）：模板 CRUD/预览、日志查询/重发、站内信。
 
 import (
 	"context"
@@ -206,7 +206,7 @@ func identityClaimsUserID(ctx context.Context) uint64 {
 	return 0
 }
 
-// ── 群发任务（T4）─────────────────────────────────────────
+// ── 群发任务（）─────────────────────────────────────────
 
 // EstimateBroadcast 覆盖人数预估。
 func (s *AdminNotifyService) EstimateBroadcast(ctx context.Context, req *adminv1.EstimateBroadcastRequest) (*adminv1.EstimateBroadcastReply, error) {

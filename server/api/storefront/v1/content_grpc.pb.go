@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreContentService 前台内容（P2-04）：横幅（生效时间窗）、文章（公告/博客）、分类。
+// StoreContentService 前台内容：横幅（生效时间窗）、文章（公告/博客）、分类。
 // 多语言字段按请求语言回落（zh_CN 默认）。
 type StoreContentServiceClient interface {
 	// ListBanners 生效中横幅（position 过滤 + sort 排序 + 时间窗过滤）。
@@ -94,7 +94,7 @@ func (c *storeContentServiceClient) ListPostCategories(ctx context.Context, in *
 // All implementations must embed UnimplementedStoreContentServiceServer
 // for forward compatibility.
 //
-// StoreContentService 前台内容（P2-04）：横幅（生效时间窗）、文章（公告/博客）、分类。
+// StoreContentService 前台内容：横幅（生效时间窗）、文章（公告/博客）、分类。
 // 多语言字段按请求语言回落（zh_CN 默认）。
 type StoreContentServiceServer interface {
 	// ListBanners 生效中横幅（position 过滤 + sort 排序 + 时间窗过滤）。

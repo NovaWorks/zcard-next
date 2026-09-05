@@ -30,7 +30,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreCartService 购物车（P1-03b T5 销账）：登录态专属 CRUD；
+// StoreCartService 购物车(销账）：登录态专属 CRUD；
 // 结算复用 StoreOrderService.CreateOrder（多商品一单支付，零下单改动）。
 type StoreCartServiceClient interface {
 	// AddCartItem 加购（同 user+product+sku 合并数量；商品须上架）。
@@ -95,7 +95,7 @@ func (c *storeCartServiceClient) RemoveCartItem(ctx context.Context, in *RemoveC
 // All implementations must embed UnimplementedStoreCartServiceServer
 // for forward compatibility.
 //
-// StoreCartService 购物车（P1-03b T5 销账）：登录态专属 CRUD；
+// StoreCartService 购物车(销账）：登录态专属 CRUD；
 // 结算复用 StoreOrderService.CreateOrder（多商品一单支付，零下单改动）。
 type StoreCartServiceServer interface {
 	// AddCartItem 加购（同 user+product+sku 合并数量；商品须上架）。

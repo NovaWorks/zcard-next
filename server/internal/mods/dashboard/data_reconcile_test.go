@@ -1,6 +1,6 @@
 package dashboard
 
-// P3-07 T4 货源对账测试：四态构造（matched/mismatched/local_only/upstream_only）、
+// 货源对账测试：四态构造（matched/mismatched/local_only/upstream_only）、
 // 任务生命周期（pending → processing → done/failed）、幂等重跑、mismatch 告警一次、
 // 上游不支持列表 → failed 可查。
 

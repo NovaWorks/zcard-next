@@ -32,7 +32,7 @@ type CreateOrderRequest struct {
 	CouponCode    string                 `protobuf:"bytes,5,opt,name=coupon_code,json=couponCode,proto3" json:"coupon_code,omitempty"`
 	// 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
 	ControlAnswers map[string]string `protobuf:"bytes,6,rep,name=control_answers,json=controlAnswers,proto3" json:"control_answers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	// 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
+	// 积分兑换下单（：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
 	UsePoints bool `protobuf:"varint,7,opt,name=use_points,json=usePoints,proto3" json:"use_points,omitempty"`
 	// 推广归因码（可空）：游客/无链用户下单时实时解析推广者 → 订单级归因快照
 	RefCode string `protobuf:"bytes,8,opt,name=ref_code,json=refCode,proto3" json:"ref_code,omitempty"`

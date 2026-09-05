@@ -1,6 +1,6 @@
 package reseller
 
-// wire providers（P3-04）。
+// wire providers（）。
 
 import (
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"

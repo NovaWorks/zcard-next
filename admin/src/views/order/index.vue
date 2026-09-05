@@ -91,7 +91,7 @@ function statusType(s: string): "success" | "error" | "warning" | "info" | "defa
   return "info";
 }
 
-// ── 枚举翻译（P2-09 T5 修复：业务名称化，未知值回显原值）──
+// ── 枚举翻译（ 修复：业务名称化，未知值回显原值）──
 
 function fulfillmentTypeText(t: string) {
   const map: Record<string, string> = {

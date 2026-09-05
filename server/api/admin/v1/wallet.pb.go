@@ -92,7 +92,7 @@ func (x *CreateGiftcardBatchRequest) GetQuantity() int32 {
 }
 
 // CreateGiftcardBatchReply 批次 + 明文码（仅创建响应一次性返回；此后任何端点
-// 不可再取——库内无明文，铁律 11；同 P1-06 一次性明文交付纪律）。
+// 不可再取——库内无明文，铁律 11；同 一次性明文交付纪律）。
 type CreateGiftcardBatchReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Batch         *GiftcardBatchItem     `protobuf:"bytes,1,opt,name=batch,proto3" json:"batch,omitempty"`

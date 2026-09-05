@@ -1,6 +1,6 @@
 package coupon
 
-// 前台营销 API（P3-02）：我的券/兑换/秒杀营销位。
+// 前台营销 API（）：我的券/兑换/秒杀营销位。
 
 import (
 	"context"

@@ -1,6 +1,6 @@
 package data
 
-// Outbox relay（规划 §4.8；P0-01 任务书 T1）：500ms 扫描 publishing 事件 →
+// Outbox relay（规划 ； ）：500ms 扫描 publishing 事件 →
 // 入队（asynq 或进程内同步分发）→ 标记 published。
 //
 // 多实例安全：MySQL/PG 认领用 FOR UPDATE SKIP LOCKED；SQLite 单写者事务天然串行

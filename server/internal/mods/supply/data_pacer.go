@@ -1,17 +1,17 @@
 package supply
 
-// 自适应节奏器（P2-10 S2）：连接级 AIMD——遇限流乘性降速、连续成功加性回升。
+// 自适应节奏器（ S2）：连接级 AIMD——遇限流乘性降速、连续成功加性回升。
 //
-//   事件                                    状态迁移
-//   ────────────────────────────────────────────────────────────────────
-//   429 / WAF 页（ErrRateLimited）          currentDelay ×2（封顶 60s）
-//   连续 2 次限流事件                        渠道熔断：rate_limit_until = now +
-//                                           cooldown（5min 起，每次熔断 ×2，
-//                                           封顶 60min；写 last_error + 事件）
-//   连续 20 次成功                           currentDelay ×0.9（回落至配置底线
-//                                           schedule.request_delay 为止）
-//   熔断到期                                 半开：放行一个探测请求；成功 → 解除
-//                                           （冷却时长归零重来）；再限流 → 冷却翻倍
+// 事件 状态迁移
+// ────────────────────────────────────────────────────────────────────
+// 429 / WAF 页（ErrRateLimited） currentDelay ×2（封顶 60s）
+// 连续 2 次限流事件 渠道熔断：rate_limit_until = now +
+// cooldown（5min 起，每次熔断 ×2，
+// 封顶 60min；写 last_error + 事件）
+// 连续 20 次成功 currentDelay ×0.9（回落至配置底线
+// schedule.request_delay 为止）
+// 熔断到期 半开：放行一个探测请求；成功 → 解除
+// （冷却时长归零重来）；再限流 → 冷却翻倍
 //
 // 消费方：SyncService（页间动态节流）与 Gateway（采购出站熔断判定）。
 // 持久化：rate_state JSON（current_delay_ms / success_streak / blocked_count /
@@ -30,7 +30,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 )
 
-// 节奏器参数（对齐计划 §5.3；不可配——参数面已足够，避免过度配置）。
+// 节奏器参数（对齐计划 ；不可配——参数面已足够，避免过度配置）。
 const (
 	pacerMaxDelay      = 60 * time.Second // 降速封顶
 	pacerCooldownBase  = 5 * time.Minute  // 首次熔断冷却
@@ -237,7 +237,7 @@ func (p *Pacer) persistIfChanged(ctx context.Context, connID uint64, m *pacerMem
 	}
 }
 
-// publishRateLimited 熔断告警事件（P2-05 告警/界面红点数据源）。
+// publishRateLimited 熔断告警事件（ 告警/界面红点数据源）。
 func (p *Pacer) publishRateLimited(ctx context.Context, connID uint64, until time.Time, reason string) {
 	if p.outbox == nil {
 		return

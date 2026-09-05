@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StoreOrderService 顾客下单（P1-03 T2）。
+// StoreOrderService 顾客下单。
 service StoreOrderService {
   // CreateOrder 下单（锁卡→算价→快照→事件；Idempotency-Key 头防重）。
   rpc CreateOrder(CreateOrderRequest) returns (CreateOrderReply) {
@@ -47,7 +47,7 @@ message CreateOrderRequest {
   string coupon_code = 5;
   // 控件答案（key=控件 ID 字符串，value=答案；多选用逗号分隔）
   map<string, string> control_answers = 6;
-  // 积分兑换下单（P3-01：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
+  // 积分兑换下单（：全部商品须为积分商品；积分同事务扣款，订单直落 paid）
   bool use_points = 7;
   // 推广归因码（可空）：游客/无链用户下单时实时解析推广者 → 订单级归因快照
   string ref_code = 8;
@@ -107,7 +107,7 @@ message GuestOrderItem {
   int64 expires_at = 5;
 }
 
-// ── 我的订单（P1-03 补全 2026-08-17）──
+// ── 我的订单(补全 2026-08-17）──
 
 message ListMyOrdersRequest {
   int32 page = 1;

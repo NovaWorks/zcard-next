@@ -16,6 +16,6 @@ service StoreCaptchaService {
 }
 
 message CaptchaImage {
-  string captcha_id = 1;    // 验证码 ID（提交时回传）
-  string image_base64 = 2;  // 图片 data URL（<img src> 直用）
+  string captcha_id = 1; // 验证码 ID（提交时回传）
+  string image_base64 = 2; // 图片 data URL（<img src> 直用）
 }

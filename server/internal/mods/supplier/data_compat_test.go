@@ -1,9 +1,9 @@
 package supplier
 
-// P2-10 B/C 兼容层契约测试：
-//   - 签名向量与 supply/adapter 包跨实现一致（同一上游协议两处实现不漂移）
-//   - dujiao 兼容层端到端（ping/products/下单/查单/幂等/余额不足口径/取消/验签失败）
-//   - acg-faka 兼容层端到端（connect/items/trade secret/query/幂等/验签失败）
+// B/C 兼容层契约测试：
+// - 签名向量与 supply/adapter 包跨实现一致（同一上游协议两处实现不漂移）
+// - dujiao 兼容层端到端（ping/products/下单/查单/幂等/余额不足口径/取消/验签失败）
+// - acg-faka 兼容层端到端（connect/items/trade secret/query/幂等/验签失败）
 
 import (
 	"bytes"

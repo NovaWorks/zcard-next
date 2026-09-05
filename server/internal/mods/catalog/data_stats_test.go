@@ -1,6 +1,6 @@
 package catalog
 
-// P1-01 管理列表库存/已售填充测试：StockBatch（cards available 计数，链接类不入卡池）
+// 管理列表库存/已售填充测试：StockBatch（cards available 计数，链接类不入卡池）
 // + SoldBatch（paid+ 订单 quantity 聚合，pending/canceled 不计）+ fillStats 降级口径。
 
 import (

@@ -1,6 +1,6 @@
 package supply
 
-// 管理面 API（P2-01）：连接 CRUD + Ping、映射规则、同步任务、健康列表。
+// 管理面 API（）：连接 CRUD + Ping、映射规则、同步任务、健康列表。
 // 凭据纪律：credentials 仅创建/重配时明文接收；任何响应零回显（credentials_set 布尔）。
 
 import (

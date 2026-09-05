@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminNotifyService 通知管理（P2-05）：模板 CRUD/测试发送、发送日志查询/重发。
+// AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 service AdminNotifyService {
   // UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
   rpc UpsertTemplate(UpsertNotifyTemplateRequest) returns (NotifyTemplate) {
@@ -69,8 +69,8 @@ service AdminNotifyService {
 message NotifyTemplate {
   uint64 id = 1;
   string event_type = 2;
-  string channel = 3;   // email | inbox | sms | telegram
-  string locale = 4;    // zh_CN 默认
+  string channel = 3; // email | inbox | sms | telegram
+  string locale = 4; // zh_CN 默认
   string subject_tpl = 5;
   string body_tpl = 6;
   bool enabled = 7;
@@ -103,7 +103,7 @@ message PreviewTemplateReply {
 }
 
 message ListNotifyLogsRequest {
-  string status = 1;     // pending | sent | failed | skipped；空 = 全部
+  string status = 1; // pending | sent | failed | skipped；空 = 全部
   string event_type = 2; // 空 = 全部
   int32 page = 3;
   int32 page_size = 4;
@@ -134,7 +134,7 @@ message ResendNotifyLogRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
-// ── 群发任务（T4）─────────────────────────────────────────
+// ── 群发任务─────────────────────────────────────────
 
 // EstimateBroadcast 覆盖人数预估（创建前预览）。
 message EstimateBroadcastRequest {

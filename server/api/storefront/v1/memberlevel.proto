@@ -7,7 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-// StoreMemberLevelService 会员等级（P3-01 M3：等级进度 + 积分产生）。
+// StoreMemberLevelService 会员等级(：等级进度 + 积分产生）。
 service StoreMemberLevelService {
   // GetMyLevel 我的等级（当前等级 + 下一等级 + 升级进度 + 积分余额与产生规则）。
   rpc GetMyLevel(google.protobuf.Empty) returns (MyLevelReply) {
@@ -35,11 +35,11 @@ message MyLevelReply {
 message LevelBrief {
   uint64 id = 1;
   string name = 2;
-  int32 discount = 3;                // 万分比折扣
-  string threshold_type = 4;         // recharge | consume | both_and | both_or
-  int64 threshold_recharge = 5;      // 升级阈值（分）
+  int32 discount = 3; // 万分比折扣
+  string threshold_type = 4; // recharge | consume | both_and | both_or
+  int64 threshold_recharge = 5; // 升级阈值（分）
   int64 threshold_consume = 6;
-  string points_rule_json = 7;       // 积分产生规则 {"spend_cents":X,"points":Y}
+  string points_rule_json = 7; // 积分产生规则 {"spend_cents":X,"points":Y}
 }
 
 // LevelProgress 距下一等级进度。

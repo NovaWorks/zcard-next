@@ -30,8 +30,8 @@ type Reservation struct {
 }
 
 // Inventory 库存窄接口（order 下单事务内锁卡消费，通道 B：同事务工作单元）。
-// M1 交付；实现约束：MySQL/PG 事务内 FOR UPDATE 锁可用行，SQLite 走
-// BEGIN IMMEDIATE + UPDATE...WHERE status='available' 校验 affected rows（§5.20.3）。
+// 交付；实现约束：MySQL/PG 事务内 FOR UPDATE 锁可用行，SQLite 走
+// BEGIN IMMEDIATE + UPDATE...WHERE status='available' 校验 affected rows（）。
 type Inventory interface {
 	Reserve(ctx context.Context, subsiteID uint64, items []ReserveItem) (*Reservation, error)
 	// Release 释放预留（订单取消/超时，TTL 兜底由周期任务二次释放）。
@@ -44,13 +44,13 @@ type Inventory interface {
 	Stock(ctx context.Context, productID, skuID uint64) (int64, error)
 }
 
-// CardContentReader 交付卡密读取（P2-03 供货交付消费，通道 A）：
+// CardContentReader 交付卡密读取（ 供货交付消费，通道 A）：
 // 按卡 ID 批量读取密文并现场解密返回明文（明文仅内存态，铁律 11 出口约束）。
 type CardContentReader interface {
 	Contents(ctx context.Context, cardIDs []uint64, productID, subsiteID uint64) ([]string, error)
 }
 
-// CardReleaser 锁卡回滚（P2-03 供货交付失败时释放；reserved → available）。
+// CardReleaser 锁卡回滚（ 供货交付失败时释放；reserved → available）。
 type CardReleaser interface {
 	ReleaseCards(ctx context.Context, cardIDs []uint64) error
 }

@@ -1,6 +1,6 @@
 package wallet
 
-// 礼品卡服务面（P1-05 T4）：admin 批次创建/列表 + storefront 兑换。
+// 礼品卡服务面（）：admin 批次创建/列表 + storefront 兑换。
 
 import (
 	"context"

@@ -1,6 +1,6 @@
 package affiliate
 
-// 前台分销 API（P3-03）：推广码/团队/流水。管理侧列表经 dashboard 模块
+// 前台分销 API（）：推广码/团队/流水。管理侧列表经 dashboard 模块
 // （AdminDashboardService.ListCommissions 消费 port.CommissionReader，通道 A）。
 
 import (

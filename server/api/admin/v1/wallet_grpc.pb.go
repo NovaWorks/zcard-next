@@ -34,7 +34,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+// AdminWalletService 钱包管理：调账/充值单/流水查询。
 //
 // 路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
 // gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须
@@ -163,7 +163,7 @@ func (c *adminWalletServiceClient) ListTransactions(ctx context.Context, in *Lis
 // All implementations must embed UnimplementedAdminWalletServiceServer
 // for forward compatibility.
 //
-// AdminWalletService 钱包管理（P1-05）：调账/充值单/流水查询。
+// AdminWalletService 钱包管理：调账/充值单/流水查询。
 //
 // 路由注册顺序注意：protoc-gen-go-http 按方法声明顺序注册路由，而
 // gorilla/mux 按注册顺序匹配（先注册先命中），因此所有静态路径方法必须

@@ -48,7 +48,7 @@ type SupplyConnection struct {
 	BalanceCache       int64                  `protobuf:"varint,20,opt,name=balance_cache,json=balanceCache,proto3" json:"balance_cache,omitempty"`
 	CreatedAt          int64                  `protobuf:"varint,21,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt          int64                  `protobuf:"varint,22,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	// P2-10 S2/S3：调度锚点与限流状态（界面展示/倒计时）
+	// S2/S3：调度锚点与限流状态（界面展示/倒计时）
 	LastCollectAt    int64  `protobuf:"varint,23,opt,name=last_collect_at,json=lastCollectAt,proto3" json:"last_collect_at,omitempty"`
 	LastPriceSyncAt  int64  `protobuf:"varint,24,opt,name=last_price_sync_at,json=lastPriceSyncAt,proto3" json:"last_price_sync_at,omitempty"`
 	LastStatusSyncAt int64  `protobuf:"varint,25,opt,name=last_status_sync_at,json=lastStatusSyncAt,proto3" json:"last_status_sync_at,omitempty"`

@@ -1,11 +1,11 @@
-// Package updater 在线更新引擎（P2-07，主文档 §10.4——「重写 1.x 最危险组件」；
-// 2026-09 在线更新方案 doc/在线更新方案.md 定稿重构）：
+// Package updater 在线更新引擎（， ——「重写 1.x 最危险组件」；
+// 2026-09 在线更新方案 定稿重构）：
 //
 //	ed25519 强制验签的 release manifest + 原子替换（rename 舞步）+ 状态机
-//	（pending→ok）+ 自动回滚。重启策略三分支见方案 §5——进程管理器
+//	（pending→ok）+ 自动回滚。重启策略三分支见方案 ——进程管理器
 //	（systemd/supervisord）为主，裸跑由 serve 层 syscall.Exec 降级。
 //
-//	更新源三型（方案 §4）：github 直连 / accel 加速镜像（ghproxy 系前缀拼接）/
+//	更新源三型（方案 ）：github 直连 / accel 加速镜像（ghproxy 系前缀拼接）/
 //	static 自建静态源。manifest 统一走 github.com 官方 releases/latest/download
 //	重定向端点（加速器不代理 REST API；直连亦免 60 次/h 匿名限流）；
 //	beta 通道需列 prerelease，仅 github 直连支持。
@@ -48,7 +48,7 @@ var DefaultPublicKeyHex = "e7d28f99b52cda5e2596c4bea8b125c8c29cb4ca07af83aa5fe2a
 // DefaultRepo 发行仓库（github/accel 源；编译期 -X 可覆盖）。
 var DefaultRepo = "NovaWorks/zcard-next"
 
-// DefaultAccelerators 内置加速镜像前缀（方案 §4.2 实测 2026-09-05 筛出；
+// DefaultAccelerators 内置加速镜像前缀（方案 实测 2026-09-05 筛出；
 // 加速器死亡是常态——列表在 settings 可配，此处仅为默认值）。
 var DefaultAccelerators = []string{
 	"https://gh-proxy.com", // 实测 206 直出 + Range 断点
@@ -351,7 +351,7 @@ func (c *Client) fetchBetaViaAPI(ctx context.Context, pub ed25519.PublicKey) (*M
 type ProgressFunc func(received, total int64)
 
 // DownloadAsset 下载指定产物到 w（流式哈希校验，不符即 ErrFileMismatch；
-// 大产物经 onProgress 报进度——124MB 二进制必须落盘不能进内存，方案 §8）。
+// 大产物经 onProgress 报进度——124MB 二进制必须落盘不能进内存，方案 ）。
 func (c *Client) DownloadAsset(ctx context.Context, m *Manifest, name string, w io.Writer, onProgress ProgressFunc) error {
 	entry := -1
 	for i, f := range m.Files {

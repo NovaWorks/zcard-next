@@ -1,6 +1,6 @@
 //go:build integration
 
-// T2-1 真并发防超卖（P0-05，M1 验收条款「并发防超卖 100/10——MySQL + SQLite
+// -1 真并发防超卖（， 验收条款「并发防超卖 100/10——MySQL + SQLite
 // 双路径」的 MySQL/PG 兑付）。
 //
 // 与 SQLite 顺序版（inventory/inventory_test.go TestSequentialReserve_10of100）

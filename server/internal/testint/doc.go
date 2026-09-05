@@ -1,4 +1,4 @@
-// Package testint CI 集成测试骨架（P0-05，主文档 §13 方言三线矩阵的 MySQL/PG 线）。
+// Package testint CI 集成测试骨架（， 方言三线矩阵的 MySQL/PG 线）。
 //
 // 全部用例挂 `-tags=integration`（make test 单元线零影响）；DSN 环境变量
 // ZCARD_TEST_MYSQL_DSN / ZCARD_TEST_PG_DSN 未配置时自动 Skip。骨架细节见

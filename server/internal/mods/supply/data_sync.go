@@ -1,18 +1,18 @@
 package supply
 
-// 货源同步服务（P2-01 T3/T4/T5 + P2-10 S1 同步引擎改造）：
-//   - 三类 scope：collect（采集：upsert + 库存 + 删除对账）/ price（仅刷价格）/
-//     status（仅刷上下架 + up_stock）——轻量 scope 走 maintainer 端口不建不删
-//   - 增量同步：驱动实现 adapter.IncrementalLister 时按锚点拉取变更
-//     （锚点存 settings.sync_anchors，-1 分钟安全窗）；否则自动回落全量
-//   - 删除对账：仅权威快照（全量 + IncludesInactive 回声）做——seenCodes 对账
-//     把上游已消失商品批量下架；护栏：上游声称 total > 实际处理数 → 任务失败
-//     不删（宁可保守，1.x「不能批量误删」纪律）
-//   - 请求节流：分页页间 request_delay（settings.schedule，防上游限流封 IP）；
-//     库存补查分批并发 + 批次间隔 + 600s 限速预算（1.x AcgFakaDriver 同款参数）
-//   - 任务追踪：进度/心跳(30s)/统计/取消标志；失败 error_context 落库
-//   - fail-open：库存补查失败项保持 -1（无限语义）仅告警；上游查询失败放行
-//   - 终态发布 sync.completed 事件（P2-05 告警 / P3-07 对账数据源）
+// 货源同步服务（// + S1 同步引擎改造）：
+// - 三类 scope：collect（采集：upsert + 库存 + 删除对账）/ price（仅刷价格）/
+// status（仅刷上下架 + up_stock）——轻量 scope 走 maintainer 端口不建不删
+// - 增量同步：驱动实现 adapter.IncrementalLister 时按锚点拉取变更
+// （锚点存 settings.sync_anchors，-1 分钟安全窗）；否则自动回落全量
+// - 删除对账：仅权威快照（全量 + IncludesInactive 回声）做——seenCodes 对账
+// 把上游已消失商品批量下架；护栏：上游声称 total > 实际处理数 → 任务失败
+// 不删（宁可保守，1.x「不能批量误删」纪律）
+// - 请求节流：分页页间 request_delay（settings.schedule，防上游限流封 IP）；
+// 库存补查分批并发 + 批次间隔 + 600s 限速预算（1.x AcgFakaDriver 同款参数）
+// - 任务追踪：进度/心跳(30s)/统计/取消标志；失败 error_context 落库
+// - fail-open：库存补查失败项保持 -1（无限语义）仅告警；上游查询失败放行
+// - 终态发布 sync.completed 事件（ 告警 / 对账数据源）
 
 import (
 	"context"
@@ -52,7 +52,7 @@ const (
 	stockThrottleBudgetMs = 600_000 // 补查限速预算（600s，超出报错提示调参）
 )
 
-// scheduleSettings 连接级节流参数（P2-10 §5.2；S2 自适应节奏器在此基础上倍增）。
+// scheduleSettings 连接级节流参数（ ；S2 自适应节奏器在此基础上倍增）。
 type scheduleSettings struct {
 	PageDelay      time.Duration // 商品分页页间隔
 	StockConc      int           // 库存补查并发
@@ -375,9 +375,9 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 }
 
 // syncOne 同步单个商品（scope 分支）：
-//   - collect：价格保护 → upsert 商品 → upsert 映射（up_stock 缓存）
-//   - price：仅已映射商品刷价格（价格保护同口径；不建不删不动库存）
-//   - status：仅已映射商品刷上下架 + up_stock（不建不删不动价格）
+// - collect：价格保护 → upsert 商品 → upsert 映射（up_stock 缓存）
+// - price：仅已映射商品刷价格（价格保护同口径；不建不删不动库存）
+// - status：仅已映射商品刷上下架 + up_stock（不建不删不动价格）
 //
 // 返回 (cancelRequested, error)。
 func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.SupplySyncTask, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, stats *TaskProgress) (bool, error) {
@@ -527,10 +527,10 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 }
 
 // resolvePrice 价格保护三级判定（collect/price 共用口径）：
-//  1. auto_sync_price=false → 不写（运营手工定价域）
-//  2. pricing_override.price 固定覆盖价 → 恒用固定价
-//  3. 本地当前价 ≠ last_synced_price 基线 → 运营改过价 → 保护；基线更新为运营价
-//     （force=true 时跳过本条——管理员强制重价）
+// 1. auto_sync_price=false → 不写（运营手工定价域）
+// 2. pricing_override.price 固定覆盖价 → 恒用固定价
+// 3. 本地当前价 ≠ last_synced_price 基线 → 运营改过价 → 保护；基线更新为运营价
+// （force=true 时跳过本条——管理员强制重价）
 //
 // 返回 (写入价, 是否写价, 是否计 price_updated, 更新后的 override)。
 func (s *SyncService) resolvePrice(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, upstreamPrice, newPrice int64, force bool) (int64, bool, bool, map[string]any) {
@@ -685,9 +685,9 @@ func (s *SyncService) currentProductCover(ctx context.Context, productID uint64)
 }
 
 // ensureCoverDir 渠道封面目录名（连接级缓存 + settings.cover_dir 持久化）：
-//   - settings.cover_dir 已有 → 沿用（重启稳定）
-//   - 否则扫描 uploads/ 一级目录：渠道名净化后取首个空闲名（重名加 2/3……），
-//     并写入 settings.cover_dir（落库失败仅告警，下次重新解析）
+// - settings.cover_dir 已有 → 沿用（重启稳定）
+// - 否则扫描 uploads/ 一级目录：渠道名净化后取首个空闲名（重名加 2/3……），
+// 并写入 settings.cover_dir（落库失败仅告警，下次重新解析）
 func (s *SyncService) ensureCoverDir(ctx context.Context, conn *ent.SupplyConnection) string {
 	s.coverMu.Lock()
 	if dir, ok := s.coverDirs[conn.ID]; ok {
@@ -808,7 +808,7 @@ func autoOnshelf(settings map[string]any) bool {
 	return b
 }
 
-// ImportOne 单品导入（P2-10 D 交互式导入；与 collect 同步同一 upsert 出口）。
+// ImportOne 单品导入（ D 交互式导入；与 collect 同步同一 upsert 出口）。
 // 定价四模式（pricing.go ApplyPricingImport）：pending 不算价不上架（Price=-1
 // 不覆盖既有价，运营补价后手动上架）；导入价写入基线（后续同步走价格保护）。
 func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64) (bool, error) {
@@ -868,7 +868,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	return created, nil
 }
 
-// ── 失败自动重试（P2-10 补强：上游暂不可用 15→30→60s 递进恢复）──
+// ── 失败自动重试（ 补强：上游暂不可用 15→30→60s 递进恢复）──
 //
 // 与请求级 AIMD（pacer）互补：pacer 管单请求间隔（防封 IP），这里管任务整体的
 // 暂时性失败恢复——重试计数进程内（重启丢失可接受：定时调度周期兜底重跑）。

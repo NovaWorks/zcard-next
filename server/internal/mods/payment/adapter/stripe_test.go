@@ -1,6 +1,6 @@
 package adapter
 
-// stripe 契约测试（P2-09 T3）：
+// stripe 契约测试（）：
 // webhook golden vector（独立 Python hmac 预计算——与 SDK/实现零耦合）+
 // httptest 假 Stripe API（backend 注入）下单/查单/退款断言。
 

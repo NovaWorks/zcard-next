@@ -1,6 +1,6 @@
 package authz
 
-// 角色管理与员工管理 API（P0-03 T2；薄 transport，业务在 biz/仓储）。
+// 角色管理与员工管理 API（；薄 transport，业务在 biz/仓储）。
 // 员工数据经 identity/port.AdminMutator 窄接口（跨模块通道 A）。
 
 import (

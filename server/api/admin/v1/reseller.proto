@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
+// AdminResellerService 分站管理(主站面核心）：申请审核/列表/定价/账本/余额。
 // 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
 service AdminResellerService {
   // MySites 分站主：名下域名列表。
@@ -145,7 +145,7 @@ message BalanceRequest {
 }
 
 message BalanceReply {
-  int64 available = 1;   // 缓存（含冻结正数）
+  int64 available = 1; // 缓存（含冻结正数）
   int64 locked = 2;
   int64 negative = 3;
   int64 recomputed_available = 4; // 流水重算（对账口径）
@@ -163,7 +163,7 @@ message ResellerSiteItem {
   uint64 profile_id = 2;
   string domain = 3;
   string verification_status = 4; // pending | verified | failed
-  string verification_token = 5;  // 用于 DNS TXT/HTTP 文件内容
+  string verification_token = 5; // 用于 DNS TXT/HTTP 文件内容
   bool is_primary = 6;
   string site_name = 7;
   string logo = 8;

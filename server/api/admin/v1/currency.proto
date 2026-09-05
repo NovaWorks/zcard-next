@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+// AdminCurrencyService 货币管理（；多币种展示，记账永远基础货币）。
 service AdminCurrencyService {
   // ListCurrencies 全部货币（含停用）。
   rpc ListCurrencies(google.protobuf.Empty) returns (CurrencyList) {

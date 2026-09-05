@@ -1,10 +1,10 @@
 package audit
 
-// wire providers（P2-06）。
+// wire providers（）。
 //
 // 跨模块绑定（通道 A）：
-//   - AuditRepo 实现 auditport.Auditor（identity/inventory/authz 埋点）
-//   - AuditRepo 实现 auditport.RiskGate（order 下单闸门 / fulfillment 取货锁定）
+// - AuditRepo 实现 auditport.Auditor（identity/inventory/authz 埋点）
+// - AuditRepo 实现 auditport.RiskGate（order 下单闸门 / fulfillment 取货锁定）
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 )
 
 // ProviderSet audit providers。
-// T5 告警：Alerter 依赖 notifyport.Sender（notify.Dispatcher 实现）+
+// 告警：Alerter 依赖 notifyport.Sender（notify.Dispatcher 实现）+
 // notifyport.SettingsReader（settings 适配——经 NotifySettingsBridge 注入）。
 var ProviderSet = wire.NewSet(
 	NewVisitCounter,

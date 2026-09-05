@@ -1,6 +1,6 @@
 package catalog
 
-// P2-10 S1 轻量维护端口测试：UpdateUpstreamPrice / UpdateUpstreamStatus /
+// S1 轻量维护端口测试：UpdateUpstreamPrice / UpdateUpstreamStatus /
 // ShelveOffMissing（删除对账——上游未见商品批量下架）。
 
 import (

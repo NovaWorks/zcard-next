@@ -1,6 +1,6 @@
 package catalog
 
-// P3-04 前台 listing 分站价测试：listing 与 checkout 共用同一 ResolveUnitPrice
+// 前台 listing 分站价测试：listing 与 checkout 共用同一 ResolveUnitPrice
 // （1.x 铁律——分站价只在一处计算；分站域名访问列表/详情/SKU 全部分站价）。
 
 import (

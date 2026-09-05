@@ -1,13 +1,13 @@
 package wallet
 
-// T1 InTx 账务内核（P1-05 核心——全模块最高纪律要求）：
+// InTx 账务内核（ 核心——全模块最高纪律要求）：
 //
 // 一切余额变动必须经 InTx：
-//   1. 按 reference 查流水——存在直接返回成功（幂等重入，跨模块幂等）
-//   2. ensureAccountForUpdate（FOR UPDATE 锁账户，不存在则建——并发竞态处理）
-//   3. 非负校验（Debit 时 available-amount ≥ 0）
-//   4. 更新余额（乐观锁 version 兜底重试 ≤3 次）
-//   5. 写流水（balance_before/after 快照 + reference 唯一索引兜底）
+// 1. 按 reference 查流水——存在直接返回成功（幂等重入，跨模块幂等）
+// 2. ensureAccountForUpdate（FOR UPDATE 锁账户，不存在则建——并发竞态处理）
+// 3. 非负校验（Debit 时 available-amount ≥ 0）
+// 4. 更新余额（乐观锁 version 兜底重试 ≤3 次）
+// 5. 写流水（balance_before/after 快照 + reference 唯一索引兜底）
 //
 // 不变量：total = available + locked 恒真；余额永可由流水重算。
 

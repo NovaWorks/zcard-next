@@ -31,7 +31,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminAuditService 审计与风控管理（P2-06）：三类日志查询、黑名单管理。
+// AdminAuditService 审计与风控管理：三类日志查询、黑名单管理。
 type AdminAuditServiceClient interface {
 	// ListOpLogs 操作审计。
 	ListOpLogs(ctx context.Context, in *ListOpLogsRequest, opts ...grpc.CallOption) (*ListOpLogsReply, error)
@@ -107,7 +107,7 @@ func (c *adminAuditServiceClient) SetBlacklist(ctx context.Context, in *SetBlack
 // All implementations must embed UnimplementedAdminAuditServiceServer
 // for forward compatibility.
 //
-// AdminAuditService 审计与风控管理（P2-06）：三类日志查询、黑名单管理。
+// AdminAuditService 审计与风控管理：三类日志查询、黑名单管理。
 type AdminAuditServiceServer interface {
 	// ListOpLogs 操作审计。
 	ListOpLogs(context.Context, *ListOpLogsRequest) (*ListOpLogsReply, error)

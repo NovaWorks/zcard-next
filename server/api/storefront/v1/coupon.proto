@@ -7,7 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 
-// StoreCouponService 前台营销（P3-02）：我的券/兑换码领券/秒杀营销位。
+// StoreCouponService 前台营销：我的券/兑换码领券/秒杀营销位。
 service StoreCouponService {
   // ListMyCoupons 我的可用券（登录用户）。
   rpc ListMyCoupons(google.protobuf.Empty) returns (ListMyCouponsReply) {
@@ -31,8 +31,8 @@ import "google/protobuf/empty.proto";
 message MyCoupon {
   uint64 id = 1;
   string name = 2;
-  string type = 3;    // fixed | percent
-  int64 value = 4;    // fixed=分；percent=万分比
+  string type = 3; // fixed | percent
+  int64 value = 4; // fixed=分；percent=万分比
   string code = 5;
   string scope_json = 6;
   int64 expire_at = 7;
@@ -56,7 +56,7 @@ message StoreFlashSale {
   int64 flash_price = 3; // 分
   int64 start_at = 4;
   int64 end_at = 5;
-  int32 remaining = 6;  // 剩余量（limit - sold；-1 未提供）
+  int32 remaining = 6; // 剩余量（limit - sold；-1 未提供）
 }
 
 message ListFlashSalesReply {

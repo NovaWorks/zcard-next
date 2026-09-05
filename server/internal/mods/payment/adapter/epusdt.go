@@ -1,13 +1,13 @@
 package adapter
 
-// epusdt 适配器（P2-09 T1）：GMPay 协议（github.com/GMWalletApp/epusdt 自托管 USDT 网关）。
+// epusdt 适配器（）：GMPay 协议（github.com/GMWalletApp/epusdt 自托管 USDT 网关）。
 //
 // 协议（1.x EpuSdtDriver 沉淀 + dujiao-next gateway/epusdt 对拍）：
-//   - 下单：POST {api_url}/payments/gmpay/v1/order/create-transaction
-//     参数 pid/order_id/currency/amount(法币元两位小数)/notify_url/redirect_url/name/network/token
-//   - 签名：剔 signature + 空值 → key ASCII 字典序 → k=v& 拼接 → HMAC-SHA256(secret) 小写 hex
-//   - 回调：JSON POST；status==2 支付成功；重签对比；amount 为法币元（与下单同口径，零换算）
-//   - 应答：纯文本 "ok"（Acker 能力位；管线 JSON 兜底不适用于本协议）
+// - 下单：POST {api_url}/payments/gmpay/v1/order/create-transaction
+// 参数 pid/order_id/currency/amount(法币元两位小数)/notify_url/redirect_url/name/network/token
+// - 签名：剔 signature + 空值 → key ASCII 字典序 → k=v& 拼接 → HMAC-SHA256(secret) 小写 hex
+// - 回调：JSON POST；status==2 支付成功；重签对比；amount 为法币元（与下单同口径，零换算）
+// - 应答：纯文本 "ok"（Acker 能力位；管线 JSON 兜底不适用于本协议）
 //
 // 金额纪律：全链 int64 分；出口一次性格式化两位小数字符串（绝不过 float64 变量——
 // dujiao 踩坑记录：签名串 float 必须去尾零，直接构造字符串则无此问题）。
@@ -37,7 +37,7 @@ type epusdtConfig struct {
 	PID       string `json:"pid"`        // 商户 ID
 	SecretKey string `json:"secret_key"` // HMAC 密钥
 	Currency  string `json:"currency"`   // 法币：cny（默认）/usd
-	// 收款方式（P2-09 T5 多选）：单值字段兼容旧配置；多选数组优先。
+	// 收款方式（ 多选）：单值字段兼容旧配置；多选数组优先。
 	// 恰好一币一链 → 下单锁定该方式；多选/未选 → 占位订单（不传 token/network，
 	// 顾客在 epusdt 收银台从服务端启用的链/币中自选——官方协议支持）
 	Token    string   `json:"token"`
@@ -118,7 +118,7 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	if c.APIURL == "" || c.PID == "" || c.SecretKey == "" {
 		return nil, fmt.Errorf("epusdt: api_url/pid/secret_key 必填")
 	}
-	// 币种快照（P2-09 T2）：跨币路径服务端已换算——ChargedUnits/ChargedCurrency
+	// 币种快照（）：跨币路径服务端已换算——ChargedUnits/ChargedCurrency
 	// 为权威金额；同币直收回落 cfg currency（默认 cny）
 	currency := c.Currency
 	if currency == "" {
@@ -219,7 +219,7 @@ func (a *EpusdtAdapter) VerifyCallback(form map[string]string, cfg json.RawMessa
 // SuccessAck GMPay 回调应答（纯文本 ok；dujiao EpusdtCallbackSuccess 同口径）。
 func (a *EpusdtAdapter) SuccessAck() string { return "ok" }
 
-// ── 字段选项动态加载（P2-09 T5 修复：network/token 以网关 supported_assets 为准）──
+// ── 字段选项动态加载（ 修复：network/token 以网关 supported_assets 为准）──
 
 // epusdtHTTPClient 出站客户端（配置面动态选项拉取）。
 var epusdtHTTPClient = &http.Client{Timeout: 10 * time.Second}

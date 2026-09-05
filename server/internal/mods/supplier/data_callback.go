@@ -1,9 +1,9 @@
 package supplier
 
-// T5 下游回调转发重试：
-//   交付完成 → downstream_callbacks pending → POST 下游 notify_url（签名同四头口径，
-//   下游验我们）→ success / 失败退避重试（间隔表耗尽入死信，可手动重发）。
-//   CallbackUrlGuard：HTTPS 强制 + 私网段拒绝（httpx.ValidateURL + 连接期 IP 复核）。
+// 下游回调转发重试：
+// 交付完成 → downstream_callbacks pending → POST 下游 notify_url（签名同四头口径，
+// 下游验我们）→ success / 失败退避重试（间隔表耗尽入死信，可手动重发）。
+// CallbackUrlGuard：HTTPS 强制 + 私网段拒绝（httpx.ValidateURL + 连接期 IP 复核）。
 
 import (
 	"bytes"
@@ -84,7 +84,7 @@ func (s *SupplyAPIService) DeliverCallback(ctx context.Context, supplyOrderID ui
 		return nil
 	}
 
-	// 回调签名按账号协议分支（P2-10 B：dujiao 兼容账号发 dujiao 事件格式 +
+	// 回调签名按账号协议分支（ B：dujiao 兼容账号发 dujiao 事件格式 +
 	// 3 头签名——签名 path 固定为协议常量 /api/v1/upstream/callback，非实际 URL）
 	apiKey, secret, protocol, err := s.repo.CredentialsWithProtocolOf(ctx, o.AccountID)
 	if err != nil {

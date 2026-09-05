@@ -35,13 +35,13 @@ var ProviderSet = wire.NewSet(
 	ProvideSettingsReader, // port.SettingsReader 绑定（低库存阈值等）
 	wire.Bind(new(ProductRepo), new(*ProductRepoImpl)),
 	wire.Bind(new(port.PricingResolver), new(*ProductRepoImpl)),
-	// P2-01：货源同步商品 upsert 端口绑定（supply 模块消费，通道 A）
+	// ：货源同步商品 upsert 端口绑定（supply 模块消费，通道 A）
 	wire.Bind(new(port.UpstreamProductWriter), new(*ProductRepoImpl)),
-	// P2-10 S1：货源轻量维护端口（price/status scope + 删除对账）
+	// S1：货源轻量维护端口（price/status scope + 删除对账）
 	wire.Bind(new(port.UpstreamProductMaintainer), new(*ProductRepoImpl)),
-	// P2-02：商品读取端口（procurement 消费，通道 A）
+	// ：商品读取端口（procurement 消费，通道 A）
 	wire.Bind(new(port.ProductReader), new(*ProductRepoImpl)),
-	// P2-03：供货目录端口（supplier 消费，通道 A）
+	// ：供货目录端口（supplier 消费，通道 A）
 	wire.Bind(new(port.SupplierCatalog), new(*ProductRepoImpl)),
 	NewStoreCatalogService,
 	NewAdminCatalogService,

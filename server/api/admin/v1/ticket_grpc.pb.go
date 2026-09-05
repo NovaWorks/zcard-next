@@ -31,7 +31,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
+// AdminTicketService 客服工单工作台：urgent_paid 置顶持续高亮、
 // 认领/回复/内部备注/解决/关闭、筛选。
 type AdminTicketServiceClient interface {
 	// ListTickets 工作台列表（urgent_paid 置顶 → 高 → 中 → 低；状态/类型/订单筛选）。
@@ -108,7 +108,7 @@ func (c *adminTicketServiceClient) CloseTicket(ctx context.Context, in *TicketNo
 // All implementations must embed UnimplementedAdminTicketServiceServer
 // for forward compatibility.
 //
-// AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
+// AdminTicketService 客服工单工作台：urgent_paid 置顶持续高亮、
 // 认领/回复/内部备注/解决/关闭、筛选。
 type AdminTicketServiceServer interface {
 	// ListTickets 工作台列表（urgent_paid 置顶 → 高 → 中 → 低；状态/类型/订单筛选）。

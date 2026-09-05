@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
+// StoreTicketService 用户工单：创建/列表/详情/回复/评价/付费加急。
 // 游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
 service StoreTicketService {
   // CreateTicket 创建工单（登录用户或游客）。
@@ -52,8 +52,8 @@ service StoreTicketService {
 message CreateTicketRequest {
   string type = 1 [(google.api.field_behavior) = REQUIRED]; // presale | aftersale
   string content = 2 [(google.api.field_behavior) = REQUIRED];
-  string guest_contact = 3;  // 游客必填（联系方式）
-  uint64 order_id = 4;       // 可选关联
+  string guest_contact = 3; // 游客必填（联系方式）
+  uint64 order_id = 4; // 可选关联
   uint64 product_id = 5;
   repeated uint64 attachment_media_ids = 6;
 }
@@ -118,6 +118,6 @@ message PayUrgentRequest {
 
 message PayUrgentReply {
   bool paid = 1;
-  int64 fee_cents = 2;  // 实扣（分）
-  string error = 3;     // 余额不足等
+  int64 fee_cents = 2; // 实扣（分）
+  string error = 3; // 余额不足等
 }

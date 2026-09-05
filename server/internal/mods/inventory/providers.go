@@ -14,7 +14,7 @@ var ProviderSet = wire.NewSet(
 	NewCardRepoImpl,
 	wire.Bind(new(CardRepo), new(*CardRepoImpl)),
 	wire.Bind(new(port.Inventory), new(*CardRepoImpl)),
-	// P2-03：供货交付卡密读取 + 失败回滚（supplier 消费，通道 A）
+	// ：供货交付卡密读取 + 失败回滚（supplier 消费，通道 A）
 	wire.Bind(new(port.CardContentReader), new(*CardRepoImpl)),
 	wire.Bind(new(port.CardReleaser), new(*CardRepoImpl)),
 	// 管理列表批量库存（catalog 消费，通道 A）

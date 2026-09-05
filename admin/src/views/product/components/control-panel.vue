@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 自定义控件管理（P1-01 M1b 前端面）：
+ * 自定义控件管理（ 前端面）：
  * 下单收集字段（text|password|select|number|checkbox|radio）+ 必填 + 选项。
  */
 import { ref, reactive, computed, watch, h } from "vue";

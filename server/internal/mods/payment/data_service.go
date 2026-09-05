@@ -1,6 +1,6 @@
 package payment
 
-// 支付服务（P1-04；admin 渠道/支付单/退款 + storefront 创建支付 + 回调入口）。
+// 支付服务（；admin 渠道/支付单/退款 + storefront 创建支付 + 回调入口）。
 
 import (
 	"bytes"
@@ -58,7 +58,7 @@ func (s *AdminPaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 	return reply, nil
 }
 
-// CreateChannel 创建渠道（P2-09 T5：驱动存在性 + 凭据即时校验——创建即反馈）。
+// CreateChannel 创建渠道（：驱动存在性 + 凭据即时校验——创建即反馈）。
 func (s *AdminPaymentService) CreateChannel(ctx context.Context, req *adminv1.CreateChannelRequest) (*adminv1.Channel, error) {
 	if req.GetName() == "" || req.GetCode() == "" || req.GetDriver() == "" {
 		return nil, errors.BadRequest("payment.INVALID_INPUT", "名称/编码/驱动必填")
@@ -93,7 +93,7 @@ func (s *AdminPaymentService) CreateChannel(ctx context.Context, req *adminv1.Cr
 	return s.channelPB(ctx, ch), nil
 }
 
-// ListDrivers 驱动元数据（P2-09 T5：admin 配置面动态表单渲染的数据源）。
+// ListDrivers 驱动元数据（：admin 配置面动态表单渲染的数据源）。
 func (s *AdminPaymentService) ListDrivers(ctx context.Context, _ *emptypb.Empty) (*adminv1.DriverList, error) {
 	drivers := []*adminv1.Driver{{
 		Code: "wallet", Name: "余额支付", Icon: "wallet",
@@ -131,7 +131,7 @@ func (s *AdminPaymentService) ListDrivers(ctx context.Context, _ *emptypb.Empty)
 	return &adminv1.DriverList{Drivers: drivers}, nil
 }
 
-// FieldOptions 驱动字段动态选项（P2-09 T5 修复：epusdt network/token 以网关
+// FieldOptions 驱动字段动态选项（ 修复：epusdt network/token 以网关
 // supported_assets 为准——转发适配器 OptionProvider，失败回落静态矩阵）。
 func (s *AdminPaymentService) FieldOptions(ctx context.Context, req *adminv1.FieldOptionsRequest) (*adminv1.FieldOptionsReply, error) {
 	if req.GetCode() == "" || req.GetField() == "" {
@@ -156,7 +156,7 @@ func (s *AdminPaymentService) FieldOptions(ctx context.Context, req *adminv1.Fie
 	return reply, nil
 }
 
-// channelPB 渠道协议对象（P2-09 T5）：
+// channelPB 渠道协议对象（）：
 // 补充已配置字段名 + 回调地址；凭据脱敏回显——敏感字段掩码 ****
 // （编辑体验：非敏感字段可回显，敏感字段留空不覆盖）。
 func (s *AdminPaymentService) channelPB(ctx context.Context, ch *ent.PaymentChannel) *adminv1.Channel {
@@ -189,7 +189,7 @@ func (s *AdminPaymentService) channelPB(ctx context.Context, ch *ent.PaymentChan
 	return pb
 }
 
-// UpdateChannel 更新渠道（P2-09 T5：fee_type 更新 + 凭据变更即时校验；
+// UpdateChannel 更新渠道（：fee_type 更新 + 凭据变更即时校验；
 // config_json=**** 跳过凭据修改——敏感字段留空不覆盖）。
 func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.UpdateChannelRequest) (*adminv1.Channel, error) {
 	if ft := req.GetFeeType(); ft != "" && ft != string(paymentchannel.FeeTypePercent) && ft != string(paymentchannel.FeeTypeFixed) {
@@ -274,7 +274,7 @@ func (s *AdminPaymentService) GetPayment(ctx context.Context, req *adminv1.GetPa
 	return ToPaymentPB(p, s.getOrderNo(ctx, p.OrderID)), nil
 }
 
-// CapturePayment 补单（M1a 框架——真实渠道拉取 M1b 接入）。
+// CapturePayment 补单（M1a 框架——真实渠道拉取 接入）。
 func (s *AdminPaymentService) CapturePayment(ctx context.Context, req *adminv1.CapturePaymentRequest) (*adminv1.Payment, error) {
 	p, err := s.repo.GetPayment(ctx, req.GetId())
 	if ent.IsNotFound(err) {
@@ -399,7 +399,7 @@ func NewStorePaymentService(repo *PaymentRepoImpl, d *data.Data) *StorePaymentSe
 	return &StorePaymentService{repo: repo, data: d}
 }
 
-// ListChannels 启用渠道列表（P2-09 T5：渠道下拉数据源——替代前端硬编码枚举）。
+// ListChannels 启用渠道列表（：渠道下拉数据源——替代前端硬编码枚举）。
 // 过滤：启用 + 已配置（空凭据的「待配置」渠道不对顾客展示；wallet 内置无需配置）。
 // 游客不下发 wallet（余额支付需登录态；游客仅可用真实支付渠道）。
 func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.ChannelListReply, error) {
@@ -461,7 +461,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		return nil, err
 	}
 
-	// wallet 渠道：余额支付（直接 markPaid——M1 接 wallet.DebitInTx）
+	// wallet 渠道：余额支付（直接 markPaid—— 接 wallet.DebitInTx）
 	if ch.Driver == "wallet" {
 		p, err := s.repo.CreatePayment(ctx, o.ID, ch.Code, o.TotalAmount, "")
 		if err != nil {
@@ -513,7 +513,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建支付失败")
 	}
-	// 币种快照（P2-09 T2）：target_currency → currency 表换算 → 适配器收渠道金额
+	// 币种快照（）：target_currency → currency 表换算 → 适配器收渠道金额
 	snap := s.repo.computeCharge(ctx, cfg, money.Cents(o.TotalAmount))
 	// 回跳/回调绝对化（易支付/Stripe/PayPal 等外部网关只认绝对地址）：
 	// notify 用 site/url 前缀（CallbackURL；未配置时请求 Host 兜底）；
@@ -581,8 +581,8 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		cfg := repo.DecryptConfig(ch)
 
 		// 4/5) 解析 + 验签 → CallbackFact：
-		//     Webhooker 分支（stripe/paypal——JSON body + 签名头，SDK 验签需凭据）
-		//     优先于表单分支（alipay/wechat/epay/epusdt）
+		// Webhooker 分支（stripe/paypal——JSON body + 签名头，SDK 验签需凭据）
+		// 优先于表单分支（alipay/wechat/epay/epusdt）
 		var f *port.CallbackFact
 		if hooker, ok := provider.(port.Webhooker); ok && isWebhookRequest(r, ch.Driver) {
 			headers := map[string]string{}
@@ -642,7 +642,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 	}
 	payments.POST("/callback/{channel}", handler)
 	payments.GET("/callback/{channel}", handler)
-	// PayPal return 同步捕获（P2-09 T4）：买家在 PayPal 授权后跳回
+	// PayPal return 同步捕获（）：买家在 PayPal 授权后跳回
 	// return_url（PayPal 追加 token=<order_id>，1.x 生产依赖）——
 	// 先查后捕（Capturer），成功后走回调管线 markPaid，302 回店铺页。
 	payments.GET("/return/{channel}", func(ctx khttp.Context) error {
@@ -740,7 +740,7 @@ func parseCallbackForm(r *http.Request, body []byte) (map[string]string, error) 
 		m[k] = r.Form.Get(k)
 	}
 	// JSON 回调体（epusdt 类）：UseNumber 保留原始字面——10.00 不得塌成 10
-	//（验签按原文重算，签名不变式 §5.5）
+	//（验签按原文重算，签名不变式 ）
 	if len(m) == 0 && len(body) > 0 {
 		dec := json.NewDecoder(bytes.NewReader(body))
 		dec.UseNumber()

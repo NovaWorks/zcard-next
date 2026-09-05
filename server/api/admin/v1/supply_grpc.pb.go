@@ -41,7 +41,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
+// AdminSupplyService 货源连接管理：上游连接 CRUD + Ping 探活、
 // 商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
 // 凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
 // （列表/详情只给 credentials_set 布尔，铁律 11）。
@@ -71,9 +71,9 @@ type AdminSupplyServiceClient interface {
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(ctx context.Context, in *CancelSyncTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
 	PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...grpc.CallOption) (*PreviewProductsReply, error)
-	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 	ImportProducts(ctx context.Context, in *ImportProductsRequest, opts ...grpc.CallOption) (*ImportProductsReply, error)
 	ListHealth(ctx context.Context, in *ListHealthRequest, opts ...grpc.CallOption) (*ListHealthReply, error)
 }
@@ -240,7 +240,7 @@ func (c *adminSupplyServiceClient) ListHealth(ctx context.Context, in *ListHealt
 // All implementations must embed UnimplementedAdminSupplyServiceServer
 // for forward compatibility.
 //
-// AdminSupplyService 货源连接管理（P2-01）：上游连接 CRUD + Ping 探活、
+// AdminSupplyService 货源连接管理：上游连接 CRUD + Ping 探活、
 // 商品映射规则、同步任务（创建/列表/详情/取消）、连接健康。
 // 凭据纪律：credentials 仅创建时明文传入，任何响应都不回显密文
 // （列表/详情只给 credentials_set 布尔，铁律 11）。
@@ -270,9 +270,9 @@ type AdminSupplyServiceServer interface {
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(context.Context, *CancelSyncTaskRequest) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
 	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
-	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 	ImportProducts(context.Context, *ImportProductsRequest) (*ImportProductsReply, error)
 	ListHealth(context.Context, *ListHealthRequest) (*ListHealthReply, error)
 	mustEmbedUnimplementedAdminSupplyServiceServer()

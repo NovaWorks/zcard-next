@@ -1,13 +1,13 @@
-// self-update 子命令（P2-07 T2；2026-09 方案 §4/§8 重构）：在线更新 CLI 面。
+// self-update 子命令（；2026-09 方案 / 重构）：在线更新 CLI 面。
 //
 //	zcard self-update [--check] [--rollback] [-conf <dir>]
-//	                  [-source auto|github|accel|static] [-repo <owner/repo>]
-//	                  [-accel <prefix[,prefix...]>] [-base <url>] [-channel stable|beta]
-//	                  [-pubkey <hex>] [-y]
-//	zcard self-update genkey                                # 发行侧密钥对
+// [-source auto|github|accel|static] [-repo <owner/repo>]
+// [-accel <prefix[,prefix...]>] [-base <url>] [-channel stable|beta]
+// [-pubkey <hex>] [-y]
+//	zcard self-update genkey # 发行侧密钥对
 //	zcard self-update sign --key <file> --dir <dist> --version vX.Y.Z [--notes-file <md>]
 //
-// 安全模型见 platform/updater 包注释与 doc/在线更新方案.md；
+// 安全模型见 platform/updater 包注释与 ；
 // 非 TTY 且无 -y 拒绝执行（防脚本误触）。
 package main
 
@@ -139,7 +139,7 @@ func runSelfUpdate(args []string) error {
 		}
 	}
 
-	// 磁盘预检（方案 §8）：产物 + 64MB 余量（DB 备份另计由 dump 工具自行失败）
+	// 磁盘预检（方案 ）：产物 + 64MB 余量（DB 备份另计由 dump 工具自行失败）
 	if err := updater.CheckDiskSpace(filepath.Dir(binPath), assetSize+64<<20); err != nil {
 		return fmt.Errorf("self-update: %w", err)
 	}
@@ -156,7 +156,7 @@ func runSelfUpdate(args []string) error {
 	// 二进制一并入备份目录（DB 恢复 + 二进制回退双保险）
 	_ = copyFile(binPath, filepath.Join(backupDir, "zcard.old"))
 
-	// 下载 → 验签落位（落盘流式，124MB 大产物零内存，方案 §8）
+	// 下载 → 验签落位（落盘流式，124MB 大产物零内存，方案 ）
 	newPath := filepath.Join(filepath.Dir(binPath), "zcard.new")
 	if err := downloadToFile(ctx, cli, m, assetName, newPath); err != nil {
 		_ = os.Remove(newPath)

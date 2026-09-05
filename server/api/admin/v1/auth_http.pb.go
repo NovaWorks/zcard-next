@@ -39,11 +39,11 @@ type AdminAuthServiceHTTPServer interface {
 	GetCaptchaConfig(context.Context, *emptypb.Empty) (*CaptchaConfigReply, error)
 	// GetCaptchaImage GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
 	GetCaptchaImage(context.Context, *emptypb.Empty) (*CaptchaImageReply, error)
-	// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+	// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
 	GetProfile(context.Context, *emptypb.Empty) (*GetProfileReply, error)
 	// Login Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
-	// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+	// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
 	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
 	// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)
@@ -244,11 +244,11 @@ type AdminAuthServiceHTTPClient interface {
 	GetCaptchaConfig(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CaptchaConfigReply, err error)
 	// GetCaptchaImage GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
 	GetCaptchaImage(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CaptchaImageReply, err error)
-	// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+	// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
 	GetProfile(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *GetProfileReply, err error)
 	// Login Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
 	Login(ctx context.Context, req *LoginRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
-	// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+	// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
 	Logout(ctx context.Context, req *LogoutRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(ctx context.Context, req *RefreshTokenRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
@@ -350,7 +350,7 @@ func (c *AdminAuthServiceHTTPClientImpl) GetCaptchaImage(ctx context.Context, in
 	return &out, nil
 }
 
-// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+// GetProfile GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
 func (c *AdminAuthServiceHTTPClientImpl) GetProfile(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*GetProfileReply, error) {
 	var out GetProfileReply
 	pattern := "/api/v1/admin/auth/profile"
@@ -385,7 +385,7 @@ func (c *AdminAuthServiceHTTPClientImpl) Login(ctx context.Context, in *LoginReq
 	return &out, nil
 }
 
-// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+// Logout Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
 func (c *AdminAuthServiceHTTPClientImpl) Logout(ctx context.Context, in *LogoutRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
 	pattern := "/api/v1/admin/auth/logout"

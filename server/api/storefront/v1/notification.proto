@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StoreNotificationService 站内信铃铛（P2-05 T3）：未读数/列表/已读。
+// StoreNotificationService 站内信铃铛：未读数/列表/已读。
 service StoreNotificationService {
   // UnreadCount 未读数。
   rpc UnreadCount(google.protobuf.Empty) returns (UnreadCountReply) {

@@ -1,4 +1,4 @@
-// updater 契约测试（P2-07 T3；2026-09 三源重构后增补）：更新安全模型 =
+// updater 契约测试（；2026-09 三源重构后增补）：更新安全模型 =
 // golden vector 纪律——篡改/换钥/降级/哈希不符全部 fail-closed；
 // rename 舞步原子性（内存/落盘双入口）与回滚三路径；三源 URL 构造与 auto 探测。
 package updater
@@ -40,7 +40,7 @@ func testManifest(t *testing.T, version string, files []FileEntry) (*Manifest, [
 	return m, raw, pub, priv
 }
 
-// ── 验签矩阵（T3-1）──────────────────────────────────────────────
+// ── 验签矩阵（-1）──────────────────────────────────────────────
 
 func TestVerifyManifestMatrix(t *testing.T) {
 	files := []FileEntry{{Name: "zcard-linux-amd64", SHA256: "ab", Size: 10}}

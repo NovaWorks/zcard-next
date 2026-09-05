@@ -32,7 +32,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
+// StoreTicketService 用户工单：创建/列表/详情/回复/评价/付费加急。
 // 游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
 type StoreTicketServiceClient interface {
 	// CreateTicket 创建工单（登录用户或游客）。
@@ -121,7 +121,7 @@ func (c *storeTicketServiceClient) PayUrgent(ctx context.Context, in *PayUrgentR
 // All implementations must embed UnimplementedStoreTicketServiceServer
 // for forward compatibility.
 //
-// StoreTicketService 用户工单（P3-05）：创建/列表/详情/回复/评价/付费加急。
+// StoreTicketService 用户工单：创建/列表/详情/回复/评价/付费加急。
 // 游客可创建（guest_contact 必填）；内部备注用户侧自动过滤。
 type StoreTicketServiceServer interface {
 	// CreateTicket 创建工单（登录用户或游客）。

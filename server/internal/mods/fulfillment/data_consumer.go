@@ -1,6 +1,6 @@
 package fulfillment
 
-// 事件消费（P1-06 M1b 接线）：order.paid → 自动交付。
+// 事件消费（ 接线）：order.paid → 自动交付。
 // 与 procurement/affiliate/reseller/notify 同款消费形态——outbox relay 投递，幂等由
 // FulfillOrder（已交付直接返回）兜底。
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 工单工作台（P3-05）：urgent_paid 置顶由后端排序保证；前台筛选状态/类型/订单号。
+// 工单工作台（）：urgent_paid 置顶由后端排序保证；前台筛选状态/类型/订单号。
 // 会话式详情：用户左灰泡 / 客服右蓝泡 / 内部备注左橙虚线（仅 ticket:read 可见）。
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";

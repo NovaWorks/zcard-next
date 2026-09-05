@@ -37,10 +37,10 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
-// 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
-// ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
+// 里程碑 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
+// ±300s 时间窗、Nonce 防重放、按 key 限流（规划)。
 // Ping 免签名（连通性探测）；其余端点全部需要签名。
-// 金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
+// 金额口径：一律「分」（int64）——与 zcard 适配器对偶。
 type SupplyServiceClient interface {
 	// Ping 连通性与协议版本探测（免签名）。
 	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PingReply, error)
@@ -178,10 +178,10 @@ func (c *supplyServiceClient) RefundOrder(ctx context.Context, in *RefundSupplyO
 // for forward compatibility.
 //
 // SupplyService 对外供货 API（本站作上游，ZCard Supply v2 协议）。
-// 里程碑 M2 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
-// ±300s 时间窗、Nonce 防重放、按 key 限流（规划 §5.8）。
+// 里程碑 完整落地：HMAC 四头鉴权（X-Supply-Key/Timestamp/Nonce/Signature）、
+// ±300s 时间窗、Nonce 防重放、按 key 限流（规划)。
 // Ping 免签名（连通性探测）；其余端点全部需要签名。
-// 金额口径：一律「分」（int64）——与 P2-01 zcard 适配器对偶。
+// 金额口径：一律「分」（int64）——与 zcard 适配器对偶。
 type SupplyServiceServer interface {
 	// Ping 连通性与协议版本探测（免签名）。
 	Ping(context.Context, *emptypb.Empty) (*PingReply, error)

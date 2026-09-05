@@ -47,7 +47,7 @@ type AdminSupplyServiceHTTPServer interface {
 	DeleteMapping(context.Context, *DeleteMappingRequest) (*emptypb.Empty, error)
 	// GetSyncTask GetSyncTask 任务详情（心跳/统计/错误上下文）。
 	GetSyncTask(context.Context, *GetSyncTaskRequest) (*SupplySyncTask, error)
-	// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 	ImportProducts(context.Context, *ImportProductsRequest) (*ImportProductsReply, error)
 	// ListConnections ListConnections 连接列表（凭据零回显）。
 	ListConnections(context.Context, *ListConnectionsRequest) (*ListConnectionsReply, error)
@@ -59,7 +59,7 @@ type AdminSupplyServiceHTTPServer interface {
 	// PingConnection PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
 	PingConnection(context.Context, *PingConnectionRequest) (*PingConnectionReply, error)
 	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
 	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(context.Context, *UpdateConnectionRequest) (*SupplyConnection, error)
@@ -408,7 +408,7 @@ type AdminSupplyServiceHTTPClient interface {
 	DeleteMapping(ctx context.Context, req *DeleteMappingRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// GetSyncTask GetSyncTask 任务详情（心跳/统计/错误上下文）。
 	GetSyncTask(ctx context.Context, req *GetSyncTaskRequest, opts ...http.CallOption) (rsp *SupplySyncTask, err error)
-	// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+	// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 	ImportProducts(ctx context.Context, req *ImportProductsRequest, opts ...http.CallOption) (rsp *ImportProductsReply, err error)
 	// ListConnections ListConnections 连接列表（凭据零回显）。
 	ListConnections(ctx context.Context, req *ListConnectionsRequest, opts ...http.CallOption) (rsp *ListConnectionsReply, err error)
@@ -420,7 +420,7 @@ type AdminSupplyServiceHTTPClient interface {
 	// PingConnection PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
 	PingConnection(ctx context.Context, req *PingConnectionRequest, opts ...http.CallOption) (rsp *PingConnectionReply, err error)
 	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
 	PreviewProducts(ctx context.Context, req *PreviewProductsRequest, opts ...http.CallOption) (rsp *PreviewProductsReply, err error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(ctx context.Context, req *UpdateConnectionRequest, opts ...http.CallOption) (rsp *SupplyConnection, err error)
@@ -541,7 +541,7 @@ func (c *AdminSupplyServiceHTTPClientImpl) GetSyncTask(ctx context.Context, in *
 	return &out, nil
 }
 
-// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认；P2-10 D）。
+// ImportProducts ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 func (c *AdminSupplyServiceHTTPClientImpl) ImportProducts(ctx context.Context, in *ImportProductsRequest, opts ...http.CallOption) (*ImportProductsReply, error) {
 	var out ImportProductsReply
 	pattern := "/api/v1/admin/supply/connections/{connection_id}/import"
@@ -645,7 +645,7 @@ func (c *AdminSupplyServiceHTTPClientImpl) PingConnection(ctx context.Context, i
 }
 
 // PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存；P2-10 D）。
+// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
 func (c *AdminSupplyServiceHTTPClientImpl) PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...http.CallOption) (*PreviewProductsReply, error) {
 	var out PreviewProductsReply
 	pattern := "/api/v1/admin/supply/connections/{connection_id}/preview"

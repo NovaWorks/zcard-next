@@ -3,7 +3,7 @@ package port
 
 import "context"
 
-// PurchaseRequest 采购提交请求（P2-02 procurement 消费；DownstreamOrderNo 幂等键）。
+// PurchaseRequest 采购提交请求（ procurement 消费；DownstreamOrderNo 幂等键）。
 type PurchaseRequest struct {
 	ConnectionID      uint64
 	ProductCode       string // 上游商品标识（映射后的上游键）
@@ -53,15 +53,15 @@ type UpstreamGateway interface {
 	Submit(ctx context.Context, req PurchaseRequest) (*PurchaseResult, error)
 	// Query 查询上游订单（三通道结果汇聚共用）。
 	Query(ctx context.Context, connectionID uint64, upstreamOrderID string) (*PurchaseOrderInfo, error)
-	// CheckStock 实时库存校验（T4 fail-open：查询失败返回 -1 放行，语义由调用方决定；
+	// CheckStock 实时库存校验（ fail-open：查询失败返回 -1 放行，语义由调用方决定；
 	// skuCode 为上游规格标识，可空——商品级口径）。
 	CheckStock(ctx context.Context, connectionID uint64, productCode, skuCode string) (int32, error)
 	// Refund 向上游传导退款（可选能力；不支持返回 ErrRefundNotSupported）。
 	Refund(ctx context.Context, connectionID uint64, upstreamOrderID string) error
 	// FailStrategyOf 渠道级失败策略（settings.failure_action：auto_refund 默认 |
-	// manual 转人工；采购建单时读取，P2-10 对齐 1.x failure_action）。
+	// manual 转人工；采购建单时读取， 对齐 1.x failure_action）。
 	FailStrategyOf(ctx context.Context, connectionID uint64) string
-	// VerifyUpstreamCallback 校验并解析上游回调（P2-10 E：按连接驱动验签——
+	// VerifyUpstreamCallback 校验并解析上游回调（ E：按连接驱动验签——
 	// zcard 四头双口径 / dujiao 三头固定 path；acg 无回调返回 ErrCallbackNotSupported）。
 	// 幂等由采购状态机 CAS 兜底（ts+签名摘要 防重放语义见实现）。
 	VerifyUpstreamCallback(ctx context.Context, connectionID uint64, auth *UpstreamCallbackAuth) (*UpstreamCallbackResult, error)

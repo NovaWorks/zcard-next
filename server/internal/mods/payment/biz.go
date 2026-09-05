@@ -1,6 +1,6 @@
 // Package payment 支付模块（M1a）：渠道/支付单/回调管线/补单/退款编排。
 //
-// M0 落地注册表骨架；M1a 交付 alipay/wechat/epay/钱包四渠道 + 回调管线
+// 落地注册表骨架；M1a 交付 alipay/wechat/epay/钱包四渠道 + 回调管线
 // （事务内：行锁 payment+order → 四重校验 → 幂等 → markPaid）+ golden vector 契约测试
 // （固定 key + 固定 body → 期望签名/验签结果，1.x 最大测试缺口的门禁化）。
 package payment
@@ -45,7 +45,7 @@ func (r *Registry) Provider(provider string) (port.Provider, error) {
 	return p, nil
 }
 
-// All 全部已注册 adapter（P2-09 T5：admin 配置面驱动元数据遍历）。
+// All 全部已注册 adapter（：admin 配置面驱动元数据遍历）。
 func (r *Registry) All() []port.Provider {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

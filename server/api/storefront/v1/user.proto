@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StoreUserService 用户中心（P3-04 前置）：注册/登录（user realm JWT）/我的信息。
+// StoreUserService 用户中心(前置）：注册/登录（user realm JWT）/我的信息。
 // 注册可带邀请码（ref=<user_id>）——三级分销归因链写入（环状拒绝）。
 service StoreUserService {
   // Register 注册（username+password；invite_code 可选=上级 user_id）。
@@ -36,7 +36,7 @@ service StoreUserService {
   rpc Me(google.protobuf.Empty) returns (MeReply) {
     option (google.api.http) = { get: "/api/v1/storefront/user/me" };
   }
-  // ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+  // ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
   rpc ForgotPassword(ForgotPasswordRequest) returns (ForgotPasswordReply) {
     option (google.api.http) = {
       post: "/api/v1/storefront/user/password/forgot"
@@ -71,16 +71,16 @@ message RegisterRequest {
   string password = 2 [(google.api.field_behavior) = REQUIRED];
   string email = 3;
   string invite_code = 4; // 推广码（8 位随机或旧数字 ID；可空）
-  string code = 5;   // 注册验证码（register_method=email/phone 时必填）
-  string phone = 6;  // 手机号（register_method=phone 时必填）
-  string captcha_id = 7;   // 图形验证码 ID（captcha_register 开启时必填）
+  string code = 5; // 注册验证码（register_method=email/phone 时必填）
+  string phone = 6; // 手机号（register_method=phone 时必填）
+  string captcha_id = 7; // 图形验证码 ID（captcha_register 开启时必填）
   string captcha_code = 8; // 图形验证码（4 位数字）
 }
 
 message SendRegisterCodeRequest {
   string target = 1 [(google.api.field_behavior) = REQUIRED]; // 邮箱或手机号
   string channel = 2; // email | phone（空则按 target 格式自动判定）
-  string captcha_id = 3;   // 图形验证码 ID（captcha_register 开启时必填）
+  string captcha_id = 3; // 图形验证码 ID（captcha_register 开启时必填）
   string captcha_code = 4; // 图形验证码
 }
 
@@ -88,7 +88,7 @@ message SendRegisterCodeReply {}
 
 message RegisterReply {
   uint64 user_id = 1;
-  string token = 2;      // 注册即登录
+  string token = 2; // 注册即登录
   int64 expires_at = 3;
   string promo_code = 4; // 自己的推广码（注册成功即拥有）
 }
@@ -96,7 +96,7 @@ message RegisterReply {
 message LoginRequest {
   string username = 1 [(google.api.field_behavior) = REQUIRED]; // 用户名/邮箱/手机号混输
   string password = 2 [(google.api.field_behavior) = REQUIRED];
-  string captcha_id = 3;   // 图形验证码 ID（captcha_login 开启时必填）
+  string captcha_id = 3; // 图形验证码 ID（captcha_login 开启时必填）
   string captcha_code = 4; // 图形验证码
 }
 
@@ -111,14 +111,14 @@ message MeReply {
   string username = 2;
   string email = 3;
   int64 created_at = 4;
-  bool is_reseller = 5;        // 分站主身份（approved）
+  bool is_reseller = 5; // 分站主身份（approved）
   uint64 reseller_profile_id = 6;
-  string promo_code = 7;       // 推广码（懒生成）
+  string promo_code = 7; // 推广码（懒生成）
 }
 
 message ForgotPasswordRequest {
   string email = 1 [(google.api.field_behavior) = REQUIRED];
-  string captcha_id = 2;   // 图形验证码 ID（captcha_reset 开启时必填）
+  string captcha_id = 2; // 图形验证码 ID（captcha_reset 开启时必填）
   string captcha_code = 3; // 图形验证码
 }
 
@@ -126,12 +126,12 @@ message ForgotPasswordReply {}
 
 message ResetPasswordRequest {
   string email = 1 [(google.api.field_behavior) = REQUIRED];
-  string code = 2 [(google.api.field_behavior) = REQUIRED];        // 邮件验证码
+  string code = 2 [(google.api.field_behavior) = REQUIRED]; // 邮件验证码
   string new_password = 3 [(google.api.field_behavior) = REQUIRED]; // >= 6 位
 }
 
 message ResetPasswordReply {
-  string token = 2;      // 重置即登录
+  string token = 2; // 重置即登录
   int64 expires_at = 3;
 }
 
@@ -141,7 +141,7 @@ message ChangePasswordRequest {
 }
 
 message ChangePasswordReply {
-  string token = 1;      // 改密后吊销全部 session；新 token 保当前会话
+  string token = 1; // 改密后吊销全部 session；新 token 保当前会话
   int64 expires_at = 2;
 }
 

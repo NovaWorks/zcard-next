@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
+// AdminCouponService 优惠券管理(基础版：批量生成/列表/作废）。
 service AdminCouponService {
   // GrantCoupon 批次赠送指定用户。
   rpc GrantCoupon(GrantCouponRequest) returns (GrantCouponReply) {
@@ -68,8 +68,8 @@ message Coupon {
   uint64 id = 1;
   string batch_id = 2;
   string name = 3;
-  string type = 4;   // fixed | percent
-  int64 value = 5;   // fixed=分；percent=万分比
+  string type = 4; // fixed | percent
+  int64 value = 5; // fixed=分；percent=万分比
   string code = 6;
   string status = 7; // unused | used | disabled
 }
@@ -84,14 +84,14 @@ message CouponList {
 
 message ListCouponsRequest {
   string status = 1;
-  string batch_id = 2;  // 按批次筛选
+  string batch_id = 2; // 按批次筛选
   int32 page = 3;
   int32 page_size = 4;
 }
 
 message CreateCouponBatchRequest {
   string name = 1;
-  string type = 2;   // fixed | percent
+  string type = 2; // fixed | percent
   int64 value = 3;
   int32 count = 4;
   int64 expire_at = 5; // unix 秒，0=不限
@@ -116,7 +116,7 @@ message DeleteCouponsReply {
 }
 
 message ExportCouponsRequest {
-  string status = 1;   // 空=全部
+  string status = 1; // 空=全部
   string batch_id = 2; // 空=全部批次
 }
 
@@ -125,7 +125,7 @@ message ExportCouponsReply {
   string csv = 2; // 含 BOM + 表头，前端直接落盘
 }
 
-// ── M3 扩展：领取/秒杀/促销 ───────────────────────────────
+// ── 扩展：领取/秒杀/促销 ───────────────────────────────
 
 // GrantCoupon 批次赠送指定用户（领取）。
 message GrantCouponRequest {
@@ -183,8 +183,8 @@ message UpsertPromotionRequest {
   string name = 2 [(google.api.field_behavior) = REQUIRED];
   string scope_json = 3; // {"product_ids":[1,2]} / {"category_ids":[3]} / 空=全场
   string type = 4 [(google.api.field_behavior) = REQUIRED]; // fixed | percent | special_price
-  int64 threshold = 5;  // 满 X（分）
-  int64 discount = 6;   // fixed=分；percent=万分比
+  int64 threshold = 5; // 满 X（分）
+  int64 discount = 6; // fixed=分；percent=万分比
   int64 special_price = 7; // special_price=分
   int64 start_at = 8 [(google.api.field_behavior) = REQUIRED];
   int64 end_at = 9 [(google.api.field_behavior) = REQUIRED];

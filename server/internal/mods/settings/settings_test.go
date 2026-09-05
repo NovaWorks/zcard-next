@@ -1,6 +1,6 @@
 package settings
 
-// P0-04 验收测试：SECRET 泄漏快照（双保险断言）、键校验、白名单、默认值回落。
+// 验收测试：SECRET 泄漏快照（双保险断言）、键校验、白名单、默认值回落。
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestValidateKey(t *testing.T) {
 	}
 }
 
-// TestGroupCatalog 分组目录快照（18 组；P0-04 验收「全部 12+ 分组」；P3-08 加 license；客服加 service；供货充值加 supplier_recharge；在线更新加 system）。
+// TestGroupCatalog 分组目录快照（18 组； 验收「全部 12+ 分组」； 加 license；客服加 service；供货充值加 supplier_recharge；在线更新加 system）。
 func TestGroupCatalog(t *testing.T) {
 	got := GroupsSorted()
 	want := []string{"affiliate", "footer", "i18n", "license", "notify", "ops", "points", "promo", "recharge", "security", "service", "site", "supplier_recharge", "supply", "system", "template", "trade", "withdraw"}

@@ -1,6 +1,6 @@
 package payment
 
-// M1b 交易闭环核心测试：支付回调分流（订单型/充值型）+ 余额支付扣款 + 充值到账。
+// 交易闭环核心测试：支付回调分流（订单型/充值型）+ 余额支付扣款 + 充值到账。
 
 import (
 	"bytes"
@@ -412,8 +412,8 @@ func TestRechargeGiftPoints(t *testing.T) {
 	}
 }
 
-// TestParseCallbackFormJSONNumber JSON 回调体数字字面保持（P2-09 epusdt）：
-// 10.00 必须保持 "10.00" 而非塌成 "10"——验签按原文重算（签名不变式 §5.5）。
+// TestParseCallbackFormJSONNumber JSON 回调体数字字面保持（ epusdt）：
+// 10.00 必须保持 "10.00" 而非塌成 "10"——验签按原文重算（签名不变式 ）。
 func TestParseCallbackFormJSONNumber(t *testing.T) {
 	body := []byte(`{"order_id":"S123","amount":10.00,"status":2,"note":"x"}`)
 	r, _ := http.NewRequest(http.MethodPost, "/payments/callback/epusdt", bytes.NewReader(body))
@@ -434,7 +434,7 @@ func TestParseCallbackFormJSONNumber(t *testing.T) {
 	}
 }
 
-// ── P2-09 T2 币种快照 ─────────────────────────────────────────────
+// ── 币种快照 ─────────────────────────────────────────────
 
 // fakeCurrencyReader 假币种表（USD rate=0.14 精度 2）。
 type fakeCurrencyReader struct{}
@@ -571,7 +571,7 @@ func TestCallbackLegacyCNYPath(t *testing.T) {
 	}
 }
 
-// TestIsWebhookRequest webhook 分支判定（P2-09 T4：paypal 五头进入 Webhooker 分支）。
+// TestIsWebhookRequest webhook 分支判定（：paypal 五头进入 Webhooker 分支）。
 func TestIsWebhookRequest(t *testing.T) {
 	cases := []struct {
 		name   string

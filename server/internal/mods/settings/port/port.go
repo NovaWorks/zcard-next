@@ -21,7 +21,7 @@ type Provider interface {
 	GetDefault(ctx context.Context, group, key string, def json.RawMessage) (json.RawMessage, error)
 }
 
-// CurrencyReader 货币读取（展示换算取数端，P0-01 exchange 消费；rate 为 decimal 字符串）。
+// CurrencyReader 货币读取（展示换算取数端， exchange 消费；rate 为 decimal 字符串）。
 type CurrencyReader interface {
 	CurrencyByCode(ctx context.Context, code string) (rate string, precision int32, err error)
 }

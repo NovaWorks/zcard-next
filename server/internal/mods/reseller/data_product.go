@@ -1,8 +1,8 @@
 package reseller
 
-// 分站自营商品上架链路（P3-04 验收旅程出单段）：
-//   分站主自服务面创建商品（subsite_id = 本人 profile.ID）→ 分站域名下单
-//   → 管线步骤 7 接 ResolveUnitPrice（分站价）→ order.paid → SettleService 利润入账。
+// 分站自营商品上架链路（ 验收旅程出单段）：
+// 分站主自服务面创建商品（subsite_id = 本人 profile.ID）→ 分站域名下单
+// → 管线步骤 7 接 ResolveUnitPrice（分站价）→ order.paid → SettleService 利润入账。
 // 商品行数据隔离与主站同构：products.subsite_id 行级隔离（铁律 14）。
 
 import (

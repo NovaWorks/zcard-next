@@ -1,11 +1,11 @@
 package reseller
 
-// P3-04 T5 账本补全：提现（FIFO 消费 + 部分拆行 + 幂等）+ 退款逆向（负行 + 负债优先抵扣）。
+// 账本补全：提现（FIFO 消费 + 部分拆行 + 幂等）+ 退款逆向（负行 + 负债优先抵扣）。
 //
 // 账本模型：ledger_entries 行即余额（有符号）；状态流转：
-//   available → locked（withdraw_lock，部分提现拆行）→ withdrawn（打款）/ available（驳回）
-//   order.refunded → refund_deduct 负行（available 直接扣减；不足 → pending 负债，
-//   后续利润优先抵扣——与 affiliate 负债态同构）。
+// available → locked（withdraw_lock，部分提现拆行）→ withdrawn（打款）/ available（驳回）
+// order.refunded → refund_deduct 负行（available 直接扣减；不足 → pending 负债，
+// 后续利润优先抵扣——与 affiliate 负债态同构）。
 
 import (
 	"context"

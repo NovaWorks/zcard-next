@@ -1,6 +1,6 @@
 package content
 
-// 数据仓储（P2-04）：banner/post/category CRUD + 时间窗查询 + 多语言回落。
+// 数据仓储（）：banner/post/category CRUD + 时间窗查询 + 多语言回落。
 // sanitize 纪律：content_json（HTML）入库前经 platform/sanitize.HTML。
 
 import (
@@ -34,7 +34,7 @@ type ContentRepo struct {
 	mediaRef mediaport.Referencer // 横幅/文章配图引用（nil 跳过）
 }
 
-// NewContentRepo 构造（mediaRef 素材引用计数，P3-06）。
+// NewContentRepo 构造（mediaRef 素材引用计数，）。
 func NewContentRepo(d *data.Data, mediaRef mediaport.Referencer) *ContentRepo {
 	return &ContentRepo{data: d, mediaRef: mediaRef}
 }

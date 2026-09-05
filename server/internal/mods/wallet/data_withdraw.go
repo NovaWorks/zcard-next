@@ -1,9 +1,9 @@
 package wallet
 
-// T5 提现执行（P1-05 M3）：
-//   申请：available→locked（Lock）+ 手续费 + 收款方式白名单快照 → withdrawals(pending)
-//   审核：通过→approved（锁定保持）；驳回→rejected（Unlock 回余额）
-//   打款：人工打款模式 approved→paid（locked 扣减 + 流水 type=withdraw）
+// 提现执行（ ）：
+// 申请：available→locked（Lock）+ 手续费 + 收款方式白名单快照 → withdrawals(pending)
+// 审核：通过→approved（锁定保持）；驳回→rejected（Unlock 回余额）
+// 打款：人工打款模式 approved→paid（locked 扣减 + 流水 type=withdraw）
 // 纪律：金额服务端裁决（铁律 16）；锁定/解锁/扣减全部走账户 CAS + 流水，可重算。
 
 import (

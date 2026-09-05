@@ -1,6 +1,6 @@
 package notify
 
-// Telegram bot 通道（P2-05 T3 收尾）：sendMessage HTTP API
+// Telegram bot 通道（ 收尾）：sendMessage HTTP API
 // （友商 telegram/notify/botapi 协议知识参照；配置运行时读取）。
 //
 // 端点：POST https://api.telegram.org/bot{token}/sendMessage

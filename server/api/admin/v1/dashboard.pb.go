@@ -882,7 +882,7 @@ func (x *DashboardReply) GetOnlineUsers() int64 {
 	return 0
 }
 
-// ListCommissions 佣金管理列表（P3-03）。
+// ListCommissions 佣金管理列表。
 type ListCommissionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // pending_confirm | available | withdrawn | reversed；空=全部
@@ -1135,7 +1135,7 @@ func (x *ListCommissionsReply) GetPageSize() int32 {
 	return 0
 }
 
-// GetReconciliation 对账总览（P3-07：订单×支付×佣金三向核对基础报表）。
+// GetReconciliation 对账总览（：订单×支付×佣金三向核对基础报表）。
 type GetReconciliationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"` // yyyymmdd；空 = 最新

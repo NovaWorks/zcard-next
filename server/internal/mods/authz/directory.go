@@ -1,15 +1,15 @@
 package authz
 
-// 权限点目录（P0-03 任务书 T1：权限目录自动生成，替代 server/middleware 手工映射）。
+// 权限点目录（ ：权限目录自动生成，替代 server/middleware 手工映射）。
 //
 // 设计（三源合一，杜绝双源漂移）：
-//   - 各模块经 Perm 声明权限点：Op（proto 方法全名）+ Method/Path（HTTP 注解）同条给出
-//   - 启动时 Reconcile 用 http.Server.WalkRoute 提取的真实路由表逐条对账——
-//     admin 前缀路由未声明且非 Public → 启动失败（fail-fast，主文档 §5.14「新增路由
-//     未挂角色 = 仅超管可见」的强化版：未声明权限点直接拒绝启动）
-//   - middleware 运行时按 Op 查目录（声明同源，path↔op 不漂移）；miss = 403 + 告警
+// - 各模块经 Perm 声明权限点：Op（proto 方法全名）+ Method/Path（HTTP 注解）同条给出
+// - 启动时 Reconcile 用 http.Server.WalkRoute 提取的真实路由表逐条对账——
+// admin 前缀路由未声明且非 Public → 启动失败（fail-fast， 「新增路由
+// 未挂角色 = 仅超管可见」的强化版：未声明权限点直接拒绝启动）
+// - middleware 运行时按 Op 查目录（声明同源，path↔op 不漂移）；miss = 403 + 告警
 //
-// 敏感权限点（§5.20.4）用 AdminOnly 标记：不进非超管内置角色种子，仅 super_admin 的 * 覆盖。
+// 敏感权限点（）用 AdminOnly 标记：不进非超管内置角色种子，仅 super_admin 的 * 覆盖。
 
 import (
 	"fmt"

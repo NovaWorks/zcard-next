@@ -1,7 +1,7 @@
 package adapter
 
-// zcard.go — 自家 Supply v2 协议（P2-03 服务端对偶，同一协议两种拓扑）。
-// 端点与字段对齐 1.x ZCardDriver + 规划 §5.8；签名 4 头 HMAC（新口径含 query md5 段）。
+// zcard.go — 自家 Supply v2 协议（ 服务端对偶，同一协议两种拓扑）。
+// 端点与字段对齐 1.x ZCardDriver + 规划 ；签名 4 头 HMAC（新口径含 query md5 段）。
 
 import (
 	"context"
@@ -192,7 +192,7 @@ func (a *zCardAdapter) CreateOrder(ctx context.Context, req CreateOrderReq) (*Cr
 	}, nil
 }
 
-// ListOrders 上游订单列表（P3-07 对账数据源；自家协议端点）。
+// ListOrders 上游订单列表（ 对账数据源；自家协议端点）。
 func (a *zCardAdapter) ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error) {
 	q := url.Values{}
 	q.Set("start", strconv.FormatInt(start.Unix(), 10))

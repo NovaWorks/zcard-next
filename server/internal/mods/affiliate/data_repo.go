@@ -1,6 +1,6 @@
 package affiliate
 
-// 佣金仓储（P3-03）：幂等入账（UNIQUE(order_id,tier)）、冻结确认、逆向扣回（负债态）。
+// 佣金仓储（）：幂等入账（UNIQUE(order_id,tier)）、冻结确认、逆向扣回（负债态）。
 
 import (
 	"context"

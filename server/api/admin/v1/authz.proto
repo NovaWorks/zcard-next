@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// RoleService 角色与权限管理（自建 RBAC，规划 §5.14；P0-03）。
+// RoleService 角色与权限管理（自建 RBAC，规划 ；）。
 // 权限目录由模块声明式生成（authz.Declare），本服务只读下发供前端勾选与动态路由。
 service RoleService {
   // ListRoles 角色列表（含权限点数量）。
@@ -50,7 +50,7 @@ service RoleService {
   }
 }
 
-// AdminUserService 员工管理（数据层归 identity，API 面在此；P0-03 T2）。
+// AdminUserService 员工管理（数据层归 identity，API 面在此；）。
 service AdminUserService {
   // ListAdmins 员工列表。
   rpc ListAdmins(google.protobuf.Empty) returns (ListAdminsReply) {

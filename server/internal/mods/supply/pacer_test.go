@@ -1,6 +1,6 @@
 package supply
 
-// P2-10 S2 节奏器（AIMD）测试：降速倍增/熔断指数递增/半开探测/回升/重置。
+// S2 节奏器（AIMD）测试：降速倍增/熔断指数递增/半开探测/回升/重置。
 
 import (
 	"context"
@@ -142,7 +142,7 @@ func TestPacerAIMD(t *testing.T) {
 	})
 }
 
-// TestGatewayCooldownGate 采购网关熔断拦截（P2-10 S2：出站共享节奏器）。
+// TestGatewayCooldownGate 采购网关熔断拦截（ S2：出站共享节奏器）。
 func TestGatewayCooldownGate(t *testing.T) {
 	ctx := context.Background()
 	repo, _ := newTestRepo(t)

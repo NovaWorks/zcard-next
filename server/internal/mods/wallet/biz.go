@@ -1,10 +1,10 @@
 package wallet
 
-// 钱包与账务模块（P1-05）：Reference 幂等键构造器（InTx 内核见 data_intx.go）。
+// 钱包与账务模块（）：Reference 幂等键构造器（InTx 内核见 data_intx.go）。
 
 import "fmt"
 
-// Reference 幂等键构造（全账务统一规范，数据库架构 §7.1）。
+// Reference 幂等键构造（全账务统一规范，数据库架构 ）。
 func Reference(kind string, ids ...uint64) string {
 	s := kind
 	for _, id := range ids {

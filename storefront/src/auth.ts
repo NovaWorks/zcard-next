@@ -1,4 +1,4 @@
-// 登录态（P3-09 T1）：轻量响应式状态（无 Pinia 依赖，单例模块）。
+// 登录态（）：轻量响应式状态（无 Pinia 依赖，单例模块）。
 import { reactive } from 'vue';
 import { me } from '@/api';
 import { getToken, clearToken } from '@/api/client';

@@ -1,7 +1,7 @@
 package supplier
 
-// T2 HMAC 四头鉴权中间件（P2-03）：
-//   X-Supply-Key / X-Supply-Timestamp / X-Supply-Nonce / X-Supply-Signature
+// HMAC 四头鉴权中间件（）：
+// X-Supply-Key / X-Supply-Timestamp / X-Supply-Nonce / X-Supply-Signature
 // 流程：四头解析 → key 查账户 → 状态 approved → ±300s 时间窗 → nonce 防重放
 // （DB supply_nonces UNIQUE(key,nonce)）→ 双口径验签（常数时间）→ 账户注入 context。
 // 挂载：仅 /api/supply/* 路由组（不挂 JWT——架构测试规则 9；Ping 免签名）。

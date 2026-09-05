@@ -3,18 +3,18 @@ package architecture
 // 金额纪律守护（铁律 1/15/16 的可执行形态——红灯即阻断合并）：
 //
 //	后端（铁律 1/16）：
-//	  M1. 交易请求（storefront order/payment）禁止携带金额字段——订单总额与支付金额
-//	      必须后端权威计算，抓包改金额在协议层即无入口（充值金额例外：档位裁决见 M3）。
-//	  M2. 全部 proto 金额字段（cents/amount/price/fee/revenue/balance）必须 int64 分——
-//	      金额永不 float/double（铁律 1）。
-//	  M3. 管理面金额提交必须服务端边界校验：money.ValidCents/ValidSignedCents
-//	      落在 catalog/reseller/wallet 三处提交入口。
+// . 交易请求（storefront order/payment）禁止携带金额字段——订单总额与支付金额
+// 必须后端权威计算，抓包改金额在协议层即无入口（充值金额例外：档位裁决见 ）。
+// . 全部 proto 金额字段（cents/amount/price/fee/revenue/balance）必须 int64 分——
+// 金额永不 float/double（铁律 1）。
+// . 管理面金额提交必须服务端边界校验：money.ValidCents/ValidSignedCents
+// 落在 catalog/reseller/wallet 三处提交入口。
 //	前端（铁律 15）：
-//	  F1. 两前端必须存在统一金额工具（fenToYuan/yuanToFen/formatMoney）。
-//	  F2. 模板禁止裸渲染 *_cents（必须经金额工具）。
-//	  F3. 禁止硬编码货币符号（符号取后台默认货币）。
-//	  F4. 表单输入禁止直接绑定 *_cents（输入一律元，提交经 yuanToFen *100）。
-//	  F5. 提交金额的视图必须调用 yuanToFen。
+// F1. 两前端必须存在统一金额工具（fenToYuan/yuanToFen/formatMoney）。
+// F2. 模板禁止裸渲染 *_cents（必须经金额工具）。
+// F3. 禁止硬编码货币符号（符号取后台默认货币）。
+// F4. 表单输入禁止直接绑定 *_cents（输入一律元，提交经 yuanToFen *100）。
+// F5. 提交金额的视图必须调用 yuanToFen。
 
 import (
 	"os"
@@ -222,7 +222,7 @@ func TestMoneyRuleSelfCheck(t *testing.T) {
 	}
 }
 
-// TestResellerPermissionDomain 分站后台权限域独立（P3-04 验收）：
+// TestResellerPermissionDomain 分站后台权限域独立（ 验收）：
 // 分站主自服务面（reseller:site/reseller:product）非 AdminOnly（分站主可达），
 // 主站面管理操作（reseller:review/reseller:pricing）AdminOnly（分站主不可越权）。
 func TestResellerPermissionDomain(t *testing.T) {
@@ -253,7 +253,7 @@ func TestResellerPermissionDomain(t *testing.T) {
 	}
 }
 
-// TestReportSQLTenantPlaceholder 裸 SQL 收口（P3-07，架构测试规则 12）：
+// TestReportSQLTenantPlaceholder 裸 SQL 收口（，架构测试规则 12）：
 // report 包是全仓唯一裸 SQL 收口；其 SQL 字符串必须包含 subsite_id 租户条件
 // 占位——防未来报表查询扫全租户（分站数据泄漏 + 大表扫描）。
 func TestReportSQLTenantPlaceholder(t *testing.T) {

@@ -3,7 +3,7 @@ import type { Router } from 'vue-router';
 import { getToken } from '@/api/client';
 import Home from '@/views/Home.vue';
 
-// meta.auth：需登录页面（P3-09 T1）——无 token 跳 /login 带回跳。
+// meta.auth：需登录页面（）——无 token 跳 /login 带回跳。
 export const routes = [
   { path: '/', name: 'home', component: Home },
   { path: '/products', name: 'products', component: () => import('@/views/Products.vue') },

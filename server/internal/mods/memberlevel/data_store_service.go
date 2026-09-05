@@ -1,6 +1,6 @@
 package memberlevel
 
-// StoreMemberLevelService 会员等级 storefront 面（P3-01：我的等级 + 进度 + 积分余额）。
+// StoreMemberLevelService 会员等级 storefront 面（：我的等级 + 进度 + 积分余额）。
 
 import (
 	"context"

@@ -1,6 +1,6 @@
 package notify
 
-// 仓储（P2-05）：站内信、模板、发送日志。
+// 仓储（）：站内信、模板、发送日志。
 
 import (
 	"context"
@@ -210,7 +210,7 @@ func (r *NotifyRepo) ListLogs(ctx context.Context, status, eventType string, pag
 // jsonUnmarshal 防御性解析（channel.go 使用）。
 func jsonUnmarshal(raw []byte, v any) error { return json.Unmarshal(raw, v) }
 
-// ── 群发任务（T4）─────────────────────────────────────────
+// ── 群发任务（）─────────────────────────────────────────
 
 // CreateBroadcast 创建群发任务（pending；audience 预估回填）。
 func (r *NotifyRepo) CreateBroadcast(ctx context.Context, in BroadcastInput, audience int64) (*ent.NotifyBroadcast, error) {

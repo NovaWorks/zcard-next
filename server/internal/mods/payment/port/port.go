@@ -1,6 +1,6 @@
 // Package port 为 payment 模块对外契约（零依赖包）。
 //
-// 渠道能力接口拆分（§5.5.1，采纳友商形态，替代 1.x 大 PaymentDriver）：
+// 渠道能力接口拆分（，采纳友商形态，替代 1.x 大 PaymentDriver）：
 // 按 (provider, channel) 注册表路由；新渠道 = 新增 adapter 文件 + 注册，不改核心代码。
 package port
 
@@ -19,9 +19,9 @@ type CreatePaymentRequest struct {
 	Subject        string
 	ReturnURL      string
 	NotifyBaseURL  string
-	IdempotencyKey string          // 写接口幂等（§7.3）
+	IdempotencyKey string          // 写接口幂等（）
 	Config         json.RawMessage // 解密后的渠道凭据 JSON（每渠道独立，adapter 无状态）
-	// ── 币种快照（P2-09 T2：服务端按 currency 表换算后的渠道金额）──
+	// ── 币种快照（：服务端按 currency 表换算后的渠道金额）──
 	// ChargedUnits==0 即同币直收（CNY）——适配器用 Amount（向后兼容 alipay/wechat/epay）；
 	// 非 0 时适配器以 ChargedUnits/ChargedCurrency 构造协议金额，回调亦以此口径核对。
 	ChargedUnits    int64
@@ -98,7 +98,7 @@ type Acker interface {
 	SuccessAck() string
 }
 
-// ConfigField 渠道配置字段 schema（P2-09 T5：admin 配置面动态表单渲染）。
+// ConfigField 渠道配置字段 schema（：admin 配置面动态表单渲染）。
 type ConfigField struct {
 	Key         string
 	Label       string
@@ -143,7 +143,7 @@ type MetaProvider interface {
 	Meta() DriverMeta
 }
 
-// OptionProvider 字段选项动态加载（P2-09 T5 修复）：epusdt network/token 的
+// OptionProvider 字段选项动态加载（ 修复）：epusdt network/token 的
 // 可选值以网关 GET /payments/gmpay/v1/config 的 supported_assets 为准（官方文档
 // 明示——每个商户实例启用的链/代币不同）；实现方负责上游不可达回落静态矩阵。
 type OptionProvider interface {
@@ -155,14 +155,14 @@ type Refunder interface {
 	Refund(ctx context.Context, gatewayOrderNo string, amount money.Cents, reason string, cfg json.RawMessage) error
 }
 
-// OrderRefunder 订单退款入口（P2-02 procurement 失败策略消费，通道 A）：
+// OrderRefunder 订单退款入口（ procurement 失败策略消费，通道 A）：
 // 按订单创建退款单（channel=upstream：货源采购失败自动退款），
 // 由 payment 模块驱动订单 refund 流转。
 type OrderRefunder interface {
 	RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error
 }
 
-// SlowPaymentChecker 慢通道 pending 流水探测（P1-03 order 超时取消顺延判定，通道 A）：
+// SlowPaymentChecker 慢通道 pending 流水探测（ order 超时取消顺延判定，通道 A）：
 // usdt 族链上确认慢于订单 TTL——存在 pending 流水时超时任务顺延不误杀。
 type SlowPaymentChecker interface {
 	HasPendingSlowPayment(ctx context.Context, orderID uint64) (bool, error)

@@ -1,6 +1,6 @@
 package settings
 
-// 设置分组目录（P0-04 T1）：每分组强类型默认值 + SECRET/PUBLIC 双清单 + 键校验。
+// 设置分组目录（）：每分组强类型默认值 + SECRET/PUBLIC 双清单 + 键校验。
 // 运行时业务开关的真理源在 settings 表（铁律 7）；本目录是「键合法性 + 默认值 + 脱敏」的唯一裁决。
 
 import (
@@ -25,7 +25,7 @@ type GroupDef struct {
 	PublicKeys map[string]bool
 }
 
-// groups 全部分组目录（主文档 §5.15 清裁）。
+// groups 全部分组目录（ 清裁）。
 var groups = map[string]*GroupDef{
 	"site": {
 		Name: "site", Desc: "站点基础",
@@ -208,7 +208,7 @@ var groups = map[string]*GroupDef{
 			"max_amount": 500000,
 			"gift_tiers": nil, // [{amount,gift_balance,gift_points}]
 		},
-		// 前台公开：充值页档位/赠送规则展示（P3-09；金额裁决仍在服务端）
+		// 前台公开：充值页档位/赠送规则展示（；金额裁决仍在服务端）
 		PublicKeys: map[string]bool{"enabled": true, "min_amount": true, "max_amount": true, "gift_tiers": true},
 	},
 	"supplier_recharge": {
@@ -239,7 +239,7 @@ var groups = map[string]*GroupDef{
 			"pubkey":      "", // ed25519 公钥（base64；发行侧配置）
 			"domain":      "", // 主站域名（许可证绑定校验；空=跳过）
 			"instance_id": "", // 实例 ID（首次读取时生成并持久化）
-			// P3-08 在线购买（发行侧部署配置；M3「专业套餐可购买激活」）
+			// 在线购买（发行侧部署配置；「专业套餐可购买激活」）
 			"purchase_monthly_cents": 300,  // 月付 3U
 			"purchase_yearly_cents":  3000, // 年付 30U
 			"purchase_privkey":       "",   // ed25519 签发私钥（base64；空=不开通在线购买）
@@ -359,7 +359,7 @@ var groups = map[string]*GroupDef{
 		},
 		PublicKeys: map[string]bool{"default_locale": true, "enabled_locales": true, "base_currency": true, "display_currency": true},
 	},
-	// 在线更新（doc/在线更新方案.md §4.4）：源配置运行时可改——mode 四态
+	// 在线更新（）：源配置运行时可改——mode 四态
 	// （auto=直连探测不通走加速，语义「大陆才加速」）、repo/加速器列表/静态基址/通道。
 	"system": {
 		Name: "system", Desc: "系统更新",

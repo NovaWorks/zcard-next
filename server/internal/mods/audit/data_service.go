@@ -1,6 +1,6 @@
 package audit
 
-// 管理面 API（P2-06）：三类日志查询、黑名单管理。
+// 管理面 API（）：三类日志查询、黑名单管理。
 
 import (
 	"context"

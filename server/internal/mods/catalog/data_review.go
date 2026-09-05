@@ -1,6 +1,6 @@
 package catalog
 
-// 评价流数据层（M1b T4）：真实评价（一单一评 + 审核流）+ 虚拟评价 + 前台合并展示。
+// 评价流数据层（ ）：真实评价（一单一评 + 审核流）+ 虚拟评价 + 前台合并展示。
 // ent import 收口：data 前缀文件（架构测试规则 3b）。
 
 import (
@@ -58,7 +58,7 @@ func (r *ProductRepoImpl) RejectReview(ctx context.Context, id uint64) (*ent.Rev
 		Save(ctx)
 }
 
-// CreateReview 创建真实评价（一单一评校验；调用方：storefront 评价提交，M1b 预留）。
+// CreateReview 创建真实评价（一单一评校验；调用方：storefront 评价提交， 预留）。
 func (r *ProductRepoImpl) CreateReview(ctx context.Context, productID, userID, orderID uint64, rating int8, content string) (*ent.Review, error) {
 	tc := tenancy.FromContext(ctx)
 	exists, err := data.Client(ctx, r.data).Review.Query().
@@ -102,7 +102,7 @@ func (r *ProductRepoImpl) ListVirtualReviews(ctx context.Context, productID uint
 }
 
 // ListProductReviews 前台评价合并：真实 approved（按时间倒序）+ 虚拟（按 sort/时间）。
-// 合并策略：真实评价优先按时间倒序，虚拟评价按 sort 穿插在后（规划 P1-01 T4）。
+// 合并策略：真实评价优先按时间倒序，虚拟评价按 sort 穿插在后（规划 ）。
 func (r *ProductRepoImpl) ListProductReviews(ctx context.Context, productID uint64) ([]port.ReviewItem, error) {
 	client := data.Client(ctx, r.data)
 	realRows, err := client.Review.Query().

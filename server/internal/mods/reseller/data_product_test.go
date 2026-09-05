@@ -1,8 +1,8 @@
 package reseller
 
-// 分站自营商品上架链路测试（P3-04 验收旅程出单段首环）：
-//   上架 API（等级权限位）→ 商品落本人分站（subsite_id = profile.ID）
-//   → 分站内 slug 唯一、分站间互不冲突。
+// 分站自营商品上架链路测试（ 验收旅程出单段首环）：
+// 上架 API（等级权限位）→ 商品落本人分站（subsite_id = profile.ID）
+// → 分站内 slug 唯一、分站间互不冲突。
 
 import (
 	"context"

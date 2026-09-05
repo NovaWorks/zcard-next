@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// StoreWalletService 顾客钱包（P1-05）：余额/积分/流水/充值。
+// StoreWalletService 顾客钱包：余额/积分/流水/充值。
 service StoreWalletService {
   // GetBalance 余额+积分。
   rpc GetBalance(google.protobuf.Empty) returns (BalanceReply) {
@@ -36,7 +36,7 @@ service StoreWalletService {
   rpc ListMyWithdrawals(ListMyWithdrawalsRequest) returns (ListMyWithdrawalsReply) {
     option (google.api.http) = { get: "/api/v1/storefront/wallet/withdrawals/mine" };
   }
-  // CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验；M3 执行）。
+  // CreateWithdrawal 提现申请（佣金提现：冻结口径+白名单+USDT 校验； 执行）。
   rpc CreateWithdrawal(CreateWithdrawalRequest) returns (CreateWithdrawalReply) {
     option (google.api.http) = {
       post: "/api/v1/storefront/wallet/withdrawals"
@@ -82,7 +82,7 @@ message CreateRechargeRequest {
 message CreateRechargeReply {
   uint64 recharge_id = 1;
   uint64 payment_id = 2;
-  string type = 3;    // redirect | qrcode | params（与 CreatePaymentReply 同构）
+  string type = 3; // redirect | qrcode | params（与 CreatePaymentReply 同构）
   string payload = 4; // 支付跳转 URL / 二维码内容 / 参数 JSON
 }
 
@@ -125,7 +125,7 @@ message MyWithdrawalItem {
 message CreateWithdrawalRequest {
   int64 amount_cents = 1 [(google.api.field_behavior) = REQUIRED];
   string method_type = 2 [(google.api.field_behavior) = REQUIRED]; // 白名单 type（alipay/wechat/usdt_trc20/bank）
-  string account = 3 [(google.api.field_behavior) = REQUIRED];    // 收款账号（USDT=TRC20 地址）
+  string account = 3 [(google.api.field_behavior) = REQUIRED]; // 收款账号（USDT=TRC20 地址）
   string qr_code_url = 4; // 收款码图片 URL（微信/支付宝可选；admin 审核展示）
 }
 

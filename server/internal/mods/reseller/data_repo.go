@@ -1,8 +1,8 @@
 package reseller
 
-// 分站核心（P3-04 T2/T4/T5/T6 核心，主站 admin 面先行）：
-//   申请/审核（等级+加价率区间）、定价引擎（4 模式 × 三级优先级 + 上下限）、
-//   分账账本（幂等/双阶段/水位缓存/重算）、防自购三查快照。
+// 分站核心（/// 核心，主站 admin 面先行）：
+// 申请/审核（等级+加价率区间）、定价引擎（4 模式 × 三级优先级 + 上下限）、
+// 分账账本（幂等/双阶段/水位缓存/重算）、防自购三查快照。
 // 域名验证与租户上下文贯穿、分站后台完整 API 面随 storefront 用户登录体系接续。
 
 import (
@@ -44,7 +44,7 @@ type ResellerRepo struct {
 // NewResellerRepo 构造。
 func NewResellerRepo(d *data.Data) *ResellerRepo { return &ResellerRepo{data: d} }
 
-// ── T2 申请/审核 ─────────────────────────────────────────
+// ── 申请/审核 ─────────────────────────────────────────
 
 // ApplyInput 申请入参。
 type ApplyInput struct {
@@ -131,7 +131,7 @@ func (r *ResellerRepo) ProfileByUser(ctx context.Context, userID uint64) (*ent.R
 	return p, nil
 }
 
-// ── T4 定价引擎 ───────────────────────────────────────────
+// ── 定价引擎 ───────────────────────────────────────────
 
 // UpsertPricing 定价规则（SKU>商品>分站默认三级之一）。
 // value 语义随 mode：markup_percent=万分比；fixed_markup/fixed_price=分。
@@ -215,7 +215,7 @@ func applyPricingMode(mode resellerpricing.Mode, value int64, basePrice money.Ce
 	return final, nil
 }
 
-// ── T5 分账账本 ───────────────────────────────────────────
+// ── 分账账本 ───────────────────────────────────────────
 
 // SettleInput 分账入账输入。
 type SettleInput struct {
@@ -349,7 +349,7 @@ func (r *ResellerRepo) RecomputeBalance(ctx context.Context, subsiteID uint64) (
 	return available, locked, negative, nil
 }
 
-// ── T6 防自购三查 ─────────────────────────────────────────
+// ── 防自购三查 ─────────────────────────────────────────
 
 // ProfitEligible 防自购判定（下单快照落 orders.profit_eligible）。
 // 三查：买家==分站主 / 买家∈分站主上级链 / 买家∈同链分站主（互推）。

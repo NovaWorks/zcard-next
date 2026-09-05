@@ -1,6 +1,6 @@
 package media
 
-// 数据仓储（P3-06）：media/media_categories CRUD + 引用计数。
+// 数据仓储（）：media/media_categories CRUD + 引用计数。
 
 import (
 	"context"

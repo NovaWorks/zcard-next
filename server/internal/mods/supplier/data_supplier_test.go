@@ -1,6 +1,6 @@
 package supplier
 
-// P2-03 必测项：签名 golden vectors（双口径）、时间窗、nonce 重放、账本幂等、
+// 必测项：签名 golden vectors（双口径）、时间窗、nonce 重放、账本幂等、
 // 下单幂等、余额不足拒绝、回调记录生命周期。
 
 import (

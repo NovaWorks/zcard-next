@@ -37,7 +37,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
+// AdminPaymentService 支付管理：渠道 CRUD + 支付单 + 退款。
 type AdminPaymentServiceClient interface {
 	// ── 渠道管理 ──
 	ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelList, error)
@@ -181,7 +181,7 @@ func (c *adminPaymentServiceClient) ListRefunds(ctx context.Context, in *ListRef
 // All implementations must embed UnimplementedAdminPaymentServiceServer
 // for forward compatibility.
 //
-// AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
+// AdminPaymentService 支付管理：渠道 CRUD + 支付单 + 退款。
 type AdminPaymentServiceServer interface {
 	// ── 渠道管理 ──
 	ListChannels(context.Context, *emptypb.Empty) (*ChannelList, error)

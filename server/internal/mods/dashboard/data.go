@@ -1,6 +1,6 @@
 package dashboard
 
-// 工作台指标聚合（M1b v1）：今日/近7天/近30天订单数与营收 + 趋势 + 商品 Top5。
+// 工作台指标聚合（ v1）：今日/近7天/近30天订单数与营收 + 趋势 + 商品 Top5。
 // 金额口径：已支付订单（status 非 pending_payment/canceled/expired）的 total_amount 求和（分）。
 
 import (
@@ -76,7 +76,7 @@ func paidStatuses() []order.Status {
 }
 
 // GetOverview 返回 6 个统计窗口：today/yesterday/last7d/prev7d/last30d/prev30d
-// （后三者为环比基准；P3-07 M3：分站视角自动隔离——按 tenancy.Context.SubsiteID
+// （后三者为环比基准； ：分站视角自动隔离——按 tenancy.Context.SubsiteID
 // 过滤，分站后台只看本站；new_users 为全局注册用户，用户表不分站）。
 func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, yesterday, last7d, prev7d, last30d, prev30d Metric, err error) {
 	subsite := tenancy.FromContext(ctx).SubsiteID
@@ -361,7 +361,7 @@ func (r *DashboardRepoImpl) GetTopProducts(ctx context.Context) ([]TopProduct, e
 
 var _ = ent.Asc // 保持引用
 
-// ReconciliationSummary 对账汇总（P3-07：订单×支付×充值×佣金四向基础核对）。
+// ReconciliationSummary 对账汇总（：订单×支付×充值×佣金四向基础核对）。
 type ReconciliationSummary struct {
 	Date                string
 	OrderPaidTotal      int64

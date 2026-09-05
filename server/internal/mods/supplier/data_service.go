@@ -1,6 +1,6 @@
 package supplier
 
-// T6 管理面 API：下游账户（申请/审核/启停/重置密钥）、定价、账本、回调管理。
+// 管理面 API：下游账户（申请/审核/启停/重置密钥）、定价、账本、回调管理。
 // secret 纪律：仅创建/重置时回显一次，其余响应零泄漏。
 
 import (
@@ -158,7 +158,7 @@ func (s *AdminSupplierService) UpsertPrice(ctx context.Context, req *adminv1.Ups
 	return &emptypb.Empty{}, nil
 }
 
-// ListPrices 账号的专属价列表（P2-10：浏览覆盖价）。
+// ListPrices 账号的专属价列表（：浏览覆盖价）。
 func (s *AdminSupplierService) ListPrices(ctx context.Context, req *adminv1.ListSupplierPricesRequest) (*adminv1.ListSupplierPricesReply, error) {
 	rows, err := s.repo.ListPrices(ctx, req.GetAccountId())
 	if err != nil {

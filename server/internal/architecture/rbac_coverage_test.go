@@ -1,9 +1,9 @@
 package architecture
 
-// RBAC 覆盖测试（架构测试规则 8，P0-03 T3）：
+// RBAC 覆盖测试（架构测试规则 8，）：
 // 1. 声明完整性：每条已声明权限点路由（Method+Path）形态合法；
 // 2. 内置角色覆盖：非敏感（!AdminOnly && !Public）权限点必须被「运营」内置角色种子
-//    覆盖，或显式登记进 adminOnlyAllowlist（超管专属清单）——防「加了权限点忘了授权」；
+// 覆盖，或显式登记进 adminOnlyAllowlist（超管专属清单）——防「加了权限点忘了授权」；
 // 3. 自证用例：人为构造漏登记 → 必须红（证明测试有效）。
 //
 // 依赖 authz 模块（架构测试允许 import 被测对象的声明数据——只读常量，不 import 实现）。
@@ -39,7 +39,7 @@ var operatorSeed = map[string]bool{
 	"memberlevel:read":    true,
 	"coupon:read":         true,
 	"dashboard:read":      true,
-	// M2：货源/采购/供货读权限（运营可查看，写操作超管专属）
+	// ：货源/采购/供货读权限（运营可查看，写操作超管专属）
 	"supply:read":      true,
 	"procurement:read": true,
 	"supplier:read":    true,
@@ -55,9 +55,9 @@ var operatorSeed = map[string]bool{
 	"reseller:product": true,
 }
 
-// adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，§5.20.4）。
+// adminOnlyAllowlist 超管专属清单（敏感权限点不进运营种子，）。
 var adminOnlyAllowlist = map[string]bool{
-	// 敏感权限点（§5.20.4 防偷卡四项——view_delivery 已下放运营）
+	// 敏感权限点（ 防偷卡四项——view_delivery 已下放运营）
 	"order:refund":         true,
 	"identity:user_status": true,
 	"system:update":        true,
@@ -74,7 +74,7 @@ var adminOnlyAllowlist = map[string]bool{
 	"identity:admin_delete":     true,
 	"settings:currency_write":   true,
 	"settings:currency_delete":  true,
-	// 商品目录写操作（超管专属，M1 起按角色开放）
+	// 商品目录写操作（超管专属， 起按角色开放）
 	"catalog:write":           true,
 	"catalog:delete":          true,
 	"catalog:category_write":  true,

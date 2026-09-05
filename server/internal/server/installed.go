@@ -1,6 +1,6 @@
 package server
 
-// EnsureInstalled 中间件（P0-04 T2）：未安装时除 /install、/health、静态资源外一律 302 /install。
+// EnsureInstalled 中间件（）：未安装时除 /install、/health、静态资源外一律 302 /install。
 // i18n 中间件：Accept-Language 解析 → i18n.WithLocale（默认语言 settings.i18n，当前 zh_CN）。
 
 import (
@@ -128,7 +128,7 @@ func isStaticAsset(p string) bool {
 	return false
 }
 
-// i18nMiddleware Accept-Language → locale（前缀匹配 zh/en；回落默认 zh_CN；DB 覆盖层 M3）。
+// i18nMiddleware Accept-Language → locale（前缀匹配 zh/en；回落默认 zh_CN；DB 覆盖层 ）。
 func i18nMiddleware(defaultLocale string) middleware.Middleware {
 	return func(handler middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {

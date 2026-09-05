@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
+// AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 service AdminFulfillmentService {
   // ListPending 待人工发货列表（manual_pending 状态订单）。
   rpc ListPending(ListPendingRequest) returns (ListPendingReply) {
@@ -46,7 +46,7 @@ message PendingOrder {
 
 message ManualDeliverRequest {
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
-  string content = 2;      // 卡密内容（多行，每行一条）
+  string content = 2; // 卡密内容（多行，每行一条）
   string logistics_no = 3; // 物流单号（与 content 二选一）
   string remark = 4;
 }

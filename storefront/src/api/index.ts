@@ -41,7 +41,7 @@ export interface Product {
   controls: ProductControl[];
   reviews: ReviewItem[];
   skus: Sku[];
-  points_required?: number; // 积分商城视图（points_only 时 >0；P3-01）
+  points_required?: number; // 积分商城视图（points_only 时 >0；）
 }
 
 export interface PageResp {
@@ -133,7 +133,7 @@ export function createOrder(body: {
   contact?: string;
   coupon_code?: string;
   control_answers?: Record<string, string>;
-  use_points?: boolean; // 积分兑换（P3-01：全积分商品直落 paid）
+  use_points?: boolean; // 积分兑换（：全积分商品直落 paid）
   ref_code?: string;    // 推广归因码（游客/无链用户下单实时归因）
   captcha_id?: string;  // 图形验证码（captcha_order 开启时游客必填）
   captcha_code?: string;
@@ -171,7 +171,7 @@ export function getBalance() {
   return api.get<BalanceReply>('/wallet');
 }
 
-// ── 用户体系（P3-04：注册即登录 / 登录 / 我的信息）──
+// ── 用户体系（：注册即登录 / 登录 / 我的信息）──
 
 export interface RegisterReply {
   user_id: number;
@@ -276,7 +276,7 @@ export function me() {
   return api.get<MeReply>('/user/me');
 }
 
-// ── 用户自服务（P3-10：找回/改密/改资料）──
+// ── 用户自服务（：找回/改密/改资料）──
 
 export function forgotPassword(email: string, captcha?: { captcha_id: string; captcha_code: string }) {
   // 防枚举：后端对任何输入都成功（仅真实邮箱收码）
@@ -295,7 +295,7 @@ export function updateProfile(body: { email: string }) {
   return api.post<MeReply>('/user/profile', body);
 }
 
-// ── 购物车（P1-03b：CRUD；结算复用 createOrder 多商品一单）──
+// ── 购物车（：CRUD；结算复用 createOrder 多商品一单）──
 
 export interface CartItem {
   id: number;
@@ -329,7 +329,7 @@ export function removeCart(id: number) {
   return api.deleteSilent(`/cart/items/${id}`);
 }
 
-// ── 我的订单（P1-03 M1b 补全）──
+// ── 我的订单（ 补全）──
 
 export interface MyOrderItem {
   order_no: string;
@@ -449,7 +449,7 @@ export function contactValid(contact: string, mode: string): boolean {
   }
 }
 
-// ── 钱包：流水/充值/礼品卡/提现（P1-05 M2/M3）──
+// ── 钱包：流水/充值/礼品卡/提现（ /）──
 
 export interface WalletTransaction {
   id: number;
@@ -545,7 +545,7 @@ export async function fetchWithdrawConfig(): Promise<WithdrawConfig> {
   }
 }
 
-// ── 等级与积分（P3-01）──
+// ── 等级与积分（）──
 
 export interface LevelBrief {
   id: number;
@@ -570,7 +570,7 @@ export function getMyLevel() {
   return api.get<MyLevelReply>('/member-level');
 }
 
-// ── 工单（P3-05）──
+// ── 工单（）──
 
 export interface TicketItem {
   id: number;
@@ -616,7 +616,7 @@ export function payUrgent(ticketNo: string) {
   return api.post<{ paid: boolean; fee_cents: number; error?: string }>(`/tickets/${ticketNo}/urgent`, {});
 }
 
-// ── 优惠券/秒杀（P3-02）──
+// ── 优惠券/秒杀（）──
 
 export interface MyCoupon {
   id: number;
@@ -649,7 +649,7 @@ export function listFlashSales(upcoming = false) {
   return api.get<{ flash_sales: FlashSale[] }>('/flash-sales', { upcoming });
 }
 
-// ── 分销（P3-03）──
+// ── 分销（）──
 
 export interface MyAffiliateReply {
   user_id: number; // 推广码 = user_id
@@ -695,7 +695,7 @@ export function listCommissions(page = 1, pageSize = 15) {
   return api.get<{ commissions: CommissionItem[]; total: number }>('/affiliate/commissions', { page, page_size: pageSize });
 }
 
-// ── 内容（P2-04）──
+// ── 内容（）──
 
 export interface Banner {
   id: number;

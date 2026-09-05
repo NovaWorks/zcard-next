@@ -56,7 +56,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
+// AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 type AdminCatalogServiceClient interface {
 	// ── 商品 ──
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error)
@@ -411,7 +411,7 @@ func (c *adminCatalogServiceClient) DeleteMemberGroup(ctx context.Context, in *D
 // All implementations must embed UnimplementedAdminCatalogServiceServer
 // for forward compatibility.
 //
-// AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
+// AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 type AdminCatalogServiceServer interface {
 	// ── 商品 ──
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)

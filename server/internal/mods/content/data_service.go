@@ -1,6 +1,6 @@
 package content
 
-// 管理面 API（P2-04 T2）：banner/post/category CRUD + 发布状态机。
+// 管理面 API（）：banner/post/category CRUD + 发布状态机。
 
 import (
 	"context"

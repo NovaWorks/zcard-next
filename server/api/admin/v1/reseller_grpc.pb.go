@@ -36,7 +36,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
+// AdminResellerService 分站管理(主站面核心）：申请审核/列表/定价/账本/余额。
 // 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
 type AdminResellerServiceClient interface {
 	// MySites 分站主：名下域名列表。
@@ -173,7 +173,7 @@ func (c *adminResellerServiceClient) Balance(ctx context.Context, in *BalanceReq
 // All implementations must embed UnimplementedAdminResellerServiceServer
 // for forward compatibility.
 //
-// AdminResellerService 分站管理（P3-04 主站面核心）：申请审核/列表/定价/账本/余额。
+// AdminResellerService 分站管理(主站面核心）：申请审核/列表/定价/账本/余额。
 // 域名验证与分站后台完整面随 storefront 用户登录体系接续（核心引擎已就绪）。
 type AdminResellerServiceServer interface {
 	// MySites 分站主：名下域名列表。

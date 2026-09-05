@@ -1,12 +1,12 @@
 package audit
 
-// T5 告警阈值接线（P2-06 收尾）：异常检测阈值（settings.security）→
+// 告警阈值接线（ 收尾）：异常检测阈值（settings.security）→
 // 安全事件计数超阈值时经 notify 管理员通道告警（telegram/email）。
 //
 // 阈值项（settings security 组 alert 子键；缺省用默认值）：
-//   fetch_fail_per_ip   同 IP 取货失败次数/窗口（默认 10/10min）
-//   login_fail_per_ip   同 IP 登录失败（默认 20/10min）
-//   decrypt_per_admin   管理员解密频率（默认 30/10min）
+// fetch_fail_per_ip 同 IP 取货失败次数/窗口（默认 10/10min）
+// login_fail_per_ip 同 IP 登录失败（默认 20/10min）
+// decrypt_per_admin 管理员解密频率（默认 30/10min）
 // 去重窗口：同 key 告警 30min 内只发一次（告警风暴防护）。
 //
 // 埋点接入：Security() 内部顺带计数——业务方零改动。

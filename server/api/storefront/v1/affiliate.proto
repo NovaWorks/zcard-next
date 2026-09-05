@@ -7,7 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-// StoreAffiliateService 我的分销（P3-03）：推广码/团队/佣金流水/统计。
+// StoreAffiliateService 我的分销：推广码/团队/佣金流水/统计。
 service StoreAffiliateService {
   // MyAffiliate 推广码 + 统计（登录用户）。
   rpc MyAffiliate(google.protobuf.Empty) returns (MyAffiliateReply) {
@@ -24,17 +24,17 @@ service StoreAffiliateService {
 }
 
 message MyAffiliateReply {
-  uint64 user_id = 1;          // 推广码 = user_id
-  string invite_url = 2;       // 邀请链接（?ref=）
-  int64 pending_cents = 3;     // 冻结中
-  int64 available_cents = 4;   // 可提
-  int64 withdrawn_cents = 5;   // 已提现
-  int64 total_cents = 6;       // 累计
-  int64 debt_cents = 7;        // 负债
-  int64 team_l1 = 8;           // 直推人数
+  uint64 user_id = 1; // 推广码 = user_id
+  string invite_url = 2; // 邀请链接（?ref=）
+  int64 pending_cents = 3; // 冻结中
+  int64 available_cents = 4; // 可提
+  int64 withdrawn_cents = 5; // 已提现
+  int64 total_cents = 6; // 累计
+  int64 debt_cents = 7; // 负债
+  int64 team_l1 = 8; // 直推人数
   int64 team_l2 = 9;
   int64 team_l3 = 10;
-  string promo_code = 11;      // 推广码（8 位随机）
+  string promo_code = 11; // 推广码（8 位随机）
 }
 
 message ListTeamRequest {
@@ -67,8 +67,8 @@ message CommissionItem {
   uint64 order_id = 2;
   int32 tier = 3;
   int64 base_amount = 4;
-  int64 amount = 5;        // 负数 = 负债行
-  string status = 6;       // pending_confirm | available | withdrawn | reversed
+  int64 amount = 5; // 负数 = 负债行
+  string status = 6; // pending_confirm | available | withdrawn | reversed
   int64 available_at = 7;
   int64 created_at = 8;
 }

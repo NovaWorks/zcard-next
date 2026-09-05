@@ -1,6 +1,6 @@
 package authz
 
-// 权限点声明（P0-03 T1/T4）：每条 admin RPC 一条声明，Op 与 HTTP 注解同源。
+// 权限点声明（/）：每条 admin RPC 一条声明，Op 与 HTTP 注解同源。
 // 新增管理路由必须在此（或对应模块）Declare——漏声明启动即失败（Reconcile fail-fast）。
 
 func init() {
@@ -47,7 +47,7 @@ func init() {
 		Perm{Code: "settings:update", Desc: "安装主题", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminSettingsService/InstallTemplate", Method: "POST", Path: "/api/v1/admin/settings/templates/install"},
 
-		// ── 权限管理（authz，本任务 T2 新增路由）──────────
+		// ── 权限管理（authz，本任务 新增路由）──────────
 		Perm{Code: "authz:role_read", Desc: "查看角色", Domain: "authz",
 			Op: "zcard.api.admin.v1.RoleService/ListRoles", Method: "GET", Path: "/api/v1/admin/authz/roles"},
 		Perm{Code: "authz:role_read_detail", Desc: "查看角色详情", Domain: "authz",
@@ -87,7 +87,7 @@ func init() {
 		Perm{Code: "identity:admin_delete", Desc: "删除员工（超管专属；内置超管角色与本人不可删）", Domain: "identity", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUserService/DeleteAdmin", Method: "DELETE", Path: "/api/v1/admin/admins/{id}"},
 
-		// ── 商品目录（catalog，P1-01）──────────────────
+		// ── 商品目录（catalog，）──────────────────
 		Perm{Code: "catalog:read", Desc: "查看商品", Domain: "catalog",
 			Op: "zcard.api.admin.v1.AdminCatalogService/ListProducts", Method: "GET", Path: "/api/v1/admin/products"},
 		Perm{Code: "catalog:read_detail", Desc: "查看商品详情", Domain: "catalog",
@@ -149,7 +149,7 @@ func init() {
 		Perm{Code: "catalog:group_write", Desc: "删除商品组（超管）", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteMemberGroup", Method: "DELETE", Path: "/api/v1/admin/member-groups/{id}"},
 
-		// ── 卡密库存（inventory，P1-02）────────────────
+		// ── 卡密库存（inventory，）────────────────
 		Perm{Code: "inventory:read", Desc: "查看卡密", Domain: "inventory",
 			Op: "zcard.api.admin.v1.AdminInventoryService/ListCards", Method: "GET", Path: "/api/v1/admin/inventory/cards"},
 		Perm{Code: "inventory:import", Desc: "导入预览（超管）", Domain: "inventory", AdminOnly: true,
@@ -165,7 +165,7 @@ func init() {
 		Perm{Code: "inventory:write", Desc: "禁用/启用卡（超管）", Domain: "inventory", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminInventoryService/ToggleCard", Method: "PUT", Path: "/api/v1/admin/inventory/cards/{id}/toggle"},
 
-		// ── 订单（order，P1-03）───────────────────────
+		// ── 订单（order，）───────────────────────
 		Perm{Code: "order:read", Desc: "查看订单", Domain: "order",
 			Op: "zcard.api.admin.v1.AdminOrderService/ListOrders", Method: "GET", Path: "/api/v1/admin/orders"},
 		Perm{Code: "order:read_detail", Desc: "查看订单详情", Domain: "order",
@@ -173,7 +173,7 @@ func init() {
 		Perm{Code: "order:cancel", Desc: "取消订单（超管）", Domain: "order", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminOrderService/CancelOrder", Method: "POST", Path: "/api/v1/admin/orders/{order_no}/cancel"},
 
-		// ── 支付（payment，P1-04）─────────────────────
+		// ── 支付（payment，）─────────────────────
 		Perm{Code: "payment:read", Desc: "查看渠道", Domain: "payment",
 			Op: "zcard.api.admin.v1.AdminPaymentService/ListChannels", Method: "GET", Path: "/api/v1/admin/payment/channels"},
 		Perm{Code: "payment:read", Desc: "查看驱动元数据（配置面表单 schema）", Domain: "payment",
@@ -197,7 +197,7 @@ func init() {
 		Perm{Code: "order:refund", Desc: "查看退款", Domain: "payment",
 			Op: "zcard.api.admin.v1.AdminPaymentService/ListRefunds", Method: "GET", Path: "/api/v1/admin/refunds"},
 
-		// ── 钱包（wallet，P1-05）──────────────────────
+		// ── 钱包（wallet，）──────────────────────
 		Perm{Code: "wallet:read", Desc: "查用户余额", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/GetBalance", Method: "GET", Path: "/api/v1/admin/wallet/{user_id}"},
 		Perm{Code: "wallet:adjust", Desc: "手动调账（超管）", Domain: "wallet", AdminOnly: true,
@@ -217,7 +217,7 @@ func init() {
 		Perm{Code: "giftcard:read", Desc: "礼品卡批次列表", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches", Method: "GET", Path: "/api/v1/admin/wallet/giftcard-batches"},
 
-		// ── 履约（fulfillment，P1-06）─────────────────
+		// ── 履约（fulfillment，）─────────────────
 		Perm{Code: "order:view_delivery", Desc: "查看交付记录", Domain: "fulfillment",
 			Op: "zcard.api.admin.v1.AdminFulfillmentService/ListDeliveries", Method: "GET", Path: "/api/v1/admin/fulfillment"},
 		Perm{Code: "order:view_delivery", Desc: "待发货列表", Domain: "fulfillment",
@@ -225,7 +225,7 @@ func init() {
 		Perm{Code: "order:deliver", Desc: "手动发货（超管）", Domain: "fulfillment", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminFulfillmentService/ManualDeliver", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/deliver"},
 
-		// ── 货币管理（settings，P0-04 T3）──────────────
+		// ── 货币管理（settings，）──────────────
 		Perm{Code: "settings:currency_read", Desc: "查看货币", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminCurrencyService/ListCurrencies", Method: "GET", Path: "/api/v1/admin/currencies"},
 		Perm{Code: "settings:currency_write", Desc: "新增/修改货币（超管专属）", Domain: "settings", AdminOnly: true,
@@ -235,7 +235,7 @@ func init() {
 		Perm{Code: "settings:currency_delete", Desc: "删除货币", Domain: "settings", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCurrencyService/DeleteCurrency", Method: "DELETE", Path: "/api/v1/admin/currencies/{code}"},
 
-		// ── 会员等级（memberlevel，P3-01 M1b）────────────
+		// ── 会员等级（memberlevel， ）────────────
 		Perm{Code: "memberlevel:read", Desc: "查看会员等级", Domain: "memberlevel",
 			Op: "zcard.api.admin.v1.AdminMemberLevelService/ListMemberLevels", Method: "GET", Path: "/api/v1/admin/member-levels"},
 		Perm{Code: "memberlevel:write", Desc: "创建会员等级（超管）", Domain: "memberlevel", AdminOnly: true,
@@ -245,7 +245,7 @@ func init() {
 		Perm{Code: "memberlevel:delete", Desc: "删除会员等级（超管）", Domain: "memberlevel", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminMemberLevelService/DeleteMemberLevel", Method: "DELETE", Path: "/api/v1/admin/member-levels/{id}"},
 
-		// ── 优惠券（coupon，P3-02 M1b）─────────────────
+		// ── 优惠券（coupon， ）─────────────────
 		Perm{Code: "coupon:read", Desc: "查看优惠券", Domain: "coupon",
 			Op: "zcard.api.admin.v1.AdminCouponService/ListCoupons", Method: "GET", Path: "/api/v1/admin/coupons"},
 		Perm{Code: "coupon:write", Desc: "批量生成优惠券（超管）", Domain: "coupon", AdminOnly: true,
@@ -257,7 +257,7 @@ func init() {
 		Perm{Code: "coupon:read", Desc: "导出优惠券 CSV", Domain: "coupon",
 			Op: "zcard.api.admin.v1.AdminCouponService/ExportCoupons", Method: "GET", Path: "/api/v1/admin/coupons/export"},
 
-		// ── 工作台（dashboard，P3-07 M1b）──────────────
+		// ── 工作台（dashboard， ）──────────────
 		Perm{Code: "dashboard:read", Desc: "查看工作台指标", Domain: "dashboard",
 			Op: "zcard.api.admin.v1.AdminDashboardService/GetDashboard", Method: "GET", Path: "/api/v1/admin/dashboard"},
 		Perm{Code: "dashboard:read", Desc: "佣金列表", Domain: "dashboard",
@@ -277,7 +277,7 @@ func init() {
 		Perm{Code: "reconcile:write", Desc: "执行对账任务（超管）", Domain: "dashboard", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminDashboardService/RunReconciliationJob", Method: "POST", Path: "/api/v1/admin/dashboard/reconciliation-jobs/{id}/run"},
 
-		// ── 敏感权限点预登记（§5.20.4 防内部偷卡；路由 M1 落地）──
+		// ── 敏感权限点预登记（ 防内部偷卡；路由 落地）──
 		Perm{Code: "card:view_content", Desc: "查看完整卡密（需二次确认+审计）", Domain: "inventory", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminInventoryService/ViewCardContent", Method: "GET", Path: "/api/v1/admin/inventory/cards/{id}/content"},
 		Perm{Code: "card:premium", Desc: "查看靓号列表（超管）", Domain: "inventory", AdminOnly: true,
@@ -286,7 +286,7 @@ func init() {
 
 		Perm{Code: "order:refund", Desc: "订单退款（二次确认+审计）", Domain: "order", AdminOnly: true},
 
-		// ── 在线更新（update，doc/在线更新方案.md §9——超管专属全套）──
+		// ── 在线更新（update，——超管专属全套）──
 		Perm{Code: "system:update", Desc: "查看更新状态", Domain: "system", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUpdateService/GetUpdateStatus", Method: "GET", Path: "/api/v1/admin/update/status"},
 		Perm{Code: "system:update", Desc: "检查更新", Domain: "system", AdminOnly: true,
@@ -296,7 +296,7 @@ func init() {
 		Perm{Code: "system:update", Desc: "回滚上一版本（超管专属）", Domain: "system", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminUpdateService/RollbackUpdate", Method: "POST", Path: "/api/v1/admin/update/rollback"},
 
-		// ── 货源连接（supply，P2-01）──────────────────
+		// ── 货源连接（supply，）──────────────────
 		Perm{Code: "supply:read", Desc: "查看货源连接", Domain: "supply",
 			Op: "zcard.api.admin.v1.AdminSupplyService/ListConnections", Method: "GET", Path: "/api/v1/admin/supply/connections"},
 		Perm{Code: "supply:write", Desc: "管理货源连接（超管）", Domain: "supply", AdminOnly: true,
@@ -328,7 +328,7 @@ func init() {
 		Perm{Code: "supply:write", Desc: "勾选导入商品（超管）", Domain: "supply", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminSupplyService/ImportProducts", Method: "POST", Path: "/api/v1/admin/supply/connections/{connection_id}/import"},
 
-		// ── 采购（procurement，P2-02）────────────────
+		// ── 采购（procurement，）────────────────
 		Perm{Code: "procurement:read", Desc: "采购单列表", Domain: "procurement",
 			Op: "zcard.api.admin.v1.AdminProcurementService/ListProcurements", Method: "GET", Path: "/api/v1/admin/procurements"},
 		Perm{Code: "procurement:read", Desc: "采购单详情", Domain: "procurement",
@@ -338,7 +338,7 @@ func init() {
 		Perm{Code: "procurement:write", Desc: "手动转人工（超管）", Domain: "procurement", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminProcurementService/MarkProcurementManual", Method: "POST", Path: "/api/v1/admin/procurements/{id}/manual"},
 
-		// ── 对外供货（supplier，P2-03）────────────────
+		// ── 对外供货（supplier，）────────────────
 		Perm{Code: "supplier:read", Desc: "下游账户列表", Domain: "supplier",
 			Op: "zcard.api.admin.v1.AdminSupplierService/ListAccounts", Method: "GET", Path: "/api/v1/admin/supplier/accounts"},
 		Perm{Code: "supplier:write", Desc: "创建下游账户（超管）", Domain: "supplier", AdminOnly: true,
@@ -368,7 +368,7 @@ func init() {
 		Perm{Code: "supplier:write", Desc: "设置 IP 白名单（超管）", Domain: "supplier", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminSupplierService/SetIPWhitelist", Method: "PUT", Path: "/api/v1/admin/supplier/accounts/{id}/ip-whitelist"},
 
-		// ── 内容（content，P2-04）────────────────────
+		// ── 内容（content，）────────────────────
 		Perm{Code: "content:read", Desc: "横幅列表", Domain: "content",
 			Op: "zcard.api.admin.v1.AdminContentService/ListBanners", Method: "GET", Path: "/api/v1/admin/content/banners"},
 		Perm{Code: "content:write", Desc: "创建横幅（超管）", Domain: "content", AdminOnly: true,
@@ -396,7 +396,7 @@ func init() {
 		Perm{Code: "content:write", Desc: "删除分类（超管）", Domain: "content", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminContentService/DeleteCategory", Method: "DELETE", Path: "/api/v1/admin/content/categories/{id}"},
 
-		// ── 营销（coupon，P3-02 M3）──────────────────
+		// ── 营销（coupon， ）──────────────────
 		Perm{Code: "coupon:write", Desc: "赠送券（超管）", Domain: "coupon", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCouponService/GrantCoupon", Method: "POST", Path: "/api/v1/admin/coupons/grant"},
 		Perm{Code: "coupon:write", Desc: "创建秒杀（超管）", Domain: "coupon", AdminOnly: true,
@@ -410,7 +410,7 @@ func init() {
 		Perm{Code: "coupon:read", Desc: "促销列表", Domain: "coupon",
 			Op: "zcard.api.admin.v1.AdminCouponService/ListPromotions", Method: "GET", Path: "/api/v1/admin/promotions"},
 
-		// ── 分站（reseller，P3-04 主站面）──────────
+		// ── 分站（reseller， 主站面）──────────
 		Perm{Code: "reseller:read", Desc: "分站列表", Domain: "reseller",
 			Op: "zcard.api.admin.v1.AdminResellerService/ListProfiles", Method: "GET", Path: "/api/v1/admin/reseller/profiles"},
 		Perm{Code: "reseller:review", Desc: "审核分站申请（超管）", Domain: "reseller", AdminOnly: true,
@@ -432,7 +432,7 @@ func init() {
 		Perm{Code: "reseller:product", Desc: "自营商品上架（分站主）", Domain: "reseller",
 			Op: "zcard.api.admin.v1.AdminResellerService/CreateProduct", Method: "POST", Path: "/api/v1/admin/reseller/products"},
 
-		// ── 订阅许可证（license，P3-08）─────────────
+		// ── 订阅许可证（license，）─────────────
 		Perm{Code: "license:read", Desc: "许可证状态", Domain: "license",
 			Op: "zcard.api.admin.v1.AdminLicenseService/GetLicenseStatus", Method: "GET", Path: "/api/v1/admin/license"},
 		Perm{Code: "license:write", Desc: "安装/清除许可证（超管）", Domain: "license", AdminOnly: true,
@@ -440,7 +440,7 @@ func init() {
 		Perm{Code: "license:write", Desc: "清除许可证（超管）", Domain: "license", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminLicenseService/ClearLicense", Method: "DELETE", Path: "/api/v1/admin/license"},
 
-		// ── 素材库（media，P3-06）───────────────────
+		// ── 素材库（media，）───────────────────
 		Perm{Code: "media:read", Desc: "分类列表", Domain: "media",
 			Op: "zcard.api.admin.v1.AdminMediaService/ListCategories", Method: "GET", Path: "/api/v1/admin/media/categories"},
 		Perm{Code: "media:read", Desc: "素材列表", Domain: "media",
@@ -464,7 +464,7 @@ func init() {
 		Perm{Code: "media:delete", Desc: "删除素材（引用需确认）", Domain: "media", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminMediaService/DeleteMedia", Method: "POST", Path: "/api/v1/admin/media/delete"},
 
-		// ── 工单（ticket，P3-05）────────────────────
+		// ── 工单（ticket，）────────────────────
 		Perm{Code: "ticket:read", Desc: "工单工作台", Domain: "ticket",
 			Op: "zcard.api.admin.v1.AdminTicketService/ListTickets", Method: "GET", Path: "/api/v1/admin/tickets"},
 		Perm{Code: "ticket:read", Desc: "工单详情（含内部备注）", Domain: "ticket",
@@ -476,7 +476,7 @@ func init() {
 		Perm{Code: "ticket:write", Desc: "关闭工单", Domain: "ticket",
 			Op: "zcard.api.admin.v1.AdminTicketService/CloseTicket", Method: "POST", Path: "/api/v1/admin/tickets/{ticket_no}/close"},
 
-		// ── 通知（notify，P2-05）────────────────────
+		// ── 通知（notify，）────────────────────
 		Perm{Code: "notify:read", Desc: "通知模板列表", Domain: "notify",
 			Op: "zcard.api.admin.v1.AdminNotifyService/ListTemplates", Method: "GET", Path: "/api/v1/admin/notify/templates"},
 		Perm{Code: "notify:read", Desc: "发送日志", Domain: "notify",
@@ -496,7 +496,7 @@ func init() {
 		Perm{Code: "notify:write", Desc: "取消群发（超管）", Domain: "notify", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminNotifyService/CancelBroadcast", Method: "POST", Path: "/api/v1/admin/notify/broadcasts/{id}/cancel"},
 
-		// ── 审计与风控（audit，P2-06）───────────────
+		// ── 审计与风控（audit，）───────────────
 		Perm{Code: "audit:read", Desc: "操作审计", Domain: "audit",
 			Op: "zcard.api.admin.v1.AdminAuditService/ListOpLogs", Method: "GET", Path: "/api/v1/admin/audit/op-logs"},
 		Perm{Code: "audit:read", Desc: "安全审计", Domain: "audit",

@@ -1,13 +1,13 @@
 package procurement
 
-// P2-10 E：上游回调接收端点（采购三通道之回调通道的接收侧）。
+// E：上游回调接收端点（采购三通道之回调通道的接收侧）。
 //
 // POST /api/v1/procurement/callback?connection_id=N
-//   - 不挂 JWT（架构测试规则 9）；connection_id 经 query 定位连接 → 按驱动验签
-//     （zcard 四头 / dujiao 三头；acg 无回调）
-//   - 验签/查单失败统一 401 防枚举（1.x 纪律：不区分原因防探测）
-//   - 回填走 confirmResult（与轮询/巡检幂等汇聚——状态机 CAS，先到先终态）
-//   - zcard 回调不携带卡密（确认后转 PollOne 查单获取）；dujiao 事件带 payload
+// - 不挂 JWT（架构测试规则 9）；connection_id 经 query 定位连接 → 按驱动验签
+// （zcard 四头 / dujiao 三头；acg 无回调）
+// - 验签/查单失败统一 401 防枚举（1.x 纪律：不区分原因防探测）
+// - 回填走 confirmResult（与轮询/巡检幂等汇聚——状态机 CAS，先到先终态）
+// - zcard 回调不携带卡密（确认后转 PollOne 查单获取）；dujiao 事件带 payload
 
 import (
 	"context"

@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminInventoryService 卡密库存管理（P1-02）：导入/导出/列表/操作。
+// AdminInventoryService 卡密库存管理：导入/导出/列表/操作。
 service AdminInventoryService {
   // ImportPreview 上传预览（去重统计 + 样本预览）。
   rpc ImportPreview(ImportPreviewRequest) returns (ImportPreviewReply) {
@@ -162,8 +162,8 @@ message PremiumCardInfo {
   uint64 id = 1;
   uint64 product_id = 2;
   string masked_content = 3; // ****尾4位
-  int64 draft_premium = 4;   // 预选加价（分）
-  int64 draft_cost = 5;      // 预选成本（分）
-  int64 price_cents = 6;     // 靓号自选价（0=商品价+premium）
+  int64 draft_premium = 4; // 预选加价（分）
+  int64 draft_cost = 5; // 预选成本（分）
+  int64 price_cents = 6; // 靓号自选价（0=商品价+premium）
   string status = 7;
 }

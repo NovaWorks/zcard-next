@@ -40,7 +40,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminSupplierService 对外供货管理（P2-03 T6）：下游账户申请/审核/启停/重置密钥、
+// AdminSupplierService 对外供货管理：下游账户申请/审核/启停/重置密钥、
 // 供货定价 CRUD、账本流水、回调记录查询与手动重发。
 type AdminSupplierServiceClient interface {
 	// CreateAccount 下游申请（secret 明文只在此响应出现一次）。
@@ -59,7 +59,7 @@ type AdminSupplierServiceClient interface {
 	Recharge(ctx context.Context, in *RechargeSupplierRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(ctx context.Context, in *ListSupplierLedgerRequest, opts ...grpc.CallOption) (*ListSupplierLedgerReply, error)
-	// ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	// ListPrices 账号的专属价列表(补齐：浏览/管理覆盖价）。
 	ListPrices(ctx context.Context, in *ListSupplierPricesRequest, opts ...grpc.CallOption) (*ListSupplierPricesReply, error)
 	// DeletePrice 删除专属价（恢复基础供货价）。
 	DeletePrice(ctx context.Context, in *DeleteSupplierPriceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -225,7 +225,7 @@ func (c *adminSupplierServiceClient) SetSupplierIPWhitelist(ctx context.Context,
 // All implementations must embed UnimplementedAdminSupplierServiceServer
 // for forward compatibility.
 //
-// AdminSupplierService 对外供货管理（P2-03 T6）：下游账户申请/审核/启停/重置密钥、
+// AdminSupplierService 对外供货管理：下游账户申请/审核/启停/重置密钥、
 // 供货定价 CRUD、账本流水、回调记录查询与手动重发。
 type AdminSupplierServiceServer interface {
 	// CreateAccount 下游申请（secret 明文只在此响应出现一次）。
@@ -244,7 +244,7 @@ type AdminSupplierServiceServer interface {
 	Recharge(context.Context, *RechargeSupplierRequest) (*emptypb.Empty, error)
 	// ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(context.Context, *ListSupplierLedgerRequest) (*ListSupplierLedgerReply, error)
-	// ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	// ListPrices 账号的专属价列表(补齐：浏览/管理覆盖价）。
 	ListPrices(context.Context, *ListSupplierPricesRequest) (*ListSupplierPricesReply, error)
 	// DeletePrice 删除专属价（恢复基础供货价）。
 	DeletePrice(context.Context, *DeleteSupplierPriceRequest) (*emptypb.Empty, error)

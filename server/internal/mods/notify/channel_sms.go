@@ -1,8 +1,8 @@
 package notify
 
-// SMS 通道（P2-05 T3 收尾）：阿里云/腾讯云/七牛三通道——零 SDK REST。
+// SMS 通道（ 收尾）：阿里云/腾讯云/七牛三通道——零 SDK REST。
 // 配置运行时读取 settings notify 组扁平键（后台「邮件短信」页保存）：
-//   sms_provider / sms_key / sms_secret / sms_sign / sms_template_code / sms_sdk_app_id
+// sms_provider / sms_key / sms_secret / sms_sign / sms_template_code / sms_sdk_app_id
 // 兼容旧版 notify.sms JSON blob（access_key 等；存量部署无缝迁移），
 // 未配置/缺凭据 → skipped 降级。
 //
@@ -10,10 +10,10 @@ package notify
 // 各通道按自身模板变量规范转换（阿里云/七牛键值对象；腾讯云按变量名排序转数组）。
 //
 // 阿里云签名算法（RPC 风格）：
-//   1. 参数去 Signature 后 ksort
-//   2. RFC 3986 变体编码（+ → %20）
-//   3. stringToSign = "POST" & enc("/") & enc(canonicalQuery)
-//   4. sig = base64(HMAC-SHA1(stringToSign, accessSecret + "&"))
+// 1. 参数去 Signature 后 ksort
+// 2. RFC 3986 变体编码（+ → %20）
+// 3. stringToSign = "POST" & enc("/") & enc(canonicalQuery)
+// 4. sig = base64(HMAC-SHA1(stringToSign, accessSecret + "&"))
 // golden vector 见 data_notify_test.go（Python 独立计算固化）。
 
 import (

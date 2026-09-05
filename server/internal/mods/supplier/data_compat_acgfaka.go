@@ -1,26 +1,26 @@
 package supplier
 
-// P2-10 C：acg-faka 协议兼容层（对外供货）。
+// C：acg-faka 协议兼容层（对外供货）。
 //
 // 让任何 acg-faka 站点用「共享店铺 → 对接异次元(type=0)」填本站地址 +
 // (app_id, app_key) 即可对接——不改对方一行代码。
 //
 // 端点（前缀 /shared，全部 POST form-urlencoded、无路径参数——acg Kernel 按
 // "/" 拆段路由）：
-//   /shared/authentication/connect                     → {shopName, balance(元)}
-//   /shared/commodity/items                            → 两级分类树 children=[商品]
-//   /shared/commodity/item (code)                      → 单商品
-//   /shared/commodity/stock (code,race,sku)            → {stock}
-//   /shared/commodity/valuation (code,num,...)         → {price(元)}
-//   /shared/commodity/trade (shared_code,num,request_no,...) → {url,amount,tradeNo,secret}
-//   /shared/commodity/query (tradeNo)                  → {secret,widget,status}
+// /shared/authentication/connect → {shopName, balance(元)}
+// /shared/commodity/items → 两级分类树 children=[商品]
+// /shared/commodity/item (code) → 单商品
+// /shared/commodity/stock (code,race,sku) → {stock}
+// /shared/commodity/valuation (code,num,...) → {price(元)}
+// /shared/commodity/trade (shared_code,num,request_no,...) → {url,amount,tradeNo,secret}
+// /shared/commodity/query (tradeNo) → {secret,widget,status}
 //
 // 协议事实来源：acg-faka app/Controller/Shared/{Commodity,Authentication}.php +
 // app/Service/Bind/Shared.php（字段/签名/错误口径逐字对齐）：
-//   - 鉴权：body 内 app_id + app_key + sign（MD5，无时间戳/nonce——协议固有，
-//     以 request_no 幂等 + HTTPS + 账号限流补偿，见计划 §C4）
-//   - 响应：{code:200,msg,data}；失败 {code:0,msg}（HTTP 200，无 data，字段名 msg）
-//   - 金额：元（数字）；卡密：secret 纯文本 \n 连接
+// - 鉴权：body 内 app_id + app_key + sign（MD5，无时间戳/nonce——协议固有，
+// 以 request_no 幂等 + HTTPS + 账号限流补偿，见计划 C4）
+// - 响应：{code:200,msg,data}；失败 {code:0,msg}（HTTP 200，无 data，字段名 msg）
+// - 金额：元（数字）；卡密：secret 纯文本 \n 连接
 //
 // 实现：原生 http.Handler（HandlePrefix 挂载）；核心复用 fulfillOrder。
 

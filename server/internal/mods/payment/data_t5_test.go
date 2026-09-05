@@ -1,6 +1,6 @@
 package payment
 
-// P2-09 T5 渠道配置面后端契约测试：
+// 渠道配置面后端契约测试：
 // ListDrivers 驱动元数据完整性 / CreateChannel 凭据即时校验 /
 // channelPB 脱敏回显（敏感掩码 + configured_fields + callback_url）/
 // UpdateChannel fee_type + 凭据变更校验 / storefront ListChannels 启用过滤。

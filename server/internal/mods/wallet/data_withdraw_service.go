@@ -1,6 +1,6 @@
 package wallet
 
-// T5 提现服务面（P1-05 M3）：storefront 申请 + admin 审核/打款。
+// 提现服务面（ ）：storefront 申请 + admin 审核/打款。
 // 金额服务端裁决（铁律 16）：白名单/最低额/手续费全部取 settings.withdraw。
 
 import (

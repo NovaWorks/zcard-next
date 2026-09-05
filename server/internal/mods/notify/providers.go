@@ -1,10 +1,10 @@
 package notify
 
-// wire providers（P2-05）。
+// wire providers（）。
 //
 // 跨模块绑定（通道 A）：
-//   - EmailChannel.settings ← notifyport.SettingsReader（settings.RepoImpl 适配，见下）
-//   - Dispatcher 实现 notifyport.Sender（业务模块告警直调）
+// - EmailChannel.settings ← notifyport.SettingsReader（settings.RepoImpl 适配，见下）
+// - Dispatcher 实现 notifyport.Sender（业务模块告警直调）
 
 import (
 	"context"

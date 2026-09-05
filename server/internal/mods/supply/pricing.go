@@ -1,11 +1,11 @@
 package supply
 
-// 定价策略（P2-01 T3）：本地价 = 上游价(分) × 汇率 × (1 + 加价%) → 取整模式。
+// 定价策略（）：本地价 = 上游价(分) × 汇率 × (1 + 加价%) → 取整模式。
 // 纯函数，无 IO，供同步服务与单测直接调用。
 
 import "math"
 
-// 取整模式（对齐《数据库架构设计.md》§4.7 price_rounding_mode）。
+// 取整模式（对齐《数据库架构设计.md》 price_rounding_mode）。
 const (
 	RoundingNone      = "none"       // 不取整（四舍五入到分）
 	RoundingCeilInt   = "ceil_int"   // 向上取整到整数元（分 → 整百）
@@ -33,7 +33,7 @@ func ApplyPricing(upstreamCents int64, rate, markupPercent float64, markupAmount
 	return result
 }
 
-// 导入定价模式（P2-10 D：交互式导入的策略选择；对齐 1.x computeInitialPrice）。
+// 导入定价模式（ D：交互式导入的策略选择；对齐 1.x computeInitialPrice）。
 const (
 	PriceModePercent = "percent" // 按连接加价 %（默认，同 ApplyPricing）
 	PriceModeFixed   = "fixed"   // 上游价 + 固定金额（markup_amount 分）

@@ -1,6 +1,6 @@
 package memberlevel
 
-// P3-01 T4 积分产生：订阅 order.paid → 按用户当前等级 points_rule（消费 X 分产 Y 分）
+// 积分产生：订阅 order.paid → 按用户当前等级 points_rule（消费 X 分产 Y 分）
 // 入积分账本（wallet.Points 端口，通道 A）；幂等键 points:<orderID>（重复投递直接 ACK）。
 // 口径：积分兑换单 total=0 不产生；取消/未支付订单不触发（事件只在 paid 后发布）。
 

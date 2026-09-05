@@ -1,6 +1,6 @@
 package audit
 
-// P2-06 必测项：IPv6 /64 聚合、黑名单（精确+CIDR）、pending 闸门、频率限流、
+// 必测项：IPv6 /64 聚合、黑名单（精确+CIDR）、pending 闸门、频率限流、
 // 取货失败锁定（TTL/锁定期拒绝）、审计写失败不阻断、访问统计聚合。
 
 import (

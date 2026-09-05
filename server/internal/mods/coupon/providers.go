@@ -1,8 +1,8 @@
 package coupon
 
-// wire providers（P3-02）。
+// wire providers（）。
 // 三端口绑定（order 管线消费，通道 A）：
-//   - CouponResolver（范围矩阵券）/ FlashResolver（秒杀同锁）/ PromotionResolver（促销最优）
+// - CouponResolver（范围矩阵券）/ FlashResolver（秒杀同锁）/ PromotionResolver（促销最优）
 
 import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"

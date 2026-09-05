@@ -1,6 +1,6 @@
 package dashboard
 
-// AdminDashboardService 工作台服务（M1b v1）。
+// AdminDashboardService 工作台服务（ v1）。
 
 import (
 	"context"
@@ -21,10 +21,10 @@ import (
 type AdminDashboardService struct {
 	adminv1.UnimplementedAdminDashboardServiceServer
 	repo       *DashboardRepoImpl
-	reconciler *Reconciler                    // P3-07 货源对账（job/item 四态）
-	commission affiliateport.CommissionReader // P3-03 佣金列表（通道 A）
+	reconciler *Reconciler                    // 货源对账（job/item 四态）
+	commission affiliateport.CommissionReader // 佣金列表（通道 A）
 	settings   dashboardport.SettingsReader   // 低库存阈值等（通道 A；nil = 默认值）
-	traffic    auditport.TrafficReader        // T5 访问统计（在线用户/PV/UV，通道 A）
+	traffic    auditport.TrafficReader        // 访问统计（在线用户/PV/UV，通道 A）
 }
 
 // NewAdminDashboardService 构造。
@@ -32,7 +32,7 @@ func NewAdminDashboardService(repo *DashboardRepoImpl, reconciler *Reconciler, c
 	return &AdminDashboardService{repo: repo, reconciler: reconciler, commission: commission, settings: settings, traffic: traffic}
 }
 
-// ListCommissions 佣金列表（P3-03；port 消费——跨模块零 ent 依赖）。
+// ListCommissions 佣金列表（；port 消费——跨模块零 ent 依赖）。
 func (s *AdminDashboardService) ListCommissions(ctx context.Context, req *adminv1.ListCommissionsRequest) (*adminv1.ListCommissionsReply, error) {
 	page := int(req.GetPage())
 	if page < 1 {
@@ -295,7 +295,7 @@ func toJobPB(job *ent.ReconciliationJob) *adminv1.ReconciliationJobItem {
 	return out
 }
 
-// GetReconciliation 对账总览（P3-07）。
+// GetReconciliation 对账总览（）。
 func (s *AdminDashboardService) GetReconciliation(ctx context.Context, req *adminv1.GetReconciliationRequest) (*adminv1.GetReconciliationReply, error) {
 	sum, err := s.repo.GetReconciliation(ctx, req.GetDate())
 	if err != nil {

@@ -1,10 +1,10 @@
-// Package architecture 架构守护测试（规划 §4.10，只有测试，无生产代码）。
+// Package architecture 架构守护测试（规划 ，只有测试，无生产代码）。
 //
 // 照搬友商最有价值的资产：分层规则、模块边界、platform 纯净由测试强制，
 // 而非口头约定。CI 中与单元测试同权重，红灯即阻断合并。
 //
-// M0 交付框架 + 前三条核心规则；后续规则按里程碑补齐（文件预算/RBAC 覆盖/
-// 回调路由/金额纪律 AST 扫描等，见 §4.10 全表）。
+// 交付框架 + 前三条核心规则；后续规则按里程碑补齐（文件预算/RBAC 覆盖/
+// 回调路由/金额纪律 AST 扫描等，见 全表）。
 package architecture
 
 import (
@@ -90,7 +90,7 @@ func relToServer(t *testing.T, file string) string {
 }
 
 // ---------------------------------------------------------------------------
-// 规则 1：port 纯净（§4.10-11）—— mods/*/port 只允许依赖标准库、platform/*、
+// 规则 1：port 纯净（-11）—— mods/*/port 只允许依赖标准库、platform/*、
 // 本仓 api 生成类型；引入任何业务实现/Ent/Kratos transport/asynq 即红灯。
 // ---------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ func TestRule1PortPurity(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// 规则 2：platform 纯净（§4.10-3）—— platform/* 不得 import mods/*（反向依赖）
+// 规则 2：platform 纯净（-3）—— platform/* 不得 import mods/*（反向依赖）
 // 与 Kratos transport（平台层与传输解耦，保证可替换性）。
 // ---------------------------------------------------------------------------
 
@@ -138,7 +138,7 @@ func TestRule2PlatformPurity(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// 规则 3：transport 不泄漏（§4.10-4）+ Ent 收口（§4.10-5）+ 模块边界（§4.6 规则 3）。
+// 规则 3：transport 不泄漏（-4）+ Ent 收口（-5）+ 模块边界(规则 3）。
 // ---------------------------------------------------------------------------
 
 func TestRule3Layering(t *testing.T) {
@@ -166,7 +166,7 @@ func TestRule3Layering(t *testing.T) {
 				return "Ent import 越界（仅 mods/*/data.go、providers.go、internal/data、admincmd、tools 允许）"
 			}
 		}
-		// 3c. 模块边界：mods/A import mods/B 只允许落在 B 的 port/ 包（§4.6 规则 3）
+		// 3c. 模块边界：mods/A import mods/B 只允许落在 B 的 port/ 包(规则 3）
 		if from, ok := strings.CutPrefix(pkgPath, modulePath+"/internal/mods/"); ok {
 			if to, ok2 := strings.CutPrefix(imported, modulePath+"/internal/mods/"); ok2 {
 				fromMod := strings.SplitN(from, "/", 2)[0]
@@ -183,8 +183,8 @@ func TestRule3Layering(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// 规则 4（M0 加餐，金额纪律雏形 §4.10-6）：带 amount/price/fee/balance 名字的
-// 字段/声明禁止 float32/float64（铁律 1 的静态扫描；完整 AST 规则 M1 补齐参数级）。
+// 规则 4(加餐，金额纪律雏形 -6）：带 amount/price/fee/balance 名字的
+// 字段/声明禁止 float32/float64（铁律 1 的静态扫描；完整 AST 规则 补齐参数级）。
 // ---------------------------------------------------------------------------
 
 func TestRule4MoneyDiscipline(t *testing.T) {
@@ -213,7 +213,7 @@ func TestRule4MoneyDiscipline(t *testing.T) {
 }
 
 // floatFieldAllowlist 费率/汇率类浮点豁免（显式登记制）：这些是「率」不是「金额」，
-// 数据库架构 §7.2 允许 decimal 存储；新增豁免必须在 CR 说明理由。
+// 数据库架构 允许 decimal 存储；新增豁免必须在 CR 说明理由。
 var floatFieldAllowlist = map[string]bool{
 	"PriceMarkupPercent": true, // 上游加价百分比（百分比，非金额）
 	"ExchangeRate":       true, // 汇率快照
@@ -248,7 +248,7 @@ func reportViolations(t *testing.T, vs []importViolation) {
 }
 
 // ---------------------------------------------------------------------------
-// 规则 5（M2，P2-01 验收）：货源适配器出站纪律——mods/supply/adapter 禁止直接
+// 规则 5（， 验收）：货源适配器出站纪律——mods/supply/adapter 禁止直接
 // 构造 http.Client（`&http.Client{` / http.DefaultClient），出站必须经
 // platform/httpx（SSRF 防护唯一入口；凭据零泄漏依赖该收口）。
 // ---------------------------------------------------------------------------
@@ -281,7 +281,7 @@ func TestRule5AdapterOutboundDiscipline(t *testing.T) {
 		}
 	}
 	for _, b := range bad {
-		t.Errorf("适配器出站纪律违规（%s）：出站必须经 httpx（P2-01 验收标准）", b)
+		t.Errorf("适配器出站纪律违规（%s）：出站必须经 httpx（适配器出站纪律）", b)
 	}
 }
 

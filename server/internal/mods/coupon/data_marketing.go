@@ -1,6 +1,6 @@
 package coupon
 
-// P3-02 M3 扩展：券范围矩阵/每人限用/领取/返还 + 秒杀（同锁防超卖）+ 促销（多促最优）。
+// 扩展：券范围矩阵/每人限用/领取/返还 + 秒杀（同锁防超卖）+ 促销（多促最优）。
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
-// ── T1/T2 券：范围矩阵 + 每人限用 + 领取/返还 ──────────────
+// ── / 券：范围矩阵 + 每人限用 + 领取/返还 ──────────────
 
 // ResolveScoped 范围矩阵版校验（port.CouponResolver 实现）。
 func (r *CouponRepoImpl) ResolveScoped(ctx context.Context, code string, userID, levelID uint64, items []port.CartItem) (money.Cents, uint64, error) {
@@ -203,7 +203,7 @@ func (r *CouponRepoImpl) ListMyCoupons(ctx context.Context, userID uint64) ([]*e
 		All(ctx)
 }
 
-// ── T3 秒杀（同锁防超卖）──────────────────────────────────
+// ── 秒杀（同锁防超卖）──────────────────────────────────
 
 // Active 生效中秒杀（窗口判定无状态）。
 func (r *CouponRepoImpl) Active(ctx context.Context, productID, skuID uint64) (*port.FlashInfo, error) {
@@ -293,7 +293,7 @@ func (r *CouponRepoImpl) ListFlash(ctx context.Context, now time.Time, upcoming 
 	return q.Limit(50).All(ctx)
 }
 
-// ── T4 促销（多促最优）────────────────────────────────────
+// ── 促销（多促最优）────────────────────────────────────
 
 // BestFor 商品命中最优促销（同时窗取折让最大；无则 nil）。
 func (r *CouponRepoImpl) BestFor(ctx context.Context, productID, categoryID uint64, unitPrice money.Cents) (*port.PromotionInfo, error) {

@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminLicenseService 订阅许可证管理（M3，主文档 §11）：安装/查询/清除。
+// AdminLicenseService 订阅许可证管理：安装/查询/清除。
 // 校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
 service AdminLicenseService {
   // GetLicenseStatus 许可证状态（安装/有效性/特性清单/到期）。

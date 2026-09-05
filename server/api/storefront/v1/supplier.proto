@@ -61,7 +61,7 @@ message SubmitSupplierApplicationRequest {
   // 下游面板协议：zcard | dujiao_next | acg_faka
   string protocol = 1 [(google.api.field_behavior) = REQUIRED];
   string display_name = 2 [(google.api.field_behavior) = REQUIRED]; // 站点/店铺名（≤100）
-  string contact = 3;    // 联系方式（QQ/邮箱/手机）
+  string contact = 3; // 联系方式（QQ/邮箱/手机）
   string apply_reason = 4; // 申请理由（≤500）
   string notify_url = 5; // 交付回调地址（可选；HTTPS 强制）
 }
@@ -113,7 +113,7 @@ message SetSupplierIPWhitelistRequest {
 message CreateSupplierRechargeReply {
   uint64 recharge_id = 1;
   uint64 payment_id = 2;
-  string type = 3;    // redirect | qrcode | params（与 CreateRechargeReply 同构）
+  string type = 3; // redirect | qrcode | params（与 CreateRechargeReply 同构）
   string payload = 4; // 支付跳转 URL / 二维码内容 / 参数 JSON
 }
 
@@ -121,6 +121,6 @@ message SupplierCredentialsReply {
   uint64 id = 1;
   string protocol = 2;
   string status = 3;
-  string api_key = 4;    // app_id（明文）
+  string api_key = 4; // app_id（明文）
   string api_secret = 5; // app_key（明文；重置后旧值立即失效）
 }

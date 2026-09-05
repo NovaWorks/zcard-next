@@ -1,6 +1,6 @@
 package procurement
 
-// 管理面 API（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+// 管理面 API（）：采购单列表/详情/手动重试/手动标记完成。
 
 import (
 	"context"

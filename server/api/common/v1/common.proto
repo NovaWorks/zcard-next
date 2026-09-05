@@ -9,13 +9,13 @@ import "google/protobuf/duration.proto";
 // Money 全仓统一金额表示（铁律 1）：amount 永远是基础货币的「分」（int64），
 // currency 为 ISO 4217 三字码。展示货币换算只发生在展示层与下单快照。
 message Money {
-  int64 amount = 1;      // 分（基础货币，默认 CNY）
-  string currency = 2;   // CNY / USD / USDT ...
+  int64 amount = 1; // 分（基础货币，默认 CNY）
+  string currency = 2; // CNY / USD / USDT ...
 }
 
 // PageReq 分页请求（后台列表默认按 created_at 倒序；深分页走游标，报表除外）。
 message PageReq {
-  int32 page = 1;    // 从 1 起
+  int32 page = 1; // 从 1 起
   int32 page_size = 2; // 默认 20，上限 100
 }
 
@@ -26,8 +26,8 @@ message PageResp {
   int32 page_size = 3;
 }
 
-// TimeRange 时间范围（今日/7天/30天/自定义，规划 §5.18）。
+// TimeRange 时间范围（今日/7天/30天/自定义，规划)。
 message TimeRange {
-  int64 start = 1;  // unix 秒（含）
-  int64 end = 2;    // unix 秒（含）
+  int64 start = 1; // unix 秒（含）
+  int64 end = 2; // unix 秒（含）
 }

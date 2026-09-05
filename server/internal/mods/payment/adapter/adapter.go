@@ -1,10 +1,10 @@
-// Package adapter 支付渠道适配器（P1-04 M1b）：alipay / wechat / epay 三渠道。
+// Package adapter 支付渠道适配器（ ）：alipay / wechat / epay 三渠道。
 //
 // 渠道能力接口见 payment/port（Provider/CallbackVerifier/Capturer/Refunder）。
 // 适配器无状态——渠道凭据经 CreatePaymentRequest.Config / VerifyCallback 的 cfg 逐调用传入，
 // 天然支持同一驱动多渠道实例（不同 pid/key）。
 //
-// 安全纪律（§5.5）：签名串哈希的字节 === 实际发出的字节；凭据与签名永不进日志；
+// 安全纪律（）：签名串哈希的字节 === 实际发出的字节；凭据与签名永不进日志；
 // 验签失败与单号错误对外语义分离（验签失败 401，状态冲突 200，系统错误 500）。
 package adapter
 

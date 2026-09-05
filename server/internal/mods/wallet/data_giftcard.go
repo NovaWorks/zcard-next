@@ -1,8 +1,8 @@
 package wallet
 
-// P1-05 T4 礼品卡（M3，表 M1 建）：
-//   批次创建（面额/数量/有效期）→ 批量生成 code（CardCipher 同款 AES-GCM 密文
-//   + keyed hash 唯一索引）→ 兑换 = 查 hash → 核销 → CreditInTx(giftcard:<id>)。
+// 礼品卡（，表 建）：
+// 批次创建（面额/数量/有效期）→ 批量生成 code（CardCipher 同款 AES-GCM 密文
+// + keyed hash 唯一索引）→ 兑换 = 查 hash → 核销 → CreditInTx(giftcard:<id>)。
 // 防爆破：兑换失败计数（同用户 30s 窗口 5 次锁定）；库内无明文 code（铁律 11）。
 
 import (
@@ -46,7 +46,7 @@ type BatchInput struct {
 
 // CreateBatch 批次创建 + 批量生成卡（密文 + keyed hash 唯一索引；批次号唯一幂等）。
 // 返回明文码列表——**仅此一次**（库内无明文铁律 11；调用方随响应一次性下发，
-// 服务端不留存），与 P1-06 一次性明文交付快照同纪律。
+// 服务端不留存），与 一次性明文交付快照同纪律。
 func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.GiftcardBatch, []string, error) {
 	// 批量生成（数量上限护栏：单批 ≤ 5000）
 	if in.Quantity <= 0 || in.Quantity > 5000 {

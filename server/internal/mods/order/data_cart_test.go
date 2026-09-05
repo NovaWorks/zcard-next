@@ -1,6 +1,6 @@
 package order
 
-// P1-03b 购物车测试：合并语义（同 user+product+sku）、属主校验（他人条目不可改删）、
+// 购物车测试：合并语义（同 user+product+sku）、属主校验（他人条目不可改删）、
 // 失效打标（下架商品 valid=false）、改量 0 删除。
 
 import (

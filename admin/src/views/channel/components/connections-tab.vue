@@ -410,7 +410,7 @@ function syncActions(row: any): DropdownOption[] {
   ];
 }
 
-// ── 交互式导入（P2-10 D）──
+// ── 交互式导入（ D）──
 const showImport = ref(false);
 const importConn = ref<any>(null);
 function openImport(row: any) {

@@ -1,8 +1,8 @@
 package supply
 
-// 货源连接健康度（P2-01 T5）：Ping 探活（更新 last_ping_at/last_ping_ok/
+// 货源连接健康度（）：Ping 探活（更新 last_ping_at/last_ping_ok/
 // balance_cache + settings.ping_history 累计统计）、健康列表（成功率/平均延迟）。
-// 累计统计是 M4 供应商评分的基础数据（任务书：从现在记）。
+// 累计统计是 M4 供应商评分的基础数据（：从现在记）。
 
 import (
 	"context"

@@ -7,7 +7,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
-// UpstreamStockGate 上游代发商品实时库存闸门（P2-02 T4 落地；supply 网关实现，
+// UpstreamStockGate 上游代发商品实时库存闸门（ 落地；supply 网关实现，
 // newApp 破环点注入）。fail-open 契约：实现方对商品不可读/查询失败/库存未知(-1)
 // 一律放行，仅在上游明确报库存不足时返回错误——把明显无货的单挡在下单前，
 // 支付后采购环节仍有无货退款兜底。nil 闸门 = 不启用预检。
@@ -23,7 +23,7 @@ type UpstreamStockItem struct {
 }
 
 // PaidFact 支付成功事实（payment 回调事务内经 OrderLifecycle 推进订单，
-// §4.6 破环点：payment → order 窄接口回调，bootstrap 注入）。
+// 破环点：payment → order 窄接口回调，bootstrap 注入）。
 type PaidFact struct {
 	OrderNo        string
 	PaymentID      uint64
@@ -37,7 +37,7 @@ type OrderLifecycle interface {
 	// MarkPaid 订单置 paid：状态机校验 → 锁卡转售出预留 → 落 order_status_events
 	// → 写 outbox(order.paid)。幂等：已 paid 直接返回成功。
 	MarkPaid(ctx context.Context, fact PaidFact) error
-	// Cancel 取消（用户/管理员/超时 TTL 任务）；paid 之后禁止回 canceled（§5.3）。
+	// Cancel 取消（用户/管理员/超时 TTL 任务）；paid 之后禁止回 canceled（）。
 	Cancel(ctx context.Context, orderNo, reason string, operator Operator) error
 }
 

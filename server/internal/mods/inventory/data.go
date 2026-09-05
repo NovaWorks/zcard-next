@@ -1,6 +1,6 @@
 package inventory
 
-// 卡密仓储（P1-02；锁卡/导入/导出实现见 data_lock.go / data_import.go）。
+// 卡密仓储（；锁卡/导入/导出实现见 data_lock.go / data_import.go）。
 
 import (
 	"context"

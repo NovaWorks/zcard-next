@@ -10,7 +10,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 // AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
-// 里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+// 登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
 service AdminAuthService {
   // Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
   rpc Login(LoginRequest) returns (LoginReply) {
@@ -31,14 +31,14 @@ service AdminAuthService {
       get: "/api/v1/admin/auth/captcha-config"
     };
   }
-  // Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+  // Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
   rpc Logout(LogoutRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/api/v1/admin/auth/logout"
       body: "*"
     };
   }
-  // GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+  // GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
   rpc GetProfile(google.protobuf.Empty) returns (GetProfileReply) {
     option (google.api.http) = {
       get: "/api/v1/admin/auth/profile"
@@ -85,8 +85,8 @@ message LoginRequest {
 }
 
 message CaptchaImageReply {
-  string captcha_id = 1;      // 验证码 ID（提交时回传）
-  string image_base64 = 2;    // base64 PNG 图片（data:image/png;base64, 前缀）
+  string captcha_id = 1; // 验证码 ID（提交时回传）
+  string image_base64 = 2; // base64 PNG 图片（data:image/png;base64, 前缀）
 }
 
 message CaptchaConfigReply {
@@ -102,8 +102,8 @@ message RefreshTokenRequest {
 }
 
 message EnableTOTPReply {
-  string secret = 1;       // base32 密钥（手输用）
-  string otpauth_url = 2;  // otpauth:// 二维码内容
+  string secret = 1; // base32 密钥（手输用）
+  string otpauth_url = 2; // otpauth:// 二维码内容
 }
 
 message ConfirmTOTPRequest {

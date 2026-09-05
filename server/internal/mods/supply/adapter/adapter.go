@@ -1,14 +1,14 @@
-// Package adapter 货源协议适配器（P2-01 T2）。
+// Package adapter 货源协议适配器（）。
 //
 // 三协议：zcard（自家 Supply v2，4 头 HMAC）/ dujiao_next（3 头 HMAC）/
 // acg_faka（body 内 MD5 签名）。协议知识迁移自 1.x app/Supply/Drivers/CLAUDE.md
 // 与 dujiao-next internal/upstream（signer 签名串、IncludesInactive 回声字段）。
 //
 // 纪律：
-//   - DTO 统一输出**分**（金额一律 int64，铁律 1）；
-//   - 出站 100% 经 platform/httpx（SSRF 防护），架构测试断言本包不得直接
-//     import net/http 构造客户端；
-//   - 凭据与签名串永不进日志（httpx.RedactURL + 本包日志纪律）。
+// - DTO 统一输出**分**（金额一律 int64，铁律 1）；
+// - 出站 100% 经 platform/httpx（SSRF 防护），架构测试断言本包不得直接
+// import net/http 构造客户端；
+// - 凭据与签名串永不进日志（httpx.RedactURL + 本包日志纪律）。
 package adapter
 
 import (
@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-// 哨兵错误：适配器层把上游协议差异归一化为统一语义（T3 同步/T4 库存判据）。
+// 哨兵错误：适配器层把上游协议差异归一化为统一语义（ 同步/ 库存判据）。
 var (
 	// ErrProductDeleted 上游商品已删除（不存在）。同步时本地应下架。
 	ErrProductDeleted = errors.New("adapter: upstream product deleted")
@@ -32,7 +32,7 @@ var (
 	// 已受理首请求，禁止重试/自动退款，必须人工核对）。
 	ErrDuplicateSubmit = errors.New("adapter: duplicate submit (request_no already exists)")
 	// ErrRateLimited 上游限流或疑似 WAF 拦截（429 / 200 但非 JSON）——
-	// 自适应节奏器的降速信号（P2-10 S2；AIMD 判据）。
+	// 自适应节奏器的降速信号（ S2；AIMD 判据）。
 	ErrRateLimited = errors.New("adapter: upstream rate limited")
 	// ErrNotSupported 上游协议不支持该能力（如 acg-faka 无退款）。
 	ErrNotSupported = errors.New("adapter: capability not supported by upstream")
@@ -125,7 +125,7 @@ type OrderDetail struct {
 	Cards           []string // delivered 时上游卡密（内存态）
 }
 
-// OrderLister 上游订单列表能力（P3-07 对账数据源；可选——协议不开放列表的
+// OrderLister 上游订单列表能力（ 对账数据源；可选——协议不开放列表的
 // 适配器返回 ErrNotSupported，对账任务置 failed「上游不支持列表对账」）。
 type OrderLister interface {
 	ListOrders(ctx context.Context, start, end time.Time) ([]OrderDetail, error)
@@ -138,7 +138,7 @@ type IncrementalLister interface {
 	ListProductsAfter(ctx context.Context, page, pageSize int, updatedAfter time.Time) (*ProductList, error)
 }
 
-// Adapter 货源适配器接口（port 契约，P2-01 T2 / P2-02 消费方）。
+// Adapter 货源适配器接口（port 契约， / 消费方）。
 type Adapter interface {
 	// Protocol 返回协议名（zcard | dujiao_next | acg_faka）。
 	Protocol() string
@@ -154,7 +154,7 @@ type Adapter interface {
 	// 语义：上游不支持该参数时，missing=已删除 的推断必须禁用，见 sync.go）。
 	ListProducts(ctx context.Context, page, pageSize int, includeInactive bool) (*ProductList, error)
 
-	// GetStock 实时查库存（-1 = 无限；T4 fail-open 判据）。
+	// GetStock 实时查库存（-1 = 无限； fail-open 判据）。
 	GetStock(ctx context.Context, productCode, skuCode string) (int32, error)
 
 	// CreateOrder 提交采购（DownstreamOrderNo 幂等）。

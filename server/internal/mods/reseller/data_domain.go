@@ -1,8 +1,8 @@
 package reseller
 
-// 域名验证双方案（P3-04 T3）：
-//   DNS TXT：_zcard-verify.<domain> TXT "<token>"
-//   HTTP：http(s)://<domain>/.well-known/zcard-verify.txt 内容 = token
+// 域名验证双方案（）：
+// DNS TXT：_zcard-verify.<domain> TXT "<token>"
+// HTTP：http(s)://<domain>/.well-known/zcard-verify.txt 内容 = token
 // 安全：HTTP 拉取经 httpx（SSRF）；DNS 解析钉公网 IP（只信公网解析结果——
 // rebinding 由 httpx 连接期复核兜底）。
 // 验证通过 → verification_status=verified → tenantMiddleware 生效。

@@ -37,7 +37,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除
+// AdminMediaService 素材库管理：分类/上传/列表/改名/移动/批量删除
 // （ref_count>0 需 confirm）/外链导入/复制链接。
 // 上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
 type AdminMediaServiceClient interface {
@@ -187,7 +187,7 @@ func (c *adminMediaServiceClient) DeleteMedia(ctx context.Context, in *DeleteMed
 // All implementations must embed UnimplementedAdminMediaServiceServer
 // for forward compatibility.
 //
-// AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除
+// AdminMediaService 素材库管理：分类/上传/列表/改名/移动/批量删除
 // （ref_count>0 需 confirm）/外链导入/复制链接。
 // 上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
 type AdminMediaServiceServer interface {

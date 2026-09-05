@@ -1,6 +1,6 @@
 package license
 
-// P3-08 M3：专业套餐在线购买（发行侧部署）。
+// ：专业套餐在线购买（发行侧部署）。
 //
 // 模型：本部署同时充当发行侧时（settings.license.purchase_privkey 配置了 ed25519
 // 签发私钥），站点用户可钱包余额购买专业套餐；签发的许可证绑定目标实例 ID
@@ -25,7 +25,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
-// 专业套餐特性清单（M3 首批；* 为永久通配——订阅版逐项授权）。
+// 专业套餐特性清单（ 首批；* 为永久通配——订阅版逐项授权）。
 var professionalFeatures = []string{"analytics", "whitelabel_ads", "auto_pricing"}
 
 // PurchaseOffer 报价视图。

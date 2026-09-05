@@ -1,8 +1,8 @@
 package reseller
 
-// 分账引擎（P3-04 T5 事件接线）：
-//   订阅 order.paid → 按订单快照（subsite_profit/profit_eligible）入账
-//   → SettleOrderProfit（幂等键 order_profit:<orderID>）→ 冻结 confirm_days 后可用。
+// 分账引擎（ 事件接线）：
+// 订阅 order.paid → 按订单快照（subsite_profit/profit_eligible）入账
+// → SettleOrderProfit（幂等键 order_profit:<orderID>）→ 冻结 confirm_days 后可用。
 // 防自购快照不产生利润：profit_eligible=false 直接 ACK 不入账。
 
 import (

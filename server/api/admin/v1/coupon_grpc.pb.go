@@ -37,7 +37,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
+// AdminCouponService 优惠券管理(基础版：批量生成/列表/作废）。
 type AdminCouponServiceClient interface {
 	// GrantCoupon 批次赠送指定用户。
 	GrantCoupon(ctx context.Context, in *GrantCouponRequest, opts ...grpc.CallOption) (*GrantCouponReply, error)
@@ -182,7 +182,7 @@ func (c *adminCouponServiceClient) ExportCoupons(ctx context.Context, in *Export
 // All implementations must embed UnimplementedAdminCouponServiceServer
 // for forward compatibility.
 //
-// AdminCouponService 优惠券管理（P3-02 M1b 基础版：批量生成/列表/作废）。
+// AdminCouponService 优惠券管理(基础版：批量生成/列表/作废）。
 type AdminCouponServiceServer interface {
 	// GrantCoupon 批次赠送指定用户。
 	GrantCoupon(context.Context, *GrantCouponRequest) (*GrantCouponReply, error)

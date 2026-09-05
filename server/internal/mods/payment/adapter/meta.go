@@ -1,6 +1,6 @@
 package adapter
 
-// 内置驱动元数据与配置字段 schema（P2-09 T5：admin 配置面动态表单渲染）。
+// 内置驱动元数据与配置字段 schema（：admin 配置面动态表单渲染）。
 // 新渠道 = adapter 文件 + Meta/ConfigFields 声明，前端零改动。
 // 敏感字段（Sensitive）编辑时留空=保持原值（不回显不覆盖——老项目 sysadmin 同规）；
 // 回调地址不在此配置——后端按站点 URL 拼接，配置面板底部展示复制。

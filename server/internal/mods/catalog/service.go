@@ -22,7 +22,7 @@ import (
 type StoreCatalogService struct {
 	storefrontv1.UnimplementedStoreCatalogServiceServer
 	uc *CatalogUsecase
-	// pricer 分站定价（P3-04：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
+	// pricer 分站定价（：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
 	// nil = 主站直营形态不解析分站价）。
 	pricer resellerport.Pricer
 	// stock 批量可用库存（库存真实值；nil 容错降级 0——同 AdminCatalogService）
@@ -142,14 +142,14 @@ func (s *StoreCatalogService) ListCategories(ctx context.Context, _ *emptypb.Emp
 	return reply, nil
 }
 
-// GetProduct 商品详情（下架/隐藏商品对游客返回 404，不暴露存在性，§5.2 必测项）。
+// GetProduct 商品详情（下架/隐藏商品对游客返回 404，不暴露存在性， 必测项）。
 func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.GetProductRequest) (*storefrontv1.Product, error) {
 	tc := tenancy.FromContext(ctx)
 	p, err := s.uc.GetVisible(ctx, tc.SubsiteID, req.GetId())
 	if err != nil {
 		return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
 	}
-	// P3-04：分站单价（listing=checkout 同源；SKU 规则优先于商品规则由定价引擎裁定）
+	// ：分站单价（listing=checkout 同源；SKU 规则优先于商品规则由定价引擎裁定）
 	base := p.Price
 	if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
 		if sp, err := s.pricer.ResolveUnitPrice(ctx, tc.SubsiteID, p.ID, 0, base); err == nil {
@@ -209,7 +209,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 
 // toStorefrontProduct DTO 映射。stocks 为批量可用库存（nil = 未注入/失败降级）：
 // card 类商品取真实值（stock_visible=false 时仍返回真实值——展示与否由前端
-// 按 stock_visible 决定；P3-09 冒烟修复：此前写死 0）；非 card 类 -1=不限。
+// 按 stock_visible 决定； 冒烟修复：此前写死 0）；非 card 类 -1=不限。
 // 上游代发商品恒 -1：库存在上游，本地空卡池的 0 会误显"缺货/已兑完"（前端
 // 以负数=不限口径渲染；下单拦截由 order 侧上游库存闸门负责）。
 // soldCount 为该商品已售数（0 = 未注入/无销量）。
@@ -230,12 +230,12 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		Name:           p.Name,
 		Slug:           p.Slug,
 		Cover:          p.Cover,
-		Description:    p.Description, // 商品详情（上游采集/后台编辑；P3-09 漏映射导致前台全部无描述）
+		Description:    p.Description, // 商品详情（上游采集/后台编辑； 漏映射导致前台全部无描述）
 		PriceCents:     int64(p.Price),
 		StockType:      p.StockType,
 		Stock:          stock,
 		StockVisible:   p.StockVisible,
-		PointsRequired: p.PointsRequired, // 积分商城（P3-01；0=常规商品）
+		PointsRequired: p.PointsRequired, // 积分商城（；0=常规商品）
 		SalesCount:     soldCount,
 		IsRecommend:    p.IsRecommend, // 运营推荐（首页推荐位）
 	}

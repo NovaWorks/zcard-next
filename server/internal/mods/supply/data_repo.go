@@ -1,6 +1,6 @@
 package supply
 
-// 货源连接仓储（P2-01）：连接 CRUD（凭据 AES-GCM 加解密）、映射规则 CRUD、
+// 货源连接仓储（）：连接 CRUD（凭据 AES-GCM 加解密）、映射规则 CRUD、
 // 同步任务 CRUD（进度/心跳/取消）。
 
 import (
@@ -328,7 +328,7 @@ func (r *SupplyRepoImpl) GetMapping(ctx context.Context, connectionID uint64, up
 	return m, nil
 }
 
-// ── 节奏器状态（P2-10 S2）────────────────────────────────
+// ── 节奏器状态（ S2）────────────────────────────────
 
 // UpdateRateState 仅写节奏器持久状态（rate_state JSON）。
 func (r *SupplyRepoImpl) UpdateRateState(ctx context.Context, id uint64, state map[string]any) error {
@@ -493,7 +493,7 @@ func (r *SupplyRepoImpl) LoadTaskProgress(ctx context.Context, id uint64) (*ent.
 	return r.GetSyncTask(ctx, id)
 }
 
-// ── 调度（P2-10 S3）───────────────────────────────────────
+// ── 调度（ S3）───────────────────────────────────────
 
 // HasRunningTask 连接是否存在未完结同步任务（pending/processing；调度防重入）。
 func (r *SupplyRepoImpl) HasRunningTask(ctx context.Context, connectionID uint64) (bool, error) {

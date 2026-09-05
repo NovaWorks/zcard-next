@@ -28,9 +28,9 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StorePaymentService 顾客支付（P1-04 T2）。
+// StorePaymentService 顾客支付。
 type StorePaymentServiceClient interface {
-	// ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+	// ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
 	ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelListReply, error)
 	// CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(ctx context.Context, in *CreatePaymentRequest, opts ...grpc.CallOption) (*CreatePaymentReply, error)
@@ -68,9 +68,9 @@ func (c *storePaymentServiceClient) CreatePayment(ctx context.Context, in *Creat
 // All implementations must embed UnimplementedStorePaymentServiceServer
 // for forward compatibility.
 //
-// StorePaymentService 顾客支付（P1-04 T2）。
+// StorePaymentService 顾客支付。
 type StorePaymentServiceServer interface {
-	// ListChannels 启用渠道列表（支付页渠道下拉数据源——T5 替代前端硬编码枚举）。
+	// ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
 	ListChannels(context.Context, *emptypb.Empty) (*ChannelListReply, error)
 	// CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(context.Context, *CreatePaymentRequest) (*CreatePaymentReply, error)

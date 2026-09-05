@@ -1,16 +1,16 @@
 //go:build integration
 
-// Package testint CI 集成测试骨架（P0-05，主文档 §13 方言三线矩阵的 MySQL/PG 线）。
+// Package testint CI 集成测试骨架（， 方言三线矩阵的 MySQL/PG 线）。
 //
 // 语义：
-//   - 仅 `-tags=integration` 编译（make test 单元线零影响）；
-//   - DSN 走环境变量，未配置自动 Skip（本地无 Docker 不污染）：
-//     ZCARD_TEST_MYSQL_DSN  管理连接（指向任意可写库，如 /mysql）
-//     ZCARD_TEST_PG_DSN     管理连接（URL 形式，指向任意可写库，如 /postgres）
-//   - 每次运行创建隔离目标（MySQL CREATE DATABASE / PG CREATE SCHEMA，
-//     名字含测试名 + 纳秒后缀），defer DROP——并行与重跑互不踩踏；
-//   - 骨架内即跑全量真迁移（data.ApplyMigrations）——每个集成用例
-//     天然建立在「迁移后的真实 schema」之上，迁移正确性随用例持续回归。
+// - 仅 `-tags=integration` 编译（make test 单元线零影响）；
+// - DSN 走环境变量，未配置自动 Skip（本地无 Docker 不污染）：
+// ZCARD_TEST_MYSQL_DSN 管理连接（指向任意可写库，如 /mysql）
+// ZCARD_TEST_PG_DSN 管理连接（URL 形式，指向任意可写库，如 /postgres）
+// - 每次运行创建隔离目标（MySQL CREATE DATABASE / PG CREATE SCHEMA，
+// 名字含测试名 + 纳秒后缀），defer DROP——并行与重跑互不踩踏；
+// - 骨架内即跑全量真迁移（data.ApplyMigrations）——每个集成用例
+// 天然建立在「迁移后的真实 schema」之上，迁移正确性随用例持续回归。
 package testint
 
 import (
@@ -119,8 +119,8 @@ func open(t *testing.T, d db.Dialect, adminDSN string, migrate bool) *Harness {
 	}
 
 	// 2) 目标连接：池上限固定 50（生产拓扑：共享池多连接并发事务；
-	//    同时防 PG max_connections=100 默认值被打爆——50 路真锁竞争已远超
-	//    SQLite 单写者串行路径的覆盖面）
+	// 同时防 PG max_connections=100 默认值被打爆——50 路真锁竞争已远超
+	// SQLite 单写者串行路径的覆盖面）
 	dh, cleanup, err := data.NewData(&conf.Data{Database: &conf.Data_Database{
 		Driver: string(d), Source: h.DSN,
 		MaxOpenConns: 50, MaxIdleConns: 50,

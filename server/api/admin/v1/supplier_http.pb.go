@@ -44,7 +44,7 @@ type AdminSupplierServiceHTTPServer interface {
 	ListCallbacks(context.Context, *ListSupplierCallbacksRequest) (*ListSupplierCallbacksReply, error)
 	// ListLedger ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(context.Context, *ListSupplierLedgerRequest) (*ListSupplierLedgerReply, error)
-	// ListPrices ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	// ListPrices ListPrices 账号的专属价列表(补齐：浏览/管理覆盖价）。
 	ListPrices(context.Context, *ListSupplierPricesRequest) (*ListSupplierPricesReply, error)
 	// Recharge Recharge 账户充值（账本入账）。
 	Recharge(context.Context, *RechargeSupplierRequest) (*emptypb.Empty, error)
@@ -383,7 +383,7 @@ type AdminSupplierServiceHTTPClient interface {
 	ListCallbacks(ctx context.Context, req *ListSupplierCallbacksRequest, opts ...http.CallOption) (rsp *ListSupplierCallbacksReply, err error)
 	// ListLedger ListLedger 账本流水（下游自助对账数据源）。
 	ListLedger(ctx context.Context, req *ListSupplierLedgerRequest, opts ...http.CallOption) (rsp *ListSupplierLedgerReply, err error)
-	// ListPrices ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+	// ListPrices ListPrices 账号的专属价列表(补齐：浏览/管理覆盖价）。
 	ListPrices(ctx context.Context, req *ListSupplierPricesRequest, opts ...http.CallOption) (rsp *ListSupplierPricesReply, err error)
 	// Recharge Recharge 账户充值（账本入账）。
 	Recharge(ctx context.Context, req *RechargeSupplierRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
@@ -497,7 +497,7 @@ func (c *AdminSupplierServiceHTTPClientImpl) ListLedger(ctx context.Context, in 
 	return &out, nil
 }
 
-// ListPrices ListPrices 账号的专属价列表（P2-10 补齐：浏览/管理覆盖价）。
+// ListPrices ListPrices 账号的专属价列表(补齐：浏览/管理覆盖价）。
 func (c *AdminSupplierServiceHTTPClientImpl) ListPrices(ctx context.Context, in *ListSupplierPricesRequest, opts ...http.CallOption) (*ListSupplierPricesReply, error) {
 	var out ListSupplierPricesReply
 	pattern := "/api/v1/admin/supplier/prices"

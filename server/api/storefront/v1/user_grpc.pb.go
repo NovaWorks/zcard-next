@@ -34,7 +34,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreUserService 用户中心（P3-04 前置）：注册/登录（user realm JWT）/我的信息。
+// StoreUserService 用户中心(前置）：注册/登录（user realm JWT）/我的信息。
 // 注册可带邀请码（ref=<user_id>）——三级分销归因链写入（环状拒绝）。
 type StoreUserServiceClient interface {
 	// Register 注册（username+password；invite_code 可选=上级 user_id）。
@@ -45,7 +45,7 @@ type StoreUserServiceClient interface {
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	// Me 我的信息（需登录）。
 	Me(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MeReply, error)
-	// ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	// ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
 	ForgotPassword(ctx context.Context, in *ForgotPasswordRequest, opts ...grpc.CallOption) (*ForgotPasswordReply, error)
 	// ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
 	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordReply, error)
@@ -147,7 +147,7 @@ func (c *storeUserServiceClient) UpdateProfile(ctx context.Context, in *UpdatePr
 // All implementations must embed UnimplementedStoreUserServiceServer
 // for forward compatibility.
 //
-// StoreUserService 用户中心（P3-04 前置）：注册/登录（user realm JWT）/我的信息。
+// StoreUserService 用户中心(前置）：注册/登录（user realm JWT）/我的信息。
 // 注册可带邀请码（ref=<user_id>）——三级分销归因链写入（环状拒绝）。
 type StoreUserServiceServer interface {
 	// Register 注册（username+password；invite_code 可选=上级 user_id）。
@@ -158,7 +158,7 @@ type StoreUserServiceServer interface {
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
 	// Me 我的信息（需登录）。
 	Me(context.Context, *emptypb.Empty) (*MeReply, error)
-	// ForgotPassword 发送找回密码验证码（P3-10：邮箱不存在同样成功——防枚举）。
+	// ForgotPassword 发送找回密码验证码（：邮箱不存在同样成功——防枚举）。
 	ForgotPassword(context.Context, *ForgotPasswordRequest) (*ForgotPasswordReply, error)
 	// ResetPassword 验码重置密码（重置即登录——返回新 token；吊销全部 session）。
 	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordReply, error)

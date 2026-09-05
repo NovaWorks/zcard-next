@@ -1,6 +1,6 @@
 package license
 
-// M3 订阅许可证模块（主文档 §11 第 1 层落地）：
+// 订阅许可证模块（ 第 1 层落地）：
 //   settings license 组存储（file=许可证内容 / pubkey=ed25519 公钥 / instance_id=实例 ID）；
 //   安装 = 校验（签名/实例绑定/到期）通过后落库；查询 = 实时 Verify fail-closed。
 // 社区版无公钥/无许可证 → 全部高级特性关闭（开源核心功能不受影响）。

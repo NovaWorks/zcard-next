@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminLicenseService 订阅许可证管理（M3，主文档 §11）：安装/查询/清除。
+// AdminLicenseService 订阅许可证管理：安装/查询/清除。
 // 校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
 type AdminLicenseServiceClient interface {
 	// GetLicenseStatus 许可证状态（安装/有效性/特性清单/到期）。
@@ -82,7 +82,7 @@ func (c *adminLicenseServiceClient) ClearLicense(ctx context.Context, in *emptyp
 // All implementations must embed UnimplementedAdminLicenseServiceServer
 // for forward compatibility.
 //
-// AdminLicenseService 订阅许可证管理（M3，主文档 §11）：安装/查询/清除。
+// AdminLicenseService 订阅许可证管理：安装/查询/清除。
 // 校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
 type AdminLicenseServiceServer interface {
 	// GetLicenseStatus 许可证状态（安装/有效性/特性清单/到期）。

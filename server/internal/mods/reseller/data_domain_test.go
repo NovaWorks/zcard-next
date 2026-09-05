@@ -1,6 +1,6 @@
 package reseller
 
-// 域名验证 + 租户解析测试（P3-04 T3）。
+// 域名验证 + 租户解析测试（）。
 // DNS/HTTP 真实验证依赖外部环境——本测试覆盖：token 生成/登记/归属/解析矩阵
 // （verified+approved 生效、未验证主站兜底、未过审兜底）。双方案验证逻辑经
 // httptest 模拟 well-known 路径单测覆盖（真实 DNS 冒烟接续联调）。

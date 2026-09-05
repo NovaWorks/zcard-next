@@ -1,13 +1,13 @@
 package supplier
 
-// P2-10 B：dujiao-next 协议兼容层（对外供货）。
+// B：dujiao-next 协议兼容层（对外供货）。
 //
 // 让任何 dujiao-next 站点在「站点连接」里填本站地址 + 我方发的
 // (api_key, api_secret) 即可对接——不改对方一行代码。
 //
 // 端点（前缀 /api/v1/upstream，全部需 3 头鉴权）：
-//   POST /ping | GET /categories | GET /products | GET /products/{id}
-//   POST /orders | GET /orders/{id} | POST /orders/{id}/cancel
+// POST /ping | GET /categories | GET /products | GET /products/{id}
+// POST /orders | GET /orders/{id} | POST /orders/{id}/cancel
 //
 // 协议事实来源：dujiao-next internal/modules/upstreamapi/transport/http/*（字段/
 // 错误码/金额口径逐字对齐）。金额：内部分 → 字符串元两位小数；卡密：纯文本

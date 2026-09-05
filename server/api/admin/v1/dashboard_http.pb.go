@@ -39,7 +39,7 @@ type AdminDashboardServiceHTTPServer interface {
 	GetReconciliationJob(context.Context, *GetReconciliationJobRequest) (*ReconciliationJobItem, error)
 	// GetTraffic GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
 	GetTraffic(context.Context, *GetTrafficRequest) (*GetTrafficReply, error)
-	// ListCommissions ListCommissions 佣金列表（P3-03 affiliate）。
+	// ListCommissions ListCommissions 佣金列表(affiliate）。
 	ListCommissions(context.Context, *ListCommissionsRequest) (*ListCommissionsReply, error)
 	// ListReconciliationItems ListReconciliationItems 对账明细分页（四态筛选）。
 	ListReconciliationItems(context.Context, *ListReconciliationItemsRequest) (*ListReconciliationItemsReply, error)
@@ -252,7 +252,7 @@ type AdminDashboardServiceHTTPClient interface {
 	GetReconciliationJob(ctx context.Context, req *GetReconciliationJobRequest, opts ...http.CallOption) (rsp *ReconciliationJobItem, err error)
 	// GetTraffic GetTraffic 流量统计（PV/UV 按天；page_views 明细表）。
 	GetTraffic(ctx context.Context, req *GetTrafficRequest, opts ...http.CallOption) (rsp *GetTrafficReply, err error)
-	// ListCommissions ListCommissions 佣金列表（P3-03 affiliate）。
+	// ListCommissions ListCommissions 佣金列表(affiliate）。
 	ListCommissions(ctx context.Context, req *ListCommissionsRequest, opts ...http.CallOption) (rsp *ListCommissionsReply, err error)
 	// ListReconciliationItems ListReconciliationItems 对账明细分页（四态筛选）。
 	ListReconciliationItems(ctx context.Context, req *ListReconciliationItemsRequest, opts ...http.CallOption) (rsp *ListReconciliationItemsReply, err error)
@@ -370,7 +370,7 @@ func (c *AdminDashboardServiceHTTPClientImpl) GetTraffic(ctx context.Context, in
 	return &out, nil
 }
 
-// ListCommissions ListCommissions 佣金列表（P3-03 affiliate）。
+// ListCommissions ListCommissions 佣金列表(affiliate）。
 func (c *AdminDashboardServiceHTTPClientImpl) ListCommissions(ctx context.Context, in *ListCommissionsRequest, opts ...http.CallOption) (*ListCommissionsReply, error) {
 	var out ListCommissionsReply
 	pattern := "/api/v1/admin/affiliate/commissions"

@@ -36,7 +36,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
-// 里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+// 登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
 type AdminAuthServiceClient interface {
 	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
 	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginReply, error)
@@ -44,9 +44,9 @@ type AdminAuthServiceClient interface {
 	GetCaptchaImage(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaImageReply, error)
 	// GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
 	GetCaptchaConfig(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CaptchaConfigReply, error)
-	// Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+	// Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
 	GetProfile(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetProfileReply, error)
 	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*LoginReply, error)
@@ -161,7 +161,7 @@ func (c *adminAuthServiceClient) DisableTOTP(ctx context.Context, in *ConfirmTOT
 // for forward compatibility.
 //
 // AdminAuthService 管理后台认证（admin realm JWT，双 realm 防提权串用）。
-// 里程碑 M0：登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
+// 登录 / 登出 / 当前身份（含权限点，供前端动态路由）。
 type AdminAuthServiceServer interface {
 	// Login 管理员登录。密码 bcrypt 校验；TOTP 校验；captcha_admin_login 开启时图形验证码必填。
 	Login(context.Context, *LoginRequest) (*LoginReply, error)
@@ -169,9 +169,9 @@ type AdminAuthServiceServer interface {
 	GetCaptchaImage(context.Context, *emptypb.Empty) (*CaptchaImageReply, error)
 	// GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
 	GetCaptchaConfig(context.Context, *emptypb.Empty) (*CaptchaConfigReply, error)
-	// Logout 登出（JWT 无状态，前端弃用令牌即可；M3 接入 refresh 轮换后落 sessions）。
+	// Logout 登出（JWT 无状态，前端弃用令牌即可；接入 refresh 轮换后落 sessions）。
 	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
-	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划 §9.1）。
+	// GetProfile 当前管理员信息与权限点清单（前端动态路由数据源，规划)。
 	GetProfile(context.Context, *emptypb.Empty) (*GetProfileReply, error)
 	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)

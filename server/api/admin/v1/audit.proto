@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminAuditService 审计与风控管理（P2-06）：三类日志查询、黑名单管理。
+// AdminAuditService 审计与风控管理：三类日志查询、黑名单管理。
 service AdminAuditService {
   // ListOpLogs 操作审计。
   rpc ListOpLogs(ListOpLogsRequest) returns (ListOpLogsReply) {

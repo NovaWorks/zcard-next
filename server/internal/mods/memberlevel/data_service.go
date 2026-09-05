@@ -1,6 +1,6 @@
 package memberlevel
 
-// AdminMemberLevelService 管理面会员等级服务（P3-01：CRUD + points_rule 透传）。
+// AdminMemberLevelService 管理面会员等级服务（：CRUD + points_rule 透传）。
 
 import (
 	"context"

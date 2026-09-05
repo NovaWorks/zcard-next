@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminMediaService 素材库管理（P3-06）：分类/上传/列表/改名/移动/批量删除
+// AdminMediaService 素材库管理：分类/上传/列表/改名/移动/批量删除
 // （ref_count>0 需 confirm）/外链导入/复制链接。
 // 上传走 base64（10MB 图 ~13.7MB JSON；管理面可接受，走统一中间件栈）。
 service AdminMediaService {
@@ -117,7 +117,7 @@ message ListMediaCategoriesReply {
 
 message UploadMediaRequest {
   string name = 1 [(google.api.field_behavior) = REQUIRED]; // 原始文件名（含扩展名）
-  string content_type = 2;  // 声明 MIME（可空——魔数兜底）
+  string content_type = 2; // 声明 MIME（可空——魔数兜底）
   string data_base64 = 3 [(google.api.field_behavior) = REQUIRED];
   uint64 category_id = 4;
 }
@@ -131,7 +131,7 @@ message MediaItem {
   uint64 id = 1;
   uint64 category_id = 2;
   string name = 3;
-  string url = 4;        // /uploads/<path>
+  string url = 4; // /uploads/<path>
   string mime = 5;
   int64 size = 6;
   int32 width = 7;

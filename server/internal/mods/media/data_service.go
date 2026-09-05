@@ -1,6 +1,6 @@
 package media
 
-// 管理面 API（P3-06 T3）+ Uploader/Referencer port 实现。
+// 管理面 API（）+ Uploader/Referencer port 实现。
 
 import (
 	"context"

@@ -1,9 +1,9 @@
 package order
 
-// P3-04 验收旅程（出单段）端到端测试：
-//   分站自营商品上架（分站主 API）→ 分站域名上下文下单 → 管线步骤 7 接
-//   ResolveUnitPrice（分站价）→ 快照（subsite_profit/profit_eligible/subsite_domain）
-//   → 支付发布 order.paid（载荷带分站快照）→ SettleService 利润入账（幂等）。
+// 验收旅程（出单段）端到端测试：
+// 分站自营商品上架（分站主 API）→ 分站域名上下文下单 → 管线步骤 7 接
+// ResolveUnitPrice（分站价）→ 快照（subsite_profit/profit_eligible/subsite_domain）
+// → 支付发布 order.paid（载荷带分站快照）→ SettleService 利润入账（幂等）。
 
 import (
 	"context"

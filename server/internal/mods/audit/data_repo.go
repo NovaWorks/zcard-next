@@ -1,6 +1,6 @@
 package audit
 
-// 数据仓储（P2-06）：四表 CRUD + 风控闸门。
+// 数据仓储（）：四表 CRUD + 风控闸门。
 // 纪律：审计写失败不阻断业务（1.x SecurityAudit）——所有写方法错误仅日志。
 
 import (
@@ -24,7 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 )
 
-// 闸门阈值（settings.security 可覆盖——读取侧 M3 接线；默认值与文档一致）。
+// 闸门阈值（settings.security 可覆盖——读取侧 接线；默认值与文档一致）。
 const (
 	DefaultMaxPendingPerIP  = 3
 	DefaultFetchFailLockN   = 5
@@ -44,7 +44,7 @@ var (
 type AuditRepo struct {
 	data    *data.Data
 	log     *slog.Logger
-	alerter *Alerter // T5 告警（nil = 未装配跳过）
+	alerter *Alerter // 告警（nil = 未装配跳过）
 
 	// 黑名单进程内缓存（admin 变更失效；解析失败用空名单 fail-open）
 	blacklistMu  sync.RWMutex
@@ -61,7 +61,7 @@ func NewAuditRepo(d *data.Data, logger *slog.Logger) *AuditRepo {
 	return &AuditRepo{data: d, log: logger, freqWin: map[string][]time.Time{}}
 }
 
-// ── T2 操作审计 ───────────────────────────────────────────
+// ── 操作审计 ───────────────────────────────────────────
 
 // OpLogInput 操作审计入参。
 type OpLogInput struct {
@@ -121,7 +121,7 @@ func (r *AuditRepo) ListOpLogs(ctx context.Context, operatorID uint64, page, siz
 	return rows, total, err
 }
 
-// ── T3 安全审计（port.Auditor 实现）──────────────────────
+// ── 安全审计（port.Auditor 实现）──────────────────────
 
 // Security 安全事件埋点（写失败不阻断——1.x 纪律）。
 func (r *AuditRepo) Security(ctx context.Context, e port.SecurityEntry) {
@@ -148,7 +148,7 @@ func (r *AuditRepo) Security(ctx context.Context, e port.SecurityEntry) {
 	if _, err := create.Save(ctx); err != nil {
 		r.log.Warn("audit.security_write_failed", "action", e.Action, "err", err)
 	}
-	// T5 告警阈值计数（达到阈值经 notify 管理员通道告警；去重窗口防护）
+	// 告警阈值计数（达到阈值经 notify 管理员通道告警；去重窗口防护）
 	if r.alerter != nil {
 		r.alerter.Count(ctx, e.Action, e.IP,
 			"[ZCard 安全告警] "+e.Action,
@@ -173,7 +173,7 @@ func (r *AuditRepo) ListSecurityLogs(ctx context.Context, action string, page, s
 	return rows, total, err
 }
 
-// ── T4 风控闸门（port.RiskGate 实现）──────────────────────
+// ── 风控闸门（port.RiskGate 实现）──────────────────────
 
 // SetBlacklist 更新黑名单缓存（admin CRUD 后调用）。
 func (r *AuditRepo) SetBlacklist(entries []string) {
@@ -277,7 +277,7 @@ func (r *AuditRepo) CleanupExpiredLocks(ctx context.Context) error {
 	return err
 }
 
-// ── T5 访问统计 ───────────────────────────────────────────
+// ── 访问统计 ───────────────────────────────────────────
 
 // VisitCounter 进程内聚合计数器（批量落库——不逐请求写）。
 type VisitCounter struct {
@@ -358,7 +358,7 @@ func (c *VisitCounter) flushLocked() {
 			SetStatHour(row.hour).
 			SetPath(row.path).
 			SetPv(row.pv).
-			SetUv(row.pv). // 轻量口径：无会话标识时 uv≈pv（M3 细化）
+			SetUv(row.pv). // 轻量口径：无会话标识时 uv≈pv（ 细化）
 			Save(ctx)
 	}
 	c.rows = map[string]*visitRow{}

@@ -1,6 +1,6 @@
 package settings
 
-// admin 货币管理实现（P0-04 T3）：rate 走 decimal 解析（拒绝非法字符串），无浮点入口。
+// admin 货币管理实现（）：rate 走 decimal 解析（拒绝非法字符串），无浮点入口。
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 // baseCurrencyDefault 基础货币默认 code（与 directory.go i18n.base_currency 默认一致）。
 const baseCurrencyDefault = "CNY"
 
-// EnsureDefaultCurrencies 基础货币种子（幂等；P0-04 T3）：
+// EnsureDefaultCurrencies 基础货币种子（幂等；）：
 // 新装（Install 事务内）与老库升级（serve 启动补种）都调用。
 // 仅缺 CNY 时写入（rate=1 恒等基础货币）；已存在不覆盖——管理员可能
 // 改过 symbol/精度等，尊重存量。

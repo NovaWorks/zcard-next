@@ -1,6 +1,6 @@
 package ticket
 
-// 客服工作台（P3-05 admin）：urgent_paid 置顶、回复/内部备注/解决/关闭、筛选。
+// 客服工作台（ admin）：urgent_paid 置顶、回复/内部备注/解决/关闭、筛选。
 
 import (
 	"context"

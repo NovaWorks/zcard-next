@@ -1,6 +1,6 @@
 package wallet
 
-// 钱包 API（P1-05；storefront 余额/流水/充值 + admin 调账/流水）。
+// 钱包 API（；storefront 余额/流水/充值 + admin 调账/流水）。
 
 import (
 	"context"
@@ -32,7 +32,7 @@ type StoreWalletService struct {
 	settings settingsport.SettingsReader
 	// payer 充值支付单创建（payment 端口，通道 A；nil = 支付管线未装配）
 	payer paymentport.RechargePayer
-	// giftcards 礼品卡兑换（P1-05 T4；nil = 未装配）
+	// giftcards 礼品卡兑换（；nil = 未装配）
 	giftcards *GiftcardRepo
 	// commissions 佣金读取（提现校验；通道 A；nil = 跳过校验）
 	commissions CommissionSource
@@ -94,7 +94,7 @@ func (s *StoreWalletService) ListTransactions(ctx context.Context, req *storefro
 // 安全口径：客户端提交的 amount_cents 只是「意向」，服务端按 settings.recharge
 // 档位（enabled/min_amount/max_amount）校验，赠送（gift_tiers）由服务端计算，
 // 落 recharge_orders(pending)。余额入账只发生在支付回调成功后
-// （payment.succeeded → wallet 订阅，reference=recharge:<paymentID>——M1b 支付
+// （payment.succeeded → wallet 订阅，reference=recharge:<paymentID>—— 支付
 // 管线接线后完成）。抓包改金额只能落在档位区间内且不会直接入账。
 func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefrontv1.CreateRechargeRequest) (*storefrontv1.CreateRechargeReply, error) {
 	claims := identity.ClaimsFromContext(ctx)
@@ -215,7 +215,7 @@ type AdminWalletService struct {
 	adminv1.UnimplementedAdminWalletServiceServer
 	repo      *WalletRepoImpl
 	data      *data.Data
-	giftcards *GiftcardRepo // 礼品卡批次管理（P1-05 T4；nil = 未装配）
+	giftcards *GiftcardRepo // 礼品卡批次管理（；nil = 未装配）
 }
 
 // NewAdminWalletService 构造。

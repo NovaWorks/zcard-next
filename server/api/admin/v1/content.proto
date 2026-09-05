@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminContentService 内容管理（P2-04）：横幅/文章/分类 CRUD。
+// AdminContentService 内容管理：横幅/文章/分类 CRUD。
 // content_json 入库前经 sanitize（与商品描述同一策略）；slug 唯一。
 service AdminContentService {
   // CreateBanner 创建横幅（时间窗/跳转类型）。
@@ -97,14 +97,14 @@ service AdminContentService {
 message Banner {
   uint64 id = 1;
   string name = 2;
-  string position = 3;   // top | middle | bottom
+  string position = 3; // top | middle | bottom
   string title_json = 4; // 多语言标题 {"zh_CN": "...", "en": "..."}
   string image = 5;
   string mobile_image = 6;
-  string link_type = 7;  // product | category | url | ad
+  string link_type = 7; // product | category | url | ad
   string link_value = 8;
   bool is_active = 9;
-  int64 start_at = 10;   // unix 秒；0 = 不限
+  int64 start_at = 10; // unix 秒；0 = 不限
   int64 end_at = 11;
   int32 sort = 12;
   int64 created_at = 13;
@@ -162,7 +162,7 @@ message ListBannersReply {
 message Post {
   uint64 id = 1;
   string slug = 2;
-  string type = 3;        // blog | notice
+  string type = 3; // blog | notice
   string title_json = 4;
   string summary_json = 5;
   string content_json = 6;

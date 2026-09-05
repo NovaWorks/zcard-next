@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminProcurementService 采购管理（P2-02）：采购单列表/详情/手动重试/手动标记完成。
+// AdminProcurementService 采购管理：采购单列表/详情/手动重试/手动标记完成。
 service AdminProcurementService {
   // ListProcurements 采购单列表（按状态过滤）。
   rpc ListProcurements(ListProcurementsRequest) returns (ListProcurementsReply) {
@@ -39,7 +39,7 @@ message ProcurementOrder {
   uint64 order_item_id = 2;
   uint64 connection_id = 3;
   string upstream_order_id = 4;
-  string status = 5;        // pending | submitted | polling | fulfilled | rejected | refunding | refunded | manual
+  string status = 5; // pending | submitted | polling | fulfilled | rejected | refunding | refunded | manual
   string fail_strategy = 6; // auto_refund | manual
   int32 retry_count = 7;
   int64 next_retry_at = 8;

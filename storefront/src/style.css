@@ -125,7 +125,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; background: #eef2ff; color: #4338ca; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
 
-/* ── P3-09 用户面 ── */
+/* ── 用户面 ── */
 .error { margin-top: 4px; }
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid #e5e6e8; margin-bottom: 16px; flex-wrap: wrap; }
 .tabs button { padding: 8px 14px; border: none; background: none; cursor: pointer; font-size: 14px; color: #6b7280; border-bottom: 2px solid transparent; }

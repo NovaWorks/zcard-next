@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminPaymentService 支付管理（P1-04）：渠道 CRUD + 支付单 + 退款。
+// AdminPaymentService 支付管理：渠道 CRUD + 支付单 + 退款。
 service AdminPaymentService {
   // ── 渠道管理 ──
   rpc ListChannels(google.protobuf.Empty) returns (ChannelList) {
@@ -71,7 +71,7 @@ message Channel {
   int32 sort = 9;
   repeated string configured_fields = 10; // 已配置字段名（仅名不显值——脱敏）
   string callback_url = 11; // 回调地址（站点 URL 拼接；未配置站点时为相对路径）
-  string icon = 12;         // 渠道自定义图标（素材库 URL，空=回落内置徽标）
+  string icon = 12; // 渠道自定义图标（素材库 URL，空=回落内置徽标）
   string methods_json = 13; // 支付方式列表 JSON [{code,name,icon,enabled,params}]（空=单方式渠道）
 }
 
@@ -82,10 +82,10 @@ message DriverList {
 
 // Driver 渠道驱动元数据（ListDrivers）。
 message Driver {
-  string code = 1;         // 驱动码（= adapter Type）
-  string name = 2;         // 显示名
-  string icon = 3;         // 品牌图标标识（前端图标库映射）
-  string description = 4;  // 说明（适用场景/收款币种）
+  string code = 1; // 驱动码（= adapter Type）
+  string name = 2; // 显示名
+  string icon = 3; // 品牌图标标识（前端图标库映射）
+  string description = 4; // 说明（适用场景/收款币种）
   repeated ConfigField fields = 5; // 配置字段 schema
 }
 
@@ -96,7 +96,7 @@ message ConfigField {
   string type = 3; // text | password | textarea | select | number | switch
   bool required = 4;
   string placeholder = 5;
-  string help = 6;    // 字段帮助文案
+  string help = 6; // 字段帮助文案
   bool sensitive = 7; // 敏感字段：编辑时留空=保持原值，不回显
   bool dynamic = 8; // 选项动态加载（FieldOptions；失败回落 options）
   bool multiple = 9; // 多选（保存为数组；epusdt token/network——占位订单模式）
@@ -141,7 +141,7 @@ message UpdateChannelRequest {
   string fee_type = 5; // percent | fixed；空=不修改
   bool enabled = 6;
   int32 sort = 7;
-  optional string icon = 8;         // 有值=更新（空串=清除）；缺省=不修改
+  optional string icon = 8; // 有值=更新（空串=清除）；缺省=不修改
   optional string methods_json = 9; // 支付方式列表 JSON；缺省=不修改
 }
 

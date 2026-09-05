@@ -1,14 +1,14 @@
 package order
 
-// T2 下单用例 + T3 状态机落地（P1-03 核心交易编排）。
+// 下单用例 + 状态机落地（ 核心交易编排）。
 //
-// CreateOrder 事务编排（§6.1 时序）：
-//   1. 校验（商品可见 → 控件必填 → 限购）
-//   2. inventory.Reserve（锁卡；不足整批回滚）
-//   3. BindOrder（回填 order_id）
-//   4. 管线算价 → 写 orders + order_items + order_amount_lines
-//   5. outbox.Write(order.created)
-//   6. 返回订单号 + 应付金额
+// CreateOrder 事务编排（ 时序）：
+// 1. 校验（商品可见 → 控件必填 → 限购）
+// 2. inventory.Reserve（锁卡；不足整批回滚）
+// 3. BindOrder（回填 order_id）
+// 4. 管线算价 → 写 orders + order_items + order_amount_lines
+// 5. outbox.Write(order.created)
+// 6. 返回订单号 + 应付金额
 
 import (
 	"context"
@@ -54,15 +54,15 @@ type OrderUsecase struct {
 	MemberRate memberlevelport.RateResolver
 	Coupon     couponport.CouponResolver
 	Catalog    catalogport.PricingResolver
-	Outbox     events.Writer                  // order.* 事件发布（M2：procurement 订阅 order.paid）
-	Gate       auditport.RiskGate             // P2-06 下单风控闸门（nil = 未装配跳过）
-	Flash      couponport.FlashResolver       // M3：秒杀（nil 跳过）
-	Promos     couponport.PromotionResolver   // M3：促销（nil 跳过）
-	Settings   settingsport.SettingsReader    // M3：互斥开关读取（nil 默认互斥）
-	Reseller   resellerport.Pricer            // P3-04：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
-	Points     walletport.PointsDebiter       // P3-01：积分兑换下单扣分（nil = 积分单不可用）
-	SlowPay    paymentport.SlowPaymentChecker // P1-03：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
-	StockGate  orderport.UpstreamStockGate         // P2-02 T4：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
+	Outbox     events.Writer                  // order.* 事件发布（：procurement 订阅 order.paid）
+	Gate       auditport.RiskGate             // 下单风控闸门（nil = 未装配跳过）
+	Flash      couponport.FlashResolver       // ：秒杀（nil 跳过）
+	Promos     couponport.PromotionResolver   // ：促销（nil 跳过）
+	Settings   settingsport.SettingsReader    // ：互斥开关读取（nil 默认互斥）
+	Reseller   resellerport.Pricer            // ：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
+	Points     walletport.PointsDebiter       // ：积分兑换下单扣分（nil = 积分单不可用）
+	SlowPay    paymentport.SlowPaymentChecker // ：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
+	StockGate  orderport.UpstreamStockGate         // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
@@ -95,8 +95,8 @@ type CreateOrderInput struct {
 	SubsiteID      uint64
 	CouponCode     string            // 优惠券码（可选）
 	ControlAnswers map[string]string // 自定义控件答案（key=控件 ID，落 order.extra）
-	UsePoints      bool              // P3-01：积分兑换下单（全部商品须为积分商品；同事务扣分直落 paid）
-	IdempotencyKey string            // P1-03：下单幂等键（头 Idempotency-Key；同 key 返回首单）
+	UsePoints      bool              // ：积分兑换下单（全部商品须为积分商品；同事务扣分直落 paid）
+	IdempotencyKey string            // ：下单幂等键（头 Idempotency-Key；同 key 返回首单）
 	RefCode        string            // 推广归因码（游客/无链用户：实时解析推广者 → 订单级快照）
 }
 
@@ -126,14 +126,14 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		return nil, err
 	}
 
-	// P2-06 下单风控闸门（事务前快速失败；事务内 pending 计数复查见 Gate 实现说明）
+	// 下单风控闸门（事务前快速失败；事务内 pending 计数复查见 Gate 实现说明）
 	if uc.Gate != nil && in.ClientIP != "" {
 		if err := uc.Gate.Check(ctx, auditport.GateInput{RiskIP: in.ClientIP, UserID: in.UserID}); err != nil {
 			return nil, err
 		}
 	}
 
-	// P2-02 T4：上游代发项实时库存预检（fail-open 闸门，事务前快速失败——
+	// ：上游代发项实时库存预检（fail-open 闸门，事务前快速失败——
 	// 上游明确无货直接拒单，不再让顾客"下单付款后等采购失败退款"。
 	// 本地卡密项的强校验在下方事务内锁卡 Reserve；闸门自身查询失败/库存未知放行）
 	if uc.StockGate != nil && len(in.Items) > 0 {
@@ -154,7 +154,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	err := data.Tx(ctx, uc.Data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, uc.Data)
 
-		// P1-03 Idempotency-Key：哈希落库唯一索引；同 key 双击返回首单（§7.3）
+		// Idempotency-Key：哈希落库唯一索引；同 key 双击返回首单（）
 		var idemHash string
 		if in.IdempotencyKey != "" {
 			sum := sha256.Sum256([]byte(in.IdempotencyKey))
@@ -170,7 +170,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 		}
 
-		// P3-01：积分兑换前置（登录 + 引擎装配；游客/未装配直接拒绝不建单）
+		// ：积分兑换前置（登录 + 引擎装配；游客/未装配直接拒绝不建单）
 		if in.UsePoints {
 			if in.UserID == 0 {
 				return fmt.Errorf("order.POINTS_LOGIN_REQUIRED")
@@ -181,7 +181,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		// 1) 锁卡（库存不足整批回滚）。上游代发商品跳过本地锁卡——卡密在
-		// 支付后由 procurement 向上游采购回填（P2-02 链路；本地池无其卡）。
+		// 支付后由 procurement 向上游采购回填（ 链路；本地池无其卡）。
 		// url/code 直发商品同样跳过——直发内容商品级共享（同一链接/兑换码
 		// 反复发货，无卡池概念），支付后由 fulfillment 直写交付记录。
 		upstreamItem := map[uint64]bool{} // product_id → 是否上游项
@@ -243,7 +243,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		var results []itemResult
 		var totalCents int64
-		var pointsTotal int64               // P3-01：积分兑换单合计（积分单位）
+		var pointsTotal int64               // ：积分兑换单合计（积分单位）
 		var cartItems []couponport.CartItem // 券范围判定输入
 		flashApplied := false               // 券×秒杀互斥判据
 		var totalSubsiteMarkup int64        // 分站加价合计（利润基数快照）
@@ -261,7 +261,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if p.Status != 1 {
 				return fmt.Errorf("order.PRODUCT_NOT_AVAILABLE") // 下架/隐藏
 			}
-			// P3-01：积分兑换单——全部商品须为积分商品（混合单拒绝，口径清晰）
+			// ：积分兑换单——全部商品须为积分商品（混合单拒绝，口径清晰）
 			if in.UsePoints {
 				if p.PointsRequired <= 0 {
 					return fmt.Errorf("order.POINTS_MIXED_CART")
@@ -284,7 +284,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 			}
 
-			// M3 步骤 4：秒杀（窗口判定 + 限购 + 同锁扣减——Reserve 已成功，同事务）
+			// 步骤 4：秒杀（窗口判定 + 限购 + 同锁扣减——Reserve 已成功，同事务）
 			var flashPrice money.Cents
 			if uc.Flash != nil {
 				if fs, err := uc.Flash.Active(txCtx, item.ProductID, item.SkuID); err == nil && fs != nil {
@@ -304,7 +304,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 			}
 
-			// M3 步骤 4.5：促销（会员折扣后、券前；与秒杀互斥——flash 生效时跳过）
+			// 步骤 4.5：促销（会员折扣后、券前；与秒杀互斥——flash 生效时跳过）
 			var promoDiscount money.Cents
 			var promoName string
 			if uc.Promos != nil && flashPrice == 0 {
@@ -315,7 +315,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 			}
 
-			// M3 步骤 7：分站定价（listing 与 checkout 共用同一 ResolveUnitPrice——
+			// 步骤 7：分站定价（listing 与 checkout 共用同一 ResolveUnitPrice——
 			// 1.x 铁律，分站价只在一处计算）。秒杀价覆盖分站价（flash 生效时跳过）。
 			var subsiteMarkup money.Cents
 			if uc.Reseller != nil && in.SubsiteID != tenancy.MainSubsiteID && flashPrice == 0 {
@@ -347,7 +347,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		// 4.6) 优惠券（整单一次性；范围矩阵 + 每人限用；券×秒杀互斥默认开）
-		// P3-01：积分兑换单不参与券/金额管线——应付恒 0，凭据=积分流水（type=redeem）
+		// ：积分兑换单不参与券/金额管线——应付恒 0，凭据=积分流水（type=redeem）
 		var couponValue int64
 		var couponID uint64
 		if in.UsePoints {
@@ -368,7 +368,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		// 4) 查询密码哈希
 		var queryPwdHash string
 		if in.QueryPassword != "" {
-			// M1 接 argon2；当前 bcrypt（crypto 包）
+			// 接 argon2；当前 bcrypt（crypto 包）
 			hash, err := hashQueryPassword(in.QueryPassword)
 			if err != nil {
 				return err
@@ -386,10 +386,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if in.UsePoints {
 			extra["points_total"] = pointsTotal // 积分口径快照（退款/审计读此处）
 		}
-		// P3-03：三级分销归因链快照（下单瞬间锁定）。优先级：
+		// ：三级分销归因链快照（下单瞬间锁定）。优先级：
 		// 1) 登录用户读自身邀请链（注册时绑定）；
 		// 2) 链为空且带 ref_code（推广链接进站）→ 实时解析推广者订单级归因
-		//    （不改用户链——一次性快照；游客/无链老用户下单均发佣）
+		// （不改用户链——一次性快照；游客/无链老用户下单均发佣）
 		var invL1, invL2, invL3 uint64
 		if in.UserID > 0 {
 			if u, err := client.User.Get(txCtx, in.UserID); err == nil {
@@ -401,7 +401,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				invL1, invL2, invL3 = inviter.ID, inviter.InviteL1, inviter.InviteL2
 			}
 		}
-		// P3-04：分站快照（下单瞬间锁定——分账与退款逆向只认快照，不回溯）
+		// ：分站快照（下单瞬间锁定——分账与退款逆向只认快照，不回溯）
 		profitEligible := true
 		if uc.Reseller != nil && in.SubsiteID != tenancy.MainSubsiteID {
 			profitEligible = uc.Reseller.ProfitEligible(txCtx, in.SubsiteID, in.UserID)
@@ -483,7 +483,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			for _, line := range r.res.Lines {
 				_, err := client.OrderAmountLine.Create().
 					SetOrderID(o.ID).
-					SetNillableItemID(nil). // 简化：M1 接 itemID 回填
+					SetNillableItemID(nil). // 简化： 接 itemID 回填
 					SetType(orderamountline.Type(line.Type)).
 					SetAmount(line.Amount).
 					SetSourceType(line.SourceType).
@@ -526,8 +526,8 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			SetClientIP(in.ClientIP).
 			Save(txCtx)
 
-		// 9) P3-01 积分兑换收尾：同事务扣分（幂等键 points_pay:<orderNo>；
-		//    不足整单回滚）→ 直落 paid（状态机 CAS + order.paid 事件 → 自动交付）。
+		// 9) 积分兑换收尾：同事务扣分（幂等键 points_pay:<orderNo>；
+		// 不足整单回滚）→ 直落 paid（状态机 CAS + order.paid 事件 → 自动交付）。
 		if in.UsePoints {
 			if err := uc.Points.PointDebitInTx(txCtx, walletport.PointEntry{
 				UserID:    in.UserID,
@@ -555,7 +555,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 	return result, err
 }
 
-// MarkPaid 支付回调事务内调用（P1-04 payment 消费）。
+// MarkPaid 支付回调事务内调用（ payment 消费）。
 func (uc *OrderUsecase) MarkPaid(ctx context.Context, orderNo string) error {
 	client := data.Client(ctx, uc.Data)
 	o, err := client.Order.Query().Where(order.OrderNo(orderNo)).Only(ctx)
@@ -597,7 +597,7 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, orderNo string) error {
 	return nil
 }
 
-// publishPaid 发布 order.paid（P2-02 procurement 订阅；payload 含 upstream 项，
+// publishPaid 发布 order.paid（ procurement 订阅；payload 含 upstream 项，
 // 消费方无需回查订单——跨模块查询受限）。
 func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *ent.Order) {
 	if uc.Outbox == nil {
@@ -631,12 +631,12 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 		"order_id":   o.ID,
 		"subsite_id": o.SubsiteID,
 		"user_id":    o.UserID,
-		// P3-03：归因链快照（affiliate 消费；事件自带免回查）
+		// ：归因链快照（affiliate 消费；事件自带免回查）
 		"invite_l1": o.InviteL1, "invite_l2": o.InviteL2, "invite_l3": o.InviteL3,
 		"total_cents": o.TotalAmount,
 		// 毛利口径基数（amount − cost；affiliate BaseScope=profit 消费）
 		"profit_cents": o.TotalAmount - orderCostOf(items),
-		// P3-04：分站快照（reseller 分账消费；自购快照不产生利润）
+		// ：分站快照（reseller 分账消费；自购快照不产生利润）
 		"subsite_profit":  o.SubsiteProfit,
 		"profit_eligible": o.ProfitEligible,
 		"items":           rows,
@@ -688,7 +688,7 @@ func (uc *OrderUsecase) CancelOrder(ctx context.Context, orderNo, reason, operat
 	return nil
 }
 
-// ExpireOrder 超时取消（TTL 到期；T6）。
+// ExpireOrder 超时取消（TTL 到期；）。
 // 慢通道顺延（1.x 教训）：存在 usdt 族 pending 流水的订单不关闭——顺延一个 TTL
 // 周期等待链上确认（探测失败保守顺延，fail-safe 不误杀）。
 func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
@@ -768,7 +768,7 @@ func (uc *OrderUsecase) ListOrders(ctx context.Context, subsiteID uint64, status
 // ── 工具 ──
 
 func hashQueryPassword(plain string) (string, error) {
-	// M1a 用 bcrypt（与 admin 登录同库）；M1 换 argon2
+	// M1a 用 bcrypt（与 admin 登录同库）； 换 argon2
 	return crypto.HashPassword(plain)
 }
 
@@ -779,7 +779,7 @@ func nilOrZero(v uint64) *uint64 {
 	return &v
 }
 
-var _ = decimal.NewFromInt // 保持 decimal 引用（rounding M1 接入）
+var _ = decimal.NewFromInt // 保持 decimal 引用（rounding 接入）
 
 // flashCouponExclusive 券×秒杀互斥判定（settings.trade.flash_coupon_exclusive；
 // 读取失败/未配置默认互斥——保守口径）。
@@ -842,10 +842,10 @@ func isDigitStr(s string) bool {
 }
 
 // validateTradeRequirements 交易设置下单校验（settings.trade）：
-//   - query_password（默认 true）：下单必须设置查询密码（≥4 位）——否则客户忘记
-//     密码且无联系方式时订单无法找回
-//   - contact_required（默认 any）：none|phone|email|qq|any——游客必须留对应
-//     格式联系方式作为查询标识；登录用户已有账户可追溯，不强制
+// - query_password（默认 true）：下单必须设置查询密码（≥4 位）——否则客户忘记
+// 密码且无联系方式时订单无法找回
+// - contact_required（默认 any）：none|phone|email|qq|any——游客必须留对应
+// 格式联系方式作为查询标识；登录用户已有账户可追溯，不强制
 //
 // 读取失败走保守默认（强制密码 + any）。
 func (uc *OrderUsecase) validateTradeRequirements(ctx context.Context, in CreateOrderInput) error {
@@ -957,7 +957,7 @@ func isDigitsOrPhone(s string) bool {
 }
 
 // orderCostOf 订单成本合计（order_items 无成本列——按商品 factory_price 近似；
-// M1 精确成本随采购联动， affiliate 毛利口径以事件快照为准）。
+// 精确成本随采购联动， affiliate 毛利口径以事件快照为准）。
 func orderCostOf(items []*ent.OrderItem) int64 {
 	return 0 // 事件侧精确毛利 M4 采购成本回填后启用；当前毛利口径 = 金额（BaseScope=amount 默认）
 }

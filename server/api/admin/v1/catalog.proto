@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
-// AdminCatalogService 商品目录管理（P1-01）：商品/分类/标签/控件/商品组/评价。
+// AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 service AdminCatalogService {
   // ── 商品 ──
   rpc ListProducts(ListProductsRequest) returns (ListProductsReply) {
@@ -130,7 +130,7 @@ message ListProductsRequest {
   int32 page_size = 5;
   bool low_stock_only = 6; // 仅返回库存不足商品（阈值取 settings.supply.low_stock_threshold）
   uint64 upstream_source_id = 7; // 按供货渠道筛选（0=全部；商品列表渠道商下拉）
-  bool local_only = 8;           // 仅看自营（无上游渠道）
+  bool local_only = 8; // 仅看自营（无上游渠道）
 }
 
 message ListProductsReply {
@@ -150,23 +150,23 @@ message AdminProduct {
   uint64 category_id = 2;
   string name = 3;
   string slug = 4;
-  string description = 5;   // sanitize 后
+  string description = 5; // sanitize 后
   string cover = 6;
   repeated string images = 7;
   int64 price_cents = 8;
   int64 factory_price_cents = 9;
-  string stock_type = 10;    // card | url | code
+  string stock_type = 10; // card | url | code
   bool stock_visible = 11;
   string delivery_mode = 12; // status | delete
   bool dedup = 13;
   int32 sort = 14;
-  int32 status = 15;         // 1=上架 0=下架 2=隐藏
-  int64 stock = 16;           // 计算字段（available 数）
+  int32 status = 15; // 1=上架 0=下架 2=隐藏
+  int64 stock = 16; // 计算字段（available 数）
   uint64 upstream_source_id = 17;
   string upstream_product_code = 18;
   int64 created_at = 19;
   int64 updated_at = 20;
-  // 积分兑换价（0=不参与积分商城；P3-01）
+  // 积分兑换价（0=不参与积分商城；）
   int64 points_required = 21;
   // 已售数量（paid 及之后状态订单的 quantity 聚合；列表计算字段）
   int64 sold_count = 22;
@@ -190,7 +190,7 @@ message CreateProductRequest {
   bool dedup = 11;
   int32 sort = 12;
   int32 status = 13;
-  // 积分兑换价（0=不参与积分商城；P3-01）
+  // 积分兑换价（0=不参与积分商城；）
   int64 points_required = 14;
   // 直发内容明文（url/code 商品：网盘链接/兑换码，加密存储；同一内容发给每个买家）
   string direct_content = 15;
@@ -211,7 +211,7 @@ message UpdateProductRequest {
   bool stock_visible = 10;
   int32 sort = 11;
   int32 status = 12;
-  // 积分兑换价（0=不参与积分商城；P3-01）
+  // 积分兑换价（0=不参与积分商城；）
   int64 points_required = 13;
   // 直发内容明文（空=保持不变；url/code 商品加密存储）
   string direct_content = 14;
@@ -323,7 +323,7 @@ message AdminControl {
   uint64 id = 1;
   uint64 product_id = 2;
   string name = 3;
-  string type = 4;    // text | password | select | number | checkbox | radio
+  string type = 4; // text | password | select | number | checkbox | radio
   bool required = 5;
   repeated string options = 6;
   int32 sort = 7;

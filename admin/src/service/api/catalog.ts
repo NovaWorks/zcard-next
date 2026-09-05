@@ -114,7 +114,7 @@ export function reorderCategories(parent_id: number, ids: number[]) {
   });
 }
 
-// ── SKU 多规格（P1-01 M1b；price_cents 0=继承商品价）──
+// ── SKU 多规格（ ；price_cents 0=继承商品价）──
 
 export function fetchSkus(productId: number) {
   return request<{ skus: any[] }>({ url: `/api/v1/admin/products/${productId}/skus` });

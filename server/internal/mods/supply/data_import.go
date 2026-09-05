@@ -1,12 +1,12 @@
 package supply
 
-// P2-10 D：交互式商品导入（预览 + 勾选 + 定价策略 + 类目映射）。
+// D：交互式商品导入（预览 + 勾选 + 定价策略 + 类目映射）。
 //
-//   PreviewProducts  实时经适配器拉全量（≤20 页 = 1000 商品上限，防失控），
-//                   按上游分类聚合树并标注 already_imported；60s 进程内缓存
-//                   （1.x 同款——避免导入弹窗反复打上游）
-//   ImportProducts   勾选 codes → 从预览缓存取商品 → 逐个 upsert（复用 syncOne
-//                   的价格保护与映射机制）→ 定价策略四模式 + 类目映射 + 存默认
+// PreviewProducts 实时经适配器拉全量（≤20 页 = 1000 商品上限，防失控），
+// 按上游分类聚合树并标注 already_imported；60s 进程内缓存
+// （1.x 同款——避免导入弹窗反复打上游）
+// ImportProducts 勾选 codes → 从预览缓存取商品 → 逐个 upsert（复用 syncOne
+// 的价格保护与映射机制）→ 定价策略四模式 + 类目映射 + 存默认
 //
 // 定价模式：percent（连接加价%）| fixed（+固定金额）| equal（原价）|
 // pending（待定价：不算价、导入后不上架 status=0，运营补价后再上）。

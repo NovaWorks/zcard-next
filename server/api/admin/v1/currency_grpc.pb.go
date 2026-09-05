@@ -30,7 +30,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+// AdminCurrencyService 货币管理（；多币种展示，记账永远基础货币）。
 type AdminCurrencyServiceClient interface {
 	// ListCurrencies 全部货币（含停用）。
 	ListCurrencies(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CurrencyList, error)
@@ -94,7 +94,7 @@ func (c *adminCurrencyServiceClient) DeleteCurrency(ctx context.Context, in *Del
 // All implementations must embed UnimplementedAdminCurrencyServiceServer
 // for forward compatibility.
 //
-// AdminCurrencyService 货币管理（P0-04 T3；多币种展示，记账永远基础货币）。
+// AdminCurrencyService 货币管理（；多币种展示，记账永远基础货币）。
 type AdminCurrencyServiceServer interface {
 	// ListCurrencies 全部货币（含停用）。
 	ListCurrencies(context.Context, *emptypb.Empty) (*CurrencyList, error)

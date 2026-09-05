@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// StoreLicenseService 专业套餐在线购买（P3-08 M3：发行侧部署配置签发私钥后开放；
+// StoreLicenseService 专业套餐在线购买(：发行侧部署配置签发私钥后开放；
 // 支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
 // 文件后在目标实例后台安装激活）。
 type StoreLicenseServiceClient interface {
@@ -83,7 +83,7 @@ func (c *storeLicenseServiceClient) ListLicenseOrders(ctx context.Context, in *L
 // All implementations must embed UnimplementedStoreLicenseServiceServer
 // for forward compatibility.
 //
-// StoreLicenseService 专业套餐在线购买（P3-08 M3：发行侧部署配置签发私钥后开放；
+// StoreLicenseService 专业套餐在线购买(：发行侧部署配置签发私钥后开放；
 // 支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
 // 文件后在目标实例后台安装激活）。
 type StoreLicenseServiceServer interface {

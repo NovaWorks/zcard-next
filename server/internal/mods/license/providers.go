@@ -1,6 +1,6 @@
 package license
 
-// wire providers（P3-08）。
+// wire providers（）。
 
 import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
@@ -12,7 +12,7 @@ import (
 var ProviderSet = wire.NewSet(
 	ProvideLicenseRepo,
 	NewAdminLicenseService,
-	// P3-08 M3：专业套餐在线购买（storefront 面）
+	// ：专业套餐在线购买（storefront 面）
 	NewPurchaseRepo,
 	NewStoreLicenseService,
 )

@@ -35,7 +35,7 @@ type SupplierAccountReply struct {
 	NotifyUrl     string                 `protobuf:"bytes,8,opt,name=notify_url,json=notifyUrl,proto3" json:"notify_url,omitempty"`
 	ReviewedAt    int64                  `protobuf:"varint,9,opt,name=reviewed_at,json=reviewedAt,proto3" json:"reviewed_at,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Protocol      string                 `protobuf:"bytes,11,opt,name=protocol,proto3" json:"protocol,omitempty"`                             // zcard | dujiao_next | acg_faka（对外供货协议；P2-10 B/C）
+	Protocol      string                 `protobuf:"bytes,11,opt,name=protocol,proto3" json:"protocol,omitempty"`                             // zcard | dujiao_next | acg_faka（对外供货协议； B/C）
 	DisplayName   string                 `protobuf:"bytes,12,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`    // connect/ping 回显店铺名
 	OwnerUserId   uint64                 `protobuf:"varint,13,opt,name=owner_user_id,json=ownerUserId,proto3" json:"owner_user_id,omitempty"` // 前台申请归属用户（0=admin 手动建号）
 	ApplyReason   string                 `protobuf:"bytes,14,opt,name=apply_reason,json=applyReason,proto3" json:"apply_reason,omitempty"`    // 申请理由（前台申请时填）

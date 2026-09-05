@@ -1,6 +1,6 @@
 package order
 
-// P1-01 管理列表已售聚合：order_items × orders（paid 及之后状态）quantity 合计，
+// 管理列表已售聚合：order_items × orders（paid 及之后状态）quantity 合计，
 // 供 catalog 管理列表 SoldCount 展示（通道 A 端口消费）。
 
 import (

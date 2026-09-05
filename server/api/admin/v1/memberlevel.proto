@@ -7,7 +7,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
-// AdminMemberLevelService 会员等级管理（P3-01）。
+// AdminMemberLevelService 会员等级管理。
 service AdminMemberLevelService {
   rpc ListMemberLevels(google.protobuf.Empty) returns (MemberLevelList) {
     option (google.api.http) = { get: "/api/v1/admin/member-levels" };

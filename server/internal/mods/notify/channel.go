@@ -1,9 +1,9 @@
 package notify
 
-// 通道实现（P2-05 T1/T3）：Email（SMTP）/ Inbox（站内信）。
+// 通道实现（/）：Email（SMTP）/ Inbox（站内信）。
 // 降级纪律（铁律）：SMTP 未配置 → status=skipped 不报错（友商教训）；
 // 配置运行时读取——settings 变更不重启生效（1.x MailService 平移）。
-// SMS/Telegram M3 交付（接口位已留，事件矩阵按 enabled 逐通道独立投递）。
+// SMS/Telegram 交付（接口位已留，事件矩阵按 enabled 逐通道独立投递）。
 
 import (
 	"context"

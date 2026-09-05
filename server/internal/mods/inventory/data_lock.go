@@ -1,16 +1,16 @@
 package inventory
 
-// T1 锁卡生命周期（P1 最高优先——防超卖双路径）：
+// 锁卡生命周期（P1 最高优先——防超卖双路径）：
 //
 // MySQL/PG：事务内 SELECT ... WHERE status='available' ORDER BY id LIMIT n FOR UPDATE SKIP LOCKED
-//           → 全部置 reserved + order_id + locked_at；数量不足整批回滚
-// SQLite：  单写者事务（BEGIN IMMEDIATE 语义由 database/sql 驱动自动处理）
-//           → UPDATE cards SET status='reserved' WHERE id IN (...) AND status='available'
-//             校验 affected rows == n（CAS 语义，§5.20.3）
+// → 全部置 reserved + order_id + locked_at；数量不足整批回滚
+// SQLite： 单写者事务（BEGIN IMMEDIATE 语义由 database/sql 驱动自动处理）
+// → UPDATE cards SET status='reserved' WHERE id IN (...) AND status='available'
+// 校验 affected rows == n（CAS 语义，）
 //
 // Release：reserved → available，**必须同时清 order_id**（1.x 踩坑：unlock 不清 order_id 导致旧订单发货错乱）
 // MarkUsed：UPDATE WHERE status='reserved' 校验 affected rows（防并发重发，友商纪律）
-// TTL 释放：周期任务扫 locked_at 超时（P1-03 order 超时取消时调用）
+// TTL 释放：周期任务扫 locked_at 超时（ order 超时取消时调用）
 
 import (
 	"context"
@@ -39,7 +39,7 @@ var (
 func (r *CardRepoImpl) Reserve(ctx context.Context, subsiteID uint64, items []port.ReserveItem) (*port.Reservation, error) {
 	client := data.Client(ctx, r.data)
 	supportsLock := r.data.Dialect.Capabilities().SupportsSkipLocked
-	var locked []port.ReservedCard // 锁到的卡（P2-03 供货交付消费）
+	var locked []port.ReservedCard // 锁到的卡（ 供货交付消费）
 
 	for _, item := range items {
 		if item.Quantity <= 0 {
@@ -244,7 +244,7 @@ func (r *CardRepoImpl) ListByOrder(ctx context.Context, orderID uint64) ([]*ent.
 var _ port.Inventory = (*CardRepoImpl)(nil)
 var _ = db.SQLite // 保持 db 引用
 
-// Contents 交付卡密批量读取解密（P2-03 供货交付出口）。
+// Contents 交付卡密批量读取解密（ 供货交付出口）。
 // 明文仅内存态返回，调用方负责 TLS 传输与零日志。
 func (r *CardRepoImpl) Contents(ctx context.Context, cardIDs []uint64, productID, subsiteID uint64) ([]string, error) {
 	rows, err := data.Client(ctx, r.data).Card.Query().

@@ -1,7 +1,7 @@
 package data
 
-// P0-01 验收必测项：事务性 Outbox（回滚不残留/dedupe 幂等）、relay 投递、消费幂等、
-// SyncQueue 死信落库。SQLite 内存库跑单元矩阵（MySQL/PG 集成线 M1 随 CI 点亮）。
+// 验收必测项：事务性 Outbox（回滚不残留/dedupe 幂等）、relay 投递、消费幂等、
+// SyncQueue 死信落库。SQLite 内存库跑单元矩阵（MySQL/PG 集成线 随 CI 点亮）。
 
 import (
 	"context"
@@ -182,7 +182,7 @@ func TestConsumerIdempotent(t *testing.T) {
 	if got := calls.Load(); got != 1 {
 		t.Fatalf("消费幂等失败：执行 %d 次，期望 1", got)
 	}
-	// 处理器报错：processed_events 已记录（M0 语义：错误返回但不重复执行），文档已注明
+	// 处理器报错：processed_events 已记录（ 语义：错误返回但不重复执行），文档已注明
 }
 
 func TestSyncQueueDeadLetter(t *testing.T) {

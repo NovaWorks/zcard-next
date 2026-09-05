@@ -1,10 +1,10 @@
 package dashboard
 
-// P3-07 T4 货源对账引擎（M2 验收项）：
-//   任务生命周期 pending → processing → done/failed（可查可告警）；
-//   时间窗内本地 procurement_orders vs 上游订单清单（数据源端口注入）；
-//   四态比对 matched / mismatched（金额·状态差异进 diff_json）/ local_only /
-//   upstream_only；job 汇总计数；mismatch>0 → notify 管理员告警。
+// 货源对账引擎（ 验收项）：
+// 任务生命周期 pending → processing → done/failed（可查可告警）；
+// 时间窗内本地 procurement_orders vs 上游订单清单（数据源端口注入）；
+// 四态比对 matched / mismatched（金额·状态差异进 diff_json）/ local_only /
+// upstream_only；job 汇总计数；mismatch>0 → notify 管理员告警。
 // 数据源：上游支持列表（zcard ListOrders）走完整四态；不支持（dujiao/acg-faka）
 // 置 failed「上游不支持列表对账」（fail-closed，不静默跳过）。
 

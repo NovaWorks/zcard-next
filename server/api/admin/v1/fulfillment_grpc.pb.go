@@ -29,7 +29,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
+// AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 type AdminFulfillmentServiceClient interface {
 	// ListPending 待人工发货列表（manual_pending 状态订单）。
 	ListPending(ctx context.Context, in *ListPendingRequest, opts ...grpc.CallOption) (*ListPendingReply, error)
@@ -81,7 +81,7 @@ func (c *adminFulfillmentServiceClient) ListDeliveries(ctx context.Context, in *
 // All implementations must embed UnimplementedAdminFulfillmentServiceServer
 // for forward compatibility.
 //
-// AdminFulfillmentService 履约管理（P1-06 T3）：待发货列表 + 手动交付。
+// AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 type AdminFulfillmentServiceServer interface {
 	// ListPending 待人工发货列表（manual_pending 状态订单）。
 	ListPending(context.Context, *ListPendingRequest) (*ListPendingReply, error)

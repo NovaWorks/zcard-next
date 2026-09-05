@@ -1,11 +1,11 @@
 package affiliate
 
-// wire providers（P3-03）。
+// wire providers（）。
 //
 // 跨模块绑定（通道 A）：
-//   - engine.wallet ← walletport.Wallet（冻结确认入账/逆向扣回）
-//   - engine.settings ← notifyport.SettingsReader（affiliate.affiliate 配置组）
-//   - CommissionRepo 实现 port.CommissionReader（dashboard 统计）
+// - engine.wallet ← walletport.Wallet（冻结确认入账/逆向扣回）
+// - engine.settings ← notifyport.SettingsReader（affiliate.affiliate 配置组）
+// - CommissionRepo 实现 port.CommissionReader（dashboard 统计）
 
 import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
