@@ -359,6 +359,23 @@ var groups = map[string]*GroupDef{
 		},
 		PublicKeys: map[string]bool{"default_locale": true, "enabled_locales": true, "base_currency": true, "display_currency": true},
 	},
+	// 在线更新（doc/在线更新方案.md §4.4）：源配置运行时可改——mode 四态
+	// （auto=直连探测不通走加速，语义「大陆才加速」）、repo/加速器列表/静态基址/通道。
+	"system": {
+		Name: "system", Desc: "系统更新",
+		Labels: map[string]string{
+			"update": "在线更新源配置",
+		},
+		Defaults: map[string]any{
+			"update": map[string]any{
+				"mode":        "auto",  // auto | github | accel | static
+				"repo":        "NovaWorks/zcard-next",
+				"accelerators": []string{"https://gh-proxy.com", "https://ghfast.top", "https://ghproxy.net"},
+				"static_base": "",      // source=static 必填
+				"channel":     "stable", // beta 仅 github 直连/静态源
+			},
+		},
+	},
 }
 
 // trade 组 PublicKeys 在 init 内补充（同文件上方字段初始化保持简洁）

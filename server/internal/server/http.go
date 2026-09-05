@@ -39,6 +39,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/seo"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
@@ -124,6 +125,7 @@ func NewHTTPServer(
 	dir *authz.Directory,
 	tracker *audit.TrackRepo,
 	seoSvc *seo.SeoService,
+	updateSvc *update.AdminUpdateService,
 ) *khttp.Server {
 	// ⚠️ Kratos khttp.Filter 是整体替换（o.filters = filters）非追加——
 	// 多次调用只有最后一次生效（曾致 supplier HMAC/CORS/租户被 audit 静默覆盖）。
@@ -251,6 +253,9 @@ func NewHTTPServer(
 
 	// P2-10 E：上游回调接收（采购三通道之回调；不挂 JWT，验签在 handler 内按驱动分支）
 	procurement.RegisterUpstreamCallback(srv, procureSvc, upstreamGW)
+
+	// 在线更新管理面（doc/在线更新方案.md §9；system:update 超管专属）
+	adminv1.RegisterAdminUpdateServiceHTTPServer(srv, updateSvc)
 
 	// 保留路径（规划 §10.1：/api /uploads /health /payments /install 为保留前缀）
 	registerHealth(srv, d, enq)

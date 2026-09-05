@@ -20,6 +20,9 @@ var serverVersion = "dev"
 // SetServerVersion 供启动链注入构建版本（cmd main 调用）。
 func SetServerVersion(v string) { serverVersion = v }
 
+// ServerVersion 当前构建版本（update 模块 status 面用——进程重启后自然为新值）。
+func ServerVersion() string { return serverVersion }
+
 // AdminInstallService 在线安装服务。
 type AdminInstallService struct {
 	adminv1.UnimplementedAdminInstallServiceServer

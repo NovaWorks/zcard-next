@@ -1,11 +1,14 @@
-// self-update 子命令（P2-07 T2）：在线更新 CLI 面。
+// self-update 子命令（P2-07 T2；2026-09 方案 §4/§8 重构）：在线更新 CLI 面。
 //
-//	zcard self-update [--check] [--rollback] [-conf <dir>] [-url <api>]
-//	                  [-channel stable|beta] [-pubkey <hex>] [-y]
+//	zcard self-update [--check] [--rollback] [-conf <dir>]
+//	                  [-source auto|github|accel|static] [-repo <owner/repo>]
+//	                  [-accel <prefix[,prefix...]>] [-base <url>] [-channel stable|beta]
+//	                  [-pubkey <hex>] [-y]
 //	zcard self-update genkey                                # 发行侧密钥对
 //	zcard self-update sign --key <file> --dir <dist> --version vX.Y.Z [--notes-file <md>]
 //
-// 安全模型见 platform/updater 包注释与任务书 §3；非 TTY 且无 -y 拒绝执行（防脚本误触）。
+// 安全模型见 platform/updater 包注释与 doc/在线更新方案.md；
+// 非 TTY 且无 -y 拒绝执行（防脚本误触）。
 package main
 
 import (
@@ -17,19 +20,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/NovaWorks/zcard-next/server/internal/conf"
-	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
 )
-
-// defaultUpdateAPI 编译期注入（-X；默认指向本仓库 Releases）。
-var defaultUpdateAPI = "https://api.github.com/repos/NovaWorks/zcard-next"
 
 func runSelfUpdate(args []string) error {
 	// 发行侧工具子形态（与更新执行互斥）
@@ -46,8 +44,11 @@ func runSelfUpdate(args []string) error {
 	confDir := fs.String("conf", "configs", "配置目录")
 	check := fs.Bool("check", false, "只检查更新不执行（输出 JSON）")
 	rollback := fs.Bool("rollback", false, "回滚到上一版本（zcard.prev）")
-	apiURL := fs.String("url", defaultUpdateAPI, "Releases API 根地址")
-	channel := fs.String("channel", "stable", "更新通道 stable|beta")
+	source := fs.String("source", "auto", "更新源 auto|github|accel|static（auto=直连探测，不通走加速）")
+	repo := fs.String("repo", updater.DefaultRepo, "发行仓库 owner/repo")
+	accel := fs.String("accel", "", "加速前缀（逗号分隔多个；source=accel/auto 时用，缺省内置列表）")
+	base := fs.String("base", "", "静态源基址（source=static 必填）")
+	channel := fs.String("channel", "stable", "更新通道 stable|beta（beta 仅直连/静态源）")
 	pubkeyHex := fs.String("pubkey", "", "更新公钥 hex（空=编译默认；轮换期过渡用）")
 	yes := fs.Bool("y", false, "跳过确认（非 TTY 必须显式指定）")
 	if err := fs.Parse(args); err != nil {
@@ -77,18 +78,28 @@ func runSelfUpdate(args []string) error {
 		return fmt.Errorf("self-update: %v（dev 构建未注入公钥，或用 -pubkey 指定）", err)
 	}
 
-	cli := &updater.Client{API: *apiURL}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
-	m, manifestURL, err := cli.FetchManifest(ctx, *channel, pub)
+	cfg := updater.SourceConfig{
+		Mode: *source, Repo: *repo, StaticBase: *base, Channel: *channel,
+	}
+	if v := strings.TrimSpace(*accel); v != "" {
+		cfg.Accels = strings.Split(v, ",")
+	}
+	cli, outcome, err := updater.ResolveSource(ctx, cfg, 5*time.Second)
 	if err != nil {
 		return fmt.Errorf("self-update: %w", err)
+	}
+	m, manifestURL, err := cli.FetchManifest(ctx, *channel, pub)
+	if err != nil {
+		return fmt.Errorf("self-update: %w（源 %s）", err, outcome.SourceDesc())
 	}
 
 	if *check {
 		out, err := json.MarshalIndent(map[string]any{
 			"current": orDev(Version), "latest": m.Version,
 			"channel": m.Channel, "notes": m.Notes, "manifest": manifestURL,
+			"source":           outcome.SourceDesc(),
 			"update_available": updater.CompareSemver(m.Version, Version) > 0,
 		}, "", "  ")
 		if err != nil {
@@ -108,7 +119,13 @@ func runSelfUpdate(args []string) error {
 	}
 
 	assetName := "zcard-" + runtime.GOOS + "-" + runtime.GOARCH
-	fmt.Printf("发现新版本 %s → %s\n\n变更记录:\n%s\n\n", orDev(Version), m.Version, m.Notes)
+	var assetSize int64
+	for _, f := range m.Files {
+		if f.Name == assetName {
+			assetSize = f.Size
+		}
+	}
+	fmt.Printf("发现新版本 %s → %s（源 %s）\n\n变更记录:\n%s\n\n", orDev(Version), m.Version, outcome.SourceDesc(), m.Notes)
 	if !*yes {
 		if !isTTY() {
 			return fmt.Errorf("self-update: 非 TTY 环境需 -y 显式确认")
@@ -122,24 +139,31 @@ func runSelfUpdate(args []string) error {
 		}
 	}
 
+	// 磁盘预检（方案 §8）：产物 + 64MB 余量（DB 备份另计由 dump 工具自行失败）
+	if err := updater.CheckDiskSpace(filepath.Dir(binPath), assetSize+64<<20); err != nil {
+		return fmt.Errorf("self-update: %w", err)
+	}
+
 	// 备份（方言感知：SQLite VACUUM INTO / mysqldump / pg_dump；失败即中止）
 	bc, err := loadBootstrap(*confDir)
 	if err != nil {
 		return err
 	}
 	backupDir := updater.BackupPath(binPath, orDev(Version))
-	if err := backupDatabase(ctx, bc, backupDir); err != nil {
+	if err := update.BackupDatabase(ctx, bc.Data, backupDir); err != nil {
 		return fmt.Errorf("self-update: 备份失败，中止更新: %w", err)
 	}
 	// 二进制一并入备份目录（DB 恢复 + 二进制回退双保险）
 	_ = copyFile(binPath, filepath.Join(backupDir, "zcard.old"))
 
-	// 下载 → 验签落位
-	var payload memFile
-	if err := cli.DownloadAsset(ctx, m, assetName, &payload); err != nil {
+	// 下载 → 验签落位（落盘流式，124MB 大产物零内存，方案 §8）
+	newPath := filepath.Join(filepath.Dir(binPath), "zcard.new")
+	if err := downloadToFile(ctx, cli, m, assetName, newPath); err != nil {
+		_ = os.Remove(newPath)
 		return fmt.Errorf("self-update: %w", err)
 	}
-	if err := updater.Apply(binPath, orDev(Version), m.Version, payload.b); err != nil {
+	if err := updater.ApplyFile(binPath, orDev(Version), m.Version, newPath); err != nil {
+		_ = os.Remove(newPath)
 		return fmt.Errorf("self-update: %w", err)
 	}
 	fmt.Printf("已更新到 %s（备份: %s）\n", m.Version, backupDir)
@@ -239,56 +263,6 @@ func runSign(args []string) error {
 	return nil
 }
 
-// backupDatabase 方言感知备份（§10.4 更新前 DB 备份；P2-07 T1-5）。
-func backupDatabase(ctx context.Context, bc *conf.Bootstrap, destDir string) error {
-	if bc.Data == nil || bc.Data.Database == nil || bc.Data.Database.Driver == "" {
-		return fmt.Errorf("配置缺 data.database")
-	}
-	if err := os.MkdirAll(destDir, 0o755); err != nil {
-		return err
-	}
-	db := bc.Data.Database
-	switch db.Driver {
-	case "sqlite":
-		// VACUUM INTO：WAL 一致快照，零外部工具
-		d, cleanup, err := data.NewData(bc.Data)
-		if err != nil {
-			return err
-		}
-		defer cleanup()
-		dest := filepath.Join(destDir, "zcard.db")
-		if _, err := d.DB.ExecContext(ctx, "VACUUM INTO ?", dest); err != nil {
-			return fmt.Errorf("VACUUM INTO 失败: %w", err)
-		}
-		return nil
-	case "mysql":
-		dest := filepath.Join(destDir, "zcard.sql")
-		return dumpCommand(ctx, dest, "mysqldump", db.Source)
-	case "postgres":
-		dest := filepath.Join(destDir, "zcard.sql")
-		return dumpCommand(ctx, dest, "pg_dump", db.Source)
-	default:
-		return fmt.Errorf("未知方言 %q", db.Driver)
-	}
-}
-
-// dumpCommand mysqldump/pg_dump 落盘（外部工具缺失给明确指引）。
-func dumpCommand(ctx context.Context, dest, tool, dsn string) error {
-	bin, err := exec.LookPath(tool)
-	if err != nil {
-		return fmt.Errorf("%s 不在 PATH（安装 client 工具后重试）: %w", tool, err)
-	}
-	f, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	cmd := exec.CommandContext(ctx, bin, dsn)
-	cmd.Stdout = f
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func isTTY() bool {
 	fi, err := os.Stdin.Stat()
 	return err == nil && fi.Mode()&os.ModeCharDevice != 0
@@ -309,6 +283,20 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-type memFile struct{ b []byte }
-
-func (m *memFile) Write(p []byte) (int, error) { m.b = append(m.b, p...); return len(p), nil }
+// downloadToFile 流式落盘下载（DownloadAsset 边写边哈希校验；失败文件由调用方删）。
+func downloadToFile(ctx context.Context, cli *updater.Client, m *updater.Manifest, name, path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	if err := cli.DownloadAsset(ctx, m, name, f, func(received, total int64) {
+		if total > 0 {
+			fmt.Printf("\r下载中 %d/%d MB", received>>20, total>>20)
+		}
+	}); err != nil {
+		_ = f.Close()
+		return err
+	}
+	fmt.Println()
+	return f.Close()
+}

@@ -95,7 +95,29 @@ lint:
 
 .PHONY: clean
 clean:
-	rm -rf bin/ data/
+	rm -rf bin/ data/ dist/
+
+# ---------------- 在线更新发行（doc/在线更新方案.md §11） ----------------
+
+NOTES?=CHANGELOG.md
+
+.PHONY: release
+# 发行一套在线更新产物到 dist/：双架构裸二进制 + SHA256SUMS + 签名 update.json。
+# 前置：HEAD 必须已打 vX.Y.Z tag（防版本号落后）；私钥 .zcard-update-key（或 ZCARD_SIGN_KEY）。
+# 产物上传 GitHub Release（tag 对应，全部文件平铺）或自建静态源目录。
+release:
+	@tag=$$(git describe --tags --exact-match 2>/dev/null) || { echo "ERROR: HEAD 未打 vX.Y.Z tag——先提交并 git tag，再发行"; exit 1; }; \
+	case "$$tag" in v[0-9]*.[0-9]*.[0-9]*) ;; *) echo "ERROR: tag 须为 vX.Y.Z 形态，得到 $$tag"; exit 1;; esac; \
+	echo "==> release $$tag"; \
+	rm -rf dist && mkdir -p dist && \
+	make web-dist && \
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags fullstack -trimpath -ldflags "-X main.Version=$$tag" -o dist/zcard-linux-amd64 ./cmd/zcard && \
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags fullstack -trimpath -ldflags "-X main.Version=$$tag" -o dist/zcard-linux-arm64 ./cmd/zcard && \
+	(cd dist && shasum -a 256 zcard-linux-amd64 zcard-linux-arm64 > SHA256SUMS) && \
+	notes=""; [ -f "$(NOTES)" ] && notes="--notes-file $(NOTES)"; \
+	go run ./cmd/zcard self-update sign --key .zcard-update-key --dir dist --version $$tag $$notes && \
+	echo "==> 完成 dist/：zcard-linux-amd64 / zcard-linux-arm64 / SHA256SUMS / update.json"; \
+	echo "    上传 GitHub Release（tag=$$tag，四个文件平铺）或静态源目录；加速镜像与后台 auto 源随即可用"
 
 # ---------------- 迁移（Atlas 版本化，禁止手写 DDL） ----------------
 

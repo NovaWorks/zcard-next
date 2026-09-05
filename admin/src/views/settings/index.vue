@@ -11,6 +11,7 @@ import TopButtonField from "./components/top-button-field.vue";
 import GiftTiersField from "./components/gift-tiers-field.vue";
 import LinkListField from "./components/link-list-field.vue";
 import AuditTab from "./components/audit-tab.vue";
+import UpdateTab from "./components/update-tab.vue";
 import ThemePickerModal from "./components/theme-picker-modal.vue";
 
 defineOptions({ name: "SettingsManagement" });
@@ -471,6 +472,9 @@ onMounted(() => {
         </OuterTabPane>
         <OuterTabPane v-if="checkAuth('audit:read')" name="audit" tab="审计日志">
           <AuditTab />
+        </OuterTabPane>
+        <OuterTabPane v-if="checkAuth('system:update')" name="update" tab="系统更新">
+          <UpdateTab />
         </OuterTabPane>
       </OuterTabs>
     </NCard>

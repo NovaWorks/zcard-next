@@ -2,7 +2,7 @@
 //
 // 磁盘布局（同目录，保证 rename 原子性——跨文件系统 rename 退化为 copy 即拒绝）：
 //
-//	<dir>/zcard        当前二进制（新版本落位后由 systemd 拉起）
+//	<dir>/zcard        当前二进制（新版本落位后由进程管理器/exec 拉起，方案 §5）
 //	<dir>/zcard.prev   上一代（回滚位，仅保留一代）
 //	<dir>/zcard.new    下载临时文件（验证通过后 rename 落位，失败即删）
 //	<dir>/update.state 状态机文件（pending → ok）
@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"time"
 )
 
@@ -81,27 +82,39 @@ func saveState(binaryPath string, s *State) error {
 	return os.WriteFile(statePath(binaryPath), raw, 0o644)
 }
 
-// Apply 原子替换（rename 舞步）：写 .new → chmod → current 改名 .prev →
-// .new 落位 current → 写 pending 态。任何一步失败磁盘可恢复（.new 可删，
-// 未到 rename 阶段 current 未动）。.new 始终与 current 同目录（同文件系统，
-// rename 原子性前提）。
+// Apply 原子替换（内存版薄包装——小产物/测试用；生产更新链走 ApplyFile，
+// 124MB 大二进制禁止整包进内存，方案 §8）。
 func Apply(binaryPath, fromVer, toVer string, newBin []byte) error {
-	dir := filepath.Dir(binaryPath)
-	tmp := filepath.Join(dir, newName)
+	tmp := filepath.Join(filepath.Dir(binaryPath), newName)
 	if err := os.WriteFile(tmp, newBin, 0o755); err != nil {
 		return fmt.Errorf("updater: 写入临时文件失败: %w", err)
 	}
-	if err := os.Chmod(tmp, 0o755); err != nil {
+	if err := ApplyFile(binaryPath, fromVer, toVer, tmp); err != nil {
 		_ = os.Remove(tmp)
 		return err
+	}
+	return nil
+}
+
+// ApplyFile 原子替换（rename 舞步，落盘版）：downloaded 为已通过哈希校验的
+// 新二进制文件（调用方直接下载到 <dir>/zcard.new，边写边校验零内存）。
+// chmod → current 改名 .prev → downloaded 落位 current → 写 pending 态。
+// 任何一步失败磁盘可恢复（downloaded 可删，未到 rename 阶段 current 未动）。
+// downloaded 必须与 binaryPath 同目录（同文件系统，rename 原子性前提）。
+func ApplyFile(binaryPath, fromVer, toVer, downloaded string) error {
+	dir := filepath.Dir(binaryPath)
+	if filepath.Dir(downloaded) != dir {
+		return fmt.Errorf("updater: 下载临时文件与二进制不同目录（rename 原子性前提）")
+	}
+	if err := os.Chmod(downloaded, 0o755); err != nil {
+		return fmt.Errorf("updater: 临时文件加执行位失败: %w", err)
 	}
 	prev := filepath.Join(dir, prevName)
 	_ = os.Remove(prev) // 上一代残留（上次更新未闭环）直接覆盖
 	if err := os.Rename(binaryPath, prev); err != nil {
-		_ = os.Remove(tmp)
 		return fmt.Errorf("updater: 保留回滚位失败: %w", err)
 	}
-	if err := os.Rename(tmp, binaryPath); err != nil {
+	if err := os.Rename(downloaded, binaryPath); err != nil {
 		// 舞步中断：回放 current（.prev 尚在）
 		_ = os.Rename(prev, binaryPath)
 		return fmt.Errorf("updater: 落位新版本失败: %w", err)
@@ -231,7 +244,7 @@ func BackupPath(binaryPath, version string) string {
 
 // RestartService 重启服务：systemd 优先（安装态），失败返回错误提示手动重启
 // （裸跑/容器态；容器内 self-update 本就被部署矩阵排除）。
-// inProcess=true（admin 面内触发）时由调用方直接优雅退出交 systemd，不走本函数。
+// inProcess=true（admin 面内触发）时由 serve 层重启三分支处理，不走本函数。
 func RestartService(unit string) error {
 	if unit == "" {
 		unit = "zcard"
@@ -252,3 +265,46 @@ func RestartService(unit string) error {
 }
 
 func fileExists(p string) bool { _, err := os.Stat(p); return err == nil }
+
+// CheckDiskSpace 磁盘预检（方案 §8）：dir 所在文件系统可用空间不足 need 即报错
+// （124MB 下载 + GB 级 DB 备份，写一半 ENOSPC 远劣于提前拒绝）。
+func CheckDiskSpace(dir string, need int64) error {
+	var st syscall.Statfs_t
+	if err := syscall.Statfs(dir, &st); err != nil {
+		return fmt.Errorf("updater: 磁盘预检失败: %w", err)
+	}
+	avail := int64(st.Bavail) * int64(st.Bsize)
+	if avail < need {
+		return fmt.Errorf("updater: 磁盘空间不足（需 %dMB，%s 可用 %dMB）", need>>20, dir, avail>>20)
+	}
+	return nil
+}
+
+// DetectSupervisor 探测进程管理器（方案 §5 重启三分支依据）：
+// ZCARD_SUPERVISOR（install.sh unit 显式声明，最可靠）> systemd 运行时注入
+// env（INVOCATION_ID）> supervisord env。注意不能用 /proc/self/cgroup——
+// systemd 系统上 nohup 裸跑进程的 cgroup 同样落在 systemd slice 内，会误判
+// （误判即「优雅退出等拉起」而实际无人拉起，服务死透）。返回 none = 裸跑。
+func DetectSupervisor() string {
+	if v := os.Getenv("ZCARD_SUPERVISOR"); v != "" {
+		return v
+	}
+	if os.Getenv("INVOCATION_ID") != "" {
+		return "systemd"
+	}
+	if os.Getenv("SUPERVISOR_ENABLED") == "1" || os.Getenv("SUPERVISOR_SERVER_URL") != "" {
+		return "supervisord"
+	}
+	return "none"
+}
+
+// RestartSelf 裸跑降级路径：syscall.Exec 同进程映像替换（方案 §5）。
+// PID/父子关系/env/cwd 全保留——systemd 主进程无感、nohup 挂载关系不变；
+// 成功不返回；失败则旧进程内存映像仍在（磁盘已换新，返回错误提示手动重启）。
+// 调用前必须已完成优雅停机（serve 层 app.Stop 后调用）。
+func RestartSelf(binaryPath string) error {
+	if _, err := os.Stat(binaryPath); err != nil {
+		return fmt.Errorf("updater: exec 目标不存在: %w", err)
+	}
+	return syscall.Exec(binaryPath, os.Args, os.Environ())
+}

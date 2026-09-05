@@ -119,6 +119,8 @@ StartLimitIntervalSec=0
 [Service]
 Type=simple
 User=$SERVICE_USER
+# 在线更新重启三分支探测标记（doc/在线更新方案.md §5）
+Environment=ZCARD_SUPERVISOR=systemd
 WorkingDirectory=$INSTALL_DIR
 ExecStart=$INSTALL_DIR/zcard serve -conf $INSTALL_DIR/configs
 Restart=always

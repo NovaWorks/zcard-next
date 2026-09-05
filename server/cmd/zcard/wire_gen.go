@@ -34,6 +34,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/ticket"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/server"
 	"github.com/go-kratos/kratos/v3"
@@ -42,8 +43,8 @@ import (
 
 // Injectors from wire.go:
 
-// wireApp init kratos application。
-func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Security, logger *slog.Logger) (*kratos.App, func(), error) {
+// wireApp init kratos application（update.Service 旁路返回——serve 层挂重启 hook）。
+func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Security, logger *slog.Logger) (*appDeps, func(), error) {
 	dataData, cleanup, err := data.NewData(dataConf)
 	if err != nil {
 		return nil, nil, err
@@ -178,7 +179,9 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminFulfillmentService := fulfillment.NewAdminFulfillmentService(deliveryRepoImpl, dataData)
 	seoRepo := seo.NewSeoRepo(dataData)
 	seoService := seo.NewSeoService(seoRepo, repoImpl)
-	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminUserRepoImpl, adminAuthService, adminSettingsService, adminInstallService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, storeSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminMediaService, adminLicenseService, adminResellerService, resellerRepo, storeUserService, adminUserManageService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, storeCaptchaService, storeMediaService, adminCurrencyService, adminCatalogService, adminMemberLevelService, storeMemberLevelService, storeLicenseService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, procureService, gateway, storeOrderService, storeCartService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory, trackRepo, seoService)
+	updateService := update.NewService(dataConf, settingsUsecase)
+	adminUpdateService := update.NewAdminUpdateService(updateService)
+	httpServer := server.NewHTTPServer(serverConf, dataData, signer, rbacUsecase, adminUserRepoImpl, adminAuthService, adminSettingsService, adminInstallService, storeCatalogService, adminSupplyService, adminProcurementService, supplyAPIService, adminSupplierService, storeSupplierService, supplierRepoImpl, adminContentService, storeContentService, adminNotifyService, storeNotificationService, storeCouponService, storeTicketService, adminTicketService, storeAffiliateService, adminMediaService, adminLicenseService, adminResellerService, resellerRepo, storeUserService, adminUserManageService, adminAuditService, auditRepo, roleService, adminUserService, storefrontConfigService, storeCaptchaService, storeMediaService, adminCurrencyService, adminCatalogService, adminMemberLevelService, storeMemberLevelService, storeLicenseService, adminCouponService, adminDashboardService, adminInventoryService, adminOrderService, procureService, gateway, storeOrderService, storeCartService, adminPaymentService, storePaymentService, paymentRepoImpl, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, enqueuer, directory, trackRepo, seoService, adminUpdateService)
 	grpcServer := server.NewGRPCServer(serverConf, adminAuthService, adminSettingsService, storeCatalogService, roleService, adminUserService, storefrontConfigService, adminCurrencyService, adminCatalogService, adminInventoryService, adminOrderService, storeOrderService, adminPaymentService, storePaymentService, storeWalletService, adminWalletService, storeDeliveryService, adminFulfillmentService, storeMemberLevelService, storeLicenseService)
 	workerServer := server.NewWorkerServer(dataConf, enqueuer, dataDispatcher, syncService, procureService, supplyAPIService, broadcastService)
 	outboxRelay := bootstrap.NewOutboxRelay(dataData, enqueuer, logger)
@@ -191,8 +194,20 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	settleService := reseller.NewSettleService(resellerRepo, logger)
 	pointsService := memberlevel.NewPointsService(memberLevelRepoImpl, points, logger)
 	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway)
-	return app, func() {
+	mainAppDeps := &appDeps{
+		App:    app,
+		Update: updateService,
+	}
+	return mainAppDeps, func() {
 		cleanup2()
 		cleanup()
 	}, nil
+}
+
+// wire.go:
+
+// appDeps wire 装配产物打包（wire 多具体返回值受限）。
+type appDeps struct {
+	App    *kratos.App
+	Update *update.Service // serve 层挂更新重启 hook 用
 }

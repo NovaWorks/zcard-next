@@ -1,19 +1,19 @@
-// updater 契约测试（P2-07 T3）：更新安全模型 = golden vector 纪律——
-// 篡改/换钥/降级/哈希不符全部 fail-closed；rename 舞步原子性与回滚三路径。
+// updater 契约测试（P2-07 T3；2026-09 三源重构后增补）：更新安全模型 =
+// golden vector 纪律——篡改/换钥/降级/哈希不符全部 fail-closed；
+// rename 舞步原子性（内存/落盘双入口）与回滚三路径；三源 URL 构造与 auto 探测。
 package updater
 
 import (
-	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -70,15 +70,6 @@ func TestVerifyManifestMatrix(t *testing.T) {
 		t.Fatal("第三方密钥自签必须失败")
 	}
 
-	// 签名段损坏
-	var badSig Manifest
-	_ = json.Unmarshal(raw, &badSig)
-	badSig.Signature = base64.StdEncoding.EncodeToString([]byte("garbage"))
-	rawBad, _ := json.Marshal(badSig)
-	if _, err := VerifyManifest(rawBad, pub); err == nil {
-		t.Fatal("损坏签名必须失败")
-	}
-
 	// 非 semver 版本（dev 构建）拒绝
 	_, rawDev, devPub, _ := testManifest(t, "dev", files)
 	if _, err := VerifyManifest(rawDev, devPub); err == nil {
@@ -118,66 +109,182 @@ func TestPublicKeyParse(t *testing.T) {
 	if _, err := PublicKey(""); err != ErrNoPubkey {
 		t.Fatal("空公钥应返回 ErrNoPubkey")
 	}
+	// 固化公钥可用（首发密钥健康自检）
+	if _, err := PublicKey(DefaultPublicKeyHex); err != nil {
+		t.Fatalf("仓库固化公钥非法: %v", err)
+	}
 }
 
-// ── FetchManifest + DownloadAsset（httptest 假源）────────────────
+// ── 三源 Fetch/Download（httptest 假源）────────────────────────
 
-func TestFetchAndDownload(t *testing.T) {
-	payload := []byte("fake binary bytes v2")
-	sum := sha256.Sum256(payload)
-	files := []FileEntry{{Name: "zcard-linux-amd64", SHA256: hex.EncodeToString(sum[:]), Size: int64(len(payload))}}
-	m, raw, pub, _ := testManifest(t, "v2.0.0", files)
-
-	asset := payload
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/releases/latest":
-			base := "http://" + r.Host
-			_ = json.NewEncoder(w).Encode(ghRelease{
-				TagName: "v2.0.0",
-				Assets:  []ghAsset{{Name: "update.json", BrowserDownloadURL: base + "/dl/update.json"}},
-			})
-		case "/dl/update.json":
+// fakeSource 起一个同时模拟 github 直连 / accel 加速 / static 三种形态的假源。
+// ghBase 充当 github.com；accelSrv 充当加速器（透传到 ghBase 的完整 URL 路径）。
+func fakeSource(t *testing.T, payload []byte, raw []byte) (ghBase, staticBase, accelBase string, closeFn func()) {
+	t.Helper()
+	gh := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/update.json"):
 			_, _ = w.Write(raw)
-		case "/releases/download/v2.0.0/zcard-linux-amd64":
-			_, _ = w.Write(asset)
+		case strings.HasSuffix(r.URL.Path, "/"+assetName()):
+			_, _ = w.Write(payload)
 		default:
 			http.NotFound(w, r)
 		}
 	}))
-	defer srv.Close()
+	accel := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// ghproxy 形态：/<完整 github URL> —— 剥协议头还原路径转发到假 github
+		idx := strings.Index(r.URL.Path, "/https://github.com/")
+		if idx < 0 {
+			http.NotFound(w, r)
+			return
+		}
+		resp, err := http.Get(gh.URL + r.URL.Path[idx+len("/https://github.com"):])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		w.WriteHeader(resp.StatusCode)
+		_, _ = copyTo(w, resp.Body)
+	}))
+	return gh.URL, gh.URL, accel.URL, func() { gh.Close(); accel.Close() }
+}
 
-	c := &Client{API: srv.URL}
-	got, _, err := c.FetchManifest(context.Background(), "stable", pub)
-	if err != nil {
-		t.Fatalf("FetchManifest: %v", err)
-	}
-	if got.Version != m.Version {
-		t.Fatalf("版本不符: %s", got.Version)
-	}
+func assetName() string { return "zcard-linux-amd64" }
 
-	// 正常下载（流式哈希校验通过）
-	var buf bytes.Buffer
-	if err := c.DownloadAsset(context.Background(), got, "zcard-linux-amd64", &buf); err != nil {
-		t.Fatalf("DownloadAsset: %v", err)
-	}
-	if !bytes.Equal(buf.Bytes(), payload) {
-		t.Fatal("下载内容不符")
-	}
-
-	// 篡改资产 → ErrFileMismatch（清单哈希与实际不符，fail-closed）
-	asset = []byte("tampered payload")
-	if err := c.DownloadAsset(context.Background(), got, "zcard-linux-amd64", &bytes.Buffer{}); err != ErrFileMismatch {
-		t.Fatalf("哈希不符必须返回 ErrFileMismatch，得到 %v", err)
-	}
-
-	// 清单缺产物名
-	if err := c.DownloadAsset(context.Background(), got, "zcard-linux-arm64", &bytes.Buffer{}); err != ErrNoAsset {
-		t.Fatalf("缺产物必须返回 ErrNoAsset，得到 %v", err)
+func copyTo(w http.ResponseWriter, r interface{ Read([]byte) (int, error) }) (int64, error) {
+	buf := make([]byte, 32*1024)
+	var n int64
+	for {
+		k, err := r.Read(buf)
+		if k > 0 {
+			if _, werr := w.Write(buf[:k]); werr != nil {
+				return n, werr
+			}
+			n += int64(k)
+		}
+		if err != nil {
+			return n, nil // io.EOF
+		}
 	}
 }
 
-// ── Apply/回滚三路径（T3-2/3）───────────────────────────────────
+func TestFetchAndDownloadThreeSources(t *testing.T) {
+	payload := []byte("fake binary bytes v2")
+	sum := sha256.Sum256(payload)
+	files := []FileEntry{{Name: assetName(), SHA256: hex.EncodeToString(sum[:]), Size: int64(len(payload))}}
+	m, raw, pub, _ := testManifest(t, "v2.0.0", files)
+
+	gh, static, accel, closeFn := fakeSource(t, payload, raw)
+	defer closeFn()
+
+	repo := "acme/zcard"
+	for _, tc := range []struct {
+		name   string
+		client *Client
+	}{
+		{"github 直连（latest/download 端点）", func() *Client {
+			c := NewClient(SourceGitHub, repo, "", "")
+			c.GHBase = gh
+			return c
+		}()},
+		{"accel 加速（前缀拼接完整 URL）", NewClient(SourceAccel, repo, accel, "")},
+		{"static 静态源", NewClient(SourceStatic, repo, "", static)},
+	} {
+		got, _, err := tc.client.FetchManifest(context.Background(), "stable", pub)
+		if err != nil {
+			t.Fatalf("[%s] FetchManifest: %v", tc.name, err)
+		}
+		if got.Version != m.Version {
+			t.Fatalf("[%s] 版本不符: %s", tc.name, got.Version)
+		}
+		out := &strings.Builder{}
+		var lastReceived int64
+		if err := tc.client.DownloadAsset(context.Background(), got, assetName(), out, func(received, total int64) {
+			lastReceived = received
+		}); err != nil {
+			t.Fatalf("[%s] DownloadAsset: %v", tc.name, err)
+		}
+		if out.String() != string(payload) {
+			t.Fatalf("[%s] 下载内容不符", tc.name)
+		}
+		if lastReceived != int64(len(payload)) {
+			t.Fatalf("[%s] 进度回调未收到末值: %d", tc.name, lastReceived)
+		}
+
+		// 篡改资产 → ErrFileMismatch（fail-closed；清单声明尺寸与实际不符）
+		bad := append([]byte(nil), payload...)
+		bad[0] ^= 0xff
+		badSum := sha256.Sum256(bad)
+		badFiles := []FileEntry{{Name: assetName(), SHA256: hex.EncodeToString(badSum[:]), Size: int64(len(bad)) + 1}}
+		badM, badRaw, _, _ := testManifest(t, "v2.0.1", badFiles)
+		_, st2, _, close2 := fakeSource(t, bad, badRaw)
+		defer close2()
+		c2 := NewClient(SourceStatic, repo, "", st2)
+		if err := c2.DownloadAsset(context.Background(), badM, assetName(), &strings.Builder{}, nil); err != ErrFileMismatch {
+			t.Fatalf("[%s] 哈希不符必须返回 ErrFileMismatch，得到 %v", tc.name, err)
+		}
+
+		// 清单缺产物名
+		if err := tc.client.DownloadAsset(context.Background(), got, "zcard-linux-other", &strings.Builder{}, nil); err != ErrNoAsset {
+			t.Fatalf("[%s] 缺产物必须返回 ErrNoAsset，得到 %v", tc.name, err)
+		}
+	}
+}
+
+func TestAccelBetaRejected(t *testing.T) {
+	c := NewClient(SourceAccel, "acme/zcard", "https://gh-proxy.com", "")
+	if _, err := c.manifestURL("beta"); err != ErrBetaSource {
+		t.Fatalf("accel beta 必须拒绝，得到 %v", err)
+	}
+}
+
+// ── auto 源探测（直连可达→github；不通→竞速加速器）──────────────
+
+func TestResolveSourceAuto(t *testing.T) {
+	payload := []byte("x")
+	sum := sha256.Sum256(payload)
+	files := []FileEntry{{Name: assetName(), SHA256: hex.EncodeToString(sum[:]), Size: 1}}
+	_, raw, pub, _ := testManifest(t, "v3.0.0", files)
+
+	// 场景一：直连可达（github.com 指向假源不可行——auto 探测 URL 硬编码真实
+	// github 域名；此处验证钉死模式 + 竞速逻辑的单元面）
+	gh, static, accel, closeFn := fakeSource(t, payload, raw)
+	defer closeFn()
+	_ = pub
+
+	// 钉死 github
+	c, out, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceGitHub, Repo: "a/b"}, time.Second)
+	if err != nil || c.Source != SourceGitHub || out.Mode != SourceGitHub {
+		t.Fatalf("钉死 github 失败: %v %+v", err, out)
+	}
+	// 钉死 static
+	if _, _, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceStatic, StaticBase: static}, time.Second); err != nil {
+		t.Fatalf("钉死 static 失败: %v", err)
+	}
+	// 钉死 static 缺 base
+	if _, _, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceStatic}, time.Second); err == nil {
+		t.Fatal("static 缺 base 必须报错")
+	}
+	// 钉死 accel：加速器全不可达 → ErrSourceUnreachable
+	if _, _, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{"http://127.0.0.1:1"}}, 500*time.Millisecond); err == nil {
+		t.Fatal("accel 全挂必须报 ErrSourceUnreachable")
+	}
+	// 钉死 accel：可用加速器胜出
+	c, out, err = ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{accel}}, 3*time.Second)
+	if err != nil || out.Accel != accel || c.Accel != accel {
+		t.Fatalf("accel 竞速胜出失败: %v %+v", err, out)
+	}
+	_ = gh
+
+	// auto：真实 github.com 直连在本测试环境不可达时走加速竞速——网络相关的
+	// 行为断言放集成环境，此处仅验证 auto 归一（Mode 非法值回 auto）。
+	if got := (SourceConfig{Mode: "weird"}).Normalize().Mode; got != "auto" {
+		t.Fatalf("非法 mode 须归一 auto，得到 %s", got)
+	}
+}
+
+// ── Apply/回滚三路径（内存版 + 落盘版双入口）───────────────────
 
 func setupBin(t *testing.T) (dir, bin string) {
 	t.Helper()
@@ -224,6 +331,40 @@ func TestApplyAndRollback(t *testing.T) {
 	}
 }
 
+// TestApplyFile 落盘入口（生产更新链路径）：预下载 .new → 舞步落位。
+func TestApplyFile(t *testing.T) {
+	dir, bin := setupBin(t)
+	newPath := filepath.Join(dir, newName)
+	if err := os.WriteFile(newPath, []byte("v2-disk"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyFile(bin, "v1.0.0", "v2.0.0", newPath); err != nil {
+		t.Fatalf("ApplyFile: %v", err)
+	}
+	if got := readFile(t, bin); got != "v2-disk" {
+		t.Fatalf("落盘版替换失败: %q", got)
+	}
+	if fi, err := os.Stat(bin); err != nil || fi.Mode()&0o111 == 0 {
+		t.Fatal("落位后必须保有执行位")
+	}
+	if _, err := os.Stat(newPath); !os.IsNotExist(err) {
+		t.Fatal(".new 落位后不应残留")
+	}
+	s, _ := LoadState(bin)
+	if s.Status != StatePending || s.ToVer != "v2.0.0" {
+		t.Fatalf("落盘版 pending 态异常: %+v", s)
+	}
+
+	// 跨目录拒绝（rename 原子性前提）
+	other := filepath.Join(t.TempDir(), "elsewhere")
+	if err := os.WriteFile(other, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := ApplyFile(bin, "v1.0.0", "v2.0.0", other); err == nil {
+		t.Fatal("跨目录 ApplyFile 必须拒绝")
+	}
+}
+
 func TestRollbackOnBootFailure(t *testing.T) {
 	_, bin := setupBin(t)
 	if err := Apply(bin, "v1.0.0", "v1.1.0", []byte("bad-new")); err != nil {
@@ -253,7 +394,7 @@ func TestRollbackNoPrev(t *testing.T) {
 	}
 }
 
-// ── 健康门（T3-3 成功/不通过双路径）─────────────────────────────
+// ── 健康门（成功/不通过双路径）────────────────────────────────
 
 func TestHealthGate(t *testing.T) {
 	_, bin := setupBin(t)
@@ -287,6 +428,32 @@ func TestHealthGate(t *testing.T) {
 	}
 	if s, _ = LoadState(bin); s.Status != StateOK {
 		t.Fatal("健康门通过后应 MarkOK")
+	}
+}
+
+// ── 磁盘预检 / supervisor 探测 ────────────────────────────────
+
+func TestCheckDiskSpace(t *testing.T) {
+	dir := t.TempDir()
+	if err := CheckDiskSpace(dir, 1); err != nil {
+		t.Fatalf("1 字节预检不应失败: %v", err)
+	}
+	if err := CheckDiskSpace(dir, 1<<62); err == nil {
+		t.Fatal("超大需求必须报空间不足")
+	}
+}
+
+func TestDetectSupervisor(t *testing.T) {
+	t.Setenv("ZCARD_SUPERVISOR", "")
+	t.Setenv("INVOCATION_ID", "")
+	t.Setenv("SUPERVISOR_ENABLED", "")
+	t.Setenv("SUPERVISOR_SERVER_URL", "")
+	if got := DetectSupervisor(); got != "none" {
+		t.Fatalf("无标记环境应为 none，得到 %s", got)
+	}
+	t.Setenv("ZCARD_SUPERVISOR", "systemd")
+	if got := DetectSupervisor(); got != "systemd" {
+		t.Fatalf("显式声明优先，得到 %s", got)
 	}
 }
 

@@ -285,7 +285,16 @@ func init() {
 		Perm{Code: "card:export", Desc: "导出卡密（审批+审计+限流）", Domain: "inventory", AdminOnly: true},
 
 		Perm{Code: "order:refund", Desc: "订单退款（二次确认+审计）", Domain: "order", AdminOnly: true},
-		Perm{Code: "system:update", Desc: "在线更新/密钥轮换", Domain: "system", AdminOnly: true},
+
+		// ── 在线更新（update，doc/在线更新方案.md §9——超管专属全套）──
+		Perm{Code: "system:update", Desc: "查看更新状态", Domain: "system", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUpdateService/GetUpdateStatus", Method: "GET", Path: "/api/v1/admin/update/status"},
+		Perm{Code: "system:update", Desc: "检查更新", Domain: "system", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUpdateService/CheckUpdate", Method: "POST", Path: "/api/v1/admin/update/check"},
+		Perm{Code: "system:update", Desc: "执行在线更新（超管专属）", Domain: "system", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUpdateService/ApplyUpdate", Method: "POST", Path: "/api/v1/admin/update/apply"},
+		Perm{Code: "system:update", Desc: "回滚上一版本（超管专属）", Domain: "system", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminUpdateService/RollbackUpdate", Method: "POST", Path: "/api/v1/admin/update/rollback"},
 
 		// ── 货源连接（supply，P2-01）──────────────────
 		Perm{Code: "supply:read", Desc: "查看货源连接", Domain: "supply",

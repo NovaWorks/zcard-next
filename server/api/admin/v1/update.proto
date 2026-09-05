@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package zcard.api.admin.v1;
+
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// AdminUpdateService 在线更新（doc/在线更新方案.md §9；system:update 超管专属）。
+// 更新链：备份 DB → 落盘下载（流式哈希+进度）→ 原子替换 → 重启三分支；
+// 重启后本接口随新进程复活——前端轮询 status 直到 current==target 即成功。
+service AdminUpdateService {
+  // GetUpdateStatus 当前状态（幂等轮询；含生效源/supervisor 探测/最近 check 结果）。
+  rpc GetUpdateStatus(google.protobuf.Empty) returns (UpdateStatus) {
+    option (google.api.http) = { get: "/api/v1/admin/update/status" };
+  }
+  // CheckUpdate 手动检查更新（源解析+manifest 验签；结果缓存于 status）。
+  rpc CheckUpdate(google.protobuf.Empty) returns (UpdateCheckResult) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/update/check"
+      body: "*"
+    };
+  }
+  // ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
+  rpc ApplyUpdate(google.protobuf.Empty) returns (UpdateStatus) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/update/apply"
+      body: "*"
+    };
+  }
+  // RollbackUpdate 回滚上一版本（zcard.prev）并重启。
+  rpc RollbackUpdate(google.protobuf.Empty) returns (UpdateStatus) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/update/rollback"
+      body: "*"
+    };
+  }
+}
+
+message UpdateStatus {
+  // idle|checking|backing_up|downloading|applying|restarting|verifying|rolled_back|failed
+  string phase = 1;
+  string current_version = 2;
+  string target_version = 3;
+  int32 progress_percent = 4; // downloading 阶段 0-100
+  string error_message = 5;
+  string source = 6;          // 生效源展示：github | <accel 前缀> | static:<base>
+  string mode = 7;            // 配置模式 auto|github|accel|static
+  string supervisor_kind = 8; // systemd | supervisord | none（none=裸跑，UI 警示）
+  bool has_update = 9;
+  string notes = 10;          // 最近一次 check 的 changelog markdown
+  string latest_version = 11;
+  string checked_at = 12;     // RFC3339
+  string backup_dir = 13;     // 本次更新备份目录
+  bool busy = 14;             // 更新链进行中（apply 单飞互斥）
+}
+
+message UpdateCheckResult {
+  string current_version = 1;
+  string latest_version = 2;
+  bool has_update = 3;
+  string notes = 4;
+  string channel = 5;
+  string source = 6;
+}

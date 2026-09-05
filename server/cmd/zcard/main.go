@@ -20,6 +20,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/admincmd"
@@ -267,11 +269,29 @@ func runServe(args []string) (err error) {
 
 	supplier.ServerVersion = orDev(Version)
 	settings.SetServerVersion(orDev(Version))
-	app, cleanup, err := wireApp(bc.Server, bc.Data, bc.Security, logger)
+	server.Version = orDev(Version) // /health 下发真实构建版本（此前恒 dev 的根因）
+	deps, cleanup, err := wireApp(bc.Server, bc.Data, bc.Security, logger)
 	if err != nil {
 		return err
 	}
-	defer cleanup()
+	app, updateSvc := deps.App, deps.Update
+	// cleanup 单次化：重启路径 exec 前显式收口，进程退出路径 defer 兜底
+	var cleanupOnce sync.Once
+	doCleanup := func() { cleanupOnce.Do(cleanup) }
+	defer doCleanup()
+
+	// 更新重启 hook（doc/在线更新方案.md §5 三分支）：置位标记 + 异步优雅停机；
+	// app.Run 返回后按 supervisor 分流——管理器环境 exit 0 交拉起，裸跑 exec 自替换
+	var restarting atomic.Bool
+	if updateSvc != nil {
+		updateSvc.SetRestartFn(func() {
+			restarting.Store(true)
+			go func() {
+				// kratos App.Stop 无参（内部 5s 优雅停机）；hook 只负责触发
+				app.Stop()
+			}()
+		})
+	}
 
 	// 更新健康门（§10.4）：HTTP 就绪 + DB 连通自检通过 → pending 转 ok；
 	// 超时 → 回滚并优雅退出，systemd 重启旧版本。

@@ -1,12 +1,17 @@
-// Package updater 在线更新引擎（P2-07，主文档 §10.4——「重写 1.x 最危险组件」）：
+// Package updater 在线更新引擎（P2-07，主文档 §10.4——「重写 1.x 最危险组件」；
+// 2026-09 在线更新方案 doc/在线更新方案.md 定稿重构）：
 //
 //	ed25519 强制验签的 release manifest + 原子替换（rename 舞步）+ 状态机
-//	（pending→ok）+ 自动回滚。重启交给 systemd——进程只负责「原子替换文件 +
-//	干净退出」，绝不 fork/exec 拉起自己。
+//	（pending→ok）+ 自动回滚。重启策略三分支见方案 §5——进程管理器
+//	（systemd/supervisord）为主，裸跑由 serve 层 syscall.Exec 降级。
+//
+//	更新源三型（方案 §4）：github 直连 / accel 加速镜像（ghproxy 系前缀拼接）/
+//	static 自建静态源。manifest 统一走 github.com 官方 releases/latest/download
+//	重定向端点（加速器不代理 REST API；直连亦免 60 次/h 匿名限流）；
+//	beta 通道需列 prerelease，仅 github 直连支持。
 //
 // 密码学原语与 platform/license 同源（ed25519 单文件内嵌签名），但使用
-//
-//	独立密钥对（license 一把、更新一把，互不连坐）。
+// 独立密钥对（license 一把、更新一把，互不连坐）。
 package updater
 
 import (
@@ -27,16 +32,36 @@ import (
 
 // 更新安全模型的 fail-closed 错误（任一命中：磁盘零变更）。
 var (
-	ErrBadManifest  = errors.New("updater: manifest 非法或验签失败")
-	ErrFileMismatch = errors.New("updater: 产物哈希/大小与清单不符")
-	ErrNoAsset      = errors.New("updater: release 缺少所需产物")
-	ErrRefuseUpdate = errors.New("updater: 拒绝更新（版本非单调或非 semver）")
-	ErrNoPubkey     = errors.New("updater: 未配置更新公钥（dev 构建）")
+	ErrBadManifest       = errors.New("updater: manifest 非法或验签失败")
+	ErrFileMismatch      = errors.New("updater: 产物哈希/大小与清单不符")
+	ErrNoAsset           = errors.New("updater: release 缺少所需产物")
+	ErrRefuseUpdate      = errors.New("updater: 拒绝更新（版本非单调或非 semver）")
+	ErrNoPubkey          = errors.New("updater: 未配置更新公钥（dev 构建）")
+	ErrBetaSource        = errors.New("updater: beta 通道仅支持 github 直连/自建静态源（加速镜像不走 REST API）")
+	ErrSourceUnreachable = errors.New("updater: 更新源均不可达")
 )
 
-// DefaultPublicKeyHex 编译期注入（-X；首发密钥固化进仓库默认值）。空 = dev 构建，
-// self-update 一律拒绝（fail-closed），仅 sign/genkey 可用。
-var DefaultPublicKeyHex string
+// DefaultPublicKeyHex 首发更新公钥（2026-09-05 genkey 固化；ldflags -X 可覆盖——
+// 密钥轮换期过渡用）。私钥离线保管（发行侧 sign 子命令），泄露即换钥发版。
+var DefaultPublicKeyHex = "e7d28f99b52cda5e2596c4bea8b125c8c29cb4ca07af83aa5fe2a898c0e587cd"
+
+// DefaultRepo 发行仓库（github/accel 源；编译期 -X 可覆盖）。
+var DefaultRepo = "NovaWorks/zcard-next"
+
+// DefaultAccelerators 内置加速镜像前缀（方案 §4.2 实测 2026-09-05 筛出；
+// 加速器死亡是常态——列表在 settings 可配，此处仅为默认值）。
+var DefaultAccelerators = []string{
+	"https://gh-proxy.com", // 实测 206 直出 + Range 断点
+	"https://ghfast.top",   // 302 规范化 latest→具体 tag 后代理
+	"https://ghproxy.net",  // 同上
+}
+
+// 源类型。
+const (
+	SourceGitHub = "github" // github.com 直连（海外/网络通畅）
+	SourceAccel  = "accel"  // ghproxy 系加速镜像（中国大陆）
+	SourceStatic = "static" // 自建静态源（商业发行；<base>/update.json + 裸产物）
+)
 
 // FileEntry 单个发布产物（双架构二进制）。
 type FileEntry struct {
@@ -55,7 +80,7 @@ type Manifest struct {
 	Signature string      `json:"signature"` // base64(ed25519.Sign(priv, content))
 }
 
-// GitHub Releases API 载荷（只取所需字段）。
+// GitHub Releases API 载荷（beta 通道列 prerelease 用；仅 github 直连）。
 type ghRelease struct {
 	TagName    string    `json:"tag_name"`
 	Prerelease bool      `json:"prerelease"`
@@ -153,24 +178,108 @@ func HashFile(r io.Reader) (hexSum string, size int64, err error) {
 	return hex.EncodeToString(h.Sum(nil)), n, nil
 }
 
-// Client 更新检查器（API 源可注入——测试走 httptest）。
+// Client 更新客户端（三源统一；源字段见 Source* 常量，测试经 GHBase/APIBase 注入）。
 type Client struct {
-	API   string       // GitHub Releases API 根（如 https://api.github.com/repos/<owner>/<repo>）
-	HTTP  *http.Client // 默认 30s 超时
-	Token string       // 可选 GitHub Token（私有仓库/限流缓解）
+	Source     string // github | accel | static
+	Repo       string // "owner/repo"（github/accel）
+	Accel      string // 加速前缀如 https://gh-proxy.com（accel）
+	StaticBase string // 静态源基址（static；update.json 与产物平铺其下）
+	GHBase     string // github 页面基址（默认 https://github.com；测试注入）
+	APIBase    string // github REST 基址（默认 https://api.github.com；仅 beta 通道）
+	HTTP       *http.Client
+	Token      string // 可选 GitHub Token（beta 通道限流缓解）
+}
+
+// NewClient 构造指定源的客户端（生产默认基址；测试可再覆写 GHBase/APIBase）。
+func NewClient(source, repo, accel, staticBase string) *Client {
+	return &Client{
+		Source: source, Repo: repo, Accel: accel, StaticBase: staticBase,
+		GHBase: "https://github.com", APIBase: "https://api.github.com",
+	}
+}
+
+func (c *Client) http() *http.Client {
+	if c.HTTP != nil {
+		return c.HTTP
+	}
+	return &http.Client{Timeout: 30 * time.Second}
+}
+
+// githubPath github 页面路径（release 下载端点共用拼接）。
+func (c *Client) githubPath(p string) string {
+	return strings.TrimRight(c.GHBase, "/") + "/" + strings.Trim(c.Repo, "/") + "/" + p
+}
+
+// accelPrefix 加速前缀（ghproxy 系：<prefix>/https://github.com/...）。
+func (c *Client) accelPrefix() string {
+	return strings.TrimRight(c.Accel, "/") + "/"
+}
+
+// manifestURL 按 source/channel 拼manifest 地址。
+func (c *Client) manifestURL(channel string) (string, error) {
+	const name = "update.json"
+	switch c.Source {
+	case SourceStatic:
+		base := strings.TrimRight(c.StaticBase, "/")
+		if base == "" {
+			return "", fmt.Errorf("updater: static 源缺 StaticBase")
+		}
+		if channel == "beta" {
+			return base + "/beta/" + name, nil
+		}
+		return base + "/" + name, nil
+	case SourceAccel:
+		if channel == "beta" {
+			return "", ErrBetaSource
+		}
+		if c.Accel == "" {
+			return "", fmt.Errorf("updater: accel 源缺 Accel 前缀")
+		}
+		return c.accelPrefix() + c.githubPath("releases/latest/download/"+name), nil
+	default: // github 直连
+		return c.githubPath("releases/latest/download/" + name), nil
+	}
+}
+
+// assetURL 产物地址（version 来自已验签 manifest——tag 即版本，无注入面）。
+func (c *Client) assetURL(version, name string) string {
+	switch c.Source {
+	case SourceStatic:
+		return strings.TrimRight(c.StaticBase, "/") + "/" + name
+	case SourceAccel:
+		return c.accelPrefix() + c.githubPath("releases/download/"+version+"/"+name)
+	default:
+		return c.githubPath("releases/download/" + version + "/" + name)
+	}
 }
 
 // FetchManifest 拉取并验签最新 release 的 update.json。
-// channel=stable 取 /releases/latest（GitHub 语义本身排除 prerelease）；
-// beta 取 /releases 列表首个 prerelease。
+// stable：github 官方 releases/latest/download 重定向端点（三源同构；
+// 加速镜像实测正确代理该语义，自身完成 latest→具体 tag 的规范化）。
+// beta：需列 prerelease——仅 github 直连走 REST API（静态源按 <base>/beta/ 约定）。
 func (c *Client) FetchManifest(ctx context.Context, channel string, pub ed25519.PublicKey) (*Manifest, string, error) {
-	if c.HTTP == nil {
-		c.HTTP = &http.Client{Timeout: 30 * time.Second}
+	if channel == "beta" && c.Source == SourceGitHub {
+		return c.fetchBetaViaAPI(ctx, pub)
 	}
-	url := strings.TrimRight(c.API, "/") + "/releases/latest"
-	if channel == "beta" {
-		url = strings.TrimRight(c.API, "/") + "/releases?per_page=20"
+	url, err := c.manifestURL(channel)
+	if err != nil {
+		return nil, "", err
 	}
+	raw, err := c.download(ctx, url)
+	if err != nil {
+		return nil, "", err
+	}
+	m, err := VerifyManifest(raw, pub)
+	if err != nil {
+		return nil, "", err
+	}
+	return m, url, nil
+}
+
+// fetchBetaViaAPI beta 通道（github 直连）：/releases 列表取首个 prerelease
+// 的 update.json 资产直链（加速镜像不代理 REST API，已在 manifestURL 拒绝）。
+func (c *Client) fetchBetaViaAPI(ctx context.Context, pub ed25519.PublicKey) (*Manifest, string, error) {
+	url := strings.TrimRight(c.APIBase, "/") + "/repos/" + strings.Trim(c.Repo, "/") + "/releases?per_page=20"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, "", err
@@ -179,7 +288,7 @@ func (c *Client) FetchManifest(ctx context.Context, channel string, pub ed25519.
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
 	}
-	resp, err := c.HTTP.Do(req)
+	resp, err := c.http().Do(req)
 	if err != nil {
 		return nil, "", err
 	}
@@ -187,54 +296,38 @@ func (c *Client) FetchManifest(ctx context.Context, channel string, pub ed25519.
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("updater: 检查更新失败（%s HTTP %d）", url, resp.StatusCode)
 	}
-	pick := func(rel ghRelease) (string, error) {
+	var rels []ghRelease
+	if err := json.NewDecoder(resp.Body).Decode(&rels); err != nil {
+		return nil, "", err
+	}
+	for _, rel := range rels {
+		if !rel.Prerelease {
+			continue
+		}
 		for _, a := range rel.Assets {
-			if a.Name == "update.json" {
-				return a.BrowserDownloadURL, nil
+			if a.Name != "update.json" {
+				continue
 			}
-		}
-		return "", ErrNoAsset
-	}
-	var manifestURL string
-	if channel == "beta" {
-		var rels []ghRelease
-		if err := json.NewDecoder(resp.Body).Decode(&rels); err != nil {
-			return nil, "", err
-		}
-		found := false
-		for _, rel := range rels {
-			if rel.Prerelease {
-				if manifestURL, err = pick(rel); err == nil {
-					found = true
-				}
-				break
+			raw, err := c.download(ctx, a.BrowserDownloadURL)
+			if err != nil {
+				return nil, "", err
 			}
-		}
-		if !found {
-			return nil, "", ErrNoAsset
-		}
-	} else {
-		var rel ghRelease
-		if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
-			return nil, "", err
-		}
-		if manifestURL, err = pick(rel); err != nil {
-			return nil, "", err
+			m, err := VerifyManifest(raw, pub)
+			if err != nil {
+				return nil, "", err
+			}
+			return m, a.BrowserDownloadURL, nil
 		}
 	}
-	raw, err := c.download(ctx, manifestURL)
-	if err != nil {
-		return nil, "", err
-	}
-	m, err := VerifyManifest(raw, pub)
-	if err != nil {
-		return nil, "", err
-	}
-	return m, manifestURL, nil
+	return nil, "", ErrNoAsset
 }
 
-// DownloadAsset 下载指定产物到 w（流式哈希校验，不符即 ErrFileMismatch 且不落完整盘）。
-func (c *Client) DownloadAsset(ctx context.Context, m *Manifest, name string, w io.Writer) error {
+// ProgressFunc 下载进度回调（received 已收字节；total 为 manifest 声明大小，未知为 0）。
+type ProgressFunc func(received, total int64)
+
+// DownloadAsset 下载指定产物到 w（流式哈希校验，不符即 ErrFileMismatch；
+// 大产物经 onProgress 报进度——124MB 二进制必须落盘不能进内存，方案 §8）。
+func (c *Client) DownloadAsset(ctx context.Context, m *Manifest, name string, w io.Writer, onProgress ProgressFunc) error {
 	entry := -1
 	for i, f := range m.Files {
 		if f.Name == name {
@@ -245,12 +338,12 @@ func (c *Client) DownloadAsset(ctx context.Context, m *Manifest, name string, w 
 	if entry < 0 {
 		return ErrNoAsset
 	}
-	// 资产 URL 从 tag 现算（清单本身已验签，tag 即清单 version）
-	if c.HTTP == nil {
-		c.HTTP = &http.Client{Timeout: 30 * time.Second}
+	url := c.assetURL(m.Version, name)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
 	}
-	url := strings.TrimRight(c.API, "/") + "/releases/download/" + m.Version + "/" + name
-	resp, err := c.HTTP.Get(url)
+	resp, err := c.http().Do(req)
 	if err != nil {
 		return err
 	}
@@ -258,15 +351,38 @@ func (c *Client) DownloadAsset(ctx context.Context, m *Manifest, name string, w 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("updater: 下载失败（%s HTTP %d）", url, resp.StatusCode)
 	}
-	sum, size, err := HashFile(io.TeeReader(resp.Body, w))
+	f := m.Files[entry]
+	var src io.Reader = resp.Body
+	if onProgress != nil {
+		src = &progressReader{r: resp.Body, total: f.Size, fn: onProgress}
+	}
+	sum, size, err := HashFile(io.TeeReader(src, w))
 	if err != nil {
 		return err
 	}
-	f := m.Files[entry]
 	if sum != strings.ToLower(f.SHA256) || size != f.Size {
 		return ErrFileMismatch
 	}
 	return nil
+}
+
+// progressReader 读取计数包装（周期性回调，避免高频锁竞争）。
+type progressReader struct {
+	r     io.Reader
+	total int64
+	n     int64
+	last  time.Time
+	fn    ProgressFunc
+}
+
+func (p *progressReader) Read(b []byte) (int, error) {
+	n, err := p.r.Read(b)
+	p.n += int64(n)
+	if now := time.Now(); p.last.IsZero() || now.Sub(p.last) >= 300*time.Millisecond {
+		p.last = now
+		p.fn(p.n, p.total)
+	}
+	return n, err
 }
 
 func (c *Client) download(ctx context.Context, url string) ([]byte, error) {
@@ -274,7 +390,7 @@ func (c *Client) download(ctx context.Context, url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.HTTP.Do(req)
+	resp, err := c.http().Do(req)
 	if err != nil {
 		return nil, err
 	}

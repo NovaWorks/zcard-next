@@ -4381,6 +4381,70 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/update/apply:
+        post:
+            tags:
+                - AdminUpdateService
+            description: ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
+            operationId: AdminUpdateService_ApplyUpdate
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UpdateStatus'
+    /api/v1/admin/update/check:
+        post:
+            tags:
+                - AdminUpdateService
+            description: CheckUpdate 手动检查更新（源解析+manifest 验签；结果缓存于 status）。
+            operationId: AdminUpdateService_CheckUpdate
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UpdateCheckResult'
+    /api/v1/admin/update/rollback:
+        post:
+            tags:
+                - AdminUpdateService
+            description: RollbackUpdate 回滚上一版本（zcard.prev）并重启。
+            operationId: AdminUpdateService_RollbackUpdate
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UpdateStatus'
+    /api/v1/admin/update/status:
+        get:
+            tags:
+                - AdminUpdateService
+            description: GetUpdateStatus 当前状态（幂等轮询；含生效源/supervisor 探测/最近 check 结果）。
+            operationId: AdminUpdateService_GetUpdateStatus
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UpdateStatus'
     /api/v1/admin/users:
         get:
             tags:
@@ -9860,6 +9924,21 @@ components:
                     type: string
                 methodsJson:
                     type: string
+        zcard.api.admin.v1.UpdateCheckResult:
+            type: object
+            properties:
+                currentVersion:
+                    type: string
+                latestVersion:
+                    type: string
+                hasUpdate:
+                    type: boolean
+                notes:
+                    type: string
+                channel:
+                    type: string
+                source:
+                    type: string
         zcard.api.admin.v1.UpdateConnectionRequest:
             required:
                 - id
@@ -10122,6 +10201,39 @@ components:
                     format: int32
                 upstreamSkuId:
                     type: string
+        zcard.api.admin.v1.UpdateStatus:
+            type: object
+            properties:
+                phase:
+                    type: string
+                    description: idle|checking|backing_up|downloading|applying|restarting|verifying|rolled_back|failed
+                currentVersion:
+                    type: string
+                targetVersion:
+                    type: string
+                progressPercent:
+                    type: integer
+                    format: int32
+                errorMessage:
+                    type: string
+                source:
+                    type: string
+                mode:
+                    type: string
+                supervisorKind:
+                    type: string
+                hasUpdate:
+                    type: boolean
+                notes:
+                    type: string
+                latestVersion:
+                    type: string
+                checkedAt:
+                    type: string
+                backupDir:
+                    type: string
+                busy:
+                    type: boolean
         zcard.api.admin.v1.UploadMediaRequest:
             required:
                 - name
@@ -12028,6 +12140,11 @@ tags:
       description: |-
         AdminTicketService 客服工单工作台（P3-05）：urgent_paid 置顶持续高亮、
          认领/回复/内部备注/解决/关闭、筛选。
+    - name: AdminUpdateService
+      description: |-
+        AdminUpdateService 在线更新（doc/在线更新方案.md §9；system:update 超管专属）。
+         更新链：备份 DB → 落盘下载（流式哈希+进度）→ 原子替换 → 重启三分支；
+         重启后本接口随新进程复活——前端轮询 status 直到 current==target 即成功。
     - name: AdminUserManageService
       description: |-
         AdminUserManageService 前台用户管理（storefront 注册用户；员工管理见
