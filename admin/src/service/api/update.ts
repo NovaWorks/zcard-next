@@ -60,6 +60,7 @@ export interface UpdateSourceConfig {
   accelerators?: string[];
   static_base: string;
   channel: string;
+  supervisor?: string; // auto | systemd | supervisord | none
 }
 
 const DEFAULT_CONFIG: UpdateSourceConfig = {
@@ -67,7 +68,8 @@ const DEFAULT_CONFIG: UpdateSourceConfig = {
   repo: "NovaWorks/zcard-next",
   accelerators: ["https://gh-proxy.com", "https://ghfast.top", "https://ghproxy.net"],
   static_base: "",
-  channel: "stable"
+  channel: "stable",
+  supervisor: "auto"
 };
 
 export async function fetchUpdateSourceConfig(): Promise<UpdateSourceConfig> {

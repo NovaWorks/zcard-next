@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -280,11 +281,18 @@ func CheckDiskSpace(dir string, need int64) error {
 	return nil
 }
 
-// DetectSupervisor 探测进程管理器（方案 §5 重启三分支依据）：
-// ZCARD_SUPERVISOR（install.sh unit 显式声明，最可靠）> systemd 运行时注入
-// env（INVOCATION_ID）> supervisord env。注意不能用 /proc/self/cgroup——
-// systemd 系统上 nohup 裸跑进程的 cgroup 同样落在 systemd slice 内，会误判
-// （误判即「优雅退出等拉起」而实际无人拉起，服务死透）。返回 none = 裸跑。
+// DetectSupervisor 探测进程管理器（方案 §5 重启三分支依据），判据按可靠度排序：
+//  1. ZCARD_SUPERVISOR（install.sh unit 显式声明）
+//  2. systemd 运行时注入 env（INVOCATION_ID）
+//  3. supervisord 标准注入 env（SUPERVISOR_*）
+//  4. 父进程链 comm（宝塔「进程守护管理器」等封装不透传标准 env——实测有
+//     env 缺失场景；父链出现 supervisord/pm2 是强判据，不可能误报）
+//  5. /proc/self/cgroup 含 supervisord（supervisord 被 systemd 托管时子进程
+//     同 cgroup 的兜底）
+//
+// 注意 cgroup 仍不能用于判 systemd——systemd 系统上 nohup 裸跑进程同样落在
+// systemd slice 内（误判即「优雅退出等拉起」而实际无人拉起，服务死透）。
+// 探测尽力的盲区由 settings system/update 的 supervisor 字段显式覆盖（service 层）。
 func DetectSupervisor() string {
 	if v := os.Getenv("ZCARD_SUPERVISOR"); v != "" {
 		return v
@@ -295,7 +303,55 @@ func DetectSupervisor() string {
 	if os.Getenv("SUPERVISOR_ENABLED") == "1" || os.Getenv("SUPERVISOR_SERVER_URL") != "" {
 		return "supervisord"
 	}
+	if v := detectAncestorManager(); v != "" {
+		return v
+	}
+	if cgroup, err := os.ReadFile("/proc/self/cgroup"); err == nil && strings.Contains(string(cgroup), "supervisord") {
+		return "supervisord"
+	}
 	return "none"
+}
+
+// detectAncestorManager 向上父进程链找进程管理器（supervisord / PM2 God Daemon /
+// 宝塔守护等——按 comm 名匹配；/proc 不可读（非 Linux）即跳过）。
+func detectAncestorManager() string {
+	pid := os.Getppid()
+	for i := 0; i < 12 && pid > 1; i++ {
+		if comm, err := os.ReadFile(fmt.Sprintf("/proc/%d/comm", pid)); err == nil {
+			name := strings.ToLower(strings.TrimSpace(string(comm)))
+			switch {
+			case strings.Contains(name, "supervisor"):
+				return "supervisord"
+			case strings.HasPrefix(name, "pm2"), name == "god":
+				return "pm2"
+			}
+		}
+		next, ok := parentPID(pid)
+		if !ok {
+			return ""
+		}
+		pid = next
+	}
+	return ""
+}
+
+// parentPID /proc/<pid>/stat 的 ppid（comm 含空格时括号定位）。
+func parentPID(pid int) (int, bool) {
+	raw, err := os.ReadFile(fmt.Sprintf("/proc/%d/stat", pid))
+	if err != nil {
+		return 0, false
+	}
+	s := string(raw)
+	if idx := strings.LastIndex(s, ")"); idx >= 0 && idx+2 <= len(s) {
+		fields := strings.Fields(s[idx+2:])
+		if len(fields) >= 2 { // state ppid
+			var pp int
+			if _, err := fmt.Sscanf(fields[1], "%d", &pp); err == nil {
+				return pp, true
+			}
+		}
+	}
+	return 0, false
 }
 
 // RestartSelf 裸跑降级路径：syscall.Exec 同进程映像替换（方案 §5）。

@@ -349,7 +349,7 @@ func (s *Service) Snapshot(ctx context.Context) Status {
 	s.mu.Unlock()
 	st.Current = cur()
 	st.Busy = busy
-	st.Supervisor = updater.DetectSupervisor()
+	st.Supervisor = s.supervisorKind(ctx)
 	if s.binPath != "" {
 		if state, err := updater.LoadState(s.binPath); err == nil && state != nil {
 			// 新进程延续目标版本（exec 重启后内存态清零，磁盘 state 是唯一延续源——
@@ -389,6 +389,22 @@ func (s *Service) fail(err error) {
 
 // cur 当前版本（settings 注入的内存值——重启后自然为新版本号）。
 func cur() string { return settings.ServerVersion() }
+
+// SupervisorKind 进程管理器判定（配置显式覆盖 > 自动探测——宝塔等封装环境
+// env 探测有盲区，方案 §5）。main 的重启三分支与 status 下发共用本口径，
+// 保证「显示的」与「实际分流的」一致。
+func (s *Service) SupervisorKind(ctx context.Context) string { return s.supervisorKind(ctx) }
+
+// supervisorKind 配置显式覆盖 > 自动探测（宝塔等封装环境 env 探测有盲区，
+// 方案 §5——重启三分支正确分流是更新安全前提，配置是权威出口）。
+func (s *Service) supervisorKind(ctx context.Context) string {
+	cfg := s.sourceConfig(ctx)
+	switch cfg.Supervisor {
+	case "systemd", "supervisord", "pm2", "none":
+		return cfg.Supervisor
+	}
+	return updater.DetectSupervisor()
+}
 
 // downloadCandidates 下载候选源序列：首选源 + 其余加速器兜底（beta 排除——
 // 加速镜像不支持 beta；static/github 钉死模式同样给加速器兜底，网络突变时多一条生路）。

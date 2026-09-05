@@ -34,20 +34,20 @@ var groups = map[string]*GroupDef{
 			"seo_title": "SEO 标题", "seo_keywords": "SEO 关键词", "seo_desc": "SEO 描述",
 			"verification_google": "Google 站长验证码", "verification_bing": "Bing 站长验证码",
 			"robots_custom": "robots.txt 自定义规则",
-			"admin_path": "后台安全路径", "top_button": "顶部自定义按钮",
+			"admin_path":    "后台安全路径", "top_button": "顶部自定义按钮",
 		},
 		Defaults: map[string]any{
-			"name":         "ZCard 演示站",
-			"logo":         "",
-			"url":          "",
-			"seo_title":    "",
-			"seo_keywords": "",
-			"seo_desc":     "",
+			"name":                "ZCard 演示站",
+			"logo":                "",
+			"url":                 "",
+			"seo_title":           "",
+			"seo_keywords":        "",
+			"seo_desc":            "",
 			"verification_google": "",
-			"verification_bing":    "",
-			"robots_custom":        "",
-			"admin_path":   "",
-			"top_button":   nil, // 顶部自定义按钮 {text,url}
+			"verification_bing":   "",
+			"robots_custom":       "",
+			"admin_path":          "",
+			"top_button":          nil, // 顶部自定义按钮 {text,url}
 		},
 		PublicKeys: map[string]bool{"name": true, "logo": true, "url": true, "seo_title": true, "seo_keywords": true, "seo_desc": true, "verification_google": true, "verification_bing": true, "robots_custom": true, "top_button": true},
 	},
@@ -174,7 +174,7 @@ var groups = map[string]*GroupDef{
 		Labels: map[string]string{
 			"maintenance": "维护模式", "maintenance_style": "维护提示样式",
 			"maintenance_modal_freq": "维护弹窗频率",
-			"announcement_type": "公告类型", "announcement": "公告内容",
+			"announcement_type":      "公告类型", "announcement": "公告内容",
 			"installed_at": "安装时间（只读）",
 		},
 		Options: map[string]map[string]string{
@@ -184,12 +184,12 @@ var groups = map[string]*GroupDef{
 			"announcement_type":      {"text": "文本", "image": "图片", "carousel": "轮播"},
 		},
 		Defaults: map[string]any{
-			"maintenance":             false,
-			"maintenance_style":       "modal", // modal | banner
-			"maintenance_modal_freq":  "every", // every | daily（仅 modal 样式生效）
-			"announcement_type":       "text",  // text | image | carousel
-			"announcement":            "",
-			"installed_at":            nil, // 安装时间（install 写入，业务只读）
+			"maintenance":            false,
+			"maintenance_style":      "modal", // modal | banner
+			"maintenance_modal_freq": "every", // every | daily（仅 modal 样式生效）
+			"announcement_type":      "text",  // text | image | carousel
+			"announcement":           "",
+			"installed_at":           nil, // 安装时间（install 写入，业务只读）
 		},
 		PublicKeys: map[string]bool{
 			"maintenance": true, "maintenance_style": true, "maintenance_modal_freq": true,
@@ -368,11 +368,12 @@ var groups = map[string]*GroupDef{
 		},
 		Defaults: map[string]any{
 			"update": map[string]any{
-				"mode":        "auto",  // auto | github | accel | static
-				"repo":        "NovaWorks/zcard-next",
+				"mode":         "auto", // auto | github | accel | static
+				"repo":         "NovaWorks/zcard-next",
 				"accelerators": []string{"https://gh-proxy.com", "https://ghfast.top", "https://ghproxy.net"},
-				"static_base": "",      // source=static 必填
-				"channel":     "stable", // beta 仅 github 直连/静态源
+				"static_base":  "",       // source=static 必填
+				"channel":      "stable", // beta 仅 github 直连/静态源
+				"supervisor":   "auto",   // auto=探测 | systemd | supervisord | pm2 | none（探测盲区手动指定）
 			},
 		},
 	},

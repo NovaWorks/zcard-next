@@ -372,6 +372,18 @@ watch(
             />
           </div>
           <div class="field">
+            <div class="field-label">
+              进程管理器
+              <span class="text-xs opacity-55">（自动探测不准时手动指定——决定更新重启的分流方式）</span>
+            </div>
+            <NRadioGroup v-model:value="config.supervisor" size="small">
+              <NRadioButton value="auto" title="父进程链/环境变量自动探测">auto 探测</NRadioButton>
+              <NRadioButton value="systemd">systemd</NRadioButton>
+              <NRadioButton value="supervisord">supervisord</NRadioButton>
+              <NRadioButton value="none" title="nohup 裸跑：更新失败无自动兜底">裸跑</NRadioButton>
+            </NRadioGroup>
+          </div>
+          <div class="field">
             <div class="field-label">更新通道</div>
             <NRadioGroup v-model:value="config.channel" size="small">
               <NRadioButton value="stable">stable 稳定</NRadioButton>

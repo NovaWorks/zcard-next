@@ -25,6 +25,9 @@ type SourceConfig struct {
 	Accels     []string `json:"accelerators"` // 加速前缀列表（空=DefaultAccelerators）
 	StaticBase string   `json:"static_base"`  // static 基址（static 模式必填）
 	Channel    string   `json:"channel"`      // stable | beta（默认 stable）
+	// Supervisor 进程管理器显式覆盖（auto=探测[默认] | systemd | supervisord | pm2 | none）。
+	// 探测尽力而为的盲区出口——重启三分支的正确分流比探测更重要（方案 §5）。
+	Supervisor string `json:"supervisor,omitempty"`
 }
 
 // Normalize 缺省填充（repo/accels/channel；mode 归一非法值到 auto）。
