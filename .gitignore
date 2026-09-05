@@ -5,6 +5,7 @@
 doc/*
 plan/
 *.md
+!README.md
 !doc/部署指南.md
 
 # Go
