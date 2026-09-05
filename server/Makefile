@@ -115,7 +115,8 @@ release:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags fullstack -trimpath -ldflags "-X main.Version=$$tag" -o dist/zcard-linux-arm64 ./cmd/zcard && \
 	(cd dist && shasum -a 256 zcard-linux-amd64 zcard-linux-arm64 > SHA256SUMS) && \
 	notes=""; [ -f "$(NOTES)" ] && notes="--notes-file $(NOTES)"; \
-	go run ./cmd/zcard self-update sign --key .zcard-update-key --dir dist --version $$tag $$notes && \
+	hist=""; [ -f "CHANGELOG.json" ] && hist="--history-file CHANGELOG.json"; \
+	go run ./cmd/zcard self-update sign --key .zcard-update-key --dir dist --version $$tag $$notes $$hist && \
 	echo "==> 完成 dist/：zcard-linux-amd64 / zcard-linux-arm64 / SHA256SUMS / update.json" && \
 	echo "    上传 GitHub Release（tag=$$tag，四个文件平铺）或静态源目录；加速镜像与后台 auto 源随即可用"
 

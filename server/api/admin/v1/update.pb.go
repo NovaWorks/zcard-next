@@ -23,30 +23,100 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ReleaseNoteEntry 历史版本变更记录（manifest history 段透传）。
+type ReleaseNoteEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Version       string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`
+	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	Notes         string                 `protobuf:"bytes,3,opt,name=notes,proto3" json:"notes,omitempty"`
+	IssuedAt      string                 `protobuf:"bytes,4,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReleaseNoteEntry) Reset() {
+	*x = ReleaseNoteEntry{}
+	mi := &file_admin_v1_update_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReleaseNoteEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReleaseNoteEntry) ProtoMessage() {}
+
+func (x *ReleaseNoteEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_update_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReleaseNoteEntry.ProtoReflect.Descriptor instead.
+func (*ReleaseNoteEntry) Descriptor() ([]byte, []int) {
+	return file_admin_v1_update_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ReleaseNoteEntry) GetVersion() string {
+	if x != nil {
+		return x.Version
+	}
+	return ""
+}
+
+func (x *ReleaseNoteEntry) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *ReleaseNoteEntry) GetNotes() string {
+	if x != nil {
+		return x.Notes
+	}
+	return ""
+}
+
+func (x *ReleaseNoteEntry) GetIssuedAt() string {
+	if x != nil {
+		return x.IssuedAt
+	}
+	return ""
+}
+
 type UpdateStatus struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// idle|checking|backing_up|downloading|applying|restarting|verifying|rolled_back|failed
-	Phase           string `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
-	CurrentVersion  string `protobuf:"bytes,2,opt,name=current_version,json=currentVersion,proto3" json:"current_version,omitempty"`
-	TargetVersion   string `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"`
-	ProgressPercent int32  `protobuf:"varint,4,opt,name=progress_percent,json=progressPercent,proto3" json:"progress_percent,omitempty"` // downloading 阶段 0-100
-	ErrorMessage    string `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	Source          string `protobuf:"bytes,6,opt,name=source,proto3" json:"source,omitempty"`                                       // 生效源展示：github | <accel 前缀> | static:<base>
-	Mode            string `protobuf:"bytes,7,opt,name=mode,proto3" json:"mode,omitempty"`                                           // 配置模式 auto|github|accel|static
-	SupervisorKind  string `protobuf:"bytes,8,opt,name=supervisor_kind,json=supervisorKind,proto3" json:"supervisor_kind,omitempty"` // systemd | supervisord | none（none=裸跑，UI 警示）
-	HasUpdate       bool   `protobuf:"varint,9,opt,name=has_update,json=hasUpdate,proto3" json:"has_update,omitempty"`
-	Notes           string `protobuf:"bytes,10,opt,name=notes,proto3" json:"notes,omitempty"` // 最近一次 check 的 changelog markdown
-	LatestVersion   string `protobuf:"bytes,11,opt,name=latest_version,json=latestVersion,proto3" json:"latest_version,omitempty"`
-	CheckedAt       string `protobuf:"bytes,12,opt,name=checked_at,json=checkedAt,proto3" json:"checked_at,omitempty"` // RFC3339
-	BackupDir       string `protobuf:"bytes,13,opt,name=backup_dir,json=backupDir,proto3" json:"backup_dir,omitempty"` // 本次更新备份目录
-	Busy            bool   `protobuf:"varint,14,opt,name=busy,proto3" json:"busy,omitempty"`                           // 更新链进行中（apply 单飞互斥）
+	Phase           string              `protobuf:"bytes,1,opt,name=phase,proto3" json:"phase,omitempty"`
+	CurrentVersion  string              `protobuf:"bytes,2,opt,name=current_version,json=currentVersion,proto3" json:"current_version,omitempty"`
+	TargetVersion   string              `protobuf:"bytes,3,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"`
+	ProgressPercent int32               `protobuf:"varint,4,opt,name=progress_percent,json=progressPercent,proto3" json:"progress_percent,omitempty"` // downloading 阶段 0-100
+	ErrorMessage    string              `protobuf:"bytes,5,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	Source          string              `protobuf:"bytes,6,opt,name=source,proto3" json:"source,omitempty"`                                       // 生效源展示：github | <accel 前缀> | static:<base>
+	Mode            string              `protobuf:"bytes,7,opt,name=mode,proto3" json:"mode,omitempty"`                                           // 配置模式 auto|github|accel|static
+	SupervisorKind  string              `protobuf:"bytes,8,opt,name=supervisor_kind,json=supervisorKind,proto3" json:"supervisor_kind,omitempty"` // systemd | supervisord | none（none=裸跑，UI 警示）
+	HasUpdate       bool                `protobuf:"varint,9,opt,name=has_update,json=hasUpdate,proto3" json:"has_update,omitempty"`
+	Notes           string              `protobuf:"bytes,10,opt,name=notes,proto3" json:"notes,omitempty"` // 最近一次 check 的 changelog markdown
+	LatestVersion   string              `protobuf:"bytes,11,opt,name=latest_version,json=latestVersion,proto3" json:"latest_version,omitempty"`
+	CheckedAt       string              `protobuf:"bytes,12,opt,name=checked_at,json=checkedAt,proto3" json:"checked_at,omitempty"` // RFC3339
+	BackupDir       string              `protobuf:"bytes,13,opt,name=backup_dir,json=backupDir,proto3" json:"backup_dir,omitempty"` // 本次更新备份目录
+	Busy            bool                `protobuf:"varint,14,opt,name=busy,proto3" json:"busy,omitempty"`                           // 更新链进行中（apply 单飞互斥）
+	History         []*ReleaseNoteEntry `protobuf:"bytes,15,rep,name=history,proto3" json:"history,omitempty"`                      // 历史版本 changelog（manifest 权威源）
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdateStatus) Reset() {
 	*x = UpdateStatus{}
-	mi := &file_admin_v1_update_proto_msgTypes[0]
+	mi := &file_admin_v1_update_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -58,7 +128,7 @@ func (x *UpdateStatus) String() string {
 func (*UpdateStatus) ProtoMessage() {}
 
 func (x *UpdateStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_update_proto_msgTypes[0]
+	mi := &file_admin_v1_update_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -71,7 +141,7 @@ func (x *UpdateStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateStatus.ProtoReflect.Descriptor instead.
 func (*UpdateStatus) Descriptor() ([]byte, []int) {
-	return file_admin_v1_update_proto_rawDescGZIP(), []int{0}
+	return file_admin_v1_update_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *UpdateStatus) GetPhase() string {
@@ -172,6 +242,13 @@ func (x *UpdateStatus) GetBusy() bool {
 	return false
 }
 
+func (x *UpdateStatus) GetHistory() []*ReleaseNoteEntry {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
 type UpdateCheckResult struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	CurrentVersion string                 `protobuf:"bytes,1,opt,name=current_version,json=currentVersion,proto3" json:"current_version,omitempty"`
@@ -180,13 +257,14 @@ type UpdateCheckResult struct {
 	Notes          string                 `protobuf:"bytes,4,opt,name=notes,proto3" json:"notes,omitempty"`
 	Channel        string                 `protobuf:"bytes,5,opt,name=channel,proto3" json:"channel,omitempty"`
 	Source         string                 `protobuf:"bytes,6,opt,name=source,proto3" json:"source,omitempty"`
+	History        []*ReleaseNoteEntry    `protobuf:"bytes,7,rep,name=history,proto3" json:"history,omitempty"` // 历史版本 changelog
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpdateCheckResult) Reset() {
 	*x = UpdateCheckResult{}
-	mi := &file_admin_v1_update_proto_msgTypes[1]
+	mi := &file_admin_v1_update_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -198,7 +276,7 @@ func (x *UpdateCheckResult) String() string {
 func (*UpdateCheckResult) ProtoMessage() {}
 
 func (x *UpdateCheckResult) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_update_proto_msgTypes[1]
+	mi := &file_admin_v1_update_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -211,7 +289,7 @@ func (x *UpdateCheckResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCheckResult.ProtoReflect.Descriptor instead.
 func (*UpdateCheckResult) Descriptor() ([]byte, []int) {
-	return file_admin_v1_update_proto_rawDescGZIP(), []int{1}
+	return file_admin_v1_update_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *UpdateCheckResult) GetCurrentVersion() string {
@@ -256,11 +334,23 @@ func (x *UpdateCheckResult) GetSource() string {
 	return ""
 }
 
+func (x *UpdateCheckResult) GetHistory() []*ReleaseNoteEntry {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
 var File_admin_v1_update_proto protoreflect.FileDescriptor
 
 const file_admin_v1_update_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/update.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc7\x03\n" +
+	"\x15admin/v1/update.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"y\n" +
+	"\x10ReleaseNoteEntry\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\tR\aversion\x12\x18\n" +
+	"\achannel\x18\x02 \x01(\tR\achannel\x12\x14\n" +
+	"\x05notes\x18\x03 \x01(\tR\x05notes\x12\x1b\n" +
+	"\tissued_at\x18\x04 \x01(\tR\bissuedAt\"\x87\x04\n" +
 	"\fUpdateStatus\x12\x14\n" +
 	"\x05phase\x18\x01 \x01(\tR\x05phase\x12'\n" +
 	"\x0fcurrent_version\x18\x02 \x01(\tR\x0ecurrentVersion\x12%\n" +
@@ -279,7 +369,8 @@ const file_admin_v1_update_proto_rawDesc = "" +
 	"checked_at\x18\f \x01(\tR\tcheckedAt\x12\x1d\n" +
 	"\n" +
 	"backup_dir\x18\r \x01(\tR\tbackupDir\x12\x12\n" +
-	"\x04busy\x18\x0e \x01(\bR\x04busy\"\xca\x01\n" +
+	"\x04busy\x18\x0e \x01(\bR\x04busy\x12>\n" +
+	"\ahistory\x18\x0f \x03(\v2$.zcard.api.admin.v1.ReleaseNoteEntryR\ahistory\"\x8a\x02\n" +
 	"\x11UpdateCheckResult\x12'\n" +
 	"\x0fcurrent_version\x18\x01 \x01(\tR\x0ecurrentVersion\x12%\n" +
 	"\x0elatest_version\x18\x02 \x01(\tR\rlatestVersion\x12\x1d\n" +
@@ -287,7 +378,8 @@ const file_admin_v1_update_proto_rawDesc = "" +
 	"has_update\x18\x03 \x01(\bR\thasUpdate\x12\x14\n" +
 	"\x05notes\x18\x04 \x01(\tR\x05notes\x12\x18\n" +
 	"\achannel\x18\x05 \x01(\tR\achannel\x12\x16\n" +
-	"\x06source\x18\x06 \x01(\tR\x06source2\xe1\x03\n" +
+	"\x06source\x18\x06 \x01(\tR\x06source\x12>\n" +
+	"\ahistory\x18\a \x03(\v2$.zcard.api.admin.v1.ReleaseNoteEntryR\ahistory2\xe1\x03\n" +
 	"\x12AdminUpdateService\x12p\n" +
 	"\x0fGetUpdateStatus\x12\x16.google.protobuf.Empty\x1a .zcard.api.admin.v1.UpdateStatus\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/admin/update/status\x12s\n" +
 	"\vCheckUpdate\x12\x16.google.protobuf.Empty\x1a%.zcard.api.admin.v1.UpdateCheckResult\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/update/check\x12n\n" +
@@ -306,26 +398,29 @@ func file_admin_v1_update_proto_rawDescGZIP() []byte {
 	return file_admin_v1_update_proto_rawDescData
 }
 
-var file_admin_v1_update_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_admin_v1_update_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_admin_v1_update_proto_goTypes = []any{
-	(*UpdateStatus)(nil),      // 0: zcard.api.admin.v1.UpdateStatus
-	(*UpdateCheckResult)(nil), // 1: zcard.api.admin.v1.UpdateCheckResult
-	(*emptypb.Empty)(nil),     // 2: google.protobuf.Empty
+	(*ReleaseNoteEntry)(nil),  // 0: zcard.api.admin.v1.ReleaseNoteEntry
+	(*UpdateStatus)(nil),      // 1: zcard.api.admin.v1.UpdateStatus
+	(*UpdateCheckResult)(nil), // 2: zcard.api.admin.v1.UpdateCheckResult
+	(*emptypb.Empty)(nil),     // 3: google.protobuf.Empty
 }
 var file_admin_v1_update_proto_depIdxs = []int32{
-	2, // 0: zcard.api.admin.v1.AdminUpdateService.GetUpdateStatus:input_type -> google.protobuf.Empty
-	2, // 1: zcard.api.admin.v1.AdminUpdateService.CheckUpdate:input_type -> google.protobuf.Empty
-	2, // 2: zcard.api.admin.v1.AdminUpdateService.ApplyUpdate:input_type -> google.protobuf.Empty
-	2, // 3: zcard.api.admin.v1.AdminUpdateService.RollbackUpdate:input_type -> google.protobuf.Empty
-	0, // 4: zcard.api.admin.v1.AdminUpdateService.GetUpdateStatus:output_type -> zcard.api.admin.v1.UpdateStatus
-	1, // 5: zcard.api.admin.v1.AdminUpdateService.CheckUpdate:output_type -> zcard.api.admin.v1.UpdateCheckResult
-	0, // 6: zcard.api.admin.v1.AdminUpdateService.ApplyUpdate:output_type -> zcard.api.admin.v1.UpdateStatus
-	0, // 7: zcard.api.admin.v1.AdminUpdateService.RollbackUpdate:output_type -> zcard.api.admin.v1.UpdateStatus
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: zcard.api.admin.v1.UpdateStatus.history:type_name -> zcard.api.admin.v1.ReleaseNoteEntry
+	0, // 1: zcard.api.admin.v1.UpdateCheckResult.history:type_name -> zcard.api.admin.v1.ReleaseNoteEntry
+	3, // 2: zcard.api.admin.v1.AdminUpdateService.GetUpdateStatus:input_type -> google.protobuf.Empty
+	3, // 3: zcard.api.admin.v1.AdminUpdateService.CheckUpdate:input_type -> google.protobuf.Empty
+	3, // 4: zcard.api.admin.v1.AdminUpdateService.ApplyUpdate:input_type -> google.protobuf.Empty
+	3, // 5: zcard.api.admin.v1.AdminUpdateService.RollbackUpdate:input_type -> google.protobuf.Empty
+	1, // 6: zcard.api.admin.v1.AdminUpdateService.GetUpdateStatus:output_type -> zcard.api.admin.v1.UpdateStatus
+	2, // 7: zcard.api.admin.v1.AdminUpdateService.CheckUpdate:output_type -> zcard.api.admin.v1.UpdateCheckResult
+	1, // 8: zcard.api.admin.v1.AdminUpdateService.ApplyUpdate:output_type -> zcard.api.admin.v1.UpdateStatus
+	1, // 9: zcard.api.admin.v1.AdminUpdateService.RollbackUpdate:output_type -> zcard.api.admin.v1.UpdateStatus
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_update_proto_init() }
@@ -339,7 +434,7 @@ func file_admin_v1_update_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_update_proto_rawDesc), len(file_admin_v1_update_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

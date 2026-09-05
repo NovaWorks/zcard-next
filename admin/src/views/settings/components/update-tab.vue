@@ -70,6 +70,14 @@ const supervisorTag = computed(() => {
   return { type: "info" as const, label: k };
 });
 
+// 历史版本 changelog（manifest 权威源;排除已安装版本——只展示比当前新的记录未安装前的全历史）
+const historyList = computed(() => status.value?.history || []);
+const historyHtml = computed(() => {
+  const out: Record<string, string> = {};
+  for (const h of historyList.value) out[h.version] = sanitizeHtml(marked.parse(h.notes || "_（无说明）_") as string);
+  return out;
+});
+
 const sourceText = computed(() => {
   const s = status.value?.source || "";
   if (!s) return "—";
@@ -312,6 +320,21 @@ watch(
       </div>
     </NCard>
 
+    <NCard v-if="historyList.length" size="small" title="版本历史" class="mb-3">
+      <div class="history-list">
+        <div v-for="h in historyList" :key="h.version" class="history-item">
+          <div class="history-head">
+            <NTag size="small" round :type="h.version === status?.current_version ? 'success' : 'default'">
+              {{ h.version }}{{ h.version === status?.current_version ? "（当前）" : "" }}
+            </NTag>
+            <span class="history-date">{{ h.issued_at }}</span>
+            <NTag v-if="h.channel === 'beta'" size="small" round type="warning" :bordered="false">beta</NTag>
+          </div>
+          <div class="history-notes" v-html="historyHtml[h.version]" />
+        </div>
+      </div>
+    </NCard>
+
     <NCollapse class="mb-3">
       <NCollapseItem name="source" title="更新源配置（大陆服务器默认 auto 即可）">
         <div v-if="config" class="config-form">
@@ -466,5 +489,40 @@ watch(
   padding: 1px 5px;
   border-radius: 4px;
   background: rgba(128, 128, 128, 0.15);
+}
+.history-list {
+  max-height: 420px;
+  overflow: auto;
+}
+.history-item {
+  padding: 10px 4px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.14);
+}
+.history-item:last-child {
+  border-bottom: none;
+}
+.history-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.history-date {
+  font-size: 12px;
+  opacity: 0.55;
+}
+.history-notes {
+  font-size: 13px;
+  line-height: 1.7;
+  color: inherit;
+}
+.history-notes :deep(ul) {
+  padding-left: 18px;
+}
+.history-notes :deep(h1),
+.history-notes :deep(h2),
+.history-notes :deep(h3) {
+  font-size: 14px;
+  margin: 6px 0 4px;
 }
 </style>

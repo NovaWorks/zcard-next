@@ -70,14 +70,26 @@ type FileEntry struct {
 	Size   int64  `json:"size"`
 }
 
-// Manifest 发布清单（验签覆盖 content 段全部字段）。
+// ReleaseNote 单个历史版本的变更记录（历史 changelog 面板数据源）。
+type ReleaseNote struct {
+	Version  string `json:"version"`           // vX.Y.Z
+	Channel  string `json:"channel,omitempty"` // stable | beta
+	Notes    string `json:"notes,omitempty"`   // changelog markdown
+	IssuedAt string `json:"issued_at,omitempty"`
+}
+
+// Manifest 发布清单（验签覆盖 content 段全部字段——含 History）。
+// History 历史版本 changelog（最近 N 条，发行侧经 sign --history-file 注入）；
+// omitempty 保证**存量已签发清单（无 history 字段）验签向后兼容**——nil 重编码
+// 时省略该字段，content 原文一致。
 type Manifest struct {
-	Version   string      `json:"version"` // vMAJOR.MINOR.PATCH
-	Channel   string      `json:"channel"` // stable | beta
-	Notes     string      `json:"notes"`   // changelog markdown
-	IssuedAt  string      `json:"issued_at"`
-	Files     []FileEntry `json:"files"`
-	Signature string      `json:"signature"` // base64(ed25519.Sign(priv, content))
+	Version   string        `json:"version"` // vMAJOR.MINOR.PATCH
+	Channel   string        `json:"channel"` // stable | beta
+	Notes     string        `json:"notes"`   // changelog markdown
+	IssuedAt  string        `json:"issued_at"`
+	Files     []FileEntry   `json:"files"`
+	History   []ReleaseNote `json:"history,omitempty"` // 历史版本记录（新墈权威源=manifest，三源统一免 API）
+	Signature string        `json:"signature"`         // base64(ed25519.Sign(priv, content))
 }
 
 // GitHub Releases API 载荷（beta 通道列 prerelease 用；仅 github 直连）。
@@ -137,7 +149,7 @@ func VerifyManifest(raw []byte, pub ed25519.PublicKey) (*Manifest, error) {
 	}
 	content, err := json.Marshal(Manifest{
 		Version: m.Version, Channel: m.Channel, Notes: m.Notes,
-		IssuedAt: m.IssuedAt, Files: m.Files,
+		IssuedAt: m.IssuedAt, Files: m.Files, History: m.History,
 	})
 	if err != nil {
 		return nil, ErrBadManifest
@@ -151,15 +163,16 @@ func VerifyManifest(raw []byte, pub ed25519.PublicKey) (*Manifest, error) {
 	return &m, nil
 }
 
-// SignManifest 发行侧签发（私钥离线保管，见 self-update sign 子命令）。
-func SignManifest(priv ed25519.PrivateKey, version, channel, notes string, files []FileEntry) ([]byte, error) {
+// SignManifest 发行侧签发（私钥离线保管，见 self-update sign 子命令；
+// history 为可选的历史版本 changelog，nil/空 = 不携带）。
+func SignManifest(priv ed25519.PrivateKey, version, channel, notes string, files []FileEntry, history []ReleaseNote) ([]byte, error) {
 	m := Manifest{
 		Version: version, Channel: channel, Notes: notes,
-		IssuedAt: time.Now().UTC().Format(time.RFC3339), Files: files,
+		IssuedAt: time.Now().UTC().Format(time.RFC3339), Files: files, History: history,
 	}
 	content, err := json.Marshal(Manifest{
 		Version: m.Version, Channel: m.Channel, Notes: m.Notes,
-		IssuedAt: m.IssuedAt, Files: m.Files,
+		IssuedAt: m.IssuedAt, Files: m.Files, History: m.History,
 	})
 	if err != nil {
 		return nil, err

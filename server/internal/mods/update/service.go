@@ -61,6 +61,7 @@ type Status struct {
 	CheckedAt  time.Time
 	BackupDir  string
 	Busy       bool
+	History    []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
 }
 
 // Service 更新编排。
@@ -155,6 +156,7 @@ type CheckResult struct {
 	Notes     string
 	Channel   string
 	Source    string
+	History   []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
 }
 
 // Check 手动检查（源解析 + manifest 验签；结果缓存进 status 供弹窗展示）。
@@ -188,10 +190,12 @@ func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 		Current: cur(), Latest: m.Version,
 		HasUpdate: updater.CompareSemver(m.Version, cur()) > 0,
 		Notes:     m.Notes, Channel: m.Channel, Source: outcome.SourceDesc(),
+		History: m.History,
 	}
 	s.mu.Lock()
 	s.st.HasUpdate, s.st.Notes, s.st.Latest = res.HasUpdate, res.Notes, res.Latest
 	s.st.Source, s.st.CheckedAt = res.Source, time.Now()
+	s.st.History = res.History
 	s.mu.Unlock()
 	return res, nil
 }

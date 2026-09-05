@@ -9093,6 +9093,18 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.ReleaseNoteEntry:
+            type: object
+            properties:
+                version:
+                    type: string
+                channel:
+                    type: string
+                notes:
+                    type: string
+                issuedAt:
+                    type: string
+            description: ReleaseNoteEntry 历史版本变更记录（manifest history 段透传）。
         zcard.api.admin.v1.RenameMediaCategoryRequest:
             required:
                 - id
@@ -9939,6 +9951,10 @@ components:
                     type: string
                 source:
                     type: string
+                history:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ReleaseNoteEntry'
         zcard.api.admin.v1.UpdateConnectionRequest:
             required:
                 - id
@@ -10234,6 +10250,10 @@ components:
                     type: string
                 busy:
                     type: boolean
+                history:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ReleaseNoteEntry'
         zcard.api.admin.v1.UploadMediaRequest:
             required:
                 - name

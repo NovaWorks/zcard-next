@@ -2,6 +2,13 @@
 
 import { request } from "../request";
 
+export interface ReleaseNoteEntry {
+  version: string;
+  channel: string;
+  notes: string;
+  issued_at: string;
+}
+
 export interface UpdateStatus {
   phase: string; // idle|checking|backing_up|downloading|applying|restarting|verifying|rolled_back|failed
   current_version: string;
@@ -17,6 +24,7 @@ export interface UpdateStatus {
   checked_at: string;
   backup_dir: string;
   busy: boolean;
+  history?: ReleaseNoteEntry[];
 }
 
 export interface UpdateCheckResult {
@@ -26,6 +34,7 @@ export interface UpdateCheckResult {
   notes: string;
   channel: string;
   source: string;
+  history?: ReleaseNoteEntry[];
 }
 
 export function fetchUpdateStatus() {

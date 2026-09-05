@@ -194,6 +194,7 @@ func runSign(args []string) error {
 	version := fs.String("version", "", "版本 tag（vX.Y.Z，必填）")
 	channel := fs.String("channel", "stable", "通道 stable|beta")
 	notesFile := fs.String("notes-file", "", "changelog markdown 文件")
+	historyFile := fs.String("history-file", "", "历史版本 changelog JSON 文件（[{version,notes,date}]；后台更新页历史面板数据源）")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -251,7 +252,29 @@ func runSign(args []string) error {
 		}
 		notes = string(b)
 	}
-	out, err := updater.SignManifest(ed25519.PrivateKey(rawKey), *version, *channel, notes, files)
+	// 历史版本 changelog（更新页历史面板）：[{version, notes, date}] 宽松解析
+	var history []updater.ReleaseNote
+	if *historyFile != "" {
+		b, err := os.ReadFile(*historyFile)
+		if err != nil {
+			return err
+		}
+		var raw []struct {
+			Version string `json:"version"`
+			Notes   string `json:"notes"`
+			Date    string `json:"date"`
+		}
+		if err := json.Unmarshal(b, &raw); err != nil {
+			return fmt.Errorf("sign: history 文件须为 [{version,notes,date}] JSON: %w", err)
+		}
+		for _, h := range raw {
+			if !updater.IsSemver(h.Version) {
+				return fmt.Errorf("sign: history 含非 semver 版本 %q", h.Version)
+			}
+			history = append(history, updater.ReleaseNote{Version: h.Version, Notes: h.Notes, IssuedAt: h.Date})
+		}
+	}
+	out, err := updater.SignManifest(ed25519.PrivateKey(rawKey), *version, *channel, notes, files, history)
 	if err != nil {
 		return err
 	}
@@ -259,7 +282,7 @@ func runSign(args []string) error {
 	if err := os.WriteFile(dst, out, 0o644); err != nil {
 		return err
 	}
-	fmt.Printf("已签名 %d 个产物 → %s\n", len(files), dst)
+	fmt.Printf("已签名 %d 个产物 → %s（历史记录 %d 条）\n", len(files), dst, len(history))
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	context "context"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -39,6 +40,7 @@ func (s *AdminUpdateService) CheckUpdate(ctx context.Context, _ *emptypb.Empty) 
 	return &adminv1.UpdateCheckResult{
 		CurrentVersion: res.Current, LatestVersion: res.Latest,
 		HasUpdate: res.HasUpdate, Notes: res.Notes, Channel: res.Channel, Source: res.Source,
+		History: toHistoryPB(res.History),
 	}, nil
 }
 
@@ -75,5 +77,19 @@ func toStatusPB(st Status) *adminv1.UpdateStatus {
 		Mode: st.Mode, SupervisorKind: st.Supervisor, HasUpdate: st.HasUpdate,
 		Notes: st.Notes, LatestVersion: st.Latest, CheckedAt: checkedAt,
 		BackupDir: st.BackupDir, Busy: st.Busy,
+		History: toHistoryPB(st.History),
 	}
+}
+
+func toHistoryPB(h []updater.ReleaseNote) []*adminv1.ReleaseNoteEntry {
+	if len(h) == 0 {
+		return nil
+	}
+	out := make([]*adminv1.ReleaseNoteEntry, 0, len(h))
+	for _, e := range h {
+		out = append(out, &adminv1.ReleaseNoteEntry{
+			Version: e.Version, Channel: e.Channel, Notes: e.Notes, IssuedAt: e.IssuedAt,
+		})
+	}
+	return out
 }

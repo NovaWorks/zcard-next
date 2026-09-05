@@ -4,6 +4,7 @@
 package updater
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
@@ -25,7 +26,7 @@ func testManifest(t *testing.T, version string, files []FileEntry) (*Manifest, [
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, err := SignManifest(priv, version, "stable", "test notes", files)
+	raw, err := SignManifest(priv, version, "stable", "test notes", files, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,6 +76,45 @@ func TestVerifyManifestMatrix(t *testing.T) {
 	_, rawDev, devPub, _ := testManifest(t, "dev", files)
 	if _, err := VerifyManifest(rawDev, devPub); err == nil {
 		t.Fatal("非 semver 版本必须拒绝")
+	}
+}
+
+// TestManifestHistory 历史版本 changelog：签名覆盖 + 存量无 history 清单向后兼容。
+func TestManifestHistory(t *testing.T) {
+	files := []FileEntry{{Name: "zcard-linux-amd64", SHA256: "ab", Size: 10}}
+	pub, priv, _ := GenerateKeyPair()
+	history := []ReleaseNote{
+		{Version: "v1.1.0", Notes: "# v1.1.0\n\n- 修复", IssuedAt: "2026-09-01"},
+		{Version: "v1.2.0", Notes: "# v1.2.0\n\n- 新增", IssuedAt: "2026-09-04"},
+	}
+	raw, err := SignManifest(priv, "v1.3.0", "stable", "top notes", files, history)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, err := VerifyManifest(raw, pub)
+	if err != nil {
+		t.Fatalf("带 history 清单验签失败: %v", err)
+	}
+	if len(m.History) != 2 || m.History[1].Version != "v1.2.0" {
+		t.Fatalf("history 透传异常: %+v", m.History)
+	}
+	// 篡改 history（签名覆盖——改历史记录必须失效）
+	tampered := *m
+	tampered.History[0].Notes = "fake history"
+	rawT, _ := json.Marshal(tampered)
+	if _, err := VerifyManifest(rawT, pub); err == nil {
+		t.Fatal("篡改 history 后验签必须失败")
+	}
+	// 存量无 history 清单（omitempty 重编码不含字段，content 原文一致 → 兼容）
+	rawOld, err := SignManifest(priv, "v1.0.0", "stable", "old notes", files, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := VerifyManifest(rawOld, pub); err != nil {
+		t.Fatalf("存量无 history 清单必须继续通过验签: %v", err)
+	}
+	if bytes.Contains(rawOld, []byte("history")) {
+		t.Fatal("nil history 序列化不应含 history 字段（存量兼容前提）")
 	}
 }
 
