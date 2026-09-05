@@ -271,6 +271,15 @@ func TestResolveSourceAuto(t *testing.T) {
 	if _, _, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{"http://127.0.0.1:1"}}, 500*time.Millisecond); err == nil {
 		t.Fatal("accel 全挂必须报 ErrSourceUnreachable")
 	}
+	// 404 = 链路可达（repo 未发 release 是常态——状态码不判可达性，防误判全挂）
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })
+	nf := httptest.NewServer(mux)
+	defer nf.Close()
+	c404, out404, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{nf.URL}}, 3*time.Second)
+	if err != nil || c404 == nil || out404.Accel != nf.URL {
+		t.Fatalf("404 响应的加速器应判可达: err=%v out=%+v", err, out404)
+	}
 	// 钉死 accel：可用加速器胜出
 	c, out, err = ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{accel}}, 3*time.Second)
 	if err != nil || out.Accel != accel || c.Accel != accel {

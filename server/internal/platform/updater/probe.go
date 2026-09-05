@@ -145,7 +145,10 @@ func pickFirstAccel(ctx context.Context, cfg SourceConfig, timeout time.Duration
 	return best.accel
 }
 
-// probeURL HEAD 探测（2xx/3xx 即可达；正文不读）。
+// probeURL HEAD 探测：**收到任何 HTTP 响应即链路可达**（含 404/405/403——恰恰
+// 证明服务端活着；404 是 repo 未发 release 的正常回包，若按状态码判可达会把
+// 「首版未发布」误判成「网络不通」）。仅网络层失败（超时/DNS/拒连）为不可达；
+// 选错路无实害——后续 manifest 验签 fail-closed 兜底。
 func probeURL(ctx context.Context, url string, timeout time.Duration) bool {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -155,14 +158,8 @@ func probeURL(ctx context.Context, url string, timeout time.Duration) bool {
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		// 部分加速器/网关拒 HEAD（405）——降级 GET Range 首字节复测
-		req.Method = http.MethodGet
-		req.Header.Set("Range", "bytes=0-0")
-		resp, err = http.DefaultClient.Do(req)
-		if err != nil {
-			return false
-		}
+		return false
 	}
-	defer resp.Body.Close()
-	return resp.StatusCode >= 200 && resp.StatusCode < 400
+	_ = resp.Body.Close()
+	return true
 }
