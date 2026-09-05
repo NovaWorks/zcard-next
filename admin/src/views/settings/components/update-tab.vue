@@ -63,12 +63,26 @@ const inFlight = computed(() => {
 });
 
 const supervisorTag = computed(() => {
-  const k = status.value?.supervisor_kind || "none";
+  if (!status.value) return { type: "default" as const, label: "状态未知" };
+  const k = status.value.supervisor_kind;
   if (k === "none") return { type: "warning" as const, label: "裸进程运行（无管理器）" };
   if (k === "systemd") return { type: "success" as const, label: "systemd" };
-  if (k === "supervisord") return { type: "success" as const, label: "supervisord" };
-  return { type: "info" as const, label: k };
+  if (k === "supervisord" || k === "pm2") return { type: "success" as const, label: k };
+  return { type: "info" as const, label: k || "未知" };
 });
+
+// 状态接口失败可见化（此前静默 catch——401/403/网络异常时页面全 fallback，
+// 与「数据为空」无法区分，误导排查）
+const statusError = ref("");
+async function refreshStatusVisible() {
+  try {
+    const res = await fetchUpdateStatus();
+    status.value = res as any;
+    statusError.value = "";
+  } catch (e: any) {
+    statusError.value = e?.response?.status ? `HTTP ${e.response.status}` : String(e?.message || e);
+  }
+}
 
 // 历史版本 changelog（manifest 权威源;排除已安装版本——只展示比当前新的记录未安装前的全历史）
 const historyList = computed(() => status.value?.history || []);
@@ -106,11 +120,13 @@ async function refreshStatus() {
         return;
       }
     }
-  } catch {
+  } catch (e: any) {
     if (waitingRestart) {
       // 连接失败 = 进程正在重启（优雅停机/exec 间隙），继续等待
+    } else if (!status.value) {
+      // 首次即失败：可见化（401/403=权限、5xx=服务、网络=反代）——此前静默
+      statusError.value = e?.response?.status ? `HTTP ${e.response.status}` : String(e?.message || e);
     }
-    // 非 waiting 模式的失败静默（网络抖动不打扰）
   }
   schedulePoll();
 }
@@ -227,7 +243,8 @@ function enterWaitIfNeeded(st: UpdateStatus | null) {
 
 onMounted(async () => {
   await loadConfig().catch(() => {});
-  await refreshStatus();
+  await refreshStatusVisible();
+  if (!statusError.value) schedulePoll();
   enterWaitIfNeeded(status.value);
 });
 onBeforeUnmount(() => {
@@ -256,7 +273,7 @@ watch(
       <div class="stat-grid">
         <div class="stat">
           <div class="stat-label">当前版本</div>
-          <div class="stat-value">{{ status?.current_version || "…" }}</div>
+          <div class="stat-value">{{ status?.current_version || "—" }}</div>
         </div>
         <div class="stat">
           <div class="stat-label">最新版本</div>
@@ -288,6 +305,14 @@ watch(
           </div>
         </div>
       </div>
+
+      <NAlert v-if="statusError" type="error" class="mb-3" :bordered="false">
+        <b>状态获取失败（{{ statusError }}）</b>
+        <div class="mt-1 text-xs opacity-70">
+          system:update 为超管专属权限——请确认当前账号为超级管理员；HTTP 401/403=权限或登录态，
+          5xx=服务异常，网络错误=反代/服务未起。F12 → Network → update/status 可看原始响应。
+        </div>
+      </NAlert>
 
       <NAlert v-if="status?.supervisor_kind === 'none'" type="warning" :show-icon="true" class="mt-3" :bordered="false">
         当前为裸进程（nohup）运行：更新可正常执行，但新版本无法启动时<b>没有自动回滚兜底</b>。建议改用
