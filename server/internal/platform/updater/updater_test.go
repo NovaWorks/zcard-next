@@ -311,6 +311,17 @@ func TestResolveSourceAuto(t *testing.T) {
 	if _, _, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{"http://127.0.0.1:1"}}, 500*time.Millisecond); err == nil {
 		t.Fatal("accel 全挂必须报 ErrSourceUnreachable")
 	}
+	// 302 重定向目标不可达也判可达（不跟随重定向——收到 github.com 响应即直连通；
+	// 跟随会因重定向目标偶发慢把港澳台直连环境误判成不可达而错走加速）
+	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Redirect(w, r0(), "http://127.0.0.1:1/slow-target", http.StatusFound)
+	}))
+	defer redirect.Close()
+	c3xx, out3xx, err := ResolveSource(context.Background(), SourceConfig{Mode: SourceAccel, Accels: []string{redirect.URL}}, 3*time.Second)
+	if err != nil || c3xx == nil || out3xx.Accel != redirect.URL {
+		t.Fatalf("302 不跟随应判可达: err=%v out=%+v", err, out3xx)
+	}
+
 	// 404 = 链路可达（repo 未发 release 是常态——状态码不判可达性，防误判全挂）
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { http.NotFound(w, r) })
@@ -506,6 +517,8 @@ func TestDetectSupervisor(t *testing.T) {
 		t.Fatalf("显式声明优先，得到 %s", got)
 	}
 }
+
+func r0() *http.Request { r, _ := http.NewRequest(http.MethodHead, "/", nil); return r }
 
 func readFile(t *testing.T, p string) string {
 	t.Helper()

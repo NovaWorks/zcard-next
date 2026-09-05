@@ -143,6 +143,10 @@ func (s *Service) resolveClient(ctx context.Context, cfg updater.SourceConfig) (
 	s.mu.Unlock()
 	c, out, err := updater.ResolveSource(ctx, cfg, 5*time.Second)
 	if err != nil {
+		// 探测失败清缓存：auto 判定可能基于过期网络快照，下轮重探
+		s.mu.Lock()
+		s.probe = nil
+		s.mu.Unlock()
 		return nil, nil, err
 	}
 	s.mu.Lock()

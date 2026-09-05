@@ -159,7 +159,17 @@ func probeURL(ctx context.Context, url string, timeout time.Duration) bool {
 	if err != nil {
 		return false
 	}
-	resp, err := http.DefaultClient.Do(req)
+	// 不跟随重定向：github.com 对该端点回 302 → 跳 objects.githubusercontent。
+	// 跟随则探测耗时=整条重定向链（目标偶发慢即误判「直连不可达」错走加速——
+	// 港澳台等直连可用地区实测踩坑）；不跟随时收到 github.com 的任何响应
+	// （302/404 皆可）即证明直连可达，探测语义精确对齐「能到 github.com」。
+	client := &http.Client{
+		Timeout: timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return false
 	}

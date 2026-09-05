@@ -218,6 +218,16 @@ func (c *Client) http() *http.Client {
 	return &http.Client{Timeout: 30 * time.Second}
 }
 
+// dlHTTP 产物下载客户端：124MB 级大文件经免费加速镜像（限速 1-10MB/s 常见）
+// 30s 整体超时必断（context deadline exceeded while reading body）——默认 10 分钟，
+// 与更新链 ctx（15min）匹配；显式注入的 HTTP（测试/定制）尊重调用方。
+func (c *Client) dlHTTP() *http.Client {
+	if c.HTTP != nil {
+		return c.HTTP
+	}
+	return &http.Client{Timeout: 10 * time.Minute}
+}
+
 // githubPath github 页面路径（release 下载端点共用拼接）。
 func (c *Client) githubPath(p string) string {
 	return strings.TrimRight(c.GHBase, "/") + "/" + strings.Trim(c.Repo, "/") + "/" + p
@@ -368,7 +378,7 @@ func (c *Client) DownloadAsset(ctx context.Context, m *Manifest, name string, w 
 	if err != nil {
 		return err
 	}
-	resp, err := c.http().Do(req)
+	resp, err := c.dlHTTP().Do(req)
 	if err != nil {
 		return err
 	}
