@@ -331,6 +331,13 @@ func (s *Service) Rollback(ctx context.Context) error {
 	if s.binPath == "" {
 		return errors.New("update: 无法定位当前二进制")
 	}
+	// 单飞守卫：更新链进行中（下载/落位中）同时回滚 = 磁盘状态竞态破坏
+	s.mu.Lock()
+	if s.busy {
+		s.mu.Unlock()
+		return ErrBusy
+	}
+	s.mu.Unlock()
 	if err := updater.Rollback(s.binPath); err != nil {
 		return err
 	}

@@ -61,6 +61,9 @@ func (s *AdminUpdateService) RollbackUpdate(ctx context.Context, _ *emptypb.Empt
 		return nil, errors.Forbidden("update.DISABLED", err.Error())
 	}
 	if err := s.svc.Rollback(ctx); err != nil {
+		if errors.Is(err, ErrBusy) {
+			return toStatusPB(s.svc.Snapshot(ctx)), nil // 进行中：返回当前态（与 apply 一致）
+		}
 		return nil, errors.InternalServer("update.ROLLBACK_FAILED", err.Error())
 	}
 	return toStatusPB(s.svc.Snapshot(ctx)), nil

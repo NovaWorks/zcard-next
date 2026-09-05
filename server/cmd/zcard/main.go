@@ -38,7 +38,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/updater"
@@ -289,8 +288,20 @@ func runServe(args []string) (err error) {
 	// 更新重启 hook（doc/在线更新方案.md §5 三分支）：置位标记 + 异步优雅停机；
 	// app.Run 返回后按 supervisor 分流——管理器环境 exit 0 交拉起，裸跑 exec 自替换
 	var restarting atomic.Bool
+	var supAtRestart atomic.Value // 停机前预取的 supervisor 判定（doCleanup 关 DB 后配置读不到）
+	supervisorOf := func() string {
+		if v := supAtRestart.Load(); v != nil {
+			return v.(string)
+		}
+		s := updater.DetectSupervisor()
+		if updateSvc != nil {
+			s = updateSvc.SupervisorKind(context.Background())
+		}
+		return s
+	}
 	if updateSvc != nil {
 		updateSvc.SetRestartFn(func() {
+			supAtRestart.Store(supervisorOf()) // 停机前预取（此刻 DB 仍活）
 			restarting.Store(true)
 			go func() {
 				// kratos App.Stop 无参（内部 5s 优雅停机）；hook 只负责触发
@@ -318,7 +329,7 @@ func runServe(args []string) (err error) {
 	runErr := app.Run()
 	if restarting.Load() {
 		doCleanup() // exec 前显式收口（exec 不走 defer 链）
-		if err := restartAfterUpdate(binPath, logger, updateSvc); err != nil {
+		if err := restartAfterUpdate(binPath, logger, supervisorOf()); err != nil {
 			// exec 失败：旧进程内存映像仍在服务，磁盘已是新版——复位更新态允许重试，
 			// 返回 nil 保持 exit 0（非零会误触 systemd OnFailure 回滚掉刚落位的新版）
 			logger.Error("update.restart.failed", "error", err)
@@ -331,24 +342,24 @@ func runServe(args []string) (err error) {
 	return runErr
 }
 
-// restartAfterUpdate 更新后重启三分支（方案 §5）：systemd/supervisord → exit 0
-// 交管理器拉起新版；裸跑 → syscall.Exec 同进程替换（PID/父子关系/env/cwd 全保留）。
-// supervisor 判定与 status 下发同口径（update.Service 配置覆盖 > 探测）——
-// 「显示的」与「实际分流的」必须一致。
-func restartAfterUpdate(binPath string, logger *slog.Logger, updateSvc *update.Service) error {
+// restartAfterUpdate 更新后重启分流（方案 §5）：仅 systemd 走 exit 0 交拉起
+// （Restart=always 由 install.sh 保证）；supervisord/宝塔/pm2/裸跑一律 exec 同进程
+// 替换（PID 不变管理器零感知，规避 autorestart 配置不可控）。sup 由调用方在
+// 停机前预取（doCleanup 关 DB 后配置读不到，回落探测会产生意图漂移）。
+func restartAfterUpdate(binPath string, logger *slog.Logger, sup string) error {
 	if binPath == "" {
 		return fmt.Errorf("无法定位二进制路径")
 	}
-	sup := updater.DetectSupervisor()
-	if updateSvc != nil {
-		sup = updateSvc.SupervisorKind(context.Background())
+	// 仅 systemd 走「exit 0 交拉起」——Restart=always 由 install.sh 保证。
+	// supervisord/宝塔守护的 autorestart 配置不可控（unexpected 语义下 exit 0
+	// 不触发重启 = 更新即停服），pm2 同理——一律 exec 同进程替换（PID 不变，
+	// 管理器零感知，对两者完全兼容）。
+	if sup == "systemd" {
+		logger.Info("update.restart.exit_to_supervisor", "supervisor", sup)
+		return nil
 	}
-	if sup == "none" {
-		logger.Info("update.restart.exec_self", "bin", binPath)
-		return updater.RestartSelf(binPath)
-	}
-	logger.Info("update.restart.exit_to_supervisor", "supervisor", sup)
-	return nil
+	logger.Info("update.restart.exec_self", "supervisor", sup, "bin", binPath)
+	return updater.RestartSelf(binPath)
 }
 
 // currentBinaryPath 当前二进制绝对路径（失败返回空串，更新态检查跳过）。
