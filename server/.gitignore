@@ -10,3 +10,4 @@
 /cmd/zcard/zcard
 .zcard-update-key
 /zcard
+/dist/
