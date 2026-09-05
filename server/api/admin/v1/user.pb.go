@@ -10,6 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -28,6 +29,8 @@ type ListUsersRequest struct {
 	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`   // active | banned（空 = 全部）
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	IsSupplier    bool                   `protobuf:"varint,5,opt,name=is_supplier,json=isSupplier,proto3" json:"is_supplier,omitempty"` // 仅看开通供货账户的用户（true 时生效）
+	LevelId       uint64                 `protobuf:"varint,6,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"`          // 按会员等级筛选（非 0 时生效）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -86,6 +89,20 @@ func (x *ListUsersRequest) GetPage() int32 {
 func (x *ListUsersRequest) GetPageSize() int32 {
 	if x != nil {
 		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListUsersRequest) GetIsSupplier() bool {
+	if x != nil {
+		return x.IsSupplier
+	}
+	return false
+}
+
+func (x *ListUsersRequest) GetLevelId() uint64 {
+	if x != nil {
+		return x.LevelId
 	}
 	return 0
 }
@@ -238,22 +255,143 @@ func (x *SetUserStatusRequest) GetStatus() string {
 	return ""
 }
 
-// UserItem 前台用户（敏感字段如密码哈希绝不外发）。
-type UserItem struct {
+type CreateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // active | banned | deleted
-	LastLoginAt   int64                  `protobuf:"varint,5,opt,name=last_login_at,json=lastLoginAt,proto3" json:"last_login_at,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"` // ≥6 位
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`       // 可选
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *CreateUserRequest) Reset() {
+	*x = CreateUserRequest{}
+	mi := &file_admin_v1_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateUserRequest) ProtoMessage() {}
+
+func (x *CreateUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateUserRequest.ProtoReflect.Descriptor instead.
+func (*CreateUserRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *CreateUserRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *CreateUserRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *CreateUserRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+type ResetUserPasswordRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	NewPassword   string                 `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"` // ≥6 位
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetUserPasswordRequest) Reset() {
+	*x = ResetUserPasswordRequest{}
+	mi := &file_admin_v1_user_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetUserPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetUserPasswordRequest) ProtoMessage() {}
+
+func (x *ResetUserPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_user_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetUserPasswordRequest.ProtoReflect.Descriptor instead.
+func (*ResetUserPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_user_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ResetUserPasswordRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ResetUserPasswordRequest) GetNewPassword() string {
+	if x != nil {
+		return x.NewPassword
+	}
+	return ""
+}
+
+// UserItem 前台用户（敏感字段如密码哈希绝不外发）。
+type UserItem struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Id          uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Username    string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Email       string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Status      string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // active | banned | deleted
+	LastLoginAt int64                  `protobuf:"varint,5,opt,name=last_login_at,json=lastLoginAt,proto3" json:"last_login_at,omitempty"`
+	CreatedAt   int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	// 聚合展示（列表/详情同源）
+	LevelId        uint64 `protobuf:"varint,7,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"` // 会员等级（0=无等级）
+	LevelName      string `protobuf:"bytes,8,opt,name=level_name,json=levelName,proto3" json:"level_name,omitempty"`
+	BalanceCents   int64  `protobuf:"varint,9,opt,name=balance_cents,json=balanceCents,proto3" json:"balance_cents,omitempty"`       // 钱包可用余额（分）
+	Points         int32  `protobuf:"varint,10,opt,name=points,proto3" json:"points,omitempty"`                                      // 积分余额
+	OrderCount     int64  `protobuf:"varint,11,opt,name=order_count,json=orderCount,proto3" json:"order_count,omitempty"`            // 全部订单数
+	SpentCents     int64  `protobuf:"varint,12,opt,name=spent_cents,json=spentCents,proto3" json:"spent_cents,omitempty"`            // 累计消费（已支付订单总额，分）
+	IsSupplier     bool   `protobuf:"varint,13,opt,name=is_supplier,json=isSupplier,proto3" json:"is_supplier,omitempty"`            // 是否开通供货账户
+	SupplierStatus string `protobuf:"bytes,14,opt,name=supplier_status,json=supplierStatus,proto3" json:"supplier_status,omitempty"` // applying | approved | rejected
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
 func (x *UserItem) Reset() {
 	*x = UserItem{}
-	mi := &file_admin_v1_user_proto_msgTypes[4]
+	mi := &file_admin_v1_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -265,7 +403,7 @@ func (x *UserItem) String() string {
 func (*UserItem) ProtoMessage() {}
 
 func (x *UserItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_user_proto_msgTypes[4]
+	mi := &file_admin_v1_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -278,7 +416,7 @@ func (x *UserItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UserItem.ProtoReflect.Descriptor instead.
 func (*UserItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_user_proto_rawDescGZIP(), []int{4}
+	return file_admin_v1_user_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UserItem) GetId() uint64 {
@@ -323,16 +461,290 @@ func (x *UserItem) GetCreatedAt() int64 {
 	return 0
 }
 
+func (x *UserItem) GetLevelId() uint64 {
+	if x != nil {
+		return x.LevelId
+	}
+	return 0
+}
+
+func (x *UserItem) GetLevelName() string {
+	if x != nil {
+		return x.LevelName
+	}
+	return ""
+}
+
+func (x *UserItem) GetBalanceCents() int64 {
+	if x != nil {
+		return x.BalanceCents
+	}
+	return 0
+}
+
+func (x *UserItem) GetPoints() int32 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
+func (x *UserItem) GetOrderCount() int64 {
+	if x != nil {
+		return x.OrderCount
+	}
+	return 0
+}
+
+func (x *UserItem) GetSpentCents() int64 {
+	if x != nil {
+		return x.SpentCents
+	}
+	return 0
+}
+
+func (x *UserItem) GetIsSupplier() bool {
+	if x != nil {
+		return x.IsSupplier
+	}
+	return false
+}
+
+func (x *UserItem) GetSupplierStatus() string {
+	if x != nil {
+		return x.SupplierStatus
+	}
+	return ""
+}
+
+// UserCouponItem 用户持有优惠券。
+type UserCouponItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`                         // unused | used | disabled
+	ExpiresAt     int64                  `protobuf:"varint,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // 0=不限
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserCouponItem) Reset() {
+	*x = UserCouponItem{}
+	mi := &file_admin_v1_user_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserCouponItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserCouponItem) ProtoMessage() {}
+
+func (x *UserCouponItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_user_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserCouponItem.ProtoReflect.Descriptor instead.
+func (*UserCouponItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_user_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UserCouponItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *UserCouponItem) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *UserCouponItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *UserCouponItem) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+// UserRecentOrder 最近订单（用户详情聚合，默认 10 条）。
+type UserRecentOrder struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserRecentOrder) Reset() {
+	*x = UserRecentOrder{}
+	mi := &file_admin_v1_user_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserRecentOrder) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserRecentOrder) ProtoMessage() {}
+
+func (x *UserRecentOrder) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_user_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserRecentOrder.ProtoReflect.Descriptor instead.
+func (*UserRecentOrder) Descriptor() ([]byte, []int) {
+	return file_admin_v1_user_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UserRecentOrder) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *UserRecentOrder) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
+}
+
+func (x *UserRecentOrder) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *UserRecentOrder) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+// UserDetail 用户详情（聚合视图）。
+type UserDetail struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	User            *UserItem              `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	Coupons         []*UserCouponItem      `protobuf:"bytes,2,rep,name=coupons,proto3" json:"coupons,omitempty"`                                        // 持有优惠券（最多 50）
+	RecentOrders    []*UserRecentOrder     `protobuf:"bytes,3,rep,name=recent_orders,json=recentOrders,proto3" json:"recent_orders,omitempty"`          // 最近订单
+	InviterUsername string                 `protobuf:"bytes,4,opt,name=inviter_username,json=inviterUsername,proto3" json:"inviter_username,omitempty"` // 邀请人（无则空）
+	InviteesCount   int64                  `protobuf:"varint,5,opt,name=invitees_count,json=inviteesCount,proto3" json:"invitees_count,omitempty"`      // 直接下级数量
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *UserDetail) Reset() {
+	*x = UserDetail{}
+	mi := &file_admin_v1_user_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserDetail) ProtoMessage() {}
+
+func (x *UserDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_user_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserDetail.ProtoReflect.Descriptor instead.
+func (*UserDetail) Descriptor() ([]byte, []int) {
+	return file_admin_v1_user_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *UserDetail) GetUser() *UserItem {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *UserDetail) GetCoupons() []*UserCouponItem {
+	if x != nil {
+		return x.Coupons
+	}
+	return nil
+}
+
+func (x *UserDetail) GetRecentOrders() []*UserRecentOrder {
+	if x != nil {
+		return x.RecentOrders
+	}
+	return nil
+}
+
+func (x *UserDetail) GetInviterUsername() string {
+	if x != nil {
+		return x.InviterUsername
+	}
+	return ""
+}
+
+func (x *UserDetail) GetInviteesCount() int64 {
+	if x != nil {
+		return x.InviteesCount
+	}
+	return 0
+}
+
 var File_admin_v1_user_proto protoreflect.FileDescriptor
 
 const file_admin_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x13admin/v1/user.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"u\n" +
+	"\x13admin/v1/user.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb1\x01\n" +
 	"\x10ListUsersRequest\x12\x18\n" +
 	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"Z\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12\x1f\n" +
+	"\vis_supplier\x18\x05 \x01(\bR\n" +
+	"isSupplier\x12\x19\n" +
+	"\blevel_id\x18\x06 \x01(\x04R\alevelId\"Z\n" +
 	"\x0eListUsersReply\x122\n" +
 	"\x05users\x18\x01 \x03(\v2\x1c.zcard.api.admin.v1.UserItemR\x05users\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\"%\n" +
@@ -340,7 +752,14 @@ const file_admin_v1_user_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"H\n" +
 	"\x14SetUserStatusRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1b\n" +
-	"\x06status\x18\x02 \x01(\tB\x03\xe0A\x02R\x06status\"\xa7\x01\n" +
+	"\x06status\x18\x02 \x01(\tB\x03\xe0A\x02R\x06status\"k\n" +
+	"\x11CreateUserRequest\x12\x1f\n" +
+	"\busername\x18\x01 \x01(\tB\x03\xe0A\x02R\busername\x12\x1f\n" +
+	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\"W\n" +
+	"\x18ResetUserPasswordRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12&\n" +
+	"\fnew_password\x18\x02 \x01(\tB\x03\xe0A\x02R\vnewPassword\"\xaa\x03\n" +
 	"\bUserItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
@@ -348,10 +767,45 @@ const file_admin_v1_user_proto_rawDesc = "" +
 	"\x06status\x18\x04 \x01(\tR\x06status\x12\"\n" +
 	"\rlast_login_at\x18\x05 \x01(\x03R\vlastLoginAt\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\x03R\tcreatedAt2\x81\x03\n" +
+	"created_at\x18\x06 \x01(\x03R\tcreatedAt\x12\x19\n" +
+	"\blevel_id\x18\a \x01(\x04R\alevelId\x12\x1d\n" +
+	"\n" +
+	"level_name\x18\b \x01(\tR\tlevelName\x12#\n" +
+	"\rbalance_cents\x18\t \x01(\x03R\fbalanceCents\x12\x16\n" +
+	"\x06points\x18\n" +
+	" \x01(\x05R\x06points\x12\x1f\n" +
+	"\vorder_count\x18\v \x01(\x03R\n" +
+	"orderCount\x12\x1f\n" +
+	"\vspent_cents\x18\f \x01(\x03R\n" +
+	"spentCents\x12\x1f\n" +
+	"\vis_supplier\x18\r \x01(\bR\n" +
+	"isSupplier\x12'\n" +
+	"\x0fsupplier_status\x18\x0e \x01(\tR\x0esupplierStatus\"m\n" +
+	"\x0eUserCouponItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\x03R\texpiresAt\"\x86\x01\n" +
+	"\x0fUserRecentOrder\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12!\n" +
+	"\famount_cents\x18\x02 \x01(\x03R\vamountCents\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\x03R\tcreatedAt\"\x98\x02\n" +
+	"\n" +
+	"UserDetail\x120\n" +
+	"\x04user\x18\x01 \x01(\v2\x1c.zcard.api.admin.v1.UserItemR\x04user\x12<\n" +
+	"\acoupons\x18\x02 \x03(\v2\".zcard.api.admin.v1.UserCouponItemR\acoupons\x12H\n" +
+	"\rrecent_orders\x18\x03 \x03(\v2#.zcard.api.admin.v1.UserRecentOrderR\frecentOrders\x12)\n" +
+	"\x10inviter_username\x18\x04 \x01(\tR\x0finviterUsername\x12%\n" +
+	"\x0einvitees_count\x18\x05 \x01(\x03R\rinviteesCount2\x80\x05\n" +
 	"\x16AdminUserManageService\x12r\n" +
-	"\tListUsers\x12$.zcard.api.admin.v1.ListUsersRequest\x1a\".zcard.api.admin.v1.ListUsersReply\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/admin/users\x12m\n" +
-	"\aGetUser\x12\".zcard.api.admin.v1.GetUserRequest\x1a\x1c.zcard.api.admin.v1.UserItem\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/users/{id}\x12\x83\x01\n" +
+	"\tListUsers\x12$.zcard.api.admin.v1.ListUsersRequest\x1a\".zcard.api.admin.v1.ListUsersReply\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/api/v1/admin/users\x12o\n" +
+	"\aGetUser\x12\".zcard.api.admin.v1.GetUserRequest\x1a\x1e.zcard.api.admin.v1.UserDetail\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/users/{id}\x12q\n" +
+	"\n" +
+	"CreateUser\x12%.zcard.api.admin.v1.CreateUserRequest\x1a\x1c.zcard.api.admin.v1.UserItem\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/admin/users\x12\x87\x01\n" +
+	"\x11ResetUserPassword\x12,.zcard.api.admin.v1.ResetUserPasswordRequest\x1a\x16.google.protobuf.Empty\",\x82\xd3\xe4\x93\x02&:\x01*\x1a!/api/v1/admin/users/{id}/password\x12\x83\x01\n" +
 	"\rSetUserStatus\x12(.zcard.api.admin.v1.SetUserStatusRequest\x1a\x1c.zcard.api.admin.v1.UserItem\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/users/{id}/statusB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
@@ -366,27 +820,40 @@ func file_admin_v1_user_proto_rawDescGZIP() []byte {
 	return file_admin_v1_user_proto_rawDescData
 }
 
-var file_admin_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_admin_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_admin_v1_user_proto_goTypes = []any{
-	(*ListUsersRequest)(nil),     // 0: zcard.api.admin.v1.ListUsersRequest
-	(*ListUsersReply)(nil),       // 1: zcard.api.admin.v1.ListUsersReply
-	(*GetUserRequest)(nil),       // 2: zcard.api.admin.v1.GetUserRequest
-	(*SetUserStatusRequest)(nil), // 3: zcard.api.admin.v1.SetUserStatusRequest
-	(*UserItem)(nil),             // 4: zcard.api.admin.v1.UserItem
+	(*ListUsersRequest)(nil),         // 0: zcard.api.admin.v1.ListUsersRequest
+	(*ListUsersReply)(nil),           // 1: zcard.api.admin.v1.ListUsersReply
+	(*GetUserRequest)(nil),           // 2: zcard.api.admin.v1.GetUserRequest
+	(*SetUserStatusRequest)(nil),     // 3: zcard.api.admin.v1.SetUserStatusRequest
+	(*CreateUserRequest)(nil),        // 4: zcard.api.admin.v1.CreateUserRequest
+	(*ResetUserPasswordRequest)(nil), // 5: zcard.api.admin.v1.ResetUserPasswordRequest
+	(*UserItem)(nil),                 // 6: zcard.api.admin.v1.UserItem
+	(*UserCouponItem)(nil),           // 7: zcard.api.admin.v1.UserCouponItem
+	(*UserRecentOrder)(nil),          // 8: zcard.api.admin.v1.UserRecentOrder
+	(*UserDetail)(nil),               // 9: zcard.api.admin.v1.UserDetail
+	(*emptypb.Empty)(nil),            // 10: google.protobuf.Empty
 }
 var file_admin_v1_user_proto_depIdxs = []int32{
-	4, // 0: zcard.api.admin.v1.ListUsersReply.users:type_name -> zcard.api.admin.v1.UserItem
-	0, // 1: zcard.api.admin.v1.AdminUserManageService.ListUsers:input_type -> zcard.api.admin.v1.ListUsersRequest
-	2, // 2: zcard.api.admin.v1.AdminUserManageService.GetUser:input_type -> zcard.api.admin.v1.GetUserRequest
-	3, // 3: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:input_type -> zcard.api.admin.v1.SetUserStatusRequest
-	1, // 4: zcard.api.admin.v1.AdminUserManageService.ListUsers:output_type -> zcard.api.admin.v1.ListUsersReply
-	4, // 5: zcard.api.admin.v1.AdminUserManageService.GetUser:output_type -> zcard.api.admin.v1.UserItem
-	4, // 6: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:output_type -> zcard.api.admin.v1.UserItem
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6,  // 0: zcard.api.admin.v1.ListUsersReply.users:type_name -> zcard.api.admin.v1.UserItem
+	6,  // 1: zcard.api.admin.v1.UserDetail.user:type_name -> zcard.api.admin.v1.UserItem
+	7,  // 2: zcard.api.admin.v1.UserDetail.coupons:type_name -> zcard.api.admin.v1.UserCouponItem
+	8,  // 3: zcard.api.admin.v1.UserDetail.recent_orders:type_name -> zcard.api.admin.v1.UserRecentOrder
+	0,  // 4: zcard.api.admin.v1.AdminUserManageService.ListUsers:input_type -> zcard.api.admin.v1.ListUsersRequest
+	2,  // 5: zcard.api.admin.v1.AdminUserManageService.GetUser:input_type -> zcard.api.admin.v1.GetUserRequest
+	4,  // 6: zcard.api.admin.v1.AdminUserManageService.CreateUser:input_type -> zcard.api.admin.v1.CreateUserRequest
+	5,  // 7: zcard.api.admin.v1.AdminUserManageService.ResetUserPassword:input_type -> zcard.api.admin.v1.ResetUserPasswordRequest
+	3,  // 8: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:input_type -> zcard.api.admin.v1.SetUserStatusRequest
+	1,  // 9: zcard.api.admin.v1.AdminUserManageService.ListUsers:output_type -> zcard.api.admin.v1.ListUsersReply
+	9,  // 10: zcard.api.admin.v1.AdminUserManageService.GetUser:output_type -> zcard.api.admin.v1.UserDetail
+	6,  // 11: zcard.api.admin.v1.AdminUserManageService.CreateUser:output_type -> zcard.api.admin.v1.UserItem
+	10, // 12: zcard.api.admin.v1.AdminUserManageService.ResetUserPassword:output_type -> google.protobuf.Empty
+	6,  // 13: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:output_type -> zcard.api.admin.v1.UserItem
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_user_proto_init() }
@@ -400,7 +867,7 @@ func file_admin_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_user_proto_rawDesc), len(file_admin_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

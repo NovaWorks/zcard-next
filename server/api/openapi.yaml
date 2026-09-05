@@ -4470,6 +4470,14 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: isSupplier
+                  in: query
+                  schema:
+                    type: boolean
+                - name: levelId
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -4477,11 +4485,29 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListUsersReply'
+        post:
+            tags:
+                - AdminUserManageService
+            description: CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+            operationId: AdminUserManageService_CreateUser
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.CreateUserRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
     /api/v1/admin/users/{id}:
         get:
             tags:
                 - AdminUserManageService
-            description: GetUser 用户详情。
+            description: GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
             operationId: AdminUserManageService_GetUser
             parameters:
                 - name: id
@@ -4495,7 +4521,29 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
+                                $ref: '#/components/schemas/zcard.api.admin.v1.UserDetail'
+    /api/v1/admin/users/{id}/password:
+        put:
+            tags:
+                - AdminUserManageService
+            description: ResetUserPassword 重置用户密码（超管专属）。
+            operationId: AdminUserManageService_ResetUserPassword
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResetUserPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/users/{id}/status:
         post:
             tags:
@@ -7254,6 +7302,18 @@ components:
                     type: string
                 position:
                     type: string
+        zcard.api.admin.v1.CreateUserRequest:
+            required:
+                - username
+                - password
+            type: object
+            properties:
+                username:
+                    type: string
+                password:
+                    type: string
+                email:
+                    type: string
         zcard.api.admin.v1.CreateVirtualReviewRequest:
             required:
                 - productId
@@ -9250,6 +9310,16 @@ components:
                     type: string
                 newSecret:
                     type: string
+        zcard.api.admin.v1.ResetUserPasswordRequest:
+            required:
+                - id
+                - newPassword
+            type: object
+            properties:
+                id:
+                    type: string
+                newPassword:
+                    type: string
         zcard.api.admin.v1.RetryProcurementRequest:
             required:
                 - id
@@ -10375,6 +10445,36 @@ components:
                     type: string
                 price:
                     type: string
+        zcard.api.admin.v1.UserCouponItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                status:
+                    type: string
+                expiresAt:
+                    type: string
+            description: UserCouponItem 用户持有优惠券。
+        zcard.api.admin.v1.UserDetail:
+            type: object
+            properties:
+                user:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
+                coupons:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.UserCouponItem'
+                recentOrders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.UserRecentOrder'
+                inviterUsername:
+                    type: string
+                inviteesCount:
+                    type: string
+            description: UserDetail 用户详情（聚合视图）。
         zcard.api.admin.v1.UserItem:
             type: object
             properties:
@@ -10390,7 +10490,37 @@ components:
                     type: string
                 createdAt:
                     type: string
+                levelId:
+                    type: string
+                    description: 聚合展示（列表/详情同源）
+                levelName:
+                    type: string
+                balanceCents:
+                    type: string
+                points:
+                    type: integer
+                    format: int32
+                orderCount:
+                    type: string
+                spentCents:
+                    type: string
+                isSupplier:
+                    type: boolean
+                supplierStatus:
+                    type: string
             description: UserItem 前台用户（敏感字段如密码哈希绝不外发）。
+        zcard.api.admin.v1.UserRecentOrder:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                amountCents:
+                    type: string
+                status:
+                    type: string
+                createdAt:
+                    type: string
+            description: UserRecentOrder 最近订单（用户详情聚合，默认 10 条）。
         zcard.api.admin.v1.VerifySiteReply:
             type: object
             properties:

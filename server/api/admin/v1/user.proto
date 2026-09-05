@@ -6,6 +6,7 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1
 
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
 
 // AdminUserManageService 前台用户管理（storefront 注册用户；员工管理见
 // AdminUserService——两者数据域独立，勿混）。
@@ -14,9 +15,23 @@ service AdminUserManageService {
   rpc ListUsers(ListUsersRequest) returns (ListUsersReply) {
     option (google.api.http) = { get: "/api/v1/admin/users" };
   }
-  // GetUser 用户详情。
-  rpc GetUser(GetUserRequest) returns (UserItem) {
+  // GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
+  rpc GetUser(GetUserRequest) returns (UserDetail) {
     option (google.api.http) = { get: "/api/v1/admin/users/{id}" };
+  }
+  // CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+  rpc CreateUser(CreateUserRequest) returns (UserItem) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/users"
+      body: "*"
+    };
+  }
+  // ResetUserPassword 重置用户密码（超管专属）。
+  rpc ResetUserPassword(ResetUserPasswordRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/api/v1/admin/users/{id}/password"
+      body: "*"
+    };
   }
   // SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。
   rpc SetUserStatus(SetUserStatusRequest) returns (UserItem) {
@@ -32,6 +47,8 @@ message ListUsersRequest {
   string status = 2; // active | banned（空 = 全部）
   int32 page = 3;
   int32 page_size = 4;
+  bool is_supplier = 5; // 仅看开通供货账户的用户（true 时生效）
+  uint64 level_id = 6; // 按会员等级筛选（非 0 时生效）
 }
 
 message ListUsersReply {
@@ -48,6 +65,17 @@ message SetUserStatusRequest {
   string status = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
+message CreateUserRequest {
+  string username = 1 [(google.api.field_behavior) = REQUIRED];
+  string password = 2 [(google.api.field_behavior) = REQUIRED]; // ≥6 位
+  string email = 3; // 可选
+}
+
+message ResetUserPasswordRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  string new_password = 2 [(google.api.field_behavior) = REQUIRED]; // ≥6 位
+}
+
 // UserItem 前台用户（敏感字段如密码哈希绝不外发）。
 message UserItem {
   uint64 id = 1;
@@ -56,4 +84,38 @@ message UserItem {
   string status = 4; // active | banned | deleted
   int64 last_login_at = 5;
   int64 created_at = 6;
+  // 聚合展示（列表/详情同源）
+  uint64 level_id = 7; // 会员等级（0=无等级）
+  string level_name = 8;
+  int64 balance_cents = 9; // 钱包可用余额（分）
+  int32 points = 10; // 积分余额
+  int64 order_count = 11; // 全部订单数
+  int64 spent_cents = 12; // 累计消费（已支付订单总额，分）
+  bool is_supplier = 13; // 是否开通供货账户
+  string supplier_status = 14; // applying | approved | rejected
+}
+
+// UserCouponItem 用户持有优惠券。
+message UserCouponItem {
+  uint64 id = 1;
+  string title = 2;
+  string status = 3; // unused | used | disabled
+  int64 expires_at = 4; // 0=不限
+}
+
+// UserRecentOrder 最近订单（用户详情聚合，默认 10 条）。
+message UserRecentOrder {
+  string order_no = 1;
+  int64 amount_cents = 2;
+  string status = 3;
+  int64 created_at = 4;
+}
+
+// UserDetail 用户详情（聚合视图）。
+message UserDetail {
+  UserItem user = 1;
+  repeated UserCouponItem coupons = 2; // 持有优惠券（最多 50）
+  repeated UserRecentOrder recent_orders = 3; // 最近订单
+  string inviter_username = 4; // 邀请人（无则空）
+  int64 invitees_count = 5; // 直接下级数量
 }

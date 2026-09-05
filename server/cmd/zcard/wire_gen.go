@@ -144,7 +144,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	registerCodeService := identity.NewRegisterCodeService(dataData, dispatcher)
 	registerCodeSettings := identity.ProvideRegisterCodeSettings(settingsReader)
 	storeUserService := identity.NewStoreUserService(userRepo, signer, dataData, passwordService, registerCodeService, registerCodeSettings, service)
-	adminUserManageService := identity.NewAdminUserManageService(userRepo)
+	adminUserManageService := identity.NewAdminUserManageService(userRepo, memberLevelRepoImpl)
 	adminAuditService := audit.NewAdminAuditService(auditRepo, adminUserRepoImpl, userRepo)
 	directory := authz.NewDirectory()
 	roleService := authz.NewRoleService(roleRepoImpl, directory, rbacUsecase)

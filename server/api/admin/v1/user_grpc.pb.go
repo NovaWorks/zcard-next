@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,9 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminUserManageService_ListUsers_FullMethodName     = "/zcard.api.admin.v1.AdminUserManageService/ListUsers"
-	AdminUserManageService_GetUser_FullMethodName       = "/zcard.api.admin.v1.AdminUserManageService/GetUser"
-	AdminUserManageService_SetUserStatus_FullMethodName = "/zcard.api.admin.v1.AdminUserManageService/SetUserStatus"
+	AdminUserManageService_ListUsers_FullMethodName         = "/zcard.api.admin.v1.AdminUserManageService/ListUsers"
+	AdminUserManageService_GetUser_FullMethodName           = "/zcard.api.admin.v1.AdminUserManageService/GetUser"
+	AdminUserManageService_CreateUser_FullMethodName        = "/zcard.api.admin.v1.AdminUserManageService/CreateUser"
+	AdminUserManageService_ResetUserPassword_FullMethodName = "/zcard.api.admin.v1.AdminUserManageService/ResetUserPassword"
+	AdminUserManageService_SetUserStatus_FullMethodName     = "/zcard.api.admin.v1.AdminUserManageService/SetUserStatus"
 )
 
 // AdminUserManageServiceClient is the client API for AdminUserManageService service.
@@ -33,8 +36,12 @@ const (
 type AdminUserManageServiceClient interface {
 	// ListUsers 用户列表（关键词/状态筛选，分页）。
 	ListUsers(ctx context.Context, in *ListUsersRequest, opts ...grpc.CallOption) (*ListUsersReply, error)
-	// GetUser 用户详情。
-	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserItem, error)
+	// GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
+	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserDetail, error)
+	// CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+	CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserItem, error)
+	// ResetUserPassword 重置用户密码（超管专属）。
+	ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。
 	SetUserStatus(ctx context.Context, in *SetUserStatusRequest, opts ...grpc.CallOption) (*UserItem, error)
 }
@@ -57,10 +64,30 @@ func (c *adminUserManageServiceClient) ListUsers(ctx context.Context, in *ListUs
 	return out, nil
 }
 
-func (c *adminUserManageServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserItem, error) {
+func (c *adminUserManageServiceClient) GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*UserDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserDetail)
+	err := c.cc.Invoke(ctx, AdminUserManageService_GetUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminUserManageServiceClient) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...grpc.CallOption) (*UserItem, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UserItem)
-	err := c.cc.Invoke(ctx, AdminUserManageService_GetUser_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AdminUserManageService_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminUserManageServiceClient) ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminUserManageService_ResetUserPassword_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +113,12 @@ func (c *adminUserManageServiceClient) SetUserStatus(ctx context.Context, in *Se
 type AdminUserManageServiceServer interface {
 	// ListUsers 用户列表（关键词/状态筛选，分页）。
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersReply, error)
-	// GetUser 用户详情。
-	GetUser(context.Context, *GetUserRequest) (*UserItem, error)
+	// GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
+	GetUser(context.Context, *GetUserRequest) (*UserDetail, error)
+	// CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+	CreateUser(context.Context, *CreateUserRequest) (*UserItem, error)
+	// ResetUserPassword 重置用户密码（超管专属）。
+	ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*emptypb.Empty, error)
 	// SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。
 	SetUserStatus(context.Context, *SetUserStatusRequest) (*UserItem, error)
 	mustEmbedUnimplementedAdminUserManageServiceServer()
@@ -103,8 +134,14 @@ type UnimplementedAdminUserManageServiceServer struct{}
 func (UnimplementedAdminUserManageServiceServer) ListUsers(context.Context, *ListUsersRequest) (*ListUsersReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListUsers not implemented")
 }
-func (UnimplementedAdminUserManageServiceServer) GetUser(context.Context, *GetUserRequest) (*UserItem, error) {
+func (UnimplementedAdminUserManageServiceServer) GetUser(context.Context, *GetUserRequest) (*UserDetail, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUser not implemented")
+}
+func (UnimplementedAdminUserManageServiceServer) CreateUser(context.Context, *CreateUserRequest) (*UserItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedAdminUserManageServiceServer) ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetUserPassword not implemented")
 }
 func (UnimplementedAdminUserManageServiceServer) SetUserStatus(context.Context, *SetUserStatusRequest) (*UserItem, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetUserStatus not implemented")
@@ -167,6 +204,42 @@ func _AdminUserManageService_GetUser_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminUserManageService_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminUserManageServiceServer).CreateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminUserManageService_CreateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminUserManageServiceServer).CreateUser(ctx, req.(*CreateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminUserManageService_ResetUserPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetUserPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminUserManageServiceServer).ResetUserPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminUserManageService_ResetUserPassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminUserManageServiceServer).ResetUserPassword(ctx, req.(*ResetUserPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminUserManageService_SetUserStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetUserStatusRequest)
 	if err := dec(in); err != nil {
@@ -199,6 +272,14 @@ var AdminUserManageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUser",
 			Handler:    _AdminUserManageService_GetUser_Handler,
+		},
+		{
+			MethodName: "CreateUser",
+			Handler:    _AdminUserManageService_CreateUser_Handler,
+		},
+		{
+			MethodName: "ResetUserPassword",
+			Handler:    _AdminUserManageService_ResetUserPassword_Handler,
 		},
 		{
 			MethodName: "SetUserStatus",

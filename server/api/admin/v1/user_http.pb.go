@@ -9,6 +9,7 @@ package adminv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -17,15 +18,21 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminUserManageServiceCreateUser = "/zcard.api.admin.v1.AdminUserManageService/CreateUser"
 const OperationAdminUserManageServiceGetUser = "/zcard.api.admin.v1.AdminUserManageService/GetUser"
 const OperationAdminUserManageServiceListUsers = "/zcard.api.admin.v1.AdminUserManageService/ListUsers"
+const OperationAdminUserManageServiceResetUserPassword = "/zcard.api.admin.v1.AdminUserManageService/ResetUserPassword"
 const OperationAdminUserManageServiceSetUserStatus = "/zcard.api.admin.v1.AdminUserManageService/SetUserStatus"
 
 type AdminUserManageServiceHTTPServer interface {
-	// GetUser GetUser 用户详情。
-	GetUser(context.Context, *GetUserRequest) (*UserItem, error)
+	// CreateUser CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+	CreateUser(context.Context, *CreateUserRequest) (*UserItem, error)
+	// GetUser GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
+	GetUser(context.Context, *GetUserRequest) (*UserDetail, error)
 	// ListUsers ListUsers 用户列表（关键词/状态筛选，分页）。
 	ListUsers(context.Context, *ListUsersRequest) (*ListUsersReply, error)
+	// ResetUserPassword ResetUserPassword 重置用户密码（超管专属）。
+	ResetUserPassword(context.Context, *ResetUserPasswordRequest) (*emptypb.Empty, error)
 	// SetUserStatus SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。
 	SetUserStatus(context.Context, *SetUserStatusRequest) (*UserItem, error)
 }
@@ -34,6 +41,8 @@ func RegisterAdminUserManageServiceHTTPServer(s *http.Server, srv AdminUserManag
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/admin/users", _AdminUserManageService_ListUsers0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/users/{id}", _AdminUserManageService_GetUser0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/users", _AdminUserManageService_CreateUser0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/users/{id}/password", _AdminUserManageService_ResetUserPassword0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/users/{id}/status", _AdminUserManageService_SetUserStatus0_HTTP_Handler(srv))
 }
 
@@ -73,7 +82,48 @@ func _AdminUserManageService_GetUser0_HTTP_Handler(srv AdminUserManageServiceHTT
 		if err != nil {
 			return err
 		}
+		reply := out.(*UserDetail)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminUserManageService_CreateUser0_HTTP_Handler(srv AdminUserManageServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in CreateUserRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminUserManageServiceCreateUser)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CreateUser(ctx, req.(*CreateUserRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
 		reply := out.(*UserItem)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminUserManageService_ResetUserPassword0_HTTP_Handler(srv AdminUserManageServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ResetUserPasswordRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminUserManageServiceResetUserPassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetUserPassword(ctx, req.(*ResetUserPasswordRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
 		return ctx.Result(200, reply)
 	}
 }
@@ -101,10 +151,14 @@ func _AdminUserManageService_SetUserStatus0_HTTP_Handler(srv AdminUserManageServ
 }
 
 type AdminUserManageServiceHTTPClient interface {
-	// GetUser GetUser 用户详情。
-	GetUser(ctx context.Context, req *GetUserRequest, opts ...http.CallOption) (rsp *UserItem, err error)
+	// CreateUser CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+	CreateUser(ctx context.Context, req *CreateUserRequest, opts ...http.CallOption) (rsp *UserItem, err error)
+	// GetUser GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
+	GetUser(ctx context.Context, req *GetUserRequest, opts ...http.CallOption) (rsp *UserDetail, err error)
 	// ListUsers ListUsers 用户列表（关键词/状态筛选，分页）。
 	ListUsers(ctx context.Context, req *ListUsersRequest, opts ...http.CallOption) (rsp *ListUsersReply, err error)
+	// ResetUserPassword ResetUserPassword 重置用户密码（超管专属）。
+	ResetUserPassword(ctx context.Context, req *ResetUserPasswordRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// SetUserStatus SetUserStatus 封禁/解封（status: active | banned；deleted 不可经此设置）。
 	SetUserStatus(ctx context.Context, req *SetUserStatusRequest, opts ...http.CallOption) (rsp *UserItem, err error)
 }
@@ -117,9 +171,27 @@ func NewAdminUserManageServiceHTTPClient(client *http.Client) AdminUserManageSer
 	return &AdminUserManageServiceHTTPClientImpl{client}
 }
 
-// GetUser GetUser 用户详情。
-func (c *AdminUserManageServiceHTTPClientImpl) GetUser(ctx context.Context, in *GetUserRequest, opts ...http.CallOption) (*UserItem, error) {
+// CreateUser CreateUser 后台新增用户（用户名/邮箱/初始密码；复用注册管线含推广码生成）。
+func (c *AdminUserManageServiceHTTPClientImpl) CreateUser(ctx context.Context, in *CreateUserRequest, opts ...http.CallOption) (*UserItem, error) {
 	var out UserItem
+	pattern := "/api/v1/admin/users"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminUserManageServiceCreateUser),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetUser GetUser 用户详情（聚合：等级/钱包/优惠券/供货账户/邀请关系/最近订单）。
+func (c *AdminUserManageServiceHTTPClientImpl) GetUser(ctx context.Context, in *GetUserRequest, opts ...http.CallOption) (*UserDetail, error) {
+	var out UserDetail
 	pattern := "/api/v1/admin/users/{id}"
 	path := http.BuildPath(pattern, in, http.WithQueryParams())
 	opts = append([]http.CallOption{
@@ -145,6 +217,24 @@ func (c *AdminUserManageServiceHTTPClientImpl) ListUsers(ctx context.Context, in
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ResetUserPassword ResetUserPassword 重置用户密码（超管专属）。
+func (c *AdminUserManageServiceHTTPClientImpl) ResetUserPassword(ctx context.Context, in *ResetUserPasswordRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/users/{id}/password"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminUserManageServiceResetUserPassword),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}
