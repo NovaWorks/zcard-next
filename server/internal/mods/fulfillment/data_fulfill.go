@@ -497,10 +497,27 @@ func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, 
 	return nil
 }
 
-// ListPending 待人工发货列表。
+// ProductNames 批量商品名（待发货面板展示用；缺失商品返回空串由调用方回落 #id）。
+func (r *DeliveryRepoImpl) ProductNames(ctx context.Context, ids []uint64) (map[uint64]string, error) {
+	out := make(map[uint64]string, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	prods, err := data.Client(ctx, r.data).Product.Query().Where(product.IDIn(ids...)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range prods {
+		out[p.ID] = p.Name
+	}
+	return out, nil
+}
+
+// ListPending 待人工发货列表（含子项——面板展示商品名/数量）。
 func (r *DeliveryRepoImpl) ListPending(ctx context.Context, page, size int) ([]*ent.Order, error) {
 	return data.Client(ctx, r.data).Order.Query().
 		Where(order.StatusEQ(order.StatusPaid)).
+		WithItems().
 		Order(ent.Desc(order.FieldID)).
 		Offset((page - 1) * size).Limit(size).
 		All(ctx)

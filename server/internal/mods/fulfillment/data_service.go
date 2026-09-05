@@ -4,14 +4,15 @@ package fulfillment
 
 import (
 	"context"
+	"fmt"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/transport"
@@ -85,11 +86,32 @@ func (s *AdminFulfillmentService) ListPending(ctx context.Context, req *adminv1.
 	if err != nil {
 		return nil, errors.InternalServer("fulfillment.LIST_FAILED", "读取待发货失败")
 	}
+	// 商品名批查（item 仅存 product_id 快照）
+	ids := make([]uint64, 0, len(rows)*2)
+	for _, o := range rows {
+		for _, it := range o.Edges.Items {
+			ids = append(ids, it.ProductID)
+		}
+	}
+	names, _ := s.repo.ProductNames(ctx, ids)
 	reply := &adminv1.ListPendingReply{}
 	for _, o := range rows {
-		reply.Orders = append(reply.Orders, &adminv1.PendingOrder{
-			OrderNo: o.OrderNo, CreatedAt: o.CreatedAt.Unix(),
-		})
+		po := &adminv1.PendingOrder{OrderNo: o.OrderNo, CreatedAt: o.CreatedAt.Unix()}
+		if items := o.Edges.Items; len(items) > 0 {
+			po.ProductId = items[0].ProductID
+			name := names[items[0].ProductID]
+			if name == "" {
+				name = fmt.Sprintf("#%d", items[0].ProductID)
+			}
+			if len(items) > 1 {
+				name = fmt.Sprintf("%s 等 %d 件商品", name, len(items))
+			}
+			po.ProductName = name
+			for _, it := range items {
+				po.Quantity += it.Quantity
+			}
+		}
+		reply.Orders = append(reply.Orders, po)
 	}
 	return reply, nil
 }

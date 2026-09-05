@@ -15,6 +15,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
@@ -66,8 +67,12 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService) *queue.Cron {
+func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService, orderUC *order.OrderUsecase) *queue.Cron {
 	c := queue.NewCron()
+	// 订单超时取消（每分钟扫 pending_payment 到期单；慢支付顺延在其内）
+	c.AddEvery("order.expire_pending", time.Minute, func(ctx context.Context) {
+		_, _ = orderUC.ExpireOrder(ctx)
+	})
 	// ：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {
 		supplySync.PingAllActive(ctx)

@@ -24,16 +24,16 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	memberlevelport "github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
-	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
@@ -62,7 +62,24 @@ type OrderUsecase struct {
 	Reseller   resellerport.Pricer            // ：管线步骤 7 分站定价 + 防自购快照（nil 跳过）
 	Points     walletport.PointsDebiter       // ：积分兑换下单扣分（nil = 积分单不可用）
 	SlowPay    paymentport.SlowPaymentChecker // ：慢通道顺延探测（nil = 不顺延直接取消；newApp 破环点注入）
-	StockGate  orderport.UpstreamStockGate         // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
+	StockGate  orderport.UpstreamStockGate    // ：上游代发项下单前实时库存预检（nil = 跳过；newApp 破环点注入）
+}
+
+// ttlMinutes 订单超时分钟数（settings trade.order_ttl_minutes；缺省/非法回落 30）。
+func (uc *OrderUsecase) ttlMinutes(ctx context.Context) int {
+	const def = 30
+	if uc.Settings == nil {
+		return def
+	}
+	raw, err := uc.Settings.GetJSON(ctx, "trade", "order_ttl_minutes")
+	if err != nil || len(raw) == 0 {
+		return def
+	}
+	var v int
+	if json.Unmarshal(raw, &v) != nil || v < 1 || v > 1440 {
+		return def
+	}
+	return v
 }
 
 // NewOrderUsecaseDep 构造（wire 注入依赖版）。
@@ -163,7 +180,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				Where(order.IdempotencyKey(idemHash)).Only(txCtx); err == nil {
 				exp := prev.ExpiredAt
 				if exp.IsZero() {
-					exp = time.Now().Add(30 * time.Minute).UTC()
+					exp = time.Now().Add(time.Duration(uc.ttlMinutes(ctx)) * time.Minute).UTC()
 				}
 				result = &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: exp}
 				return nil // 幂等快路径：重复请求返回首次结果
@@ -377,7 +394,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		// 5) 写 orders（父单）
-		ttl := 30 * time.Minute
+		ttl := time.Duration(uc.ttlMinutes(ctx)) * time.Minute
 		exp := time.Now().Add(ttl).UTC()
 		extra := map[string]any{}
 		if len(in.ControlAnswers) > 0 {
@@ -700,7 +717,7 @@ func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	ttl := 30 * time.Minute
+	ttl := time.Duration(uc.ttlMinutes(ctx)) * time.Minute
 	count := 0
 	for _, o := range rows {
 		if uc.SlowPay != nil {
