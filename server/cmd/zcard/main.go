@@ -275,6 +275,11 @@ func runServe(args []string) (err error) {
 		return err
 	}
 	app, updateSvc := deps.App, deps.Update
+	// 多进程形态禁用面板更新（方案 §12）：api/worker 分进程会撞 update.state，
+	// 且面板只重启 api 进程 → worker 旧代码 + 新 schema。滚动更新走 CLI。
+	if appMode != string(server.ModeAll) && updateSvc != nil {
+		updateSvc.Disable(fmt.Sprintf("多进程模式（%s）面板在线更新已禁用——请用 zcard self-update 逐进程滚动", appMode))
+	}
 	// cleanup 单次化：重启路径 exec 前显式收口，进程退出路径 defer 兜底
 	var cleanupOnce sync.Once
 	doCleanup := func() { cleanupOnce.Do(cleanup) }

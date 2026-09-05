@@ -29,6 +29,9 @@ func (s *AdminUpdateService) GetUpdateStatus(ctx context.Context, _ *emptypb.Emp
 
 // CheckUpdate 手动检查（源探测 + manifest 验签）。
 func (s *AdminUpdateService) CheckUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateCheckResult, error) {
+	if err := s.svc.DisabledErr(); err != nil {
+		return nil, errors.Forbidden("update.DISABLED", err.Error())
+	}
 	res, err := s.svc.Check(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("update.CHECK_FAILED", err.Error())
@@ -41,6 +44,9 @@ func (s *AdminUpdateService) CheckUpdate(ctx context.Context, _ *emptypb.Empty) 
 
 // ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
 func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateStatus, error) {
+	if err := s.svc.DisabledErr(); err != nil {
+		return nil, errors.Forbidden("update.DISABLED", err.Error())
+	}
 	if err := s.svc.Apply(ctx); err != nil {
 		return toStatusPB(s.svc.Snapshot(ctx)), nil // ErrBusy 亦返回当前态（200 携带 busy）
 	}
@@ -49,6 +55,9 @@ func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, _ *emptypb.Empty) 
 
 // RollbackUpdate 回滚上一版本并重启。
 func (s *AdminUpdateService) RollbackUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateStatus, error) {
+	if err := s.svc.DisabledErr(); err != nil {
+		return nil, errors.Forbidden("update.DISABLED", err.Error())
+	}
 	if err := s.svc.Rollback(ctx); err != nil {
 		return nil, errors.InternalServer("update.ROLLBACK_FAILED", err.Error())
 	}

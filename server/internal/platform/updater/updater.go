@@ -215,6 +215,18 @@ func (c *Client) accelPrefix() string {
 	return strings.TrimRight(c.Accel, "/") + "/"
 }
 
+// Desc 源展示串（status/UI/下载换源重试日志用）。
+func (c *Client) Desc() string {
+	switch c.Source {
+	case SourceStatic:
+		return "static:" + c.StaticBase
+	case SourceAccel:
+		return c.Accel
+	default:
+		return "github"
+	}
+}
+
 // manifestURL 按 source/channel 拼manifest 地址。
 func (c *Client) manifestURL(channel string) (string, error) {
 	const name = "update.json"

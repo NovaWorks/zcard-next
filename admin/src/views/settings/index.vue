@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { fetchSettings, updateSettings, listCurrencies, fetchTemplates } from "@/service/api";
 import type { TemplateItem } from "@/service/api";
@@ -15,6 +16,10 @@ import UpdateTab from "./components/update-tab.vue";
 import ThemePickerModal from "./components/theme-picker-modal.vue";
 
 defineOptions({ name: "SettingsManagement" });
+
+const route = useRoute();
+// 外层 tab 受控：支持 ?tab=update 直达（header 更新徽标跳转用）
+const outerTab = ref((route.query.tab as string) || "settings");
 
 const { te, t } = useI18n();
 const loading = ref(false);
@@ -320,7 +325,7 @@ onMounted(() => {
 <template>
   <div class="min-h-500px">
     <NCard title="系统设置">
-      <OuterTabs type="line">
+      <OuterTabs v-model:value="outerTab" type="line">
         <OuterTabPane name="settings" tab="参数设置">
           <NTabs v-model:value="activeGroup" type="line" @update:value="loadSettings">
             <NTabPane v-for="g in groups" :key="g.key" :name="g.key" :tab="g.label" />

@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,7 +30,7 @@ const (
 	PhaseDownloading = "downloading"
 	PhaseApplying    = "applying"
 	PhaseRestarting  = "restarting"
-	PhaseVerifying   = "verifying"  // 新进程健康门中（磁盘 state pending 合成）
+	PhaseVerifying   = "verifying"   // 新进程健康门中（磁盘 state pending 合成）
 	PhaseRolledBack  = "rolled_back" // 最近一次结果为回滚
 	PhaseFailed      = "failed"
 )
@@ -37,39 +38,44 @@ const (
 // ErrBusy 更新链进行中（apply 单飞互斥）。
 var ErrBusy = errors.New("update: 更新正在进行中")
 
+// ErrDisabled 面板更新被禁用（多进程模式，方案 §12——api/worker 分进程会撞
+// update.state 且 worker 跑旧代码+新 schema，须走 CLI 滚动）。
+var ErrDisabled = errors.New("update: 当前为多进程部署，面板在线更新已禁用（请用 zcard self-update 滚动各进程）")
+
 // probeCacheTTL auto 源探测缓存（方案 §4.3：10 分钟）。
 const probeCacheTTL = 10 * time.Minute
 
 // Status 状态快照（admin API 下发；Current/Supervisor 每次现算——重启后即新值）。
 type Status struct {
-	Phase     string
-	Current   string
-	Target    string
-	Progress  int32
-	Err       string
-	Source    string // 生效源展示（github | <accel> | static:<base>）
-	Mode      string // 配置模式
+	Phase      string
+	Current    string
+	Target     string
+	Progress   int32
+	Err        string
+	Source     string // 生效源展示（github | <accel> | static:<base>）
+	Mode       string // 配置模式
 	Supervisor string
-	HasUpdate bool
-	Notes     string
-	Latest    string
-	CheckedAt time.Time
-	BackupDir string
-	Busy      bool
+	HasUpdate  bool
+	Notes      string
+	Latest     string
+	CheckedAt  time.Time
+	BackupDir  string
+	Busy       bool
 }
 
 // Service 更新编排。
 type Service struct {
-	mu    sync.Mutex
-	busy  bool
-	st    Status
-	probe *updater.ProbeOutcome
+	mu       sync.Mutex
+	busy     bool
+	st       Status
+	probe    *updater.ProbeOutcome
 	probedAt time.Time
 
-	dataCfg *conf.Data
-	uc      *settings.SettingsUsecase
-	binPath string
+	dataCfg   *conf.Data
+	uc        *settings.SettingsUsecase
+	binPath   string
 	restartFn func()
+	disabled  string // 非空=禁用原因（多进程模式）
 }
 
 // NewService wire 构造。
@@ -87,6 +93,17 @@ func NewService(dataCfg *conf.Data, uc *settings.SettingsUsecase) *Service {
 
 // SetRestartFn serve 层注入重启回调（优雅停机 + 三分支；nil=禁用重启——测试态）。
 func (s *Service) SetRestartFn(f func()) { s.restartFn = f }
+
+// Disable 禁用面板更新链（serve 层注入：-mode != all 时调用，方案 §12）。
+func (s *Service) Disable(reason string) { s.disabled = reason }
+
+// DisabledErr 禁用态错误（空=启用）。
+func (s *Service) DisabledErr() error {
+	if s.disabled == "" {
+		return nil
+	}
+	return ErrDisabled
+}
 
 // sourceConfig settings system/update → updater.SourceConfig。
 func (s *Service) sourceConfig(ctx context.Context) updater.SourceConfig {
@@ -122,18 +139,22 @@ func (s *Service) resolveClient(ctx context.Context, cfg updater.SourceConfig) (
 
 // CheckResult 检查结果。
 type CheckResult struct {
-	Current string
-	Latest  string
+	Current   string
+	Latest    string
 	HasUpdate bool
-	Notes   string
-	Channel string
-	Source  string
+	Notes     string
+	Channel   string
+	Source    string
 }
 
 // Check 手动检查（源解析 + manifest 验签；结果缓存进 status 供弹窗展示）。
 func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 	s.setPhase(PhaseChecking)
-	defer func() { if s.st.Phase == PhaseChecking { s.setPhase(PhaseIdle) } }()
+	defer func() {
+		if s.st.Phase == PhaseChecking {
+			s.setPhase(PhaseIdle)
+		}
+	}()
 
 	cfg := s.sourceConfig(ctx)
 	cli, outcome, err := s.resolveClient(ctx, cfg)
@@ -153,7 +174,7 @@ func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 	res := &CheckResult{
 		Current: cur(), Latest: m.Version,
 		HasUpdate: updater.CompareSemver(m.Version, cur()) > 0,
-		Notes: m.Notes, Channel: m.Channel, Source: outcome.SourceDesc(),
+		Notes:     m.Notes, Channel: m.Channel, Source: outcome.SourceDesc(),
 	}
 	s.mu.Lock()
 	s.st.HasUpdate, s.st.Notes, s.st.Latest = res.HasUpdate, res.Notes, res.Latest
@@ -235,20 +256,39 @@ func (s *Service) run() {
 	}
 	_ = copyBinary(s.binPath, filepath.Join(backupDir, "zcard.old"))
 
-	// 落盘下载（流式哈希；进度回调）
+	// 落盘下载（流式哈希；进度回调）。源失败自动换下一个候选从头重试（方案 §4.3：
+	// 首选源（auto 探测/钉死）→ 其余加速器逐个兜底，beta 通道排除加速器）
 	s.mu.Lock()
 	s.st.Phase, s.st.Progress, s.st.BackupDir = PhaseDownloading, 0, backupDir
 	s.mu.Unlock()
 	newPath := filepath.Join(dir, "zcard.new")
-	if err := downloadTo(ctx, cli, m, assetName, newPath, func(received, total int64) {
-		if total > 0 {
+	candidates := s.downloadCandidates(cfg, cli)
+	var dlErr error
+	for i, cand := range candidates {
+		if i > 0 {
 			s.mu.Lock()
-			s.st.Progress = int32(received * 100 / total)
+			s.st.Progress = 0
 			s.mu.Unlock()
 		}
-	}); err != nil {
-		_ = os.Remove(newPath)
-		fail(fmt.Errorf("下载失败: %w", err))
+		if err := downloadTo(ctx, cand, m, assetName, newPath, func(received, total int64) {
+			if total > 0 {
+				s.mu.Lock()
+				s.st.Progress = int32(received * 100 / total)
+				s.mu.Unlock()
+			}
+		}); err != nil {
+			_ = os.Remove(newPath)
+			dlErr = fmt.Errorf("下载失败（源 %s）: %w", cand.Desc(), err)
+			continue
+		}
+		dlErr = nil
+		s.mu.Lock()
+		s.st.Source = cand.Desc()
+		s.mu.Unlock()
+		break
+	}
+	if dlErr != nil {
+		fail(dlErr)
 		return
 	}
 
@@ -327,6 +367,26 @@ func (s *Service) fail(err error) {
 
 // cur 当前版本（settings 注入的内存值——重启后自然为新版本号）。
 func cur() string { return settings.ServerVersion() }
+
+// downloadCandidates 下载候选源序列：首选源 + 其余加速器兜底（beta 排除——
+// 加速镜像不支持 beta；static/github 钉死模式同样给加速器兜底，网络突变时多一条生路）。
+func (s *Service) downloadCandidates(cfg updater.SourceConfig, primary *updater.Client) []*updater.Client {
+	out := []*updater.Client{primary}
+	if cfg.Channel == "beta" {
+		return out
+	}
+	for _, acc := range cfg.Accels {
+		acc = strings.TrimRight(acc, "/")
+		if acc == "" || acc == primary.Accel {
+			continue
+		}
+		out = append(out, updater.NewClient(updater.SourceAccel, cfg.Repo, acc, ""))
+	}
+	if len(out) > 3 { // 最多试 3 个源（重试成本可控）
+		out = out[:3]
+	}
+	return out
+}
 
 // downloadTo 流式落盘（DownloadAsset 边写边哈希校验；失败文件由调用方删）。
 func downloadTo(ctx context.Context, cli *updater.Client, m *updater.Manifest, name, path string, onProgress updater.ProgressFunc) error {

@@ -7,6 +7,7 @@ import GlobalLogo from "../global-logo/index.vue";
 import GlobalBreadcrumb from "../global-breadcrumb/index.vue";
 import GlobalSearch from "../global-search/index.vue";
 import ThemeButton from "./components/theme-button.vue";
+import UpdateBadge from "./components/update-badge.vue";
 import UserAvatar from "./components/user-avatar.vue";
 
 defineOptions({
@@ -46,6 +47,7 @@ const { isFullscreen, toggle } = useFullscreen();
       <GlobalBreadcrumb v-if="!appStore.isMobile" class="ml-12px" />
     </div>
     <div class="h-full flex-y-center justify-end">
+      <UpdateBadge class="mr-4px" />
       <GlobalSearch v-if="themeStore.header.globalSearch.visible" />
       <FullScreen v-if="!appStore.isMobile" :full="isFullscreen" @click="toggle" />
       <LangSwitch
