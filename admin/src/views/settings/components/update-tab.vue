@@ -92,6 +92,12 @@ const historyHtml = computed(() => {
   return out;
 });
 
+// 下载百分比（统一出口——仅 downloading 阶段有值；百分比由进度条 indicator 单点展示，
+// 阶段标题只显示阶段名，避免「下载新版本中 23% + 23%」双显）
+const dlPercent = computed(() =>
+  status.value?.phase === "downloading" ? status.value?.progress_percent || 0 : undefined
+);
+
 const sourceText = computed(() => {
   const s = status.value?.source || "";
   if (!s) return "—";
@@ -332,14 +338,14 @@ watch(
 
       <!-- 进行中进度 -->
       <div v-if="inFlight" class="progress-block mt-3">
-        <div class="progress-title">
-          {{ phaseText }}
-          <span v-if="status?.phase === 'downloading'" class="pct">{{ status?.progress_percent }}%</span>
-        </div>
+        <div class="progress-title">{{ phaseText }}</div>
         <NProgress
           type="line"
-          :percentage="status?.phase === 'downloading' ? status?.progress_percent || 0 : undefined"
-          :indeterminate="status?.phase !== 'downloading'"
+          :percentage="dlPercent"
+          :indeterminate="dlPercent === undefined"
+          :rail-height="10"
+          :border-radius="5"
+          :show-indicator="dlPercent !== undefined"
           processing
         />
         <div v-if="status?.phase === 'restarting' || status?.phase === 'verifying'" class="mt-2 text-xs opacity-70">
