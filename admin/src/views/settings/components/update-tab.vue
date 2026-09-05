@@ -76,8 +76,8 @@ const supervisorTag = computed(() => {
 const statusError = ref("");
 async function refreshStatusVisible() {
   try {
-    const res = await fetchUpdateStatus();
-    status.value = res as any;
+    const { data } = await fetchUpdateStatus();
+    status.value = data as any;
     statusError.value = "";
   } catch (e: any) {
     statusError.value = e?.response?.status ? `HTTP ${e.response.status}` : String(e?.message || e);
@@ -103,8 +103,8 @@ const sourceText = computed(() => {
 // ── 状态拉取（waitingRestart 模式：连接失败=仍在重启继续等；恢复且版本到位=成功）──
 async function refreshStatus() {
   try {
-    const res = await fetchUpdateStatus();
-    status.value = res as any;
+    const { data } = await fetchUpdateStatus();
+    status.value = data as any;
     if (waitingRestart) {
       const st = status.value!;
       if (st.current_version && st.target_version && st.current_version === st.target_version) {
@@ -144,13 +144,13 @@ const changelogHtml = ref("");
 async function doCheck() {
   checking.value = true;
   try {
-    const res: any = await checkUpdate();
-    checkResult.value = res;
-    changelogHtml.value = sanitizeHtml(marked.parse(res.notes || "_（本版本未提供变更记录）_") as string);
-    if (res.has_update) {
+    const { data }: any = await checkUpdate();
+    checkResult.value = data;
+    changelogHtml.value = sanitizeHtml(marked.parse(data.notes || "_（本版本未提供变更记录）_") as string);
+    if (data.has_update) {
       showConfirm.value = true;
     } else {
-      message.success(`已是最新版本 ${res.current_version}`);
+      message.success(`已是最新版本 ${data.current_version}`);
     }
   } catch (e: any) {
     message.error(`检查更新失败：${e?.message || e}`);

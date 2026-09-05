@@ -73,16 +73,14 @@ const DEFAULT_CONFIG: UpdateSourceConfig = {
 };
 
 export async function fetchUpdateSourceConfig(): Promise<UpdateSourceConfig> {
-  const res = await request<{ group: string; key: string; value_json: string; items?: any[] }>({
+  const { data } = await request<{ items?: Array<{ key: string; value_json: string }> }>({
     url: "/api/v1/admin/settings",
     params: { group: "system" }
   });
-  const items = (res as any).items || (Array.isArray(res) ? res : []);
-  const it = items.find((x: any) => x.key === "update");
+  const it = (data?.items || []).find(x => x.key === "update");
   if (!it?.value_json) return { ...DEFAULT_CONFIG };
   try {
-    const parsed = JSON.parse(it.value_json);
-    return { ...DEFAULT_CONFIG, ...parsed };
+    return { ...DEFAULT_CONFIG, ...JSON.parse(it.value_json) };
   } catch {
     return { ...DEFAULT_CONFIG };
   }

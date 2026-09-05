@@ -23,10 +23,10 @@ onMounted(async () => {
   if (Date.now() - last < THROTTLE_MS) return;
   localStorage.setItem(LS_LAST_CHECK, String(Date.now()));
   try {
-    const st: any = await fetchUpdateStatus();
-    if (!st?.has_update || !st?.latest_version) return;
-    if (localStorage.getItem(LS_DISMISSED) === st.latest_version) return;
-    latest.value = st.latest_version;
+    const { data }: any = await fetchUpdateStatus();
+    if (!data?.has_update || !data?.latest_version) return;
+    if (localStorage.getItem(LS_DISMISSED) === data.latest_version) return;
+    latest.value = data.latest_version;
     visible.value = true;
   } catch {
     // 静默检查失败不打扰（无权限/网络抖动）
