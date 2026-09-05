@@ -17,6 +17,7 @@ init:
 # 生成 api/* 对外 API（pb + http + grpc + openapi）
 api:
 	buf generate --template buf.gen.yaml
+	sed -i.bak 's/^    title: ""/    title: "ZCard API"/' api/openapi.yaml && rm -f api/openapi.yaml.bak
 
 .PHONY: config
 # 生成 internal/conf 配置代码

@@ -3,7 +3,7 @@
 
 openapi: 3.0.3
 info:
-    title: ""
+    title: "ZCard API"
     version: 0.0.1
 paths:
     /api/supply/categories:
