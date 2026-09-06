@@ -63,7 +63,8 @@
           <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
-              <span v-if="c.icon" class="chip-icon">{{ c.icon }}</span>{{ c.name }}
+              <img v-if="c.icon && String(c.icon).startsWith('http')" :src="c.icon" class="chip-icon chip-icon-img" alt="" />
+              <span v-else-if="c.icon" class="chip-icon">{{ c.icon }}</span>{{ c.name }}
             </button>
             <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类 -->
             <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
@@ -389,6 +390,7 @@ onUnmounted(stopHero);
 .chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
 .chip-icon { margin-right: 5px; }
+.chip-icon-img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
 /* 「更多」按钮：仅移动端显示；sticky 贴滚动行右缘（底色遮住下层滑过的胶囊） */
 .chip-more {
   display: none; position: sticky; right: 0; flex-shrink: 0;

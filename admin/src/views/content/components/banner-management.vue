@@ -3,7 +3,7 @@
 import { computed, h, onMounted, ref, watch } from "vue";
 import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NInputNumber, NPopconfirm, NSelect, NSwitch, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
-import { fetchBanners, createBanner, deleteBanner, fetchPosts } from "@/service/api";
+import { fetchBanners, createBanner, updateBanner, deleteBanner, fetchPosts } from "@/service/api";
 import { checkAuth } from "@/directives";
 import MediaField from "@/components/common/media-picker/media-field.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
@@ -105,10 +105,13 @@ const bannerColumns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 70,
+    width: 110,
     render: (row) =>
       canWrite()
-        ? h(NPopconfirm, { onPositiveClick: () => handleDeleteBanner(row.id) }, { trigger: () => h(NButton, { size: "tiny", type: "error", quaternary: true }, { default: () => "删除" }), default: () => "确定删除该横幅？" })
+        ? h("div", { class: "flex gap-4px" }, [
+            h(NButton, { size: "tiny", quaternary: true, onClick: () => openEditBanner(row) }, { default: () => "编辑" }),
+            h(NPopconfirm, { onPositiveClick: () => handleDeleteBanner(row.id) }, { trigger: () => h(NButton, { size: "tiny", type: "error", quaternary: true }, { default: () => "删除" }), default: () => "确定删除该横幅？" }),
+          ])
         : null,
   },
 ];
@@ -134,8 +137,28 @@ async function loadPostSlugOptions() {
   }
 }
 
+const editingBannerId = ref<number | null>(null);
+
 function openCreateBanner() {
+  editingBannerId.value = null;
   bannerForm.value = { name: "", position: "top", title_json: "", image: [], link_type: "url", link_value: "", is_active: true, sort: 0 };
+  if (bannerForm.value.link_type === "post") loadPostSlugOptions();
+  showBanner.value = true;
+}
+
+/** 编辑：回填现有值（图片 URL 回填进 MediaField 单值数组；多语言 title 原文回填） */
+function openEditBanner(row: any) {
+  editingBannerId.value = row.id;
+  bannerForm.value = {
+    name: row.name || "",
+    position: row.position || "top",
+    title_json: typeof row.title_json === "string" && row.title_json.startsWith("{") ? row.title_json : "",
+    image: row.image ? [row.image] : [],
+    link_type: row.link_type || "url",
+    link_value: row.link_value || "",
+    is_active: !!row.is_active,
+    sort: row.sort ?? 0,
+  };
   if (bannerForm.value.link_type === "post") loadPostSlugOptions();
   showBanner.value = true;
 }
@@ -145,9 +168,12 @@ async function handleBanner() {
   bannerSaving.value = true;
   try {
     const title = bannerForm.value.title_json || JSON.stringify({ zh_CN: bannerForm.value.name });
-    const { error } = await createBanner({ ...bannerForm.value, image: bannerForm.value.image[0], title_json: title });
+    const payload = { ...bannerForm.value, image: bannerForm.value.image[0], title_json: title };
+    const { error } = editingBannerId.value
+      ? await updateBanner(editingBannerId.value, payload)
+      : await createBanner(payload);
     if (!error) {
-      window.$message?.success("横幅已创建（storefront 首页即时消费）");
+      window.$message?.success(editingBannerId.value ? "横幅已更新（storefront 首页即时消费）" : "横幅已创建（storefront 首页即时消费）");
       showBanner.value = false;
       loadBanners();
     }
@@ -175,7 +201,7 @@ onMounted(loadBanners);
     </div>
     <NDataTable :columns="bannerColumns" :data="filteredBanners" :loading="bannerLoading" size="small" :max-height="560" />
 
-    <NModal v-model:show="showBanner" preset="dialog" title="新增横幅" style="width: 520px">
+    <NModal v-model:show="showBanner" preset="dialog" :title="editingBannerId ? '编辑横幅' : '新增横幅'" style="width: 520px">
       <NForm :model="bannerForm" label-placement="left" label-width="72">
         <NFormItem label="名称" required>
           <NInput v-model:value="bannerForm.name" />
@@ -210,7 +236,7 @@ onMounted(loadBanners);
       </NForm>
       <template #action>
         <NButton @click="showBanner = false">取消</NButton>
-        <NButton type="primary" :loading="bannerSaving" @click="handleBanner">创建</NButton>
+        <NButton type="primary" :loading="bannerSaving" @click="handleBanner">{{ editingBannerId ? "保存" : "创建" }}</NButton>
       </template>
     </NModal>
   </div>

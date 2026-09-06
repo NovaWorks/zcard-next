@@ -4,6 +4,7 @@
  * 新建/变更后向父组件抛 refresh 事件（表单下拉联动刷新）。
  */
 import { ref, reactive, computed, watch } from "vue";
+import MediaField from "@/components/common/media-picker/media-field.vue";
 import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm, NPopover } from "naive-ui";
 import type { DropdownOption } from "naive-ui";
 import {
@@ -47,6 +48,15 @@ const ICON_GROUPS: { label: string; icons: string[] }[] = [
   { label: "金融", icons: ["💳", "💵", "🏦", "📈", "🪙", "💎", "🧾", "💹", "🤑", "📉"] },
 ];
 const iconPicking = ref<any | null>(null); // 正在选图标的分类（null=面板关闭）
+// 自定义图片图标（MediaField 数组值；选定即写入 newIcon=URL——icon 字段 emoji/URL 同存，前台按形态渲染）
+const customIconImage = ref<string[]>([]);
+watch(customIconImage, (v) => {
+  const url = (v || [])[0];
+  if (url) {
+    newIcon.value = url;
+    iconPicking.value = null;
+  }
+});
 
 async function applyIcon(cat: any, icon: string) {
   const { error } = await updateCategory(cat.id, { icon }); // 空串=清除（服务端 optional 语义）
@@ -421,7 +431,8 @@ async function onSortBlur(cat: any) {
             title="选择图标（可选）"
             @click="iconPicking = iconPicking === 'new' ? null : 'new'"
           >
-            {{ newIcon || "➕" }}
+            <img v-if="newIcon && newIcon.startsWith('http')" :src="newIcon" class="cat-icon-img" alt="" />
+            <template v-else>{{ newIcon || "➕" }}</template>
           </button>
         </template>
         <div class="w-320px">
@@ -439,6 +450,10 @@ async function onSortBlur(cat: any) {
                 {{ ic }}
               </button>
             </div>
+          </div>
+          <div class="mt-6px border-t border-gray-100 pt-6px dark:border-gray-700">
+            <div class="mb-4px text-11px text-gray-400">自定义图片（上传后优先于 emoji）</div>
+            <MediaField v-model:value="customIconImage" />
           </div>
           <div class="flex justify-end border-t border-gray-100 pt-6px dark:border-gray-700">
             <NButton size="tiny" quaternary @click="newIcon = ''; iconPicking = null">不使用图标</NButton>
@@ -508,7 +523,8 @@ async function onSortBlur(cat: any) {
               :title="cat.icon ? '更换图标' : '设置图标'"
               @click.stop="iconPicking = iconPicking === cat.id ? null : cat.id"
             >
-              {{ cat.icon || "➕" }}
+              <img v-if="cat.icon && cat.icon.startsWith('http')" :src="cat.icon" class="cat-icon-img" alt="" />
+              <template v-else>{{ cat.icon || "➕" }}</template>
             </button>
           </template>
           <div class="w-320px">
@@ -615,6 +631,13 @@ async function onSortBlur(cat: any) {
   cursor: pointer;
   transition: all 0.15s;
 }
+.cat-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  display: block;
+}
+
 .cat-icon-btn:hover {
   border-color: #4098ff;
   background: rgba(64, 152, 255, 0.08);
