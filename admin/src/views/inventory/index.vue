@@ -150,7 +150,7 @@ const cardColumns: DataTableColumns<any> = [
         },
       ),
   },
-  { title: "备注", key: "note", width: 120 },
+  { title: "备注", key: "note", width: 120, ellipsis: { tooltip: true } },
   {
     title: "创建时间",
     key: "created_at",

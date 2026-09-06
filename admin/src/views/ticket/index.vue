@@ -82,7 +82,7 @@ function formatTime(ts?: number) {
 }
 
 const columns: DataTableColumns<any> = [
-  { title: "工单号", key: "ticket_no", width: 170 },
+  { title: "工单号", key: "ticket_no", width: 170, ellipsis: { tooltip: true } },
   {
     title: "类型",
     key: "type",

@@ -24,7 +24,7 @@ const plainCodes = ref<string[]>([]);
 
 const columns: DataTableColumns<any> = [
   { title: "批次号", key: "batch_no", width: 170 },
-  { title: "名称", key: "name", width: 140 },
+  { title: "名称", key: "name", width: 140, ellipsis: { tooltip: true } },
   { title: "面值", key: "amount_cents", width: 90, render: (row) => formatMoney(row.amount_cents) },
   { title: "数量", key: "quantity", width: 70 },
   { title: "已兑换", key: "redeemed", width: 70, render: (row) => row.redeemed ?? row.redeemed_count ?? "-" },

@@ -190,7 +190,7 @@ function formatTime(ts?: number) {
 }
 
 const columns: DataTableColumns<any> = [
-  { title: "订单号", key: "order_no", width: 200 },
+  { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
   {
     title: "状态",
     key: "status",

@@ -5,10 +5,14 @@ package catalog
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	inventoryport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
@@ -254,10 +258,25 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 	return ToAdminPB(p), nil
 }
 
-// DeleteProduct 删除商品。
+// DeleteProduct 删除商品（引用检查先行——历史订单/在库卡密拒删并给原因；
+// 无引用时级联清理自有子表（SKU/控件/商品组关联）后删主体）。
 func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.DeleteProductRequest) (*emptypb.Empty, error) {
-	if err := s.repo.DeleteProduct(ctx, req.GetId()); err != nil {
-		return nil, errors.InternalServer("catalog.DELETE_FAILED", "删除失败")
+	client := data.Client(ctx, s.repo.data)
+	id := req.GetId()
+	// 历史订单引用（order_items 只增不改——有单即不可删，改下架）
+	if n, err := client.OrderItem.Query().Where(orderitem.ProductIDEQ(id)).Count(ctx); err == nil && n > 0 {
+		return nil, errors.BadRequest("catalog.PRODUCT_HAS_ORDERS",
+			fmt.Sprintf("该商品有 %d 条订单记录，不可删除——请改为下架（下架不影响已有订单交付）", n))
+	}
+	// 在库未售卡密（available/reserved）——提示先清理，不静默销毁库存
+	if n, err := client.Card.Query().
+		Where(card.ProductIDEQ(id), card.StatusIn(card.StatusAvailable, card.StatusReserved)).
+		Count(ctx); err == nil && n > 0 {
+		return nil, errors.BadRequest("catalog.PRODUCT_HAS_CARDS",
+			fmt.Sprintf("该商品还有 %d 张未售卡密，请先在卡密库存中清理（导出/删除）后再删除商品", n))
+	}
+	if err := s.repo.DeleteProductCascade(ctx, id); err != nil {
+		return nil, errors.InternalServer("catalog.DELETE_FAILED", "删除失败: "+err.Error())
 	}
 	return &emptypb.Empty{}, nil
 }

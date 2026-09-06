@@ -43,7 +43,7 @@ const promoSaving = ref(false);
 const promoForm = ref({ name: "", scope_json: "", type: "percent", thresholdYuan: 0, discount: 9500, special_priceYuan: 0, range: [Date.now(), Date.now() + 86400000 * 7] as [number, number], enabled: true });
 
 const promoColumns: DataTableColumns<any> = [
-  { title: "名称", key: "name", width: 140 },
+  { title: "名称", key: "name", width: 140, ellipsis: { tooltip: true } },
   { title: "范围", key: "scope_json", width: 160, ellipsis: true, render: (row) => row.scope_json || "全场" },
   {
     title: "规则",

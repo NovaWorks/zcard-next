@@ -33,9 +33,9 @@ function statusTag(s: string) {
 
 const columns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 70 },
-  { title: "订单号", key: "order_no", width: 200 },
+  { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
   { title: "渠道", key: "channel", width: 90 },
-  { title: "渠道单号", key: "channel_order_no", width: 180, ellipsis: true },
+  { title: "渠道单号", key: "channel_order_no", width: 180, ellipsis: { tooltip: true } },
   {
     title: "金额",
     key: "amount_cents",
@@ -111,7 +111,7 @@ const refunds = ref<any[]>([]);
 const refundLoading = ref(false);
 const refundColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 70 },
-  { title: "订单号", key: "order_no", width: 200 },
+  { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
   { title: "金额", key: "amount_cents", width: 100, render: (row) => formatMoney(row.amount_cents) },
   {
     title: "渠道",

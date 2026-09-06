@@ -63,7 +63,7 @@ function zhValue(json: string): string {
 
 const bannerColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
-  { title: "名称", key: "name", width: 120 },
+  { title: "名称", key: "name", width: 120, ellipsis: { tooltip: true } },
   { title: "位置", key: "position", width: 70 },
   {
     title: "图片",

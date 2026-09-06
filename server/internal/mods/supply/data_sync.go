@@ -18,10 +18,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -31,6 +31,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 )
 
@@ -46,16 +47,16 @@ const (
 
 // 节流/补查默认参数（settings.schedule 可覆盖；对齐 1.x AcgFakaDriver）。
 const (
-	defaultPageDelaySec   = 1    // 商品分页页间间隔（秒；0=不限）
-	defaultStockConc      = 3    // 库存补查并发（1-10）
-	defaultStockBatchMs   = 200  // 补查批次间隔（毫秒）
+	defaultPageDelaySec   = 1       // 商品分页页间间隔（秒；0=不限）
+	defaultStockConc      = 3       // 库存补查并发（1-10）
+	defaultStockBatchMs   = 200     // 补查批次间隔（毫秒）
 	stockThrottleBudgetMs = 600_000 // 补查限速预算（600s，超出报错提示调参）
 )
 
 // scheduleSettings 连接级节流参数（ ；S2 自适应节奏器在此基础上倍增）。
 type scheduleSettings struct {
-	PageDelay      time.Duration // 商品分页页间隔
-	StockConc      int           // 库存补查并发
+	PageDelay       time.Duration // 商品分页页间隔
+	StockConc       int           // 库存补查并发
 	StockBatchDelay time.Duration // 补查批次间隔
 }
 
@@ -100,7 +101,7 @@ type SyncService struct {
 	repo       *SupplyRepoImpl
 	writer     catalogport.UpstreamProductWriter
 	maintainer catalogport.UpstreamProductMaintainer // 轻量 scope + 删除对账（nil=跳过）
-	pacer      *Pacer                                 // 自适应节奏器（nil=静态节流，测试用）
+	pacer      *Pacer                                // 自适应节奏器（nil=静态节流，测试用）
 	enq        queue.Enqueuer
 	outbox     events.Writer // sync.completed 发布
 	log        *slog.Logger
@@ -405,6 +406,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 	// 状态语义：上游不可售（手动发货/预选/停售）→ 本地下架(0)。
 	// （曾用隐藏(2)——但隐藏商品会员可见可买，此类品 API 无法履约，必须全员下架）
 	// 下架同时删除本地采集封面（cover 清空；上架后重新下载）
+	// 上游可售(1)不覆盖本地已下架品——手动下架的运营意图优先（同步只下架不上架）
 	status := int8(1)
 	if !p.IsActive {
 		status = 0
@@ -412,6 +414,8 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 			deleteLocalCover(old)
 		}
 		p.Cover = ""
+	} else if !notFound && s.localProductShelvedOff(ctx, mapping.LocalProductID) {
+		status = 0 // 保持本地手动下架（不写 1 拉回）
 	}
 
 	// 定价（价格保护三级判定；force_reprice 覆盖运营改价保护）
@@ -504,14 +508,24 @@ func (s *SyncService) syncPriceOnly(ctx context.Context, conn *ent.SupplyConnect
 	return nil
 }
 
-// syncStatusOnly status scope 轻路径：上下架状态 + up_stock 缓存（-1 保留原值）。
-func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, stats *TaskProgress) error {
-	status := int8(1)
-	if !p.IsActive {
-		status = 0 // 上游不可售 → 下架（同 syncOne 语义）
+// localProductShelvedOff 本地商品当前是否下架(0)——手动下架保持判据。
+func (s *SyncService) localProductShelvedOff(ctx context.Context, localProductID uint64) bool {
+	if localProductID == 0 {
+		return false
 	}
-	if s.maintainer != nil {
-		if _, err := s.maintainer.UpdateUpstreamStatus(ctx, conn.ID, p.ID, status); err != nil {
+	st, err := s.repo.entClient(ctx).Product.Query().
+		Where(product.ID(localProductID)).
+		Select(product.FieldStatus).
+		Int(ctx)
+	return err == nil && st == 0
+}
+
+// syncStatusOnly status scope 轻路径：上下架状态 + up_stock 缓存（-1 保留原值）。
+// 单向语义：只传导「下架」，不自动上架——运营在后台手动下架的商品不被同步
+// 拉回（重新上架走后台操作；上游可售≠本地必须卖）。
+func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, stats *TaskProgress) error {
+	if s.maintainer != nil && !p.IsActive {
+		if _, err := s.maintainer.UpdateUpstreamStatus(ctx, conn.ID, p.ID, 0); err != nil {
 			return err
 		}
 	}

@@ -16,6 +16,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
@@ -264,6 +265,34 @@ func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
 		return fmt.Errorf("catalog.PRODUCT_NOT_FOUND")
 	}
 	return nil
+}
+
+// DeleteProductCascade 级联删除（引用检查已由 service 层完成——订单/在库卡密
+// 拒删；此处清理商品自有子表后删主体，单事务）。
+func (r *ProductRepoImpl) DeleteProductCascade(ctx context.Context, id uint64) error {
+	tx, err := data.Client(ctx, r.data).Tx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	// 子表清理（无订单引用时安全）
+	if _, err := tx.ProductControl.Delete().Where(productcontrol.ProductIDEQ(id)).Exec(ctx); err != nil {
+		return err
+	}
+	if _, err := tx.ProductSku.Delete().Where(productsku.ProductIDEQ(id)).Exec(ctx); err != nil {
+		return err
+	}
+	if p, err := tx.Product.Get(ctx, id); err == nil {
+		deleteProductCover(p.Cover)
+	}
+	n, err := tx.Product.Delete().Where(product.ID(id)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("catalog.PRODUCT_NOT_FOUND")
+	}
+	return tx.Commit()
 }
 
 func (r *ProductRepoImpl) genUniqueSlug(ctx context.Context, subsiteID uint64, name string) (string, error) {

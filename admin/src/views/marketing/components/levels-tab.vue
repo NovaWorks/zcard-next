@@ -98,7 +98,7 @@ const canWrite = () => checkAuth("memberlevel:write");
 
 const columns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
-  { title: "名称", key: "name", width: 110 },
+  { title: "名称", key: "name", width: 110, ellipsis: { tooltip: true } },
   {
     title: "升级条件",
     key: "threshold",
