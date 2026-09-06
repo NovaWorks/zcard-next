@@ -108,7 +108,7 @@ NOTES?=CHANGELOG.md
 # 产物上传 GitHub Release（tag 对应，全部文件平铺）或自建静态源目录。
 release:
 	@tag=$$(git describe --tags --exact-match 2>/dev/null) || { echo "ERROR: HEAD 未打 vX.Y.Z tag——先提交并 git tag，再发行"; exit 1; }; \
-	case "$$tag" in v[0-9]*.[0-9]*.[0-9]) ;; *) echo "ERROR: tag 须为纯 vX.Y.Z（sign 拒绝预发布后缀），得到 $$tag"; exit 1;; esac; \
+	echo "$$tag" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "ERROR: tag 须为纯 vX.Y.Z（sign 拒绝预发布后缀），得到 $$tag"; exit 1; }; \
 	echo "==> release $$tag"; \
 	rm -rf dist && mkdir -p dist && \
 	make web-dist && \
