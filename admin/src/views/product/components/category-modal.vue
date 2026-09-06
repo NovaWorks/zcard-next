@@ -5,6 +5,7 @@
  */
 import { ref, reactive, computed, watch } from "vue";
 import MediaField from "@/components/common/media-picker/media-field.vue";
+import { resolveMediaUrl } from "@/utils/media";
 import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm, NPopover } from "naive-ui";
 import type { DropdownOption } from "naive-ui";
 import {
@@ -48,8 +49,27 @@ const ICON_GROUPS: { label: string; icons: string[] }[] = [
   { label: "金融", icons: ["💳", "💵", "🏦", "📈", "🪙", "💎", "🧾", "💹", "🤑", "📉"] },
 ];
 const iconPicking = ref<any | null>(null); // 正在选图标的分类（null=面板关闭）
+
+// 图标是否为图片（URL 相对/绝对或带扩展名；emoji 均不命中）——上传图标可能是
+// 相对路径 /uploads/...，此前仅判断 startsWith('http') 会把 URL 当 emoji 文本渲染
+function iconIsImage(icon?: string): boolean {
+  if (!icon) return false;
+  return icon.startsWith("/") || /^https?:\/\//i.test(icon) || /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(icon);
+}
 // 自定义图片图标（MediaField 数组值；选定即写入 newIcon=URL——icon 字段 emoji/URL 同存，前台按形态渲染）
 const customIconImage = ref<string[]>([]);
+// 行内快改面板的自定义图片（应用到 iconPicking 当前分类）
+const rowIconImage = ref<string[]>([]);
+watch(rowIconImage, (v) => {
+  const url = (v || [])[0];
+  if (url && iconPicking.value && typeof iconPicking.value === "number") {
+    const cat = flatTree.value.find((c: any) => c.id === iconPicking.value);
+    if (cat) {
+      applyIcon(cat, url);
+      rowIconImage.value = [];
+    }
+  }
+});
 watch(customIconImage, (v) => {
   const url = (v || [])[0];
   if (url) {
@@ -431,7 +451,7 @@ async function onSortBlur(cat: any) {
             title="选择图标（可选）"
             @click="iconPicking = iconPicking === 'new' ? null : 'new'"
           >
-            <img v-if="newIcon && newIcon.startsWith('http')" :src="newIcon" class="cat-icon-img" alt="" />
+            <img v-if="iconIsImage(newIcon)" :src="resolveMediaUrl(newIcon)" class="cat-icon-img" alt="" />
             <template v-else>{{ newIcon || "➕" }}</template>
           </button>
         </template>
@@ -523,7 +543,7 @@ async function onSortBlur(cat: any) {
               :title="cat.icon ? '更换图标' : '设置图标'"
               @click.stop="iconPicking = iconPicking === cat.id ? null : cat.id"
             >
-              <img v-if="cat.icon && cat.icon.startsWith('http')" :src="cat.icon" class="cat-icon-img" alt="" />
+              <img v-if="iconIsImage(cat.icon)" :src="resolveMediaUrl(cat.icon)" class="cat-icon-img" alt="" />
               <template v-else>{{ cat.icon || "➕" }}</template>
             </button>
           </template>
@@ -542,6 +562,10 @@ async function onSortBlur(cat: any) {
                   {{ ic }}
                 </button>
               </div>
+            </div>
+            <div class="mt-6px border-t border-gray-100 pt-6px dark:border-gray-700">
+              <div class="mb-4px text-11px text-gray-400">自定义图片</div>
+              <MediaField v-model:value="rowIconImage" />
             </div>
             <div class="flex items-center justify-between border-t border-gray-100 pt-6px dark:border-gray-700">
               <NButton v-auth="'catalog:category_write'" size="tiny" quaternary type="error" @click="applyIcon(cat, '')">
