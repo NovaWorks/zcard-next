@@ -111,6 +111,7 @@ async function refreshStatus() {
   try {
     const { data } = await fetchUpdateStatus();
     status.value = data as any;
+    enterWaitIfNeeded(status.value);
     if (waitingRestart) {
       const st = status.value!;
       if (st.current_version && st.target_version && st.current_version === st.target_version) {
@@ -279,11 +280,21 @@ async function saveConfig() {
   }
 }
 
-// restarting 进入等待模式（轮询直至恢复）
+// 进入「等待恢复」模式的判据（页面刷新/重开也能接上——等待态从服务端推导,
+// 不依赖内存 flag）：
+//  a) phase 处于进行中任一阶段（含新进程健康检查 verifying）
+//  b) 目标版本已登记且尚未到位（重启间隙/刷新后 update.state 延续 target）
+// 进入即重开分步进度弹窗——用户刷新页面回来直接看到更新进度而非干等。
 function enterWaitIfNeeded(st: UpdateStatus | null) {
-  if (st?.phase === "restarting" && !waitingRestart) {
+  if (!st || waitingRestart) return;
+  if (st.phase === "failed") return;
+  const inFlightPhase = ["checking", "backing_up", "downloading", "applying", "restarting", "verifying"].includes(st.phase);
+  const pendingTarget = !!st.target_version && st.current_version !== st.target_version;
+  if (inFlightPhase || pendingTarget) {
     waitingRestart = true;
     waitStart = Date.now();
+    modalStage.value = "progress";
+    showConfirm.value = true;
   }
 }
 
