@@ -146,20 +146,24 @@ function schedulePoll() {
 const checkResult = ref<UpdateCheckResult | null>(null);
 const showConfirm = ref(false);
 const changelogHtml = ref("");
+// 弹窗多态：confirm=版本确认（取消/立即更新）；progress=分步进度；由 phase 自动切换
+const modalStage = ref<"confirm" | "progress">("confirm");
+const autoChecked = ref(false); // 进 tab 自动检查只做一次（重进页面再触发）
 
-async function doCheck() {
+async function doCheck(silent = false) {
   checking.value = true;
   try {
     const { data }: any = await checkUpdate();
     checkResult.value = data;
     changelogHtml.value = sanitizeHtml(marked.parse(data.notes || "_（本版本未提供变更记录）_") as string);
     if (data.has_update) {
-      showConfirm.value = true;
-    } else {
+      modalStage.value = "confirm";
+      showConfirm.value = true; // 有新版：直接弹更新框（自动检查与手动一致）
+    } else if (!silent) {
       message.success(`已是最新版本 ${data.current_version}`);
     }
   } catch (e: any) {
-    message.error(`检查更新失败：${e?.message || e}`);
+    if (!silent) message.error(`检查更新失败：${e?.message || e}`);
   } finally {
     checking.value = false;
   }
@@ -175,14 +179,50 @@ function sanitizeHtml(html: string) {
 }
 
 async function doApply() {
-  showConfirm.value = false;
+  modalStage.value = "progress"; // 弹窗切换为分步进度（大厂范式：同一弹窗承接全流程）
   try {
     await applyUpdate();
     waitingRestart = false;
-    message.info("更新已开始");
     if (pollTimer) clearTimeout(pollTimer);
     refreshStatus();
   } catch (e: any) {
+    showConfirm.value = false;
+    message.error(`触发更新失败：${e?.message || e}`);
+  }
+}
+
+// ── 分步进度（大厂更新器范式）：四步 + 当前步骤高亮 + 下载步百分比 ──
+const STEPS = [
+  { key: "backing_up", label: "备份数据库" },
+  { key: "downloading", label: "下载新版本" },
+  { key: "applying", label: "应用更新" },
+  { key: "restarting", label: "重启服务" },
+] as const;
+const stepIndex = computed(() => {
+  const ph = status.value?.phase || "";
+  // verifying（新进程健康检查）归入重启步；failed 停在当前步标红
+  const order = ["backing_up", "downloading", "applying", "restarting", "verifying"];
+  const idx = order.indexOf(ph);
+  return idx < 0 ? -1 : Math.min(idx, STEPS.length - 1);
+});
+const stepState = (i: number): "done" | "current" | "todo" | "error" => {
+  const ph = status.value?.phase;
+  if (ph === "failed") return i === Math.max(stepIndex.value, 0) ? "error" : i < stepIndex.value ? "done" : "todo";
+  if (i < stepIndex.value) return "done";
+  if (i === stepIndex.value) return "current";
+  return "todo";
+};
+
+/** 失败重试：回到确认阶段重新发起 */
+async function retryFromFailed() {
+  modalStage.value = "progress";
+  try {
+    await applyUpdate();
+    waitingRestart = false;
+    if (pollTimer) clearTimeout(pollTimer);
+    refreshStatus();
+  } catch (e: any) {
+    showConfirm.value = false;
     message.error(`触发更新失败：${e?.message || e}`);
   }
 }
@@ -252,6 +292,11 @@ onMounted(async () => {
   await refreshStatusVisible();
   if (!statusError.value) schedulePoll();
   enterWaitIfNeeded(status.value);
+  // 进入 tab 自动检查（静默失败不打扰）；有新版本直接弹更新框
+  if (!autoChecked.value && !statusError.value && !inFlight.value) {
+    autoChecked.value = true;
+    doCheck(true);
+  }
 });
 onBeforeUnmount(() => {
   if (pollTimer) clearTimeout(pollTimer);
@@ -300,7 +345,7 @@ watch(
           <div class="stat-label">操作</div>
           <div class="stat-value">
             <NSpace :size="8">
-              <NButton size="tiny" type="primary" :loading="checking" :disabled="inFlight" @click="doCheck">检查更新</NButton>
+              <NButton size="tiny" type="primary" :loading="checking" :disabled="inFlight" @click="doCheck()">检查更新</NButton>
               <NPopconfirm @positive-click="doRollback">
                 <template #trigger>
                   <NButton size="tiny" :disabled="inFlight" quaternary type="warning">回滚上一版</NButton>
@@ -435,27 +480,72 @@ watch(
       </NCollapseItem>
     </NCollapse>
 
-    <!-- 更新确认弹窗：版本对比 + changelog -->
+    <!-- 更新弹窗（多态）：确认（取消/立即更新）→ 分步进度（同一弹窗承接全流程） -->
     <NModal
       :show="showConfirm"
       preset="card"
       style="width: min(640px, 94vw)"
-      title="发现新版本"
+      :title="modalStage === 'confirm' ? '发现新版本' : '正在更新'"
       :mask-closable="false"
+      :close-on-esc="false"
       @update:show="(v: boolean) => (showConfirm = v)"
     >
-      <div class="version-line">
-        <NTag size="small" round>{{ checkResult?.current_version }}</NTag>
-        <span class="arrow">→</span>
-        <NTag size="small" round type="success">{{ checkResult?.latest_version }}</NTag>
-        <NTag size="small" round :bordered="false" class="ml-2">{{ checkResult?.channel }} · {{ sourceText }}</NTag>
-      </div>
-      <div class="changelog" v-html="changelogHtml" />
+      <!-- 阶段一：版本确认 -->
+      <template v-if="modalStage === 'confirm'">
+        <div class="version-line">
+          <NTag size="small" round>{{ checkResult?.current_version }}</NTag>
+          <span class="arrow">→</span>
+          <NTag size="small" round type="success">{{ checkResult?.latest_version }}</NTag>
+          <NTag size="small" round :bordered="false" class="ml-2">{{ checkResult?.channel }} · {{ checkResult?.source || sourceText }}</NTag>
+        </div>
+        <div class="changelog" v-html="changelogHtml" />
+      </template>
+
+      <!-- 阶段二：分步进度 -->
+      <template v-else>
+        <div class="steps">
+          <div v-for="(s, i) in STEPS" :key="s.key" class="step" :class="stepState(i)">
+            <span class="step-dot">
+              <template v-if="stepState(i) === 'done'">✓</template>
+              <template v-else-if="stepState(i) === 'error'">✕</template>
+              <template v-else-if="stepState(i) === 'current' && s.key === 'downloading'">{{ status?.progress_percent ?? 0 }}%</template>
+              <template v-else>{{ i + 1 }}</template>
+            </span>
+            <span class="step-label">{{ s.label }}</span>
+          </div>
+        </div>
+        <NProgress
+          v-if="status?.phase === 'downloading'"
+          type="line"
+          :percentage="status?.progress_percent || 0"
+          :rail-height="8"
+          :border-radius="4"
+          :show-indicator="false"
+          processing
+          class="mt-2"
+        />
+        <div class="mt-3 text-center text-13px opacity-70">
+          <template v-if="status?.phase === 'restarting' || status?.phase === 'verifying'">
+            服务重启中（约 10–30 秒），完成后页面将自动刷新——请勿关闭浏览器
+          </template>
+          <template v-else-if="status?.phase === 'failed'">
+            更新失败：{{ status?.error_message }}
+            <div class="mt-2 flex justify-center gap-8px">
+              <NButton size="tiny" @click="retryFromFailed">重试</NButton>
+              <NButton size="tiny" type="warning" quaternary @click="doRollback">回滚上一版</NButton>
+              <NButton size="tiny" quaternary @click="showConfirm = false">关闭</NButton>
+            </div>
+          </template>
+          <template v-else>更新过程中请勿关闭浏览器；失败可安全重试（不会改动现有版本）</template>
+        </div>
+      </template>
+
       <template #footer>
-        <NSpace justify="end">
-          <NButton size="small" @click="showConfirm = false">稍后提醒</NButton>
+        <NSpace v-if="modalStage === 'confirm'" justify="end">
+          <NButton size="small" @click="showConfirm = false">取消</NButton>
           <NButton size="small" type="primary" @click="doApply">立即更新</NButton>
         </NSpace>
+        <div v-else class="text-center text-12px opacity-50">zcard 在线更新</div>
       </template>
     </NModal>
   </div>
@@ -515,6 +605,59 @@ watch(
   font-size: 18px;
   opacity: 0.6;
 }
+.steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 4px 4px;
+}
+.step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.step-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  border: 1.5px solid rgba(128, 128, 128, 0.35);
+  color: rgba(128, 128, 128, 0.8);
+  transition: all 0.2s;
+}
+.step.done .step-dot {
+  border-color: #18a058;
+  background: rgba(24, 160, 88, 0.12);
+  color: #18a058;
+}
+.step.current .step-dot {
+  border-color: var(--primary-color, #2080f0);
+  background: rgba(32, 128, 240, 0.1);
+  color: var(--primary-color, #2080f0);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.step.error .step-dot {
+  border-color: #d03050;
+  background: rgba(208, 48, 80, 0.12);
+  color: #d03050;
+}
+.step-label {
+  font-size: 12px;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+.step.current .step-label {
+  opacity: 1;
+  font-weight: 500;
+}
+
 .changelog {
   max-height: 46vh;
   overflow: auto;
