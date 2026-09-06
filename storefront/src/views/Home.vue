@@ -181,7 +181,8 @@ const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [
 // 每页选项跟随后台 template.per_page（默认 20 → 20/40/60），前台不再写死档位
 const pageSizeOptions = computed(() => [pageSize.value, pageSize.value * 2, pageSize.value * 3]);
 
-const siteName = 'ZCard 商店';
+const siteName = ref('ZCard 商店');
+onMounted(async () => { const cfg = await fetchSiteSeo(); if (cfg.name) siteName.value = cfg.name; });
 
 // ── 模板设置（后台 系统设置 → 模板；与商品列表页同源消费，保证全站一致）──
 const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊

@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
@@ -82,7 +83,7 @@ func NewSigner(sec *conf.Security) (*authn.Signer, error) {
 	return authn.NewSigner(
 		key32(resolveKey("ZCARD_JWT_ADMIN_KEY", sec.JwtAdminKey, "jwt_admin")),
 		key32(resolveKey("ZCARD_JWT_USER_KEY", sec.JwtUserKey, "jwt_user")),
-		0, // access TTL 默认 2h
+		24*time.Hour, // access TTL 24h（频繁重启/更新的部署形态下 2h 掉线感过强；refresh 会话 14 天不变）
 	)
 }
 

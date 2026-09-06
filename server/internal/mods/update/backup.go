@@ -9,8 +9,11 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
+
+	"github.com/go-sql-driver/mysql"
 	"path/filepath"
 	"strings"
 
@@ -42,12 +45,65 @@ func BackupDatabase(ctx context.Context, dataCfg *conf.Data, destDir string) err
 		}
 		return nil
 	case "mysql":
-		return dumpCommand(ctx, filepath.Join(destDir, "zcard.sql"), "mysqldump", db.Source)
+		return dumpMysql(ctx, filepath.Join(destDir, "zcard.sql"), db.Source)
 	case "postgres":
 		return dumpCommand(ctx, filepath.Join(destDir, "zcard.sql"), "pg_dump", db.Source)
 	default:
 		return fmt.Errorf("未知方言 %q", db.Driver)
 	}
+}
+
+// dumpMysql MySQL 备份：mysqldump 不认 URL/Go DSN（直接传会当库名且丢密码——
+// using password: NO 实测），须解析后经 --defaults-extra-file 传凭据（0600 临时
+// 文件，密码不进进程参数表 ps 可见面），用后即删。
+func dumpMysql(ctx context.Context, dest, dsn string) error {
+	bin, err := exec.LookPath("mysqldump")
+	if err != nil {
+		return fmt.Errorf("mysqldump 不在 PATH（apt install default-mysql-client 后重试）: %w", err)
+	}
+	cfg, err := mysql.ParseDSN(dsn)
+	if err != nil {
+		return fmt.Errorf("MySQL 连接串解析失败: %w", err)
+	}
+	host, port, _ := net.SplitHostPort(cfg.Addr)
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	if port == "" {
+		port = "3306"
+	}
+	f, err := os.CreateTemp("", "zcard-mysql-*.cnf")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f.Name())
+	cnf := fmt.Sprintf("[client]\nhost=%s\nport=%s\nuser=%s\npassword=%s\n", host, port, cfg.User, cfg.Passwd)
+	if _, err := f.WriteString(cnf); err != nil {
+		_ = f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	_ = os.Chmod(f.Name(), 0o600)
+
+	out, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	var errBuf bytes.Buffer
+	cmd := exec.CommandContext(ctx, bin, "--defaults-extra-file="+f.Name(), cfg.DBName)
+	cmd.Stdout = out
+	cmd.Stderr = io.MultiWriter(os.Stderr, &errBuf)
+	if err := cmd.Run(); err != nil {
+		msg := strings.TrimSpace(errBuf.String())
+		if strings.Contains(msg, "Access denied") || strings.Contains(msg, "1045") {
+			return fmt.Errorf("mysqldump 失败: 数据库认证被拒（检查 config.yaml / database.yaml 的 data.database 连接账号密码）: %s", tail(msg, 300))
+		}
+		return fmt.Errorf("mysqldump 失败: %v: %s", err, tail(msg, 400))
+	}
+	return nil
 }
 
 // dumpCommand mysqldump/pg_dump 落盘（外部工具缺失给明确指引；执行失败

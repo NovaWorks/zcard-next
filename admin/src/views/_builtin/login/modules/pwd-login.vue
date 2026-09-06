@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
+import { NCheckbox } from "naive-ui";
 import { useAuthStore } from "@/store/modules/auth";
 import { useFormRules, useNaiveForm } from "@/hooks/common/form";
 import { $t } from "@/locales";
@@ -17,11 +18,37 @@ interface FormModel {
   password: string;
 }
 
-// 不预填账密（模板原默认 admin/admin123456——生产环境不得携带演示凭据）
 const model: FormModel = reactive({
   userName: "",
   password: "",
 });
+
+// ── 记住账号/密码（本机 localStorage；记住密码请仅在本机自用时勾选）──
+const REMEMBER_KEY = "zcard.admin.remember";
+const rememberPwd = ref(false);
+function loadRemembered() {
+  try {
+    const r = JSON.parse(localStorage.getItem(REMEMBER_KEY) || "{}");
+    if (r.userName) model.userName = r.userName;
+    if (r.password && r.rememberPwd) {
+      model.password = r.password;
+      rememberPwd.value = true;
+    }
+  } catch {
+    /* 损坏忽略 */
+  }
+}
+function saveRemembered() {
+  if (!rememberPwd.value) {
+    // 只记账号：清掉历史密码
+    localStorage.setItem(REMEMBER_KEY, JSON.stringify({ userName: model.userName }));
+    return;
+  }
+  localStorage.setItem(
+    REMEMBER_KEY,
+    JSON.stringify({ userName: model.userName, password: model.password, rememberPwd: true })
+  );
+}
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
   // inside computed to make locale reactive, if not apply i18n, you can define it without computed
@@ -40,6 +67,7 @@ const captchaImage = ref("");
 const captchaCode = ref("");
 
 onMounted(async () => {
+  loadRemembered();
   try {
     const { data } = await fetchAdminCaptchaConfig();
     showCaptcha.value = data?.enabled === true;
@@ -69,6 +97,7 @@ async function handleSubmit() {
     window.$message?.warning("请输入图形验证码");
     return;
   }
+  saveRemembered();
   await authStore.login(
     model.userName,
     model.password,
@@ -122,6 +151,9 @@ async function handleSubmit() {
         <NButton v-else quaternary size="small" @click="loadCaptchaImage">获取验证码</NButton>
       </div>
     </NFormItem>
+    <div class="mb-8px">
+      <NCheckbox v-model:checked="rememberPwd" size="small" title="账号恒记住；勾选后密码一并保存在本机浏览器（仅建议自用电脑）">记住账号{{ rememberPwd ? '和密码' : '' }}</NCheckbox>
+    </div>
     <NSpace vertical :size="24">
       <!-- admin 面仅密码登录：验证码登录/注册/找回密码均为 storefront 能力，
            后端无对应端点，模板入口已移除（勿恢复——会切到无实现的登录模块） -->

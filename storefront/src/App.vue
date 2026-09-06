@@ -31,7 +31,8 @@
     <!-- 主导航（sticky） -->
     <header class="topbar">
       <router-link to="/" class="logo">
-        <span class="logo-mark">ZC</span>
+        <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
+        <span v-else class="logo-mark">ZC</span>
         <span class="logo-name">{{ siteName }}</span>
       </router-link>
       <nav class="nav-links">
@@ -160,6 +161,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
+import { fetchSiteSeo } from './seo';
 import { useRoute, useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
@@ -176,8 +178,14 @@ const route = useRoute();
 // 安装页：无商城布局（头部/尾部/客服/公告等全部不渲染，见模板 v-if）
 const isInstall = computed(() => route.path === '/install');
 
-// 站点名（config 下发；失败回退）
+// 站点名/LOGO（config 下发——后台设置 site.name / site.logo 实时生效；失败回退默认）
 const siteName = ref('ZCard 商店');
+const siteLogo = ref('');
+onMounted(async () => {
+  const cfg = await fetchSiteSeo();
+  if (cfg.name) siteName.value = cfg.name;
+  siteLogo.value = cfg.logo || '';
+});
 
 // SEO 默认 head 由 main.ts 处理（客户端拉取后更新；SSR 渲染后输出到静态 HTML）
 

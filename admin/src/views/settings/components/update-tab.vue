@@ -333,7 +333,7 @@ watch(
 
       <NAlert v-if="status?.phase === 'failed'" type="error" class="mt-3" :bordered="false">
         <b>更新失败：</b>{{ status?.error_message }}
-        <div class="mt-1 text-xs opacity-70">常见处置：磁盘不足（清理后重试）/ pg_dump 缺失（apt install postgresql-client）/ 下载源不可达（切换更新源模式）。</div>
+        <div class="mt-1 text-xs opacity-70">失败原因与对应处置见上方错误信息（按数据库方言与实际错误给出）。磁盘不足可清理后重试；下载源不可达可在「更新源配置」切换模式。更新在任何阶段失败都不会改动磁盘上的现有版本，可安全重试。</div>
       </NAlert>
 
       <!-- 进行中进度 -->
