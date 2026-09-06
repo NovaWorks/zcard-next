@@ -7,9 +7,11 @@ export const REG_PHONE =
 /**
  * Password reg
  *
- * 6-18 characters, including letters, numbers, and underscores
+ * 长度 6-64、不含空白——字符集不限制（与后端一致：bcrypt 支持任意可见字符）。
+ * 此前模板自带 /^\w{6,18}$/（仅字母数字下划线）挂在登录页表单校验上，
+ * 导致「能设置带特殊字符的密码、却登录不进去」（表单拦截请求发不出）。
  */
-export const REG_PWD = /^\w{6,18}$/;
+export const REG_PWD = /^\S{6,64}$/;
 
 /** Email reg */
 export const REG_EMAIL = /^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/;
