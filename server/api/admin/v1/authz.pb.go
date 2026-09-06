@@ -903,7 +903,7 @@ func (x *UpdateAdminRequest) GetRemark() string {
 type ToggleAdminRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Enabled       bool                   `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"` // 不标 REQUIRED:false=禁用是合法值(零值会被当未传拒绝,同 batch-status status 坑)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1158,10 +1158,10 @@ const file_admin_v1_authz_proto_rawDesc = "" +
 	"\bnickname\x18\x02 \x01(\tR\bnickname\x12\x16\n" +
 	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12\x17\n" +
 	"\arole_id\x18\x04 \x01(\x04R\x06roleId\x12\x16\n" +
-	"\x06remark\x18\x05 \x01(\tR\x06remark\"H\n" +
+	"\x06remark\x18\x05 \x01(\tR\x06remark\"C\n" +
 	"\x12ToggleAdminRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1d\n" +
-	"\aenabled\x18\x02 \x01(\bB\x03\xe0A\x02R\aenabled\"Q\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\"Q\n" +
 	"\x19ResetAdminPasswordRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1f\n" +
 	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\",\n" +

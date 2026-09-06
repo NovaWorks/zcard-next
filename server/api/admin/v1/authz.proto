@@ -192,7 +192,7 @@ message UpdateAdminRequest {
 
 message ToggleAdminRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
-  bool enabled = 2 [(google.api.field_behavior) = REQUIRED];
+  bool enabled = 2; // 不标 REQUIRED:false=禁用是合法值(零值会被当未传拒绝,同 batch-status status 坑)
 }
 
 message ResetAdminPasswordRequest {

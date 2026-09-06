@@ -1,0 +1,116 @@
+{
+    "comment": "ZCard 1.x 加密 golden vectors（真实 Laravel Encrypter 生成；密钥为确定性测试派生，禁止用于生产）",
+    "cipher": "AES-256-CBC",
+    "app_key": "base64:lfVdeuqGBP6JMwsHEBXM4Ttv25tgCfYBD2UwFO31sLk=",
+    "card_key": "base64:iyTosTny+UgUs9dBk+TvURm5HOy1FeRjk+pkkYyJKPQ=",
+    "vectors": [
+        {
+            "name": "crypt_string_ascii",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6IldCSnF1Q1hSbGpEa3JFam1tc1VKdWc9PSIsInZhbHVlIjoibEFMTjdiSGxRU2hPc3RseWpaTEFnUT09IiwibWFjIjoiZThkYjU3MzJmNWZkZTNlOWNkYzdhZGI0MDg0MDdkZGY1MzFmZjEwM2VlNzhlMmQxMWFkZjdmMDE1Zjc5YWM4OCIsInRhZyI6IiJ9",
+            "expect": "hello zcard"
+        },
+        {
+            "name": "crypt_string_cjk",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6IjYyaGdIdk1lQVNTYkF0TXFmcjkxYkE9PSIsInZhbHVlIjoiQnhGZW42Ukl3VlpRU01LbExMVFVZaDk5eVNYVUIrR0pIa0dTN1RCQjlpNnlLczVSMS9KMTgyTXE5MzV6K1d5cCIsIm1hYyI6IjI4ZjA4MTQ3ZWM5YmQ0YjJiOTQwMzllYTUyOTg5Njk3NzM1Yjg5MzU0MTA4ZDJmMjE2YTViZTJmMTg3MDQ5NWUiLCJ0YWciOiIifQ==",
+            "expect": "中文卡密内容-测试【】￥%&*()"
+        },
+        {
+            "name": "crypt_string_json",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6IjJPNDVvZDRUTERES3Fqc1VtMXpac2c9PSIsInZhbHVlIjoiTzdUSDh1TzliVmVkZ1BXaTF4SC9OWTJnbXVLUndZSkZKd29nMGR3QkIvS3c2clJGc1pmNTNxSUtHS29zT1NnSUlsUkRoRHNVT1lzU1p0a1RFbk5Sa1FqNnl5ZGJ0a1hJQytMd3BGV20rMkYxREgxMVM1SlU4YUpBVEdkbmFkTGYiLCJtYWMiOiI2YjEyMDZmMzkzZDBkY2M2ZGRjMmQ4YzMwMGNjN2Q0OTc3OGNkZTkwYzljNmUzMGM0ZmZjNmU4ZTg4MjM5YjczIiwidGFnIjoiIn0=",
+            "expect": "{\"app_id\":\"1001\",\"app_secret\":\"sk-9f8e7d\",\"gateway\":\"https://pay.example.com/submit\"}"
+        },
+        {
+            "name": "crypt_string_multiline",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6IlFJM0xFM3YyT01tb3RwK3VmNGxlcGc9PSIsInZhbHVlIjoiZVpaVmJReXJBKzhLaGpJZHJJcHh4T0M5OXJRNDd1YVRqdjdTcm10VGpxRFhrb2wyeUpIY3V4WGpCZWZwY0pQRCIsIm1hYyI6Ijk2Njg0OTNiMjljYTQyNGM4MzE5YzUwOTNiYTNjMmQyYzM3ODcxNzRhNzNkZjc3ZTkwOTRlZmNiNTEwYjMyODciLCJ0YWciOiIifQ==",
+            "expect": "第一行\nsecond line\r\n第三行\ttab"
+        },
+        {
+            "name": "crypt_string_empty",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6ImcrSE9wKzRMY0ErSUFncE5HcTU5WGc9PSIsInZhbHVlIjoiMFJ4TElXOC9BMlludWFnY2xEZkV2Zz09IiwibWFjIjoiYzU2YjYzYTk1OTgzZThlNzU3MDlkOTdlZjdiZDczMjQzMWMwYmM1MWY1MGFmZDdiMGIzZTRjMzk4Yjk5ODc5NyIsInRhZyI6IiJ9",
+            "expect": ""
+        },
+        {
+            "name": "crypt_string_255_border",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6IkRBSHdGRlBxQ3BTSUVvdGlBTW9mVWc9PSIsInZhbHVlIjoiVzNtVmN6WTJ5VUI2NXhBMzVBMEZkQmhuMzN4RGgwZ3BiQnNtS1hmSkh3QVlaQ01qMHd3cUs2RVo2c2JoOWNWaE1yMDdQcGovdlVYREsvY29CaDVpdDcwdFVuREJhNWt5ZDZGV09QNDBrcEUra296Mnk0RFJhNkFDZlBCME5qeFo5QVNIVHBROHlLa1pMVXQ4VS9MTHJBNTVNbHVjM3BRNzJMTGpTaEk1MUhHL3dsQ2ZMSWFGbHBZbkpkbDN2OVowNlVZNDljUVdqcFhaS2phZTFMTWRqL0gzY042U0M4ZVlBUEhuaVZ6OVVQRlpQQ0lNejVhNERUc0VkRnJKM1h3cFRYMXBqWWpVSFhLTG5HT3JGOS9jRmVMNGlYMTFnQUJlSDFTVmIybll2V3ZndXB1Q2JaclZtSXpiK3RFNjRiM2xaUU9mUmliTlhCSnE3anFvUVdPdi93PT0iLCJtYWMiOiI3YjFmNTJiOGU2ODdhY2FlZjc4NWE3NjMwN2U5YTM3MTY2NzU4MjU4M2VmNjEzZTMyZDRlZTY1NDM0ODczNmU2IiwidGFnIjoiIn0=",
+            "expect": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        {
+            "name": "crypt_serialized_string",
+            "kind": "crypt_serialized",
+            "payload": "eyJpdiI6Iml1RjRGV2xtSklwd09UNjFEeWIxaUE9PSIsInZhbHVlIjoiTXdzM0RraFFoRzgyTGtQVEpBME43ZEpMVS9qL2E5UHM0ZVZLWjJRc1JOND0iLCJtYWMiOiJkNzg3NDhlMjk4NzQxNjhlN2M2YTk5MGQyYzhmNTI1NjRlZmNkMjIzMjBmMTYwMzBlM2QyYzQxNmM3NGZjNzI5IiwidGFnIjoiIn0=",
+            "expect": "serialized-string-value"
+        },
+        {
+            "name": "card_ascii",
+            "kind": "card",
+            "payload": "eyJpdiI6IjE4MTNLVmF6SHkwdFZKcktSU0tUZ1E9PSIsInZhbHVlIjoiYlVvazJXTWVPdzc4OFlSNksvbVh5WXNSQmlYK2h2ZEIvZHhLMmpndlAwUT0iLCJtYWMiOiJjNzZkMzk5MTNkZTkyNGUyODQ5NzY2OWRiODcyNjE1ZjU5ODdmYjIwOGUwMDJiYmQ3NjNlYjk4NDQ3MGI1ZWUxIiwidGFnIjoiIn0=",
+            "expect": "CARD-AB12-CD34-EF56"
+        },
+        {
+            "name": "card_cjk",
+            "kind": "card",
+            "payload": "eyJpdiI6InpieU9wOGdYVkZ0Rmh3bWZFTDJubEE9PSIsInZhbHVlIjoiQzNOa2owQ3BDRUV4bG1EWk91NkJDQTBzY0dWT0VRZnl0VVp4Y3c0ZGUrYnJaNk9uVnpTRkF5ZDVTbHRCdGM3LyIsIm1hYyI6IjAxMWVlMjU1ZDQwOGNkODcwMWEyODM4NmNhYzJlNjA3N2ZmZWEwOWM4NTQ1OWRlYzJmYzlhZjg2NGRiMzE1YzUiLCJ0YWciOiIifQ==",
+            "expect": "月卡兑换码：优享会员30天"
+        },
+        {
+            "name": "card_json",
+            "kind": "card",
+            "payload": "eyJpdiI6InlXcG9JcFBzVEN4d2dOYWRkSlVMOGc9PSIsInZhbHVlIjoiK3F5RUNIaHQyTGpYZzRlMjVYZnRKZ1N0MkhpRFdkd2hDQmJzRWRyMFdHMXQwK0MwY2xHdGczU3lieURrMXcrZHNaYW9ldHNaTThJNVA1WE9HYktmSFRsbVlPZ2sxV0JvY2dwbnJFeFRHYUU9IiwibWFjIjoiYzA5OTZmZTU1MDY2ODU4MTFiMmUxZWZjOGY3YjM0NjY3YjI5ZGE0ZjliYzkwYWRhOWI4MWJiZWYxNjhjZTU2OSIsInRhZyI6IiJ9",
+            "expect": "{\"account\":\"user@example.com\",\"password\":\"p@ss\",\"remark\":\"含引号\\\"转义\"}"
+        },
+        {
+            "name": "card_long",
+            "kind": "card",
+            "payload": "eyJpdiI6Ik9PZGJFNTdZOU1JTTlSbDhQbU5HdkE9PSIsInZhbHVlIjoiTmZWNzBtNzZlVk1wc2hSMEppN21KdkdpV1dPQkoxQ055RWVkSFhrZ0FuejBSUVR5NmxZOXVKblp2ekE3ZldqWkhxQzZXYWNQcS9aQWdPMUpWaXZvSHB2dXI5TmljSFZGUzA2eTJpK2tGdDdFZnVoSTNCQXRHa1lUSjFLUmoydkVVVzVXZnovbVhyQlUzcUlUaUF6M2Y2Y0p1Q3F3cjA2VzdQOFRKcWRzNGxpMTBXcXBxZUhhQ2hCRzRZQnNNbG42QkgrOXJkRzd1SDJaQmhhYisyYWEyTTZVR0tTb09lRUVJUEJYQ1EwbWNMMk1SNW1ReW94OHNLRk5LV25ESWswN20xUDdpOWJtY3d3bkd0RGZSM0c1TjJ1L1pRM0ZqWlFSQlMyM2N6am14TWN0YXpXaWpqQ2JabTBPdllraFFTSzRXTGF2clFKakJnOXdXaTR1MmNDUWVxQWMxSTJ5eGhHay9BTEhNVS9kU3JQcjY2K3FtRmNGamx4emhYUGhkTFlaT2lMS1hZZThQTFhpSjdBdDIyengvWjQ4cTlEVzUrbDdDNVdpVmMvdDdNbFRCT2xMbnczRlg1M1crVElZY08rSVRWRmFGRVczb2JpZXFLbTRtNm1RLzNjdEZOdFJEeEM2a2FvR1JybU52V0cxT1BCa1JYcmZnRHR6c21qWmlqUXFDZFhVUUFoaXhNcXhVNW1iNUdKbDMyaWQ5Yk93V3BZdHovQi9OendPdW5oUUFpOTJ1K1VLTjRrZm15ckx0SmRRUW5TekNEQmphS0w1OGROSTRSSmp1dVJ1RkkyZUxMVXlIZ0JLMWIzUjR4MnZlVzVQMG51T0JUQ25zUlJubURVMUJLdzZRTTU2cHU4YmlvbXNXelo5Mzc1YVBtenBXdzJidWtVQVFpWU5sV3RFN3FMQ3prNDZqNVZHSjZ3OTNDYmJIMGRZNnRJTmZ1MXA2WEFWVVBPVWtXaEhTOE5wUWEyZWQzcy9OYnpqNHppaXdvaHJpbis2Y1pobHN1YkpyeE1hdncxT3l1VmFkZDZQOURvZWZMQTZVQktVRThCNlc3cERWVXdlZDJXQWxNL0FnNGJuRDZqeTAxZzk1dlRaL0FIaWZrN1FyY3MzenJVdEpZMWFQSUJNdyt3emtOMENmS3hMZnBSQVhNUE5SQmxFSTIwRWdwMlZ4TUo3bzFGZU9NN3RFV0dCU1E2WTZCSjMvd2RNUVZ2ZWI5TGM3ZFVWTk5ySHV4ampjVUZkTTJFekNIL2V6blZtYWJjQTB3RHlFaXBzNjF6b28zb2RzVUVlQmtXUmVmZWNrNC91d1FodzV2RjlTckJydjRZdWh2cC82OU5qbFZMRDlOTnZaZTVuWGRSRHdKWnd1cWtuRUR0K3JFRFFIWWJ6Q3oySXlZMTdJZ1RaOHk1dUNnM0ZyQ2IwOHRZQWd1VFRxTG1pWWJQbDBDa1JEcU0wY3ZaWHpvckRuS1dkMDh2cUZwcjFyQTVVL2sxL242eHZwTTVmbFk1QnpyNjVYbEh3MWg5Y1EzY3l4L2NSKzNZbXk5VC9iS1ZlK3BsODh3TWV2NW4rWkVzYmtqYWg0M0JSSklIZFF5RVc1Y3lRbXVrQmR5VGJONFNiRkN4QllET0Vha1YrajdZZ0dWS215WlJ1MUNOc0FuM1hqbWpQL2lVbWNzTVFNVVgvVWJMdDBLOTZZSTk3NFljRFpoMHJpWUc0ei9uZFF0a3R0dkpQUkppU1NlOXdOaWc2Z2VXNHlmYWxLVXFWb0pUQzJMSVJrU0ZGaFIxY3krUWpqamdGWUhGNUkybVhodU1uL0ZEVVBscTVwLy9KR0IyRkJienJoT1U4ZjdrNUhUbz0iLCJtYWMiOiI5ZTIzNjA4MGFhNzhmNGEyMThhOWQ5OWJkYjQ2MDA1NTY2MGMyYWQzN2NmNzI4NmNlYTI2YjEzZmM3NzJkYzA5IiwidGFnIjoiIn0=",
+            "expect": "KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK"
+        },
+        {
+            "name": "payment_config",
+            "kind": "payment_config",
+            "payload": "\"eyJpdiI6IktTSW1qMUlpalBQbngyVkphRlBPN0E9PSIsInZhbHVlIjoiODdTTURVQUVaQ21EVjR4QjBTTml5V203NHdlYVR3d1BXbFBnVXBZaEljUW9mOGF6Q2hQWTV4Z3dJaHV5MGhjMDE1Y3JRMk1CUUJrS3J0VmJZemFlcFNrKzZocTUrS2liK0tXUUdIR2prSm0xeXN4ODdOVTF1alJ4TzdRSy9HQ2wiLCJtYWMiOiIzODZhN2FhOTVhYzNmZjljYjY3NzI4ZDQzYTE0YWRhMDVlN2Y0ZTdkZTdiMzEyNjZjZGYzNTVmZjFhMDc5NjIxIiwidGFnIjoiIn0=\"",
+            "expect": "{\"app_id\":\"10086\",\"key\":\"商户秘钥ABC\",\"gateway\":\"https:\\/\\/api.epay.example\\/submit\"}"
+        },
+        {
+            "name": "payment_config_legacy_plain",
+            "kind": "payment_config",
+            "payload": "{\"app_id\":\"10086\",\"key\":\"商户秘钥ABC\",\"gateway\":\"https:\\/\\/api.epay.example\\/submit\"}",
+            "expect": "{\"app_id\":\"10086\",\"key\":\"商户秘钥ABC\",\"gateway\":\"https:\\/\\/api.epay.example\\/submit\"}"
+        },
+        {
+            "name": "setting_secret",
+            "kind": "setting_secret",
+            "payload": "\"eyJpdiI6IlprM1V2VHcveVF1N3U1SzRINmhaZVE9PSIsInZhbHVlIjoiZmMvcVBaSy9IK0tDZ0duempFUUkyaThRMnFVSEdMZ1c5MW80bkI3aGh1RT0iLCJtYWMiOiJkMTcxMjA5ZTc0ZGFiMDJmZGJmM2YyYmUwZmVjNGFkYzRkNGM1ZWY3MDYwZjRiM2U0NzhjNWY5YmRmOGI2ODQxIiwidGFnIjoiIn0=\"",
+            "expect": "smtp-relay-password-测试"
+        },
+        {
+            "name": "setting_card_key",
+            "kind": "setting_card_key",
+            "payload": "\"eyJpdiI6InY1K1dCN1FsV3BqbXg0TmNrU2VlblE9PSIsInZhbHVlIjoiVUMrT3ZiWEF6R2ZSSHVDMDZ1TW9PT0V6R2hnaTB5YVd2NkhOaHorUGU1KzdCcUlMdk94MytBcCtZUFM0VU1JYVhydVRZWU1KMUE0anErZGdzZ2dRdmc9PSIsIm1hYyI6IjFiMGYzOTBkNDlkZDAxNWE0NGM4NDQ5MTFiZDc0NWQ1NTEyNzgxZWVkNTZhMGE4YTNmZGM4ZGQyYjI3M2Q5ZmEiLCJ0YWciOiIifQ==\"",
+            "expect": "base64:iyTosTny+UgUs9dBk+TvURm5HOy1FeRjk+pkkYyJKPQ="
+        },
+        {
+            "name": "setting_card_key_legacy_plain",
+            "kind": "setting_card_key",
+            "payload": "\"base64:iyTosTny+UgUs9dBk+TvURm5HOy1FeRjk+pkkYyJKPQ=\"",
+            "expect": "base64:iyTosTny+UgUs9dBk+TvURm5HOy1FeRjk+pkkYyJKPQ="
+        },
+        {
+            "name": "plaintext_card",
+            "kind": "plaintext_card",
+            "payload": "PLAIN-CARD-0001-直接明文",
+            "expect": "PLAIN-CARD-0001-直接明文"
+        },
+        {
+            "name": "tampered_mac",
+            "kind": "crypt_string",
+            "payload": "eyJpdiI6IjM0WlFuVzM3bHNxdCtJR3BzMVBSZlE9PSIsInZhbHVlIjoiWmFVeThIS2s1V2I1QWZYVzNKZStwUT09IiwibWFjIjoiMDUyMDFjODRhYzM2N2E1YWMyY2IyMDI3MzI0M2JkYTQ2MDAwZGUwMTEzZDBkMzg2MjExMDZhZjkxMzVkZmViNiIsInRhZyI6IiJ9",
+            "expect_error": "mac"
+        }
+    ]
+}

@@ -153,17 +153,19 @@ func TestRule3Layering(t *testing.T) {
 			return "biz/data/port 层依赖 Kratos transport（transport 只允许 service/server 层）"
 		}
 		// 3b. Ent 收口：只有 internal/data/**、mods/*/data.go、mods/*/providers.go（绑定实现）、
-		// internal/admincmd（运维子命令）与 tools/*（构建期迁移工具）可 import ent
+		// internal/admincmd（运维子命令）、internal/migratev1（migrate-from-v1 迁移内核，
+		// v1id_maps 读写必需）与 tools/*（构建期迁移工具）可 import ent
 		if strings.HasPrefix(imported, modulePath+"/internal/data/ent") ||
 			imported == "entgo.io/ent" || strings.HasPrefix(imported, "entgo.io/ent/") {
 			allowed := pkgPath == modulePath+"/internal/data" ||
 				strings.HasPrefix(pkgPath, modulePath+"/internal/data/") ||
 				pkgPath == modulePath+"/internal/admincmd" ||
+				pkgPath == modulePath+"/internal/migratev1" ||
 				strings.HasPrefix(pkgPath, modulePath+"/tools/") ||
 				strings.HasPrefix(pkgPath, modulePath+"/internal/mods/") &&
 					(strings.HasPrefix(file[strings.LastIndex(file, "/")+1:], "data") || strings.HasSuffix(file, "providers.go"))
 			if !allowed {
-				return "Ent import 越界（仅 mods/*/data.go、providers.go、internal/data、admincmd、tools 允许）"
+				return "Ent import 越界（仅 mods/*/data.go、providers.go、internal/data、admincmd、migratev1、tools 允许）"
 			}
 		}
 		// 3c. 模块边界：mods/A import mods/B 只允许落在 B 的 port/ 包(规则 3）

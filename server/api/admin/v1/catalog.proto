@@ -225,7 +225,9 @@ message DeleteProductRequest {
 
 message BatchUpdateProductStatusRequest {
   repeated uint64 ids = 1 [(google.api.field_behavior) = REQUIRED];
-  int32 status = 2 [(google.api.field_behavior) = REQUIRED]; // 1=上架 0=下架 2=隐藏
+  // status 不标 REQUIRED:0=下架是合法值,REQUIRED 校验把零值当未传拒绝
+  // (missing required field: status——下架必炸;值域 0/1/2 由业务层校验)。
+  int32 status = 2; // 1=上架 0=下架 2=隐藏
 }
 
 message BatchUpdateProductStatusReply {

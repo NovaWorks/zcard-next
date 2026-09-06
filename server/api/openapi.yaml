@@ -6488,7 +6488,6 @@ components:
         zcard.api.admin.v1.BatchUpdateProductStatusRequest:
             required:
                 - ids
-                - status
             type: object
             properties:
                 ids:
@@ -6497,6 +6496,9 @@ components:
                         type: string
                 status:
                     type: integer
+                    description: |-
+                        status 不标 REQUIRED:0=下架是合法值,REQUIRED 校验把零值当未传拒绝
+                         (missing required field: status——下架必炸;值域 0/1/2 由业务层校验)。
                     format: int32
         zcard.api.admin.v1.Broadcast:
             type: object
@@ -9880,7 +9882,6 @@ components:
         zcard.api.admin.v1.ToggleAdminRequest:
             required:
                 - id
-                - enabled
             type: object
             properties:
                 id:

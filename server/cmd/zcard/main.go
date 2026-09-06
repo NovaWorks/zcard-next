@@ -90,6 +90,8 @@ func main() {
 		err = admincmd.Run(args)
 	case "reencrypt-cards":
 		err = admincmd.RunReencrypt(args)
+	case "migrate-from-v1":
+		err = admincmd.RunMigrateV1(args)
 	case "install":
 		err = runInstall(args)
 	case "dbtest":
@@ -119,6 +121,7 @@ func printUsage() {
   zcard migrate [-conf <dir>]                          应用待执行迁移后退出
   zcard admin  create|list|reset-password              运维子命令
   zcard reencrypt-cards --new-key <hex>                卡密密钥轮换
+  zcard migrate-from-v1 --old-env <dir> [--dry-run]   1.x 数据迁移（先跑预检报告）
   zcard self-update [--check|--rollback]               在线更新（ed25519 验签；--check 只查）
   zcard install                                        安装向导（M1 交付）
   zcard version                                        版本信息

@@ -839,9 +839,11 @@ func (x *DeleteProductRequest) GetId() uint64 {
 }
 
 type BatchUpdateProductStatusRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ids           []uint64               `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
-	Status        int32                  `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"` // 1=上架 0=下架 2=隐藏
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Ids   []uint64               `protobuf:"varint,1,rep,packed,name=ids,proto3" json:"ids,omitempty"`
+	// status 不标 REQUIRED:0=下架是合法值,REQUIRED 校验把零值当未传拒绝
+	// (missing required field: status——下架必炸;值域 0/1/2 由业务层校验)。
+	Status        int32 `protobuf:"varint,2,opt,name=status,proto3" json:"status,omitempty"` // 1=上架 0=下架 2=隐藏
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3321,10 +3323,10 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0edirect_content\x18\x0e \x01(\tR\rdirectContent\x12!\n" +
 	"\fis_recommend\x18\x0f \x01(\bR\visRecommend\"+\n" +
 	"\x14DeleteProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"U\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"P\n" +
 	"\x1fBatchUpdateProductStatusRequest\x12\x15\n" +
-	"\x03ids\x18\x01 \x03(\x04B\x03\xe0A\x02R\x03ids\x12\x1b\n" +
-	"\x06status\x18\x02 \x01(\x05B\x03\xe0A\x02R\x06status\"9\n" +
+	"\x03ids\x18\x01 \x03(\x04B\x03\xe0A\x02R\x03ids\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\"9\n" +
 	"\x1dBatchUpdateProductStatusReply\x12\x18\n" +
 	"\aupdated\x18\x01 \x01(\x05R\aupdated\"L\n" +
 	"\fCategoryList\x12<\n" +
