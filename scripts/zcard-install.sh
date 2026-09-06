@@ -222,15 +222,15 @@ db_validate() {
 # 未指定（交互向导后选）则两个都尽力；非 Debian 系降级为提示。
 ensure_backup_tools() {
   local want_pg=0 want_my=0
-  case "$DB_ARGS_DIALECT" in
+  case "${DB_ARGS_DIALECT:-}" in
     postgres) want_pg=1 ;;
     mysql)    want_my=1 ;;
     *)        want_pg=1; want_my=1 ;;
   esac
   if [ "$want_pg" = 1 ] && ! command -v pg_dump >/dev/null; then
     apt-get install -y postgresql-client >/dev/null 2>&1 \
-      && c_green "已预装 postgresql-client（更新前备份依赖）" \
-      || c_yellow "pg_dump 未就绪：选 PostgreSQL 时在线更新前需自行安装 postgresql-client"
+      && log "已预装 postgresql-client（更新前备份依赖）" \
+      || warn "pg_dump 未就绪：选 PostgreSQL 时在线更新前需自行安装 postgresql-client（版本须与服务器同大版本）"
   fi
   if [ "$want_my" = 1 ] && ! command -v mysqldump >/dev/null; then
     apt-get install -y default-mysql-client >/dev/null 2>&1 || true
