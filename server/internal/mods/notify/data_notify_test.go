@@ -232,12 +232,12 @@ func TestSMSChannelSkipped(t *testing.T) {
 // TestSMSConfigFlatKeys 扁平键配置解析（后台「邮件短信」页保存口径）。
 func TestSMSConfigFlatKeys(t *testing.T) {
 	ch := NewSMSChannel(fakeSettings{values: map[string]string{
-		"notify.sms_provider":     `"tencent"`,
-		"notify.sms_key":          `"test-secret-id"`,
-		"notify.sms_secret":       `"test-secret-key"`,
-		"notify.sms_sign":         `"签名"`,
+		"notify.sms_provider":      `"tencent"`,
+		"notify.sms_key":           `"test-secret-id"`,
+		"notify.sms_secret":        `"test-secret-key"`,
+		"notify.sms_sign":          `"签名"`,
 		"notify.sms_template_code": `"TPL-1"`,
-		"notify.sms_sdk_app_id":   `"1400000000"`,
+		"notify.sms_sdk_app_id":    `"1400000000"`,
 	}})
 	cfg, err := ch.smsConfig(context.Background())
 	if err != nil {

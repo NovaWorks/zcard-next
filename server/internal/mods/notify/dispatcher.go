@@ -216,6 +216,17 @@ func trimFloat(f float64) string {
 }
 
 // Send 显式发送（管理员告警等业务直调；实现 notifyport.Sender）。
+// ChannelReady 通道是否就绪（配置齐全）。验证码等「必须送达」的场景应在发送前
+// 调用并 fail-fast——Send 对未配置通道按降级语义返回成功（营销通知不阻断业务），
+// 验证码静默 skipped = 用户点了发送却永远收不到（实测踩坑）。
+func (d *Dispatcher) ChannelReady(ctx context.Context, channel string) bool {
+	c, ok := d.channels[channel]
+	if !ok {
+		return false
+	}
+	return c.Ready(ctx)
+}
+
 func (d *Dispatcher) Send(ctx context.Context, msg notifyport.Message) error {
 	channel, ok := d.channels[msg.Channel]
 	if !ok {

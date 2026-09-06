@@ -118,6 +118,16 @@ func (s *RegisterCodeService) SendRegisterCode(ctx context.Context, target, chan
 		purpose = emailverification.PurposePhoneRegister
 		notifyChannel = "sms"
 	}
+	// 通道就绪前置校验（fail-fast）：验证码是「必须送达」场景——Send 对未配置通道
+	// 按营销降级语义返回成功，用户却永远收不到码（实测踩坑），必须在发码前拦下。
+	if cr, ok := s.sender.(interface {
+		ChannelReady(ctx context.Context, channel string) bool
+	}); ok && !cr.ChannelReady(ctx, notifyChannel) {
+		if notifyChannel == "sms" {
+			return errors.New("identity.SMS_NOT_READY: 短信通道未配置——请联系管理员在后台「设置 → 邮件短信」配置短信服务商")
+		}
+		return errors.New("identity.EMAIL_NOT_READY: 邮件通道未配置——请联系管理员在后台「设置 → 邮件短信」配置 SMTP 发件账号")
+	}
 
 	// 60s 冷却
 	latest, err := client.EmailVerification.Query().

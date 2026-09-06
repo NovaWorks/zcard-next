@@ -112,6 +112,12 @@ func (c *SMSChannel) smsConfig(ctx context.Context) (*SMSConfig, error) {
 }
 
 // Deliver 发送短信（Recipient = 手机号；Body = 模板变量 JSON 键值对象）。
+// Ready 短信凭据齐全（Deliver 的 ErrSkipped 同源判定）。
+func (c *SMSChannel) Ready(ctx context.Context) bool {
+	cfg, err := c.smsConfig(ctx)
+	return err == nil && cfg != nil && cfg.AccessKey != "" && cfg.AccessSecret != ""
+}
+
 func (c *SMSChannel) Deliver(ctx context.Context, msg notifyport.Message) error {
 	cfg, err := c.smsConfig(ctx)
 	if err != nil {

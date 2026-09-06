@@ -23,6 +23,8 @@ type Channel interface {
 	Name() string
 	// Deliver 投递（返回 skipped 语义错误由调用方落日志；配置缺失不报错）。
 	Deliver(ctx context.Context, msg notifyport.Message) error
+	// Ready 配置是否齐全（验证码等必须送达场景的前置校验；无配置依赖恒 true）。
+	Ready(ctx context.Context) bool
 }
 
 // ── Email（SMTP）──────────────────────────────────────────
@@ -59,6 +61,12 @@ func (c *EmailChannel) smtpConfig(ctx context.Context) (*notifyport.SMTPConfig, 
 var ErrSkipped = errors.New("notify: 通道未配置或禁用（skipped）")
 
 // Deliver 发送邮件。
+// Ready SMTP 配置齐全（Deliver 的 ErrSkipped 同源判定）。
+func (c *EmailChannel) Ready(ctx context.Context) bool {
+	cfg, err := c.smtpConfig(ctx)
+	return err == nil && cfg != nil && cfg.Enabled && cfg.Host != ""
+}
+
 func (c *EmailChannel) Deliver(ctx context.Context, msg notifyport.Message) error {
 	cfg, err := c.smtpConfig(ctx)
 	if err != nil {
@@ -155,6 +163,8 @@ func NewInboxChannel(repo *NotifyRepo) *InboxChannel {
 func (*InboxChannel) Name() string { return "inbox" }
 
 // Deliver 写站内信（userID=0 → skipped）。
+func (c *InboxChannel) Ready(context.Context) bool { return true }
+
 func (c *InboxChannel) Deliver(ctx context.Context, msg notifyport.Message) error {
 	if msg.UserID == 0 {
 		return ErrSkipped

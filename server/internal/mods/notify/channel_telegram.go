@@ -55,6 +55,11 @@ func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error)
 }
 
 // Deliver 发送消息（Recipient = chat_id；空则发配置的全部 chat_ids）。
+func (c *TelegramChannel) Ready(ctx context.Context) bool {
+	cfg, err := c.tgConfig(ctx)
+	return err == nil && cfg != nil && cfg.Enabled && cfg.BotToken != ""
+}
+
 func (c *TelegramChannel) Deliver(ctx context.Context, msg notifyport.Message) error {
 	cfg, err := c.tgConfig(ctx)
 	if err != nil {

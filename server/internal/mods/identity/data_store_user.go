@@ -23,17 +23,16 @@ import (
 
 // stdErr 便捷别名（本文件 stdErrors 与 kratos errors 双包共存）
 
-
 // StoreUserService 用户中心服务。
 type StoreUserService struct {
 	storefrontv1.UnimplementedStoreUserServiceServer
-	repo     *UserRepo
-	signer   *authn.Signer
-	data     *data.Data
-	pwd      *PasswordService      // 自服务（找回/改密/改资料）
-	regCode  *RegisterCodeService  // 注册验证码（email/phone 通道）
-	regCfg   *RegisterCodeSettings // security 组注册开关/方式
-	captcha  *captcha.Service      // 图形验证码（scene: login/register/reset）
+	repo    *UserRepo
+	signer  *authn.Signer
+	data    *data.Data
+	pwd     *PasswordService      // 自服务（找回/改密/改资料）
+	regCode *RegisterCodeService  // 注册验证码（email/phone 通道）
+	regCfg  *RegisterCodeSettings // security 组注册开关/方式
+	captcha *captcha.Service      // 图形验证码（scene: login/register/reset）
 }
 
 // NewStoreUserService 构造。

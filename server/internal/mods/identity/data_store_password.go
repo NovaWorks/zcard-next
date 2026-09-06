@@ -90,6 +90,12 @@ func (s *PasswordService) sendResetCode(ctx context.Context, u *ent.User) error 
 	if err == nil && time.Since(latest.CreatedAt) < resetCodeCooldown {
 		return errors.New("identity.CODE_COOLDOWN") // 命中真实邮箱才暴露冷却（防枚举允许）
 	}
+	// 通道就绪前置校验（fail-fast;防枚举允许冷却差异,通道缺失必须明示）
+	if cr, ok := s.sender.(interface {
+		ChannelReady(ctx context.Context, channel string) bool
+	}); ok && !cr.ChannelReady(ctx, "email") {
+		return errors.New("identity.EMAIL_NOT_READY: 邮件通道未配置——请联系管理员在后台「设置 → 邮件短信」配置 SMTP 发件账号")
+	}
 	code, err := randomCode()
 	if err != nil {
 		return err

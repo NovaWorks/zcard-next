@@ -21,7 +21,7 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(port.AdminReader), new(*AdminUserRepoImpl)),
 	NewUserRepo,
 	wire.Bind(new(port.UserReader), new(*UserRepo)),
-	NewAdminAuthService,	NewPasswordService,
+	NewAdminAuthService, NewPasswordService,
 	NewRegisterCodeService,
 	ProvideRegisterCodeSettings, // 注册开关/方式读取（复用 notifyport.SettingsReader 绑定）
 	NewStoreUserService,
