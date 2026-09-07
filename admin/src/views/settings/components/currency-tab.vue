@@ -5,6 +5,7 @@ import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NP
 import type { DataTableColumns } from "naive-ui";
 import { listCurrencies, createCurrency, updateCurrency, deleteCurrency, fetchSettings } from "@/service/api";
 import { checkAuth } from "@/directives";
+import { getCurrency } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "CurrencyTab" });
@@ -46,7 +47,7 @@ const rateHint = computed(() =>
 
 // 展示效果预览（符号 + 位置 + 小数位实时联动，以 10 元为例）
 const moneyPreview = computed(() => {
-  const sym = form.value.symbol || "¥";
+  const sym = form.value.symbol || getCurrency().symbol;
   const num = (10).toFixed(form.value.precision ?? 2);
   return form.value.position === "suffix" ? `${num}${sym}` : `${sym}${num}`;
 });

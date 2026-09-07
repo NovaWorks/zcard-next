@@ -179,7 +179,7 @@
             </button>
           </div>
           <div class="rc-custom">
-            <span class="rc-yen">¥</span>
+            <span v-if="moneySymbol" class="rc-yen">{{ moneySymbol }}</span>
             <input v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="输入充值金额" @input="pickedTier = 0" />
             <button v-if="rechargeYuan" type="button" class="rc-clear" title="清空" @click="clearAmount">×</button>
           </div>
@@ -326,7 +326,7 @@ import {
   fetchPaymentChannels, type ChannelItem,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
-import { api, formatMoney, formatSignedMoney, setToken, centsToYuan } from '@/api/client';
+import { api, formatMoney, formatSignedMoney, setToken, centsToYuan, getCurrency } from '@/api/client';
 import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import Affiliate from './Affiliate.vue';
@@ -367,6 +367,9 @@ const txPageSize = 15;
 type RechargePhase = 'form' | 'qrcode' | 'redirect';
 const rechargePhase = ref<RechargePhase>('form');
 const rechargeYuan = ref<number | null>(null);
+
+// 货币符号（后台默认货币下发;后缀币种不显示前缀占位）
+const moneySymbol = computed(() => (getCurrency().position === 'prefix' ? getCurrency().symbol : ''));
 const pickedTier = ref(0); // 命中的赠送档位（amount 分）；自定义输入时清零
 const rechargeChannels = ref<ChannelItem[]>([]);
 const rechargeChannel = ref('');
@@ -743,7 +746,7 @@ function fmtTime(ts: number): string {
   padding: 1px 8px; border-radius: 999px;
 }
 
-/* 自定义金额输入（¥ 前缀 + 清空） */
+/* 自定义金额输入（货币符号前缀 + 清空） */
 .rc-custom {
   display: flex; align-items: center; gap: 6px;
   border: 1px solid #e5e7eb; border-radius: 10px; padding: 0 12px;

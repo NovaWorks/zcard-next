@@ -27,6 +27,10 @@ func (walletRouteStub) GetBalance(context.Context, *adminv1.GetBalanceRequest) (
 func (walletRouteStub) Adjust(context.Context, *adminv1.AdjustRequest) (*adminv1.Balance, error) {
 	return nil, errors.BadRequest("stub", "Adjust")
 }
+func (walletRouteStub) AdjustPoints(context.Context, *adminv1.AdjustPointsRequest) (*adminv1.PointsBalance, error) {
+	return nil, errors.BadRequest("stub", "AdjustPoints")
+}
+
 func (walletRouteStub) ListTransactions(context.Context, *adminv1.ListWalletTxRequest) (*adminv1.ListWalletTxReply, error) {
 	return nil, errors.BadRequest("stub", "ListTransactions")
 }
