@@ -116,8 +116,12 @@ async function refreshStatus() {
       const st = status.value!;
       if (st.current_version && st.target_version && st.current_version === st.target_version) {
         waitingRestart = false;
-        message.success(`已更新到 ${st.current_version}，页面即将刷新`);
-        setTimeout(() => window.location.reload(), 1200);
+        // 完成态:版本对展示 + 停留 3 秒再刷新——更新完成的确定性反馈
+        // (下载快时 applying/restarting 一闪而过直接 reload,用户误以为「下载中界面自己重启了」)
+        updateDone.value = true;
+        const from = st.prev_version || "旧版本";
+        message.success(`更新完成：${from} → ${st.current_version}`);
+        setTimeout(() => window.location.reload(), 3000);
         return;
       }
       // 超时保护（5 分钟）
@@ -149,6 +153,8 @@ const showConfirm = ref(false);
 const changelogHtml = ref("");
 // 弹窗多态：confirm=版本确认（取消/立即更新）；progress=分步进度；由 phase 自动切换
 const modalStage = ref<"confirm" | "progress">("confirm");
+// 完成态：四步全绿 + 「vA → vB」版本对展示（停留后自动刷新）
+const updateDone = ref(false);
 const autoChecked = ref(false); // 进 tab 自动检查只做一次（重进页面再触发）
 
 async function doCheck(silent = false) {
@@ -180,6 +186,7 @@ function sanitizeHtml(html: string) {
 }
 
 async function doApply() {
+  updateDone.value = false;
   modalStage.value = "progress"; // 弹窗切换为分步进度（大厂范式：同一弹窗承接全流程）
   try {
     await applyUpdate();
@@ -207,6 +214,7 @@ const stepIndex = computed(() => {
   return idx < 0 ? -1 : Math.min(idx, STEPS.length - 1);
 });
 const stepState = (i: number): "done" | "current" | "todo" | "error" => {
+  if (updateDone.value) return "done";
   const ph = status.value?.phase;
   if (ph === "failed") return i === Math.max(stepIndex.value, 0) ? "error" : i < stepIndex.value ? "done" : "todo";
   if (i < stepIndex.value) return "done";
@@ -303,8 +311,10 @@ onMounted(async () => {
   await refreshStatusVisible();
   if (!statusError.value) schedulePoll();
   enterWaitIfNeeded(status.value);
-  // 进入 tab 自动检查（静默失败不打扰）；有新版本直接弹更新框
-  if (!autoChecked.value && !statusError.value && !inFlight.value) {
+  // 进入 tab 自动检查（静默失败不打扰）；有新版本直接弹更新框。
+  // 双保险：inFlight 之外,目标版本在途（等待恢复模式/刷新重开场景）同样不查——
+  // 更新中触发 Check 会打断进度展示（另一标签页自动检查即触发,线上实录）
+  if (!autoChecked.value && !statusError.value && !inFlight.value && !waitingRestart && !status.value?.target_version) {
     autoChecked.value = true;
     doCheck(true);
   }
@@ -356,7 +366,7 @@ watch(
           <div class="stat-label">操作</div>
           <div class="stat-value">
             <NSpace :size="8">
-              <NButton size="tiny" type="primary" :loading="checking" :disabled="inFlight" @click="doCheck()">检查更新</NButton>
+              <NButton size="tiny" type="primary" :loading="checking" :disabled="inFlight || waitingRestart" @click="doCheck()">检查更新</NButton>
               <NPopconfirm @positive-click="doRollback">
                 <template #trigger>
                   <NButton size="tiny" :disabled="inFlight" quaternary type="warning">回滚上一版</NButton>
@@ -512,9 +522,18 @@ watch(
         <div class="changelog" v-html="changelogHtml" />
       </template>
 
-      <!-- 阶段二：分步进度 -->
+      <!-- 阶段二：分步进度（含完成态横幅） -->
       <template v-else>
-        <div class="steps">
+        <div v-if="updateDone" class="done-banner">
+          <div class="done-title">✓ 更新完成</div>
+          <div class="done-vers">
+            <NTag size="small" round>{{ status?.prev_version || "旧版本" }}</NTag>
+            <span class="arrow">→</span>
+            <NTag size="small" round type="success">{{ status?.current_version }}</NTag>
+          </div>
+          <div class="done-hint">页面将在 3 秒后自动刷新…</div>
+        </div>
+        <div class="steps" :class="{ 'steps-done': updateDone }">
           <div v-for="(s, i) in STEPS" :key="s.key" class="step" :class="stepState(i)">
             <span class="step-dot">
               <template v-if="stepState(i) === 'done'">✓</template>
@@ -535,7 +554,7 @@ watch(
           processing
           class="mt-2"
         />
-        <div class="mt-3 text-center text-13px opacity-70">
+        <div v-if="!updateDone" class="mt-3 text-center text-13px opacity-70">
           <template v-if="status?.phase === 'restarting' || status?.phase === 'verifying'">
             服务重启中（约 10–30 秒），完成后页面将自动刷新——请勿关闭浏览器
           </template>
@@ -616,6 +635,28 @@ watch(
   font-size: 18px;
   opacity: 0.6;
 }
+.done-banner {
+  text-align: center;
+  padding: 18px 8px 10px;
+}
+.done-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #18a058;
+  margin-bottom: 10px;
+}
+.done-vers {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.done-hint {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
 .steps {
   display: flex;
   justify-content: space-between;

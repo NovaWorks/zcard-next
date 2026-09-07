@@ -27,6 +27,7 @@ export interface UpdateStatus {
   history?: ReleaseNoteEntry[];
   backup_ready?: boolean;
   backup_hint?: string;
+  prev_version?: string;
 }
 
 export interface UpdateCheckResult {

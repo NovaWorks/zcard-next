@@ -63,6 +63,7 @@ type Status struct {
 	BackupDir   string
 	Busy        bool
 	History     []updater.ReleaseNote // 历史版本 changelog（manifest 权威源）
+	Prev        string                // 上一次版本（最近一次更新的 from——update.state.FromVer 持久保存）
 	BackupReady bool                  // 备份工具就绪（pg_dump/mysqldump 按方言；缺失则更新会被 fail-closed 中止）
 	BackupHint  string                // 缺失时的安装指引（事前警示，不等更新失败才报）
 }
@@ -167,7 +168,16 @@ type CheckResult struct {
 }
 
 // Check 手动检查（源解析 + manifest 验签；结果缓存进 status 供弹窗展示）。
+// 更新链进行中拒绝重入：Check 的 phase 迁移会打断下载/应用状态展示，
+// 等待模式被破坏后前端弹窗退回确认态——另一标签页自动检查即触发（线上实录）。
 func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
+	s.mu.Lock()
+	busy := s.busy
+	target := s.st.Target
+	s.mu.Unlock()
+	if busy || target != "" {
+		return nil, ErrBusy
+	}
 	s.setPhase(PhaseChecking)
 	defer func() {
 		s.mu.Lock()
@@ -371,6 +381,10 @@ func (s *Service) Snapshot(ctx context.Context) Status {
 			// 前端「等待恢复」以 current==target 判成功，target 断档会假性超时）
 			if st.Target == "" && state.ToVer != "" {
 				st.Target = state.ToVer
+			}
+			// 上一次版本号（from 持久保留：更新闭环后仍是最近一次升级起点）
+			if state.FromVer != "" {
+				st.Prev = state.FromVer
 			}
 			if st.Phase == PhaseIdle {
 				if state.Status == updater.StatePending {

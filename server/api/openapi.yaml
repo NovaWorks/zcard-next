@@ -10329,6 +10329,8 @@ components:
                     type: boolean
                 backupHint:
                     type: string
+                prevVersion:
+                    type: string
         zcard.api.admin.v1.UploadMediaRequest:
             required:
                 - name

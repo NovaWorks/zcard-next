@@ -65,6 +65,7 @@ message UpdateStatus {
   repeated ReleaseNoteEntry history = 15; // 历史版本 changelog（manifest 权威源）
   bool backup_ready = 16;                 // 备份工具就绪（缺 pg_dump/mysqldump 时 false）
   string backup_hint = 17;                // 缺失时的事前安装指引
+  string prev_version = 18;               // 上一次版本（最近一次更新的起点，持久保存）
 }
 
 message UpdateCheckResult {
