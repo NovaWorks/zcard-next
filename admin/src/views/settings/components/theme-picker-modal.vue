@@ -5,8 +5,8 @@
  * 右上角支持本地上传 zip 安装（服务端解压校验后原子落盘）。
  */
 import { ref, watch } from "vue";
-import { NButton, NModal, NSpin, NTag } from "naive-ui";
-import { fetchTemplates, installTemplate } from "@/service/api";
+import { NAlert, NButton, NModal, NSpin, NTag } from "naive-ui";
+import { fetchTemplates, installTemplate, updateSettings } from "@/service/api";
 import type { TemplateItem } from "@/service/api";
 
 defineOptions({ name: "ThemePickerModal" });
@@ -19,10 +19,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: "update:show", v: boolean): void;
   (e: "select", key: string): void;
+  (e: "installed"): void;
 }>();
 
 const loading = ref(false);
 const installing = ref(false);
+const activating = ref(false);
 const templates = ref<TemplateItem[]>([]);
 const selected = ref<string | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -67,20 +69,34 @@ function onFileChange(e: Event) {
       const base64 = String(reader.result).split(",")[1] || "";
       const { error } = await installTemplate(base64);
       if (!error) {
-        window.$message?.success("主题安装成功");
+        window.$message?.success("主题安装成功，选择后点击「切换为默认」才会生效");
+        emit("installed");
         await load();
       }
     } finally {
       installing.value = false;
     }
   };
+  reader.onerror = () => { installing.value = false; window.$message?.error("读取主题包失败，请重新选择文件"); };
+  reader.onabort = () => { installing.value = false; };
   reader.readAsDataURL(file);
 }
 
-function confirm() {
-  if (!selected.value) return;
-  emit("select", selected.value);
-  emit("update:show", false);
+async function confirm() {
+  if (!selected.value || installing.value || activating.value) return;
+  activating.value = true;
+  try {
+    const key = selected.value;
+    const { error } = await updateSettings([
+      { group: "template", key: "pc_template", value_json: JSON.stringify(key) },
+    ]);
+    if (error) return;
+    emit("select", key);
+    emit("update:show", false);
+    window.$message?.success("默认主题已切换，刷新商城首页即可查看");
+  } finally {
+    activating.value = false;
+  }
 }
 </script>
 
@@ -88,7 +104,10 @@ function confirm() {
   <NModal
     :show="show"
     preset="card"
-    title="选择主题"
+    title="商城主题"
+    :closable="!installing && !activating"
+    :mask-closable="!installing && !activating"
+    :close-on-esc="!installing && !activating"
     style="width: 920px; max-width: 94vw"
     @update:show="(v: boolean) => emit('update:show', v)"
   >
@@ -100,11 +119,14 @@ function confirm() {
         class="hidden"
         @change="onFileChange"
       />
-      <NButton size="small" secondary type="primary" :loading="installing" @click="fileInput?.click()">
+      <NButton size="small" secondary type="primary" :loading="installing" :disabled="activating || installing" @click="fileInput?.click()">
         安装主题（zip）
       </NButton>
     </template>
 
+    <NAlert type="info" :bordered="false" class="mb-16px">
+      一个主题同时适配 PC 和手机。ZIP 上限 20MB，需包含 theme.json、编译后的 index.html 和静态资源；Vue 源码包不能直接安装。上传仅安装并显示在列表中；卡片显示最新安装版本，新主题或同名升级都需点击「切换为默认」才会生效。
+    </NAlert>
     <NSpin :show="loading">
       <div v-if="templates.length" class="grid grid-cols-2 gap-14px sm:grid-cols-3">
         <div
@@ -116,7 +138,7 @@ function confirm() {
               ? 'border-primary shadow-md'
               : 'border-gray-200 hover:border-gray-400 dark:border-gray-700'
           "
-          @click="selected = tp.key"
+          @click="!activating && !installing && (selected = tp.key)"
         >
           <!-- 封面 -->
           <div class="relative h-120px bg-gray-100 dark:bg-gray-800">
@@ -154,8 +176,8 @@ function confirm() {
 
     <template #footer>
       <div class="flex justify-end gap-8px">
-        <NButton @click="emit('update:show', false)">取消</NButton>
-        <NButton type="primary" :disabled="!selected" @click="confirm">确定</NButton>
+        <NButton :disabled="installing || activating" @click="emit('update:show', false)">关闭</NButton>
+        <NButton type="primary" :disabled="!selected || installing || loading" :loading="activating" @click="confirm">切换为默认</NButton>
       </div>
     </template>
   </NModal>

@@ -6,13 +6,18 @@
 // dist 并提供 SPA 服务（§10.1 交付形态纪律：dist 缺失即编译失败）。
 package web
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+
+	"github.com/NovaWorks/zcard-next/server/internal/platform/theme"
+)
 
 // Handler 非 fullstack 下为空壳（接线侧以 Available() 分流，不会构造）。
 type Handler struct{}
 
 // NewStorefrontHandler fullstack 专属——默认形态调用即 panic（编程错误）。
-func NewStorefrontHandler(_ BotRenderer) *Handler {
+func NewStorefrontHandler(_ BotRenderer, _ ...func(context.Context) *theme.Theme) *Handler {
 	panic("web: 非 fullstack 构建（-tags fullstack 才嵌入前端）")
 }
 

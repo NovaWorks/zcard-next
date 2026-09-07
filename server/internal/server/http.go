@@ -39,12 +39,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/procurement"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/reseller"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/seo"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supplier"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/ticket"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/update"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/authn"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
@@ -282,7 +282,7 @@ func NewHTTPServer(
 		}
 		srv.HandlePrefix(adminBase, web.NewAdminHandler())
 		// storefront 兜底根（最后注册，最广匹配、最低优先）
-		srv.HandlePrefix("/", web.NewStorefrontHandler(seoSvc))
+		srv.HandlePrefix("/", web.NewStorefrontHandler(seoSvc, settingsSvc.ActiveTheme))
 	}
 	return srv
 }

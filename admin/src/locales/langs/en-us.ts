@@ -391,7 +391,7 @@ const local: App.I18n.Schema = {
       top_button: "Top Custom Button",
     },
     template: {
-      pc_template: "PC Template",
+      pc_template: "Storefront Theme (Desktop / Mobile)",
       mobile_template: "Mobile Template",
       bg_image: "Background Image",
       category_nav_style: "Category Nav Style",

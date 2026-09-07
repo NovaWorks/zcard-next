@@ -54,7 +54,7 @@ var groups = map[string]*GroupDef{
 	"template": {
 		Name: "template", Desc: "模板",
 		Labels: map[string]string{
-			"pc_template": "PC 端模板", "mobile_template": "移动端模板", "bg_image": "背景图",
+			"pc_template": "商城主题（PC / 手机）", "mobile_template": "商城主题（兼容旧设置）", "bg_image": "背景图",
 			"category_nav_style": "分类导航样式", "default_view": "商品默认视图",
 			"per_row": "每行商品数", "per_page": "每页商品数", "sort_by": "默认排序方式",
 			"show_stock": "显示库存", "show_sales": "显示销量", "show_reviews": "显示评价",
@@ -71,6 +71,7 @@ var groups = map[string]*GroupDef{
 			},
 		},
 		Defaults: map[string]any{
+			"active_theme":       nil, // Internal atomic key + revision snapshot; never editable/public.
 			"pc_template":        "classic",
 			"mobile_template":    "classic",
 			"bg_image":           "",

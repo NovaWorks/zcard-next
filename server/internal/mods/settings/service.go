@@ -42,6 +42,12 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 	items = SanitizeGroup(items)
 	reply := &adminv1.ListSettingsReply{Items: make([]*adminv1.Setting, 0, len(items))}
 	for _, it := range items {
+		if it.Group == "template" && (it.Key == "mobile_template" || it.Key == activeThemeKey) {
+			continue
+		}
+		if it.Group == "template" && it.Key == "pc_template" {
+			it.Value, _ = json.Marshal(s.ActiveTemplate(ctx))
+		}
 		label := it.Key
 		var options []*adminv1.OptionItem
 		secret := false
@@ -66,6 +72,9 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 // validateSettingValue 设置值业务校验（单键/批量共用）：
 // base_currency 必须存在、模板键必须在清单内。
 func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "template" && key == activeThemeKey {
+		return errors.BadRequest("settings.INVALID_KEY", "请通过主题选择器切换默认主题")
+	}
 	// 基础货币必须指向货币表中已存在的货币（防孤儿配置——前台按 code 取符号）。
 	if group == "i18n" && key == "base_currency" {
 		var code string
@@ -95,8 +104,12 @@ func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, 
 
 // GetSetting 读取单项（SECRET 键脱敏）。
 func (s *AdminSettingsService) GetSetting(ctx context.Context, req *adminv1.GetSettingRequest) (*adminv1.Setting, error) {
-	if err := ValidateKey(req.GetGroup(), req.GetKey()); err != nil {
+	if err := ValidateKey(req.GetGroup(), req.GetKey()); err != nil || (req.GetGroup() == "template" && req.GetKey() == activeThemeKey) {
 		return nil, errors.NotFound("settings.NOT_FOUND", "设置项不存在或不在目录内")
+	}
+	if isThemeKey(req.GetGroup(), req.GetKey()) {
+		value, _ := json.Marshal(s.ActiveTemplate(ctx))
+		return &adminv1.Setting{Group: req.GetGroup(), Key: req.GetKey(), ValueJson: string(value)}, nil
 	}
 	v, err := s.uc.Get(ctx, req.GetGroup(), req.GetKey())
 	if err != nil {
@@ -111,11 +124,17 @@ func (s *AdminSettingsService) GetSetting(ctx context.Context, req *adminv1.GetS
 
 // UpdateSetting 更新单项。
 func (s *AdminSettingsService) UpdateSetting(ctx context.Context, req *adminv1.UpdateSettingRequest) (*adminv1.Setting, error) {
+	themeChanges.Lock()
+	defer themeChanges.Unlock()
 	value := json.RawMessage(req.GetValueJson())
 	if err := s.validateSettingValue(ctx, req.GetGroup(), req.GetKey(), value); err != nil {
 		return nil, err
 	}
-	if err := s.uc.Put(ctx, req.GetGroup(), req.GetKey(), value); err != nil {
+	items, err := normalizeThemeWrites([]port.Item{{Group: req.GetGroup(), Key: req.GetKey(), Value: value}})
+	if err != nil {
+		return nil, err
+	}
+	if err := s.uc.PutMany(ctx, items); err != nil {
 		return nil, errors.BadRequest("settings.INVALID_VALUE", "设置值必须是合法 JSON")
 	}
 	return &adminv1.Setting{Group: req.GetGroup(), Key: req.GetKey(), ValueJson: string(value)}, nil
@@ -123,6 +142,8 @@ func (s *AdminSettingsService) UpdateSetting(ctx context.Context, req *adminv1.U
 
 // UpdateSettings 批量更新（表单级保存；单事务原子写入，任一项失败整体回滚）。
 func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.UpdateSettingsRequest) (*adminv1.UpdateSettingsReply, error) {
+	themeChanges.Lock()
+	defer themeChanges.Unlock()
 	items := make([]port.Item, 0, len(req.GetItems()))
 	for _, it := range req.GetItems() {
 		value := json.RawMessage(it.GetValueJson())
@@ -130,6 +151,10 @@ func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.
 			return nil, err
 		}
 		items = append(items, port.Item{Group: it.GetGroup(), Key: it.GetKey(), Value: value})
+	}
+	items, err := normalizeThemeWrites(items)
+	if err != nil {
+		return nil, err
 	}
 	if err := s.uc.PutMany(ctx, items); err != nil {
 		return nil, errors.BadRequest("settings.INVALID_VALUE", "设置值必须是合法 JSON 或键不在目录内")

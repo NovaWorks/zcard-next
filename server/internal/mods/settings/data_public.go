@@ -5,6 +5,7 @@ package settings
 
 import (
 	"context"
+	"encoding/json"
 	"sort"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -45,6 +46,10 @@ func (s *StorefrontConfigService) GetPublicConfig(ctx context.Context, _ *emptyp
 			val, _ := g.DefaultJSON(k)
 			if raw, err := s.repo.Get(ctx, gname, k); err == nil && raw != nil {
 				val = string(raw)
+			}
+			if isThemeKey(gname, k) {
+				b, _ := json.Marshal(selectedTheme(ctx, s.repo))
+				val = string(b)
 			}
 			out = append(out, entry{gname + "." + k, val})
 		}

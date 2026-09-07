@@ -41,3 +41,6 @@ storefront/dist/
 
 # 本地运行产物
 *.rdb
+
+# Standalone storefront theme builds
+storefront/dist-theme/

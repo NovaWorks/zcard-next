@@ -186,7 +186,7 @@ function setImageValue(item: any, urls: string[]) {
 
 // ── 模板选择（WP 主题式：模板组 pc/mobile_template → 弹窗选择）──
 const TEMPLATE_KEYS: Record<string, string[]> = {
-  template: ["pc_template", "mobile_template"],
+  template: ["pc_template"],
 };
 
 function isTemplateKey(item: any) {
@@ -197,7 +197,7 @@ function isTemplateKey(item: any) {
 function currentTemplateName(item: any) {
   const v = getVal(item);
   const hit = templates.value.find((t: any) => t.key === v);
-  return hit ? `${hit.name}${hit.version ? `（v${hit.version}）` : ""}` : String(v ?? "");
+  return hit ? hit.name : String(v ?? "");
 }
 
 // 主题选择弹窗状态（目标字段 + 显隐）
@@ -207,7 +207,10 @@ function openThemePicker(item: any) {
   themePicker.show = true;
 }
 function onThemeSelect(key: string) {
-  setVal(themePicker.item, key);
+  // The picker persists activation before emitting; preserve other unsaved settings.
+  if (!themePicker.item) return;
+  themePicker.item.value_json = JSON.stringify(key);
+  dirtyKeys.value.delete(`${themePicker.item.group}.${themePicker.item.key}`);
 }
 
 async function loadTemplates() {
@@ -346,6 +349,10 @@ onMounted(() => {
                 <span>· <b>用户协议 / ICP 备案号</b> → 底部版权行</span>
                 <span class="sm:col-span-2 text-gray-400">· 「帮助中心」「会员服务」两栏为系统内置导航，暂不支持自定义</span>
               </div>
+            </div>
+
+            <div v-if="activeGroup === 'template'" class="mt-12px text-13px text-gray-500">
+              PC 和手机共用一个响应式主题，自动适配屏幕。上传只安装主题；在主题弹窗点击「切换为默认」后立即生效，无需再保存。Classic 可随时切回。
             </div>
 
             <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form">
@@ -490,6 +497,7 @@ onMounted(() => {
       :current="themePicker.item ? getVal(themePicker.item) : undefined"
       @update:show="(v: boolean) => (themePicker.show = v)"
       @select="onThemeSelect"
+      @installed="loadTemplates"
     />
   </div>
 </template>

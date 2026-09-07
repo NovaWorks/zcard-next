@@ -6,7 +6,8 @@ import './style.css';
 
 export const createApp = ViteSSG(
   App,
-  { routes },
+  // Theme assets use a versioned <base>; application routes stay at the site root.
+  { routes, base: '/' },
   ({ app, head, router, isClient }) => {
     setActiveHead(head);
     if (isClient) {

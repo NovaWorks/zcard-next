@@ -8,6 +8,7 @@
 package web
 
 import (
+	"context"
 	"io"
 	"io/fs"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NovaWorks/zcard-next/server/internal/platform/theme"
 	rootweb "github.com/NovaWorks/zcard-next/server/web"
 )
 
@@ -38,15 +40,20 @@ func Available() bool { return true }
 
 // Handler SPA 静态服务。
 type Handler struct {
-	root       fs.FS
-	prefix     string // 挂载前缀（如 /admin；strip 后再查 FS）
-	indexBytes []byte
-	bot        BotRenderer // 爬虫动态渲染（storefront 专属；admin 为 nil）
+	root        fs.FS
+	prefix      string // 挂载前缀（如 /admin；strip 后再查 FS）
+	indexBytes  []byte
+	activeTheme func(context.Context) *theme.Theme
+	bot         BotRenderer // 爬虫动态渲染（storefront 专属；admin 为 nil）
 }
 
 // NewStorefrontHandler 前台 SPA（兜底根，无前缀；botRenderer 可为 nil）。
-func NewStorefrontHandler(botRenderer BotRenderer) *Handler {
-	return newHandler(storefrontFS, "", botRenderer)
+func NewStorefrontHandler(botRenderer BotRenderer, activeTheme ...func(context.Context) *theme.Theme) *Handler {
+	h := newHandler(storefrontFS, "", botRenderer)
+	if len(activeTheme) > 0 {
+		h.activeTheme = activeTheme[0]
+	}
+	return h
 }
 
 // NewAdminHandler 管理后台 SPA（挂 /admin 前缀；请求路径剥前缀后查 FS）。
@@ -72,6 +79,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 爬虫动态渲染（仅 storefront；详情页实时渲染优先，保证内容新鲜）
 	if h.bot != nil && h.prefix == "" && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
 		return
+	}
+	// Keep embedded assets available to already-open Classic pages. Reserved
+	// service routes must never be intercepted by an installed storefront theme.
+	if h.prefix == "" && h.activeTheme != nil && themePagePath(r.URL.Path) {
+		if t := h.activeTheme(r.Context()); t != nil {
+			if path.Ext(r.URL.Path) != "" && strings.Count(strings.Trim(r.URL.Path, "/"), "/") == 0 && r.URL.Path != "/index.html" {
+				http.NotFound(w, r)
+				return
+			}
+			if theme.ServePage(w, r, t) {
+				return
+			}
+		}
 	}
 	p := r.URL.Path
 	if h.prefix != "" {
@@ -131,4 +151,13 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, _ = w.Write(h.indexBytes)
+}
+
+func themePagePath(p string) bool {
+	for _, prefix := range []string{"/api", "/uploads", "/health", "/payments", "/install", "/templates", "/assets"} {
+		if p == prefix || strings.HasPrefix(p, prefix+"/") {
+			return false
+		}
+	}
+	return true
 }

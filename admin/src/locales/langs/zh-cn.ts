@@ -384,7 +384,7 @@ const local: App.I18n.Schema = {
       top_button: "顶部自定义按钮",
     },
     template: {
-      pc_template: "PC 端模板",
+      pc_template: "商城主题（PC / 手机）",
       mobile_template: "移动端模板",
       bg_image: "背景图",
       category_nav_style: "分类导航样式",
