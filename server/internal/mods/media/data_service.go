@@ -40,7 +40,7 @@ func (r *MediaRepo) Upload(ctx context.Context, in mediaport.UploadInput) (*medi
 	if err != nil {
 		return nil, err
 	}
-	ext := strings.ToLower(path.Ext(in.Name))
+	ext := imageExtension(mime)
 	rel, err := SaveLocal(clean, ext)
 	if err != nil {
 		return nil, err
@@ -95,6 +95,9 @@ func (s *AdminMediaService) ImportFromURL(ctx context.Context, req *adminv1.Impo
 	if err != nil {
 		return nil, errors.BadRequest("media.FETCH_FAILED", err.Error())
 	}
+	if len(data) > MaxSizeBytes {
+		return nil, mapMediaError(ErrTooLarge)
+	}
 	// 内容嗅探：CDN 直链常见「URL 扩展名/响应头 ≠ 实际编码」（.png 实为 JPEG/WebP、
 	// 无扩展名短链、binary/octet-stream 等），校验按文件名白名单三分会误杀。
 	// 以魔数实测为准重写扩展名与 Content-Type，再走统一校验（校验本身不放宽）。
@@ -111,7 +114,7 @@ func (s *AdminMediaService) ImportFromURL(ctx context.Context, req *adminv1.Impo
 		name = stem + ext
 		contentType = sniffedMime
 	} else {
-		return nil, errors.BadRequest("media.NOT_IMAGE", "外链内容不是可识别的图片（支持 jpg/png/webp/gif；AVIF/HEIC 等请先转换格式）")
+		return nil, errors.BadRequest("media.NOT_IMAGE", "外链内容不是可识别的图片，支持 "+SupportedImages)
 	}
 	res, err := s.repo.Upload(ctx, mediaport.UploadInput{
 		Name: name, ContentType: contentType, Data: data,
@@ -250,9 +253,11 @@ func mapMediaError(err error) error {
 	case err == ErrNotFound:
 		return errors.NotFound("media.NOT_FOUND", "记录不存在")
 	case err == ErrInvalidType:
-		return errors.BadRequest("media.INVALID_TYPE", "仅支持 jpg/png/webp/gif 图片")
+		return errors.BadRequest("media.INVALID_TYPE", "支持 "+SupportedImages+" 图片")
 	case err == ErrTooLarge:
-		return errors.BadRequest("media.TOO_LARGE", "超过 10MB 上限")
+		return errors.BadRequest("media.TOO_LARGE", "图片超过 10MB 上限，请压缩后重试")
+	case err == ErrImageDimensions:
+		return errors.BadRequest("media.DIMENSIONS", "图片尺寸或动画总像素过大，请缩小尺寸后重试")
 	case err == ErrNotImage:
 		return errors.BadRequest("media.NOT_IMAGE", "文件内容不是合法图片")
 	}

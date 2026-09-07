@@ -237,12 +237,12 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-function beforeUpload({ file }: { file: { name: string } }) {
-  const ext = file.name.split(".").pop()?.toLowerCase() || "";
-  if (!["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif"].includes(ext)) {
-    window.$message?.error("仅支持图片文件（png/jpg/jpeg/gif/webp/svg/bmp/ico/avif）");
+function beforeUpload({ file }: { file: { file?: File | null } }) {
+  if (file.file && file.file.size > 10 * 1024 * 1024) {
+    window.$message?.error("图片超过 10MB 上限，请压缩后重试");
     return false;
   }
+  // File extensions and browser MIME are unreliable; the server inspects bytes.
   return true;
 }
 
@@ -466,8 +466,8 @@ const categorySelectOptions = computed(() => [
           <NUpload
             :custom-request="customRequest"
             :show-file-list="false"
-            accept="image/*"
-            :before-upload="beforeUpload as any"
+            accept="image/*,.apng,.avif,.jfif,.tif,.tiff,.heic,.heif,.ico"
+            :on-before-upload="beforeUpload"
           >
             <NButton v-auth="'media:upload'" size="small" type="primary" :loading="uploading > 0">上传图片</NButton>
           </NUpload>

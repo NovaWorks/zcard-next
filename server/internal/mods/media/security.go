@@ -1,12 +1,7 @@
 package media
 
-// 上传安全三件套（，）：
-// 1. 类型白名单三重校验：扩展名 + 声明 MIME + 文件头魔数
-// 2. 大小限制 10MB（1.x 验证参数）
-// 3. 图片重编码：Decode → 重新 Encode（剥离 EXIF/嵌入载荷/尾部数据——防图片马）
-// jpeg/png/gif 全重编码；webp 标准库无编码器——仅魔数+解码校验
-// （x/image/webp 解码成功即合法图像，载荷风险以白名单源头控制）
-
+// Identify the encoding from bytes, never from a browser MIME or a filename.
+// Raster formats with encoders are sanitized; animated containers retain frames.
 import (
 	"bytes"
 	"fmt"
@@ -18,43 +13,33 @@ import (
 	"path/filepath"
 	"strings"
 
-	_ "golang.org/x/image/webp" // webp 解码注册（编码不可用——校验降级说明见上）
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
+	_ "golang.org/x/image/webp"
 )
 
-// 上传约束（1.x 参数平移）。
-const (
-	MaxSizeBytes = 10 * 1024 * 1024 // 10MB
-)
+const MaxSizeBytes = 10 * 1024 * 1024
+const maxImagePixels = 40_000_000
+const maxAnimationPixels = 100_000_000
+const SupportedImages = "JPG/JPEG/JFIF、PNG/APNG、GIF、WebP、AVIF、BMP、ICO、SVG、TIFF、HEIC/HEIF"
 
-// allowedTypes 白名单：ext → {mime, 魔数}。运营诉求「只要是图片都可以上传」——
-// 常见格式全放行;bmp/ico/svg 标准库无解码器,魔数校验后原样存储(不重编码)。
-var allowedTypes = map[string]struct {
-	mime   string
-	magic  []byte // 文件头（前 N 字节匹配；nil = 无稳定魔数,按内容嗅探兜底）
-	decode bool   // 是否可经标准库解码（可解码者重编码净化）
-}{
-	".jpg":  {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, true},
-	".jpeg": {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, true},
-	".png":  {"image/png", []byte{0x89, 'P', 'N', 'G'}, true},
-	".webp": {"image/webp", []byte{'R', 'I', 'F', 'F'}, true}, // RIFF....WEBP
-	".gif":  {"image/gif", []byte{'G', 'I', 'F', '8'}, true},
-	".bmp":  {"image/bmp", []byte{'B', 'M'}, false},
-	".ico":  {"image/x-icon", []byte{0x00, 0x00, 0x01, 0x00}, false},
-	".svg":  {"image/svg+xml", nil, false}, // 文本格式,首部 <svg / <?xml 嗅探
-	".avif": {"image/avif", []byte{'f', 't', 'y', 'p'}, false},
+var ErrInvalidType = fmt.Errorf("media.INVALID_TYPE: 支持 %s 图片", SupportedImages)
+var ErrTooLarge = fmt.Errorf("media.TOO_LARGE: 超过 10MB 上限")
+var ErrNotImage = fmt.Errorf("media.NOT_IMAGE: 文件内容不是合法图片")
+var ErrImageDimensions = fmt.Errorf("media.DIMENSIONS: 图片尺寸或动画总像素过大")
+
+func validDimensions(w, h int) bool { return w > 0 && h > 0 && int64(w)*int64(h) <= maxImagePixels }
+
+// Retain the executable-extension rejection, but allow extensionless images and
+// generic download names. A misleading *image* suffix is corrected on storage.
+func allowedFilename(name string) bool {
+	switch strings.ToLower(filepath.Ext(name)) {
+	case "", ".jpg", ".jpeg", ".jfif", ".pjpeg", ".pjp", ".png", ".apng", ".gif", ".webp", ".avif", ".bmp", ".dib", ".ico", ".svg", ".tif", ".tiff", ".heic", ".heif", ".bin", ".dat", ".tmp", ".blob", ".download":
+		return true
+	}
+	return false
 }
 
-// ErrInvalidType 类型不在白名单（伪装扩展名同此错误——对外统一，不泄漏细节）。
-var ErrInvalidType = fmt.Errorf("media.INVALID_TYPE: 仅支持 jpg/png/webp/gif 图片")
-
-// ErrTooLarge 超大小限制。
-var ErrTooLarge = fmt.Errorf("media.TOO_LARGE: 超过 10MB 上限")
-
-// ErrNotImage 内容不是合法图片（魔数/解码失败）。
-var ErrNotImage = fmt.Errorf("media.NOT_IMAGE: 文件内容不是合法图片")
-
-// ValidateAndReencode 三件套入口：校验 + 重编码。
-// 返回净化后的字节、真实 MIME、尺寸；错误为哨兵（API 层直接映射 4xx）。
 func ValidateAndReencode(filename, contentType string, data []byte) (out []byte, mime string, width, height int, err error) {
 	if len(data) == 0 {
 		return nil, "", 0, 0, ErrNotImage
@@ -62,105 +47,138 @@ func ValidateAndReencode(filename, contentType string, data []byte) (out []byte,
 	if len(data) > MaxSizeBytes {
 		return nil, "", 0, 0, ErrTooLarge
 	}
-	ext := strings.ToLower(filepath.Ext(filename))
-	spec, ok := allowedTypes[ext]
-	if !ok {
+	if !allowedFilename(filename) {
 		return nil, "", 0, 0, ErrInvalidType
 	}
-	// MIME 校验放宽:声明与白名单不符但内容嗅探为图片族亦放行（浏览器/客户端
-	// 上传常见声明为 octet-stream 或 image/jpg 别名——运营诉求按内容判定）
-	if contentType != "" && contentType != "application/octet-stream" &&
-		!strings.HasPrefix(contentType, "image/") {
-		if !strings.HasPrefix(contentType, spec.mime) {
-			return nil, "", 0, 0, ErrInvalidType
-		}
-	}
-	// 魔数校验（svg 无魔数→嗅探文本头;avif ftyp 盒在第 4 字节起）
-	if spec.magic != nil {
-		if !bytes.HasPrefix(data, spec.magic) {
-			return nil, "", 0, 0, ErrNotImage
-		}
-	} else if ext == ".svg" {
-		head := strings.ToLower(string(data[:min(len(data), 512)]))
-		if !strings.Contains(head, "<svg") && !strings.Contains(head, "<?xml") {
-			return nil, "", 0, 0, ErrNotImage
-		}
-	}
-	if ext == ".webp" && (len(data) < 12 || string(data[8:12]) != "WEBP") {
+	ext, mime, ok := SniffImage(data)
+	if !ok {
 		return nil, "", 0, 0, ErrNotImage
 	}
-	if ext == ".avif" && (len(data) < 12 || string(data[4:8]) != "ftyp") {
-		return nil, "", 0, 0, ErrNotImage
+	ct := strings.ToLower(strings.TrimSpace(strings.Split(contentType, ";")[0]))
+	if ct != "" && ct != "application/octet-stream" && ct != "binary/octet-stream" && !strings.HasPrefix(ct, "image/") && !(ext == ".svg" && (ct == "text/plain" || ct == "text/xml" || ct == "application/xml")) {
+		return nil, "", 0, 0, ErrInvalidType
 	}
-
-	// 宽高:可解码格式取真实尺寸;无解码器格式(bmp/ico/svg/avif)跳过(0 占位)
-	if spec.decode {
-		cfg, _, decodeErr := image.DecodeConfig(bytes.NewReader(data))
-		if decodeErr != nil {
-			return nil, "", 0, 0, ErrNotImage
-		}
-		width, height = cfg.Width, cfg.Height
-	}
-
-	// 重编码（webp 除外——标准库无编码器；解码成功即入白名单语义）
 	switch ext {
-	case ".jpg", ".jpeg":
-		img, err := jpeg.Decode(bytes.NewReader(data))
-		if err != nil {
+	case ".avif", ".heic", ".heif":
+		if !validImageContainer(data) {
 			return nil, "", 0, 0, ErrNotImage
 		}
-		var buf bytes.Buffer
-		if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 90}); err != nil {
-			return nil, "", 0, 0, fmt.Errorf("media.REENCODE_FAILED: %w", err)
-		}
-		return buf.Bytes(), "image/jpeg", width, height, nil
-	case ".png":
-		img, err := png.Decode(bytes.NewReader(data))
-		if err != nil {
+		return data, mime, 0, 0, nil
+	case ".svg":
+		if !validSVG(data) {
 			return nil, "", 0, 0, ErrNotImage
 		}
-		var buf bytes.Buffer
-		enc := png.Encoder{CompressionLevel: png.DefaultCompression}
-		if err := enc.Encode(&buf, img); err != nil {
-			return nil, "", 0, 0, fmt.Errorf("media.REENCODE_FAILED: %w", err)
+		return data, mime, 0, 0, nil
+	case ".ico":
+		w, h, err := validateICO(data)
+		return data, mime, w, h, err
+	case ".webp":
+		clean, w, h, err := validateWebP(data)
+		return clean, mime, w, h, err
+	}
+	cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+	if err != nil {
+		return nil, "", 0, 0, ErrNotImage
+	}
+	width, height = cfg.Width, cfg.Height
+	if !validDimensions(width, height) {
+		return nil, "", 0, 0, ErrImageDimensions
+	}
+	if ext == ".gif" {
+		if err := checkGIFBudget(data); err != nil {
+			return nil, "", 0, 0, err
 		}
-		return buf.Bytes(), "image/png", width, height, nil
-	case ".gif":
-		// 保留动画：DecodeAll → EncodeAll（逐帧重编码剥离附加块）
 		g, err := gif.DecodeAll(bytes.NewReader(data))
 		if err != nil {
 			return nil, "", 0, 0, ErrNotImage
 		}
 		var buf bytes.Buffer
-		if err := gif.EncodeAll(&buf, g); err != nil {
-			return nil, "", 0, 0, fmt.Errorf("media.REENCODE_FAILED: %w", err)
+		if err = gif.EncodeAll(&buf, g); err != nil {
+			return nil, "", 0, 0, err
 		}
-		return buf.Bytes(), "image/gif", width, height, nil
-	case ".webp":
-		// 解码校验已过（DecodeConfig 成功）；原样保留（无编码器）
-		return data, "image/webp", width, height, nil
-	default:
-		// bmp/ico/svg/avif 等无标准库解码器格式:魔数校验已过,原样存储
-		return data, spec.mime, width, height, nil
+		return buf.Bytes(), mime, width, height, nil
 	}
-	return nil, "", 0, 0, ErrInvalidType
+	if ext == ".png" {
+		end, animated, err := checkPNG(data)
+		if err != nil {
+			return nil, "", 0, 0, err
+		}
+		// Standard PNG decoders only decode the fallback frame. Retain APNG chunks.
+		if animated {
+			if _, err := png.Decode(bytes.NewReader(data)); err != nil {
+				return nil, "", 0, 0, ErrNotImage
+			}
+			return data[:end], mime, width, height, nil
+		}
+	}
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return nil, "", 0, 0, ErrNotImage
+	}
+	var buf bytes.Buffer
+	if ext == ".jpg" {
+		err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: 90})
+	} else {
+		// TIFF/BMP become browser-compatible PNGs, including transparency.
+		err = png.Encode(&buf, img)
+		mime = "image/png"
+	}
+	if err != nil {
+		return nil, "", 0, 0, err
+	}
+	return buf.Bytes(), mime, width, height, nil
 }
-
-// SniffContentType 便捷（http.DetectContentType 标准库）。
 func SniffContentType(data []byte) string { return http.DetectContentType(data) }
 
-// SniffImage 魔数实测图片类型（外链导入用：URL 名/响应头都可能说谎，内容不会）。
-// ok=false 表示不是白名单内格式（AVIF/HEIC/BMP/HTML…）。
+// SniffImage identifies a candidate; ValidateAndReencode validates its structure.
 func SniffImage(data []byte) (ext, mime string, ok bool) {
 	switch {
-	case bytes.HasPrefix(data, []byte{0xFF, 0xD8, 0xFF}):
+	case bytes.HasPrefix(data, []byte{0xff, 0xd8, 0xff}):
 		return ".jpg", "image/jpeg", true
-	case bytes.HasPrefix(data, []byte{0x89, 'P', 'N', 'G'}):
+	case bytes.HasPrefix(data, []byte("\x89PNG\r\n\x1a\n")):
 		return ".png", "image/png", true
-	case bytes.HasPrefix(data, []byte{'G', 'I', 'F', '8'}):
+	case bytes.HasPrefix(data, []byte("GIF87a")) || bytes.HasPrefix(data, []byte("GIF89a")):
 		return ".gif", "image/gif", true
-	case len(data) >= 12 && bytes.HasPrefix(data, []byte{'R', 'I', 'F', 'F'}) && string(data[8:12]) == "WEBP":
+	case len(data) >= 12 && string(data[:4]) == "RIFF" && string(data[8:12]) == "WEBP":
 		return ".webp", "image/webp", true
+	case bytes.HasPrefix(data, []byte("BM")):
+		return ".bmp", "image/bmp", true
+	case bytes.HasPrefix(data, []byte{0, 0, 1, 0}):
+		return ".ico", "image/x-icon", true
+	case bytes.HasPrefix(data, []byte{'I', 'I', 42, 0}) || bytes.HasPrefix(data, []byte{'M', 'M', 0, 42}):
+		return ".tiff", "image/tiff", true
+	}
+	if ext, mime := sniffImageContainer(data); ext != "" {
+		return ext, mime, true
+	}
+	if validSVG(data) {
+		return ".svg", "image/svg+xml", true
 	}
 	return "", "", false
+}
+
+func imageExtension(mime string) string {
+	switch mime {
+	case "image/jpeg":
+		return ".jpg"
+	case "image/png":
+		return ".png"
+	case "image/gif":
+		return ".gif"
+	case "image/webp":
+		return ".webp"
+	case "image/avif":
+		return ".avif"
+	case "image/bmp":
+		return ".bmp"
+	case "image/x-icon":
+		return ".ico"
+	case "image/svg+xml":
+		return ".svg"
+	case "image/heic":
+		return ".heic"
+	case "image/heif":
+		return ".heif"
+	}
+	return ""
 }

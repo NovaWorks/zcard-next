@@ -27,6 +27,8 @@ var StorageRoot = "data/uploads"
 var contentTypeByExt = map[string]string{
 	".jpg": "image/jpeg", ".jpeg": "image/jpeg",
 	".png": "image/png", ".webp": "image/webp", ".gif": "image/gif",
+	".avif": "image/avif", ".bmp": "image/bmp", ".ico": "image/x-icon", ".svg": "image/svg+xml",
+	".heic": "image/heic", ".heif": "image/heif",
 }
 
 // SaveLocal 存储：净化后字节 → 年月目录随机名；返回相对路径。
@@ -154,6 +156,9 @@ func serveStatic(w http.ResponseWriter, r *http.Request) {
 	}
 	etag := fmt.Sprintf(`"%x-%x"`, st.ModTime().UnixNano(), st.Size())
 	w.Header().Set("Content-Type", ct)
+	if ct == "image/svg+xml" {
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox")
+	}
 	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable") // 随机名内容不变
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	if r.Header.Get("If-None-Match") == etag {
