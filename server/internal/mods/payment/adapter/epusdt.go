@@ -4,13 +4,13 @@ package adapter
 //
 // 协议（1.x EpuSdtDriver 沉淀 + dujiao-next gateway/epusdt 对拍）：
 // - 下单：POST {api_url}/payments/gmpay/v1/order/create-transaction
-// 参数 pid/order_id/currency/amount(法币元两位小数)/notify_url/redirect_url/name/network/token
+// 参数 pid/order_id/currency/amount(法币元 JSON 数字)/notify_url/redirect_url/name/network/token
 // - 签名：剔 signature + 空值 → key ASCII 字典序 → k=v& 拼接 → HMAC-SHA256(secret) 小写 hex
 // - 回调：JSON POST；status==2 支付成功；重签对比；amount 为法币元（与下单同口径，零换算）
 // - 应答：纯文本 "ok"（Acker 能力位；管线 JSON 兜底不适用于本协议）
 //
 // 金额纪律：全链 int64 分；出口一次性格式化两位小数字符串（绝不过 float64 变量——
-// dujiao 踩坑记录：签名串 float 必须去尾零，直接构造字符串则无此问题）。
+// 金额使用 json.Number 输出，签名采用去尾零的小数，与网关数值规范化一致）。
 // USDT 实收（actual_amount）不参与金额核对，仅随 Raw 落审计。
 
 import (
@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -65,7 +66,7 @@ func (c *epusdtConfig) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*c = epusdtConfig(rawEpusdt{
-		APIURL: raw.APIURL, PID: raw.PID, SecretKey: raw.SecretKey,
+		APIURL: strings.TrimSpace(raw.APIURL), PID: raw.PID, SecretKey: raw.SecretKey,
 		Currency: raw.Currency, Tokens: raw.Tokens, Networks: raw.Networks,
 	})
 	pick := func(v json.RawMessage, list []string) (string, []string, error) {
@@ -142,6 +143,16 @@ func (a *EpusdtAdapter) ValidateConfig(cfg json.RawMessage) error {
 	if c.APIURL == "" || c.PID == "" || c.SecretKey == "" {
 		return fmt.Errorf("epusdt: api_url/pid/secret_key 必填")
 	}
+	u, err := url.Parse(c.APIURL)
+	if err != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
+		return fmt.Errorf("epusdt: 网关地址须为含 http:// 或 https:// 的基础地址，不含查询参数")
+	}
+	path := strings.TrimRight(u.Path, "/")
+	for _, suffix := range []string{"/payments/gmpay/v1", "/payments/gmpay/v1/order/create-transaction", "/payments/gmpay/v1/config"} {
+		if strings.HasSuffix(path, suffix) {
+			return fmt.Errorf("epusdt: 请填写网关基础地址，不要附加 GMPay 接口路径，系统会自动补全")
+		}
+	}
 	return nil
 }
 
@@ -152,7 +163,6 @@ type epusdtCreateReply struct {
 	Data       struct {
 		TradeID    string `json:"trade_id"`
 		PaymentURL string `json:"payment_url"`
-		Amount     string `json:"amount"`
 		Token      string `json:"token"`
 		Network    string `json:"network"`
 	} `json:"data"`
@@ -160,6 +170,9 @@ type epusdtCreateReply struct {
 
 // CreatePayment 下单（redirect 到网关收银台）。
 func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymentRequest) (*port.RedirectInfo, error) {
+	if err := a.ValidateConfig(req.Config); err != nil {
+		return nil, err
+	}
 	var c epusdtConfig
 	if err := json.Unmarshal(req.Config, &c); err != nil {
 		return nil, fmt.Errorf("epusdt: 凭据格式错误: %w", err)
@@ -183,7 +196,7 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		"order_id": req.OrderNo,
 		"currency": currency,
 		// GMPay cny/usd 均两位小数（最小单位=分/美分同构）；快照口径直接出口
-		"amount":       centsToYuan(chargeUnits),
+		"amount":       strings.TrimRight(strings.TrimRight(centsToYuan(chargeUnits), "0"), "."),
 		"notify_url":   req.NotifyBaseURL,
 		"redirect_url": req.ReturnURL,
 		"name":         req.Subject,
@@ -201,7 +214,17 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	}
 	params["signature"] = epusdtSign(params, c.SecretKey)
 
-	body, _ := json.Marshal(params)
+	// GMPay v2 将 amount 绑定为 float64：JSON 字符串虽可通过验签，
+	// 随后的参数绑定仍会失败。只将 amount 编码为数字，账本金额保持整数。
+	wireParams := make(map[string]any, len(params))
+	for k, v := range params {
+		wireParams[k] = v
+	}
+	wireParams["amount"] = json.Number(params["amount"])
+	body, err := json.Marshal(wireParams)
+	if err != nil {
+		return nil, fmt.Errorf("epusdt: 下单参数编码失败: %w", err)
+	}
 	url := strings.TrimRight(c.APIURL, "/") + "/payments/gmpay/v1/order/create-transaction"
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
@@ -214,16 +237,35 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		return nil, fmt.Errorf("epusdt: 下单请求失败: %w", err)
 	}
 	defer resp.Body.Close()
-	raw, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("epusdt: 下单失败 HTTP %d", resp.StatusCode)
+	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	if err != nil {
+		return nil, fmt.Errorf("epusdt: 下单响应读取失败: %w", err)
 	}
 	var reply epusdtCreateReply
-	if err := json.Unmarshal(raw, &reply); err != nil {
-		return nil, fmt.Errorf("epusdt: 下单响应解析失败: %w", err)
+	parseErr := json.Unmarshal(raw, &reply)
+	message := strings.Join(strings.Fields(reply.Message), " ")
+	for _, secret := range []string{c.SecretKey, params["signature"]} {
+		if secret != "" {
+			message = strings.ReplaceAll(message, secret, "[redacted]")
+		}
+	}
+	if chars := []rune(message); len(chars) > 200 {
+		message = string(chars[:200]) + "…"
+	}
+	if resp.StatusCode != http.StatusOK {
+		if parseErr == nil && message != "" {
+			return nil, fmt.Errorf("epusdt: 下单失败 HTTP %d（网关代码 %d）：%s", resp.StatusCode, reply.StatusCode, message)
+		}
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, fmt.Errorf("epusdt: 下单失败 HTTP 404，请检查网关基础地址及 GMPay 接口版本")
+		}
+		return nil, fmt.Errorf("epusdt: 下单失败 HTTP %d", resp.StatusCode)
+	}
+	if parseErr != nil {
+		return nil, fmt.Errorf("epusdt: 下单响应解析失败: %w", parseErr)
 	}
 	if reply.StatusCode != 200 || reply.Data.PaymentURL == "" {
-		return nil, fmt.Errorf("epusdt: 下单被网关拒绝: %s", reply.Message)
+		return nil, fmt.Errorf("epusdt: 下单被网关拒绝（网关代码 %d）：%s", reply.StatusCode, message)
 	}
 	payload, _ := json.Marshal(map[string]string{"url": reply.Data.PaymentURL})
 	return &port.RedirectInfo{Type: "redirect", Payload: payload}, nil

@@ -55,13 +55,13 @@ func (a *EpayAdapter) ConfigFields() []port.ConfigField {
 
 // Meta epusdt（GMPay）。
 func (a *EpusdtAdapter) Meta() port.DriverMeta {
-	return port.DriverMeta{Name: "USDT（TRC20）", Icon: "epusdt", Description: "自托管 epusdt 网关，USDT 链上收款"}
+	return port.DriverMeta{Name: "USDT（TRC20）", Icon: "epusdt", Description: "EPUSDT / GM Pay，使用 GMPay v2 HMAC-SHA256 接口"}
 }
 
 // ConfigFields epusdt 配置字段。
 func (a *EpusdtAdapter) ConfigFields() []port.ConfigField {
 	return []port.ConfigField{
-		{Key: "api_url", Label: "网关地址", Type: "text", Required: true, Placeholder: "如 https://epay.example.com"},
+		{Key: "api_url", Label: "网关地址", Type: "text", Required: true, Placeholder: "如 https://pay.example.com", Help: "填写支付网关基础地址，包含 https://。不要填写商城域名、管理后台路径或完整下单接口，系统会自动补全。本渠道使用 GMPay v2 HMAC-SHA256 协议。"},
 		{Key: "pid", Label: "商户 ID", Type: "text", Required: true, Placeholder: "网关后台分配的 PID"},
 		{Key: "secret_key", Label: "API 密钥", Type: "password", Required: true, Sensitive: true, Help: "网关后台的密钥（HMAC 签名）"},
 		{Key: "currency", Label: "法币计价", Type: "select", Default: "cny", Options: []port.ConfigOption{{Label: "CNY 人民币", Value: "cny"}, {Label: "USD 美元", Value: "usd"}}},

@@ -678,12 +678,17 @@ onMounted(() => {
               <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" :placeholder="fieldHint(f)" />
             </template>
             <template v-else>
-              <NInput
-                v-model:value="form.values[f.key]"
-                :type="f.sensitive ? 'password' : 'text'"
-                show-password-on="click"
-                :placeholder="fieldHint(f)"
-              />
+              <div class="w-full">
+                <NInput
+                  v-model:value="form.values[f.key]"
+                  :type="f.sensitive ? 'password' : 'text'"
+                  show-password-on="click"
+                  :placeholder="fieldHint(f)"
+                />
+                <div v-if="current?.driver === 'epusdt' && f.key === 'api_url' && f.help" class="text-12px opacity-70 mt-4px">
+                  {{ f.help }}
+                </div>
+              </div>
             </template>
           </NFormItem>
         </template>

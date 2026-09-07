@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -117,8 +118,8 @@ func TestEpusdtCreatePaymentMock(t *testing.T) {
 			w.WriteHeader(404)
 			return
 		}
-		_ = json.NewDecoder(r.Body).Decode(&gotBody)
-		_, _ = w.Write([]byte(`{"status_code":200,"message":"ok","data":{"trade_id":"T123","payment_url":"https://gw/pay/T123"}}`))
+		gotBody = decodeEpusdtNumericRequest(t, r)
+		_, _ = w.Write([]byte(`{"status_code":200,"message":"ok","data":{"trade_id":"T123","payment_url":"https://gw/pay/T123","amount":10}}`))
 	}))
 	defer srv.Close()
 
@@ -142,9 +143,9 @@ func TestEpusdtCreatePaymentMock(t *testing.T) {
 	if err := json.Unmarshal(info.Payload, &payload); err != nil || payload.URL != "https://gw/pay/T123" {
 		t.Fatalf("支付链接错位: %s %v", payload.URL, err)
 	}
-	// 请求侧断言：金额两位小数字符串 + 签名可被同算法验证
-	if gotBody["amount"] != "10.00" {
-		t.Fatalf("金额格式必须两位小数字符串: %q", gotBody["amount"])
+	// 请求侧断言：JSON 数字金额去尾零，签名按网关规范化后的金额计算
+	if gotBody["amount"] != "10" {
+		t.Fatalf("金额签名须使用规范化数值: %q", gotBody["amount"])
 	}
 	if !epusdtVerifySign(gotBody, "testsecret", gotBody["signature"]) {
 		t.Fatal("下单请求签名自验失败")
@@ -267,7 +268,7 @@ func TestEpusdtMultiTokenPlaceholder(t *testing.T) {
 				w.WriteHeader(404)
 				return
 			}
-			_ = json.NewDecoder(r.Body).Decode(&gotPlaceholderBody)
+			gotPlaceholderBody = decodeEpusdtNumericRequest(t, r)
 			_, _ = w.Write([]byte(`{"status_code":200,"message":"ok","data":{"trade_id":"T1","payment_url":"https://gw/pay/T1"}}`))
 		}))
 		t.Cleanup(srv.Close)
@@ -382,4 +383,30 @@ func TestEpusdtConfigSelections(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Match GMPay v2's JSON decoder: amount must bind as a number, and signatures
+// use its normalized decimal representation.
+func decodeEpusdtNumericRequest(t *testing.T, r *http.Request) map[string]string {
+	t.Helper()
+	var values map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&values); err != nil {
+		t.Error(err)
+		return nil
+	}
+	if _, ok := values["amount"].(float64); !ok {
+		t.Errorf("amount must be JSON number, got %T", values["amount"])
+	}
+	result := make(map[string]string, len(values))
+	for k, v := range values {
+		switch value := v.(type) {
+		case float64:
+			result[k] = strconv.FormatFloat(value, 'f', -1, 64)
+		case string:
+			result[k] = value
+		default:
+			t.Errorf("unsupported request field %s: %T", k, v)
+		}
+	}
+	return result
 }
