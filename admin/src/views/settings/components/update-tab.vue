@@ -32,6 +32,8 @@ import {
   type UpdateStatus
 } from "@/service/api";
 
+import { isUpdatePending, isUpdateComplete } from "./update-state";
+
 defineOptions({ name: "UpdateTab" });
 
 const message = useMessage();
@@ -43,6 +45,7 @@ const checking = ref(false);
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let waitingRestart = false; // restarting 后进入「等待服务恢复」模式
 let waitStart = 0;
+let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PHASE_TEXT: Record<string, string> = {
   idle: "空闲",
@@ -76,7 +79,8 @@ const supervisorTag = computed(() => {
 const statusError = ref("");
 async function refreshStatusVisible() {
   try {
-    const { data } = await fetchUpdateStatus();
+    const { data, error } = await fetchUpdateStatus();
+    if (error || !data) throw error || new Error("状态响应为空");
     status.value = data as any;
     statusError.value = "";
   } catch (e: any) {
@@ -109,19 +113,21 @@ const sourceText = computed(() => {
 // ── 状态拉取（waitingRestart 模式：连接失败=仍在重启继续等；恢复且版本到位=成功）──
 async function refreshStatus() {
   try {
-    const { data } = await fetchUpdateStatus();
+    const { data, error } = await fetchUpdateStatus();
+    if (error || !data) throw error || new Error("状态响应为空");
     status.value = data as any;
     enterWaitIfNeeded(status.value);
+    if (status.value?.phase === "failed" || status.value?.phase === "rolled_back") waitingRestart = false;
     if (waitingRestart) {
       const st = status.value!;
-      if (st.current_version && st.target_version && st.current_version === st.target_version) {
+      if (isUpdateComplete(st)) {
         waitingRestart = false;
         // 完成态:版本对展示 + 停留 3 秒再刷新——更新完成的确定性反馈
         // (下载快时 applying/restarting 一闪而过直接 reload,用户误以为「下载中界面自己重启了」)
         updateDone.value = true;
         const from = st.prev_version || "旧版本";
         message.success(`更新完成：${from} → ${st.current_version}`);
-        setTimeout(() => window.location.reload(), 3000);
+        reloadTimer = setTimeout(() => window.location.reload(), 3000);
         return;
       }
       // 超时保护（5 分钟）
@@ -158,9 +164,20 @@ const updateDone = ref(false);
 const autoChecked = ref(false); // 进 tab 自动检查只做一次（重进页面再触发）
 
 async function doCheck(silent = false) {
+  if (checking.value || waitingRestart || updateDone.value || isUpdatePending(status.value)) return;
   checking.value = true;
   try {
-    const { data }: any = await checkUpdate();
+    const { data, error } = await checkUpdate();
+    if (error || !data) {
+      await refreshStatusVisible();
+      enterWaitIfNeeded(status.value);
+      return;
+    }
+    // Refresh after Check so a polled checking phase is not mistaken for an update.
+    await refreshStatusVisible();
+    enterWaitIfNeeded(status.value);
+    // A response started before an update must not reopen the confirmation.
+    if (statusError.value || waitingRestart || updateDone.value || isUpdatePending(status.value)) return;
     checkResult.value = data;
     changelogHtml.value = sanitizeHtml(marked.parse(data.notes || "_（本版本未提供变更记录）_") as string);
     if (data.has_update) {
@@ -189,7 +206,9 @@ async function doApply() {
   updateDone.value = false;
   modalStage.value = "progress"; // 弹窗切换为分步进度（大厂范式：同一弹窗承接全流程）
   try {
-    await applyUpdate();
+    const { data, error } = await applyUpdate();
+    if (error || !data) throw error || new Error("更新响应为空");
+    status.value = data;
     waitingRestart = false;
     if (pollTimer) clearTimeout(pollTimer);
     refreshStatus();
@@ -226,7 +245,9 @@ const stepState = (i: number): "done" | "current" | "todo" | "error" => {
 async function retryFromFailed() {
   modalStage.value = "progress";
   try {
-    await applyUpdate();
+    const { data, error } = await applyUpdate();
+    if (error || !data) throw error || new Error("更新响应为空");
+    status.value = data;
     waitingRestart = false;
     if (pollTimer) clearTimeout(pollTimer);
     refreshStatus();
@@ -238,7 +259,9 @@ async function retryFromFailed() {
 
 async function doRollback() {
   try {
-    await rollbackUpdate();
+    const { data, error } = await rollbackUpdate();
+    if (error || !data) throw error || new Error("回滚响应为空");
+    status.value = data;
     waitingRestart = true;
     waitStart = Date.now();
     message.info("已回滚，等待服务重启…");
@@ -294,11 +317,8 @@ async function saveConfig() {
 //  b) 目标版本已登记且尚未到位（重启间隙/刷新后 update.state 延续 target）
 // 进入即重开分步进度弹窗——用户刷新页面回来直接看到更新进度而非干等。
 function enterWaitIfNeeded(st: UpdateStatus | null) {
-  if (!st || waitingRestart) return;
-  if (st.phase === "failed") return;
-  const inFlightPhase = ["checking", "backing_up", "downloading", "applying", "restarting", "verifying"].includes(st.phase);
-  const pendingTarget = !!st.target_version && st.current_version !== st.target_version;
-  if (inFlightPhase || pendingTarget) {
+  if (!st || waitingRestart || updateDone.value) return;
+  if (isUpdatePending(st) && (st.busy || st.phase !== "checking")) {
     waitingRestart = true;
     waitStart = Date.now();
     modalStage.value = "progress";
@@ -314,13 +334,14 @@ onMounted(async () => {
   // 进入 tab 自动检查（静默失败不打扰）；有新版本直接弹更新框。
   // 双保险：inFlight 之外,目标版本在途（等待恢复模式/刷新重开场景）同样不查——
   // 更新中触发 Check 会打断进度展示（另一标签页自动检查即触发,线上实录）
-  if (!autoChecked.value && !statusError.value && !inFlight.value && !waitingRestart && !status.value?.target_version) {
+  if (!autoChecked.value && !statusError.value && !waitingRestart && !isUpdatePending(status.value)) {
     autoChecked.value = true;
     doCheck(true);
   }
 });
 onBeforeUnmount(() => {
   if (pollTimer) clearTimeout(pollTimer);
+  if (reloadTimer) clearTimeout(reloadTimer);
 });
 
 // status 变化时捕捉 restarting
@@ -506,7 +527,7 @@ watch(
       :show="showConfirm"
       preset="card"
       style="width: min(640px, 94vw)"
-      :title="modalStage === 'confirm' ? '发现新版本' : '正在更新'"
+      :title="modalStage === 'confirm' ? '发现新版本' : updateDone ? '更新完成' : '正在更新'"
       :mask-closable="false"
       :close-on-esc="false"
       @update:show="(v: boolean) => (showConfirm = v)"

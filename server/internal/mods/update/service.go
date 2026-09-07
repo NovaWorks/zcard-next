@@ -72,6 +72,7 @@ type Status struct {
 type Service struct {
 	mu       sync.Mutex
 	busy     bool
+	checking bool
 	st       Status
 	probe    *updater.ProbeOutcome
 	probedAt time.Time
@@ -172,19 +173,21 @@ type CheckResult struct {
 // 等待模式被破坏后前端弹窗退回确认态——另一标签页自动检查即触发（线上实录）。
 func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 	s.mu.Lock()
-	busy := s.busy
-	target := s.st.Target
-	s.mu.Unlock()
-	if busy || target != "" {
+	if s.busy || s.checking || s.st.Phase == PhaseChecking || s.pendingTargetLocked() {
+		s.mu.Unlock()
 		return nil, ErrBusy
 	}
-	s.setPhase(PhaseChecking)
+	// Reserve the operation before releasing the lock: Apply/Rollback must
+	// not start while a slow Check can still write its result or failure.
+	s.checking = true
+	s.st.Phase = PhaseChecking
+	s.mu.Unlock()
 	defer func() {
 		s.mu.Lock()
-		p := s.st.Phase
-		s.mu.Unlock()
-		if p == PhaseChecking {
-			s.setPhase(PhaseIdle)
+		defer s.mu.Unlock()
+		s.checking = false
+		if s.st.Phase == PhaseChecking {
+			s.st.Phase, s.st.Err = PhaseIdle, ""
 		}
 	}()
 
@@ -217,15 +220,32 @@ func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 	return res, nil
 }
 
+// pendingTargetLocked includes the new process's persisted health gate.
+// Completed and failed attempts must not permanently disable future checks.
+func (s *Service) pendingTargetLocked() bool {
+	if s.st.Phase == PhaseFailed || s.st.Phase == PhaseRolledBack {
+		return false
+	}
+	if s.st.Target != "" && s.st.Target != cur() {
+		return true
+	}
+	if s.binPath != "" {
+		state, err := updater.LoadState(s.binPath)
+		return err == nil && state.Status == updater.StatePending
+	}
+	return false
+}
+
 // Apply 触发更新（后台 goroutine 执行链；重复调用 ErrBusy）。
 // 链：磁盘预检 → DB 备份 → 落盘下载（进度）→ 原子替换 → 重启 hook。
 func (s *Service) Apply(ctx context.Context) error {
 	s.mu.Lock()
-	if s.busy {
+	if s.busy || s.checking || s.st.Phase == PhaseChecking {
 		s.mu.Unlock()
 		return ErrBusy
 	}
 	s.busy = true
+	s.st.Phase, s.st.Target, s.st.Err = PhaseChecking, "", ""
 	s.mu.Unlock()
 	go s.run()
 	return nil
@@ -267,6 +287,9 @@ func (s *Service) run() {
 		fail(fmt.Errorf("%w（当前 %s ↔ 目标 %s）", updater.ErrRefuseUpdate, cur(), m.Version))
 		return
 	}
+	s.mu.Lock()
+	s.st.Target = m.Version
+	s.mu.Unlock()
 	assetName := "zcard-" + runtime.GOOS + "-" + runtime.GOARCH
 	var assetSize int64
 	for _, f := range m.Files {
@@ -350,7 +373,7 @@ func (s *Service) Rollback(ctx context.Context) error {
 	}
 	// 单飞守卫：更新链进行中（下载/落位中）同时回滚 = 磁盘状态竞态破坏
 	s.mu.Lock()
-	if s.busy {
+	if s.busy || s.checking || s.st.Phase == PhaseChecking {
 		s.mu.Unlock()
 		return ErrBusy
 	}
@@ -379,7 +402,7 @@ func (s *Service) Snapshot(ctx context.Context) Status {
 		if state, err := updater.LoadState(s.binPath); err == nil && state != nil {
 			// 新进程延续目标版本（exec 重启后内存态清零，磁盘 state 是唯一延续源——
 			// 前端「等待恢复」以 current==target 判成功，target 断档会假性超时）
-			if st.Target == "" && state.ToVer != "" {
+			if !busy && st.Target == "" && state.ToVer != "" {
 				st.Target = state.ToVer
 			}
 			// 上一次版本号（from 持久保留：更新闭环后仍是最近一次升级起点）

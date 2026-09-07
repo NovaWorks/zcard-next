@@ -36,12 +36,7 @@ func (s *AdminUpdateService) CheckUpdate(ctx context.Context, _ *emptypb.Empty) 
 	res, err := s.svc.Check(ctx)
 	if err != nil {
 		if errors.Is(err, ErrBusy) {
-			// 更新进行中：返回当前态（前端据此保持进度视图，不弹检查结果）
-			st := s.svc.Snapshot(ctx)
-			return &adminv1.UpdateCheckResult{
-				CurrentVersion: st.Current, LatestVersion: st.Current,
-				HasUpdate: false, Channel: "stable", Source: st.Source,
-			}, nil
+			return nil, errors.Conflict("update.BUSY", err.Error())
 		}
 		return nil, errors.InternalServer("update.CHECK_FAILED", err.Error())
 	}
@@ -88,7 +83,8 @@ func toStatusPB(st Status) *adminv1.UpdateStatus {
 		Mode: st.Mode, SupervisorKind: st.Supervisor, HasUpdate: st.HasUpdate,
 		Notes: st.Notes, LatestVersion: st.Latest, CheckedAt: checkedAt,
 		BackupDir: st.BackupDir, Busy: st.Busy,
-		History: toHistoryPB(st.History),
+		History:     toHistoryPB(st.History),
+		PrevVersion: st.Prev, BackupReady: st.BackupReady, BackupHint: st.BackupHint,
 	}
 }
 
