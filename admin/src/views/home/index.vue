@@ -7,6 +7,7 @@ import { useEcharts } from "@/hooks/common/echarts";
 import { fetchDashboard, fetchTraffic } from "@/service/api";
 import { formatMoney, centsToYuan } from "@/utils/money";
 import type { DashboardData, DashboardStat, DashboardTopChannel, DashboardTopProduct, TrafficPoint } from "@/service/api";
+import SponsorCard from "./components/sponsor-card.vue";
 
 defineOptions({ name: "Dashboard" });
 
@@ -250,7 +251,7 @@ onMounted(loadDashboard);
       </div>
 
       <!-- KPI 指标卡（营收带迷你趋势线；环比红涨绿跌） -->
-      <NGrid :x-gap="16" :y-gap="16" cols="s:1 m:2 l:4" responsive="screen">
+      <NGrid :x-gap="16" :y-gap="16" cols="1 m:2 l:4" responsive="screen">
         <NGi v-for="card in kpiCards" :key="card.key">
           <NCard :bordered="false" size="small" class="h-full">
             <div class="flex items-center justify-between">
@@ -275,7 +276,7 @@ onMounted(loadDashboard);
       </NGrid>
 
       <!-- 中部：销售趋势 + 支付渠道排行 -->
-      <NGrid :x-gap="16" :y-gap="16" cols="s:1 l:3" responsive="screen">
+      <NGrid :x-gap="16" :y-gap="16" cols="1 l:3" responsive="screen">
         <NGi span="2">
           <NCard :bordered="false">
             <template #header>
@@ -319,11 +320,14 @@ onMounted(loadDashboard);
       </NGrid>
 
       <!-- 底部：商品销量 Top5 + 待办事项 -->
-      <NGrid :x-gap="16" :y-gap="16" cols="s:1 l:3" responsive="screen">
+      <NGrid :x-gap="16" :y-gap="16" cols="1 l:3" responsive="screen">
         <NGi span="2">
-          <NCard title="商品销量 Top5（近30天）" :bordered="false">
-            <NDataTable :columns="topColumns" :data="topProducts" size="small" :bordered="false"  :max-height="540" />
-          </NCard>
+          <div class="flex flex-col gap-16px">
+            <NCard title="商品销量 Top5（近30天）" :bordered="false">
+              <NDataTable :columns="topColumns" :data="topProducts" size="small" :bordered="false" :max-height="540" :scroll-x="400" />
+            </NCard>
+            <SponsorCard />
+          </div>
         </NGi>
         <NGi>
           <NCard title="待办事项" :bordered="false">

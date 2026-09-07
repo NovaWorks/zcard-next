@@ -139,7 +139,7 @@ function getSiderAndCollapsedWidth(isCollapsed: boolean) {
     :sider-width="siderWidth"
     :sider-collapsed-width="siderCollapsedWidth"
     :footer-visible="themeStore.footer.visible"
-    :footer-height="themeStore.footer.height"
+    :footer-height="Math.max(themeStore.footer.height, appStore.isMobile ? 104 : 72)"
     :fixed-footer="themeStore.footer.fixed"
     :right-footer="themeStore.footer.right"
   >
