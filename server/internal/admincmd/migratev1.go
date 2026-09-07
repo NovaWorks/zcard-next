@@ -40,6 +40,7 @@ func RunMigrateV1(args []string) error {
 	auditMonths := fs.Int("audit-months", 12, "security_audit_logs 保留月数（0=全量，-1=不迁）")
 	sample := fs.Int("sample", 100, "卡密抽样比对数量")
 	skipMAC := fs.Bool("skip-mac", false, "跳过载荷 MAC 校验（仅限密钥疑似损坏的抢救场景）")
+	oldStorage := fs.String("old-storage", "", "1.x 部署根目录（媒体文件源：<root>/storage/app/public）")
 	yes := fs.Bool("yes", false, "跳过交互确认（脚本化运行）")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -107,24 +108,35 @@ func RunMigrateV1(args []string) error {
 	if kerr != nil {
 		return fmt.Errorf("ZCARD_DATA_KEY 不可用（supply 凭据重加密必需）: %w", kerr)
 	}
+	// 2.0 卡密密钥（直发内容/卡密重加密）：env > conf.security.card_key
+	cardKeyNewRaw := os.Getenv("ZCARD_CARD_KEY")
+	if cardKeyNewRaw == "" && bc.Security != nil {
+		cardKeyNewRaw = bc.Security.CardKey
+	}
+	cardKeyNew, ckerr := crypto.ParseHexKey(cardKeyNewRaw)
+	if ckerr != nil {
+		return fmt.Errorf("ZCARD_CARD_KEY 不可用（直发内容重加密必需）: %w", ckerr)
+	}
 
 	return migratev1.Run(context.Background(), client, migratev1.Options{
-		DSNOld:      *dsnOld,
-		OldEnvDir:   *oldEnv,
-		AppKeyRaw:   *appKey,
-		CardKeyRaw:  *cardKey,
-		Phases:      phases,
-		Batch:       *batch,
-		DryRun:      *dryRun,
-		VerifyOnly:  *verifyOnly,
-		ReportDir:   *reportDir,
-		OnError:     *onError,
-		VisitDays:   *visitDays,
-		AuditMonths: *auditMonths,
-		Sample:      *sample,
-		SkipMAC:     *skipMAC,
-		Yes:         *yes,
-		TargetDesc:  targetDesc,
-		DataKey:     dataKey,
+		DSNOld:         *dsnOld,
+		OldEnvDir:      *oldEnv,
+		AppKeyRaw:      *appKey,
+		CardKeyRaw:     *cardKey,
+		Phases:         phases,
+		Batch:          *batch,
+		DryRun:         *dryRun,
+		VerifyOnly:     *verifyOnly,
+		ReportDir:      *reportDir,
+		OnError:        *onError,
+		VisitDays:      *visitDays,
+		AuditMonths:    *auditMonths,
+		Sample:         *sample,
+		SkipMAC:        *skipMAC,
+		Yes:            *yes,
+		TargetDesc:     targetDesc,
+		DataKey:        dataKey,
+		NewCardKey:     cardKeyNew,
+		OldStorageRoot: *oldStorage,
 	})
 }

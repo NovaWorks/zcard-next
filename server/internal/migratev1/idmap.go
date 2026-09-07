@@ -71,6 +71,69 @@ func (m *IDMapper) Put(ctx context.Context, c *ent.Client, table string, oldID, 
 	return newID, nil
 }
 
+// GetBatch 批量查映射（大表批处理用：一次 IN 查询回填缓存）。
+// 返回 oldID → newID（仅含命中的）。
+func (m *IDMapper) GetBatch(ctx context.Context, table string, oldIDs []uint64) map[uint64]uint64 {
+	out := make(map[uint64]uint64, len(oldIDs))
+	if len(oldIDs) == 0 {
+		return out
+	}
+	var missing []uint64
+	m.mu.RLock()
+	cached := m.cache[table]
+	for _, id := range oldIDs {
+		if v, ok := cached[id]; ok {
+			out[id] = v
+		} else {
+			missing = append(missing, id)
+		}
+	}
+	m.mu.RUnlock()
+	if len(missing) == 0 {
+		return out
+	}
+	rows, err := m.client.V1IDMap.Query().
+		Where(
+			v1idmap.TableName(table),
+			v1idmap.OldIDIn(missing...),
+		).
+		All(ctx)
+	if err != nil {
+		return out // 查询失败按全部未命中处理，调用方逐行兜底
+	}
+	for _, r := range rows {
+		out[r.OldID] = r.NewID
+		m.Remember(table, r.OldID, r.NewID)
+	}
+	return out
+}
+
+// PutBatch 批量写映射（大表批处理：CreateBulk 一次插入）。
+// 假定 (table, oldID) 均不存在（调用方已按 GetBatch 过滤）；整批失败回退逐行。
+func (m *IDMapper) PutBatch(ctx context.Context, c *ent.Client, table string, pairs [][2]uint64) error {
+	if len(pairs) == 0 {
+		return nil
+	}
+	builders := make([]*ent.V1IDMapCreate, len(pairs))
+	for i, pr := range pairs {
+		builders[i] = c.V1IDMap.Create().
+			SetTableName(table).
+			SetOldID(pr[0]).
+			SetNewID(pr[1])
+	}
+	if _, err := c.V1IDMap.CreateBulk(builders...).Save(ctx); err != nil {
+		for _, pr := range pairs {
+			if _, err := m.Put(ctx, c, table, pr[0], pr[1]); err != nil {
+				return err
+			}
+		}
+	}
+	for _, pr := range pairs {
+		m.Remember(table, pr[0], pr[1])
+	}
+	return nil
+}
+
 // Remember 仅写缓存（loader 已在事务内写库后同步缓存用）。
 func (m *IDMapper) Remember(table string, oldID, newID uint64) {
 	m.mu.Lock()

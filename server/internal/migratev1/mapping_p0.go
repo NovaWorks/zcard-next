@@ -39,19 +39,18 @@ func (m *Migrator) MigrateSystem(ctx context.Context) error {
 // 1.x is_base 无 2.0 列（基础货币在 2.0 侧另行约定），非 CNY 基础货币仅进报告提示。
 func (m *Migrator) migrateCurrencies(ctx context.Context) error {
 	var (
-		id                        int64
 		code, symbol              string
 		name, pos, rate           string
 		decimalPlaces, sort, enab int64
 		isBase                    bool
 	)
 	_ = name // 1.x 币种名无 2.0 列，显式丢弃
-	return m.scanTable(ctx, "currencies",
-		[]string{"id", "code", "name", "symbol", "symbol_position", "decimal_places", "exchange_rate", "is_base", "is_enabled", "sort"},
+	return m.scanAll(ctx, "currencies",
+		[]string{"code", "name", "symbol", "symbol_position", "decimal_places", "exchange_rate", "is_base", "is_enabled", "sort"},
 		func() []any {
-			return []any{&id, &code, &name, &symbol, &pos, &decimalPlaces, &rate, &isBase, &enab, &sort}
+			return []any{&code, &name, &symbol, &pos, &decimalPlaces, &rate, &isBase, &enab, &sort}
 		},
-		func(int64) error {
+		func() error {
 			position := "prefix"
 			if strings.TrimSpace(pos) == "after" {
 				position = "suffix"
@@ -87,7 +86,7 @@ func (m *Migrator) migrateCurrencies(ctx context.Context) error {
 				return err
 			}
 			if isBase {
-				m.RW.AddError("currencies", uint64(id), fmt.Sprintf("基础货币 %s 无 2.0 直迁列（请在 2.0 核对基础货币约定）", code))
+				m.RW.AddError("currencies", 0, fmt.Sprintf("基础货币 %s 无 2.0 直迁列（请在 2.0 核对基础货币约定）", code))
 			}
 			m.st.Record("currencies", "migrated")
 			return nil

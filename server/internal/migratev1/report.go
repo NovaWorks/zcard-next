@@ -141,6 +141,10 @@ func (w *ReportWriter) WriteStats(st *Stats, meta PreflightMeta) error {
 	return err
 }
 
+func openAppend(dir, name string) (*os.File, error) {
+	return os.OpenFile(filepath.Join(dir, name), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+}
+
 func sortedTableNames(st *Stats) []string {
 	names := make([]string, 0, len(st.Tables))
 	for n := range st.Tables {

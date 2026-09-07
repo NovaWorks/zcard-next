@@ -41,6 +41,10 @@ type Options struct {
 	TargetDesc string
 	// DataKey 2.0 业务数据密钥（ZCARD_DATA_KEY 原始 32 字节；凭据重加密必需）。
 	DataKey []byte
+	// NewCardKey 2.0 卡密密钥（ZCARD_CARD_KEY 原始 32 字节；直发内容/卡密重加密用）。
+	NewCardKey []byte
+	// OldStorageRoot 1.x 部署根（媒体文件源：<root>/storage/app/public）。
+	OldStorageRoot string
 }
 
 // Run 迁移入口内核（client = 2.0 目标库 ent 客户端）。
@@ -127,6 +131,28 @@ func Run(ctx context.Context, client *ent.Client, opts Options) error {
 	m.AppKey = report.AppKey
 	m.CardKey = report.CardKey
 	m.DataKey = opts.DataKey
+	m.NewCardKey = opts.NewCardKey
+
+	if opts.VerifyOnly {
+		res, err := m.RunVerify(ctx, opts.Sample)
+		if err != nil {
+			return err
+		}
+		if err := rw.WriteVerify(res, meta); err != nil {
+			return err
+		}
+		for _, c := range res.Checks {
+			fmt.Printf("  [%s] %s：%s\n", c.Status, c.Name, c.Message)
+		}
+		for k, v := range res.Summary {
+			fmt.Printf("  行数核对 %s：%s\n", k, v)
+		}
+		if !res.Passed {
+			return fmt.Errorf("校验未通过：详见 %s", filepath.Join(reportDir, "report.md"))
+		}
+		fmt.Printf("\n校验通过。报告目录：%s\n", reportDir)
+		return nil
+	}
 
 	notDelivered := []string{}
 	for _, id := range opts.Phases {
@@ -136,6 +162,22 @@ func Run(ctx context.Context, client *ent.Client, opts Options) error {
 			err = m.MigrateSystem(ctx)
 		case 1:
 			err = m.MigrateIdentity(ctx)
+		case 2:
+			err = m.MigrateCatalog(ctx)
+		case 3:
+			err = m.MigrateInventory(ctx)
+		case 4:
+			err = m.MigrateTrade(ctx)
+		case 5:
+			err = m.MigrateMoney(ctx)
+		case 6:
+			if err := m.MigrateReseller(ctx); err != nil {
+				return err
+			}
+			if err := m.MigrateSuppliers(ctx); err != nil {
+				return err
+			}
+			err = m.MigrateContent(ctx)
 		default:
 			if p, ok := PhaseByID(id); ok {
 				notDelivered = append(notDelivered, fmt.Sprintf("P%d %s", p.ID, p.Name))

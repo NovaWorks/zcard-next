@@ -323,6 +323,7 @@ func TestMigrateP0P1(t *testing.T) {
 
 type fixFile struct {
 	AppKey  string `json:"app_key"`
+	CardKey string `json:"card_key"`
 	Vectors []struct {
 		Name    string  `json:"name"`
 		Payload string  `json:"payload"`

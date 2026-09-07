@@ -68,11 +68,11 @@ func (m *Migrator) migrateUsers(ctx context.Context) error {
 			case status == 0:
 				st = user.StatusBanned
 			}
-			ca, _, err := mustTime(nullStr(createdAt), m.TZ)
+			ca, caOK, err := mustTime(nullStr(createdAt), m.TZ)
 			if err != nil {
 				return err
 			}
-			ua, _, err := mustTime(nullStr(updatedAt), m.TZ)
+			ua, uaOK, err := mustTime(nullStr(updatedAt), m.TZ)
 			if err != nil {
 				return err
 			}
@@ -89,16 +89,20 @@ func (m *Migrator) migrateUsers(ctx context.Context) error {
 			} else if ok {
 				lastLoginAt = &t
 			}
-			u, err := m.Client.User.Create().
+			ub := m.Client.User.Create().
 				SetUsername(username).
 				SetNillableEmail(nilIfEmpty(nullStr(email))).
 				SetNillablePhone(nilIfEmpty(nullStr(phone))).
 				SetNillablePasswordHash(nilIfEmpty(password)).
 				SetStatus(st).
-				SetNillableLastLoginAt(lastLoginAt).
-				SetCreatedAt(ca).
-				SetUpdatedAt(ua).
-				Save(ctx)
+				SetNillableLastLoginAt(lastLoginAt)
+			if caOK { // 直插行可能零日期——不 Set 走 ent 默认（与 reviews 同防御）
+				ub = ub.SetCreatedAt(ca)
+			}
+			if uaOK {
+				ub = ub.SetUpdatedAt(ua)
+			}
+			u, err := ub.Save(ctx)
 			if err != nil {
 				return err
 			}

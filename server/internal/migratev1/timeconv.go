@@ -5,6 +5,7 @@ package migratev1
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -20,9 +21,10 @@ func srcTimezone(tz string) *time.Location {
 }
 
 // parseNaiveTime 解析 '2006-01-02 15:04:05[.fff]'（源 DATETIME 字符串），
-// 在源时区解释后转 UTC。空串/NULL 返回零值与 false。
+// 在源时区解释后转 UTC。空串/NULL/MySQL 零日期返回零值与 false
+// （零日期多见于绕过 ORM 的直插行，按未记录时间处理而非报错）。
 func parseNaiveTime(s string, tz *time.Location) (time.Time, bool) {
-	if s == "" || s == "NULL" {
+	if s == "" || s == "NULL" || strings.HasPrefix(s, "0000-00-00") {
 		return time.Time{}, false
 	}
 	// go-sql-driver 字符串形态；sqlite 测试源同格式
@@ -36,7 +38,7 @@ func parseNaiveTime(s string, tz *time.Location) (time.Time, bool) {
 
 // mustTime 同 parseNaiveTime，解析失败时返回错误而非静默（时间列损坏应暴露）。
 func mustTime(s string, tz *time.Location) (time.Time, bool, error) {
-	if s == "" || s == "NULL" {
+	if s == "" || s == "NULL" || strings.HasPrefix(s, "0000-00-00") {
 		return time.Time{}, false, nil
 	}
 	for _, layout := range []string{"2006-01-02 15:04:05.999999", "2006-01-02 15:04:05", time.RFC3339} {

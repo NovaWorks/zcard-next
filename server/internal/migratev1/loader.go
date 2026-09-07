@@ -24,8 +24,9 @@ type Migrator struct {
 
 	// 1.x 密钥（preflight 解析产物）
 	AppKey, CardKey []byte
-	// 2.0 新密钥（凭据重加密 DataBox / 卡密 CardCipher 用）
-	DataKey []byte
+	// 2.0 新密钥（凭据重加密 DataBox / 卡密与直发内容 CardCipher 用）
+	DataKey    []byte
+	NewCardKey []byte
 
 	TZ  *time.Location
 	st  *Stats
@@ -47,6 +48,29 @@ func NewMigrator(src *Source, client *ent.Client, ids *IDMapper, rw *ReportWrite
 		dry:    opts.DryRun,
 		st:     NewStats(),
 	}
+}
+
+// subsiteFor 1.x merchant → 2.0 subsite_id 解析（分站补迁的核心开关）：
+// merchant=1 主站 → (0, true)；merchant>1 且其 reseller_profile 已迁 → (profileID, true)；
+// 未迁（主站先行阶段）→ (0, false) 调用方跳过计数。P6 迁完 merchants 后重跑即补上。
+func (m *Migrator) subsiteFor(ctx context.Context, merchantID int64) (uint64, bool) {
+	if merchantID == 1 {
+		return 0, true
+	}
+	if merchantID <= 0 {
+		return 0, false
+	}
+	sid, ok := m.IDs.Get(ctx, "merchants", uint64(merchantID))
+	return sid, ok
+}
+
+// productSubsite 查已迁商品的 subsite_id（卡密 Seal 的 AAD 必须与商品一致）。
+func (m *Migrator) productSubsite(ctx context.Context, productID uint64) uint64 {
+	p, err := m.Client.Product.Get(ctx, productID)
+	if err != nil {
+		return 0
+	}
+	return p.SubsiteID
 }
 
 // Stats 迁移统计（报告用）。
@@ -115,7 +139,6 @@ func (m *Migrator) scanTable(ctx context.Context, table string, cols []string,
 	}
 	query := fmt.Sprintf("SELECT %s FROM `%s` WHERE `id` > ? ORDER BY `id` LIMIT ?",
 		strings.Join(colList, ", "), table)
-
 	var cursor int64
 	for {
 		rows, err := m.Src.DB.QueryContext(ctx, query, cursor, m.Opts.Batch)
@@ -155,6 +178,46 @@ func (m *Migrator) scanTable(ctx context.Context, table string, cols []string,
 			return nil
 		}
 	}
+}
+
+// scanAll 无 id 主键的小表全量扫描（如 currencies：1.x 主键是 code，无自增 id）。
+// dest/fn 语义同 scanTable；表必须有界（字典级数据）。
+func (m *Migrator) scanAll(ctx context.Context, table string, cols []string,
+	dest func() []any, fn func() error) error {
+
+	t := m.st.table(table)
+	if m.dry {
+		var n int64
+		if err := m.Src.DB.QueryRowContext(ctx,
+			fmt.Sprintf("SELECT COUNT(*) FROM `%s`", table)).Scan(&n); err != nil {
+			return err
+		}
+		t.Planned = n
+		return nil
+	}
+	colList := make([]string, len(cols))
+	for i, c := range cols {
+		colList[i] = "`" + c + "`"
+	}
+	rows, err := m.Src.DB.QueryContext(ctx,
+		fmt.Sprintf("SELECT %s FROM `%s`", strings.Join(colList, ", "), table))
+	if err != nil {
+		return fmt.Errorf("扫描 %s 失败: %w", table, err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		targets := dest()
+		if err := rows.Scan(targets...); err != nil {
+			return fmt.Errorf("扫描 %s 行失败: %w", table, err)
+		}
+		if err := fn(); err != nil {
+			if m.Opts.OnError == "abort" {
+				return fmt.Errorf("表 %s 行迁移失败（abort）: %w", table, err)
+			}
+			t.Failed++
+		}
+	}
+	return rows.Err()
 }
 
 // ErrNotDelivered 未交付阶段的占位错误。
