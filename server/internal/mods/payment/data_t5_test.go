@@ -168,7 +168,7 @@ func TestUpdateChannelFeeTypeAndValidate(t *testing.T) {
 	}
 	// 凭据变更校验：无效配置拒绝
 	_, err = svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{
-		Id: ch.Id, ConfigJson: `{"client_id":"cid"}`,
+		Id: ch.Id, ConfigJson: `{"client_id":""}`,
 	})
 	if !isBadRequest(err, "payment.CHANNEL_CONFIG_INVALID") {
 		t.Fatalf("无效凭据应拒绝: %v", err)
@@ -298,3 +298,39 @@ func isBadRequest(err error, reason string) bool {
 
 var _ = strings.TrimSpace
 var _ = storefrontv1.ChannelListReply{}
+
+func TestEpusdtEditPreservesCredentialsAndClearsSelection(t *testing.T) {
+	d, repo, _, _, _, _ := newCallbackEnv(t)
+	svc := NewAdminPaymentService(repo, d)
+	ctx := context.Background()
+	ch, err := svc.CreateChannel(ctx, &adminv1.CreateChannelRequest{
+		Code: "ep-edit", Name: "EP", Driver: "epusdt", Enabled: true,
+		ConfigJson: `{"api_url":"https://gw","pid":"1","secret_key":"original-secret","token":["USDT"],"network":["tron"]}`,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, patch := range []string{
+		`{"token":["USDC"],"network":["erc20"]}`,
+		`{"token":[],"network":[],"secret_key":"****"}`,
+		`{"secret_key":""}`,
+	} {
+		if _, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.Id, ConfigJson: patch, Enabled: true}); err != nil {
+			t.Fatalf("partial edit: %v", err)
+		}
+	}
+	row, err := d.Client.PaymentChannel.Get(ctx, ch.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cfg map[string]json.RawMessage
+	if err := json.Unmarshal(repo.DecryptConfig(row), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	if string(cfg["secret_key"]) != `"original-secret"` || string(cfg["pid"]) != `"1"` || string(cfg["token"]) != `[]` || string(cfg["network"]) != `[]` {
+		t.Fatal("partial edit lost credentials or failed to clear selections")
+	}
+	if _, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.Id, ConfigJson: `{"token":[123]}`}); !isBadRequest(err, "payment.CHANNEL_CONFIG_INVALID") {
+		t.Fatalf("malformed selection should fail: %v", err)
+	}
+}

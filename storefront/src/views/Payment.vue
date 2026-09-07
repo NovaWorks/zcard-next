@@ -6,6 +6,20 @@
       <div class="pay-loading-title">正在加载订单…</div>
     </div>
 
+    <div v-else-if="phase === 'error'" class="pay-center-card">
+      <div class="pay-state-title">暂时无法查询订单</div>
+      <div class="muted" role="alert">{{ error }}</div>
+      <p class="muted">已付款请勿重复支付。游客在新窗口返回时，可输入下单时的查询密码查看结果。</p>
+      <form @submit.prevent="retryOrder">
+        <label for="order-query-password">查询密码（游客订单）</label>
+        <input id="order-query-password" v-model="queryPassword" class="input" type="password" autocomplete="off" />
+        <div class="pay-btn-row">
+          <button class="btn btn-primary" type="submit" :disabled="retrying">{{ retrying ? '查询中…' : '重新查询' }}</button>
+          <router-link class="btn btn-outline" :to="`/fetch?order_no=${orderNo}`">前往取货</router-link>
+        </div>
+      </form>
+    </div>
+
     <!-- 已取消 / 已过期 -->
     <div v-else-if="phase === 'closed'" class="pay-center-card">
       <div class="pay-state-icon gray">{{ order?.status === 'canceled' ? '🚫' : '⏰' }}</div>
@@ -160,7 +174,7 @@ const router = useRouter();
 const orderNo = String(route.params.orderNo || '');
 
 // ── 六态：loading → select / qrcode / redirect / success / waiting / closed ──
-type Phase = 'loading' | 'select' | 'qrcode' | 'redirect' | 'success' | 'waiting' | 'closed';
+type Phase = 'loading' | 'select' | 'qrcode' | 'redirect' | 'success' | 'waiting' | 'closed' | 'error';
 const phase = ref<Phase>('loading');
 
 const order = ref<OrderDetail | null>(null);
@@ -170,6 +184,8 @@ const selected = ref<{ channel: string; method: string }>({ channel: '', method:
 const payingChannel = ref<ChannelItem | null>(null);
 const submitting = ref(false);
 const error = ref('');
+const queryPassword = ref('');
+const retrying = ref(false);
 
 // 二维码 / 跳转
 const qrDataUrl = ref('');
@@ -191,7 +207,7 @@ const countdown = ref<number | null>(null);
 let cdTimer: ReturnType<typeof setInterval> | null = null;
 const countdownText = computed(() => {
   if (countdown.value === null) return '';
-  if (countdown.value <= 0) return '已超时';
+  if (countdown.value <= 0) return '等待确认状态';
   const m = Math.floor(countdown.value / 60);
   const s = countdown.value % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
@@ -210,19 +226,25 @@ onMounted(async () => {
     rememberOrderPassword(orderNo, qpwd);
     router.replace({ path: `/payment/${orderNo}` });
   }
-  await refreshOrder();
-  // 订单加载失败（不存在/密码缺失）：进关闭态
-  if (!order.value) {
-    phase.value = 'closed';
-    return;
-  }
+  await initializePayment();
+});
+
+async function initializePayment() {
+  if (!await refreshOrder()) return;
+  if (phase.value === 'success') { await loadDelivery(); return; }
+  if (phase.value === 'closed') return;
   const { data } = await fetchPaymentChannels();
   channels.value = data?.channels || [];
   const first = payOptions.value[0];
   selected.value = first ? { channel: first.channel, method: first.method } : { channel: '', method: '' };
-  if (phase.value === 'success') loadDelivery();
-  if (phase.value === 'select' || phase.value === 'qrcode' || phase.value === 'redirect') startPolling();
-});
+  startPolling();
+}
+
+async function retryOrder() {
+  retrying.value = true;
+  if (queryPassword.value) rememberOrderPassword(orderNo, queryPassword.value);
+  try { await initializePayment(); } finally { retrying.value = false; }
+}
 
 onUnmounted(() => { stopPolling(); stopCountdown(); });
 
@@ -230,16 +252,17 @@ onUnmounted(() => { stopPolling(); stopCountdown(); });
 // 游客订单查询需带下单时密码（会话记忆）；登录本人订单免密——两参数都传由后端裁决
 async function refreshOrder() {
   const pwd = getOrderPassword(orderNo);
-  const { data } = await getOrder(orderNo, pwd || undefined).catch(() => ({ data: null }));
+  const { data, error: loadError } = await getOrder(orderNo, pwd || undefined).catch(() => ({ data: null, error: '网络异常，请重试' }));
   if (!data) {
-    // 登录态首次可能 me 未就绪：不立即判 closed，仅记录错误等渠道加载后重试
-    error.value = '订单加载失败，请刷新重试';
-    return;
+    error.value = loadError || '订单加载失败，请重试';
+    if (!order.value) phase.value = 'error';
+    return false;
   }
   error.value = '';
   order.value = data;
   if (data.expires_at) startCountdown(data.expires_at);
   decidePhase();
+  return true;
 }
 
 function decidePhase() {
@@ -247,7 +270,7 @@ function decidePhase() {
   if (!st) return;
   if (PAID_STATES.includes(st)) phase.value = 'success';
   else if (st === 'canceled' || st === 'expired') phase.value = 'closed';
-  else if (phase.value === 'loading') phase.value = 'select';
+  else if (phase.value === 'loading' || phase.value === 'error') phase.value = 'select';
 }
 
 // ── 轮询 ──
@@ -314,7 +337,7 @@ async function pay() {
 
   const payload = data.payload || '';
   // 余额支付：同步扣款即完成，不走收银台跳转（后端 payload 为本页地址，避免弹窗）
-  if (selected.value.channel === 'wallet') {
+  if (payingChannel.value?.driver === 'wallet') {
     await refreshOrder();
     decidePhase();
     if (phase.value === 'success') loadDelivery();

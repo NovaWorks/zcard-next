@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/wallet"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
@@ -592,5 +593,40 @@ func TestIsWebhookRequest(t *testing.T) {
 		if got := isWebhookRequest(req, "paypal"); got != c.want {
 			t.Fatalf("%s: isWebhookRequest = %v, want %v", c.name, got, c.want)
 		}
+	}
+}
+
+func TestCallbackFindsRetriedOrderPayment(t *testing.T) {
+	d, repo, _, _, lifecycle, _ := newCallbackEnv(t)
+	ctx := context.Background()
+	o, first := seedPendingOrder(t, d, "ep-retry", 1000)
+	latest, err := repo.CreatePayment(ctx, o.ID, "ep-retry", 1000, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := &port.CallbackFact{OrderNo: o.OrderNo, ChannelOrderNo: "T-retry", Amount: 1000, Currency: "CNY", Success: true}
+	id := locatePaymentByFact(ctx, d, "ep-retry", f)
+	if id != latest.ID {
+		t.Fatalf("callback must find latest pending attempt, got %d", id)
+	}
+	fact := CallbackFact{OrderNo: o.OrderNo, ChannelOrderNo: f.ChannelOrderNo, Channel: "ep-retry", Amount: 1000, Currency: "CNY", Success: true}
+	if err := repo.HandleCallback(ctx, id, fact); err != nil {
+		t.Fatal(err)
+	}
+	if got := locatePaymentByFact(ctx, d, "ep-retry", f); got != id {
+		t.Fatalf("repeated callback switched to older pending payment %d", got)
+	}
+	if err := repo.HandleCallback(ctx, id, fact); err != nil {
+		t.Fatal(err)
+	}
+	if len(lifecycle.markPaidCalls) != 1 {
+		t.Fatalf("settled %d times", len(lifecycle.markPaidCalls))
+	}
+	old, err := repo.GetPayment(ctx, first.ID)
+	if err != nil || old.Status != "pending" {
+		t.Fatal("older attempt mutated")
+	}
+	if got := locatePaymentByFact(ctx, d, "different-channel", f); got != 0 {
+		t.Fatal("cross-channel callback matched")
 	}
 }

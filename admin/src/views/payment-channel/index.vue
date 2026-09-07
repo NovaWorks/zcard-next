@@ -216,7 +216,7 @@ function fieldHint(f: ConfigFieldSchema) {
 }
 
 const driverOf = (code: string) => drivers.value.find((d) => d.code === code);
-const isConfigured = (ch: ChannelRow) => (ch.configured_fields || []).length > 0;
+const isConfigured = (ch: ChannelRow) => ch.driver === "wallet" || (ch.configured_fields || []).length > 0;
 
 async function loadList() {
   loading.value = true;
@@ -346,7 +346,7 @@ function handleConfigSave() {
   for (const f of currentFields.value) {
     const v = form.values[f.key];
     if (Array.isArray(v)) {
-      if (v.length > 0) cfg[f.key] = v; // 多选数组原样保存
+      cfg[f.key] = v; // 空数组也提交，允许清空旧的币种/网络限制
     } else {
       const sv = ((v as string) || "").trim();
       if (sv && sv !== "****") cfg[f.key] = sv;
@@ -477,7 +477,7 @@ onMounted(() => {
               {{ ch.enabled ? "已启用" : "已停用" }}
             </NTag>
             <NTag size="small" :type="isConfigured(ch) ? 'success' : 'warning'" :bordered="false">
-              {{ isConfigured(ch) ? "已配置" : "待配置" }}
+              {{ ch.driver === "wallet" ? "无需凭据" : isConfigured(ch) ? "已配置" : "待配置" }}
             </NTag>
             <NTag v-if="(ch.fee || 0) > 0" size="small" type="info" :bordered="false">
               {{ ch.fee_type === "percent" ? `费率 ${((ch.fee || 0) / 100).toFixed(2)}%` : `手续费 ${((ch.fee || 0) / 100).toFixed(2)} 元` }}

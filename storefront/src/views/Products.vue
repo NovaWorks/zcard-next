@@ -8,7 +8,7 @@
         <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
-            <span v-if="c.icon" class="chip-icon">{{ c.icon }}</span>{{ c.name }}
+            <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
           </button>
           <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类（与首页同款） -->
           <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
@@ -70,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import CategoryIcon from '@/components/CategoryIcon.vue';
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { listProducts, listCategories, type Product, type CategoryItem } from '@/api';

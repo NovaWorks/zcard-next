@@ -122,7 +122,7 @@ func TestEpusdtCreatePaymentMock(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	cfg := json.RawMessage(fmt.Sprintf(`{"api_url":%q,"pid":"1001","secret_key":"testsecret"}`, srv.URL))
+	cfg := json.RawMessage(fmt.Sprintf(`{"api_url":%q,"pid":"1001","secret_key":"testsecret","token":["USDT"],"network":["tron"]}`, srv.URL))
 	a := NewEpusdt()
 	info, err := a.CreatePayment(context.Background(), port.CreatePaymentRequest{
 		OrderNo: "S215161659327512576", Amount: money.Cents(1000), Subject: "S215161659327512576",
@@ -148,6 +148,9 @@ func TestEpusdtCreatePaymentMock(t *testing.T) {
 	}
 	if !epusdtVerifySign(gotBody, "testsecret", gotBody["signature"]) {
 		t.Fatal("下单请求签名自验失败")
+	}
+	if gotBody["token"] != "USDT" || gotBody["network"] != "tron" {
+		t.Fatalf("array-config method lost: %+v", gotBody)
 	}
 	// 网关拒绝路径
 	srv2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -340,3 +343,43 @@ func TestEpusdtFieldOptionsMultiNetwork(t *testing.T) {
 }
 
 var gotPlaceholderBody map[string]string
+
+func TestEpusdtConfigSelections(t *testing.T) {
+	for _, tc := range []struct {
+		name, fields     string
+		tokens, networks string
+		valid            bool
+	}{
+		{"legacy strings", `"token":"USDT","network":"tron"`, "USDT", "tron", true},
+		{"admin arrays", `"token":["USDT","USDC"],"network":["tron","erc20"]`, "USDT,USDC", "tron,erc20", true},
+		{"plural priority", `"token":["USDT"],"tokens":["USDC"],"network":"tron","networks":["erc20"]`, "USDC", "erc20", true},
+		{"clear plural", `"token":"USDT","tokens":[],"network":"tron","networks":[]`, "", "", true},
+		{"clear admin", `"token":[],"network":[]`, "", "", true},
+		{"invalid array", `"token":[123]`, "", "", false},
+		{"invalid number", `"network":12`, "", "", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := json.RawMessage(`{"api_url":"https://gw","pid":"1001","secret_key":"testsecret",` + tc.fields + `}`)
+			err := NewEpusdt().ValidateConfig(cfg)
+			if (err == nil) != tc.valid {
+				t.Fatalf("validation=%v", err)
+			}
+			if !tc.valid {
+				return
+			}
+			var c epusdtConfig
+			if err := json.Unmarshal(cfg, &c); err != nil {
+				t.Fatal(err)
+			}
+			if strings.Join(epusdtTokens(c), ",") != tc.tokens || strings.Join(epusdtNetworks(c), ",") != tc.networks {
+				t.Fatalf("selection mismatch: %+v", c)
+			}
+			form := map[string]string{"order_id": "O1", "trade_id": "T1", "status": "2", "amount": "10.00"}
+			form["signature"] = epusdtSign(form, "testsecret")
+			fact, err := NewEpusdt().VerifyCallback(form, cfg)
+			if err != nil || !fact.Success || fact.Amount != 1000 {
+				t.Fatalf("array-config callback: %v %+v", err, fact)
+			}
+		})
+	}
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CategoryIcon from '@/components/CategoryIcon.vue';
 // 递归分类节点（任意层级：三级/四级……均可展开；缩进随 depth 递增）
 const props = defineProps<{
   node: any;
@@ -24,7 +25,7 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
       @click="emit('select', node.id)"
     >
       <span class="tree-dot" :class="{ active: modelValue === node.id }"></span>
-      <span v-if="node.icon" class="tree-icon">{{ node.icon }}</span>
+      <CategoryIcon :icon="node.icon" class="tree-icon" />
       <span class="flex-1 text-left truncate">{{ node.name }}</span>
       <span
         v-if="hasChildren"

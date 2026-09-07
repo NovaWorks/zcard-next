@@ -63,8 +63,7 @@
           <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
-              <img v-if="iconIsImage(c.icon)" :src="c.icon" class="chip-icon chip-icon-img" alt="" />
-              <span v-else-if="c.icon" class="chip-icon">{{ c.icon }}</span>{{ c.name }}
+              <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
             </button>
             <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类 -->
             <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
@@ -152,6 +151,7 @@
 </template>
 
 <script setup lang="ts">
+import CategoryIcon from '@/components/CategoryIcon.vue';
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
@@ -201,13 +201,6 @@ const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅�
 const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
-// 分类图标是否为图片（后台可传 emoji 或上传图片——图片可能是相对路径 /uploads/...，
-// 仅判 http 会把相对路径当 emoji 文本渲染导致胶囊爆版）
-function iconIsImage(icon?: string): boolean {
-  if (!icon) return false;
-  // 含 / 即路径形态(uploads/...、/uploads/...、完整 URL 均命中;emoji 不含 /)
-  return icon.includes("/") || /\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i.test(icon);
-}
 const sectionTitle = computed(() =>
   activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'

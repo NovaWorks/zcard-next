@@ -195,6 +195,7 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 	if ft := req.GetFeeType(); ft != "" && ft != string(paymentchannel.FeeTypePercent) && ft != string(paymentchannel.FeeTypeFixed) {
 		return nil, errors.BadRequest("payment.INVALID_INPUT", "fee_type 须为 percent/fixed")
 	}
+	configJSON := req.GetConfigJson()
 	if req.GetConfigJson() != "" && req.GetConfigJson() != `"****"` {
 		old, err := data.Client(ctx, s.data).PaymentChannel.Get(ctx, req.GetId())
 		if ent.IsNotFound(err) {
@@ -208,7 +209,35 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 			if err != nil {
 				return nil, errors.BadRequest("payment.DRIVER_UNSUPPORTED", "渠道驱动未实现: "+old.Driver)
 			}
-			if err := provider.ValidateConfig(json.RawMessage(req.GetConfigJson())); err != nil {
+			// 编辑表单只提交变更字段；先合并旧凭据，再校验完整配置。
+			merged := map[string]json.RawMessage{}
+			_ = json.Unmarshal(s.repo.DecryptConfig(old), &merged)
+			if merged == nil {
+				merged = map[string]json.RawMessage{}
+			}
+			var patch map[string]json.RawMessage
+			if err := json.Unmarshal([]byte(configJSON), &patch); err != nil || patch == nil {
+				return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", "凭据必须为 JSON 对象")
+			}
+			sensitive := map[string]bool{}
+			if fp, ok := provider.(port.FieldProvider); ok {
+				for _, f := range fp.ConfigFields() {
+					sensitive[f.Key] = f.Sensitive
+				}
+			}
+			for key, value := range patch {
+				var text string
+				if sensitive[key] && json.Unmarshal(value, &text) == nil && (text == "****" || strings.TrimSpace(text) == "") {
+					continue
+				}
+				merged[key] = value
+			}
+			encoded, err := json.Marshal(merged)
+			if err != nil {
+				return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", "凭据格式错误")
+			}
+			configJSON = string(encoded)
+			if err := provider.ValidateConfig(encoded); err != nil {
 				return nil, errors.BadRequest("payment.CHANNEL_CONFIG_INVALID", err.Error())
 			}
 		}
@@ -221,7 +250,7 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 			return nil, errors.BadRequest("payment.METHODS_INVALID", "支付方式列表格式错误")
 		}
 	}
-	ch, err := s.repo.UpdateChannel(ctx, req.GetId(), req.GetName(), req.GetConfigJson(),
+	ch, err := s.repo.UpdateChannel(ctx, req.GetId(), req.GetName(), configJSON,
 		req.GetFee(), req.GetFeeType(), req.GetEnabled(), req.GetSort(),
 		req.Icon != nil, req.GetIcon(), req.MethodsJson != nil, methods)
 	if ent.IsNotFound(err) {
@@ -528,7 +557,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		NotifyBaseURL: absolutePayURL(ctx, s.repo.CallbackURL(ctx, ch.Code)),
 		Config:        cfg,
 		ChargedUnits:  snap.Units, ChargedCurrency: snap.Currency,
-		MethodCode:    methodCode, MethodParams: methodParams,
+		MethodCode: methodCode, MethodParams: methodParams,
 	})
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "发起支付失败: "+err.Error())
@@ -706,22 +735,32 @@ func locatePaymentByFact(ctx context.Context, d *data.Data, channelCode string, 
 		return 0
 	}
 	client := data.Client(ctx, d)
+	query := client.Payment.Query().Where(payment.Channel(channelCode))
 	if rid, ok := strings.CutPrefix(f.OrderNo, "RCH"); ok {
-		if id, err := strconv.ParseUint(rid, 10, 64); err == nil {
-			p, err := client.Payment.Query().
-				Where(payment.RechargeOrderID(id), payment.Channel(channelCode)).Only(ctx)
-			if err == nil {
-				return p.ID
-			}
+		id, err := strconv.ParseUint(rid, 10, 64)
+		if err != nil {
+			return 0
 		}
-		return 0
+		query.Where(payment.RechargeOrderID(id))
+	} else {
+		o, err := client.Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
+		if err != nil {
+			return 0
+		}
+		query.Where(payment.OrderID(o.ID))
 	}
-	o, err := client.Order.Query().Where(order.OrderNo(f.OrderNo)).Only(ctx)
-	if err != nil {
-		return 0
+	// 重复回调先找已登记的网关流水，保持幂等；发起重试会产生多笔
+	// pending 流水，不能使用 Only（多行即报错，导致已付款回调找不到单）。
+	if f.ChannelOrderNo != "" {
+		p, err := query.Clone().Where(payment.ChannelOrderNo(f.ChannelOrderNo)).First(ctx)
+		if err == nil {
+			return p.ID
+		}
+		if !ent.IsNotFound(err) {
+			return 0
+		}
 	}
-	p, err := client.Payment.Query().
-		Where(payment.OrderID(o.ID), payment.Channel(channelCode)).Only(ctx)
+	p, err := query.Where(payment.StatusEQ(payment.StatusPending)).Order(ent.Desc(payment.FieldID)).First(ctx)
 	if err != nil {
 		return 0
 	}

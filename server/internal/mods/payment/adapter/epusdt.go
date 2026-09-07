@@ -47,7 +47,7 @@ type epusdtConfig struct {
 }
 
 // UnmarshalJSON 兼容多选形态的历史存量：token/network 被存成数组（前端多选
-// 表单直存）时取首元素并同步填 Tokens/Networks——此前直接报
+// 表单直存）时保留完整选择；显式 tokens/networks 优先——此前直接报
 // "cannot unmarshal array into ... token of type string" 致渠道整体不可用。
 func (c *epusdtConfig) UnmarshalJSON(b []byte) error {
 	type rawEpusdt epusdtConfig // 防递归：先按字段级宽容解析
@@ -68,28 +68,30 @@ func (c *epusdtConfig) UnmarshalJSON(b []byte) error {
 		APIURL: raw.APIURL, PID: raw.PID, SecretKey: raw.SecretKey,
 		Currency: raw.Currency, Tokens: raw.Tokens, Networks: raw.Networks,
 	})
-	pick := func(v json.RawMessage, list []string) (string, []string) {
-		s := strings.TrimSpace(string(v))
-		if s == "" || s == "null" {
-			return "", list
+	pick := func(v json.RawMessage, list []string) (string, []string, error) {
+		if list != nil { // 明确的复数字段优先，包括主动清空的数组
+			return "", list, nil
 		}
-		if s[0] == '[' { // 数组形态：取首元素为单值,整体为列表
-			var arr []string
-			if json.Unmarshal(v, &arr) == nil && len(arr) > 0 {
-				return arr[0], arr
-			}
-			return "", list
+		if len(v) == 0 || string(v) == "null" {
+			return "", nil, nil
 		}
 		var one string
-		if json.Unmarshal(v, &one) == nil && one != "" && len(list) == 0 {
-			return one, []string{one}
+		if err := json.Unmarshal(v, &one); err == nil {
+			return one, nil, nil
 		}
-		var one2 string
-		_ = json.Unmarshal(v, &one2)
-		return one2, list
+		var many []string
+		if err := json.Unmarshal(v, &many); err != nil {
+			return "", nil, fmt.Errorf("须为字符串或字符串数组: %w", err)
+		}
+		return "", many, nil
 	}
-	c.Token, c.Tokens = pick(raw.Token, c.Tokens)
-	c.Network, c.Networks = pick(raw.Network, c.Networks)
+	var err error
+	if c.Token, c.Tokens, err = pick(raw.Token, raw.Tokens); err != nil {
+		return fmt.Errorf("epusdt token: %w", err)
+	}
+	if c.Network, c.Networks, err = pick(raw.Network, raw.Networks); err != nil {
+		return fmt.Errorf("epusdt network: %w", err)
+	}
 	return nil
 }
 
@@ -383,7 +385,7 @@ type epusdtSupportedAsset struct {
 
 // epusdtTokens/epusdtNetworks 收款方式取值（多选数组优先，旧单值兜底）。
 func epusdtTokens(c epusdtConfig) []string {
-	if len(c.Tokens) > 0 {
+	if c.Tokens != nil {
 		return c.Tokens
 	}
 	if c.Token != "" {
@@ -393,7 +395,7 @@ func epusdtTokens(c epusdtConfig) []string {
 }
 
 func epusdtNetworks(c epusdtConfig) []string {
-	if len(c.Networks) > 0 {
+	if c.Networks != nil {
 		return c.Networks
 	}
 	if c.Network != "" {
