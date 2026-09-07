@@ -177,6 +177,7 @@ const activeCategory = ref(0);
 const viewMode = ref<'grid' | 'list'>('grid');
 const page = ref(1);
 const pageSize = ref(20);
+const sort = ref('default');
 const total = ref(0);
 const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [] });
 // 每页选项跟随后台 template.per_page（默认 20 → 20/40/60），前台不再写死档位
@@ -301,15 +302,19 @@ function formatDate(unix?: number): string {
   return new Date(unix * 1000).toLocaleDateString('zh-CN');
 }
 
+let loadSequence = 0;
 async function load() {
+  const sequence = ++loadSequence;
   loading.value = true;
   error.value = '';
   const { data, error: err } = await listProducts({
     keyword: keyword.value || undefined,
     category_id: activeCategory.value || undefined,
+    sort: sort.value,
     page: page.value,
     page_size: pageSize.value,
   });
+  if (sequence !== loadSequence) return;
   loading.value = false;
   if (err) { error.value = err; return; }
   products.value = data?.items || [];
@@ -359,11 +364,17 @@ onMounted(async () => {
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
     // 每页商品数（防滥用夹在 6~60；与 /products 页同源消费）
     const pp = Number(val('template.per_page'));
+    let reload = false;
     if (Number.isInteger(pp) && pp >= 6 && pp <= 60 && pp !== pageSize.value) {
       pageSize.value = Math.floor(pp);
-      page.value = 1;
-      load();
+      reload = true;
     }
+    const sb = val('template.sort_by');
+    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && sb !== sort.value) {
+      sort.value = sb;
+      reload = true;
+    }
+    if (reload) { page.value = 1; void load(); }
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
     if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }

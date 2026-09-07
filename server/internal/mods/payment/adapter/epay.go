@@ -35,6 +35,9 @@ func NewEpay() *EpayAdapter { return &EpayAdapter{} }
 // Type 渠道驱动名。
 func (a *EpayAdapter) Type() string { return "epay" }
 
+// SuccessAck 易支付通知协议要求纯文本 success，否则网关会继续重试。
+func (a *EpayAdapter) SuccessAck() string { return "success" }
+
 // ValidateConfig 校验凭据必填。
 func (a *EpayAdapter) ValidateConfig(cfg json.RawMessage) error {
 	var c epayConfig

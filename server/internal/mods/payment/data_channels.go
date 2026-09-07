@@ -239,7 +239,14 @@ func (r *PaymentRepoImpl) CallbackURL(ctx context.Context, code string) string {
 		if raw, err := r.settings.Get(ctx, "site", "url"); err == nil && len(raw) > 2 {
 			var v string
 			if json.Unmarshal(raw, &v) == nil {
-				base = strings.TrimRight(v, "/")
+				base = strings.TrimRight(strings.TrimSpace(v), "/")
+				// 站点设置允许裸域名；先补协议，避免 absolutePayURL 将域名
+				// 当作相对路径再次拼接到请求 Host 后。
+				if strings.HasPrefix(base, "//") {
+					base = "https:" + base
+				} else if base != "" && !strings.Contains(base, "://") {
+					base = "https://" + base
+				}
 			}
 		}
 	}

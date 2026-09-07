@@ -663,7 +663,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
 		// 应答体渠道感知（Acker 能力位）：epusdt 类网关要求纯文本 "ok"；
-		// 未实现 Acker 的渠道维持 JSON（alipay/wechat/epay 现状）
+		// 易支付返回 success；未实现 Acker 的渠道维持 JSON。
 		if acker, ok := provider.(port.Acker); ok {
 			return ctx.String(http.StatusOK, acker.SuccessAck())
 		}
@@ -773,7 +773,11 @@ func parseCallbackForm(r *http.Request, body []byte) (map[string]string, error) 
 	if strings.Contains(ct, "xml") {
 		return parseXMLMap(body)
 	}
-	_ = r.ParseForm()
+	// 入口已读取 body 供 webhook 验签使用，表单解析必须从保存的原文重读。
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	if err := r.ParseForm(); err != nil {
+		return nil, err
+	}
 	m := map[string]string{}
 	for k := range r.Form {
 		m[k] = r.Form.Get(k)

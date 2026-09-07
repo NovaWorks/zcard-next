@@ -123,16 +123,18 @@ onMounted(async () => {
     else viewMode.value = 'grid';
     // 每页商品数（防滥用夹在 6~60；与首页同源消费，默认 20 一致时免重查）
     const pp = Number(val('template.per_page'));
+    let reload = false;
     if (Number.isInteger(pp) && pp >= 6 && pp <= 60 && pp !== pageSize.value) {
       pageSize.value = Math.floor(pp);
-      load();
+      reload = true;
     }
     // 默认排序方式（与后台 sort_by 同值域；default=综合）
     const sb = val('template.sort_by');
-    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort) {
+    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort && sb !== sort.value) {
       sort.value = sb;
-      load();
+      reload = true;
     }
+    if (reload) { page.value = 1; void load(); }
     // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
     if (val('template.show_sales') === false) showSales.value = false;
     if (val('template.show_stock') === false) showStock.value = false;
@@ -145,7 +147,9 @@ onMounted(async () => {
   } catch { /* 配置拉取失败保持默认 */ }
 });
 
+let loadSequence = 0;
 async function load() {
+  const sequence = ++loadSequence;
   loading.value = true;
   error.value = '';
   const { data, error: err } = await listProducts({
@@ -155,6 +159,7 @@ async function load() {
     page: page.value,
     page_size: pageSize.value,
   });
+  if (sequence !== loadSequence) return;
   loading.value = false;
   if (err) { error.value = err; return; }
   products.value = data?.items || [];
