@@ -61,6 +61,7 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .logout-btn:hover { color: #ef4444; }
 
 /* ── 页脚 ── */
+.footer-mobile-actions, .footer-mobile-toggle { display: none; }
 .footer { background: #fff; border-top: 1px solid #e5e6e8; margin-top: 24px; }
 .footer-trust {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -203,11 +204,48 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
   .cart-link { padding: 6px 8px; }
   .user-link { display: none; }
 
-  /* 页脚：信任点/栏目双列紧凑 */
-  .footer-trust { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 16px; }
-  .trust-icon { font-size: 18px; }
-  .footer-cols { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; padding: 8px 16px 16px; }
-  .footer-copy { padding: 10px 12px; }
+  /* 手机端以常用服务为主，次要导航与商家资料按需展开。 */
+  .footer-trust { display: none; }
+  .footer-mobile-actions {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 520px; margin: 0 auto; padding: 20px 16px 16px; gap: 8px;
+  }
+  .footer-mobile-actions a {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 64px; gap: 8px; padding: 8px 4px; border-radius: 10px;
+    color: #374151; font-size: 13px; font-weight: 500; text-decoration: none;
+  }
+  .footer-mobile-actions svg { width: 22px; height: 22px; color: #4b5563; }
+  .footer-mobile-actions a:active { background: #f3f4f6; }
+  .footer-mobile-toggle {
+    display: flex; width: calc(100% - 40px); min-height: 52px; margin: 0 20px;
+    align-items: center; justify-content: space-between; gap: 12px;
+    border: 0; border-top: 1px solid #f0f1f3; padding: 12px 0;
+    background: transparent; color: #4b5563; font: inherit; font-size: 13px;
+    text-align: left; cursor: pointer;
+  }
+  .footer-mobile-toggle svg { width: 18px; height: 18px; flex-shrink: 0; transition: transform .18s ease; }
+  .footer-mobile-toggle svg.expanded { transform: rotate(180deg); }
+  .footer-mobile-toggle:active { color: #2563eb; }
+  .footer-mobile-actions a:focus-visible, .footer-mobile-toggle:focus-visible,
+  .footer-cols a:focus-visible, .footer-copy a:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  .footer-cols { display: none; }
+  .footer-cols.is-expanded { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 16px; padding: 8px 20px 20px; }
+  .footer-col { min-width: 0; overflow-wrap: anywhere; }
+  .footer-col:first-child, .footer-col:last-child:nth-child(5) { grid-column: 1 / -1; }
+  .footer-col p { font-size: 13px; line-height: 1.7; color: #6b7280; }
+  .footer-col h4 { margin-bottom: 4px; font-size: 13px; font-weight: 600; }
+  .footer-col a { display: flex; align-items: center; min-height: 44px; padding: 8px 0; }
+  .footer-col .footer-social { flex-wrap: wrap; }
+  .footer-col .footer-social-link { min-width: 44px; justify-content: center; }
+  .footer-copy {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+    gap: 0 16px; padding: 12px 20px max(16px, env(safe-area-inset-bottom));
+    color: #6b7280; line-height: 1.6; overflow-wrap: anywhere;
+  }
+  .footer-copyright { flex-basis: 100%; min-width: 0; }
+  .footer-rights { display: none; }
+  .footer-copy-link { margin-left: 0; min-height: 44px; display: inline-flex; align-items: center; max-width: 100%; }
 
   .back-top { right: 16px; }
 }
@@ -233,3 +271,7 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
   padding: 9px 28px; border-radius: 8px; cursor: pointer;
 }
 .maint-btn:hover { background: #1d4ed8; }
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-mobile-toggle svg { transition: none; }
+}

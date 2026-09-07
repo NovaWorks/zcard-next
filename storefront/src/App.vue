@@ -97,7 +97,25 @@
         <div class="trust-item"><span class="trust-icon">💬</span><div><b>在线客服</b><span class="muted">7×24 小时响应</span></div></div>
         <div class="trust-item"><span class="trust-icon">↩️</span><div><b>售后无忧</b><span class="muted">问题订单快速处理</span></div></div>
       </div>
-      <div class="footer-cols">
+      <nav class="footer-mobile-actions" aria-label="常用服务">
+        <router-link to="/fetch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 7 9-4 9 4v10l-9 4-9-4Z"/><path d="m3 7 9 4 9-4M12 11v10M7.5 5l9 4"/></svg>
+          <span>订单取货</span>
+        </router-link>
+        <router-link to="/posts?type=blog">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-2H4ZM20 4h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-2h3Z"/></svg>
+          <span>使用帮助</span>
+        </router-link>
+        <router-link to="/tickets">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13v-2a8 8 0 0 1 16 0v2M4 12H3v6h4v-6ZM20 12h1v6h-4v-6ZM19 18v1a2 2 0 0 1-2 2h-5"/></svg>
+          <span>售后工单</span>
+        </router-link>
+      </nav>
+      <button class="footer-mobile-toggle" type="button" :aria-expanded="footerExpanded" aria-controls="footer-information" @click="footerExpanded = !footerExpanded">
+        <span>{{ footerExpanded ? '收起服务与店铺信息' : '更多服务与店铺信息' }}</span>
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" :class="{ expanded: footerExpanded }" aria-hidden="true"><path d="m5 7.5 5 5 5-5"/></svg>
+      </button>
+      <div id="footer-information" class="footer-cols" :class="{ 'is-expanded': footerExpanded }">
         <div class="footer-col">
           <div class="footer-brand">
             <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
@@ -141,7 +159,7 @@
         </div>
       </div>
       <div class="footer-copy">
-        © {{ year }} {{ siteName }} · 保留所有权利
+        <span class="footer-copyright">© {{ year }} {{ siteName }}<span class="footer-rights"> · 保留所有权利</span></span>
         <a v-if="agreementHref" :href="agreementHref" :target="agreementHref.startsWith('http') ? '_blank' : undefined" rel="noopener noreferrer" class="footer-copy-link">用户协议</a>
         <a v-if="footerIcp" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" class="footer-copy-link">{{ footerIcp }}</a>
       </div>
@@ -248,6 +266,8 @@ const appBgStyle = computed(() => {
 });
 
 // ── 页脚配置（footer.* 公开下发：about/nav/social/contact/agreement/icp，空值回落默认）──
+const footerExpanded = ref(false);
+watch(() => route.fullPath, () => { footerExpanded.value = false; });
 const footerAbout = ref('');
 const footerNav = ref<{ text: string; url: string }[]>([]);
 const footerSocial = ref<{ icon: string; url: string }[]>([]);
