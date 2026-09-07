@@ -63,13 +63,13 @@ type Category struct {
 
 // SKU 上游 SKU。
 type SKU struct {
-	ID          string
-	Code        string // 上游 SKU 标识（acg=规格选择编码；dujiao=sku_id；zcard=sku code）
-	Name        string // 展示名（acg 组合名；缺省回退 Code）
-	Price       int64  // 分
-	Stock       int32  // -1 = 无限
-	IsActive    bool
-	SpecValues  map[string]string // 结构化规格（acg race+sku / dujiao spec_values）
+	ID         string
+	Code       string // 上游 SKU 标识（acg=规格选择编码；dujiao=sku_id；zcard=sku code）
+	Name       string // 展示名（acg 组合名；缺省回退 Code）
+	Price      int64  // 分
+	Stock      int32  // -1 = 无限
+	IsActive   bool
+	SpecValues map[string]string // 结构化规格（acg race+sku / dujiao spec_values）
 }
 
 // Product 上游商品（统一输出分）。

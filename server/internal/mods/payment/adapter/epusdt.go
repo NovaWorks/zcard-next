@@ -46,6 +46,53 @@ type epusdtConfig struct {
 	Networks []string `json:"networks,omitempty"`
 }
 
+// UnmarshalJSON 兼容多选形态的历史存量：token/network 被存成数组（前端多选
+// 表单直存）时取首元素并同步填 Tokens/Networks——此前直接报
+// "cannot unmarshal array into ... token of type string" 致渠道整体不可用。
+func (c *epusdtConfig) UnmarshalJSON(b []byte) error {
+	type rawEpusdt epusdtConfig // 防递归：先按字段级宽容解析
+	var raw struct {
+		APIURL    string          `json:"api_url"`
+		PID       string          `json:"pid"`
+		SecretKey string          `json:"secret_key"`
+		Currency  string          `json:"currency"`
+		Token     json.RawMessage `json:"token"`
+		Network   json.RawMessage `json:"network"`
+		Tokens    []string        `json:"tokens"`
+		Networks  []string        `json:"networks"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	*c = epusdtConfig(rawEpusdt{
+		APIURL: raw.APIURL, PID: raw.PID, SecretKey: raw.SecretKey,
+		Currency: raw.Currency, Tokens: raw.Tokens, Networks: raw.Networks,
+	})
+	pick := func(v json.RawMessage, list []string) (string, []string) {
+		s := strings.TrimSpace(string(v))
+		if s == "" || s == "null" {
+			return "", list
+		}
+		if s[0] == '[' { // 数组形态：取首元素为单值,整体为列表
+			var arr []string
+			if json.Unmarshal(v, &arr) == nil && len(arr) > 0 {
+				return arr[0], arr
+			}
+			return "", list
+		}
+		var one string
+		if json.Unmarshal(v, &one) == nil && one != "" && len(list) == 0 {
+			return one, []string{one}
+		}
+		var one2 string
+		_ = json.Unmarshal(v, &one2)
+		return one2, list
+	}
+	c.Token, c.Tokens = pick(raw.Token, c.Tokens)
+	c.Network, c.Networks = pick(raw.Network, c.Networks)
+	return nil
+}
+
 // EpusdtAdapter GMPay 协议适配器（无状态——凭据逐调用传入）。
 type EpusdtAdapter struct{}
 

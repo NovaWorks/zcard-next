@@ -156,20 +156,20 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 		ID       any    `json:"id"`
 		Name     string `json:"name"`
 		Children []struct {
-			Code         string `json:"code"`
-			Name         string `json:"name"`
-			Price        FlexNum `json:"price"`
-			FactoryPrice FlexNum `json:"factory_price"`
-			Description  string `json:"description"`
-			Introduce    string `json:"introduce"`
-			Cover        string `json:"cover"`
-			Status       *int   `json:"status"` // 1=上架 0=下架；皮肤站可能缺省（接口语义为可对接商品）→ 指针区分缺失与显式 0
-			Stock        *int32 `json:"stock"`  // 仅自动发货商品有；手动发货缺省
-			CategoryID   any    `json:"category_id"`
-			DeliveryWay  int    `json:"delivery_way"`
-			DraftStatus  int    `json:"draft_status"`
-			OnlyUser     int    `json:"only_user"` // 1=货主专属（Order.php:878 非货主下单报「请先登录后再购买哦」）
-			Config       string `json:"config"` // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
+			Code         string   `json:"code"`
+			Name         string   `json:"name"`
+			Price        FlexNum  `json:"price"`
+			FactoryPrice FlexNum  `json:"factory_price"`
+			Description  string   `json:"description"`
+			Introduce    string   `json:"introduce"`
+			Cover        string   `json:"cover"`
+			Status       *int     `json:"status"` // 1=上架 0=下架；皮肤站可能缺省（接口语义为可对接商品）→ 指针区分缺失与显式 0
+			Stock        *FlexNum `json:"stock"`  // 仅自动发货商品有；手动发货缺省。PHP 站 string 直出（"stock":"990"）——FlexNum 兼容（GetStock 同款，列表此处曾漏）
+			CategoryID   any      `json:"category_id"`
+			DeliveryWay  int      `json:"delivery_way"`
+			DraftStatus  int      `json:"draft_status"`
+			OnlyUser     int      `json:"only_user"` // 1=货主专属（Order.php:878 非货主下单报「请先登录后再购买哦」）
+			Config       string   `json:"config"`    // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
 		} `json:"children"`
 	}
 	if err := json.Unmarshal(raw, &cats); err != nil {
@@ -194,7 +194,7 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 		for _, p := range cat.Children {
 			stock := int32(-1)
 			if p.Stock != nil {
-				stock = *p.Stock
+				stock = int32(*p.Stock)
 			}
 			desc := p.Description
 			if desc == "" {

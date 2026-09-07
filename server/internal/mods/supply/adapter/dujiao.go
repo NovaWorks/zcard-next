@@ -103,9 +103,9 @@ func (a *dujiaoAdapter) ListCategories(ctx context.Context) ([]Category, error) 
 	var resp struct {
 		OK         bool `json:"ok"`
 		Categories []struct {
-			ID       any    `json:"id"`
-			Name     any    `json:"name"` // 多语言 JSON 对象（dujiao-next jsonmap.JSON）
-			ParentID any    `json:"parent_id"`
+			ID       any `json:"id"`
+			Name     any `json:"name"` // 多语言 JSON 对象（dujiao-next jsonmap.JSON）
+			ParentID any `json:"parent_id"`
 		} `json:"categories"`
 	}
 	if err := json.Unmarshal(data, &resp); err != nil {
@@ -319,15 +319,15 @@ func (a *dujiaoAdapter) ListOrders(ctx context.Context, start, end time.Time) ([
 // dujiaoProduct 上游商品行（字段对齐 dujiao-next upstreamProduct：
 // title/description/content 为多语言 JSON 对象（jsonmap.JSON），非平文字符串）。
 type dujiaoProduct struct {
-	ID          any    `json:"id"`
-	Title       any    `json:"title"`       // 多语言对象；旧版兼容平文
-	Description any    `json:"description"` // 多语言对象（短描述）
-	Content     any    `json:"content"`     // 多语言对象（富文本详情，优先）
-	PriceAmount string `json:"price_amount"`
-	CategoryID  any    `json:"category_id"`
+	ID          any      `json:"id"`
+	Title       any      `json:"title"`       // 多语言对象；旧版兼容平文
+	Description any      `json:"description"` // 多语言对象（短描述）
+	Content     any      `json:"content"`     // 多语言对象（富文本详情，优先）
+	PriceAmount string   `json:"price_amount"`
+	CategoryID  any      `json:"category_id"`
 	Images      []string `json:"images"`
-	IsActive    bool   `json:"is_active"`
-	StockStatus string `json:"stock_status"`
+	IsActive    bool     `json:"is_active"`
+	StockStatus string   `json:"stock_status"`
 	SKUs        []struct {
 		ID            any               `json:"id"`
 		SKUCode       string            `json:"sku_code"`
@@ -363,12 +363,12 @@ func (p dujiaoProduct) toProduct() Product {
 		}
 		skuID := idString(s.ID)
 		sku := SKU{
-			ID:     skuID,
-			Code:   skuID, // 下单反解键：dujiao sku_id（数字）→ product_skus.upstream_sku_id
-			Name:   firstNonEmpty(s.SKUCode, skuID),
-			Price:  parseYuanToCents(s.PriceAmount),
-			Stock:  s.StockQuantity,
-			IsActive: true,
+			ID:         skuID,
+			Code:       skuID, // 下单反解键：dujiao sku_id（数字）→ product_skus.upstream_sku_id
+			Name:       firstNonEmpty(s.SKUCode, skuID),
+			Price:      parseYuanToCents(s.PriceAmount),
+			Stock:      s.StockQuantity,
+			IsActive:   true,
 			SpecValues: s.SpecValues,
 		}
 		if out.Stock == -1 {

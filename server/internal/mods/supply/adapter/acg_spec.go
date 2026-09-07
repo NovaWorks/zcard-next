@@ -25,7 +25,7 @@ const acgSpecDelims = "|=;,"
 
 // acgSpecINI 解析后的规格配置。
 type acgSpecINI struct {
-	Race map[string]string   // [category] 种类名 → 单价（元字符串）
+	Race map[string]string            // [category] 种类名 → 单价（元字符串）
 	Sku  map[string]map[string]string // [sku] 规格名 → 选项 → 加价（元字符串）
 }
 
@@ -83,12 +83,12 @@ func parseAcgINI(content string) (*acgSpecINI, error) {
 
 // acgCombo 一个可购组合。
 type acgCombo struct {
-	Race     string            // 种类名（空=无 race）
-	Choices  map[string]string // 规格名 → 选项
-	Code     string            // 编码（upstream_sku_id）
-	Name     string            // 展示名（种类 · 选项1 · 选项2）
-	BaseCents int64            // race 价（无 race=商品价，由调用方填）
-	AddCents int64             // Σ规格加价（分）
+	Race      string            // 种类名（空=无 race）
+	Choices   map[string]string // 规格名 → 选项
+	Code      string            // 编码（upstream_sku_id）
+	Name      string            // 展示名（种类 · 选项1 · 选项2）
+	BaseCents int64             // race 价（无 race=商品价，由调用方填）
+	AddCents  int64             // Σ规格加价（分）
 }
 
 // Encode 生成紧凑编码：race|规格名=选项;…（规格名按字母序）。

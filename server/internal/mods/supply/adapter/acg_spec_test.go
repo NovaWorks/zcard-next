@@ -5,8 +5,8 @@ package adapter
 
 import (
 	"context"
-	"io"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"

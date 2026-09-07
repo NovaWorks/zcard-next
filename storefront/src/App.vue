@@ -102,7 +102,6 @@
           <div class="footer-brand">
             <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
             <span v-else class="logo-mark">ZC</span>
-            <span class="footer-name">{{ siteName }}</span>
           </div>
           <p class="muted">{{ footerAbout || '专业的自动发卡商城系统，为你的数字商品交易保驾护航。' }}</p>
           <!-- 社交链接（footer.social = [{icon,url}]，配置后显示） -->

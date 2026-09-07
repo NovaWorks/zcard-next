@@ -5,9 +5,9 @@ package adapter
 
 import (
 	"context"
-	"io"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -471,7 +471,7 @@ func TestLooksLikeJSON(t *testing.T) {
 	}{
 		{`{"ok":true}`, true},
 		{`  [1,2]`, true},
-		{"", true},  // 空体放行
+		{"", true}, // 空体放行
 		{"<html>", false},
 		{"\n\r {\"a\":1}", true},
 		{"Access Denied", false},
