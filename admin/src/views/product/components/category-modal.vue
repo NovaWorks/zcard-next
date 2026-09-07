@@ -54,7 +54,8 @@ const iconPicking = ref<any | null>(null); // 正在选图标的分类（null=�
 // 相对路径 /uploads/...，此前仅判断 startsWith('http') 会把 URL 当 emoji 文本渲染
 function iconIsImage(icon?: string): boolean {
   if (!icon) return false;
-  return icon.startsWith("/") || /^https?:\/\//i.test(icon) || /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(icon);
+  // 含 / 即路径形态(uploads/...、/uploads/...、完整 URL 均命中;emoji 不含 /)
+  return icon.includes("/") || /\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i.test(icon);
 }
 // 自定义图片图标（MediaField 数组值；选定即写入 newIcon=URL——icon 字段 emoji/URL 同存，前台按形态渲染）
 const customIconImage = ref<string[]>([]);

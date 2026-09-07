@@ -26,16 +26,22 @@ const (
 	MaxSizeBytes = 10 * 1024 * 1024 // 10MB
 )
 
-// allowedTypes 白名单：ext → {mime, 魔数}。
+// allowedTypes 白名单：ext → {mime, 魔数}。运营诉求「只要是图片都可以上传」——
+// 常见格式全放行;bmp/ico/svg 标准库无解码器,魔数校验后原样存储(不重编码)。
 var allowedTypes = map[string]struct {
-	mime  string
-	magic []byte // 文件头（前 N 字节匹配）
+	mime   string
+	magic  []byte // 文件头（前 N 字节匹配；nil = 无稳定魔数,按内容嗅探兜底）
+	decode bool   // 是否可经标准库解码（可解码者重编码净化）
 }{
-	".jpg":  {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}},
-	".jpeg": {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}},
-	".png":  {"image/png", []byte{0x89, 'P', 'N', 'G'}},
-	".webp": {"image/webp", []byte{'R', 'I', 'F', 'F'}}, // RIFF....WEBP
-	".gif":  {"image/gif", []byte{'G', 'I', 'F', '8'}},
+	".jpg":  {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, true},
+	".jpeg": {"image/jpeg", []byte{0xFF, 0xD8, 0xFF}, true},
+	".png":  {"image/png", []byte{0x89, 'P', 'N', 'G'}, true},
+	".webp": {"image/webp", []byte{'R', 'I', 'F', 'F'}, true}, // RIFF....WEBP
+	".gif":  {"image/gif", []byte{'G', 'I', 'F', '8'}, true},
+	".bmp":  {"image/bmp", []byte{'B', 'M'}, false},
+	".ico":  {"image/x-icon", []byte{0x00, 0x00, 0x01, 0x00}, false},
+	".svg":  {"image/svg+xml", nil, false}, // 文本格式,首部 <svg / <?xml 嗅探
+	".avif": {"image/avif", []byte{'f', 't', 'y', 'p'}, false},
 }
 
 // ErrInvalidType 类型不在白名单（伪装扩展名同此错误——对外统一，不泄漏细节）。
@@ -61,26 +67,40 @@ func ValidateAndReencode(filename, contentType string, data []byte) (out []byte,
 	if !ok {
 		return nil, "", 0, 0, ErrInvalidType
 	}
-	// MIME 校验（声明为空回退魔数判定；非空必须匹配白名单项）
-	if contentType != "" && contentType != "application/octet-stream" {
-		if !strings.HasPrefix(contentType, spec.mime) &&
-			!(contentType == "image/jpg" && ext == ".jpg") { // 常见非标别名
+	// MIME 校验放宽:声明与白名单不符但内容嗅探为图片族亦放行（浏览器/客户端
+	// 上传常见声明为 octet-stream 或 image/jpg 别名——运营诉求按内容判定）
+	if contentType != "" && contentType != "application/octet-stream" &&
+		!strings.HasPrefix(contentType, "image/") {
+		if !strings.HasPrefix(contentType, spec.mime) {
 			return nil, "", 0, 0, ErrInvalidType
 		}
 	}
-	// 魔数校验（webp RIFF 头后还需 WEBP 标识）
-	if !bytes.HasPrefix(data, spec.magic) {
-		return nil, "", 0, 0, ErrNotImage
+	// 魔数校验（svg 无魔数→嗅探文本头;avif ftyp 盒在第 4 字节起）
+	if spec.magic != nil {
+		if !bytes.HasPrefix(data, spec.magic) {
+			return nil, "", 0, 0, ErrNotImage
+		}
+	} else if ext == ".svg" {
+		head := strings.ToLower(string(data[:min(len(data), 512)]))
+		if !strings.Contains(head, "<svg") && !strings.Contains(head, "<?xml") {
+			return nil, "", 0, 0, ErrNotImage
+		}
 	}
 	if ext == ".webp" && (len(data) < 12 || string(data[8:12]) != "WEBP") {
 		return nil, "", 0, 0, ErrNotImage
 	}
-
-	cfg, _, decodeErr := image.DecodeConfig(bytes.NewReader(data))
-	if decodeErr != nil {
+	if ext == ".avif" && (len(data) < 12 || string(data[4:8]) != "ftyp") {
 		return nil, "", 0, 0, ErrNotImage
 	}
-	width, height = cfg.Width, cfg.Height
+
+	// 宽高:可解码格式取真实尺寸;无解码器格式(bmp/ico/svg/avif)跳过(0 占位)
+	if spec.decode {
+		cfg, _, decodeErr := image.DecodeConfig(bytes.NewReader(data))
+		if decodeErr != nil {
+			return nil, "", 0, 0, ErrNotImage
+		}
+		width, height = cfg.Width, cfg.Height
+	}
 
 	// 重编码（webp 除外——标准库无编码器；解码成功即入白名单语义）
 	switch ext {
@@ -119,6 +139,9 @@ func ValidateAndReencode(filename, contentType string, data []byte) (out []byte,
 	case ".webp":
 		// 解码校验已过（DecodeConfig 成功）；原样保留（无编码器）
 		return data, "image/webp", width, height, nil
+	default:
+		// bmp/ico/svg/avif 等无标准库解码器格式:魔数校验已过,原样存储
+		return data, spec.mime, width, height, nil
 	}
 	return nil, "", 0, 0, ErrInvalidType
 }

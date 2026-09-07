@@ -239,8 +239,8 @@ function fileToBase64(file: File): Promise<string> {
 
 function beforeUpload({ file }: { file: { name: string } }) {
   const ext = file.name.split(".").pop()?.toLowerCase() || "";
-  if (!["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) {
-    window.$message?.error("仅支持图片文件（png/jpg/jpeg/gif/webp/svg）");
+  if (!["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico", "avif"].includes(ext)) {
+    window.$message?.error("仅支持图片文件（png/jpg/jpeg/gif/webp/svg/bmp/ico/avif）");
     return false;
   }
   return true;

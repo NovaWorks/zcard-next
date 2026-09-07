@@ -205,7 +205,8 @@ const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → �
 // 仅判 http 会把相对路径当 emoji 文本渲染导致胶囊爆版）
 function iconIsImage(icon?: string): boolean {
   if (!icon) return false;
-  return icon.startsWith("/") || /^https?:\/\//i.test(icon) || /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(icon);
+  // 含 / 即路径形态(uploads/...、/uploads/...、完整 URL 均命中;emoji 不含 /)
+  return icon.includes("/") || /\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i.test(icon);
 }
 const sectionTitle = computed(() =>
   activeCategory.value
