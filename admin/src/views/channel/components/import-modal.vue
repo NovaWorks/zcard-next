@@ -4,7 +4,8 @@
 import { computed, reactive, ref, watch } from "vue";
 import {
   NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInputNumber,
-  NModal, NSelect, NSpace, NSpin, NTag,
+  NModal, NSelect, NSpace, NSpin, NTag, NTreeSelect,
+  type TreeSelectOption,
 } from "naive-ui";
 import { previewSupplyProducts, importSupplyProducts, createCategory } from "@/service/api";
 import { fetchCategories } from "@/service/api";
@@ -41,9 +42,23 @@ const pricing = reactive({
 });
 const categoryMapDraft = reactive<Record<string, number>>({});
 
-const localCategoryOptions = computed(() =>
-  localCategories.value.map((c: any) => ({ label: c.name, value: c.id })),
-);
+const localCategoryOptions = computed(() => {
+  const nodes = new Map<number, TreeSelectOption>();
+  for (const category of localCategories.value) {
+    nodes.set(category.id, { label: category.name, key: category.id });
+  }
+  const roots: TreeSelectOption[] = [];
+  for (const category of localCategories.value) {
+    const node = nodes.get(category.id)!;
+    const parent = nodes.get(category.parent_id);
+    if (parent && parent !== node) {
+      (parent.children ??= []).push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+});
 
 watch(
   () => props.show,
@@ -297,13 +312,15 @@ async function submit() {
               <div class="flex w-full flex-col gap-6px">
                 <div v-for="cat in categories" :key="cat.code" class="flex items-center gap-6px">
                   <span class="w-110px shrink-0 truncate text-12px" :title="cat.name">{{ cat.name }}</span>
-                  <NSelect
+                  <NTreeSelect
                     v-model:value="categoryMapDraft[cat.code]"
                     size="small"
                     clearable
                     filterable
+                    show-path
+                    default-expand-all
                     placement="bottom-start"
-                    class="flex-1"
+                    class="min-w-0 flex-1"
                     placeholder="本地分类（空=不设置）"
                     :options="localCategoryOptions"
                   />
