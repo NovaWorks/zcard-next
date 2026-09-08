@@ -12,7 +12,7 @@
     <div class="pd-main">
       <!-- 左栏：商品图 -->
       <div class="pd-gallery">
-        <div class="pd-cover" @click="showLightbox = true">
+        <div class="pd-cover" :role="p.cover ? 'button' : undefined" :tabindex="p.cover ? 0 : undefined" aria-label="查看商品大图" @click="openCover" @keydown.enter="openCover" @keydown.space.prevent="openCover">
           <img v-if="p.cover" :src="p.cover" :alt="p.name" @error="onImgError" />
           <img v-else :src="NO_IMAGE" :alt="p.name" class="pd-noimg" />
           <span v-if="p.cover" class="pd-zoom-hint">🔍 点击查看大图</span>
@@ -164,7 +164,7 @@
     <!-- 描述区 -->
     <div v-if="p.description" class="pd-section">
       <h3 class="pd-section-title">商品详情</h3>
-      <div class="pd-desc" v-html="p.description"></div>
+      <div ref="description" class="pd-desc" @click="openDescriptionImage" @keydown="descriptionKeydown" v-html="p.description"></div>
     </div>
 
     <!-- 评价区（template.show_reviews 开关控制；默认展示 3 条可展开） -->
@@ -185,18 +185,14 @@
       </button>
     </div>
 
-    <!-- Lightbox 大图 -->
-    <div v-if="showLightbox && p.cover" class="pd-lightbox" @click="showLightbox = false">
-      <img :src="p.cover" :alt="p.name" @click.stop />
-      <button class="pd-lightbox-close" @click="showLightbox = false">✕</button>
-    </div>
+    <ImageViewer v-if="previewImages.length" :images="previewImages" :initial-index="previewIndex" @close="previewImages = []" />
   </div>
   <div v-else-if="error" class="error">{{ error }}</div>
   <div v-else class="muted" style="text-align: center; padding: 40px;">加载中…</div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
 import { formatMoney, getToken } from '@/api/client';
@@ -206,6 +202,7 @@ import { addToCart as addToCartStore, removeCartItem, cartItemOf } from '@/cart'
 import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import { fetchSiteSeo, applySeo, stripHtml, truncate, type SiteSeoConfig } from '@/seo';
+import ImageViewer from '@/components/ImageViewer.vue';
 import CaptchaInput from '@/components/CaptchaInput.vue';
 
 const route = useRoute();
@@ -221,7 +218,35 @@ const submitting = ref(false);
 const error = ref('');
 const addingCart = ref(false);
 const removingCart = ref(false);
-const showLightbox = ref(false);
+const description = ref<HTMLElement | null>(null);
+const previewImages = ref<{ src: string; alt: string }[]>([]);
+const previewIndex = ref(0);
+function openCover() {
+  if (!p.value?.cover) return;
+  previewIndex.value = 0;
+  previewImages.value = [{ src: p.value.cover, alt: p.value.name }];
+}
+function openDescriptionImage(event: Event) {
+  if (!(event.target instanceof HTMLImageElement)) return;
+  const images = [...(description.value?.querySelectorAll('img') || [])].filter(img => img.currentSrc || img.src);
+  const index = images.indexOf(event.target);
+  if (index < 0) return;
+  event.preventDefault(); // 图片包在链接内时，预览优先，避免跳离教程。
+  event.target.focus({ preventScroll: true });
+  previewIndex.value = index;
+  previewImages.value = images.map(img => ({ src: img.currentSrc || img.src, alt: img.alt || p.value?.name || '商品详情图片' }));
+}
+function descriptionKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') openDescriptionImage(event);
+}
+watch([description, () => p.value?.description], () => {
+  description.value?.querySelectorAll('img').forEach(img => {
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', `放大查看${img.alt || '商品详情图片'}`);
+  });
+}, { flush: 'post' });
+watch(() => route.params, () => { previewImages.value = []; });
 
 // 购物车（淘宝式切换）：当前商品 + 所选 SKU 在购物车 → 按钮变灰「移除购物车」
 const canCart = computed(() => !(p.value?.points_required && p.value.points_required > 0));
@@ -650,20 +675,8 @@ async function exchangePoints() {
 .pd-stars { color: #f59e0b; font-size: 12px; }
 .pd-review-content { font-size: 13px; color: #4b5563; }
 
-/* ── Lightbox ── */
-.pd-lightbox {
-  position: fixed; inset: 0; z-index: 999;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex; align-items: center; justify-content: center; padding: 24px;
-  cursor: zoom-out;
-}
-.pd-lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; cursor: default; }
-.pd-lightbox-close {
-  position: absolute; top: 20px; right: 24px;
-  width: 40px; height: 40px; border-radius: 999px; border: none;
-  background: rgba(255, 255, 255, 0.15); color: #fff; font-size: 16px; cursor: pointer;
-}
-.pd-lightbox-close:hover { background: rgba(255, 255, 255, 0.3); }
+.pd-desc :deep(img) { cursor: zoom-in; }
+.pd-desc :deep(img:focus-visible), .pd-cover:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
 /* ── 手机端（大厂商品页范式：无面包屑、紧凑留白、底部吸底操作栏）── */
 @media (max-width: 768px) {
   .pd-page { padding: 0 12px calc(76px + env(safe-area-inset-bottom)); gap: 12px; }

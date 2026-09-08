@@ -2,16 +2,13 @@
   <aside class="cat-tree" :class="{ 'cat-tree--panel': variant === 'panel' }">
     <div class="cat-tree-card">
       <!-- 标题栏：品牌竖条 + 标题 + 分类数（与右侧「全部商品」区标题同一设计语言） -->
-      <button class="cat-tree-head" type="button" :aria-expanded="bodyOpen" @click="manualOpen = !bodyOpen">
+      <button class="cat-tree-head" type="button" :aria-expanded="allExpanded" :disabled="!branchIds.length" @click="toggleAll">
         <span class="head-bar"></span>
         <span class="cat-tree-title">全部分类</span>
         <span v-if="categories.length" class="cat-tree-count">{{ categories.length }} 类</span>
-        <span class="cat-tree-toggle-label">{{ bodyOpen ? '折叠' : '展开' }}</span>
+        <span v-if="branchIds.length" class="cat-tree-toggle-label">{{ allExpanded ? '折叠下级' : '展开下级' }}</span>
       </button>
-      <div v-show="bodyOpen" class="cat-tree-body">
-        <button v-if="branchIds.length" class="tree-expand-all" type="button" @click="toggleAll">
-          {{ allExpanded ? '全部折叠' : '全部展开' }}
-        </button>
+      <div class="cat-tree-body">
         <!-- 全部商品入口 -->
         <button
           class="tree-all"
@@ -32,7 +29,7 @@
           @select="select"
           @toggle="toggle"
         />
-        <div v-if="!roots.length" class="tree-empty muted">暂无分类</div>
+        <div v-if="!tree.length" class="tree-empty muted">暂无分类</div>
       </div>
     </div>
   </aside>
@@ -43,7 +40,7 @@ import { ref, computed, watch } from 'vue';
 import CategoryTreeNode from './CategoryTreeNode.vue';
 import type { CategoryItem } from '@/api';
 
-// variant：sidebar=PC 左侧栏（默认）；panel=移动端折叠面板（全宽、无头部、限高滚动）
+// variant：sidebar=PC 左侧栏（默认）；panel=移动端折叠面板（全宽、限高滚动）
 const props = withDefaults(
   defineProps<{
     categories: CategoryItem[];
@@ -56,8 +53,6 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
 }>();
-const manualOpen = ref<boolean | null>(null);
-const bodyOpen = computed(() => props.variant === 'panel' || (manualOpen.value ?? props.categories.length <= 1));
 
 // 分类树（任意层级：parent_id 链构建 children；一级为根）
 const tree = computed(() => {
@@ -70,8 +65,6 @@ const tree = computed(() => {
   }
   return rootsArr;
 });
-// 一级分类（parent_id 缺失/0 为根——proto3 JSON 省略 0 值字段，须用 falsy 判断）
-const roots = computed(() => props.categories.filter((c) => !c.parent_id));
 
 // 多级分类默认收起，选中深层分类时只展开其祖先。
 const expanded = ref<Set<number>>(new Set());
@@ -146,8 +139,6 @@ function select(id: number) {
   white-space: nowrap;
 }
 .cat-tree-body { padding: 12px 10px; max-height: calc(100vh - 220px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
-.tree-expand-all { align-self: flex-end; min-height: 44px; padding: 6px 10px; border: none; border-radius: 6px; background: none; color: #2563eb; font: inherit; font-size: 13px; cursor: pointer; }
-.tree-expand-all:hover { background: #eff6ff; }
 
 .tree-all {
   width: 100%;
@@ -163,10 +154,10 @@ function select(id: number) {
 .tree-all > span:first-child { font-size: 16px; }
 .tree-empty { padding: 16px 0; text-align: center; }
 
-/* 面板变体（移动端折叠面板内嵌）：全宽平铺、隐藏自带头部、限高滚动。
+/* 面板变体（移动端折叠面板内嵌）：全宽平铺、保留一级分类、限高滚动。
    双类名提升优先级，覆盖基础 .cat-tree 的移动端 display:none */
 .cat-tree.cat-tree--panel { display: block; width: 100%; }
 .cat-tree--panel .cat-tree-card { position: static; border: none; border-radius: 0; }
-.cat-tree--panel .cat-tree-head { display: none; }
+.cat-tree-head:disabled { cursor: default; color: inherit; }
 .cat-tree--panel .cat-tree-body { max-height: 56vh; padding: 4px 4px 8px; }
 </style>

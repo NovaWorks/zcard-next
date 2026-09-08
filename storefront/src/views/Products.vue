@@ -17,15 +17,7 @@
         </div>
       </div>
       <div v-else-if="categories.length" class="card mobile-cat mobile-only" style="margin-bottom: 12px;">
-        <button class="mobile-cat-head" @click="mobileCatOpen = !mobileCatOpen">
-          <span class="mcb-bar"></span>
-          <span class="mcb-title">全部分类</span>
-          <span class="mcb-count">{{ categories.length }} 类</span>
-          <span class="mcb-arrow" :class="{ open: mobileCatOpen }"></span>
-        </button>
-        <div v-show="mobileCatOpen" class="mobile-cat-body">
-          <CategoryTree variant="panel" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
-        </div>
+        <CategoryTree variant="panel" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
       </div>
 
       <!-- 排序 + 搜索 + 视图切换 -->
@@ -90,7 +82,6 @@ const pageSize = ref(20);
 const total = ref(0);
 const loading = ref(false);
 const error = ref('');
-const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
 // ── 模板设置（后台 系统设置 → 模板；公开配置下发，客户端生效）──
@@ -174,7 +165,6 @@ function go(p: number) {
 
 function pickCategory(id: number) {
   categoryId.value = id;
-  mobileCatOpen.value = false;
   chipsExpanded.value = false; // 选完即收起，回紧凑单行
   onSearch();
 }

@@ -66,7 +66,7 @@
             <span class="mcb-toggle-label">{{ chipsExpanded ? '折叠' : '展开' }}</span>
             <span class="mcb-arrow" :class="{ open: chipsExpanded }"></span>
           </button>
-          <div v-show="chipsExpanded" class="cat-chips-row expanded">
+          <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
@@ -74,16 +74,7 @@
           </div>
         </div>
         <div v-else-if="categories.length" class="card mobile-cat mobile-only">
-          <button class="mobile-cat-head" type="button" :aria-expanded="mobileCatOpen" @click="mobileCatOpen = !mobileCatOpen">
-            <span class="mcb-bar"></span>
-            <span class="mcb-title">全部分类</span>
-            <span class="mcb-count">{{ categories.length }} 类</span>
-            <span class="mcb-toggle-label">{{ mobileCatOpen ? '折叠' : '展开' }}</span>
-            <span class="mcb-arrow" :class="{ open: mobileCatOpen }"></span>
-          </button>
-          <div v-show="mobileCatOpen" class="mobile-cat-body">
-            <CategoryTree variant="panel" :categories="categories" :model-value="activeCategory" @update:model-value="pickCategory" />
-          </div>
+          <CategoryTree variant="panel" :categories="categories" :model-value="activeCategory" @update:model-value="pickCategory" />
         </div>
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
@@ -202,7 +193,6 @@ const gridStyle = computed(() =>
 const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
-const mobileCatOpen = ref(false); // 移动端「全部分类」折叠面板展开态
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
 const sectionTitle = computed(() =>
@@ -295,7 +285,6 @@ function goSearch() {
 function pickCategory(id: number) {
   activeCategory.value = id;
   page.value = 1;
-  mobileCatOpen.value = false;
   chipsExpanded.value = false; // 选完即收起，回紧凑单行
   load();
 }
@@ -397,7 +386,9 @@ onUnmounted(stopHero);
 }
 /* 分类胶囊（category_nav_style=grid 顶部导航 / list 移动端兜底）——饱满大尺寸 */
 .cat-chips { padding: 0; overflow: hidden; }
-.cat-chips-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; }
+.cat-chips-row.expanded { flex-wrap: wrap; overflow-x: visible; }
+.cat-chips-row .chip { flex-shrink: 0; }
+.cat-chips-row { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 10px; align-items: center; padding: 12px 16px; }
 .chip {
   padding: 9px 22px; border-radius: 999px; font-size: 15px; font-weight: 500; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
