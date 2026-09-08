@@ -33,7 +33,7 @@
       <router-link to="/" class="logo">
         <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
         <span v-else class="logo-mark">ZC</span>
-        <span class="logo-name">{{ siteName }}</span>
+        <span class="logo-name" :title="siteName">{{ siteName }}</span>
       </router-link>
       <nav class="nav-links">
         <router-link to="/" exact>首页</router-link>

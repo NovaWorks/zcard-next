@@ -20,9 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminOrderService_ListOrders_FullMethodName  = "/zcard.api.admin.v1.AdminOrderService/ListOrders"
-	AdminOrderService_GetOrder_FullMethodName    = "/zcard.api.admin.v1.AdminOrderService/GetOrder"
-	AdminOrderService_CancelOrder_FullMethodName = "/zcard.api.admin.v1.AdminOrderService/CancelOrder"
+	AdminOrderService_ListOrders_FullMethodName   = "/zcard.api.admin.v1.AdminOrderService/ListOrders"
+	AdminOrderService_GetOrder_FullMethodName     = "/zcard.api.admin.v1.AdminOrderService/GetOrder"
+	AdminOrderService_CancelOrder_FullMethodName  = "/zcard.api.admin.v1.AdminOrderService/CancelOrder"
+	AdminOrderService_DeleteOrders_FullMethodName = "/zcard.api.admin.v1.AdminOrderService/DeleteOrders"
 )
 
 // AdminOrderServiceClient is the client API for AdminOrderService service.
@@ -37,6 +38,8 @@ type AdminOrderServiceClient interface {
 	GetOrder(ctx context.Context, in *GetAdminOrderRequest, opts ...grpc.CallOption) (*AdminOrder, error)
 	// CancelOrder 取消订单（pending 可取消）。
 	CancelOrder(ctx context.Context, in *CancelOrderRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+	DeleteOrders(ctx context.Context, in *DeleteOrdersRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type adminOrderServiceClient struct {
@@ -77,6 +80,16 @@ func (c *adminOrderServiceClient) CancelOrder(ctx context.Context, in *CancelOrd
 	return out, nil
 }
 
+func (c *adminOrderServiceClient) DeleteOrders(ctx context.Context, in *DeleteOrdersRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminOrderService_DeleteOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminOrderServiceServer is the server API for AdminOrderService service.
 // All implementations must embed UnimplementedAdminOrderServiceServer
 // for forward compatibility.
@@ -89,6 +102,8 @@ type AdminOrderServiceServer interface {
 	GetOrder(context.Context, *GetAdminOrderRequest) (*AdminOrder, error)
 	// CancelOrder 取消订单（pending 可取消）。
 	CancelOrder(context.Context, *CancelOrderRequest) (*emptypb.Empty, error)
+	// DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+	DeleteOrders(context.Context, *DeleteOrdersRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminOrderServiceServer()
 }
 
@@ -107,6 +122,9 @@ func (UnimplementedAdminOrderServiceServer) GetOrder(context.Context, *GetAdminO
 }
 func (UnimplementedAdminOrderServiceServer) CancelOrder(context.Context, *CancelOrderRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelOrder not implemented")
+}
+func (UnimplementedAdminOrderServiceServer) DeleteOrders(context.Context, *DeleteOrdersRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteOrders not implemented")
 }
 func (UnimplementedAdminOrderServiceServer) mustEmbedUnimplementedAdminOrderServiceServer() {}
 func (UnimplementedAdminOrderServiceServer) testEmbeddedByValue()                           {}
@@ -183,6 +201,24 @@ func _AdminOrderService_CancelOrder_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminOrderService_DeleteOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminOrderServiceServer).DeleteOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminOrderService_DeleteOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminOrderServiceServer).DeleteOrders(ctx, req.(*DeleteOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminOrderService_ServiceDesc is the grpc.ServiceDesc for AdminOrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -201,6 +237,10 @@ var AdminOrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelOrder",
 			Handler:    _AdminOrderService_CancelOrder_Handler,
+		},
+		{
+			MethodName: "DeleteOrders",
+			Handler:    _AdminOrderService_DeleteOrders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

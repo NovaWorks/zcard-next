@@ -22,8 +22,8 @@
         </div>
 
         <!-- 商品列表 -->
-        <div v-for="it in items" :key="it.id" class="cart-item" :class="{ invalid: !it.valid || it.stock === 0 }">
-          <input type="checkbox" :disabled="!it.valid || it.stock === 0" v-model="selected" :value="it.id" class="cart-item-check" />
+        <div v-for="it in items" :key="it.id" class="cart-item" :class="{ invalid: !it.valid || (it.stock ?? 0) === 0 || it.stock < -1 }">
+          <input type="checkbox" :disabled="!it.valid || (it.stock ?? 0) === 0 || it.stock < -1" v-model="selected" :value="it.id" class="cart-item-check" />
           <router-link v-if="it.valid" :to="`/product/${it.product_id}`" class="cart-item-cover">
             <img v-if="it.product_cover" :src="it.product_cover" :alt="it.product_name" @error="onImgError" />
             <img v-else :src="NO_IMAGE" :alt="it.product_name" style="object-fit: contain;" />
@@ -36,7 +36,7 @@
             <span v-else class="cart-item-name">{{ it.product_name }}</span>
             <div class="cart-item-badges">
               <span v-if="!it.valid" class="badge red">已失效</span>
-              <span v-else-if="it.stock === 0" class="badge orange">缺货</span>
+              <span v-else-if="(it.stock ?? 0) === 0 || it.stock < -1" class="badge orange">{{ it.stock < -1 ? '库存待确认' : '缺货' }}</span>
               <span v-if="it.points_only" class="tag">积分商品</span>
             </div>
             <div class="cart-item-sku muted" v-if="it.sku_id">SKU #{{ it.sku_id }}</div>
@@ -46,10 +46,10 @@
             <div class="muted">单价</div>
           </div>
           <div class="cart-item-qty">
-            <button class="cart-qty-btn" :disabled="it.stock === 0" @click="changeQty(it, it.quantity - 1)">−</button>
+            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @click="changeQty(it, it.quantity - 1)">−</button>
             <input class="cart-qty-input" type="number" min="1" max="99" v-model.number="it.quantity"
-                   :disabled="it.stock === 0" @change="changeQty(it, it.quantity)" />
-            <button class="cart-qty-btn" :disabled="it.stock === 0" @click="changeQty(it, it.quantity + 1)">＋</button>
+                   :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @change="changeQty(it, it.quantity)" />
+            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @click="changeQty(it, it.quantity + 1)">＋</button>
           </div>
           <div class="cart-item-subtotal">
             <div class="cart-subtotal">{{ formatMoney(it.price_cents * it.quantity) }}</div>
@@ -143,14 +143,10 @@ const showControls = ref(false);
 const controlAnswers = ref<Record<string, string>>({});
 const controlsNeeded = ref<{ productId: number; name: string; controls: ProductControl[] }[]>([]);
 
-// 有效项：登录购物车按库存过滤；游客本地购物车（库存未知）仅按 valid 判定，缺货由后端下单时校验
-const validItems = computed(() =>
-  isGuestCart.value
-    ? items.value.filter((i) => i.valid)
-    : items.value.filter((i) => i.valid && i.stock !== 0),
-);
+// 自营/对接都按服务端各自库存判断；游客快照仍由后端下单复核。
+const validItems = computed(() => items.value.filter((i) => i.valid && (i.stock ?? 0) !== 0 && i.stock >= -1));
 const allSelected = computed(() => validItems.value.length > 0 && selected.value.length === validItems.value.length);
-const selectedItems = computed(() => items.value.filter((i) => selected.value.includes(i.id)));
+const selectedItems = computed(() => validItems.value.filter((i) => selected.value.includes(i.id)));
 const rawTotal = computed(() => selectedItems.value.reduce((s, i) => s + i.price_cents * i.quantity, 0));
 const controlsComplete = computed(() =>
   controlsNeeded.value.every((g) => g.controls.every((c) => (controlAnswers.value[String(c.id)] || '').trim() !== ''))

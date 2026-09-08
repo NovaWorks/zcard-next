@@ -176,6 +176,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminOrderService/GetOrder", Method: "GET", Path: "/api/v1/admin/orders/{order_no}"},
 		Perm{Code: "order:cancel", Desc: "取消订单（超管）", Domain: "order", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminOrderService/CancelOrder", Method: "POST", Path: "/api/v1/admin/orders/{order_no}/cancel"},
+		Perm{Code: "order:delete", Desc: "清理无用订单（超管）", Domain: "order", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminOrderService/DeleteOrders", Method: "POST", Path: "/api/v1/admin/orders/delete"},
 
 		// ── 支付（payment，）─────────────────────
 		Perm{Code: "payment:read", Desc: "查看渠道", Domain: "payment",

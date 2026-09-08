@@ -852,6 +852,7 @@ var (
 		{Name: "idempotency_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 80},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "admin_deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "expired_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
@@ -873,7 +874,7 @@ var (
 			{
 				Name:    "order_status_expired_at",
 				Unique:  false,
-				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[33]},
+				Columns: []*schema.Column{OrdersColumns[12], OrdersColumns[34]},
 			},
 			{
 				Name:    "order_parent_id",

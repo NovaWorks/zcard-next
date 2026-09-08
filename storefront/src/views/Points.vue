@@ -33,7 +33,7 @@
         </div>
         <div class="muted" style="margin-bottom: 8px;">{{ stockLabel(p) }}</div>
         <button class="btn" :disabled="exchanging === p.id || soldOut(p)" @click="exchange(p)">
-          {{ exchanging === p.id ? '兑换中…' : soldOut(p) ? '已兑完' : '积分兑换' }}
+          {{ exchanging === p.id ? '兑换中…' : p.stock < -1 ? '库存待确认' : soldOut(p) ? '已兑完' : '积分兑换' }}
         </button>
       </div>
     </div>
@@ -59,13 +59,13 @@ const error = ref('');
 const exchanging = ref<number>(0);
 
 // 库存口径（与后端 DTO 对齐）：-1=不限（上游代发/直发），>=0=有限库存；
-// proto3 零值省略 → undefined 视同 0（有限库存售罄）。仅有限 0 库存售罄。
+// proto3 省略零值仍为缺货；-2 待确认也暂停兑换。
 function soldOut(p: Product): boolean {
-  return (p.stock ?? 0) === 0;
+  return (p.stock ?? 0) === 0 || (p.stock ?? 0) < -1;
 }
 function stockLabel(p: Product): string {
   const s = p.stock ?? 0;
-  return s < 0 ? '库存充足' : `库存 ${s} 件`;
+  return s < -1 ? '库存待确认' : s === -1 ? '不限库存' : `库存 ${s} 件`;
 }
 
 // 数据预取（setup 顶层：SSG 静态化积分商城内容 + 输出 SEO head）

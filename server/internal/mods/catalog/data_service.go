@@ -15,7 +15,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
-	inventoryport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
@@ -29,15 +28,14 @@ import (
 type AdminCatalogService struct {
 	adminv1.UnimplementedAdminCatalogServiceServer
 	repo     *ProductRepoImpl
-	stock    inventoryport.StockBatcher // 批量可用库存（nil 容错降级 0）
-	sold     orderport.SoldCounter      // 批量已售数量（nil 容错降级 0）
-	settings port.SettingsReader        // 低库存阈值等（通道 A；nil = 默认值）
-	cipher   *inventory.CardCipher      // 直发内容加密（url/code 商品；nil = 直发不可用）
+	sold     orderport.SoldCounter // 批量已售数量（nil 容错降级 0）
+	settings port.SettingsReader   // 低库存阈值等（通道 A；nil = 默认值）
+	cipher   *inventory.CardCipher // 直发内容加密（url/code 商品；nil = 直发不可用）
 }
 
 // NewAdminCatalogService 构造。
-func NewAdminCatalogService(repo *ProductRepoImpl, stock inventoryport.StockBatcher, sold orderport.SoldCounter, settings port.SettingsReader, cipher *inventory.CardCipher) *AdminCatalogService {
-	return &AdminCatalogService{repo: repo, stock: stock, sold: sold, settings: settings, cipher: cipher}
+func NewAdminCatalogService(repo *ProductRepoImpl, sold orderport.SoldCounter, settings port.SettingsReader, cipher *inventory.CardCipher) *AdminCatalogService {
+	return &AdminCatalogService{repo: repo, sold: sold, settings: settings, cipher: cipher}
 }
 
 // sealDirect 直发内容加密（AAD 绑定 product+subsite）。
@@ -70,52 +68,24 @@ func (s *AdminCatalogService) lowStockThreshold(ctx context.Context) int {
 	return v
 }
 
-// fillStats 批量填充库存/已售（列表与详情共用；查询失败降级 0 不阻断列表）。
+// fillStats 批量填充库存/已售（列表与详情共用；库存查询失败标记待确认，不冒充缺货或充足）。
 func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.AdminProduct) {
 	if len(items) == 0 {
 		return
 	}
 	ids := make([]uint64, 0, len(items))
-	cardIDs := make([]uint64, 0) // 仅卡密类需要库存（链接/兑换码不入卡池）
 	for _, p := range items {
 		ids = append(ids, p.Id)
-		if p.StockType == "card" {
-			cardIDs = append(cardIDs, p.Id)
-		}
 	}
-	var stocks, solds map[uint64]int64
-	if s.stock != nil {
-		stocks, _ = s.stock.StockBatch(ctx, cardIDs) // 失败降级：留 0
-	}
+	stocks, err := s.repo.StockBatch(ctx, ids)
+	var solds map[uint64]int64
 	if s.sold != nil {
 		solds, _ = s.sold.SoldBatch(ctx, ids)
 	}
-	// 代发商品（上游货源）：库存 = 上游库存缓存（mapping.up_stock，同步时写入），
-	// 非本地卡池数（代发本地无卡密恒 0——曾误导运营以为缺货）
-	var upstreamIDs []uint64
 	for _, p := range items {
-		if p.UpstreamSourceId > 0 {
-			upstreamIDs = append(upstreamIDs, p.Id)
-		}
-	}
-	var upStocks map[uint64]int32
-	if len(upstreamIDs) > 0 {
-		upStocks = s.repo.UpStockBatch(ctx, upstreamIDs)
-	}
-	for _, p := range items {
-		if p.UpstreamSourceId > 0 {
-			if v, ok := upStocks[p.Id]; ok {
-				p.Stock = int64(v) // -1 = 上游无限
-			} else {
-				p.Stock = -1 // 无缓存（未同步过）：视为未知/不限
-			}
-			p.SoldCount = solds[p.Id]
-			continue
-		}
-		if p.StockType == "card" {
-			p.Stock = stocks[p.Id]
-		} else {
-			p.Stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
+		p.Stock = -2
+		if n, ok := stocks[p.Id]; err == nil && ok {
+			p.Stock = n
 		}
 		p.SoldCount = solds[p.Id]
 	}
@@ -140,6 +110,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 		Page:              page,
 		PageSize:          size,
 		LowStockThreshold: s.lowStockThresholdFor(ctx, req.GetLowStockOnly()),
+		OutOfStockOnly:    req.GetOutOfStockOnly(),
 		ConnectionID:      req.GetUpstreamSourceId(),
 		LocalOnly:         req.GetLocalOnly(),
 	})

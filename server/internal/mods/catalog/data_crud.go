@@ -12,13 +12,11 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	mediamods "github.com/NovaWorks/zcard-next/server/internal/mods/media"
@@ -61,49 +59,29 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		}
 		q = q.Where(product.Status(st))
 	}
-	// 低库存过滤（分页前）：与首页预警同口径——仅上架卡密类商品，可用卡密 < 阈值；
-	// 无卡密行视为 0。固定 status=1（下架/隐藏不参与售卖，不预警）。
-	if f.LowStockThreshold > 0 {
-		var candidateIDs []uint64
-		if err := q.Clone().
-			Where(product.StockTypeEQ(product.StockTypeCard), product.Status(1)).
-			Select(product.FieldID).
-			Scan(ctx, &candidateIDs); err != nil {
+	// 先按货源计算库存，再筛选和分页；未知/不限库存不计入缺货。
+	if f.LowStockThreshold > 0 || f.OutOfStockOnly {
+		candidates, err := q.Clone().Where(product.Status(1)).All(ctx)
+		if err != nil {
 			return nil, 0, err
 		}
-		if len(candidateIDs) == 0 {
-			return nil, 0, nil
-		}
-		var counts []struct {
-			ProductID uint64 `json:"product_id"`
-			Count     int    `json:"count"`
-		}
-		if err := data.Client(ctx, r.data).Card.Query().
-			Where(
-				card.ProductIDIn(candidateIDs...),
-				card.StatusEQ(card.StatusAvailable),
-				card.SubsiteID(tc.SubsiteID),
-			).
-			GroupBy(card.FieldProductID).
-			Aggregate(ent.Count()).
-			Scan(ctx, &counts); err != nil {
+		stocks, err := data.ProductStocks(ctx, r.data, candidates)
+		if err != nil {
 			return nil, 0, err
 		}
-		stock := make(map[uint64]int64, len(counts))
-		for _, c := range counts {
-			stock[c.ProductID] = int64(c.Count)
-		}
-		lowIDs := make([]uint64, 0, len(candidateIDs))
-		for _, id := range candidateIDs {
-			if stock[id] < int64(f.LowStockThreshold) {
-				lowIDs = append(lowIDs, id)
+		var ids []uint64
+		for _, p := range candidates {
+			n := stocks[p.ID]
+			if (f.OutOfStockOnly && n == 0) || (!f.OutOfStockOnly && n >= 0 && n < int64(f.LowStockThreshold)) {
+				ids = append(ids, p.ID)
 			}
 		}
-		if len(lowIDs) == 0 {
+		if len(ids) == 0 {
 			return nil, 0, nil
 		}
-		q = q.Where(product.IDIn(lowIDs...))
+		q = q.Where(product.IDIn(ids...))
 	}
+
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -115,26 +93,27 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	return rows, int64(total), err
 }
 
-// UpStockBatch 上游库存缓存批量查询（代发商品列表库存口径；缺省 -1=未知/无限）。
-func (r *ProductRepoImpl) UpStockBatch(ctx context.Context, productIDs []uint64) map[uint64]int32 {
-	out := map[uint64]int32{}
-	if len(productIDs) == 0 {
-		return out
+// StockBatch returns stock from the product's actual fulfillment source.
+func (r *ProductRepoImpl) StockBatch(ctx context.Context, productIDs []uint64) (map[uint64]int64, error) {
+	out := map[uint64]int64{}
+	for start := 0; start < len(productIDs); start += 500 {
+		end := start + 500
+		if end > len(productIDs) {
+			end = len(productIDs)
+		}
+		rows, err := data.Client(ctx, r.data).Product.Query().Where(product.IDIn(productIDs[start:end]...), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		batch, err := data.ProductStocks(ctx, r.data, rows)
+		if err != nil {
+			return nil, err
+		}
+		for id, n := range batch {
+			out[id] = n
+		}
 	}
-	var rows []struct {
-		LocalProductID uint64 `json:"local_product_id"`
-		UpStock        int32  `json:"up_stock"`
-	}
-	if err := data.Client(ctx, r.data).SupplyMapping.Query().
-		Where(supplymapping.LocalProductIDIn(productIDs...)).
-		Select(supplymapping.FieldLocalProductID, supplymapping.FieldUpStock).
-		Scan(ctx, &rows); err != nil {
-		return out
-	}
-	for _, r := range rows {
-		out[r.LocalProductID] = r.UpStock
-	}
-	return out
+	return out, nil
 }
 
 // GetAdmin 管理面商品详情。

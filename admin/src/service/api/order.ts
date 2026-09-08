@@ -2,12 +2,16 @@ import { request } from "../request";
 
 // ── 订单管理 ──
 
-export function fetchOrders(params?: { status?: string; cursor?: number; limit?: number }) {
+export function fetchOrders(params?: { status?: string; cursor?: number; limit?: number; keyword?: string }) {
   return request({
     url: "/api/v1/admin/orders",
     method: "get",
     params,
   });
+}
+
+export function deleteOrders(orderNos: string[]) {
+  return request({ url: "/api/v1/admin/orders/delete", method: "post", data: { order_nos: orderNos } });
 }
 
 export function fetchOrder(orderNo: string) {

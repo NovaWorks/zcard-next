@@ -27,7 +27,7 @@ type StoreCatalogServiceHTTPServer interface {
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)
 	// ListCategories ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
 	ListCategories(context.Context, *emptypb.Empty) (*ListCategoriesReply, error)
-	// ListProducts ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+	// ListProducts ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
 }
 
@@ -103,7 +103,7 @@ type StoreCatalogServiceHTTPClient interface {
 	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *Product, err error)
 	// ListCategories ListCategories 可见分类列表（hide=false + 分站白名单；导航/筛选用）。
 	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *ListCategoriesReply, err error)
-	// ListProducts ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+	// ListProducts ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
 	ListProducts(ctx context.Context, req *ListProductsRequest, opts ...http.CallOption) (rsp *ListProductsReply, err error)
 }
 
@@ -149,7 +149,7 @@ func (c *StoreCatalogServiceHTTPClientImpl) ListCategories(ctx context.Context, 
 	return &out, nil
 }
 
-// ListProducts ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+// ListProducts ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
 func (c *StoreCatalogServiceHTTPClientImpl) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...http.CallOption) (*ListProductsReply, error) {
 	var out ListProductsReply
 	pattern := "/api/v1/storefront/products"

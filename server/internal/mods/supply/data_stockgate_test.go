@@ -1,11 +1,12 @@
 package supply
 
 // 下单前上游库存预检决策矩阵：非上游跳过、明确不足拒单、
-// 库存未知(-1)/查询失败/商品不可读 fail-open 放行、SKU 上游标识透传。
+// 不限库存(-1)放行，未知/查询失败拒单，SKU 上游标识透传。
 
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -39,25 +40,31 @@ func TestCheckOrderItems(t *testing.T) {
 			1: {ID: 1, Name: "本地卡密", StockType: "card"},
 			2: {ID: 2, Name: "上游商品", StockType: "card", UpstreamSourceID: 9, UpstreamProductCode: "UP-2"},
 			3: {ID: 3, Name: "直发链接", StockType: "url"},
+			4: {ID: 4, Name: "缺少上游标识", StockType: "card", UpstreamSourceID: 9},
 		},
 		skus: map[uint64]string{77: "race=1|color=红"},
 	}
 
 	cases := []struct {
-		name      string
-		items     []orderport.UpstreamStockItem
-		stock     int32
-		stockErr  error
-		wantCall  bool
-		wantCode  string // 期望透传的上游规格标识
-		wantOrder bool   // true = 应放行（nil）
+		name            string
+		items           []orderport.UpstreamStockItem
+		stock           int32
+		stockErr        error
+		wantUnavailable bool
+		wantCall        bool
+		wantCode        string // 期望透传的上游规格标识
+		wantOrder       bool   // true = 应放行（nil）
 	}{
 		{name: "非上游项跳过", items: []orderport.UpstreamStockItem{{ProductID: 1, Quantity: 3}}, wantCall: false, wantOrder: true},
 		{name: "直发项跳过", items: []orderport.UpstreamStockItem{{ProductID: 3, Quantity: 3}}, wantCall: false, wantOrder: true},
 		{name: "上游充足放行", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 3}}, stock: 5, wantCall: true, wantOrder: true},
 		{name: "上游不足拒单", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 3}}, stock: 2, wantCall: true, wantOrder: false},
-		{name: "库存未知放行", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 3}}, stock: -1, wantCall: true, wantOrder: true},
-		{name: "查询失败放行", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 3}}, stockErr: errors.New("boom"), wantCall: true, wantOrder: true},
+		{name: "上游明确无限放行", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 3}}, stock: -1, wantCall: true, wantOrder: true},
+		{name: "查询失败拒单", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 3}}, stockErr: errors.New("boom"), wantCall: true, wantOrder: false, wantUnavailable: true},
+		{name: "上游零库存拒单", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 1}}, stock: 0, wantCall: true},
+		{name: "未知库存拒单", items: []orderport.UpstreamStockItem{{ProductID: 2, Quantity: 1}}, stock: -2, wantCall: true, wantUnavailable: true},
+		{name: "缺少上游商品标识拒单", items: []orderport.UpstreamStockItem{{ProductID: 4, Quantity: 1}}, wantUnavailable: true},
+		{name: "缺少上游规格标识拒单", items: []orderport.UpstreamStockItem{{ProductID: 2, SkuID: 999, Quantity: 1}}, wantUnavailable: true},
 		{name: "SKU标识透传", items: []orderport.UpstreamStockItem{{ProductID: 2, SkuID: 77, Quantity: 1}}, stock: 9, wantCall: true, wantCode: "race=1|color=红", wantOrder: true},
 	}
 
@@ -84,7 +91,11 @@ func TestCheckOrderItems(t *testing.T) {
 				t.Fatalf("应放行: %v", err)
 			}
 			if !tc.wantOrder {
-				if !errors.Is(err, port.ErrUpstreamNoStock) {
+				if tc.wantUnavailable {
+					if err == nil || !strings.Contains(err.Error(), "STOCK_UNAVAILABLE") {
+						t.Fatalf("expected unavailable: %v", err)
+					}
+				} else if !errors.Is(err, port.ErrUpstreamNoStock) {
 					t.Fatalf("应拒绝且归因无库存: %v", err)
 				}
 			}
@@ -95,5 +106,14 @@ func TestCheckOrderItems(t *testing.T) {
 	if err := checkOrderItems(ctx, reader, func(uint64, string, string) (int32, error) { return 0, nil }, 0,
 		[]orderport.UpstreamStockItem{{ProductID: 404, Quantity: 1}}); err != nil {
 		t.Fatalf("不可读商品应放行: %v", err)
+	}
+}
+
+func TestStockQueryFailureIsNotUnlimited(t *testing.T) {
+	repo, _ := newTestRepo(t)
+	gateway := NewGateway(repo, nil, nil)
+	n, err := gateway.CheckStock(context.Background(), 999, "missing", "")
+	if err == nil || n == -1 {
+		t.Fatalf("query failure must remain an error, stock=%d err=%v", n, err)
 	}
 }

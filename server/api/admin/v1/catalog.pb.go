@@ -32,6 +32,7 @@ type ListProductsRequest struct {
 	PageSize         int32                  `protobuf:"varint,5,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	LowStockOnly     bool                   `protobuf:"varint,6,opt,name=low_stock_only,json=lowStockOnly,proto3" json:"low_stock_only,omitempty"`             // 仅返回库存不足商品（阈值取 settings.supply.low_stock_threshold）
 	UpstreamSourceId uint64                 `protobuf:"varint,7,opt,name=upstream_source_id,json=upstreamSourceId,proto3" json:"upstream_source_id,omitempty"` // 按供货渠道筛选（0=全部；商品列表渠道商下拉）
+	OutOfStockOnly   bool                   `protobuf:"varint,9,opt,name=out_of_stock_only,json=outOfStockOnly,proto3" json:"out_of_stock_only,omitempty"`     // 仅库存为 0，按自营/上游货源分别计算
 	LocalOnly        bool                   `protobuf:"varint,8,opt,name=local_only,json=localOnly,proto3" json:"local_only,omitempty"`                        // 仅看自营（无上游渠道）
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -114,6 +115,13 @@ func (x *ListProductsRequest) GetUpstreamSourceId() uint64 {
 		return x.UpstreamSourceId
 	}
 	return 0
+}
+
+func (x *ListProductsRequest) GetOutOfStockOnly() bool {
+	if x != nil {
+		return x.OutOfStockOnly
+	}
+	return false
 }
 
 func (x *ListProductsRequest) GetLocalOnly() bool {
@@ -3231,7 +3239,7 @@ var File_admin_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x8c\x02\n" +
+	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb7\x02\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
@@ -3240,7 +3248,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x04 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x05 \x01(\x05R\bpageSize\x12$\n" +
 	"\x0elow_stock_only\x18\x06 \x01(\bR\flowStockOnly\x12,\n" +
-	"\x12upstream_source_id\x18\a \x01(\x04R\x10upstreamSourceId\x12\x1d\n" +
+	"\x12upstream_source_id\x18\a \x01(\x04R\x10upstreamSourceId\x12)\n" +
+	"\x11out_of_stock_only\x18\t \x01(\bR\x0eoutOfStockOnly\x12\x1d\n" +
 	"\n" +
 	"local_only\x18\b \x01(\bR\tlocalOnly\"\x98\x01\n" +
 	"\x11ListProductsReply\x12<\n" +

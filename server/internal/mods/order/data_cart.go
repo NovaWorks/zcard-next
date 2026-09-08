@@ -193,7 +193,12 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 	}
 	item.PriceCents = int64(price)
 	// 库存（inventory port 单查；失败降级 0——宁显无货不显假库存）
-	if p.StockType == "card" && s.inv != nil {
+	if p.UpstreamSourceID > 0 {
+		item.Stock = -2
+		if stocks, err := data.ProductStocks(ctx, s.data, []*ent.Product{p}); err == nil {
+			item.Stock = stocks[p.ID]
+		}
+	} else if p.StockType == "card" && s.inv != nil {
 		if stock, err := s.inv.Stock(ctx, row.ProductID, row.SkuID); err == nil {
 			item.Stock = stock
 		}

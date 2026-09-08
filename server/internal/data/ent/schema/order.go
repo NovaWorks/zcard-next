@@ -69,6 +69,7 @@ func (Order) Fields() []ent.Field {
 		field.String("idempotency_key").MaxLen(80).Unique().Optional().Comment("下单幂等键哈希（P1-03：同 key 返回首单）"),
 		field.Time("paid_at").SchemaType(mysqlTime).Optional(),
 		field.Time("closed_at").SchemaType(mysqlTime).Optional(),
+		field.Time("admin_deleted_at").SchemaType(mysqlTime).Optional().Nillable().Comment("管理列表软删除时间；保留订单、支付及审计记录"),
 		field.Time("expired_at").SchemaType(mysqlTime).Optional().Comment("超时取消扫描（INDEX(status, expired_at)）"),
 	}
 }

@@ -60,22 +60,25 @@
 
         <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级，替代胶囊） -->
         <div v-if="navStyle === 'grid' && categories.length" class="card cat-chips">
-          <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
+          <button class="mobile-cat-head" type="button" :aria-expanded="chipsExpanded" @click="chipsExpanded = !chipsExpanded">
+            <span class="mcb-bar"></span><span class="mcb-title">全部分类</span>
+            <span class="mcb-count">{{ categories.length }} 类</span>
+            <span class="mcb-toggle-label">{{ chipsExpanded ? '折叠' : '展开' }}</span>
+            <span class="mcb-arrow" :class="{ open: chipsExpanded }"></span>
+          </button>
+          <div v-show="chipsExpanded" class="cat-chips-row expanded">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
             </button>
-            <!-- 移动端展开/收起：贴右悬浮，免逐个横滑找分类 -->
-            <button class="chip chip-more" @click="chipsExpanded = !chipsExpanded">
-              {{ chipsExpanded ? '收起 ⌃' : '更多 ⌄' }}
-            </button>
           </div>
         </div>
         <div v-else-if="categories.length" class="card mobile-cat mobile-only">
-          <button class="mobile-cat-head" @click="mobileCatOpen = !mobileCatOpen">
+          <button class="mobile-cat-head" type="button" :aria-expanded="mobileCatOpen" @click="mobileCatOpen = !mobileCatOpen">
             <span class="mcb-bar"></span>
             <span class="mcb-title">全部分类</span>
             <span class="mcb-count">{{ categories.length }} 类</span>
+            <span class="mcb-toggle-label">{{ mobileCatOpen ? '折叠' : '展开' }}</span>
             <span class="mcb-arrow" :class="{ open: mobileCatOpen }"></span>
           </button>
           <div v-show="mobileCatOpen" class="mobile-cat-body">
@@ -393,8 +396,8 @@ onUnmounted(stopHero);
   .mobile-only { display: none; }
 }
 /* 分类胶囊（category_nav_style=grid 顶部导航 / list 移动端兜底）——饱满大尺寸 */
-.cat-chips { padding: 14px 16px; }
-.cat-chips-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.cat-chips { padding: 0; overflow: hidden; }
+.cat-chips-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px 16px; }
 .chip {
   padding: 9px 22px; border-radius: 999px; font-size: 15px; font-weight: 500; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
@@ -403,11 +406,6 @@ onUnmounted(stopHero);
 .chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
 .chip-icon { margin-right: 5px; }
 .chip-icon-img { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
-/* 「更多」按钮：仅移动端显示；sticky 贴滚动行右缘（底色遮住下层滑过的胶囊） */
-.chip-more {
-  display: none; position: sticky; right: 0; flex-shrink: 0;
-  background: #fff; border-color: #e5e7eb; box-shadow: -8px 0 12px -6px rgba(15, 23, 42, 0.18);
-}
 
 /* ── 移动端「全部分类」折叠面板（PC 左树的移动端等价物；含全部层级） ── */
 /* mobile-only 会给容器 display:flex，这里必须转纵向，防止头/体横排挤压树体 */
@@ -419,6 +417,7 @@ onUnmounted(stopHero);
 }
 .mcb-bar { width: 4px; height: 16px; border-radius: 999px; background: #ff5722; flex-shrink: 0; }
 .mcb-title { font-size: 15px; font-weight: 700; color: #111827; letter-spacing: 0.5px; }
+.mcb-toggle-label { font-size: 12px; color: #6b7280; }
 .mcb-count {
   margin-left: auto; font-size: 12px; color: #2563eb;
   background: rgba(37, 99, 235, 0.08); padding: 2px 9px; border-radius: 999px;
@@ -465,7 +464,8 @@ onUnmounted(stopHero);
   background: linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6);
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
 }
-.hero-banner h1 { font-size: 28px; margin-bottom: 8px; }
+.hero-banner > div { min-width: 0; }
+.hero-banner h1 { font-size: 28px; margin-bottom: 8px; overflow-wrap: anywhere; }
 .hero-banner p { opacity: 0.9; margin-bottom: 14px; }
 .hero-points { display: flex; gap: 14px; font-size: 13px; }
 .hero-icon { font-size: 72px; opacity: 0.35; }
@@ -521,6 +521,12 @@ onUnmounted(stopHero);
   gap: 14px;
 }
 .product-list { display: flex; flex-direction: column; gap: 10px; }
+@media (max-width: 640px) {
+  .product-list { gap: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+  .product-list :deep(.product-card) { border: none; border-radius: 0; border-bottom: 1px solid #e5e7eb; }
+  .product-list :deep(.product-card:last-child) { border-bottom: none; }
+  .product-list :deep(.product-card:hover) { transform: none; box-shadow: none; }
+}
 
 .empty-state { text-align: center; padding: 48px 0; }
 .empty-icon { font-size: 44px; margin-bottom: 8px; }
@@ -561,18 +567,9 @@ onUnmounted(stopHero);
   .hero-banner p { margin-bottom: 8px; font-size: 12px; }
   .hero-points { font-size: 12px; gap: 10px; flex-wrap: wrap; }
   .hero-icon { display: none; }
-  /* 分类胶囊：单行横向滑动（对齐主流电商分类栏），不折行占屏；
-     「更多」贴右悬浮——点开整片 wrap 平铺，免逐个滑找分类 */
-  .cat-chips { padding: 10px 12px; }
-  .cat-chips-row {
-    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .cat-chips-row.expanded { flex-wrap: wrap; overflow-x: visible; }
-  .cat-chips-row::-webkit-scrollbar { display: none; }
-  .chip { flex-shrink: 0; white-space: nowrap; }
-  .chip-more { display: inline-flex; }
-  .cat-chips-row.expanded .chip-more { margin-left: auto; position: static; box-shadow: none; }
+  /* 分类展开后自动换行，长分类名不撑出屏幕。 */
+  .cat-chips-row { gap: 8px; padding: 10px 12px; }
+  .chip { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
   /* 商品网格：双列瀑布（auto-fill minmax(200px) 在手机只能出 1 列） */
   .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
   /* 分页器：手机紧凑单行（上一页 · 当前/总页 · 下一页）——页码砖/省略号/首末跳转收起，

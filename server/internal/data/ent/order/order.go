@@ -79,6 +79,8 @@ const (
 	FieldPaidAt = "paid_at"
 	// FieldClosedAt holds the string denoting the closed_at field in the database.
 	FieldClosedAt = "closed_at"
+	// FieldAdminDeletedAt holds the string denoting the admin_deleted_at field in the database.
+	FieldAdminDeletedAt = "admin_deleted_at"
 	// FieldExpiredAt holds the string denoting the expired_at field in the database.
 	FieldExpiredAt = "expired_at"
 	// EdgeItems holds the string denoting the items edge name in mutations.
@@ -174,6 +176,7 @@ var Columns = []string{
 	FieldIdempotencyKey,
 	FieldPaidAt,
 	FieldClosedAt,
+	FieldAdminDeletedAt,
 	FieldExpiredAt,
 }
 
@@ -420,6 +423,11 @@ func ByPaidAt(opts ...sql.OrderTermOption) OrderOption {
 // ByClosedAt orders the results by the closed_at field.
 func ByClosedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClosedAt, opts...).ToFunc()
+}
+
+// ByAdminDeletedAt orders the results by the admin_deleted_at field.
+func ByAdminDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAdminDeletedAt, opts...).ToFunc()
 }
 
 // ByExpiredAt orders the results by the expired_at field.

@@ -137,16 +137,16 @@
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-        <!-- 操作按钮（本地卡密 0 库存禁购：soldOut；-1=不限（上游代发/直发）不禁） -->
+        <!-- 缺货和未知库存禁购；不限库存仍由后端按货源验证。 -->
         <div class="pd-actions">
-          <button class="pd-btn-buy" :disabled="submitting || soldOut" @click="buy">
-            {{ submitting ? '提交中…' : soldOut ? '暂时缺货' : '立即购买' }}
+          <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown" @click="buy">
+            {{ submitting ? '提交中…' : stockUnknown ? '库存待确认' : soldOut ? '暂时缺货' : '立即购买' }}
           </button>
           <button
             v-if="canCart"
             class="pd-btn-cart"
             :class="{ 'is-in': inCartNow }"
-            :disabled="submitting || cartBusy || soldOut"
+            :disabled="submitting || cartBusy || soldOut || stockUnknown"
             :title="inCartNow ? '从购物车移除' : '加入购物车'"
             @click="inCartNow ? removeFromCart() : addToCart()"
           >
@@ -154,8 +154,8 @@
             <template v-else-if="inCartNow">🗑️ 移除购物车</template>
             <template v-else>🛒 加入购物车</template>
           </button>
-          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut" @click="exchangePoints">
-            {{ soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
+          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown" @click="exchangePoints">
+            {{ stockUnknown ? '库存待确认' : soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
           </button>
         </div>
       </div>
@@ -243,15 +243,15 @@ const displayPrice = computed(() => {
 
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
-  if (p.value.stock_type !== 'card') return '不限';
   const s = p.value.stock ?? 0;
-  if (s < 0) return '充足'; // 上游代发：库存在上游，本地卡池口径不适用
+  if (s < -1) return '待确认';
+  if (s === -1) return '不限';
   return String(s);
 });
-// 售罄判定：仅本地卡密有限库存的 0 库存（proto3 零值省略 → undefined 视同 0）；
-// -1/undefined 以外负值为不限口径不禁
+// 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
+const stockUnknown = computed(() => (p.value?.stock ?? 0) < -1);
 const soldOut = computed(() => {
-  if (!p.value || p.value.stock_type !== 'card') return false;
+  if (!p.value) return false;
   return (p.value.stock ?? 0) === 0;
 });
 
@@ -282,7 +282,7 @@ const stockPct = computed(() => {
 // 购物车：积分商品不可加购（积分单走兑换按钮）；游客加购进本地购物车（老项目同款）
 
 async function addToCart() {
-  if (!p.value) return;
+  if (!p.value || soldOut.value || stockUnknown.value) return;
   addingCart.value = true;
   error.value = '';
   const { error: err } = await addToCartStore(p.value, quantity.value, selectedSku.value || 0);
@@ -425,7 +425,7 @@ function validateTradeFields(): boolean {
 }
 
 async function buy() {
-  if (!p.value) return;
+  if (!p.value || soldOut.value || stockUnknown.value) return;
   // 交易设置校验（查询密码 / 游客联系方式）
   if (!validateTradeFields()) { scrollToFormError(); return; }
   // 必填控件校验（proto3 空数组省略 → undefined 兜底空数组）
@@ -456,7 +456,7 @@ async function buy() {
 
 // 积分兑换（：use_points → 服务端同事务扣积分 → 订单直落 paid → 取货页交付）
 async function exchangePoints() {
-  if (!p.value) return;
+  if (!p.value || soldOut.value || stockUnknown.value) return;
   if (!getToken()) {
     router.push({ path: '/login', query: { redirect: route.fullPath } });
     return;

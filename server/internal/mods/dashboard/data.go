@@ -10,7 +10,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
@@ -229,41 +228,28 @@ func (r *DashboardRepoImpl) GetTopChannels(ctx context.Context) ([]TopChannel, e
 	return out, nil
 }
 
-// GetLowStockCount 库存预警商品数：上架商品（status=1）中可用卡密数 < threshold。
+// GetLowStockCount 库存预警商品数：上架商品（status=1）按本地/上游分别统计有限库存 < threshold。
 func (r *DashboardRepoImpl) GetLowStockCount(ctx context.Context, threshold int) (int64, error) {
 	if threshold < 1 {
 		threshold = 10
 	}
 	subsite := tenancy.FromContext(ctx).SubsiteID
 	client := data.Client(ctx, r.data)
-	// 按商品聚合可用卡密数（ent Scan 列映射：字段名小写化 + sql/json tag——见 ent scan.go）
-	var stock []struct {
-		ProductID uint64 `json:"product_id"`
-		Count     int    `json:"count"`
-	}
-	if err := client.Card.Query().
-		Where(card.StatusEQ(card.StatusAvailable), card.SubsiteID(subsite)).
-		GroupBy(card.FieldProductID).
-		Aggregate(ent.Count()).
-		Scan(ctx, &stock); err != nil {
+	products, err := client.Product.Query().Where(product.StatusEQ(1), product.SubsiteID(subsite)).All(ctx)
+	if err != nil {
 		return 0, err
 	}
-	counts := make(map[uint64]int, len(stock))
-	for _, s := range stock {
-		counts[s.ProductID] = s.Count
-	}
-	products, err := client.Product.Query().
-		Where(product.StatusEQ(1), product.SubsiteID(subsite)).
-		All(ctx)
+	stocks, err := data.ProductStocks(ctx, r.data, products)
 	if err != nil {
 		return 0, err
 	}
 	var low int64
-	for _, p := range products {
-		if counts[p.ID] < threshold {
+	for _, n := range stocks {
+		if n >= 0 && n < int64(threshold) {
 			low++
 		}
 	}
+
 	return low, nil
 }
 

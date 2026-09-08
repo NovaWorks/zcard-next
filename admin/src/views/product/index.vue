@@ -46,7 +46,7 @@ const page = ref(1);
 const pageSize = ref(20);
 
 // 快捷筛选卡片（后端 status 口径：0=全部 1=上架 2=隐藏 -1=仅下架；low_stock=库存告急）
-const statusFilter = ref<number | "low_stock">(0);
+const statusFilter = ref<number | "low_stock" | "out_of_stock">(0);
 const categoryFilter = ref<number | null>(null); // 分类筛选（null=全部）
 const supplyFilter = ref<number | null>(null); // 渠道筛选（null=全部 0=自营 >0=渠道ID）
 const statusTabs = [
@@ -55,6 +55,7 @@ const statusTabs = [
   { label: "已隐藏", value: 2, type: "warning" as const },
   { label: "已下架", value: -1, type: "error" as const },
   { label: "库存告急", value: "low_stock" as const, type: "warning" as const },
+  { label: "无库存", value: "out_of_stock" as const, type: "error" as const },
 ];
 
 // 列表多选（批量上下架）
@@ -225,8 +226,6 @@ function priceCell(row: any) {
 
 // statsCell 库存/已售块：两行，标签定宽 + 数值紧邻（与价格块视觉一致）
 function statsCell(row: any) {
-  const isCard = row.stock_type === "card";
-  const isUpstream = (row.upstream_source_id ?? 0) > 0; // 代发：库存=上游缓存
   const stock = row.stock ?? 0; // -1 = 不限（链接/兑换码类不入卡池；代发上游无限）
   const sold = row.sold_count ?? 0;
   const line = (label: string, value: any) =>
@@ -235,8 +234,9 @@ function statsCell(row: any) {
       value,
     ]);
   // 库存颜色：卡密类 0=红（缺货）、≤10=橙（低库存预警）；代发/链接/兑换码 -1=不限
-  const stockNode = !isCard || (isUpstream && stock < 0)
-    ? h("span", {}, "不限")
+  const stockNode = stock < -1
+    ? h("span", { class: "text-gray-400" }, "待确认")
+    : stock === -1 ? h("span", {}, "不限")
     : stock <= 0
       ? h("span", { class: "font-medium text-red-500" }, "0 件")
       : h("span", { class: stock <= 10 ? "text-orange-500" : "" }, `${stock} 件`);
@@ -546,8 +546,9 @@ async function loadList() {
   try {
     const { data, error } = await fetchProducts({
       keyword: keyword.value || undefined,
-      status: statusFilter.value === "low_stock" ? undefined : statusFilter.value || undefined,
+      status: typeof statusFilter.value === "number" ? statusFilter.value || undefined : undefined,
       low_stock_only: statusFilter.value === "low_stock" || undefined,
+      out_of_stock_only: statusFilter.value === "out_of_stock" || undefined,
       category_id: categoryFilter.value || undefined,
       upstream_source_id: (supplyFilter.value ?? 0) > 0 ? supplyFilter.value! : undefined,
       local_only: supplyFilter.value === 0 || undefined,

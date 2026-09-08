@@ -667,6 +667,26 @@ func (_u *OrderUpdate) ClearClosedAt() *OrderUpdate {
 	return _u
 }
 
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (_u *OrderUpdate) SetAdminDeletedAt(v time.Time) *OrderUpdate {
+	_u.mutation.SetAdminDeletedAt(v)
+	return _u
+}
+
+// SetNillableAdminDeletedAt sets the "admin_deleted_at" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableAdminDeletedAt(v *time.Time) *OrderUpdate {
+	if v != nil {
+		_u.SetAdminDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearAdminDeletedAt clears the value of the "admin_deleted_at" field.
+func (_u *OrderUpdate) ClearAdminDeletedAt() *OrderUpdate {
+	_u.mutation.ClearAdminDeletedAt()
+	return _u
+}
+
 // SetExpiredAt sets the "expired_at" field.
 func (_u *OrderUpdate) SetExpiredAt(v time.Time) *OrderUpdate {
 	_u.mutation.SetExpiredAt(v)
@@ -1218,6 +1238,12 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ClosedAtCleared() {
 		_spec.ClearField(order.FieldClosedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AdminDeletedAt(); ok {
+		_spec.SetField(order.FieldAdminDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.AdminDeletedAtCleared() {
+		_spec.ClearField(order.FieldAdminDeletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ExpiredAt(); ok {
 		_spec.SetField(order.FieldExpiredAt, field.TypeTime, value)
@@ -2148,6 +2174,26 @@ func (_u *OrderUpdateOne) ClearClosedAt() *OrderUpdateOne {
 	return _u
 }
 
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (_u *OrderUpdateOne) SetAdminDeletedAt(v time.Time) *OrderUpdateOne {
+	_u.mutation.SetAdminDeletedAt(v)
+	return _u
+}
+
+// SetNillableAdminDeletedAt sets the "admin_deleted_at" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableAdminDeletedAt(v *time.Time) *OrderUpdateOne {
+	if v != nil {
+		_u.SetAdminDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearAdminDeletedAt clears the value of the "admin_deleted_at" field.
+func (_u *OrderUpdateOne) ClearAdminDeletedAt() *OrderUpdateOne {
+	_u.mutation.ClearAdminDeletedAt()
+	return _u
+}
+
 // SetExpiredAt sets the "expired_at" field.
 func (_u *OrderUpdateOne) SetExpiredAt(v time.Time) *OrderUpdateOne {
 	_u.mutation.SetExpiredAt(v)
@@ -2729,6 +2775,12 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.ClosedAtCleared() {
 		_spec.ClearField(order.FieldClosedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.AdminDeletedAt(); ok {
+		_spec.SetField(order.FieldAdminDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.AdminDeletedAtCleared() {
+		_spec.ClearField(order.FieldAdminDeletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ExpiredAt(); ok {
 		_spec.SetField(order.FieldExpiredAt, field.TypeTime, value)

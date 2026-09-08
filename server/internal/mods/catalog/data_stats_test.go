@@ -17,7 +17,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
-	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	ordermod "github.com/NovaWorks/zcard-next/server/internal/mods/order"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
@@ -37,9 +36,8 @@ func newStatsEnv(t *testing.T) (*data.Data, *AdminCatalogService) {
 	}
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
 	gen, _ := id.NewGenerator(1)
-	cardRepo := inventory.NewCardRepoImpl(d, nil)
 	uc := &ordermod.OrderUsecase{Data: d, Gen: gen}
-	svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), cardRepo, uc, nil, nil)
+	svc := NewAdminCatalogService(NewProductRepoImpl(d, nil), uc, nil, nil)
 	return d, svc
 }
 

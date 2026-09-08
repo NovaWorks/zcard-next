@@ -28,6 +28,7 @@ type ListOrdersRequest struct {
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	Cursor        uint64                 `protobuf:"varint,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Keyword       string                 `protobuf:"bytes,4,opt,name=keyword,proto3" json:"keyword,omitempty"` // 订单号或联系方式（包含匹配）。
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -81,6 +82,13 @@ func (x *ListOrdersRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *ListOrdersRequest) GetKeyword() string {
+	if x != nil {
+		return x.Keyword
+	}
+	return ""
 }
 
 type ListOrdersReply struct {
@@ -712,15 +720,60 @@ func (x *CancelOrderRequest) GetReason() string {
 	return ""
 }
 
+type DeleteOrdersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNos      []string               `protobuf:"bytes,1,rep,name=order_nos,json=orderNos,proto3" json:"order_nos,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteOrdersRequest) Reset() {
+	*x = DeleteOrdersRequest{}
+	mi := &file_admin_v1_order_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteOrdersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteOrdersRequest) ProtoMessage() {}
+
+func (x *DeleteOrdersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_order_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteOrdersRequest.ProtoReflect.Descriptor instead.
+func (*DeleteOrdersRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_order_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DeleteOrdersRequest) GetOrderNos() []string {
+	if x != nil {
+		return x.OrderNos
+	}
+	return nil
+}
+
 var File_admin_v1_order_proto protoreflect.FileDescriptor
 
 const file_admin_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"Y\n" +
+	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"s\n" +
 	"\x11ListOrdersRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x16\n" +
 	"\x06cursor\x18\x02 \x01(\x04R\x06cursor\x12\x14\n" +
-	"\x05limit\x18\x03 \x01(\x05R\x05limit\"j\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x18\n" +
+	"\akeyword\x18\x04 \x01(\tR\akeyword\"j\n" +
 	"\x0fListOrdersReply\x126\n" +
 	"\x06orders\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.AdminOrderR\x06orders\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +
@@ -788,12 +841,15 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"created_at\x18\x06 \x01(\x03R\tcreatedAt\"Q\n" +
 	"\x12CancelOrderRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12\x1b\n" +
-	"\x06reason\x18\x02 \x01(\tB\x03\xe0A\x02R\x06reason2\x8d\x03\n" +
+	"\x06reason\x18\x02 \x01(\tB\x03\xe0A\x02R\x06reason\"7\n" +
+	"\x13DeleteOrdersRequest\x12 \n" +
+	"\torder_nos\x18\x01 \x03(\tB\x03\xe0A\x02R\borderNos2\x86\x04\n" +
 	"\x11AdminOrderService\x12v\n" +
 	"\n" +
 	"ListOrders\x12%.zcard.api.admin.v1.ListOrdersRequest\x1a#.zcard.api.admin.v1.ListOrdersReply\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/api/v1/admin/orders\x12}\n" +
 	"\bGetOrder\x12(.zcard.api.admin.v1.GetAdminOrderRequest\x1a\x1e.zcard.api.admin.v1.AdminOrder\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/orders/{order_no}\x12\x80\x01\n" +
-	"\vCancelOrder\x12&.zcard.api.admin.v1.CancelOrderRequest\x1a\x16.google.protobuf.Empty\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/v1/admin/orders/{order_no}/cancelB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
+	"\vCancelOrder\x12&.zcard.api.admin.v1.CancelOrderRequest\x1a\x16.google.protobuf.Empty\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/v1/admin/orders/{order_no}/cancel\x12w\n" +
+	"\fDeleteOrders\x12'.zcard.api.admin.v1.DeleteOrdersRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/orders/deleteB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_admin_v1_order_proto_rawDescOnce sync.Once
@@ -807,7 +863,7 @@ func file_admin_v1_order_proto_rawDescGZIP() []byte {
 	return file_admin_v1_order_proto_rawDescData
 }
 
-var file_admin_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_admin_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_admin_v1_order_proto_goTypes = []any{
 	(*ListOrdersRequest)(nil),    // 0: zcard.api.admin.v1.ListOrdersRequest
 	(*ListOrdersReply)(nil),      // 1: zcard.api.admin.v1.ListOrdersReply
@@ -817,7 +873,8 @@ var file_admin_v1_order_proto_goTypes = []any{
 	(*AmountLine)(nil),           // 5: zcard.api.admin.v1.AmountLine
 	(*StatusEvent)(nil),          // 6: zcard.api.admin.v1.StatusEvent
 	(*CancelOrderRequest)(nil),   // 7: zcard.api.admin.v1.CancelOrderRequest
-	(*emptypb.Empty)(nil),        // 8: google.protobuf.Empty
+	(*DeleteOrdersRequest)(nil),  // 8: zcard.api.admin.v1.DeleteOrdersRequest
+	(*emptypb.Empty)(nil),        // 9: google.protobuf.Empty
 }
 var file_admin_v1_order_proto_depIdxs = []int32{
 	3, // 0: zcard.api.admin.v1.ListOrdersReply.orders:type_name -> zcard.api.admin.v1.AdminOrder
@@ -827,11 +884,13 @@ var file_admin_v1_order_proto_depIdxs = []int32{
 	0, // 4: zcard.api.admin.v1.AdminOrderService.ListOrders:input_type -> zcard.api.admin.v1.ListOrdersRequest
 	2, // 5: zcard.api.admin.v1.AdminOrderService.GetOrder:input_type -> zcard.api.admin.v1.GetAdminOrderRequest
 	7, // 6: zcard.api.admin.v1.AdminOrderService.CancelOrder:input_type -> zcard.api.admin.v1.CancelOrderRequest
-	1, // 7: zcard.api.admin.v1.AdminOrderService.ListOrders:output_type -> zcard.api.admin.v1.ListOrdersReply
-	3, // 8: zcard.api.admin.v1.AdminOrderService.GetOrder:output_type -> zcard.api.admin.v1.AdminOrder
-	8, // 9: zcard.api.admin.v1.AdminOrderService.CancelOrder:output_type -> google.protobuf.Empty
-	7, // [7:10] is the sub-list for method output_type
-	4, // [4:7] is the sub-list for method input_type
+	8, // 7: zcard.api.admin.v1.AdminOrderService.DeleteOrders:input_type -> zcard.api.admin.v1.DeleteOrdersRequest
+	1, // 8: zcard.api.admin.v1.AdminOrderService.ListOrders:output_type -> zcard.api.admin.v1.ListOrdersReply
+	3, // 9: zcard.api.admin.v1.AdminOrderService.GetOrder:output_type -> zcard.api.admin.v1.AdminOrder
+	9, // 10: zcard.api.admin.v1.AdminOrderService.CancelOrder:output_type -> google.protobuf.Empty
+	9, // 11: zcard.api.admin.v1.AdminOrderService.DeleteOrders:output_type -> google.protobuf.Empty
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
 	4, // [4:4] is the sub-list for extension type_name
 	4, // [4:4] is the sub-list for extension extendee
 	0, // [0:4] is the sub-list for field type_name
@@ -848,7 +907,7 @@ func file_admin_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_order_proto_rawDesc), len(file_admin_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

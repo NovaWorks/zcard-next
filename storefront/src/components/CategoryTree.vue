@@ -2,12 +2,16 @@
   <aside class="cat-tree" :class="{ 'cat-tree--panel': variant === 'panel' }">
     <div class="cat-tree-card">
       <!-- 标题栏：品牌竖条 + 标题 + 分类数（与右侧「全部商品」区标题同一设计语言） -->
-      <div class="cat-tree-head">
+      <button class="cat-tree-head" type="button" :aria-expanded="bodyOpen" @click="manualOpen = !bodyOpen">
         <span class="head-bar"></span>
         <span class="cat-tree-title">全部分类</span>
         <span v-if="categories.length" class="cat-tree-count">{{ categories.length }} 类</span>
-      </div>
-      <div class="cat-tree-body">
+        <span class="cat-tree-toggle-label">{{ bodyOpen ? '折叠' : '展开' }}</span>
+      </button>
+      <div v-show="bodyOpen" class="cat-tree-body">
+        <button v-if="branchIds.length" class="tree-expand-all" type="button" @click="toggleAll">
+          {{ allExpanded ? '全部折叠' : '全部展开' }}
+        </button>
         <!-- 全部商品入口 -->
         <button
           class="tree-all"
@@ -35,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import CategoryTreeNode from './CategoryTreeNode.vue';
 import type { CategoryItem } from '@/api';
 
@@ -52,6 +56,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
 }>();
+const manualOpen = ref<boolean | null>(null);
+const bodyOpen = computed(() => props.variant === 'panel' || (manualOpen.value ?? props.categories.length <= 1));
 
 // 分类树（任意层级：parent_id 链构建 children；一级为根）
 const tree = computed(() => {
@@ -67,8 +73,27 @@ const tree = computed(() => {
 // 一级分类（parent_id 缺失/0 为根——proto3 JSON 省略 0 值字段，须用 falsy 判断）
 const roots = computed(() => props.categories.filter((c) => !c.parent_id));
 
-// 展开状态（默认全展开）
-const expanded = ref<Set<number>>(new Set(props.categories.filter((c) => !!c.parent_id).map((c) => c.parent_id)));
+// 多级分类默认收起，选中深层分类时只展开其祖先。
+const expanded = ref<Set<number>>(new Set());
+const branchIds = computed(() => [...new Set(props.categories.filter((c) => c.parent_id).map((c) => c.parent_id!))]);
+const allExpanded = computed(() => branchIds.value.length > 0 && branchIds.value.every((id) => expanded.value.has(id)));
+
+function toggleAll() {
+  expanded.value = new Set(allExpanded.value ? [] : branchIds.value);
+}
+
+watch(() => [props.modelValue, props.categories] as const, () => {
+  const byId = new Map(props.categories.map((c) => [c.id, c]));
+  const next = new Set(expanded.value);
+  const seen = new Set<number>();
+  let parent = byId.get(props.modelValue)?.parent_id;
+  while (parent && !seen.has(parent)) {
+    seen.add(parent);
+    next.add(parent);
+    parent = byId.get(parent)?.parent_id;
+  }
+  expanded.value = next;
+}, { immediate: true });
 
 function toggle(id: number) {
   const s = new Set(expanded.value);
@@ -100,11 +125,13 @@ function select(id: number) {
   top: 72px; /* 品牌条 + 主导航之下 */
 }
 .cat-tree-head {
+  width: 100%; border: none; font: inherit; text-align: left; cursor: pointer;
   display: flex; align-items: center; gap: 8px;
   padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
   background: #f8fafc;
 }
+.cat-tree-toggle-label { font-size: 12px; color: #6b7280; white-space: nowrap; }
 .head-bar {
   width: 4px; height: 16px; border-radius: 999px;
   background: #ff5722; display: inline-block; flex-shrink: 0;
@@ -119,6 +146,8 @@ function select(id: number) {
   white-space: nowrap;
 }
 .cat-tree-body { padding: 12px 10px; max-height: calc(100vh - 220px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.tree-expand-all { align-self: flex-end; min-height: 44px; padding: 6px 10px; border: none; border-radius: 6px; background: none; color: #2563eb; font: inherit; font-size: 13px; cursor: pointer; }
+.tree-expand-all:hover { background: #eff6ff; }
 
 .tree-all {
   width: 100%;

@@ -200,6 +200,11 @@ func ClosedAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldClosedAt, v))
 }
 
+// AdminDeletedAt applies equality check predicate on the "admin_deleted_at" field. It's identical to AdminDeletedAtEQ.
+func AdminDeletedAt(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldAdminDeletedAt, v))
+}
+
 // ExpiredAt applies equality check predicate on the "expired_at" field. It's identical to ExpiredAtEQ.
 func ExpiredAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldExpiredAt, v))
@@ -1848,6 +1853,56 @@ func ClosedAtIsNil() predicate.Order {
 // ClosedAtNotNil applies the NotNil predicate on the "closed_at" field.
 func ClosedAtNotNil() predicate.Order {
 	return predicate.Order(sql.FieldNotNull(FieldClosedAt))
+}
+
+// AdminDeletedAtEQ applies the EQ predicate on the "admin_deleted_at" field.
+func AdminDeletedAtEQ(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldAdminDeletedAt, v))
+}
+
+// AdminDeletedAtNEQ applies the NEQ predicate on the "admin_deleted_at" field.
+func AdminDeletedAtNEQ(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldAdminDeletedAt, v))
+}
+
+// AdminDeletedAtIn applies the In predicate on the "admin_deleted_at" field.
+func AdminDeletedAtIn(vs ...time.Time) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldAdminDeletedAt, vs...))
+}
+
+// AdminDeletedAtNotIn applies the NotIn predicate on the "admin_deleted_at" field.
+func AdminDeletedAtNotIn(vs ...time.Time) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldAdminDeletedAt, vs...))
+}
+
+// AdminDeletedAtGT applies the GT predicate on the "admin_deleted_at" field.
+func AdminDeletedAtGT(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldAdminDeletedAt, v))
+}
+
+// AdminDeletedAtGTE applies the GTE predicate on the "admin_deleted_at" field.
+func AdminDeletedAtGTE(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldAdminDeletedAt, v))
+}
+
+// AdminDeletedAtLT applies the LT predicate on the "admin_deleted_at" field.
+func AdminDeletedAtLT(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldAdminDeletedAt, v))
+}
+
+// AdminDeletedAtLTE applies the LTE predicate on the "admin_deleted_at" field.
+func AdminDeletedAtLTE(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldAdminDeletedAt, v))
+}
+
+// AdminDeletedAtIsNil applies the IsNil predicate on the "admin_deleted_at" field.
+func AdminDeletedAtIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldAdminDeletedAt))
+}
+
+// AdminDeletedAtNotNil applies the NotNil predicate on the "admin_deleted_at" field.
+func AdminDeletedAtNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldAdminDeletedAt))
 }
 
 // ExpiredAtEQ applies the EQ predicate on the "expired_at" field.

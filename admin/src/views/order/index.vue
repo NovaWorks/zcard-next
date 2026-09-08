@@ -19,6 +19,7 @@ import {
   fetchOrders,
   fetchOrder,
   cancelOrder,
+  deleteOrders,
   createRefund,
   fetchPendingDeliveries,
   manualDeliver,
@@ -37,6 +38,11 @@ const pageSize = ref(20);
 const cursors = ref<number[]>([0]);
 const hasMore = ref(false);
 const statusFilter = ref<string>("");
+const keywordInput = ref("");
+const keyword = ref("");
+const selectedOrders = ref<string[]>([]);
+const deleting = ref(false);
+let listRequest = 0;
 const showDetail = ref(false);
 const detail = ref<{
   order_no: string;
@@ -66,6 +72,7 @@ const statusTabs = [
   { label: "已发货", value: "delivered", type: "success" as const },
   { label: "已完成", value: "completed", type: "success" as const },
   { label: "已取消", value: "canceled", type: "error" as const },
+  { label: "已过期", value: "expired", type: "error" as const },
   { label: "已退款", value: "refunded", type: "error" as const },
 ];
 
@@ -190,6 +197,7 @@ function formatTime(ts?: number) {
 }
 
 const columns: DataTableColumns<any> = [
+  { type: "selection", disabled: (row) => !canDelete(row) },
   { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
   {
     title: "状态",
@@ -208,7 +216,7 @@ const columns: DataTableColumns<any> = [
     width: 100,
     render: (row) => formatMoney(row.total_cents),
   },
-  { title: "联系方式", key: "contact", width: 140, ellipsis: { tooltip: true } },
+  { title: "联系方式", key: "contact", width: 140, ellipsis: { tooltip: true }, render: (row) => row.contact || row.guest_contact || "-" },
   {
     title: "创建时间",
     key: "created_at",
@@ -240,6 +248,12 @@ const columns: DataTableColumns<any> = [
                     default: () => "确定取消该订单？",
                   },
                 )
+              : null,
+            canDelete(row)
+              ? h(NPopconfirm, { onPositiveClick: () => handleDelete([row.order_no]) }, {
+                  trigger: () => h(NButton, { size: "small", type: "error", disabled: deleting.value }, { default: () => "删除" }),
+                  default: () => "从管理列表删除该订单？关联支付及审计记录将保留。",
+                })
               : null,
           ],
         },
@@ -326,14 +340,18 @@ const amountColumns: DataTableColumns<any> = [
 ];
 
 async function loadOrders() {
+  const requestId = ++listRequest;
   loading.value = true;
+  selectedOrders.value = [];
   try {
     const cur = cursors.value[page.value - 1] || 0;
     const { data, error } = await fetchOrders({
       status: statusFilter.value || undefined,
       cursor: cur || undefined,
       limit: pageSize.value,
+      keyword: keyword.value || undefined,
     });
+    if (requestId !== listRequest) return;
     if (!error && data) {
       orders.value = (data as any).orders || [];
       const next = Number((data as any).next_cursor || 0);
@@ -341,7 +359,37 @@ async function loadOrders() {
       if (next > 0) cursors.value[page.value] = next;
     }
   } finally {
-    loading.value = false;
+    if (requestId === listRequest) loading.value = false;
+  }
+}
+
+function searchOrders() {
+  keyword.value = keywordInput.value.trim();
+  resetOrderList();
+}
+
+function clearSearch() {
+  keywordInput.value = "";
+  keyword.value = "";
+  resetOrderList();
+}
+
+function canDelete(row: any) {
+  return checkAuth("order:delete") && ["canceled", "expired"].includes(row.status) && !Number(row.paid_at);
+}
+
+async function handleDelete(orderNos: string[]) {
+  if (deleting.value || !orderNos.length) return;
+  deleting.value = true;
+  try {
+    const { error } = await deleteOrders(orderNos);
+    if (!error) {
+      window.$message?.success(`已从列表删除 ${orderNos.length} 条订单`);
+      if (detail.value && orderNos.includes(detail.value.order_no)) showDetail.value = false;
+      resetOrderList();
+    }
+  } finally {
+    deleting.value = false;
   }
 }
 
@@ -447,12 +495,21 @@ onMounted(loadOrders);
     <NCard title="订单管理" class="flex-1">
       <NTabs type="line">
         <NTabPane name="orders" tab="订单列表">
+          <form class="mb-12px flex flex-wrap items-center gap-8px" @submit.prevent="searchOrders">
+            <NInput v-model:value="keywordInput" clearable :maxlength="150" placeholder="搜索订单号 / 联系方式" aria-label="搜索订单号或联系方式" style="width: 320px; max-width: 100%" @clear="clearSearch" />
+            <NButton attr-type="submit" type="primary">搜索</NButton>
+            <NButton @click="clearSearch">重置</NButton>
+            <NPopconfirm v-if="checkAuth('order:delete')" @positive-click="handleDelete([...selectedOrders])">
+              <template #trigger><NButton type="error" :loading="deleting" :disabled="loading || !selectedOrders.length">删除所选（{{ selectedOrders.length }}）</NButton></template>
+              确认从管理列表删除选中的 {{ selectedOrders.length }} 条订单？仅支持已取消、已过期的未付款订单，关联支付及审计记录保留。
+            </NPopconfirm>
+          </form>
           <div class="mb-16px flex flex-wrap items-center justify-between gap-12px">
             <FilterTabs v-model:value="statusFilter" :options="statusTabs" @change="resetOrderList" />
             <NButton @click="loadOrders">刷新</NButton>
           </div>
 
-          <NDataTable :columns="columns" :data="orders" :loading="loading"  :max-height="540" />
+          <NDataTable v-model:checked-row-keys="selectedOrders" :row-key="(row) => row.order_no" :columns="columns" :data="orders" :loading="loading" :max-height="540" :scroll-x="900" />
 
           <TablePager
             v-model:page="page"

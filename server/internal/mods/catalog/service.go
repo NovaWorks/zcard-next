@@ -10,7 +10,6 @@ import (
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
-	inventoryport "github.com/NovaWorks/zcard-next/server/internal/mods/inventory/port"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
@@ -25,15 +24,13 @@ type StoreCatalogService struct {
 	// pricer 分站定价（：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
 	// nil = 主站直营形态不解析分站价）。
 	pricer resellerport.Pricer
-	// stock 批量可用库存（库存真实值；nil 容错降级 0——同 AdminCatalogService）
-	stock inventoryport.StockBatcher
 	// sold 批量已售数量（列表展示 + sales 排序；nil 容错降级 0）
 	sold orderport.SoldCounter
 }
 
 // NewStoreCatalogService 构造。
-func NewStoreCatalogService(uc *CatalogUsecase, pricer resellerport.Pricer, stock inventoryport.StockBatcher, sold orderport.SoldCounter) *StoreCatalogService {
-	return &StoreCatalogService{uc: uc, pricer: pricer, stock: stock, sold: sold}
+func NewStoreCatalogService(uc *CatalogUsecase, pricer resellerport.Pricer, sold orderport.SoldCounter) *StoreCatalogService {
+	return &StoreCatalogService{uc: uc, pricer: pricer, sold: sold}
 }
 
 // ListProducts 商品列表（游客可访问；隐藏商品不出现在列表）。
@@ -105,16 +102,12 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 		Page:     page,
 		PageSize: pageSize,
 	}
-	var cardIDs []uint64
-	for i := range items {
-		if items[i].StockType == "card" {
-			cardIDs = append(cardIDs, items[i].ID)
-		}
+	ids := make([]uint64, 0, len(items))
+	for _, p := range items {
+		ids = append(ids, p.ID)
 	}
-	var stocks map[uint64]int64
-	if s.stock != nil {
-		stocks, _ = s.stock.StockBatch(ctx, cardIDs) // 失败降级：留 0
-	}
+	stocks, _ := s.uc.repo.StockBatch(ctx, ids) // 读取失败展示待确认，不能冒充充足。
+
 	for i := range items {
 		p := &items[i]
 		if tc.SubsiteID != tenancy.MainSubsiteID && s.pricer != nil {
@@ -156,10 +149,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 			p.Price = sp
 		}
 	}
-	var stocks map[uint64]int64
-	if s.stock != nil && p.StockType == "card" {
-		stocks, _ = s.stock.StockBatch(ctx, []uint64{p.ID})
-	}
+	stocks, _ := s.uc.repo.StockBatch(ctx, []uint64{p.ID})
 	out := toStorefrontProduct(p, stocks, 0)
 	controls, err := s.uc.ListControls(ctx, req.GetId())
 	if err != nil {
@@ -207,24 +197,14 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	return out, nil
 }
 
-// toStorefrontProduct DTO 映射。stocks 为批量可用库存（nil = 未注入/失败降级）：
-// card 类商品取真实值（stock_visible=false 时仍返回真实值——展示与否由前端
-// 按 stock_visible 决定； 冒烟修复：此前写死 0）；非 card 类 -1=不限。
-// 上游代发商品恒 -1：库存在上游，本地空卡池的 0 会误显"缺货/已兑完"（前端
-// 以负数=不限口径渲染；下单拦截由 order 侧上游库存闸门负责）。
-// soldCount 为该商品已售数（0 = 未注入/无销量）。
+// toStorefrontProduct preserves source-aware stock: >=0 finite, -1 unlimited,
+// -2 unknown. Stock visibility only controls display, never purchase validation.
 func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int64) *storefrontv1.Product {
-	var stock int64
-	switch {
-	case p.UpstreamSourceID > 0:
-		stock = -1 // 上游代发：本地卡池口径不适用
-	case p.StockType == "card":
-		if stocks != nil {
-			stock = stocks[p.ID]
-		}
-	default:
-		stock = -1 // 链接/兑换码类：不限（卡池口径不适用）
+	stock, ok := stocks[p.ID]
+	if !ok {
+		stock = -2
 	}
+
 	return &storefrontv1.Product{
 		Id:             p.ID,
 		Name:           p.Name,

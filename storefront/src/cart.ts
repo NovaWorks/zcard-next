@@ -100,6 +100,8 @@ export async function loadCart() {
 
 /** 加购（登录 → 后端；游客/令牌失效 → 本地，同商品同 SKU 合并数量）；成功后同步角标 */
 export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number }, quantity: number, skuId = 0) {
+  if ((product.stock ?? 0) === 0) return { data: null, error: '暂时缺货' };
+  if ((product.stock ?? 0) < -1) return { data: null, error: '库存待确认，请稍后重试' };
   let result;
   if (getToken()) {
     const { data, error } = await addCart(product.id, quantity, skuId);
@@ -130,7 +132,7 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
       quantity,
       product_name: product.name,
       price_cents: product.price_cents,
-      stock: product.stock ?? -1, // -1 = 未知库存（接口零值省略），视为有效，下单时后端校验
+      stock: product.stock ?? 0, // proto3 省略零库存，不能转换成不限。
       points_only: !!product.points_required,
       points_required: product.points_required || 0,
       valid: true,

@@ -145,3 +145,19 @@ func TestCartInvalidFlag(t *testing.T) {
 		t.Fatal("未登录应拒绝")
 	}
 }
+
+func TestCartUpstreamStockSource(t *testing.T) {
+	svc, d := newCartEnv(t)
+	ctx := userCtx(1)
+	for i, want := range []int32{0, 129, 299, -1, -2} {
+		code := fmt.Sprintf("stock-%d", i)
+		p := d.Client.Product.Create().SetName(code).SetSlug(code).SetStockType("card").SetStatus(1).SetUpstreamSourceID(9).SetUpstreamProductCode(code).SaveX(ctx)
+		if want != -2 {
+			d.Client.SupplyMapping.Create().SetConnectionID(9).SetUpstreamProduct(code).SetLocalProductID(p.ID).SetUpStock(want).SaveX(ctx)
+		}
+		item, err := svc.AddCartItem(ctx, &storefrontv1.AddCartItemRequest{ProductId: p.ID, Quantity: 1})
+		if err != nil || item.Stock != int64(want) {
+			t.Fatalf("stock=%v want=%d err=%v", item, want, err)
+		}
+	}
+}

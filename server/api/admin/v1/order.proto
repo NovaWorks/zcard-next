@@ -25,12 +25,20 @@ service AdminOrderService {
       body: "*"
     };
   }
+  // DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+  rpc DeleteOrders(DeleteOrdersRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/api/v1/admin/orders/delete"
+      body: "*"
+    };
+  }
 }
 
 message ListOrdersRequest {
   string status = 1;
   uint64 cursor = 2;
   int32 limit = 3;
+  string keyword = 4; // 订单号或联系方式（包含匹配）。
 }
 
 message ListOrdersReply {
@@ -100,4 +108,8 @@ message StatusEvent {
 message CancelOrderRequest {
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   string reason = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message DeleteOrdersRequest {
+  repeated string order_nos = 1 [(google.api.field_behavior) = REQUIRED];
 }

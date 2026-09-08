@@ -47,13 +47,13 @@ type UpstreamCallbackResult struct {
 }
 
 // UpstreamGateway 上游采购网关（procurement 模块消费，通道 A）。
-// 实现位于 supply 模块（连接凭据解密 + 适配器装配 + fail-open 库存兜底）。
+// 实现位于 supply 模块（连接凭据解密 + 适配器装配 + 实时库存校验）。
 type UpstreamGateway interface {
 	// Submit 提交采购（幂等键随请求；永久错误归一化为哨兵错误语义，见实现）。
 	Submit(ctx context.Context, req PurchaseRequest) (*PurchaseResult, error)
 	// Query 查询上游订单（三通道结果汇聚共用）。
 	Query(ctx context.Context, connectionID uint64, upstreamOrderID string) (*PurchaseOrderInfo, error)
-	// CheckStock 实时库存校验（ fail-open：查询失败返回 -1 放行，语义由调用方决定；
+	// CheckStock 实时库存校验（-1=上游明确不限；查询失败保留 error；
 	// skuCode 为上游规格标识，可空——商品级口径）。
 	CheckStock(ctx context.Context, connectionID uint64, productCode, skuCode string) (int32, error)
 	// Refund 向上游传导退款（可选能力；不支持返回 ErrRefundNotSupported）。

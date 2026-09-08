@@ -187,12 +187,19 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
   .brand-trust { display: none; }
 
   /* 头部两行：第一行 logo + 购物车/登录注册；第二行导航胶囊横向滑动（不逐字换行） */
-  .topbar { flex-wrap: wrap; gap: 0 8px; padding: 8px 12px; }
-  .topbar .logo { order: 1; }
-  .logo-name { font-size: 16px; }
-  .nav-right { order: 2; margin-left: auto; gap: 2px; }
+  .topbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 8px 12px; }
+  .topbar .logo { grid-column: 1; grid-row: 1; min-width: 0; gap: 6px; }
+  .topbar .logo-mark { flex-shrink: 0; width: 26px; height: 26px; }
+  .logo-name {
+    min-width: 0; font-size: 15px; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  .nav-right { grid-column: 2; grid-row: 1; min-width: 0; margin-left: 0; gap: 2px; white-space: nowrap; font-size: 13px; }
+  .nav-right .btn { padding: 8px 10px; font-size: 13px; }
+  .nav-right .member-link { padding: 6px; font-size: 13px; }
   .nav-links {
-    order: 3; flex: 1 1 100%; width: 100%;
+    grid-column: 1 / -1; grid-row: 2; min-width: 0; width: 100%;
     overflow-x: auto; -webkit-overflow-scrolling: touch;
     scrollbar-width: none; gap: 2px; padding: 4px 0 2px;
   }

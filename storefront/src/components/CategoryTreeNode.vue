@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CategoryIcon from '@/components/CategoryIcon.vue';
+import { computed } from 'vue';
 // 递归分类节点（任意层级：三级/四级……均可展开；缩进随 depth 递增）
 const props = defineProps<{
   node: any;
@@ -12,11 +13,12 @@ const emit = defineEmits<{
   (e: 'toggle', id: number): void;
 }>();
 
-const hasChildren = (props.node.children?.length ?? 0) > 0;
+const hasChildren = computed(() => (props.node.children?.length ?? 0) > 0);
 </script>
 
 <template>
   <div>
+    <div class="tree-row" :class="{ active: modelValue === node.id }">
     <button
       class="tree-node"
       :class="{ active: modelValue === node.id, 'tree-node--root': depth === 0 }"
@@ -27,13 +29,16 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
       <span class="tree-dot" :class="{ active: modelValue === node.id }"></span>
       <CategoryIcon :icon="node.icon" class="tree-icon" />
       <span class="flex-1 text-left truncate">{{ node.name }}</span>
-      <span
-        v-if="hasChildren"
-        class="tree-arrow"
-        :class="{ open: expanded.has(node.id) }"
-        @click.stop="emit('toggle', node.id)"
-      ></span>
     </button>
+    <button
+      v-if="hasChildren"
+      type="button"
+      class="tree-toggle"
+      :aria-label="`${expanded.has(node.id) ? '折叠' : '展开'}${node.name}`"
+      :aria-expanded="expanded.has(node.id)"
+      @click="emit('toggle', node.id)"
+    ><span class="tree-arrow" :class="{ open: expanded.has(node.id) }" aria-hidden="true"></span></button>
+    </div>
     <template v-if="hasChildren && expanded.has(node.id)">
       <CategoryTreeNode
         v-for="ch in node.children"
@@ -50,8 +55,12 @@ const hasChildren = (props.node.children?.length ?? 0) > 0;
 </template>
 
 <style scoped>
+.tree-row { display: flex; align-items: stretch; border-radius: 8px; }
+.tree-row.active { background: #2563eb; color: #fff; }
+.tree-toggle { display: flex; align-items: center; justify-content: center; width: 44px; min-height: 44px; flex-shrink: 0; border: none; border-radius: 8px; background: none; color: inherit; cursor: pointer; }
+.tree-toggle:hover { background: rgba(37, 99, 235, 0.1); }
 .tree-node {
-  width: 100%;
+  min-width: 0; flex: 1;
   display: flex; align-items: center; gap: 7px;
   padding: 10px 12px;
   border: none; background: none; cursor: pointer;

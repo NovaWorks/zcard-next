@@ -9,6 +9,7 @@ export function fetchProducts(params?: {
   page?: number;
   page_size?: number;
   low_stock_only?: boolean;
+  out_of_stock_only?: boolean;
   upstream_source_id?: number;
   local_only?: boolean;
 }) {

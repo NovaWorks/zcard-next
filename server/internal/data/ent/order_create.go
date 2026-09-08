@@ -452,6 +452,20 @@ func (_c *OrderCreate) SetNillableClosedAt(v *time.Time) *OrderCreate {
 	return _c
 }
 
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (_c *OrderCreate) SetAdminDeletedAt(v time.Time) *OrderCreate {
+	_c.mutation.SetAdminDeletedAt(v)
+	return _c
+}
+
+// SetNillableAdminDeletedAt sets the "admin_deleted_at" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableAdminDeletedAt(v *time.Time) *OrderCreate {
+	if v != nil {
+		_c.SetAdminDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetExpiredAt sets the "expired_at" field.
 func (_c *OrderCreate) SetExpiredAt(v time.Time) *OrderCreate {
 	_c.mutation.SetExpiredAt(v)
@@ -887,6 +901,10 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ClosedAt(); ok {
 		_spec.SetField(order.FieldClosedAt, field.TypeTime, value)
 		_node.ClosedAt = value
+	}
+	if value, ok := _c.mutation.AdminDeletedAt(); ok {
+		_spec.SetField(order.FieldAdminDeletedAt, field.TypeTime, value)
+		_node.AdminDeletedAt = &value
 	}
 	if value, ok := _c.mutation.ExpiredAt(); ok {
 		_spec.SetField(order.FieldExpiredAt, field.TypeTime, value)
@@ -1619,6 +1637,24 @@ func (u *OrderUpsert) UpdateClosedAt() *OrderUpsert {
 // ClearClosedAt clears the value of the "closed_at" field.
 func (u *OrderUpsert) ClearClosedAt() *OrderUpsert {
 	u.SetNull(order.FieldClosedAt)
+	return u
+}
+
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (u *OrderUpsert) SetAdminDeletedAt(v time.Time) *OrderUpsert {
+	u.Set(order.FieldAdminDeletedAt, v)
+	return u
+}
+
+// UpdateAdminDeletedAt sets the "admin_deleted_at" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateAdminDeletedAt() *OrderUpsert {
+	u.SetExcluded(order.FieldAdminDeletedAt)
+	return u
+}
+
+// ClearAdminDeletedAt clears the value of the "admin_deleted_at" field.
+func (u *OrderUpsert) ClearAdminDeletedAt() *OrderUpsert {
+	u.SetNull(order.FieldAdminDeletedAt)
 	return u
 }
 
@@ -2367,6 +2403,27 @@ func (u *OrderUpsertOne) UpdateClosedAt() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearClosedAt() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearClosedAt()
+	})
+}
+
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (u *OrderUpsertOne) SetAdminDeletedAt(v time.Time) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetAdminDeletedAt(v)
+	})
+}
+
+// UpdateAdminDeletedAt sets the "admin_deleted_at" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateAdminDeletedAt() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateAdminDeletedAt()
+	})
+}
+
+// ClearAdminDeletedAt clears the value of the "admin_deleted_at" field.
+func (u *OrderUpsertOne) ClearAdminDeletedAt() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearAdminDeletedAt()
 	})
 }
 
@@ -3284,6 +3341,27 @@ func (u *OrderUpsertBulk) UpdateClosedAt() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearClosedAt() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearClosedAt()
+	})
+}
+
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (u *OrderUpsertBulk) SetAdminDeletedAt(v time.Time) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetAdminDeletedAt(v)
+	})
+}
+
+// UpdateAdminDeletedAt sets the "admin_deleted_at" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateAdminDeletedAt() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateAdminDeletedAt()
+	})
+}
+
+// ClearAdminDeletedAt clears the value of the "admin_deleted_at" field.
+func (u *OrderUpsertBulk) ClearAdminDeletedAt() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearAdminDeletedAt()
 	})
 }
 

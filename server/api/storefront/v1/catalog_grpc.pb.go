@@ -32,7 +32,7 @@ const (
 // StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划)。
 // ； 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
 type StoreCatalogServiceClient interface {
-	// ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+	// ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error)
 	// GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*Product, error)
@@ -85,7 +85,7 @@ func (c *storeCatalogServiceClient) ListCategories(ctx context.Context, in *empt
 // StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划)。
 // ； 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
 type StoreCatalogServiceServer interface {
-	// ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+	// ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
 	// GetProduct 商品详情（下架/隐藏商品返回 NOT_FOUND）。
 	GetProduct(context.Context, *GetProductRequest) (*Product, error)

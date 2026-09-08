@@ -115,3 +115,15 @@ func TestStockGateNilSkip(t *testing.T) {
 		t.Fatalf("nil 闸门应跳过预检: %v", err)
 	}
 }
+
+func TestUnavailableStockDoesNotCreateOrder(t *testing.T) {
+	d, uc, pid := newGateEnv(t)
+	uc.SetStockGate(&fakeStockGate{err: errors.New("supply.STOCK_UNAVAILABLE")})
+	_, err := uc.CreateOrder(context.Background(), CreateOrderInput{QueryPassword: "test1234", Contact: "buyer@test.com", Items: []OrderItemInput{{ProductID: pid, Quantity: 1}}})
+	if err == nil || !strings.Contains(mapOrderErr(err).Error(), "暂时无法确认库存") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if n := d.Client.Order.Query().CountX(context.Background()); n != 0 {
+		t.Fatalf("failed stock check created %d orders", n)
+	}
+}

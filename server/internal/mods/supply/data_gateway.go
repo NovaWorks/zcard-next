@@ -1,7 +1,7 @@
 package supply
 
 // 采购网关实现（ 消费方端口）：连接凭据解密 → 适配器装配 → 提交/查询/退款。
-// fail-open 语义（）：CheckStock 查询失败返回 -1（放行），由 procurement 决定处理。
+// 库存查询失败保留错误，避免付款前将未知库存当作充足。
 
 import (
 	"context"
@@ -27,7 +27,7 @@ var ErrCooldownActive = errors.New("supply: rate limit cooldown active")
 // 限流信号反馈降速、成功反馈回升（采购请求量小，主要防持续撞墙）。
 type Gateway struct {
 	repo   *SupplyRepoImpl
-	pacer  *Pacer // nil = 不节流（测试）
+	pacer  *Pacer                    // nil = 不节流（测试）
 	reader catalogport.ProductReader // 商品/SKU 上游映射（CheckOrderItems 预检用）
 }
 
@@ -182,23 +182,23 @@ func (g *Gateway) Query(ctx context.Context, connectionID uint64, upstreamOrderI
 	}, nil
 }
 
-// CheckStock 实时库存（fail-open：查询失败返回 -1 放行，日志留痕由调用方）。
+// CheckStock 实时库存：-1 仅表示上游明确不限；错误不可伪装成不限。
 // skuCode 为上游规格标识（acg=race|k=v 编码 / dujiao=sku_id），可空走商品级口径。
 func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCode, skuCode string) (int32, error) {
 	a, err := g.adapterFor(ctx, connectionID)
 	if err != nil {
-		return -1, nil // fail-open：凭据/连接问题不阻断下单（转采购环节处理）
+		return 0, err
 	}
 	stock, err := a.GetStock(ctx, productCode, skuCode)
 	if err != nil {
-		return -1, nil // fail-open：上游抖动放行
+		return 0, err
 	}
 	return stock, nil
 }
 
 // CheckOrderItems 下单前上游代发项实时库存预检（实现 orderport.UpstreamStockGate 接口，
-// order 创建订单消费）：把上游明确无货的单挡在付款前；fail-open——商品不可读/
-// 非上游项/查询失败/库存未知(-1) 一律放行，支付后采购环节仍有 ErrUpstreamNoStock 兜底。
+// order 创建订单消费）：把上游缺货或查询失败的单挡在付款前。
+// 本地商品由本地锁卡校验；对接商品查库存失败拒单，明确不限(-1)可下单。
 func (g *Gateway) CheckItems(ctx context.Context, subsiteID uint64, items []orderport.UpstreamStockItem) error {
 	return checkOrderItems(ctx, g.reader, func(connectionID uint64, productCode, skuCode string) (int32, error) {
 		return g.CheckStock(ctx, connectionID, productCode, skuCode)
@@ -217,17 +217,27 @@ func checkOrderItems(ctx context.Context, reader catalogport.ProductReader,
 		if err != nil {
 			continue // 商品不可读：交由订单主流程判定（PRODUCT_NOT_FOUND）
 		}
-		if p.UpstreamSourceID == 0 || p.UpstreamProductCode == "" {
+		if p.UpstreamSourceID == 0 {
 			continue // 非上游项：本地卡密走事务内锁卡，直发无库存概念
+		}
+		if p.UpstreamProductCode == "" {
+			return fmt.Errorf("supply.STOCK_UNAVAILABLE: 商品「%s」缺少上游商品标识", p.Name)
 		}
 		skuCode := ""
 		if it.SkuID > 0 {
 			skuCode = reader.SkuUpstreamCode(ctx, subsiteID, it.SkuID)
+			if skuCode == "" {
+				return fmt.Errorf("supply.STOCK_UNAVAILABLE: 商品「%s」缺少上游规格标识", p.Name)
+			}
 		}
 		n, err := stock(p.UpstreamSourceID, p.UpstreamProductCode, skuCode)
-		if err != nil || n < 0 {
-			continue // fail-open：连接/凭据/上游抖动/库存未知 → 放行
+		if err != nil || n < -1 {
+			return fmt.Errorf("supply.STOCK_UNAVAILABLE: 商品「%s」暂时无法确认库存，请稍后重试", p.Name)
 		}
+		if n == -1 {
+			continue // 上游明确返回无限库存。
+		}
+
 		if n < int32(it.Quantity) {
 			return fmt.Errorf("supply: 商品「%s」上游库存不足（余 %d 需 %d）: %w", p.Name, n, it.Quantity, supplyport.ErrUpstreamNoStock)
 		}

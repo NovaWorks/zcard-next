@@ -8,9 +8,9 @@ import (
 )
 
 // UpstreamStockGate 上游代发商品实时库存闸门（ 落地；supply 网关实现，
-// newApp 破环点注入）。fail-open 契约：实现方对商品不可读/查询失败/库存未知(-1)
-// 一律放行，仅在上游明确报库存不足时返回错误——把明显无货的单挡在下单前，
-// 支付后采购环节仍有无货退款兜底。nil 闸门 = 不启用预检。
+// newApp 破环点注入）。本地商品不走上游；对接商品缺货/查询失败/库存未知
+// 返回错误，仅上游明确不限(-1)可放行。nil 闸门 = 不启用预检。
+
 type UpstreamStockGate interface {
 	CheckItems(ctx context.Context, subsiteID uint64, items []UpstreamStockItem) error
 }

@@ -28042,6 +28042,7 @@ type OrderMutation struct {
 	idempotency_key      *string
 	paid_at              *time.Time
 	closed_at            *time.Time
+	admin_deleted_at     *time.Time
 	expired_at           *time.Time
 	clearedFields        map[string]struct{}
 	items                map[uint64]struct{}
@@ -29877,6 +29878,55 @@ func (m *OrderMutation) ResetClosedAt() {
 	delete(m.clearedFields, order.FieldClosedAt)
 }
 
+// SetAdminDeletedAt sets the "admin_deleted_at" field.
+func (m *OrderMutation) SetAdminDeletedAt(t time.Time) {
+	m.admin_deleted_at = &t
+}
+
+// AdminDeletedAt returns the value of the "admin_deleted_at" field in the mutation.
+func (m *OrderMutation) AdminDeletedAt() (r time.Time, exists bool) {
+	v := m.admin_deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminDeletedAt returns the old "admin_deleted_at" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldAdminDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminDeletedAt: %w", err)
+	}
+	return oldValue.AdminDeletedAt, nil
+}
+
+// ClearAdminDeletedAt clears the value of the "admin_deleted_at" field.
+func (m *OrderMutation) ClearAdminDeletedAt() {
+	m.admin_deleted_at = nil
+	m.clearedFields[order.FieldAdminDeletedAt] = struct{}{}
+}
+
+// AdminDeletedAtCleared returns if the "admin_deleted_at" field was cleared in this mutation.
+func (m *OrderMutation) AdminDeletedAtCleared() bool {
+	_, ok := m.clearedFields[order.FieldAdminDeletedAt]
+	return ok
+}
+
+// ResetAdminDeletedAt resets all changes to the "admin_deleted_at" field.
+func (m *OrderMutation) ResetAdminDeletedAt() {
+	m.admin_deleted_at = nil
+	delete(m.clearedFields, order.FieldAdminDeletedAt)
+}
+
 // SetExpiredAt sets the "expired_at" field.
 func (m *OrderMutation) SetExpiredAt(t time.Time) {
 	m.expired_at = &t
@@ -30284,7 +30334,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
 	}
@@ -30381,6 +30431,9 @@ func (m *OrderMutation) Fields() []string {
 	if m.closed_at != nil {
 		fields = append(fields, order.FieldClosedAt)
 	}
+	if m.admin_deleted_at != nil {
+		fields = append(fields, order.FieldAdminDeletedAt)
+	}
 	if m.expired_at != nil {
 		fields = append(fields, order.FieldExpiredAt)
 	}
@@ -30456,6 +30509,8 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.PaidAt()
 	case order.FieldClosedAt:
 		return m.ClosedAt()
+	case order.FieldAdminDeletedAt:
+		return m.AdminDeletedAt()
 	case order.FieldExpiredAt:
 		return m.ExpiredAt()
 	}
@@ -30531,6 +30586,8 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldPaidAt(ctx)
 	case order.FieldClosedAt:
 		return m.OldClosedAt(ctx)
+	case order.FieldAdminDeletedAt:
+		return m.OldAdminDeletedAt(ctx)
 	case order.FieldExpiredAt:
 		return m.OldExpiredAt(ctx)
 	}
@@ -30765,6 +30822,13 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetClosedAt(v)
+		return nil
+	case order.FieldAdminDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminDeletedAt(v)
 		return nil
 	case order.FieldExpiredAt:
 		v, ok := value.(time.Time)
@@ -31028,6 +31092,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	if m.FieldCleared(order.FieldClosedAt) {
 		fields = append(fields, order.FieldClosedAt)
 	}
+	if m.FieldCleared(order.FieldAdminDeletedAt) {
+		fields = append(fields, order.FieldAdminDeletedAt)
+	}
 	if m.FieldCleared(order.FieldExpiredAt) {
 		fields = append(fields, order.FieldExpiredAt)
 	}
@@ -31110,6 +31177,9 @@ func (m *OrderMutation) ClearField(name string) error {
 		return nil
 	case order.FieldClosedAt:
 		m.ClearClosedAt()
+		return nil
+	case order.FieldAdminDeletedAt:
+		m.ClearAdminDeletedAt()
 		return nil
 	case order.FieldExpiredAt:
 		m.ClearExpiredAt()
@@ -31217,6 +31287,9 @@ func (m *OrderMutation) ResetField(name string) error {
 		return nil
 	case order.FieldClosedAt:
 		m.ResetClosedAt()
+		return nil
+	case order.FieldAdminDeletedAt:
+		m.ResetAdminDeletedAt()
 		return nil
 	case order.FieldExpiredAt:
 		m.ResetExpiredAt()

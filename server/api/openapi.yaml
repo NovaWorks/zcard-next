@@ -2498,6 +2498,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -2505,6 +2509,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.ListOrdersReply'
+    /api/v1/admin/orders/delete:
+        post:
+            tags:
+                - AdminOrderService
+            description: DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+            operationId: AdminOrderService_DeleteOrders
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.DeleteOrdersRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/orders/{orderNo}:
         get:
             tags:
@@ -2865,6 +2885,10 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: outOfStockOnly
+                  in: query
+                  schema:
+                    type: boolean
                 - name: localOnly
                   in: query
                   schema:
@@ -5474,7 +5498,7 @@ paths:
         get:
             tags:
                 - StoreCatalogService
-            description: ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+            description: ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
             operationId: StoreCatalogService_ListProducts
             parameters:
                 - name: categoryId
@@ -7507,6 +7531,15 @@ components:
                         type: string
                 confirm:
                     type: boolean
+        zcard.api.admin.v1.DeleteOrdersRequest:
+            required:
+                - orderNos
+            type: object
+            properties:
+                orderNos:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.DeliveryRecord:
             type: object
             properties:
@@ -11572,7 +11605,7 @@ components:
                     description: 库存类型 card/url/code
                 stock:
                     type: string
-                    description: 库存显示开关开启时为真实值，否则不下发（0）
+                    description: 按货源返回库存（>=0 数量，-1 不限，-2 待确认），stock_visible 仅控制展示
                 stockVisible:
                     type: boolean
                     description: 库存是否对外可见

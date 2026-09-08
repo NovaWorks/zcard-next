@@ -12,7 +12,7 @@ import "common/v1/common.proto";
 // StoreCatalogService 顾客前台商品目录（游客可访问；隐藏商品对游客 404，规划)。
 // ； 骨架先打通「租户上下文 → Ent 查询 → 薄 service」链路。
 service StoreCatalogService {
-  // ListProducts 商品列表（上架 + 按排序；库存数仅当 stock_visible 时返回）。
+  // ListProducts 商品列表（上架 + 按排序；库存数用于购买校验，stock_visible 仅控制展示）。
   rpc ListProducts(ListProductsRequest) returns (ListProductsReply) {
     option (google.api.http) = {
       get: "/api/v1/storefront/products"
@@ -81,7 +81,7 @@ message Product {
   int64 price_cents = 6;
   // 库存类型 card/url/code
   string stock_type = 7;
-  // 库存显示开关开启时为真实值，否则不下发（0）
+  // 按货源返回库存（>=0 数量，-1 不限，-2 待确认），stock_visible 仅控制展示
   int64 stock = 8;
   // 库存是否对外可见
   bool stock_visible = 9;

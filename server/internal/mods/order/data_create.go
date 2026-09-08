@@ -150,9 +150,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 	}
 
-	// ：上游代发项实时库存预检（fail-open 闸门，事务前快速失败——
+	// ：上游代发项实时库存预检（事务前快速失败——
 	// 上游明确无货直接拒单，不再让顾客"下单付款后等采购失败退款"。
-	// 本地卡密项的强校验在下方事务内锁卡 Reserve；闸门自身查询失败/库存未知放行）
+	// 本地卡密项的强校验在下方事务内锁卡 Reserve；闸门查询失败/库存未知拒单，仅明确不限库存放行）
 	if uc.StockGate != nil && len(in.Items) > 0 {
 		gateItems := make([]orderport.UpstreamStockItem, 0, len(in.Items))
 		for _, item := range in.Items {
@@ -768,9 +768,9 @@ func (uc *OrderUsecase) GetByOrderNo(ctx context.Context, orderNo string) (*ent.
 }
 
 // ListOrders 订单列表（游标分页）。
-func (uc *OrderUsecase) ListOrders(ctx context.Context, subsiteID uint64, status string, cursor uint64, limit int32) ([]*ent.Order, error) {
+func (uc *OrderUsecase) ListOrders(ctx context.Context, subsiteID uint64, status string, cursor uint64, limit int32, keyword string) ([]*ent.Order, error) {
 	q := data.Client(ctx, uc.Data).Order.Query().
-		Where(order.SubsiteID(subsiteID)).
+		Where(order.SubsiteID(subsiteID), order.AdminDeletedAtIsNil()).
 		Order(ent.Desc(order.FieldID)).
 		Limit(int(limit))
 	if status != "" {
@@ -778,6 +778,9 @@ func (uc *OrderUsecase) ListOrders(ctx context.Context, subsiteID uint64, status
 	}
 	if cursor > 0 {
 		q = q.Where(order.IDLT(cursor))
+	}
+	if keyword = strings.TrimSpace(keyword); keyword != "" {
+		q = q.Where(order.Or(order.OrderNoContains(keyword), order.ContactContains(keyword), order.GuestContactContains(keyword)))
 	}
 	return q.All(ctx)
 }

@@ -5,6 +5,7 @@ package order
 import (
 	"context"
 	"strings"
+	"unicode/utf8"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -71,7 +72,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 		QueryPassword: req.GetQueryPassword(), Contact: req.GetContact(),
 		CouponCode: req.GetCouponCode(), ControlAnswers: req.GetControlAnswers(),
 		UsePoints: req.GetUsePoints(),
-		RefCode: req.GetRefCode(),
+		RefCode:   req.GetRefCode(),
 		// ：Idempotency-Key 头（同 key 双击返回首单，）
 		IdempotencyKey: idempotencyKeyFromContext(ctx),
 	})
@@ -230,7 +231,11 @@ func (s *AdminOrderService) ListOrders(ctx context.Context, req *adminv1.ListOrd
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
-	rows, err := s.uc.ListOrders(ctx, tc.SubsiteID, req.GetStatus(), req.GetCursor(), limit)
+	keyword := strings.TrimSpace(req.GetKeyword())
+	if utf8.RuneCountInString(keyword) > 150 {
+		return nil, errors.BadRequest("order.INVALID_KEYWORD", "搜索关键词不能超过 150 个字符")
+	}
+	rows, err := s.uc.ListOrders(ctx, tc.SubsiteID, req.GetStatus(), req.GetCursor(), limit, keyword)
 	if err != nil {
 		return nil, errors.InternalServer("order.LIST_FAILED", "读取订单失败")
 	}
@@ -364,6 +369,8 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 func mapOrderErr(err error) error {
 	msg := err.Error()
 	switch {
+	case contains(msg, "STOCK_UNAVAILABLE"):
+		return errors.BadRequest("order.STOCK_UNAVAILABLE", "暂时无法确认库存，请稍后重试")
 	case contains(msg, "INSUFFICIENT"):
 		return errors.BadRequest("order.INSUFFICIENT_STOCK", "库存不足")
 	case contains(msg, "PRODUCT_NOT"):

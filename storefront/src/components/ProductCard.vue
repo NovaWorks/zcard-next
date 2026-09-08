@@ -13,11 +13,12 @@
       <div class="pc-name" :title="p.name">{{ p.name }}</div>
       <div class="pc-price">{{ formatMoney(p.price_cents) }}</div>
       <div v-if="showSales || showStock" class="pc-meta">
-        <span v-if="showSales">已售 {{ p.sales_count || 0 }}</span>
-        <span v-if="showStock && p.stock_visible && p.stock_type === 'card' && p.stock >= 0">库存 {{ p.stock }}</span>
-        <span v-else-if="showStock && p.stock_type !== 'card'" class="pc-stock-free">不限库存</span>
+        <span v-if="showSales" class="pc-sales">已售 {{ p.sales_count || 0 }}</span>
+        <span v-if="showStock && p.stock_visible && (p.stock ?? 0) >= 0">库存 {{ p.stock ?? 0 }}</span>
+        <span v-else-if="showStock && p.stock_visible && p.stock === -1" class="pc-stock-free">不限库存</span>
+        <span v-else-if="showStock && p.stock_visible">库存待确认</span>
       </div>
-      <button class="btn btn-primary pc-buy" @click.stop="$router.push(`/product/${p.id}`)">查看详情</button>
+      <button class="btn btn-primary pc-buy" @click.stop="$router.push(`/product/${p.id}`)">{{ mode === 'list' ? '购买' : '查看详情' }}</button>
     </div>
   </div>
 </template>
@@ -120,7 +121,9 @@ defineProps<{
 
 /* 列表视图 */
 .product-card.list-mode { flex-direction: row; align-items: center; gap: 14px; padding: 12px; }
-.list-mode .pc-cover { width: 64px; height: 64px; aspect-ratio: auto; border-radius: 8px; flex-shrink: 0; }
+.list-mode .pc-cover { width: 64px; height: 64px; aspect-ratio: 1 / 1; border-radius: 8px; flex-shrink: 0; }
+.list-mode .pc-cover img { object-fit: contain; }
+.product-card.list-mode:hover .pc-cover img { transform: none; }
 .list-mode .pc-cover-placeholder { font-size: 20px; }
 .list-mode .pc-body { padding: 0; flex-direction: row; align-items: center; gap: 14px; flex: 1; }
 .list-mode .pc-name { min-height: auto; flex: 1; -webkit-line-clamp: 1; min-width: 0; }
@@ -137,26 +140,36 @@ defineProps<{
   .grid-mode .pc-body { padding: 10px; gap: 5px; }
   .grid-mode .pc-price { font-size: 16px; }
   .grid-mode .pc-name { min-height: 38px; }
-  .product-card.list-mode { align-items: flex-start; gap: 10px; }
-  .list-mode .pc-cover { width: 56px; height: 56px; }
+  .product-card.list-mode { align-items: center; gap: 10px; padding: 10px 12px; }
+  .list-mode .pc-cover { width: 48px; height: 48px; }
   .list-mode .pc-body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 6px 8px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 3px 6px;
   }
   .list-mode .pc-name {
-    grid-column: 1 / -1;
-    -webkit-line-clamp: 3;
-    line-height: 1.5;
+    grid-column: 1 / 3;
+    grid-row: 1;
+    display: block;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 20px;
   }
-  .list-mode .pc-price { grid-column: 1; grid-row: 2; overflow-wrap: anywhere; }
+  .list-mode .pc-price { grid-column: 1; grid-row: 2; white-space: nowrap; line-height: 20px; }
   .list-mode .pc-buy {
-    grid-column: 2;
-    grid-row: 2;
+    grid-column: 3;
+    grid-row: 1 / 3;
     min-height: 44px;
-    padding: 6px 10px;
+    min-width: 44px;
+    padding: 6px 8px;
     white-space: nowrap;
   }
-  .list-mode .pc-meta { grid-column: 1 / -1; flex-wrap: wrap; gap: 4px 12px; }
+  .list-mode .pc-meta {
+    grid-column: 2; grid-row: 2; min-width: 0;
+    justify-content: flex-start; gap: 8px;
+    overflow: hidden; white-space: nowrap; line-height: 20px;
+  }
+  .list-mode .pc-meta span { flex-shrink: 0; }
+  .list-mode .pc-sales { order: 1; }
 }
 </style>

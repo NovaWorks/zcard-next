@@ -358,7 +358,7 @@ type Product struct {
 	PriceCents int64 `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
 	// 库存类型 card/url/code
 	StockType string `protobuf:"bytes,7,opt,name=stock_type,json=stockType,proto3" json:"stock_type,omitempty"`
-	// 库存显示开关开启时为真实值，否则不下发（0）
+	// 按货源返回库存（>=0 数量，-1 不限，-2 待确认），stock_visible 仅控制展示
 	Stock int64 `protobuf:"varint,8,opt,name=stock,proto3" json:"stock,omitempty"`
 	// 库存是否对外可见
 	StockVisible bool   `protobuf:"varint,9,opt,name=stock_visible,json=stockVisible,proto3" json:"stock_visible,omitempty"`

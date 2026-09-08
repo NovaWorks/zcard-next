@@ -19,12 +19,15 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminOrderServiceCancelOrder = "/zcard.api.admin.v1.AdminOrderService/CancelOrder"
+const OperationAdminOrderServiceDeleteOrders = "/zcard.api.admin.v1.AdminOrderService/DeleteOrders"
 const OperationAdminOrderServiceGetOrder = "/zcard.api.admin.v1.AdminOrderService/GetOrder"
 const OperationAdminOrderServiceListOrders = "/zcard.api.admin.v1.AdminOrderService/ListOrders"
 
 type AdminOrderServiceHTTPServer interface {
 	// CancelOrder CancelOrder 取消订单（pending 可取消）。
 	CancelOrder(context.Context, *CancelOrderRequest) (*emptypb.Empty, error)
+	// DeleteOrders DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+	DeleteOrders(context.Context, *DeleteOrdersRequest) (*emptypb.Empty, error)
 	// GetOrder GetOrder 订单详情（含金额行+状态事件时间线）。
 	GetOrder(context.Context, *GetAdminOrderRequest) (*AdminOrder, error)
 	// ListOrders ListOrders 订单列表（游标分页）。
@@ -36,6 +39,7 @@ func RegisterAdminOrderServiceHTTPServer(s *http.Server, srv AdminOrderServiceHT
 	r.Handle("GET", "/api/v1/admin/orders", _AdminOrderService_ListOrders0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/orders/{order_no}", _AdminOrderService_GetOrder0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/orders/{order_no}/cancel", _AdminOrderService_CancelOrder0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/orders/delete", _AdminOrderService_DeleteOrders0_HTTP_Handler(srv))
 }
 
 func _AdminOrderService_ListOrders0_HTTP_Handler(srv AdminOrderServiceHTTPServer) func(ctx http.Context) error {
@@ -101,9 +105,30 @@ func _AdminOrderService_CancelOrder0_HTTP_Handler(srv AdminOrderServiceHTTPServe
 	}
 }
 
+func _AdminOrderService_DeleteOrders0_HTTP_Handler(srv AdminOrderServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteOrdersRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminOrderServiceDeleteOrders)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteOrders(ctx, req.(*DeleteOrdersRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 type AdminOrderServiceHTTPClient interface {
 	// CancelOrder CancelOrder 取消订单（pending 可取消）。
 	CancelOrder(ctx context.Context, req *CancelOrderRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// DeleteOrders DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+	DeleteOrders(ctx context.Context, req *DeleteOrdersRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// GetOrder GetOrder 订单详情（含金额行+状态事件时间线）。
 	GetOrder(ctx context.Context, req *GetAdminOrderRequest, opts ...http.CallOption) (rsp *AdminOrder, err error)
 	// ListOrders ListOrders 订单列表（游标分页）。
@@ -127,6 +152,24 @@ func (c *AdminOrderServiceHTTPClientImpl) CancelOrder(ctx context.Context, in *C
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminOrderServiceCancelOrder),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteOrders DeleteOrders 从管理列表移除已取消或已过期的未付款订单，保留关联记录。
+func (c *AdminOrderServiceHTTPClientImpl) DeleteOrders(ctx context.Context, in *DeleteOrdersRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/orders/delete"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminOrderServiceDeleteOrders),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
