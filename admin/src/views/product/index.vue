@@ -794,16 +794,20 @@ onMounted(() => {
   <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
   <div class="min-h-500px flex gap-16px overflow-hidden">
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
-    <NCard title="商品分类" class="w-230px shrink-0">
+    <NCard
+      title="商品分类"
+      class="product-category-card w-230px shrink-0"
+      :content-style="{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }"
+    >
       <template #header-extra>
         <NButton v-auth="'catalog:category_write'" size="tiny" quaternary @click="showCategory = true">管理</NButton>
       </template>
       <!-- 展开/收起独立成行（放 header 时窄屏与标题/管理按钮挤在一行会换行错位） -->
-      <div class="mb-8px flex items-center gap-8px">
+      <div class="mb-8px flex shrink-0 items-center gap-8px">
         <NButton size="tiny" quaternary class="flex-1" @click="expandAllCats">展开全部</NButton>
         <NButton size="tiny" quaternary class="flex-1" @click="collapseAllCats">收起全部</NButton>
       </div>
-      <NScrollbar class="max-h-[calc(100vh-240px)]">
+      <div class="product-category-scroll">
         <NTree
           block-line
           :data="filterCategoryTree"
@@ -813,7 +817,7 @@ onMounted(() => {
           :render-prefix="catRenderPrefix"
           @update:selected-keys="onTreeSelect"
         />
-      </NScrollbar>
+      </div>
     </NCard>
     <!-- 右侧：商品列表 -->
     <NCard title="商品管理" class="flex-1">
@@ -1118,6 +1122,22 @@ onMounted(() => {
 </template>
 
 <style>
+.product-category-card {
+  min-height: 0;
+  align-self: flex-start;
+  /* 使用后台实际的顶栏、标签栏和页脚尺寸，避免小高度窗口中被页脚遮挡。 */
+  max-height: calc(100dvh - var(--soy-header-height, 56px) - var(--soy-tab-height, 48px) - var(--soy-footer-height, 72px) - 32px);
+}
+
+.product-category-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  padding-bottom: 4px;
+}
+
 /* 商品描述步（第 3 步）：编辑器整高展开后弹窗整体上移，保证底部按钮可见 */
 .product-editor-step-modal {
   transform: translateY(-4vh);
