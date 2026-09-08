@@ -256,8 +256,13 @@ async function handlePing(row: any) {
     const { data, error } = await pingSupplyConnection(row.id);
     if (!error && data) {
       const d = data as any;
-      window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${(d.balance_cents ?? d.balance ?? 0) < 0 ? "未知" : formatMoney(d.balance_cents ?? d.balance ?? 0)}`);
-      load();
+      if (d.ok === true) {
+        const balance = d.balance_cents ?? d.balance;
+        window.$message?.success(`连接成功：${d.site_name || "上游"}，余额 ${balance == null || balance < 0 ? "未知" : formatMoney(balance)}`);
+      } else {
+        window.$message?.error(`连接失败：${d.error || "上游未确认连接成功，请重试"}`);
+      }
+      await load();
     }
   } finally {
     pinging[row.id] = false;
@@ -534,6 +539,9 @@ function nameCol(t: TableTier) {
           : sch.tip;
       return h("div", { class: "flex min-w-0 items-center gap-4px" }, [
         h("span", { class: "truncate", title: tip }, row.name),
+        row.last_ping_at > 0 && !row.last_ping_ok
+          ? h(NTag, { size: "small", type: "error", bordered: false, title: `最近测试：${fmtTime(row.last_ping_at)}\n${row.last_error || "连接失败"}` }, { default: () => "连接失败" })
+          : null,
         sch.on ? h("span", { title: sch.tip, class: "cursor-help shrink-0" }, "⏰") : null,
       ]);
     },
@@ -684,7 +692,21 @@ const columns = computed<DataTableColumns<any>>(() => {
     });
   }
   if (t === "full") {
-    cols.push({ title: "余额", key: "balance_cache", width: 96, render: (row: any) => (row.balance_cache == null || row.balance_cache < 0 ? "—（未取到）" : formatMoney(row.balance_cache)) });
+    cols.push({
+      title: "余额", key: "balance_cache", width: 110,
+      render: (row: any) => {
+        if (row.balance_cache == null || row.balance_cache < 0) return "—（未取到）";
+        const historical = !row.last_ping_ok;
+        return h("div", {
+          title: historical
+            ? "上次成功获取的余额，当前未验证；最新余额以连接成功后的结果为准"
+            : `最近测试：${fmtTime(row.last_ping_at)}`,
+        }, [
+          h("div", formatMoney(row.balance_cache)),
+          historical ? h("small", { class: "text-amber-600" }, "历史余额") : null,
+        ]);
+      },
+    });
     cols.push({ title: "最近采集", key: "last_collect_at", width: 146, render: (row: any) => fmtTime(row.last_collect_at || row.last_synced_at) });
   }
   cols.push(rateCol(t));
