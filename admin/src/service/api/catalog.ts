@@ -56,10 +56,22 @@ export function updateProduct(id: number, data: Record<string, any>) {
   });
 }
 
-export function deleteProduct(id: number) {
+export interface ProductDeletePreview {
+  name: string;
+  order_count: number | string;
+  delete_block_reason?: string;
+  delete_orders_block_reason?: string;
+}
+
+export function previewDeleteProduct(id: number) {
+  return request<ProductDeletePreview>({ url: `/api/v1/admin/products/${id}/delete-preview` });
+}
+
+export function deleteProduct(id: number, params?: { delete_orders: boolean; confirm_name: string; expected_order_count: number }) {
   return request({
     url: `/api/v1/admin/products/${id}`,
     method: "delete",
+    params,
   });
 }
 

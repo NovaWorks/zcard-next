@@ -191,6 +191,7 @@ func TestTenantIsolationMatrix(t *testing.T) {
 	}
 
 	// 删除隔离：B 删自己的商品，A 不受影响
+	d.Client.Product.UpdateOneID(prodB.ID).SetStatus(0).ExecX(ctxB)
 	if _, err := adminSvc.DeleteProduct(ctxB, &adminv1.DeleteProductRequest{Id: prodB.ID}); err != nil {
 		t.Fatal(err)
 	}

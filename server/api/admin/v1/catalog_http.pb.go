@@ -42,6 +42,7 @@ const OperationAdminCatalogServiceListReviews = "/zcard.api.admin.v1.AdminCatalo
 const OperationAdminCatalogServiceListSkus = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
 const OperationAdminCatalogServiceListTags = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
 const OperationAdminCatalogServiceMergeCategories = "/zcard.api.admin.v1.AdminCatalogService/MergeCategories"
+const OperationAdminCatalogServicePreviewDeleteProduct = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
 const OperationAdminCatalogServiceRejectReview = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
 const OperationAdminCatalogServiceReorderCategories = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
 const OperationAdminCatalogServiceUpdateCategory = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
@@ -83,6 +84,7 @@ type AdminCatalogServiceHTTPServer interface {
 	// ListTags ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
 	MergeCategories(context.Context, *MergeCategoriesRequest) (*MergeCategoriesReply, error)
+	PreviewDeleteProduct(context.Context, *GetProductRequest) (*DeleteProductPreview, error)
 	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
 	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*emptypb.Empty, error)
@@ -100,6 +102,7 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("POST", "/api/v1/admin/products", _AdminCatalogService_CreateProduct0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/products/{id}", _AdminCatalogService_UpdateProduct0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/products/{id}", _AdminCatalogService_DeleteProduct0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/products/{id}/delete-preview", _AdminCatalogService_PreviewDeleteProduct0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/products/batch-status", _AdminCatalogService_BatchUpdateProductStatus0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/categories", _AdminCatalogService_ListCategories0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/categories", _AdminCatalogService_CreateCategory0_HTTP_Handler(srv))
@@ -228,6 +231,28 @@ func _AdminCatalogService_DeleteProduct0_HTTP_Handler(srv AdminCatalogServiceHTT
 			return err
 		}
 		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_PreviewDeleteProduct0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetProductRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServicePreviewDeleteProduct)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PreviewDeleteProduct(ctx, req.(*GetProductRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*DeleteProductPreview)
 		return ctx.Result(200, reply)
 	}
 }
@@ -804,6 +829,7 @@ type AdminCatalogServiceHTTPClient interface {
 	// ListTags ── 标签 ──
 	ListTags(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TagList, err error)
 	MergeCategories(ctx context.Context, req *MergeCategoriesRequest, opts ...http.CallOption) (rsp *MergeCategoriesReply, err error)
+	PreviewDeleteProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *DeleteProductPreview, err error)
 	RejectReview(ctx context.Context, req *RejectReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
 	ReorderCategories(ctx context.Context, req *ReorderCategoriesRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
@@ -1218,6 +1244,22 @@ func (c *AdminCatalogServiceHTTPClientImpl) MergeCategories(ctx context.Context,
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) PreviewDeleteProduct(ctx context.Context, in *GetProductRequest, opts ...http.CallOption) (*DeleteProductPreview, error) {
+	var out DeleteProductPreview
+	pattern := "/api/v1/admin/products/{id}/delete-preview"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServicePreviewDeleteProduct),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

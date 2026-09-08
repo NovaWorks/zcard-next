@@ -25,6 +25,7 @@ const (
 	AdminCatalogService_CreateProduct_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
 	AdminCatalogService_UpdateProduct_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/UpdateProduct"
 	AdminCatalogService_DeleteProduct_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
+	AdminCatalogService_PreviewDeleteProduct_FullMethodName     = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
 	AdminCatalogService_BatchUpdateProductStatus_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus"
 	AdminCatalogService_ListCategories_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
 	AdminCatalogService_CreateCategory_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
@@ -65,6 +66,7 @@ type AdminCatalogServiceClient interface {
 	CreateProduct(ctx context.Context, in *CreateProductRequest, opts ...grpc.CallOption) (*AdminProduct, error)
 	UpdateProduct(ctx context.Context, in *UpdateProductRequest, opts ...grpc.CallOption) (*AdminProduct, error)
 	DeleteProduct(ctx context.Context, in *DeleteProductRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PreviewDeleteProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*DeleteProductPreview, error)
 	// BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(ctx context.Context, in *BatchUpdateProductStatusRequest, opts ...grpc.CallOption) (*BatchUpdateProductStatusReply, error)
 	// ── 分类 ──
@@ -153,6 +155,16 @@ func (c *adminCatalogServiceClient) DeleteProduct(ctx context.Context, in *Delet
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, AdminCatalogService_DeleteProduct_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) PreviewDeleteProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*DeleteProductPreview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteProductPreview)
+	err := c.cc.Invoke(ctx, AdminCatalogService_PreviewDeleteProduct_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -431,6 +443,7 @@ type AdminCatalogServiceServer interface {
 	CreateProduct(context.Context, *CreateProductRequest) (*AdminProduct, error)
 	UpdateProduct(context.Context, *UpdateProductRequest) (*AdminProduct, error)
 	DeleteProduct(context.Context, *DeleteProductRequest) (*emptypb.Empty, error)
+	PreviewDeleteProduct(context.Context, *GetProductRequest) (*DeleteProductPreview, error)
 	// BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(context.Context, *BatchUpdateProductStatusRequest) (*BatchUpdateProductStatusReply, error)
 	// ── 分类 ──
@@ -489,6 +502,9 @@ func (UnimplementedAdminCatalogServiceServer) UpdateProduct(context.Context, *Up
 }
 func (UnimplementedAdminCatalogServiceServer) DeleteProduct(context.Context, *DeleteProductRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteProduct not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) PreviewDeleteProduct(context.Context, *GetProductRequest) (*DeleteProductPreview, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewDeleteProduct not implemented")
 }
 func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductStatus(context.Context, *BatchUpdateProductStatusRequest) (*BatchUpdateProductStatusReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchUpdateProductStatus not implemented")
@@ -675,6 +691,24 @@ func _AdminCatalogService_DeleteProduct_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminCatalogServiceServer).DeleteProduct(ctx, req.(*DeleteProductRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_PreviewDeleteProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).PreviewDeleteProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_PreviewDeleteProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).PreviewDeleteProduct(ctx, req.(*GetProductRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1173,6 +1207,10 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteProduct",
 			Handler:    _AdminCatalogService_DeleteProduct_Handler,
+		},
+		{
+			MethodName: "PreviewDeleteProduct",
+			Handler:    _AdminCatalogService_PreviewDeleteProduct_Handler,
 		},
 		{
 			MethodName: "BatchUpdateProductStatus",

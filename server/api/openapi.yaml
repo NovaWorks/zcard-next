@@ -3005,10 +3005,40 @@ paths:
                   required: true
                   schema:
                     type: string
+                - name: deleteOrders
+                  in: query
+                  schema:
+                    type: boolean
+                - name: confirmName
+                  in: query
+                  schema:
+                    type: string
+                - name: expectedOrderCount
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/products/{id}/delete-preview:
+        get:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_PreviewDeleteProduct
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DeleteProductPreview'
     /api/v1/admin/products/{productId}/controls:
         get:
             tags:
@@ -7558,6 +7588,17 @@ components:
                     type: array
                     items:
                         type: string
+        zcard.api.admin.v1.DeleteProductPreview:
+            type: object
+            properties:
+                name:
+                    type: string
+                orderCount:
+                    type: string
+                deleteBlockReason:
+                    type: string
+                deleteOrdersBlockReason:
+                    type: string
         zcard.api.admin.v1.DeliveryRecord:
             type: object
             properties:

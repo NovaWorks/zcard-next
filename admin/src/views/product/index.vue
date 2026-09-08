@@ -28,6 +28,9 @@ import SkuPanel from "./components/sku-panel.vue";
 import ControlPanel from "./components/control-panel.vue";
 import CategoryModal from "./components/category-modal.vue";
 import ReviewsDrawer from "./components/reviews-drawer.vue";
+import DeleteProductModal from "./components/delete-product-modal.vue";
+
+const deleteTarget = ref<{ id: number; name: string } | null>(null);
 
 defineOptions({ name: "ProductManagement" });
 
@@ -526,13 +529,9 @@ const columns: DataTableColumns<any> = [
               : null,
             checkAuth("catalog:delete")
               ? h(
-                  NPopconfirm,
-                  { onPositiveClick: () => handleDelete(row.id) },
-                  {
-                    trigger: () =>
-                      h(NButton, { size: "small", type: "error" }, { default: () => "删除" }),
-                    default: () => "确定删除该商品？",
-                  },
+                  NButton,
+                  { size: "small", type: "error", onClick: () => { deleteTarget.value = row; } },
+                  { default: () => "删除" },
                 )
               : null,
           ],
@@ -644,7 +643,7 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
   }
 }
 
-// ── 批量删除（并发逐条调删除接口；被订单/卡密引用的商品后端会拒绝，成功失败分别计数）──
+// ── 批量删除（并发逐条调删除接口；未下架或仍有待处理订单/库存的商品后端会拒绝，成功失败分别计数）──
 const batchDeleting = ref(false);
 async function handleBatchDelete() {
   if (!checkedKeys.value.length) return;
@@ -654,7 +653,7 @@ async function handleBatchDelete() {
     const ok = results.filter((r) => !r.error).length;
     const fail = results.length - ok;
     if (fail > 0) {
-      window.$message?.warning(`已删除 ${ok} 件，${fail} 件失败（可能仍被订单/规格引用）`);
+      window.$message?.warning(`已删除 ${ok} 件，${fail} 件失败（请先下架并处理未完成订单或库存）`);
     } else {
       window.$message?.success(`已删除 ${ok} 件商品`);
     }
@@ -782,13 +781,6 @@ async function saveAndContinue() {
   }
 }
 
-async function handleDelete(id: number) {
-  const { error } = await deleteProduct(id);
-  if (!error) {
-    window.$message?.success("删除成功");
-    loadList();
-  }
-}
 
 onMounted(() => {
   if (route.query.low_stock === "1") statusFilter.value = "low_stock";
@@ -799,6 +791,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
   <div class="min-h-500px flex gap-16px overflow-hidden">
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard title="商品分类" class="w-230px shrink-0">
@@ -893,7 +886,7 @@ onMounted(() => {
           <template #trigger>
             <NButton v-auth="'catalog:delete'" size="small" type="error" :loading="batchDeleting">批量删除</NButton>
           </template>
-          确定删除选中的 {{ checkedKeys.length }} 件商品？被订单/规格引用的商品会删除失败，不影响其余。
+          确定删除选中的 {{ checkedKeys.length }} 件商品？仅删除已下架且可删除的商品，保留历史订单；失败不影响其余商品。
         </NPopconfirm>
         <NButton size="small" quaternary @click="checkedKeys = []">取消选择</NButton>
       </div>

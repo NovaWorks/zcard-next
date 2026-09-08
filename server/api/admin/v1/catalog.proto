@@ -26,6 +26,9 @@ service AdminCatalogService {
   rpc DeleteProduct(DeleteProductRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { delete: "/api/v1/admin/products/{id}" };
   }
+  rpc PreviewDeleteProduct(GetProductRequest) returns (DeleteProductPreview) {
+    option (google.api.http) = { get: "/api/v1/admin/products/{id}/delete-preview" };
+  }
   // BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
   rpc BatchUpdateProductStatus(BatchUpdateProductStatusRequest) returns (BatchUpdateProductStatusReply) {
     option (google.api.http) = {
@@ -225,6 +228,16 @@ message UpdateProductRequest {
 
 message DeleteProductRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+  bool delete_orders = 2;
+  string confirm_name = 3;
+  int64 expected_order_count = 4;
+}
+
+message DeleteProductPreview {
+  string name = 1;
+  int64 order_count = 2;
+  string delete_block_reason = 3;
+  string delete_orders_block_reason = 4;
 }
 
 message BatchUpdateProductStatusRequest {

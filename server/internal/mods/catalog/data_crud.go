@@ -15,7 +15,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -29,7 +28,7 @@ import (
 func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]*ent.Product, int64, error) {
 	tc := tenancy.FromContext(ctx)
 	q := data.Client(ctx, r.data).Product.Query().
-		Where(product.SubsiteID(tc.SubsiteID)).
+		Where(product.SubsiteID(tc.SubsiteID), product.StatusGTE(0)).
 		Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
 	if f.CategoryID > 0 {
 		// 选择父分类时递归包含全部子分类商品
@@ -119,7 +118,7 @@ func (r *ProductRepoImpl) StockBatch(ctx context.Context, productIDs []uint64) (
 // GetAdmin 管理面商品详情。
 func (r *ProductRepoImpl) GetAdmin(ctx context.Context, subsiteID, id uint64) (*ent.Product, error) {
 	return data.Client(ctx, r.data).Product.Query().
-		Where(product.ID(id), product.SubsiteID(subsiteID)).
+		Where(product.ID(id), product.SubsiteID(subsiteID), product.StatusGTE(0)).
 		Only(ctx)
 }
 
@@ -167,7 +166,7 @@ func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphe
 
 // UpdateProduct 更新（nil/零值字段不动）。
 func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
-	q := data.Client(ctx, r.data).Product.UpdateOneID(id)
+	q := data.Client(ctx, r.data).Product.UpdateOneID(id).Where(product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID))
 	if in.Name != "" {
 		q.SetName(in.Name)
 	}
@@ -221,7 +220,7 @@ func (r *ProductRepoImpl) BatchUpdateStatus(ctx context.Context, ids []uint64, s
 		return 0, fmt.Errorf("catalog.STATUS_INVALID")
 	}
 	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(product.IDIn(ids...)).
+		Where(product.IDIn(ids...), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		SetStatus(status).
 		Save(ctx)
 	if err != nil {
@@ -244,34 +243,6 @@ func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
 		return fmt.Errorf("catalog.PRODUCT_NOT_FOUND")
 	}
 	return nil
-}
-
-// DeleteProductCascade 级联删除（引用检查已由 service 层完成——订单/在库卡密
-// 拒删；此处清理商品自有子表后删主体，单事务）。
-func (r *ProductRepoImpl) DeleteProductCascade(ctx context.Context, id uint64) error {
-	tx, err := data.Client(ctx, r.data).Tx(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	// 子表清理（无订单引用时安全）
-	if _, err := tx.ProductControl.Delete().Where(productcontrol.ProductIDEQ(id)).Exec(ctx); err != nil {
-		return err
-	}
-	if _, err := tx.ProductSku.Delete().Where(productsku.ProductIDEQ(id)).Exec(ctx); err != nil {
-		return err
-	}
-	if p, err := tx.Product.Get(ctx, id); err == nil {
-		deleteProductCover(p.Cover)
-	}
-	n, err := tx.Product.Delete().Where(product.ID(id)).Exec(ctx)
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return fmt.Errorf("catalog.PRODUCT_NOT_FOUND")
-	}
-	return tx.Commit()
 }
 
 func (r *ProductRepoImpl) genUniqueSlug(ctx context.Context, subsiteID uint64, name string) (string, error) {
@@ -649,8 +620,12 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 		return created.ID, true, nil
 	}
 
+	if existing.Status < 0 {
+		return 0, false, fmt.Errorf("商品已删除，禁止同步恢复；如需换品请导入其他商品")
+	}
+
 	// 更新：名称/描述/封面/分类/状态/成本价；价格按保护语义（-1 不动）
-	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).
+	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).Where(product.StatusGTE(0)).
 		SetName(in.Name).
 		SetFactoryPrice(in.FactoryPrice).
 		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
@@ -776,6 +751,7 @@ func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID 
 			product.SubsiteID(tc.SubsiteID),
 			product.UpstreamSourceID(connectionID),
 			product.UpstreamProductCode(productCode),
+			product.StatusGTE(0),
 		).
 		SetPrice(priceCents).
 		SetUpstreamSyncedAt(time.Now().UTC()).
@@ -794,6 +770,7 @@ func (r *ProductRepoImpl) UpdateUpstreamStatus(ctx context.Context, connectionID
 			product.SubsiteID(tc.SubsiteID),
 			product.UpstreamSourceID(connectionID),
 			product.UpstreamProductCode(productCode),
+			product.StatusGTE(0),
 		).
 		SetStatus(status).
 		SetUpstreamSyncedAt(time.Now().UTC()).
@@ -813,7 +790,7 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 		Where(
 			product.SubsiteID(tc.SubsiteID),
 			product.UpstreamSourceID(connectionID),
-			product.StatusNEQ(0),
+			product.StatusGT(0),
 		)
 	if len(seen) > 0 {
 		q = q.Where(product.UpstreamProductCodeNotIn(seen...))
@@ -828,7 +805,7 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 		deleteProductCover(row.Cover) // 上游已消失 → 本地封面同步清理
 	}
 	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(product.IDIn(ids...)).
+		Where(product.IDIn(ids...), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		SetStatus(0).
 		Save(ctx)
 	if err != nil {
@@ -849,7 +826,7 @@ func deleteProductCover(cover string) {
 
 // ListForSupply 供货目录分页（ supplier 消费；管理面语义含下架）。
 func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter) ([]port.SupplierProduct, int64, error) {
-	q := data.Client(ctx, r.data).Product.Query()
+	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}

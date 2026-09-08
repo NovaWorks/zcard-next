@@ -104,6 +104,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus", Method: "POST", Path: "/api/v1/admin/products/batch-status"},
 		Perm{Code: "catalog:delete", Desc: "删除商品", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteProduct", Method: "DELETE", Path: "/api/v1/admin/products/{id}"},
+		Perm{Code: "catalog:delete", Desc: "预览商品删除影响", Domain: "catalog", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct", Method: "GET", Path: "/api/v1/admin/products/{id}/delete-preview"},
 		Perm{Code: "catalog:category_read", Desc: "查看分类", Domain: "catalog",
 			Op: "zcard.api.admin.v1.AdminCatalogService/ListCategories", Method: "GET", Path: "/api/v1/admin/categories"},
 		Perm{Code: "catalog:category_write", Desc: "创建分类（超管）", Domain: "catalog", AdminOnly: true,

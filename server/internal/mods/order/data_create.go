@@ -38,6 +38,7 @@ import (
 	resellerport "github.com/NovaWorks/zcard-next/server/internal/mods/reseller/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -266,9 +267,13 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		var totalSubsiteMarkup int64        // 分站加价合计（利润基数快照）
 
 		for _, item := range in.Items {
-			p, err := client.Product.Query().
-				Where(product.ID(item.ProductID), product.SubsiteID(in.SubsiteID)).
-				Only(txCtx)
+			// 共享锁允许同商品并发下单，并让下架/删除等待已开始的下单事务。
+			// SQLite 由事务快照及写入冲突保证一致性，不支持行级锁。
+			q := client.Product.Query().Where(product.ID(item.ProductID), product.SubsiteID(in.SubsiteID))
+			if uc.Data.Dialect != db.SQLite {
+				q = q.ForShare()
+			}
+			p, err := q.Only(txCtx)
 			if ent.IsNotFound(err) {
 				return fmt.Errorf("order.PRODUCT_NOT_FOUND")
 			}
