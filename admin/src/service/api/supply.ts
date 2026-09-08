@@ -94,6 +94,7 @@ export function importSupplyProducts(
     markup_amount_cents?: number;
     save_default?: boolean;
     category_map?: Record<string, number>;
+    category_drafts?: { upstream_code: string; name: string; parent_id: number }[];
   },
 ) {
   return request({ url: `/api/v1/admin/supply/connections/${connectionId}/import`, method: "post", data, timeout: 60000 });

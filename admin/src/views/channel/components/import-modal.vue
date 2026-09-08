@@ -4,10 +4,10 @@
 import { computed, reactive, ref, watch } from "vue";
 import {
   NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInputNumber,
-  NModal, NSelect, NSpace, NSpin, NTag, NTreeSelect,
+  NModal, NSelect, NSpace, NSpin, NTag, NTreeSelect, NInput,
   type TreeSelectOption,
 } from "naive-ui";
-import { previewSupplyProducts, importSupplyProducts, createCategory } from "@/service/api";
+import { previewSupplyProducts, importSupplyProducts } from "@/service/api";
 import { fetchCategories } from "@/service/api";
 import { formatMoney, yuanToFen } from "@/utils/money";
 
@@ -43,7 +43,40 @@ const pricing = reactive({
   markupAmountYuan: 1,
   saveDefault: false,
 });
-const categoryMapDraft = reactive<Record<string, number>>({});
+const categoryMapDraft = reactive<Record<string, number | null>>({});
+
+const drafts = reactive<Record<string, { name: string; parent_id: number | null }>>({});
+const keyword = ref("");
+const batchCategory = ref<number | null>(null);
+const resultMessage = ref("");
+const selectedCodes = computed(() => new Set(checked.value));
+const counts = computed(() => new Map(categories.value.map(cat => [cat.code, cat.products.filter(p => selectedCodes.value.has(p.code)).length])));
+const selectedCategories = computed(() => categories.value.filter(cat => (counts.value.get(cat.code) || 0) > 0));
+const visibleCategories = computed(() => {
+  const key = keyword.value.trim().toLowerCase();
+  return categories.value.filter(cat => !key || cat.name.toLowerCase().includes(key) || cat.products.some(p => p.name.toLowerCase().includes(key)));
+});
+const draftCount = computed(() => new Set(selectedCategories.value.filter(cat => drafts[cat.code]).map(cat => JSON.stringify([drafts[cat.code].parent_id || 0, drafts[cat.code].name.trim()]))).size);
+const mappedCount = computed(() => selectedCategories.value.filter(cat => !drafts[cat.code] && Number(categoryMapDraft[cat.code]) > 0).length);
+function setMapping(code: string, value: number | null) {
+  delete drafts[code];
+  categoryMapDraft[code] = value;
+}
+function applyBatchCategory() {
+  if (batchCategory.value === null) return;
+  for (const cat of selectedCategories.value) setMapping(cat.code, batchCategory.value);
+}
+function generateDrafts() {
+  let ambiguous = 0;
+  for (const cat of selectedCategories.value) {
+    if (categoryMapDraft[cat.code] != null || drafts[cat.code]) continue;
+    const matches = localCategories.value.filter(c => c.name === cat.name);
+    if (matches.length === 1) categoryMapDraft[cat.code] = matches[0].id;
+    else if (matches.length > 1) ambiguous++;
+    else drafts[cat.code] = { name: cat.name, parent_id: null };
+  }
+  if (ambiguous) window.$message?.warning(`${ambiguous} 个分类有多个同名项，请按完整路径手动选择`);
+}
 
 const localCategoryOptions = computed(() => {
   const nodes = new Map<number, TreeSelectOption>();
@@ -85,6 +118,11 @@ async function loadPreview() {
   checked.value = [];
   expandedCats.value = new Set();
   for (const key of Object.keys(categoryMapDraft)) delete categoryMapDraft[key];
+  for (const key of Object.keys(drafts)) delete drafts[key];
+  keyword.value = "";
+  batchCategory.value = null;
+  resultMessage.value = "";
+  Object.assign(pricing, { mode: "percent", markupPercent: 10, markupAmountYuan: 1, saveDefault: false });
   try {
     const { data, error } = await previewSupplyProducts(connection.id);
     if (requestId !== previewRequest) return;
@@ -113,7 +151,7 @@ async function loadPreview() {
         const saved = JSON.parse(connection.settings || "{}").category_map;
         if (saved) {
           for (const [k, v] of Object.entries(saved)) {
-            if (Number(v) > 0) categoryMapDraft[k] = Number(v);
+            if (Number(v) >= 0) categoryMapDraft[k] = Number(v);
           }
         }
       } catch {
@@ -128,46 +166,10 @@ async function loadPreview() {
 }
 
 async function loadLocalCategories() {
+  const requestId = previewRequest;
   const { data, error } = await fetchCategories();
+  if (requestId !== previewRequest) return;
   if (!error && data) localCategories.value = (data as any).categories || [];
-}
-
-// ── 一键创建上游分类：上游有哪些分类就建哪些（同名复用已有分类）；创建后自动填入映射 ──
-const creatingCats = ref(false);
-
-async function createUpstreamCategories() {
-  if (!categories.value.length) return;
-  creatingCats.value = true;
-  try {
-    let created = 0;
-    let reused = 0;
-    for (const cat of categories.value) {
-      // 已映射的直接跳过
-      if (categoryMapDraft[cat.code]) continue;
-      // 同名复用（本地分类按名字匹配）
-      const exist = localCategories.value.find((c: any) => c.name === cat.name);
-      let id = exist?.id;
-      if (!id) {
-        const { data, error } = await createCategory({ name: cat.name });
-        if (error) continue;
-        id = (data as any)?.id;
-        if (!id) continue;
-        created++;
-        localCategories.value.push({ id, name: cat.name });
-      } else {
-        reused++;
-      }
-      categoryMapDraft[cat.code] = id;
-    }
-    window.$message?.success(`分类就绪：新建 ${created} 个，复用 ${reused} 个`);
-  } finally {
-    creatingCats.value = false;
-  }
-}
-
-function checkedInCat(cat: PreviewCategory): string[] {
-  const set = new Set(checked.value);
-  return cat.products.filter((p) => set.has(p.code)).map((p) => p.code);
 }
 
 function toggleCat(cat: PreviewCategory, on: boolean) {
@@ -186,16 +188,21 @@ function toggleExpand(code: string) {
 }
 
 const allExpanded = computed(
-  () => categories.value.length > 0 && categories.value.every((c) => expandedCats.value.has(c.code)),
+  () => categories.value.length > 0 && visibleCategories.value.every((c) => expandedCats.value.has(c.code)),
 );
 
 function toggleAllExpand() {
-  expandedCats.value = new Set(allExpanded.value ? [] : categories.value.map((c) => c.code));
+  expandedCats.value = new Set(allExpanded.value ? [] : visibleCategories.value.map((c) => c.code));
 }
 
 async function submit() {
   if (!checked.value.length) {
     window.$message?.warning("请先勾选要导入的商品");
+    return;
+  }
+  if (importing.value) return;
+  if (selectedCategories.value.some(cat => drafts[cat.code] && !drafts[cat.code].name.trim())) {
+    window.$message?.warning("请填写待新建分类名称");
     return;
   }
   importing.value = true;
@@ -204,16 +211,30 @@ async function submit() {
       codes: checked.value,
       pricing_mode: pricing.mode,
       save_default: pricing.saveDefault,
-      category_map: Object.fromEntries(Object.entries(categoryMapDraft).filter(([, v]) => v > 0)),
+      category_map: Object.fromEntries(selectedCategories.value
+        .filter(cat => !drafts[cat.code] && categoryMapDraft[cat.code] != null)
+        .map(cat => [cat.code, categoryMapDraft[cat.code]])),
+      category_drafts: selectedCategories.value.filter(cat => drafts[cat.code]).map(cat => ({
+        upstream_code: cat.code, name: drafts[cat.code].name.trim(), parent_id: drafts[cat.code].parent_id || 0,
+      })),
     };
     if (pricing.mode === "percent" && pricing.markupPercent > 0) payload.markup_percent = pricing.markupPercent;
     if (pricing.mode === "fixed") payload.markup_amount_cents = yuanToFen(pricing.markupAmountYuan);
     const { data, error } = await importSupplyProducts(props.connection.id, payload as any);
     if (!error && data) {
       const d = data as any;
-      window.$message?.success(`导入完成：新建 ${d.imported ?? 0}，更新 ${d.updated ?? 0}，失败 ${d.failed ?? 0}`);
       emit("imported");
-      emit("update:show", false);
+      if (Number(d.failed) > 0) {
+        resultMessage.value = `分类映射已保存。新建商品 ${d.imported ?? 0}，更新 ${d.updated ?? 0}，失败 ${d.failed}。${d.error_context || ""} 可重试失败商品。`;
+        for (const key of Object.keys(drafts)) delete drafts[key];
+        for (const [key, value] of Object.entries(d.category_map || {})) categoryMapDraft[key] = Number(value);
+        if (d.failed_codes?.length) checked.value = d.failed_codes;
+        await loadLocalCategories();
+        window.$message?.warning("部分商品导入失败，请查看结果并重试");
+      } else {
+        window.$message?.success(`导入完成：新建 ${d.imported ?? 0}，更新 ${d.updated ?? 0}`);
+        emit("update:show", false);
+      }
     }
   } finally {
     importing.value = false;
@@ -222,81 +243,65 @@ async function submit() {
 </script>
 
 <template>
-  <NModal
-    :show="props.show"
-    preset="card"
-    :title="`导入上游商品：${props.connection?.name || ''}`"
-    style="width: 920px; max-width: 96vw"
-    @update:show="emit('update:show', $event)"
-  >
-    <NSpin :show="loading">
-      <NAlert v-if="loading" type="info" :bordered="false" class="mb-12px">
-        正在加载上游商品目录，商品较多时请稍候…
-      </NAlert>
-      <NAlert v-else-if="previewError" type="error" :bordered="false" class="mb-12px">
-        {{ previewError }}
-        <div class="mt-8px"><NButton size="small" @click="loadPreview">重新加载</NButton></div>
-      </NAlert>
-      <NAlert v-else-if="!categories.length" type="warning" :bordered="false" class="mb-12px">
-        上游返回的商品目录为空，请确认该对接账号有可用商品。
-        <div class="mt-8px"><NButton size="small" @click="loadPreview">重新加载</NButton></div>
-      </NAlert>
-
-      <!-- 左：分类树勾选；右：定价与映射（左列 min-w-0：长分类/商品名截断不撑破弹窗） -->
-      <div class="grid grid-cols-[minmax(0,1fr)_310px] gap-16px">
-        <div class="max-h-480px min-w-0 overflow-auto pr-8px">
-          <div class="sticky top-0 z-1 mb-4px flex items-center justify-between bg-white py-2px dark:bg-[#101014]">
-            <span class="text-11px text-gray-400">分类默认折叠 · 点行展开，勾选整类无须展开</span>
-            <NButton size="tiny" quaternary @click="toggleAllExpand">
-              {{ allExpanded ? "全部收起" : "全部展开" }}
-            </NButton>
-          </div>
-          <div v-for="cat in categories" :key="cat.code" class="mb-4px">
-            <div
-              class="flex cursor-pointer select-none items-center gap-4px rounded-4px px-4px py-3px hover:bg-gray-100 dark:hover:bg-gray-800"
-              @click="toggleExpand(cat.code)"
-            >
-              <span
-                class="w-12px shrink-0 text-10px text-gray-400 transition-transform duration-200"
-                :class="{ 'rotate-90': expandedCats.has(cat.code) }"
-              >▶</span>
-              <span @click.stop>
-                <NCheckbox
-                  :checked="checkedInCat(cat).length === cat.products.length && cat.products.length > 0"
-                  :indeterminate="checkedInCat(cat).length > 0 && checkedInCat(cat).length < cat.products.length"
-                  @update:checked="(v: boolean) => toggleCat(cat, v)"
-                />
-              </span>
-              <b class="min-w-0 truncate" :title="cat.name">{{ cat.name }}</b>
-              <NTag size="tiny" :bordered="false" class="shrink-0">{{ cat.products.length }} 件</NTag>
-              <NTag
-                v-if="!expandedCats.has(cat.code) && checkedInCat(cat).length"
-                size="tiny"
-                type="primary"
-                :bordered="false"
-                class="shrink-0"
-              >
-                已选 {{ checkedInCat(cat).length }}
-              </NTag>
+  <NModal :show="props.show" preset="card" :title="`导入上游商品：${props.connection?.name || ''}`"
+    style="width: 1000px; max-width: 96vw" :closable="!importing" :mask-closable="false" :close-on-esc="!importing"
+    @update:show="!importing && emit('update:show', $event)">
+    <NSpin :show="loading || importing">
+      <div class="import-body" :inert="importing || undefined">
+        <NAlert v-if="loading" type="info" :bordered="false">正在加载上游商品目录，商品较多时请稍候…</NAlert>
+        <NAlert v-else-if="previewError" type="error" :bordered="false">
+          {{ previewError }} <NButton size="small" @click="loadPreview">重新加载</NButton>
+        </NAlert>
+        <NAlert v-else-if="!categories.length" type="warning" :bordered="false">上游商品目录为空，请确认对接账号有可用商品。</NAlert>
+        <NAlert v-if="resultMessage" type="warning" :bordered="false">{{ resultMessage }}</NAlert>
+        <div class="import-toolbar">
+          <NInput v-model:value="keyword" clearable placeholder="搜索上游分类或商品名称" aria-label="搜索上游分类或商品名称" />
+          <NButton size="small" @click="toggleAllExpand">{{ allExpanded ? '全部收起' : '全部展开' }}</NButton>
+        </div>
+        <div class="text-12px text-gray-400">分类默认折叠；勾选整类包含该分类全部商品，搜索不会取消已选商品。</div>
+        <div class="category-list">
+          <div v-for="cat in visibleCategories" :key="cat.code" class="category-item">
+            <div class="category-row">
+              <div class="category-heading">
+                <NButton text :aria-label="`${expandedCats.has(cat.code) ? '收起' : '展开'}${cat.name}`" :aria-expanded="expandedCats.has(cat.code)" @click="toggleExpand(cat.code)">{{ expandedCats.has(cat.code) ? '▼' : '▶' }}</NButton>
+                <NCheckbox :checked="counts.get(cat.code) === cat.products.length && cat.products.length > 0"
+                  :indeterminate="(counts.get(cat.code) || 0) > 0 && (counts.get(cat.code) || 0) < cat.products.length"
+                  :aria-label="`选择${cat.name}全部商品`" @update:checked="(v: boolean) => toggleCat(cat, v)" />
+                <button type="button" class="category-name" :title="cat.name" @click="toggleExpand(cat.code)">{{ cat.name }}</button>
+                <NTag size="tiny" :bordered="false">{{ cat.products.length }} 件</NTag>
+                <NTag v-if="counts.get(cat.code)" size="tiny" type="primary" :bordered="false">已选 {{ counts.get(cat.code) }}</NTag>
+              </div>
+              <div class="category-destination">
+                <template v-if="drafts[cat.code]">
+                  <div class="draft-name"><NTag size="small" type="warning">待新建</NTag><NInput v-model:value="drafts[cat.code].name" size="small" maxlength="100" placeholder="新分类名称" :aria-label="`${cat.name}的新分类名称`" /></div>
+                  <NTreeSelect v-model:value="drafts[cat.code].parent_id" :options="localCategoryOptions" clearable filterable show-path size="small" placeholder="创建位置：顶级分类" :aria-label="`${cat.name}的父分类`" />
+                  <NButton text size="tiny" @click="delete drafts[cat.code]">取消新建，改选已有分类</NButton>
+                </template>
+                <NTreeSelect v-else :value="categoryMapDraft[cat.code]" :options="[{ key: 0, label: '不归入分类（清除映射）' }, ...localCategoryOptions]"
+                  clearable filterable show-path size="small" placeholder="沿用原映射；无映射则未分类" :aria-label="`${cat.name}的本地分类`"
+                  @update:value="(v: number | null) => setMapping(cat.code, v)" />
+              </div>
             </div>
             <NCheckboxGroup v-if="expandedCats.has(cat.code)" v-model:value="checked">
-              <div class="grid grid-cols-1 gap-2px py-2px pl-28px">
-                <NCheckbox v-for="p in cat.products" :key="p.code" :value="p.code" class="py-1px">
-                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }" :title="p.name">{{ p.name }}</span>
-                  <span class="ml-4px text-12px text-gray-400">
-                    {{ formatMoney(p.price_cents) }}
-                    <template v-if="p.stock >= 0">· 库存 {{ p.stock }}</template>
-                  </span>
+              <div class="product-list">
+                <NCheckbox v-for="p in cat.products" :key="p.code" :value="p.code">
+                  <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}</span>
+                  <span class="ml-4px text-12px text-gray-400">{{ formatMoney(p.price_cents) }} <template v-if="p.stock >= 0">· 库存 {{ p.stock }}</template></span>
                   <NTag v-if="p.already_imported" size="tiny" type="info" :bordered="false" class="ml-4px">已导入</NTag>
                   <NTag v-if="!p.is_active" size="tiny" type="warning" :bordered="false" class="ml-4px">已下架</NTag>
                 </NCheckbox>
               </div>
             </NCheckboxGroup>
           </div>
+          <div v-if="categories.length && !visibleCategories.length" class="p-16px text-gray-400">没有匹配的分类或商品</div>
         </div>
-
-        <div>
-          <NForm label-placement="top" size="small">
+        <div class="mapping-actions">
+          <NTreeSelect v-model:value="batchCategory" :options="[{ key: 0, label: '不归入分类' }, ...localCategoryOptions]" clearable filterable show-path size="small" placeholder="批量指定本地分类" aria-label="批量指定本地分类" />
+          <NButton size="small" :disabled="!selectedCategories.length || batchCategory === null" @click="applyBatchCategory">应用到已选分类</NButton>
+          <NButton v-auth="'catalog:category_write'" size="small" type="primary" secondary :disabled="!selectedCategories.length" @click="generateDrafts">生成映射草稿</NButton>
+        </div>
+        <div class="text-12px text-gray-400">只处理所选商品涉及的分类；草稿保存前不会出现在商城。保存后的映射也用于后续全量同步及该上游分类的其他已导入商品。</div>
+          <NForm label-placement="top" size="small" class="pricing-grid">
             <NFormItem label="定价策略">
               <NSelect
                 v-model:value="pricing.mode"
@@ -314,7 +319,7 @@ async function submit() {
             <NFormItem v-if="pricing.mode === 'fixed'" label="加价金额（元）">
               <NInputNumber v-model:value="pricing.markupAmountYuan" :min="0.01" :precision="2" class="w-full" />
             </NFormItem>
-            <NFormItem>
+            <NFormItem class="pricing-default">
               <div class="flex w-full flex-col gap-2px">
                 <NCheckbox v-model:checked="pricing.saveDefault">存为该渠道默认</NCheckbox>
                 <span class="text-12px text-gray-400">
@@ -322,52 +327,42 @@ async function submit() {
                 </span>
               </div>
             </NFormItem>
-            <NFormItem>
-              <template #label>
-                <span class="mr-8px">类目映射（上游分类 → 本地分类，保存后全量同步沿用）</span>
-                <NButton
-                  v-auth="'catalog:category_write'"
-                  size="tiny"
-                  type="primary"
-                  quaternary
-                  :loading="creatingCats"
-                  @click="createUpstreamCategories"
-                >
-                  一键创建上游分类
-                </NButton>
-              </template>
-              <div class="flex w-full flex-col gap-6px">
-                <div v-for="cat in categories" :key="cat.code" class="flex items-center gap-6px">
-                  <span class="w-110px shrink-0 truncate text-12px" :title="cat.name">{{ cat.name }}</span>
-                  <NTreeSelect
-                    v-model:value="categoryMapDraft[cat.code]"
-                    size="small"
-                    clearable
-                    filterable
-                    show-path
-                    default-expand-all
-                    placement="bottom-start"
-                    class="min-w-0 flex-1"
-                    placeholder="本地分类（空=不设置）"
-                    :options="localCategoryOptions"
-                  />
-                </div>
-              </div>
-            </NFormItem>
           </NForm>
-        </div>
       </div>
     </NSpin>
     <template #footer>
       <NSpace justify="space-between" align="center">
-        <span class="text-12px text-gray-400">已勾选 {{ checked.length }} 件</span>
+        <span class="text-12px">已选 {{ checked.length }} 件 · 涉及 {{ selectedCategories.length }} 类 · 已指定 {{ mappedCount }} 类 · 待新建 {{ draftCount }} 类</span>
         <NSpace>
-          <NButton size="small" @click="emit('update:show', false)">取消</NButton>
-          <NButton size="small" type="primary" :loading="importing" :disabled="loading || !!previewError || !checked.length" @click="submit">
-            导入所选
-          </NButton>
+          <NButton size="small" :disabled="importing" @click="emit('update:show', false)">取消</NButton>
+          <NButton size="small" type="primary" :loading="importing" :disabled="loading || !!previewError || !checked.length" @click="submit">{{ resultMessage ? '重试失败商品' : '保存并导入' }}</NButton>
         </NSpace>
       </NSpace>
     </template>
   </NModal>
 </template>
+
+<style scoped>
+.import-body { max-height: 70vh; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.import-toolbar { display: flex; align-items: center; gap: 12px; }
+.category-list { max-height: 42vh; min-height: 160px; overflow: auto; border: 1px solid var(--n-border-color); border-radius: 8px; }
+.category-item + .category-item { border-top: 1px solid var(--n-border-color); }
+.category-row { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 12px; align-items: center; }
+.category-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.category-heading > :not(.category-name) { flex-shrink: 0; }
+.category-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-weight: 600; cursor: pointer; }
+.category-destination { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.draft-name { display: flex; gap: 6px; }
+.product-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 12px 12px 40px; }
+.mapping-actions { display: flex; align-items: center; gap: 8px; }
+.mapping-actions > :first-child { flex: 1; min-width: 0; }
+.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; padding: 12px; border: 1px solid var(--n-border-color); border-radius: 8px; }
+.pricing-default { grid-column: 1 / -1; }
+@media (max-width: 640px) {
+  .category-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .mapping-actions { flex-wrap: wrap; }
+  .mapping-actions > :first-child { flex-basis: 100%; }
+  .pricing-grid { grid-template-columns: minmax(0, 1fr); }
+  .category-heading { gap: 5px; }
+}
+</style>

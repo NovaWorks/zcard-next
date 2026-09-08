@@ -14,6 +14,7 @@ import {
   updateCategory,
   deleteCategory,
   reorderCategories,
+  mergeCategories,
 } from "@/service/api";
 
 const props = defineProps<{ show: boolean }>();
@@ -393,6 +394,46 @@ async function handleBatchDelete() {
   emit("refresh");
 }
 
+
+const showMerge = ref(false);
+const mergeTarget = ref<number | null>(null);
+const merging = ref(false);
+const mergePreview = ref<{ categories: number; products: number; children: number } | null>(null);
+const mergeSources = ref<number[]>([]);
+const mergeOptions = computed(() => {
+  const excluded = new Set(mergeSources.value);
+  for (const cat of flatTree.value) if (excluded.has(cat.parent_id)) excluded.add(cat.id);
+  const names = new Map<number, string>();
+  return flatTree.value.filter(cat => {
+    names.set(cat.id, [names.get(cat.parent_id), cat.name].filter(Boolean).join(' / '));
+    return !excluded.has(cat.id);
+  }).map(cat => ({ value: cat.id, label: names.get(cat.id)! }));
+});
+watch(mergeTarget, () => { mergePreview.value = null; });
+function openMerge() {
+  mergeSources.value = [...batchChecked.value];
+  mergeTarget.value = null;
+  mergePreview.value = null;
+  showMerge.value = true;
+}
+async function runMerge(preview: boolean) {
+  if (!mergeTarget.value || merging.value) return;
+  merging.value = true;
+  try {
+    const { data, error } = await mergeCategories({ source_ids: mergeSources.value, target_id: mergeTarget.value, preview });
+    if (error || !data) return;
+    if (preview) mergePreview.value = data;
+    else {
+      window.$message?.success(`已合并 ${data.categories} 个分类，迁移 ${data.products} 件商品`);
+      showMerge.value = false;
+      batchChecked.value = new Set();
+      batchMode.value = false;
+      await load();
+      emit("refresh");
+    }
+  } finally { merging.value = false; }
+}
+
 // 名称截断时悬浮显示全名（scrollWidth > clientWidth 即溢出）
 function onNameEnter(cat: any, e: MouseEvent) {
   const el = e.target as HTMLElement;
@@ -422,6 +463,7 @@ async function onSortBlur(cat: any) {
         <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类</span>
         <template v-if="batchMode">
           <NTag size="small" :bordered="false">已选 {{ batchChecked.size }}</NTag>
+          <NButton v-auth="'catalog:category_delete'" size="tiny" :disabled="!batchChecked.size" @click="openMerge">合并所选</NButton>
           <NPopconfirm @positive-click="handleBatchDelete">
             <template #trigger>
               <NButton v-auth="'catalog:category_delete'" size="tiny" type="error" :disabled="!batchChecked.size">
@@ -434,7 +476,7 @@ async function onSortBlur(cat: any) {
       </div>
       <div class="flex items-center gap-8px">
         <NButton v-auth="'catalog:category_write'" size="small" quaternary @click="toggleBatchMode">
-          {{ batchMode ? "退出批量" : "批量删除" }}
+          {{ batchMode ? "退出批量" : "批量管理" }}
         </NButton>
         <NButton v-auth="'catalog:category_write'" size="small" type="primary" @click="showCreate = !showCreate">
           {{ showCreate ? "收起" : "新建分类" }}
@@ -621,6 +663,19 @@ async function onSortBlur(cat: any) {
       <template #action>
         <NButton @click="renaming = null">取消</NButton>
         <NButton v-auth="'catalog:category_write'" type="primary" @click="handleRename">确定</NButton>
+      </template>
+    </NModal>
+
+    <NModal :show="showMerge" preset="card" title="批量合并分类" style="width: 560px; max-width: 94vw" :closable="!merging" :mask-closable="false" :close-on-esc="!merging" @update:show="!merging && (showMerge = $event)">
+      <div class="mb-12px">已选 {{ mergeSources.length }} 个来源分类。商品和上游映射迁移到目标分类，未选中的子分类移到目标下面，随后删除来源分类。</div>
+      <NSelect v-model:value="mergeTarget" :options="mergeOptions" filterable :disabled="merging" placeholder="选择合并到的本地分类" />
+      <div v-if="mergePreview" class="mt-12px">将删除 {{ mergePreview.categories }} 个来源分类、迁移 {{ mergePreview.products }} 件商品、移动 {{ mergePreview.children }} 个子分类。商品沿用目标分类的展示设置。</div>
+      <template #footer>
+        <div class="flex justify-end gap-8px">
+          <NButton :disabled="merging" @click="showMerge = false">取消</NButton>
+          <NButton v-if="!mergePreview" type="primary" :disabled="!mergeTarget" :loading="merging" @click="runMerge(true)">预览影响范围</NButton>
+          <NButton v-else type="error" :loading="merging" @click="runMerge(false)">确认合并</NButton>
+        </div>
       </template>
     </NModal>
 

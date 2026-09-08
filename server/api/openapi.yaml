@@ -3,7 +3,7 @@
 
 openapi: 3.0.3
 info:
-    title: "ZCard API"
+    title: ""
     version: 0.0.1
 paths:
     /api/supply/categories:
@@ -782,6 +782,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+    /api/v1/admin/categories/merge:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_MergeCategories
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.MergeCategoriesRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.MergeCategoriesReply'
     /api/v1/admin/categories/reorder:
         post:
             tags:
@@ -7814,6 +7832,15 @@ components:
                     format: int32
                 status:
                     type: string
+        zcard.api.admin.v1.ImportCategoryDraft:
+            type: object
+            properties:
+                upstreamCode:
+                    type: string
+                name:
+                    type: string
+                parentId:
+                    type: string
         zcard.api.admin.v1.ImportConfirmRequest:
             required:
                 - productId
@@ -7886,6 +7913,14 @@ components:
                     format: int32
                 errorContext:
                     type: string
+                failedCodes:
+                    type: array
+                    items:
+                        type: string
+                categoryMap:
+                    type: object
+                    additionalProperties:
+                        type: string
         zcard.api.admin.v1.ImportProductsRequest:
             required:
                 - connectionId
@@ -7911,6 +7946,10 @@ components:
                     type: object
                     additionalProperties:
                         type: string
+                categoryDrafts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ImportCategoryDraft'
         zcard.api.admin.v1.InstallLicenseRequest:
             required:
                 - content
@@ -8644,6 +8683,30 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.MemberLevel'
+        zcard.api.admin.v1.MergeCategoriesReply:
+            type: object
+            properties:
+                categories:
+                    type: integer
+                    format: int32
+                products:
+                    type: integer
+                    format: int32
+                children:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.MergeCategoriesRequest:
+            type: object
+            properties:
+                sourceIds:
+                    type: array
+                    items:
+                        type: string
+                targetId:
+                    type: string
+                preview:
+                    type: boolean
+            description: 仅合并明确选中的分类；未选中的子分类移到目标下，不递归删除。
         zcard.api.admin.v1.MoveMediaCategoryRequest:
             required:
                 - id

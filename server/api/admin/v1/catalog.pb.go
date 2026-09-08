@@ -3235,6 +3235,127 @@ func (x *DeleteMemberGroupRequest) GetId() uint64 {
 	return 0
 }
 
+// 仅合并明确选中的分类；未选中的子分类移到目标下，不递归删除。
+type MergeCategoriesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SourceIds     []uint64               `protobuf:"varint,1,rep,packed,name=source_ids,json=sourceIds,proto3" json:"source_ids,omitempty"`
+	TargetId      uint64                 `protobuf:"varint,2,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	Preview       bool                   `protobuf:"varint,3,opt,name=preview,proto3" json:"preview,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MergeCategoriesRequest) Reset() {
+	*x = MergeCategoriesRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MergeCategoriesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MergeCategoriesRequest) ProtoMessage() {}
+
+func (x *MergeCategoriesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MergeCategoriesRequest.ProtoReflect.Descriptor instead.
+func (*MergeCategoriesRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *MergeCategoriesRequest) GetSourceIds() []uint64 {
+	if x != nil {
+		return x.SourceIds
+	}
+	return nil
+}
+
+func (x *MergeCategoriesRequest) GetTargetId() uint64 {
+	if x != nil {
+		return x.TargetId
+	}
+	return 0
+}
+
+func (x *MergeCategoriesRequest) GetPreview() bool {
+	if x != nil {
+		return x.Preview
+	}
+	return false
+}
+
+type MergeCategoriesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Categories    int32                  `protobuf:"varint,1,opt,name=categories,proto3" json:"categories,omitempty"`
+	Products      int32                  `protobuf:"varint,2,opt,name=products,proto3" json:"products,omitempty"`
+	Children      int32                  `protobuf:"varint,3,opt,name=children,proto3" json:"children,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MergeCategoriesReply) Reset() {
+	*x = MergeCategoriesReply{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MergeCategoriesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MergeCategoriesReply) ProtoMessage() {}
+
+func (x *MergeCategoriesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MergeCategoriesReply.ProtoReflect.Descriptor instead.
+func (*MergeCategoriesReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *MergeCategoriesReply) GetCategories() int32 {
+	if x != nil {
+		return x.Categories
+	}
+	return 0
+}
+
+func (x *MergeCategoriesReply) GetProducts() int32 {
+	if x != nil {
+		return x.Products
+	}
+	return 0
+}
+
+func (x *MergeCategoriesReply) GetChildren() int32 {
+	if x != nil {
+		return x.Children
+	}
+	return 0
+}
+
 var File_admin_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_admin_v1_catalog_proto_rawDesc = "" +
@@ -3546,7 +3667,18 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\vbadge_style\x18\a \x01(\tR\n" +
 	"badgeStyle\"/\n" +
 	"\x18DeleteMemberGroupRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xb7\x1e\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"n\n" +
+	"\x16MergeCategoriesRequest\x12\x1d\n" +
+	"\n" +
+	"source_ids\x18\x01 \x03(\x04R\tsourceIds\x12\x1b\n" +
+	"\ttarget_id\x18\x02 \x01(\x04R\btargetId\x12\x18\n" +
+	"\apreview\x18\x03 \x01(\bR\apreview\"n\n" +
+	"\x14MergeCategoriesReply\x12\x1e\n" +
+	"\n" +
+	"categories\x18\x01 \x01(\x05R\n" +
+	"categories\x12\x1a\n" +
+	"\bproducts\x18\x02 \x01(\x05R\bproducts\x12\x1a\n" +
+	"\bchildren\x18\x03 \x01(\x05R\bchildren2\xcc\x1f\n" +
 	"\x13AdminCatalogService\x12~\n" +
 	"\fListProducts\x12'.zcard.api.admin.v1.ListProductsRequest\x1a%.zcard.api.admin.v1.ListProductsReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/admin/products\x12z\n" +
 	"\n" +
@@ -3558,7 +3690,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a .zcard.api.admin.v1.CategoryList\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/categories\x12~\n" +
 	"\x0eCreateCategory\x12).zcard.api.admin.v1.CreateCategoryRequest\x1a\x1c.zcard.api.admin.v1.Category\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/categories\x12\x83\x01\n" +
 	"\x0eUpdateCategory\x12).zcard.api.admin.v1.UpdateCategoryRequest\x1a\x1c.zcard.api.admin.v1.Category\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/api/v1/admin/categories/{id}\x12z\n" +
-	"\x0eDeleteCategory\x12).zcard.api.admin.v1.DeleteCategoryRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/admin/categories/{id}\x12\x86\x01\n" +
+	"\x0eDeleteCategory\x12).zcard.api.admin.v1.DeleteCategoryRequest\x1a\x16.google.protobuf.Empty\"%\x82\xd3\xe4\x93\x02\x1f*\x1d/api/v1/admin/categories/{id}\x12\x92\x01\n" +
+	"\x0fMergeCategories\x12*.zcard.api.admin.v1.MergeCategoriesRequest\x1a(.zcard.api.admin.v1.MergeCategoriesReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/categories/merge\x12\x86\x01\n" +
 	"\x11ReorderCategories\x12,.zcard.api.admin.v1.ReorderCategoriesRequest\x1a\x16.google.protobuf.Empty\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/admin/categories/reorder\x12[\n" +
 	"\bListTags\x12\x16.google.protobuf.Empty\x1a\x1b.zcard.api.admin.v1.TagList\"\x1a\x82\xd3\xe4\x93\x02\x14\x12\x12/api/v1/admin/tags\x12i\n" +
 	"\tCreateTag\x12$.zcard.api.admin.v1.CreateTagRequest\x1a\x17.zcard.api.admin.v1.Tag\"\x1d\x82\xd3\xe4\x93\x02\x17:\x01*\"\x12/api/v1/admin/tags\x12j\n" +
@@ -3592,7 +3725,7 @@ func file_admin_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_admin_v1_catalog_proto_rawDescData
 }
 
-var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
+var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_admin_v1_catalog_proto_goTypes = []any{
 	(*ListProductsRequest)(nil),             // 0: zcard.api.admin.v1.ListProductsRequest
 	(*ListProductsReply)(nil),               // 1: zcard.api.admin.v1.ListProductsReply
@@ -3637,10 +3770,12 @@ var file_admin_v1_catalog_proto_goTypes = []any{
 	(*CreateMemberGroupRequest)(nil),        // 40: zcard.api.admin.v1.CreateMemberGroupRequest
 	(*UpdateMemberGroupRequest)(nil),        // 41: zcard.api.admin.v1.UpdateMemberGroupRequest
 	(*DeleteMemberGroupRequest)(nil),        // 42: zcard.api.admin.v1.DeleteMemberGroupRequest
-	nil,                                     // 43: zcard.api.admin.v1.Sku.SpecValuesEntry
-	nil,                                     // 44: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
-	nil,                                     // 45: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
-	(*emptypb.Empty)(nil),                   // 46: google.protobuf.Empty
+	(*MergeCategoriesRequest)(nil),          // 43: zcard.api.admin.v1.MergeCategoriesRequest
+	(*MergeCategoriesReply)(nil),            // 44: zcard.api.admin.v1.MergeCategoriesReply
+	nil,                                     // 45: zcard.api.admin.v1.Sku.SpecValuesEntry
+	nil,                                     // 46: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	nil,                                     // 47: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	(*emptypb.Empty)(nil),                   // 48: google.protobuf.Empty
 }
 var file_admin_v1_catalog_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.admin.v1.ListProductsReply.products:type_name -> zcard.api.admin.v1.AdminProduct
@@ -3650,9 +3785,9 @@ var file_admin_v1_catalog_proto_depIdxs = []int32{
 	21, // 4: zcard.api.admin.v1.ControlList.controls:type_name -> zcard.api.admin.v1.AdminControl
 	27, // 5: zcard.api.admin.v1.ListReviewsReply.reviews:type_name -> zcard.api.admin.v1.ReviewItem
 	34, // 6: zcard.api.admin.v1.SkuList.skus:type_name -> zcard.api.admin.v1.Sku
-	43, // 7: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
-	44, // 8: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
-	45, // 9: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	45, // 7: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
+	46, // 8: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	47, // 9: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
 	39, // 10: zcard.api.admin.v1.MemberGroupList.groups:type_name -> zcard.api.admin.v1.MemberGroup
 	0,  // 11: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
 	2,  // 12: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
@@ -3660,62 +3795,64 @@ var file_admin_v1_catalog_proto_depIdxs = []int32{
 	5,  // 14: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
 	6,  // 15: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
 	7,  // 16: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:input_type -> zcard.api.admin.v1.BatchUpdateProductStatusRequest
-	46, // 17: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	48, // 17: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
 	11, // 18: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
 	12, // 19: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
 	14, // 20: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
-	13, // 21: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:input_type -> zcard.api.admin.v1.ReorderCategoriesRequest
-	46, // 22: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
-	17, // 23: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
-	18, // 24: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
-	19, // 25: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
-	22, // 26: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
-	23, // 27: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
-	24, // 28: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
-	25, // 29: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
-	28, // 30: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
-	29, // 31: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
-	31, // 32: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
-	32, // 33: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
-	35, // 34: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
-	36, // 35: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
-	37, // 36: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
-	46, // 37: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
-	40, // 38: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
-	41, // 39: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
-	42, // 40: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
-	1,  // 41: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
-	3,  // 42: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 43: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 44: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	46, // 45: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
-	8,  // 46: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:output_type -> zcard.api.admin.v1.BatchUpdateProductStatusReply
-	9,  // 47: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
-	10, // 48: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
-	10, // 49: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
-	46, // 50: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
-	46, // 51: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:output_type -> google.protobuf.Empty
-	15, // 52: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
-	16, // 53: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
-	46, // 54: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
-	20, // 55: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
-	21, // 56: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
-	21, // 57: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
-	46, // 58: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
-	26, // 59: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
-	27, // 60: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
-	27, // 61: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
-	30, // 62: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
-	33, // 63: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
-	34, // 64: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
-	34, // 65: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
-	46, // 66: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
-	38, // 67: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
-	39, // 68: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
-	39, // 69: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
-	46, // 70: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
-	41, // [41:71] is the sub-list for method output_type
-	11, // [11:41] is the sub-list for method input_type
+	43, // 21: zcard.api.admin.v1.AdminCatalogService.MergeCategories:input_type -> zcard.api.admin.v1.MergeCategoriesRequest
+	13, // 22: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:input_type -> zcard.api.admin.v1.ReorderCategoriesRequest
+	48, // 23: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
+	17, // 24: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
+	18, // 25: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
+	19, // 26: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
+	22, // 27: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
+	23, // 28: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
+	24, // 29: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
+	25, // 30: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
+	28, // 31: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
+	29, // 32: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
+	31, // 33: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
+	32, // 34: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
+	35, // 35: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
+	36, // 36: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
+	37, // 37: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
+	48, // 38: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
+	40, // 39: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
+	41, // 40: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
+	42, // 41: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
+	1,  // 42: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
+	3,  // 43: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 44: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 45: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	48, // 46: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
+	8,  // 47: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:output_type -> zcard.api.admin.v1.BatchUpdateProductStatusReply
+	9,  // 48: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
+	10, // 49: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
+	10, // 50: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
+	48, // 51: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
+	44, // 52: zcard.api.admin.v1.AdminCatalogService.MergeCategories:output_type -> zcard.api.admin.v1.MergeCategoriesReply
+	48, // 53: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:output_type -> google.protobuf.Empty
+	15, // 54: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
+	16, // 55: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
+	48, // 56: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
+	20, // 57: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
+	21, // 58: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
+	21, // 59: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
+	48, // 60: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
+	26, // 61: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
+	27, // 62: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
+	27, // 63: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
+	30, // 64: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
+	33, // 65: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
+	34, // 66: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
+	34, // 67: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
+	48, // 68: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
+	38, // 69: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
+	39, // 70: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	39, // 71: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	48, // 72: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
+	42, // [42:73] is the sub-list for method output_type
+	11, // [11:42] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -3733,7 +3870,7 @@ func file_admin_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_catalog_proto_rawDesc), len(file_admin_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   46,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

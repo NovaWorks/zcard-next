@@ -215,3 +215,7 @@ export function rejectReview(id: number) {
 export function createVirtualReview(data: { product_id: number; nickname?: string; content: string; rating?: number; sort?: number }) {
   return request({ url: "/api/v1/admin/virtual-reviews", method: "post", data });
 }
+
+export function mergeCategories(data: { source_ids: number[]; target_id: number; preview: boolean }) {
+  return request<{ categories: number; products: number; children: number }>({ url: "/api/v1/admin/categories/merge", method: "post", data });
+}

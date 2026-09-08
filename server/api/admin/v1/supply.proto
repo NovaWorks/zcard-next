@@ -310,7 +310,14 @@ message ImportProductsRequest {
   double markup_percent = 4; // percent 模式加价 %（0 = 用连接默认）
   int64 markup_amount_cents = 5; // fixed 模式加价金额（分）
   bool save_default = 6; // 把本次策略存为连接默认（settings.import_pricing）
-  map<string, uint64> category_map = 7; // 上游分类 code → 本地分类 id
+  map<string, uint64> category_map = 7; // 缺省沿用；0 显式清除；正数指定本地分类
+  repeated ImportCategoryDraft category_drafts = 8; // 仅在提交时创建，限所选商品涉及分类
+}
+
+message ImportCategoryDraft {
+  string upstream_code = 1;
+  string name = 2;
+  uint64 parent_id = 3; // 0 = 顶级分类
 }
 
 message ImportProductsReply {
@@ -318,6 +325,8 @@ message ImportProductsReply {
   int32 updated = 2; // 更新（已导入重导）
   int32 failed = 3;
   string error_context = 4;
+  repeated string failed_codes = 5;
+  map<string, uint64> category_map = 6; // 本次已保存映射，失败重试时复用
 }
 
 message ListSyncTasksRequest {

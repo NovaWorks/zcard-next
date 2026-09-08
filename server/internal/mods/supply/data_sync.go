@@ -436,6 +436,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 	}
 	if localCat, ok := categoryMap[p.CategoryID]; ok {
 		write.CategoryID = localCat
+		write.CategorySet = true
 	}
 	if !writePrice {
 		write.Price = -1
@@ -462,7 +463,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 			SpecValues: sk.SpecValues,
 		})
 	}
-	productID, created, err := s.writer.UpsertUpstreamProduct(ctx, write)
+	productID, created, err := s.writeProductCategory(ctx, p.CategoryID, &write)
 	if err != nil {
 		return false, err
 	}
@@ -476,9 +477,12 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 	// upsert 映射（up_stock 缓存 + pricing_override 持久化）
 	mapping.LocalProductID = productID
 	mapping.UpstreamCategory = p.CategoryID
+	if write.CategorySet {
+		mapping.LocalCategoryID = write.CategoryID
+	}
 	mapping.UpStock = p.Stock
 	mapping.PricingOverride = override
-	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
+	if err := s.saveProductMapping(ctx, mapping); err != nil {
 		return false, err
 	}
 
@@ -666,7 +670,7 @@ func categoryMapFromSettings(settings map[string]any) map[string]uint64 {
 		return out
 	}
 	for k, v := range raw {
-		if id := toInt64(v); id > 0 {
+		if id := toInt64(v); id >= 0 && (fmt.Sprint(v) == "0" || id > 0) {
 			out[k] = uint64(id)
 		}
 	}
@@ -719,13 +723,10 @@ func (s *SyncService) ensureCoverDir(ctx context.Context, conn *ent.SupplyConnec
 	if dir == "" {
 		dir = allocateCoverDir(listUploadSubDirs(), sanitizeSubDir(conn.Name))
 		if dir != "" {
-			settings := conn.Settings
-			if settings == nil {
-				settings = map[string]any{}
-			}
-			settings["cover_dir"] = dir
-			if _, err := s.repo.entClient(ctx).SupplyConnection.UpdateOneID(conn.ID).SetSettings(settings).Save(ctx); err != nil {
+			if saved, err := s.saveCoverDirectory(ctx, conn.ID, dir); err != nil {
 				s.log.Warn("supply.cover_dir_save_failed", "connection_id", conn.ID, "err", err)
+			} else {
+				dir = saved
 			}
 		}
 	}
@@ -855,8 +856,9 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	}
 	if localCat, ok := categoryMap[p.CategoryID]; ok {
 		write.CategoryID = localCat
+		write.CategorySet = true
 	}
-	productID, created, err := s.writer.UpsertUpstreamProduct(ctx, write)
+	productID, created, err := s.writeProductCategory(ctx, p.CategoryID, &write)
 	if err != nil {
 		return false, err
 	}
@@ -874,9 +876,12 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	}
 	mapping.LocalProductID = productID
 	mapping.UpstreamCategory = p.CategoryID
+	if write.CategorySet {
+		mapping.LocalCategoryID = write.CategoryID
+	}
 	mapping.UpStock = p.Stock
 	mapping.PricingOverride = override
-	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
+	if err := s.saveProductMapping(ctx, mapping); err != nil {
 		return created, err
 	}
 	return created, nil

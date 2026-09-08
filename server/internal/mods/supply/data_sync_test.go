@@ -223,7 +223,7 @@ type fakeUpstream struct {
 	stocks   map[string]int32
 }
 
-func (f *fakeUpstream) Protocol() string                          { return "fake" }
+func (f *fakeUpstream) Protocol() string                                  { return "fake" }
 func (f *fakeUpstream) Ping(context.Context) (*adapter.PingResult, error) { return nil, nil }
 func (f *fakeUpstream) ListCategories(context.Context) ([]adapter.Category, error) {
 	return nil, nil
@@ -457,11 +457,11 @@ func TestCategoryMapFromSettings(t *testing.T) {
 	if m := categoryMapFromSettings(map[string]any{"category_map": "bad"}); len(m) != 0 {
 		t.Fatal("非法类型应返回空映射")
 	}
-	// JSON 反序列化形态：{code: float64(id)}，过滤非正 id
+	// JSON 反序列化形态：保留显式 0，阻止旧映射回填
 	m := categoryMapFromSettings(map[string]any{
 		"category_map": map[string]any{"3": float64(12), "7": float64(99), "8": float64(0), "9": "-1"},
 	})
-	if len(m) != 2 || m["3"] != 12 || m["7"] != 99 {
+	if len(m) != 3 || m["3"] != 12 || m["7"] != 99 || m["8"] != 0 {
 		t.Fatalf("映射解析错误: %+v", m)
 	}
 }

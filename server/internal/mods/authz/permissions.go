@@ -112,6 +112,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminCatalogService/UpdateCategory", Method: "PUT", Path: "/api/v1/admin/categories/{id}"},
 		Perm{Code: "catalog:category_delete", Desc: "删除分类", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/DeleteCategory", Method: "DELETE", Path: "/api/v1/admin/categories/{id}"},
+		Perm{Code: "catalog:category_delete", Desc: "合并分类（超管）", Domain: "catalog", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminCatalogService/MergeCategories", Method: "POST", Path: "/api/v1/admin/categories/merge"},
 		Perm{Code: "catalog:category_write", Desc: "分类排序（超管）", Domain: "catalog", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminCatalogService/ReorderCategories", Method: "POST", Path: "/api/v1/admin/categories/reorder"},
 		Perm{Code: "catalog:tag_read", Desc: "查看标签", Domain: "catalog",

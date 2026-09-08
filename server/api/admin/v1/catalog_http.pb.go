@@ -41,6 +41,7 @@ const OperationAdminCatalogServiceListProducts = "/zcard.api.admin.v1.AdminCatal
 const OperationAdminCatalogServiceListReviews = "/zcard.api.admin.v1.AdminCatalogService/ListReviews"
 const OperationAdminCatalogServiceListSkus = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
 const OperationAdminCatalogServiceListTags = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
+const OperationAdminCatalogServiceMergeCategories = "/zcard.api.admin.v1.AdminCatalogService/MergeCategories"
 const OperationAdminCatalogServiceRejectReview = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
 const OperationAdminCatalogServiceReorderCategories = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
 const OperationAdminCatalogServiceUpdateCategory = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
@@ -81,6 +82,7 @@ type AdminCatalogServiceHTTPServer interface {
 	ListSkus(context.Context, *ListSkusRequest) (*SkuList, error)
 	// ListTags ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
+	MergeCategories(context.Context, *MergeCategoriesRequest) (*MergeCategoriesReply, error)
 	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
 	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*emptypb.Empty, error)
@@ -103,6 +105,7 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("POST", "/api/v1/admin/categories", _AdminCatalogService_CreateCategory0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/categories/{id}", _AdminCatalogService_UpdateCategory0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/categories/{id}", _AdminCatalogService_DeleteCategory0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/categories/merge", _AdminCatalogService_MergeCategories0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/categories/reorder", _AdminCatalogService_ReorderCategories0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/tags", _AdminCatalogService_ListTags0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/tags", _AdminCatalogService_CreateTag0_HTTP_Handler(srv))
@@ -326,6 +329,25 @@ func _AdminCatalogService_DeleteCategory0_HTTP_Handler(srv AdminCatalogServiceHT
 			return err
 		}
 		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_MergeCategories0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in MergeCategoriesRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceMergeCategories)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.MergeCategories(ctx, req.(*MergeCategoriesRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*MergeCategoriesReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -781,6 +803,7 @@ type AdminCatalogServiceHTTPClient interface {
 	ListSkus(ctx context.Context, req *ListSkusRequest, opts ...http.CallOption) (rsp *SkuList, err error)
 	// ListTags ── 标签 ──
 	ListTags(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TagList, err error)
+	MergeCategories(ctx context.Context, req *MergeCategoriesRequest, opts ...http.CallOption) (rsp *MergeCategoriesReply, err error)
 	RejectReview(ctx context.Context, req *RejectReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
 	ReorderCategories(ctx context.Context, req *ReorderCategoriesRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
@@ -1178,6 +1201,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) ListTags(ctx context.Context, in *em
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) MergeCategories(ctx context.Context, in *MergeCategoriesRequest, opts ...http.CallOption) (*MergeCategoriesReply, error) {
+	var out MergeCategoriesReply
+	pattern := "/api/v1/admin/categories/merge"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceMergeCategories),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

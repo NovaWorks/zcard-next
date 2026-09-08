@@ -661,6 +661,8 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	upd.SetStatus(in.Status)
 	if in.CategoryID > 0 {
 		upd.SetCategoryID(in.CategoryID)
+	} else if in.CategorySet {
+		upd.ClearCategoryID()
 	}
 	if in.Description != "" {
 		upd.SetDescription(in.Description)

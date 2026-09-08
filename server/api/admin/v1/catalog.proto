@@ -47,6 +47,9 @@ service AdminCatalogService {
   rpc DeleteCategory(DeleteCategoryRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { delete: "/api/v1/admin/categories/{id}" };
   }
+  rpc MergeCategories(MergeCategoriesRequest) returns (MergeCategoriesReply) {
+    option (google.api.http) = { post: "/api/v1/admin/categories/merge" body: "*" };
+  }
   // ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
   rpc ReorderCategories(ReorderCategoriesRequest) returns (google.protobuf.Empty) {
     option (google.api.http) = { post: "/api/v1/admin/categories/reorder" body: "*" };
@@ -490,4 +493,16 @@ message UpdateMemberGroupRequest {
 
 message DeleteMemberGroupRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// 仅合并明确选中的分类；未选中的子分类移到目标下，不递归删除。
+message MergeCategoriesRequest {
+  repeated uint64 source_ids = 1;
+  uint64 target_id = 2;
+  bool preview = 3;
+}
+message MergeCategoriesReply {
+  int32 categories = 1;
+  int32 products = 2;
+  int32 children = 3;
 }
