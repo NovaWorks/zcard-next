@@ -301,8 +301,8 @@ async function submit() {
           <NButton v-auth="'catalog:category_write'" size="small" type="primary" secondary :disabled="!selectedCategories.length" @click="generateDrafts">生成映射草稿</NButton>
         </div>
         <div class="text-12px text-gray-400">只处理所选商品涉及的分类；草稿保存前不会出现在商城。保存后的映射也用于后续全量同步及该上游分类的其他已导入商品。</div>
-          <NForm label-placement="top" size="small" class="pricing-grid">
-            <NFormItem label="定价策略">
+          <NForm label-placement="left" size="small" class="pricing-grid">
+            <NFormItem label="定价策略" :show-feedback="false">
               <NSelect
                 v-model:value="pricing.mode"
                 :options="[
@@ -313,20 +313,18 @@ async function submit() {
                 ]"
               />
             </NFormItem>
-            <NFormItem v-if="pricing.mode === 'percent'" label="加价比例（%）">
+            <NFormItem v-if="pricing.mode === 'percent'" label="加价比例（%）" :show-feedback="false">
               <NInputNumber v-model:value="pricing.markupPercent" :min="0" class="w-full" placeholder="10 = 加价 10%" />
             </NFormItem>
-            <NFormItem v-if="pricing.mode === 'fixed'" label="加价金额（元）">
+            <NFormItem v-if="pricing.mode === 'fixed'" label="加价金额（元）" :show-feedback="false">
               <NInputNumber v-model:value="pricing.markupAmountYuan" :min="0.01" :precision="2" class="w-full" />
             </NFormItem>
-            <NFormItem class="pricing-default">
-              <div class="flex w-full flex-col gap-2px">
+            <div class="pricing-default">
                 <NCheckbox v-model:checked="pricing.saveDefault">存为该渠道默认</NCheckbox>
                 <span class="text-12px text-gray-400">
-                  勾选后本次加价规则将保存为渠道默认，下次打开本弹窗自动回填（只影响这里的勾选导入，不改渠道本身的加价设置）
+                  下次导入自动回填，仅用于勾选导入，不改变渠道加价设置。
                 </span>
-              </div>
-            </NFormItem>
+            </div>
           </NForm>
       </div>
     </NSpin>
@@ -343,26 +341,31 @@ async function submit() {
 </template>
 
 <style scoped>
-.import-body { max-height: 70vh; overflow: auto; display: flex; flex-direction: column; gap: 12px; }
+.import-body { height: min(78vh, calc(100dvh - 160px)); min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.import-body > :not(.category-list) { flex-shrink: 0; }
 .import-toolbar { display: flex; align-items: center; gap: 12px; }
-.category-list { max-height: 42vh; min-height: 160px; overflow: auto; border: 1px solid var(--n-border-color); border-radius: 8px; }
+.category-list { flex: 1 1 0; min-height: 0; overflow: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; border: 1px solid var(--n-border-color); border-radius: 8px; }
 .category-item + .category-item { border-top: 1px solid var(--n-border-color); }
-.category-row { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 12px; align-items: center; }
+.category-row { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 12px; padding: 7px 10px; align-items: center; }
 .category-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .category-heading > :not(.category-name) { flex-shrink: 0; }
 .category-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-weight: 600; cursor: pointer; }
 .category-destination { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .draft-name { display: flex; gap: 6px; }
-.product-list { display: flex; flex-direction: column; gap: 8px; padding: 4px 12px 12px 40px; }
+.product-list { display: flex; flex-direction: column; gap: 5px; padding: 2px 10px 8px 38px; }
 .mapping-actions { display: flex; align-items: center; gap: 8px; }
 .mapping-actions > :first-child { flex: 1; min-width: 0; }
-.pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; padding: 12px; border: 1px solid var(--n-border-color); border-radius: 8px; }
-.pricing-default { grid-column: 1 / -1; }
+.pricing-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 16px; padding: 8px 10px; border: 1px solid var(--n-border-color); border-radius: 8px; }
+.pricing-default { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
 @media (max-width: 640px) {
   .category-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .mapping-actions { flex-wrap: wrap; }
   .mapping-actions > :first-child { flex-basis: 100%; }
   .pricing-grid { grid-template-columns: minmax(0, 1fr); }
   .category-heading { gap: 5px; }
+}
+@media (max-width: 640px), (max-height: 600px) {
+  .import-body { height: auto; max-height: calc(100dvh - 180px); overflow: auto; }
+  .category-list { flex: 0 0 auto; height: 48dvh; min-height: 180px; }
 }
 </style>
