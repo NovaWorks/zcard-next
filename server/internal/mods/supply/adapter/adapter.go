@@ -92,6 +92,8 @@ type ProductList struct {
 	Total   int
 	Items   []Product
 	HasMore bool
+	// Categories 非 nil 表示商品目录已携带分类，无须再次请求全量目录取分类名。
+	Categories []Category
 	// IncludesInactive 上游是否真的在本次响应里包含了下架商品（dujiao 回声字段）。
 	// 删除对账的权威性判据：仅当快照完整（全量 + 回声为 true）时，
 	// 「上游未见」才可推断为已删除（误判会把下架商品当删除下架掉——语义虽同向
@@ -136,6 +138,13 @@ type OrderLister interface {
 // 注意：增量快照不具删除对账权威性（未见 ≠ 已删除），引擎仅在全量模式对账。
 type IncrementalLister interface {
 	ListProductsAfter(ctx context.Context, page, pageSize int, updatedAfter time.Time) (*ProductList, error)
+}
+
+// ImportPreviewer 避免预览目录时逐品查询规格；正式导入必须重新解析所选商品，
+// 保留其完整规格、拿货价及可售状态。未实现的协议继续使用 ListProducts。
+type ImportPreviewer interface {
+	PreviewProducts(ctx context.Context) (*ProductList, error)
+	ResolveImportProducts(ctx context.Context, codes []string) (*ProductList, error)
 }
 
 // Adapter 货源适配器接口（port 契约， / 消费方）。

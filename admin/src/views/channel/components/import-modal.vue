@@ -29,10 +29,13 @@ const props = defineProps<{ show: boolean; connection: any }>();
 const emit = defineEmits<{ (e: "update:show", v: boolean): void; (e: "imported"): void }>();
 
 const loading = ref(false);
+const previewError = ref("");
+let previewRequest = 0;
 const importing = ref(false);
 const categories = ref<PreviewCategory[]>([]);
 const localCategories = ref<any[]>([]);
 const checked = ref<string[]>([]);
+const expandedCats = ref<Set<string>>(new Set());
 
 const pricing = reactive({
   mode: "percent",
@@ -61,26 +64,42 @@ const localCategoryOptions = computed(() => {
 });
 
 watch(
-  () => props.show,
-  (v) => {
-    if (v && props.connection) {
+  () => [props.show, props.connection?.id] as const,
+  ([show]) => {
+    if (show && props.connection) {
       loadPreview();
       loadLocalCategories();
+    } else {
+      previewRequest++;
     }
   },
+  { immediate: true },
 );
 
 async function loadPreview() {
+  const requestId = ++previewRequest;
+  const connection = props.connection;
   loading.value = true;
+  previewError.value = "";
+  categories.value = [];
   checked.value = [];
   expandedCats.value = new Set();
+  for (const key of Object.keys(categoryMapDraft)) delete categoryMapDraft[key];
   try {
-    const { data, error } = await previewSupplyProducts(props.connection.id);
+    const { data, error } = await previewSupplyProducts(connection.id);
+    if (requestId !== previewRequest) return;
+    if (error) {
+      const err = error as any;
+      previewError.value = ["ECONNABORTED", "ETIMEDOUT"].includes(err.code)
+        ? "加载上游商品超时，请重试；若持续失败，请检查上游响应速度或测试连接。"
+        : err.response?.data?.message || err.message || "加载上游商品失败，请重试或测试连接。";
+      return;
+    }
     if (!error && data) {
       categories.value = (data as any).categories || [];
       // 连接默认定价回填
       try {
-        const def = JSON.parse(props.connection.settings || "{}").import_pricing;
+        const def = JSON.parse(connection.settings || "{}").import_pricing;
         if (def) {
           pricing.mode = def.mode || "percent";
           pricing.markupPercent = Number(def.markup_percent ?? 10);
@@ -91,7 +110,7 @@ async function loadPreview() {
       }
       // 已持久化的类目映射回填（保存后全量同步沿用同一映射）
       try {
-        const saved = JSON.parse(props.connection.settings || "{}").category_map;
+        const saved = JSON.parse(connection.settings || "{}").category_map;
         if (saved) {
           for (const [k, v] of Object.entries(saved)) {
             if (Number(v) > 0) categoryMapDraft[k] = Number(v);
@@ -101,8 +120,10 @@ async function loadPreview() {
         /* 无映射 */
       }
     }
+  } catch {
+    if (requestId === previewRequest) previewError.value = "加载上游商品失败，请重试或测试连接。";
   } finally {
-    loading.value = false;
+    if (requestId === previewRequest) loading.value = false;
   }
 }
 
@@ -157,8 +178,6 @@ function toggleCat(cat: PreviewCategory, on: boolean) {
 }
 
 // ── 分类折叠（默认全收起，点行展开/收起；勾选不受折叠影响）──
-const expandedCats = ref<Set<string>>(new Set());
-
 function toggleExpand(code: string) {
   const next = new Set(expandedCats.value);
   if (next.has(code)) next.delete(code);
@@ -211,8 +230,16 @@ async function submit() {
     @update:show="emit('update:show', $event)"
   >
     <NSpin :show="loading">
-      <NAlert v-if="!loading && !categories.length" type="warning" :bordered="false">
-        上游未返回商品（检查连接凭据或先「测试连接」）
+      <NAlert v-if="loading" type="info" :bordered="false" class="mb-12px">
+        正在加载上游商品目录，商品较多时请稍候…
+      </NAlert>
+      <NAlert v-else-if="previewError" type="error" :bordered="false" class="mb-12px">
+        {{ previewError }}
+        <div class="mt-8px"><NButton size="small" @click="loadPreview">重新加载</NButton></div>
+      </NAlert>
+      <NAlert v-else-if="!categories.length" type="warning" :bordered="false" class="mb-12px">
+        上游返回的商品目录为空，请确认该对接账号有可用商品。
+        <div class="mt-8px"><NButton size="small" @click="loadPreview">重新加载</NButton></div>
       </NAlert>
 
       <!-- 左：分类树勾选；右：定价与映射（左列 min-w-0：长分类/商品名截断不撑破弹窗） -->
@@ -336,7 +363,7 @@ async function submit() {
         <span class="text-12px text-gray-400">已勾选 {{ checked.length }} 件</span>
         <NSpace>
           <NButton size="small" @click="emit('update:show', false)">取消</NButton>
-          <NButton size="small" type="primary" :loading="importing" :disabled="!checked.length" @click="submit">
+          <NButton size="small" type="primary" :loading="importing" :disabled="loading || !!previewError || !checked.length" @click="submit">
             导入所选
           </NButton>
         </NSpace>

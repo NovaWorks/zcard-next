@@ -82,7 +82,7 @@ export function fetchSupplyHealth() {
 // ── 交互式导入（ D）──
 
 export function previewSupplyProducts(connectionId: number) {
-  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview` });
+  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview`, timeout: 60000 });
 }
 
 export function importSupplyProducts(
@@ -96,5 +96,5 @@ export function importSupplyProducts(
     category_map?: Record<string, number>;
   },
 ) {
-  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/import`, method: "post", data });
+  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/import`, method: "post", data, timeout: 60000 });
 }

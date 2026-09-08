@@ -2,7 +2,7 @@ package supply
 
 // D：交互式商品导入（预览 + 勾选 + 定价策略 + 类目映射）。
 //
-// PreviewProducts 实时经适配器拉全量（≤20 页 = 1000 商品上限，防失控），
+// PreviewProducts 实时经适配器拉目录（分页协议最多 100 页），
 // 按上游分类聚合树并标注 already_imported；60s 进程内缓存
 // （1.x 同款——避免导入弹窗反复打上游）
 // ImportProducts 勾选 codes → 从预览缓存取商品 → 逐个 upsert（复用 syncOne
@@ -30,9 +30,9 @@ var previewCache = struct {
 }{m: map[uint64]previewEntry{}}
 
 type previewEntry struct {
-	at        time.Time
+	at         time.Time
 	categories []*adminv1.PreviewCategory
-	byCode    map[string]adapter.Product
+	byCode     map[string]adapter.Product
 }
 
 const (
@@ -67,29 +67,39 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 	if err != nil {
 		return nil, err
 	}
-	// 拉全量（≤20 页）
+	// 预览优先只拉目录，避免 ACG 皮肤站逐品 inventory 查询拖垮大目录。
 	byCat := map[string][]adapter.Product{}
 	catNames := map[string]string{}
 	byCode := map[string]adapter.Product{}
-	total := 0
+	var categories []adapter.Category
 	for page := 1; page <= previewMaxPages; page++ {
-		list, err := a.ListProducts(ctx, page, 50, true)
+		var list *adapter.ProductList
+		var err error
+		if previewer, ok := a.(adapter.ImportPreviewer); ok {
+			list, err = previewer.PreviewProducts(ctx)
+		} else {
+			list, err = a.ListProducts(ctx, page, 50, true)
+		}
 		if err != nil {
 			return nil, err
+		}
+		if list.Categories != nil {
+			categories = list.Categories
 		}
 		for i := range list.Items {
 			p := list.Items[i]
 			byCat[p.CategoryID] = append(byCat[p.CategoryID], p)
 			byCode[p.ID] = p
-			total++
 		}
 		if !list.HasMore {
 			break
 		}
 	}
-	// 分类名（dujiao 支持；acg 空分类走商品内嵌）
-	cats, _ := a.ListCategories(ctx)
-	for _, c := range cats {
+	// ACG 已携带分类，避免为分类名再次下载整个商品目录。
+	if categories == nil {
+		categories, _ = a.ListCategories(ctx)
+	}
+	for _, c := range categories {
 		catNames[c.ID] = c.Name
 	}
 	// 已导入标注
@@ -100,6 +110,9 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 				imported[m.UpstreamProduct] = true
 			}
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	// 聚合（分类顺序稳定：按首个商品出现顺序不可控 → 用 catNames/ID 排序太重，保持 map 迭代 + 排序键）
 	entry := &previewEntry{at: time.Now(), byCode: byCode}
@@ -144,6 +157,22 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 	if err != nil {
 		return nil, err
 	}
+	// 轻量目录不可直接导入：只为勾选商品补齐规格与拿货价，不修改共享预览缓存。
+	_, a, err := s.adapterForConnection(ctx, conn.ID)
+	if err != nil {
+		return nil, err
+	}
+	byCode := entry.byCode
+	if previewer, ok := a.(adapter.ImportPreviewer); ok {
+		list, err := previewer.ResolveImportProducts(ctx, req.GetCodes())
+		if err != nil {
+			return nil, err
+		}
+		byCode = make(map[string]adapter.Product, len(list.Items))
+		for _, p := range list.Items {
+			byCode[p.ID] = p
+		}
+	}
 	// 定价策略（缺省回退连接默认 settings.import_pricing）
 	mode := req.GetPricingMode()
 	markupPercent := req.GetMarkupPercent()
@@ -180,7 +209,7 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 
 	reply := &adminv1.ImportProductsReply{}
 	for _, code := range req.GetCodes() {
-		p, ok := entry.byCode[code]
+		p, ok := byCode[code]
 		if !ok {
 			reply.Failed++
 			continue

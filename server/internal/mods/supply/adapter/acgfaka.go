@@ -143,6 +143,22 @@ func (a *acgFakaAdapter) ListCategories(ctx context.Context) ([]Category, error)
 }
 
 func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeInactive bool) (*ProductList, error) {
+	return a.listProducts(ctx, nil, false)
+}
+
+func (a *acgFakaAdapter) PreviewProducts(ctx context.Context) (*ProductList, error) {
+	return a.listProducts(ctx, nil, true)
+}
+
+func (a *acgFakaAdapter) ResolveImportProducts(ctx context.Context, codes []string) (*ProductList, error) {
+	selected := make(map[string]bool, len(codes))
+	for _, code := range codes {
+		selected[code] = true
+	}
+	return a.listProducts(ctx, selected, false)
+}
+
+func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]bool, preview bool) (*ProductList, error) {
 	// items 一次全量（无分页）；includeInactive 恒返回全部商品，由 is_active 过滤语义下放
 	data, err := a.signedPost(ctx, "/shared/commodity/items", nil)
 	if err != nil {
@@ -188,10 +204,17 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 		}
 	}
 	// items 一次全量（无分页）：快照天然含下架商品（is_active 过滤语义下放）→ 对账权威
-	out := &ProductList{IncludesInactive: true}
+	out := &ProductList{IncludesInactive: true, Categories: make([]Category, 0, len(cats))}
 	for _, cat := range cats {
 		catID := idString(cat.ID)
+		out.Categories = append(out.Categories, Category{ID: catID, Name: cat.Name})
 		for _, p := range cat.Children {
+			if err := ctx.Err(); err != nil {
+				return nil, err
+			}
+			if selected != nil && !selected[p.Code] {
+				continue
+			}
 			stock := int32(-1)
 			if p.Stock != nil {
 				stock = int32(*p.Stock)
@@ -204,8 +227,13 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 			// 规格 INI + 当前对接身份的 factory_price（失败不致命，按无规格品继续）
 			cfg, factory := p.Config, p.FactoryPrice.Cents()
 			draftStatus := p.DraftStatus
-			if cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
-				if inv, err := a.fetchInventory(ctx, p.Code); err == nil {
+			if !preview && cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
+				inv, err := a.fetchInventory(ctx, p.Code)
+				// 正式导入不能把规格查询失败的商品当作无规格品写入。
+				if err != nil && selected != nil {
+					return nil, fmt.Errorf("adapter.acgfaka: 商品 %s 规格加载失败: %w", p.Code, err)
+				}
+				if err == nil {
 					if inv.Config != "" {
 						cfg = inv.Config
 					}
@@ -258,6 +286,9 @@ func (a *acgFakaAdapter) ListProducts(ctx context.Context, page, _ int, includeI
 				SKUs:         skus,
 			})
 		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
 	out.Total = len(out.Items)
 	return out, nil
