@@ -117,7 +117,7 @@
         </div>
 
         <!-- 分页器（首页/页码/末页 + 每页条数） -->
-        <div v-if="totalPage > 1" class="pager">
+        <div v-if="total > defaultPageSize" class="pager">
           <span class="pager-total muted">共 {{ total }} 件</span>
           <div class="pager-btns">
             <button class="pager-btn pager-jump" :disabled="page <= 1" title="首页" @click="goPage(1)">«</button>
@@ -133,7 +133,7 @@
           </div>
           <div class="pager-size">
             <span class="muted">每页</span>
-            <select v-model.number="pageSize" class="pager-select" @change="goPage(1)">
+            <select v-model.number="pageSize" class="pager-select" @change="changePageSize">
               <option v-for="s in pageSizeOptions" :key="s" :value="s">{{ s }}</option>
             </select>
             <span class="muted">条</span>
@@ -170,12 +170,13 @@ const recommended = ref<Product[]>([]); // 首页推荐位（后台商品 is_rec
 const activeCategory = ref(0);
 const viewMode = ref<'grid' | 'list'>('grid');
 const page = ref(1);
+const defaultPageSize = ref(20);
 const pageSize = ref(20);
 const sort = ref('default');
 const total = ref(0);
 const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [] });
 // 每页选项跟随后台 template.per_page（默认 20 → 20/40/60），前台不再写死档位
-const pageSizeOptions = computed(() => [pageSize.value, pageSize.value * 2, pageSize.value * 3]);
+const pageSizeOptions = computed(() => [defaultPageSize.value, defaultPageSize.value * 2, defaultPageSize.value * 3]);
 
 const siteName = ref('ZCard 商店');
 onMounted(async () => { const cfg = await fetchSiteSeo(); if (cfg.name) siteName.value = cfg.name; });
@@ -221,6 +222,12 @@ function goPage(p: number) {
   page.value = target;
   load();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function changePageSize() {
+  // 即使当前已在第一页，也必须按新的每页条数重新请求。
+  page.value = 1;
+  load();
 }
 
 // Hero 轮播：公告设置 image/carousel 优先；顶部横幅开启时用生效横幅；点击行为跟随来源
@@ -357,9 +364,12 @@ onMounted(async () => {
     // 每页商品数（防滥用夹在 6~60；与 /products 页同源消费）
     const pp = Number(val('template.per_page'));
     let reload = false;
-    if (Number.isInteger(pp) && pp >= 6 && pp <= 60 && pp !== pageSize.value) {
-      pageSize.value = Math.floor(pp);
-      reload = true;
+    if (Number.isInteger(pp) && pp >= 6 && pp <= 60) {
+      defaultPageSize.value = pp;
+      if (pp !== pageSize.value) {
+        pageSize.value = pp;
+        reload = true;
+      }
     }
     const sb = val('template.sort_by');
     if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && sb !== sort.value) {
