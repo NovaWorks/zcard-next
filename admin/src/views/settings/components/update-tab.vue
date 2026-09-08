@@ -33,6 +33,7 @@ import {
 } from "@/service/api";
 
 import { isUpdatePending, isUpdateComplete } from "./update-state";
+import { isRestartConnectionError, restartWaitExpired } from "@/service/request/update-restart";
 
 defineOptions({ name: "UpdateTab" });
 
@@ -45,6 +46,9 @@ const checking = ref(false);
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let waitingRestart = false; // restarting 后进入「等待服务恢复」模式
 let waitStart = 0;
+let disposed = false;
+const connectionWaiting = ref(false);
+const pollingStopped = ref(false);
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 const PHASE_TEXT: Record<string, string> = {
@@ -79,11 +83,19 @@ const supervisorTag = computed(() => {
 const statusError = ref("");
 async function refreshStatusVisible() {
   try {
-    const { data, error } = await fetchUpdateStatus();
+    const { data, error } = await fetchUpdateStatus(() => waitingRestart && !pollingStopped.value && !disposed);
+    if (disposed) return;
     if (error || !data) throw error || new Error("状态响应为空");
     status.value = data as any;
     statusError.value = "";
   } catch (e: any) {
+    if (disposed) return;
+    if (waitingRestart && isRestartConnectionError(e)) {
+      connectionWaiting.value = true;
+      if (!waitStart) waitStart = Date.now();
+      if (!stopWaitingIfExpired()) schedulePoll();
+      return;
+    }
     statusError.value = e?.response?.status ? `HTTP ${e.response.status}` : String(e?.message || e);
   }
 }
@@ -111,46 +123,80 @@ const sourceText = computed(() => {
 });
 
 // ── 状态拉取（waitingRestart 模式：连接失败=仍在重启继续等；恢复且版本到位=成功）──
+function stopWaitingIfExpired() {
+  if (!waitingRestart || !restartWaitExpired(waitStart, Date.now())) return false;
+  waitingRestart = false;
+  connectionWaiting.value = false;
+  pollingStopped.value = true;
+  statusError.value = "等待服务恢复已超过 5 分钟，请检查服务状态后点击重新连接。";
+  message.error(statusError.value);
+  return true;
+}
+
 async function refreshStatus() {
+  if (disposed || pollingStopped.value || updateDone.value || stopWaitingIfExpired()) return;
   try {
-    const { data, error } = await fetchUpdateStatus();
+    // 回调在错误发生时读取最新状态，覆盖轮询发出后才进入重启阶段的情况。
+    const { data, error } = await fetchUpdateStatus(() => waitingRestart && !pollingStopped.value && !disposed);
+    if (disposed || pollingStopped.value || updateDone.value) return;
     if (error || !data) throw error || new Error("状态响应为空");
     status.value = data as any;
+    statusError.value = "";
+    connectionWaiting.value = false;
     enterWaitIfNeeded(status.value);
-    if (status.value?.phase === "failed" || status.value?.phase === "rolled_back") waitingRestart = false;
+    if (status.value?.phase === "failed" || status.value?.phase === "rolled_back") {
+      waitingRestart = false;
+      waitStart = 0;
+    }
     if (waitingRestart) {
       const st = status.value!;
       if (isUpdateComplete(st)) {
         waitingRestart = false;
-        // 完成态:版本对展示 + 停留 3 秒再刷新——更新完成的确定性反馈
-        // (下载快时 applying/restarting 一闪而过直接 reload,用户误以为「下载中界面自己重启了」)
+        waitStart = 0;
         updateDone.value = true;
         const from = st.prev_version || "旧版本";
         message.success(`更新完成：${from} → ${st.current_version}`);
         reloadTimer = setTimeout(() => window.location.reload(), 3000);
         return;
       }
-      // 超时保护（5 分钟）
-      if (Date.now() - waitStart > 5 * 60 * 1000) {
-        waitingRestart = false;
-        message.error("等待服务恢复超时——请手动检查服务状态（SSH: journalctl -u zcard -e 或查看进程）");
-        return;
-      }
+      // 下载/备份可能超过五分钟；只计算重启检查或连续失联的等待时间。
+      if (["restarting", "verifying"].includes(st.phase)) {
+        if (!waitStart) waitStart = Date.now();
+      } else waitStart = 0;
+      if (stopWaitingIfExpired()) return;
     }
   } catch (e: any) {
-    if (waitingRestart) {
-      // 连接失败 = 进程正在重启（优雅停机/exec 间隙），继续等待
-    } else if (!status.value) {
-      // 首次即失败：可见化（401/403=权限、5xx=服务、网络=反代）——此前静默
+    if (disposed || pollingStopped.value || updateDone.value) return;
+    if (waitingRestart && isRestartConnectionError(e)) {
+      if (!waitStart) waitStart = Date.now();
+      connectionWaiting.value = true;
+      if (stopWaitingIfExpired()) return;
+    } else {
       statusError.value = e?.response?.status ? `HTTP ${e.response.status}` : String(e?.message || e);
+      // 权限、业务或程序错误不伪装成重启，也不连续弹错。
+      waitingRestart = false;
+      connectionWaiting.value = false;
+      pollingStopped.value = true;
+      return;
     }
   }
   schedulePoll();
 }
 
 function schedulePoll() {
+  if (disposed || pollingStopped.value || updateDone.value) return;
+  if (pollTimer) clearTimeout(pollTimer);
   const interval = waitingRestart ? 2000 : inFlight.value ? 1500 : 8000;
   pollTimer = setTimeout(refreshStatus, interval);
+}
+
+async function reconnectStatus() {
+  pollingStopped.value = false;
+  statusError.value = "";
+  waitStart = 0;
+  // 重新连接只查询状态，不重复提交更新或回滚操作。
+  enterWaitIfNeeded(status.value);
+  await refreshStatus();
 }
 
 // ── 检查更新 ──
@@ -210,6 +256,9 @@ async function doApply() {
     if (error || !data) throw error || new Error("更新响应为空");
     status.value = data;
     waitingRestart = false;
+    pollingStopped.value = false;
+    statusError.value = "";
+    enterWaitIfNeeded(status.value);
     if (pollTimer) clearTimeout(pollTimer);
     refreshStatus();
   } catch (e: any) {
@@ -249,6 +298,9 @@ async function retryFromFailed() {
     if (error || !data) throw error || new Error("更新响应为空");
     status.value = data;
     waitingRestart = false;
+    pollingStopped.value = false;
+    statusError.value = "";
+    enterWaitIfNeeded(status.value);
     if (pollTimer) clearTimeout(pollTimer);
     refreshStatus();
   } catch (e: any) {
@@ -263,6 +315,8 @@ async function doRollback() {
     if (error || !data) throw error || new Error("回滚响应为空");
     status.value = data;
     waitingRestart = true;
+    pollingStopped.value = false;
+    statusError.value = "";
     waitStart = Date.now();
     message.info("已回滚，等待服务重启…");
     if (pollTimer) clearTimeout(pollTimer);
@@ -317,10 +371,12 @@ async function saveConfig() {
 //  b) 目标版本已登记且尚未到位（重启间隙/刷新后 update.state 延续 target）
 // 进入即重开分步进度弹窗——用户刷新页面回来直接看到更新进度而非干等。
 function enterWaitIfNeeded(st: UpdateStatus | null) {
-  if (!st || waitingRestart || updateDone.value) return;
+  if (!st || waitingRestart || updateDone.value || pollingStopped.value || disposed) return;
   if (isUpdatePending(st) && (st.busy || st.phase !== "checking")) {
     waitingRestart = true;
-    waitStart = Date.now();
+    pollingStopped.value = false;
+    statusError.value = "";
+    waitStart = ["restarting", "verifying"].includes(st.phase) ? Date.now() : 0;
     modalStage.value = "progress";
     showConfirm.value = true;
   }
@@ -328,7 +384,9 @@ function enterWaitIfNeeded(st: UpdateStatus | null) {
 
 onMounted(async () => {
   await loadConfig().catch(() => {});
+  if (disposed) return;
   await refreshStatusVisible();
+  if (disposed) return;
   if (!statusError.value) schedulePoll();
   enterWaitIfNeeded(status.value);
   // 进入 tab 自动检查（静默失败不打扰）；有新版本直接弹更新框。
@@ -340,6 +398,7 @@ onMounted(async () => {
   }
 });
 onBeforeUnmount(() => {
+  disposed = true;
   if (pollTimer) clearTimeout(pollTimer);
   if (reloadTimer) clearTimeout(reloadTimer);
 });
@@ -407,6 +466,7 @@ watch(
 
       <NAlert v-if="statusError" type="error" class="mb-3" :bordered="false">
         <b>状态获取失败（{{ statusError }}）</b>
+        <NButton size="small" class="ml-2" @click="reconnectStatus">重新连接</NButton>
         <div class="mt-1 text-xs opacity-70">
           system:update 为超管专属权限——请确认当前账号为超级管理员；HTTP 401/403=权限或登录态，
           5xx=服务异常，网络错误=反代/服务未起。F12 → Network → update/status 可看原始响应。
@@ -435,8 +495,8 @@ watch(
           :show-indicator="dlPercent !== undefined"
           processing
         />
-        <div v-if="status?.phase === 'restarting' || status?.phase === 'verifying'" class="mt-2 text-xs opacity-70">
-          服务重启中（约 10–30 秒）……恢复后本页将自动刷新；请勿关闭浏览器。
+        <div v-if="!pollingStopped && (connectionWaiting || status?.phase === 'restarting' || status?.phase === 'verifying')" class="mt-2 text-xs opacity-70">
+          服务正在重启，请稍候。正在等待连接恢复，确认新版本就绪后本页会自动刷新。
         </div>
         <div v-if="status?.phase === 'backing_up'" class="mt-2 text-xs opacity-70">
           正在备份数据库（SQLite VACUUM INTO / pg_dump）——数据安全优先，跳过不提供。
@@ -576,8 +636,12 @@ watch(
           class="mt-2"
         />
         <div v-if="!updateDone" class="mt-3 text-center text-13px opacity-70">
-          <template v-if="status?.phase === 'restarting' || status?.phase === 'verifying'">
-            服务重启中（约 10–30 秒），完成后页面将自动刷新——请勿关闭浏览器
+          <template v-if="pollingStopped && statusError">
+            {{ statusError }}
+            <div class="mt-2"><NButton size="small" @click="reconnectStatus">重新连接</NButton></div>
+          </template>
+          <template v-else-if="connectionWaiting || status?.phase === 'restarting' || status?.phase === 'verifying'">
+            服务正在重启，请稍候。正在等待连接恢复，确认新版本就绪后本页会自动刷新。
           </template>
           <template v-else-if="status?.phase === 'failed'">
             更新失败：{{ status?.error_message }}

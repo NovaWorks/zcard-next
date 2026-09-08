@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/modules/auth";
 import { getServiceBaseURL } from "@/utils/service";
 import { getAuthorization, handleExpiredRequest, showErrorMsg } from "./shared";
 import type { RequestInstanceState } from "./type";
+import { suppressUpdateRestartError } from "./update-restart";
 
 const isHttpProxy = import.meta.env.DEV && import.meta.env.VITE_HTTP_PROXY === "Y";
 const { baseURL } = getServiceBaseURL(import.meta.env, isHttpProxy);
@@ -70,6 +71,7 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
       return null;
     },
     onError(err: any) {
+      if (suppressUpdateRestartError(err)) return;
       const msg = err.response?.data?.message || err.message || "网络异常";
       showErrorMsg(request.state as RequestInstanceState, msg);
     },

@@ -40,8 +40,8 @@ export interface UpdateCheckResult {
   history?: ReleaseNoteEntry[];
 }
 
-export function fetchUpdateStatus() {
-  return request<UpdateStatus>({ url: "/api/v1/admin/update/status" });
+export function fetchUpdateStatus(expectedUpdateRestart?: () => boolean) {
+  return request<UpdateStatus>({ url: "/api/v1/admin/update/status", expectedUpdateRestart });
 }
 
 export function checkUpdate() {
