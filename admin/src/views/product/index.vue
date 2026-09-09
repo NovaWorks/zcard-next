@@ -229,7 +229,7 @@ function priceCell(row: any) {
 
 // statsCell 库存/已售块：两行，标签定宽 + 数值紧邻（与价格块视觉一致）
 function statsCell(row: any) {
-  const stock = row.stock ?? 0; // -1 = 不限（链接/兑换码类不入卡池；代发上游无限）
+  const stock = row.stock ?? (row.stock_status === "unknown" || row.stock_status === "stale" ? -2 : 0); // -1 = 不限（链接/兑换码类不入卡池；代发上游无限）
   const sold = row.sold_count ?? 0;
   const line = (label: string, value: any) =>
     h("div", { class: "flex items-center gap-6px leading-20px" }, [
@@ -237,8 +237,10 @@ function statsCell(row: any) {
       value,
     ]);
   // 库存颜色：卡密类 0=红（缺货）、≤10=橙（低库存预警）；代发/链接/兑换码 -1=不限
-  const stockNode = stock < -1
-    ? h("span", { class: "text-gray-400" }, "待确认")
+  const stockNode = row.stock_status === 'stale'
+    ? h("span", { class: "text-12px", title: `上次同步：${row.stock_checked_at ? new Date(row.stock_checked_at * 1000).toLocaleString() : '未知'}。仅供参考，买家进入详情时重新查询。` }, row.stock_reference === -1 ? '上次不限' : `参考 ${row.stock_reference ?? 0} 件`)
+    : stock < -1
+    ? h("span", { class: "text-12px", title: "上游暂未返回库存，可到货源渠道执行同步；买家进入商品详情时会重新查询。" }, "上游未返回")
     : stock === -1 ? h("span", {}, "不限")
     : stock <= 0
       ? h("span", { class: "font-medium text-red-500" }, "0 件")

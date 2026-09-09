@@ -6442,6 +6442,12 @@ components:
                 isRecommend:
                     type: boolean
                     description: 运营推荐（storefront 首页推荐位）
+                stockStatus:
+                    type: string
+                stockReference:
+                    type: string
+                stockCheckedAt:
+                    type: string
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -11873,6 +11879,12 @@ components:
                 isRecommend:
                     type: boolean
                     description: 运营推荐（首页推荐位标记）
+                stockStatus:
+                    type: string
+                stockReference:
+                    type: string
+                stockCheckedAt:
+                    type: string
             description: Product 顾客视角商品（管理字段与成本价绝不下发）。
         zcard.api.storefront.v1.ProductControl:
             type: object

@@ -94,7 +94,19 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 
 // StockBatch returns stock from the product's actual fulfillment source.
 func (r *ProductRepoImpl) StockBatch(ctx context.Context, productIDs []uint64) (map[uint64]int64, error) {
+	snapshots, err := r.StockSnapshotBatch(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
 	out := map[uint64]int64{}
+	for id, snapshot := range snapshots {
+		out[id] = snapshot.Available
+	}
+	return out, nil
+}
+
+func (r *ProductRepoImpl) StockSnapshotBatch(ctx context.Context, productIDs []uint64) (map[uint64]port.StockSnapshot, error) {
+	out := map[uint64]port.StockSnapshot{}
 	for start := 0; start < len(productIDs); start += 500 {
 		end := start + 500
 		if end > len(productIDs) {
@@ -104,12 +116,12 @@ func (r *ProductRepoImpl) StockBatch(ctx context.Context, productIDs []uint64) (
 		if err != nil {
 			return nil, err
 		}
-		batch, err := data.ProductStocks(ctx, r.data, rows)
+		batch, err := data.ProductStockSnapshots(ctx, r.data, rows)
 		if err != nil {
 			return nil, err
 		}
 		for id, n := range batch {
-			out[id] = n
+			out[id] = port.StockSnapshot{Available: n.Available(), Quantity: n.Quantity, CheckedAt: n.CheckedAt, Status: n.Status}
 		}
 	}
 	return out, nil

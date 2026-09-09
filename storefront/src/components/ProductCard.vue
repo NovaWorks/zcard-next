@@ -14,11 +14,12 @@
       <div class="pc-price">{{ formatMoney(p.price_cents) }}</div>
       <div v-if="showSales || showStock" class="pc-meta">
         <span v-if="showSales" class="pc-sales">已售 {{ p.sales_count || 0 }}</span>
-        <span v-if="showStock && p.stock_visible && (p.stock ?? 0) >= 0">库存 {{ p.stock ?? 0 }}</span>
+        <span v-if="showStock && p.stock_visible && p.stock_status === 'stale'" class="pc-stock-reference" :title="stockHint(p)">{{ p.stock_reference === -1 ? '上次库存不限' : `参考库存 ${p.stock_reference ?? 0}` }}</span>
+        <span v-else-if="showStock && p.stock_visible && stockValue(p) >= 0">{{ stockValue(p) === 0 ? '暂时售罄' : `库存 ${stockValue(p)}` }}</span>
         <span v-else-if="showStock && p.stock_visible && p.stock === -1" class="pc-stock-free">不限库存</span>
-        <span v-else-if="showStock && p.stock_visible">库存待确认</span>
+        <span v-else-if="showStock && p.stock_visible" title="上游暂未提供库存，进入商品详情即可查询">库存需查询</span>
       </div>
-      <button class="btn btn-primary pc-buy" @click.stop="$router.push(`/product/${p.id}`)">{{ mode === 'list' ? '购买' : '查看详情' }}</button>
+      <button type="button" class="btn btn-primary pc-buy" :aria-label="`${buyLabel(p, mode)}：${p.name}`" @click.stop="$router.push(`/product/${p.id}`)">{{ buyLabel(p, mode) }}</button>
     </div>
   </div>
 </template>
@@ -27,6 +28,13 @@
 import type { Product } from '@/api';
 import { formatMoney } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
+function stockValue(p: Product) { return p.stock ?? (p.stock_status === 'unknown' || p.stock_status === 'stale' ? -2 : 0); }
+function buyLabel(p: Product, mode?: string) { return mode !== 'list' ? '查看详情' : stockValue(p) === 0 ? '查看' : stockValue(p) < -1 ? '查库存' : '购买'; }
+function stockHint(p: Product) {
+  const date = p.stock_checked_at ? new Date(p.stock_checked_at * 1000).toLocaleString() : '';
+  return `上次同步${date ? '：' + date : ''}，仅供参考；进入商品详情重新核对库存`;
+}
+
 
 defineProps<{
   p: Product;
@@ -113,11 +121,12 @@ defineProps<{
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #9ca3af;
+  color: #64748b;
   margin-top: auto;
 }
 .pc-stock-free { color: #16a34a; }
-.pc-buy { display: none; margin-top: 8px; width: 100%; justify-content: center; }
+.pc-stock-reference { color: #475569; }
+.pc-buy { align-items: center; line-height: 1.2; flex-shrink: 0; display: none; margin-top: 8px; width: 100%; justify-content: center; }
 
 /* 列表视图 */
 .product-card.list-mode { flex-direction: row; align-items: center; gap: 14px; padding: 12px; }
@@ -144,30 +153,31 @@ defineProps<{
   .list-mode .pc-cover { width: 48px; height: 48px; }
   .list-mode .pc-body {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 3px 6px;
   }
   .list-mode .pc-name {
-    grid-column: 1 / 3;
+    grid-column: 1;
     grid-row: 1;
-    display: block;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    white-space: normal;
     line-height: 20px;
   }
-  .list-mode .pc-price { grid-column: 1; grid-row: 2; white-space: nowrap; line-height: 20px; }
+  .list-mode .pc-price { grid-column: 1; grid-row: 2; white-space: nowrap; line-height: 22px; }
   .list-mode .pc-buy {
-    grid-column: 3;
-    grid-row: 1 / 3;
-    min-height: 44px;
-    min-width: 44px;
+    grid-column: 2;
+    grid-row: 1 / 4;
+    align-self: center;
+    height: 44px;
+    min-width: 60px;
     padding: 6px 8px;
     white-space: nowrap;
   }
   .list-mode .pc-meta {
-    grid-column: 2; grid-row: 2; min-width: 0;
+    grid-column: 1; grid-row: 3; min-width: 0;
     justify-content: flex-start; gap: 8px;
-    overflow: hidden; white-space: nowrap; line-height: 20px;
+    flex-wrap: wrap; white-space: normal; line-height: 18px;
   }
   .list-mode .pc-meta span { flex-shrink: 0; }
   .list-mode .pc-sales { order: 1; }

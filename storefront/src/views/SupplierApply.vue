@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="supplier-page">
     <!-- 说明 -->
     <div class="card" style="margin-bottom: 16px;">
       <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
@@ -65,14 +65,14 @@
       <div v-else-if="!accounts.length" class="muted">暂无申请，提交上方表单即可开始对接</div>
       <div v-else class="account-list" style="display: flex; flex-direction: column; gap: 10px;">
         <div v-for="a in accounts" :key="a.id" class="account-item" style="border: 1px solid #e5e6e8; border-radius: 10px; padding: 12px;">
-          <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
-            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div class="account-head">
+            <div class="account-title">
               <b>{{ a.display_name }}</b>
               <span class="tag" style="margin-left: 8px;">{{ protocolLabel(a.protocol) }}</span>
               <span class="tag" :style="statusStyle(a.status)">{{ statusLabel(a.status) }}</span>
             </div>
-            <div class="actions" style="gap: 8px; align-items: center;">
-              <span v-if="a.status === 'approved'" style="font-size: 14px; margin-right: 4px;">
+            <div class="account-actions">
+              <span v-if="a.status === 'approved'" class="account-balance">
                 余额 <b style="color: #2563eb; font-size: 16px;">{{ formatMoney(a.balance_cache || 0) }}</b>
               </span>
               <button v-if="a.status === 'approved'" class="btn" style="padding: 6px 14px; font-size: 13px;" @click="openRecharge(a)">充值</button>
@@ -86,16 +86,16 @@
           <div class="muted" style="margin-top: 4px;">申请时间：{{ fmt(a.created_at) }}<template v-if="a.reviewed_at"> · 审核时间：{{ fmt(a.reviewed_at) }}</template></div>
 
           <!-- 凭据 + 对接指引 -->
-          <div v-if="a.status === 'approved' && credOpenId === a.id" style="margin-top: 12px; background: #f9fafb; border-radius: 8px; padding: 12px;">
+          <div v-if="a.status === 'approved' && credOpenId === a.id" class="account-credentials" style="margin-top: 12px; background: #f9fafb; border-radius: 8px; padding: 12px;">
             <div v-if="credLoading" class="muted">加载凭据…</div>
             <template v-else-if="credentials">
               <div style="font-weight: 600; margin-bottom: 8px;">凭据（请妥善保存）</div>
-              <div class="cred-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+              <div class="cred-row">
                 <span class="muted" style="width: 72px;">app_id</span>
                 <code style="flex: 1; background: #fff; border: 1px solid #e5e6e8; border-radius: 6px; padding: 6px 10px; font-size: 13px;">{{ credentials.api_key }}</code>
                 <button class="btn secondary" @click="copy(credentials.api_key)">{{ copied === 'key' ? '✓' : '复制' }}</button>
               </div>
-              <div class="cred-row" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+              <div class="cred-row">
                 <span class="muted" style="width: 72px;">app_key</span>
                 <code style="flex: 1; background: #fff; border: 1px solid #e5e6e8; border-radius: 6px; padding: 6px 10px; font-size: 13px;">{{ credentials.api_secret }}</code>
                 <button class="btn secondary" @click="copy(credentials.api_secret)">{{ copied === 'secret' ? '✓' : '复制' }}</button>
@@ -125,7 +125,7 @@
                 <input
                   v-model="whitelistInput"
                   class="input"
-                  style="flex: 1; min-width: 200px;"
+                  style="flex: 1; min-width: 0; width: 100%;"
                   placeholder="添加 IP 或网段，如 1.2.3.4 / 10.0.0.0/24"
                   @keyup.enter="addWhitelistIP(a)"
                 />
@@ -585,6 +585,27 @@ onMounted(load);
 </script>
 
 <style scoped>
+.supplier-page, .account-item, .account-title { min-width: 0; overflow-wrap: anywhere; }
+.account-head { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.account-title { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.account-actions { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.account-actions .btn { min-height:44px; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; }
+.account-balance { font-size:14px; }
+.cred-row { display:grid; grid-template-columns:72px minmax(0,1fr) auto; align-items:center; gap:8px; margin-bottom:10px; }
+.cred-row code { min-width:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.supplier-page :deep(.muted) { color:#64748b; }
+@media(max-width:640px) {
+ .account-head, .account-actions { width:100%; }
+ .account-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .account-balance { grid-column:1/-1; }
+ .account-actions .btn { padding:8px; }
+ .account-title b { flex-basis:100%; }
+ .account-title .tag { margin-left:0 !important; }
+ .cred-row { grid-template-columns:minmax(0,1fr) auto; }
+ .cred-row > span { grid-column:1/-1; }
+ .apply-form-grid, .protocol-grid { grid-template-columns:minmax(0,1fr) !important; }
+}
+
 /* ── 提交新申请表单（大厂表单规范：分区标签 + 卡片式单选 + 16px 节奏）── */
 .apply-card { margin-bottom: 16px; }
 .apply-title { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 12px; }

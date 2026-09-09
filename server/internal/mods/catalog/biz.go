@@ -13,6 +13,7 @@ import (
 // ProductRepo 商品仓储（模块内端口，实现于 data.go）。
 type ProductRepo interface {
 	StockBatch(context.Context, []uint64) (map[uint64]int64, error)
+	StockSnapshotBatch(context.Context, []uint64) (map[uint64]port.StockSnapshot, error)
 	ListVisible(ctx context.Context, f port.VisibleFilter) ([]port.Product, int64, error)
 	Get(ctx context.Context, subsiteID, id uint64) (*port.Product, error)
 	ListControls(ctx context.Context, productID uint64) ([]port.Control, error)

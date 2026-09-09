@@ -374,9 +374,12 @@ type Product struct {
 	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；）
 	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 运营推荐（首页推荐位标记）
-	IsRecommend   bool `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsRecommend    bool   `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	StockStatus    string `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
+	StockReference int64  `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
+	StockCheckedAt int64  `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
@@ -519,6 +522,27 @@ func (x *Product) GetIsRecommend() bool {
 		return x.IsRecommend
 	}
 	return false
+}
+
+func (x *Product) GetStockStatus() string {
+	if x != nil {
+		return x.StockStatus
+	}
+	return ""
+}
+
+func (x *Product) GetStockReference() int64 {
+	if x != nil {
+		return x.StockReference
+	}
+	return 0
+}
+
+func (x *Product) GetStockCheckedAt() int64 {
+	if x != nil {
+		return x.StockCheckedAt
+	}
+	return 0
 }
 
 // ProductControl 自定义控件定义（下单表单渲染）。
@@ -782,7 +806,7 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb8\x04\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xae\x05\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -804,7 +828,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\areviews\x18\r \x03(\v2#.zcard.api.storefront.v1.ReviewItemR\areviews\x120\n" +
 	"\x04skus\x18\x0e \x03(\v2\x1c.zcard.api.storefront.v1.SkuR\x04skus\x12'\n" +
 	"\x0fpoints_required\x18\x0f \x01(\x03R\x0epointsRequired\x12!\n" +
-	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\"\x92\x01\n" +
+	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\x12!\n" +
+	"\fstock_status\x18\x11 \x01(\tR\vstockStatus\x12'\n" +
+	"\x0fstock_reference\x18\x12 \x01(\x03R\x0estockReference\x12(\n" +
+	"\x10stock_checked_at\x18\x13 \x01(\x03R\x0estockCheckedAt\"\x92\x01\n" +
 	"\x0eProductControl\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +

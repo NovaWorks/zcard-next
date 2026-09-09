@@ -1,8 +1,8 @@
 <template>
-  <div>
+  <div class="posts-page">
     <div class="card" style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
       <div style="display: flex; gap: 8px;">
-        <button :class="['btn', type !== 'notice' ? '' : 'secondary']" @click="switchType('')">全部</button>
+        <button :class="['btn', type === '' ? '' : 'secondary']" @click="switchType('')">全部</button>
         <button :class="['btn', type === 'notice' ? '' : 'secondary']" @click="switchType('notice')">公告</button>
         <button :class="['btn', type === 'blog' ? '' : 'secondary']" @click="switchType('blog')">博客</button>
       </div>
@@ -19,14 +19,14 @@
     </div>
     <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
     <div class="post-list">
-      <div v-for="p in posts" :key="p.id" class="card post-item" @click="$router.push(`/posts/${p.slug}`)">
+      <router-link v-for="p in posts" :key="p.id" class="card post-item" :to="`/posts/${p.slug}`">
         <div class="tag">{{ typeLabel(p.type) }}</div>
         <div class="post-title">{{ p.title }}</div>
         <div v-if="p.category_id" class="tag tag-category">{{ categoryName(p.category_id) }}</div>
-        <div class="muted">{{ formatDate(p.published_at) }}</div>
-      </div>
+        <div class="muted post-date">{{ formatDate(p.published_at) }}</div>
+      </router-link>
     </div>
-    <div v-if="posts.length === 0 && !loading" class="muted" style="text-align: center; margin-top: 24px;">暂无内容</div>
+    <div v-if="posts.length === 0 && !loading" class="card post-empty" role="status">暂无内容</div>
     <div v-if="total > pageSize" style="display: flex; gap: 8px; justify-content: center; margin-top: 16px;">
       <button class="btn secondary" :disabled="page <= 1" @click="load(page - 1)">上一页</button>
       <span class="muted" style="align-self: center;">{{ page }} / {{ Math.ceil(total / pageSize) }}</span>
@@ -114,8 +114,20 @@ async function applyListSeo() {
 </script>
 
 <style scoped>
-.post-item { cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-.post-title { flex: 1; font-weight: 600; font-size: 15px; }
+.posts-page { min-width:0; }
+.posts-page .muted { color:#64748b; }
+.post-empty { text-align:center; color:#475569; margin-top:24px; padding:32px 16px; }
+.post-date { white-space:nowrap; }
+.post-item .tag { flex-shrink:0; }
+@media(max-width:640px) {
+ .post-item { display:grid !important; grid-template-columns:auto minmax(0,1fr); gap:8px 12px; }
+ .post-item .post-title { grid-column:1/-1; grid-row:2; font-size:16px; }
+ .post-item .tag-category { justify-self:start; white-space:normal; overflow-wrap:anywhere; }
+ .post-item .post-date { grid-column:1/-1; }
+}
+
+.post-item { color:#1f2937; text-decoration:none; min-width:0; cursor: pointer; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.post-title { min-width:0; overflow-wrap:anywhere; line-height:1.6; flex: 1; font-weight: 600; font-size: 15px; }
 
 /* 栏目胶囊：横向滚动，选中蓝底白字（与首页分类导航同款交互） */
 .cat-nav {

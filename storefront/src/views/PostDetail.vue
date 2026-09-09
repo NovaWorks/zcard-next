@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="post-page">
     <div v-if="error" class="error card">{{ error }}</div>
     <template v-else-if="post">
       <div class="card post-head">
@@ -100,7 +100,10 @@ async function applyPostSeo(detail: { post: StorePost; content: string } | null)
 <style scoped>
 .post-head { margin-bottom: 16px; }
 .post-title { font-size: 22px; margin: 8px 0; }
-.post-body { line-height: 1.8; font-size: 15px; word-break: break-word; }
+.post-body { min-width:0; color:#1f2937; line-height:1.85; font-size:16px; overflow-wrap:anywhere; }
+.post-page { min-width:0; }
+.post-page .muted { color:#64748b; }
+.post-title { overflow-wrap:anywhere; line-height:1.5; }
 .post-body :deep(h1), .post-body :deep(h2), .post-body :deep(h3), .post-body :deep(h4) {
   margin: 20px 0 10px; font-weight: 700; color: #111827; line-height: 1.4;
 }
@@ -112,7 +115,9 @@ async function applyPostSeo(detail: { post: StorePost; content: string } | null)
 .post-body :deep(ul), .post-body :deep(ol) { margin: 0 0 12px; padding-left: 24px; }
 .post-body :deep(li) { margin-bottom: 4px; }
 .post-body :deep(a) { color: #2563eb; text-decoration: underline; word-break: break-all; }
-.post-body :deep(img) { max-width: 100%; border-radius: 8px; margin: 6px 0; }
+.post-body :deep(img) { max-width: 100%; height:auto; border-radius: 8px; margin: 6px 0; }
+.post-body :deep(video), .post-body :deep(iframe) { max-width:100%; }
+.post-body :deep(iframe) { width:100%; height:auto; aspect-ratio:16/9; border:0; }
 .post-body :deep(blockquote) {
   margin: 12px 0; padding: 10px 14px; border-left: 4px solid #2563eb;
   background: #f5f9ff; color: #4b5563; border-radius: 0 8px 8px 0;
@@ -126,8 +131,8 @@ async function applyPostSeo(detail: { post: StorePost; content: string } | null)
   background: #f1f5f9; color: #be185d; padding: 2px 6px; border-radius: 4px; font-size: 13px;
 }
 .post-body :deep(table) {
-  width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px;
-  overflow: hidden; border-radius: 10px;
+  display:block; max-width:100%; width:max-content; overflow-x:auto; border-collapse: collapse; margin: 12px 0; font-size: 14px;
+  border-radius: 10px;
 }
 .post-body :deep(th), .post-body :deep(td) {
   border: 1px solid #e5e7eb; padding: 8px 12px; text-align: left;

@@ -35,6 +35,9 @@ export interface Product {
   price_cents: number;
   stock_type: string;
   stock: number;
+  stock_status?: string;
+  stock_reference?: number;
+  stock_checked_at?: number;
   stock_visible: boolean;
   category_id: number;
   sales_count: number;

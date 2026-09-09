@@ -181,6 +181,10 @@ message AdminProduct {
   bool has_direct_content = 23;
   // 运营推荐（storefront 首页推荐位）
   bool is_recommend = 24;
+  string stock_status = 25; // current | stale | unknown
+  int64 stock_reference = 26; // 仅供展示的上次库存，不作为购买校验依据
+  int64 stock_checked_at = 27; // 上次库存查询时间
+
 }
 
 message CreateProductRequest {

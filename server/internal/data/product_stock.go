@@ -9,12 +9,39 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 )
 
-// ProductStocks resolves display/filter stock by fulfillment source. Callers pass
-// authorized products. Local cards count only available rows in the same subsite;
-// upstream products use their current product-level mapping, never the local pool.
+// ProductStockSnapshot separates a display quantity from its freshness.
 // -1 means unlimited; -2 means unknown (missing mapping or failed read).
+type ProductStockSnapshot struct {
+	Quantity  int64
+	CheckedAt time.Time
+	Status    string // current | stale | unknown
+}
+
+func (s ProductStockSnapshot) Available() int64 {
+	if s.Status != "current" {
+		return -2
+	}
+	return s.Quantity
+}
+
+// ProductStocks resolves stock by fulfillment source for authorized products.
+// Local cards count only available rows in the same subsite; upstream products
+// use their current product-level mapping, never the local pool or stale counts.
 func ProductStocks(ctx context.Context, d *Data, products []*ent.Product) (map[uint64]int64, error) {
-	out := make(map[uint64]int64, len(products))
+	snapshots, err := ProductStockSnapshots(ctx, d, products)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[uint64]int64, len(snapshots))
+	for id, snapshot := range snapshots {
+		out[id] = snapshot.Available()
+	}
+	return out, nil
+}
+
+// ProductStockSnapshots keeps old quantities for display without treating them as available stock.
+func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product) (map[uint64]ProductStockSnapshot, error) {
+	out := make(map[uint64]ProductStockSnapshot, len(products))
 	client := Client(ctx, d)
 	// Bound IN clauses for large supplier catalogs on all supported databases.
 	for start := 0; start < len(products); start += 500 {
@@ -28,13 +55,13 @@ func ProductStocks(ctx context.Context, d *Data, products []*ent.Product) (map[u
 			byID[p.ID] = p
 			switch {
 			case p.UpstreamSourceID > 0:
-				out[p.ID] = -2
+				out[p.ID] = ProductStockSnapshot{Quantity: -2, Status: "unknown"}
 				upIDs = append(upIDs, p.ID)
 			case p.StockType == "card":
-				out[p.ID] = 0
+				out[p.ID] = ProductStockSnapshot{Quantity: 0, Status: "current"}
 				localIDs = append(localIDs, p.ID)
 			default:
-				out[p.ID] = -1
+				out[p.ID] = ProductStockSnapshot{Quantity: -1, Status: "current"}
 			}
 		}
 		if len(localIDs) > 0 {
@@ -49,7 +76,7 @@ func ProductStocks(ctx context.Context, d *Data, products []*ent.Product) (map[u
 			}
 			for _, c := range counts {
 				if p := byID[c.ProductID]; p != nil && p.SubsiteID == c.SubsiteID {
-					out[p.ID] = c.Count
+					out[p.ID] = ProductStockSnapshot{Quantity: c.Count, Status: "current"}
 				}
 			}
 		}
@@ -61,9 +88,15 @@ func ProductStocks(ctx context.Context, d *Data, products []*ent.Product) (map[u
 			for _, m := range rows {
 				p := byID[m.LocalProductID]
 				if p != nil && p.UpstreamSourceID == m.ConnectionID && p.UpstreamProductCode == m.UpstreamProduct {
-					if !m.StockCheckedAt.IsZero() && time.Since(m.StockCheckedAt) <= 5*time.Minute {
-						out[p.ID] = int64(m.UpStock)
+					snapshot := ProductStockSnapshot{Quantity: -2, CheckedAt: m.StockCheckedAt, Status: "unknown"}
+					if m.UpStock >= -1 && !m.StockCheckedAt.IsZero() {
+						snapshot.Quantity = int64(m.UpStock)
+						snapshot.Status = "stale"
+						if time.Since(m.StockCheckedAt) <= 5*time.Minute {
+							snapshot.Status = "current"
+						}
 					}
+					out[p.ID] = snapshot
 				}
 			}
 		}

@@ -273,9 +273,12 @@ type AdminProduct struct {
 	// 直发内容已设置（url/code 商品；明文永不回传）
 	HasDirectContent bool `protobuf:"varint,23,opt,name=has_direct_content,json=hasDirectContent,proto3" json:"has_direct_content,omitempty"`
 	// 运营推荐（storefront 首页推荐位）
-	IsRecommend   bool `protobuf:"varint,24,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	IsRecommend    bool   `protobuf:"varint,24,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	StockStatus    string `protobuf:"bytes,25,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
+	StockReference int64  `protobuf:"varint,26,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
+	StockCheckedAt int64  `protobuf:"varint,27,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *AdminProduct) Reset() {
@@ -474,6 +477,27 @@ func (x *AdminProduct) GetIsRecommend() bool {
 		return x.IsRecommend
 	}
 	return false
+}
+
+func (x *AdminProduct) GetStockStatus() string {
+	if x != nil {
+		return x.StockStatus
+	}
+	return ""
+}
+
+func (x *AdminProduct) GetStockReference() int64 {
+	if x != nil {
+		return x.StockReference
+	}
+	return 0
+}
+
+func (x *AdminProduct) GetStockCheckedAt() int64 {
+	if x != nil {
+		return x.StockCheckedAt
+	}
+	return 0
 }
 
 type CreateProductRequest struct {
@@ -3471,7 +3495,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x82\x06\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xf8\x06\n" +
 	"\fAdminProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +
@@ -3503,7 +3527,10 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
 	"sold_count\x18\x16 \x01(\x03R\tsoldCount\x12,\n" +
 	"\x12has_direct_content\x18\x17 \x01(\bR\x10hasDirectContent\x12!\n" +
-	"\fis_recommend\x18\x18 \x01(\bR\visRecommend\"\x99\x04\n" +
+	"\fis_recommend\x18\x18 \x01(\bR\visRecommend\x12!\n" +
+	"\fstock_status\x18\x19 \x01(\tR\vstockStatus\x12'\n" +
+	"\x0fstock_reference\x18\x1a \x01(\x03R\x0estockReference\x12(\n" +
+	"\x10stock_checked_at\x18\x1b \x01(\x03R\x0estockCheckedAt\"\x99\x04\n" +
 	"\x14CreateProductRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x1f\n" +
 	"\vcategory_id\x18\x02 \x01(\x04R\n" +

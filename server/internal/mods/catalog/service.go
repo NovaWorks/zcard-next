@@ -107,7 +107,11 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 	for _, p := range items {
 		ids = append(ids, p.ID)
 	}
-	stocks, _ := s.uc.repo.StockBatch(ctx, ids) // 读取失败展示待确认，不能冒充充足。
+	snapshots, _ := s.uc.repo.StockSnapshotBatch(ctx, ids)
+	stocks := map[uint64]int64{}
+	for id, snapshot := range snapshots {
+		stocks[id] = snapshot.Available
+	}
 
 	for i := range items {
 		p := &items[i]
@@ -116,7 +120,17 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 				p.Price = sp // 分站价（下限保护在 ResolveUnitPrice 内）
 			}
 		}
-		reply.Items = append(reply.Items, toStorefrontProduct(p, stocks, solds[p.ID]))
+		item := toStorefrontProduct(p, stocks, solds[p.ID])
+		snapshot, ok := snapshots[p.ID]
+		item.StockStatus = "unknown"
+		if ok {
+			item.StockStatus = snapshot.Status
+			item.StockReference = snapshot.Quantity
+			if !snapshot.CheckedAt.IsZero() {
+				item.StockCheckedAt = snapshot.CheckedAt.Unix()
+			}
+		}
+		reply.Items = append(reply.Items, item)
 	}
 	return reply, nil
 }

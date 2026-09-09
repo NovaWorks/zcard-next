@@ -14,6 +14,7 @@ import {
   NSelect,
 } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
+import { useAppStore } from "@/store/modules/app";
 import { checkAuth } from "@/directives";
 import {
   fetchOrders,
@@ -496,11 +497,12 @@ async function handleCancel(orderNo: string) {
   }
 }
 
+const appStore = useAppStore();
 onMounted(loadOrders);
 </script>
 
 <template>
-  <div class="min-h-500px flex-col gap-16px overflow-hidden">
+  <div class="order-page min-h-500px min-w-0 flex-col gap-16px">
     <NCard title="订单管理" class="flex-1">
       <NTabs type="line">
         <NTabPane name="orders" tab="订单列表">
@@ -518,7 +520,7 @@ onMounted(loadOrders);
             <NButton @click="loadOrders">刷新</NButton>
           </div>
 
-          <NDataTable v-model:checked-row-keys="selectedOrders" :row-key="(row) => row.order_no" :columns="columns" :data="orders" :loading="loading" :max-height="540" :scroll-x="1140" />
+          <NDataTable v-model:checked-row-keys="selectedOrders" :row-key="(row) => row.order_no" :columns="columns" :data="orders" :loading="loading" :max-height="appStore.isMobile ? undefined : 540" :scroll-x="1140" />
 
           <TablePager
             v-model:page="page"
@@ -698,5 +700,6 @@ onMounted(loadOrders);
 </template>
 
 <style scoped>
+.order-page { flex-shrink:0; }
 .order-product-names { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
 </style>

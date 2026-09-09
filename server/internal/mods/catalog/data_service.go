@@ -73,15 +73,21 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 	for _, p := range items {
 		ids = append(ids, p.Id)
 	}
-	stocks, err := s.repo.StockBatch(ctx, ids)
+	snapshots, err := s.repo.StockSnapshotBatch(ctx, ids)
 	var solds map[uint64]int64
 	if s.sold != nil {
 		solds, _ = s.sold.SoldBatch(ctx, ids)
 	}
 	for _, p := range items {
 		p.Stock = -2
-		if n, ok := stocks[p.Id]; err == nil && ok {
-			p.Stock = n
+		p.StockStatus = "unknown"
+		if snapshot, ok := snapshots[p.Id]; err == nil && ok {
+			p.Stock = snapshot.Available
+			p.StockStatus = snapshot.Status
+			p.StockReference = snapshot.Quantity
+			if !snapshot.CheckedAt.IsZero() {
+				p.StockCheckedAt = snapshot.CheckedAt.Unix()
+			}
 		}
 		p.SoldCount = solds[p.Id]
 	}

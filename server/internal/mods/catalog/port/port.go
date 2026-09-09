@@ -8,6 +8,14 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
 
+// StockSnapshot carries display history separately from authoritative availability.
+type StockSnapshot struct {
+	Available int64
+	Quantity  int64
+	CheckedAt time.Time
+	Status    string
+}
+
 // Product 商品 DTO（跨模块快照：order 价格管线消费；管理字段不下发）。
 type Product struct {
 	ID           uint64
