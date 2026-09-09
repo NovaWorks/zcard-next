@@ -38,6 +38,7 @@ type MyLevelReply struct {
 	Next *LevelBrief `protobuf:"bytes,5,opt,name=next,proto3" json:"next,omitempty"`
 	// 升级进度（距下一等级差额）
 	Progress      *LevelProgress `protobuf:"bytes,6,opt,name=progress,proto3" json:"progress,omitempty"`
+	Levels        []*LevelBrief  `protobuf:"bytes,7,rep,name=levels,proto3" json:"levels,omitempty"` // 启用的等级及折扣，按升级顺序排列
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -110,6 +111,13 @@ func (x *MyLevelReply) GetNext() *LevelBrief {
 func (x *MyLevelReply) GetProgress() *LevelProgress {
 	if x != nil {
 		return x.Progress
+	}
+	return nil
+}
+
+func (x *MyLevelReply) GetLevels() []*LevelBrief {
+	if x != nil {
+		return x.Levels
 	}
 	return nil
 }
@@ -275,14 +283,15 @@ var File_storefront_v1_memberlevel_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_memberlevel_proto_rawDesc = "" +
 	"\n" +
-	"\x1fstorefront/v1/memberlevel.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb2\x02\n" +
+	"\x1fstorefront/v1/memberlevel.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xef\x02\n" +
 	"\fMyLevelReply\x12'\n" +
 	"\x0frecharged_cents\x18\x01 \x01(\x03R\x0erechargedCents\x12%\n" +
 	"\x0econsumed_cents\x18\x02 \x01(\x03R\rconsumedCents\x12\x16\n" +
 	"\x06points\x18\x03 \x01(\x03R\x06points\x12=\n" +
 	"\acurrent\x18\x04 \x01(\v2#.zcard.api.storefront.v1.LevelBriefR\acurrent\x127\n" +
 	"\x04next\x18\x05 \x01(\v2#.zcard.api.storefront.v1.LevelBriefR\x04next\x12B\n" +
-	"\bprogress\x18\x06 \x01(\v2&.zcard.api.storefront.v1.LevelProgressR\bprogress\"\xf9\x01\n" +
+	"\bprogress\x18\x06 \x01(\v2&.zcard.api.storefront.v1.LevelProgressR\bprogress\x12;\n" +
+	"\x06levels\x18\a \x03(\v2#.zcard.api.storefront.v1.LevelBriefR\x06levels\"\xf9\x01\n" +
 	"\n" +
 	"LevelBrief\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
@@ -323,13 +332,14 @@ var file_storefront_v1_memberlevel_proto_depIdxs = []int32{
 	1, // 0: zcard.api.storefront.v1.MyLevelReply.current:type_name -> zcard.api.storefront.v1.LevelBrief
 	1, // 1: zcard.api.storefront.v1.MyLevelReply.next:type_name -> zcard.api.storefront.v1.LevelBrief
 	2, // 2: zcard.api.storefront.v1.MyLevelReply.progress:type_name -> zcard.api.storefront.v1.LevelProgress
-	3, // 3: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:input_type -> google.protobuf.Empty
-	0, // 4: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:output_type -> zcard.api.storefront.v1.MyLevelReply
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1, // 3: zcard.api.storefront.v1.MyLevelReply.levels:type_name -> zcard.api.storefront.v1.LevelBrief
+	3, // 4: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:input_type -> google.protobuf.Empty
+	0, // 5: zcard.api.storefront.v1.StoreMemberLevelService.GetMyLevel:output_type -> zcard.api.storefront.v1.MyLevelReply
+	5, // [5:6] is the sub-list for method output_type
+	4, // [4:5] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_memberlevel_proto_init() }

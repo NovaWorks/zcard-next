@@ -53,6 +53,6 @@ export function manualDeliver(orderNo: string, data: { content?: string; logisti
   return request({ url: `/api/v1/admin/fulfillment/${orderNo}/deliver`, method: "post", data });
 }
 
-export function fetchDeliveries(orderNo: string, page = 1, pageSize = 20) {
-  return request({ url: "/api/v1/admin/fulfillment", params: { order_no: orderNo, page, page_size: pageSize } });
+export function fetchDeliveries(orderNo: string, page = 1, pageSize = 20, orderItemId?: number) {
+  return request({ url: "/api/v1/admin/fulfillment", params: { order_no: orderNo, page, page_size: pageSize, order_item_id: orderItemId } });
 }

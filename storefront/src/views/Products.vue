@@ -35,7 +35,7 @@
           </select>
           <span style="flex: 1;"></span>
           <div class="view-toggle">
-            <button class="vt-btn" :class="{ active: viewMode === 'grid' }" title="网格视图" @click="viewMode = 'grid'">▦</button>
+            <button class="vt-btn" :class="{ active: viewMode === 'grid' }" title="网格视图" @click="viewMode = 'grid'; bigGrid = false">▦</button>
             <button class="vt-btn" :class="{ active: viewMode === 'list' }" title="列表视图" @click="viewMode = 'list'">☰</button>
           </div>
         </div>
@@ -43,7 +43,7 @@
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-      <div v-if="viewMode === 'grid'" class="grid" :style="gridStyle">
+      <div v-if="viewMode === 'grid'" class="grid" :class="{ 'catalog-big': bigGrid }" :style="gridStyle">
         <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
       </div>
       <div v-else class="list-rows">
@@ -94,14 +94,15 @@ const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | 
 const gridMinPx = computed(() => (bigGrid.value ? 300 : 200)); // per_row 未设置时的自适应列宽
 const perRow = ref(0); // template.per_row：每行商品数（2-8 固定列数；0=自适应）
 const gridStyle = computed(() =>
-  perRow.value
+  !bigGrid.value && perRow.value
     ? { gridTemplateColumns: `repeat(${perRow.value}, 1fr)` }
     : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
 );
 const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
 
-onMounted(async () => {
+let appliedDefaultView = '';
+async function loadTemplateSettings() {
   try {
     const resp = await fetch('/api/v1/storefront/config');
     const json = await resp.json();
@@ -112,9 +113,12 @@ onMounted(async () => {
     };
     // 商品默认视图：list=列表行 | grid=网格 | big=大图（网格加宽）
     const dv = val('template.default_view');
-    if (dv === 'list') viewMode.value = 'list';
-    else if (dv === 'big') { viewMode.value = 'grid'; bigGrid.value = true; }
-    else viewMode.value = 'grid';
+    const nextView = ['list', 'big'].includes(dv) ? dv : 'grid';
+    if (nextView !== appliedDefaultView) {
+      bigGrid.value = nextView === 'big';
+      viewMode.value = nextView === 'list' ? 'list' : 'grid';
+      appliedDefaultView = nextView;
+    }
     // 每页商品数（防滥用夹在 6~60；与首页同源消费，默认 20 一致时免重查）
     const pp = Number(val('template.per_page'));
     let reload = false;
@@ -139,7 +143,8 @@ onMounted(async () => {
     const pr = val('template.per_row');
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
   } catch { /* 配置拉取失败保持默认 */ }
-});
+}
+onMounted(loadTemplateSettings);
 
 let loadSequence = 0;
 async function load() {
@@ -180,6 +185,7 @@ function onSearch() {
 let needsRefresh = false;
 onActivated(() => {
   if (needsRefresh) {
+    void loadTemplateSettings();
     needsRefresh = false;
     void load();
     void applyListSeo();
@@ -279,4 +285,6 @@ async function applyListSeo() {
 .vt-btn:hover { color: #2563eb; }
 .vt-btn.active { background: #2563eb; color: #fff; }
 .list-rows { display: flex; flex-direction: column; gap: 10px; }
+
+@media (max-width: 767px) { .catalog-big { grid-template-columns: minmax(0, 1fr) !important; } }
 </style>

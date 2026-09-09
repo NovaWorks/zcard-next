@@ -561,6 +561,7 @@ export interface LevelBrief {
 }
 
 export interface MyLevelReply {
+  levels?: LevelBrief[];
   recharged_cents: number;
   consumed_cents: number;
   points: number;

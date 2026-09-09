@@ -524,9 +524,12 @@ func (r *DeliveryRepoImpl) ListPending(ctx context.Context, page, size int) ([]*
 }
 
 // ListDeliveries 交付记录列表。
-func (r *DeliveryRepoImpl) ListDeliveries(ctx context.Context, orderNo string, page, size int) ([]*ent.OrderDelivery, int64, error) {
+func (r *DeliveryRepoImpl) ListDeliveries(ctx context.Context, orderNo string, page, size int, orderItemID ...uint64) ([]*ent.OrderDelivery, int64, error) {
 	client := data.Client(ctx, r.data)
-	q := client.OrderDelivery.Query().Order(ent.Desc(orderdelivery.FieldDeliveredAt))
+	q := client.OrderDelivery.Query().Order(ent.Desc(orderdelivery.FieldDeliveredAt), ent.Desc(orderdelivery.FieldID))
+	if len(orderItemID) > 0 && orderItemID[0] != 0 {
+		q = q.Where(orderdelivery.ItemID(orderItemID[0]))
+	}
 	if orderNo != "" {
 		o, err := client.Order.Query().Where(order.OrderNo(orderNo)).Only(ctx)
 		if ent.IsNotFound(err) {

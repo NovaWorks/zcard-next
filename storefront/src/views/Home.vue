@@ -99,13 +99,13 @@
         <div class="section-head">
           <h2 class="section-title"><span class="title-bar"></span>{{ sectionTitle }}</h2>
           <div class="view-switcher">
-            <button :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'" title="网格视图">▦</button>
+            <button :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'; bigGrid = false" title="网格视图">▦</button>
             <button :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="列表视图">☰</button>
           </div>
         </div>
 
         <!-- 商品列表（网格/列表双视图） -->
-        <div v-if="viewMode === 'grid'" class="product-grid" :style="gridStyle">
+        <div v-if="viewMode === 'grid'" class="product-grid" :class="{ 'catalog-big': bigGrid }" :style="gridStyle">
           <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
         </div>
         <div v-else class="product-list">
@@ -190,7 +190,7 @@ const bigGrid = ref(false); // template.default_view=big：大图卡片（更宽
 const perRow = ref(0); // template.per_row：每行商品数（2-8 固定列数；0=按容器宽度自适应）
 const gridMinPx = computed(() => (bigGrid.value ? 300 : 200));
 const gridStyle = computed(() =>
-  perRow.value
+  !bigGrid.value && perRow.value
     ? { gridTemplateColumns: `repeat(${perRow.value}, 1fr)` }
     : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
 );
@@ -327,6 +327,7 @@ let needsRefresh = false;
 onActivated(() => {
   startHero();
   if (needsRefresh) {
+    void loadTemplateSettings();
     needsRefresh = false;
     // 保留浏览状态，同时重新获取价格、库存和首页标题。
     void load();
@@ -354,9 +355,9 @@ await Promise.all([
   }),
 ]);
 
-// 模板设置读取（onMounted：SSG 构建期不拉取，水合后客户端实时应用）
-onMounted(async () => {
-  startHero();
+// Cached catalog pages refresh template settings when revisited.
+let appliedDefaultView = '';
+async function loadTemplateSettings() {
   try {
     const resp = await fetch('/api/v1/storefront/config');
     const json = await resp.json();
@@ -370,9 +371,12 @@ onMounted(async () => {
     if (ns === 'grid' || ns === 'list') navStyle.value = ns;
     // 商品默认视图：list=列表行 | grid=网格 | big=大图（网格加宽）
     const dv = val('template.default_view');
-    if (dv === 'list') viewMode.value = 'list';
-    else if (dv === 'big') { viewMode.value = 'grid'; bigGrid.value = true; }
-    else viewMode.value = 'grid';
+    const nextView = ['list', 'big'].includes(dv) ? dv : 'grid';
+    if (nextView !== appliedDefaultView) {
+      bigGrid.value = nextView === 'big';
+      viewMode.value = nextView === 'list' ? 'list' : 'grid';
+      appliedDefaultView = nextView;
+    }
     // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
     if (val('template.show_sales') === false) showSales.value = false;
     if (val('template.show_stock') === false) showStock.value = false;
@@ -398,7 +402,8 @@ onMounted(async () => {
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
     if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }
-});
+}
+onMounted(() => { startHero(); void loadTemplateSettings(); });
 onUnmounted(stopHero);
 </script>
 
@@ -601,4 +606,6 @@ onUnmounted(stopHero);
   .pager-total, .pager-size .muted { color: #6b7280; }
   .pager-size { justify-content: center; white-space: nowrap; }
 }
+
+@media (max-width: 767px) { .catalog-big { grid-template-columns: minmax(0, 1fr) !important; } }
 </style>

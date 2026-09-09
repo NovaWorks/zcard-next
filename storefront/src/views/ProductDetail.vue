@@ -81,9 +81,9 @@
         </div>
 
         <!-- 评价入口（锚点；大厂电商：评分摘要卡 → 点击滚动到评价区） -->
-        <button v-if="showReviews && p.reviews?.length" class="pd-review-entry" @click="scrollToReviews">
-          <span class="pd-review-entry-score">⭐ {{ reviewAvg }}</span>
-          <span class="pd-review-entry-count">{{ p.reviews.length }} 条评价</span>
+        <button v-if="showReviews" class="pd-review-entry" @click="scrollToReviews">
+          <span class="pd-review-entry-score">{{ p.reviews?.length ? `★ ${reviewAvg}` : '暂无评分' }}</span>
+          <span class="pd-review-entry-count">{{ (p.reviews?.length || 0) }} 条评价</span>
           <span class="pd-review-entry-go">查看 ›</span>
         </button>
 
@@ -178,8 +178,10 @@
     </div>
 
     <!-- 评价区（template.show_reviews 开关控制；默认展示 3 条可展开） -->
-    <div v-if="showReviews && p.reviews?.length" id="pd-reviews" class="pd-section">
-      <h3 class="pd-section-title">用户评价（{{ p.reviews.length }}）</h3>
+    <div v-if="showReviews" id="pd-reviews" class="pd-section">
+      <h3 class="pd-section-title">用户评价（{{ (p.reviews?.length || 0) }}）</h3>
+      <p v-if="!p.reviews?.length" class="muted">暂无评价，欢迎购买后分享使用体验。</p>
+      <p class="muted"><router-link to="/member?tab=orders">前往我的订单评价</router-link> · 发货完成后可提交，审核通过后展示。</p>
       <div v-for="r in visibleReviews" :key="`${r.is_virtual}-${r.id}`" class="pd-review">
         <span class="pd-avatar">{{ (r.nickname || '匿')[0] }}</span>
         <div class="pd-review-body">
@@ -190,8 +192,8 @@
           <div class="pd-review-content">{{ r.content }}</div>
         </div>
       </div>
-      <button v-if="p.reviews.length > reviewCollapsed" class="pd-review-more" @click="reviewsExpanded = !reviewsExpanded">
-        {{ reviewsExpanded ? '收起评价 ↑' : `查看全部 ${p.reviews.length} 条评价 ↓` }}
+      <button v-if="(p.reviews?.length || 0) > reviewCollapsed" class="pd-review-more" @click="reviewsExpanded = !reviewsExpanded">
+        {{ reviewsExpanded ? '收起评价 ↑' : `查看全部 ${(p.reviews?.length || 0)} 条评价 ↓` }}
       </button>
     </div>
 
@@ -324,7 +326,7 @@ const visibleReviews = computed(() =>
 );
 const reviewAvg = computed(() => {
   const list = p.value?.reviews || [];
-  if (!list.length) return '5.0';
+  if (!list.length) return '—';
   return (list.reduce((s, r) => s + (r.rating || 5), 0) / list.length).toFixed(1);
 });
 function scrollToReviews() {

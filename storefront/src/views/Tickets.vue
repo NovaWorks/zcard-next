@@ -1,5 +1,6 @@
 <template>
   <div>
+    <MemberTabs active="tickets" />
     <div class="card" style="margin-bottom: 16px;">
       <h2 style="margin-bottom: 12px;">新建工单</h2>
       <div class="field">
@@ -69,6 +70,7 @@
 </template>
 
 <script setup lang="ts">
+import MemberTabs from "@/components/MemberTabs.vue";
 import { ref, onMounted } from 'vue';
 import { createTicket, listMyTickets, type TicketItem } from '@/api';
 import { authState } from '@/auth';

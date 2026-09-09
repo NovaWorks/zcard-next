@@ -53,6 +53,23 @@ message ProcurementOrder {
   int32 received_cards = 16; // 已到手卡密行数（密文行数）
   int64 created_at = 17;
   int64 updated_at = 18;
+  string order_no = 19;
+  string order_status = 20;
+  uint64 product_id = 21;
+  string product_name = 22;
+  string sku_name = 23;
+  string connection_name = 24;
+  string connection_url = 25;
+  string connection_driver = 26;
+  string upstream_product_code = 27;
+  int64 sale_unit_cents = 28;
+  int64 sale_amount_cents = 29;
+  int64 allocated_sale_cents = 30; // 整单优惠按子项金额分摊
+  int64 cost_unit_cents = 31;
+  int64 cost_total_cents = 32;
+  int64 profit_cents = 33; // 预计毛利，未计退款和手续费
+  string cost_basis = 34; // order_snapshot | unrecorded
+
 }
 
 message ListProcurementsRequest {

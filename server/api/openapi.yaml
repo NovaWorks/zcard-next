@@ -1607,6 +1607,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: orderItemId
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -5438,6 +5442,47 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/storefront/orders/{orderNo}/review:
+        get:
+            tags:
+                - StoreReviewService
+            operationId: StoreReviewService_GetOrderReview
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.OrderReviewState'
+        post:
+            tags:
+                - StoreReviewService
+            operationId: StoreReviewService_SubmitOrderReview
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.SubmitOrderReviewRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.OrderReviewState'
     /api/v1/storefront/payment/channels:
         get:
             tags:
@@ -8171,6 +8216,8 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.DeliveryRecord'
+                total:
+                    type: string
         zcard.api.admin.v1.ListFlashSalesReply:
             type: object
             properties:
@@ -9172,6 +9219,38 @@ components:
                 createdAt:
                     type: string
                 updatedAt:
+                    type: string
+                orderNo:
+                    type: string
+                orderStatus:
+                    type: string
+                productId:
+                    type: string
+                productName:
+                    type: string
+                skuName:
+                    type: string
+                connectionName:
+                    type: string
+                connectionUrl:
+                    type: string
+                connectionDriver:
+                    type: string
+                upstreamProductCode:
+                    type: string
+                saleUnitCents:
+                    type: string
+                saleAmountCents:
+                    type: string
+                allocatedSaleCents:
+                    type: string
+                costUnitCents:
+                    type: string
+                costTotalCents:
+                    type: string
+                profitCents:
+                    type: string
+                costBasis:
                     type: string
         zcard.api.admin.v1.PromotionItem:
             type: object
@@ -11614,6 +11693,10 @@ components:
                     allOf:
                         - $ref: '#/components/schemas/zcard.api.storefront.v1.LevelProgress'
                     description: 升级进度（距下一等级差额）
+                levels:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.LevelBrief'
             description: MyLevelReply 等级进度（阈值即时评估口径：只升不降随累计值单调）。
         zcard.api.storefront.v1.MyOrderItem:
             type: object
@@ -11702,6 +11785,26 @@ components:
                     type: integer
                     format: int32
                 unitPriceCents:
+                    type: string
+        zcard.api.storefront.v1.OrderReviewState:
+            type: object
+            properties:
+                enabled:
+                    type: boolean
+                status:
+                    type: string
+                message:
+                    type: string
+                products:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.ReviewProduct'
+                productId:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+                content:
                     type: string
         zcard.api.storefront.v1.PayUrgentReply:
             type: object
@@ -11949,6 +12052,13 @@ components:
                 isVirtual:
                     type: boolean
             description: ReviewItem 顾客视角评价（真实 approved + 虚拟合并）。
+        zcard.api.storefront.v1.ReviewProduct:
+            type: object
+            properties:
+                productId:
+                    type: string
+                name:
+                    type: string
         zcard.api.storefront.v1.SendRegisterCodeReply:
             type: object
             properties: {}
@@ -12056,6 +12166,21 @@ components:
             type: object
             properties:
                 dataBase64:
+                    type: string
+        zcard.api.storefront.v1.SubmitOrderReviewRequest:
+            required:
+                - orderNo
+                - productId
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                productId:
+                    type: string
+                rating:
+                    type: integer
+                    format: int32
+                content:
                     type: string
         zcard.api.storefront.v1.SubmitSupplierApplicationRequest:
             required:
@@ -12523,6 +12648,7 @@ tags:
       description: StoreOrderService 顾客下单。
     - name: StorePaymentService
       description: StorePaymentService 顾客支付。
+    - name: StoreReviewService
     - name: StoreSupplierService
       description: |-
         StoreSupplierService 前台对接申请（个人中心）：申请成为供货商户 →

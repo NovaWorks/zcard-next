@@ -55,6 +55,15 @@ func (s *StoreMemberLevelService) GetMyLevel(ctx context.Context, _ *emptypb.Emp
 			Percent:          p.Percent,
 		}
 	}
+	levels, err := s.repo.ListLevels(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("memberlevel.LIST_FAILED", "读取等级列表失败")
+	}
+	for _, lv := range levels {
+		if lv.Enabled {
+			reply.Levels = append(reply.Levels, toLevelBrief(lv))
+		}
+	}
 	return reply, nil
 }
 

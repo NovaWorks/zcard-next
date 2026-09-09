@@ -55,10 +55,12 @@ message ListDeliveriesRequest {
   string order_no = 1;
   int32 page = 2;
   int32 page_size = 3;
+  uint64 order_item_id = 4;
 }
 
 message ListDeliveriesReply {
   repeated DeliveryRecord deliveries = 1;
+  int64 total = 2;
 }
 
 // DeliveryRecord 交付记录（content=完整卡密，服务端现场解密；路由受

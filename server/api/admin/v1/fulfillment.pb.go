@@ -268,6 +268,7 @@ type ListDeliveriesRequest struct {
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	OrderItemId   uint64                 `protobuf:"varint,4,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -323,9 +324,17 @@ func (x *ListDeliveriesRequest) GetPageSize() int32 {
 	return 0
 }
 
+func (x *ListDeliveriesRequest) GetOrderItemId() uint64 {
+	if x != nil {
+		return x.OrderItemId
+	}
+	return 0
+}
+
 type ListDeliveriesReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Deliveries    []*DeliveryRecord      `protobuf:"bytes,1,rep,name=deliveries,proto3" json:"deliveries,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -365,6 +374,13 @@ func (x *ListDeliveriesReply) GetDeliveries() []*DeliveryRecord {
 		return x.Deliveries
 	}
 	return nil
+}
+
+func (x *ListDeliveriesReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 // DeliveryRecord 交付记录（content=完整卡密，服务端现场解密；路由受
@@ -507,15 +523,17 @@ const file_admin_v1_fulfillment_proto_rawDesc = "" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12!\n" +
 	"\flogistics_no\x18\x03 \x01(\tR\vlogisticsNo\x12\x16\n" +
-	"\x06remark\x18\x04 \x01(\tR\x06remark\"c\n" +
+	"\x06remark\x18\x04 \x01(\tR\x06remark\"\x87\x01\n" +
 	"\x15ListDeliveriesRequest\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"Y\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\"\n" +
+	"\rorder_item_id\x18\x04 \x01(\x04R\vorderItemId\"o\n" +
 	"\x13ListDeliveriesReply\x12B\n" +
 	"\n" +
 	"deliveries\x18\x01 \x03(\v2\".zcard.api.admin.v1.DeliveryRecordR\n" +
-	"deliveries\"\xc2\x02\n" +
+	"deliveries\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xc2\x02\n" +
 	"\x0eDeliveryRecord\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x17\n" +

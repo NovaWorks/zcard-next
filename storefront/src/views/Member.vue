@@ -16,7 +16,7 @@
             <div class="muted lv-label">当前等级</div>
             <div class="lv-name-row">
               <span class="lv-name">{{ level.current?.name || '普通会员' }}</span>
-              <span v-if="level.current?.discount" class="tag">{{ (level.current.discount / 100).toFixed(0) }} 折</span>
+              <span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
             </div>
           </div>
           <span v-if="level.next" class="lv-next">距 {{ level.next.name }} <span class="lv-arrow">›</span></span>
@@ -71,6 +71,7 @@
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
               >取货</router-link>
               <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
+              <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">评价</router-link>
               <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
             </td>
           </tr>
@@ -98,6 +99,7 @@
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
               >取货</router-link>
               <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
+              <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">评价</router-link>
               <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
             </span>
           </div>
@@ -165,6 +167,7 @@
       </div>
 
       <!-- 表单态 -->
+      <MemberLevelBenefits v-if="level" :level="level" />
       <div v-if="rechargePhase === 'form'" class="rc-layout">
         <!-- 左：充值金额 -->
         <div class="card rc-panel">
@@ -333,6 +336,8 @@ import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import Affiliate from './Affiliate.vue';
 import SupplierApply from './SupplierApply.vue';
+import MemberLevelBenefits from '@/components/MemberLevelBenefits.vue';
+import { levelDiscount } from '@/composables/member-level';
 import MemberTabs from '@/components/MemberTabs.vue';
 
 // tab 由 ?tab= 查询参数驱动（MemberTabs 导航跳转 /member?tab=xxx）——
@@ -347,6 +352,7 @@ const tab = ref<Tab>(normalizeTab(route.query.tab));
 watch(() => route.query.tab, (v) => switchTab(normalizeTab(v)));
 const balance = ref<BalanceReply | null>(null);
 const level = ref<MyLevelReply | null>(null);
+const showReviews = ref(false);
 
 // 等级进度（proto3 零值省略/-1 未配置均归一为不展示；>0 才渲染差额胶囊）
 const levelPercent = computed(() => level.value?.progress?.percent ?? 100);
@@ -415,6 +421,7 @@ onMounted(async () => {
   // 充值档位（ 公开下发：recharge.enabled/min_amount/max_amount/gift_tiers）
   const cfg = await api.get<{ entries: { key: string; value_json: string }[] }>('/config');
   const find = (k: string) => cfg.data?.entries?.find((e) => e.key === k)?.value_json;
+  showReviews.value = find('template.show_reviews') !== 'false';
   const min = find('recharge.min_amount');
   const max = find('recharge.max_amount');
   if (min && max) {

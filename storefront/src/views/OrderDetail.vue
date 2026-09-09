@@ -59,6 +59,7 @@
           </div>
         </div>
       </div>
+      <OrderReview :order-no="orderNo" />
     </template>
   </div>
 </template>
@@ -67,6 +68,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrder, cancelMyOrder, type OrderDetail } from '@/api';
+import OrderReview from '@/components/OrderReview.vue';
 import { formatMoney } from '@/api/client';
 
 const route = useRoute();

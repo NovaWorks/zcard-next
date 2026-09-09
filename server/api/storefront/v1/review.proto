@@ -1,0 +1,31 @@
+syntax = "proto3";
+package zcard.api.storefront.v1;
+option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+
+service StoreReviewService {
+  rpc GetOrderReview(GetOrderReviewRequest) returns (OrderReviewState) {
+    option (google.api.http) = { get: "/api/v1/storefront/orders/{order_no}/review" };
+  }
+  rpc SubmitOrderReview(SubmitOrderReviewRequest) returns (OrderReviewState) {
+    option (google.api.http) = { post: "/api/v1/storefront/orders/{order_no}/review" body: "*" };
+  }
+}
+message GetOrderReviewRequest { string order_no = 1 [(google.api.field_behavior) = REQUIRED]; }
+message SubmitOrderReviewRequest {
+  string order_no = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 product_id = 2 [(google.api.field_behavior) = REQUIRED];
+  int32 rating = 3;
+  string content = 4;
+}
+message ReviewProduct { uint64 product_id = 1; string name = 2; }
+message OrderReviewState {
+  bool enabled = 1;
+  string status = 2; // available | not_ready | disabled | pending | approved | rejected
+  string message = 3;
+  repeated ReviewProduct products = 4;
+  uint64 product_id = 5;
+  int32 rating = 6;
+  string content = 7;
+}

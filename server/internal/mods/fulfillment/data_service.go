@@ -143,7 +143,7 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 	if size < 1 || size > 100 {
 		size = 20
 	}
-	rows, _, err := s.repo.ListDeliveries(ctx, req.GetOrderNo(), page, size)
+	rows, total, err := s.repo.ListDeliveries(ctx, req.GetOrderNo(), page, size, req.GetOrderItemId())
 	if err != nil {
 		return nil, errors.InternalServer("fulfillment.LIST_FAILED", "读取交付失败")
 	}
@@ -159,7 +159,7 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 			Metadata: map[string]any{"order_no": req.GetOrderNo(), "count": len(rows)},
 		})
 	}
-	reply := &adminv1.ListDeliveriesReply{}
+	reply := &adminv1.ListDeliveriesReply{Total: total}
 	for _, d := range rows {
 		orderNo := s.getOrderNo(ctx, d.OrderID)
 		content := s.decryptDelivery(ctx, d)

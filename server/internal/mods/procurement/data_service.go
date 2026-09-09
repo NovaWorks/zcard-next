@@ -45,7 +45,7 @@ func (s *AdminProcurementService) GetProcurement(ctx context.Context, req *admin
 	if err != nil {
 		return nil, err
 	}
-	return s.toProto(ctx, po), nil
+	return s.detail(ctx, po)
 }
 
 // RetryProcurement 手动重试：终态拒绝；否则按当前状态推进（提交/轮询）。

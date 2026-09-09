@@ -112,12 +112,24 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		reply.ExpiresAt = o.ExpiredAt.Unix()
 	}
 	// 子项
-	items, _ := data.Client(ctx, s.uc.Data).OrderItem.Query().
-		Where(orderitem.OrderID(o.ID)).All(ctx)
+	items, err := data.Client(ctx, s.uc.Data).OrderItem.Query().Where(orderitem.OrderID(o.ID)).All(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("order.GET_FAILED", "读取订单商品失败")
+	}
+	summaries, err := data.OrderProductSummaries(ctx, s.uc.Data, []*ent.Order{o})
+	if err != nil {
+		return nil, errors.InternalServer("order.GET_FAILED", "读取订单商品失败")
+	}
+	names := map[uint64]string{}
+	for _, item := range summaries[o.ID] {
+		names[item.ProductID] = item.Name
+	}
 	for _, it := range items {
-		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{
-			ProductId: it.ProductID, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice,
-		})
+		name := names[it.ProductID]
+		if it.SkuName != "" {
+			name += " / " + it.SkuName
+		}
+		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice})
 	}
 	return reply, nil
 }

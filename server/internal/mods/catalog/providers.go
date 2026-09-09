@@ -44,5 +44,6 @@ var ProviderSet = wire.NewSet(
 	// ：供货目录端口（supplier 消费，通道 A）
 	wire.Bind(new(port.SupplierCatalog), new(*ProductRepoImpl)),
 	NewStoreCatalogService,
+	NewStoreReviewService,
 	NewAdminCatalogService,
 )

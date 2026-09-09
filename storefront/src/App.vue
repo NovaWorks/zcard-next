@@ -55,8 +55,8 @@
         ><ThemeIcon v-if="isGuide(topButton.text)" name="book" />{{ navText(topButton.text) }}</a>
         <!-- 导航推荐位（promo.nav_recommend [{text,url}]）：站内路径走路由，外链新窗口 -->
         <template v-for="r in navRecommend" :key="r.text + r.url">
-          <router-link v-if="r.url.startsWith('/')" :to="r.url" class="nav-recommend-btn"><ThemeIcon v-if="isGuide(r.text)" name="book" /><span v-else aria-hidden="true">🔥</span>{{ navText(r.text) }}</router-link>
-          <a v-else :href="r.url" target="_blank" rel="noopener noreferrer" class="nav-recommend-btn"><ThemeIcon v-if="isGuide(r.text)" name="book" /><span v-else aria-hidden="true">🔥</span>{{ navText(r.text) }}</a>
+          <router-link v-if="r.url.startsWith('/')" :to="r.url" class="nav-recommend-btn">{{ r.text }}</router-link>
+          <a v-else :href="r.url" target="_blank" rel="noopener noreferrer" class="nav-recommend-btn">{{ r.text }}</a>
         </template>
       </nav>
       <div class="nav-right">
@@ -82,10 +82,10 @@
     <main class="main" :class="{ 'install-main': isInstall }">
       <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
       <router-view v-slot="{ Component, route: viewRoute }">
-        <!-- 保留目录的筛选、分页和分类树；详情、支付和会员页仍按导航重新创建。 -->
+        <!-- 保留目录浏览状态；会员页内切换复用表单，其余详情和支付页按导航重新创建。 -->
         <KeepAlive include="Home,Products" :max="8">
           <Suspense>
-            <component :is="Component" :key="viewRoute.fullPath" />
+            <component :is="Component" :key="viewRoute.path === '/member' ? viewRoute.path : viewRoute.fullPath" />
           </Suspense>
         </KeepAlive>
       </router-view>
@@ -207,6 +207,8 @@ onMounted(async () => {
   const cfg = await fetchSiteSeo();
   if (cfg.name) siteName.value = cfg.name;
   siteLogo.value = cfg.logo || '';
+  const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (icon) { icon.removeAttribute('type'); icon.href = siteLogo.value || '/zcard-icon.png'; }
 });
 
 // SEO 默认 head 由 main.ts 处理（客户端拉取后更新；SSR 渲染后输出到静态 HTML）

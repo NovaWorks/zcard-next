@@ -29,6 +29,7 @@ message MyLevelReply {
   LevelBrief next = 5;
   // 升级进度（距下一等级差额）
   LevelProgress progress = 6;
+  repeated LevelBrief levels = 7; // 启用的等级及折扣，按升级顺序排列
 }
 
 // LevelBrief 等级摘要。

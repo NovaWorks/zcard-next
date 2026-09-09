@@ -74,6 +74,7 @@ func NewHTTPServer(
 	settingsSvc *settings.AdminSettingsService,
 	installSvc *settings.AdminInstallService,
 	catalogSvc *catalog.StoreCatalogService,
+	reviewSvc *catalog.StoreReviewService,
 	supplyAdminSvc *supply.AdminSupplyService,
 	procureAdminSvc *procurement.AdminProcurementService,
 	supplyAPISvc *supplier.SupplyAPIService,
@@ -221,6 +222,7 @@ func NewHTTPServer(
 	adminv1.RegisterAdminFulfillmentServiceHTTPServer(srv, fulfillAdminSvc)
 	storefrontv1.RegisterStoreDeliveryServiceHTTPServer(srv, fulfillStoreSvc)
 	storefrontv1.RegisterStoreCatalogServiceHTTPServer(srv, catalogSvc)
+	storefrontv1.RegisterStoreReviewServiceHTTPServer(srv, reviewSvc)
 	supplyv1.RegisterSupplyServiceHTTPServer(srv, supplyAPISvc)
 	adminv1.RegisterAdminSupplyServiceHTTPServer(srv, supplyAdminSvc)
 	adminv1.RegisterAdminProcurementServiceHTTPServer(srv, procureAdminSvc)

@@ -24,27 +24,43 @@ const (
 )
 
 type ProcurementOrder struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Id               uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrderItemId      uint64                 `protobuf:"varint,2,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"`
-	ConnectionId     uint64                 `protobuf:"varint,3,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
-	UpstreamOrderId  string                 `protobuf:"bytes,4,opt,name=upstream_order_id,json=upstreamOrderId,proto3" json:"upstream_order_id,omitempty"`
-	Status           string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`                                 // pending | submitted | polling | fulfilled | rejected | refunding | refunded | manual
-	FailStrategy     string                 `protobuf:"bytes,6,opt,name=fail_strategy,json=failStrategy,proto3" json:"fail_strategy,omitempty"` // auto_refund | manual
-	RetryCount       int32                  `protobuf:"varint,7,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
-	NextRetryAt      int64                  `protobuf:"varint,8,opt,name=next_retry_at,json=nextRetryAt,proto3" json:"next_retry_at,omitempty"`
-	LastPollAt       int64                  `protobuf:"varint,9,opt,name=last_poll_at,json=lastPollAt,proto3" json:"last_poll_at,omitempty"`
-	DedupeKey        string                 `protobuf:"bytes,10,opt,name=dedupe_key,json=dedupeKey,proto3" json:"dedupe_key,omitempty"`
-	TraceId          string                 `protobuf:"bytes,11,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
-	LastError        string                 `protobuf:"bytes,12,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
-	UpstreamRefundId string                 `protobuf:"bytes,13,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
-	ItemQuantity     int32                  `protobuf:"varint,14,opt,name=item_quantity,json=itemQuantity,proto3" json:"item_quantity,omitempty"`
-	ItemUnitCost     int64                  `protobuf:"varint,15,opt,name=item_unit_cost,json=itemUnitCost,proto3" json:"item_unit_cost,omitempty"`
-	ReceivedCards    int32                  `protobuf:"varint,16,opt,name=received_cards,json=receivedCards,proto3" json:"received_cards,omitempty"` // 已到手卡密行数（密文行数）
-	CreatedAt        int64                  `protobuf:"varint,17,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt        int64                  `protobuf:"varint,18,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderItemId         uint64                 `protobuf:"varint,2,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"`
+	ConnectionId        uint64                 `protobuf:"varint,3,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	UpstreamOrderId     string                 `protobuf:"bytes,4,opt,name=upstream_order_id,json=upstreamOrderId,proto3" json:"upstream_order_id,omitempty"`
+	Status              string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`                                 // pending | submitted | polling | fulfilled | rejected | refunding | refunded | manual
+	FailStrategy        string                 `protobuf:"bytes,6,opt,name=fail_strategy,json=failStrategy,proto3" json:"fail_strategy,omitempty"` // auto_refund | manual
+	RetryCount          int32                  `protobuf:"varint,7,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
+	NextRetryAt         int64                  `protobuf:"varint,8,opt,name=next_retry_at,json=nextRetryAt,proto3" json:"next_retry_at,omitempty"`
+	LastPollAt          int64                  `protobuf:"varint,9,opt,name=last_poll_at,json=lastPollAt,proto3" json:"last_poll_at,omitempty"`
+	DedupeKey           string                 `protobuf:"bytes,10,opt,name=dedupe_key,json=dedupeKey,proto3" json:"dedupe_key,omitempty"`
+	TraceId             string                 `protobuf:"bytes,11,opt,name=trace_id,json=traceId,proto3" json:"trace_id,omitempty"`
+	LastError           string                 `protobuf:"bytes,12,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
+	UpstreamRefundId    string                 `protobuf:"bytes,13,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
+	ItemQuantity        int32                  `protobuf:"varint,14,opt,name=item_quantity,json=itemQuantity,proto3" json:"item_quantity,omitempty"`
+	ItemUnitCost        int64                  `protobuf:"varint,15,opt,name=item_unit_cost,json=itemUnitCost,proto3" json:"item_unit_cost,omitempty"`
+	ReceivedCards       int32                  `protobuf:"varint,16,opt,name=received_cards,json=receivedCards,proto3" json:"received_cards,omitempty"` // 已到手卡密行数（密文行数）
+	CreatedAt           int64                  `protobuf:"varint,17,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt           int64                  `protobuf:"varint,18,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OrderNo             string                 `protobuf:"bytes,19,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	OrderStatus         string                 `protobuf:"bytes,20,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
+	ProductId           uint64                 `protobuf:"varint,21,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	ProductName         string                 `protobuf:"bytes,22,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	SkuName             string                 `protobuf:"bytes,23,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	ConnectionName      string                 `protobuf:"bytes,24,opt,name=connection_name,json=connectionName,proto3" json:"connection_name,omitempty"`
+	ConnectionUrl       string                 `protobuf:"bytes,25,opt,name=connection_url,json=connectionUrl,proto3" json:"connection_url,omitempty"`
+	ConnectionDriver    string                 `protobuf:"bytes,26,opt,name=connection_driver,json=connectionDriver,proto3" json:"connection_driver,omitempty"`
+	UpstreamProductCode string                 `protobuf:"bytes,27,opt,name=upstream_product_code,json=upstreamProductCode,proto3" json:"upstream_product_code,omitempty"`
+	SaleUnitCents       int64                  `protobuf:"varint,28,opt,name=sale_unit_cents,json=saleUnitCents,proto3" json:"sale_unit_cents,omitempty"`
+	SaleAmountCents     int64                  `protobuf:"varint,29,opt,name=sale_amount_cents,json=saleAmountCents,proto3" json:"sale_amount_cents,omitempty"`
+	AllocatedSaleCents  int64                  `protobuf:"varint,30,opt,name=allocated_sale_cents,json=allocatedSaleCents,proto3" json:"allocated_sale_cents,omitempty"` // 整单优惠按子项金额分摊
+	CostUnitCents       int64                  `protobuf:"varint,31,opt,name=cost_unit_cents,json=costUnitCents,proto3" json:"cost_unit_cents,omitempty"`
+	CostTotalCents      int64                  `protobuf:"varint,32,opt,name=cost_total_cents,json=costTotalCents,proto3" json:"cost_total_cents,omitempty"`
+	ProfitCents         int64                  `protobuf:"varint,33,opt,name=profit_cents,json=profitCents,proto3" json:"profit_cents,omitempty"` // 预计毛利，未计退款和手续费
+	CostBasis           string                 `protobuf:"bytes,34,opt,name=cost_basis,json=costBasis,proto3" json:"cost_basis,omitempty"`        // order_snapshot | unrecorded
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *ProcurementOrder) Reset() {
@@ -201,6 +217,118 @@ func (x *ProcurementOrder) GetUpdatedAt() int64 {
 		return x.UpdatedAt
 	}
 	return 0
+}
+
+func (x *ProcurementOrder) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetOrderStatus() string {
+	if x != nil {
+		return x.OrderStatus
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetProductName() string {
+	if x != nil {
+		return x.ProductName
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetConnectionName() string {
+	if x != nil {
+		return x.ConnectionName
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetConnectionUrl() string {
+	if x != nil {
+		return x.ConnectionUrl
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetConnectionDriver() string {
+	if x != nil {
+		return x.ConnectionDriver
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetUpstreamProductCode() string {
+	if x != nil {
+		return x.UpstreamProductCode
+	}
+	return ""
+}
+
+func (x *ProcurementOrder) GetSaleUnitCents() int64 {
+	if x != nil {
+		return x.SaleUnitCents
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetSaleAmountCents() int64 {
+	if x != nil {
+		return x.SaleAmountCents
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetAllocatedSaleCents() int64 {
+	if x != nil {
+		return x.AllocatedSaleCents
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetCostUnitCents() int64 {
+	if x != nil {
+		return x.CostUnitCents
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetCostTotalCents() int64 {
+	if x != nil {
+		return x.CostTotalCents
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetProfitCents() int64 {
+	if x != nil {
+		return x.ProfitCents
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetCostBasis() string {
+	if x != nil {
+		return x.CostBasis
+	}
+	return ""
 }
 
 type ListProcurementsRequest struct {
@@ -475,7 +603,7 @@ var File_admin_v1_procurement_proto protoreflect.FileDescriptor
 
 const file_admin_v1_procurement_proto_rawDesc = "" +
 	"\n" +
-	"\x1aadmin/v1/procurement.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf2\x04\n" +
+	"\x1aadmin/v1/procurement.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd8\t\n" +
 	"\x10ProcurementOrder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\"\n" +
 	"\rorder_item_id\x18\x02 \x01(\x04R\vorderItemId\x12#\n" +
@@ -501,7 +629,25 @@ const file_admin_v1_procurement_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x11 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x12 \x01(\x03R\tupdatedAt\"b\n" +
+	"updated_at\x18\x12 \x01(\x03R\tupdatedAt\x12\x19\n" +
+	"\border_no\x18\x13 \x01(\tR\aorderNo\x12!\n" +
+	"\forder_status\x18\x14 \x01(\tR\vorderStatus\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x15 \x01(\x04R\tproductId\x12!\n" +
+	"\fproduct_name\x18\x16 \x01(\tR\vproductName\x12\x19\n" +
+	"\bsku_name\x18\x17 \x01(\tR\askuName\x12'\n" +
+	"\x0fconnection_name\x18\x18 \x01(\tR\x0econnectionName\x12%\n" +
+	"\x0econnection_url\x18\x19 \x01(\tR\rconnectionUrl\x12+\n" +
+	"\x11connection_driver\x18\x1a \x01(\tR\x10connectionDriver\x122\n" +
+	"\x15upstream_product_code\x18\x1b \x01(\tR\x13upstreamProductCode\x12&\n" +
+	"\x0fsale_unit_cents\x18\x1c \x01(\x03R\rsaleUnitCents\x12*\n" +
+	"\x11sale_amount_cents\x18\x1d \x01(\x03R\x0fsaleAmountCents\x120\n" +
+	"\x14allocated_sale_cents\x18\x1e \x01(\x03R\x12allocatedSaleCents\x12&\n" +
+	"\x0fcost_unit_cents\x18\x1f \x01(\x03R\rcostUnitCents\x12(\n" +
+	"\x10cost_total_cents\x18  \x01(\x03R\x0ecostTotalCents\x12!\n" +
+	"\fprofit_cents\x18! \x01(\x03R\vprofitCents\x12\x1d\n" +
+	"\n" +
+	"cost_basis\x18\" \x01(\tR\tcostBasis\"b\n" +
 	"\x17ListProcurementsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
