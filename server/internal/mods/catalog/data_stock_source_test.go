@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -27,7 +28,7 @@ func TestStockSources(t *testing.T) {
 		}
 		p := q.SaveX(ctx)
 		if source > 0 && stock != -2 {
-			d.Client.SupplyMapping.Create().SetConnectionID(source).SetUpstreamProduct(name).SetLocalProductID(p.ID).SetUpStock(stock).SaveX(ctx)
+			d.Client.SupplyMapping.Create().SetConnectionID(source).SetUpstreamProduct(name).SetLocalProductID(p.ID).SetUpStock(stock).SetStockCheckedAt(time.Now().UTC()).SaveX(ctx)
 		}
 		for i := 0; i < cards; i++ {
 			d.Client.Card.Create().SetProductID(p.ID).SetContent([]byte("x")).SetContentHash(fmt.Sprintf("%s-%d", name, i)).SaveX(ctx)

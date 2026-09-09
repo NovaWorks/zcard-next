@@ -189,24 +189,28 @@ func (x *GetAdminOrderRequest) GetOrderNo() string {
 
 // AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
 type AdminOrder struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrderNo       string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	TotalCents    int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	CostCents     int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
-	UserId        uint64                 `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	GuestContact  string                 `protobuf:"bytes,7,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
-	Contact       string                 `protobuf:"bytes,8,opt,name=contact,proto3" json:"contact,omitempty"`
-	ClientIp      string                 `protobuf:"bytes,9,opt,name=client_ip,json=clientIp,proto3" json:"client_ip,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	PaidAt        int64                  `protobuf:"varint,11,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
-	ExpiredAt     int64                  `protobuf:"varint,12,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
-	Items         []*AdminOrderItem      `protobuf:"bytes,13,rep,name=items,proto3" json:"items,omitempty"`
-	AmountLines   []*AmountLine          `protobuf:"bytes,14,rep,name=amount_lines,json=amountLines,proto3" json:"amount_lines,omitempty"`
-	StatusEvents  []*StatusEvent         `protobuf:"bytes,15,rep,name=status_events,json=statusEvents,proto3" json:"status_events,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderNo        string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status         string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents     int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	CostCents      int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
+	UserId         uint64                 `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	GuestContact   string                 `protobuf:"bytes,7,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
+	Contact        string                 `protobuf:"bytes,8,opt,name=contact,proto3" json:"contact,omitempty"`
+	ClientIp       string                 `protobuf:"bytes,9,opt,name=client_ip,json=clientIp,proto3" json:"client_ip,omitempty"`
+	CreatedAt      int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PaidAt         int64                  `protobuf:"varint,11,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
+	ExpiredAt      int64                  `protobuf:"varint,12,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	Items          []*AdminOrderItem      `protobuf:"bytes,13,rep,name=items,proto3" json:"items,omitempty"`
+	AmountLines    []*AmountLine          `protobuf:"bytes,14,rep,name=amount_lines,json=amountLines,proto3" json:"amount_lines,omitempty"`
+	StatusEvents   []*StatusEvent         `protobuf:"bytes,15,rep,name=status_events,json=statusEvents,proto3" json:"status_events,omitempty"`
+	ExpiryRetryAt  int64                  `protobuf:"varint,16,opt,name=expiry_retry_at,json=expiryRetryAt,proto3" json:"expiry_retry_at,omitempty"`
+	ExpiryAttempts int32                  `protobuf:"varint,17,opt,name=expiry_attempts,json=expiryAttempts,proto3" json:"expiry_attempts,omitempty"`
+	ExpiryReview   bool                   `protobuf:"varint,18,opt,name=expiry_review,json=expiryReview,proto3" json:"expiry_review,omitempty"`
+	ExpiryReason   string                 `protobuf:"bytes,19,opt,name=expiry_reason,json=expiryReason,proto3" json:"expiry_reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *AdminOrder) Reset() {
@@ -342,6 +346,34 @@ func (x *AdminOrder) GetStatusEvents() []*StatusEvent {
 		return x.StatusEvents
 	}
 	return nil
+}
+
+func (x *AdminOrder) GetExpiryRetryAt() int64 {
+	if x != nil {
+		return x.ExpiryRetryAt
+	}
+	return 0
+}
+
+func (x *AdminOrder) GetExpiryAttempts() int32 {
+	if x != nil {
+		return x.ExpiryAttempts
+	}
+	return 0
+}
+
+func (x *AdminOrder) GetExpiryReview() bool {
+	if x != nil {
+		return x.ExpiryReview
+	}
+	return false
+}
+
+func (x *AdminOrder) GetExpiryReason() string {
+	if x != nil {
+		return x.ExpiryReason
+	}
+	return ""
 }
 
 type AdminOrderItem struct {
@@ -779,7 +811,7 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +
 	"nextCursor\"6\n" +
 	"\x14GetAdminOrderRequest\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\x9e\x04\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xb9\x05\n" +
 	"\n" +
 	"AdminOrder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
@@ -801,7 +833,11 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"expired_at\x18\f \x01(\x03R\texpiredAt\x128\n" +
 	"\x05items\x18\r \x03(\v2\".zcard.api.admin.v1.AdminOrderItemR\x05items\x12A\n" +
 	"\famount_lines\x18\x0e \x03(\v2\x1e.zcard.api.admin.v1.AmountLineR\vamountLines\x12D\n" +
-	"\rstatus_events\x18\x0f \x03(\v2\x1f.zcard.api.admin.v1.StatusEventR\fstatusEvents\"\xd0\x04\n" +
+	"\rstatus_events\x18\x0f \x03(\v2\x1f.zcard.api.admin.v1.StatusEventR\fstatusEvents\x12&\n" +
+	"\x0fexpiry_retry_at\x18\x10 \x01(\x03R\rexpiryRetryAt\x12'\n" +
+	"\x0fexpiry_attempts\x18\x11 \x01(\x05R\x0eexpiryAttempts\x12#\n" +
+	"\rexpiry_review\x18\x12 \x01(\bR\fexpiryReview\x12#\n" +
+	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\"\xd0\x04\n" +
 	"\x0eAdminOrderItem\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x15\n" +

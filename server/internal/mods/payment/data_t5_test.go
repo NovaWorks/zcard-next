@@ -8,6 +8,7 @@ package payment
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -137,7 +138,7 @@ func TestChannelPBMaskedEcho(t *testing.T) {
 	if len(ch.ConfiguredFields) != 3 {
 		t.Fatalf("configured_fields 应为 3: %+v", ch.ConfiguredFields)
 	}
-	if ch.CallbackUrl != "/payments/callback/stripe2" {
+	if ch.CallbackUrl != fmt.Sprintf("/payments/callback/stripe2?channel_id=%d", ch.Id) {
 		t.Fatalf("callback_url 错位（settings 未装配应相对路径）: %s", ch.CallbackUrl)
 	}
 	// 列表同样脱敏

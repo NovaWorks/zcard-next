@@ -84,8 +84,16 @@ type Order struct {
 	ClosedAt time.Time `json:"closed_at,omitempty"`
 	// 管理列表软删除时间；保留订单、支付及审计记录
 	AdminDeletedAt *time.Time `json:"admin_deleted_at,omitempty"`
-	// 超时取消扫描（INDEX(status, expired_at)）
+	// 原始支付截止时间
 	ExpiredAt time.Time `json:"expired_at,omitempty"`
+	// ExpiryRetryAt holds the value of the "expiry_retry_at" field.
+	ExpiryRetryAt time.Time `json:"expiry_retry_at,omitempty"`
+	// ExpiryAttempts holds the value of the "expiry_attempts" field.
+	ExpiryAttempts int32 `json:"expiry_attempts,omitempty"`
+	// ExpiryReview holds the value of the "expiry_review" field.
+	ExpiryReview bool `json:"expiry_review,omitempty"`
+	// ExpiryReason holds the value of the "expiry_reason" field.
+	ExpiryReason string `json:"expiry_reason,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OrderQuery when eager-loading is set.
 	Edges        OrderEdges `json:"edges"`
@@ -172,15 +180,15 @@ func (*Order) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case order.FieldRiskFlags, order.FieldExtra:
 			values[i] = new([]byte)
-		case order.FieldProfitEligible:
+		case order.FieldProfitEligible, order.FieldExpiryReview:
 			values[i] = new(sql.NullBool)
 		case order.FieldExchangeRate:
 			values[i] = new(sql.NullFloat64)
-		case order.FieldID, order.FieldSubsiteID, order.FieldVersion, order.FieldSubsiteProfit, order.FieldUserID, order.FieldTotalAmount, order.FieldCost, order.FieldAmountDisplay, order.FieldParentID, order.FieldEscrowID, order.FieldInviteL1, order.FieldInviteL2, order.FieldInviteL3:
+		case order.FieldID, order.FieldSubsiteID, order.FieldVersion, order.FieldSubsiteProfit, order.FieldUserID, order.FieldTotalAmount, order.FieldCost, order.FieldAmountDisplay, order.FieldParentID, order.FieldEscrowID, order.FieldInviteL1, order.FieldInviteL2, order.FieldInviteL3, order.FieldExpiryAttempts:
 			values[i] = new(sql.NullInt64)
-		case order.FieldOrderNo, order.FieldSubsiteDomain, order.FieldGuestContact, order.FieldQueryPasswordHash, order.FieldStatus, order.FieldBaseCurrency, order.FieldDisplayCurrency, order.FieldPaymentChannel, order.FieldContact, order.FieldClientIP, order.FieldRiskIP, order.FieldIdempotencyKey:
+		case order.FieldOrderNo, order.FieldSubsiteDomain, order.FieldGuestContact, order.FieldQueryPasswordHash, order.FieldStatus, order.FieldBaseCurrency, order.FieldDisplayCurrency, order.FieldPaymentChannel, order.FieldContact, order.FieldClientIP, order.FieldRiskIP, order.FieldIdempotencyKey, order.FieldExpiryReason:
 			values[i] = new(sql.NullString)
-		case order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldPaidAt, order.FieldClosedAt, order.FieldAdminDeletedAt, order.FieldExpiredAt:
+		case order.FieldCreatedAt, order.FieldUpdatedAt, order.FieldPaidAt, order.FieldClosedAt, order.FieldAdminDeletedAt, order.FieldExpiredAt, order.FieldExpiryRetryAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -412,6 +420,30 @@ func (_m *Order) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ExpiredAt = value.Time
 			}
+		case order.FieldExpiryRetryAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_retry_at", values[i])
+			} else if value.Valid {
+				_m.ExpiryRetryAt = value.Time
+			}
+		case order.FieldExpiryAttempts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_attempts", values[i])
+			} else if value.Valid {
+				_m.ExpiryAttempts = int32(value.Int64)
+			}
+		case order.FieldExpiryReview:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_review", values[i])
+			} else if value.Valid {
+				_m.ExpiryReview = value.Bool
+			}
+		case order.FieldExpiryReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field expiry_reason", values[i])
+			} else if value.Valid {
+				_m.ExpiryReason = value.String
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -581,6 +613,18 @@ func (_m *Order) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("expired_at=")
 	builder.WriteString(_m.ExpiredAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("expiry_retry_at=")
+	builder.WriteString(_m.ExpiryRetryAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("expiry_attempts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ExpiryAttempts))
+	builder.WriteString(", ")
+	builder.WriteString("expiry_review=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ExpiryReview))
+	builder.WriteString(", ")
+	builder.WriteString("expiry_reason=")
+	builder.WriteString(_m.ExpiryReason)
 	builder.WriteByte(')')
 	return builder.String()
 }

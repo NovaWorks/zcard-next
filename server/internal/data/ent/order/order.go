@@ -83,6 +83,14 @@ const (
 	FieldAdminDeletedAt = "admin_deleted_at"
 	// FieldExpiredAt holds the string denoting the expired_at field in the database.
 	FieldExpiredAt = "expired_at"
+	// FieldExpiryRetryAt holds the string denoting the expiry_retry_at field in the database.
+	FieldExpiryRetryAt = "expiry_retry_at"
+	// FieldExpiryAttempts holds the string denoting the expiry_attempts field in the database.
+	FieldExpiryAttempts = "expiry_attempts"
+	// FieldExpiryReview holds the string denoting the expiry_review field in the database.
+	FieldExpiryReview = "expiry_review"
+	// FieldExpiryReason holds the string denoting the expiry_reason field in the database.
+	FieldExpiryReason = "expiry_reason"
 	// EdgeItems holds the string denoting the items edge name in mutations.
 	EdgeItems = "items"
 	// EdgeAmountLines holds the string denoting the amount_lines edge name in mutations.
@@ -178,6 +186,10 @@ var Columns = []string{
 	FieldClosedAt,
 	FieldAdminDeletedAt,
 	FieldExpiredAt,
+	FieldExpiryRetryAt,
+	FieldExpiryAttempts,
+	FieldExpiryReview,
+	FieldExpiryReason,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -231,6 +243,14 @@ var (
 	RiskIPValidator func(string) error
 	// IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	IdempotencyKeyValidator func(string) error
+	// DefaultExpiryAttempts holds the default value on creation for the "expiry_attempts" field.
+	DefaultExpiryAttempts int32
+	// DefaultExpiryReview holds the default value on creation for the "expiry_review" field.
+	DefaultExpiryReview bool
+	// DefaultExpiryReason holds the default value on creation for the "expiry_reason" field.
+	DefaultExpiryReason string
+	// ExpiryReasonValidator is a validator for the "expiry_reason" field. It is called by the builders before save.
+	ExpiryReasonValidator func(string) error
 )
 
 // Status defines the type for the "status" enum field.
@@ -433,6 +453,26 @@ func ByAdminDeletedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiredAt orders the results by the expired_at field.
 func ByExpiredAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiredAt, opts...).ToFunc()
+}
+
+// ByExpiryRetryAt orders the results by the expiry_retry_at field.
+func ByExpiryRetryAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryRetryAt, opts...).ToFunc()
+}
+
+// ByExpiryAttempts orders the results by the expiry_attempts field.
+func ByExpiryAttempts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryAttempts, opts...).ToFunc()
+}
+
+// ByExpiryReview orders the results by the expiry_review field.
+func ByExpiryReview(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryReview, opts...).ToFunc()
+}
+
+// ByExpiryReason orders the results by the expiry_reason field.
+func ByExpiryReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiryReason, opts...).ToFunc()
 }
 
 // ByItemsCount orders the results by items count.

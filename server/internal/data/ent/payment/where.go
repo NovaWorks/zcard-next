@@ -85,6 +85,26 @@ func Channel(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldChannel, v))
 }
 
+// ChannelID applies equality check predicate on the "channel_id" field. It's identical to ChannelIDEQ.
+func ChannelID(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChannelID, v))
+}
+
+// DriverSnapshot applies equality check predicate on the "driver_snapshot" field. It's identical to DriverSnapshotEQ.
+func DriverSnapshot(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldDriverSnapshot, v))
+}
+
+// ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
+func ExpiresAt(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldExpiresAt, v))
+}
+
+// ReviewReason applies equality check predicate on the "review_reason" field. It's identical to ReviewReasonEQ.
+func ReviewReason(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldReviewReason, v))
+}
+
 // ChannelOrderNo applies equality check predicate on the "channel_order_no" field. It's identical to ChannelOrderNoEQ.
 func ChannelOrderNo(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldChannelOrderNo, v))
@@ -393,6 +413,226 @@ func ChannelEqualFold(v string) predicate.Payment {
 // ChannelContainsFold applies the ContainsFold predicate on the "channel" field.
 func ChannelContainsFold(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldContainsFold(FieldChannel, v))
+}
+
+// ChannelIDEQ applies the EQ predicate on the "channel_id" field.
+func ChannelIDEQ(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChannelID, v))
+}
+
+// ChannelIDNEQ applies the NEQ predicate on the "channel_id" field.
+func ChannelIDNEQ(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldChannelID, v))
+}
+
+// ChannelIDIn applies the In predicate on the "channel_id" field.
+func ChannelIDIn(vs ...uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldChannelID, vs...))
+}
+
+// ChannelIDNotIn applies the NotIn predicate on the "channel_id" field.
+func ChannelIDNotIn(vs ...uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldChannelID, vs...))
+}
+
+// ChannelIDGT applies the GT predicate on the "channel_id" field.
+func ChannelIDGT(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldChannelID, v))
+}
+
+// ChannelIDGTE applies the GTE predicate on the "channel_id" field.
+func ChannelIDGTE(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldChannelID, v))
+}
+
+// ChannelIDLT applies the LT predicate on the "channel_id" field.
+func ChannelIDLT(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldChannelID, v))
+}
+
+// ChannelIDLTE applies the LTE predicate on the "channel_id" field.
+func ChannelIDLTE(v uint64) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldChannelID, v))
+}
+
+// DriverSnapshotEQ applies the EQ predicate on the "driver_snapshot" field.
+func DriverSnapshotEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotNEQ applies the NEQ predicate on the "driver_snapshot" field.
+func DriverSnapshotNEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotIn applies the In predicate on the "driver_snapshot" field.
+func DriverSnapshotIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldDriverSnapshot, vs...))
+}
+
+// DriverSnapshotNotIn applies the NotIn predicate on the "driver_snapshot" field.
+func DriverSnapshotNotIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldDriverSnapshot, vs...))
+}
+
+// DriverSnapshotGT applies the GT predicate on the "driver_snapshot" field.
+func DriverSnapshotGT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotGTE applies the GTE predicate on the "driver_snapshot" field.
+func DriverSnapshotGTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotLT applies the LT predicate on the "driver_snapshot" field.
+func DriverSnapshotLT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotLTE applies the LTE predicate on the "driver_snapshot" field.
+func DriverSnapshotLTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotContains applies the Contains predicate on the "driver_snapshot" field.
+func DriverSnapshotContains(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContains(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotHasPrefix applies the HasPrefix predicate on the "driver_snapshot" field.
+func DriverSnapshotHasPrefix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasPrefix(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotHasSuffix applies the HasSuffix predicate on the "driver_snapshot" field.
+func DriverSnapshotHasSuffix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasSuffix(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotEqualFold applies the EqualFold predicate on the "driver_snapshot" field.
+func DriverSnapshotEqualFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEqualFold(FieldDriverSnapshot, v))
+}
+
+// DriverSnapshotContainsFold applies the ContainsFold predicate on the "driver_snapshot" field.
+func DriverSnapshotContainsFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContainsFold(FieldDriverSnapshot, v))
+}
+
+// ExpiresAtEQ applies the EQ predicate on the "expires_at" field.
+func ExpiresAtEQ(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldExpiresAt, v))
+}
+
+// ExpiresAtNEQ applies the NEQ predicate on the "expires_at" field.
+func ExpiresAtNEQ(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldExpiresAt, v))
+}
+
+// ExpiresAtIn applies the In predicate on the "expires_at" field.
+func ExpiresAtIn(vs ...time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldExpiresAt, vs...))
+}
+
+// ExpiresAtNotIn applies the NotIn predicate on the "expires_at" field.
+func ExpiresAtNotIn(vs ...time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldExpiresAt, vs...))
+}
+
+// ExpiresAtGT applies the GT predicate on the "expires_at" field.
+func ExpiresAtGT(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldExpiresAt, v))
+}
+
+// ExpiresAtGTE applies the GTE predicate on the "expires_at" field.
+func ExpiresAtGTE(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldExpiresAt, v))
+}
+
+// ExpiresAtLT applies the LT predicate on the "expires_at" field.
+func ExpiresAtLT(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldExpiresAt, v))
+}
+
+// ExpiresAtLTE applies the LTE predicate on the "expires_at" field.
+func ExpiresAtLTE(v time.Time) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldExpiresAt, v))
+}
+
+// ExpiresAtIsNil applies the IsNil predicate on the "expires_at" field.
+func ExpiresAtIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldExpiresAt))
+}
+
+// ExpiresAtNotNil applies the NotNil predicate on the "expires_at" field.
+func ExpiresAtNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldExpiresAt))
+}
+
+// ReviewReasonEQ applies the EQ predicate on the "review_reason" field.
+func ReviewReasonEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldReviewReason, v))
+}
+
+// ReviewReasonNEQ applies the NEQ predicate on the "review_reason" field.
+func ReviewReasonNEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldReviewReason, v))
+}
+
+// ReviewReasonIn applies the In predicate on the "review_reason" field.
+func ReviewReasonIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldReviewReason, vs...))
+}
+
+// ReviewReasonNotIn applies the NotIn predicate on the "review_reason" field.
+func ReviewReasonNotIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldReviewReason, vs...))
+}
+
+// ReviewReasonGT applies the GT predicate on the "review_reason" field.
+func ReviewReasonGT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldReviewReason, v))
+}
+
+// ReviewReasonGTE applies the GTE predicate on the "review_reason" field.
+func ReviewReasonGTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldReviewReason, v))
+}
+
+// ReviewReasonLT applies the LT predicate on the "review_reason" field.
+func ReviewReasonLT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldReviewReason, v))
+}
+
+// ReviewReasonLTE applies the LTE predicate on the "review_reason" field.
+func ReviewReasonLTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldReviewReason, v))
+}
+
+// ReviewReasonContains applies the Contains predicate on the "review_reason" field.
+func ReviewReasonContains(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContains(FieldReviewReason, v))
+}
+
+// ReviewReasonHasPrefix applies the HasPrefix predicate on the "review_reason" field.
+func ReviewReasonHasPrefix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasPrefix(FieldReviewReason, v))
+}
+
+// ReviewReasonHasSuffix applies the HasSuffix predicate on the "review_reason" field.
+func ReviewReasonHasSuffix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasSuffix(FieldReviewReason, v))
+}
+
+// ReviewReasonEqualFold applies the EqualFold predicate on the "review_reason" field.
+func ReviewReasonEqualFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEqualFold(FieldReviewReason, v))
+}
+
+// ReviewReasonContainsFold applies the ContainsFold predicate on the "review_reason" field.
+func ReviewReasonContainsFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContainsFold(FieldReviewReason, v))
 }
 
 // ChannelOrderNoEQ applies the EQ predicate on the "channel_order_no" field.

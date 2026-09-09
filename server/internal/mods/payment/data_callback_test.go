@@ -137,7 +137,7 @@ func seedPendingOrder(t *testing.T, d *data.Data, channel string, amount int64) 
 		SetStatus(order.StatusPendingPayment).
 		SetTotalAmount(amount).
 		SetBaseCurrency("CNY").
-		SetVersion(0).
+		SetVersion(0).SetExpiredAt(time.Now().UTC().Add(30 * time.Minute)).
 		Save(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -599,6 +599,7 @@ func TestIsWebhookRequest(t *testing.T) {
 func TestCallbackFindsRetriedOrderPayment(t *testing.T) {
 	d, repo, _, _, lifecycle, _ := newCallbackEnv(t)
 	ctx := context.Background()
+	d.Client.PaymentChannel.Create().SetName("ep retry").SetCode("ep-retry").SetDriver("epay").SetConfig([]byte("{}")).SaveX(ctx)
 	o, first := seedPendingOrder(t, d, "ep-retry", 1000)
 	latest, err := repo.CreatePayment(ctx, o.ID, "ep-retry", 1000, "")
 	if err != nil {

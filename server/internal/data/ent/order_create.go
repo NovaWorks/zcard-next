@@ -480,6 +480,62 @@ func (_c *OrderCreate) SetNillableExpiredAt(v *time.Time) *OrderCreate {
 	return _c
 }
 
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (_c *OrderCreate) SetExpiryRetryAt(v time.Time) *OrderCreate {
+	_c.mutation.SetExpiryRetryAt(v)
+	return _c
+}
+
+// SetNillableExpiryRetryAt sets the "expiry_retry_at" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableExpiryRetryAt(v *time.Time) *OrderCreate {
+	if v != nil {
+		_c.SetExpiryRetryAt(*v)
+	}
+	return _c
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (_c *OrderCreate) SetExpiryAttempts(v int32) *OrderCreate {
+	_c.mutation.SetExpiryAttempts(v)
+	return _c
+}
+
+// SetNillableExpiryAttempts sets the "expiry_attempts" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableExpiryAttempts(v *int32) *OrderCreate {
+	if v != nil {
+		_c.SetExpiryAttempts(*v)
+	}
+	return _c
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (_c *OrderCreate) SetExpiryReview(v bool) *OrderCreate {
+	_c.mutation.SetExpiryReview(v)
+	return _c
+}
+
+// SetNillableExpiryReview sets the "expiry_review" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableExpiryReview(v *bool) *OrderCreate {
+	if v != nil {
+		_c.SetExpiryReview(*v)
+	}
+	return _c
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (_c *OrderCreate) SetExpiryReason(v string) *OrderCreate {
+	_c.mutation.SetExpiryReason(v)
+	return _c
+}
+
+// SetNillableExpiryReason sets the "expiry_reason" field if the given value is not nil.
+func (_c *OrderCreate) SetNillableExpiryReason(v *string) *OrderCreate {
+	if v != nil {
+		_c.SetExpiryReason(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *OrderCreate) SetID(v uint64) *OrderCreate {
 	_c.mutation.SetID(v)
@@ -647,6 +703,18 @@ func (_c *OrderCreate) defaults() {
 		v := order.DefaultCost
 		_c.mutation.SetCost(v)
 	}
+	if _, ok := _c.mutation.ExpiryAttempts(); !ok {
+		v := order.DefaultExpiryAttempts
+		_c.mutation.SetExpiryAttempts(v)
+	}
+	if _, ok := _c.mutation.ExpiryReview(); !ok {
+		v := order.DefaultExpiryReview
+		_c.mutation.SetExpiryReview(v)
+	}
+	if _, ok := _c.mutation.ExpiryReason(); !ok {
+		v := order.DefaultExpiryReason
+		_c.mutation.SetExpiryReason(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -739,6 +807,20 @@ func (_c *OrderCreate) check() error {
 	if v, ok := _c.mutation.IdempotencyKey(); ok {
 		if err := order.IdempotencyKeyValidator(v); err != nil {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ExpiryAttempts(); !ok {
+		return &ValidationError{Name: "expiry_attempts", err: errors.New(`ent: missing required field "Order.expiry_attempts"`)}
+	}
+	if _, ok := _c.mutation.ExpiryReview(); !ok {
+		return &ValidationError{Name: "expiry_review", err: errors.New(`ent: missing required field "Order.expiry_review"`)}
+	}
+	if _, ok := _c.mutation.ExpiryReason(); !ok {
+		return &ValidationError{Name: "expiry_reason", err: errors.New(`ent: missing required field "Order.expiry_reason"`)}
+	}
+	if v, ok := _c.mutation.ExpiryReason(); ok {
+		if err := order.ExpiryReasonValidator(v); err != nil {
+			return &ValidationError{Name: "expiry_reason", err: fmt.Errorf(`ent: validator failed for field "Order.expiry_reason": %w`, err)}
 		}
 	}
 	return nil
@@ -909,6 +991,22 @@ func (_c *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExpiredAt(); ok {
 		_spec.SetField(order.FieldExpiredAt, field.TypeTime, value)
 		_node.ExpiredAt = value
+	}
+	if value, ok := _c.mutation.ExpiryRetryAt(); ok {
+		_spec.SetField(order.FieldExpiryRetryAt, field.TypeTime, value)
+		_node.ExpiryRetryAt = value
+	}
+	if value, ok := _c.mutation.ExpiryAttempts(); ok {
+		_spec.SetField(order.FieldExpiryAttempts, field.TypeInt32, value)
+		_node.ExpiryAttempts = value
+	}
+	if value, ok := _c.mutation.ExpiryReview(); ok {
+		_spec.SetField(order.FieldExpiryReview, field.TypeBool, value)
+		_node.ExpiryReview = value
+	}
+	if value, ok := _c.mutation.ExpiryReason(); ok {
+		_spec.SetField(order.FieldExpiryReason, field.TypeString, value)
+		_node.ExpiryReason = value
 	}
 	if nodes := _c.mutation.ItemsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1673,6 +1771,66 @@ func (u *OrderUpsert) UpdateExpiredAt() *OrderUpsert {
 // ClearExpiredAt clears the value of the "expired_at" field.
 func (u *OrderUpsert) ClearExpiredAt() *OrderUpsert {
 	u.SetNull(order.FieldExpiredAt)
+	return u
+}
+
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (u *OrderUpsert) SetExpiryRetryAt(v time.Time) *OrderUpsert {
+	u.Set(order.FieldExpiryRetryAt, v)
+	return u
+}
+
+// UpdateExpiryRetryAt sets the "expiry_retry_at" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateExpiryRetryAt() *OrderUpsert {
+	u.SetExcluded(order.FieldExpiryRetryAt)
+	return u
+}
+
+// ClearExpiryRetryAt clears the value of the "expiry_retry_at" field.
+func (u *OrderUpsert) ClearExpiryRetryAt() *OrderUpsert {
+	u.SetNull(order.FieldExpiryRetryAt)
+	return u
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (u *OrderUpsert) SetExpiryAttempts(v int32) *OrderUpsert {
+	u.Set(order.FieldExpiryAttempts, v)
+	return u
+}
+
+// UpdateExpiryAttempts sets the "expiry_attempts" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateExpiryAttempts() *OrderUpsert {
+	u.SetExcluded(order.FieldExpiryAttempts)
+	return u
+}
+
+// AddExpiryAttempts adds v to the "expiry_attempts" field.
+func (u *OrderUpsert) AddExpiryAttempts(v int32) *OrderUpsert {
+	u.Add(order.FieldExpiryAttempts, v)
+	return u
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (u *OrderUpsert) SetExpiryReview(v bool) *OrderUpsert {
+	u.Set(order.FieldExpiryReview, v)
+	return u
+}
+
+// UpdateExpiryReview sets the "expiry_review" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateExpiryReview() *OrderUpsert {
+	u.SetExcluded(order.FieldExpiryReview)
+	return u
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (u *OrderUpsert) SetExpiryReason(v string) *OrderUpsert {
+	u.Set(order.FieldExpiryReason, v)
+	return u
+}
+
+// UpdateExpiryReason sets the "expiry_reason" field to the value that was provided on create.
+func (u *OrderUpsert) UpdateExpiryReason() *OrderUpsert {
+	u.SetExcluded(order.FieldExpiryReason)
 	return u
 }
 
@@ -2445,6 +2603,76 @@ func (u *OrderUpsertOne) UpdateExpiredAt() *OrderUpsertOne {
 func (u *OrderUpsertOne) ClearExpiredAt() *OrderUpsertOne {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearExpiredAt()
+	})
+}
+
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (u *OrderUpsertOne) SetExpiryRetryAt(v time.Time) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryRetryAt(v)
+	})
+}
+
+// UpdateExpiryRetryAt sets the "expiry_retry_at" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateExpiryRetryAt() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryRetryAt()
+	})
+}
+
+// ClearExpiryRetryAt clears the value of the "expiry_retry_at" field.
+func (u *OrderUpsertOne) ClearExpiryRetryAt() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearExpiryRetryAt()
+	})
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (u *OrderUpsertOne) SetExpiryAttempts(v int32) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryAttempts(v)
+	})
+}
+
+// AddExpiryAttempts adds v to the "expiry_attempts" field.
+func (u *OrderUpsertOne) AddExpiryAttempts(v int32) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddExpiryAttempts(v)
+	})
+}
+
+// UpdateExpiryAttempts sets the "expiry_attempts" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateExpiryAttempts() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryAttempts()
+	})
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (u *OrderUpsertOne) SetExpiryReview(v bool) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryReview(v)
+	})
+}
+
+// UpdateExpiryReview sets the "expiry_review" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateExpiryReview() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryReview()
+	})
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (u *OrderUpsertOne) SetExpiryReason(v string) *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryReason(v)
+	})
+}
+
+// UpdateExpiryReason sets the "expiry_reason" field to the value that was provided on create.
+func (u *OrderUpsertOne) UpdateExpiryReason() *OrderUpsertOne {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryReason()
 	})
 }
 
@@ -3383,6 +3611,76 @@ func (u *OrderUpsertBulk) UpdateExpiredAt() *OrderUpsertBulk {
 func (u *OrderUpsertBulk) ClearExpiredAt() *OrderUpsertBulk {
 	return u.Update(func(s *OrderUpsert) {
 		s.ClearExpiredAt()
+	})
+}
+
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (u *OrderUpsertBulk) SetExpiryRetryAt(v time.Time) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryRetryAt(v)
+	})
+}
+
+// UpdateExpiryRetryAt sets the "expiry_retry_at" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateExpiryRetryAt() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryRetryAt()
+	})
+}
+
+// ClearExpiryRetryAt clears the value of the "expiry_retry_at" field.
+func (u *OrderUpsertBulk) ClearExpiryRetryAt() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.ClearExpiryRetryAt()
+	})
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (u *OrderUpsertBulk) SetExpiryAttempts(v int32) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryAttempts(v)
+	})
+}
+
+// AddExpiryAttempts adds v to the "expiry_attempts" field.
+func (u *OrderUpsertBulk) AddExpiryAttempts(v int32) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.AddExpiryAttempts(v)
+	})
+}
+
+// UpdateExpiryAttempts sets the "expiry_attempts" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateExpiryAttempts() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryAttempts()
+	})
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (u *OrderUpsertBulk) SetExpiryReview(v bool) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryReview(v)
+	})
+}
+
+// UpdateExpiryReview sets the "expiry_review" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateExpiryReview() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryReview()
+	})
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (u *OrderUpsertBulk) SetExpiryReason(v string) *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.SetExpiryReason(v)
+	})
+}
+
+// UpdateExpiryReason sets the "expiry_reason" field to the value that was provided on create.
+func (u *OrderUpsertBulk) UpdateExpiryReason() *OrderUpsertBulk {
+	return u.Update(func(s *OrderUpsert) {
+		s.UpdateExpiryReason()
 	})
 }
 

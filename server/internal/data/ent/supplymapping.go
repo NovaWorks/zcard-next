@@ -36,8 +36,10 @@ type SupplyMapping struct {
 	UpstreamSku string `json:"upstream_sku,omitempty"`
 	// LocalSkuID holds the value of the "local_sku_id" field.
 	LocalSkuID uint64 `json:"local_sku_id,omitempty"`
-	// 库存缓存（-1=无限）
+	// 库存缓存（-1=无限，-2=未知）
 	UpStock int32 `json:"up_stock,omitempty"`
+	// StockCheckedAt holds the value of the "stock_checked_at" field.
+	StockCheckedAt time.Time `json:"stock_checked_at,omitempty"`
 	// PricingOverride holds the value of the "pricing_override" field.
 	PricingOverride map[string]interface{} `json:"pricing_override,omitempty"`
 	selectValues    sql.SelectValues
@@ -54,7 +56,7 @@ func (*SupplyMapping) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case supplymapping.FieldUpstreamCategory, supplymapping.FieldUpstreamProduct, supplymapping.FieldUpstreamSku:
 			values[i] = new(sql.NullString)
-		case supplymapping.FieldCreatedAt, supplymapping.FieldUpdatedAt:
+		case supplymapping.FieldCreatedAt, supplymapping.FieldUpdatedAt, supplymapping.FieldStockCheckedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -137,6 +139,12 @@ func (_m *SupplyMapping) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpStock = int32(value.Int64)
 			}
+		case supplymapping.FieldStockCheckedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_checked_at", values[i])
+			} else if value.Valid {
+				_m.StockCheckedAt = value.Time
+			}
 		case supplymapping.FieldPricingOverride:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field pricing_override", values[i])
@@ -210,6 +218,9 @@ func (_m *SupplyMapping) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("up_stock=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UpStock))
+	builder.WriteString(", ")
+	builder.WriteString("stock_checked_at=")
+	builder.WriteString(_m.StockCheckedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("pricing_override=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PricingOverride))

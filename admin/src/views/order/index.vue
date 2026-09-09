@@ -49,6 +49,10 @@ const detail = ref<{
   status: string;
   total_cents: number;
   cost_cents: number;
+  expired_at?: number;
+  expiry_retry_at?: number;
+  expiry_review?: boolean;
+  expiry_reason?: string;
   contact?: string;
   guest_contact?: string;
   client_ip?: string;
@@ -181,6 +185,8 @@ function eventText(evt: string) {
     completed: "订单完成",
     canceled: "订单取消",
     expired: "订单过期",
+    expiry_check: "超时核对",
+    payment_review: "到账待核对",
     refund_requested: "申请退款",
     refunded: "退款完成",
   };
@@ -535,6 +541,10 @@ onMounted(loadOrders);
           <NDescriptionsItem label="成本">{{ formatMoney(detail.cost_cents) }}</NDescriptionsItem>
           <NDescriptionsItem label="联系方式">{{ detail.contact || detail.guest_contact || "-" }}</NDescriptionsItem>
           <NDescriptionsItem label="IP">{{ detail.client_ip || "-" }}</NDescriptionsItem>
+          <NDescriptionsItem label="付款截止">{{ detail.expired_at ? new Date(Number(detail.expired_at) * 1000).toLocaleString() : '未记录' }}</NDescriptionsItem>
+          <NDescriptionsItem label="超时处理">{{ detail.expiry_review ? '待人工核对' : detail.expiry_reason || '按付款截止时间处理' }}</NDescriptionsItem>
+          <NDescriptionsItem v-if="detail.expiry_reason" label="核对原因">{{ detail.expiry_reason }}</NDescriptionsItem>
+          <NDescriptionsItem v-if="detail.expiry_retry_at && !detail.expiry_review" label="下次核对">{{ new Date(Number(detail.expiry_retry_at) * 1000).toLocaleString() }}</NDescriptionsItem>
           <NDescriptionsItem label="订单属性">
             <NSpace :size="4">
               <NTag v-if="hasDiscount(detail)" size="small" type="success" :bordered="false">已用折扣</NTag>

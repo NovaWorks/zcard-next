@@ -67,6 +67,10 @@ message AdminOrder {
   repeated AdminOrderItem items = 13;
   repeated AmountLine amount_lines = 14;
   repeated StatusEvent status_events = 15;
+  int64 expiry_retry_at = 16;
+  int32 expiry_attempts = 17;
+  bool expiry_review = 18;
+  string expiry_reason = 19;
 }
 
 message AdminOrderItem {

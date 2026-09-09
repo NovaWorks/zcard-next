@@ -19,6 +19,7 @@ import (
 
 // StoreCatalogService 前台目录服务（实现 storefrontv1.StoreCatalogService）。
 type StoreCatalogService struct {
+	stockLookup port.StockLookup
 	storefrontv1.UnimplementedStoreCatalogServiceServer
 	uc *CatalogUsecase
 	// pricer 分站定价（：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
@@ -151,6 +152,14 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	}
 	stocks, _ := s.uc.repo.StockBatch(ctx, []uint64{p.ID})
 	out := toStorefrontProduct(p, stocks, 0)
+	if p.UpstreamSourceID != 0 && s.stockLookup != nil {
+		n, err := s.stockLookup.DisplayStock(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
+		if err != nil {
+			out.Stock = -2
+		} else {
+			out.Stock = int64(n)
+		}
+	}
 	controls, err := s.uc.ListControls(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.InternalServer("catalog.CONTROL_FAILED", "读取控件失败")
@@ -220,3 +229,5 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		IsRecommend:    p.IsRecommend, // 运营推荐（首页推荐位）
 	}
 }
+
+func (s *StoreCatalogService) SetStockLookup(lookup port.StockLookup) { s.stockLookup = lookup }

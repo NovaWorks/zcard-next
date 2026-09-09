@@ -1,13 +1,13 @@
 import { ViteSSG } from 'vite-ssg';
 import App from './App.vue';
-import { routes, installRouterGuards } from './router';
+import { routes, installRouterGuards, scrollBehavior } from './router';
 import { setActiveHead, fetchSiteSeo, applyDefaultSeo, applyVerification } from './seo';
 import './style.css';
 
 export const createApp = ViteSSG(
   App,
   // Theme assets use a versioned <base>; application routes stay at the site root.
-  { routes, base: '/' },
+  { routes, base: '/', scrollBehavior },
   ({ app, head, router, isClient }) => {
     setActiveHead(head);
     if (isClient) {

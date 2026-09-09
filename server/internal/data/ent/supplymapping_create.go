@@ -146,6 +146,20 @@ func (_c *SupplyMappingCreate) SetNillableUpStock(v *int32) *SupplyMappingCreate
 	return _c
 }
 
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (_c *SupplyMappingCreate) SetStockCheckedAt(v time.Time) *SupplyMappingCreate {
+	_c.mutation.SetStockCheckedAt(v)
+	return _c
+}
+
+// SetNillableStockCheckedAt sets the "stock_checked_at" field if the given value is not nil.
+func (_c *SupplyMappingCreate) SetNillableStockCheckedAt(v *time.Time) *SupplyMappingCreate {
+	if v != nil {
+		_c.SetStockCheckedAt(*v)
+	}
+	return _c
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (_c *SupplyMappingCreate) SetPricingOverride(v map[string]interface{}) *SupplyMappingCreate {
 	_c.mutation.SetPricingOverride(v)
@@ -318,6 +332,10 @@ func (_c *SupplyMappingCreate) createSpec() (*SupplyMapping, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.UpStock(); ok {
 		_spec.SetField(supplymapping.FieldUpStock, field.TypeInt32, value)
 		_node.UpStock = value
+	}
+	if value, ok := _c.mutation.StockCheckedAt(); ok {
+		_spec.SetField(supplymapping.FieldStockCheckedAt, field.TypeTime, value)
+		_node.StockCheckedAt = value
 	}
 	if value, ok := _c.mutation.PricingOverride(); ok {
 		_spec.SetField(supplymapping.FieldPricingOverride, field.TypeJSON, value)
@@ -534,6 +552,24 @@ func (u *SupplyMappingUpsert) UpdateUpStock() *SupplyMappingUpsert {
 // AddUpStock adds v to the "up_stock" field.
 func (u *SupplyMappingUpsert) AddUpStock(v int32) *SupplyMappingUpsert {
 	u.Add(supplymapping.FieldUpStock, v)
+	return u
+}
+
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (u *SupplyMappingUpsert) SetStockCheckedAt(v time.Time) *SupplyMappingUpsert {
+	u.Set(supplymapping.FieldStockCheckedAt, v)
+	return u
+}
+
+// UpdateStockCheckedAt sets the "stock_checked_at" field to the value that was provided on create.
+func (u *SupplyMappingUpsert) UpdateStockCheckedAt() *SupplyMappingUpsert {
+	u.SetExcluded(supplymapping.FieldStockCheckedAt)
+	return u
+}
+
+// ClearStockCheckedAt clears the value of the "stock_checked_at" field.
+func (u *SupplyMappingUpsert) ClearStockCheckedAt() *SupplyMappingUpsert {
+	u.SetNull(supplymapping.FieldStockCheckedAt)
 	return u
 }
 
@@ -792,6 +828,27 @@ func (u *SupplyMappingUpsertOne) AddUpStock(v int32) *SupplyMappingUpsertOne {
 func (u *SupplyMappingUpsertOne) UpdateUpStock() *SupplyMappingUpsertOne {
 	return u.Update(func(s *SupplyMappingUpsert) {
 		s.UpdateUpStock()
+	})
+}
+
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (u *SupplyMappingUpsertOne) SetStockCheckedAt(v time.Time) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockCheckedAt(v)
+	})
+}
+
+// UpdateStockCheckedAt sets the "stock_checked_at" field to the value that was provided on create.
+func (u *SupplyMappingUpsertOne) UpdateStockCheckedAt() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockCheckedAt()
+	})
+}
+
+// ClearStockCheckedAt clears the value of the "stock_checked_at" field.
+func (u *SupplyMappingUpsertOne) ClearStockCheckedAt() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.ClearStockCheckedAt()
 	})
 }
 
@@ -1219,6 +1276,27 @@ func (u *SupplyMappingUpsertBulk) AddUpStock(v int32) *SupplyMappingUpsertBulk {
 func (u *SupplyMappingUpsertBulk) UpdateUpStock() *SupplyMappingUpsertBulk {
 	return u.Update(func(s *SupplyMappingUpsert) {
 		s.UpdateUpStock()
+	})
+}
+
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (u *SupplyMappingUpsertBulk) SetStockCheckedAt(v time.Time) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockCheckedAt(v)
+	})
+}
+
+// UpdateStockCheckedAt sets the "stock_checked_at" field to the value that was provided on create.
+func (u *SupplyMappingUpsertBulk) UpdateStockCheckedAt() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockCheckedAt()
+	})
+}
+
+// ClearStockCheckedAt clears the value of the "stock_checked_at" field.
+func (u *SupplyMappingUpsertBulk) ClearStockCheckedAt() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.ClearStockCheckedAt()
 	})
 }
 

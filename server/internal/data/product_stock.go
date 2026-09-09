@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
@@ -60,7 +61,9 @@ func ProductStocks(ctx context.Context, d *Data, products []*ent.Product) (map[u
 			for _, m := range rows {
 				p := byID[m.LocalProductID]
 				if p != nil && p.UpstreamSourceID == m.ConnectionID && p.UpstreamProductCode == m.UpstreamProduct {
-					out[p.ID] = int64(m.UpStock)
+					if !m.StockCheckedAt.IsZero() && time.Since(m.StockCheckedAt) <= 5*time.Minute {
+						out[p.ID] = int64(m.UpStock)
+					}
 				}
 			}
 		}

@@ -190,6 +190,9 @@ func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCo
 		return 0, err
 	}
 	stock, err := a.GetStock(ctx, productCode, skuCode)
+	if skuCode == "" {
+		g.cacheStock(ctx, connectionID, productCode, stock, err)
+	}
 	if err != nil {
 		return 0, err
 	}

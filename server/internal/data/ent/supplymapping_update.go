@@ -205,6 +205,26 @@ func (_u *SupplyMappingUpdate) AddUpStock(v int32) *SupplyMappingUpdate {
 	return _u
 }
 
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (_u *SupplyMappingUpdate) SetStockCheckedAt(v time.Time) *SupplyMappingUpdate {
+	_u.mutation.SetStockCheckedAt(v)
+	return _u
+}
+
+// SetNillableStockCheckedAt sets the "stock_checked_at" field if the given value is not nil.
+func (_u *SupplyMappingUpdate) SetNillableStockCheckedAt(v *time.Time) *SupplyMappingUpdate {
+	if v != nil {
+		_u.SetStockCheckedAt(*v)
+	}
+	return _u
+}
+
+// ClearStockCheckedAt clears the value of the "stock_checked_at" field.
+func (_u *SupplyMappingUpdate) ClearStockCheckedAt() *SupplyMappingUpdate {
+	_u.mutation.ClearStockCheckedAt()
+	return _u
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (_u *SupplyMappingUpdate) SetPricingOverride(v map[string]interface{}) *SupplyMappingUpdate {
 	_u.mutation.SetPricingOverride(v)
@@ -343,6 +363,12 @@ func (_u *SupplyMappingUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if value, ok := _u.mutation.AddedUpStock(); ok {
 		_spec.AddField(supplymapping.FieldUpStock, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.StockCheckedAt(); ok {
+		_spec.SetField(supplymapping.FieldStockCheckedAt, field.TypeTime, value)
+	}
+	if _u.mutation.StockCheckedAtCleared() {
+		_spec.ClearField(supplymapping.FieldStockCheckedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.PricingOverride(); ok {
 		_spec.SetField(supplymapping.FieldPricingOverride, field.TypeJSON, value)
@@ -547,6 +573,26 @@ func (_u *SupplyMappingUpdateOne) AddUpStock(v int32) *SupplyMappingUpdateOne {
 	return _u
 }
 
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (_u *SupplyMappingUpdateOne) SetStockCheckedAt(v time.Time) *SupplyMappingUpdateOne {
+	_u.mutation.SetStockCheckedAt(v)
+	return _u
+}
+
+// SetNillableStockCheckedAt sets the "stock_checked_at" field if the given value is not nil.
+func (_u *SupplyMappingUpdateOne) SetNillableStockCheckedAt(v *time.Time) *SupplyMappingUpdateOne {
+	if v != nil {
+		_u.SetStockCheckedAt(*v)
+	}
+	return _u
+}
+
+// ClearStockCheckedAt clears the value of the "stock_checked_at" field.
+func (_u *SupplyMappingUpdateOne) ClearStockCheckedAt() *SupplyMappingUpdateOne {
+	_u.mutation.ClearStockCheckedAt()
+	return _u
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (_u *SupplyMappingUpdateOne) SetPricingOverride(v map[string]interface{}) *SupplyMappingUpdateOne {
 	_u.mutation.SetPricingOverride(v)
@@ -715,6 +761,12 @@ func (_u *SupplyMappingUpdateOne) sqlSave(ctx context.Context) (_node *SupplyMap
 	}
 	if value, ok := _u.mutation.AddedUpStock(); ok {
 		_spec.AddField(supplymapping.FieldUpStock, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.StockCheckedAt(); ok {
+		_spec.SetField(supplymapping.FieldStockCheckedAt, field.TypeTime, value)
+	}
+	if _u.mutation.StockCheckedAtCleared() {
+		_spec.ClearField(supplymapping.FieldStockCheckedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.PricingOverride(); ok {
 		_spec.SetField(supplymapping.FieldPricingOverride, field.TypeJSON, value)

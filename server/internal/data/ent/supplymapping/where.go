@@ -104,6 +104,11 @@ func UpStock(v int32) predicate.SupplyMapping {
 	return predicate.SupplyMapping(sql.FieldEQ(FieldUpStock, v))
 }
 
+// StockCheckedAt applies equality check predicate on the "stock_checked_at" field. It's identical to StockCheckedAtEQ.
+func StockCheckedAt(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockCheckedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.SupplyMapping {
 	return predicate.SupplyMapping(sql.FieldEQ(FieldCreatedAt, v))
@@ -617,6 +622,56 @@ func UpStockLT(v int32) predicate.SupplyMapping {
 // UpStockLTE applies the LTE predicate on the "up_stock" field.
 func UpStockLTE(v int32) predicate.SupplyMapping {
 	return predicate.SupplyMapping(sql.FieldLTE(FieldUpStock, v))
+}
+
+// StockCheckedAtEQ applies the EQ predicate on the "stock_checked_at" field.
+func StockCheckedAtEQ(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldEQ(FieldStockCheckedAt, v))
+}
+
+// StockCheckedAtNEQ applies the NEQ predicate on the "stock_checked_at" field.
+func StockCheckedAtNEQ(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNEQ(FieldStockCheckedAt, v))
+}
+
+// StockCheckedAtIn applies the In predicate on the "stock_checked_at" field.
+func StockCheckedAtIn(vs ...time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldIn(FieldStockCheckedAt, vs...))
+}
+
+// StockCheckedAtNotIn applies the NotIn predicate on the "stock_checked_at" field.
+func StockCheckedAtNotIn(vs ...time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNotIn(FieldStockCheckedAt, vs...))
+}
+
+// StockCheckedAtGT applies the GT predicate on the "stock_checked_at" field.
+func StockCheckedAtGT(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGT(FieldStockCheckedAt, v))
+}
+
+// StockCheckedAtGTE applies the GTE predicate on the "stock_checked_at" field.
+func StockCheckedAtGTE(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldGTE(FieldStockCheckedAt, v))
+}
+
+// StockCheckedAtLT applies the LT predicate on the "stock_checked_at" field.
+func StockCheckedAtLT(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLT(FieldStockCheckedAt, v))
+}
+
+// StockCheckedAtLTE applies the LTE predicate on the "stock_checked_at" field.
+func StockCheckedAtLTE(v time.Time) predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldLTE(FieldStockCheckedAt, v))
+}
+
+// StockCheckedAtIsNil applies the IsNil predicate on the "stock_checked_at" field.
+func StockCheckedAtIsNil() predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldIsNull(FieldStockCheckedAt))
+}
+
+// StockCheckedAtNotNil applies the NotNil predicate on the "stock_checked_at" field.
+func StockCheckedAtNotNil() predicate.SupplyMapping {
+	return predicate.SupplyMapping(sql.FieldNotNull(FieldStockCheckedAt))
 }
 
 // PricingOverrideIsNil applies the IsNil predicate on the "pricing_override" field.

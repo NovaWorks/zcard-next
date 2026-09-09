@@ -140,11 +140,14 @@ func (r *CouponRepoImpl) ReturnByOrder(ctx context.Context, orderID uint64) erro
 		if !c.ExpireAt.IsZero() && time.Now().UTC().After(c.ExpireAt) {
 			continue // 过期不返（口径：作废）
 		}
-		_, _ = client.Coupon.UpdateOneID(c.ID).
+		_, err = client.Coupon.UpdateOneID(c.ID).
 			SetStatus(coupon.StatusUnused).
 			ClearUsedAt().
 			ClearUsedOrderID().
 			Save(ctx)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

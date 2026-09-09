@@ -300,7 +300,12 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		stats.Page = page
 
 		// 库存补查（仅 collect：列表缺库存的项分批查实时值；失败项保持 -1 放行）
-		if scope == ScopeCollect {
+		if scope == ScopeCollect || scope == ScopeStatus {
+			if conn.Driver == "acg_faka" {
+				for i := range list0.Items {
+					list0.Items[i].Stock = -2
+				}
+			}
 			if err := s.backfillStocks(ctx, a, sched, list0.Items, taskID); err != nil {
 				_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "STOCK_BACKFILL_BUDGET", err.Error())
 				s.publishCompleted(ctx, conn.ID, taskID, "failed")
@@ -481,6 +486,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		mapping.LocalCategoryID = write.CategoryID
 	}
 	mapping.UpStock = p.Stock
+	mapping.StockCheckedAt = time.Now().UTC()
 	mapping.PricingOverride = override
 	if err := s.saveProductMapping(ctx, mapping); err != nil {
 		return false, err
@@ -524,7 +530,7 @@ func (s *SyncService) localProductShelvedOff(ctx context.Context, localProductID
 	return err == nil && st == 0
 }
 
-// syncStatusOnly status scope 轻路径：上下架状态 + up_stock 缓存（-1 保留原值）。
+// syncStatusOnly uses the normalized stock after upstream backfill (-1 unlimited, -2 unknown).
 // 单向语义：只传导「下架」，不自动上架——运营在后台手动下架的商品不被同步
 // 拉回（重新上架走后台操作；上游可售≠本地必须卖）。
 func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, stats *TaskProgress) error {
@@ -533,8 +539,9 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 			return err
 		}
 	}
-	if p.Stock >= 0 {
+	if p.Stock >= -2 {
 		mapping.UpStock = p.Stock
+		mapping.StockCheckedAt = time.Now().UTC()
 	}
 	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return err
@@ -615,9 +622,10 @@ func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg
 				st, err := a.GetStock(ctx, items[i].ID, "")
 				if err != nil {
 					s.log.Warn("supply.sync.stock_backfill_failed", "task_id", taskID, "code", items[i].ID, "err", err)
-					return // fail-open：保持 -1
+					items[i].Stock = -2
+					return // 未知库存不可冒充无限或售罄
 				}
-				if st >= 0 {
+				if st >= -1 {
 					items[i].Stock = st
 				}
 			}(i)
@@ -880,6 +888,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		mapping.LocalCategoryID = write.CategoryID
 	}
 	mapping.UpStock = p.Stock
+	mapping.StockCheckedAt = time.Now().UTC()
 	mapping.PricingOverride = override
 	if err := s.saveProductMapping(ctx, mapping); err != nil {
 		return created, err

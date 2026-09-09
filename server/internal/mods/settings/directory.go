@@ -129,14 +129,16 @@ var groups = map[string]*GroupDef{
 	"trade": {
 		Name: "trade", Desc: "交易",
 		Labels: map[string]string{
-			"guest_checkout": "游客下单", "contact_required": "联系方式要求", "query_password": "订单查询密码",
+			"guest_checkout": "游客下单", "contact_required": "联系方式要求", "contact_scope": "联系方式适用买家（积分兑换除外）", "query_password": "订单查询密码",
 			"order_ttl_minutes": "订单超时（分钟）", "cart_enabled": "购物车功能", "api_order_enabled": "API 下单",
 		},
 		Options: map[string]map[string]string{
+			"contact_scope":    {"guest": "仅游客", "all": "所有买家"},
 			"contact_required": {"none": "不要求", "phone": "手机号", "email": "邮箱", "qq": "QQ", "any": "任意一种"},
 		},
 		Defaults: map[string]any{
 			"guest_checkout":    true,
+			"contact_scope":     "guest",
 			"contact_required":  "any", // none | phone | email | qq | any
 			"query_password":    true,
 			"order_ttl_minutes": 30,
@@ -383,7 +385,7 @@ var groups = map[string]*GroupDef{
 // trade 组 PublicKeys 在 init 内补充（同文件上方字段初始化保持简洁）
 func init() {
 	groups["trade"].PublicKeys = map[string]bool{
-		"guest_checkout": true, "query_password": true, "contact_required": true,
+		"guest_checkout": true, "query_password": true, "contact_required": true, "contact_scope": true,
 	}
 	// withdraw 组公开键（提现页表单驱动：开关/最低额/手续费/白名单）
 	groups["withdraw"].PublicKeys = map[string]bool{

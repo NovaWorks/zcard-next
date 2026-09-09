@@ -100,6 +100,62 @@ func (_c *PaymentCreate) SetChannel(v string) *PaymentCreate {
 	return _c
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_c *PaymentCreate) SetChannelID(v uint64) *PaymentCreate {
+	_c.mutation.SetChannelID(v)
+	return _c
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableChannelID(v *uint64) *PaymentCreate {
+	if v != nil {
+		_c.SetChannelID(*v)
+	}
+	return _c
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (_c *PaymentCreate) SetDriverSnapshot(v string) *PaymentCreate {
+	_c.mutation.SetDriverSnapshot(v)
+	return _c
+}
+
+// SetNillableDriverSnapshot sets the "driver_snapshot" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableDriverSnapshot(v *string) *PaymentCreate {
+	if v != nil {
+		_c.SetDriverSnapshot(*v)
+	}
+	return _c
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (_c *PaymentCreate) SetExpiresAt(v time.Time) *PaymentCreate {
+	_c.mutation.SetExpiresAt(v)
+	return _c
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableExpiresAt(v *time.Time) *PaymentCreate {
+	if v != nil {
+		_c.SetExpiresAt(*v)
+	}
+	return _c
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (_c *PaymentCreate) SetReviewReason(v string) *PaymentCreate {
+	_c.mutation.SetReviewReason(v)
+	return _c
+}
+
+// SetNillableReviewReason sets the "review_reason" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableReviewReason(v *string) *PaymentCreate {
+	if v != nil {
+		_c.SetReviewReason(*v)
+	}
+	return _c
+}
+
 // SetChannelOrderNo sets the "channel_order_no" field.
 func (_c *PaymentCreate) SetChannelOrderNo(v string) *PaymentCreate {
 	_c.mutation.SetChannelOrderNo(v)
@@ -296,6 +352,18 @@ func (_c *PaymentCreate) defaults() {
 		v := payment.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.ChannelID(); !ok {
+		v := payment.DefaultChannelID
+		_c.mutation.SetChannelID(v)
+	}
+	if _, ok := _c.mutation.DriverSnapshot(); !ok {
+		v := payment.DefaultDriverSnapshot
+		_c.mutation.SetDriverSnapshot(v)
+	}
+	if _, ok := _c.mutation.ReviewReason(); !ok {
+		v := payment.DefaultReviewReason
+		_c.mutation.SetReviewReason(v)
+	}
 	if _, ok := _c.mutation.ChargedAmount(); !ok {
 		v := payment.DefaultChargedAmount
 		_c.mutation.SetChargedAmount(v)
@@ -335,6 +403,25 @@ func (_c *PaymentCreate) check() error {
 	if v, ok := _c.mutation.Channel(); ok {
 		if err := payment.ChannelValidator(v); err != nil {
 			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Payment.channel": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ChannelID(); !ok {
+		return &ValidationError{Name: "channel_id", err: errors.New(`ent: missing required field "Payment.channel_id"`)}
+	}
+	if _, ok := _c.mutation.DriverSnapshot(); !ok {
+		return &ValidationError{Name: "driver_snapshot", err: errors.New(`ent: missing required field "Payment.driver_snapshot"`)}
+	}
+	if v, ok := _c.mutation.DriverSnapshot(); ok {
+		if err := payment.DriverSnapshotValidator(v); err != nil {
+			return &ValidationError{Name: "driver_snapshot", err: fmt.Errorf(`ent: validator failed for field "Payment.driver_snapshot": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.ReviewReason(); !ok {
+		return &ValidationError{Name: "review_reason", err: errors.New(`ent: missing required field "Payment.review_reason"`)}
+	}
+	if v, ok := _c.mutation.ReviewReason(); ok {
+		if err := payment.ReviewReasonValidator(v); err != nil {
+			return &ValidationError{Name: "review_reason", err: fmt.Errorf(`ent: validator failed for field "Payment.review_reason": %w`, err)}
 		}
 	}
 	if v, ok := _c.mutation.ChannelOrderNo(); ok {
@@ -427,6 +514,22 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Channel(); ok {
 		_spec.SetField(payment.FieldChannel, field.TypeString, value)
 		_node.Channel = value
+	}
+	if value, ok := _c.mutation.ChannelID(); ok {
+		_spec.SetField(payment.FieldChannelID, field.TypeUint64, value)
+		_node.ChannelID = value
+	}
+	if value, ok := _c.mutation.DriverSnapshot(); ok {
+		_spec.SetField(payment.FieldDriverSnapshot, field.TypeString, value)
+		_node.DriverSnapshot = value
+	}
+	if value, ok := _c.mutation.ExpiresAt(); ok {
+		_spec.SetField(payment.FieldExpiresAt, field.TypeTime, value)
+		_node.ExpiresAt = value
+	}
+	if value, ok := _c.mutation.ReviewReason(); ok {
+		_spec.SetField(payment.FieldReviewReason, field.TypeString, value)
+		_node.ReviewReason = value
 	}
 	if value, ok := _c.mutation.ChannelOrderNo(); ok {
 		_spec.SetField(payment.FieldChannelOrderNo, field.TypeString, value)
@@ -622,6 +725,66 @@ func (u *PaymentUpsert) SetChannel(v string) *PaymentUpsert {
 // UpdateChannel sets the "channel" field to the value that was provided on create.
 func (u *PaymentUpsert) UpdateChannel() *PaymentUpsert {
 	u.SetExcluded(payment.FieldChannel)
+	return u
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *PaymentUpsert) SetChannelID(v uint64) *PaymentUpsert {
+	u.Set(payment.FieldChannelID, v)
+	return u
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateChannelID() *PaymentUpsert {
+	u.SetExcluded(payment.FieldChannelID)
+	return u
+}
+
+// AddChannelID adds v to the "channel_id" field.
+func (u *PaymentUpsert) AddChannelID(v uint64) *PaymentUpsert {
+	u.Add(payment.FieldChannelID, v)
+	return u
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (u *PaymentUpsert) SetDriverSnapshot(v string) *PaymentUpsert {
+	u.Set(payment.FieldDriverSnapshot, v)
+	return u
+}
+
+// UpdateDriverSnapshot sets the "driver_snapshot" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateDriverSnapshot() *PaymentUpsert {
+	u.SetExcluded(payment.FieldDriverSnapshot)
+	return u
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *PaymentUpsert) SetExpiresAt(v time.Time) *PaymentUpsert {
+	u.Set(payment.FieldExpiresAt, v)
+	return u
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateExpiresAt() *PaymentUpsert {
+	u.SetExcluded(payment.FieldExpiresAt)
+	return u
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *PaymentUpsert) ClearExpiresAt() *PaymentUpsert {
+	u.SetNull(payment.FieldExpiresAt)
+	return u
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (u *PaymentUpsert) SetReviewReason(v string) *PaymentUpsert {
+	u.Set(payment.FieldReviewReason, v)
+	return u
+}
+
+// UpdateReviewReason sets the "review_reason" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateReviewReason() *PaymentUpsert {
+	u.SetExcluded(payment.FieldReviewReason)
 	return u
 }
 
@@ -963,6 +1126,76 @@ func (u *PaymentUpsertOne) SetChannel(v string) *PaymentUpsertOne {
 func (u *PaymentUpsertOne) UpdateChannel() *PaymentUpsertOne {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateChannel()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *PaymentUpsertOne) SetChannelID(v uint64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// AddChannelID adds v to the "channel_id" field.
+func (u *PaymentUpsertOne) AddChannelID(v uint64) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateChannelID() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChannelID()
+	})
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (u *PaymentUpsertOne) SetDriverSnapshot(v string) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetDriverSnapshot(v)
+	})
+}
+
+// UpdateDriverSnapshot sets the "driver_snapshot" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateDriverSnapshot() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateDriverSnapshot()
+	})
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *PaymentUpsertOne) SetExpiresAt(v time.Time) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetExpiresAt(v)
+	})
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateExpiresAt() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateExpiresAt()
+	})
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *PaymentUpsertOne) ClearExpiresAt() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearExpiresAt()
+	})
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (u *PaymentUpsertOne) SetReviewReason(v string) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetReviewReason(v)
+	})
+}
+
+// UpdateReviewReason sets the "review_reason" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateReviewReason() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateReviewReason()
 	})
 }
 
@@ -1502,6 +1735,76 @@ func (u *PaymentUpsertBulk) SetChannel(v string) *PaymentUpsertBulk {
 func (u *PaymentUpsertBulk) UpdateChannel() *PaymentUpsertBulk {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateChannel()
+	})
+}
+
+// SetChannelID sets the "channel_id" field.
+func (u *PaymentUpsertBulk) SetChannelID(v uint64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChannelID(v)
+	})
+}
+
+// AddChannelID adds v to the "channel_id" field.
+func (u *PaymentUpsertBulk) AddChannelID(v uint64) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddChannelID(v)
+	})
+}
+
+// UpdateChannelID sets the "channel_id" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateChannelID() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChannelID()
+	})
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (u *PaymentUpsertBulk) SetDriverSnapshot(v string) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetDriverSnapshot(v)
+	})
+}
+
+// UpdateDriverSnapshot sets the "driver_snapshot" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateDriverSnapshot() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateDriverSnapshot()
+	})
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (u *PaymentUpsertBulk) SetExpiresAt(v time.Time) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetExpiresAt(v)
+	})
+}
+
+// UpdateExpiresAt sets the "expires_at" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateExpiresAt() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateExpiresAt()
+	})
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (u *PaymentUpsertBulk) ClearExpiresAt() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearExpiresAt()
+	})
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (u *PaymentUpsertBulk) SetReviewReason(v string) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetReviewReason(v)
+	})
+}
+
+// UpdateReviewReason sets the "review_reason" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateReviewReason() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateReviewReason()
 	})
 }
 

@@ -210,6 +210,26 @@ func ExpiredAt(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldExpiredAt, v))
 }
 
+// ExpiryRetryAt applies equality check predicate on the "expiry_retry_at" field. It's identical to ExpiryRetryAtEQ.
+func ExpiryRetryAt(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryRetryAt, v))
+}
+
+// ExpiryAttempts applies equality check predicate on the "expiry_attempts" field. It's identical to ExpiryAttemptsEQ.
+func ExpiryAttempts(v int32) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryAttempts, v))
+}
+
+// ExpiryReview applies equality check predicate on the "expiry_review" field. It's identical to ExpiryReviewEQ.
+func ExpiryReview(v bool) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryReview, v))
+}
+
+// ExpiryReason applies equality check predicate on the "expiry_reason" field. It's identical to ExpiryReasonEQ.
+func ExpiryReason(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryReason, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldEQ(FieldCreatedAt, v))
@@ -1953,6 +1973,171 @@ func ExpiredAtIsNil() predicate.Order {
 // ExpiredAtNotNil applies the NotNil predicate on the "expired_at" field.
 func ExpiredAtNotNil() predicate.Order {
 	return predicate.Order(sql.FieldNotNull(FieldExpiredAt))
+}
+
+// ExpiryRetryAtEQ applies the EQ predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtEQ(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryRetryAt, v))
+}
+
+// ExpiryRetryAtNEQ applies the NEQ predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtNEQ(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldExpiryRetryAt, v))
+}
+
+// ExpiryRetryAtIn applies the In predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtIn(vs ...time.Time) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldExpiryRetryAt, vs...))
+}
+
+// ExpiryRetryAtNotIn applies the NotIn predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtNotIn(vs ...time.Time) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldExpiryRetryAt, vs...))
+}
+
+// ExpiryRetryAtGT applies the GT predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtGT(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldExpiryRetryAt, v))
+}
+
+// ExpiryRetryAtGTE applies the GTE predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtGTE(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldExpiryRetryAt, v))
+}
+
+// ExpiryRetryAtLT applies the LT predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtLT(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldExpiryRetryAt, v))
+}
+
+// ExpiryRetryAtLTE applies the LTE predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtLTE(v time.Time) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldExpiryRetryAt, v))
+}
+
+// ExpiryRetryAtIsNil applies the IsNil predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtIsNil() predicate.Order {
+	return predicate.Order(sql.FieldIsNull(FieldExpiryRetryAt))
+}
+
+// ExpiryRetryAtNotNil applies the NotNil predicate on the "expiry_retry_at" field.
+func ExpiryRetryAtNotNil() predicate.Order {
+	return predicate.Order(sql.FieldNotNull(FieldExpiryRetryAt))
+}
+
+// ExpiryAttemptsEQ applies the EQ predicate on the "expiry_attempts" field.
+func ExpiryAttemptsEQ(v int32) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryAttempts, v))
+}
+
+// ExpiryAttemptsNEQ applies the NEQ predicate on the "expiry_attempts" field.
+func ExpiryAttemptsNEQ(v int32) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldExpiryAttempts, v))
+}
+
+// ExpiryAttemptsIn applies the In predicate on the "expiry_attempts" field.
+func ExpiryAttemptsIn(vs ...int32) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldExpiryAttempts, vs...))
+}
+
+// ExpiryAttemptsNotIn applies the NotIn predicate on the "expiry_attempts" field.
+func ExpiryAttemptsNotIn(vs ...int32) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldExpiryAttempts, vs...))
+}
+
+// ExpiryAttemptsGT applies the GT predicate on the "expiry_attempts" field.
+func ExpiryAttemptsGT(v int32) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldExpiryAttempts, v))
+}
+
+// ExpiryAttemptsGTE applies the GTE predicate on the "expiry_attempts" field.
+func ExpiryAttemptsGTE(v int32) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldExpiryAttempts, v))
+}
+
+// ExpiryAttemptsLT applies the LT predicate on the "expiry_attempts" field.
+func ExpiryAttemptsLT(v int32) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldExpiryAttempts, v))
+}
+
+// ExpiryAttemptsLTE applies the LTE predicate on the "expiry_attempts" field.
+func ExpiryAttemptsLTE(v int32) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldExpiryAttempts, v))
+}
+
+// ExpiryReviewEQ applies the EQ predicate on the "expiry_review" field.
+func ExpiryReviewEQ(v bool) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryReview, v))
+}
+
+// ExpiryReviewNEQ applies the NEQ predicate on the "expiry_review" field.
+func ExpiryReviewNEQ(v bool) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldExpiryReview, v))
+}
+
+// ExpiryReasonEQ applies the EQ predicate on the "expiry_reason" field.
+func ExpiryReasonEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldEQ(FieldExpiryReason, v))
+}
+
+// ExpiryReasonNEQ applies the NEQ predicate on the "expiry_reason" field.
+func ExpiryReasonNEQ(v string) predicate.Order {
+	return predicate.Order(sql.FieldNEQ(FieldExpiryReason, v))
+}
+
+// ExpiryReasonIn applies the In predicate on the "expiry_reason" field.
+func ExpiryReasonIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldIn(FieldExpiryReason, vs...))
+}
+
+// ExpiryReasonNotIn applies the NotIn predicate on the "expiry_reason" field.
+func ExpiryReasonNotIn(vs ...string) predicate.Order {
+	return predicate.Order(sql.FieldNotIn(FieldExpiryReason, vs...))
+}
+
+// ExpiryReasonGT applies the GT predicate on the "expiry_reason" field.
+func ExpiryReasonGT(v string) predicate.Order {
+	return predicate.Order(sql.FieldGT(FieldExpiryReason, v))
+}
+
+// ExpiryReasonGTE applies the GTE predicate on the "expiry_reason" field.
+func ExpiryReasonGTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldGTE(FieldExpiryReason, v))
+}
+
+// ExpiryReasonLT applies the LT predicate on the "expiry_reason" field.
+func ExpiryReasonLT(v string) predicate.Order {
+	return predicate.Order(sql.FieldLT(FieldExpiryReason, v))
+}
+
+// ExpiryReasonLTE applies the LTE predicate on the "expiry_reason" field.
+func ExpiryReasonLTE(v string) predicate.Order {
+	return predicate.Order(sql.FieldLTE(FieldExpiryReason, v))
+}
+
+// ExpiryReasonContains applies the Contains predicate on the "expiry_reason" field.
+func ExpiryReasonContains(v string) predicate.Order {
+	return predicate.Order(sql.FieldContains(FieldExpiryReason, v))
+}
+
+// ExpiryReasonHasPrefix applies the HasPrefix predicate on the "expiry_reason" field.
+func ExpiryReasonHasPrefix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasPrefix(FieldExpiryReason, v))
+}
+
+// ExpiryReasonHasSuffix applies the HasSuffix predicate on the "expiry_reason" field.
+func ExpiryReasonHasSuffix(v string) predicate.Order {
+	return predicate.Order(sql.FieldHasSuffix(FieldExpiryReason, v))
+}
+
+// ExpiryReasonEqualFold applies the EqualFold predicate on the "expiry_reason" field.
+func ExpiryReasonEqualFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldEqualFold(FieldExpiryReason, v))
+}
+
+// ExpiryReasonContainsFold applies the ContainsFold predicate on the "expiry_reason" field.
+func ExpiryReasonContainsFold(v string) predicate.Order {
+	return predicate.Order(sql.FieldContainsFold(FieldExpiryReason, v))
 }
 
 // HasItems applies the HasEdge predicate on the "items" edge.

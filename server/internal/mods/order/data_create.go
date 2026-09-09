@@ -608,28 +608,30 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, orderNo string) error {
 		return fmt.Errorf("order.CONCURRENT_UPDATE")
 	}
 	// 状态事件溯源
-	_, _ = client.OrderStatusEvent.Create().
+	_, err = client.OrderStatusEvent.Create().
 		SetOrderID(o.ID).
 		SetFromStatus(string(o.Status)).
 		SetToStatus(string(order.StatusPaid)).
 		SetEvent("paid").
 		SetOperator(orderstatusevent.OperatorSystem).
 		Save(ctx)
-	uc.publishPaid(ctx, client, o)
-	return nil
+	if err != nil {
+		return err
+	}
+	return uc.publishPaid(ctx, client, o)
 }
 
 // publishPaid 发布 order.paid（ procurement 订阅；payload 含 upstream 项，
 // 消费方无需回查订单——跨模块查询受限）。
-func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *ent.Order) {
+func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *ent.Order) error {
 	if uc.Outbox == nil {
-		return
+		return nil
 	}
 	items, err := client.OrderItem.Query().
 		Where(orderitem.OrderID(o.ID)).
 		All(ctx)
 	if err != nil {
-		return // 事件发布失败不阻断支付主流程（outbox 幂等，可后续补发）
+		return err
 	}
 	type paidItem struct {
 		OrderItemID     uint64 `json:"order_item_id"`
@@ -665,81 +667,9 @@ func (uc *OrderUsecase) publishPaid(ctx context.Context, client *ent.Client, o *
 	}
 	raw, err := json.Marshal(payload)
 	if err != nil {
-		return
-	}
-	_ = uc.Outbox.Write(ctx, "order", events.OrderPaid, o.OrderNo, DedupeKey(o.OrderNo, "paid"), raw)
-}
-
-// CancelOrder 取消（pending 可取消；paid 后走退款）。
-func (uc *OrderUsecase) CancelOrder(ctx context.Context, orderNo, reason, operatorType string, operatorID uint64) error {
-	client := data.Client(ctx, uc.Data)
-	o, err := client.Order.Query().Where(order.OrderNo(orderNo)).Only(ctx)
-	if ent.IsNotFound(err) {
-		return fmt.Errorf("order.NOT_FOUND")
-	}
-	if err != nil {
 		return err
 	}
-	if !Allow(string(o.Status), string(order.StatusCanceled)) {
-		return fmt.Errorf("order.CANNOT_CANCEL: %s", o.Status)
-	}
-	_, err = client.Order.UpdateOne(o).
-		SetStatus(order.StatusCanceled).
-		SetClosedAt(time.Now().UTC()).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	_, _ = client.OrderStatusEvent.Create().
-		SetOrderID(o.ID).
-		SetFromStatus(string(o.Status)).
-		SetToStatus(string(order.StatusCanceled)).
-		SetEvent("canceled").
-		SetOperator(orderstatusevent.Operator(operatorType)).
-		SetOperatorID(operatorID).
-		SetReason(reason).
-		Save(ctx)
-	// 释放锁卡
-	if err := uc.Inv.Release(ctx, o.ID); err != nil {
-		return err
-	}
-	// 券返还（取消恢复可用；过期不返由 coupon 侧口径保证）
-	if uc.Coupon != nil {
-		_ = uc.Coupon.ReturnByOrder(ctx, o.ID)
-	}
-	return nil
-}
-
-// ExpireOrder 超时取消（TTL 到期；）。
-// 慢通道顺延（1.x 教训）：存在 usdt 族 pending 流水的订单不关闭——顺延一个 TTL
-// 周期等待链上确认（探测失败保守顺延，fail-safe 不误杀）。
-func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
-	client := data.Client(ctx, uc.Data)
-	rows, err := client.Order.Query().
-		Where(order.StatusEQ(order.StatusPendingPayment), order.ExpiredAtLT(time.Now().UTC())).
-		Limit(500).
-		All(ctx)
-	if err != nil {
-		return 0, err
-	}
-	ttl := time.Duration(uc.ttlMinutes(ctx)) * time.Minute
-	count := 0
-	for _, o := range rows {
-		if uc.SlowPay != nil {
-			slow, err := uc.SlowPay.HasPendingSlowPayment(ctx, o.ID)
-			if err != nil || slow {
-				// 顺延一个 TTL（探测异常同样顺延——宁可慢杀不可误杀）
-				_, _ = client.Order.UpdateOneID(o.ID).
-					SetExpiredAt(time.Now().UTC().Add(ttl)).
-					Save(ctx)
-				continue
-			}
-		}
-		if err := uc.CancelOrder(ctx, o.OrderNo, "超时未支付", "system", 0); err == nil {
-			count++
-		}
-	}
-	return count, nil
+	return uc.Outbox.Write(ctx, "order", events.OrderPaid, o.OrderNo, DedupeKey(o.OrderNo, "paid"), raw)
 }
 
 // ListUserOrders 用户订单列表（登录态「我的订单」；offset 分页——单用户量级安全）。
@@ -882,7 +812,7 @@ func (uc *OrderUsecase) validateTradeRequirements(ctx context.Context, in Create
 	}
 	// 联系方式（仅游客；登录用户有账户可追溯；积分兑换游客在事务内 POINTS_LOGIN 拒绝，
 	// 此处跳过避免拦截语义——联系方式校验只对常规游客单生效）
-	if in.UserID == 0 && !in.UsePoints {
+	if (in.UserID == 0 || uc.contactScope(ctx) == "all") && !in.UsePoints {
 		mode := uc.contactRequired(ctx)
 		contact := strings.TrimSpace(in.Contact)
 		if contact == "" {
@@ -994,4 +924,16 @@ func fulfillmentTypeOf(isUpstream bool) orderitem.FulfillmentType {
 		return orderitem.FulfillmentTypeUpstream
 	}
 	return orderitem.FulfillmentTypeAuto
+}
+
+// contactScope preserves existing sites; operators can require every buyer.
+func (uc *OrderUsecase) contactScope(ctx context.Context) string {
+	if uc.Settings != nil {
+		raw, err := uc.Settings.GetJSON(ctx, "trade", "contact_scope")
+		var scope string
+		if err == nil && json.Unmarshal(raw, &scope) == nil && scope == "all" {
+			return "all"
+		}
+	}
+	return "guest"
 }

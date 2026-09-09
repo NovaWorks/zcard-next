@@ -70,7 +70,7 @@
           </div>
           <div class="cart-checkout-fields">
             <input v-model="queryPwd" type="text" class="input" :placeholder="trade.queryPasswordRequired ? '查询密码 *（取货用，≥4 位）' : '查询密码（取货用，≥4 位）'" style="max-width: 170px;" />
-            <input v-if="isGuestCart && trade.contactRequired !== 'none'" v-model="contact" type="text" class="input" :placeholder="`联系方式 *（${contactRequiredLabel(trade.contactRequired)}）`" style="max-width: 170px;" />
+            <input v-if="(isGuestCart || trade.contactScope === 'all') && trade.contactRequired !== 'none'" v-model="contact" type="text" class="input" :placeholder="`联系方式 *（${contactRequiredLabel(trade.contactRequired)}）`" style="max-width: 170px;" />
             <input v-model="couponCode" type="text" class="input" placeholder="优惠券码（选填）" style="max-width: 150px;" />
             <template v-if="isGuestCart && captchaCfg.order">
               <CaptchaInput ref="captchaRef" @update:code="captchaCode = $event" @update:captcha-id="captchaId = $event" />
@@ -208,7 +208,7 @@ async function checkout() {
     alert('请设置查询密码（取货用，至少 4 位）');
     return;
   }
-  if (isGuestCart.value && trade.value.contactRequired !== 'none') {
+  if ((isGuestCart.value || trade.value.contactScope === 'all') && trade.value.contactRequired !== 'none') {
     if (!contact.value.trim()) {
       alert(`请填写联系方式（${contactRequiredLabel(trade.value.contactRequired)}），用于订单查询与售后`);
       return;
@@ -244,12 +244,13 @@ async function doCheckout() {
     ref_code: getRefCode() || undefined,
     captcha_id: (isGuestCart.value && captchaCfg.value.order) ? captchaId.value : undefined,
     captcha_code: (isGuestCart.value && captchaCfg.value.order) ? captchaCode.value : undefined,
-    contact: (isGuestCart.value && contact.value.trim()) || undefined,
+    contact: contact.value.trim() || undefined,
     control_answers: Object.keys(controlAnswers.value).length ? controlAnswers.value : undefined
   });
   checkingOut.value = false;
   if (error || !data) {
     alert(error || '下单失败');
+    await load();
     return;
   }
   // 下单成功后移除已结算项（游客清本地 / 登录删后端）

@@ -6292,6 +6292,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.StatusEvent'
+                expiryRetryAt:
+                    type: string
+                expiryAttempts:
+                    type: integer
+                    format: int32
+                expiryReview:
+                    type: boolean
+                expiryReason:
+                    type: string
             description: AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
         zcard.api.admin.v1.AdminOrderItem:
             type: object
@@ -8895,6 +8904,12 @@ components:
                 paidAt:
                     type: string
                 createdAt:
+                    type: string
+                reviewReason:
+                    type: string
+                expiresAt:
+                    type: string
+                driverSnapshot:
                     type: string
             description: Payment 支付单。
         zcard.api.admin.v1.PendingOrder:

@@ -63,14 +63,16 @@
 
 <script setup lang="ts">
 import CategoryIcon from '@/components/CategoryIcon.vue';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onActivated, onDeactivated } from 'vue';
 import { useRoute } from 'vue-router';
 import { listProducts, listCategories, type Product, type CategoryItem } from '@/api';
 import { fetchSiteSeo, applySeo } from '@/seo';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
+import { useCatalogScroll } from '@/composables/catalog-scroll';
 
 const route = useRoute();
+useCatalogScroll();
 const products = ref<Product[]>([]);
 const categories = ref<CategoryItem[]>([]);
 const keyword = ref('');
@@ -173,6 +175,16 @@ function onSearch() {
   page.value = 1;
   load();
 }
+
+let needsRefresh = false;
+onActivated(() => {
+  if (needsRefresh) {
+    needsRefresh = false;
+    void load();
+    void applyListSeo();
+  }
+});
+onDeactivated(() => { needsRefresh = true; });
 
 // 列表数据预取（setup 顶层：SSG 静态化列表页 + 输出 SEO head）
 {

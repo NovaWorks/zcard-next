@@ -854,6 +854,10 @@ var (
 		{Name: "closed_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "admin_deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "expired_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "expiry_retry_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "expiry_attempts", Type: field.TypeInt32, Default: 0},
+		{Name: "expiry_review", Type: field.TypeBool, Default: false},
+		{Name: "expiry_reason", Type: field.TypeString, Size: 255, Default: ""},
 	}
 	// OrdersTable holds the schema information for the "orders" table.
 	OrdersTable = &schema.Table{
@@ -1125,6 +1129,10 @@ var (
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "recharge_order_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "channel", Type: field.TypeString, Size: 50},
+		{Name: "channel_id", Type: field.TypeUint64, Default: 0},
+		{Name: "driver_snapshot", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "review_reason", Type: field.TypeString, Size: 255, Default: ""},
 		{Name: "channel_order_no", Type: field.TypeString, Nullable: true, Size: 80},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "charged_amount", Type: field.TypeInt64, Default: 0},
@@ -1146,7 +1154,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payments_orders_payments",
-				Columns:    []*schema.Column{PaymentsColumns[17]},
+				Columns:    []*schema.Column{PaymentsColumns[21]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1155,17 +1163,17 @@ var (
 			{
 				Name:    "payment_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[17]},
+				Columns: []*schema.Column{PaymentsColumns[21]},
 			},
 			{
 				Name:    "payment_channel_channel_order_no",
 				Unique:  true,
-				Columns: []*schema.Column{PaymentsColumns[5], PaymentsColumns[6]},
+				Columns: []*schema.Column{PaymentsColumns[5], PaymentsColumns[10]},
 			},
 			{
 				Name:    "payment_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[13], PaymentsColumns[1]},
+				Columns: []*schema.Column{PaymentsColumns[17], PaymentsColumns[1]},
 			},
 		},
 	}
@@ -2095,6 +2103,7 @@ var (
 		{Name: "upstream_sku", Type: field.TypeString, Size: 64, Default: ""},
 		{Name: "local_sku_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "up_stock", Type: field.TypeInt32, Default: 0},
+		{Name: "stock_checked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "pricing_override", Type: field.TypeJSON, Nullable: true},
 	}
 	// SupplyMappingsTable holds the schema information for the "supply_mappings" table.

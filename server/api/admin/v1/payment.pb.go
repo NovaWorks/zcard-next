@@ -1109,6 +1109,9 @@ type Payment struct {
 	Status         string                 `protobuf:"bytes,9,opt,name=status,proto3" json:"status,omitempty"`
 	PaidAt         int64                  `protobuf:"varint,10,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
 	CreatedAt      int64                  `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ReviewReason   string                 `protobuf:"bytes,12,opt,name=review_reason,json=reviewReason,proto3" json:"review_reason,omitempty"`
+	ExpiresAt      int64                  `protobuf:"varint,13,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	DriverSnapshot string                 `protobuf:"bytes,14,opt,name=driver_snapshot,json=driverSnapshot,proto3" json:"driver_snapshot,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1218,6 +1221,27 @@ func (x *Payment) GetCreatedAt() int64 {
 		return x.CreatedAt
 	}
 	return 0
+}
+
+func (x *Payment) GetReviewReason() string {
+	if x != nil {
+		return x.ReviewReason
+	}
+	return ""
+}
+
+func (x *Payment) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *Payment) GetDriverSnapshot() string {
+	if x != nil {
+		return x.DriverSnapshot
+	}
+	return ""
 }
 
 type CreateRefundRequest struct {
@@ -1581,7 +1605,7 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x11GetPaymentRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\",\n" +
 	"\x15CapturePaymentRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xc8\x02\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb5\x03\n" +
 	"\aPayment\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\x04R\aorderId\x12\x19\n" +
@@ -1595,7 +1619,11 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\apaid_at\x18\n" +
 	" \x01(\x03R\x06paidAt\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\v \x01(\x03R\tcreatedAt\"\x94\x01\n" +
+	"created_at\x18\v \x01(\x03R\tcreatedAt\x12#\n" +
+	"\rreview_reason\x18\f \x01(\tR\freviewReason\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\r \x01(\x03R\texpiresAt\x12'\n" +
+	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\x94\x01\n" +
 	"\x13CreateRefundRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12&\n" +
 	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +

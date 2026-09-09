@@ -331,8 +331,8 @@ func TestStatusScopeLightPath(t *testing.T) {
 			t.Fatal(err)
 		}
 		m2, _ := repo.GetMapping(ctx, conn.ID, "P1", "")
-		if m2.UpStock != 7 {
-			t.Fatalf("未知库存(-1)不得覆盖缓存: %+v", m2)
+		if m2.UpStock != -1 {
+			t.Fatalf("补查确认无限库存(-1)应覆盖缓存: %+v", m2)
 		}
 	})
 }
@@ -425,8 +425,8 @@ func TestBackfillStocks(t *testing.T) {
 	if items[0].Stock != 5 || items[1].Stock != 0 {
 		t.Fatalf("补查应回填真实库存: %+v", items)
 	}
-	if items[2].Stock != -1 {
-		t.Fatalf("失败项应保持 -1: %+v", items)
+	if items[2].Stock != -2 {
+		t.Fatalf("失败项应为未知 -2: %+v", items)
 	}
 	if items[3].Stock != 9 {
 		t.Fatalf("已知库存不得覆盖: %+v", items)

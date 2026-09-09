@@ -33,6 +33,8 @@ const (
 	FieldLocalSkuID = "local_sku_id"
 	// FieldUpStock holds the string denoting the up_stock field in the database.
 	FieldUpStock = "up_stock"
+	// FieldStockCheckedAt holds the string denoting the stock_checked_at field in the database.
+	FieldStockCheckedAt = "stock_checked_at"
 	// FieldPricingOverride holds the string denoting the pricing_override field in the database.
 	FieldPricingOverride = "pricing_override"
 	// Table holds the table name of the supplymapping in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldUpstreamSku,
 	FieldLocalSkuID,
 	FieldUpStock,
+	FieldStockCheckedAt,
 	FieldPricingOverride,
 }
 
@@ -140,4 +143,9 @@ func ByLocalSkuID(opts ...sql.OrderTermOption) OrderOption {
 // ByUpStock orders the results by the up_stock field.
 func ByUpStock(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpStock, opts...).ToFunc()
+}
+
+// ByStockCheckedAt orders the results by the stock_checked_at field.
+func ByStockCheckedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockCheckedAt, opts...).ToFunc()
 }

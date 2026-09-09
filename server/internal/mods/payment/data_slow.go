@@ -9,7 +9,6 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 )
 
 // slowDrivers 慢支付渠道驱动名单（usdt 族）。
@@ -30,18 +29,16 @@ func (r *PaymentRepoImpl) HasPendingSlowPayment(ctx context.Context, orderID uin
 	if len(pays) == 0 {
 		return false, nil
 	}
-	codes := make([]string, 0, len(pays))
 	for _, p := range pays {
-		codes = append(codes, p.Channel)
-	}
-	channels, err := client.PaymentChannel.Query().
-		Where(paymentchannel.CodeIn(codes...)).
-		All(ctx)
-	if err != nil {
-		return false, err
-	}
-	for _, ch := range channels {
-		if slowDrivers[ch.Driver] {
+		driver := p.DriverSnapshot
+		if driver == "" {
+			ch, err := r.channelForPayment(ctx, p)
+			if err != nil {
+				return false, err
+			}
+			driver = ch.Driver
+		}
+		if slowDrivers[driver] {
 			return true, nil
 		}
 	}

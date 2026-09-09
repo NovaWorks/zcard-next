@@ -71,7 +71,9 @@ func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, 
 	c := queue.NewCron()
 	// 订单超时取消（每分钟扫 pending_payment 到期单；慢支付顺延在其内）
 	c.AddEvery("order.expire_pending", time.Minute, func(ctx context.Context) {
-		_, _ = orderUC.ExpireOrder(ctx)
+		if _, err := orderUC.ExpireOrder(ctx); err != nil {
+			slog.ErrorContext(ctx, "order.expiry.failed", "error", err)
+		}
 	})
 	// ：货源连接周期探活（健康度累计 → M4 供应商评分基础数据，）
 	c.AddEvery("supply.health_ping", 5*time.Minute, func(ctx context.Context) {

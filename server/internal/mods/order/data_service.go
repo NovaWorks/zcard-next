@@ -327,6 +327,12 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 	if !o.ExpiredAt.IsZero() {
 		out.ExpiredAt = o.ExpiredAt.Unix()
 	}
+	out.ExpiryReview = o.ExpiryReview
+	out.ExpiryReason = o.ExpiryReason
+	out.ExpiryAttempts = o.ExpiryAttempts
+	if !o.ExpiryRetryAt.IsZero() {
+		out.ExpiryRetryAt = o.ExpiryRetryAt.Unix()
+	}
 	for _, it := range items {
 		pb := &adminv1.AdminOrderItem{
 			ProductId: it.ProductID, SkuId: it.SkuID, Quantity: it.Quantity,

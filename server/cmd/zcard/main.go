@@ -28,6 +28,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog"
+	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
@@ -473,12 +475,15 @@ func runInstall(args []string) error {
 //	all = HTTP + gRPC + worker + 后台（默认，单机形态）
 //	api = HTTP + gRPC + 后台relay（多实例 api，cron 不注册）
 //	worker = worker + 后台（消费与周期任务，多实例 asynq 竞争消费）
-func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService, fulfillRepo *fulfillment.DeliveryRepoImpl, pointsSvc *memberlevel.PointsService, orderUC *order.OrderUsecase, payRepo *payment.PaymentRepoImpl, walletRepo *wallet.WalletRepoImpl, stockGate orderport.UpstreamStockGate) *kratos.App {
+func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.WorkerServer, bs *server.BackgroundServer, dp *data.Dispatcher, procureSvc *procurement.ProcureService, notifyDisp *notify.Dispatcher, affiliateSvc *affiliate.AffiliateService, resellerSettleSvc *reseller.SettleService, fulfillRepo *fulfillment.DeliveryRepoImpl, pointsSvc *memberlevel.PointsService, orderUC *order.OrderUsecase, payRepo *payment.PaymentRepoImpl, walletRepo *wallet.WalletRepoImpl, stockGate orderport.UpstreamStockGate, catalogSvc *catalog.StoreCatalogService) *kratos.App {
 	// 破环点：order 超时取消慢通道顺延探测 ← payment 实现
 	// （wire 环 OrderUsecase ↔ PaymentRepoImpl，装配期手工注入——同 dp.Register 模式）
 	orderUC.SetSlowPaymentChecker(payRepo)
 	// 破环点：上游代发项下单前实时库存预检 ← supply 网关实现
 	orderUC.SetStockGate(stockGate)
+	if lookup, ok := stockGate.(catalogport.StockLookup); ok {
+		catalogSvc.SetStockLookup(lookup)
+	}
 	// 佣金提现打通：打款 FIFO 消耗佣金（affiliate → wallet 注入，装配期一次）
 	walletRepo.SetCommissionConsumer(affiliateSvc.Repo())
 	// 事件订阅注册（）：order.paid → 采购（wire 破环点，见 bootstrap/queue.go 注释）

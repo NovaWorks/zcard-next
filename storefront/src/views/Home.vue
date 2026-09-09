@@ -146,15 +146,17 @@
 
 <script setup lang="ts">
 import CategoryIcon from '@/components/CategoryIcon.vue';
-import { ref, computed, onMounted, onUnmounted, inject } from 'vue';
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
 import { fetchSiteSeo, applyDefaultSeo, applyVerification } from '@/seo';
 import { formatMoney } from '@/api/client';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
+import { useCatalogScroll } from '@/composables/catalog-scroll';
 
 const router = useRouter();
+useCatalogScroll();
 const products = ref<Product[]>([]);
 const keyword = ref('');
 const loading = ref(false);
@@ -319,6 +321,21 @@ async function load() {
   products.value = data?.items || [];
   total.value = data?.total || 0;
 }
+
+let needsRefresh = false;
+onActivated(() => {
+  startHero();
+  if (needsRefresh) {
+    needsRefresh = false;
+    // 保留浏览状态，同时重新获取价格、库存和首页标题。
+    void load();
+    void fetchSiteSeo().then(applyDefaultSeo);
+  }
+});
+onDeactivated(() => {
+  stopHero();
+  needsRefresh = true;
+});
 
 // 首页数据预取（setup 顶层：SSG 构建时渲染完整内容；客户端水合复用后由 onMounted 启动轮播）
 await Promise.all([

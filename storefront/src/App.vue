@@ -81,10 +81,13 @@
 
     <main class="main" :class="{ 'install-main': isInstall }">
       <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
-      <router-view v-slot="{ Component }">
-        <Suspense>
-          <component :is="Component" />
-        </Suspense>
+      <router-view v-slot="{ Component, route: viewRoute }">
+        <!-- 保留目录的筛选、分页和分类树；详情、支付和会员页仍按导航重新创建。 -->
+        <KeepAlive include="Home,Products" :max="8">
+          <Suspense>
+            <component :is="Component" :key="viewRoute.fullPath" />
+          </Suspense>
+        </KeepAlive>
       </router-view>
     </main>
 

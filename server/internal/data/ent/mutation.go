@@ -28044,6 +28044,11 @@ type OrderMutation struct {
 	closed_at            *time.Time
 	admin_deleted_at     *time.Time
 	expired_at           *time.Time
+	expiry_retry_at      *time.Time
+	expiry_attempts      *int32
+	addexpiry_attempts   *int32
+	expiry_review        *bool
+	expiry_reason        *string
 	clearedFields        map[string]struct{}
 	items                map[uint64]struct{}
 	removeditems         map[uint64]struct{}
@@ -29976,6 +29981,183 @@ func (m *OrderMutation) ResetExpiredAt() {
 	delete(m.clearedFields, order.FieldExpiredAt)
 }
 
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (m *OrderMutation) SetExpiryRetryAt(t time.Time) {
+	m.expiry_retry_at = &t
+}
+
+// ExpiryRetryAt returns the value of the "expiry_retry_at" field in the mutation.
+func (m *OrderMutation) ExpiryRetryAt() (r time.Time, exists bool) {
+	v := m.expiry_retry_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryRetryAt returns the old "expiry_retry_at" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldExpiryRetryAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryRetryAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryRetryAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryRetryAt: %w", err)
+	}
+	return oldValue.ExpiryRetryAt, nil
+}
+
+// ClearExpiryRetryAt clears the value of the "expiry_retry_at" field.
+func (m *OrderMutation) ClearExpiryRetryAt() {
+	m.expiry_retry_at = nil
+	m.clearedFields[order.FieldExpiryRetryAt] = struct{}{}
+}
+
+// ExpiryRetryAtCleared returns if the "expiry_retry_at" field was cleared in this mutation.
+func (m *OrderMutation) ExpiryRetryAtCleared() bool {
+	_, ok := m.clearedFields[order.FieldExpiryRetryAt]
+	return ok
+}
+
+// ResetExpiryRetryAt resets all changes to the "expiry_retry_at" field.
+func (m *OrderMutation) ResetExpiryRetryAt() {
+	m.expiry_retry_at = nil
+	delete(m.clearedFields, order.FieldExpiryRetryAt)
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (m *OrderMutation) SetExpiryAttempts(i int32) {
+	m.expiry_attempts = &i
+	m.addexpiry_attempts = nil
+}
+
+// ExpiryAttempts returns the value of the "expiry_attempts" field in the mutation.
+func (m *OrderMutation) ExpiryAttempts() (r int32, exists bool) {
+	v := m.expiry_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryAttempts returns the old "expiry_attempts" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldExpiryAttempts(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryAttempts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryAttempts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryAttempts: %w", err)
+	}
+	return oldValue.ExpiryAttempts, nil
+}
+
+// AddExpiryAttempts adds i to the "expiry_attempts" field.
+func (m *OrderMutation) AddExpiryAttempts(i int32) {
+	if m.addexpiry_attempts != nil {
+		*m.addexpiry_attempts += i
+	} else {
+		m.addexpiry_attempts = &i
+	}
+}
+
+// AddedExpiryAttempts returns the value that was added to the "expiry_attempts" field in this mutation.
+func (m *OrderMutation) AddedExpiryAttempts() (r int32, exists bool) {
+	v := m.addexpiry_attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExpiryAttempts resets all changes to the "expiry_attempts" field.
+func (m *OrderMutation) ResetExpiryAttempts() {
+	m.expiry_attempts = nil
+	m.addexpiry_attempts = nil
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (m *OrderMutation) SetExpiryReview(b bool) {
+	m.expiry_review = &b
+}
+
+// ExpiryReview returns the value of the "expiry_review" field in the mutation.
+func (m *OrderMutation) ExpiryReview() (r bool, exists bool) {
+	v := m.expiry_review
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryReview returns the old "expiry_review" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldExpiryReview(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryReview is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryReview requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryReview: %w", err)
+	}
+	return oldValue.ExpiryReview, nil
+}
+
+// ResetExpiryReview resets all changes to the "expiry_review" field.
+func (m *OrderMutation) ResetExpiryReview() {
+	m.expiry_review = nil
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (m *OrderMutation) SetExpiryReason(s string) {
+	m.expiry_reason = &s
+}
+
+// ExpiryReason returns the value of the "expiry_reason" field in the mutation.
+func (m *OrderMutation) ExpiryReason() (r string, exists bool) {
+	v := m.expiry_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiryReason returns the old "expiry_reason" field's value of the Order entity.
+// If the Order object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderMutation) OldExpiryReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiryReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiryReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiryReason: %w", err)
+	}
+	return oldValue.ExpiryReason, nil
+}
+
+// ResetExpiryReason resets all changes to the "expiry_reason" field.
+func (m *OrderMutation) ResetExpiryReason() {
+	m.expiry_reason = nil
+}
+
 // AddItemIDs adds the "items" edge to the OrderItem entity by ids.
 func (m *OrderMutation) AddItemIDs(ids ...uint64) {
 	if m.items == nil {
@@ -30334,7 +30516,7 @@ func (m *OrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderMutation) Fields() []string {
-	fields := make([]string, 0, 34)
+	fields := make([]string, 0, 38)
 	if m.created_at != nil {
 		fields = append(fields, order.FieldCreatedAt)
 	}
@@ -30437,6 +30619,18 @@ func (m *OrderMutation) Fields() []string {
 	if m.expired_at != nil {
 		fields = append(fields, order.FieldExpiredAt)
 	}
+	if m.expiry_retry_at != nil {
+		fields = append(fields, order.FieldExpiryRetryAt)
+	}
+	if m.expiry_attempts != nil {
+		fields = append(fields, order.FieldExpiryAttempts)
+	}
+	if m.expiry_review != nil {
+		fields = append(fields, order.FieldExpiryReview)
+	}
+	if m.expiry_reason != nil {
+		fields = append(fields, order.FieldExpiryReason)
+	}
 	return fields
 }
 
@@ -30513,6 +30707,14 @@ func (m *OrderMutation) Field(name string) (ent.Value, bool) {
 		return m.AdminDeletedAt()
 	case order.FieldExpiredAt:
 		return m.ExpiredAt()
+	case order.FieldExpiryRetryAt:
+		return m.ExpiryRetryAt()
+	case order.FieldExpiryAttempts:
+		return m.ExpiryAttempts()
+	case order.FieldExpiryReview:
+		return m.ExpiryReview()
+	case order.FieldExpiryReason:
+		return m.ExpiryReason()
 	}
 	return nil, false
 }
@@ -30590,6 +30792,14 @@ func (m *OrderMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldAdminDeletedAt(ctx)
 	case order.FieldExpiredAt:
 		return m.OldExpiredAt(ctx)
+	case order.FieldExpiryRetryAt:
+		return m.OldExpiryRetryAt(ctx)
+	case order.FieldExpiryAttempts:
+		return m.OldExpiryAttempts(ctx)
+	case order.FieldExpiryReview:
+		return m.OldExpiryReview(ctx)
+	case order.FieldExpiryReason:
+		return m.OldExpiryReason(ctx)
 	}
 	return nil, fmt.Errorf("unknown Order field %s", name)
 }
@@ -30837,6 +31047,34 @@ func (m *OrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetExpiredAt(v)
 		return nil
+	case order.FieldExpiryRetryAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryRetryAt(v)
+		return nil
+	case order.FieldExpiryAttempts:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryAttempts(v)
+		return nil
+	case order.FieldExpiryReview:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryReview(v)
+		return nil
+	case order.FieldExpiryReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiryReason(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)
 }
@@ -30884,6 +31122,9 @@ func (m *OrderMutation) AddedFields() []string {
 	if m.addinvite_l3 != nil {
 		fields = append(fields, order.FieldInviteL3)
 	}
+	if m.addexpiry_attempts != nil {
+		fields = append(fields, order.FieldExpiryAttempts)
+	}
 	return fields
 }
 
@@ -30918,6 +31159,8 @@ func (m *OrderMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedInviteL2()
 	case order.FieldInviteL3:
 		return m.AddedInviteL3()
+	case order.FieldExpiryAttempts:
+		return m.AddedExpiryAttempts()
 	}
 	return nil, false
 }
@@ -31018,6 +31261,13 @@ func (m *OrderMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddInviteL3(v)
 		return nil
+	case order.FieldExpiryAttempts:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExpiryAttempts(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Order numeric field %s", name)
 }
@@ -31097,6 +31347,9 @@ func (m *OrderMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(order.FieldExpiredAt) {
 		fields = append(fields, order.FieldExpiredAt)
+	}
+	if m.FieldCleared(order.FieldExpiryRetryAt) {
+		fields = append(fields, order.FieldExpiryRetryAt)
 	}
 	return fields
 }
@@ -31183,6 +31436,9 @@ func (m *OrderMutation) ClearField(name string) error {
 		return nil
 	case order.FieldExpiredAt:
 		m.ClearExpiredAt()
+		return nil
+	case order.FieldExpiryRetryAt:
+		m.ClearExpiryRetryAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Order nullable field %s", name)
@@ -31293,6 +31549,18 @@ func (m *OrderMutation) ResetField(name string) error {
 		return nil
 	case order.FieldExpiredAt:
 		m.ResetExpiredAt()
+		return nil
+	case order.FieldExpiryRetryAt:
+		m.ResetExpiryRetryAt()
+		return nil
+	case order.FieldExpiryAttempts:
+		m.ResetExpiryAttempts()
+		return nil
+	case order.FieldExpiryReview:
+		m.ResetExpiryReview()
+		return nil
+	case order.FieldExpiryReason:
+		m.ResetExpiryReason()
 		return nil
 	}
 	return fmt.Errorf("unknown Order field %s", name)
@@ -37621,6 +37889,11 @@ type PaymentMutation struct {
 	recharge_order_id    *uint64
 	addrecharge_order_id *int64
 	channel              *string
+	channel_id           *uint64
+	addchannel_id        *int64
+	driver_snapshot      *string
+	expires_at           *time.Time
+	review_reason        *string
 	channel_order_no     *string
 	amount               *int64
 	addamount            *int64
@@ -38031,6 +38304,183 @@ func (m *PaymentMutation) OldChannel(ctx context.Context) (v string, err error) 
 // ResetChannel resets all changes to the "channel" field.
 func (m *PaymentMutation) ResetChannel() {
 	m.channel = nil
+}
+
+// SetChannelID sets the "channel_id" field.
+func (m *PaymentMutation) SetChannelID(u uint64) {
+	m.channel_id = &u
+	m.addchannel_id = nil
+}
+
+// ChannelID returns the value of the "channel_id" field in the mutation.
+func (m *PaymentMutation) ChannelID() (r uint64, exists bool) {
+	v := m.channel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChannelID returns the old "channel_id" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldChannelID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChannelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChannelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChannelID: %w", err)
+	}
+	return oldValue.ChannelID, nil
+}
+
+// AddChannelID adds u to the "channel_id" field.
+func (m *PaymentMutation) AddChannelID(u int64) {
+	if m.addchannel_id != nil {
+		*m.addchannel_id += u
+	} else {
+		m.addchannel_id = &u
+	}
+}
+
+// AddedChannelID returns the value that was added to the "channel_id" field in this mutation.
+func (m *PaymentMutation) AddedChannelID() (r int64, exists bool) {
+	v := m.addchannel_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetChannelID resets all changes to the "channel_id" field.
+func (m *PaymentMutation) ResetChannelID() {
+	m.channel_id = nil
+	m.addchannel_id = nil
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (m *PaymentMutation) SetDriverSnapshot(s string) {
+	m.driver_snapshot = &s
+}
+
+// DriverSnapshot returns the value of the "driver_snapshot" field in the mutation.
+func (m *PaymentMutation) DriverSnapshot() (r string, exists bool) {
+	v := m.driver_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDriverSnapshot returns the old "driver_snapshot" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldDriverSnapshot(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDriverSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDriverSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDriverSnapshot: %w", err)
+	}
+	return oldValue.DriverSnapshot, nil
+}
+
+// ResetDriverSnapshot resets all changes to the "driver_snapshot" field.
+func (m *PaymentMutation) ResetDriverSnapshot() {
+	m.driver_snapshot = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *PaymentMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *PaymentMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (m *PaymentMutation) ClearExpiresAt() {
+	m.expires_at = nil
+	m.clearedFields[payment.FieldExpiresAt] = struct{}{}
+}
+
+// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
+func (m *PaymentMutation) ExpiresAtCleared() bool {
+	_, ok := m.clearedFields[payment.FieldExpiresAt]
+	return ok
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *PaymentMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	delete(m.clearedFields, payment.FieldExpiresAt)
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (m *PaymentMutation) SetReviewReason(s string) {
+	m.review_reason = &s
+}
+
+// ReviewReason returns the value of the "review_reason" field in the mutation.
+func (m *PaymentMutation) ReviewReason() (r string, exists bool) {
+	v := m.review_reason
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReviewReason returns the old "review_reason" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldReviewReason(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReviewReason is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReviewReason requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReviewReason: %w", err)
+	}
+	return oldValue.ReviewReason, nil
+}
+
+// ResetReviewReason resets all changes to the "review_reason" field.
+func (m *PaymentMutation) ResetReviewReason() {
+	m.review_reason = nil
 }
 
 // SetChannelOrderNo sets the "channel_order_no" field.
@@ -38671,7 +39121,7 @@ func (m *PaymentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, payment.FieldCreatedAt)
 	}
@@ -38689,6 +39139,18 @@ func (m *PaymentMutation) Fields() []string {
 	}
 	if m.channel != nil {
 		fields = append(fields, payment.FieldChannel)
+	}
+	if m.channel_id != nil {
+		fields = append(fields, payment.FieldChannelID)
+	}
+	if m.driver_snapshot != nil {
+		fields = append(fields, payment.FieldDriverSnapshot)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, payment.FieldExpiresAt)
+	}
+	if m.review_reason != nil {
+		fields = append(fields, payment.FieldReviewReason)
 	}
 	if m.channel_order_no != nil {
 		fields = append(fields, payment.FieldChannelOrderNo)
@@ -38743,6 +39205,14 @@ func (m *PaymentMutation) Field(name string) (ent.Value, bool) {
 		return m.RechargeOrderID()
 	case payment.FieldChannel:
 		return m.Channel()
+	case payment.FieldChannelID:
+		return m.ChannelID()
+	case payment.FieldDriverSnapshot:
+		return m.DriverSnapshot()
+	case payment.FieldExpiresAt:
+		return m.ExpiresAt()
+	case payment.FieldReviewReason:
+		return m.ReviewReason()
 	case payment.FieldChannelOrderNo:
 		return m.ChannelOrderNo()
 	case payment.FieldAmount:
@@ -38786,6 +39256,14 @@ func (m *PaymentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldRechargeOrderID(ctx)
 	case payment.FieldChannel:
 		return m.OldChannel(ctx)
+	case payment.FieldChannelID:
+		return m.OldChannelID(ctx)
+	case payment.FieldDriverSnapshot:
+		return m.OldDriverSnapshot(ctx)
+	case payment.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case payment.FieldReviewReason:
+		return m.OldReviewReason(ctx)
 	case payment.FieldChannelOrderNo:
 		return m.OldChannelOrderNo(ctx)
 	case payment.FieldAmount:
@@ -38858,6 +39336,34 @@ func (m *PaymentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetChannel(v)
+		return nil
+	case payment.FieldChannelID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChannelID(v)
+		return nil
+	case payment.FieldDriverSnapshot:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDriverSnapshot(v)
+		return nil
+	case payment.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case payment.FieldReviewReason:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReviewReason(v)
 		return nil
 	case payment.FieldChannelOrderNo:
 		v, ok := value.(string)
@@ -38950,6 +39456,9 @@ func (m *PaymentMutation) AddedFields() []string {
 	if m.addrecharge_order_id != nil {
 		fields = append(fields, payment.FieldRechargeOrderID)
 	}
+	if m.addchannel_id != nil {
+		fields = append(fields, payment.FieldChannelID)
+	}
 	if m.addamount != nil {
 		fields = append(fields, payment.FieldAmount)
 	}
@@ -38977,6 +39486,8 @@ func (m *PaymentMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSubsiteID()
 	case payment.FieldRechargeOrderID:
 		return m.AddedRechargeOrderID()
+	case payment.FieldChannelID:
+		return m.AddedChannelID()
 	case payment.FieldAmount:
 		return m.AddedAmount()
 	case payment.FieldChargedAmount:
@@ -39009,6 +39520,13 @@ func (m *PaymentMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRechargeOrderID(v)
+		return nil
+	case payment.FieldChannelID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChannelID(v)
 		return nil
 	case payment.FieldAmount:
 		v, ok := value.(int64)
@@ -39059,6 +39577,9 @@ func (m *PaymentMutation) ClearedFields() []string {
 	if m.FieldCleared(payment.FieldRechargeOrderID) {
 		fields = append(fields, payment.FieldRechargeOrderID)
 	}
+	if m.FieldCleared(payment.FieldExpiresAt) {
+		fields = append(fields, payment.FieldExpiresAt)
+	}
 	if m.FieldCleared(payment.FieldChannelOrderNo) {
 		fields = append(fields, payment.FieldChannelOrderNo)
 	}
@@ -39093,6 +39614,9 @@ func (m *PaymentMutation) ClearField(name string) error {
 		return nil
 	case payment.FieldRechargeOrderID:
 		m.ClearRechargeOrderID()
+		return nil
+	case payment.FieldExpiresAt:
+		m.ClearExpiresAt()
 		return nil
 	case payment.FieldChannelOrderNo:
 		m.ClearChannelOrderNo()
@@ -39134,6 +39658,18 @@ func (m *PaymentMutation) ResetField(name string) error {
 		return nil
 	case payment.FieldChannel:
 		m.ResetChannel()
+		return nil
+	case payment.FieldChannelID:
+		m.ResetChannelID()
+		return nil
+	case payment.FieldDriverSnapshot:
+		m.ResetDriverSnapshot()
+		return nil
+	case payment.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case payment.FieldReviewReason:
+		m.ResetReviewReason()
 		return nil
 	case payment.FieldChannelOrderNo:
 		m.ResetChannelOrderNo()
@@ -70621,6 +71157,7 @@ type SupplyMappingMutation struct {
 	addlocal_sku_id      *int64
 	up_stock             *int32
 	addup_stock          *int32
+	stock_checked_at     *time.Time
 	pricing_override     *map[string]interface{}
 	clearedFields        map[string]struct{}
 	done                 bool
@@ -71247,6 +71784,55 @@ func (m *SupplyMappingMutation) ResetUpStock() {
 	m.addup_stock = nil
 }
 
+// SetStockCheckedAt sets the "stock_checked_at" field.
+func (m *SupplyMappingMutation) SetStockCheckedAt(t time.Time) {
+	m.stock_checked_at = &t
+}
+
+// StockCheckedAt returns the value of the "stock_checked_at" field in the mutation.
+func (m *SupplyMappingMutation) StockCheckedAt() (r time.Time, exists bool) {
+	v := m.stock_checked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockCheckedAt returns the old "stock_checked_at" field's value of the SupplyMapping entity.
+// If the SupplyMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyMappingMutation) OldStockCheckedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockCheckedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockCheckedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockCheckedAt: %w", err)
+	}
+	return oldValue.StockCheckedAt, nil
+}
+
+// ClearStockCheckedAt clears the value of the "stock_checked_at" field.
+func (m *SupplyMappingMutation) ClearStockCheckedAt() {
+	m.stock_checked_at = nil
+	m.clearedFields[supplymapping.FieldStockCheckedAt] = struct{}{}
+}
+
+// StockCheckedAtCleared returns if the "stock_checked_at" field was cleared in this mutation.
+func (m *SupplyMappingMutation) StockCheckedAtCleared() bool {
+	_, ok := m.clearedFields[supplymapping.FieldStockCheckedAt]
+	return ok
+}
+
+// ResetStockCheckedAt resets all changes to the "stock_checked_at" field.
+func (m *SupplyMappingMutation) ResetStockCheckedAt() {
+	m.stock_checked_at = nil
+	delete(m.clearedFields, supplymapping.FieldStockCheckedAt)
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (m *SupplyMappingMutation) SetPricingOverride(value map[string]interface{}) {
 	m.pricing_override = &value
@@ -71330,7 +71916,7 @@ func (m *SupplyMappingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplyMappingMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, supplymapping.FieldCreatedAt)
 	}
@@ -71360,6 +71946,9 @@ func (m *SupplyMappingMutation) Fields() []string {
 	}
 	if m.up_stock != nil {
 		fields = append(fields, supplymapping.FieldUpStock)
+	}
+	if m.stock_checked_at != nil {
+		fields = append(fields, supplymapping.FieldStockCheckedAt)
 	}
 	if m.pricing_override != nil {
 		fields = append(fields, supplymapping.FieldPricingOverride)
@@ -71392,6 +71981,8 @@ func (m *SupplyMappingMutation) Field(name string) (ent.Value, bool) {
 		return m.LocalSkuID()
 	case supplymapping.FieldUpStock:
 		return m.UpStock()
+	case supplymapping.FieldStockCheckedAt:
+		return m.StockCheckedAt()
 	case supplymapping.FieldPricingOverride:
 		return m.PricingOverride()
 	}
@@ -71423,6 +72014,8 @@ func (m *SupplyMappingMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldLocalSkuID(ctx)
 	case supplymapping.FieldUpStock:
 		return m.OldUpStock(ctx)
+	case supplymapping.FieldStockCheckedAt:
+		return m.OldStockCheckedAt(ctx)
 	case supplymapping.FieldPricingOverride:
 		return m.OldPricingOverride(ctx)
 	}
@@ -71503,6 +72096,13 @@ func (m *SupplyMappingMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpStock(v)
+		return nil
+	case supplymapping.FieldStockCheckedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockCheckedAt(v)
 		return nil
 	case supplymapping.FieldPricingOverride:
 		v, ok := value.(map[string]interface{})
@@ -71616,6 +72216,9 @@ func (m *SupplyMappingMutation) ClearedFields() []string {
 	if m.FieldCleared(supplymapping.FieldLocalSkuID) {
 		fields = append(fields, supplymapping.FieldLocalSkuID)
 	}
+	if m.FieldCleared(supplymapping.FieldStockCheckedAt) {
+		fields = append(fields, supplymapping.FieldStockCheckedAt)
+	}
 	if m.FieldCleared(supplymapping.FieldPricingOverride) {
 		fields = append(fields, supplymapping.FieldPricingOverride)
 	}
@@ -71644,6 +72247,9 @@ func (m *SupplyMappingMutation) ClearField(name string) error {
 		return nil
 	case supplymapping.FieldLocalSkuID:
 		m.ClearLocalSkuID()
+		return nil
+	case supplymapping.FieldStockCheckedAt:
+		m.ClearStockCheckedAt()
 		return nil
 	case supplymapping.FieldPricingOverride:
 		m.ClearPricingOverride()
@@ -71685,6 +72291,9 @@ func (m *SupplyMappingMutation) ResetField(name string) error {
 		return nil
 	case supplymapping.FieldUpStock:
 		m.ResetUpStock()
+		return nil
+	case supplymapping.FieldStockCheckedAt:
+		m.ResetStockCheckedAt()
 		return nil
 	case supplymapping.FieldPricingOverride:
 		m.ResetPricingOverride()

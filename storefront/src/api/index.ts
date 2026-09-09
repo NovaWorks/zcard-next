@@ -404,7 +404,8 @@ export function getOrderPassword(orderNo: string): string {
 
 export interface TradeConfig {
   queryPasswordRequired: boolean; // 下单必须设置查询密码
-  contactRequired: string;        // none | phone | email | qq | any（游客必填联系方式）
+  contactRequired: string;        // none | phone | email | qq | any
+  contactScope?: 'guest' | 'all';
 }
 
 /** 拉取交易设置（失败走保守默认：强制密码 + any） */
@@ -423,7 +424,9 @@ export async function fetchTradeConfig(): Promise<TradeConfig> {
     if (contact) {
       try { const v = JSON.parse(contact); if (typeof v === 'string' && v) contactMode = v; } catch { /* 默认 */ }
     }
-    return { queryPasswordRequired: pwdRequired, contactRequired: contactMode };
+    let contactScope: 'guest' | 'all' = 'guest';
+    try { if (JSON.parse(find('trade.contact_scope') || '"guest"') === 'all') contactScope = 'all'; } catch { /* 兼容旧配置 */ }
+    return { queryPasswordRequired: pwdRequired, contactRequired: contactMode, contactScope };
   } catch {
     return { queryPasswordRequired: true, contactRequired: 'any' };
   }

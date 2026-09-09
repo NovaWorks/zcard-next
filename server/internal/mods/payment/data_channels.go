@@ -87,16 +87,17 @@ func (r *PaymentRepoImpl) computeCharge(ctx context.Context, cfg json.RawMessage
 }
 
 // snapshotCharge 渠道发起成功后固化快照三列（跨币路径；同币直收零写）。
-// 失败仅日志不阻断（快照缺失时回调走旧核对路径——fail-safe）。
-func (r *PaymentRepoImpl) snapshotCharge(ctx context.Context, paymentID uint64, snap ChargeSnapshot) {
+// 必须在发起网关请求前保存，失败则停止创建支付。
+func (r *PaymentRepoImpl) snapshotCharge(ctx context.Context, paymentID uint64, snap ChargeSnapshot) error {
 	if snap.Units == 0 {
-		return
+		return nil
 	}
-	_, _ = data.Client(ctx, r.data).Payment.UpdateOneID(paymentID).
+	_, err := data.Client(ctx, r.data).Payment.UpdateOneID(paymentID).
 		SetChargedUnits(snap.Units).
 		SetChargedCurrency(snap.Currency).
 		SetExchangeRate(snap.Rate).
 		Save(ctx)
+	return err
 }
 
 // ── 渠道管理（）────────────────────────────────────────────
@@ -287,13 +288,37 @@ func (r *PaymentRepoImpl) ConfiguredFields(ch *ent.PaymentChannel) []string {
 
 // CreatePayment 创建支付单。
 func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, channel string, amount int64, idemKey string) (*ent.Payment, error) {
-	return data.Client(ctx, r.data).Payment.Create().
-		SetOrderID(orderID).
-		SetChannel(channel).
-		SetAmount(amount).
-		SetStatus(payment.StatusPending).
-		SetIdempotencyKey(idemKey).
-		Save(ctx)
+	var result *ent.Payment
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		client := data.Client(ctx, r.data)
+		o, err := client.Order.Get(ctx, orderID)
+		if err != nil {
+			return err
+		}
+		now := time.Now().UTC()
+		if o.Status != order.StatusPendingPayment || o.ExpiredAt.IsZero() || !now.Before(o.ExpiredAt) || o.ExpiryReview {
+			return fmt.Errorf("payment.ORDER_EXPIRED: 订单已过期或待核对，请重新下单")
+		}
+		ch, err := resolveChannel(ctx, r.data, o.SubsiteID, channel)
+		if err != nil {
+			return err
+		}
+		if !ch.Enabled {
+			return fmt.Errorf("payment.CHANNEL_DISABLED")
+		}
+		// Serialize attempt creation against cancellation/settlement without keeping a
+		// transaction open during the external gateway request.
+		n, err := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusPendingPayment), order.VersionEQ(o.Version), order.ExpiredAtGT(now)).SetVersion(o.Version + 1).Save(ctx)
+		if err != nil {
+			return err
+		}
+		if n != 1 {
+			return fmt.Errorf("payment.ORDER_CHANGED")
+		}
+		result, err = client.Payment.Create().SetOrderID(orderID).SetSubsiteID(o.SubsiteID).SetChannel(channel).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetExpiresAt(o.ExpiredAt).SetAmount(amount).SetStatus(payment.StatusPending).SetIdempotencyKey(idemKey).Save(ctx)
+		return err
+	})
+	return result, err
 }
 
 // CreateRechargePayment 充值支付单（RechargePayer 端口实现）：
@@ -304,13 +329,15 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	if err != nil {
 		return nil, fmt.Errorf("payment.RECHARGE_NOT_FOUND")
 	}
-	ch, err := client.PaymentChannel.Query().
-		Where(paymentchannel.Code(channel), paymentchannel.Enabled(true)).Only(ctx)
+	ch, err := resolveChannel(ctx, r.data, 0, channel)
 	if ent.IsNotFound(err) {
 		return nil, fmt.Errorf("payment.CHANNEL_NOT_FOUND")
 	}
 	if err != nil {
 		return nil, err
+	}
+	if !ch.Enabled {
+		return nil, fmt.Errorf("payment.CHANNEL_DISABLED")
 	}
 	if ch.Driver == "wallet" {
 		return nil, fmt.Errorf("payment.RECHARGE_CHANNEL_INVALID: 充值不支持余额渠道")
@@ -331,6 +358,7 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	}
 	p, err := client.Payment.Create().
 		SetRechargeOrderID(ro.ID).
+		SetSubsiteID(0).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).
 		SetChannel(channel).
 		SetAmount(ro.Amount).
 		SetStatus(payment.StatusPending).
@@ -347,6 +375,9 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 		return nil, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: %w", err)
 	}
 	snap := r.computeCharge(ctx, cfg, amount)
+	if err := r.snapshotCharge(ctx, p.ID, snap); err != nil {
+		return nil, err
+	}
 	// 回跳/回调绝对化（同订单支付口径）：return 回充值 tab——曾不传，
 	// 网关回跳空地址即 404；notify 走 site/url 或请求 Host
 	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
@@ -356,14 +387,13 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 		Subject:      "余额充值",
 		ChargedUnits: snap.Units, ChargedCurrency: snap.Currency,
 		ReturnURL:     absolutePayURL(ctx, "/member?tab=recharge"),
-		NotifyBaseURL: absolutePayURL(ctx, r.CallbackURL(ctx, channel)),
+		NotifyBaseURL: absolutePayURL(ctx, r.callbackURLFor(ctx, ch)),
 		Config:        cfg,
 		MethodCode:    methodCode, MethodParams: methodParams,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("payment.CREATE_FAILED: %w", err)
 	}
-	r.snapshotCharge(ctx, p.ID, snap)
 	return &port.RechargePaymentInfo{
 		PaymentID: p.ID, Type: info.Type, Payload: string(info.Payload),
 	}, nil
@@ -402,12 +432,18 @@ func (r *PaymentRepoImpl) ListPayments(ctx context.Context, status, orderNo stri
 // 事务内：行锁 payment → 幂等三层 → 按支付单类型分流：
 //
 //	订单型（order_id>0）：余额渠道先扣款（wallet.DebitInTx，同事务）→
+//
 // OrderLifecycle.MarkPaid（状态机 CAS + 状态事件 + outbox order.paid， 破环点）
+//
 //	充值型（recharge_order_id>0）：充值单 pending→success → 余额入账
+//
 // （amount+gift，reference=recharge:<paymentID> 幂等）→ outbox recharge.succeeded
 //
 // 支付确认前零入账（铁律 16）；事件与入账同事务，回滚不残留。
 func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, fact CallbackFact) error {
+	if !fact.Success {
+		return fmt.Errorf("payment.NOT_SUCCESSFUL")
+	}
 	return data.Tx(ctx, r.data, func(txCtx context.Context) error {
 		client := data.Client(txCtx, r.data)
 
@@ -460,19 +496,54 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 			}
 		}
 
+		if p.OrderID > 0 {
+			o, err := client.Order.Get(txCtx, p.OrderID)
+			if err != nil {
+				return err
+			}
+			if fact.OrderNo != "" && fact.OrderNo != o.OrderNo {
+				return fmt.Errorf("payment.ORDER_MISMATCH")
+			}
+			fact.OrderNo = o.OrderNo
+		}
 		// 4) 幂等第二层 + 分流推进（支付单 CAS pending→success）
 		now := time.Now().UTC()
-		_, err = client.Payment.Update().
-			Where(payment.ID(p.ID), payment.StatusEQ(payment.StatusPending)).
+		affected, err := client.Payment.Update().
+			Where(payment.ID(p.ID), payment.StatusNEQ(payment.StatusSuccess)).
 			SetStatus(payment.StatusSuccess).
 			SetChargedAmount(chargedBase).
 			SetChannelOrderNo(fact.ChannelOrderNo).
 			SetPaidAt(now).
+			SetRaw(fact.Raw).
 			Save(txCtx)
 		if err != nil {
 			return err
 		}
 
+		if affected != 1 {
+			return fmt.Errorf("payment.CONCURRENT_UPDATE")
+		}
+		if p.OrderID > 0 {
+			o, err := client.Order.Get(txCtx, p.OrderID)
+			if err != nil {
+				return err
+			}
+			if o.Status != order.StatusPendingPayment {
+				ch, err := r.channelForPayment(txCtx, p)
+				if err != nil {
+					return err
+				}
+				if ch.Driver == "wallet" {
+					return fmt.Errorf("payment.ORDER_NOT_PENDING")
+				}
+				reason := "订单已关闭或已有付款，到账待核对，请处理补单或退款"
+				if _, err = client.Payment.UpdateOneID(p.ID).SetReviewReason(reason).Save(txCtx); err != nil {
+					return err
+				}
+				_, err = client.OrderStatusEvent.Create().SetOrderID(o.ID).SetFromStatus(string(o.Status)).SetToStatus(string(o.Status)).SetEvent("payment_review").SetOperator("system").SetReason(reason).Save(txCtx)
+				return err
+			}
+		}
 		if p.RechargeOrderID > 0 {
 			return r.settleRecharge(txCtx, p, fact)
 		}
@@ -489,7 +560,11 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 // settleOrder 订单型推进：余额渠道扣款 → OrderLifecycle.MarkPaid（同事务）。
 func (r *PaymentRepoImpl) settleOrder(ctx context.Context, p *ent.Payment, fact CallbackFact) error {
 	// 余额支付：先扣款（幂等键 order_pay:<orderID>；余额不足整事务回滚）
-	if r.wallet != nil && r.isWalletChannel(ctx, p.Channel) && p.OrderID > 0 {
+	ch, err := r.channelForPayment(ctx, p)
+	if err != nil {
+		return err
+	}
+	if r.wallet != nil && ch.Driver == "wallet" && p.OrderID > 0 {
 		o, err := data.Client(ctx, r.data).Order.Get(ctx, p.OrderID)
 		if err != nil {
 			return err
@@ -647,6 +722,11 @@ func ToPaymentPB(p *ent.Payment, orderNo string) *adminv1.Payment {
 		Channel: p.Channel, ChannelOrderNo: p.ChannelOrderNo,
 		AmountCents: p.Amount, ChargedCents: p.ChargedAmount, FeeCents: p.Fee,
 		Status: string(p.Status),
+	}
+	out.ReviewReason = p.ReviewReason
+	out.DriverSnapshot = p.DriverSnapshot
+	if !p.ExpiresAt.IsZero() {
+		out.ExpiresAt = p.ExpiresAt.Unix()
 	}
 	if !p.PaidAt.IsZero() {
 		out.PaidAt = p.PaidAt.Unix()

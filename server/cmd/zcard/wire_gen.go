@@ -193,7 +193,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
 	settleService := reseller.NewSettleService(resellerRepo, logger)
 	pointsService := memberlevel.NewPointsService(memberLevelRepoImpl, points, logger)
-	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway)
+	app := newApp(logger, httpServer, grpcServer, workerServer, backgroundServer, dataDispatcher, procureService, dispatcher, affiliateService, settleService, deliveryRepoImpl, pointsService, orderUsecase, paymentRepoImpl, walletRepoImpl, gateway, storeCatalogService)
 	mainAppDeps := &appDeps{
 		App:    app,
 		Update: updateService,

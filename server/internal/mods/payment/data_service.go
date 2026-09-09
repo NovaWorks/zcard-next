@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -162,7 +163,7 @@ func (s *AdminPaymentService) FieldOptions(ctx context.Context, req *adminv1.Fie
 func (s *AdminPaymentService) channelPB(ctx context.Context, ch *ent.PaymentChannel) *adminv1.Channel {
 	pb := ToChannelPB(ch)
 	pb.ConfiguredFields = s.repo.ConfiguredFields(ch)
-	pb.CallbackUrl = s.repo.CallbackURL(ctx, ch.Code)
+	pb.CallbackUrl = s.repo.callbackURLFor(ctx, ch)
 	if ch.Driver != "wallet" {
 		if p, err := s.repo.reg.Provider(ch.Driver); err == nil {
 			if fp, ok := p.(port.FieldProvider); ok {
@@ -312,26 +313,29 @@ func (s *AdminPaymentService) CapturePayment(ctx context.Context, req *adminv1.C
 	if err != nil {
 		return nil, err
 	}
-	// 真实渠道：走 Capturer 主动查单；不支持 Capturer 的渠道（wallet）保持直接标记成功
-	var fact CallbackFact
-	provider, perr := s.repo.reg.Provider(p.Channel)
-	if perr == nil {
-		if capr, ok := provider.(port.Capturer); ok {
-			ch, _ := data.Client(ctx, s.data).PaymentChannel.Query().Where(paymentchannel.Code(p.Channel)).Only(ctx)
-			f, err := capr.QueryPayment(ctx, p.ChannelOrderNo, s.repo.DecryptConfig(ch))
-			if err != nil {
-				return nil, errors.InternalServer("payment.CAPTURE_FAILED", "查单失败: "+err.Error())
-			}
-			if !f.Success {
-				return nil, errors.BadRequest("payment.NOT_PAID", "上游未支付，无法补单")
-			}
-			fact = CallbackFact{Channel: p.Channel, Amount: int64(f.Amount), Currency: f.Currency, Success: true, ChannelOrderNo: f.ChannelOrderNo}
-		} else {
-			fact = CallbackFact{Channel: p.Channel, Amount: p.Amount, Currency: "CNY", Success: true, ChannelOrderNo: fmt.Sprintf("manual-%d", p.ID)}
-		}
-	} else {
-		fact = CallbackFact{Channel: p.Channel, Amount: p.Amount, Currency: "CNY", Success: true, ChannelOrderNo: fmt.Sprintf("manual-%d", p.ID)}
+	ch, err := s.repo.channelForPayment(ctx, p)
+	if err != nil {
+		return nil, errors.BadRequest("payment.CHANNEL_INVALID", "无法确定原支付渠道，请核对流水")
 	}
+	provider, err := s.repo.reg.Provider(ch.Driver)
+	if err != nil {
+		return nil, errors.BadRequest("payment.CHANNEL_UNSUPPORTED", "原支付驱动不可用")
+	}
+	capr, ok := provider.(port.Capturer)
+	if !ok {
+		return nil, errors.BadRequest("payment.CAPTURE_UNSUPPORTED", "渠道不支持主动查单，请到网关核对到账")
+	}
+	if p.ChannelOrderNo == "" {
+		return nil, errors.BadRequest("payment.GATEWAY_ORDER_MISSING", "缺少网关单号，请到网关核对到账")
+	}
+	f, err := capr.QueryPayment(ctx, p.ChannelOrderNo, s.repo.DecryptConfig(ch))
+	if err != nil {
+		return nil, errors.InternalServer("payment.CAPTURE_FAILED", "查单失败: "+err.Error())
+	}
+	if f == nil || !f.Success {
+		return nil, errors.BadRequest("payment.NOT_PAID", "上游尚未确认支付")
+	}
+	fact := CallbackFact{Channel: p.Channel, OrderNo: f.OrderNo, Amount: int64(f.Amount), Currency: f.Currency, Success: true, ChannelOrderNo: f.ChannelOrderNo, Raw: f.Raw}
 	if err := s.repo.HandleCallback(ctx, p.ID, fact); err != nil {
 		return nil, errors.InternalServer("payment.CAPTURE_FAILED", "补单失败: "+err.Error())
 	}
@@ -480,9 +484,12 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		return nil, errors.BadRequest("payment.ORDER_NOT_PENDING", "订单不在待支付状态")
 	}
 
+	if o.ExpiredAt.IsZero() || !time.Now().UTC().Before(o.ExpiredAt) || o.ExpiryReview {
+		return nil, errors.BadRequest("payment.ORDER_EXPIRED", "订单已过期或待核对，请重新下单")
+	}
+
 	// 检查渠道启用
-	ch, err := client.PaymentChannel.Query().
-		Where(paymentchannel.Code(req.GetChannel()), paymentchannel.Enabled(true)).Only(ctx)
+	ch, err := resolveChannel(ctx, s.data, o.SubsiteID, req.GetChannel())
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "支付渠道不存在或未启用")
 	}
@@ -490,6 +497,9 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		return nil, err
 	}
 
+	if !ch.Enabled {
+		return nil, errors.BadRequest("payment.CHANNEL_DISABLED", "支付渠道已停用")
+	}
 	// wallet 渠道：余额支付（直接 markPaid—— 接 wallet.DebitInTx）
 	if ch.Driver == "wallet" {
 		p, err := s.repo.CreatePayment(ctx, o.ID, ch.Code, o.TotalAmount, "")
@@ -544,6 +554,9 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	}
 	// 币种快照（）：target_currency → currency 表换算 → 适配器收渠道金额
 	snap := s.repo.computeCharge(ctx, cfg, money.Cents(o.TotalAmount))
+	if err := s.repo.snapshotCharge(ctx, p.ID, snap); err != nil {
+		return nil, errors.InternalServer("payment.SNAPSHOT_FAILED", "保存支付快照失败")
+	}
 	// 回跳/回调绝对化（易支付/Stripe/PayPal 等外部网关只认绝对地址）：
 	// notify 用 site/url 前缀（CallbackURL；未配置时请求 Host 兜底）；
 	// return 回支付页（轮询出结果并展示卡密）——曾传空值，客户付完被
@@ -554,7 +567,7 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		Amount:        money.Cents(o.TotalAmount),
 		Subject:       "订单 " + o.OrderNo,
 		ReturnURL:     absolutePayURL(ctx, "/payment/"+o.OrderNo),
-		NotifyBaseURL: absolutePayURL(ctx, s.repo.CallbackURL(ctx, ch.Code)),
+		NotifyBaseURL: absolutePayURL(ctx, s.repo.callbackURLFor(ctx, ch)),
 		Config:        cfg,
 		ChargedUnits:  snap.Units, ChargedCurrency: snap.Currency,
 		MethodCode: methodCode, MethodParams: methodParams,
@@ -562,7 +575,13 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "发起支付失败: "+err.Error())
 	}
-	s.repo.snapshotCharge(ctx, p.ID, snap)
+	current, err := client.Order.Get(ctx, o.ID)
+	if err != nil {
+		return nil, err
+	}
+	if current.Status != order.StatusPendingPayment || !time.Now().UTC().Before(current.ExpiredAt) {
+		return nil, errors.BadRequest("payment.ORDER_EXPIRED", "订单已过期，请重新下单；已付款请联系售后核对")
+	}
 	return &storefrontv1.CreatePaymentReply{
 		PaymentId: p.ID, Type: info.Type, Payload: string(info.Payload),
 	}, nil
@@ -593,8 +612,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		}
 
 		// 2) 查渠道（按 code；停用渠道拒绝）
-		ch, err := data.Client(ctx, d).PaymentChannel.Query().
-			Where(paymentchannel.Code(channelCode), paymentchannel.Enabled(true)).Only(ctx)
+		ch, err := callbackChannel(ctx, d, channelCode, r.URL.Query().Get("channel_id"))
 		if ent.IsNotFound(err) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "channel not found"})
 		}
@@ -634,6 +652,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 			if err != nil {
 				return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "parse failed"})
 			}
+			delete(form, "channel_id") // routing metadata is not part of gateway-signed fields
 			f, err = verifier.VerifyCallback(form, cfg)
 			if err != nil {
 				return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
@@ -659,6 +678,14 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 			Success:        f.Success,
 			Raw:            f.Raw,
 		}
+		p, checkErr := repo.GetPayment(ctx, paymentID)
+		if checkErr != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "payment lookup failed"})
+		}
+		resolved, checkErr := repo.channelForPayment(ctx, p)
+		if checkErr != nil || resolved.ID != ch.ID {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment channel mismatch"})
+		}
 		if err := repo.HandleCallback(ctx, paymentID, fact); err != nil {
 			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}
@@ -681,8 +708,7 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		if !paypalOrderIDTokenRe.MatchString(token) {
 			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "invalid token"})
 		}
-		ch, err := data.Client(ctx, d).PaymentChannel.Query().
-			Where(paymentchannel.Code(channelCode), paymentchannel.Enabled(true)).Only(ctx)
+		ch, err := callbackChannel(ctx, d, channelCode, ctx.Request().URL.Query().Get("channel_id"))
 		if ent.IsNotFound(err) {
 			return ctx.JSON(http.StatusNotFound, map[string]string{"error": "channel not found"})
 		}
@@ -712,6 +738,14 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		paymentID := locatePaymentByFact(ctx, d, channelCode, f)
 		if paymentID == 0 {
 			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment not found"})
+		}
+		p, checkErr := repo.GetPayment(ctx, paymentID)
+		if checkErr != nil {
+			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": "payment lookup failed"})
+		}
+		original, checkErr := repo.channelForPayment(ctx, p)
+		if checkErr != nil || original.ID != ch.ID {
+			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment channel mismatch"})
 		}
 		if err := repo.HandleCallback(ctx, paymentID, CallbackFact{
 			Channel:        channelCode,
@@ -760,7 +794,7 @@ func locatePaymentByFact(ctx context.Context, d *data.Data, channelCode string, 
 			return 0
 		}
 	}
-	p, err := query.Where(payment.StatusEQ(payment.StatusPending)).Order(ent.Desc(payment.FieldID)).First(ctx)
+	p, err := query.Where(payment.StatusNEQ(payment.StatusSuccess)).Order(ent.Desc(payment.FieldID)).First(ctx)
 	if err != nil {
 		return 0
 	}
@@ -781,6 +815,10 @@ func parseCallbackForm(r *http.Request, body []byte) (map[string]string, error) 
 	m := map[string]string{}
 	for k := range r.Form {
 		m[k] = r.Form.Get(k)
+	}
+	delete(m, "channel_id")
+	if strings.Contains(ct, "json") {
+		m = map[string]string{}
 	}
 	// JSON 回调体（epusdt 类）：UseNumber 保留原始字面——10.00 不得塌成 10
 	//（验签按原文重算，签名不变式 ）

@@ -233,3 +233,8 @@ type SettingsReader interface {
 	// GetJSON 读取分组配置（读取失败返回 nil, nil，调用方走默认值）。
 	GetJSON(ctx context.Context, group, key string) ([]byte, error)
 }
+
+// StockLookup refreshes a visible upstream product; implementations coalesce requests.
+type StockLookup interface {
+	DisplayStock(ctx context.Context, connectionID uint64, productCode string) (int32, error)
+}

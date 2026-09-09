@@ -10,11 +10,11 @@ import (
 	"fmt"
 	"time"
 
+	entsql "entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
-	entsql "entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 )
@@ -274,6 +274,7 @@ func (r *SupplyRepoImpl) UpsertMapping(ctx context.Context, m *ent.SupplyMapping
 		SetUpstreamSku(m.UpstreamSku).
 		SetLocalSkuID(m.LocalSkuID).
 		SetUpStock(m.UpStock).
+		SetStockCheckedAt(m.StockCheckedAt).
 		SetPricingOverride(m.PricingOverride).
 		OnConflict(
 			entsql.ConflictColumns(

@@ -57,7 +57,7 @@ func TestCreateOrderIdempotency(t *testing.T) {
 	d, uc, _ := newIdemEnv(t)
 	ctx := context.Background()
 	in := CreateOrderInput{
-		QueryPassword: "test1234",
+		QueryPassword:  "test1234",
 		UserID:         3,
 		Items:          []OrderItemInput{{ProductID: 1, Quantity: 1}},
 		IdempotencyKey: "dup-key-001",
@@ -80,7 +80,7 @@ func TestCreateOrderIdempotency(t *testing.T) {
 	// 不同 key 正常新单
 	other, err := uc.CreateOrder(ctx, CreateOrderInput{
 		QueryPassword: "test1234",
-		UserID: 3, Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}, IdempotencyKey: "dup-key-002",
+		UserID:        3, Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}, IdempotencyKey: "dup-key-002",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -134,8 +134,8 @@ func TestExpireSlowChannelDeferral(t *testing.T) {
 	if ga.Status == order.StatusCanceled || ga.Status == order.StatusExpired {
 		t.Fatalf("慢通道单被误杀: %s", ga.Status)
 	}
-	if !ga.ExpiredAt.After(time.Now().UTC()) {
-		t.Fatal("慢通道单应顺延 expired_at")
+	if !ga.ExpiredAt.Equal(past) || !ga.ExpiryRetryAt.After(time.Now().UTC()) {
+		t.Fatal("慢通道单应保留原截止时间并记录重试时间")
 	}
 	if gb.Status != order.StatusCanceled && gb.Status != order.StatusExpired {
 		t.Fatalf("普通超时单未取消: %s", gb.Status)
@@ -200,8 +200,8 @@ func TestMyOrdersAndOwnerFetch(t *testing.T) {
 	// 非本人取消 → NOT_FOUND（不泄露存在性）
 	if _, err := uc.CreateOrder(ctx, CreateOrderInput{
 		QueryPassword: "test1234",
-		UserID: 3,
-		Items:  []OrderItemInput{{ProductID: 1, Quantity: 1}},
+		UserID:        3,
+		Items:         []OrderItemInput{{ProductID: 1, Quantity: 1}},
 	}); err != nil {
 		t.Fatal(err)
 	}

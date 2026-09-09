@@ -27,6 +27,14 @@ const (
 	FieldRechargeOrderID = "recharge_order_id"
 	// FieldChannel holds the string denoting the channel field in the database.
 	FieldChannel = "channel"
+	// FieldChannelID holds the string denoting the channel_id field in the database.
+	FieldChannelID = "channel_id"
+	// FieldDriverSnapshot holds the string denoting the driver_snapshot field in the database.
+	FieldDriverSnapshot = "driver_snapshot"
+	// FieldExpiresAt holds the string denoting the expires_at field in the database.
+	FieldExpiresAt = "expires_at"
+	// FieldReviewReason holds the string denoting the review_reason field in the database.
+	FieldReviewReason = "review_reason"
 	// FieldChannelOrderNo holds the string denoting the channel_order_no field in the database.
 	FieldChannelOrderNo = "channel_order_no"
 	// FieldAmount holds the string denoting the amount field in the database.
@@ -71,6 +79,10 @@ var Columns = []string{
 	FieldOrderID,
 	FieldRechargeOrderID,
 	FieldChannel,
+	FieldChannelID,
+	FieldDriverSnapshot,
+	FieldExpiresAt,
+	FieldReviewReason,
 	FieldChannelOrderNo,
 	FieldAmount,
 	FieldChargedAmount,
@@ -105,6 +117,16 @@ var (
 	DefaultSubsiteID uint64
 	// ChannelValidator is a validator for the "channel" field. It is called by the builders before save.
 	ChannelValidator func(string) error
+	// DefaultChannelID holds the default value on creation for the "channel_id" field.
+	DefaultChannelID uint64
+	// DefaultDriverSnapshot holds the default value on creation for the "driver_snapshot" field.
+	DefaultDriverSnapshot string
+	// DriverSnapshotValidator is a validator for the "driver_snapshot" field. It is called by the builders before save.
+	DriverSnapshotValidator func(string) error
+	// DefaultReviewReason holds the default value on creation for the "review_reason" field.
+	DefaultReviewReason string
+	// ReviewReasonValidator is a validator for the "review_reason" field. It is called by the builders before save.
+	ReviewReasonValidator func(string) error
 	// ChannelOrderNoValidator is a validator for the "channel_order_no" field. It is called by the builders before save.
 	ChannelOrderNoValidator func(string) error
 	// DefaultChargedAmount holds the default value on creation for the "charged_amount" field.
@@ -184,6 +206,26 @@ func ByRechargeOrderID(opts ...sql.OrderTermOption) OrderOption {
 // ByChannel orders the results by the channel field.
 func ByChannel(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldChannel, opts...).ToFunc()
+}
+
+// ByChannelID orders the results by the channel_id field.
+func ByChannelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChannelID, opts...).ToFunc()
+}
+
+// ByDriverSnapshot orders the results by the driver_snapshot field.
+func ByDriverSnapshot(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDriverSnapshot, opts...).ToFunc()
+}
+
+// ByExpiresAt orders the results by the expires_at field.
+func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
+}
+
+// ByReviewReason orders the results by the review_reason field.
+func ByReviewReason(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReviewReason, opts...).ToFunc()
 }
 
 // ByChannelOrderNo orders the results by the channel_order_no field.

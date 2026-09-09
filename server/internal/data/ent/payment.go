@@ -31,6 +31,14 @@ type Payment struct {
 	RechargeOrderID uint64 `json:"recharge_order_id,omitempty"`
 	// 渠道码
 	Channel string `json:"channel,omitempty"`
+	// 发起时渠道身份；0 为历史流水
+	ChannelID uint64 `json:"channel_id,omitempty"`
+	// DriverSnapshot holds the value of the "driver_snapshot" field.
+	DriverSnapshot string `json:"driver_snapshot,omitempty"`
+	// ExpiresAt holds the value of the "expires_at" field.
+	ExpiresAt time.Time `json:"expires_at,omitempty"`
+	// ReviewReason holds the value of the "review_reason" field.
+	ReviewReason string `json:"review_reason,omitempty"`
 	// 网关单号（回调时回填）
 	ChannelOrderNo string `json:"channel_order_no,omitempty"`
 	// 应收（分，基础货币）
@@ -88,11 +96,11 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case payment.FieldExchangeRate:
 			values[i] = new(sql.NullFloat64)
-		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldChargedUnits, payment.FieldFee:
+		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldChannelID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldChargedUnits, payment.FieldFee:
 			values[i] = new(sql.NullInt64)
-		case payment.FieldChannel, payment.FieldChannelOrderNo, payment.FieldChargedCurrency, payment.FieldStatus, payment.FieldIdempotencyKey:
+		case payment.FieldChannel, payment.FieldDriverSnapshot, payment.FieldReviewReason, payment.FieldChannelOrderNo, payment.FieldChargedCurrency, payment.FieldStatus, payment.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
-		case payment.FieldCreatedAt, payment.FieldUpdatedAt, payment.FieldPaidAt:
+		case payment.FieldCreatedAt, payment.FieldUpdatedAt, payment.FieldExpiresAt, payment.FieldPaidAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -150,6 +158,30 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field channel", values[i])
 			} else if value.Valid {
 				_m.Channel = value.String
+			}
+		case payment.FieldChannelID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field channel_id", values[i])
+			} else if value.Valid {
+				_m.ChannelID = uint64(value.Int64)
+			}
+		case payment.FieldDriverSnapshot:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field driver_snapshot", values[i])
+			} else if value.Valid {
+				_m.DriverSnapshot = value.String
+			}
+		case payment.FieldExpiresAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field expires_at", values[i])
+			} else if value.Valid {
+				_m.ExpiresAt = value.Time
+			}
+		case payment.FieldReviewReason:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field review_reason", values[i])
+			} else if value.Valid {
+				_m.ReviewReason = value.String
 			}
 		case payment.FieldChannelOrderNo:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -277,6 +309,18 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("channel=")
 	builder.WriteString(_m.Channel)
+	builder.WriteString(", ")
+	builder.WriteString("channel_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChannelID))
+	builder.WriteString(", ")
+	builder.WriteString("driver_snapshot=")
+	builder.WriteString(_m.DriverSnapshot)
+	builder.WriteString(", ")
+	builder.WriteString("expires_at=")
+	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("review_reason=")
+	builder.WriteString(_m.ReviewReason)
 	builder.WriteString(", ")
 	builder.WriteString("channel_order_no=")
 	builder.WriteString(_m.ChannelOrderNo)

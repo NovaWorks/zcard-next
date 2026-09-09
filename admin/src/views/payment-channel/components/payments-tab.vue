@@ -35,6 +35,7 @@ const columns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 70 },
   { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
   { title: "渠道", key: "channel", width: 90 },
+  { title: "到账核对", key: "review_reason", width: 240, render: (row) => row.review_reason || "-" },
   { title: "渠道单号", key: "channel_order_no", width: 180, ellipsis: { tooltip: true } },
   {
     title: "金额",

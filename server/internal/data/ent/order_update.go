@@ -707,6 +707,75 @@ func (_u *OrderUpdate) ClearExpiredAt() *OrderUpdate {
 	return _u
 }
 
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (_u *OrderUpdate) SetExpiryRetryAt(v time.Time) *OrderUpdate {
+	_u.mutation.SetExpiryRetryAt(v)
+	return _u
+}
+
+// SetNillableExpiryRetryAt sets the "expiry_retry_at" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableExpiryRetryAt(v *time.Time) *OrderUpdate {
+	if v != nil {
+		_u.SetExpiryRetryAt(*v)
+	}
+	return _u
+}
+
+// ClearExpiryRetryAt clears the value of the "expiry_retry_at" field.
+func (_u *OrderUpdate) ClearExpiryRetryAt() *OrderUpdate {
+	_u.mutation.ClearExpiryRetryAt()
+	return _u
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (_u *OrderUpdate) SetExpiryAttempts(v int32) *OrderUpdate {
+	_u.mutation.ResetExpiryAttempts()
+	_u.mutation.SetExpiryAttempts(v)
+	return _u
+}
+
+// SetNillableExpiryAttempts sets the "expiry_attempts" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableExpiryAttempts(v *int32) *OrderUpdate {
+	if v != nil {
+		_u.SetExpiryAttempts(*v)
+	}
+	return _u
+}
+
+// AddExpiryAttempts adds value to the "expiry_attempts" field.
+func (_u *OrderUpdate) AddExpiryAttempts(v int32) *OrderUpdate {
+	_u.mutation.AddExpiryAttempts(v)
+	return _u
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (_u *OrderUpdate) SetExpiryReview(v bool) *OrderUpdate {
+	_u.mutation.SetExpiryReview(v)
+	return _u
+}
+
+// SetNillableExpiryReview sets the "expiry_review" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableExpiryReview(v *bool) *OrderUpdate {
+	if v != nil {
+		_u.SetExpiryReview(*v)
+	}
+	return _u
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (_u *OrderUpdate) SetExpiryReason(v string) *OrderUpdate {
+	_u.mutation.SetExpiryReason(v)
+	return _u
+}
+
+// SetNillableExpiryReason sets the "expiry_reason" field if the given value is not nil.
+func (_u *OrderUpdate) SetNillableExpiryReason(v *string) *OrderUpdate {
+	if v != nil {
+		_u.SetExpiryReason(*v)
+	}
+	return _u
+}
+
 // AddItemIDs adds the "items" edge to the OrderItem entity by IDs.
 func (_u *OrderUpdate) AddItemIDs(ids ...uint64) *OrderUpdate {
 	_u.mutation.AddItemIDs(ids...)
@@ -1026,6 +1095,11 @@ func (_u *OrderUpdate) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ExpiryReason(); ok {
+		if err := order.ExpiryReasonValidator(v); err != nil {
+			return &ValidationError{Name: "expiry_reason", err: fmt.Errorf(`ent: validator failed for field "Order.expiry_reason": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -1250,6 +1324,24 @@ func (_u *OrderUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.ExpiredAtCleared() {
 		_spec.ClearField(order.FieldExpiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ExpiryRetryAt(); ok {
+		_spec.SetField(order.FieldExpiryRetryAt, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryRetryAtCleared() {
+		_spec.ClearField(order.FieldExpiryRetryAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ExpiryAttempts(); ok {
+		_spec.SetField(order.FieldExpiryAttempts, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedExpiryAttempts(); ok {
+		_spec.AddField(order.FieldExpiryAttempts, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ExpiryReview(); ok {
+		_spec.SetField(order.FieldExpiryReview, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ExpiryReason(); ok {
+		_spec.SetField(order.FieldExpiryReason, field.TypeString, value)
 	}
 	if _u.mutation.ItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -2214,6 +2306,75 @@ func (_u *OrderUpdateOne) ClearExpiredAt() *OrderUpdateOne {
 	return _u
 }
 
+// SetExpiryRetryAt sets the "expiry_retry_at" field.
+func (_u *OrderUpdateOne) SetExpiryRetryAt(v time.Time) *OrderUpdateOne {
+	_u.mutation.SetExpiryRetryAt(v)
+	return _u
+}
+
+// SetNillableExpiryRetryAt sets the "expiry_retry_at" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableExpiryRetryAt(v *time.Time) *OrderUpdateOne {
+	if v != nil {
+		_u.SetExpiryRetryAt(*v)
+	}
+	return _u
+}
+
+// ClearExpiryRetryAt clears the value of the "expiry_retry_at" field.
+func (_u *OrderUpdateOne) ClearExpiryRetryAt() *OrderUpdateOne {
+	_u.mutation.ClearExpiryRetryAt()
+	return _u
+}
+
+// SetExpiryAttempts sets the "expiry_attempts" field.
+func (_u *OrderUpdateOne) SetExpiryAttempts(v int32) *OrderUpdateOne {
+	_u.mutation.ResetExpiryAttempts()
+	_u.mutation.SetExpiryAttempts(v)
+	return _u
+}
+
+// SetNillableExpiryAttempts sets the "expiry_attempts" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableExpiryAttempts(v *int32) *OrderUpdateOne {
+	if v != nil {
+		_u.SetExpiryAttempts(*v)
+	}
+	return _u
+}
+
+// AddExpiryAttempts adds value to the "expiry_attempts" field.
+func (_u *OrderUpdateOne) AddExpiryAttempts(v int32) *OrderUpdateOne {
+	_u.mutation.AddExpiryAttempts(v)
+	return _u
+}
+
+// SetExpiryReview sets the "expiry_review" field.
+func (_u *OrderUpdateOne) SetExpiryReview(v bool) *OrderUpdateOne {
+	_u.mutation.SetExpiryReview(v)
+	return _u
+}
+
+// SetNillableExpiryReview sets the "expiry_review" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableExpiryReview(v *bool) *OrderUpdateOne {
+	if v != nil {
+		_u.SetExpiryReview(*v)
+	}
+	return _u
+}
+
+// SetExpiryReason sets the "expiry_reason" field.
+func (_u *OrderUpdateOne) SetExpiryReason(v string) *OrderUpdateOne {
+	_u.mutation.SetExpiryReason(v)
+	return _u
+}
+
+// SetNillableExpiryReason sets the "expiry_reason" field if the given value is not nil.
+func (_u *OrderUpdateOne) SetNillableExpiryReason(v *string) *OrderUpdateOne {
+	if v != nil {
+		_u.SetExpiryReason(*v)
+	}
+	return _u
+}
+
 // AddItemIDs adds the "items" edge to the OrderItem entity by IDs.
 func (_u *OrderUpdateOne) AddItemIDs(ids ...uint64) *OrderUpdateOne {
 	_u.mutation.AddItemIDs(ids...)
@@ -2546,6 +2707,11 @@ func (_u *OrderUpdateOne) check() error {
 			return &ValidationError{Name: "idempotency_key", err: fmt.Errorf(`ent: validator failed for field "Order.idempotency_key": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.ExpiryReason(); ok {
+		if err := order.ExpiryReasonValidator(v); err != nil {
+			return &ValidationError{Name: "expiry_reason", err: fmt.Errorf(`ent: validator failed for field "Order.expiry_reason": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -2787,6 +2953,24 @@ func (_u *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error)
 	}
 	if _u.mutation.ExpiredAtCleared() {
 		_spec.ClearField(order.FieldExpiredAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ExpiryRetryAt(); ok {
+		_spec.SetField(order.FieldExpiryRetryAt, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiryRetryAtCleared() {
+		_spec.ClearField(order.FieldExpiryRetryAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ExpiryAttempts(); ok {
+		_spec.SetField(order.FieldExpiryAttempts, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedExpiryAttempts(); ok {
+		_spec.AddField(order.FieldExpiryAttempts, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ExpiryReview(); ok {
+		_spec.SetField(order.FieldExpiryReview, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.ExpiryReason(); ok {
+		_spec.SetField(order.FieldExpiryReason, field.TypeString, value)
 	}
 	if _u.mutation.ItemsCleared() {
 		edge := &sqlgraph.EdgeSpec{

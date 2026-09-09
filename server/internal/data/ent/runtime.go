@@ -1055,6 +1055,20 @@ func init() {
 	orderDescIdempotencyKey := orderFields[26].Descriptor()
 	// order.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	order.IdempotencyKeyValidator = orderDescIdempotencyKey.Validators[0].(func(string) error)
+	// orderDescExpiryAttempts is the schema descriptor for expiry_attempts field.
+	orderDescExpiryAttempts := orderFields[32].Descriptor()
+	// order.DefaultExpiryAttempts holds the default value on creation for the expiry_attempts field.
+	order.DefaultExpiryAttempts = orderDescExpiryAttempts.Default.(int32)
+	// orderDescExpiryReview is the schema descriptor for expiry_review field.
+	orderDescExpiryReview := orderFields[33].Descriptor()
+	// order.DefaultExpiryReview holds the default value on creation for the expiry_review field.
+	order.DefaultExpiryReview = orderDescExpiryReview.Default.(bool)
+	// orderDescExpiryReason is the schema descriptor for expiry_reason field.
+	orderDescExpiryReason := orderFields[34].Descriptor()
+	// order.DefaultExpiryReason holds the default value on creation for the expiry_reason field.
+	order.DefaultExpiryReason = orderDescExpiryReason.Default.(string)
+	// order.ExpiryReasonValidator is a validator for the "expiry_reason" field. It is called by the builders before save.
+	order.ExpiryReasonValidator = orderDescExpiryReason.Validators[0].(func(string) error)
 	orderamountlineFields := schema.OrderAmountLine{}.Fields()
 	_ = orderamountlineFields
 	// orderamountlineDescSourceType is the schema descriptor for source_type field.
@@ -1241,32 +1255,48 @@ func init() {
 	paymentDescChannel := paymentFields[3].Descriptor()
 	// payment.ChannelValidator is a validator for the "channel" field. It is called by the builders before save.
 	payment.ChannelValidator = paymentDescChannel.Validators[0].(func(string) error)
+	// paymentDescChannelID is the schema descriptor for channel_id field.
+	paymentDescChannelID := paymentFields[4].Descriptor()
+	// payment.DefaultChannelID holds the default value on creation for the channel_id field.
+	payment.DefaultChannelID = paymentDescChannelID.Default.(uint64)
+	// paymentDescDriverSnapshot is the schema descriptor for driver_snapshot field.
+	paymentDescDriverSnapshot := paymentFields[5].Descriptor()
+	// payment.DefaultDriverSnapshot holds the default value on creation for the driver_snapshot field.
+	payment.DefaultDriverSnapshot = paymentDescDriverSnapshot.Default.(string)
+	// payment.DriverSnapshotValidator is a validator for the "driver_snapshot" field. It is called by the builders before save.
+	payment.DriverSnapshotValidator = paymentDescDriverSnapshot.Validators[0].(func(string) error)
+	// paymentDescReviewReason is the schema descriptor for review_reason field.
+	paymentDescReviewReason := paymentFields[7].Descriptor()
+	// payment.DefaultReviewReason holds the default value on creation for the review_reason field.
+	payment.DefaultReviewReason = paymentDescReviewReason.Default.(string)
+	// payment.ReviewReasonValidator is a validator for the "review_reason" field. It is called by the builders before save.
+	payment.ReviewReasonValidator = paymentDescReviewReason.Validators[0].(func(string) error)
 	// paymentDescChannelOrderNo is the schema descriptor for channel_order_no field.
-	paymentDescChannelOrderNo := paymentFields[4].Descriptor()
+	paymentDescChannelOrderNo := paymentFields[8].Descriptor()
 	// payment.ChannelOrderNoValidator is a validator for the "channel_order_no" field. It is called by the builders before save.
 	payment.ChannelOrderNoValidator = paymentDescChannelOrderNo.Validators[0].(func(string) error)
 	// paymentDescChargedAmount is the schema descriptor for charged_amount field.
-	paymentDescChargedAmount := paymentFields[6].Descriptor()
+	paymentDescChargedAmount := paymentFields[10].Descriptor()
 	// payment.DefaultChargedAmount holds the default value on creation for the charged_amount field.
 	payment.DefaultChargedAmount = paymentDescChargedAmount.Default.(int64)
 	// paymentDescChargedCurrency is the schema descriptor for charged_currency field.
-	paymentDescChargedCurrency := paymentFields[7].Descriptor()
+	paymentDescChargedCurrency := paymentFields[11].Descriptor()
 	// payment.ChargedCurrencyValidator is a validator for the "charged_currency" field. It is called by the builders before save.
 	payment.ChargedCurrencyValidator = paymentDescChargedCurrency.Validators[0].(func(string) error)
 	// paymentDescExchangeRate is the schema descriptor for exchange_rate field.
-	paymentDescExchangeRate := paymentFields[8].Descriptor()
+	paymentDescExchangeRate := paymentFields[12].Descriptor()
 	// payment.DefaultExchangeRate holds the default value on creation for the exchange_rate field.
 	payment.DefaultExchangeRate = paymentDescExchangeRate.Default.(float64)
 	// paymentDescChargedUnits is the schema descriptor for charged_units field.
-	paymentDescChargedUnits := paymentFields[9].Descriptor()
+	paymentDescChargedUnits := paymentFields[13].Descriptor()
 	// payment.DefaultChargedUnits holds the default value on creation for the charged_units field.
 	payment.DefaultChargedUnits = paymentDescChargedUnits.Default.(int64)
 	// paymentDescFee is the schema descriptor for fee field.
-	paymentDescFee := paymentFields[10].Descriptor()
+	paymentDescFee := paymentFields[14].Descriptor()
 	// payment.DefaultFee holds the default value on creation for the fee field.
 	payment.DefaultFee = paymentDescFee.Default.(int64)
 	// paymentDescIdempotencyKey is the schema descriptor for idempotency_key field.
-	paymentDescIdempotencyKey := paymentFields[14].Descriptor()
+	paymentDescIdempotencyKey := paymentFields[18].Descriptor()
 	// payment.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	payment.IdempotencyKeyValidator = paymentDescIdempotencyKey.Validators[0].(func(string) error)
 	paymentchannelMixin := schema.PaymentChannel{}.Mixin()

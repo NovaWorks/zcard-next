@@ -119,6 +119,75 @@ func (_u *PaymentUpdate) SetNillableChannel(v *string) *PaymentUpdate {
 	return _u
 }
 
+// SetChannelID sets the "channel_id" field.
+func (_u *PaymentUpdate) SetChannelID(v uint64) *PaymentUpdate {
+	_u.mutation.ResetChannelID()
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableChannelID(v *uint64) *PaymentUpdate {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
+// AddChannelID adds value to the "channel_id" field.
+func (_u *PaymentUpdate) AddChannelID(v int64) *PaymentUpdate {
+	_u.mutation.AddChannelID(v)
+	return _u
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (_u *PaymentUpdate) SetDriverSnapshot(v string) *PaymentUpdate {
+	_u.mutation.SetDriverSnapshot(v)
+	return _u
+}
+
+// SetNillableDriverSnapshot sets the "driver_snapshot" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableDriverSnapshot(v *string) *PaymentUpdate {
+	if v != nil {
+		_u.SetDriverSnapshot(*v)
+	}
+	return _u
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (_u *PaymentUpdate) SetExpiresAt(v time.Time) *PaymentUpdate {
+	_u.mutation.SetExpiresAt(v)
+	return _u
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableExpiresAt(v *time.Time) *PaymentUpdate {
+	if v != nil {
+		_u.SetExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (_u *PaymentUpdate) ClearExpiresAt() *PaymentUpdate {
+	_u.mutation.ClearExpiresAt()
+	return _u
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (_u *PaymentUpdate) SetReviewReason(v string) *PaymentUpdate {
+	_u.mutation.SetReviewReason(v)
+	return _u
+}
+
+// SetNillableReviewReason sets the "review_reason" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableReviewReason(v *string) *PaymentUpdate {
+	if v != nil {
+		_u.SetReviewReason(*v)
+	}
+	return _u
+}
+
 // SetChannelOrderNo sets the "channel_order_no" field.
 func (_u *PaymentUpdate) SetChannelOrderNo(v string) *PaymentUpdate {
 	_u.mutation.SetChannelOrderNo(v)
@@ -395,6 +464,16 @@ func (_u *PaymentUpdate) check() error {
 			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Payment.channel": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DriverSnapshot(); ok {
+		if err := payment.DriverSnapshotValidator(v); err != nil {
+			return &ValidationError{Name: "driver_snapshot", err: fmt.Errorf(`ent: validator failed for field "Payment.driver_snapshot": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ReviewReason(); ok {
+		if err := payment.ReviewReasonValidator(v); err != nil {
+			return &ValidationError{Name: "review_reason", err: fmt.Errorf(`ent: validator failed for field "Payment.review_reason": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ChannelOrderNo(); ok {
 		if err := payment.ChannelOrderNoValidator(v); err != nil {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
@@ -450,6 +529,24 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Channel(); ok {
 		_spec.SetField(payment.FieldChannel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ChannelID(); ok {
+		_spec.SetField(payment.FieldChannelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedChannelID(); ok {
+		_spec.AddField(payment.FieldChannelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.DriverSnapshot(); ok {
+		_spec.SetField(payment.FieldDriverSnapshot, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ExpiresAt(); ok {
+		_spec.SetField(payment.FieldExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiresAtCleared() {
+		_spec.ClearField(payment.FieldExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ReviewReason(); ok {
+		_spec.SetField(payment.FieldReviewReason, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ChannelOrderNo(); ok {
 		_spec.SetField(payment.FieldChannelOrderNo, field.TypeString, value)
@@ -652,6 +749,75 @@ func (_u *PaymentUpdateOne) SetChannel(v string) *PaymentUpdateOne {
 func (_u *PaymentUpdateOne) SetNillableChannel(v *string) *PaymentUpdateOne {
 	if v != nil {
 		_u.SetChannel(*v)
+	}
+	return _u
+}
+
+// SetChannelID sets the "channel_id" field.
+func (_u *PaymentUpdateOne) SetChannelID(v uint64) *PaymentUpdateOne {
+	_u.mutation.ResetChannelID()
+	_u.mutation.SetChannelID(v)
+	return _u
+}
+
+// SetNillableChannelID sets the "channel_id" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableChannelID(v *uint64) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetChannelID(*v)
+	}
+	return _u
+}
+
+// AddChannelID adds value to the "channel_id" field.
+func (_u *PaymentUpdateOne) AddChannelID(v int64) *PaymentUpdateOne {
+	_u.mutation.AddChannelID(v)
+	return _u
+}
+
+// SetDriverSnapshot sets the "driver_snapshot" field.
+func (_u *PaymentUpdateOne) SetDriverSnapshot(v string) *PaymentUpdateOne {
+	_u.mutation.SetDriverSnapshot(v)
+	return _u
+}
+
+// SetNillableDriverSnapshot sets the "driver_snapshot" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableDriverSnapshot(v *string) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetDriverSnapshot(*v)
+	}
+	return _u
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (_u *PaymentUpdateOne) SetExpiresAt(v time.Time) *PaymentUpdateOne {
+	_u.mutation.SetExpiresAt(v)
+	return _u
+}
+
+// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableExpiresAt(v *time.Time) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetExpiresAt(*v)
+	}
+	return _u
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (_u *PaymentUpdateOne) ClearExpiresAt() *PaymentUpdateOne {
+	_u.mutation.ClearExpiresAt()
+	return _u
+}
+
+// SetReviewReason sets the "review_reason" field.
+func (_u *PaymentUpdateOne) SetReviewReason(v string) *PaymentUpdateOne {
+	_u.mutation.SetReviewReason(v)
+	return _u
+}
+
+// SetNillableReviewReason sets the "review_reason" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableReviewReason(v *string) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetReviewReason(*v)
 	}
 	return _u
 }
@@ -945,6 +1111,16 @@ func (_u *PaymentUpdateOne) check() error {
 			return &ValidationError{Name: "channel", err: fmt.Errorf(`ent: validator failed for field "Payment.channel": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.DriverSnapshot(); ok {
+		if err := payment.DriverSnapshotValidator(v); err != nil {
+			return &ValidationError{Name: "driver_snapshot", err: fmt.Errorf(`ent: validator failed for field "Payment.driver_snapshot": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ReviewReason(); ok {
+		if err := payment.ReviewReasonValidator(v); err != nil {
+			return &ValidationError{Name: "review_reason", err: fmt.Errorf(`ent: validator failed for field "Payment.review_reason": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ChannelOrderNo(); ok {
 		if err := payment.ChannelOrderNoValidator(v); err != nil {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
@@ -1017,6 +1193,24 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.Channel(); ok {
 		_spec.SetField(payment.FieldChannel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ChannelID(); ok {
+		_spec.SetField(payment.FieldChannelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedChannelID(); ok {
+		_spec.AddField(payment.FieldChannelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.DriverSnapshot(); ok {
+		_spec.SetField(payment.FieldDriverSnapshot, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ExpiresAt(); ok {
+		_spec.SetField(payment.FieldExpiresAt, field.TypeTime, value)
+	}
+	if _u.mutation.ExpiresAtCleared() {
+		_spec.ClearField(payment.FieldExpiresAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.ReviewReason(); ok {
+		_spec.SetField(payment.FieldReviewReason, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.ChannelOrderNo(); ok {
 		_spec.SetField(payment.FieldChannelOrderNo, field.TypeString, value)

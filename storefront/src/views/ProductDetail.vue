@@ -122,7 +122,7 @@
           <label class="pd-label">查询密码（取货用，至少 4 位）<span v-if="trade.queryPasswordRequired" class="pd-req">*</span></label>
           <input v-model="queryPassword" type="text" class="pd-input" placeholder="用于取货验证（忘记将无法取货）" />
         </div>
-        <div v-if="isGuest" class="pd-field">
+        <div v-if="isGuest || trade.contactScope === 'all'" class="pd-field">
           <label class="pd-label">联系方式 {{ trade.contactRequired !== 'none' ? ' *' : '（选填）' }}</label>
           <input v-model="contact" type="text" class="pd-input" :placeholder="`用于订单查询与售后（${contactRequiredLabel(trade.contactRequired)}）`" />
         </div>
@@ -162,7 +162,7 @@
     </div>
 
     <!-- 描述区 -->
-    <div v-if="p.description" class="pd-section">
+    <div v-if="p.description" class="pd-section pd-details">
       <h3 class="pd-section-title">商品详情</h3>
       <div ref="description" class="pd-desc" @click="openDescriptionImage" @keydown="descriptionKeydown" v-html="p.description"></div>
     </div>
@@ -312,7 +312,12 @@ async function addToCart() {
   error.value = '';
   const { error: err } = await addToCartStore(p.value, quantity.value, selectedSku.value || 0);
   addingCart.value = false;
-  if (err) { error.value = err; return; }
+  if (err) {
+    error.value = err;
+    const fresh = await getProduct(p.value.id);
+    if (fresh.data) p.value = fresh.data;
+    return;
+  }
   // 成功后按钮经 cartState 响应式切换为「移除购物车」（无临时态）
 }
 
@@ -431,12 +436,12 @@ async function applyProductSeo(product: Product) {
 }
 
 /** 下单前校验（与后端 validateTradeRequirements 同口径） */
-function validateTradeFields(): boolean {
+function validateTradeFields(requireContact = true): boolean {
   if (trade.value.queryPasswordRequired && queryPassword.value.trim().length < 4) {
     error.value = '请设置查询密码（至少 4 位，取货时使用）';
     return false;
   }
-  if (isGuest.value && trade.value.contactRequired !== 'none') {
+  if (requireContact && (isGuest.value || trade.value.contactScope === 'all') && trade.value.contactRequired !== 'none') {
     if (!contact.value.trim()) {
       error.value = `请填写联系方式（${contactRequiredLabel(trade.value.contactRequired)}），用于订单查询与售后`;
       return false;
@@ -486,7 +491,7 @@ async function exchangePoints() {
     router.push({ path: '/login', query: { redirect: route.fullPath } });
     return;
   }
-  if (!validateTradeFields()) return;
+  if (!validateTradeFields(false)) return;
   if (!queryPassword.value || queryPassword.value.length < 4) {
     error.value = '积分兑换同样需要设置查询密码（取货用，至少 4 位）';
     return;
@@ -646,6 +651,12 @@ async function exchangePoints() {
 .pd-desc { font-size: 14px; line-height: 1.8; color: #374151; word-break: break-word; overflow-wrap: anywhere; }
 .pd-desc :deep(img) { max-width: 100%; border-radius: 8px; }
 .pd-desc :deep(p) { margin: 8px 0; }
+.pd-desc :deep(ol), .pd-desc :deep(ul) { margin: 12px 0; padding-inline-start: 1.75em; list-style-position: outside; }
+.pd-desc :deep(li) { padding-inline-start: 0.25em; }
+.pd-desc :deep(li + li) { margin-top: 8px; }
+.pd-desc :deep(li > ol), .pd-desc :deep(li > ul) { margin: 8px 0; }
+.pd-desc > :deep(:first-child) { margin-top: 0; }
+.pd-desc > :deep(:last-child) { margin-bottom: 0; }
 
 .pd-review { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
 .pd-review:last-child { border-bottom: none; }
@@ -686,6 +697,7 @@ async function exchangePoints() {
   .pd-price { font-size: 24px; }
   .pd-price-card { margin-top: 12px; padding: 12px 14px; }
   .pd-section { padding: 14px; border-radius: 12px; }
+  .pd-details { padding: 20px; }
   .pd-actions {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 100;
     margin: 0; padding: 10px 12px calc(10px + env(safe-area-inset-bottom));

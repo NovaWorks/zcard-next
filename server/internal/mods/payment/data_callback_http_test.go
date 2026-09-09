@@ -36,7 +36,7 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 	if method == "JSON" {
 		driver, cfg, ack = "epusdt", `{"pid":"1","secret_key":"test-secret","currency":"cny"}`, "ok"
 	}
-	_, err := repo.CreateChannel(ctx, "form gateway", "form-test", driver, cfg, 0, "fixed", true, 0, "", nil)
+	ch, err := repo.CreateChannel(ctx, "form gateway", "form-test", driver, cfg, 0, "fixed", true, 0, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,9 +86,9 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 	srv := khttp.NewServer()
 	RegisterPaymentCallback(srv, repo, d)
 	for i := 0; i < 2; i++ {
-		requestMethod, target, contentType, body := "POST", "/payments/callback/form-test", "application/x-www-form-urlencoded", form.Encode()
+		requestMethod, target, contentType, body := "POST", fmt.Sprintf("/payments/callback/form-test?channel_id=%d", ch.ID), "application/x-www-form-urlencoded", form.Encode()
 		if method == "GET" {
-			requestMethod, target, body = "GET", target+"?"+body, ""
+			requestMethod, target, body = "GET", target+"&"+body, ""
 		}
 		if method == "JSON" {
 			contentType = "application/json"

@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import type { Router } from 'vue-router';
+import type { Router, RouterScrollBehavior } from 'vue-router';
 import { getToken } from '@/api/client';
 import Home from '@/views/Home.vue';
 
@@ -27,10 +27,17 @@ export const routes = [
   { path: '/posts/:slug', name: 'post-detail', component: () => import('@/views/PostDetail.vue') }
 ];
 
+export const scrollBehavior: RouterScrollBehavior = (to, _from, savedPosition) => {
+  // 目录由 useCatalogScroll 在缓存组件激活后恢复，避免被尚未移除的详情页高度截断。
+  if (to.name === 'home' || to.name === 'products') return false;
+  return savedPosition || { left: 0, top: 0 };
+};
+
 export function createAppRouter(): Router {
   const router = createRouter({
     history: createWebHistory(),
     routes,
+    scrollBehavior,
   });
   installRouterGuards(router);
   return router;

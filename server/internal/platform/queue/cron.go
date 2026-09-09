@@ -19,6 +19,9 @@ type Cron struct {
 	stop    chan struct{}
 	stopped sync.Once
 	started bool
+	running map[string]bool
+	ctx     context.Context
+	cancel  context.CancelFunc
 }
 
 type cronEntry struct {
@@ -30,7 +33,8 @@ type cronEntry struct {
 
 // NewCron 构造。
 func NewCron() *Cron {
-	return &Cron{entries: map[string]cronEntry{}, stop: make(chan struct{})}
+	ctx, cancel := context.WithCancel(context.Background())
+	return &Cron{entries: map[string]cronEntry{}, running: map[string]bool{}, stop: make(chan struct{}), ctx: ctx, cancel: cancel}
 }
 
 // AddEvery 注册周期任务（name 唯一，重复注册覆盖——测试与重装配友好）。
@@ -59,7 +63,10 @@ func (c *Cron) Start(log *slog.Logger) {
 
 // Stop 停止（幂等）。
 func (c *Cron) Stop() {
-	c.stopped.Do(func() { close(c.stop) })
+	c.stopped.Do(func() {
+		c.cancel()
+		close(c.stop)
+	})
 }
 
 func (c *Cron) loop(log *slog.Logger) {
@@ -79,7 +86,8 @@ func (c *Cron) fireDue(now time.Time, log *slog.Logger) {
 	c.mu.Lock()
 	due := make([]cronEntry, 0, len(c.entries))
 	for _, e := range c.entries {
-		if !now.Before(e.next) {
+		if !now.Before(e.next) && !c.running[e.name] && c.ctx.Err() == nil {
+			c.running[e.name] = true
 			due = append(due, e)
 			ne := e
 			ne.next = now.Add(ne.interval)
@@ -89,11 +97,33 @@ func (c *Cron) fireDue(now time.Time, log *slog.Logger) {
 	c.mu.Unlock()
 	sort.Slice(due, func(i, j int) bool { return due[i].name < due[j].name })
 	for _, e := range due {
-		c.safeRun(e, log)
+		go c.safeRun(e, log)
 	}
 }
 
 func (c *Cron) safeRun(e cronEntry, log *slog.Logger) {
+	started := time.Now()
+	budget := max(e.interval, time.Minute)
+	ctx, cancel := context.WithTimeout(c.ctx, budget)
+	defer cancel()
+	defer func() {
+		c.mu.Lock()
+		delete(c.running, e.name)
+		c.mu.Unlock()
+		if log != nil {
+			log.Info("queue.cron.finished", "task", e.name, "duration", time.Since(started), "context_error", ctx.Err())
+		}
+	}()
+	if log != nil {
+		log.Info("queue.cron.started", "task", e.name, "timeout", budget)
+	}
+	stopWarning := context.AfterFunc(ctx, func() {
+		if log != nil && ctx.Err() == context.DeadlineExceeded {
+			log.Error("queue.cron.timeout", "task", e.name, "timeout", budget)
+		}
+	})
+	defer stopWarning()
+
 	defer func() {
 		if r := recover(); r != nil {
 			if log != nil {
@@ -101,7 +131,7 @@ func (c *Cron) safeRun(e cronEntry, log *slog.Logger) {
 			}
 		}
 	}()
-	e.fn(context.Background())
+	e.fn(ctx)
 }
 
 // Entries 快照（测试与诊断）。
