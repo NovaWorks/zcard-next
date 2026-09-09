@@ -109,11 +109,11 @@ export function fetchPosts(params?: { page?: number; page_size?: number }) {
   return request({ url: "/api/v1/admin/content/posts", params });
 }
 
-export function createPost(data: { slug: string; type: string; title_json: string; summary_json?: string; content_json: string; category_id?: number; is_published?: boolean }) {
+export function createPost(data: { slug: string; type: string; title_json: string; summary_json?: string; content_json: string; category_id?: number; is_published?: boolean; sort?: number }) {
   return request({ url: "/api/v1/admin/content/posts", method: "post", data });
 }
 
-export function updatePost(id: number, data: { title_json?: string; summary_json?: string; content_json?: string; thumbnail?: string; category_id?: number }) {
+export function updatePost(id: number, data: { title_json?: string; summary_json?: string; content_json?: string; thumbnail?: string; category_id?: number; sort?: number }) {
   return request({ url: `/api/v1/admin/content/posts/${id}`, method: "put", data });
 }
 

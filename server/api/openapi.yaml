@@ -3,7 +3,7 @@
 
 openapi: 3.0.3
 info:
-    title: ""
+    title: "ZCard API"
     version: 0.0.1
 paths:
     /api/supply/categories:
@@ -7185,6 +7185,9 @@ components:
                     type: string
                 isPublished:
                     type: boolean
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.CreateProductRequest:
             required:
                 - name
@@ -9014,6 +9017,9 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.PostCategory:
             type: object
             properties:
@@ -10310,6 +10316,9 @@ components:
                     type: string
                 categoryId:
                     type: string
+                sort:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.UpdateProductRequest:
             required:
                 - id

@@ -66,6 +66,7 @@ func (s *AdminContentService) ListBanners(ctx context.Context, req *adminv1.List
 
 func (s *AdminContentService) CreatePost(ctx context.Context, req *adminv1.CreatePostRequest) (*adminv1.Post, error) {
 	typ := orDefault(req.GetType(), "blog")
+	sort := req.GetSort()
 	p, err := s.repo.CreatePost(ctx, PostInput{
 		Slug:        req.GetSlug(),
 		Type:        typ,
@@ -75,6 +76,7 @@ func (s *AdminContentService) CreatePost(ctx context.Context, req *adminv1.Creat
 		Thumbnail:   req.GetThumbnail(),
 		CategoryID:  req.GetCategoryId(),
 		IsPublished: req.GetIsPublished(),
+		Sort:        &sort,
 	})
 	if err != nil {
 		return nil, err
@@ -89,6 +91,7 @@ func (s *AdminContentService) UpdatePost(ctx context.Context, req *adminv1.Updat
 		ContentJSON: req.GetContentJson(),
 		Thumbnail:   req.GetThumbnail(),
 		CategoryID:  req.GetCategoryId(),
+		Sort:        req.Sort,
 	})
 	if err != nil {
 		return nil, err
@@ -210,6 +213,7 @@ func toPostPB(p *ent.Post) *adminv1.Post {
 		Id: p.ID, Slug: p.Slug, Type: string(p.Type),
 		ContentJson: p.ContentJSON, Thumbnail: p.Thumbnail,
 		CategoryId: p.CategoryID, IsPublished: p.IsPublished,
+		Sort:      p.Sort,
 		CreatedAt: p.CreatedAt.Unix(), UpdatedAt: p.UpdatedAt.Unix(),
 	}
 	if p.TitleJSON != nil {

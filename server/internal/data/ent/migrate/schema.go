@@ -1256,6 +1256,7 @@ var (
 		{Name: "category_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "is_published", Type: field.TypeBool, Default: false},
 		{Name: "published_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "sort", Type: field.TypeInt32, Default: 0},
 	}
 	// PostsTable holds the schema information for the "posts" table.
 	PostsTable = &schema.Table{

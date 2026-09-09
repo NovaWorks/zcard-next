@@ -613,6 +613,7 @@ type Post struct {
 	PublishedAt   int64                  `protobuf:"varint,10,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     int64                  `protobuf:"varint,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Sort          int32                  `protobuf:"varint,13,opt,name=sort,proto3" json:"sort,omitempty"` // 数字越小越靠前
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -731,6 +732,13 @@ func (x *Post) GetUpdatedAt() int64 {
 	return 0
 }
 
+func (x *Post) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
 type CreatePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Slug          string                 `protobuf:"bytes,1,opt,name=slug,proto3" json:"slug,omitempty"`
@@ -741,6 +749,7 @@ type CreatePostRequest struct {
 	Thumbnail     string                 `protobuf:"bytes,6,opt,name=thumbnail,proto3" json:"thumbnail,omitempty"`
 	CategoryId    uint64                 `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
 	IsPublished   bool                   `protobuf:"varint,8,opt,name=is_published,json=isPublished,proto3" json:"is_published,omitempty"`
+	Sort          int32                  `protobuf:"varint,9,opt,name=sort,proto3" json:"sort,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -831,6 +840,13 @@ func (x *CreatePostRequest) GetIsPublished() bool {
 	return false
 }
 
+func (x *CreatePostRequest) GetSort() int32 {
+	if x != nil {
+		return x.Sort
+	}
+	return 0
+}
+
 type UpdatePostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -839,6 +855,7 @@ type UpdatePostRequest struct {
 	ContentJson   string                 `protobuf:"bytes,4,opt,name=content_json,json=contentJson,proto3" json:"content_json,omitempty"`
 	Thumbnail     string                 `protobuf:"bytes,5,opt,name=thumbnail,proto3" json:"thumbnail,omitempty"`
 	CategoryId    uint64                 `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Sort          *int32                 `protobuf:"varint,7,opt,name=sort,proto3,oneof" json:"sort,omitempty"` // 未传保留原值，允许重置为 0
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -911,6 +928,13 @@ func (x *UpdatePostRequest) GetThumbnail() string {
 func (x *UpdatePostRequest) GetCategoryId() uint64 {
 	if x != nil {
 		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *UpdatePostRequest) GetSort() int32 {
+	if x != nil && x.Sort != nil {
+		return *x.Sort
 	}
 	return 0
 }
@@ -1525,7 +1549,7 @@ const file_admin_v1_content_proto_rawDesc = "" +
 	"\abanners\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.BannerR\abanners\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xe6\x02\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xfa\x02\n" +
 	"\x04Post\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04slug\x18\x02 \x01(\tR\x04slug\x12\x12\n" +
@@ -1543,7 +1567,8 @@ const file_admin_v1_content_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\v \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\f \x01(\x03R\tupdatedAt\"\x96\x02\n" +
+	"updated_at\x18\f \x01(\x03R\tupdatedAt\x12\x12\n" +
+	"\x04sort\x18\r \x01(\x05R\x04sort\"\xaa\x02\n" +
 	"\x11CreatePostRequest\x12\x17\n" +
 	"\x04slug\x18\x01 \x01(\tB\x03\xe0A\x02R\x04slug\x12\x17\n" +
 	"\x04type\x18\x02 \x01(\tB\x03\xe0A\x02R\x04type\x12\"\n" +
@@ -1554,7 +1579,8 @@ const file_admin_v1_content_proto_rawDesc = "" +
 	"\tthumbnail\x18\x06 \x01(\tR\tthumbnail\x12\x1f\n" +
 	"\vcategory_id\x18\a \x01(\x04R\n" +
 	"categoryId\x12!\n" +
-	"\fis_published\x18\b \x01(\bR\visPublished\"\xcc\x01\n" +
+	"\fis_published\x18\b \x01(\bR\visPublished\x12\x12\n" +
+	"\x04sort\x18\t \x01(\x05R\x04sort\"\xee\x01\n" +
 	"\x11UpdatePostRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1563,7 +1589,9 @@ const file_admin_v1_content_proto_rawDesc = "" +
 	"\fcontent_json\x18\x04 \x01(\tR\vcontentJson\x12\x1c\n" +
 	"\tthumbnail\x18\x05 \x01(\tR\tthumbnail\x12\x1f\n" +
 	"\vcategory_id\x18\x06 \x01(\x04R\n" +
-	"categoryId\"C\n" +
+	"categoryId\x12\x17\n" +
+	"\x04sort\x18\a \x01(\x05H\x00R\x04sort\x88\x01\x01B\a\n" +
+	"\x05_sort\"C\n" +
 	"\x12PublishPostRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x18\n" +
 	"\apublish\x18\x02 \x01(\bR\apublish\"(\n" +
@@ -1695,6 +1723,7 @@ func file_admin_v1_content_proto_init() {
 	if File_admin_v1_content_proto != nil {
 		return
 	}
+	file_admin_v1_content_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

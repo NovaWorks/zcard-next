@@ -38,6 +38,8 @@ const (
 	FieldIsPublished = "is_published"
 	// FieldPublishedAt holds the string denoting the published_at field in the database.
 	FieldPublishedAt = "published_at"
+	// FieldSort holds the string denoting the sort field in the database.
+	FieldSort = "sort"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 )
@@ -57,6 +59,7 @@ var Columns = []string{
 	FieldCategoryID,
 	FieldIsPublished,
 	FieldPublishedAt,
+	FieldSort,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -84,6 +87,10 @@ var (
 	ThumbnailValidator func(string) error
 	// DefaultIsPublished holds the default value on creation for the "is_published" field.
 	DefaultIsPublished bool
+	// DefaultSort holds the default value on creation for the "sort" field.
+	DefaultSort int32
+	// SortValidator is a validator for the "sort" field. It is called by the builders before save.
+	SortValidator func(int32) error
 )
 
 // Type defines the type for the "type" enum field.
@@ -168,4 +175,9 @@ func ByIsPublished(opts ...sql.OrderTermOption) OrderOption {
 // ByPublishedAt orders the results by the published_at field.
 func ByPublishedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPublishedAt, opts...).ToFunc()
+}
+
+// BySort orders the results by the sort field.
+func BySort(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSort, opts...).ToFunc()
 }

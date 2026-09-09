@@ -41,7 +41,9 @@ type Post struct {
 	// IsPublished holds the value of the "is_published" field.
 	IsPublished bool `json:"is_published,omitempty"`
 	// PublishedAt holds the value of the "published_at" field.
-	PublishedAt  time.Time `json:"published_at,omitempty"`
+	PublishedAt time.Time `json:"published_at,omitempty"`
+	// Sort holds the value of the "sort" field.
+	Sort         int32 `json:"sort,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -54,7 +56,7 @@ func (*Post) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case post.FieldIsPublished:
 			values[i] = new(sql.NullBool)
-		case post.FieldID, post.FieldSubsiteID, post.FieldCategoryID:
+		case post.FieldID, post.FieldSubsiteID, post.FieldCategoryID, post.FieldSort:
 			values[i] = new(sql.NullInt64)
 		case post.FieldSlug, post.FieldType, post.FieldContentJSON, post.FieldThumbnail:
 			values[i] = new(sql.NullString)
@@ -157,6 +159,12 @@ func (_m *Post) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PublishedAt = value.Time
 			}
+		case post.FieldSort:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sort", values[i])
+			} else if value.Valid {
+				_m.Sort = int32(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -228,6 +236,9 @@ func (_m *Post) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("published_at=")
 	builder.WriteString(_m.PublishedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("sort=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Sort))
 	builder.WriteByte(')')
 	return builder.String()
 }

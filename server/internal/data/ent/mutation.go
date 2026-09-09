@@ -42065,6 +42065,8 @@ type PostMutation struct {
 	addcategory_id *int64
 	is_published   *bool
 	published_at   *time.Time
+	sort           *int32
+	addsort        *int32
 	clearedFields  map[string]struct{}
 	done           bool
 	oldValue       func(context.Context) (*Post, error)
@@ -42700,6 +42702,62 @@ func (m *PostMutation) ResetPublishedAt() {
 	delete(m.clearedFields, post.FieldPublishedAt)
 }
 
+// SetSort sets the "sort" field.
+func (m *PostMutation) SetSort(i int32) {
+	m.sort = &i
+	m.addsort = nil
+}
+
+// Sort returns the value of the "sort" field in the mutation.
+func (m *PostMutation) Sort() (r int32, exists bool) {
+	v := m.sort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSort returns the old "sort" field's value of the Post entity.
+// If the Post object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostMutation) OldSort(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSort is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSort requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSort: %w", err)
+	}
+	return oldValue.Sort, nil
+}
+
+// AddSort adds i to the "sort" field.
+func (m *PostMutation) AddSort(i int32) {
+	if m.addsort != nil {
+		*m.addsort += i
+	} else {
+		m.addsort = &i
+	}
+}
+
+// AddedSort returns the value that was added to the "sort" field in this mutation.
+func (m *PostMutation) AddedSort() (r int32, exists bool) {
+	v := m.addsort
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSort resets all changes to the "sort" field.
+func (m *PostMutation) ResetSort() {
+	m.sort = nil
+	m.addsort = nil
+}
+
 // Where appends a list predicates to the PostMutation builder.
 func (m *PostMutation) Where(ps ...predicate.Post) {
 	m.predicates = append(m.predicates, ps...)
@@ -42734,7 +42792,7 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, post.FieldCreatedAt)
 	}
@@ -42771,6 +42829,9 @@ func (m *PostMutation) Fields() []string {
 	if m.published_at != nil {
 		fields = append(fields, post.FieldPublishedAt)
 	}
+	if m.sort != nil {
+		fields = append(fields, post.FieldSort)
+	}
 	return fields
 }
 
@@ -42803,6 +42864,8 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 		return m.IsPublished()
 	case post.FieldPublishedAt:
 		return m.PublishedAt()
+	case post.FieldSort:
+		return m.Sort()
 	}
 	return nil, false
 }
@@ -42836,6 +42899,8 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldIsPublished(ctx)
 	case post.FieldPublishedAt:
 		return m.OldPublishedAt(ctx)
+	case post.FieldSort:
+		return m.OldSort(ctx)
 	}
 	return nil, fmt.Errorf("unknown Post field %s", name)
 }
@@ -42929,6 +42994,13 @@ func (m *PostMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPublishedAt(v)
 		return nil
+	case post.FieldSort:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSort(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Post field %s", name)
 }
@@ -42943,6 +43015,9 @@ func (m *PostMutation) AddedFields() []string {
 	if m.addcategory_id != nil {
 		fields = append(fields, post.FieldCategoryID)
 	}
+	if m.addsort != nil {
+		fields = append(fields, post.FieldSort)
+	}
 	return fields
 }
 
@@ -42955,6 +43030,8 @@ func (m *PostMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSubsiteID()
 	case post.FieldCategoryID:
 		return m.AddedCategoryID()
+	case post.FieldSort:
+		return m.AddedSort()
 	}
 	return nil, false
 }
@@ -42977,6 +43054,13 @@ func (m *PostMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddCategoryID(v)
+		return nil
+	case post.FieldSort:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSort(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Post numeric field %s", name)
@@ -43067,6 +43151,9 @@ func (m *PostMutation) ResetField(name string) error {
 		return nil
 	case post.FieldPublishedAt:
 		m.ResetPublishedAt()
+		return nil
+	case post.FieldSort:
+		m.ResetSort()
 		return nil
 	}
 	return fmt.Errorf("unknown Post field %s", name)

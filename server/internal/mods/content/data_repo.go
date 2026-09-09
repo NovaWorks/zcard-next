@@ -210,6 +210,7 @@ type PostInput struct {
 	Thumbnail   string
 	CategoryID  uint64
 	IsPublished bool
+	Sort        *int32
 }
 
 // CreatePost 创建（slug 唯一；content 逐语言 sanitize）。
@@ -230,6 +231,7 @@ func (r *ContentRepo) CreatePost(ctx context.Context, in PostInput) (*ent.Post, 
 		SetType(post.Type(in.Type)).
 		SetTitleJSON(title).
 		SetContentJSON(content).
+		SetNillableSort(in.Sort).
 		SetIsPublished(in.IsPublished)
 	if in.SummaryJSON != "" {
 		summary, err := mustLangJSON(in.SummaryJSON)
@@ -265,7 +267,7 @@ func (r *ContentRepo) UpdatePost(ctx context.Context, id uint64, in PostInput) (
 		}
 		return nil, err
 	}
-	upd := data.Client(ctx, r.data).Post.UpdateOneID(id)
+	upd := data.Client(ctx, r.data).Post.UpdateOneID(id).SetNillableSort(in.Sort)
 	if in.TitleJSON != "" {
 		title, err := mustLangJSON(in.TitleJSON)
 		if err != nil {
@@ -325,7 +327,7 @@ func (r *ContentRepo) DeletePost(ctx context.Context, id uint64) error {
 
 // ListPosts 管理面列表（全量含草稿）。
 func (r *ContentRepo) ListPosts(ctx context.Context, typ string, page, pageSize int) ([]*ent.Post, int, error) {
-	q := data.Client(ctx, r.data).Post.Query().Order(ent.Desc(post.FieldID))
+	q := data.Client(ctx, r.data).Post.Query().Order(ent.Asc(post.FieldSort), ent.Desc(post.FieldID))
 	if typ != "" {
 		q = q.Where(post.TypeEQ(post.Type(typ)))
 	}
@@ -341,7 +343,7 @@ func (r *ContentRepo) ListPosts(ctx context.Context, typ string, page, pageSize 
 func (r *ContentRepo) ListPublishedPosts(ctx context.Context, typ string, categoryID uint64, page, pageSize int) ([]*ent.Post, int, error) {
 	q := data.Client(ctx, r.data).Post.Query().
 		Where(post.IsPublished(true)).
-		Order(ent.Desc(post.FieldPublishedAt))
+		Order(ent.Asc(post.FieldSort), ent.Desc(post.FieldPublishedAt), ent.Desc(post.FieldID))
 	if typ != "" {
 		q = q.Where(post.TypeEQ(post.Type(typ)))
 	}

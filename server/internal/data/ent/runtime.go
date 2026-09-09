@@ -1391,6 +1391,12 @@ func init() {
 	postDescIsPublished := postFields[8].Descriptor()
 	// post.DefaultIsPublished holds the default value on creation for the is_published field.
 	post.DefaultIsPublished = postDescIsPublished.Default.(bool)
+	// postDescSort is the schema descriptor for sort field.
+	postDescSort := postFields[10].Descriptor()
+	// post.DefaultSort holds the default value on creation for the sort field.
+	post.DefaultSort = postDescSort.Default.(int32)
+	// post.SortValidator is a validator for the "sort" field. It is called by the builders before save.
+	post.SortValidator = postDescSort.Validators[0].(func(int32) error)
 	postcategoryMixin := schema.PostCategory{}.Mixin()
 	postcategoryMixinFields0 := postcategoryMixin[0].Fields()
 	_ = postcategoryMixinFields0

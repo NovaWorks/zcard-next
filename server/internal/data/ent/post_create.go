@@ -158,6 +158,20 @@ func (_c *PostCreate) SetNillablePublishedAt(v *time.Time) *PostCreate {
 	return _c
 }
 
+// SetSort sets the "sort" field.
+func (_c *PostCreate) SetSort(v int32) *PostCreate {
+	_c.mutation.SetSort(v)
+	return _c
+}
+
+// SetNillableSort sets the "sort" field if the given value is not nil.
+func (_c *PostCreate) SetNillableSort(v *int32) *PostCreate {
+	if v != nil {
+		_c.SetSort(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *PostCreate) SetID(v uint64) *PostCreate {
 	_c.mutation.SetID(v)
@@ -219,6 +233,10 @@ func (_c *PostCreate) defaults() {
 		v := post.DefaultIsPublished
 		_c.mutation.SetIsPublished(v)
 	}
+	if _, ok := _c.mutation.Sort(); !ok {
+		v := post.DefaultSort
+		_c.mutation.SetSort(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -261,6 +279,14 @@ func (_c *PostCreate) check() error {
 	}
 	if _, ok := _c.mutation.IsPublished(); !ok {
 		return &ValidationError{Name: "is_published", err: errors.New(`ent: missing required field "Post.is_published"`)}
+	}
+	if _, ok := _c.mutation.Sort(); !ok {
+		return &ValidationError{Name: "sort", err: errors.New(`ent: missing required field "Post.sort"`)}
+	}
+	if v, ok := _c.mutation.Sort(); ok {
+		if err := post.SortValidator(v); err != nil {
+			return &ValidationError{Name: "sort", err: fmt.Errorf(`ent: validator failed for field "Post.sort": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -342,6 +368,10 @@ func (_c *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PublishedAt(); ok {
 		_spec.SetField(post.FieldPublishedAt, field.TypeTime, value)
 		_node.PublishedAt = value
+	}
+	if value, ok := _c.mutation.Sort(); ok {
+		_spec.SetField(post.FieldSort, field.TypeInt32, value)
+		_node.Sort = value
 	}
 	return _node, _spec
 }
@@ -560,6 +590,24 @@ func (u *PostUpsert) UpdatePublishedAt() *PostUpsert {
 // ClearPublishedAt clears the value of the "published_at" field.
 func (u *PostUpsert) ClearPublishedAt() *PostUpsert {
 	u.SetNull(post.FieldPublishedAt)
+	return u
+}
+
+// SetSort sets the "sort" field.
+func (u *PostUpsert) SetSort(v int32) *PostUpsert {
+	u.Set(post.FieldSort, v)
+	return u
+}
+
+// UpdateSort sets the "sort" field to the value that was provided on create.
+func (u *PostUpsert) UpdateSort() *PostUpsert {
+	u.SetExcluded(post.FieldSort)
+	return u
+}
+
+// AddSort adds v to the "sort" field.
+func (u *PostUpsert) AddSort(v int32) *PostUpsert {
+	u.Add(post.FieldSort, v)
 	return u
 }
 
@@ -807,6 +855,27 @@ func (u *PostUpsertOne) UpdatePublishedAt() *PostUpsertOne {
 func (u *PostUpsertOne) ClearPublishedAt() *PostUpsertOne {
 	return u.Update(func(s *PostUpsert) {
 		s.ClearPublishedAt()
+	})
+}
+
+// SetSort sets the "sort" field.
+func (u *PostUpsertOne) SetSort(v int32) *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.SetSort(v)
+	})
+}
+
+// AddSort adds v to the "sort" field.
+func (u *PostUpsertOne) AddSort(v int32) *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.AddSort(v)
+	})
+}
+
+// UpdateSort sets the "sort" field to the value that was provided on create.
+func (u *PostUpsertOne) UpdateSort() *PostUpsertOne {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdateSort()
 	})
 }
 
@@ -1220,6 +1289,27 @@ func (u *PostUpsertBulk) UpdatePublishedAt() *PostUpsertBulk {
 func (u *PostUpsertBulk) ClearPublishedAt() *PostUpsertBulk {
 	return u.Update(func(s *PostUpsert) {
 		s.ClearPublishedAt()
+	})
+}
+
+// SetSort sets the "sort" field.
+func (u *PostUpsertBulk) SetSort(v int32) *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.SetSort(v)
+	})
+}
+
+// AddSort adds v to the "sort" field.
+func (u *PostUpsertBulk) AddSort(v int32) *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.AddSort(v)
+	})
+}
+
+// UpdateSort sets the "sort" field to the value that was provided on create.
+func (u *PostUpsertBulk) UpdateSort() *PostUpsertBulk {
+	return u.Update(func(s *PostUpsert) {
+		s.UpdateSort()
 	})
 }
 

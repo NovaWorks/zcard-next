@@ -196,6 +196,27 @@ func (_u *PostUpdate) ClearPublishedAt() *PostUpdate {
 	return _u
 }
 
+// SetSort sets the "sort" field.
+func (_u *PostUpdate) SetSort(v int32) *PostUpdate {
+	_u.mutation.ResetSort()
+	_u.mutation.SetSort(v)
+	return _u
+}
+
+// SetNillableSort sets the "sort" field if the given value is not nil.
+func (_u *PostUpdate) SetNillableSort(v *int32) *PostUpdate {
+	if v != nil {
+		_u.SetSort(*v)
+	}
+	return _u
+}
+
+// AddSort adds value to the "sort" field.
+func (_u *PostUpdate) AddSort(v int32) *PostUpdate {
+	_u.mutation.AddSort(v)
+	return _u
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdate) Mutation() *PostMutation {
 	return _u.mutation
@@ -252,6 +273,11 @@ func (_u *PostUpdate) check() error {
 	if v, ok := _u.mutation.Thumbnail(); ok {
 		if err := post.ThumbnailValidator(v); err != nil {
 			return &ValidationError{Name: "thumbnail", err: fmt.Errorf(`ent: validator failed for field "Post.thumbnail": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Sort(); ok {
+		if err := post.SortValidator(v); err != nil {
+			return &ValidationError{Name: "sort", err: fmt.Errorf(`ent: validator failed for field "Post.sort": %w`, err)}
 		}
 	}
 	return nil
@@ -319,6 +345,12 @@ func (_u *PostUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.PublishedAtCleared() {
 		_spec.ClearField(post.FieldPublishedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Sort(); ok {
+		_spec.SetField(post.FieldSort, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedSort(); ok {
+		_spec.AddField(post.FieldSort, field.TypeInt32, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -508,6 +540,27 @@ func (_u *PostUpdateOne) ClearPublishedAt() *PostUpdateOne {
 	return _u
 }
 
+// SetSort sets the "sort" field.
+func (_u *PostUpdateOne) SetSort(v int32) *PostUpdateOne {
+	_u.mutation.ResetSort()
+	_u.mutation.SetSort(v)
+	return _u
+}
+
+// SetNillableSort sets the "sort" field if the given value is not nil.
+func (_u *PostUpdateOne) SetNillableSort(v *int32) *PostUpdateOne {
+	if v != nil {
+		_u.SetSort(*v)
+	}
+	return _u
+}
+
+// AddSort adds value to the "sort" field.
+func (_u *PostUpdateOne) AddSort(v int32) *PostUpdateOne {
+	_u.mutation.AddSort(v)
+	return _u
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (_u *PostUpdateOne) Mutation() *PostMutation {
 	return _u.mutation
@@ -577,6 +630,11 @@ func (_u *PostUpdateOne) check() error {
 	if v, ok := _u.mutation.Thumbnail(); ok {
 		if err := post.ThumbnailValidator(v); err != nil {
 			return &ValidationError{Name: "thumbnail", err: fmt.Errorf(`ent: validator failed for field "Post.thumbnail": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.Sort(); ok {
+		if err := post.SortValidator(v); err != nil {
+			return &ValidationError{Name: "sort", err: fmt.Errorf(`ent: validator failed for field "Post.sort": %w`, err)}
 		}
 	}
 	return nil
@@ -661,6 +719,12 @@ func (_u *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) {
 	}
 	if _u.mutation.PublishedAtCleared() {
 		_spec.ClearField(post.FieldPublishedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.Sort(); ok {
+		_spec.SetField(post.FieldSort, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedSort(); ok {
+		_spec.AddField(post.FieldSort, field.TypeInt32, value)
 	}
 	_node = &Post{config: _u.config}
 	_spec.Assign = _node.assignValues

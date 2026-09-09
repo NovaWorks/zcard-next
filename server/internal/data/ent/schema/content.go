@@ -74,6 +74,7 @@ func (Post) Fields() []ent.Field {
 		field.Uint64("category_id").Optional(),
 		field.Bool("is_published").Default(false),
 		field.Time("published_at").SchemaType(mysqlTime).Optional(),
+		field.Int32("sort").Default(0).NonNegative(),
 	}
 }
 

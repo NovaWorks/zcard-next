@@ -19,7 +19,7 @@ const postLoading = ref(false);
 const posts = ref<any[]>([]);
 const showPost = ref(false);
 const postSaving = ref(false);
-const postForm = ref({ slug: "", type: "notice", title: "", summary: "", content: "", category_id: 0, is_published: true });
+const postForm = ref({ slug: "", type: "notice", title: "", summary: "", content: "", category_id: 0, is_published: true, sort: 0 });
 const editingPost = ref<any>(null);
 
 // 筛选：发布状态（带计数）+ 栏目（下拉，全部栏目=空）
@@ -71,6 +71,7 @@ const categoryFilterOptions = computed(() => [{ label: "全部栏目", value: 0 
 
 const postColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
+  { title: "排序", key: "sort", width: 70, render: (row) => row.sort ?? 0 },
   { title: "slug", key: "slug", width: 130 },
   {
     title: "类型",
@@ -116,8 +117,17 @@ const postColumns: DataTableColumns<any> = [
 async function loadPosts() {
   postLoading.value = true;
   try {
-    const { data, error } = await fetchPosts();
-    if (!error && data) posts.value = (data as any).posts || [];
+    // 筛选与计数在本地完成，因此需读取全部分页，不能只管理默认第一页。
+    const rows: any[] = [];
+    for (let page = 1; ; page++) {
+      const { data, error } = await fetchPosts({ page, page_size: 100 });
+      if (error || !data) return;
+      const result = data as any;
+      const batch = result.posts || [];
+      rows.push(...batch);
+      if (!batch.length || rows.length >= Number(result.total || 0)) break;
+    }
+    posts.value = rows;
   } finally {
     postLoading.value = false;
   }
@@ -130,7 +140,7 @@ async function loadCategories() {
 
 function openCreatePost() {
   editingPost.value = null;
-  postForm.value = { slug: "", type: "notice", title: "", summary: "", content: "", category_id: categoryFilter.value || 0, is_published: true };
+  postForm.value = { slug: "", type: "notice", title: "", summary: "", content: "", category_id: categoryFilter.value || 0, is_published: true, sort: 0 };
   showPost.value = true;
 }
 
@@ -144,6 +154,7 @@ function openEditPost(row: any) {
     content: String(zhValue(row.content_json) === "-" ? "" : zhValue(row.content_json)),
     category_id: row.category_id || 0,
     is_published: row.is_published,
+    sort: row.sort ?? 0,
   };
   showPost.value = true;
 }
@@ -158,6 +169,7 @@ async function handlePost() {
         summary_json: postForm.value.summary ? JSON.stringify({ zh_CN: postForm.value.summary }) : undefined,
         content_json: JSON.stringify({ zh_CN: postForm.value.content }),
         category_id: postForm.value.category_id || undefined,
+        sort: postForm.value.sort ?? 0,
       });
       if (!error) {
         window.$message?.success("文章已更新");
@@ -173,6 +185,7 @@ async function handlePost() {
         content_json: JSON.stringify({ zh_CN: postForm.value.content }),
         category_id: postForm.value.category_id || undefined,
         is_published: postForm.value.is_published,
+        sort: postForm.value.sort ?? 0,
       });
       if (!error) {
         window.$message?.success("文章已创建");
@@ -364,6 +377,12 @@ onMounted(() => {
         </NFormItem>
         <NFormItem label="摘要">
           <NInput v-model:value="postForm.summary" />
+        </NFormItem>
+        <NFormItem label="排序">
+          <div class="w-full">
+            <NInputNumber v-model:value="postForm.sort" :min="0" :max="2147483647" :precision="0" class="w-full" />
+            <div class="mt-6px text-12px text-gray-500">数字越小越靠前，默认 0；相同数值保留原有排序。</div>
+          </div>
         </NFormItem>
         <NFormItem label="正文" required>
           <div class="w-full">
