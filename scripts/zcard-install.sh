@@ -1,139 +1,159 @@
 #!/usr/bin/env bash
-# ZCard 一键安装 / 管理脚本（Linux 服务器；比传统发卡系统更简——单二进制 + 内嵌 SQLite）。
-#
-# 用法：
-#   curl -fsSL https://raw.githubusercontent.com/NovaWorks/zcard-next/main/scripts/zcard-install.sh -o /tmp/zcard-install.sh
-#   sudo bash /tmp/zcard-install.sh install                    # 交互式（选数据库：PostgreSQL 推荐/MySQL/SQLite）
-#   sudo bash /tmp/zcard-install.sh install --db postgres --db-host 127.0.0.1 --db-port 5432 \
-#        --db-user postgres --db-pass xxx --db-name zcard --redis 127.0.0.1:6379   # 免交互直装 PG
-#   sudo bash /tmp/zcard-install.sh install --bin ./bin/zcard  # 本地二进制安装（无 Releases 时）
-#   sudo bash /tmp/zcard-install.sh update / status / start / stop / restart / uninstall / logs
-#
-# 数据库规则（与 Web 安装向导一致）：PostgreSQL（推荐·生产首选）/ MySQL 需配 Redis，
-# 库不存在自动创建（安装前用 zcard dbtest 真实校验）；SQLite 免一切依赖（本地测试模式）。
-#
-# 安装内容：/opt/zcard/{zcard,configs/config.yaml,data/} + systemd 服务（自动重启/开机自启）。
-# 安装后浏览器打开 http://服务器IP:8000 → 在线安装向导（选 PostgreSQL 推荐 / SQLite 本地测试）。
-#
-# 环境变量：ZCARD_VERSION（默认 latest）｜ZCARD_PORT（默认 8000）｜ZCARD_GH_REPO（默认 NovaWorks/zcard-next）
-
+# ZCard Linux 安装 / 管理。需 bash、curl、python3；生产推荐 systemd。
+# sudo bash zcard-install.sh install [--bin ./zcard-linux-amd64] [--db sqlite|mysql|postgres]
+# sudo bash zcard-install.sh update [self-update 参数，如 -source github]
+# sudo bash zcard-install.sh status|logs|start|stop|restart|uninstall
+# ZCARD_INSTALL_DIR=/opt/zcard，ZCARD_PORT=8000，ZCARD_VERSION=latest（仅首次下载）。
 set -Eeuo pipefail
+umask 077
 
 readonly GH_REPO="${ZCARD_GH_REPO:-NovaWorks/zcard-next}"
 readonly VERSION="${ZCARD_VERSION:-latest}"
 readonly PORT="${ZCARD_PORT:-8000}"
-# 目录可覆盖（默认 /opt/zcard）——测试/定制部署用：ZCARD_INSTALL_DIR=/srv/zcard
 readonly INSTALL_DIR="${ZCARD_INSTALL_DIR:-/opt/zcard}"
 readonly CONF_DIR="${INSTALL_DIR}/configs"
 readonly DATA_DIR="${INSTALL_DIR}/data"
 readonly BIN="${INSTALL_DIR}/zcard"
 readonly UNIT_FILE="${ZCARD_UNIT_FILE:-/etc/systemd/system/zcard.service}"
-readonly SERVICE="zcard"
-
-log()  { printf '\033[36m[INFO]\033[0m %s\n' "$*"; }
-warn() { printf '\033[33m[WARN]\033[0m %s\n' "$*"; }
-die()  { printf '\033[31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
-
-have_systemd() { [ "$(ps -p 1 -o comm= 2>/dev/null | tr -d '[:space:]')" = "systemd" ]; }
-
+readonly SERVICE=zcard
+log() { printf '[INFO] %s\n' "$*"; }
+warn() { printf '[WARN] %s\n' "$*" >&2; }
+die() { printf '[ERROR] %s\n' "$*" >&2; exit 1; }
+have_systemd() { [ -d /run/systemd/system ] && command -v systemctl >/dev/null; }
 need_root() {
-  # 显式覆盖安装目录（测试/定制）时放宽 root 要求；默认 /opt 与 systemd 仍需 root
-  if [ "${ZCARD_INSTALL_DIR:-}" != "" ] || [ "${ZCARD_UNIT_FILE:-}" != "" ]; then return 0; fi
-  [ "$(id -u)" = 0 ] || die "请用 root 运行（sudo bash $0 ...）"
+  [ "$(uname -s)" = Linux ] || die '此脚本仅支持 Linux'
+  if [ "$INSTALL_DIR" = /opt/zcard ] || have_systemd; then
+    [ "$(id -u)" = 0 ] || die '请以 root / sudo 运行'
+  fi
+  # 配置路径同时用于 systemd unit 与 SQLite URI，限制为普通绝对路径。
+  [[ "$INSTALL_DIR" =~ ^/[a-zA-Z0-9_./-]+$ ]] || die '安装目录必须为无空格的普通绝对路径'
 }
+require_command() { command -v "$1" >/dev/null || die "缺少 $1，请先安装"; }
+svc() { systemctl "$@" "$SERVICE.service"; }
 
 arch_name() {
   case "$(uname -m)" in
     x86_64|amd64) echo amd64 ;;
     aarch64|arm64) echo arm64 ;;
-    *) die "不支持的架构 $(uname -m)（支持 amd64/arm64）" ;;
+    *) die '仅支持 amd64 / arm64' ;;
   esac
 }
 
-# download_bin <目标路径>：GitHub Releases 下载（zcard-linux-<arch>.tar.gz 或裸二进制）
-download_bin() {
-  local dest="$1" arch tmp url
-  arch="$(arch_name)"
-  tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' RETURN
-  local vtag="$VERSION"
-  if [ "$vtag" = "latest" ]; then
-    vtag="$(curl -fsSL "https://api.github.com/repos/${GH_REPO}/releases/latest" | grep -m1 '"tag_name"' | cut -d'"' -f4)"
-    [ -n "$vtag" ] || die "无法获取最新版本（检查网络/GitHub Releases）"
+# 首装从同一个明确 tag 下载二进制和 SHA256SUMS，拒绝校验失败的文件。
+download_bin() (
+  local dest="$1" arch tmp tag asset base
+  arch="$(arch_name)"; tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+  tag="$VERSION"
+  if [ "$tag" = latest ]; then
+    tag="$(curl -fsSL --retry 3 "https://api.github.com/repos/${GH_REPO}/releases/latest" | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')"
   fi
-  log "下载 ZCard ${vtag} (linux/${arch}) ..."
-  for url in \
-    "https://github.com/${GH_REPO}/releases/download/${vtag}/zcard-linux-${arch}.tar.gz" \
-    "https://github.com/${GH_REPO}/releases/download/${vtag}/zcard-linux-${arch}"; do
-    if curl -fSL --retry 3 -o "${tmp}/dl" "$url" 2>/dev/null; then
-      if tar -tzf "${tmp}/dl" >/dev/null 2>&1; then
-        tar -xzf "${tmp}/dl" -C "$tmp"
-        local inner="$(find "$tmp" -type f -name zcard | head -1)"
-        [ -n "$inner" ] || die "压缩包内未找到 zcard 二进制"
-        mv "$inner" "$dest"
-      else
-        mv "${tmp}/dl" "$dest"
-      fi
-      chmod +x "$dest"
-      return 0
-    fi
-  done
-  die "下载失败：Releases 未发布 ${vtag} 资产？可用 --bin ./path/to/zcard 本地安装"
+  [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || die '版本须为 vX.Y.Z'
+  asset="zcard-linux-${arch}"
+  base="https://github.com/${GH_REPO}/releases/download/${tag}"
+  log "下载 ${tag} (${arch})"
+  curl -fSL --retry 3 --connect-timeout 15 -o "$tmp/$asset" "$base/$asset"
+  curl -fsSL --retry 3 --connect-timeout 15 -o "$tmp/SHA256SUMS" "$base/SHA256SUMS"
+  python3 - "$tmp" "$asset" <<'PYTHON'
+import hashlib, pathlib, sys
+root, name = pathlib.Path(sys.argv[1]), sys.argv[2]
+rows = [line.split() for line in (root/'SHA256SUMS').read_text().splitlines()]
+expected = [r[0] for r in rows if len(r) == 2 and r[1].lstrip('*') == name]
+with (root/name).open('rb') as f:
+    digest = hashlib.sha256()
+    for block in iter(lambda: f.read(1024 * 1024), b''): digest.update(block)
+    actual = digest.hexdigest()
+if len(expected) != 1 or actual != expected[0]:
+    sys.exit('SHA256 校验失败，中止安装')
+PYTHON
+  install -m 755 "$tmp/$asset" "$dest"
+)
+
+ask() {
+  local ans=""
+  if [ -t 0 ]; then read -r -p "$1 [$2]: " ans; fi
+  printf '%s\n' "${ans:-$2}"
+}
+ask_secret() {
+  local ans=""
+  if [ -t 0 ]; then
+    read -r -s -p "$1: " ans
+    printf '\n' >&2
+  fi
+  printf '%s\n' "$ans"
+}
+resolve_db() {
+  DB_DIALECT="${DB_DIALECT:-}"
+  if [ -z "$DB_DIALECT" ]; then
+    DB_DIALECT="$(ask '数据库 postgres / mysql / sqlite' sqlite)"
+  fi
+  case "$DB_DIALECT" in sqlite|mysql|postgres) ;; *) die '数据库须为 sqlite / mysql / postgres';; esac
+  DB_HOST="${DB_HOST:-}"; DB_NAME="${DB_NAME:-}"
+  DB_USER="${DB_USER:-}"; DB_PASS="${DB_PASS:-}"; DB_PORT="${DB_PORT:-}"
+  REDIS_ADDR="${REDIS_ADDR:-}"; REDIS_PASS="${REDIS_PASS:-}"
+  if [ "$DB_DIALECT" = sqlite ]; then return; fi
+  local def_port=5432 def_user=postgres
+  if [ "$DB_DIALECT" = mysql ]; then def_port=3306; def_user=root; fi
+  DB_HOST="${DB_HOST:-$(ask '数据库主机' '127.0.0.1')}"
+  DB_PORT="${DB_PORT:-$(ask '数据库端口' "$def_port")}"
+  DB_USER="${DB_USER:-$(ask '数据库用户' "$def_user")}"
+  DB_PASS="${DB_PASS:-$(ask_secret '数据库密码')}"
+  DB_NAME="${DB_NAME:-$(ask '数据库名（不存在将创建）' 'zcard')}"
+  REDIS_ADDR="${REDIS_ADDR:-$(ask 'Redis 地址' '127.0.0.1:6379')}"
+  REDIS_PASS="${REDIS_PASS:-$(ask_secret 'Redis 密码（可留空）')}"
+  [ -n "$DB_PASS" ] || die '数据库密码不能为空'
 }
 
 write_config() {
   mkdir -p "$CONF_DIR" "$DATA_DIR"
-  if [ -f "${CONF_DIR}/config.yaml" ]; then
-    warn "配置已存在，保留不动（${CONF_DIR}/config.yaml）——如需更换数据库请删除后重装"
-    return
-  fi
-  local db_driver=sqlite db_source="file:${DATA_DIR}/zcard.db"
-  local redis_addr="127.0.0.1:6379" redis_pass=""
-  if [ "${DB_DIALECT:-sqlite}" = "mysql" ]; then
-    db_driver=mysql
-    db_source="${DB_USER}:${DB_PASS}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=True&loc=UTC&charset=utf8mb4"
-    redis_addr="$REDIS_ADDR"; redis_pass="$REDIS_PASS"
-  elif [ "${DB_DIALECT:-sqlite}" = "postgres" ]; then
-    db_driver=postgres
-    db_source="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable"
-    redis_addr="$REDIS_ADDR"; redis_pass="$REDIS_PASS"
-  fi
-  cat > "${CONF_DIR}/config.yaml" <<EOF
-# ZCard 一键安装生成（数据库：${DB_DIALECT:-sqlite}）
-# 结构对齐 config.example.yaml：http/grpc 须嵌套在 server 段下（漏包裹=端口配置失效）
-server:
-  http:
-    addr: 0.0.0.0:${PORT}
-    timeout: 30s
-  grpc:
-    addr: 0.0.0.0:$((PORT + 1000))
-    timeout: 30s
-  migrate_on_start: true
-  admin_base_path: ""
-data:
-  database:
-    driver: ${db_driver}
-    source: "${db_source}"
-    max_open_conns: 20
-    max_idle_conns: 5
-  redis:
-    addr: ${redis_addr}
-    password: "${redis_pass}"
-    read_timeout: 0.2s
-EOF
-  log "已生成配置 ${CONF_DIR}/config.yaml（端口 ${PORT}；数据库 ${DB_DIALECT:-sqlite}$([ "${DB_DIALECT:-sqlite}" != sqlite ] && echo " @ ${DB_HOST}:${DB_PORT}/${DB_NAME}")）"
+  # JSON 是 YAML 的子集；标准库负责转义密码，PG 用户信息使用 URL 编码。
+  export DB_DIALECT DB_HOST DB_PORT DB_USER DB_PASS DB_NAME REDIS_ADDR REDIS_PASS
+  python3 - "$CONF_DIR/config.yaml" "$DATA_DIR" "$PORT" <<'PYTHON'
+import json, os, secrets, sys
+from urllib.parse import quote
+path, data, port = sys.argv[1:]
+e = os.environ
+driver = e['DB_DIALECT']
+source = 'file:' + data + '/zcard.db'
+if driver == 'mysql':
+    source = '{}:{}@tcp({}:{})/{}?parseTime=True&loc=UTC&charset=utf8mb4'.format(e['DB_USER'], e['DB_PASS'], e['DB_HOST'], e['DB_PORT'], e['DB_NAME'])
+elif driver == 'postgres':
+    host = e['DB_HOST']
+    if ':' in host and not host.startswith('['): host = '[' + host + ']'
+    source = 'postgres://{}:{}@{}:{}/{}?sslmode=disable'.format(quote(e['DB_USER'], safe=''), quote(e['DB_PASS'], safe=''), host, e['DB_PORT'], quote(e['DB_NAME'], safe=''))
+security = {}
+for key in ('jwt_admin_key', 'jwt_user_key', 'card_key', 'data_key'):
+    value = e.get('ZCARD_' + key.upper()) or secrets.token_hex(32)
+    if key in ('card_key', 'data_key'):
+        try: valid = len(value) == 64 and len(bytes.fromhex(value)) == 32
+        except ValueError: valid = False
+    else: valid = len(value.encode()) >= 32
+    if not valid: sys.exit('密钥格式错误: ' + key)
+    security[key] = value
+cfg = {'server': {'http': {'addr': '0.0.0.0:' + port, 'timeout': '30s'}, 'grpc': {'addr': ''}, 'migrate_on_start': True},
+       'data': {'database': {'driver': driver, 'source': source, 'max_open_conns': 20, 'max_idle_conns': 5},
+                'redis': {'addr': e['REDIS_ADDR'], 'password': e['REDIS_PASS'], 'read_timeout': '0.2s', 'write_timeout': '0.2s'}},
+       'security': security, 'tenancy': {'mode': 'row'}, 'log': {'level': 'info', 'format': 'text'}}
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w') as f: json.dump(cfg, f, ensure_ascii=False, indent=2); f.write('\n')
+PYTHON
+  unset DB_PASS REDIS_PASS
+  log '已生成配置和四把持久密钥（0600）；请备份 configs 与 data'
 }
 
 write_unit() {
   cat > "$UNIT_FILE" <<EOF
 [Unit]
-Description=ZCard 商城系统（单二进制 + 内嵌 SQLite）
-After=network.target
+Description=ZCard
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
 ExecStart=${BIN} serve -conf ${CONF_DIR}
+Environment=ZCARD_SUPERVISOR=systemd
+EnvironmentFile=-${INSTALL_DIR}/zcard.env
 Restart=always
 RestartSec=3
 LimitNOFILE=65535
@@ -141,195 +161,121 @@ LimitNOFILE=65535
 [Install]
 WantedBy=multi-user.target
 EOF
+  chmod 644 "$UNIT_FILE"
   systemctl daemon-reload
 }
-
-svc() { systemctl "$1" "${SERVICE}" 2>/dev/null || true; }
-
-# ask <提示> <默认值>：TTY 交互读入（无 TTY 返回默认）
-ask() {
-  local def="$2" ans=""
-  if [ -t 0 ]; then
-    printf '\033[36m[?]\033[0m %s [%s]: ' "$1" "$def" >&2
-    read -r ans || true
-  fi
-  echo "${ans:-$def}"
-}
-
-ask_secret() {
-  local def="$2" ans=""
-  if [ -t 0 ]; then
-    printf '\033[36m[?]\033[0m %s%s: ' "$1" "$([ -n "$def" ] && echo " [${def}]" || echo '（无则留空）')" >&2
-    read -r ans || true
-  fi
-  echo "${ans:-$def}"
-}
-
-# resolve_db：决定 DB 选择（参数优先 → 交互菜单 → sqlite 默认）
-resolve_db() {
-  DB_DIALECT="${DB_ARGS_DIALECT:-}"
-  if [ -z "$DB_DIALECT" ] && [ -t 0 ]; then
-    echo ""
-    echo "  ┌─────────────── 选择数据库 ───────────────┐"
-    echo "  │ 1) PostgreSQL   推荐 · 生产首选          │"
-    echo "  │ 2) MySQL        自托管标准形态           │"
-    echo "  │ 3) SQLite       本地测试（免配置免Redis）│"
-    echo "  └──────────────────────────────────────────┘"
-    DB_DIALECT="$(ask '请选择数据库（1/2/3）' '1')"
-    case "$DB_DIALECT" in
-      1|postgres|postgresql|pg) DB_DIALECT=postgres ;;
-      2|mysql) DB_DIALECT=mysql ;;
-      3|sqlite) DB_DIALECT=sqlite ;;
-      *) die "无效选择：$DB_DIALECT" ;;
-    esac
-  fi
-  [ -z "$DB_DIALECT" ] && DB_DIALECT=sqlite
-  case "$DB_DIALECT" in postgres|mysql|sqlite) ;; *) die "无效数据库类型：$DB_DIALECT（postgres|mysql|sqlite）";; esac
-
-  if [ "$DB_DIALECT" = "sqlite" ]; then
-    if [ -t 0 ]; then
-      echo ""
-      warn "SQLite 为本地测试模式：不支持分站多租户等高级功能，生产环境建议 PostgreSQL。"
+wait_healthy() {
+  local attempt response
+  for ((attempt=0; attempt<60; attempt++)); do
+    if svc is-active --quiet && response="$(curl -fsS --max-time 2 "http://127.0.0.1:${PORT}/health")" &&
+      python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(not (d.get("status",{}).get("database") and d["status"].get("server")))' <<< "$response"; then
+      return 0
     fi
-    return
-  fi
-
-  local def_host="127.0.0.1" def_port=5432 def_user="postgres"
-  [ "$DB_DIALECT" = "mysql" ] && { def_port=3306; def_user="root"; }
-  DB_HOST="${DB_ARGS_HOST:-$(ask '数据库主机' "$def_host")}"
-  DB_PORT="${DB_ARGS_PORT:-$(ask '数据库端口' "$def_port")}"
-  DB_USER="${DB_ARGS_USER:-$(ask '数据库用户' "$def_user")}"
-  DB_PASS="${DB_ARGS_PASS:-$(ask_secret '数据库密码' '')}"
-  DB_NAME="${DB_ARGS_NAME:-$(ask '数据库名（不存在自动创建）' 'zcard')}"
-  REDIS_ADDR="${REDIS_ARGS_ADDR:-$(ask 'Redis 地址（必配）' '127.0.0.1:6379')}"
-  REDIS_PASS="${REDIS_ARGS_PASS:-$(ask_secret 'Redis 密码' '')}"
-  [ -n "$DB_PASS" ] || die "数据库密码不能为空（${DB_DIALECT} 模式）"
+    sleep 1
+  done
+  journalctl -u "$SERVICE" -n 30 --no-pager >&2 || true
+  return 1
 }
-
-# db_validate：zcard dbtest 真实校验（连接/权限/自动建库/Redis ping）
-db_validate() {
-  log "校验 ${DB_DIALECT} 与 Redis 连接（库不存在将自动创建）..."
-  if ! "${BIN}" dbtest -dialect "$DB_DIALECT" -host "$DB_HOST" -port "$DB_PORT" \
-      -user "$DB_USER" -password "$DB_PASS" -name "$DB_NAME" \
-      -redis "$REDIS_ADDR" -redis-password "$REDIS_PASS" 2>&1; then
-    die "数据库/Redis 校验失败（检查地址、账号密码与权限）"
-  fi
-}
-
-
-# ensure_backup_tools 预装数据库备份工具（在线更新前强制 DB 备份依赖 pg_dump/mysqldump；
-# 缺失则更新会被 fail-closed 中止——安装时装好比事后踩坑好）。按预置方言精准装，
-# 未指定（交互向导后选）则两个都尽力；非 Debian 系降级为提示。
 ensure_backup_tools() {
-  local want_pg=0 want_my=0
-  case "${DB_ARGS_DIALECT:-}" in
-    postgres) want_pg=1 ;;
-    mysql)    want_my=1 ;;
-    *)        want_pg=1; want_my=1 ;;
+  local tool package
+  case "$DB_DIALECT" in
+    postgres) tool=pg_dump; package=postgresql-client ;;
+    mysql) tool=mysqldump; package=default-mysql-client ;;
+    *) return 0 ;;
   esac
-  if [ "$want_pg" = 1 ] && ! command -v pg_dump >/dev/null; then
-    apt-get install -y postgresql-client >/dev/null 2>&1 \
-      && log "已预装 postgresql-client（更新前备份依赖）" \
-      || warn "pg_dump 未就绪：选 PostgreSQL 时在线更新前需自行安装 postgresql-client（版本须与服务器同大版本）"
+  if ! command -v "$tool" >/dev/null; then
+    if command -v apt-get >/dev/null && [ "$(id -u)" = 0 ]; then
+      if ! apt-get update -qq || ! apt-get install -y "$package"; then warn "请自行安装 ${tool}"; fi
+    else warn "请自行安装 ${tool}"; fi
   fi
-  if [ "$want_my" = 1 ] && ! command -v mysqldump >/dev/null; then
-    apt-get install -y default-mysql-client >/dev/null 2>&1 || true
-  fi
+  if [ "$DB_DIALECT" = postgres ]; then warn '请核对 pg_dump 大版本不低于 PostgreSQL 服务器版本'; fi
 }
 
 do_install() {
-  need_root
+  need_root; require_command curl; require_command python3
+  if ! [[ "$PORT" =~ ^[1-9][0-9]{0,4}$ ]] || ((PORT > 65535)); then die 'ZCARD_PORT 必须为 1~65535'; fi
+  [ ! -e "$BIN" ] && [ ! -e "$CONF_DIR/config.yaml" ] || die '已有部署：安装不会覆盖二进制或密钥；升级请用 update，修复旧部署请参阅部署指南'
+  if have_systemd && [ -e "$UNIT_FILE" ]; then die 'zcard 服务已存在，请先核对旧部署；不会覆盖服务单元'; fi
   local bin_src=""
-  local args=("$@")
-  local i=0
-  # 解析预置参数（--db*/--redis* 免交互；--bin 本地二进制）
-  while [ $((i + 1)) -le ${#args[@]} ]; do
-    case "${args[$i]}" in
-      --db)      DB_ARGS_DIALECT="${args[$((i + 1))]}"; i=$((i + 2)) ;;
-      --db-host) DB_ARGS_HOST="${args[$((i + 1))]}";    i=$((i + 2)) ;;
-      --db-port) DB_ARGS_PORT="${args[$((i + 1))]}";    i=$((i + 2)) ;;
-      --db-user) DB_ARGS_USER="${args[$((i + 1))]}";    i=$((i + 2)) ;;
-      --db-pass) DB_ARGS_PASS="${args[$((i + 1))]}";    i=$((i + 2)) ;;
-      --db-name) DB_ARGS_NAME="${args[$((i + 1))]}";    i=$((i + 2)) ;;
-      --redis)   REDIS_ARGS_ADDR="${args[$((i + 1))]}"; i=$((i + 2)) ;;
-      --redis-pass) REDIS_ARGS_PASS="${args[$((i + 1))]}"; i=$((i + 2)) ;;
-      --bin)     bin_src="${args[$((i + 1))]}";         i=$((i + 2)) ;;
-      *)         i=$((i + 1)) ;;
+  while [ "$#" -gt 0 ]; do
+    [ "$#" -ge 2 ] || die "缺少参数值: $1"
+    case "$1" in
+      --bin) bin_src="$2" ;; --db) DB_DIALECT="$2" ;;
+      --db-host) DB_HOST="$2" ;; --db-port) DB_PORT="$2" ;;
+      --db-user) DB_USER="$2" ;; --db-pass) DB_PASS="$2" ;; --db-name) DB_NAME="$2" ;;
+      --redis) REDIS_ADDR="$2" ;; --redis-pass) REDIS_PASS="$2" ;;
+      *) die "未知参数: $1" ;;
     esac
+    shift 2
   done
-  ensure_backup_tools
-
   resolve_db
   mkdir -p "$INSTALL_DIR"
-  # 二进制：本地 or Releases（先落临时位，校验可执行后启用——失败不影响在跑服务）
-  if [ -n "$bin_src" ]; then
-    [ -f "$bin_src" ] || die "本地二进制不存在：$bin_src"
-    install -m 755 "$bin_src" "${BIN}.new"
-  else
-    download_bin "${BIN}.new"
+  if [ -n "$bin_src" ]; then install -m 755 "$bin_src" "$BIN.new"; else download_bin "$BIN.new"; fi
+  "$BIN.new" version >/dev/null || { rm -f "$BIN.new"; die '二进制不可执行'; }
+  if [ "$DB_DIALECT" != sqlite ]; then
+    if ! "$BIN.new" dbtest -dialect "$DB_DIALECT" -host "$DB_HOST" -port "$DB_PORT" \
+      -user "$DB_USER" -password "$DB_PASS" -name "$DB_NAME" -redis "$REDIS_ADDR" -redis-password "$REDIS_PASS"; then
+      rm -f "$BIN.new"; die '数据库或 Redis 校验失败'
+    fi
   fi
-  "${BIN}.new" -h >/dev/null 2>&1 || { rm -f "${BIN}.new"; die "二进制不可执行（架构不匹配？）"; }
-  mv "${BIN}.new" "$BIN"
-
-  [ "$DB_DIALECT" != "sqlite" ] && db_validate
   write_config
+  mv "$BIN.new" "$BIN"
+  ensure_backup_tools
   if have_systemd; then
     write_unit
-    if svc is-active >/dev/null 2>&1; then svc restart; else svc enable --now; fi
-    sleep 2
-    svc is-active >/dev/null 2>&1 || { journalctl -u "$SERVICE" -n 20 --no-pager; die "服务启动失败（上方为日志）"; }
-    log "安装完成并已启动（开机自启）"
-  else
-    warn "未检测到 systemd——文件已就绪，手动启动：cd ${INSTALL_DIR} && ${BIN} serve -conf ${CONF_DIR}"
-  fi
-  echo ""
-  echo "  ➜ 数据库: $([ "$DB_DIALECT" = "sqlite" ] && echo "SQLite（本地测试模式）" || echo "${DB_DIALECT} @ ${DB_HOST}:${DB_PORT}/${DB_NAME}")"
-  echo "  ➜ 浏览器打开: http://$(hostname -I 2>/dev/null | awk '{print $1}' || echo 服务器IP):${PORT}"
-  echo "  ➜ 在线安装向导自动进入（设置管理员即完成）"
-  echo "  ➜ 管理命令: bash $0 {status|logs|restart|update|uninstall}"
+    svc enable
+    svc restart
+    wait_healthy || die '服务未通过健康检查，安装未完成'
+    log '安装完成：服务健康，已启用开机自启'
+  else warn "未检测到 systemd；请运行: cd ${INSTALL_DIR} && ./zcard serve -conf configs"; fi
+  log "浏览器访问 http://服务器IP:${PORT}/install 设置管理员；Nginx / HTTPS 按部署指南配置"
 }
 
 do_update() {
-  need_root
-  [ -f "$BIN" ] || die "未安装（先 install）"
-  cp "$BIN" "${BIN}.bak"
-  if [ "${1:-}" = "--bin" ] && [ -n "${2:-}" ]; then
-    [ -f "$2" ] || die "本地二进制不存在：$2"
-    install -m 755 "$2" "${BIN}.new"
-  else
-    download_bin "${BIN}.new"
-  fi
-  mv "${BIN}.new" "$BIN"
-  have_systemd && svc restart
-  sleep 3
-  if have_systemd && ! svc is-active >/dev/null 2>&1; then
-    warn "新版本启动失败——回滚上一版本"
-    mv "${BIN}.bak" "$BIN"; svc restart
-    die "更新失败已回滚（journalctl -u ${SERVICE} -n 30 查原因）"
-  fi
-  rm -f "${BIN}.bak"
-  log "更新完成（启动迁移已自动应用）"
+  need_root; require_command curl; require_command python3
+  [ -x "$BIN" ] || die '尚未安装'
+  # 不接受裸二进制覆盖：统一经过内置的数据库备份、签名校验和更新状态机。
+  local arg
+  for arg in "$@"; do
+    case "$arg" in --bin|--bin=*|-conf|--conf|-conf=*|--conf=*|--rollback|-rollback|--rollback=*|-rollback=*) die '此参数请使用部署指南中的独立运维流程';; esac
+  done
+  cd "$INSTALL_DIR"
+  local state_before=""
+  if [ -f update.state ]; then state_before="$(cat update.state)"; fi
+  "$BIN" self-update -y -conf "$CONF_DIR" "$@"
+  if have_systemd; then
+    wait_healthy || die '更新后服务不健康，请检查日志与更新状态；未报告更新成功'
+    if [ -f update.state ] && [ "$(cat update.state)" != "$state_before" ]; then
+      python3 - <<'PYTHON'
+import json, time, sys
+for _ in range(60):
+    with open('update.state') as f: state = json.load(f)
+    if state.get('rolled_back'): sys.exit('更新失败，程序已回滚；请检查日志')
+    if state.get('status') == 'ok': break
+    time.sleep(1)
+else: sys.exit('更新尚未通过启动确认，请检查 update.state 与服务日志')
+PYTHON
+    fi
+  else warn '文件已处理；请通过原进程管理器重启并检查 /health'; fi
 }
 
 do_uninstall() {
   need_root
-  svc stop; svc disable 2>/dev/null || true
-  rm -f "$UNIT_FILE"; systemctl daemon-reload 2>/dev/null || true
-  warn "已停止并移除服务。数据保留在 ${DATA_DIR}（确认放弃再手动删除：rm -rf ${INSTALL_DIR}）"
+  if have_systemd; then svc stop; svc disable; fi
+  rm -f "$UNIT_FILE"
+  if have_systemd; then systemctl daemon-reload; fi
+  log "已移除服务，配置、二进制与数据保留在 ${INSTALL_DIR}"
 }
-
 main() {
-  case "${1:-}" in
-    install)   shift; do_install "$@" ;;
-    update)    shift; do_update "$@" ;;
+  case "${1:-help}" in
+    install) shift; do_install "$@" ;;
+    update) shift; do_update "$@" ;;
     uninstall) do_uninstall ;;
-    status)    have_systemd && systemctl status "$SERVICE" --no-pager || die "无 systemd" ;;
-    logs)      have_systemd && journalctl -u "$SERVICE" -n 100 --no-pager -f || die "无 systemd" ;;
-    start|stop|restart) need_root; svc "${1}" ;;
-    -h|--help|help|'')
-      sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//' ;;
-    *) die "未知命令 $1（install|update|uninstall|status|logs|start|stop|restart）" ;;
+    status) have_systemd || die '无 systemd'; svc status --no-pager ;;
+    logs) have_systemd || die '无 systemd'; journalctl -u "$SERVICE" -n 100 --no-pager -f ;;
+    start|stop|restart) need_root; have_systemd || die '无 systemd'; svc "$1" ;;
+    -h|--help|help) sed -n '2,6p' "$0" ;;
+    *) die "未知命令: $1" ;;
   esac
 }
-
-main "$@"
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then main "$@"; fi

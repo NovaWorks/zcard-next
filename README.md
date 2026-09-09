@@ -8,7 +8,7 @@
 
 `Go · Kratos v3 · Vue 3 · 双向货源 · 自动发卡 · 多货币 · 多语言 · 三级分销 · 分站白标 · 单二进制`
 
-![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go)
+![Go](https://img.shields.io/badge/Go-1.26.4+-00ADD8?logo=go)
 ![Kratos](https://img.shields.io/badge/Kratos-v3-00B5AD)
 ![Vue](https://img.shields.io/badge/Vue-3-42B883?logo=vue.js)
 ![SQLite](https://img.shields.io/badge/SQLite-embedded-003B57?logo=sqlite)
@@ -143,8 +143,8 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 ### 部署与在线更新
 
 - 单二进制交付（管理后台 + 商城 + 数据库内嵌），双架构 amd64 / arm64
-- 三种安装方式：一键脚本（自动 systemd + Nginx）、浏览器向导、命令行
-- 后台一键在线更新：GitHub 直连 / 大陆加速镜像（自动探测切换）/ 自建静态源；ED25519 验签、更新前自动备份数据库、新版异常自动回滚、版本历史面板
+- 多种安装方式：一键脚本（systemd）、Docker Compose、浏览器向导、命令行
+- 后台一键在线更新（单二进制部署）：GitHub 直连 / 大陆加速镜像（自动探测切换）/ 自建静态源；ED25519 验签、更新前自动备份数据库、新版异常自动回滚、版本历史面板
 - 后台任务调度内置（周期任务随服务启动，无需额外 cron）
 - CLI 运维命令：install、serve、migrate、admin、self-update、dbtest、reencrypt-cards
 
@@ -207,18 +207,25 @@ zcard-next/
 ## 快速开始
 
 ```bash
-# 方式一：一键脚本（Linux，自动配置 systemd 与 Nginx）
+# Linux 一键安装（需 curl、Python 3.9+；自动配置 systemd，Nginx/HTTPS 另行配置）
 curl -fsSL https://raw.githubusercontent.com/NovaWorks/zcard-next/main/scripts/zcard-install.sh -o /tmp/zcard-install.sh
-sudo bash /tmp/zcard-install.sh install --bin ./zcard-linux-amd64
-
-# 方式二：手动部署，浏览器打开 http://IP:8000 进入安装向导
-./zcard serve -conf configs
-
-# 方式三：命令行安装
-./zcard install
+sudo bash /tmp/zcard-install.sh install
+# 本地二进制也可：sudo bash /tmp/zcard-install.sh install --bin ./zcard-linux-amd64 --db sqlite
 ```
 
-启动管理、反向代理、域名绑定与 HTTPS 配置见 [doc/部署指南.md](doc/部署指南.md)。
+Docker Compose（需 Docker Compose v2.20+、OpenSSL、curl、Python 3）：
+
+```bash
+git clone https://github.com/NovaWorks/zcard-next.git
+cd zcard-next
+bash deploy/docker-install.sh
+```
+
+浏览器打开 `http://服务器IP:8000/install` 完成初始化。Docker 向导选择 MySQL：主机 `mysql`，用户/库名 `zcard`，密码见 `deploy/.env` 的 `MYSQL_PASSWORD`，Redis 为 `redis:6379`。
+
+手动单文件部署可执行 `./zcard serve -conf configs`，无配置时自动生成 SQLite 引导配置与持久密钥；CLI 安装为 `./zcard install -conf configs`。
+
+**备份配置、密钥和数据；Docker 通过重建镜像升级。** 安装、反代、数据库备份、升级和旧部署迁移见 [部署指南](doc/部署指南.md)。
 
 开发环境：
 
@@ -231,7 +238,7 @@ cd server && make init && make generate && make test && make run
 项目保持活跃开发：
 
 - 功能与修复持续合入主干，每个可部署版本打 tag 发布（[Releases](../../releases)）
-- 已部署实例在后台「设置 → 系统更新」一键升级，大陆服务器自动走加速镜像，升级失败自动回滚
+- 单二进制实例可在后台「设置 → 系统更新」升级；Docker 通过重建镜像升级，备份与回滚边界见部署指南
 - 支付驱动持续增加中，欢迎提 issue 建议需要对接的通道
 - 欢迎提交 issue 与 PR
 

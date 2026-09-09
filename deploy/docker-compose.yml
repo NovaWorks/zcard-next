@@ -1,48 +1,55 @@
-# ZCard 标准部署（规划 §10.2）：zcard + mysql，--profile redis 可选
-# 最小化单体（SQLite 起步）不需要本文件：单二进制 + 单 .db 文件。
+# 首次运行：bash deploy/docker-install.sh；然后浏览器安装向导选择 MySQL。
+# /app 内保存配置、上传、主题与 SQLite 引导库；MySQL 单独持久化。
 services:
   zcard:
+    image: zcard-local:${ZCARD_VERSION:-dev}
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+      args:
+        VERSION: ${ZCARD_VERSION:-dev}
     restart: unless-stopped
     ports:
-      - "8000:8000"   # HTTP（API + SPA）
-      - "9000:9000"   # gRPC（可选暴露）
+      - "${ZCARD_BIND:-0.0.0.0}:${ZCARD_PORT:-8000}:8000"
     environment:
-      # 密钥经环境注入，绝不进镜像/git（铁律：四把钥匙解耦）
-      ZCARD_JWT_ADMIN_KEY: ${ZCARD_JWT_ADMIN_KEY:?请在 .env 设置}
-      ZCARD_JWT_USER_KEY: ${ZCARD_JWT_USER_KEY:?请在 .env 设置}
-      ZCARD_CARD_KEY: ${ZCARD_CARD_KEY:?请在 .env 设置}
-      ZCARD_DATA_KEY: ${ZCARD_DATA_KEY:?请在 .env 设置}
+      ZCARD_JWT_ADMIN_KEY: ${ZCARD_JWT_ADMIN_KEY:?请先运行 deploy/docker-install.sh}
+      ZCARD_JWT_USER_KEY: ${ZCARD_JWT_USER_KEY:?请先运行 deploy/docker-install.sh}
+      ZCARD_CARD_KEY: ${ZCARD_CARD_KEY:?请先运行 deploy/docker-install.sh}
+      ZCARD_DATA_KEY: ${ZCARD_DATA_KEY:?请先运行 deploy/docker-install.sh}
     volumes:
-      - app-data:/data
-      - ./config.compose.yaml:/etc/zcard/config.yaml:ro
+      - app-data:/app
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-        required: false
 
   mysql:
-    image: mysql:8
+    image: mysql:8.4
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: zcard
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请在 .env 设置}
+      MYSQL_USER: zcard
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请先运行 deploy/docker-install.sh}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先运行 deploy/docker-install.sh}
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-p$$MYSQL_ROOT_PASSWORD"]
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u zcard zcard -e 'SELECT 1' >/dev/null
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 30
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    profiles: ["redis"]   # docker compose --profile redis up -d
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -52,3 +59,4 @@ services:
 volumes:
   app-data:
   mysql-data:
+  redis-data:

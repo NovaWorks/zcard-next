@@ -94,3 +94,23 @@ jobs:
         env:
           ZCARD_TEST_PG_DSN: "postgres://postgres:pass@127.0.0.1:5432/postgres?sslmode=disable"
         run: make test-integration
+
+  deployment:
+    name: 部署脚本与干净 Docker 构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 脚本语法与回归测试
+        run: |
+          bash -n scripts/zcard-install.sh deploy/install.sh deploy/docker-install.sh
+          python3 scripts/test_install.py
+          for key in ZCARD_JWT_ADMIN_KEY ZCARD_JWT_USER_KEY ZCARD_CARD_KEY ZCARD_DATA_KEY MYSQL_PASSWORD MYSQL_ROOT_PASSWORD; do
+            export "$key=deployment-ci"
+          done
+          docker compose -f deploy/docker-compose.yml config --quiet
+      - name: 干净源码构建镜像
+        run: docker build -f deploy/Dockerfile -t zcard:test .
+      - name: 首次安装与重建持久化验证
+        env:
+          ZCARD_TEST_IMAGE: zcard:test
+        run: python3 scripts/test_docker.py
