@@ -1,3 +1,4 @@
+import { adminBasePath } from "@/utils/admin-base";
 import { h } from "vue";
 import type { App } from "vue";
 import { NButton } from "naive-ui";
@@ -94,7 +95,7 @@ export function setupAppVersionNotification() {
 }
 
 async function getHtmlBuildTime(): Promise<string | null> {
-  const baseUrl = import.meta.env.VITE_BASE_URL || "/";
+  const baseUrl = adminBasePath();
 
   try {
     const res = await fetch(`${baseUrl}index.html?time=${Date.now()}`);

@@ -332,7 +332,7 @@ onMounted(load);
       </div>
     </NCard>
 
-    <NModal v-model:show="showDetail" preset="card" title="用户详情" style="width: 720px; max-width: 96vw">
+    <NModal v-model:show="showDetail" preset="card" title="用户详情" style="width: 960px; max-width: 96vw">
       <div v-if="detailLoading" class="py-40px text-center">加载中…</div>
       <template v-else-if="detailUser">
         <NDescriptions :column="3" bordered size="small">
@@ -365,8 +365,9 @@ onMounted(load);
         <NTabs type="line" size="small" class="mt-12px">
           <NTabPane name="orders" :tab="`最近订单（${(detailUser.recent_orders || []).length}）`">
             <div v-if="(detailUser.recent_orders || []).length" class="max-h-220px overflow-auto">
-              <div v-for="o in detailUser.recent_orders" :key="o.order_no" class="flex items-center gap-12px border-b border-gray-100 py-6px text-13px dark:border-gray-800">
-                <span class="flex-1 font-mono">{{ o.order_no }}</span>
+              <div v-for="o in detailUser.recent_orders" :key="o.order_no" class="recent-order-row border-b border-gray-100 py-8px text-13px dark:border-gray-800">
+                <span class="font-mono">{{ o.order_no }}</span>
+                <div class="recent-order-products"><div v-for="(it, index) in o.items || []" :key="index">{{ it.name || `商品 #${it.product_id}` }}<span v-if="it.sku_name"> · {{ it.sku_name }}</span> ×{{ it.quantity }}</div><span v-if="!o.items?.length">—</span></div>
                 <span>{{ fenToYuan(o.amount_cents) }}</span>
                 <NTag size="tiny" :bordered="false">{{ o.status }}</NTag>
                 <span class="w-130px text-right opacity-60">{{ fmtTime(o.created_at) }}</span>
@@ -473,3 +474,9 @@ onMounted(load);
     </NModal>
   </div>
 </template>
+
+<style scoped>
+.recent-order-row { display: grid; grid-template-columns: minmax(140px,1fr) minmax(180px,1.5fr) auto auto 130px; align-items: center; gap: 12px; }
+.recent-order-products { overflow-wrap: anywhere; white-space: normal; }
+@media (max-width: 768px) { .recent-order-row { grid-template-columns: 1fr auto; } .recent-order-products { grid-column: 1 / -1; grid-row: 2; } }
+</style>

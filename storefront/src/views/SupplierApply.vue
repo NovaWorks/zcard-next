@@ -210,19 +210,7 @@
             <!-- 支付方式 -->
             <div class="recharge-section">
               <div class="recharge-label">支付方式</div>
-              <div v-if="rechargeChannels.length === 0" class="muted">暂无可用的支付渠道</div>
-              <div v-else class="channel-list">
-                <label
-                  v-for="c in rechargeChannels"
-                  :key="c.code"
-                  class="channel-card"
-                  :class="{ active: rechargeChannel === c.code }"
-                >
-                  <input v-model="rechargeChannel" type="radio" :value="c.code" style="display: none;" />
-                  <span class="channel-dot" :class="{ on: rechargeChannel === c.code }"></span>
-                  <span class="channel-name">{{ c.name }}</span>
-                </label>
-              </div>
+              <PayChannelGrid :options="supplierPayOptions" :channel="rechargeChannel" :method="rechargeMethod" @select="(channel, method) => { rechargeChannel = channel; rechargeMethod = method; }" />
             </div>
 
             <div v-if="rechargeError" style="color: #dc2626; font-size: 13px; margin: 8px 0;">{{ rechargeError }}</div>
@@ -254,7 +242,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import PayChannelGrid from '@/components/PayChannelGrid.vue';
+import { flattenPayOptions } from '@/composables/pay-options';
+import { computed, onMounted, ref } from 'vue';
 import {
   listMySupplierAccounts, submitSupplierApplication, getSupplierCredentials,
   regenerateSupplierSecret, cancelSupplierApplication, createSupplierRecharge,
@@ -352,6 +342,8 @@ const supplierGiftTiers = ref<{ amount: number; gift_balance: number }[]>([]);
 const focusCustom = ref(false);
 const rechargeChannels = ref<ChannelItem[]>([]);
 const rechargeChannel = ref('');
+const rechargeMethod = ref('');
+const supplierPayOptions = computed(() => flattenPayOptions(rechargeChannels.value.filter(c => c.driver !== 'wallet')));
 const recharging = ref(false);
 const rechargeError = ref('');
 const rechargeRedirect = ref('');
@@ -374,7 +366,8 @@ async function openRecharge(a: SupplierAccount) {
   // 支付渠道 + 供货充值限额（独立配置组 supplier_recharge，与钱包充值隔离）
   const [ch, cfg] = await Promise.all([fetchPaymentChannels(), api.get<{ entries: { key: string; value_json: string }[] }>('/config')]);
   rechargeChannels.value = ch.data?.channels || [];
-  rechargeChannel.value = rechargeChannels.value[0]?.code || '';
+  rechargeChannel.value = supplierPayOptions.value[0]?.channel || '';
+  rechargeMethod.value = supplierPayOptions.value[0]?.method || '';
   const find = (k: string) => cfg.data?.entries?.find((e) => e.key === k)?.value_json;
   const min = find('supplier_recharge.min_amount');
   const max = find('supplier_recharge.max_amount');
@@ -427,6 +420,7 @@ async function doRecharge() {
   const { data, error } = await createSupplierRecharge(rechargeTarget.value.id, {
     amount_cents: Math.round(rechargeYuan.value * 100),
     channel: rechargeChannel.value,
+    method: rechargeMethod.value || undefined,
   });
   recharging.value = false;
   if (error || !data) {
@@ -720,43 +714,6 @@ onMounted(load);
 }
 .tier-symbol { font-size: 12px; font-weight: 500; margin-right: 2px; }
 .custom-input { margin-top: 8px; }
-.channel-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.channel-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  border: 1px solid #e5e6e8;
-  border-radius: 10px;
-  padding: 10px 12px;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.channel-card:hover { border-color: #93c5fd; }
-.channel-card.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-}
-.channel-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid #d1d5db;
-  position: relative;
-  flex-shrink: 0;
-}
-.channel-dot.on { border-color: #2563eb; }
-.channel-dot.on::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 50%;
-  background: #2563eb;
-}
-.channel-name { font-size: 14px; font-weight: 500; }
 .recharge-submit {
   width: 100%;
   margin-top: 6px;

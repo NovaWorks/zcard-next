@@ -30,4 +30,6 @@ func Available() bool { return false }
 // ServeHTTP 不可达（接线侧不注册）。
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {}
 
+func (h *Handler) ServeAt(w http.ResponseWriter, r *http.Request, base string) {}
+
 var _ http.Handler = (*Handler)(nil)

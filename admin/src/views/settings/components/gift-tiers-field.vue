@@ -63,22 +63,22 @@ function removeRow(i: number) {
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="gift-tiers-field w-full">
     <div v-if="tiers.length" class="flex flex-col gap-6px">
-      <div class="flex items-center gap-8px text-12px text-gray-400">
-        <span class="w-110px text-center">单笔充值满</span>
-        <span class="w-110px text-center">赠送余额</span>
-        <span v-if="!supplier" class="w-110px text-center">赠送积分</span>
+      <div class="gift-tier-grid text-12px text-gray-400" :class="{ supplier }">
+        <span class="tier-input text-center">单笔充值满</span>
+        <span class="tier-input text-center">赠送余额</span>
+        <span v-if="!supplier" class="tier-input text-center">赠送积分</span>
         <span class="w-40px" />
       </div>
-      <div v-for="(t, i) in tiers" :key="i" class="flex items-center gap-8px">
-        <NInputNumber v-model:value="t.amountYuan" size="small" :min="0.01" :precision="2" class="w-110px" placeholder="元" @update:value="push">
+      <div v-for="(t, i) in tiers" :key="i" class="gift-tier-grid" :class="{ supplier }">
+        <NInputNumber v-model:value="t.amountYuan" :show-button="false" size="medium" :min="0.01" :precision="2" class="tier-input" placeholder="元" @update:value="push">
           <template #suffix>元</template>
         </NInputNumber>
-        <NInputNumber v-model:value="t.giftYuan" size="small" :min="0" :precision="2" class="w-110px" placeholder="0.00" @update:value="push">
+        <NInputNumber v-model:value="t.giftYuan" :show-button="false" size="medium" :min="0" :precision="2" class="tier-input" placeholder="0.00" @update:value="push">
           <template #suffix>元</template>
         </NInputNumber>
-        <NInputNumber v-if="!supplier" v-model:value="t.giftPoints" size="small" :min="0" class="w-110px" placeholder="0" @update:value="push">
+        <NInputNumber v-if="!supplier" v-model:value="t.giftPoints" :show-button="false" size="medium" :min="0" class="tier-input" placeholder="0" @update:value="push">
           <template #suffix>分</template>
         </NInputNumber>
         <NButton size="tiny" quaternary type="error" class="w-40px" @click="removeRow(i)">删</NButton>
@@ -96,3 +96,10 @@ function removeRow(i: number) {
     </div>
   </div>
 </template>
+
+<style scoped>
+.gift-tiers-field { overflow-x: auto; padding-bottom: 4px; }
+.gift-tier-grid { display: grid; grid-template-columns: repeat(3, minmax(170px, 1fr)) 40px; gap: 12px; align-items: center; min-width: 586px; margin-bottom: 8px; }
+.gift-tier-grid.supplier { grid-template-columns: repeat(2, minmax(170px, 1fr)) 40px; min-width: 404px; }
+.tier-input { width: 100%; min-width: 0; }
+</style>

@@ -103,7 +103,6 @@ const tree = computed(() => {
   for (const node of map.values()) {
     if (node.parent_id && map.has(node.parent_id)) {
       const parent = map.get(node.parent_id)!;
-      node.depth = parent.depth + 1;
       parent.children.push(node);
     } else {
       roots.push(node);
@@ -114,10 +113,11 @@ const tree = computed(() => {
 
 const flatTree = computed(() => {
   const out: any[] = [];
-  const walk = (nodes: any[]) => {
+  const walk = (nodes: any[], depth = 0, parentPath = "") => {
     for (const n of nodes) {
-      out.push(n);
-      walk(n.children);
+      const path = [parentPath, n.name].filter(Boolean).join(" / ");
+      out.push({ ...n, depth, path });
+      walk(n.children, depth + 1, path);
     }
   };
   walk(tree.value);
@@ -126,7 +126,7 @@ const flatTree = computed(() => {
 
 const parentOptions = computed(() => [
   { label: "顶级分类", value: 0 },
-  ...flatTree.value.map((c) => ({ label: `${"　".repeat(c.depth)}${c.name}`, value: c.id })),
+  ...flatTree.value.map((c) => ({ label: c.path, value: c.id })),
 ]);
 
 async function load() {
@@ -434,12 +434,6 @@ async function runMerge(preview: boolean) {
   } finally { merging.value = false; }
 }
 
-// 名称截断时悬浮显示全名（scrollWidth > clientWidth 即溢出）
-function onNameEnter(cat: any, e: MouseEvent) {
-  const el = e.target as HTMLElement;
-  cat._overflow = el.scrollWidth > el.clientWidth;
-}
-
 // 排序输入框：失焦/回车保存（hide 未传保持原状）
 async function onSortBlur(cat: any) {
   const v = cat.sort;
@@ -457,7 +451,7 @@ async function onSortBlur(cat: any) {
 </script>
 
 <template>
-  <NModal v-model:show="visible" preset="card" title="分类管理" style="width: 640px">
+  <NModal v-model:show="visible" preset="card" title="分类管理" style="width: 960px; max-width: 94vw">
     <div class="mb-12px flex items-center justify-between">
       <div class="flex items-center gap-8px">
         <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类</span>
@@ -534,7 +528,8 @@ async function onSortBlur(cat: any) {
         v-model:value="newParent"
         size="small"
         placeholder="父分类"
-        class="w-140px"
+        class="w-280px"
+        filterable
         :options="parentOptions"
       />
       <NButton size="small" type="primary" :loading="creating" @click="handleCreate">创建</NButton>
@@ -551,7 +546,7 @@ async function onSortBlur(cat: any) {
     >
       {{ dropToRoot ? '松开设为顶级分类' : '拖拽分类到此处 = 设为顶级' }}
     </div>
-    <NScrollbar class="max-h-340px rounded-4px border border-gray-200 dark:border-gray-700">
+    <NScrollbar x-scrollable class="max-h-340px rounded-4px border border-gray-200 dark:border-gray-700">
       <NEmpty
         v-if="!flatTree.length && !loading"
         size="small"
@@ -562,7 +557,7 @@ async function onSortBlur(cat: any) {
         v-for="cat in flatTree"
         :key="cat.id"
         draggable="true"
-        class="group flex cursor-grab items-center gap-8px rounded-4px py-7px pr-8px text-13px hover:bg-gray-100 dark:hover:bg-gray-800 active:cursor-grabbing"
+        class="category-manage-row group flex cursor-grab items-center gap-8px rounded-4px py-7px pr-8px text-13px hover:bg-gray-100 dark:hover:bg-gray-800 active:cursor-grabbing"
         :class="rowClass(cat)"
         :style="rowStyle(cat)"
         @dragstart="onDragStart(cat)"
@@ -621,9 +616,9 @@ async function onSortBlur(cat: any) {
         <!-- 名称列：占满剩余宽度，超长截断不撑破行；悬浮显示全名 -->
         <div class="flex min-w-0 flex-1 items-center gap-6px">
           <NTag v-if="cat.hide" size="tiny" :bordered="false" class="shrink-0">隐藏</NTag>
-          <NTooltip :disabled="!cat._overflow" placement="top" :show-arrow="false">
+          <NTooltip  placement="top" :show-arrow="false">
             <template #trigger>
-              <span class="min-w-0 truncate" @mouseenter="onNameEnter(cat, $event)">{{ cat.name }}</span>
+              <span class="category-full-name" :title="cat.path">{{ cat.name }}</span>
             </template>
             {{ cat.name }}
           </NTooltip>
@@ -697,6 +692,8 @@ async function onSortBlur(cat: any) {
 </template>
 
 <style scoped>
+.category-manage-row { min-width: 650px; }
+.category-full-name { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
 /* 图标槽：行内小按钮（空=虚框加号提示可设置） */
 .cat-icon-btn {
   width: 26px;

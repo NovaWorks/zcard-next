@@ -571,11 +571,13 @@ function onSearch() {
 
 // ── 左侧分类树（含「全部分类」根节点；大厂交互：左树右列表）──
 const filterCategoryTree = computed(() => [
-  { key: 0, label: "全部分类", children: categoryTreeOptions.value },
+  { key: 0, label: "全部分类" },
+  ...categoryTreeOptions.value,
 ]);
 const selectedCatKeys = ref<Array<string | number>>([0]);
 
 function onTreeSelect(keys: Array<string | number>) {
+  selectedCatKeys.value = keys.length ? keys : [0];
   const k = keys[0];
   categoryFilter.value = typeof k === "number" && k > 0 ? k : null;
   onSearch();
@@ -796,7 +798,7 @@ onMounted(() => {
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard
       title="商品分类"
-      class="product-category-card w-230px shrink-0"
+      class="product-category-card shrink-0"
       :content-style="{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }"
     >
       <template #header-extra>
@@ -810,6 +812,7 @@ onMounted(() => {
       <div class="product-category-scroll">
         <NTree
           block-line
+          :indent="14"
           :data="filterCategoryTree"
           :selected-keys="selectedCatKeys"
           v-model:expanded-keys="expandedCatKeys"
@@ -820,7 +823,7 @@ onMounted(() => {
       </div>
     </NCard>
     <!-- 右侧：商品列表 -->
-    <NCard title="商品管理" class="flex-1">
+    <NCard title="商品管理" class="min-w-0 flex-1">
       <div class="mb-16px flex items-center gap-12px">
         <NButton
           v-auth="'catalog:write'"
@@ -1123,6 +1126,7 @@ onMounted(() => {
 
 <style>
 .product-category-card {
+  width: clamp(280px, 24vw, 360px);
   min-height: 0;
   align-self: flex-start;
   /* 使用后台实际的顶栏、标签栏和页脚尺寸，避免小高度窗口中被页脚遮挡。 */
@@ -1147,9 +1151,11 @@ onMounted(() => {
 .cat-node .n-tree-node-content__prefix {
   display: inline-flex; align-items: center; flex-shrink: 0;
 }
+.cat-node .n-tree-node-content { min-width: 0; }
+.cat-node.n-tree-node { height: auto; }
 .cat-prefix { font-size: 13px; line-height: 1; }
 .cat-node .n-tree-node-content__text {
-  display: inline-block; max-width: 150px; overflow: hidden;
-  text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+  display: block; min-width: 0; max-width: none;
+  white-space: normal; overflow-wrap: anywhere; line-height: 1.6; padding: 4px 0;
 }
 </style>

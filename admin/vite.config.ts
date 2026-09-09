@@ -12,7 +12,7 @@ export default defineConfig((configEnv) => {
   const enableProxy = configEnv.command === "serve" && !configEnv.isPreview;
 
   return {
-    base: viteEnv.VITE_BASE_URL,
+    base: configEnv.command === "build" ? "./" : viteEnv.VITE_BASE_URL,
     resolve: {
       alias: {
         "~": fileURLToPath(new URL("./", import.meta.url)),

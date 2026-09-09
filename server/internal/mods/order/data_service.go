@@ -239,9 +239,17 @@ func (s *AdminOrderService) ListOrders(ctx context.Context, req *adminv1.ListOrd
 	if err != nil {
 		return nil, errors.InternalServer("order.LIST_FAILED", "读取订单失败")
 	}
+	summaries, err := data.OrderProductSummaries(ctx, s.uc.Data, rows)
+	if err != nil {
+		return nil, errors.InternalServer("order.LIST_FAILED", "读取订单商品失败")
+	}
 	reply := &adminv1.ListOrdersReply{}
 	for _, o := range rows {
-		reply.Orders = append(reply.Orders, toAdminOrderPB(o, nil, nil, nil, nil, nil))
+		pb := toAdminOrderPB(o, nil, nil, nil, nil, nil)
+		for _, it := range summaries[o.ID] {
+			pb.Items = append(pb.Items, &adminv1.AdminOrderItem{ProductId: it.ProductID, SkuId: it.SkuID, Name: it.Name, SkuName: it.SkuName, Quantity: it.Quantity})
+		}
+		reply.Orders = append(reply.Orders, pb)
 	}
 	if len(rows) == int(limit) {
 		reply.NextCursor = rows[len(rows)-1].ID

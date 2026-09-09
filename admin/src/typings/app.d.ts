@@ -608,6 +608,7 @@ declare namespace App {
           pc_template: string;
           mobile_template: string;
           bg_image: string;
+          bg_image_mobile: string;
           category_nav_style: string;
           default_view: string;
           per_row: string;

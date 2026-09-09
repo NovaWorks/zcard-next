@@ -274,15 +274,16 @@ func NewHTTPServer(
 	// fullstack SPA（）：storefront 兜底根 + admin 独立前缀；未匹配回落
 	// index.html 由前端路由接管。保留前缀（/api /uploads /health /payments
 	// /install）已注册的业务/静态路由优先命中，回落仅在未匹配时发生。
+	adminBase := "/admin"
+	if c != nil && c.AdminBasePath != "" {
+		adminBase = c.AdminBasePath
+	}
+	if err := settingsSvc.SetAdminBasePath(adminBase); err != nil {
+		panic(err)
+	}
 	if web.Available() {
-		// admin 前缀：配置 admin_base_path（ 安全入口可配），默认 /admin
-		adminBase := "/admin"
-		if c != nil && c.AdminBasePath != "" {
-			adminBase = c.AdminBasePath
-		}
-		srv.HandlePrefix(adminBase, web.NewAdminHandler())
-		// storefront 兜底根（最后注册，最广匹配、最低优先）
-		srv.HandlePrefix("/", web.NewStorefrontHandler(seoSvc, settingsSvc.ActiveTheme))
+		admin := web.NewAdminHandler()
+		srv.HandlePrefix("/", web.NewEntryHandler(web.NewStorefrontHandler(seoSvc, settingsSvc.ActiveTheme), admin.ServeAt, settingsSvc.AdminPath, "/"+strings.Trim(adminBase, "/")))
 	}
 	return srv
 }

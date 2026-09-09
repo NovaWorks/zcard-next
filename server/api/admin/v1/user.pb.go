@@ -589,6 +589,7 @@ func (x *UserCouponItem) GetExpiresAt() int64 {
 // UserRecentOrder 最近订单（用户详情聚合，默认 10 条）。
 type UserRecentOrder struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*AdminOrderItem      `protobuf:"bytes,5,rep,name=items,proto3" json:"items,omitempty"` // 商品名称、规格和数量摘要
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
 	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
@@ -625,6 +626,13 @@ func (x *UserRecentOrder) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UserRecentOrder.ProtoReflect.Descriptor instead.
 func (*UserRecentOrder) Descriptor() ([]byte, []int) {
 	return file_admin_v1_user_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *UserRecentOrder) GetItems() []*AdminOrderItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
 }
 
 func (x *UserRecentOrder) GetOrderNo() string {
@@ -736,7 +744,7 @@ var File_admin_v1_user_proto protoreflect.FileDescriptor
 
 const file_admin_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x13admin/v1/user.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb1\x01\n" +
+	"\x13admin/v1/user.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x14admin/v1/order.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb1\x01\n" +
 	"\x10ListUsersRequest\x12\x18\n" +
 	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x12\n" +
@@ -786,8 +794,9 @@ const file_admin_v1_user_proto_rawDesc = "" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x04 \x01(\x03R\texpiresAt\"\x86\x01\n" +
-	"\x0fUserRecentOrder\x12\x19\n" +
+	"expires_at\x18\x04 \x01(\x03R\texpiresAt\"\xc0\x01\n" +
+	"\x0fUserRecentOrder\x128\n" +
+	"\x05items\x18\x05 \x03(\v2\".zcard.api.admin.v1.AdminOrderItemR\x05items\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12!\n" +
 	"\famount_cents\x18\x02 \x01(\x03R\vamountCents\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1d\n" +
@@ -832,28 +841,30 @@ var file_admin_v1_user_proto_goTypes = []any{
 	(*UserCouponItem)(nil),           // 7: zcard.api.admin.v1.UserCouponItem
 	(*UserRecentOrder)(nil),          // 8: zcard.api.admin.v1.UserRecentOrder
 	(*UserDetail)(nil),               // 9: zcard.api.admin.v1.UserDetail
-	(*emptypb.Empty)(nil),            // 10: google.protobuf.Empty
+	(*AdminOrderItem)(nil),           // 10: zcard.api.admin.v1.AdminOrderItem
+	(*emptypb.Empty)(nil),            // 11: google.protobuf.Empty
 }
 var file_admin_v1_user_proto_depIdxs = []int32{
 	6,  // 0: zcard.api.admin.v1.ListUsersReply.users:type_name -> zcard.api.admin.v1.UserItem
-	6,  // 1: zcard.api.admin.v1.UserDetail.user:type_name -> zcard.api.admin.v1.UserItem
-	7,  // 2: zcard.api.admin.v1.UserDetail.coupons:type_name -> zcard.api.admin.v1.UserCouponItem
-	8,  // 3: zcard.api.admin.v1.UserDetail.recent_orders:type_name -> zcard.api.admin.v1.UserRecentOrder
-	0,  // 4: zcard.api.admin.v1.AdminUserManageService.ListUsers:input_type -> zcard.api.admin.v1.ListUsersRequest
-	2,  // 5: zcard.api.admin.v1.AdminUserManageService.GetUser:input_type -> zcard.api.admin.v1.GetUserRequest
-	4,  // 6: zcard.api.admin.v1.AdminUserManageService.CreateUser:input_type -> zcard.api.admin.v1.CreateUserRequest
-	5,  // 7: zcard.api.admin.v1.AdminUserManageService.ResetUserPassword:input_type -> zcard.api.admin.v1.ResetUserPasswordRequest
-	3,  // 8: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:input_type -> zcard.api.admin.v1.SetUserStatusRequest
-	1,  // 9: zcard.api.admin.v1.AdminUserManageService.ListUsers:output_type -> zcard.api.admin.v1.ListUsersReply
-	9,  // 10: zcard.api.admin.v1.AdminUserManageService.GetUser:output_type -> zcard.api.admin.v1.UserDetail
-	6,  // 11: zcard.api.admin.v1.AdminUserManageService.CreateUser:output_type -> zcard.api.admin.v1.UserItem
-	10, // 12: zcard.api.admin.v1.AdminUserManageService.ResetUserPassword:output_type -> google.protobuf.Empty
-	6,  // 13: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:output_type -> zcard.api.admin.v1.UserItem
-	9,  // [9:14] is the sub-list for method output_type
-	4,  // [4:9] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	10, // 1: zcard.api.admin.v1.UserRecentOrder.items:type_name -> zcard.api.admin.v1.AdminOrderItem
+	6,  // 2: zcard.api.admin.v1.UserDetail.user:type_name -> zcard.api.admin.v1.UserItem
+	7,  // 3: zcard.api.admin.v1.UserDetail.coupons:type_name -> zcard.api.admin.v1.UserCouponItem
+	8,  // 4: zcard.api.admin.v1.UserDetail.recent_orders:type_name -> zcard.api.admin.v1.UserRecentOrder
+	0,  // 5: zcard.api.admin.v1.AdminUserManageService.ListUsers:input_type -> zcard.api.admin.v1.ListUsersRequest
+	2,  // 6: zcard.api.admin.v1.AdminUserManageService.GetUser:input_type -> zcard.api.admin.v1.GetUserRequest
+	4,  // 7: zcard.api.admin.v1.AdminUserManageService.CreateUser:input_type -> zcard.api.admin.v1.CreateUserRequest
+	5,  // 8: zcard.api.admin.v1.AdminUserManageService.ResetUserPassword:input_type -> zcard.api.admin.v1.ResetUserPasswordRequest
+	3,  // 9: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:input_type -> zcard.api.admin.v1.SetUserStatusRequest
+	1,  // 10: zcard.api.admin.v1.AdminUserManageService.ListUsers:output_type -> zcard.api.admin.v1.ListUsersReply
+	9,  // 11: zcard.api.admin.v1.AdminUserManageService.GetUser:output_type -> zcard.api.admin.v1.UserDetail
+	6,  // 12: zcard.api.admin.v1.AdminUserManageService.CreateUser:output_type -> zcard.api.admin.v1.UserItem
+	11, // 13: zcard.api.admin.v1.AdminUserManageService.ResetUserPassword:output_type -> google.protobuf.Empty
+	6,  // 14: zcard.api.admin.v1.AdminUserManageService.SetUserStatus:output_type -> zcard.api.admin.v1.UserItem
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_user_proto_init() }
@@ -861,6 +872,7 @@ func file_admin_v1_user_proto_init() {
 	if File_admin_v1_user_proto != nil {
 		return
 	}
+	file_admin_v1_order_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

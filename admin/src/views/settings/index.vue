@@ -155,7 +155,7 @@ function labelOf(item: any) {
 // ── 图片类设置键：走素材库选择（MediaField 预览 + 弹窗选择/上传）──
 const IMAGE_KEYS: Record<string, string[]> = {
   site: ["logo"],
-  template: ["bg_image"],
+  template: ["bg_image", "bg_image_mobile"],
   ops: ["announcement"], // 仅 announcement_type 为 image/carousel 时是图片
 };
 
@@ -313,10 +313,11 @@ async function saveAll() {
     const pending = items.value
       .filter((it) => dirtyKeys.value.has(`${it.group}.${it.key}`))
       .map((it) => ({ group: it.group, key: it.key, value_json: it.value_json }));
-    const { error } = await updateSettings(pending);
+    const { data, error } = await updateSettings(pending);
     if (!error) {
       window.$message?.success("设置已保存");
       dirtyKeys.value.clear();
+      if (data?.admin_base_path) window.location.replace(`${data.admin_base_path}/settings`);
     }
   } finally {
     saving.value = false;
@@ -360,7 +361,7 @@ onMounted(() => {
               PC 和手机共用一个响应式主题，自动适配屏幕。上传只安装主题；在主题弹窗点击「切换为默认」后立即生效，无需再保存。Classic 可随时切回。
             </div>
 
-            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': activeGroup === 'ops' }">
+            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup) }">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
                   <template v-if="linkListOf(item)">
@@ -414,7 +415,7 @@ onMounted(() => {
                     <MediaField
                       class="flex-1"
                       :value="imageValueOf(item)"
-                      tip="从素材库选择或上传；选中后即时预览"
+                      :tip="item.key === 'bg_image_mobile' ? '建议上传竖版图片；留空时沿用电脑背景图' : '从素材库选择或上传；选中后即时预览'"
                       @update:value="(urls: string[]) => setImageValue(item, urls)"
                     />
                   </template>
@@ -463,6 +464,12 @@ onMounted(() => {
                       class="w-200px"
                       @update:value="(v: number | null) => v !== null && setVal(item, v)"
                     />
+                  </template>
+                  <template v-else-if="item.group === 'site' && item.key === 'admin_path'">
+                    <div class="flex-1">
+                      <NInput :value="String(getVal(item) ?? '')" placeholder="例如 /manage-8x2k" @update:value="(v: string) => setVal(item, v)" />
+                      <p class="mt-6px text-12px text-gray-500">保存后立即跳转至新入口，原 /admin 入口关闭。留空使用启动配置中的路径（默认 /admin）。</p>
+                    </div>
                   </template>
                   <template v-else>
                     <NInput

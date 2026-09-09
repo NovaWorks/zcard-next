@@ -386,7 +386,8 @@ const local: App.I18n.Schema = {
     template: {
       pc_template: "商城主题（PC / 手机）",
       mobile_template: "移动端模板",
-      bg_image: "背景图",
+      bg_image: "电脑背景图",
+      bg_image_mobile: "手机背景图",
       category_nav_style: "分类导航样式",
       default_view: "商品默认视图",
       per_row: "每行商品数",

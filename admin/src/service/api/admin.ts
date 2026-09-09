@@ -167,7 +167,7 @@ export function updateSetting(group: string, key: string, valueJson: string) {
 
 // 批量更新（表单级保存；后端单事务原子写入）
 export function updateSettings(items: { group: string; key: string; value_json: string }[]) {
-  return request<{ updated: number }>({
+  return request<{ updated: number; admin_base_path?: string }>({
     url: "/api/v1/admin/settings",
     method: "put",
     data: { items },

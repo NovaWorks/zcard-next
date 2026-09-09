@@ -115,15 +115,25 @@ func (s *AdminUserManageService) GetUser(ctx context.Context, req *adminv1.GetUs
 		})
 	}
 	// 最近订单 10 条
-	orders, _ := client.Order.Query().
+	orders, err := client.Order.Query().
 		Where(order.UserIDEQ(row.ID)).
 		Order(ent.Desc(order.FieldID)).
 		Limit(10).
 		All(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("identity.ORDERS_FAILED", "读取最近订单失败")
+	}
+	summaries, err := data.OrderProductSummaries(ctx, s.repo.data, orders)
+	if err != nil {
+		return nil, errors.InternalServer("identity.ORDER_PRODUCTS_FAILED", "读取最近订单商品失败")
+	}
 	for _, o := range orders {
 		ro := &adminv1.UserRecentOrder{
 			OrderNo: o.OrderNo, AmountCents: o.TotalAmount, Status: string(o.Status),
 			CreatedAt: o.CreatedAt.Unix(),
+		}
+		for _, it := range summaries[o.ID] {
+			ro.Items = append(ro.Items, &adminv1.AdminOrderItem{ProductId: it.ProductID, SkuId: it.SkuID, Name: it.Name, SkuName: it.SkuName, Quantity: it.Quantity})
 		}
 		detail.RecentOrders = append(detail.RecentOrders, ro)
 	}

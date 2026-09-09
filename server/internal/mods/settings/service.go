@@ -6,7 +6,9 @@ package settings
 import (
 	"context"
 	"encoding/json"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/adminpath"
 	"sort"
+	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 
@@ -23,7 +25,8 @@ const (
 // AdminSettingsService 设置管理服务（实现 adminv1.AdminSettingsService）。
 type AdminSettingsService struct {
 	adminv1.UnimplementedAdminSettingsServiceServer
-	uc *SettingsUsecase
+	uc            *SettingsUsecase
+	adminBasePath string
 }
 
 // NewAdminSettingsService 构造。
@@ -72,6 +75,15 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 // validateSettingValue 设置值业务校验（单键/批量共用）：
 // base_currency 必须存在、模板键必须在清单内。
 func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "site" && key == "admin_path" {
+		var p string
+		if err := json.Unmarshal(value, &p); err != nil || strings.TrimSpace(string(value)) == "null" {
+			return errors.BadRequest("settings.INVALID_VALUE", "后台路径必须是字符串")
+		}
+		if _, err := adminpath.Normalize(p); err != nil {
+			return errors.BadRequest("settings.INVALID_VALUE", err.Error())
+		}
+	}
 	if group == "template" && key == activeThemeKey {
 		return errors.BadRequest("settings.INVALID_KEY", "请通过主题选择器切换默认主题")
 	}
@@ -159,5 +171,20 @@ func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.
 	if err := s.uc.PutMany(ctx, items); err != nil {
 		return nil, errors.BadRequest("settings.INVALID_VALUE", "设置值必须是合法 JSON 或键不在目录内")
 	}
-	return &adminv1.UpdateSettingsReply{Updated: int32(len(items))}, nil
+	reply := &adminv1.UpdateSettingsReply{Updated: int32(len(items))}
+	for _, it := range items {
+		if it.Group == "site" && it.Key == "admin_path" {
+			// The value was validated before writing; avoid a second DB read after committing.
+			var configured string
+			_ = json.Unmarshal(it.Value, &configured)
+			reply.AdminBasePath, _ = adminpath.Normalize(configured)
+			if reply.AdminBasePath == "" {
+				reply.AdminBasePath = s.adminBasePath
+				if reply.AdminBasePath == "" {
+					reply.AdminBasePath = "/admin"
+				}
+			}
+		}
+	}
+	return reply, nil
 }

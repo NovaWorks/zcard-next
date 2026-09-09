@@ -472,8 +472,10 @@ func (x *SettingUpdate) GetValueJson() string {
 }
 
 type UpdateSettingsReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Updated       int32                  `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Updated int32                  `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	// Effective private entry after changing site.admin_path; omitted for other saves.
+	AdminBasePath string `protobuf:"bytes,2,opt,name=admin_base_path,json=adminBasePath,proto3" json:"admin_base_path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -513,6 +515,13 @@ func (x *UpdateSettingsReply) GetUpdated() int32 {
 		return x.Updated
 	}
 	return 0
+}
+
+func (x *UpdateSettingsReply) GetAdminBasePath() string {
+	if x != nil {
+		return x.AdminBasePath
+	}
+	return ""
 }
 
 // TemplateItem 可用模板。
@@ -724,9 +733,10 @@ const file_admin_v1_settings_proto_rawDesc = "" +
 	"\x05group\x18\x01 \x01(\tB\x03\xe0A\x02R\x05group\x12\x15\n" +
 	"\x03key\x18\x02 \x01(\tB\x03\xe0A\x02R\x03key\x12\"\n" +
 	"\n" +
-	"value_json\x18\x03 \x01(\tB\x03\xe0A\x02R\tvalueJson\"/\n" +
+	"value_json\x18\x03 \x01(\tB\x03\xe0A\x02R\tvalueJson\"W\n" +
 	"\x13UpdateSettingsReply\x12\x18\n" +
-	"\aupdated\x18\x01 \x01(\x05R\aupdated\"\x94\x01\n" +
+	"\aupdated\x18\x01 \x01(\x05R\aupdated\x12&\n" +
+	"\x0fadmin_base_path\x18\x02 \x01(\tR\radminBasePath\"\x94\x01\n" +
 	"\fTemplateItem\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +

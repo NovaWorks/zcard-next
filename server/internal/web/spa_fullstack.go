@@ -59,6 +59,15 @@ func NewStorefrontHandler(botRenderer BotRenderer, activeTheme ...func(context.C
 // NewAdminHandler 管理后台 SPA（挂 /admin 前缀；请求路径剥前缀后查 FS）。
 func NewAdminHandler() *Handler { return newHandler(adminFS, "/admin", nil) }
 
+// ServeAt uses a request-local copy so changing the entry never races asset requests.
+func (h *Handler) ServeAt(w http.ResponseWriter, r *http.Request, base string) {
+	local := *h
+	local.prefix = base
+	local.indexBytes = []byte(strings.ReplaceAll(string(h.indexBytes), `name="zcard-admin-base" content="/admin/"`, `name="zcard-admin-base" content="`+base+`/"`))
+	local.indexBytes = []byte(strings.ReplaceAll(string(local.indexBytes), `<base href="/admin/">`, `<base href="`+base+`/">`))
+	local.ServeHTTP(w, r)
+}
+
 func newHandler(root fs.FS, prefix string, bot BotRenderer) *Handler {
 	h := &Handler{root: root, prefix: prefix, bot: bot}
 	if b, err := fs.ReadFile(root, "index.html"); err == nil {
@@ -99,7 +108,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	up := strings.TrimPrefix(path.Clean("/"+p), "/")
 	// 根（""）走 SPA 回落；清洗后仍含穿越段（理论不可达）拒绝
-	if up == "" {
+	if up == "" || up == "index.html" {
 		h.serveIndex(w, r)
 		return
 	}

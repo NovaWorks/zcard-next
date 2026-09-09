@@ -106,6 +106,8 @@ message SettingUpdate {
 
 message UpdateSettingsReply {
   int32 updated = 1;
+  // Effective private entry after changing site.admin_path; omitted for other saves.
+  string admin_base_path = 2;
 }
 
 // TemplateItem 可用模板。

@@ -10419,6 +10419,9 @@ components:
                 updated:
                     type: integer
                     format: int32
+                adminBasePath:
+                    type: string
+                    description: Effective private entry after changing site.admin_path; omitted for other saves.
         zcard.api.admin.v1.UpdateSettingsRequest:
             type: object
             properties:
@@ -10676,6 +10679,10 @@ components:
         zcard.api.admin.v1.UserRecentOrder:
             type: object
             properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.AdminOrderItem'
                 orderNo:
                     type: string
                 amountCents:

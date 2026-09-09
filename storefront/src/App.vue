@@ -270,10 +270,17 @@ const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=2
 const topBannerEnabled = ref(true);
 // template.bg_image：全站背景图（空=默认纯色背景）
 const bgImage = ref('');
+const bgImageMobile = ref('');
+const mobileBackground = ref(false);
+let backgroundMedia: MediaQueryList | null = null;
+function updateBackgroundMedia() { mobileBackground.value = backgroundMedia?.matches ?? false; }
+onMounted(() => { backgroundMedia = window.matchMedia('(max-width: 768px)'); updateBackgroundMedia(); backgroundMedia.addEventListener('change', updateBackgroundMedia); });
+onUnmounted(() => backgroundMedia?.removeEventListener('change', updateBackgroundMedia));
 // 商品详情页排除全站背景图（详情页为白卡布局，重背景图会压过内容可读性）
 const appBgStyle = computed(() => {
-  if (!bgImage.value || route.path.startsWith('/product/')) return undefined;
-  return { backgroundImage: `url(${bgImage.value})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' };
+  const image = mobileBackground.value ? bgImageMobile.value || bgImage.value : bgImage.value;
+  if (!image || route.path.startsWith('/product/')) return undefined;
+  return { backgroundImage: `url(${JSON.stringify(image)})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' };
 });
 
 // ── 页脚配置（footer.* 公开下发：about/nav/social/contact/agreement/icp，空值回落默认）──
@@ -416,6 +423,8 @@ onMounted(async () => {
     const tbe = find('promo.top_banner_enabled');
     if (tbe) { try { topBannerEnabled.value = JSON.parse(tbe) !== false; } catch { /* ignore */ } }
     // 全站背景图（template.bg_image；空=默认纯色）
+    const mobileBi = find('template.bg_image_mobile');
+    if (mobileBi) { try { const v = JSON.parse(mobileBi); if (typeof v === 'string') bgImageMobile.value = v; } catch { /* ignore */ } }
     const bi = find('template.bg_image');
     if (bi) { try { const v = JSON.parse(bi); if (typeof v === 'string') bgImage.value = v; } catch { /* ignore */ } }
     const ms = find('ops.maintenance_style');

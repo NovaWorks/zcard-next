@@ -205,6 +205,9 @@ function formatTime(ts?: number) {
 const columns: DataTableColumns<any> = [
   { type: "selection", disabled: (row) => !canDelete(row) },
   { title: "订单号", key: "order_no", width: 200, ellipsis: { tooltip: true } },
+  { title: "订单商品", key: "items", minWidth: 240, render: (row) => row.items?.length
+    ? h("div", { class: "order-product-names" }, row.items.map((it: any) => h("div", {}, `${it.name || `商品 #${it.product_id}`}${it.sku_name ? ` · ${it.sku_name}` : ""} ×${it.quantity}`)))
+    : "—" },
   {
     title: "状态",
     key: "status",
@@ -515,7 +518,7 @@ onMounted(loadOrders);
             <NButton @click="loadOrders">刷新</NButton>
           </div>
 
-          <NDataTable v-model:checked-row-keys="selectedOrders" :row-key="(row) => row.order_no" :columns="columns" :data="orders" :loading="loading" :max-height="540" :scroll-x="900" />
+          <NDataTable v-model:checked-row-keys="selectedOrders" :row-key="(row) => row.order_no" :columns="columns" :data="orders" :loading="loading" :max-height="540" :scroll-x="1140" />
 
           <TablePager
             v-model:page="page"
@@ -693,3 +696,7 @@ onMounted(loadOrders);
     </NModal>
   </div>
 </template>
+
+<style scoped>
+.order-product-names { white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
+</style>

@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -141,5 +142,29 @@ func TestAdminDeleteOrdersGuards(t *testing.T) {
 				t.Fatalf("guard modified order: %+v %v", o, err)
 			}
 		})
+	}
+}
+
+func TestAdminOrderListProductNames(t *testing.T) {
+	d, uc, _ := newIdemEnv(t)
+	ctx := context.Background()
+	svc := NewAdminOrderService(uc, d)
+	p := d.Client.Product.Create().SetName("视频会员").SetSlug("list-video").SaveX(ctx)
+	for _, tenant := range []uint64{0, 7} {
+		o := d.Client.Order.Create().SetOrderNo(fmt.Sprintf("list-%d", tenant)).SetSubsiteID(tenant).SaveX(ctx)
+		d.Client.OrderItem.Create().SetOrderID(o.ID).SetSubsiteID(tenant).SetProductID(p.ID).SetSkuName("一年版").SetQuantity(2).SetUnitPrice(100).SetAmount(200).SetCost(50).SetFulfillmentType("auto").SaveX(ctx)
+	}
+	for _, tenant := range []uint64{0, 7} {
+		result, err := svc.ListOrders(tenancy.WithContext(ctx, tenancy.Context{SubsiteID: tenant}), &adminv1.ListOrdersRequest{Limit: 20})
+		if err != nil || len(result.GetOrders()) != 1 {
+			t.Fatal(result, err)
+		}
+		items := result.Orders[0].Items
+		if len(items) != 1 || items[0].Name != "视频会员" || items[0].SkuName != "一年版" || items[0].Quantity != 2 {
+			t.Fatal(items)
+		}
+		if items[0].CostCents != 0 {
+			t.Fatal("list summary exposed item cost")
+		}
 	}
 }

@@ -5,6 +5,7 @@ package zcard.api.admin.v1;
 option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
 
 import "google/api/annotations.proto";
+import "admin/v1/order.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
@@ -105,6 +106,7 @@ message UserCouponItem {
 
 // UserRecentOrder 最近订单（用户详情聚合，默认 10 条）。
 message UserRecentOrder {
+  repeated AdminOrderItem items = 5; // 商品名称、规格和数量摘要
   string order_no = 1;
   int64 amount_cents = 2;
   string status = 3;

@@ -1,3 +1,4 @@
+import { adminBasePath } from "@/utils/admin-base";
 import type { App } from "vue";
 import {
   type RouterHistory,
@@ -9,7 +10,7 @@ import {
 import { createBuiltinVueRoutes } from "./routes/builtin";
 import { createRouterGuard } from "./guard";
 
-const { VITE_ROUTER_HISTORY_MODE = "history", VITE_BASE_URL } = import.meta.env;
+const { VITE_ROUTER_HISTORY_MODE = "history" } = import.meta.env;
 
 const historyCreatorMap: Record<Env.RouterHistoryMode, (base?: string) => RouterHistory> = {
   hash: createWebHashHistory,
@@ -18,7 +19,7 @@ const historyCreatorMap: Record<Env.RouterHistoryMode, (base?: string) => Router
 };
 
 export const router = createRouter({
-  history: historyCreatorMap[VITE_ROUTER_HISTORY_MODE](VITE_BASE_URL),
+  history: historyCreatorMap[VITE_ROUTER_HISTORY_MODE](adminBasePath()),
   routes: createBuiltinVueRoutes(),
 });
 

@@ -54,7 +54,7 @@ var groups = map[string]*GroupDef{
 	"template": {
 		Name: "template", Desc: "模板",
 		Labels: map[string]string{
-			"pc_template": "商城主题（PC / 手机）", "mobile_template": "商城主题（兼容旧设置）", "bg_image": "背景图",
+			"pc_template": "商城主题（PC / 手机）", "mobile_template": "商城主题（兼容旧设置）", "bg_image": "电脑背景图", "bg_image_mobile": "手机背景图",
 			"category_nav_style": "分类导航样式", "default_view": "商品默认视图",
 			"per_row": "每行商品数", "per_page": "每页商品数", "sort_by": "默认排序方式",
 			"show_stock": "显示库存", "show_sales": "显示销量", "show_reviews": "显示评价",
@@ -75,6 +75,7 @@ var groups = map[string]*GroupDef{
 			"pc_template":        "classic",
 			"mobile_template":    "classic",
 			"bg_image":           "",
+			"bg_image_mobile":    "",
 			"category_nav_style": "list", // list | grid
 			"default_view":       "grid", // list | grid | big
 			"per_row":            4,
@@ -84,7 +85,7 @@ var groups = map[string]*GroupDef{
 			"show_sales":         true,
 			"show_reviews":       true,
 		},
-		PublicKeys: map[string]bool{"pc_template": true, "mobile_template": true, "bg_image": true, "category_nav_style": true, "default_view": true, "per_row": true, "per_page": true, "sort_by": true, "show_stock": true, "show_sales": true, "show_reviews": true},
+		PublicKeys: map[string]bool{"pc_template": true, "mobile_template": true, "bg_image": true, "bg_image_mobile": true, "category_nav_style": true, "default_view": true, "per_row": true, "per_page": true, "sort_by": true, "show_stock": true, "show_sales": true, "show_reviews": true},
 	},
 	"footer": {
 		Name: "footer", Desc: "页脚",

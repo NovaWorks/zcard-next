@@ -393,7 +393,8 @@ const local: App.I18n.Schema = {
     template: {
       pc_template: "Storefront Theme (Desktop / Mobile)",
       mobile_template: "Mobile Template",
-      bg_image: "Background Image",
+      bg_image: "Desktop Background Image",
+      bg_image_mobile: "Mobile Background Image",
       category_nav_style: "Category Nav Style",
       default_view: "Default View",
       per_row: "Items Per Row",
