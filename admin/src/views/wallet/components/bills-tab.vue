@@ -5,7 +5,7 @@ import { NDataTable, NInput, NSelect, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWalletTransactions } from "@/service/api";
 import TablePager from "@/components/common/table-pager.vue";
-import { formatMoney, formatSignedMoney } from "@/utils/money";
+import { formatTransactionRemark, formatMoney, formatSignedMoney } from "@/utils/money";
 
 defineOptions({ name: "WalletBillsTab" });
 
@@ -110,7 +110,7 @@ const columns: DataTableColumns<any> = [
     render: (row) => formatMoney(row.balance_after_cents),
   },
   { title: "关联单号", key: "reference", minWidth: 150, ellipsis: { tooltip: true } },
-  { title: "备注", key: "remark", minWidth: 120, ellipsis: { tooltip: true } },
+  { title: "备注", key: "remark", render: (row) => formatTransactionRemark(row.remark), minWidth: 120, ellipsis: { tooltip: true } },
   { title: "时间", key: "created_at", width: 160, render: (row) => formatTime(row.created_at) },
 ];
 

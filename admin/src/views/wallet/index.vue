@@ -9,7 +9,7 @@ import { ref, reactive, h } from "vue";
 import { NTag, NSelect, NRadioGroup, NRadioButton, NRadio } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWalletBalance, adjustWalletBalance, adjustWalletPoints, fetchWalletTransactions, fetchUsers, fetchCoupons, grantCoupon } from "@/service/api";
-import { formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
+import { formatTransactionRemark, formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "WalletManagement" });
 
@@ -112,7 +112,7 @@ const columns: DataTableColumns<any> = [
     width: 120,
     render: (row) => formatMoney(row.balance_after_cents),
   },
-  { title: "备注", key: "remark", minWidth: 140, ellipsis: { tooltip: true } },
+  { title: "备注", key: "remark", render: (row) => formatTransactionRemark(row.remark), minWidth: 140, ellipsis: { tooltip: true } },
   { title: "时间", key: "created_at", width: 160, render: (row) => formatTime(row.created_at) },
 ];
 

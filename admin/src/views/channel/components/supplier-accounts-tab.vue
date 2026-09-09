@@ -18,7 +18,7 @@ import {
   fetchSupplierPrices, deleteSupplierPrice, setSupplierIPWhitelist,
 } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
+import { formatTransactionRemark, formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
 
@@ -734,7 +734,7 @@ onMounted(load);
           { title: '时间', key: 'created_at', width: 160, render: (r: any) => (r.created_at ? new Date(r.created_at * 1000).toLocaleString() : '-') },
           { title: '类型', key: 'type', width: 110, render: (r: any) => ({ recharge: '充值', supply_pay: '供货扣款', supply_refund: '退款', adjust: '调账' } as any)[r.type] || r.type },
           { title: '金额', key: 'amount', width: 110, render: (r: any) => (r.amount >= 0 ? '+' : '') + fenToYuan(r.amount) },
-          { title: '备注', key: 'remark', ellipsis: true, render: (r: any) => r.remark || '-' },
+          { title: '备注', key: 'remark', ellipsis: true, render: (r: any) => formatTransactionRemark(r.remark) || '-' },
         ]"
       />
     </NModal>

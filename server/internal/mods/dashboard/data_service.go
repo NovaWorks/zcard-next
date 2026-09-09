@@ -158,8 +158,11 @@ func (s *AdminDashboardService) GetTraffic(ctx context.Context, req *adminv1.Get
 	reply := &adminv1.GetTrafficReply{}
 	start := time.Now().UTC().AddDate(0, 0, -(days - 1))
 	for i := 0; i < days; i++ {
-		d := start.AddDate(0, 0, i).Format("2006-01-02")
-		if p, ok := byDay[d]; ok {
+		day := start.AddDate(0, 0, i)
+		d := day.Format("2006-01-02")
+		// page_views.day uses YYYYMMDD; the chart API returns YYYY-MM-DD.
+		if p, ok := byDay[day.Format("20060102")]; ok {
+			p.Date = d
 			reply.Points = append(reply.Points, p)
 		} else {
 			reply.Points = append(reply.Points, &adminv1.TrafficPoint{Date: d})

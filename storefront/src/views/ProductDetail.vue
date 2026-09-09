@@ -137,6 +137,16 @@
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
+        <div v-if="stockUnknown" class="pd-stock-notice" role="status">
+          <div>
+            <strong>暂时无法确认库存</strong>
+            <p>{{ stockRefreshMessage || '尚未获取到有效库存，这不代表已售罄。请稍后重新查询，或联系客服确认。' }}</p>
+          </div>
+          <button type="button" :disabled="stockRefreshing" @click="refreshStock">
+            {{ stockRefreshing ? '查询中…' : '重新查询库存' }}
+          </button>
+        </div>
+
         <!-- 缺货和未知库存禁购；不限库存仍由后端按货源验证。 -->
         <div class="pd-actions">
           <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown" @click="buy">
@@ -275,6 +285,27 @@ const stockDisplay = computed(() => {
 });
 // 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
 const stockUnknown = computed(() => (p.value?.stock ?? 0) < -1);
+const stockRefreshing = ref(false);
+const stockRefreshMessage = ref('');
+async function refreshStock() {
+  if (!p.value || stockRefreshing.value) return;
+  const productID = p.value.id;
+  stockRefreshing.value = true;
+  stockRefreshMessage.value = '';
+  try {
+    const fresh = await getProduct(productID);
+    if (p.value?.id !== productID) return;
+    if (fresh.data) {
+      // 只更新库存，保留用户已填写的规格、数量和取货信息。
+      p.value.stock = fresh.data.stock ?? 0;
+    }
+    if (fresh.error || stockUnknown.value) {
+      stockRefreshMessage.value = '仍未获取到有效库存，请 15 秒后重试，或联系客服确认。';
+    }
+  } finally {
+    stockRefreshing.value = false;
+  }
+}
 const soldOut = computed(() => {
   if (!p.value) return false;
   return (p.value.stock ?? 0) === 0;
@@ -613,6 +644,11 @@ async function exchangePoints() {
 .pd-options { display: flex; gap: 14px; flex-wrap: wrap; }
 .pd-option { display: flex; align-items: center; gap: 4px; font-size: 14px; }
 
+.pd-stock-notice { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; padding: 14px; border: 1px solid #f4d58d; border-radius: 10px; background: #fff9eb; color: #775015; }
+.pd-stock-notice > div { flex: 1; min-width: 180px; }
+.pd-stock-notice p { margin: 5px 0 0; font-size: 13px; line-height: 1.6; }
+.pd-stock-notice button { min-height: 44px; padding: 8px 12px; border: 1px solid #b98d39; border-radius: 8px; background: #fff; color: inherit; cursor: pointer; font: inherit; white-space: nowrap; }
+.pd-stock-notice button:disabled { opacity: 0.6; cursor: wait; }
 .pd-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
 .pd-btn-buy {
   flex: 1; min-width: 140px; padding: 12px 0; border: none; cursor: pointer;

@@ -121,7 +121,7 @@
             <td>{{ t.type }}</td>
             <td :class="t.amount_cents >= 0 ? 'success' : 'error'">{{ formatSignedMoney(t.amount_cents) }}</td>
             <td>{{ formatMoney(t.balance_after_cents) }}</td>
-            <td class="muted">{{ t.remark || t.reference }}</td>
+            <td class="muted">{{ formatTransactionRemark(t.remark) || t.reference }}</td>
           </tr>
           <tr v-if="!transactions.length"><td colspan="5" class="muted" style="text-align: center;">暂无流水</td></tr>
         </tbody>
@@ -137,8 +137,8 @@
             <span class="muted">{{ fmtTime(t.created_at) }}</span>
             <span class="muted">余额 {{ formatMoney(t.balance_after_cents) }}</span>
           </div>
-          <div class="mcard-row" v-if="t.remark || t.reference">
-            <span class="muted" style="word-break: break-all;">{{ t.remark || t.reference }}</span>
+          <div class="mcard-row" v-if="formatTransactionRemark(t.remark) || t.reference">
+            <span class="muted" style="word-break: break-all;">{{ formatTransactionRemark(t.remark) || t.reference }}</span>
           </div>
         </div>
         <div v-if="!transactions.length" class="muted" style="text-align: center; padding: 16px 0;">暂无流水</div>
@@ -328,7 +328,7 @@ import {
   fetchPaymentChannels, type ChannelItem,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
-import { api, formatMoney, formatSignedMoney, setToken, centsToYuan, getCurrency } from '@/api/client';
+import { api, formatMoney, formatSignedMoney, formatTransactionRemark, setToken, centsToYuan, getCurrency } from '@/api/client';
 import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import Affiliate from './Affiliate.vue';

@@ -219,3 +219,19 @@ export function initCurrency(): Promise<void> {
   }
   return initPromise;
 }
+
+// 兼容已保存的充值备注：只转换系统生成的整段文案，金额跟随当前货币。
+// 原始流水与账务金额保持不变，其他人工备注原样显示。
+export function formatTransactionRemark(remark?: string): string {
+  if (!remark) return '';
+  const match = /^(充值到账|对接账户自助充值到账)（(?:用户 #(\d+)，)?本金\s*(\d+)\s*分\s*[+＋]\s*赠送\s*(\d+)\s*分）$/.exec(remark);
+  if (!match) return remark;
+  const principal = Number(match[3]);
+  const gift = Number(match[4]);
+  const total = principal + gift;
+  if (![principal, gift, total].every(Number.isSafeInteger)) return remark;
+  const amount = gift > 0
+    ? `${formatMoney(total)}（本金 ${formatMoney(principal)}＋赠送 ${formatMoney(gift)}）`
+    : formatMoney(principal);
+  return `${match[1]} ${amount}${match[2] ? `（用户 #${match[2]}）` : ''}`;
+}
