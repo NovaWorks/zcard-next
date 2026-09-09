@@ -120,6 +120,10 @@ function textareaValueOf(item: any) {
 
 /** textarea 变更 → 写入（JSON 键尝试解析，解析失败按原文本存储） */
 function setTextareaValue(item: any, text: string) {
+  if (item.group === 'ops' && item.key === 'announcement') {
+    setVal(item, text);
+    return;
+  }
   if (isTextareaKey(item)) {
     try {
       setVal(item, JSON.parse(text));
@@ -134,7 +138,7 @@ function textareaPlaceholderOf(item: any) {
   if (item.key === "widget_script") return "粘贴 Chatwoot/Crisp 等第三方客服完整嵌入代码（含 <script> 标签）——前台右下角悬浮球";
   if (item.key === "stats_script") return "粘贴百度统计/Google Analytics/51la 等统计代码（含 <script> 标签）——前台页面最底部注入";
   if (item.key === "robots_custom") return "追加到 robots.txt 的规则（每行一条，如 Disallow: /member）；默认已放行全站并指向 sitemap";
-  if (item.group === "ops" && item.key === "announcement") return "公告文本：显示在首页顶部公告条与公告弹窗；留空则回落最新公告文章";
+  if (item.group === "ops" && item.key === "announcement") return "支持 Markdown：# 标题、**加粗**、列表、链接、图片及表格；留空则回落公告文章";
   if (item.key === "sms_template_register" || item.key === "sms_template_reset") {
     return "短信模板内容（需与短信服务商控制台的模板一致）；变量：{code} 验证码 {minutes} 有效分钟 {site} 站点名";
   }
@@ -379,6 +383,7 @@ onMounted(() => {
                     </div>
                   </template>
                   <template v-else-if="isTextareaKey(item)">
+                    <div class="w-full">
                     <NInput
                       :value="textareaValueOf(item)"
                       type="textarea"
@@ -387,6 +392,10 @@ onMounted(() => {
                       :placeholder="textareaPlaceholderOf(item)"
                       @update:value="(v: string) => setTextareaValue(item, v)"
                     />
+                    <div v-if="item.group === 'ops' && item.key === 'announcement'" class="mt-6px text-12px text-gray-500">
+                      支持 Markdown 格式。弹窗显示排版后的内容，首页公告条显示文字摘要。
+                    </div>
+                    </div>
                   </template>
                   <template v-else-if="isCarouselKey(item)">
                     <MediaField

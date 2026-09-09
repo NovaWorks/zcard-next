@@ -8,9 +8,10 @@
       </div>
       <div class="notice-body">
         <!-- 设置公告：文本 -->
-        <div v-if="announcement && announcement.type === 'text'" class="notice-content">
-          {{ announcement.text }}
-        </div>
+        <template v-if="announcement && announcement.type === 'text'">
+          <div v-if="announcement.html !== undefined" class="notice-content notice-markdown" v-html="announcement.html"></div>
+          <div v-else class="notice-content">{{ announcement.text }}</div>
+        </template>
         <!-- 设置公告：单图 / 轮播（指示点 + 自动播放，hover 暂停） -->
         <div v-else-if="announcement && announcement.images.length" class="ann-slider" @mouseenter="stopAuto" @mouseleave="startAuto">
           <div class="ann-track" :style="{ transform: `translateX(-${idx * 100}%)` }">
@@ -114,6 +115,12 @@ function formatDate(unix?: number): string {
 .notice-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
 .notice-date { margin-bottom: 10px; }
 .notice-content { font-size: 14px; line-height: 1.7; color: #374151; word-break: break-word; white-space: pre-wrap; }
+.notice-markdown { white-space: normal; }
+.notice-markdown :deep(h1), .notice-markdown :deep(h2), .notice-markdown :deep(h3) { margin: 16px 0 10px; line-height: 1.4; }
+.notice-markdown :deep(h1) { font-size: 22px; }
+.notice-markdown :deep(h2) { font-size: 19px; }
+.notice-markdown :deep(h3) { font-size: 16px; }
+.notice-markdown :deep(a) { color: #2563eb; text-decoration: underline; }
 .notice-content :deep(p) { margin: 0 0 10px; }
 .notice-content :deep(img) { max-width: 100%; border-radius: 8px; }
 .notice-content :deep(ul), .notice-content :deep(ol) { padding-left: 22px; margin: 0 0 10px; }

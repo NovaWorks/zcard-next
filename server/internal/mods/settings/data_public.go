@@ -52,6 +52,16 @@ func (s *StorefrontConfigService) GetPublicConfig(ctx context.Context, _ *emptyp
 				val = string(b)
 			}
 			out = append(out, entry{gname + "." + k, val})
+			if gname == "ops" && k == "announcement" {
+				var source string
+				if json.Unmarshal([]byte(val), &source) == nil {
+					rendered, summary := renderAnnouncement(source)
+					for key, value := range map[string]string{"ops.announcement_html": rendered, "ops.announcement_summary": summary} {
+						raw, _ := json.Marshal(value)
+						out = append(out, entry{key, string(raw)})
+					}
+				}
+			}
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].key < out[j].key })

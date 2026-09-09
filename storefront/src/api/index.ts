@@ -750,6 +750,8 @@ export interface AnnouncementConfig {
   type: string;     // text | image | carousel
   text: string;     // text 类型内容
   images: string[]; // image/carousel 图片列表
+  html?: string;    // 服务端解析 Markdown 并过滤后的 HTML
+  summary?: string; // 首页公告条使用的纯文本
 }
 export async function fetchAnnouncement(): Promise<AnnouncementConfig> {
   const def: AnnouncementConfig = { type: "text", text: "", images: [] };
@@ -772,7 +774,15 @@ export async function fetchAnnouncement(): Promise<AnnouncementConfig> {
       try {
         const v = JSON.parse(raw);
         if (typeof v === "string") {
-          if (type === "text") return { type, text: v, images: [] };
+          if (type === "text") {
+            const readText = (key: string): string | undefined => {
+              try {
+                const value = JSON.parse(find(key));
+                return typeof value === 'string' ? value : undefined;
+              } catch { return undefined; }
+            };
+            return { type, text: v, images: [], html: readText('ops.announcement_html'), summary: readText('ops.announcement_summary') };
+          }
           images.push(v);
         } else if (Array.isArray(v)) {
           images.push(...v.filter((x): x is string => typeof x === "string" && !!x));

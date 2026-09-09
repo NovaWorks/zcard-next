@@ -243,7 +243,7 @@ const heroItems = computed(() => {
 });
 // 公告条：设置文本优先，回落最新公告文章标题
 const announcementText = computed(() => (announcement.value.type === 'text' ? announcement.value.text : ''));
-const noticeBarText = computed(() => announcementText.value || latestNotice.value?.title || '');
+const noticeBarText = computed(() => (announcementText.value ? (announcement.value.summary ?? announcementText.value) : latestNotice.value?.title) || '');
 
 // 点击公告轮播 → 打开全局公告弹窗（App.vue 监听）
 function openAnnouncement() {
