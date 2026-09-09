@@ -1,56 +1,113 @@
 <p align="center">
-  <img src=".github/logo.png" width="120" alt="ZCard" />
+  <img src=".github/logo.png" width="108" alt="ZCard" />
 </p>
 
-# ZCard 2.0（zcard-next）
+<h1 align="center">ZCard 2.0</h1>
 
-双向上下游自动发卡 / 数字商品销售系统。既能对接异次元、独角数卡、其他 ZCard 站点自动拿货，也能开放供货 API 向下游系统供货。
+<p align="center">
+  <strong>数字商品销售 · 自动发卡 · 双向上下游供货</strong><br />
+  Go 重写，单二进制交付，内含商城与管理后台。
+</p>
 
-`Go · Kratos v3 · Vue 3 · 双向货源 · 自动发卡 · 多货币 · 多语言 · 三级分销 · 分站白标 · 单二进制`
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.26.4+-00ADD8?logo=go" alt="Go 1.26.4+" />
+  <img src="https://img.shields.io/badge/Kratos-v3-00B5AD" alt="Kratos v3" />
+  <img src="https://img.shields.io/badge/Vue-3-42B883?logo=vue.js" alt="Vue 3" />
+</p>
 
-![Go](https://img.shields.io/badge/Go-1.26.4+-00ADD8?logo=go)
-![Kratos](https://img.shields.io/badge/Kratos-v3-00B5AD)
-![Vue](https://img.shields.io/badge/Vue-3-42B883?logo=vue.js)
-![SQLite](https://img.shields.io/badge/SQLite-embedded-003B57?logo=sqlite)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql)
-![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?logo=mysql)
+<p align="center">
+  <a href="#快速开始">快速开始</a> ·
+  <a href="doc/部署指南.md"><strong>部署指南</strong></a> ·
+  <a href="#功能概览">功能概览</a> ·
+  <a href="#api-文档">API 文档</a> ·
+  <a href="https://github.com/NovaWorks/zcard-next/releases">下载版本</a>
+</p>
 
-Open-source automatic card vending, digital goods storefront and bidirectional supply platform, shipped as a single binary.
+<p align="center">
+  <sub>Open-source digital goods storefront and bidirectional supply platform.</sub>
+</p>
 
-> 前代版本：[ZCard 1.x](https://github.com/NovaWorks/ZCard)（PHP / Laravel），本仓库是它的 Golang 重写版本。
+ZCard 既能对接异次元、独角数卡和其他 ZCard 站点自动拿货，也能开放供货 API 向下游系统供货。支持 SQLite、MySQL、PostgreSQL，以及多语言、多货币、三级分销和分站白标。
 
-## 为什么开发 2.0
+前代版本：[ZCard 1.x](https://github.com/NovaWorks/ZCard)（PHP / Laravel）。本仓库 `zcard-next` 是它的 Go 重写版本。
 
-我们的 v1 版本基于 PHP 8.3 + Laravel，功能完整，也仍在维护。但在长期运营中，一些架构层面的问题反复出现：
+## 快速开始
 
-- 部署环节多：PHP 版本与扩展、Composer、PHP-FPM、Supervisor、cron 都要正确配置，任何一环出问题都会导致服务异常，排查成本高；
-- 后台队列是硬依赖：队列进程一旦没有运行，用户付款后无法拿到卡密，这类故障在低配服务器上并不少见；
-- 升级麻烦：在线更新后需要手动重启 PHP-FPM 和 Supervisor，出问题回退旧版本全靠手工；
-- 必须 MySQL：轻量场景下也希望用 SQLite 直接跑；
-- 分站与分销功能互斥，无法同时使用。
+> [!TIP]
+> **更多安装步骤与配置说明，请参考 [ZCard 部署指南](doc/部署指南.md)。**
+> 文档涵盖 Linux 一键安装、Docker、手动与面板部署、域名与 HTTPS，以及升级、备份和旧部署迁移。
 
-2.0 用 Golang 重写，就是为了解决这些问题：
+| 安装方式 | 适用场景 | 准备事项 |
+| --- | --- | --- |
+| **Linux 一键安装** | 在服务器上直接运行，由 systemd 管理 | Bash、curl、Python 3.9+ |
+| **Docker Compose** | 统一运行应用、MySQL 和 Redis | Docker、Compose v2.20+、Git、Bash、OpenSSL、curl、Python 3 |
+| **手动 / 面板部署** | 已有宝塔、1Panel 或其他进程守护 | 对应架构的 Linux 二进制 |
 
-| | v1 | v2 |
-|---|---|---|
-| 部署 | PHP + Composer + PHP-FPM + Supervisor + cron | 单个二进制文件（前端内嵌） |
-| 后台任务 | 队列强依赖 | Redis 可选，缺失时自动降级为同步执行 |
-| 升级 | 手动重启服务，回退靠手工 | 后台一键更新，失败自动回滚 |
-| 数据库 | MySQL | SQLite / MySQL / PostgreSQL |
-| 分站与分销 | 互斥 | 可同时使用 |
+### Linux 一键安装
 
-选择 Golang 的原因：
+```bash
+curl -fsSL https://raw.githubusercontent.com/NovaWorks/zcard-next/main/scripts/zcard-install.sh -o /tmp/zcard-install.sh
+sudo bash /tmp/zcard-install.sh install
+```
 
-- 编译为单个静态二进制，配合 `go:embed` 把前端打包进去，交叉编译一次就得到完整的安装包，部署就是复制一个文件；
-- goroutine 并发模型适合上游同步、事件分发、队列消费这类异步工作，不需要常驻多个进程；
-- 内存占用低，1核1G 的小服务器可以流畅运行；
-- 静态类型加上架构守护测试（依赖方向、SQL 收口等由 CI 强制），项目长期迭代不容易腐化。
+脚本自动配置 systemd；Nginx 与 HTTPS 按部署指南另行配置。已有本地二进制时，可使用 `install --bin ./zcard-linux-amd64 --db sqlite`。
 
-## 功能列表
+### Docker Compose
+
+```bash
+git clone https://github.com/NovaWorks/zcard-next.git
+cd zcard-next
+bash deploy/docker-install.sh
+```
+
+启动后，浏览器打开 **`http://服务器IP:8000/install`** 完成初始化。Docker 安装向导中的连接信息：
+
+| 配置项 | 填写内容 |
+| --- | --- |
+| 数据库类型 | MySQL |
+| 数据库主机 / 端口 | `mysql` / `3306` |
+| 数据库用户 / 库名 | `zcard` / `zcard` |
+| 数据库密码 | `deploy/.env` 中的 `MYSQL_PASSWORD` |
+| Redis 地址 | `redis:6379`，密码留空 |
+
+<details>
+<summary><strong>手动部署与 CLI 安装</strong></summary>
+
+在部署目录执行：
+
+```bash
+./zcard serve -conf configs
+```
+
+无配置时自动生成 SQLite 引导配置与持久密钥，然后通过 `/install` 完成安装。若需要纯命令行初始化，可先执行 `./zcard install -conf configs`，再启动服务。
+
+进程守护、运行目录与权限设置请参考 [部署指南](doc/部署指南.md)。
+
+</details>
+
+> [!IMPORTANT]
+> 请备份配置、密钥和数据。单二进制部署支持程序内在线更新；**Docker 通过重建镜像升级**。旧部署请先阅读部署指南中的迁移说明。
+
+## 功能概览
+
+| 能力 | 主要功能 |
+| --- | --- |
+| **双向货源** | 上游拿货、下游供货、价格与库存同步、兼容主流供货协议 |
+| **商品与交易** | 多规格商品、加密卡密、购物车、多种支付方式、自动履约 |
+| **会员与资金** | 会员等级、钱包、积分、优惠券、提现与退款 |
+| **增长与运营** | 三级分销、分站白标、促销秒杀、经营报表与对账 |
+| **内容与服务** | 多主题、多语言、多货币、SEO、工单及邮件短信通知 |
+| **安全与运维** | RBAC、两步验证、操作审计、数据备份、单二进制与 Docker 部署 |
+
+展开查看各模块的详细功能：
+
+<details>
+<summary><strong>货源、商品与卡密</strong></summary>
 
 ### 双向上下游货源对接
 
 **作为下游拿货**（对接异次元 ACG-Faka、独角数卡 Dujiao Next、其他 ZCard 站点）：
+
 - 多货源连接管理、连接测试、商品预览勾选导入、分类映射一键建目录
 - 全量 / 增量 / 定时同步（价格、库存、上下架，可设间隔与时间窗口防限流）
 - 本地定价：比例加价、固定加价；封面采集本地化存储
@@ -58,6 +115,7 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 - 下单前上游实时库存预检，防超卖
 
 **作为上游供货**（开放 `/api/supply/*` API）：
+
 - 下游账号申请 / 审核，api_key + api_secret
 - 预存余额账本（充值、调账、余额快照、幂等流水）
 - 商品级 / SKU 级专属供货价
@@ -75,6 +133,11 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 - 卡密批量导入（预览、确认、批次撤销）、keyed-hash 去重、批量导出（超管专属并审计）
 - AES-256-GCM 加密存储（不可关闭），查看完整卡密需二次确认并留审计
 - 单卡禁用/启用、靓号识别、低库存提醒
+
+</details>
+
+<details>
+<summary><strong>订单、支付与履约</strong></summary>
 
 ### 订单与支付
 
@@ -108,6 +171,11 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 - 提现：申请、审核、打款，手续费支持固定金额或比例，收款方式白名单
 - 手动调账（超管专属并审计）；积分抵现比例与上限可配
 
+</details>
+
+<details>
+<summary><strong>运营、内容与客户服务</strong></summary>
+
 ### 增长运营
 
 - 三级分销佣金（按订单金额或利润计佣，支持退款逆向扣回）
@@ -133,6 +201,11 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 - SEO：robots 与 sitemap 动态生成、SSG 预渲染、爬虫动态渲染，内容修改实时生效
 - 多语言（中/英）、多币种切换；移动端全面适配
 
+</details>
+
+<details>
+<summary><strong>安全、部署与在线更新</strong></summary>
+
 ### 安全与权限
 
 - RBAC 细粒度权限点（100+），敏感操作限超管（卡密明文、导出、资金操作）
@@ -142,17 +215,20 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 
 ### 部署与在线更新
 
-- 单二进制交付（管理后台 + 商城 + 数据库内嵌），双架构 amd64 / arm64
+- 单二进制交付（管理后台 + 商城 + SQLite 驱动内嵌），双架构 amd64 / arm64
 - 多种安装方式：一键脚本（systemd）、Docker Compose、浏览器向导、命令行
 - 后台一键在线更新（单二进制部署）：GitHub 直连 / 大陆加速镜像（自动探测切换）/ 自建静态源；ED25519 验签、更新前自动备份数据库、新版异常自动回滚、版本历史面板
 - 后台任务调度内置（周期任务随服务启动，无需额外 cron）
 - CLI 运维命令：install、serve、migrate、admin、self-update、dbtest、reencrypt-cards
 
+</details>
+
 ## API 文档
 
-全部接口（管理后台、前台、供货 API）由 protobuf 自动生成 OpenAPI 规范：[server/api/openapi.yaml](server/api/openapi.yaml)（244 个路径，随代码同步生成）。
+全部接口（管理后台、前台、供货 API）由 protobuf 自动生成 OpenAPI 规范：[server/api/openapi.yaml](server/api/openapi.yaml)（随代码同步生成）。
 
-供货 API（下游系统对接用）端点一览：
+<details>
+<summary><strong>供货 API 端点与鉴权说明</strong></summary>
 
 | 端点 | 说明 |
 |---|---|
@@ -168,7 +244,59 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 
 鉴权：HMAC-SHA256 签名（api_key + api_secret），请求带时间窗口与 nonce 防重放；具体签名算法与字段说明见 openapi.yaml 中 SupplyService 各接口描述。
 
-## 技术栈
+</details>
+
+## 为什么开发 2.0
+
+2.0 将商城、后台和内置任务调度集中到单个 Go 程序中，支持多种数据库，简化安装与运维。
+
+<details>
+<summary><strong>从 1.x 到 2.0：设计取舍与版本对比</strong></summary>
+
+我们的 v1 版本基于 PHP 8.3 + Laravel，功能完整，也仍在维护。但在长期运营中，一些架构层面的问题反复出现：
+
+- 部署环节多：PHP 版本与扩展、Composer、PHP-FPM、Supervisor、cron 都要正确配置，任何一环出问题都会导致服务异常，排查成本高；
+- 后台队列是硬依赖：队列进程一旦没有运行，用户付款后无法拿到卡密，这类故障在低配服务器上并不少见；
+- 升级麻烦：在线更新后需要手动重启 PHP-FPM 和 Supervisor，出问题回退旧版本全靠手工；
+- 必须 MySQL：轻量场景下也希望用 SQLite 直接跑；
+- 分站与分销功能互斥，无法同时使用。
+
+2.0 用 Golang 重写，就是为了解决这些问题：
+
+| 对比项 | ZCard 1.x | ZCard 2.0 |
+|---|---|---|
+| 部署 | PHP + Composer + PHP-FPM + Supervisor + cron | 单个二进制文件（前端内嵌） |
+| 后台任务 | 队列强依赖 | Redis 可选，缺失时自动降级为同步执行 |
+| 升级 | 手动重启服务，回退靠手工 | 后台一键更新，失败自动回滚 |
+| 数据库 | MySQL | SQLite / MySQL / PostgreSQL |
+| 分站与分销 | 互斥 | 可同时使用 |
+
+选择 Golang 的原因：
+
+- 编译为单个静态二进制，配合 `go:embed` 把前端打包进去，交叉编译一次就得到完整的安装包，部署就是复制一个文件；
+- goroutine 并发模型适合上游同步、事件分发、队列消费这类异步工作，不需要常驻多个进程；
+- 内存占用低，1核1G 的小服务器可以流畅运行；
+- 静态类型加上架构守护测试（依赖方向、SQL 收口等由 CI 强制），项目长期迭代不容易腐化。
+
+</details>
+
+<details>
+<summary><strong>与同类系统对比</strong></summary>
+
+| 对比项 | ZCard 2.0 | dujiao-next | acg-faka |
+|---|---|---|---|
+| 安装 | 单二进制 + 浏览器向导 | 手编配置 + 管理脚本 | 浏览器向导（需填数据库） |
+| 数据库 | 内嵌 SQLite，可选 MySQL/PG | SQLite | 必须 MySQL |
+| Redis | 可选（自动降级） | 可选 | 无 |
+| 在线更新 | 后台一键（验签、回滚、大陆加速） | — | — |
+| 货源对接 | 双向（拿货 + 供货，免修改对接） | 单向拿货 | 单向拿货 |
+| 对账系统 | 内置（任务 + 明细核对） | — | — |
+
+</details>
+
+## 开发与架构
+
+### 技术栈
 
 | 层 | 选型 |
 |---|---|
@@ -178,7 +306,18 @@ Open-source automatic card vending, digital goods storefront and bidirectional s
 | 存储 | SQLite（纯 Go 驱动）/ MySQL 8 / PostgreSQL 15+；Redis 可选 |
 | 部署 | 单二进制、Docker、systemd 一键脚本、宝塔进程守护 |
 
-## 项目结构
+### 本地开发
+
+```bash
+cd server
+make init
+make generate
+make test
+make run
+```
+
+<details>
+<summary><strong>项目目录结构</strong></summary>
 
 ```
 zcard-next/
@@ -204,66 +343,25 @@ zcard-next/
 └── doc/                     # 部署指南
 ```
 
-## 快速开始
+</details>
 
-> **详细安装与部署文档**：更多安装步骤与配置说明，请参考 [ZCard 部署指南](doc/部署指南.md)，涵盖 Linux 一键安装、Docker Compose、手动与面板部署、域名与 HTTPS 配置，以及升级、备份和旧部署迁移。
-
-```bash
-# Linux 一键安装（需 curl、Python 3.9+；自动配置 systemd，Nginx/HTTPS 另行配置）
-curl -fsSL https://raw.githubusercontent.com/NovaWorks/zcard-next/main/scripts/zcard-install.sh -o /tmp/zcard-install.sh
-sudo bash /tmp/zcard-install.sh install
-# 本地二进制也可：sudo bash /tmp/zcard-install.sh install --bin ./zcard-linux-amd64 --db sqlite
-```
-
-Docker Compose（需 Docker Compose v2.20+、OpenSSL、curl、Python 3）：
-
-```bash
-git clone https://github.com/NovaWorks/zcard-next.git
-cd zcard-next
-bash deploy/docker-install.sh
-```
-
-浏览器打开 `http://服务器IP:8000/install` 完成初始化。Docker 向导选择 MySQL：主机 `mysql`，用户/库名 `zcard`，密码见 `deploy/.env` 的 `MYSQL_PASSWORD`，Redis 为 `redis:6379`。
-
-手动单文件部署可执行 `./zcard serve -conf configs`，无配置时自动生成 SQLite 引导配置与持久密钥；CLI 安装为 `./zcard install -conf configs`。
-
-**备份配置、密钥和数据；Docker 通过重建镜像升级。**
-
-开发环境：
-
-```bash
-cd server && make init && make generate && make test && make run
-```
-
-## 持续更新
-
-项目保持活跃开发：
-
-- 功能与修复持续合入主干，每个可部署版本打 tag 发布（[Releases](../../releases)）
-- 单二进制实例可在后台「设置 → 系统更新」升级；Docker 通过重建镜像升级，备份与回滚边界见部署指南
-- 支付驱动持续增加中，欢迎提 issue 建议需要对接的通道
-- 欢迎提交 issue 与 PR
-
-## 更多支持
-
-- Telegram 群组：[@ZhonCard](https://t.me/ZhonCard)
-- Telegram 频道：[@ZCardGroup](https://t.me/ZCardGroup)
-
-## 与同类系统对比
-
-| | ZCard 2.0 | dujiao-next | acg-faka |
-|---|---|---|---|
-| 安装 | 单二进制 + 浏览器向导 | 手编配置 + 管理脚本 | 浏览器向导（需填数据库） |
-| 数据库 | 内嵌 SQLite，可选 MySQL/PG | SQLite | 必须 MySQL |
-| Redis | 可选（自动降级） | 可选 | 无 |
-| 在线更新 | 后台一键（验签、回滚、大陆加速） | — | — |
-| 货源对接 | 双向（拿货 + 供货，免修改对接） | 单向拿货 | 单向拿货 |
-| 对账系统 | 内置（任务 + 明细核对） | — | — |
-
-## 工程纪律
+<details>
+<summary><strong>工程纪律</strong></summary>
 
 - 金额统一使用 int64 分，禁止浮点
 - 卡密强制加密存储，永不落明文
 - 模块间只通过窄接口与事件通信，由架构测试强制
 - 对外单号使用雪花 ID，与内部自增主键严格分离
 - 三方言迁移独立版本化，启动自动迁移，失败拒绝启动
+
+</details>
+
+## 更新与交流
+
+- **版本发布**：[GitHub Releases](https://github.com/NovaWorks/zcard-next/releases) 提供可部署版本与更新说明。
+- **升级指引**：单二进制可在后台「设置 → 系统更新」升级；Docker 重建镜像。操作步骤与回滚边界见 [部署指南](doc/部署指南.md)。
+- **问题反馈**：欢迎通过 [Issues](https://github.com/NovaWorks/zcard-next/issues) 报告问题、提出功能建议，或提交 PR。
+
+| 交流讨论 | 更新通知 |
+| --- | --- |
+| [Telegram 群组 · @ZhonCard](https://t.me/ZhonCard) | [Telegram 频道 · @ZCardGroup](https://t.me/ZCardGroup) |
