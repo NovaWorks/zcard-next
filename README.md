@@ -206,6 +206,8 @@ zcard-next/
 
 ## 快速开始
 
+> **详细安装与部署文档**：更多安装步骤与配置说明，请参考 [ZCard 部署指南](doc/部署指南.md)，涵盖 Linux 一键安装、Docker Compose、手动与面板部署、域名与 HTTPS 配置，以及升级、备份和旧部署迁移。
+
 ```bash
 # Linux 一键安装（需 curl、Python 3.9+；自动配置 systemd，Nginx/HTTPS 另行配置）
 curl -fsSL https://raw.githubusercontent.com/NovaWorks/zcard-next/main/scripts/zcard-install.sh -o /tmp/zcard-install.sh
@@ -225,7 +227,7 @@ bash deploy/docker-install.sh
 
 手动单文件部署可执行 `./zcard serve -conf configs`，无配置时自动生成 SQLite 引导配置与持久密钥；CLI 安装为 `./zcard install -conf configs`。
 
-**备份配置、密钥和数据；Docker 通过重建镜像升级。** 安装、反代、数据库备份、升级和旧部署迁移见 [部署指南](doc/部署指南.md)。
+**备份配置、密钥和数据；Docker 通过重建镜像升级。**
 
 开发环境：
 
