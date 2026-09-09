@@ -54,7 +54,7 @@
                 :class="{ active: methodType === m.type }"
                 @click="methodType = m.type"
               >
-                <span class="wd-method-icon">{{ methodIcon(m.type) }}</span>
+                <PaymentMethodIcon :type="m.type" :icon="m.icon" />
                 <span>{{ m.name }}</span>
               </button>
             </div>
@@ -133,6 +133,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import PaymentMethodIcon from '@/components/PaymentMethodIcon.vue';
 import MemberTabs from '@/components/MemberTabs.vue';
 import {
   myAffiliate, listMyWithdrawals, createWithdrawal, uploadQrCode,
@@ -172,10 +173,6 @@ const credited = computed(() => Math.max(0, yuanToFen(amountYuan.value || 0) - f
 const feeDesc = computed(() =>
   cfg.value.feeType === 'percent' ? `按 ${(cfg.value.feeValue / 100).toFixed(2)}% 收取` : `固定 ${formatMoney(cfg.value.feeValue)}`
 );
-
-function methodIcon(t: string) {
-  return ({ alipay: '🅰️', wechat: '💬', usdt_trc20: '₮', bank: '🏦' } as Record<string, string>)[t] || '💳';
-}
 
 function allIn() {
   amountYuan.value = centsToYuan(withdrawable.value);
@@ -316,7 +313,9 @@ function fmtTime(ts: number): string {
 /* 表单 */
 .wd-field { margin-bottom: 14px; }
 .wd-label { display: block; font-size: 13px; font-weight: 600; color: #4b5563; margin-bottom: 6px; }
-.wd-amount-row { display: flex; gap: 8px; }
+.wd-amount-row { display: flex; align-items: stretch; gap: 8px; }
+.wd-amount-row .input { flex: 1; width: 0; min-width: 0; }
+.wd-amount-row .btn { flex: none; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; min-height: 44px; }
 .wd-preview { margin-top: 6px; font-size: 13px; display: flex; align-items: baseline; gap: 6px; }
 .wd-preview-num { color: #16a34a; font-size: 16px; }
 
@@ -328,7 +327,7 @@ function fmtTime(ts: number): string {
 }
 .wd-method:hover { border-color: rgba(37, 99, 235, 0.4); }
 .wd-method.active { border-color: #2563eb; background: #eff6ff; }
-.wd-method-icon { font-size: 16px; }
+
 
 /* 收款码 */
 .wd-qr-upload { display: flex; gap: 12px; align-items: center; }

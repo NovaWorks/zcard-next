@@ -26,6 +26,7 @@ const loading = ref(false);
 const activeGroup = ref("site");
 const items = ref<any[]>([]);
 const saving = ref(false);
+const announcementEditor = ref<any | null>(null);
 // 已修改键集合（"group.key"）；驱动底部保存按钮可用态与批量提交。
 const dirtyKeys = ref(new Set<string>());
 const hasDirty = () => dirtyKeys.value.size > 0;
@@ -359,7 +360,7 @@ onMounted(() => {
               PC 和手机共用一个响应式主题，自动适配屏幕。上传只安装主题；在主题弹窗点击「切换为默认」后立即生效，无需再保存。Classic 可随时切回。
             </div>
 
-            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form">
+            <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': activeGroup === 'ops' }">
               <NFormItem v-for="item in items" :key="item.key" :label="labelOf(item)">
                 <div class="flex w-full items-center gap-8px">
                   <template v-if="linkListOf(item)">
@@ -387,13 +388,16 @@ onMounted(() => {
                     <NInput
                       :value="textareaValueOf(item)"
                       type="textarea"
-                      :rows="item.key === 'widget_script' || item.key === 'stats_script' ? 6 : 4"
+                      :rows="item.group === 'ops' && item.key === 'announcement' ? 12 : item.key === 'widget_script' || item.key === 'stats_script' ? 6 : 4"
                       class="w-full"
                       :placeholder="textareaPlaceholderOf(item)"
                       @update:value="(v: string) => setTextareaValue(item, v)"
                     />
                     <div v-if="item.group === 'ops' && item.key === 'announcement'" class="mt-6px text-12px text-gray-500">
-                      支持 Markdown 格式。弹窗显示排版后的内容，首页公告条显示文字摘要。
+                      <div class="flex flex-wrap items-center justify-between gap-8px">
+                        <span>支持 Markdown 格式。弹窗显示排版后的内容，首页公告条显示文字摘要。</span>
+                        <NButton size="small" @click="announcementEditor = item">大窗口编辑</NButton>
+                      </div>
                     </div>
                     </div>
                   </template>
@@ -500,6 +504,20 @@ onMounted(() => {
       </OuterTabs>
     </NCard>
 
+    <NModal :show="!!announcementEditor" preset="card" title="编辑公告" class="announcement-editor-modal"
+      :style="{ width: 'min(1100px, calc(100vw - 32px))' }"
+      @update:show="(show: boolean) => { if (!show) announcementEditor = null; }">
+      <template v-if="announcementEditor">
+        <NInput :value="textareaValueOf(announcementEditor)" type="textarea" class="announcement-editor-input"
+          placeholder="输入 Markdown 公告内容" :input-props="{ style: { height: '60vh', minHeight: '240px' } }"
+          @update:value="(v: string) => setTextareaValue(announcementEditor, v)" />
+        <div class="mt-12px flex flex-wrap items-center justify-between gap-12px">
+          <span class="text-13px text-gray-500">支持 Markdown。完成编辑后，点击页面上的「保存更改」发布。</span>
+          <NButton type="primary" @click="announcementEditor = null">完成编辑</NButton>
+        </div>
+      </template>
+    </NModal>
+
     <!-- 主题选择弹窗（模板字段点击「选择主题」打开） -->
     <ThemePickerModal
       :show="themePicker.show"
@@ -512,6 +530,11 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.settings-form-wide { max-width: 1100px; }
+@media (max-width: 640px) {
+  .settings-form-wide :deep(.n-form-item) { grid-template-columns: minmax(0, 1fr); }
+  .settings-form-wide :deep(.n-form-item-label) { justify-content: flex-start; }
+}
 /* 页脚分区说明卡（浅蓝信息底，与 naive 信息-alert 同语系） */
 .footer-map {
   max-width: 760px;
