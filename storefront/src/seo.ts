@@ -8,11 +8,11 @@
 
 type HeadEntry = Record<string, any>;
 
-let activeHead: { push: (entry: HeadEntry) => () => void } | null = null;
+let activeHead: { push: (entry: HeadEntry) => unknown } | null = null;
 
 /** 由 vite-ssg createApp 回调注入 head 实例（main.ts） */
-export function setActiveHead(head: { push: (entry: HeadEntry) => () => void }) {
-  activeHead = head;
+export function setActiveHead(head: { push: (entry: HeadEntry) => unknown } | undefined) {
+  activeHead = head ?? null;
 }
 
 function headPush(entry: HeadEntry) {

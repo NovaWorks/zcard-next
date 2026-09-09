@@ -791,8 +791,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
   <div class="min-h-500px flex gap-16px overflow-hidden">
+    <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard
       title="商品分类"

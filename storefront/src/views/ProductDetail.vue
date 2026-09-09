@@ -361,7 +361,7 @@ if (productResp.error) {
   error.value = productResp.error;
 } else {
   p.value = productResp.data;
-  applyProductSeo(productResp.data);
+  if (productResp.data) applyProductSeo(productResp.data);
 }
 
 onMounted(async () => {

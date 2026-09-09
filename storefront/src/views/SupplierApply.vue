@@ -348,6 +348,7 @@ const rechargeOpen = ref(false);
 const rechargeTarget = ref<SupplierAccount | null>(null);
 const rechargeYuan = ref<number | null>(null);
 const presetTiers = ref<number[]>([100, 200, 500, 1000, 2000]);
+const supplierGiftTiers = ref<{ amount: number; gift_balance: number }[]>([]);
 const focusCustom = ref(false);
 const rechargeChannels = ref<ChannelItem[]>([]);
 const rechargeChannel = ref('');
@@ -360,6 +361,8 @@ const rechargeDone = ref(false);
 const rechargeDoneAmount = ref(0);
 
 async function openRecharge(a: SupplierAccount) {
+  supplierGiftTiers.value = [];
+  presetTiers.value = [100, 200, 500, 1000, 2000];
   rechargeTarget.value = a;
   rechargeYuan.value = presetTiers.value[1] ?? 100; // 默认第二档
   focusCustom.value = false;
