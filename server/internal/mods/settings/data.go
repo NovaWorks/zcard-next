@@ -89,8 +89,8 @@ func (r *RepoImpl) PutMany(ctx context.Context, items []port.Item) error {
 
 // GetDefault 读取单项，不存在返回 def。
 func (r *RepoImpl) GetDefault(ctx context.Context, group, key string, def json.RawMessage) (json.RawMessage, error) {
-	v, err := Get(ctx, r.data, group, key)
-	if ent.IsNotFound(err) {
+	v, err := r.Get(ctx, group, key)
+	if errors.Is(err, ErrSettingNotFound) {
 		return def, nil
 	}
 	return v, err

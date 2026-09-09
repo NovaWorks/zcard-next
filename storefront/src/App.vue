@@ -61,7 +61,7 @@
       </nav>
       <div class="nav-right">
         <CurrencySwitcher />
-        <router-link to="/cart" class="cart-link" title="查看购物车">
+        <router-link v-if="cartEnabled" to="/cart" class="cart-link" title="查看购物车">
           <span class="cart-icon">🛒</span>
           <span class="cart-label">购物车</span>
           <span v-if="cartCount > 0" :key="cartCount" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
@@ -187,7 +187,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
 import { listPosts, getPost, fetchAnnouncement, type StorePost, type AnnouncementConfig } from '@/api';
-import { mergeGuestCart, refreshCartState, cartState } from '@/cart';
+import { mergeGuestCart, refreshCartState, cartState, cartEnabled, refreshCartSetting } from '@/cart';
 import { captureRefCode } from '@/ref';
 import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
@@ -218,6 +218,10 @@ refreshAuth();
 const year = new Date().getFullYear();
 
 // 购物车角标：共享响应式状态（商品页加购/删除实时联动；:key 变化触发弹跳动画）
+async function refreshCartAvailability() {
+  if (!isInstall.value && await refreshCartSetting(true)) await refreshCartState();
+}
+watch(() => route.fullPath, refreshCartAvailability);
 const cartCount = computed(() => cartState.value.count);
 // 登录/登出后重拉（登录合并本地车、登出回退本地车）
 watch(() => authState.loggedIn, () => { refreshCartState(); });
@@ -342,6 +346,8 @@ provide('openNotice', openNotice);
 onMounted(async () => {
   // 安装页：不加载商城业务（购物车/公告/统计/回顶监听等）
   if (isInstall.value) return;
+  await refreshCartAvailability();
+  window.addEventListener('focus', refreshCartAvailability);
   captureRefCode(); // 推广归因捕获（任何页面 ?ref= 进站即记 30 天）
   // 站点配置（service.stats_script 统计代码；SEO 配置已在 setup 顶层消费）
   try {
@@ -442,6 +448,7 @@ onMounted(async () => {
   window.addEventListener('zcard-open-notice', openNotice);
 });
 onUnmounted(() => {
+  window.removeEventListener('focus', refreshCartAvailability);
   window.removeEventListener('scroll', onScroll);
   window.removeEventListener('zcard-open-notice', openNotice);
 });

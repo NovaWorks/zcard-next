@@ -1,6 +1,11 @@
 <template>
   <div class="cart-page">
-    <div v-if="!loaded" class="card" style="text-align: center;"><span class="muted">加载中…</span></div>
+    <div v-if="cartSettingLoaded && !cartEnabled" class="cart-empty" role="status">
+      <p class="cart-empty-text">{{ cartSettingError || '购物车已关闭，请前往商品详情页直接购买' }}</p>
+      <button v-if="cartSettingError" class="btn secondary" :disabled="retrying" @click="retrySetting">{{ retrying ? '读取中…' : '重试' }}</button>
+      <router-link class="btn btn-primary" to="/products">浏览商品</router-link>
+    </div>
+    <div v-else-if="!loaded || !cartSettingLoaded" class="card" style="text-align: center;"><span class="muted">加载中…</span></div>
 
     <template v-else>
       <!-- 空购物车 -->
@@ -116,11 +121,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { createOrder, getProduct, updateCart, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type CartItem, type ProductControl, type TradeConfig } from '@/api';
 import { formatMoney } from '@/api/client';
-import { loadCart, updateGuestQty, removeCartItem, clearPurchased } from '@/cart';
+import { loadCart, updateGuestQty, removeCartItem, clearPurchased, cartEnabled, cartSettingLoaded, cartSettingError, refreshCartSetting } from '@/cart';
 import { NO_IMAGE, onImgError } from '@/no-image';
 import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
@@ -130,6 +135,12 @@ const router = useRouter();
 const items = ref<CartItem[]>([]);
 const selected = ref<number[]>([]);
 const loaded = ref(false);
+const retrying = ref(false);
+async function retrySetting() {
+  retrying.value = true;
+  try { if (await refreshCartSetting(true)) await load(); } finally { retrying.value = false; }
+}
+watch(cartEnabled, enabled => { if (enabled) load(); });
 const isGuestCart = ref(false);
 const couponCode = ref('');
 const contact = ref('');
@@ -182,6 +193,7 @@ function toggleAll() {
 }
 
 async function changeQty(it: CartItem, qty: number) {
+  if (!(await refreshCartSetting(true))) return;
   const q = Math.max(1, Math.min(99, qty || 1));
   if (isGuestCart.value) {
     // 游客本地购物车
@@ -203,6 +215,7 @@ async function remove(id: number) {
 
 // 结算：先收必填控件（有则展开表单），后下单
 async function checkout() {
+  if (!(await refreshCartSetting(true))) return;
   // 交易设置校验（与后端同口径：查询密码强制 + 游客联系方式）
   if (trade.value.queryPasswordRequired && queryPwd.value.trim().length < 4) {
     alert('请设置查询密码（取货用，至少 4 位）');
@@ -236,7 +249,9 @@ async function checkout() {
 }
 
 async function doCheckout() {
+  if (checkingOut.value) return;
   checkingOut.value = true;
+  if (!(await refreshCartSetting(true))) { checkingOut.value = false; return; }
   const { data, error } = await createOrder({
     items: selectedItems.value.map((i) => ({ product_id: i.product_id, sku_id: i.sku_id || undefined, quantity: i.quantity })),
     coupon_code: couponCode.value || undefined,

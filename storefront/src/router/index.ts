@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { Router, RouterScrollBehavior } from 'vue-router';
+import { refreshCartSetting } from '@/cart';
 import { getToken } from '@/api/client';
 import Home from '@/views/Home.vue';
 
@@ -45,8 +46,10 @@ export function createAppRouter(): Router {
 
 /** 登录守卫 + 尾斜杠规范化（注册到任意 router 实例；vite-ssg 与独立入口共用） */
 export function installRouterGuards(router: Router) {
-  router.beforeEach((to) => {
-    if (to.meta.auth && !getToken()) {
+  router.beforeEach(async (to) => {
+    // 关闭时允许展示停用说明，无需先要求登录。
+    const cartUnavailable = to.name === 'cart' && !(await refreshCartSetting(true));
+    if (to.meta.auth && !cartUnavailable && !getToken()) {
       return { path: '/login', query: { redirect: to.fullPath } };
     }
     // URL 规范化：尾斜杠 replace 到无斜杠版本，避免同一内容双 URL 重复收录

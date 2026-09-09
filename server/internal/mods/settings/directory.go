@@ -386,7 +386,7 @@ var groups = map[string]*GroupDef{
 // trade 组 PublicKeys 在 init 内补充（同文件上方字段初始化保持简洁）
 func init() {
 	groups["trade"].PublicKeys = map[string]bool{
-		"guest_checkout": true, "query_password": true, "contact_required": true, "contact_scope": true,
+		"guest_checkout": true, "query_password": true, "contact_required": true, "contact_scope": true, "cart_enabled": true,
 	}
 	// withdraw 组公开键（提现页表单驱动：开关/最低额/手续费/白名单）
 	groups["withdraw"].PublicKeys = map[string]bool{

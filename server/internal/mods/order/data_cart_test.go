@@ -5,7 +5,11 @@ package order
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"testing"
 	"time"
 
@@ -32,7 +36,7 @@ func newCartEnv(t *testing.T) (*StoreCartService, *data.Data) {
 		t.Fatal(err)
 	}
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
-	return NewStoreCartService(d, nil, nil), d // pricing/inv nil：快照降级路径不炸
+	return NewStoreCartService(d, nil, nil, settings.NewRepoImpl(d)), d // pricing/inv nil：快照降级路径不炸
 }
 
 func userCtx(userID uint64) context.Context {
@@ -159,5 +163,69 @@ func TestCartUpstreamStockSource(t *testing.T) {
 		if err != nil || item.Stock != int64(want) {
 			t.Fatalf("stock=%v want=%d err=%v", item, want, err)
 		}
+	}
+}
+
+func TestCartTogglePreservesItems(t *testing.T) {
+	svc, d := newCartEnv(t)
+	ctx := userCtx(1)
+	repo := settings.NewRepoImpl(d)
+	product := d.Client.Product.Create().SetName("cart toggle").SetSlug("toggle").SetStatus(1).SaveX(ctx)
+	// No setting retains the documented enabled default.
+	item, err := svc.AddCartItem(ctx, &storefrontv1.AddCartItemRequest{ProductId: product.ID, Quantity: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Put(ctx, "trade", "cart_enabled", json.RawMessage(`false`)); err != nil {
+		t.Fatal(err)
+	}
+	checks := []struct {
+		name string
+		run  func() error
+	}{
+		{"list", func() error { _, e := svc.ListCart(ctx, &emptypb.Empty{}); return e }},
+		{"add", func() error {
+			_, e := svc.AddCartItem(ctx, &storefrontv1.AddCartItemRequest{ProductId: product.ID, Quantity: 1})
+			return e
+		}},
+		{"update", func() error {
+			_, e := svc.UpdateCartItem(ctx, &storefrontv1.UpdateCartItemRequest{Id: item.Id, Quantity: 5})
+			return e
+		}},
+		{"delete", func() error {
+			_, e := svc.RemoveCartItem(ctx, &storefrontv1.RemoveCartItemRequest{Id: item.Id})
+			return e
+		}},
+	}
+	for _, check := range checks {
+		t.Run(check.name, func(t *testing.T) {
+			err := check.run()
+			if err == nil || kerrors.FromError(err).Reason != "cart.DISABLED" {
+				t.Fatalf("want cart.DISABLED, got %v", err)
+			}
+		})
+	}
+	if row := d.Client.CartItem.GetX(ctx, item.Id); row.Quantity != 2 {
+		t.Fatalf("disabled cart changed: %+v", row)
+	}
+	if err := repo.Put(ctx, "trade", "cart_enabled", json.RawMessage(`true`)); err != nil {
+		t.Fatal(err)
+	}
+	list, err := svc.ListCart(ctx, &emptypb.Empty{})
+	if err != nil || len(list.Items) != 1 || list.Items[0].Quantity != 2 {
+		t.Fatalf("reopened cart: %v %v", list, err)
+	}
+	if _, err := svc.UpdateCartItem(ctx, &storefrontv1.UpdateCartItemRequest{Id: item.Id, Quantity: 3}); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Put(ctx, "trade", "cart_enabled", json.RawMessage(`"false"`)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ListCart(ctx, &emptypb.Empty{}); err == nil || kerrors.FromError(err).Reason != "cart.CONFIG_INVALID" {
+		t.Fatalf("invalid configuration must not enable cart: %v", err)
+	}
+	svc.settings = nil
+	if _, err := svc.ListCart(ctx, &emptypb.Empty{}); err == nil {
+		t.Fatal("missing provider allowed cart")
 	}
 }

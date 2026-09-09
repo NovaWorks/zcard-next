@@ -208,7 +208,7 @@ import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, conta
 import { formatMoney, getToken } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
 import { authState } from '@/auth';
-import { addToCart as addToCartStore, removeCartItem, cartItemOf } from '@/cart';
+import { addToCart as addToCartStore, removeCartItem, cartItemOf, cartEnabled } from '@/cart';
 import { getRefCode } from '@/ref';
 import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import { fetchSiteSeo, applySeo, stripHtml, truncate, type SiteSeoConfig } from '@/seo';
@@ -259,7 +259,7 @@ watch([description, () => p.value?.description], () => {
 watch(() => route.params, () => { previewImages.value = []; });
 
 // 购物车（淘宝式切换）：当前商品 + 所选 SKU 在购物车 → 按钮变灰「移除购物车」
-const canCart = computed(() => !(p.value?.points_required && p.value.points_required > 0));
+const canCart = computed(() => cartEnabled.value && !(p.value?.points_required && p.value.points_required > 0));
 const inCartNow = computed(() => {
   if (!p.value || !canCart.value) return false;
   return !!cartItemOf(p.value.id, selectedSku.value || 0);

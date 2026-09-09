@@ -169,7 +169,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminInventoryService := inventory.NewAdminInventoryService(cardRepoImpl, dataData)
 	adminOrderService := order.NewAdminOrderService(orderUsecase, dataData)
 	storeOrderService := order.NewStoreOrderService(orderUsecase, service)
-	storeCartService := order.NewStoreCartService(dataData, productRepoImpl, cardRepoImpl)
+	storeCartService := order.NewStoreCartService(dataData, productRepoImpl, cardRepoImpl, repoImpl)
 	adminPaymentService := payment.NewAdminPaymentService(paymentRepoImpl, dataData)
 	storePaymentService := payment.NewStorePaymentService(paymentRepoImpl, dataData)
 	giftcardRepo := wallet.NewGiftcardRepo(dataData, cardCipher, walletRepoImpl)

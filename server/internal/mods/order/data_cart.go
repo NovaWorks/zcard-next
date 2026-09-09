@@ -6,7 +6,10 @@ package order
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
+	kerrors "github.com/go-kratos/kratos/v3/errors"
 
 	"entgo.io/ent/dialect/sql"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -24,14 +27,15 @@ import (
 // StoreCartService 购物车服务。
 type StoreCartService struct {
 	storefrontv1.UnimplementedStoreCartServiceServer
-	data    *data.Data
-	pricing catalogport.PricingResolver
-	inv     invport.Inventory // 库存快照（Stock 单查；批量留优化）
+	settings settingsport.Provider
+	data     *data.Data
+	pricing  catalogport.PricingResolver
+	inv      invport.Inventory // 库存快照（Stock 单查；批量留优化）
 }
 
 // NewStoreCartService 构造（wire；Pricing/Inventory 复用 order 依赖注入链）。
-func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv invport.Inventory) *StoreCartService {
-	return &StoreCartService{data: d, pricing: pricing, inv: inv}
+func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv invport.Inventory, settings settingsport.Provider) *StoreCartService {
+	return &StoreCartService{data: d, pricing: pricing, inv: inv, settings: settings}
 }
 
 func mustUserClaims(ctx context.Context) (uint64, error) {
@@ -44,6 +48,9 @@ func mustUserClaims(ctx context.Context) (uint64, error) {
 
 // AddCartItem 加购（合并语义；商品须存在，价格/库存快照在列表联查）。
 func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.AddCartItemRequest) (*storefrontv1.CartItem, error) {
+	if err := s.requireEnabled(ctx); err != nil {
+		return nil, err
+	}
 	userID, err := mustUserClaims(ctx)
 	if err != nil {
 		return nil, err
@@ -79,6 +86,9 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 
 // ListCart 我的购物车（快照联查 + 失效打标）。
 func (s *StoreCartService) ListCart(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.ListCartReply, error) {
+	if err := s.requireEnabled(ctx); err != nil {
+		return nil, err
+	}
 	userID, err := mustUserClaims(ctx)
 	if err != nil {
 		return nil, err
@@ -106,6 +116,9 @@ func (s *StoreCartService) ListCart(ctx context.Context, _ *emptypb.Empty) (*sto
 
 // UpdateCartItem 改量（0=删除；属主校验）。
 func (s *StoreCartService) UpdateCartItem(ctx context.Context, req *storefrontv1.UpdateCartItemRequest) (*storefrontv1.CartItem, error) {
+	if err := s.requireEnabled(ctx); err != nil {
+		return nil, err
+	}
 	userID, err := mustUserClaims(ctx)
 	if err != nil {
 		return nil, err
@@ -133,6 +146,9 @@ func (s *StoreCartService) UpdateCartItem(ctx context.Context, req *storefrontv1
 
 // RemoveCartItem 移除（属主校验）。
 func (s *StoreCartService) RemoveCartItem(ctx context.Context, req *storefrontv1.RemoveCartItemRequest) (*emptypb.Empty, error) {
+	if err := s.requireEnabled(ctx); err != nil {
+		return nil, err
+	}
 	userID, err := mustUserClaims(ctx)
 	if err != nil {
 		return nil, err
@@ -206,4 +222,23 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 		item.Stock = -1 // 链接/兑换码类不限
 	}
 	return item, nil
+}
+
+// 运行时读取开关；关闭只阻止操作，不删除已有购物车。
+func (s *StoreCartService) requireEnabled(ctx context.Context) error {
+	if s.settings == nil {
+		return kerrors.ServiceUnavailable("cart.CONFIG_UNAVAILABLE", "购物车配置暂时无法读取")
+	}
+	raw, err := s.settings.GetDefault(ctx, "trade", "cart_enabled", json.RawMessage(`true`))
+	if err != nil {
+		return kerrors.ServiceUnavailable("cart.CONFIG_UNAVAILABLE", "购物车配置暂时无法读取")
+	}
+	var enabled bool
+	if err := json.Unmarshal(raw, &enabled); err != nil {
+		return kerrors.ServiceUnavailable("cart.CONFIG_INVALID", "购物车配置无效")
+	}
+	if !enabled {
+		return kerrors.Forbidden("cart.DISABLED", "购物车已关闭，请在商品详情页直接购买")
+	}
+	return nil
 }

@@ -4,9 +4,42 @@
 
 import { ref } from 'vue';
 import { listCart, addCart, updateCart, removeCart } from './api';
-import { getToken } from './api/client';
+import { api, getToken } from './api/client';
 
 const GUEST_KEY = 'zcard_guest_cart';
+
+// 所有购物车入口共享同一开关。配置未确认/读取失败时不展示入口。
+export const cartEnabled = ref(false);
+export const cartSettingLoaded = ref(false);
+export const cartSettingError = ref('');
+let settingRequest: Promise<boolean> | null = null;
+export async function refreshCartSetting(force = false): Promise<boolean> {
+  if (settingRequest) return settingRequest;
+  if (cartSettingLoaded.value && !force) return cartEnabled.value;
+  settingRequest = (async () => {
+    try {
+      const { data, error } = await api.get<{ entries: { key: string; value_json: string }[] }>('/config');
+      if (error || !Array.isArray(data?.entries)) throw new Error('config unavailable');
+      const entry = data.entries.find(e => e.key === 'trade.cart_enabled');
+      const enabled = entry ? JSON.parse(entry.value_json) : true;
+      if (typeof enabled !== 'boolean') throw new Error('invalid cart setting');
+      cartEnabled.value = enabled;
+      cartSettingError.value = '';
+    } catch {
+      cartEnabled.value = false;
+      cartSettingError.value = '购物车配置暂时无法读取，请重试';
+    } finally {
+      cartSettingLoaded.value = true;
+      if (!cartEnabled.value) syncCartState([]);
+    }
+    return cartEnabled.value;
+  })();
+  try { return await settingRequest; } finally { settingRequest = null; }
+}
+function unavailableMessage() {
+  return cartSettingError.value || '购物车已关闭，请在商品详情页直接购买';
+}
+
 
 // ── 共享响应式状态（单一数据源）──
 // 导航购物车角标 + 商品页「已在购物车 → 移除购物车」判定都读这里；
@@ -28,6 +61,7 @@ function syncCartState(items: CartSnapshotItem[]) {
 
 /** 刷新共享状态（不返回给调用方数据——纯状态同步；加购/删除后调用） */
 export async function refreshCartState() {
+  if (!(await refreshCartSetting())) return;
   if (getToken()) {
     const { data, error } = await listCart().catch(() => ({ data: null, error: 'network' }));
     if (!error && data) {
@@ -84,6 +118,7 @@ function isAuthError(error: string | null): boolean {
 
 /** 加载购物车（登录 → 后端；游客/令牌失效 → 本地；同时同步共享角标状态） */
 export async function loadCart() {
+  if (!(await refreshCartSetting())) return { items: [], error: unavailableMessage(), isGuest: !getToken() };
   if (getToken()) {
     const { data, error } = await listCart();
     if (isAuthError(error)) {
@@ -100,6 +135,7 @@ export async function loadCart() {
 
 /** 加购（登录 → 后端；游客/令牌失效 → 本地，同商品同 SKU 合并数量）；成功后同步角标 */
 export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number }, quantity: number, skuId = 0) {
+  if (!(await refreshCartSetting(true))) return { data: null, error: unavailableMessage() };
   if ((product.stock ?? 0) === 0) return { data: null, error: '暂时缺货' };
   if ((product.stock ?? 0) < -1) return { data: null, error: '库存待确认，请稍后重试' };
   let result;
@@ -145,6 +181,7 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
 
 /** 改数量（游客本地；同步角标计数） */
 export function updateGuestQty(id: number, quantity: number) {
+  if (!cartEnabled.value) return;
   const items = guestItems();
   const it = items.find((i) => i.id === id);
   if (it) it.quantity = Math.max(1, Math.min(99, quantity || 1));
@@ -154,6 +191,7 @@ export function updateGuestQty(id: number, quantity: number) {
 
 /** 删除（登录 → 后端；游客 → 本地）；成功后同步角标 */
 export async function removeCartItem(id: number) {
+  if (!(await refreshCartSetting(true))) return { data: null, error: unavailableMessage() };
   let result;
   if (getToken()) {
     result = await removeCart(id);
@@ -178,13 +216,16 @@ export async function clearPurchased(ids: number[]) {
 
 /** 登录后合并本地购物车到后端并清空（App 挂载时调用）；同步角标 */
 export async function mergeGuestCart() {
-  if (!getToken()) return;
+  if (!getToken() || !(await refreshCartSetting())) return;
   const items = guestItems();
   if (items.length) {
+    const merged = new Set<number>();
     for (const it of items) {
-      await addCart(it.product_id, it.quantity, it.sku_id || 0).catch(() => {});
+      const result = await addCart(it.product_id, it.quantity, it.sku_id || 0);
+      if (result.error) break; // 开关在合并途中关闭时，保留尚未合并的商品。
+      merged.add(it.id);
     }
-    try { localStorage.removeItem(GUEST_KEY); } catch { /* 忽略 */ }
+    saveGuest(guestItems().filter(it => !merged.has(it.id)));
     await refreshCartState();
   }
 }
