@@ -6,7 +6,7 @@
       <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级） -->
       <div v-if="navStyle === 'grid' && categories.length" class="card category-chips" style="margin-bottom: 12px;">
         <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
-          <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)">全部</button>
+          <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />全部</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
             <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
           </button>
@@ -62,6 +62,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
 import { ref, computed, onMounted, onActivated, onDeactivated } from 'vue';
 import { useRoute } from 'vue-router';

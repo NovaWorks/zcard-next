@@ -10,7 +10,7 @@
     <template v-else>
       <!-- 空购物车 -->
       <div v-if="!items.length" class="cart-empty">
-        <div class="cart-empty-icon">🛒</div>
+        <div class="cart-empty-icon"><ThemeIcon name="cart" /></div>
         <div class="cart-empty-text">购物车还是空的</div>
         <router-link class="btn btn-primary" to="/products">去逛逛</router-link>
       </div>
@@ -121,6 +121,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { createOrder, getProduct, updateCart, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type CartItem, type ProductControl, type TradeConfig } from '@/api';
@@ -286,7 +287,7 @@ const queryPwd = ref('');
   background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
   padding: 60px 20px; text-align: center;
 }
-.cart-empty-icon { font-size: 48px; opacity: 0.4; margin-bottom: 12px; }
+.cart-empty-icon { font-size: 48px; color: #2563eb; opacity: 0.65; margin-bottom: 12px; }
 .cart-empty-text { color: #6b7280; font-size: 15px; margin-bottom: 16px; }
 
 /* ── 工具栏 ── */

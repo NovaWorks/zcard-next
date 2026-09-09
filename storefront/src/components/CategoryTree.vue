@@ -15,7 +15,7 @@
           :class="{ active: modelValue === 0 }"
           @click="select(0)"
         >
-          <span>🏠</span>
+          <ThemeIcon name="grid" />
           <span class="flex-1 text-left">全部商品</span>
         </button>
         <!-- 分类树：递归渲染任意层级（三级/四级均可展开） -->
@@ -36,6 +36,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, watch } from 'vue';
 import CategoryTreeNode from './CategoryTreeNode.vue';
 import type { CategoryItem } from '@/api';

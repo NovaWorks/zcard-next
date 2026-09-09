@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import ThemeIcon from '@/components/ThemeIcon.vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps<{ icon?: string }>();
+const failed = ref(false);
+watch(() => props.icon, () => { failed.value = false; });
 const image = computed(() => !!props.icon && (
   props.icon.includes('/') || /\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)(?:[?#].*)?$/i.test(props.icon)
 ));
@@ -12,8 +15,9 @@ const src = computed(() => {
 </script>
 
 <template>
-  <img v-if="image" :src="src" class="category-icon" alt="" />
-  <span v-else-if="icon" class="category-icon" aria-hidden="true">{{ icon }}</span>
+  <img v-if="image && !failed" :src="src" @error="failed = true" class="category-icon" alt="" />
+  <span v-else-if="icon && !image" class="category-icon" aria-hidden="true">{{ icon }}</span>
+  <ThemeIcon v-else name="folder" class="category-icon" />
 </template>
 
 <style scoped>

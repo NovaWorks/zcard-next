@@ -282,3 +282,8 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
 @media (prefers-reduced-motion: reduce) {
   .footer-mobile-toggle svg { transition: none; }
 }
+
+/* 主题导航图标：统一线条、尺寸和文字对齐，选中状态继承链接颜色。 */
+.nav-links a, .nav-horn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.nav-links .theme-icon, .cart-icon { font-size: 18px; }
+.nav-custom-btn .theme-icon, .nav-recommend-btn .theme-icon { font-size: 16px; }

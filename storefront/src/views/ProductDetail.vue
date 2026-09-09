@@ -161,8 +161,8 @@
             @click="inCartNow ? removeFromCart() : addToCart()"
           >
             <template v-if="cartBusy">{{ addingCart ? '加入中…' : '处理中…' }}</template>
-            <template v-else-if="inCartNow">🗑️ 移除购物车</template>
-            <template v-else>🛒 加入购物车</template>
+            <template v-else-if="inCartNow"><ThemeIcon name="trash" />移除购物车</template>
+            <template v-else><ThemeIcon name="cart" />加入购物车</template>
           </button>
           <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown" @click="exchangePoints">
             {{ stockUnknown ? '库存待确认' : soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
@@ -202,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
@@ -658,6 +659,7 @@ async function exchangePoints() {
 }
 .pd-btn-buy:hover:not(:disabled) { box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4); transform: translateY(-1px); }
 .pd-btn-cart {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   flex: 1; min-width: 140px; padding: 12px 0; cursor: pointer;
   border-radius: 10px; font-size: 15px; font-weight: 700;
   background: #fff; color: #2563eb; border: 2px solid #2563eb; transition: all 0.15s;

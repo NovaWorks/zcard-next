@@ -37,32 +37,32 @@
       </router-link>
       <nav class="nav-links">
         <router-link to="/" exact>首页</router-link>
-        <router-link to="/products">全部商品</router-link>
-        <button class="nav-horn" @click="openNotice" title="系统公告">📢 公告</button>
+        <router-link to="/products"><ThemeIcon name="grid" />全部商品</router-link>
+        <button class="nav-horn" @click="openNotice" title="系统公告"><ThemeIcon name="announcement" />公告</button>
         <router-link to="/fetch">取货查询</router-link>
         <!-- 顶部自定义按钮：外部链接新窗口；文章/公告站内路由（site.top_button {text,type,url|slug}） -->
         <router-link
           v-if="topButton && topButton.type !== 'link' && topButton.slug"
           :to="`/posts/${topButton.slug}`"
           class="nav-custom-btn"
-        >{{ topButton.text }}</router-link>
+        ><ThemeIcon v-if="isGuide(topButton.text)" name="book" />{{ navText(topButton.text) }}</router-link>
         <a
           v-else-if="topButton"
           :href="topButton.url || '#'"
           :target="topButton.url ? '_blank' : undefined"
           rel="noopener noreferrer"
           class="nav-custom-btn"
-        >{{ topButton.text }}</a>
+        ><ThemeIcon v-if="isGuide(topButton.text)" name="book" />{{ navText(topButton.text) }}</a>
         <!-- 导航推荐位（promo.nav_recommend [{text,url}]）：站内路径走路由，外链新窗口 -->
         <template v-for="r in navRecommend" :key="r.text + r.url">
-          <router-link v-if="r.url.startsWith('/')" :to="r.url" class="nav-recommend-btn">🔥 {{ r.text }}</router-link>
-          <a v-else :href="r.url" target="_blank" rel="noopener noreferrer" class="nav-recommend-btn">🔥 {{ r.text }}</a>
+          <router-link v-if="r.url.startsWith('/')" :to="r.url" class="nav-recommend-btn"><ThemeIcon v-if="isGuide(r.text)" name="book" /><span v-else aria-hidden="true">🔥</span>{{ navText(r.text) }}</router-link>
+          <a v-else :href="r.url" target="_blank" rel="noopener noreferrer" class="nav-recommend-btn"><ThemeIcon v-if="isGuide(r.text)" name="book" /><span v-else aria-hidden="true">🔥</span>{{ navText(r.text) }}</a>
         </template>
       </nav>
       <div class="nav-right">
         <CurrencySwitcher />
-        <router-link v-if="cartEnabled" to="/cart" class="cart-link" title="查看购物车">
-          <span class="cart-icon">🛒</span>
+        <router-link v-if="cartEnabled" to="/cart" class="cart-link" title="查看购物车" aria-label="查看购物车">
+          <ThemeIcon name="cart" class="cart-icon" />
           <span class="cart-label">购物车</span>
           <span v-if="cartCount > 0" :key="cartCount" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
         </router-link>
@@ -181,6 +181,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
 import { fetchSiteSeo } from './seo';
 import { useRoute, useRouter } from 'vue-router';
@@ -257,6 +258,9 @@ function scrollTop() {
 
 // ── 顶部自定义按钮（site.top_button 公开下发）+ 维护模式（ops.maintenance[_style]）──
 // top_button：{text, type: link|post|notice, url?|slug?}——link 外链新窗口；post/notice 站内文章路由
+// 教程入口可能来自自定义按钮或推荐位；只替换旧书本前缀，配置原文不变。
+const isGuide = (text: string) => /教程|指南|帮助/.test(text);
+const navText = (text: string) => isGuide(text) ? text.replace(/^(?:📚|📖|📘|📙|📗|📕|📔|📓)\s*/, '') : text;
 const topButton = ref<{ text: string; type?: string; url?: string; slug?: string } | null>(null);
 const navRecommend = ref<{ text: string; url: string }[]>([]);
 const maintenance = ref(false);

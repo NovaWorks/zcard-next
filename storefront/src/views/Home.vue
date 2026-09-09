@@ -67,7 +67,7 @@
             <span class="mcb-arrow" :class="{ open: chipsExpanded }"></span>
           </button>
           <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
-            <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)">全部</button>
+            <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />全部</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
             </button>
@@ -145,6 +145,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, inject } from 'vue';
 import { useRouter } from 'vue-router';

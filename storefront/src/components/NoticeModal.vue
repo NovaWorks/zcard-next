@@ -1,10 +1,10 @@
 <template>
   <div v-if="show" class="notice-mask" @click.self="close">
-    <div class="notice-modal">
+    <div class="notice-modal" role="dialog" aria-modal="true" :aria-label="headTitle">
       <div class="notice-head">
-        <span class="notice-horn">📢</span>
+        <span class="notice-horn"><ThemeIcon name="announcement" /></span>
         <span class="notice-head-title">{{ headTitle }}</span>
-        <button class="notice-close" @click="close">✕</button>
+        <button class="notice-close" aria-label="关闭公告" @click="close">✕</button>
       </div>
       <div class="notice-body">
         <!-- 设置公告：文本 -->
@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, watch, onUnmounted } from 'vue';
 import type { StorePost, AnnouncementConfig } from '@/api';
 
@@ -105,11 +106,11 @@ function formatDate(unix?: number): string {
   padding: 14px 18px; background: linear-gradient(90deg, #eff6ff, #dbeafe);
   border-bottom: 1px solid #e5e7eb;
 }
-.notice-horn { font-size: 18px; }
+.notice-horn { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: #fff; color: #2563eb; font-size: 20px; }
 .notice-head-title { flex: 1; font-weight: 700; font-size: 15px; color: #1f2329; }
 .notice-close {
   border: none; background: none; cursor: pointer; font-size: 14px; color: #9ca3af;
-  width: 28px; height: 28px; border-radius: 999px;
+  width: 44px; height: 44px; flex-shrink: 0; border-radius: 999px;
 }
 .notice-close:hover { background: #e5e7eb; color: #111827; }
 .notice-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
@@ -147,6 +148,15 @@ function formatDate(unix?: number): string {
 .notice-foot {
   display: flex; justify-content: flex-end; gap: 10px;
   padding: 12px 18px; border-top: 1px solid #f3f4f6;
+}
+
+@media (min-width: 641px) {
+  .notice-modal { max-width: 800px; }
+  .notice-head { padding: 16px 24px; gap: 12px; }
+  .notice-head-title { font-size: 17px; }
+  .notice-body { padding: 24px; }
+  .notice-content { font-size: 15px; line-height: 1.8; }
+  .notice-foot { padding: 16px 24px; }
 }
 
 /* 移动端：弹窗收紧不铺满屏——图片限高、按钮整宽纵排（主按钮靠拇指） */
