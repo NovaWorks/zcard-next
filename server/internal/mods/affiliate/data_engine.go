@@ -26,6 +26,7 @@ import (
 
 // AffiliateConfig settings.affiliate 配置（运行时读取，默认值兜底）。
 type AffiliateConfig struct {
+	Levels     int    `json:"levels"`      // 启用层数（1—3）
 	RateL1     int32  `json:"rate_l1"`     // 万分比（默认 500 = 5%）
 	RateL2     int32  `json:"rate_l2"`     // 默认 200 = 2%
 	RateL3     int32  `json:"rate_l3"`     // 默认 100 = 1%
@@ -37,7 +38,7 @@ type AffiliateConfig struct {
 
 func defaultConfig() AffiliateConfig {
 	return AffiliateConfig{
-		RateL1: 500, RateL2: 200, RateL3: 100,
+		Levels: 3, RateL1: 500, RateL2: 200, RateL3: 100,
 		BaseScope: "amount", FreezeDays: 7, SelfBuy: false, Enabled: true,
 	}
 }
@@ -102,7 +103,7 @@ func (s *AffiliateService) OnOrderPaid(ctx context.Context, env events.Envelope)
 	}
 	rates := [3]int32{cfg.RateL1, cfg.RateL2, cfg.RateL3}
 	availableAt := time.Now().UTC().AddDate(0, 0, cfg.FreezeDays)
-	for tier := 0; tier < 3; tier++ {
+	for tier := 0; tier < cfg.Levels; tier++ {
 		referrer := chain[tier]
 		if referrer == 0 {
 			continue
@@ -128,12 +129,16 @@ func (s *AffiliateService) OnOrderPaid(ctx context.Context, env events.Envelope)
 // config 运行时读配置（settings.affiliate 组扁平键——与设置目录键名一致；
 // 逐项读取，单项缺失/非法回退默认值）。
 func (s *AffiliateService) config(ctx context.Context) AffiliateConfig {
+	return readAffiliateConfig(ctx, s.settings)
+}
+
+func readAffiliateConfig(ctx context.Context, settings notifyport.SettingsReader) AffiliateConfig {
 	cfg := defaultConfig()
-	if s.settings == nil {
+	if settings == nil {
 		return cfg
 	}
 	get := func(key string, out any) bool {
-		raw, err := s.settings.GetJSON(ctx, "affiliate", key)
+		raw, err := settings.GetJSON(ctx, "affiliate", key)
 		if err != nil || len(raw) == 0 {
 			return false
 		}
@@ -141,15 +146,19 @@ func (s *AffiliateService) config(ctx context.Context) AffiliateConfig {
 	}
 	get("enabled", &cfg.Enabled)
 	get("self_buy", &cfg.SelfBuy)
-	// 费率（>0 才覆盖；0 视为缺省）
+	var levels int
+	if get("levels", &levels) && levels >= 1 && levels <= 3 {
+		cfg.Levels = levels
+	}
+	// 0 表示该层不发佣；只有缺失或非法值才回落默认比例。
 	var v int
-	if get("rate_l1", &v) && v > 0 {
+	if get("rate_l1", &v) && v >= 0 {
 		cfg.RateL1 = int32(v)
 	}
-	if get("rate_l2", &v) && v > 0 {
+	if get("rate_l2", &v) && v >= 0 {
 		cfg.RateL2 = int32(v)
 	}
-	if get("rate_l3", &v) && v > 0 {
+	if get("rate_l3", &v) && v >= 0 {
 		cfg.RateL3 = int32(v)
 	}
 	// 基数口径（amount | profit；映射目录 base 键）

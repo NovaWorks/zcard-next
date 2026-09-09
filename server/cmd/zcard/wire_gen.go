@@ -135,7 +135,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	adminTicketService := ticket.NewAdminTicketService(ticketRepo, outboxWriter)
 	commissionRepo := affiliate.NewCommissionRepo(dataData)
 	userRepo := identity.NewUserRepo(dataData)
-	storeAffiliateService := affiliate.NewStoreAffiliateService(commissionRepo, userRepo)
+	storeAffiliateService := affiliate.NewStoreAffiliateService(commissionRepo, userRepo, settingsReader)
 	adminMediaService := media.NewAdminMediaService(mediaRepo)
 	licenseRepo := license.ProvideLicenseRepo(repoImpl)
 	adminLicenseService := license.NewAdminLicenseService(licenseRepo)

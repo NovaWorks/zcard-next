@@ -17,7 +17,7 @@
             <input class="input" :value="my.invite_url" readonly style="flex: 1;" />
             <button class="btn secondary" @click="copyLink">{{ copied ? '✓ 已复制' : '复制链接' }}</button>
           </div>
-          <div class="muted" style="margin-top: 8px;">好友通过链接注册/下单，你都能获得佣金</div>
+          <div class="muted" style="margin-top: 8px;">{{ affiliateConfig?.enabled ? '好友通过链接注册/下单，符合推广规则的订单可获得佣金' : '推广规则以站点当前配置为准' }}</div>
         </div>
       </div>
       <!-- 右列：二维码（垂直居中） -->
@@ -38,15 +38,18 @@
     </div>
 
     <!-- 团队概览 + 规则说明 -->
-    <div class="card" style="margin-bottom: 16px;" v-if="my">
+    <div class="card" style="margin-bottom: 16px;" v-if="my && affiliateConfig">
       <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: center;">
-        <div>团队：直推 {{ my.team_l1 }} 人 · 二级 {{ my.team_l2 }} 人 · 三级 {{ my.team_l3 }} 人</div>
-        <span class="badge blue">三级分销</span>
+        <div>团队：直推 {{ my.team_l1 }} 人<span v-if="affiliateConfig.levels >= 2"> · 二级 {{ my.team_l2 }} 人</span><span v-if="affiliateConfig.levels >= 3"> · 三级 {{ my.team_l3 }} 人</span></div>
+        <span class="badge blue">{{ affiliateConfig.enabled ? `${levelNames[affiliateConfig.levels]}级分销` : '分销已关闭' }}</span>
       </div>
       <div class="muted" style="margin-top: 6px;">
-        📌 归因规则：好友经你的推广链接访问后 30 天内注册或下单均计入你的团队；佣金按订单金额三级分成（比例由站长配置），冻结期后可提现
+        <template v-if="affiliateConfig.enabled">佣金按{{ affiliateConfig.base === 'profit' ? '利润' : '订单金额' }}计算，最多 {{ affiliateConfig.levels }} 层，比例由站长配置，冻结期后可提现。</template>
+        <template v-else>当前已关闭分销，历史佣金可在佣金流水中查看。</template>
       </div>
     </div>
+
+    <div v-if="configError" class="card error" role="alert">{{ configError }} <button class="btn secondary" @click="loadAffiliateConfig">重试</button></div>
 
     <div class="tabs">
       <button :class="{ active: tab === 'team' }" @click="switchTab('team')">我的团队</button>
@@ -54,13 +57,11 @@
     </div>
 
     <!-- 团队 -->
-    <div v-if="tab === 'team'" class="card">
+    <div v-if="tab === 'team' && affiliateConfig" class="card">
       <div class="actions" style="margin-bottom: 8px;">
         <select v-model="teamTier" @change="loadTeam(1)" style="padding: 6px;">
           <option :value="0">全部层级</option>
-          <option :value="1">直推（一级）</option>
-          <option :value="2">二级</option>
-          <option :value="3">三级</option>
+          <option v-for="level in affiliateConfig.levels" :key="level" :value="level">{{ level === 1 ? '直推（一级）' : `${levelNames[level]}级` }}</option>
         </select>
       </div>
       <table class="list">
@@ -128,10 +129,15 @@
 import { ref, onMounted, nextTick } from 'vue';
 import QRCode from 'qrcode';
 import {
-  myAffiliate, listTeam, listCommissions, createWithdrawal,
+  myAffiliate, listTeam, listCommissions, createWithdrawal, fetchAffiliateConfig,
+  type AffiliateConfig,
   type MyAffiliateReply, type TeamMember, type CommissionItem
 } from '@/api';
 import { formatMoney, formatSignedMoney } from '@/api/client';
+
+const affiliateConfig = ref<AffiliateConfig | null>(null);
+const configError = ref('');
+const levelNames = ['', '一', '二', '三'];
 
 const tab = ref<'team' | 'commissions' | 'withdraw'>('team');
 const my = ref<MyAffiliateReply | null>(null);
@@ -154,9 +160,8 @@ const withdrawOk = ref<{ withdrawal_id: number; amount_cents: number; fee_cents:
 const withdrawing = ref(false);
 
 onMounted(async () => {
-  const { data } = await myAffiliate();
+  const [{ data }] = await Promise.all([myAffiliate(), loadAffiliateConfig()]);
   my.value = data;
-  loadTeam(1);
   // 推广链接二维码（canvas 渲染；链接为空跳过）
   if (data?.invite_url) {
     await nextTick();
@@ -173,7 +178,19 @@ function switchTab(t: 'team' | 'commissions' | 'withdraw') {
   if (t === 'commissions' && !commissions.value.length) loadCommissions(1);
 }
 
+async function loadAffiliateConfig() {
+  configError.value = '';
+  affiliateConfig.value = await fetchAffiliateConfig();
+  if (!affiliateConfig.value) {
+    configError.value = '分销设置加载失败，请重试。';
+    return;
+  }
+  if (teamTier.value > affiliateConfig.value.levels) teamTier.value = 0;
+  await loadTeam(1);
+}
+
 async function loadTeam(page: number) {
+  if (!affiliateConfig.value) return;
   const { data } = await listTeam(teamTier.value || undefined, page, pageSize);
   if (data) team.value = data.members || [];
 }

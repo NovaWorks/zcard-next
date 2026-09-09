@@ -10,8 +10,8 @@ import (
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
 
-	
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -19,13 +19,14 @@ import (
 // StoreAffiliateService 前台分销服务。
 type StoreAffiliateService struct {
 	storefrontv1.UnimplementedStoreAffiliateServiceServer
-	repo   *CommissionRepo
-	users  *identity.UserRepo // 推广码懒生成（通道 A）
+	settings notifyport.SettingsReader
+	repo     *CommissionRepo
+	users    *identity.UserRepo // 推广码懒生成（通道 A）
 }
 
 // NewStoreAffiliateService 构造。
-func NewStoreAffiliateService(repo *CommissionRepo, users *identity.UserRepo) *StoreAffiliateService {
-	return &StoreAffiliateService{repo: repo, users: users}
+func NewStoreAffiliateService(repo *CommissionRepo, users *identity.UserRepo, settings notifyport.SettingsReader) *StoreAffiliateService {
+	return &StoreAffiliateService{repo: repo, users: users, settings: settings}
 }
 
 // MyAffiliate 推广码 + 统计（invite_url 用请求 Host 拼绝对 URL；推广码懒生成）。
@@ -41,6 +42,13 @@ func (s *StoreAffiliateService) MyAffiliate(ctx context.Context, _ *emptypb.Empt
 	l1, l2, l3, err := s.repo.TeamCounts(ctx, userID)
 	if err != nil {
 		return nil, err
+	}
+	cfg := readAffiliateConfig(ctx, s.settings)
+	if cfg.Levels < 3 {
+		l3 = 0
+	}
+	if cfg.Levels < 2 {
+		l2 = 0
 	}
 	// 推广码（懒生成——存量用户首次访问推广中心即补）
 	promoCode := s.users.EnsurePromoCode(ctx, userID)
@@ -95,7 +103,7 @@ func (s *StoreAffiliateService) ListTeam(ctx context.Context, req *storefrontv1.
 		return nil, fmt.Errorf("affiliate.UNAUTHORIZED")
 	}
 	page, size := pageParams(req.GetPage(), req.GetPageSize())
-	rows, total, err := s.repo.ListTeam(ctx, userID, int(req.GetTier()), page, size)
+	rows, total, err := s.repo.ListTeam(ctx, userID, int(req.GetTier()), readAffiliateConfig(ctx, s.settings).Levels, page, size)
 	if err != nil {
 		return nil, err
 	}

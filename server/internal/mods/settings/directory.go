@@ -283,6 +283,7 @@ var groups = map[string]*GroupDef{
 	},
 	"affiliate": {
 		Name: "affiliate", Desc: "分销",
+		PublicKeys: map[string]bool{"enabled": true, "levels": true, "base": true},
 		Labels: map[string]string{
 			"enabled": "分销功能", "levels": "分销层级",
 			"rate_l1": "L1 佣金（万分比）", "rate_l2": "L2 佣金（万分比）", "rate_l3": "L3 佣金（万分比）",

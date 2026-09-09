@@ -11,8 +11,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	entUser "github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 )
 
@@ -219,20 +220,18 @@ func (r *CommissionRepo) TeamCounts(ctx context.Context, userID uint64) (l1, l2,
 }
 
 // ListTeam 下级列表（按层级过滤；tier=0 全部）。
-func (r *CommissionRepo) ListTeam(ctx context.Context, userID uint64, tier, page, size int) ([]*ent.User, int, error) {
+func (r *CommissionRepo) ListTeam(ctx context.Context, userID uint64, tier, maxTier, page, size int) ([]*ent.User, int, error) {
 	q := data.Client(ctx, r.data).User.Query().Order(ent.Desc(entUser.FieldID))
-	switch tier {
-	case 1:
-		q = q.Where(entUser.InviteL1(userID))
-	case 2:
-		q = q.Where(entUser.InviteL2(userID))
-	case 3:
-		q = q.Where(entUser.InviteL3(userID))
-	default:
-		q = q.Where(entUser.Or(
-			entUser.InviteL1(userID), entUser.InviteL2(userID), entUser.InviteL3(userID),
-		))
+	if tier < 0 || tier > maxTier || maxTier < 1 || maxTier > 3 {
+		return nil, 0, nil
 	}
+	predicates := []predicate.User{entUser.InviteL1(userID), entUser.InviteL2(userID), entUser.InviteL3(userID)}
+	if tier > 0 {
+		q = q.Where(predicates[tier-1])
+	} else {
+		q = q.Where(entUser.Or(predicates[:maxTier]...))
+	}
+
 	total, err := q.Count(ctx)
 	if err != nil {
 		return nil, 0, err

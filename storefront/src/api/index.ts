@@ -523,7 +523,7 @@ export interface WithdrawConfig {
   minAmountCents: number;
   feeType: string;
   feeValue: number;
-  methods: { type: string; name: string }[];
+  methods: { type: string; name: string; icon?: string }[];
 }
 export async function fetchWithdrawConfig(): Promise<WithdrawConfig> {
   const def: WithdrawConfig = { enabled: false, minAmountCents: 1000, feeType: 'fixed', feeValue: 0, methods: [] };
@@ -541,7 +541,7 @@ export async function fetchWithdrawConfig(): Promise<WithdrawConfig> {
       minAmountCents: parse<number>('withdraw.min_amount', 1000),
       feeType: parse<string>('withdraw.fee_type', 'fixed'),
       feeValue: parse<number>('withdraw.fee_value', 0),
-      methods: parse<{ type: string; name: string }[]>('withdraw.methods', []),
+      methods: parse<{ type: string; name: string; icon?: string }[]>('withdraw.methods', []),
     };
   } catch {
     return def;
@@ -653,6 +653,24 @@ export function listFlashSales(upcoming = false) {
 }
 
 // ── 分销（）──
+
+export interface AffiliateConfig {
+  enabled: boolean;
+  levels: number;
+  base: 'amount' | 'profit';
+}
+
+export async function fetchAffiliateConfig(): Promise<AffiliateConfig | null> {
+  const { data } = await api.get<{ entries: { key: string; value_json: string }[] }>('/config');
+  try {
+    const value = (key: string) => JSON.parse(data?.entries.find(e => e.key === `affiliate.${key}`)?.value_json ?? 'null');
+    const levels = value('levels');
+    if (!Number.isInteger(levels) || levels < 1 || levels > 3) return null;
+    return { enabled: value('enabled') === true, levels, base: value('base') === 'profit' ? 'profit' : 'amount' };
+  } catch {
+    return null;
+  }
+}
 
 export interface MyAffiliateReply {
   user_id: number; // 推广码 = user_id
