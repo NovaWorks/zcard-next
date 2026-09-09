@@ -79,7 +79,7 @@ func (SupplyMapping) Fields() []ent.Field {
 		field.String("upstream_sku").MaxLen(64).Default(""),
 		field.Uint64("local_sku_id").Optional(),
 		field.Int32("up_stock").Default(0).Comment("库存缓存（-1=无限，-2=未知）"),
-        field.Time("stock_checked_at").SchemaType(mysqlTime).Optional(),
+		field.Time("stock_checked_at").SchemaType(mysqlTime).Optional(),
 		field.JSON("pricing_override", map[string]any{}).Optional(),
 	}
 }

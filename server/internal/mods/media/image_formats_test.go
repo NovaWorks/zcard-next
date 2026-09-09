@@ -54,7 +54,7 @@ func TestImageFormatsUploadAndStaticHTTP(t *testing.T) {
 				t.Fatal(err)
 			}
 			if item.Mime != tc.mime || !strings.HasSuffix(item.Url, tc.ext) {
-				t.Fatalf("incorrect canonical type: %+v", item)
+				t.Fatalf("incorrect canonical type: %+v", &item)
 			}
 			w = httptest.NewRecorder()
 			s.ServeHTTP(w, httptest.NewRequest("GET", item.Url, nil))
