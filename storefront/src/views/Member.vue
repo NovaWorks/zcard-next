@@ -46,7 +46,7 @@
           <div style="font-family: ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #2563eb; margin-top: 2px;">{{ myPromoCode || '点击开通' }}</div>
         </div>
         <div style="flex: 1; min-width: 200px;" class="muted">
-          分享推广链接给好友，注册/下单均可赚三级佣金 →
+          分享推广链接给好友，符合推广规则的订单可获得佣金 →
         </div>
         <span style="font-size: 22px;">🔗</span>
       </div>
@@ -238,7 +238,7 @@
       </div>
     </div>
 
-    <!-- 礼品卡兑换（与充值页同构：余额条 + 主卡 + 说明，视觉节奏一致） -->
+    <!-- 礼品卡兑换：全宽余额条，桌面表单与说明并排 -->
     <div v-if="tab === 'giftcard'" class="recharge-page">
       <div class="card rc-balance">
         <div>
@@ -250,24 +250,26 @@
           <span>积分 {{ level?.points ?? balance?.points ?? 0 }}</span>
         </div>
       </div>
-      <div class="card gc-card">
-        <div class="gc-title">礼品卡兑换</div>
-        <div class="field">
-          <label>礼品卡兑换码</label>
-          <input class="input gc-input" v-model="giftCode" type="text" placeholder="输入卡密兑换码" @keyup.enter="doRedeem" />
-          <div class="muted">兑换后余额即时到账；连续失败将临时锁定（防爆破）</div>
+      <div class="gc-layout">
+        <div class="card gc-card">
+          <div class="gc-title">礼品卡兑换</div>
+          <div class="field">
+            <label>礼品卡兑换码</label>
+            <input class="input gc-input" v-model="giftCode" type="text" placeholder="输入卡密兑换码" @keyup.enter="doRedeem" />
+            <div class="muted">兑换后余额即时到账；连续失败将临时锁定（防爆破）</div>
+          </div>
+          <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ giftError }}</div>
+          <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
+          <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '立即兑换' }}</button>
         </div>
-        <div v-if="giftError" class="error" style="margin-bottom: 8px;">{{ giftError }}</div>
-        <div v-if="giftOk" class="success" style="margin-bottom: 8px;">兑换成功：到账 {{ formatMoney(giftOk.amount_cents) }}，当前余额 {{ formatMoney(giftOk.balance_after_cents) }}</div>
-        <button class="btn gc-submit" :disabled="redeeming" @click="doRedeem">{{ redeeming ? '兑换中…' : '立即兑换' }}</button>
-      </div>
-      <div class="card gc-tips">
-        <div class="rc-title">兑换说明</div>
-        <ul class="gc-tips-list">
-          <li>在「礼品卡/卡密」渠道购买后获得兑换码，粘贴到上方输入框即可兑换</li>
-          <li>兑换金额即时进入账户余额，可用于下单与充值</li>
-          <li>兑换码连续输错将临时锁定；遇到问题请联系在线客服处理</li>
-        </ul>
+        <div class="card gc-tips">
+          <div class="rc-title">兑换说明</div>
+          <ul class="gc-tips-list">
+            <li>在「礼品卡/卡密」渠道购买后获得兑换码，粘贴到上方输入框即可兑换</li>
+            <li>兑换金额即时进入账户余额，可用于下单与充值</li>
+            <li>兑换码连续输错将临时锁定；遇到问题请联系在线客服处理</li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -282,7 +284,7 @@
     </div>
 
     <!-- 账户安全（：改密吊销全部会话、新 token 保当前；改邮箱唯一校验） -->
-    <div v-if="tab === 'security'" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 420px)); gap: 16px;">
+    <div v-if="tab === 'security'" class="security-layout">
       <div class="card">
         <h3 style="margin-bottom: 12px;">修改密码</h3>
         <div class="field">
@@ -717,7 +719,8 @@ function fmtTime(ts: number): string {
 .lv-gap b { color: #ff5722; font-weight: 700; }
 
 /* ── 充值（方式级收银台，与支付页同视觉语言）── */
-.recharge-page { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+/* 外层宽度交给 .main，与会员导航和总览共用左右边界。 */
+.recharge-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .rc-balance {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
   background: linear-gradient(135deg, #eff6ff, #fff);
@@ -726,13 +729,21 @@ function fmtTime(ts: number): string {
 .rc-balance-num { font-size: 26px; font-weight: 800; color: #111827; margin-top: 2px; }
 .rc-balance-side { display: flex; flex-direction: column; gap: 4px; font-size: 13px; text-align: right; }
 
-.rc-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
-@media (min-width: 768px) { .rc-layout { grid-template-columns: 1fr 1fr; } }
+.rc-layout, .gc-layout, .security-layout {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px;
+}
+.rc-layout > .card, .gc-layout > .card, .security-layout > .card { min-width: 0; }
+.security-layout > .card { display: flex; flex-direction: column; }
+.security-layout > .card > .btn { align-self: flex-start; margin-top: auto; }
+@media (min-width: 769px) {
+  .rc-layout, .gc-layout { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .security-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 .rc-panel { padding: 18px; }
 .rc-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 14px; }
 
 /* 档位网格 */
-.rc-tiers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+.rc-tiers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .rc-tier {
   position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px;
   border: 2px solid #e5e7eb; border-radius: 12px; padding: 12px 8px;
@@ -794,7 +805,7 @@ function fmtTime(ts: number): string {
 }
 .rc-qr-title { font-size: 15px; font-weight: 700; color: #111827; }
 .rc-qr-box {
-  width: 244px; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb;
+  width: 244px; max-width: 100%; margin: 0 auto; background: #fff; border: 1px solid #e5e7eb;
   border-radius: 12px; padding: 12px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 .rc-qr-box img { width: 100%; display: block; }
@@ -806,8 +817,8 @@ function fmtTime(ts: number): string {
 .rc-redirect-icon { font-size: 40px; margin-bottom: 10px; }
 .rc-btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
 
-/* ── 礼品卡兑换（嵌于 recharge-page 容器内与充值页同构：余额条 + 主卡 + 说明）── */
-.gc-card { padding: 26px 28px; }
+/* ── 礼品卡兑换（主操作与说明同一行，手机端顺序排列）── */
+.gc-card, .gc-tips { padding: 24px; }
 .gc-title { font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 16px; }
 .gc-input { height: 48px; font-size: 16px; letter-spacing: 1px; }
 .gc-tips-list { margin: 0; padding-left: 18px; color: #6b7280; font-size: 13px; line-height: 2; }
@@ -825,6 +836,6 @@ function fmtTime(ts: number): string {
 @media (max-width: 768px) {
   .ov-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .ov-actions .btn { width: 100%; text-align: center; margin: 0; padding: 11px 0; }
-  .gc-card { padding: 20px 16px; }
+  .gc-card, .gc-tips { padding: 20px 16px; }
 }
 </style>

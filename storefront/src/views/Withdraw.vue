@@ -284,7 +284,8 @@ function fmtTime(ts: number): string {
 </script>
 
 <style scoped>
-.wd-page { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+.wd-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.wd-page :deep(.member-tabs) { margin-bottom: 0; }
 .wd-title { font-size: 20px; font-weight: 800; color: #111827; }
 .wd-center { text-align: center; padding: 48px 20px; }
 .wd-state-icon { font-size: 40px; margin-bottom: 10px; }
@@ -307,7 +308,7 @@ function fmtTime(ts: number): string {
 
 /* 布局 */
 .wd-layout { display: grid; grid-template-columns: 1fr; gap: 16px; }
-@media (min-width: 860px) { .wd-layout { grid-template-columns: 1.2fr 1fr; } }
+@media (min-width: 860px) { .wd-layout { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } }
 .wd-section-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 14px; }
 
 /* 表单 */
