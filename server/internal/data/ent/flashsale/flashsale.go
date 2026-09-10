@@ -33,6 +33,8 @@ const (
 	FieldLimitQty = "limit_qty"
 	// FieldSoldQty holds the string denoting the sold_qty field in the database.
 	FieldSoldQty = "sold_qty"
+	// FieldReservedQty holds the string denoting the reserved_qty field in the database.
+	FieldReservedQty = "reserved_qty"
 	// FieldPerUserLimit holds the string denoting the per_user_limit field in the database.
 	FieldPerUserLimit = "per_user_limit"
 	// Table holds the table name of the flashsale in the database.
@@ -52,6 +54,7 @@ var Columns = []string{
 	FieldEndAt,
 	FieldLimitQty,
 	FieldSoldQty,
+	FieldReservedQty,
 	FieldPerUserLimit,
 }
 
@@ -78,6 +81,8 @@ var (
 	DefaultSkuID uint64
 	// DefaultSoldQty holds the default value on creation for the "sold_qty" field.
 	DefaultSoldQty int32
+	// DefaultReservedQty holds the default value on creation for the "reserved_qty" field.
+	DefaultReservedQty int32
 	// DefaultPerUserLimit holds the default value on creation for the "per_user_limit" field.
 	DefaultPerUserLimit int32
 )
@@ -138,6 +143,11 @@ func ByLimitQty(opts ...sql.OrderTermOption) OrderOption {
 // BySoldQty orders the results by the sold_qty field.
 func BySoldQty(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSoldQty, opts...).ToFunc()
+}
+
+// ByReservedQty orders the results by the reserved_qty field.
+func ByReservedQty(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldReservedQty, opts...).ToFunc()
 }
 
 // ByPerUserLimit orders the results by the per_user_limit field.

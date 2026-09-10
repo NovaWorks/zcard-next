@@ -7802,6 +7802,9 @@ components:
                 perUserLimit:
                     type: integer
                     format: int32
+                reservedQty:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.GetBlacklistReply:
             type: object
             properties:

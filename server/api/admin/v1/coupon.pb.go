@@ -833,6 +833,7 @@ type FlashSaleItem struct {
 	LimitQty      int32                  `protobuf:"varint,7,opt,name=limit_qty,json=limitQty,proto3" json:"limit_qty,omitempty"`
 	SoldQty       int32                  `protobuf:"varint,8,opt,name=sold_qty,json=soldQty,proto3" json:"sold_qty,omitempty"`
 	PerUserLimit  int32                  `protobuf:"varint,9,opt,name=per_user_limit,json=perUserLimit,proto3" json:"per_user_limit,omitempty"`
+	ReservedQty   int32                  `protobuf:"varint,10,opt,name=reserved_qty,json=reservedQty,proto3" json:"reserved_qty,omitempty"` // 待付款预占，不计已售
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -926,6 +927,13 @@ func (x *FlashSaleItem) GetSoldQty() int32 {
 func (x *FlashSaleItem) GetPerUserLimit() int32 {
 	if x != nil {
 		return x.PerUserLimit
+	}
+	return 0
+}
+
+func (x *FlashSaleItem) GetReservedQty() int32 {
+	if x != nil {
+		return x.ReservedQty
 	}
 	return 0
 }
@@ -1508,7 +1516,7 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\bstart_at\x18\x04 \x01(\x03B\x03\xe0A\x02R\astartAt\x12\x1a\n" +
 	"\x06end_at\x18\x05 \x01(\x03B\x03\xe0A\x02R\x05endAt\x12 \n" +
 	"\tlimit_qty\x18\x06 \x01(\x05B\x03\xe0A\x02R\blimitQty\x12$\n" +
-	"\x0eper_user_limit\x18\a \x01(\x05R\fperUserLimit\"\x86\x02\n" +
+	"\x0eper_user_limit\x18\a \x01(\x05R\fperUserLimit\"\xa9\x02\n" +
 	"\rFlashSaleItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1520,7 +1528,9 @@ const file_admin_v1_coupon_proto_rawDesc = "" +
 	"\x06end_at\x18\x06 \x01(\x03R\x05endAt\x12\x1b\n" +
 	"\tlimit_qty\x18\a \x01(\x05R\blimitQty\x12\x19\n" +
 	"\bsold_qty\x18\b \x01(\x05R\asoldQty\x12$\n" +
-	"\x0eper_user_limit\x18\t \x01(\x05R\fperUserLimit\"H\n" +
+	"\x0eper_user_limit\x18\t \x01(\x05R\fperUserLimit\x12!\n" +
+	"\freserved_qty\x18\n" +
+	" \x01(\x05R\vreservedQty\"H\n" +
 	"\x15ListFlashSalesRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"\x95\x01\n" +

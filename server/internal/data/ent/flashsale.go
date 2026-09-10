@@ -35,8 +35,10 @@ type FlashSale struct {
 	EndAt time.Time `json:"end_at,omitempty"`
 	// 总量（与库存同锁扣减）
 	LimitQty int32 `json:"limit_qty,omitempty"`
-	// 已售（CAS 扣减）
+	// 支付成功后正式扣减
 	SoldQty int32 `json:"sold_qty,omitempty"`
+	// 待付款预占，取消或超时释放
+	ReservedQty int32 `json:"reserved_qty,omitempty"`
 	// PerUserLimit holds the value of the "per_user_limit" field.
 	PerUserLimit int32 `json:"per_user_limit,omitempty"`
 	selectValues sql.SelectValues
@@ -47,7 +49,7 @@ func (*FlashSale) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case flashsale.FieldID, flashsale.FieldSubsiteID, flashsale.FieldProductID, flashsale.FieldSkuID, flashsale.FieldFlashPrice, flashsale.FieldLimitQty, flashsale.FieldSoldQty, flashsale.FieldPerUserLimit:
+		case flashsale.FieldID, flashsale.FieldSubsiteID, flashsale.FieldProductID, flashsale.FieldSkuID, flashsale.FieldFlashPrice, flashsale.FieldLimitQty, flashsale.FieldSoldQty, flashsale.FieldReservedQty, flashsale.FieldPerUserLimit:
 			values[i] = new(sql.NullInt64)
 		case flashsale.FieldCreatedAt, flashsale.FieldUpdatedAt, flashsale.FieldStartAt, flashsale.FieldEndAt:
 			values[i] = new(sql.NullTime)
@@ -132,6 +134,12 @@ func (_m *FlashSale) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.SoldQty = int32(value.Int64)
 			}
+		case flashsale.FieldReservedQty:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field reserved_qty", values[i])
+			} else if value.Valid {
+				_m.ReservedQty = int32(value.Int64)
+			}
 		case flashsale.FieldPerUserLimit:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field per_user_limit", values[i])
@@ -203,6 +211,9 @@ func (_m *FlashSale) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sold_qty=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SoldQty))
+	builder.WriteString(", ")
+	builder.WriteString("reserved_qty=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ReservedQty))
 	builder.WriteString(", ")
 	builder.WriteString("per_user_limit=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PerUserLimit))

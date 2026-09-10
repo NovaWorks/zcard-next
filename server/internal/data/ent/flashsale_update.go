@@ -188,6 +188,27 @@ func (_u *FlashSaleUpdate) AddSoldQty(v int32) *FlashSaleUpdate {
 	return _u
 }
 
+// SetReservedQty sets the "reserved_qty" field.
+func (_u *FlashSaleUpdate) SetReservedQty(v int32) *FlashSaleUpdate {
+	_u.mutation.ResetReservedQty()
+	_u.mutation.SetReservedQty(v)
+	return _u
+}
+
+// SetNillableReservedQty sets the "reserved_qty" field if the given value is not nil.
+func (_u *FlashSaleUpdate) SetNillableReservedQty(v *int32) *FlashSaleUpdate {
+	if v != nil {
+		_u.SetReservedQty(*v)
+	}
+	return _u
+}
+
+// AddReservedQty adds value to the "reserved_qty" field.
+func (_u *FlashSaleUpdate) AddReservedQty(v int32) *FlashSaleUpdate {
+	_u.mutation.AddReservedQty(v)
+	return _u
+}
+
 // SetPerUserLimit sets the "per_user_limit" field.
 func (_u *FlashSaleUpdate) SetPerUserLimit(v int32) *FlashSaleUpdate {
 	_u.mutation.ResetPerUserLimit()
@@ -303,6 +324,12 @@ func (_u *FlashSaleUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedSoldQty(); ok {
 		_spec.AddField(flashsale.FieldSoldQty, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ReservedQty(); ok {
+		_spec.SetField(flashsale.FieldReservedQty, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedReservedQty(); ok {
+		_spec.AddField(flashsale.FieldReservedQty, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.PerUserLimit(); ok {
 		_spec.SetField(flashsale.FieldPerUserLimit, field.TypeInt32, value)
@@ -490,6 +517,27 @@ func (_u *FlashSaleUpdateOne) AddSoldQty(v int32) *FlashSaleUpdateOne {
 	return _u
 }
 
+// SetReservedQty sets the "reserved_qty" field.
+func (_u *FlashSaleUpdateOne) SetReservedQty(v int32) *FlashSaleUpdateOne {
+	_u.mutation.ResetReservedQty()
+	_u.mutation.SetReservedQty(v)
+	return _u
+}
+
+// SetNillableReservedQty sets the "reserved_qty" field if the given value is not nil.
+func (_u *FlashSaleUpdateOne) SetNillableReservedQty(v *int32) *FlashSaleUpdateOne {
+	if v != nil {
+		_u.SetReservedQty(*v)
+	}
+	return _u
+}
+
+// AddReservedQty adds value to the "reserved_qty" field.
+func (_u *FlashSaleUpdateOne) AddReservedQty(v int32) *FlashSaleUpdateOne {
+	_u.mutation.AddReservedQty(v)
+	return _u
+}
+
 // SetPerUserLimit sets the "per_user_limit" field.
 func (_u *FlashSaleUpdateOne) SetPerUserLimit(v int32) *FlashSaleUpdateOne {
 	_u.mutation.ResetPerUserLimit()
@@ -635,6 +683,12 @@ func (_u *FlashSaleUpdateOne) sqlSave(ctx context.Context) (_node *FlashSale, er
 	}
 	if value, ok := _u.mutation.AddedSoldQty(); ok {
 		_spec.AddField(flashsale.FieldSoldQty, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.ReservedQty(); ok {
+		_spec.SetField(flashsale.FieldReservedQty, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedReservedQty(); ok {
+		_spec.AddField(flashsale.FieldReservedQty, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.PerUserLimit(); ok {
 		_spec.SetField(flashsale.FieldPerUserLimit, field.TypeInt32, value)

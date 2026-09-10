@@ -1,4 +1,4 @@
-h1:kmp+iBVZNWWS5EKUgF0hkxtqx3513jp08xbw4Gi03tM=
+h1:Bmuqf+b4EUFYjKzOzKo0Ek4dKjTdfzGz8aqY7H14xyQ=
 20260815190720_init.sql h1:YQ1dapmjcvZ7lL1ftfCgd8Z/h8hqxnS6tCJpOhboLe4=
 20260815193738_add_failed_tasks.sql h1:ahRwWY2iyo38+hQ88AV8P3KYJrCt6AfoDNpKmDmjEXk=
 20260815201530_v1_full_schema.sql h1:oHn5bzaeNTXmlcaeCVn/rme4XxKu3P43XYAvOsQBwOs=
@@ -25,3 +25,4 @@ h1:kmp+iBVZNWWS5EKUgF0hkxtqx3513jp08xbw4Gi03tM=
 20260908060527_order_admin_deleted_at.sql h1:0omL2lmrCoDM5msfXIG0FFlVqlTM/2Df0/iNxV6lRmM=
 20260909050643_post_sort.sql h1:7/MX9S+ZKXgHYmQKDalE07tt5CGhSvbmRJvi84PAw+w=
 20260909070027_checkout_expiry_stock.sql h1:A+n+Y7mAWPc6e+oHvDG5v8yQ+71KHFsz68cJArqfMhE=
+20260910100000_flash_paid_reservation.sql h1:R7fwneGZqmlo/WtOtifNn9eXwrhXh+gDrG6eEx3qg2U=

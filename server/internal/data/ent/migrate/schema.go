@@ -507,6 +507,7 @@ var (
 		{Name: "end_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "limit_qty", Type: field.TypeInt32},
 		{Name: "sold_qty", Type: field.TypeInt32, Default: 0},
+		{Name: "reserved_qty", Type: field.TypeInt32, Default: 0},
 		{Name: "per_user_limit", Type: field.TypeInt32, Default: 1},
 	}
 	// FlashSalesTable holds the schema information for the "flash_sales" table.

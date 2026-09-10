@@ -4,7 +4,9 @@ package order
 
 import (
 	"context"
+	stderrors "errors"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
+	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"strings"
 	"unicode/utf8"
 
@@ -405,6 +407,12 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 func mapOrderErr(err error) error {
 	msg := err.Error()
 	switch {
+	case stderrors.Is(err, couponport.ErrFlashReserved):
+		return errors.BadRequest("order.FLASH_RESERVED", "秒杀名额暂被待付款订单占用，请稍后重试")
+	case stderrors.Is(err, couponport.ErrFlashSoldOut):
+		return errors.BadRequest("order.FLASH_SOLD_OUT", "秒杀已抢完")
+	case stderrors.Is(err, couponport.ErrFlashUserLimit):
+		return errors.BadRequest("order.FLASH_USER_LIMIT", "已达到本次秒杀限购数量")
 	case contains(msg, "STOCK_UNAVAILABLE"):
 		return errors.BadRequest("order.STOCK_UNAVAILABLE", "暂时无法确认库存，请稍后重试")
 	case contains(msg, "INSUFFICIENT"):

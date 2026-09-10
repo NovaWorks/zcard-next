@@ -81,7 +81,8 @@ func (FlashSale) Fields() []ent.Field {
 		field.Time("start_at").SchemaType(mysqlTime),
 		field.Time("end_at").SchemaType(mysqlTime),
 		field.Int32("limit_qty").Comment("总量（与库存同锁扣减）"),
-		field.Int32("sold_qty").Default(0).Comment("已售（CAS 扣减）"),
+		field.Int32("sold_qty").Default(0).Comment("支付成功后正式扣减"),
+		field.Int32("reserved_qty").Default(0).Comment("待付款预占，取消或超时释放"),
 		field.Int32("per_user_limit").Default(1),
 	}
 }

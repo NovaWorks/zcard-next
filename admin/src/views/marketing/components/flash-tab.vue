@@ -22,7 +22,8 @@ const flashColumns: DataTableColumns<any> = [
   { title: "开始", key: "start_at", width: 150, render: (row) => new Date(row.start_at * 1000).toLocaleString() },
   { title: "结束", key: "end_at", width: 150, render: (row) => new Date(row.end_at * 1000).toLocaleString() },
   { title: "限量", key: "limit_qty", width: 60 },
-  { title: "已售", key: "sold_qty", width: 60 },
+  { title: "已付款", key: "sold_qty", width: 76, render: (row) => row.sold_qty || 0 },
+  { title: "待付款预占", key: "reserved_qty", width: 96, render: (row) => row.reserved_qty || 0 },
   { title: "每人限购", key: "per_user_limit", width: 76 },
   {
     title: "操作",

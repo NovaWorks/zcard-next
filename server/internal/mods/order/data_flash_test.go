@@ -41,8 +41,8 @@ func TestFlashCheckoutSkuLimitsAndReadFailure(t *testing.T) {
 	if _, err := create(sku.ID); !errors.Is(err, couponport.ErrFlashUserLimit) {
 		t.Fatalf("limit bypassed: %v", err)
 	}
-	if got := d.Client.FlashSale.GetX(ctx, offer.ID); got.SoldQty != 2 {
-		t.Fatalf("incorrect consumed quantity %d", got.SoldQty)
+	if got := d.Client.FlashSale.GetX(ctx, offer.ID); got.SoldQty != 0 || got.ReservedQty != 2 {
+		t.Fatalf("unpaid quota: sold=%d reserved=%d", got.SoldQty, got.ReservedQty)
 	}
 	uc.Flash = failingFlash{}
 	if _, err := create(sku.ID); err == nil {

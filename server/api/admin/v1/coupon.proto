@@ -159,6 +159,7 @@ message FlashSaleItem {
   int32 limit_qty = 7;
   int32 sold_qty = 8;
   int32 per_user_limit = 9;
+  int32 reserved_qty = 10; // 待付款预占，不计已售
 }
 
 message ListFlashSalesRequest {

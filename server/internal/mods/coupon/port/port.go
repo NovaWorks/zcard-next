@@ -46,9 +46,15 @@ type FlashInfo struct {
 
 // FlashResolver 秒杀解析（order 价格管线步骤 4 + 同锁扣减消费）。
 type FlashResolver interface {
+	// Reserve 仅预占待付款额度，不计已售；和订单快照同事务提交。
+	Reserve(ctx context.Context, flashID uint64, qty int32) error
+	// Confirm 支付成功后将预占转为已售，和支付状态同事务提交。
+	Confirm(ctx context.Context, flashID uint64, qty int32) error
+	// Release 取消或超时后释放预占，不修改已售。
+	Release(ctx context.Context, flashID uint64, qty int32) error
 	// Active 生效中秒杀（窗口判定无状态；无则返回 nil）。
 	Active(ctx context.Context, productID, skuID uint64) (*FlashInfo, error)
-	// Consume 同锁扣减（inventory.Reserve 成功后、同一事务内调用；
+	// Consume 直接扣减（保留兼容；新下单使用 Reserve/Confirm；
 	// CAS：sold_qty+qty<=limit_qty，affected==0 → ErrFlashSoldOut）。
 	Consume(ctx context.Context, flashID uint64, qty int32) error
 	// UserPurchasedCount 用户在秒杀窗口内已购数量（paid+pending 累计，限购判据）。
@@ -57,6 +63,8 @@ type FlashResolver interface {
 
 // ErrFlashSoldOut 秒杀限量不足（哨兵：事务内回滚）。
 var ErrFlashSoldOut = errNew("coupon: 秒杀已抢完")
+
+var ErrFlashReserved = errNew("coupon: 秒杀名额暂被待付款订单占用，请稍后重试")
 
 // ErrFlashUserLimit 秒杀限购（哨兵）。
 var ErrFlashUserLimit = errNew("coupon: 秒杀限购")

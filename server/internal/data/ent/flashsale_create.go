@@ -122,6 +122,20 @@ func (_c *FlashSaleCreate) SetNillableSoldQty(v *int32) *FlashSaleCreate {
 	return _c
 }
 
+// SetReservedQty sets the "reserved_qty" field.
+func (_c *FlashSaleCreate) SetReservedQty(v int32) *FlashSaleCreate {
+	_c.mutation.SetReservedQty(v)
+	return _c
+}
+
+// SetNillableReservedQty sets the "reserved_qty" field if the given value is not nil.
+func (_c *FlashSaleCreate) SetNillableReservedQty(v *int32) *FlashSaleCreate {
+	if v != nil {
+		_c.SetReservedQty(*v)
+	}
+	return _c
+}
+
 // SetPerUserLimit sets the "per_user_limit" field.
 func (_c *FlashSaleCreate) SetPerUserLimit(v int32) *FlashSaleCreate {
 	_c.mutation.SetPerUserLimit(v)
@@ -197,6 +211,10 @@ func (_c *FlashSaleCreate) defaults() {
 		v := flashsale.DefaultSoldQty
 		_c.mutation.SetSoldQty(v)
 	}
+	if _, ok := _c.mutation.ReservedQty(); !ok {
+		v := flashsale.DefaultReservedQty
+		_c.mutation.SetReservedQty(v)
+	}
 	if _, ok := _c.mutation.PerUserLimit(); !ok {
 		v := flashsale.DefaultPerUserLimit
 		_c.mutation.SetPerUserLimit(v)
@@ -234,6 +252,9 @@ func (_c *FlashSaleCreate) check() error {
 	}
 	if _, ok := _c.mutation.SoldQty(); !ok {
 		return &ValidationError{Name: "sold_qty", err: errors.New(`ent: missing required field "FlashSale.sold_qty"`)}
+	}
+	if _, ok := _c.mutation.ReservedQty(); !ok {
+		return &ValidationError{Name: "reserved_qty", err: errors.New(`ent: missing required field "FlashSale.reserved_qty"`)}
 	}
 	if _, ok := _c.mutation.PerUserLimit(); !ok {
 		return &ValidationError{Name: "per_user_limit", err: errors.New(`ent: missing required field "FlashSale.per_user_limit"`)}
@@ -310,6 +331,10 @@ func (_c *FlashSaleCreate) createSpec() (*FlashSale, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SoldQty(); ok {
 		_spec.SetField(flashsale.FieldSoldQty, field.TypeInt32, value)
 		_node.SoldQty = value
+	}
+	if value, ok := _c.mutation.ReservedQty(); ok {
+		_spec.SetField(flashsale.FieldReservedQty, field.TypeInt32, value)
+		_node.ReservedQty = value
 	}
 	if value, ok := _c.mutation.PerUserLimit(); ok {
 		_spec.SetField(flashsale.FieldPerUserLimit, field.TypeInt32, value)
@@ -508,6 +533,24 @@ func (u *FlashSaleUpsert) UpdateSoldQty() *FlashSaleUpsert {
 // AddSoldQty adds v to the "sold_qty" field.
 func (u *FlashSaleUpsert) AddSoldQty(v int32) *FlashSaleUpsert {
 	u.Add(flashsale.FieldSoldQty, v)
+	return u
+}
+
+// SetReservedQty sets the "reserved_qty" field.
+func (u *FlashSaleUpsert) SetReservedQty(v int32) *FlashSaleUpsert {
+	u.Set(flashsale.FieldReservedQty, v)
+	return u
+}
+
+// UpdateReservedQty sets the "reserved_qty" field to the value that was provided on create.
+func (u *FlashSaleUpsert) UpdateReservedQty() *FlashSaleUpsert {
+	u.SetExcluded(flashsale.FieldReservedQty)
+	return u
+}
+
+// AddReservedQty adds v to the "reserved_qty" field.
+func (u *FlashSaleUpsert) AddReservedQty(v int32) *FlashSaleUpsert {
+	u.Add(flashsale.FieldReservedQty, v)
 	return u
 }
 
@@ -745,6 +788,27 @@ func (u *FlashSaleUpsertOne) AddSoldQty(v int32) *FlashSaleUpsertOne {
 func (u *FlashSaleUpsertOne) UpdateSoldQty() *FlashSaleUpsertOne {
 	return u.Update(func(s *FlashSaleUpsert) {
 		s.UpdateSoldQty()
+	})
+}
+
+// SetReservedQty sets the "reserved_qty" field.
+func (u *FlashSaleUpsertOne) SetReservedQty(v int32) *FlashSaleUpsertOne {
+	return u.Update(func(s *FlashSaleUpsert) {
+		s.SetReservedQty(v)
+	})
+}
+
+// AddReservedQty adds v to the "reserved_qty" field.
+func (u *FlashSaleUpsertOne) AddReservedQty(v int32) *FlashSaleUpsertOne {
+	return u.Update(func(s *FlashSaleUpsert) {
+		s.AddReservedQty(v)
+	})
+}
+
+// UpdateReservedQty sets the "reserved_qty" field to the value that was provided on create.
+func (u *FlashSaleUpsertOne) UpdateReservedQty() *FlashSaleUpsertOne {
+	return u.Update(func(s *FlashSaleUpsert) {
+		s.UpdateReservedQty()
 	})
 }
 
@@ -1151,6 +1215,27 @@ func (u *FlashSaleUpsertBulk) AddSoldQty(v int32) *FlashSaleUpsertBulk {
 func (u *FlashSaleUpsertBulk) UpdateSoldQty() *FlashSaleUpsertBulk {
 	return u.Update(func(s *FlashSaleUpsert) {
 		s.UpdateSoldQty()
+	})
+}
+
+// SetReservedQty sets the "reserved_qty" field.
+func (u *FlashSaleUpsertBulk) SetReservedQty(v int32) *FlashSaleUpsertBulk {
+	return u.Update(func(s *FlashSaleUpsert) {
+		s.SetReservedQty(v)
+	})
+}
+
+// AddReservedQty adds v to the "reserved_qty" field.
+func (u *FlashSaleUpsertBulk) AddReservedQty(v int32) *FlashSaleUpsertBulk {
+	return u.Update(func(s *FlashSaleUpsert) {
+		s.AddReservedQty(v)
+	})
+}
+
+// UpdateReservedQty sets the "reserved_qty" field to the value that was provided on create.
+func (u *FlashSaleUpsertBulk) UpdateReservedQty() *FlashSaleUpsertBulk {
+	return u.Update(func(s *FlashSaleUpsert) {
+		s.UpdateReservedQty()
 	})
 }
 

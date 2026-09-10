@@ -16174,6 +16174,8 @@ type FlashSaleMutation struct {
 	addlimit_qty      *int32
 	sold_qty          *int32
 	addsold_qty       *int32
+	reserved_qty      *int32
+	addreserved_qty   *int32
 	per_user_limit    *int32
 	addper_user_limit *int32
 	clearedFields     map[string]struct{}
@@ -16766,6 +16768,62 @@ func (m *FlashSaleMutation) ResetSoldQty() {
 	m.addsold_qty = nil
 }
 
+// SetReservedQty sets the "reserved_qty" field.
+func (m *FlashSaleMutation) SetReservedQty(i int32) {
+	m.reserved_qty = &i
+	m.addreserved_qty = nil
+}
+
+// ReservedQty returns the value of the "reserved_qty" field in the mutation.
+func (m *FlashSaleMutation) ReservedQty() (r int32, exists bool) {
+	v := m.reserved_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldReservedQty returns the old "reserved_qty" field's value of the FlashSale entity.
+// If the FlashSale object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *FlashSaleMutation) OldReservedQty(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldReservedQty is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldReservedQty requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldReservedQty: %w", err)
+	}
+	return oldValue.ReservedQty, nil
+}
+
+// AddReservedQty adds i to the "reserved_qty" field.
+func (m *FlashSaleMutation) AddReservedQty(i int32) {
+	if m.addreserved_qty != nil {
+		*m.addreserved_qty += i
+	} else {
+		m.addreserved_qty = &i
+	}
+}
+
+// AddedReservedQty returns the value that was added to the "reserved_qty" field in this mutation.
+func (m *FlashSaleMutation) AddedReservedQty() (r int32, exists bool) {
+	v := m.addreserved_qty
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetReservedQty resets all changes to the "reserved_qty" field.
+func (m *FlashSaleMutation) ResetReservedQty() {
+	m.reserved_qty = nil
+	m.addreserved_qty = nil
+}
+
 // SetPerUserLimit sets the "per_user_limit" field.
 func (m *FlashSaleMutation) SetPerUserLimit(i int32) {
 	m.per_user_limit = &i
@@ -16856,7 +16914,7 @@ func (m *FlashSaleMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *FlashSaleMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, flashsale.FieldCreatedAt)
 	}
@@ -16886,6 +16944,9 @@ func (m *FlashSaleMutation) Fields() []string {
 	}
 	if m.sold_qty != nil {
 		fields = append(fields, flashsale.FieldSoldQty)
+	}
+	if m.reserved_qty != nil {
+		fields = append(fields, flashsale.FieldReservedQty)
 	}
 	if m.per_user_limit != nil {
 		fields = append(fields, flashsale.FieldPerUserLimit)
@@ -16918,6 +16979,8 @@ func (m *FlashSaleMutation) Field(name string) (ent.Value, bool) {
 		return m.LimitQty()
 	case flashsale.FieldSoldQty:
 		return m.SoldQty()
+	case flashsale.FieldReservedQty:
+		return m.ReservedQty()
 	case flashsale.FieldPerUserLimit:
 		return m.PerUserLimit()
 	}
@@ -16949,6 +17012,8 @@ func (m *FlashSaleMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldLimitQty(ctx)
 	case flashsale.FieldSoldQty:
 		return m.OldSoldQty(ctx)
+	case flashsale.FieldReservedQty:
+		return m.OldReservedQty(ctx)
 	case flashsale.FieldPerUserLimit:
 		return m.OldPerUserLimit(ctx)
 	}
@@ -17030,6 +17095,13 @@ func (m *FlashSaleMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetSoldQty(v)
 		return nil
+	case flashsale.FieldReservedQty:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetReservedQty(v)
+		return nil
 	case flashsale.FieldPerUserLimit:
 		v, ok := value.(int32)
 		if !ok {
@@ -17063,6 +17135,9 @@ func (m *FlashSaleMutation) AddedFields() []string {
 	if m.addsold_qty != nil {
 		fields = append(fields, flashsale.FieldSoldQty)
 	}
+	if m.addreserved_qty != nil {
+		fields = append(fields, flashsale.FieldReservedQty)
+	}
 	if m.addper_user_limit != nil {
 		fields = append(fields, flashsale.FieldPerUserLimit)
 	}
@@ -17086,6 +17161,8 @@ func (m *FlashSaleMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedLimitQty()
 	case flashsale.FieldSoldQty:
 		return m.AddedSoldQty()
+	case flashsale.FieldReservedQty:
+		return m.AddedReservedQty()
 	case flashsale.FieldPerUserLimit:
 		return m.AddedPerUserLimit()
 	}
@@ -17138,6 +17215,13 @@ func (m *FlashSaleMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSoldQty(v)
+		return nil
+	case flashsale.FieldReservedQty:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddReservedQty(v)
 		return nil
 	case flashsale.FieldPerUserLimit:
 		v, ok := value.(int32)
@@ -17202,6 +17286,9 @@ func (m *FlashSaleMutation) ResetField(name string) error {
 		return nil
 	case flashsale.FieldSoldQty:
 		m.ResetSoldQty()
+		return nil
+	case flashsale.FieldReservedQty:
+		m.ResetReservedQty()
 		return nil
 	case flashsale.FieldPerUserLimit:
 		m.ResetPerUserLimit()

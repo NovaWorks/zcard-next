@@ -641,8 +641,12 @@ func init() {
 	flashsaleDescSoldQty := flashsaleFields[7].Descriptor()
 	// flashsale.DefaultSoldQty holds the default value on creation for the sold_qty field.
 	flashsale.DefaultSoldQty = flashsaleDescSoldQty.Default.(int32)
+	// flashsaleDescReservedQty is the schema descriptor for reserved_qty field.
+	flashsaleDescReservedQty := flashsaleFields[8].Descriptor()
+	// flashsale.DefaultReservedQty holds the default value on creation for the reserved_qty field.
+	flashsale.DefaultReservedQty = flashsaleDescReservedQty.Default.(int32)
 	// flashsaleDescPerUserLimit is the schema descriptor for per_user_limit field.
-	flashsaleDescPerUserLimit := flashsaleFields[8].Descriptor()
+	flashsaleDescPerUserLimit := flashsaleFields[9].Descriptor()
 	// flashsale.DefaultPerUserLimit holds the default value on creation for the per_user_limit field.
 	flashsale.DefaultPerUserLimit = flashsaleDescPerUserLimit.Default.(int32)
 	giftcardMixin := schema.Giftcard{}.Mixin()

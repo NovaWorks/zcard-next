@@ -65,6 +65,9 @@ func (uc *OrderUsecase) cancelOrder(ctx context.Context, no, reason, operator st
 		if _, err = client.OrderStatusEvent.Create().SetOrderID(o.ID).SetFromStatus(string(o.Status)).SetToStatus("canceled").SetEvent("canceled").SetOperator(orderstatusevent.Operator(operator)).SetOperatorID(operatorID).SetReason(reason).Save(ctx); err != nil {
 			return err
 		}
+		if err = uc.settleFlashReservations(ctx, o, false); err != nil {
+			return err
+		}
 		if err = uc.Inv.Release(ctx, o.ID); err != nil {
 			return err
 		}

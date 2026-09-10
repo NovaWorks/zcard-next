@@ -104,6 +104,11 @@ func SoldQty(v int32) predicate.FlashSale {
 	return predicate.FlashSale(sql.FieldEQ(FieldSoldQty, v))
 }
 
+// ReservedQty applies equality check predicate on the "reserved_qty" field. It's identical to ReservedQtyEQ.
+func ReservedQty(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldEQ(FieldReservedQty, v))
+}
+
 // PerUserLimit applies equality check predicate on the "per_user_limit" field. It's identical to PerUserLimitEQ.
 func PerUserLimit(v int32) predicate.FlashSale {
 	return predicate.FlashSale(sql.FieldEQ(FieldPerUserLimit, v))
@@ -507,6 +512,46 @@ func SoldQtyLT(v int32) predicate.FlashSale {
 // SoldQtyLTE applies the LTE predicate on the "sold_qty" field.
 func SoldQtyLTE(v int32) predicate.FlashSale {
 	return predicate.FlashSale(sql.FieldLTE(FieldSoldQty, v))
+}
+
+// ReservedQtyEQ applies the EQ predicate on the "reserved_qty" field.
+func ReservedQtyEQ(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldEQ(FieldReservedQty, v))
+}
+
+// ReservedQtyNEQ applies the NEQ predicate on the "reserved_qty" field.
+func ReservedQtyNEQ(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldNEQ(FieldReservedQty, v))
+}
+
+// ReservedQtyIn applies the In predicate on the "reserved_qty" field.
+func ReservedQtyIn(vs ...int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldIn(FieldReservedQty, vs...))
+}
+
+// ReservedQtyNotIn applies the NotIn predicate on the "reserved_qty" field.
+func ReservedQtyNotIn(vs ...int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldNotIn(FieldReservedQty, vs...))
+}
+
+// ReservedQtyGT applies the GT predicate on the "reserved_qty" field.
+func ReservedQtyGT(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldGT(FieldReservedQty, v))
+}
+
+// ReservedQtyGTE applies the GTE predicate on the "reserved_qty" field.
+func ReservedQtyGTE(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldGTE(FieldReservedQty, v))
+}
+
+// ReservedQtyLT applies the LT predicate on the "reserved_qty" field.
+func ReservedQtyLT(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldLT(FieldReservedQty, v))
+}
+
+// ReservedQtyLTE applies the LTE predicate on the "reserved_qty" field.
+func ReservedQtyLTE(v int32) predicate.FlashSale {
+	return predicate.FlashSale(sql.FieldLTE(FieldReservedQty, v))
 }
 
 // PerUserLimitEQ applies the EQ predicate on the "per_user_limit" field.

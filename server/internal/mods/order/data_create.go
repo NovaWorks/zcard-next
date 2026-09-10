@@ -263,8 +263,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		var totalCents int64
 		var pointsTotal int64               // ：积分兑换单合计（积分单位）
 		var cartItems []couponport.CartItem // 券范围判定输入
-		flashApplied := false               // 券×秒杀互斥判据
-		var totalSubsiteMarkup int64        // 分站加价合计（利润基数快照）
+		var flashReservations []flashReservation
+		flashApplied := false        // 券×秒杀互斥判据
+		var totalSubsiteMarkup int64 // 分站加价合计（利润基数快照）
 
 		for _, item := range in.Items {
 			// 共享锁允许同商品并发下单，并让下架/删除等待已开始的下单事务。
@@ -308,7 +309,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 			}
 
-			// 步骤 4：秒杀（窗口判定 + 限购 + 同锁扣减——Reserve 已成功，同事务）
+			// 步骤 4：秒杀（窗口判定 + 限购 + 待付款预占；正式扣减在 MarkPaid）
 			var flashPrice money.Cents
 			if uc.Flash != nil {
 				fs, err := uc.Flash.Active(txCtx, item.ProductID, item.SkuID)
@@ -326,10 +327,11 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 							return couponport.ErrFlashUserLimit
 						}
 					}
-					// 同锁扣减（CAS 防超卖；失败回滚整个下单事务）
-					if err := uc.Flash.Consume(txCtx, fs.ID, item.Quantity); err != nil {
+					// 临时预占与订单同事务落库，未付款不增加 sold_qty。
+					if err := uc.Flash.Reserve(txCtx, fs.ID, item.Quantity); err != nil {
 						return err
 					}
+					flashReservations = append(flashReservations, newFlashReservation(fs.ID, item.Quantity))
 					flashPrice = fs.FlashPrice
 					flashApplied = true
 				}
@@ -411,6 +413,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		ttl := time.Duration(uc.ttlMinutes(ctx)) * time.Minute
 		exp := time.Now().Add(ttl).UTC()
 		extra := map[string]any{}
+		if len(flashReservations) > 0 {
+			extra["flash_reservations"] = flashReservations
+		}
 		if len(in.ControlAnswers) > 0 {
 			extra["control_answers"] = in.ControlAnswers
 		}
@@ -468,14 +473,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			create.SetIdempotencyKey(idemHash)
 		}
 		o, err := create.Save(txCtx)
-		if ent.IsConstraintError(err) && idemHash != "" {
-			// 并发同 key：唯一索引兜底——返回首单
-			if prev, qerr := client.Order.Query().
-				Where(order.IdempotencyKey(idemHash)).Only(txCtx); qerr == nil {
-				result = &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: prev.ExpiredAt}
-				return nil
-			}
-		}
+
 		if err != nil {
 			return fmt.Errorf("order.CREATE_FAILED: %w", err)
 		}
@@ -583,11 +581,22 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		return nil
 	})
+	// A unique-key race must roll back all reservations before returning the first order.
+	if ent.IsConstraintError(err) && in.IdempotencyKey != "" {
+		sum := sha256.Sum256([]byte(in.IdempotencyKey))
+		if prev, qerr := data.Client(ctx, uc.Data).Order.Query().Where(order.IdempotencyKey("idem-" + hex.EncodeToString(sum[:]))).Only(ctx); qerr == nil {
+			return &CreateOrderResult{OrderNo: prev.OrderNo, TotalCents: prev.TotalAmount, ExpiresAt: prev.ExpiredAt}, nil
+		}
+	}
 	return result, err
 }
 
 // MarkPaid 支付回调事务内调用（ payment 消费）。
 func (uc *OrderUsecase) MarkPaid(ctx context.Context, orderNo string) error {
+	return data.Tx(ctx, uc.Data, func(ctx context.Context) error { return uc.markPaid(ctx, orderNo) })
+}
+
+func (uc *OrderUsecase) markPaid(ctx context.Context, orderNo string) error {
 	client := data.Client(ctx, uc.Data)
 	o, err := client.Order.Query().Where(order.OrderNo(orderNo)).Only(ctx)
 	if ent.IsNotFound(err) {
@@ -615,6 +624,9 @@ func (uc *OrderUsecase) MarkPaid(ctx context.Context, orderNo string) error {
 	}
 	if affected == 0 {
 		return fmt.Errorf("order.CONCURRENT_UPDATE")
+	}
+	if err := uc.settleFlashReservations(ctx, o, true); err != nil {
+		return err
 	}
 	// 状态事件溯源
 	_, err = client.OrderStatusEvent.Create().

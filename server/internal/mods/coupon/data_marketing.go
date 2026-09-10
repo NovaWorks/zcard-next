@@ -253,7 +253,7 @@ func (r *CouponRepoImpl) Consume(ctx context.Context, flashID uint64, qty int32)
 	affected, err := data.Client(ctx, r.data).FlashSale.Update().
 		Where(flashsale.ID(flashID), func(s *sql.Selector) {
 			s.Where(sql.P(func(b *sql.Builder) {
-				b.Ident(flashsale.FieldSoldQty).WriteString(" + ").Arg(qty).WriteString(" <= ").Ident(flashsale.FieldLimitQty)
+				b.Ident(flashsale.FieldSoldQty).WriteString(" + ").Ident(flashsale.FieldReservedQty).WriteString(" + ").Arg(qty).WriteString(" <= ").Ident(flashsale.FieldLimitQty)
 			}))
 		}).AddSoldQty(qty).Save(ctx)
 	if err != nil {
@@ -414,7 +414,14 @@ func (r *CouponRepoImpl) ListFlashAll(ctx context.Context, page, size int) ([]*e
 
 // DeleteFlash 删除秒杀。
 func (r *CouponRepoImpl) DeleteFlash(ctx context.Context, id uint64) error {
-	return data.Client(ctx, r.data).FlashSale.DeleteOneID(id).Exec(ctx)
+	n, err := data.Client(ctx, r.data).FlashSale.Delete().Where(flashsale.ID(id), flashsale.ReservedQtyEQ(0)).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("存在待付款秒杀订单，取消或完成支付后再删除活动")
+	}
+	return nil
 }
 
 // UpsertPromotion 创建/更新促销。
@@ -472,7 +479,7 @@ var _ = json.Marshal
 func toFlashPB(fs *ent.FlashSale) *adminv1.FlashSaleItem {
 	return &adminv1.FlashSaleItem{
 		Id: fs.ID, ProductId: fs.ProductID, SkuId: fs.SkuID,
-		FlashPrice: fs.FlashPrice, LimitQty: fs.LimitQty, SoldQty: fs.SoldQty,
+		FlashPrice: fs.FlashPrice, LimitQty: fs.LimitQty, SoldQty: fs.SoldQty, ReservedQty: fs.ReservedQty,
 		PerUserLimit: fs.PerUserLimit,
 		StartAt:      fs.StartAt.Unix(), EndAt: fs.EndAt.Unix(),
 	}
