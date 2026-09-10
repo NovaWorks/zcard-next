@@ -96,6 +96,7 @@ func (r *GiftcardRepo) CreateBatch(ctx context.Context, in BatchInput) (*ent.Gif
 // ListBatches 批次列表。
 func (r *GiftcardRepo) ListBatches(ctx context.Context, page, size int) ([]*ent.GiftcardBatch, int64, error) {
 	q := data.Client(ctx, r.data).GiftcardBatch.Query().
+		Where(giftcardbatch.DeletedAtIsNil()).
 		Order(ent.Desc(giftcardbatch.FieldID))
 	total, err := q.Clone().Count(ctx)
 	if err != nil {
@@ -103,6 +104,26 @@ func (r *GiftcardRepo) ListBatches(ctx context.Context, page, size int) ([]*ent.
 	}
 	rows, err := q.Offset((page - 1) * size).Limit(size).All(ctx)
 	return rows, int64(total), err
+}
+
+// DeleteBatch 在同一事务中隐藏批次并作废未兑换卡。已兑换卡和账本保留。
+// 与 Redeem 的 unused CAS 竞争：先完成兑换的保留入账，先作废的不能兑换。
+func (r *GiftcardRepo) DeleteBatch(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(txCtx context.Context) error {
+		client := data.Client(txCtx, r.data)
+		batch, err := client.GiftcardBatch.Get(txCtx, id)
+		if err != nil {
+			return err
+		}
+		if !batch.DeletedAt.IsZero() {
+			return nil
+		}
+		if _, err := client.GiftcardBatch.UpdateOneID(id).SetDeletedAt(time.Now().UTC()).Save(txCtx); err != nil {
+			return err
+		}
+		_, err = client.Giftcard.Update().Where(giftcard.BatchID(id), giftcard.StatusEQ(giftcard.StatusUnused)).SetStatus(giftcard.StatusDisabled).Save(txCtx)
+		return err
+	})
 }
 
 // Redeem 兑换（登录用户）：查 hash → 核销 → 余额入账（幂等键 giftcard:<id>）。
@@ -120,14 +141,14 @@ func (r *GiftcardRepo) Redeem(ctx context.Context, code string, userID uint64) (
 	hash := r.cipher.ContentHash(code)
 	g, err := client.Giftcard.Query().
 		Where(giftcard.CodeHash(hash)).Only(ctx)
-	if ent.IsNotFound(err) || g.Status != giftcard.StatusUnused {
+	if ent.IsNotFound(err) {
 		r.recordFailure(userID)
 		return 0, fmt.Errorf("giftcard.INVALID: 卡密无效或已使用")
 	}
 	if err != nil {
 		return 0, err
 	}
-	if !g.ExpiresAt.IsZero() && time.Now().After(g.ExpiresAt) {
+	if g.Status != giftcard.StatusUnused || (!g.ExpiresAt.IsZero() && time.Now().After(g.ExpiresAt)) {
 		r.recordFailure(userID)
 		return 0, fmt.Errorf("giftcard.INVALID: 卡密无效或已使用")
 	}

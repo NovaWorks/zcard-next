@@ -48,6 +48,26 @@ func (_u *GiftcardBatchUpdate) SetNillableBatchNo(v *string) *GiftcardBatchUpdat
 	return _u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *GiftcardBatchUpdate) SetDeletedAt(v time.Time) *GiftcardBatchUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *GiftcardBatchUpdate) SetNillableDeletedAt(v *time.Time) *GiftcardBatchUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *GiftcardBatchUpdate) ClearDeletedAt() *GiftcardBatchUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *GiftcardBatchUpdate) SetName(v string) *GiftcardBatchUpdate {
 	_u.mutation.SetName(v)
@@ -205,6 +225,12 @@ func (_u *GiftcardBatchUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.BatchNo(); ok {
 		_spec.SetField(giftcardbatch.FieldBatchNo, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(giftcardbatch.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(giftcardbatch.FieldDeletedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(giftcardbatch.FieldName, field.TypeString, value)
 	}
@@ -266,6 +292,26 @@ func (_u *GiftcardBatchUpdateOne) SetNillableBatchNo(v *string) *GiftcardBatchUp
 	if v != nil {
 		_u.SetBatchNo(*v)
 	}
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *GiftcardBatchUpdateOne) SetDeletedAt(v time.Time) *GiftcardBatchUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *GiftcardBatchUpdateOne) SetNillableDeletedAt(v *time.Time) *GiftcardBatchUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *GiftcardBatchUpdateOne) ClearDeletedAt() *GiftcardBatchUpdateOne {
+	_u.mutation.ClearDeletedAt()
 	return _u
 }
 
@@ -455,6 +501,12 @@ func (_u *GiftcardBatchUpdateOne) sqlSave(ctx context.Context) (_node *GiftcardB
 	}
 	if value, ok := _u.mutation.BatchNo(); ok {
 		_spec.SetField(giftcardbatch.FieldBatchNo, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(giftcardbatch.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(giftcardbatch.FieldDeletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(giftcardbatch.FieldName, field.TypeString, value)

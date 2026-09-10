@@ -122,6 +122,7 @@ func (GiftcardBatch) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.String("batch_no").MaxLen(40).Unique(),
+		field.Time("deleted_at").SchemaType(mysqlTime).Optional().Comment("批次删除时间，保留兑换审计"),
 		field.String("name").MaxLen(100),
 		field.Int64("amount").Comment("面额（分）"),
 		field.Int32("quantity").Comment("发行数量"),

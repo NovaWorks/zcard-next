@@ -1,9 +1,9 @@
 <script setup lang="ts">
 // 礼品卡批次（giftcard:read / giftcard:write 超管专属；明文码仅创建时一次性返回）。
-import { onMounted, ref } from "vue";
+import { computed, h, onMounted, ref } from "vue";
 import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NInputNumber } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
-import { fetchGiftcardBatches, createGiftcardBatch } from "@/service/api";
+import { fetchGiftcardBatches, createGiftcardBatch, deleteGiftcardBatch } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { formatMoney } from "@/utils/money";
 
@@ -22,7 +22,10 @@ const showCodes = ref(false);
 const codesBatch = ref("");
 const plainCodes = ref<string[]>([]);
 
-const columns: DataTableColumns<any> = [
+const deleteTarget = ref<any>(null);
+const deleting = ref(false);
+
+const columns = computed<DataTableColumns<any>>(() => [
   { title: "批次号", key: "batch_no", width: 170 },
   { title: "名称", key: "name", width: 140, ellipsis: { tooltip: true } },
   { title: "面值", key: "amount_cents", width: 90, render: (row) => formatMoney(row.amount_cents) },
@@ -34,7 +37,26 @@ const columns: DataTableColumns<any> = [
     width: 160,
     render: (row) => (row.created_at ? new Date(row.created_at * 1000).toLocaleString() : "-"),
   },
-];
+  ...(checkAuth("giftcard:write") ? [{
+    title: "操作", key: "actions", width: 90, fixed: "right" as const,
+    render: (row: any) => h(NButton, { size: "small", type: "error", secondary: true, onClick: () => { deleteTarget.value = row; } }, () => "删除"),
+  }] : []),
+]);
+
+async function handleDelete() {
+  if (!deleteTarget.value || deleting.value) return;
+  deleting.value = true;
+  try {
+    const { error } = await deleteGiftcardBatch(deleteTarget.value.id);
+    if (error) return;
+    deleteTarget.value = null;
+    window.$message?.success("批次已删除，未兑换礼品卡已作废");
+    if (batches.value.length === 1 && page.value > 1) page.value--;
+    await load();
+  } finally {
+    deleting.value = false;
+  }
+}
 
 async function load() {
   loading.value = true;
@@ -85,11 +107,23 @@ onMounted(load);
       <NButton v-if="checkAuth('giftcard:write')" size="small" type="primary" @click="showCreate = true">新建批次</NButton>
       <span class="ml-8px text-12px text-gray-400">兑换码明文仅创建时一次性展示，库内无明文（安全铁律）</span>
     </div>
-    <NDataTable :columns="columns" :data="batches" :loading="loading" size="small"  :max-height="540" />
+    <NDataTable :columns="columns" :data="batches" :loading="loading" size="small"  :max-height="540" :scroll-x="790" :row-key="(row: any) => row.id" />
     <div class="mt-8px flex items-center justify-end gap-8px">
-      <NButton size="small" :disabled="page <= 1" @click="page--, load()">上一页</NButton>
-      <NButton size="small" :disabled="batches.length < 20" @click="page++, load()">下一页</NButton>
+      <NButton size="small" :disabled="page <= 1 || loading" @click="page--, load()">上一页</NButton>
+      <NButton size="small" :disabled="page * 20 >= total || loading" @click="page++, load()">下一页</NButton>
     </div>
+
+    <NModal :show="Boolean(deleteTarget)" preset="dialog" type="warning" title="删除礼品卡批次"
+      style="width: min(460px, calc(100vw - 32px))" :mask-closable="!deleting" :close-on-esc="!deleting" :closable="!deleting"
+      @update:show="(show) => { if (!show && !deleting) deleteTarget = null; }">
+      <p style="overflow-wrap: anywhere">确定删除批次「{{ deleteTarget?.name }}」（{{ deleteTarget?.batch_no }}）？</p>
+      <p>该批次会从列表移除，所有未兑换的礼品卡立即作废，无法恢复。</p>
+      <p>已兑换的余额和流水记录保留，批次号不可重复使用。</p>
+      <template #action>
+        <NButton :disabled="deleting" @click="deleteTarget = null">取消</NButton>
+        <NButton type="error" :loading="deleting" @click="handleDelete">确认删除</NButton>
+      </template>
+    </NModal>
 
     <NModal v-model:show="showCreate" preset="dialog" title="新建礼品卡批次" style="width: 440px">
       <NForm :model="form" label-placement="left" label-width="72">

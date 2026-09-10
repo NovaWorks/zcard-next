@@ -56,6 +56,20 @@ func (_c *GiftcardBatchCreate) SetBatchNo(v string) *GiftcardBatchCreate {
 	return _c
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *GiftcardBatchCreate) SetDeletedAt(v time.Time) *GiftcardBatchCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *GiftcardBatchCreate) SetNillableDeletedAt(v *time.Time) *GiftcardBatchCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *GiftcardBatchCreate) SetName(v string) *GiftcardBatchCreate {
 	_c.mutation.SetName(v)
@@ -214,6 +228,10 @@ func (_c *GiftcardBatchCreate) createSpec() (*GiftcardBatch, *sqlgraph.CreateSpe
 		_spec.SetField(giftcardbatch.FieldBatchNo, field.TypeString, value)
 		_node.BatchNo = value
 	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(giftcardbatch.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = value
+	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(giftcardbatch.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -303,6 +321,24 @@ func (u *GiftcardBatchUpsert) SetBatchNo(v string) *GiftcardBatchUpsert {
 // UpdateBatchNo sets the "batch_no" field to the value that was provided on create.
 func (u *GiftcardBatchUpsert) UpdateBatchNo() *GiftcardBatchUpsert {
 	u.SetExcluded(giftcardbatch.FieldBatchNo)
+	return u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GiftcardBatchUpsert) SetDeletedAt(v time.Time) *GiftcardBatchUpsert {
+	u.Set(giftcardbatch.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GiftcardBatchUpsert) UpdateDeletedAt() *GiftcardBatchUpsert {
+	u.SetExcluded(giftcardbatch.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GiftcardBatchUpsert) ClearDeletedAt() *GiftcardBatchUpsert {
+	u.SetNull(giftcardbatch.FieldDeletedAt)
 	return u
 }
 
@@ -454,6 +490,27 @@ func (u *GiftcardBatchUpsertOne) SetBatchNo(v string) *GiftcardBatchUpsertOne {
 func (u *GiftcardBatchUpsertOne) UpdateBatchNo() *GiftcardBatchUpsertOne {
 	return u.Update(func(s *GiftcardBatchUpsert) {
 		s.UpdateBatchNo()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GiftcardBatchUpsertOne) SetDeletedAt(v time.Time) *GiftcardBatchUpsertOne {
+	return u.Update(func(s *GiftcardBatchUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GiftcardBatchUpsertOne) UpdateDeletedAt() *GiftcardBatchUpsertOne {
+	return u.Update(func(s *GiftcardBatchUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GiftcardBatchUpsertOne) ClearDeletedAt() *GiftcardBatchUpsertOne {
+	return u.Update(func(s *GiftcardBatchUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 
@@ -783,6 +840,27 @@ func (u *GiftcardBatchUpsertBulk) SetBatchNo(v string) *GiftcardBatchUpsertBulk 
 func (u *GiftcardBatchUpsertBulk) UpdateBatchNo() *GiftcardBatchUpsertBulk {
 	return u.Update(func(s *GiftcardBatchUpsert) {
 		s.UpdateBatchNo()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *GiftcardBatchUpsertBulk) SetDeletedAt(v time.Time) *GiftcardBatchUpsertBulk {
+	return u.Update(func(s *GiftcardBatchUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *GiftcardBatchUpsertBulk) UpdateDeletedAt() *GiftcardBatchUpsertBulk {
+	return u.Update(func(s *GiftcardBatchUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *GiftcardBatchUpsertBulk) ClearDeletedAt() *GiftcardBatchUpsertBulk {
+	return u.Update(func(s *GiftcardBatchUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 

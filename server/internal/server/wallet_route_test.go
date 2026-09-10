@@ -8,6 +8,8 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -50,6 +52,10 @@ func (walletRouteStub) ListGiftcardBatches(context.Context, *adminv1.ListGiftcar
 	return nil, errors.BadRequest("stub", "ListGiftcardBatches")
 }
 
+func (walletRouteStub) DeleteGiftcardBatch(_ context.Context, req *adminv1.DeleteGiftcardBatchRequest) (*emptypb.Empty, error) {
+	return nil, errors.BadRequest("stub", fmt.Sprintf("DeleteGiftcardBatch:%d", req.GetId()))
+}
+
 func TestAdminWalletRouteDispatch(t *testing.T) {
 	srv := khttp.NewServer()
 	adminv1.RegisterAdminWalletServiceHTTPServer(srv, walletRouteStub{})
@@ -64,6 +70,7 @@ func TestAdminWalletRouteDispatch(t *testing.T) {
 		{"流水", "GET", "/api/v1/admin/wallet/42/transactions", "", "ListTransactions"},
 		{"提现审核", "POST", "/api/v1/admin/wallet/withdrawals/7/review", "{}", "ReviewWithdrawal"},
 		{"提现打款", "POST", "/api/v1/admin/wallet/withdrawals/7/pay", "{}", "PayWithdrawal"},
+		{"删除礼品卡批次并绑定编号", "DELETE", "/api/v1/admin/wallet/giftcard-batches/17", "", "DeleteGiftcardBatch:17"},
 		{"创建礼品卡批次", "POST", "/api/v1/admin/wallet/giftcard-batches", "{}", "CreateGiftcardBatch"},
 	}
 	for _, tc := range cases {

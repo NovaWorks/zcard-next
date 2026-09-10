@@ -98,3 +98,78 @@ func TestGiftcardBruteForce(t *testing.T) {
 		t.Fatal("伪造卡应拒绝")
 	}
 }
+
+func TestGiftcardDeleteBatch(t *testing.T) {
+	repo, walletRepo := newGiftcardRepo(t)
+	ctx := context.Background()
+	batch, codes, err := repo.CreateBatch(ctx, BatchInput{BatchNo: "DELETE", Name: "删除测试", Amount: 5000, Quantity: 3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	other, otherCodes, err := repo.CreateBatch(ctx, BatchInput{BatchNo: "KEEP", Name: "其他批次", Amount: 100, Quantity: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.Redeem(ctx, codes[0], 1); err != nil {
+		t.Fatal(err)
+	}
+	before, err := repo.data.Client.WalletTransaction.Query().All(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.DeleteBatch(ctx, batch.ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.DeleteBatch(ctx, batch.ID); err != nil {
+		t.Fatalf("重复删除应幂等: %v", err)
+	}
+	rows, total, err := repo.ListBatches(ctx, 1, 20)
+	if err != nil || total != 1 || len(rows) != 1 || rows[0].ID != other.ID {
+		t.Fatalf("删除后列表错误: %v %d %v", rows, total, err)
+	}
+	retained, err := repo.data.Client.GiftcardBatch.Get(ctx, batch.ID)
+	if err != nil || retained.DeletedAt.IsZero() {
+		t.Fatalf("批次审计丢失: %v", err)
+	}
+	cards, err := repo.data.Client.Giftcard.Query().Where(giftcard.BatchID(batch.ID)).All(ctx)
+	if err != nil || len(cards) != 3 {
+		t.Fatalf("卡记录丢失: %v", err)
+	}
+	used, disabled := 0, 0
+	for _, c := range cards {
+		if c.Status == giftcard.StatusUsed {
+			used++
+			if c.UsedBy != 1 || c.UsedAt.IsZero() {
+				t.Fatal("兑换记录丢失")
+			}
+		}
+		if c.Status == giftcard.StatusDisabled {
+			disabled++
+		}
+	}
+	if used != 1 || disabled != 2 {
+		t.Fatalf("作废状态错误: used=%d disabled=%d", used, disabled)
+	}
+	for _, code := range codes {
+		if _, err := repo.Redeem(ctx, code, 2); err == nil {
+			t.Fatal("已删除卡仍可兑换")
+		}
+	}
+	avail, _, err := walletRepo.GetBalance(ctx, 1)
+	if err != nil || avail != 5000 {
+		t.Fatalf("已有余额被修改: %d %v", avail, err)
+	}
+	after, err := repo.data.Client.WalletTransaction.Query().All(ctx)
+	if err != nil || len(after) != len(before) || after[0].ID != before[0].ID || after[0].Amount != before[0].Amount {
+		t.Fatalf("删除修改了流水: %v", err)
+	}
+	if _, err := repo.Redeem(ctx, otherCodes[0], 3); err != nil {
+		t.Fatalf("其他批次受影响: %v", err)
+	}
+	if _, _, err := repo.CreateBatch(ctx, BatchInput{BatchNo: "DELETE", Name: "重复", Amount: 1, Quantity: 1}); err == nil {
+		t.Fatal("已删除批次号不可复用")
+	}
+	if err := repo.DeleteBatch(ctx, 99999); err == nil {
+		t.Fatal("不存在批次应返回错误")
+	}
+}

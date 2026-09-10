@@ -694,7 +694,7 @@ func init() {
 	// giftcardbatch.BatchNoValidator is a validator for the "batch_no" field. It is called by the builders before save.
 	giftcardbatch.BatchNoValidator = giftcardbatchDescBatchNo.Validators[0].(func(string) error)
 	// giftcardbatchDescName is the schema descriptor for name field.
-	giftcardbatchDescName := giftcardbatchFields[2].Descriptor()
+	giftcardbatchDescName := giftcardbatchFields[3].Descriptor()
 	// giftcardbatch.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	giftcardbatch.NameValidator = giftcardbatchDescName.Validators[0].(func(string) error)
 	licenseorderMixin := schema.LicenseOrder{}.Mixin()

@@ -54,6 +54,19 @@ func (s *AdminWalletService) ListGiftcardBatches(ctx context.Context, req *admin
 	return reply, nil
 }
 
+func (s *AdminWalletService) DeleteGiftcardBatch(ctx context.Context, req *adminv1.DeleteGiftcardBatchRequest) (*emptypb.Empty, error) {
+	if req.GetId() == 0 {
+		return nil, errors.BadRequest("wallet.BATCH_INVALID", "请选择要删除的批次")
+	}
+	if err := s.giftcards.DeleteBatch(ctx, req.GetId()); err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.NotFound("wallet.BATCH_NOT_FOUND", "礼品卡批次不存在")
+		}
+		return nil, errors.InternalServer("wallet.BATCH_DELETE_FAILED", "删除失败，请重试")
+	}
+	return &emptypb.Empty{}, nil
+}
+
 // RedeemGiftcard 兑换（登录用户；失败统一「卡密无效」防枚举）。
 func (s *StoreWalletService) RedeemGiftcard(ctx context.Context, req *storefrontv1.RedeemGiftcardRequest) (*storefrontv1.RedeemGiftcardReply, error) {
 	claims := identity.ClaimsFromContext(ctx)

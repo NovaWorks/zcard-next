@@ -18389,6 +18389,7 @@ type GiftcardBatchMutation struct {
 	created_at     *time.Time
 	updated_at     *time.Time
 	batch_no       *string
+	deleted_at     *time.Time
 	name           *string
 	amount         *int64
 	addamount      *int64
@@ -18612,6 +18613,55 @@ func (m *GiftcardBatchMutation) OldBatchNo(ctx context.Context) (v string, err e
 // ResetBatchNo resets all changes to the "batch_no" field.
 func (m *GiftcardBatchMutation) ResetBatchNo() {
 	m.batch_no = nil
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (m *GiftcardBatchMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *GiftcardBatchMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the GiftcardBatch entity.
+// If the GiftcardBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GiftcardBatchMutation) OldDeletedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *GiftcardBatchMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[giftcardbatch.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *GiftcardBatchMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[giftcardbatch.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *GiftcardBatchMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, giftcardbatch.FieldDeletedAt)
 }
 
 // SetName sets the "name" field.
@@ -18866,7 +18916,7 @@ func (m *GiftcardBatchMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GiftcardBatchMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.created_at != nil {
 		fields = append(fields, giftcardbatch.FieldCreatedAt)
 	}
@@ -18875,6 +18925,9 @@ func (m *GiftcardBatchMutation) Fields() []string {
 	}
 	if m.batch_no != nil {
 		fields = append(fields, giftcardbatch.FieldBatchNo)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, giftcardbatch.FieldDeletedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, giftcardbatch.FieldName)
@@ -18902,6 +18955,8 @@ func (m *GiftcardBatchMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case giftcardbatch.FieldBatchNo:
 		return m.BatchNo()
+	case giftcardbatch.FieldDeletedAt:
+		return m.DeletedAt()
 	case giftcardbatch.FieldName:
 		return m.Name()
 	case giftcardbatch.FieldAmount:
@@ -18925,6 +18980,8 @@ func (m *GiftcardBatchMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldUpdatedAt(ctx)
 	case giftcardbatch.FieldBatchNo:
 		return m.OldBatchNo(ctx)
+	case giftcardbatch.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
 	case giftcardbatch.FieldName:
 		return m.OldName(ctx)
 	case giftcardbatch.FieldAmount:
@@ -18962,6 +19019,13 @@ func (m *GiftcardBatchMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetBatchNo(v)
+		return nil
+	case giftcardbatch.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
 		return nil
 	case giftcardbatch.FieldName:
 		v, ok := value.(string)
@@ -19060,6 +19124,9 @@ func (m *GiftcardBatchMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *GiftcardBatchMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(giftcardbatch.FieldDeletedAt) {
+		fields = append(fields, giftcardbatch.FieldDeletedAt)
+	}
 	if m.FieldCleared(giftcardbatch.FieldOperatorID) {
 		fields = append(fields, giftcardbatch.FieldOperatorID)
 	}
@@ -19077,6 +19144,9 @@ func (m *GiftcardBatchMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *GiftcardBatchMutation) ClearField(name string) error {
 	switch name {
+	case giftcardbatch.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
 	case giftcardbatch.FieldOperatorID:
 		m.ClearOperatorID()
 		return nil
@@ -19096,6 +19166,9 @@ func (m *GiftcardBatchMutation) ResetField(name string) error {
 		return nil
 	case giftcardbatch.FieldBatchNo:
 		m.ResetBatchNo()
+		return nil
+	case giftcardbatch.FieldDeletedAt:
+		m.ResetDeletedAt()
 		return nil
 	case giftcardbatch.FieldName:
 		m.ResetName()

@@ -4705,6 +4705,22 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.CreateGiftcardBatchReply'
+    /api/v1/admin/wallet/giftcard-batches/{id}:
+        delete:
+            tags:
+                - AdminWalletService
+            description: DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+            operationId: AdminWalletService_DeleteGiftcardBatch
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/wallet/withdrawals:
         get:
             tags:

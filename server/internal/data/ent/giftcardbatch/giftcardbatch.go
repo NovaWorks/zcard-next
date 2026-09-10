@@ -19,6 +19,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldBatchNo holds the string denoting the batch_no field in the database.
 	FieldBatchNo = "batch_no"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldAmount holds the string denoting the amount field in the database.
@@ -37,6 +39,7 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldBatchNo,
+	FieldDeletedAt,
 	FieldName,
 	FieldAmount,
 	FieldQuantity,
@@ -87,6 +90,11 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByBatchNo orders the results by the batch_no field.
 func ByBatchNo(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldBatchNo, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

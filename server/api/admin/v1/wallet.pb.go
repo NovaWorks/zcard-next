@@ -10,7 +10,7 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	_ "google.golang.org/protobuf/types/known/emptypb"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -22,6 +22,50 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+type DeleteGiftcardBatchRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteGiftcardBatchRequest) Reset() {
+	*x = DeleteGiftcardBatchRequest{}
+	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteGiftcardBatchRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteGiftcardBatchRequest) ProtoMessage() {}
+
+func (x *DeleteGiftcardBatchRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteGiftcardBatchRequest.ProtoReflect.Descriptor instead.
+func (*DeleteGiftcardBatchRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *DeleteGiftcardBatchRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
 
 type CreateGiftcardBatchRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -35,7 +79,7 @@ type CreateGiftcardBatchRequest struct {
 
 func (x *CreateGiftcardBatchRequest) Reset() {
 	*x = CreateGiftcardBatchRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	mi := &file_admin_v1_wallet_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +91,7 @@ func (x *CreateGiftcardBatchRequest) String() string {
 func (*CreateGiftcardBatchRequest) ProtoMessage() {}
 
 func (x *CreateGiftcardBatchRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[0]
+	mi := &file_admin_v1_wallet_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +104,7 @@ func (x *CreateGiftcardBatchRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateGiftcardBatchRequest.ProtoReflect.Descriptor instead.
 func (*CreateGiftcardBatchRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{0}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateGiftcardBatchRequest) GetBatchNo() string {
@@ -103,7 +147,7 @@ type CreateGiftcardBatchReply struct {
 
 func (x *CreateGiftcardBatchReply) Reset() {
 	*x = CreateGiftcardBatchReply{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[1]
+	mi := &file_admin_v1_wallet_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -115,7 +159,7 @@ func (x *CreateGiftcardBatchReply) String() string {
 func (*CreateGiftcardBatchReply) ProtoMessage() {}
 
 func (x *CreateGiftcardBatchReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[1]
+	mi := &file_admin_v1_wallet_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -128,7 +172,7 @@ func (x *CreateGiftcardBatchReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateGiftcardBatchReply.ProtoReflect.Descriptor instead.
 func (*CreateGiftcardBatchReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{1}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateGiftcardBatchReply) GetBatch() *GiftcardBatchItem {
@@ -159,7 +203,7 @@ type GiftcardBatchItem struct {
 
 func (x *GiftcardBatchItem) Reset() {
 	*x = GiftcardBatchItem{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[2]
+	mi := &file_admin_v1_wallet_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -171,7 +215,7 @@ func (x *GiftcardBatchItem) String() string {
 func (*GiftcardBatchItem) ProtoMessage() {}
 
 func (x *GiftcardBatchItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[2]
+	mi := &file_admin_v1_wallet_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -184,7 +228,7 @@ func (x *GiftcardBatchItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GiftcardBatchItem.ProtoReflect.Descriptor instead.
 func (*GiftcardBatchItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{2}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GiftcardBatchItem) GetId() uint64 {
@@ -239,7 +283,7 @@ type ListGiftcardBatchesRequest struct {
 
 func (x *ListGiftcardBatchesRequest) Reset() {
 	*x = ListGiftcardBatchesRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[3]
+	mi := &file_admin_v1_wallet_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -251,7 +295,7 @@ func (x *ListGiftcardBatchesRequest) String() string {
 func (*ListGiftcardBatchesRequest) ProtoMessage() {}
 
 func (x *ListGiftcardBatchesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[3]
+	mi := &file_admin_v1_wallet_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -264,7 +308,7 @@ func (x *ListGiftcardBatchesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGiftcardBatchesRequest.ProtoReflect.Descriptor instead.
 func (*ListGiftcardBatchesRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{3}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListGiftcardBatchesRequest) GetPage() int32 {
@@ -291,7 +335,7 @@ type ListGiftcardBatchesReply struct {
 
 func (x *ListGiftcardBatchesReply) Reset() {
 	*x = ListGiftcardBatchesReply{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[4]
+	mi := &file_admin_v1_wallet_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -303,7 +347,7 @@ func (x *ListGiftcardBatchesReply) String() string {
 func (*ListGiftcardBatchesReply) ProtoMessage() {}
 
 func (x *ListGiftcardBatchesReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[4]
+	mi := &file_admin_v1_wallet_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -316,7 +360,7 @@ func (x *ListGiftcardBatchesReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListGiftcardBatchesReply.ProtoReflect.Descriptor instead.
 func (*ListGiftcardBatchesReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{4}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListGiftcardBatchesReply) GetBatches() []*GiftcardBatchItem {
@@ -344,7 +388,7 @@ type ListWithdrawalsRequest struct {
 
 func (x *ListWithdrawalsRequest) Reset() {
 	*x = ListWithdrawalsRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[5]
+	mi := &file_admin_v1_wallet_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -356,7 +400,7 @@ func (x *ListWithdrawalsRequest) String() string {
 func (*ListWithdrawalsRequest) ProtoMessage() {}
 
 func (x *ListWithdrawalsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[5]
+	mi := &file_admin_v1_wallet_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -369,7 +413,7 @@ func (x *ListWithdrawalsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWithdrawalsRequest.ProtoReflect.Descriptor instead.
 func (*ListWithdrawalsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{5}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListWithdrawalsRequest) GetStatus() string {
@@ -403,7 +447,7 @@ type ListWithdrawalsReply struct {
 
 func (x *ListWithdrawalsReply) Reset() {
 	*x = ListWithdrawalsReply{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[6]
+	mi := &file_admin_v1_wallet_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +459,7 @@ func (x *ListWithdrawalsReply) String() string {
 func (*ListWithdrawalsReply) ProtoMessage() {}
 
 func (x *ListWithdrawalsReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[6]
+	mi := &file_admin_v1_wallet_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +472,7 @@ func (x *ListWithdrawalsReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWithdrawalsReply.ProtoReflect.Descriptor instead.
 func (*ListWithdrawalsReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{6}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ListWithdrawalsReply) GetWithdrawals() []*WithdrawalItem {
@@ -468,7 +512,7 @@ type WithdrawalItem struct {
 
 func (x *WithdrawalItem) Reset() {
 	*x = WithdrawalItem{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[7]
+	mi := &file_admin_v1_wallet_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -480,7 +524,7 @@ func (x *WithdrawalItem) String() string {
 func (*WithdrawalItem) ProtoMessage() {}
 
 func (x *WithdrawalItem) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[7]
+	mi := &file_admin_v1_wallet_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -493,7 +537,7 @@ func (x *WithdrawalItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WithdrawalItem.ProtoReflect.Descriptor instead.
 func (*WithdrawalItem) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{7}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *WithdrawalItem) GetId() uint64 {
@@ -612,7 +656,7 @@ type ReviewWithdrawalRequest struct {
 
 func (x *ReviewWithdrawalRequest) Reset() {
 	*x = ReviewWithdrawalRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[8]
+	mi := &file_admin_v1_wallet_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -624,7 +668,7 @@ func (x *ReviewWithdrawalRequest) String() string {
 func (*ReviewWithdrawalRequest) ProtoMessage() {}
 
 func (x *ReviewWithdrawalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[8]
+	mi := &file_admin_v1_wallet_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -637,7 +681,7 @@ func (x *ReviewWithdrawalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReviewWithdrawalRequest.ProtoReflect.Descriptor instead.
 func (*ReviewWithdrawalRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{8}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ReviewWithdrawalRequest) GetId() uint64 {
@@ -671,7 +715,7 @@ type PayWithdrawalRequest struct {
 
 func (x *PayWithdrawalRequest) Reset() {
 	*x = PayWithdrawalRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[9]
+	mi := &file_admin_v1_wallet_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -683,7 +727,7 @@ func (x *PayWithdrawalRequest) String() string {
 func (*PayWithdrawalRequest) ProtoMessage() {}
 
 func (x *PayWithdrawalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[9]
+	mi := &file_admin_v1_wallet_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -696,7 +740,7 @@ func (x *PayWithdrawalRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PayWithdrawalRequest.ProtoReflect.Descriptor instead.
 func (*PayWithdrawalRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{9}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *PayWithdrawalRequest) GetId() uint64 {
@@ -722,7 +766,7 @@ type GetBalanceRequest struct {
 
 func (x *GetBalanceRequest) Reset() {
 	*x = GetBalanceRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[10]
+	mi := &file_admin_v1_wallet_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -734,7 +778,7 @@ func (x *GetBalanceRequest) String() string {
 func (*GetBalanceRequest) ProtoMessage() {}
 
 func (x *GetBalanceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[10]
+	mi := &file_admin_v1_wallet_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +791,7 @@ func (x *GetBalanceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBalanceRequest.ProtoReflect.Descriptor instead.
 func (*GetBalanceRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{10}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetBalanceRequest) GetUserId() uint64 {
@@ -769,7 +813,7 @@ type Balance struct {
 
 func (x *Balance) Reset() {
 	*x = Balance{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[11]
+	mi := &file_admin_v1_wallet_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -781,7 +825,7 @@ func (x *Balance) String() string {
 func (*Balance) ProtoMessage() {}
 
 func (x *Balance) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[11]
+	mi := &file_admin_v1_wallet_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -794,7 +838,7 @@ func (x *Balance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Balance.ProtoReflect.Descriptor instead.
 func (*Balance) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{11}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *Balance) GetUserId() uint64 {
@@ -836,7 +880,7 @@ type AdjustRequest struct {
 
 func (x *AdjustRequest) Reset() {
 	*x = AdjustRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[12]
+	mi := &file_admin_v1_wallet_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -848,7 +892,7 @@ func (x *AdjustRequest) String() string {
 func (*AdjustRequest) ProtoMessage() {}
 
 func (x *AdjustRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[12]
+	mi := &file_admin_v1_wallet_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -861,7 +905,7 @@ func (x *AdjustRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdjustRequest.ProtoReflect.Descriptor instead.
 func (*AdjustRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{12}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *AdjustRequest) GetUserId() uint64 {
@@ -896,7 +940,7 @@ type AdjustPointsRequest struct {
 
 func (x *AdjustPointsRequest) Reset() {
 	*x = AdjustPointsRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[13]
+	mi := &file_admin_v1_wallet_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -908,7 +952,7 @@ func (x *AdjustPointsRequest) String() string {
 func (*AdjustPointsRequest) ProtoMessage() {}
 
 func (x *AdjustPointsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[13]
+	mi := &file_admin_v1_wallet_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -921,7 +965,7 @@ func (x *AdjustPointsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdjustPointsRequest.ProtoReflect.Descriptor instead.
 func (*AdjustPointsRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{13}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *AdjustPointsRequest) GetUserId() uint64 {
@@ -955,7 +999,7 @@ type PointsBalance struct {
 
 func (x *PointsBalance) Reset() {
 	*x = PointsBalance{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[14]
+	mi := &file_admin_v1_wallet_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -967,7 +1011,7 @@ func (x *PointsBalance) String() string {
 func (*PointsBalance) ProtoMessage() {}
 
 func (x *PointsBalance) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[14]
+	mi := &file_admin_v1_wallet_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -980,7 +1024,7 @@ func (x *PointsBalance) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PointsBalance.ProtoReflect.Descriptor instead.
 func (*PointsBalance) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{14}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PointsBalance) GetUserId() uint64 {
@@ -1009,7 +1053,7 @@ type ListWalletTxRequest struct {
 
 func (x *ListWalletTxRequest) Reset() {
 	*x = ListWalletTxRequest{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[15]
+	mi := &file_admin_v1_wallet_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1021,7 +1065,7 @@ func (x *ListWalletTxRequest) String() string {
 func (*ListWalletTxRequest) ProtoMessage() {}
 
 func (x *ListWalletTxRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[15]
+	mi := &file_admin_v1_wallet_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1034,7 +1078,7 @@ func (x *ListWalletTxRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWalletTxRequest.ProtoReflect.Descriptor instead.
 func (*ListWalletTxRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{15}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListWalletTxRequest) GetUserId() uint64 {
@@ -1068,7 +1112,7 @@ type ListWalletTxReply struct {
 
 func (x *ListWalletTxReply) Reset() {
 	*x = ListWalletTxReply{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[16]
+	mi := &file_admin_v1_wallet_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1080,7 +1124,7 @@ func (x *ListWalletTxReply) String() string {
 func (*ListWalletTxReply) ProtoMessage() {}
 
 func (x *ListWalletTxReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[16]
+	mi := &file_admin_v1_wallet_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1093,7 +1137,7 @@ func (x *ListWalletTxReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListWalletTxReply.ProtoReflect.Descriptor instead.
 func (*ListWalletTxReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{16}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListWalletTxReply) GetTransactions() []*WalletTx {
@@ -1130,7 +1174,7 @@ type WalletTx struct {
 
 func (x *WalletTx) Reset() {
 	*x = WalletTx{}
-	mi := &file_admin_v1_wallet_proto_msgTypes[17]
+	mi := &file_admin_v1_wallet_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1142,7 +1186,7 @@ func (x *WalletTx) String() string {
 func (*WalletTx) ProtoMessage() {}
 
 func (x *WalletTx) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_wallet_proto_msgTypes[17]
+	mi := &file_admin_v1_wallet_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1155,7 +1199,7 @@ func (x *WalletTx) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WalletTx.ProtoReflect.Descriptor instead.
 func (*WalletTx) Descriptor() ([]byte, []int) {
-	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{17}
+	return file_admin_v1_wallet_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *WalletTx) GetId() uint64 {
@@ -1246,7 +1290,9 @@ var File_admin_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\n" +
-	"\x15admin/v1/wallet.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x9e\x01\n" +
+	"\x15admin/v1/wallet.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"1\n" +
+	"\x1aDeleteGiftcardBatchRequest\x12\x13\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x9e\x01\n" +
 	"\x1aCreateGiftcardBatchRequest\x12\x1e\n" +
 	"\bbatch_no\x18\x01 \x01(\tB\x03\xe0A\x02R\abatchNo\x12\x17\n" +
 	"\x04name\x18\x02 \x01(\tB\x03\xe0A\x02R\x04name\x12&\n" +
@@ -1344,14 +1390,14 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\auser_id\x18\n" +
 	" \x01(\x04R\x06userId\x12\x1a\n" +
 	"\busername\x18\v \x01(\tR\busername\x12+\n" +
-	"\x11display_reference\x18\f \x01(\tR\x10displayReference2\xd0\n" +
-	"\n" +
+	"\x11display_reference\x18\f \x01(\tR\x10displayReference2\xe4\v\n" +
 	"\x12AdminWalletService\x12\x91\x01\n" +
 	"\x0fListWithdrawals\x12*.zcard.api.admin.v1.ListWithdrawalsRequest\x1a(.zcard.api.admin.v1.ListWithdrawalsReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/wallet/withdrawals\x12\x9c\x01\n" +
 	"\x10ReviewWithdrawal\x12+.zcard.api.admin.v1.ReviewWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/wallet/withdrawals/{id}/review\x12\x93\x01\n" +
 	"\rPayWithdrawal\x12(.zcard.api.admin.v1.PayWithdrawalRequest\x1a\".zcard.api.admin.v1.WithdrawalItem\"4\x82\xd3\xe4\x93\x02.:\x01*\")/api/v1/admin/wallet/withdrawals/{id}/pay\x12\xa5\x01\n" +
 	"\x13CreateGiftcardBatch\x12..zcard.api.admin.v1.CreateGiftcardBatchRequest\x1a,.zcard.api.admin.v1.CreateGiftcardBatchReply\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/giftcard-batches\x12\xa2\x01\n" +
-	"\x13ListGiftcardBatches\x12..zcard.api.admin.v1.ListGiftcardBatchesRequest\x1a,.zcard.api.admin.v1.ListGiftcardBatchesReply\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/wallet/giftcard-batches\x12x\n" +
+	"\x13ListGiftcardBatches\x12..zcard.api.admin.v1.ListGiftcardBatchesRequest\x1a,.zcard.api.admin.v1.ListGiftcardBatchesReply\"-\x82\xd3\xe4\x93\x02'\x12%/api/v1/admin/wallet/giftcard-batches\x12\x91\x01\n" +
+	"\x13DeleteGiftcardBatch\x12..zcard.api.admin.v1.DeleteGiftcardBatchRequest\x1a\x16.google.protobuf.Empty\"2\x82\xd3\xe4\x93\x02,**/api/v1/admin/wallet/giftcard-batches/{id}\x12x\n" +
 	"\n" +
 	"GetBalance\x12%.zcard.api.admin.v1.GetBalanceRequest\x1a\x1b.zcard.api.admin.v1.Balance\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/wallet/{user_id}\x12z\n" +
 	"\x06Adjust\x12!.zcard.api.admin.v1.AdjustRequest\x1a\x1b.zcard.api.admin.v1.Balance\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/wallet/{user_id}/adjust\x12\x93\x01\n" +
@@ -1370,52 +1416,56 @@ func file_admin_v1_wallet_proto_rawDescGZIP() []byte {
 	return file_admin_v1_wallet_proto_rawDescData
 }
 
-var file_admin_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_admin_v1_wallet_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_admin_v1_wallet_proto_goTypes = []any{
-	(*CreateGiftcardBatchRequest)(nil), // 0: zcard.api.admin.v1.CreateGiftcardBatchRequest
-	(*CreateGiftcardBatchReply)(nil),   // 1: zcard.api.admin.v1.CreateGiftcardBatchReply
-	(*GiftcardBatchItem)(nil),          // 2: zcard.api.admin.v1.GiftcardBatchItem
-	(*ListGiftcardBatchesRequest)(nil), // 3: zcard.api.admin.v1.ListGiftcardBatchesRequest
-	(*ListGiftcardBatchesReply)(nil),   // 4: zcard.api.admin.v1.ListGiftcardBatchesReply
-	(*ListWithdrawalsRequest)(nil),     // 5: zcard.api.admin.v1.ListWithdrawalsRequest
-	(*ListWithdrawalsReply)(nil),       // 6: zcard.api.admin.v1.ListWithdrawalsReply
-	(*WithdrawalItem)(nil),             // 7: zcard.api.admin.v1.WithdrawalItem
-	(*ReviewWithdrawalRequest)(nil),    // 8: zcard.api.admin.v1.ReviewWithdrawalRequest
-	(*PayWithdrawalRequest)(nil),       // 9: zcard.api.admin.v1.PayWithdrawalRequest
-	(*GetBalanceRequest)(nil),          // 10: zcard.api.admin.v1.GetBalanceRequest
-	(*Balance)(nil),                    // 11: zcard.api.admin.v1.Balance
-	(*AdjustRequest)(nil),              // 12: zcard.api.admin.v1.AdjustRequest
-	(*AdjustPointsRequest)(nil),        // 13: zcard.api.admin.v1.AdjustPointsRequest
-	(*PointsBalance)(nil),              // 14: zcard.api.admin.v1.PointsBalance
-	(*ListWalletTxRequest)(nil),        // 15: zcard.api.admin.v1.ListWalletTxRequest
-	(*ListWalletTxReply)(nil),          // 16: zcard.api.admin.v1.ListWalletTxReply
-	(*WalletTx)(nil),                   // 17: zcard.api.admin.v1.WalletTx
+	(*DeleteGiftcardBatchRequest)(nil), // 0: zcard.api.admin.v1.DeleteGiftcardBatchRequest
+	(*CreateGiftcardBatchRequest)(nil), // 1: zcard.api.admin.v1.CreateGiftcardBatchRequest
+	(*CreateGiftcardBatchReply)(nil),   // 2: zcard.api.admin.v1.CreateGiftcardBatchReply
+	(*GiftcardBatchItem)(nil),          // 3: zcard.api.admin.v1.GiftcardBatchItem
+	(*ListGiftcardBatchesRequest)(nil), // 4: zcard.api.admin.v1.ListGiftcardBatchesRequest
+	(*ListGiftcardBatchesReply)(nil),   // 5: zcard.api.admin.v1.ListGiftcardBatchesReply
+	(*ListWithdrawalsRequest)(nil),     // 6: zcard.api.admin.v1.ListWithdrawalsRequest
+	(*ListWithdrawalsReply)(nil),       // 7: zcard.api.admin.v1.ListWithdrawalsReply
+	(*WithdrawalItem)(nil),             // 8: zcard.api.admin.v1.WithdrawalItem
+	(*ReviewWithdrawalRequest)(nil),    // 9: zcard.api.admin.v1.ReviewWithdrawalRequest
+	(*PayWithdrawalRequest)(nil),       // 10: zcard.api.admin.v1.PayWithdrawalRequest
+	(*GetBalanceRequest)(nil),          // 11: zcard.api.admin.v1.GetBalanceRequest
+	(*Balance)(nil),                    // 12: zcard.api.admin.v1.Balance
+	(*AdjustRequest)(nil),              // 13: zcard.api.admin.v1.AdjustRequest
+	(*AdjustPointsRequest)(nil),        // 14: zcard.api.admin.v1.AdjustPointsRequest
+	(*PointsBalance)(nil),              // 15: zcard.api.admin.v1.PointsBalance
+	(*ListWalletTxRequest)(nil),        // 16: zcard.api.admin.v1.ListWalletTxRequest
+	(*ListWalletTxReply)(nil),          // 17: zcard.api.admin.v1.ListWalletTxReply
+	(*WalletTx)(nil),                   // 18: zcard.api.admin.v1.WalletTx
+	(*emptypb.Empty)(nil),              // 19: google.protobuf.Empty
 }
 var file_admin_v1_wallet_proto_depIdxs = []int32{
-	2,  // 0: zcard.api.admin.v1.CreateGiftcardBatchReply.batch:type_name -> zcard.api.admin.v1.GiftcardBatchItem
-	2,  // 1: zcard.api.admin.v1.ListGiftcardBatchesReply.batches:type_name -> zcard.api.admin.v1.GiftcardBatchItem
-	7,  // 2: zcard.api.admin.v1.ListWithdrawalsReply.withdrawals:type_name -> zcard.api.admin.v1.WithdrawalItem
-	17, // 3: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
-	5,  // 4: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:input_type -> zcard.api.admin.v1.ListWithdrawalsRequest
-	8,  // 5: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:input_type -> zcard.api.admin.v1.ReviewWithdrawalRequest
-	9,  // 6: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:input_type -> zcard.api.admin.v1.PayWithdrawalRequest
-	0,  // 7: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:input_type -> zcard.api.admin.v1.CreateGiftcardBatchRequest
-	3,  // 8: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:input_type -> zcard.api.admin.v1.ListGiftcardBatchesRequest
-	10, // 9: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
-	12, // 10: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
-	13, // 11: zcard.api.admin.v1.AdminWalletService.AdjustPoints:input_type -> zcard.api.admin.v1.AdjustPointsRequest
-	15, // 12: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
-	6,  // 13: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
-	7,  // 14: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
-	7,  // 15: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
-	1,  // 16: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:output_type -> zcard.api.admin.v1.CreateGiftcardBatchReply
-	4,  // 17: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:output_type -> zcard.api.admin.v1.ListGiftcardBatchesReply
-	11, // 18: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
-	11, // 19: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
-	14, // 20: zcard.api.admin.v1.AdminWalletService.AdjustPoints:output_type -> zcard.api.admin.v1.PointsBalance
-	16, // 21: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
-	13, // [13:22] is the sub-list for method output_type
-	4,  // [4:13] is the sub-list for method input_type
+	3,  // 0: zcard.api.admin.v1.CreateGiftcardBatchReply.batch:type_name -> zcard.api.admin.v1.GiftcardBatchItem
+	3,  // 1: zcard.api.admin.v1.ListGiftcardBatchesReply.batches:type_name -> zcard.api.admin.v1.GiftcardBatchItem
+	8,  // 2: zcard.api.admin.v1.ListWithdrawalsReply.withdrawals:type_name -> zcard.api.admin.v1.WithdrawalItem
+	18, // 3: zcard.api.admin.v1.ListWalletTxReply.transactions:type_name -> zcard.api.admin.v1.WalletTx
+	6,  // 4: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:input_type -> zcard.api.admin.v1.ListWithdrawalsRequest
+	9,  // 5: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:input_type -> zcard.api.admin.v1.ReviewWithdrawalRequest
+	10, // 6: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:input_type -> zcard.api.admin.v1.PayWithdrawalRequest
+	1,  // 7: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:input_type -> zcard.api.admin.v1.CreateGiftcardBatchRequest
+	4,  // 8: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:input_type -> zcard.api.admin.v1.ListGiftcardBatchesRequest
+	0,  // 9: zcard.api.admin.v1.AdminWalletService.DeleteGiftcardBatch:input_type -> zcard.api.admin.v1.DeleteGiftcardBatchRequest
+	11, // 10: zcard.api.admin.v1.AdminWalletService.GetBalance:input_type -> zcard.api.admin.v1.GetBalanceRequest
+	13, // 11: zcard.api.admin.v1.AdminWalletService.Adjust:input_type -> zcard.api.admin.v1.AdjustRequest
+	14, // 12: zcard.api.admin.v1.AdminWalletService.AdjustPoints:input_type -> zcard.api.admin.v1.AdjustPointsRequest
+	16, // 13: zcard.api.admin.v1.AdminWalletService.ListTransactions:input_type -> zcard.api.admin.v1.ListWalletTxRequest
+	7,  // 14: zcard.api.admin.v1.AdminWalletService.ListWithdrawals:output_type -> zcard.api.admin.v1.ListWithdrawalsReply
+	8,  // 15: zcard.api.admin.v1.AdminWalletService.ReviewWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	8,  // 16: zcard.api.admin.v1.AdminWalletService.PayWithdrawal:output_type -> zcard.api.admin.v1.WithdrawalItem
+	2,  // 17: zcard.api.admin.v1.AdminWalletService.CreateGiftcardBatch:output_type -> zcard.api.admin.v1.CreateGiftcardBatchReply
+	5,  // 18: zcard.api.admin.v1.AdminWalletService.ListGiftcardBatches:output_type -> zcard.api.admin.v1.ListGiftcardBatchesReply
+	19, // 19: zcard.api.admin.v1.AdminWalletService.DeleteGiftcardBatch:output_type -> google.protobuf.Empty
+	12, // 20: zcard.api.admin.v1.AdminWalletService.GetBalance:output_type -> zcard.api.admin.v1.Balance
+	12, // 21: zcard.api.admin.v1.AdminWalletService.Adjust:output_type -> zcard.api.admin.v1.Balance
+	15, // 22: zcard.api.admin.v1.AdminWalletService.AdjustPoints:output_type -> zcard.api.admin.v1.PointsBalance
+	17, // 23: zcard.api.admin.v1.AdminWalletService.ListTransactions:output_type -> zcard.api.admin.v1.ListWalletTxReply
+	14, // [14:24] is the sub-list for method output_type
+	4,  // [4:14] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -1432,7 +1482,7 @@ func file_admin_v1_wallet_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_wallet_proto_rawDesc), len(file_admin_v1_wallet_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

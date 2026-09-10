@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -24,6 +25,7 @@ const (
 	AdminWalletService_PayWithdrawal_FullMethodName       = "/zcard.api.admin.v1.AdminWalletService/PayWithdrawal"
 	AdminWalletService_CreateGiftcardBatch_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch"
 	AdminWalletService_ListGiftcardBatches_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
+	AdminWalletService_DeleteGiftcardBatch_FullMethodName = "/zcard.api.admin.v1.AdminWalletService/DeleteGiftcardBatch"
 	AdminWalletService_GetBalance_FullMethodName          = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
 	AdminWalletService_Adjust_FullMethodName              = "/zcard.api.admin.v1.AdminWalletService/Adjust"
 	AdminWalletService_AdjustPoints_FullMethodName        = "/zcard.api.admin.v1.AdminWalletService/AdjustPoints"
@@ -51,6 +53,8 @@ type AdminWalletServiceClient interface {
 	CreateGiftcardBatch(ctx context.Context, in *CreateGiftcardBatchRequest, opts ...grpc.CallOption) (*CreateGiftcardBatchReply, error)
 	// ListGiftcardBatches 批次列表。
 	ListGiftcardBatches(ctx context.Context, in *ListGiftcardBatchesRequest, opts ...grpc.CallOption) (*ListGiftcardBatchesReply, error)
+	// DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+	DeleteGiftcardBatch(ctx context.Context, in *DeleteGiftcardBatchRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// GetBalance 指定用户余额。
 	GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error)
 	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
@@ -119,6 +123,16 @@ func (c *adminWalletServiceClient) ListGiftcardBatches(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *adminWalletServiceClient) DeleteGiftcardBatch(ctx context.Context, in *DeleteGiftcardBatchRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminWalletService_DeleteGiftcardBatch_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminWalletServiceClient) GetBalance(ctx context.Context, in *GetBalanceRequest, opts ...grpc.CallOption) (*Balance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Balance)
@@ -180,6 +194,8 @@ type AdminWalletServiceServer interface {
 	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error)
 	// ListGiftcardBatches 批次列表。
 	ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error)
+	// DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+	DeleteGiftcardBatch(context.Context, *DeleteGiftcardBatchRequest) (*emptypb.Empty, error)
 	// GetBalance 指定用户余额。
 	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
 	// Adjust 手动调账（需 wallet:adjust 权限 + 原因必填 + 审计）。
@@ -212,6 +228,9 @@ func (UnimplementedAdminWalletServiceServer) CreateGiftcardBatch(context.Context
 }
 func (UnimplementedAdminWalletServiceServer) ListGiftcardBatches(context.Context, *ListGiftcardBatchesRequest) (*ListGiftcardBatchesReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListGiftcardBatches not implemented")
+}
+func (UnimplementedAdminWalletServiceServer) DeleteGiftcardBatch(context.Context, *DeleteGiftcardBatchRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteGiftcardBatch not implemented")
 }
 func (UnimplementedAdminWalletServiceServer) GetBalance(context.Context, *GetBalanceRequest) (*Balance, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetBalance not implemented")
@@ -336,6 +355,24 @@ func _AdminWalletService_ListGiftcardBatches_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminWalletService_DeleteGiftcardBatch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteGiftcardBatchRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminWalletServiceServer).DeleteGiftcardBatch(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminWalletService_DeleteGiftcardBatch_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminWalletServiceServer).DeleteGiftcardBatch(ctx, req.(*DeleteGiftcardBatchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminWalletService_GetBalance_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBalanceRequest)
 	if err := dec(in); err != nil {
@@ -434,6 +471,10 @@ var AdminWalletService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListGiftcardBatches",
 			Handler:    _AdminWalletService_ListGiftcardBatches_Handler,
+		},
+		{
+			MethodName: "DeleteGiftcardBatch",
+			Handler:    _AdminWalletService_DeleteGiftcardBatch_Handler,
 		},
 		{
 			MethodName: "GetBalance",

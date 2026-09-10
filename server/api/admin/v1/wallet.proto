@@ -44,6 +44,10 @@ service AdminWalletService {
   rpc ListGiftcardBatches(ListGiftcardBatchesRequest) returns (ListGiftcardBatchesReply) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/giftcard-batches" };
   }
+  // DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+  rpc DeleteGiftcardBatch(DeleteGiftcardBatchRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { delete: "/api/v1/admin/wallet/giftcard-batches/{id}" };
+  }
   // GetBalance 指定用户余额。
   rpc GetBalance(GetBalanceRequest) returns (Balance) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}" };
@@ -66,6 +70,10 @@ service AdminWalletService {
   rpc ListTransactions(ListWalletTxRequest) returns (ListWalletTxReply) {
     option (google.api.http) = { get: "/api/v1/admin/wallet/{user_id}/transactions" };
   }
+}
+
+message DeleteGiftcardBatchRequest {
+  uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message CreateGiftcardBatchRequest {

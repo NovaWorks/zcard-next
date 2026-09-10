@@ -23,6 +23,8 @@ type GiftcardBatch struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// BatchNo holds the value of the "batch_no" field.
 	BatchNo string `json:"batch_no,omitempty"`
+	// 批次删除时间，保留兑换审计
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// 面额（分）
@@ -43,7 +45,7 @@ func (*GiftcardBatch) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case giftcardbatch.FieldBatchNo, giftcardbatch.FieldName:
 			values[i] = new(sql.NullString)
-		case giftcardbatch.FieldCreatedAt, giftcardbatch.FieldUpdatedAt:
+		case giftcardbatch.FieldCreatedAt, giftcardbatch.FieldUpdatedAt, giftcardbatch.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -83,6 +85,12 @@ func (_m *GiftcardBatch) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field batch_no", values[i])
 			} else if value.Valid {
 				_m.BatchNo = value.String
+			}
+		case giftcardbatch.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = value.Time
 			}
 		case giftcardbatch.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -152,6 +160,9 @@ func (_m *GiftcardBatch) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("batch_no=")
 	builder.WriteString(_m.BatchNo)
+	builder.WriteString(", ")
+	builder.WriteString("deleted_at=")
+	builder.WriteString(_m.DeletedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

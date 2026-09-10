@@ -9,6 +9,7 @@ package adminv1
 import (
 	context "context"
 	http "github.com/go-kratos/kratos/v3/transport/http"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -20,6 +21,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationAdminWalletServiceAdjust = "/zcard.api.admin.v1.AdminWalletService/Adjust"
 const OperationAdminWalletServiceAdjustPoints = "/zcard.api.admin.v1.AdminWalletService/AdjustPoints"
 const OperationAdminWalletServiceCreateGiftcardBatch = "/zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch"
+const OperationAdminWalletServiceDeleteGiftcardBatch = "/zcard.api.admin.v1.AdminWalletService/DeleteGiftcardBatch"
 const OperationAdminWalletServiceGetBalance = "/zcard.api.admin.v1.AdminWalletService/GetBalance"
 const OperationAdminWalletServiceListGiftcardBatches = "/zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches"
 const OperationAdminWalletServiceListTransactions = "/zcard.api.admin.v1.AdminWalletService/ListTransactions"
@@ -34,6 +36,8 @@ type AdminWalletServiceHTTPServer interface {
 	AdjustPoints(context.Context, *AdjustPointsRequest) (*PointsBalance, error)
 	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
 	CreateGiftcardBatch(context.Context, *CreateGiftcardBatchRequest) (*CreateGiftcardBatchReply, error)
+	// DeleteGiftcardBatch DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+	DeleteGiftcardBatch(context.Context, *DeleteGiftcardBatchRequest) (*emptypb.Empty, error)
 	// GetBalance GetBalance 指定用户余额。
 	GetBalance(context.Context, *GetBalanceRequest) (*Balance, error)
 	// ListGiftcardBatches ListGiftcardBatches 批次列表。
@@ -55,6 +59,7 @@ func RegisterAdminWalletServiceHTTPServer(s *http.Server, srv AdminWalletService
 	r.Handle("POST", "/api/v1/admin/wallet/withdrawals/{id}/pay", _AdminWalletService_PayWithdrawal0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_CreateGiftcardBatch0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/giftcard-batches", _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv))
+	r.Handle("DELETE", "/api/v1/admin/wallet/giftcard-batches/{id}", _AdminWalletService_DeleteGiftcardBatch0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/wallet/{user_id}", _AdminWalletService_GetBalance0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust", _AdminWalletService_Adjust0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/wallet/{user_id}/adjust-points", _AdminWalletService_AdjustPoints0_HTTP_Handler(srv))
@@ -162,6 +167,28 @@ func _AdminWalletService_ListGiftcardBatches0_HTTP_Handler(srv AdminWalletServic
 	}
 }
 
+func _AdminWalletService_DeleteGiftcardBatch0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in DeleteGiftcardBatchRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminWalletServiceDeleteGiftcardBatch)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.DeleteGiftcardBatch(ctx, req.(*DeleteGiftcardBatchRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AdminWalletService_GetBalance0_HTTP_Handler(srv AdminWalletServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in GetBalanceRequest
@@ -257,6 +284,8 @@ type AdminWalletServiceHTTPClient interface {
 	AdjustPoints(ctx context.Context, req *AdjustPointsRequest, opts ...http.CallOption) (rsp *PointsBalance, err error)
 	// CreateGiftcardBatch CreateGiftcardBatch 礼品卡批次创建（批量生成密文 code；giftcard:write）。
 	CreateGiftcardBatch(ctx context.Context, req *CreateGiftcardBatchRequest, opts ...http.CallOption) (rsp *CreateGiftcardBatchReply, err error)
+	// DeleteGiftcardBatch DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+	DeleteGiftcardBatch(ctx context.Context, req *DeleteGiftcardBatchRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// GetBalance GetBalance 指定用户余额。
 	GetBalance(ctx context.Context, req *GetBalanceRequest, opts ...http.CallOption) (rsp *Balance, err error)
 	// ListGiftcardBatches ListGiftcardBatches 批次列表。
@@ -327,6 +356,23 @@ func (c *AdminWalletServiceHTTPClientImpl) CreateGiftcardBatch(ctx context.Conte
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteGiftcardBatch DeleteGiftcardBatch 删除批次并作废未兑换卡，保留已兑换记录。
+func (c *AdminWalletServiceHTTPClientImpl) DeleteGiftcardBatch(ctx context.Context, in *DeleteGiftcardBatchRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/wallet/giftcard-batches/{id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminWalletServiceDeleteGiftcardBatch),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "DELETE", path, nil, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

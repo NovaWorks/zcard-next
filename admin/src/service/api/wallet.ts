@@ -82,6 +82,10 @@ export function fetchGiftcardBatches(page = 1, pageSize = 20) {
   return request({ url: "/api/v1/admin/wallet/giftcard-batches", params: { page, page_size: pageSize } });
 }
 
+export function deleteGiftcardBatch(id: number | string) {
+  return request({ url: `/api/v1/admin/wallet/giftcard-batches/${id}`, method: "delete" });
+}
+
 export function createGiftcardBatch(data: { batch_no: string; name: string; amount_cents: number; quantity: number }) {
   return request({ url: "/api/v1/admin/wallet/giftcard-batches", method: "post", data });
 }

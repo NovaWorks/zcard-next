@@ -567,6 +567,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "batch_no", Type: field.TypeString, Unique: true, Size: 40},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "name", Type: field.TypeString, Size: 100},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "quantity", Type: field.TypeInt32},

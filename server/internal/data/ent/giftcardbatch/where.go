@@ -69,6 +69,11 @@ func BatchNo(v string) predicate.GiftcardBatch {
 	return predicate.GiftcardBatch(sql.FieldEQ(FieldBatchNo, v))
 }
 
+// DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
+func DeletedAt(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldEQ(FieldDeletedAt, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.GiftcardBatch {
 	return predicate.GiftcardBatch(sql.FieldEQ(FieldName, v))
@@ -232,6 +237,56 @@ func BatchNoEqualFold(v string) predicate.GiftcardBatch {
 // BatchNoContainsFold applies the ContainsFold predicate on the "batch_no" field.
 func BatchNoContainsFold(v string) predicate.GiftcardBatch {
 	return predicate.GiftcardBatch(sql.FieldContainsFold(FieldBatchNo, v))
+}
+
+// DeletedAtEQ applies the EQ predicate on the "deleted_at" field.
+func DeletedAtEQ(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtNEQ applies the NEQ predicate on the "deleted_at" field.
+func DeletedAtNEQ(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldNEQ(FieldDeletedAt, v))
+}
+
+// DeletedAtIn applies the In predicate on the "deleted_at" field.
+func DeletedAtIn(vs ...time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtNotIn applies the NotIn predicate on the "deleted_at" field.
+func DeletedAtNotIn(vs ...time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldNotIn(FieldDeletedAt, vs...))
+}
+
+// DeletedAtGT applies the GT predicate on the "deleted_at" field.
+func DeletedAtGT(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldGT(FieldDeletedAt, v))
+}
+
+// DeletedAtGTE applies the GTE predicate on the "deleted_at" field.
+func DeletedAtGTE(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldGTE(FieldDeletedAt, v))
+}
+
+// DeletedAtLT applies the LT predicate on the "deleted_at" field.
+func DeletedAtLT(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldLT(FieldDeletedAt, v))
+}
+
+// DeletedAtLTE applies the LTE predicate on the "deleted_at" field.
+func DeletedAtLTE(v time.Time) predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldLTE(FieldDeletedAt, v))
+}
+
+// DeletedAtIsNil applies the IsNil predicate on the "deleted_at" field.
+func DeletedAtIsNil() predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldIsNull(FieldDeletedAt))
+}
+
+// DeletedAtNotNil applies the NotNil predicate on the "deleted_at" field.
+func DeletedAtNotNil() predicate.GiftcardBatch {
+	return predicate.GiftcardBatch(sql.FieldNotNull(FieldDeletedAt))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

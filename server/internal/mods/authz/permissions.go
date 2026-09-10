@@ -224,6 +224,8 @@ func init() {
 			Op: "zcard.api.admin.v1.AdminWalletService/PayWithdrawal", Method: "POST", Path: "/api/v1/admin/wallet/withdrawals/{id}/pay"},
 		Perm{Code: "giftcard:write", Desc: "礼品卡批次创建（超管）", Domain: "wallet", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminWalletService/CreateGiftcardBatch", Method: "POST", Path: "/api/v1/admin/wallet/giftcard-batches"},
+		Perm{Code: "giftcard:write", Desc: "礼品卡批次删除（超管）", Domain: "wallet", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminWalletService/DeleteGiftcardBatch", Method: "DELETE", Path: "/api/v1/admin/wallet/giftcard-batches/{id}"},
 		Perm{Code: "giftcard:read", Desc: "礼品卡批次列表", Domain: "wallet",
 			Op: "zcard.api.admin.v1.AdminWalletService/ListGiftcardBatches", Method: "GET", Path: "/api/v1/admin/wallet/giftcard-batches"},
 
