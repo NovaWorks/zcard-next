@@ -78,7 +78,7 @@
           <CategoryTree variant="panel" :categories="categories" :show-recommended="hasRecommended" :model-value="activeCategory" @update:model-value="pickCategory" />
         </div>
 
-        <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
+        <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }} <button v-if="mobileCatalog" class="feed-retry" @click="load(products.length > 0)">重新加载</button></div>
 
         <CatalogToolbar :title="sectionTitle" :sort="sort" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
 
@@ -91,13 +91,21 @@
               label="商品列表中部横幅" @open="openBanner" />
           </template>
         </div>
-        <div v-if="products.length === 0 && !loading" class="empty-state">
+        <div v-if="products.length === 0 && !loading && !error" class="empty-state">
           <div class="empty-icon">📦</div>
           <div class="muted">暂无商品</div>
         </div>
 
         <!-- 分页器（首页/页码/末页 + 每页条数） -->
-        <div v-if="total > defaultPageSize" class="pager">
+        <div v-if="mobileCatalog && loading && !products.length" class="feed-status" role="status">正在加载商品…</div>
+        <div v-if="mobileCatalog && products.length" ref="loadMoreTarget" class="feed-status" :class="{ 'is-complete': !hasMore && !loading }" :aria-busy="loading || loadingMore">
+          <span v-if="loadingMore" role="status">正在加载更多商品…</span>
+          <button v-else-if="error" class="feed-retry" @click="load(true)">刷新失败，点击重试</button>
+          <button v-else-if="loadMoreError" class="feed-retry" @click="loadMore()">加载失败，点击重试</button>
+          <button v-else-if="hasMore" class="feed-more" :disabled="loading" @click="loadMore()">继续下滑加载更多 · 已加载 {{ products.length }} 件</button>
+          <span v-else role="status">已显示全部 {{ products.length }} 件商品</span>
+        </div>
+        <div v-if="!mobileCatalog && total > defaultPageSize" class="pager">
           <span class="pager-total muted">共 {{ total }} 件</span>
           <div class="pager-btns">
             <button class="pager-btn pager-jump" :disabled="page <= 1" title="首页" @click="goPage(1)">«</button>
@@ -121,7 +129,7 @@
         </div>
       </div>
     </div>
-    <BannerStrip :banners="bottomBanners" label="首页底部横幅" @open="openBanner" />
+    <BannerStrip class="home-bottom-banners" :banners="bottomBanners" label="首页底部横幅" @open="openBanner" />
   </div>
 </template>
 
@@ -165,6 +173,16 @@ const defaultPageSize = ref(20);
 const pageSize = ref(20);
 const sort = ref('default');
 const total = ref(0);
+const mobileCatalog = ref(typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
+const loadedPage = ref(1);
+const feedPageSize = ref(20);
+const firstBatchCount = ref(0);
+const feedEnded = ref(false);
+const loadingMore = ref(false);
+const loadMoreError = ref('');
+const loadMoreTarget = ref<HTMLElement | null>(null);
+const catalogActive = ref(true);
+const hasMore = computed(() => !feedEnded.value && loadedPage.value * feedPageSize.value < total.value);
 const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [] });
 // 每页选项跟随后台 template.per_page（默认 20 → 20/40/60），前台不再写死档位
 const pageSizeOptions = computed(() => [defaultPageSize.value, defaultPageSize.value * 2, defaultPageSize.value * 3]);
@@ -197,7 +215,7 @@ watch([catalogItems, gridStyle, viewMode], ([element], _previous, onCleanup) => 
   onCleanup(() => observer.disconnect());
 }, { flush: 'post' });
 const middleBannerIndex = computed(() => {
-  const count = products.value.length;
+  const count = mobileCatalog.value ? Math.min(firstBatchCount.value, products.value.length) : products.value.length;
   if (!count || !middleBanners.value.length) return 0;
   const columns = viewMode.value === 'grid' ? catalogColumns.value : 1;
   const lastBreak = Math.floor((count - 1) / columns) * columns;
@@ -309,9 +327,9 @@ function readRouteFilters() {
   keyword.value = searchTerm.value = typeof q.keyword === 'string' ? q.keyword : '';
   sort.value = typeof q.sort === 'string' && sorts.includes(q.sort) ? q.sort : defaultSort.value;
   const size = Number(q.page_size);
-  pageSize.value = pageSizeOptions.value.includes(size) ? size : defaultPageSize.value;
+  pageSize.value = !mobileCatalog.value && pageSizeOptions.value.includes(size) ? size : defaultPageSize.value;
   const p = Number(q.page);
-  page.value = Number.isSafeInteger(p) && p > 0 ? p : 1;
+  page.value = !mobileCatalog.value && Number.isSafeInteger(p) && p > 0 ? p : 1;
 }
 function scrollToCatalog() {
   const toolbar = document.querySelector('.catalog-toolbar');
@@ -383,36 +401,119 @@ async function refreshRecommendations() {
 }
 
 let loadSequence = 0;
-async function load() {
-  const sequence = ++loadSequence;
-  loading.value = true;
-  error.value = '';
-  const { data, error: err } = await listProducts({
+function productRequest(requestPage: number, size: number) {
+  return listProducts({
     keyword: searchTerm.value || undefined,
     category_id: activeCategory.value > 0 ? activeCategory.value : undefined,
     recommend_only: activeCategory.value === -1 || undefined,
-    sort: sort.value,
-    page: page.value,
-    page_size: pageSize.value,
+    sort: sort.value, page: requestPage, page_size: size,
   });
-  if (sequence !== loadSequence) return;
-  loading.value = false;
-  if (err) { error.value = err; return; }
-  products.value = data?.items || [];
-  total.value = data?.total || 0;
 }
+function uniqueProducts(items: Product[]) {
+  const seen = new Set<number>();
+  return items.filter(item => { if (seen.has(item.id)) return false; seen.add(item.id); return true; });
+}
+async function load(preserveFeed = false) {
+  const sequence = ++loadSequence;
+  const mobile = mobileCatalog.value;
+  const size = mobile ? defaultPageSize.value : pageSize.value;
+  // 返回详情页时刷新已加载的所有批次，替换前保留原列表高度和位置。
+  const pages = mobile && preserveFeed && feedPageSize.value === size ? loadedPage.value : 1;
+  loading.value = true;
+  loadingMore.value = false;
+  loadMoreError.value = '';
+  error.value = '';
+  if (mobile && !preserveFeed) { products.value = []; firstBatchCount.value = 0; }
+  const items: Product[] = [];
+  let nextTotal = 0, lastPage = 1, lastCount = 0, firstCount = 0;
+  try {
+    for (let batch = 1; batch <= pages; batch++) {
+      const requestPage = mobile ? batch : page.value;
+      const { data, error: err } = await productRequest(requestPage, size);
+      if (sequence !== loadSequence) return;
+      if (err) { error.value = err; return; }
+      const rows = data?.items || [];
+      if (batch === 1) firstCount = rows.length;
+      items.push(...rows);
+      nextTotal = Number(data?.total || 0);
+      lastPage = requestPage;
+      lastCount = rows.length;
+      if (rows.length < size || requestPage * size >= nextTotal) break;
+    }
+    products.value = uniqueProducts(items);
+    total.value = nextTotal;
+    firstBatchCount.value = firstCount;
+    loadedPage.value = lastPage;
+    feedPageSize.value = size;
+    feedEnded.value = lastCount < size || lastPage * size >= nextTotal;
+  } finally {
+    if (sequence === loadSequence) loading.value = false;
+  }
+}
+async function loadMore() {
+  if (!mobileCatalog.value || !catalogActive.value || route.path !== '/' || loading.value || loadingMore.value || error.value || !hasMore.value) return;
+  const sequence = loadSequence;
+  const nextPage = loadedPage.value + 1;
+  loadingMore.value = true;
+  loadMoreError.value = '';
+  try {
+    const { data, error: err } = await productRequest(nextPage, feedPageSize.value);
+    if (sequence !== loadSequence) return;
+    if (err) { loadMoreError.value = err; return; }
+    const rows = data?.items || [];
+    products.value = uniqueProducts([...products.value, ...rows]);
+    total.value = Number(data?.total || 0);
+    loadedPage.value = nextPage;
+    feedEnded.value = rows.length < feedPageSize.value || nextPage * feedPageSize.value >= total.value;
+  } finally {
+    if (sequence === loadSequence) loadingMore.value = false;
+  }
+}
+// 只保留一个观察器；请求失败后停止自动重试，由用户点击重试继续。
+watch([loadMoreTarget, mobileCatalog, hasMore, loading, loadingMore, loadMoreError, error, catalogActive], ([target], _old, onCleanup) => {
+  if (!target || !mobileCatalog.value || !hasMore.value || loading.value || loadingMore.value || loadMoreError.value || error.value || !catalogActive.value || typeof IntersectionObserver === 'undefined') return;
+  const observer = new IntersectionObserver(entries => {
+    if (entries.some(entry => entry.isIntersecting)) void loadMore();
+  }, { rootMargin: '0px 0px 160px 0px' });
+  observer.observe(target);
+  onCleanup(() => observer.disconnect());
+}, { flush: 'post' });
+let stopViewportWatch: (() => void) | undefined;
+onMounted(() => {
+  const media = window.matchMedia('(max-width: 767px)');
+  const update = () => {
+    if (mobileCatalog.value === media.matches) return;
+    mobileCatalog.value = media.matches;
+    if (initialized && route.path === '/') { readRouteFilters(); void load(); }
+  };
+  media.addEventListener('change', update);
+  stopViewportWatch = () => media.removeEventListener('change', update);
+  update();
+});
+onUnmounted(() => { stopViewportWatch?.(); ++loadSequence; });
 
 let needsRefresh = false;
-onActivated(() => {
+onActivated(async () => {
+  catalogActive.value = true;
   startHero();
   if (needsRefresh) {
     needsRefresh = false;
     // 保留浏览状态，同时重新获取价格、库存和首页标题。
-    void loadTemplateSettings().then(refreshRecommendations).then(load);
+    const sequence = loadSequence;
+    await loadTemplateSettings();
+    if (sequence !== loadSequence || !catalogActive.value || route.path !== '/') return;
+    readRouteFilters();
+    await refreshRecommendations();
+    if (sequence !== loadSequence || !catalogActive.value || route.path !== '/') return;
+    void load(mobileCatalog.value);
     void fetchSiteSeo().then(applyDefaultSeo);
   }
 });
 onDeactivated(() => {
+  catalogActive.value = false;
+  ++loadSequence;
+  loading.value = false;
+  loadingMore.value = false;
   stopHero();
   needsRefresh = true;
 });
@@ -489,6 +590,14 @@ async function loadTemplateSettings() {
 
 <style scoped>
 .home { display: flex; flex-direction: column; gap: 16px; }
+.feed-status { align-self: center; max-width: 100%; padding: 0 12px; border-radius: 999px; background: rgba(255, 255, 255, .94); min-height: 44px; display: flex; justify-content: center; align-items: center; color: #64748b; font-size: 13px; text-align: center; }
+.feed-status.is-complete { min-height: 28px; }
+.feed-more, .feed-retry { min-height: 44px; padding: 8px 12px; border: 0; border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.feed-retry { color: var(--primary, #2563eb); }
+.feed-more:focus-visible, .feed-retry:focus-visible { outline: 2px solid var(--primary, #2563eb); outline-offset: 2px; }
+@media (max-width: 767px) {
+  .home .home-bottom-banners { margin: 0; }
+}
 
 /* 左右布局：PC 左侧分类树 + 右侧内容 */
 .home-layout { scroll-margin-top: 100px; display: flex; gap: 16px; align-items: flex-start; }

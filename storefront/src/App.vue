@@ -78,7 +78,7 @@
     </header>
     </template>
 
-    <main class="main" :class="{ 'install-main': isInstall }">
+    <main class="main" :class="{ 'install-main': isInstall, 'home-main': route.path === '/' }">
       <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
       <router-view v-slot="{ Component, route: viewRoute }">
         <!-- 保留目录浏览状态；会员页内切换复用表单，其余详情和支付页按导航重新创建。 -->

@@ -287,3 +287,9 @@ table.list td { padding: 8px; border-bottom: 1px solid #f3f4f6; }
 .nav-links a, .nav-horn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .nav-links .theme-icon, .cart-icon { font-size: 18px; }
 .nav-custom-btn .theme-icon, .nav-recommend-btn .theme-icon { font-size: 16px; }
+
+/* 首页手机商品流：底部横幅与服务区之间只保留一层间距。 */
+@media (max-width: 767px) {
+  .main.home-main { padding-bottom: 12px; }
+  .main.home-main + .footer { margin-top: 0; }
+}
