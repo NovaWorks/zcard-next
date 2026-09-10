@@ -38,8 +38,6 @@
       <span v-if="latestNotice && !announcementText" class="muted">{{ formatDate(latestNotice.published_at) }}</span>
     </div>
 
-    <BannerStrip :banners="middleBanners" label="首页中部横幅" @open="openBanner" />
-
     <!-- 左右布局：PC 左侧多级分类树 + 右侧内容；移动端横向胶囊兜底 -->
     <div id="catalog" class="home-layout">
       <CategoryTree
@@ -85,11 +83,13 @@
         <CatalogToolbar :title="sectionTitle" :sort="sort" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
 
         <!-- 商品列表（网格/列表双视图） -->
-        <div v-if="viewMode === 'grid'" class="product-grid" :class="{ 'catalog-big': bigGrid }" :style="gridStyle">
-          <ProductCard v-for="p in products" :key="p.id" :p="p" mode="grid" :show-sales="showSales" :show-stock="showStock" />
-        </div>
-        <div v-else class="product-list">
-          <ProductCard v-for="p in products" :key="p.id" :p="p" mode="list" :show-sales="showSales" :show-stock="showStock" />
+        <div ref="catalogItems" :class="[viewMode === 'grid' ? 'product-grid' : 'product-list', { 'catalog-big': viewMode === 'grid' && bigGrid }]"
+          :style="viewMode === 'grid' ? gridStyle : undefined">
+          <template v-for="(p, index) in products" :key="p.id">
+            <ProductCard :p="p" :mode="viewMode" :show-sales="showSales" :show-stock="showStock" />
+            <BannerStrip v-if="index + 1 === middleBannerIndex" :banners="middleBanners" catalog
+              label="商品列表中部横幅" @open="openBanner" />
+          </template>
         </div>
         <div v-if="products.length === 0 && !loading" class="empty-state">
           <div class="empty-icon">📦</div>
@@ -182,6 +182,30 @@ const gridStyle = computed(() =>
     ? { gridTemplateColumns: `repeat(${perRow.value}, 1fr)` }
     : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
 );
+// 以实际渲染列数对齐完整商品行，避免横幅前留出半行空白。
+const catalogItems = ref<HTMLElement | null>(null);
+const catalogColumns = ref(1);
+watch([catalogItems, gridStyle, viewMode], ([element], _previous, onCleanup) => {
+  if (!element || typeof window === 'undefined') return;
+  const measure = () => {
+    const tracks = window.getComputedStyle(element).gridTemplateColumns;
+    catalogColumns.value = viewMode.value === 'grid' && tracks !== 'none' ? Math.max(1, tracks.split(' ').filter(Boolean).length) : 1;
+  };
+  measure();
+  const observer = new ResizeObserver(measure);
+  observer.observe(element);
+  onCleanup(() => observer.disconnect());
+}, { flush: 'post' });
+const middleBannerIndex = computed(() => {
+  const count = products.value.length;
+  if (!count || !middleBanners.value.length) return 0;
+  const columns = viewMode.value === 'grid' ? catalogColumns.value : 1;
+  const lastBreak = Math.floor((count - 1) / columns) * columns;
+  // 只有一行时放在该行之后，既不挤开商品，也不制造空白行。
+  if (!lastBreak) return count;
+  return Math.min(lastBreak, Math.max(columns, Math.round(count / 2 / columns) * columns));
+});
+
 const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
@@ -580,6 +604,7 @@ async function loadTemplateSettings() {
 @media (max-width: 640px) {
   .product-list { gap: 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
   .product-list :deep(.product-card) { border: none; border-radius: 0; border-bottom: 1px solid #e5e7eb; }
+  .product-list :deep(.banner-strip--catalog) { margin: 12px; }
   .product-list :deep(.product-card:last-child) { border-bottom: none; }
   .product-list :deep(.product-card:hover) { transform: none; box-shadow: none; }
 }

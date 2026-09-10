@@ -64,7 +64,7 @@ function zhValue(json: string): string {
 const bannerColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
   { title: "名称", key: "name", width: 120, ellipsis: { tooltip: true } },
-  { title: "位置", key: "position", width: 70 },
+  { title: "位置", key: "position", width: 120, render: (row) => ({ top: "顶部", middle: "商品列表中部", bottom: "商品列表下方" }[row.position as string] || row.position) },
   {
     title: "图片",
     key: "image",
@@ -207,8 +207,11 @@ onMounted(loadBanners);
           <NInput v-model:value="bannerForm.name" />
         </NFormItem>
         <NFormItem label="位置">
-          <NSelect v-model:value="bannerForm.position" :options="[{ label: '顶部', value: 'top' }, { label: '中部（公告下方、商品列表上方）', value: 'middle' }, { label: '底部（商品列表下方）', value: 'bottom' }]" />
+          <NSelect v-model:value="bannerForm.position" :options="[{ label: '顶部', value: 'top' }, { label: '中部（商品列表内）', value: 'middle' }, { label: '底部（商品列表下方）', value: 'bottom' }]" />
         </NFormItem>
+        <p v-if="bannerForm.position === 'middle'" style="margin: -4px 0 16px 72px; line-height: 1.6; color: var(--text-color-2)">
+          显示在当前页商品中段，网格视图会对齐完整商品行。多个横幅在电脑端并排、手机端横滑；仅一行商品时显示在该行之后，无商品时隐藏。建议使用宽幅图片。
+        </p>
         <NFormItem label="图片" required>
           <MediaField v-model:value="bannerForm.image" />
         </NFormItem>
