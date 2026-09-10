@@ -23,8 +23,8 @@
     <!-- 已取消 / 已过期 -->
     <div v-else-if="phase === 'closed'" class="pay-center-card">
       <div class="pay-state-icon gray">{{ order?.status === 'canceled' ? '🚫' : '⏰' }}</div>
-      <div class="pay-state-title">{{ order?.status === 'canceled' ? '订单已取消' : '订单已超时' }}</div>
-      <div class="muted">订单号：{{ orderNo }} · 未完成支付</div>
+      <div class="pay-state-title">{{ order?.status === 'refunded' ? '订单已退款' : order?.status === 'canceled' ? '订单已取消' : '订单已超时' }}</div>
+      <div class="muted">订单号：{{ orderNo }} · {{ order?.status === 'refunded' ? '请核对退款记录' : '未完成支付' }}</div>
       <div class="pay-btn-row">
         <router-link class="btn btn-primary" to="/products">重新选购</router-link>
         <router-link class="btn btn-outline" to="/member?tab=orders">我的订单</router-link>
@@ -39,7 +39,7 @@
       <div style="margin-bottom: 6px;">支付金额 <b class="pay-amount">{{ formatMoney(order?.total_cents || 0) }}</b></div>
 
       <!-- 自动取货：卡密直接展示（会话内记忆查询密码；失败降级提示去取货页） -->
-      <div v-if="delivery" class="pay-cards">
+      <div v-if="delivery?.items.length" class="pay-cards">
         <div class="pay-cards-head">
           <span>您的卡密（{{ delivery.items.length }} 条）</span>
           <button v-if="delivery.items.length > 1" class="pay-copy-all" @click="copyAll">
@@ -52,12 +52,14 @@
           <button class="pay-card-copy" @click="copyOne(it.content, i)">{{ copied === i ? '已复制' : '复制' }}</button>
         </div>
       </div>
-      <div v-else class="pay-fetch-hint">
-        <span>🎁 商品已发放，凭订单号 + 查询密码领取卡密</span>
+      <div class="pay-fetch-hint">
+        <span>{{ ['delivered', 'completed'].includes(order?.status || '') ? '商品已发货，凭订单号 + 查询密码领取卡密' : '已付款，正在安排发货，请勿重复付款。长时间未发货请凭订单号联系客服补发。' }}</span>
         <router-link class="btn btn-primary" :to="`/fetch?order_no=${orderNo}`">前往取货</router-link>
       </div>
 
+      <p class="muted">请保存订单号和下单时的查询密码，游客也可随时查询、取货，无需注册。</p>
       <div class="pay-btn-row">
+        <button class="btn btn-primary" @click="checkOnce(true)">刷新发货结果</button>
         <router-link class="btn btn-outline" :to="`/order/${orderNo}`">查看订单详情</router-link>
         <router-link class="btn btn-outline" to="/products">继续购物</router-link>
       </div>
@@ -231,7 +233,7 @@ onMounted(async () => {
 
 async function initializePayment() {
   if (!await refreshOrder()) return;
-  if (phase.value === 'success') { await loadDelivery(); return; }
+  if (phase.value === 'success') { await loadDelivery(); if (!['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
   if (phase.value === 'closed') return;
   const { data } = await fetchPaymentChannels();
   channels.value = data?.channels || [];
@@ -269,7 +271,7 @@ function decidePhase() {
   const st = order.value?.status;
   if (!st) return;
   if (PAID_STATES.includes(st)) phase.value = 'success';
-  else if (st === 'canceled' || st === 'expired') phase.value = 'closed';
+  else if (st === 'canceled' || st === 'expired' || st === 'refunded') phase.value = 'closed';
   else if (phase.value === 'loading' || phase.value === 'error') phase.value = 'select';
 }
 
@@ -279,25 +281,17 @@ function startPolling() {
   pollCount = 0;
   pollTimer = setInterval(async () => {
     pollCount += 1;
-    const prev = order.value?.status;
-    await refreshOrder();
-    if (!order.value) return; // 单次查询失败（网络抖动）不切态，等下一轮
-    const st = order.value.status;
-    if (st && PAID_STATES.includes(st) && (!prev || !PAID_STATES.includes(prev))) {
-      stopPolling();
+    if (!await refreshOrder()) { if (pollCount >= POLL_MAX) stopPolling(); return; }
+    const st = order.value?.status;
+    if (st && PAID_STATES.includes(st)) {
       phase.value = 'success';
-      loadDelivery();
+      await loadDelivery();
+      if (['delivered', 'completed'].includes(st) || pollCount >= POLL_MAX) stopPolling();
       return;
     }
-    if (st === 'canceled' || st === 'expired') {
-      stopPolling();
-      phase.value = 'closed';
-      return;
-    }
-    if (pollCount >= POLL_MAX) {
-      stopPolling();
-      phase.value = 'waiting';
-    }
+    if (phase.value === 'closed') { stopPolling(); return; }
+    if (pollCount >= POLL_MAX) { stopPolling(); phase.value = 'waiting'; }
+
   }, 4000);
 }
 function stopPolling() {
@@ -307,7 +301,7 @@ function stopPolling() {
 async function checkOnce(manual = false) {
   await refreshOrder();
   decidePhase();
-  if (phase.value === 'success') { loadDelivery(); return; }
+  if (phase.value === 'success') { await loadDelivery(); if (!['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
   if (manual && phase.value === 'waiting') window.alert('暂未检测到支付，请稍后再试');
   if (phase.value === 'qrcode' || phase.value === 'redirect' || phase.value === 'waiting') startPolling();
 }

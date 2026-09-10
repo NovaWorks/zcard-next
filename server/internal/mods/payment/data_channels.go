@@ -747,19 +747,9 @@ func ToRefundPB(rf *ent.RefundOrder, orderNo string) *adminv1.RefundOrder {
 	}
 }
 
-// RefundOrder 订单退款入口（ procurement 失败策略消费，通道 A）：
-// 按订单创建退款单（channel=upstream），订单 refund 流转由 payment 现有编排驱动。
+// RefundOrder is used by procurement. There is no automatic gateway refund executor.
+// Return an error so procurement transfers the order to manual review instead of
+// creating a receipt that can never settle (especially for guest and mixed orders).
 func (r *PaymentRepoImpl) RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error {
-	if amount <= 0 {
-		o, err := data.Client(ctx, r.data).Order.Get(ctx, orderID)
-		if err != nil {
-			return fmt.Errorf("payment: 退款订单不存在: %w", err)
-		}
-		amount = money.Cents(o.TotalAmount)
-	}
-	if amount <= 0 {
-		return fmt.Errorf("payment: 退款金额必须为正")
-	}
-	_, err := r.CreateRefund(ctx, orderID, int64(amount), string(refundorder.ChannelUpstream), reason)
-	return err
+	return fmt.Errorf("payment: 自动退款尚未执行，请在订单详情核实后退款或补发")
 }

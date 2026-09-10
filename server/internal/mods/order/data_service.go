@@ -20,6 +20,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -101,7 +102,7 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 	isOwner := claims != nil && o.UserID != 0 && claims.Subject == o.UserID
 	if !isOwner {
 		// 查询密码校验（三重门之一：设置则必须匹配；错误与单号不存在表现一致）
-		if o.QueryPasswordHash != "" && req.GetQueryPassword() == "" {
+		if o.QueryPasswordHash == "" || !crypto.VerifyPassword(o.QueryPasswordHash, req.GetQueryPassword()) {
 			return nil, errors.NotFound("order.NOT_FOUND", "订单不存在")
 		}
 	}
@@ -366,7 +367,7 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 		pb := &adminv1.AdminOrderItem{
 			ProductId: it.ProductID, SkuId: it.SkuID, Quantity: it.Quantity,
 			UnitPriceCents: it.UnitPrice, AmountCents: it.Amount,
-			FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus,
+			Id: it.ID, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus,
 			SkuName: it.SkuName, CostCents: it.Cost,
 		}
 		// 自营/上游信息（商品快照缺失时回落商品当前态——订单详情以商品为准）

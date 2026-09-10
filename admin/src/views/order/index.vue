@@ -26,6 +26,7 @@ import {
   manualDeliver,
   fetchDeliveries,
 } from "@/service/api";
+import ManualDeliverDialog from "./components/manual-deliver-dialog.vue";
 import PendingDeliverTab from "./components/pending-deliver-tab.vue";
 import { formatMoney, formatSignedMoney } from "@/utils/money";
 
@@ -45,6 +46,11 @@ const selectedOrders = ref<string[]>([]);
 const deleting = ref(false);
 let listRequest = 0;
 const showDetail = ref(false);
+const showManualDeliver = ref(false);
+async function afterManualDeliver() {
+  if (detail.value) await handleDetail(detail.value.order_no);
+  await loadOrders();
+}
 const detail = ref<{
   order_no: string;
   status: string;
@@ -119,6 +125,7 @@ function fulfillmentStatusText(s: string) {
   const map: Record<string, string> = {
     pending: "待履约",
     delivering: "履约中",
+    manual: "待人工补发",
     delivered: "已履约",
     failed: "履约失败",
   };
@@ -165,7 +172,11 @@ function eventDotColor(evt: any): string {
 
 // 事件排序（时间升序——后端已排，防御性再排一次）
 function sortedEvents(evts: any[]) {
-  return [...(evts || [])].sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
+  return [...(evts || [])].map(evt => {
+    if (evt.event === 'completed' && evt.from_status && evt.from_status !== 'delivered') return { ...evt, event: 'fetch_pending', to_status: evt.from_status, reason: '旧版取货事件误记完成，以订单当前状态为准' };
+    if (evt.event === 'delivered' && ['fulfilling', 'partially_delivered'].includes(evt.to_status)) return { ...evt, event: evt.to_status };
+    return evt;
+  }).sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
 }
 
 function operatorText(op: string) {
@@ -185,6 +196,11 @@ function eventText(evt: string) {
     fulfilled: "履约完成",
     delivered: "发货完成",
     completed: "订单完成",
+    fetch_pending: "取货查询（待发货）",
+    manual_delivered: "人工补发",
+    fulfillment_manual: "转人工处理",
+    fulfilling: "等待发货",
+    partially_delivered: "部分发货",
     canceled: "订单取消",
     expired: "订单过期",
     expiry_check: "超时核对",
@@ -626,7 +642,7 @@ onMounted(loadOrders);
         <!-- 横向时间线（大厂订单详情风格：圆点节点 + 连线 + 时间，可横向滚动） -->
         <div style="display:flex;align-items:flex-start;overflow-x:auto;padding:4px 4px 8px;">
           <div
-            v-for="(evt, i) in [...(detail.status_events || [])].sort((a, b) => (a.created_at || 0) - (b.created_at || 0))"
+            v-for="(evt, i) in sortedEvents(detail.status_events || [])"
             :key="i"
             style="display:flex;align-items:flex-start;"
           >
@@ -659,6 +675,7 @@ onMounted(loadOrders);
       <template #footer>
         <div v-if="detail" class="flex justify-end gap-8px">
           <!-- NPopconfirm 的 trigger 槽必须恰好一个子节点：v-if 放在 Popconfirm 自身（空槽会抛 follower 错误） -->
+          <NButton v-if="['paid', 'fulfilling', 'partially_delivered'].includes(detail.status) && checkAuth('order:deliver')" type="primary" @click="showManualDeliver = true">人工补发</NButton>
           <NPopconfirm
             v-if="detail.status === 'pending_payment' && checkAuth('order:cancel')"
             @positive-click="handleCancel(detail.order_no)"
@@ -711,6 +728,7 @@ onMounted(loadOrders);
         <NButton type="error" :loading="refunding" @click="handleRefund">确认退款到余额</NButton>
       </template>
     </NModal>
+    <ManualDeliverDialog v-model:show="showManualDeliver" :order-no="detail?.order_no || ''" @delivered="afterManualDeliver" />
   </div>
 </template>
 

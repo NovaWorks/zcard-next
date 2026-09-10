@@ -4,6 +4,7 @@ import { onMounted, ref, h } from "vue";
 import { NButton, NDataTable, NModal, NForm, NFormItem, NInput, NInputNumber, NSelect, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchPendingDeliveries, manualDeliver } from "@/service/api";
+import ManualDeliverDialog from "./manual-deliver-dialog.vue";
 import { checkAuth } from "@/directives";
 
 defineOptions({ name: "PendingDeliverTab" });
@@ -14,9 +15,7 @@ const pageSize = 20;
 const orders = ref<any[]>([]);
 
 const showDeliver = ref(false);
-const delivering = ref(false);
 const target = ref<any>(null);
-const form = ref({ content: "", logistics_no: "", remark: "" });
 
 const columns: DataTableColumns<any> = [
   {
@@ -66,31 +65,7 @@ async function load() {
 
 function openDeliver(row: any) {
   target.value = row;
-  form.value = { content: "", logistics_no: "", remark: "" };
   showDeliver.value = true;
-}
-
-async function handleDeliver() {
-  if (!target.value) return;
-  if (!form.value.content.trim() && !form.value.logistics_no.trim()) {
-    window.$message?.warning("卡密内容与物流单号至少填一项");
-    return;
-  }
-  delivering.value = true;
-  try {
-    const { error } = await manualDeliver(target.value.order_no, {
-      content: form.value.content.trim() || undefined,
-      logistics_no: form.value.logistics_no.trim() || undefined,
-      remark: form.value.remark.trim() || undefined,
-    });
-    if (!error) {
-      window.$message?.success(`订单 ${target.value.order_no} 已发货`);
-      showDeliver.value = false;
-      load();
-    }
-  } finally {
-    delivering.value = false;
-  }
 }
 
 onMounted(load);
@@ -98,7 +73,7 @@ onMounted(load);
 
 <template>
   <div>
-    <NDataTable :columns="columns" :data="orders" :loading="loading"  :max-height="540" />
+    <NDataTable :columns="columns" :data="orders" :loading="loading"  :scroll-x="700" />
     <div class="mt-8px flex items-center justify-between">
       <span class="text-12px text-gray-400">第 {{ page }} 页</span>
       <div class="flex gap-8px">
@@ -109,36 +84,6 @@ onMounted(load);
       </div>
     </div>
 
-    <!-- 手动发货（卡密内容多行=每行一条；或物流单号二选一） -->
-    <NModal
-      v-model:show="showDeliver"
-      preset="dialog"
-      :title="`手动发货：${target?.product_name || ''} ×${target?.quantity || 0}`"
-      style="width: 520px"
-    >
-      <NForm label-placement="top">
-        <NFormItem label="订单号">
-          <NInput :value="target?.order_no" disabled />
-        </NFormItem>
-        <NFormItem label="卡密内容（多行，每行一条）">
-          <NInput
-            v-model:value="form.content"
-            type="textarea"
-            :rows="4"
-            placeholder="与物流单号二选一；交付即走取货三重门（掩码默认，买家凭订单号+查询密码取货）"
-          />
-        </NFormItem>
-        <NFormItem label="物流单号">
-          <NInput v-model:value="form.logistics_no" placeholder="实体/卡板类填此处" />
-        </NFormItem>
-        <NFormItem label="备注">
-          <NInput v-model:value="form.remark" placeholder="选填" />
-        </NFormItem>
-      </NForm>
-      <template #action>
-        <NButton @click="showDeliver = false">取消</NButton>
-        <NButton type="primary" :loading="delivering" @click="handleDeliver">确认发货</NButton>
-      </template>
-    </NModal>
+    <ManualDeliverDialog v-model:show="showDeliver" :order-no="target?.order_no || ''" @delivered="load" />
   </div>
 </template>

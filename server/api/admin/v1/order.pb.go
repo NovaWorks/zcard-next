@@ -386,6 +386,7 @@ func (x *AdminOrder) GetExpiryReason() string {
 
 type AdminOrderItem struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
+	Id                  uint64                 `protobuf:"varint,17,opt,name=id,proto3" json:"id,omitempty"` // 订单商品项 ID，人工补发使用
 	ProductId           uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	SkuId               uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
 	Quantity            int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
@@ -434,6 +435,13 @@ func (x *AdminOrderItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrderItem.ProtoReflect.Descriptor instead.
 func (*AdminOrderItem) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdminOrderItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
 }
 
 func (x *AdminOrderItem) GetProductId() uint64 {
@@ -846,8 +854,9 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\x0fexpiry_retry_at\x18\x10 \x01(\x03R\rexpiryRetryAt\x12'\n" +
 	"\x0fexpiry_attempts\x18\x11 \x01(\x05R\x0eexpiryAttempts\x12#\n" +
 	"\rexpiry_review\x18\x12 \x01(\bR\fexpiryReview\x12#\n" +
-	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\"\xd0\x04\n" +
-	"\x0eAdminOrderItem\x12\x1d\n" +
+	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\"\xe0\x04\n" +
+	"\x0eAdminOrderItem\x12\x0e\n" +
+	"\x02id\x18\x11 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x15\n" +
 	"\x06sku_id\x18\x02 \x01(\x04R\x05skuId\x12\x1a\n" +

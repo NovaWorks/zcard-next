@@ -18,6 +18,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 )
@@ -40,7 +41,7 @@ func NewProcureRepo(d *data.Data) *ProcureRepo { return &ProcureRepo{data: d} }
 
 // 合法迁移表（并发三通道汇聚同一终态只生效一次：CAS + 迁移表双保险）。
 var allowedTransitions = map[string]map[string]bool{
-	"pending":   {"submitted": true, "fulfilled": true, "rejected": true, "polling": true},
+	"pending":   {"manual": true, "submitted": true, "fulfilled": true, "rejected": true, "polling": true},
 	"submitted": {"polling": true, "fulfilled": true, "rejected": true, "refunding": true, "manual": true},
 	"polling":   {"fulfilled": true, "rejected": true, "refunding": true, "manual": true},
 	"rejected":  {"refunding": true, "manual": true, "refunded": true},
@@ -229,7 +230,40 @@ func (r *ProcureRepo) MarkRefunded(ctx context.Context, id uint64, upstreamRefun
 
 // MarkManual → manual（人工终态：失败策略分流 / 24h 卡死）。
 func (r *ProcureRepo) MarkManual(ctx context.Context, id uint64, reason string) error {
-	for _, from := range []string{"rejected", "submitted", "polling", "refunding"} {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if err := r.markManual(ctx, id, reason); err != nil {
+			return err
+		}
+		client := data.Client(ctx, r.data)
+		po, err := client.ProcurementOrder.Get(ctx, id)
+		if err != nil {
+			return err
+		}
+		it, err := client.OrderItem.Get(ctx, po.OrderItemID)
+		if ent.IsNotFound(err) {
+			return nil
+		} // Keep orphaned historic procurements actionable.
+		if err != nil {
+			return err
+		}
+		o, err := client.Order.Get(ctx, it.OrderID)
+		if err != nil {
+			return err
+		}
+		switch o.Status {
+		case order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered:
+		default:
+			return nil
+		}
+		if err := client.OrderItem.UpdateOneID(it.ID).SetFulfillmentStatus("manual").Exec(ctx); err != nil {
+			return err
+		}
+		return client.OrderStatusEvent.Create().SetOrderID(o.ID).SetFromStatus(string(o.Status)).SetToStatus(string(o.Status)).SetEvent("fulfillment_manual").SetOperator("system").SetReason(reason).Exec(ctx)
+	})
+}
+
+func (r *ProcureRepo) markManual(ctx context.Context, id uint64, reason string) error {
+	for _, from := range []string{"pending", "rejected", "submitted", "polling", "refunding"} {
 		err := r.transition(ctx, id, from, "manual", func(upd *ent.ProcurementOrderUpdateOne) *ent.ProcurementOrderUpdateOne {
 			return upd.SetLastError(reason)
 		})

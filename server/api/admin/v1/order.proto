@@ -75,6 +75,7 @@ message AdminOrder {
 }
 
 message AdminOrderItem {
+  uint64 id = 17; // 订单商品项 ID，人工补发使用
   uint64 product_id = 1;
   uint64 sku_id = 2;
   int32 quantity = 3;

@@ -98,6 +98,12 @@
           </div>
         </div>
 
+        <div v-if="['paid', 'fulfilling', 'partially_delivered'].includes(result.status)" class="card-list">
+          <p>已付款，{{ result.items.length ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。无需再次支付，也无需注册；稍后用此订单号和查询密码刷新取货。</p>
+          <p>长时间未发货，请凭订单号联系客服补发。</p>
+          <button class="btn btn-primary" :disabled="loading" @click="pickOrder(result.order_no)">刷新发货结果</button>
+        </div>
+        <div v-else-if="!result.items.length" class="card-list">{{ result.status === 'refunded' ? '订单已退款，请核对退款记录。' : '暂无可领取内容，请查看订单状态或联系客服。' }}</div>
         <div v-if="result.items.length" class="card-list">
           <div class="card-list-title">
             <span>卡密列表</span>
@@ -119,7 +125,7 @@
       </div>
 
       <div class="result-actions">
-        <router-link class="btn btn-outline" to="/member?tab=orders">查看我的订单</router-link>
+        <router-link class="btn btn-outline" :to="`/order/${result.order_no}`">查看订单详情</router-link>
       </div>
     </div>
   </div>
@@ -128,7 +134,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
+import { getOrderPassword, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';
 import { formatMoney } from '@/api/client';
 
 const route = useRoute();
@@ -152,7 +158,7 @@ function looksLikeContact(v: string): boolean {
 // 支付成功/订单列表跳转时预填订单号
 onMounted(() => {
   const q = route.query.order_no;
-  if (typeof q === 'string' && q) orderNo.value = q;
+  if (typeof q === 'string' && q) { orderNo.value = q; queryPassword.value = getOrderPassword(q); if (queryPassword.value) pickOrder(q); }
 });
 
 async function fetch() {
@@ -199,6 +205,7 @@ async function pickOrder(no: string) {
   loading.value = false;
   if (err) { error.value = err; return; }
   result.value = data;
+  if (data) rememberOrderPassword(no, queryPassword.value);
   guestOrders.value = []; // 取货成功收起列表
   orderNo.value = no;     // 结果区显示该单号
 }

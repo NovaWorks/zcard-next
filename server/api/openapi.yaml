@@ -6352,6 +6352,8 @@ components:
         zcard.api.admin.v1.AdminOrderItem:
             type: object
             properties:
+                id:
+                    type: string
                 productId:
                     type: string
                 skuId:
@@ -8686,6 +8688,8 @@ components:
                 logisticsNo:
                     type: string
                 remark:
+                    type: string
+                orderItemId:
                     type: string
         zcard.api.admin.v1.MarkProcurementManualRequest:
             required:

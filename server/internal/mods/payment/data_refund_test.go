@@ -126,3 +126,15 @@ type refundThreadWriter struct{}
 func (refundThreadWriter) Write(context.Context, string, string, string, string, json.RawMessage) error {
 	return nil
 }
+
+func TestProcurementRefundCannotPretendToSettle(t *testing.T) {
+	d, r, _, _, _, _ := newCallbackEnv(t)
+	ctx := context.Background()
+	o := d.Client.Order.Create().SetOrderNo("UPSTREAM-FAILURE").SetStatus(order.StatusFulfilling).SetTotalAmount(1000).SaveX(ctx)
+	if err := r.RefundOrder(ctx, o.ID, 0, "采购失败"); err == nil {
+		t.Fatal("unexecuted refund reported success")
+	}
+	if d.Client.RefundOrder.Query().CountX(ctx) != 0 || d.Client.Order.GetX(ctx, o.ID).Status != order.StatusFulfilling {
+		t.Fatal("created an unexecutable receipt")
+	}
+}

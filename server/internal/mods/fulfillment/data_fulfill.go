@@ -12,7 +12,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -70,23 +69,11 @@ func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) err
 		return err
 	}
 
-	// Refund and delivery serialize on the same order row before touching cards.
-	if o.Status != order.StatusPaid {
+	if o.Status != order.StatusPaid && o.Status != order.StatusFulfilling && o.Status != order.StatusPartiallyDelivered {
 		return nil
 	}
-	n, err := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusPaid), order.Version(o.Version)).AddVersion(1).Save(ctx)
-	if err != nil {
+	if err := r.lockDeliveryOrder(ctx, o); err != nil {
 		return err
-	}
-	if n != 1 {
-		return fmt.Errorf("fulfillment.ORDER_CHANGED")
-	}
-
-	// 幂等：已有交付记录直接返回
-	existing, _ := client.OrderDelivery.Query().
-		Where(orderdelivery.OrderID(o.ID)).Exist(ctx)
-	if existing {
-		return nil
 	}
 
 	// 取 reserved 卡密
@@ -143,13 +130,23 @@ func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) err
 			continue // 已处理（并发幂等）
 		}
 
+		var itemID uint64
+		for _, it := range items {
+			if it.ProductID == c.ProductID && it.SkuID == c.SkuID {
+				itemID = it.ID
+				break
+			}
+		}
+		if itemID == 0 {
+			return fmt.Errorf("fulfillment.CARD_ITEM_MISMATCH")
+		}
 		// 交付记录（card_id 引用 + 一次性令牌哈希——不存明文）
 		token := randomToken()
 		tokenHash := hashToken(token)
 		mode := modeOf(c.ProductID)
 		_, err = client.OrderDelivery.Create().
 			SetOrderID(o.ID).
-			SetItemID(0).
+			SetItemID(itemID).
 			SetCardID(c.ID).
 			SetDeliveryTokenHash(tokenHash).
 			SetDeliveredMode(mode).
@@ -172,11 +169,17 @@ func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) err
 
 	// 直发商品（url/code）：同一链接/兑换码反复发货——写直发交付记录
 	// （CardID=0，取货时从商品 direct_content 现场解密）。每订单项一条。
-	localDelivered := len(cards) > 0 // 本地卡密项已同步交付
 	for _, it := range items {
 		p, err := client.Product.Get(ctx, it.ProductID)
-		if err != nil || p.StockType == product.StockTypeCard || p.UpstreamSourceID > 0 {
+		if err != nil || p.StockType == product.StockTypeCard || p.UpstreamSourceID > 0 || it.FulfillmentType == orderitem.FulfillmentTypeManual {
 			continue // 卡密类走上方逐卡；上游项由 procurement 回填
+		}
+		exists, err := client.OrderDelivery.Query().Where(orderdelivery.OrderID(o.ID), orderdelivery.ItemID(it.ID)).Exist(ctx)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
 		}
 		token := randomToken()
 		_, err = client.OrderDelivery.Create().
@@ -192,56 +195,9 @@ func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) err
 		if err != nil {
 			return fmt.Errorf("fulfillment.DIRECT_CREATE_FAILED: %w", err)
 		}
-		localDelivered = true
 	}
 
-	// 状态推进：含「未到卡上游项」的订单不得落 delivered——procurement 采购仍在途
-	// 或失败，订单却显示已发货，客户/后台均无卡密可看（曾无条件 paid→delivered，
-	// 线上实测即症状）。全项已交付 → delivered；本地已交 + 上游在途 →
-	// partially_delivered；纯上游在途 → fulfilling（前台 PAID_STATES 均按成功展示，
-	// 到卡后由 AttachUpstreamDelivery 推进终态）。
-	upstreamPending := false
-	for _, it := range items {
-		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream {
-			continue
-		}
-		ok, err := client.OrderDelivery.Query().Where(orderdelivery.ItemID(it.ID)).Exist(ctx)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			upstreamPending = true
-			break
-		}
-	}
-	nextStatus := order.StatusDelivered
-	if upstreamPending {
-		nextStatus = order.StatusFulfilling
-		if localDelivered {
-			nextStatus = order.StatusPartiallyDelivered
-		}
-	}
-
-	// 更新订单状态（paid → 终态/在途态）
-	_, err = client.Order.Update().
-		Where(order.ID(o.ID), order.StatusEQ(order.StatusPaid)).
-		SetStatus(nextStatus).
-		SetVersion(o.Version + 1).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-
-	// 状态事件溯源
-	_, _ = client.OrderStatusEvent.Create().
-		SetOrderID(o.ID).
-		SetFromStatus(string(o.Status)).
-		SetToStatus(string(nextStatus)).
-		SetEvent("delivered").
-		SetOperator("system").
-		Save(ctx)
-
-	return nil
+	return r.updateDeliveryProgress(ctx, o, "system", 0, "")
 }
 
 // ── 取货三重门 ─────────────────────────────────────────
@@ -317,11 +273,7 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 		})
 	}
 
-	isFirstFetch := true
 	for _, d := range deliveries {
-		if d.FetchCount > 0 {
-			isFirstFetch = false
-		}
 
 		// 直发交付（url/code 商品）：内容在商品 direct_content（CardID=0 无卡）
 		if d.DeliveredMode == orderdelivery.DeliveredModeDirect {
@@ -348,6 +300,10 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 			continue
 		}
 
+		if tracking, ok := d.Logistics["tracking_no"].(string); ok && tracking != "" {
+			result.Items = append(result.Items, FetchItem{Content: "物流单号：" + tracking})
+			continue
+		}
 		// 取卡密
 		c, err := client.Card.Get(ctx, d.CardID)
 		if ent.IsNotFound(err) {
@@ -385,132 +341,28 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	if len(deliveries) > 0 {
 		result.FetchCnt = deliveries[0].FetchCount + 1
 	}
-	if isFirstFetch && len(deliveries) > 0 {
-		// 订单状态 → completed
-		_, _ = client.Order.Update().
-			Where(order.ID(o.ID), order.StatusEQ(order.StatusDelivered)).
-			SetStatus(order.StatusCompleted).
-			SetVersion(o.Version + 1).
-			Save(ctx)
-		_, _ = client.OrderStatusEvent.Create().
-			SetOrderID(o.ID).
-			SetFromStatus(string(o.Status)).
-			SetToStatus(string(order.StatusCompleted)).
-			SetEvent("completed").
-			SetOperator("user").
-			SetClientIP(clientIP).
-			Save(ctx)
+	if o.Status == order.StatusDelivered && len(deliveries) > 0 {
+		err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+			client := data.Client(ctx, r.data)
+			n, err := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusDelivered), order.Version(o.Version)).SetStatus(order.StatusCompleted).AddVersion(1).Save(ctx)
+			if err != nil {
+				return err
+			}
+			if n == 0 {
+				return nil
+			}
+			if err := client.OrderStatusEvent.Create().SetOrderID(o.ID).SetFromStatus("delivered").SetToStatus("completed").SetEvent("completed").SetOperator("user").SetClientIP(clientIP).Exec(ctx); err != nil {
+				return err
+			}
+			result.Status = "completed"
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return result, nil
-}
-
-// ── 人工发货 ───────────────────────────────────────────
-
-// ManualDeliver 手动交付（卡密内容或物流单号）。
-func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, logisticsNo, remark string, adminID uint64) error {
-	client := data.Client(ctx, r.data)
-
-	o, err := client.Order.Query().Where(order.OrderNo(orderNo)).Only(ctx)
-	if ent.IsNotFound(err) {
-		return fmt.Errorf("fulfillment.ORDER_NOT_FOUND")
-	}
-	if err != nil {
-		return err
-	}
-
-	// 卡密内容模式
-	if content != "" {
-		lines := strings.Split(strings.TrimSpace(content), "\n")
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if line == "" {
-				continue
-			}
-			// 加密后创建卡密 + 交付记录（同自动交付出口）
-			// 简化：直接用第一个 product_id
-			items, _ := client.OrderItem.Query().Where(orderitem.OrderID(o.ID)).All(ctx)
-			if len(items) == 0 {
-				return fmt.Errorf("fulfillment.NO_ITEMS")
-			}
-			productID := items[0].ProductID
-
-			enc, err := r.cipher.Seal(line, productID, o.SubsiteID)
-			if err != nil {
-				return err
-			}
-			hash := r.cipher.ContentHash(line)
-
-			// 创建卡密（直接 used 状态）
-			c, err := client.Card.Create().
-				SetProductID(productID).
-				SetSubsiteID(o.SubsiteID).
-				SetContent(enc).
-				SetContentHash(hash).
-				SetStatus(card.StatusUsed).
-				SetOrderID(o.ID).
-				SetUsedAt(time.Now().UTC()).
-				Save(ctx)
-			if err != nil {
-				return fmt.Errorf("fulfillment.CARD_CREATE_FAILED: %w", err)
-			}
-
-			// 交付记录
-			token := randomToken()
-			_, err = client.OrderDelivery.Create().
-				SetOrderID(o.ID).
-				SetItemID(0).
-				SetCardID(c.ID).
-				SetDeliveryTokenHash(hashToken(token)).
-				SetDeliveredMode(orderdelivery.DeliveredModeStatus).
-				SetDeliveredBy(adminID).
-				SetFetchCount(0).
-				SetDeliveredAt(time.Now().UTC()).
-				Save(ctx)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	// 物流模式（logistics JSON）
-	if logisticsNo != "" {
-		_, err = client.OrderDelivery.Create().
-			SetOrderID(o.ID).
-			SetItemID(0).
-			SetCardID(0).
-			SetDeliveryTokenHash(hashToken(randomToken())).
-			SetDeliveredMode(orderdelivery.DeliveredModeStatus).
-			SetDeliveredBy(adminID).
-			SetLogistics(map[string]any{"tracking_no": logisticsNo, "remark": remark}).
-			SetFetchCount(0).
-			SetDeliveredAt(time.Now().UTC()).
-			Save(ctx)
-		if err != nil {
-			return err
-		}
-	}
-
-	// 更新订单状态
-	_, err = client.Order.Update().
-		Where(order.ID(o.ID)).
-		SetStatus(order.StatusDelivered).
-		SetVersion(o.Version + 1).
-		Save(ctx)
-	if err != nil {
-		return err
-	}
-	_, _ = client.OrderStatusEvent.Create().
-		SetOrderID(o.ID).
-		SetFromStatus(string(o.Status)).
-		SetToStatus(string(order.StatusDelivered)).
-		SetEvent("delivered").
-		SetOperator("admin").
-		SetOperatorID(adminID).
-		SetReason(remark).
-		Save(ctx)
-
-	return nil
 }
 
 // ProductNames 批量商品名（待发货面板展示用；缺失商品返回空串由调用方回落 #id）。
@@ -532,7 +384,7 @@ func (r *DeliveryRepoImpl) ProductNames(ctx context.Context, ids []uint64) (map[
 // ListPending 待人工发货列表（含子项——面板展示商品名/数量）。
 func (r *DeliveryRepoImpl) ListPending(ctx context.Context, page, size int) ([]*ent.Order, error) {
 	return data.Client(ctx, r.data).Order.Query().
-		Where(order.StatusEQ(order.StatusPaid)).
+		Where(order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered)).
 		WithItems().
 		Order(ent.Desc(order.FieldID)).
 		Offset((page - 1) * size).Limit(size).
@@ -588,10 +440,42 @@ func hashToken(t string) string {
 //
 // 幂等：同 order_item 已交付直接返回（procurement 侧也以采购单状态机兜底）。
 func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []port.UpstreamDeliveryItem) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		return r.attachUpstreamDelivery(ctx, orderID, itemID, productID, items)
+	})
+}
+
+func (r *DeliveryRepoImpl) attachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []port.UpstreamDeliveryItem) error {
 	client := data.Client(ctx, r.data)
 
 	// 幂等：该 order_item 已有上游交付记录（card_id 关联）→ 直接返回
 	exists, err := client.OrderDelivery.Query().
+		Where(orderdelivery.ItemID(itemID)).
+		Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+
+	o, err := client.Order.Get(ctx, orderID)
+	if err != nil {
+		return err
+	}
+	oi, err := client.OrderItem.Get(ctx, itemID)
+	if err != nil {
+		return err
+	}
+	if oi.OrderID != orderID || oi.ProductID != productID || len(items) == 0 {
+		return fmt.Errorf("fulfillment.INVALID_UPSTREAM_DELIVERY")
+	}
+	if err := r.lockDeliveryOrder(ctx, o); err != nil {
+		return err
+	}
+
+	// 幂等：该 order_item 已有上游交付记录（card_id 关联）→ 直接返回
+	exists, err = client.OrderDelivery.Query().
 		Where(orderdelivery.ItemID(itemID)).
 		Exist(ctx)
 	if err != nil {
@@ -606,7 +490,8 @@ func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, 
 		// 上游卡密以「已用卡」形态入库（不进入可售库存池；防超卖语义不受影响）
 		c, err := client.Card.Create().
 			SetProductID(productID).
-			SetSubsiteID(0).
+			SetSubsiteID(o.SubsiteID).
+			SetSkuID(oi.SkuID).
 			SetContent(it.SealedContent).
 			SetContentHash(it.ContentHash).
 			SetStatus(card.StatusUsed).
@@ -632,35 +517,5 @@ func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, 
 		}
 	}
 
-	// 到卡推进终态：全部上游项已交付 → delivered（FulfillOrder 曾把含上游项的
-	// 订单提前标 delivered，本方法此前不推进状态——上游到卡前后状态口径由
-	// 此收口；paid/fulfilling/partially_delivered → delivered，幂等）
-	ups, err := client.OrderItem.Query().Where(orderitem.OrderID(orderID)).All(ctx)
-	if err != nil {
-		return err
-	}
-	allAttached := true
-	for _, it := range ups {
-		if it.FulfillmentType != orderitem.FulfillmentTypeUpstream {
-			continue
-		}
-		ok, err := client.OrderDelivery.Query().Where(orderdelivery.ItemID(it.ID)).Exist(ctx)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			allAttached = false
-			break
-		}
-	}
-	if allAttached {
-		if _, err := client.Order.Update().
-			Where(order.ID(orderID),
-				order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered)).
-			SetStatus(order.StatusDelivered).
-			Save(ctx); err != nil {
-			return fmt.Errorf("fulfillment.UPSTREAM_STATUS_FAILED: %w", err)
-		}
-	}
-	return nil
+	return r.updateDeliveryProgress(ctx, o, "system", 0, "上游交付")
 }

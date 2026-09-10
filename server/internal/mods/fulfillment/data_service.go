@@ -126,7 +126,7 @@ func (s *AdminFulfillmentService) ManualDeliver(ctx context.Context, req *adminv
 	if claims != nil {
 		adminID = claims.Subject
 	}
-	if err := s.repo.ManualDeliver(ctx, req.GetOrderNo(), req.GetContent(), req.GetLogisticsNo(), req.GetRemark(), adminID); err != nil {
+	if err := s.repo.ManualDeliver(ctx, req.GetOrderNo(), req.GetContent(), req.GetLogisticsNo(), req.GetRemark(), adminID, req.GetOrderItemId()); err != nil {
 		return nil, errors.InternalServer("fulfillment.DELIVER_FAILED", "交付失败: "+err.Error())
 	}
 	return &emptypb.Empty{}, nil
@@ -184,6 +184,9 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 // 即删模式卡密已物理删除）。
 func (s *AdminFulfillmentService) decryptDelivery(ctx context.Context, d *ent.OrderDelivery) string {
 	client := data.Client(ctx, s.data)
+	if tracking, ok := d.Logistics["tracking_no"].(string); ok && tracking != "" {
+		return "物流单号：" + tracking
+	}
 	if d.DeliveredMode == orderdelivery.DeliveredModeDirect && d.CardID == 0 {
 		var productID uint64
 		if d.ItemID > 0 {

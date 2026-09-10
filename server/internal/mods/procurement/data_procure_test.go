@@ -95,7 +95,7 @@ func (f *fakeGW) Query(_ context.Context, _ uint64, _ string) (*supplyport.Purch
 	return f.queryRes, f.queryErr
 }
 func (f *fakeGW) CheckStock(_ context.Context, _ uint64, _, _ string) (int32, error) { return 10, nil }
-func (f *fakeGW) Refund(_ context.Context, _ uint64, _ string) error              { return nil }
+func (f *fakeGW) Refund(_ context.Context, _ uint64, _ string) error                 { return nil }
 func (f *fakeGW) VerifyUpstreamCallback(_ context.Context, _ uint64, _ *supplyport.UpstreamCallbackAuth) (*supplyport.UpstreamCallbackResult, error) {
 	return nil, supplyport.ErrCallbackNotSupported // 测试桩：回调通道不参与断言
 }
@@ -338,5 +338,27 @@ func TestPollBackoff(t *testing.T) {
 	po, _ = repo.Get(ctx, po.ID)
 	if po.Status != procurementorder.StatusPolling {
 		t.Fatalf("耗尽应移交巡检(polling): %s", po.Status)
+	}
+}
+
+func TestBalanceFailureRequiresManualDelivery(t *testing.T) {
+	repo, d := newProcureTestData(t)
+	ctx := context.Background()
+	_, itemID := seedOrderItem(t, d)
+	po, err := repo.CreatePending(ctx, itemID, 1, "P1", 1, "auto_refund", "BALANCE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	refund := &fakeRefund{}
+	svc := &ProcureService{repo: repo, refund: refund, log: slog.Default()}
+	if err := svc.handleSubmitError(ctx, po.ID, supplyport.ErrUpstreamBalance); err != nil {
+		t.Fatal(err)
+	}
+	got, err := repo.Get(ctx, po.ID)
+	if err != nil || got.Status != "manual" || got.LastError == "" {
+		t.Fatalf("not actionable: %#v %v", got, err)
+	}
+	if refund.calls != 0 {
+		t.Fatal("merchant balance failure refunded the customer automatically")
 	}
 }

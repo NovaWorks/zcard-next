@@ -201,6 +201,7 @@ type ManualDeliverRequest struct {
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`                            // 卡密内容（多行，每行一条）
 	LogisticsNo   string                 `protobuf:"bytes,3,opt,name=logistics_no,json=logisticsNo,proto3" json:"logistics_no,omitempty"` // 物流单号（与 content 二选一）
 	Remark        string                 `protobuf:"bytes,4,opt,name=remark,proto3" json:"remark,omitempty"`
+	OrderItemId   uint64                 `protobuf:"varint,5,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"` // 多商品订单必须指定补发商品项
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -261,6 +262,13 @@ func (x *ManualDeliverRequest) GetRemark() string {
 		return x.Remark
 	}
 	return ""
+}
+
+func (x *ManualDeliverRequest) GetOrderItemId() uint64 {
+	if x != nil {
+		return x.OrderItemId
+	}
+	return 0
 }
 
 type ListDeliveriesRequest struct {
@@ -518,12 +526,13 @@ const file_admin_v1_fulfillment_proto_rawDesc = "" +
 	"\fproduct_name\x18\x03 \x01(\tR\vproductName\x12\x1a\n" +
 	"\bquantity\x18\x04 \x01(\x05R\bquantity\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\x03R\tcreatedAt\"\x8b\x01\n" +
+	"created_at\x18\x05 \x01(\x03R\tcreatedAt\"\xaf\x01\n" +
 	"\x14ManualDeliverRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12!\n" +
 	"\flogistics_no\x18\x03 \x01(\tR\vlogisticsNo\x12\x16\n" +
-	"\x06remark\x18\x04 \x01(\tR\x06remark\"\x87\x01\n" +
+	"\x06remark\x18\x04 \x01(\tR\x06remark\x12\"\n" +
+	"\rorder_item_id\x18\x05 \x01(\x04R\vorderItemId\"\x87\x01\n" +
 	"\x15ListDeliveriesRequest\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +

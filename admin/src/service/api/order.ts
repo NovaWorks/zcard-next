@@ -50,7 +50,7 @@ export function fetchPendingDeliveries(page = 1, pageSize = 20) {
   return request({ url: "/api/v1/admin/fulfillment/pending", params: { page, page_size: pageSize } });
 }
 
-export function manualDeliver(orderNo: string, data: { content?: string; logistics_no?: string; remark?: string }) {
+export function manualDeliver(orderNo: string, data: { order_item_id?: number; content?: string; logistics_no?: string; remark?: string }) {
   return request({ url: `/api/v1/admin/fulfillment/${orderNo}/deliver`, method: "post", data });
 }
 

@@ -49,6 +49,7 @@ message ManualDeliverRequest {
   string content = 2; // 卡密内容（多行，每行一条）
   string logistics_no = 3; // 物流单号（与 content 二选一）
   string remark = 4;
+  uint64 order_item_id = 5; // 多商品订单必须指定补发商品项
 }
 
 message ListDeliveriesRequest {

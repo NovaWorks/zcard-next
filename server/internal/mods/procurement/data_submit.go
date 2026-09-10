@@ -212,6 +212,13 @@ func (s *ProcureService) handleSubmitError(ctx context.Context, poID uint64, err
 		})
 		return nil
 	}
+	if errors.Is(err, supplyport.ErrUpstreamBalance) {
+		if e := s.repo.MarkManual(ctx, poID, "上游账户余额不足，等待管理员补卡或核实后退款"); e != nil {
+			return e
+		}
+		s.publish(ctx, events.ProcurementFailed, poID, map[string]any{"procurement_id": poID, "reason": "上游账户余额不足", "strategy": "manual_balance"})
+		return nil
+	}
 	permanent := errors.Is(err, supplyport.ErrUpstreamDeleted) ||
 		errors.Is(err, supplyport.ErrUpstreamUnavailable) ||
 		errors.Is(err, supplyport.ErrUpstreamBalance) ||

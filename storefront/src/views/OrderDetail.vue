@@ -2,12 +2,15 @@
   <div class="order-detail">
     <!-- 页头：返回 + 标题 -->
     <div class="od-head">
-      <router-link class="od-back" to="/member?tab=orders">← 返回订单列表</router-link>
+      <router-link class="od-back" :to="isLoggedIn ? '/member?tab=orders' : '/fetch'">← {{ isLoggedIn ? '返回订单列表' : '取货查询' }}</router-link>
       <h2 class="od-title">订单详情</h2>
     </div>
 
     <div v-if="loading" class="card muted" style="padding: 48px; text-align: center;">加载中…</div>
-    <div v-else-if="error" class="card error" style="padding: 48px; text-align: center;">{{ error }}</div>
+    <div v-else-if="error" class="card" style="padding: 24px;">
+      <p class="error">{{ error }}</p>
+      <form @submit.prevent="loadOrder"><label>下单时的查询密码<input v-model="password" class="input" type="password" autocomplete="off" /></label><button class="btn" type="submit">查询订单</button></form>
+    </div>
 
     <template v-else-if="order">
       <!-- 状态条：状态徽章 + 订单号 + 下单时间（铺满全宽） -->
@@ -19,6 +22,10 @@
         </div>
       </div>
 
+      <div v-if="['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
+        <p>已付款，{{ order.status === 'partially_delivered' ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服补发。</p>
+        <button class="btn secondary" @click="loadOrder">刷新订单状态</button>
+      </div>
       <div class="od-body">
         <!-- 左列：商品清单（grid 行式：PC 四列对齐表头；移动端每行两行块状——大厂订单详情同构） -->
         <div class="card od-items">
@@ -54,12 +61,12 @@
                 :to="`/fetch?order_no=${order.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
               >取货</router-link>
-              <button class="btn secondary od-action-btn" v-if="order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
+              <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
             </div>
           </div>
         </div>
       </div>
-      <OrderReview :order-no="orderNo" />
+      <OrderReview v-if="isLoggedIn" :order-no="orderNo" />
     </template>
   </div>
 </template>
@@ -67,30 +74,35 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { getOrder, cancelMyOrder, type OrderDetail } from '@/api';
+import { getOrder, getOrderPassword, rememberOrderPassword, cancelMyOrder, type OrderDetail } from '@/api';
 import OrderReview from '@/components/OrderReview.vue';
-import { formatMoney } from '@/api/client';
+import { getToken, formatMoney } from '@/api/client';
 
 const route = useRoute();
 const orderNo = String(route.params.orderNo || '');
+const password = ref(getOrderPassword(orderNo));
+const isLoggedIn = !!getToken();
 const loading = ref(false);
 const error = ref('');
 const order = ref<OrderDetail | null>(null);
 
-onMounted(async () => {
+onMounted(loadOrder);
+async function loadOrder() {
   loading.value = true;
-  const { data, error: err } = await getOrder(orderNo).catch(() => ({ data: null, error: '订单不存在或无权查看' }));
+  const { data, error: err } = await getOrder(orderNo, password.value || undefined).catch(() => ({ data: null, error: '订单不存在或无权查看' }));
   loading.value = false;
   if (err) { error.value = err; return; }
   order.value = data;
-});
+  error.value = '';
+  if (data) rememberOrderPassword(orderNo, password.value);
+}
 
 async function cancelOrder() {
   if (!confirm(`确认取消订单 ${orderNo}？`)) return;
   const { error: err } = await cancelMyOrder(orderNo);
   if (err) { error.value = err; return; }
   // 重新加载：状态变 canceled 后按钮消失
-  const { data } = await getOrder(orderNo).catch(() => ({ data: null }));
+  const { data } = await getOrder(orderNo, password.value || undefined).catch(() => ({ data: null }));
   order.value = data;
 }
 

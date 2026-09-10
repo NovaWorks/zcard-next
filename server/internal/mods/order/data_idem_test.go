@@ -213,3 +213,23 @@ func TestMyOrdersAndOwnerFetch(t *testing.T) {
 		t.Fatal("非本人取消应拒绝")
 	}
 }
+
+func TestGuestOrderRequiresCorrectPassword(t *testing.T) {
+	_, uc, _ := newIdemEnv(t)
+	ctx := context.Background()
+	o, err := uc.CreateOrder(ctx, CreateOrderInput{GuestContact: "guest@example.test", QueryPassword: "secret", Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := NewStoreOrderService(uc, nil)
+	for _, pwd := range []string{"", "wrong", "secret"} {
+		got, err := svc.GetOrder(ctx, &storefrontv1.GetOrderRequest{OrderNo: o.OrderNo, QueryPassword: pwd})
+		if pwd == "secret" {
+			if err != nil || got.OrderNo != o.OrderNo {
+				t.Fatalf("guest denied: %v", err)
+			}
+		} else if err == nil {
+			t.Fatal("wrong password disclosed order")
+		}
+	}
+}
