@@ -27,6 +27,7 @@ type GroupDef struct {
 
 // groups 全部分组目录（ 清裁）。
 var groups = map[string]*GroupDef{
+	"ticket": {Name: "ticket", Desc: "工单", Labels: map[string]string{"urgent_fee": "加急费（分，0 为免费）"}, Defaults: map[string]any{"urgent_fee": 0}},
 	"site": {
 		Name: "site", Desc: "站点基础",
 		Labels: map[string]string{

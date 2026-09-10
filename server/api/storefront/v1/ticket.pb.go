@@ -472,11 +472,14 @@ func (x *TicketMessage) GetCreatedAt() int64 {
 }
 
 type GetTicketReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Ticket        *Ticket                `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
-	Messages      []*TicketMessage       `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Ticket          *Ticket                `protobuf:"bytes,1,opt,name=ticket,proto3" json:"ticket,omitempty"`
+	Messages        []*TicketMessage       `protobuf:"bytes,2,rep,name=messages,proto3" json:"messages,omitempty"`
+	UrgentAvailable bool                   `protobuf:"varint,3,opt,name=urgent_available,json=urgentAvailable,proto3" json:"urgent_available,omitempty"`
+	UrgentFeeCents  int64                  `protobuf:"varint,4,opt,name=urgent_fee_cents,json=urgentFeeCents,proto3" json:"urgent_fee_cents,omitempty"`
+	UrgentError     string                 `protobuf:"bytes,5,opt,name=urgent_error,json=urgentError,proto3" json:"urgent_error,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetTicketReply) Reset() {
@@ -521,6 +524,27 @@ func (x *GetTicketReply) GetMessages() []*TicketMessage {
 		return x.Messages
 	}
 	return nil
+}
+
+func (x *GetTicketReply) GetUrgentAvailable() bool {
+	if x != nil {
+		return x.UrgentAvailable
+	}
+	return false
+}
+
+func (x *GetTicketReply) GetUrgentFeeCents() int64 {
+	if x != nil {
+		return x.UrgentFeeCents
+	}
+	return 0
+}
+
+func (x *GetTicketReply) GetUrgentError() string {
+	if x != nil {
+		return x.UrgentError
+	}
+	return ""
 }
 
 type ReplyTicketRequest struct {
@@ -636,10 +660,11 @@ func (x *RateTicketRequest) GetRating() int32 {
 }
 
 type PayUrgentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TicketNo      string                 `protobuf:"bytes,1,opt,name=ticket_no,json=ticketNo,proto3" json:"ticket_no,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	TicketNo         string                 `protobuf:"bytes,1,opt,name=ticket_no,json=ticketNo,proto3" json:"ticket_no,omitempty"`
+	ExpectedFeeCents *int64                 `protobuf:"varint,2,opt,name=expected_fee_cents,json=expectedFeeCents,proto3,oneof" json:"expected_fee_cents,omitempty"` // 用户已确认的报价；缺失或变价拒绝扣费
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *PayUrgentRequest) Reset() {
@@ -679,11 +704,19 @@ func (x *PayUrgentRequest) GetTicketNo() string {
 	return ""
 }
 
+func (x *PayUrgentRequest) GetExpectedFeeCents() int64 {
+	if x != nil && x.ExpectedFeeCents != nil {
+		return *x.ExpectedFeeCents
+	}
+	return 0
+}
+
 type PayUrgentReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Paid          bool                   `protobuf:"varint,1,opt,name=paid,proto3" json:"paid,omitempty"`
 	FeeCents      int64                  `protobuf:"varint,2,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"` // 实扣（分）
 	Error         string                 `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`                        // 余额不足等
+	AlreadyUrgent bool                   `protobuf:"varint,4,opt,name=already_urgent,json=alreadyUrgent,proto3" json:"already_urgent,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -739,6 +772,13 @@ func (x *PayUrgentReply) GetError() string {
 	return ""
 }
 
+func (x *PayUrgentReply) GetAlreadyUrgent() bool {
+	if x != nil {
+		return x.AlreadyUrgent
+	}
+	return false
+}
+
 var File_storefront_v1_ticket_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_ticket_proto_rawDesc = "" +
@@ -785,23 +825,29 @@ const file_storefront_v1_ticket_proto_rawDesc = "" +
 	"\acontent\x18\x03 \x01(\tR\acontent\x12 \n" +
 	"\vattachments\x18\x04 \x03(\x04R\vattachments\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\x03R\tcreatedAt\"\x8d\x01\n" +
+	"created_at\x18\x05 \x01(\x03R\tcreatedAt\"\x85\x02\n" +
 	"\x0eGetTicketReply\x127\n" +
 	"\x06ticket\x18\x01 \x01(\v2\x1f.zcard.api.storefront.v1.TicketR\x06ticket\x12B\n" +
-	"\bmessages\x18\x02 \x03(\v2&.zcard.api.storefront.v1.TicketMessageR\bmessages\"\x87\x01\n" +
+	"\bmessages\x18\x02 \x03(\v2&.zcard.api.storefront.v1.TicketMessageR\bmessages\x12)\n" +
+	"\x10urgent_available\x18\x03 \x01(\bR\x0furgentAvailable\x12(\n" +
+	"\x10urgent_fee_cents\x18\x04 \x01(\x03R\x0eurgentFeeCents\x12!\n" +
+	"\furgent_error\x18\x05 \x01(\tR\vurgentError\"\x87\x01\n" +
 	"\x12ReplyTicketRequest\x12 \n" +
 	"\tticket_no\x18\x01 \x01(\tB\x03\xe0A\x02R\bticketNo\x12\x1d\n" +
 	"\acontent\x18\x02 \x01(\tB\x03\xe0A\x02R\acontent\x120\n" +
 	"\x14attachment_media_ids\x18\x03 \x03(\x04R\x12attachmentMediaIds\"R\n" +
 	"\x11RateTicketRequest\x12 \n" +
 	"\tticket_no\x18\x01 \x01(\tB\x03\xe0A\x02R\bticketNo\x12\x1b\n" +
-	"\x06rating\x18\x02 \x01(\x05B\x03\xe0A\x02R\x06rating\"4\n" +
+	"\x06rating\x18\x02 \x01(\x05B\x03\xe0A\x02R\x06rating\"~\n" +
 	"\x10PayUrgentRequest\x12 \n" +
-	"\tticket_no\x18\x01 \x01(\tB\x03\xe0A\x02R\bticketNo\"W\n" +
+	"\tticket_no\x18\x01 \x01(\tB\x03\xe0A\x02R\bticketNo\x121\n" +
+	"\x12expected_fee_cents\x18\x02 \x01(\x03H\x00R\x10expectedFeeCents\x88\x01\x01B\x15\n" +
+	"\x13_expected_fee_cents\"~\n" +
 	"\x0ePayUrgentReply\x12\x12\n" +
 	"\x04paid\x18\x01 \x01(\bR\x04paid\x12\x1b\n" +
 	"\tfee_cents\x18\x02 \x01(\x03R\bfeeCents\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error2\xf4\x06\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\x12%\n" +
+	"\x0ealready_urgent\x18\x04 \x01(\bR\ralreadyUrgent2\xf4\x06\n" +
 	"\x12StoreTicketService\x12\x84\x01\n" +
 	"\fCreateTicket\x12,.zcard.api.storefront.v1.CreateTicketRequest\x1a\x1f.zcard.api.storefront.v1.Ticket\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/storefront/tickets\x12\x8f\x01\n" +
 	"\rListMyTickets\x12-.zcard.api.storefront.v1.ListMyTicketsRequest\x1a+.zcard.api.storefront.v1.ListMyTicketsReply\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/storefront/tickets\x12\x8f\x01\n" +
@@ -866,6 +912,7 @@ func file_storefront_v1_ticket_proto_init() {
 	if File_storefront_v1_ticket_proto != nil {
 		return
 	}
+	file_storefront_v1_ticket_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -309,11 +309,18 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			// 步骤 4：秒杀（窗口判定 + 限购 + 同锁扣减——Reserve 已成功，同事务）
 			var flashPrice money.Cents
 			if uc.Flash != nil {
-				if fs, err := uc.Flash.Active(txCtx, item.ProductID, item.SkuID); err == nil && fs != nil {
+				fs, err := uc.Flash.Active(txCtx, item.ProductID, item.SkuID)
+				if err != nil {
+					return fmt.Errorf("order.FLASH_LOOKUP_FAILED: %w", err)
+				}
+				if fs != nil {
 					// 限购：窗口内 paid+pending 累计
 					if fs.PerUserLimit > 0 && in.UserID > 0 {
-						if bought, err := uc.Flash.UserPurchasedCount(txCtx, item.ProductID, in.UserID, fs.StartAt); err == nil &&
-							bought+item.Quantity > fs.PerUserLimit {
+						bought, err := uc.Flash.UserPurchasedCount(txCtx, item.ProductID, in.UserID, fs.StartAt)
+						if err != nil {
+							return err
+						}
+						if bought+item.Quantity > fs.PerUserLimit {
 							return couponport.ErrFlashUserLimit
 						}
 					}

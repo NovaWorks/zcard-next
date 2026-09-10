@@ -20,13 +20,17 @@ export interface ReviewItem {
   is_virtual: boolean;
 }
 
+export interface FlashOffer { price_cents: number; end_at: number; remaining: number; per_user_limit: number; }
+
 export interface Sku {
+  flash_sale?: FlashOffer;
   id: number;
   name: string;
   price_cents: number;
 }
 
 export interface Product {
+  flash_sale?: FlashOffer;
   id: number;
   name: string;
   slug: string;
@@ -302,6 +306,7 @@ export function updateProfile(body: { email: string }) {
 // ── 购物车（：CRUD；结算复用 createOrder 多商品一单）──
 
 export interface CartItem {
+  flash_sale?: FlashOffer;
   id: number;
   product_id: number;
   sku_id: number;
@@ -609,7 +614,7 @@ export function listMyTickets(page = 1, pageSize = 10) {
 }
 
 export function getTicket(ticketNo: string) {
-  return api.get<{ ticket: TicketItem; messages: TicketMessage[] }>(`/tickets/${ticketNo}`);
+  return api.get<{ ticket: TicketItem; messages: TicketMessage[]; urgent_available: boolean; urgent_fee_cents: number; urgent_error?: string }>(`/tickets/${ticketNo}`);
 }
 
 export function replyTicket(ticketNo: string, content: string) {
@@ -620,8 +625,8 @@ export function rateTicket(ticketNo: string, satisfaction: number) {
   return api.post<null>(`/tickets/${ticketNo}/rate`, { satisfaction });
 }
 
-export function payUrgent(ticketNo: string) {
-  return api.post<{ paid: boolean; fee_cents: number; error?: string }>(`/tickets/${ticketNo}/urgent`, {});
+export function payUrgent(ticketNo: string, expectedFee: number) {
+  return api.post<{ paid: boolean; fee_cents: number; already_urgent?: boolean; error?: string }>(`/tickets/${ticketNo}/urgent`, { expected_fee_cents: expectedFee });
 }
 
 // ── 优惠券/秒杀（）──
@@ -654,7 +659,7 @@ export interface FlashSale {
 }
 
 export function listFlashSales(upcoming = false) {
-  return api.get<{ flash_sales: FlashSale[] }>('/flash-sales', { upcoming });
+  return api.get<{ items: FlashSale[] }>('/flash-sales', { upcoming });
 }
 
 // ── 分销（）──

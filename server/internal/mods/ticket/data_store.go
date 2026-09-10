@@ -11,10 +11,12 @@ import (
 	"time"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/ticket"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
-	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
+	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/id"
@@ -38,13 +40,13 @@ type StoreTicketService struct {
 	repo     *TicketRepo
 	gen      *id.Generator
 	wallet   walletport.Wallet
-	settings notifyport.SettingsReader
+	settings settingsport.Provider
 	outbox   events.Writer
 	log      *slog.Logger
 }
 
 // NewStoreTicketService 构造。
-func NewStoreTicketService(repo *TicketRepo, gen *id.Generator, wallet walletport.Wallet, settings notifyport.SettingsReader, outbox events.Writer, logger *slog.Logger) *StoreTicketService {
+func NewStoreTicketService(repo *TicketRepo, gen *id.Generator, wallet walletport.Wallet, settings settingsport.Provider, outbox events.Writer, logger *slog.Logger) *StoreTicketService {
 	return &StoreTicketService{repo: repo, gen: gen, wallet: wallet, settings: settings, outbox: outbox, log: logger}
 }
 
@@ -109,6 +111,15 @@ func (s *StoreTicketService) GetTicket(ctx context.Context, req *storefrontv1.Ge
 		return nil, err
 	}
 	reply := &storefrontv1.GetTicketReply{Ticket: toStorePB(t)}
+	if currentUserID(ctx) != 0 && t.UserID == currentUserID(ctx) && (t.Status == ticket.StatusOpen || t.Status == ticket.StatusProcessing) && t.Priority != ticket.PriorityUrgentPaid {
+		fee, err := s.urgentFee(ctx)
+		if err != nil {
+			reply.UrgentError = "暂时无法读取加急费用，请稍后重试"
+		} else {
+			reply.UrgentAvailable = true
+			reply.UrgentFeeCents = fee
+		}
+	}
 	for _, m := range msgs {
 		reply.Messages = append(reply.Messages, toMsgPB(m))
 	}
@@ -149,55 +160,95 @@ func (s *StoreTicketService) RateTicket(ctx context.Context, req *storefrontv1.R
 	return &emptypb.Empty{}, nil
 }
 
-// PayUrgent 付费加急：余额扣费（免费配置直接升）→ urgent_paid + 短 SLA。
+// PayUrgent confirms the quoted fee and commits wallet debit and priority together.
 func (s *StoreTicketService) PayUrgent(ctx context.Context, req *storefrontv1.PayUrgentRequest) (*storefrontv1.PayUrgentReply, error) {
-	t, err := s.assertAccess(ctx, req.GetTicketNo())
+	reply := &storefrontv1.PayUrgentReply{}
+	var upgraded *ent.Ticket
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		t, err := s.assertAccess(ctx, req.GetTicketNo())
+		if err != nil {
+			return err
+		}
+		userID := currentUserID(ctx)
+		if userID == 0 || t.UserID != userID {
+			return errors.New("ticket.UNAUTHORIZED: 请使用工单所属账户登录")
+		}
+		client := data.Client(ctx, s.repo.data)
+		reference := "ticket_urgent:" + t.TicketNo
+		if t.Priority == ticket.PriorityUrgentPaid {
+			entry, err := client.WalletTransaction.Query().Where(wallettransaction.Reference(reference)).Only(ctx)
+			if err != nil && !ent.IsNotFound(err) {
+				return err
+			}
+			if entry != nil {
+				reply.FeeCents = int64(entry.Amount)
+			}
+			reply.Paid, reply.AlreadyUrgent = true, true
+			return nil
+		}
+		if t.Status != ticket.StatusOpen && t.Status != ticket.StatusProcessing {
+			return errors.New("ticket.NOT_ACTIVE: 已解决或关闭的工单不能加急")
+		}
+		fee, err := s.urgentFee(ctx)
+		if err != nil {
+			return fmt.Errorf("ticket.FEE_UNAVAILABLE: 无法读取加急费用: %w", err)
+		}
+		if req.ExpectedFeeCents == nil || req.GetExpectedFeeCents() != fee {
+			return errors.New("ticket.FEE_CHANGED: 请刷新页面后重新确认加急费用")
+		}
+		n, err := client.Ticket.Update().Where(ticket.ID(t.ID), ticket.UserID(userID), ticket.PriorityNEQ(ticket.PriorityUrgentPaid), ticket.StatusIn(ticket.StatusOpen, ticket.StatusProcessing)).
+			SetPriority(ticket.PriorityUrgentPaid).SetSLADueAt(time.Now().UTC().Add(urgentSLAHours * time.Hour)).Save(ctx)
+		if err != nil {
+			return err
+		}
+		if n != 1 {
+			return errors.New("ticket.CONCURRENT_UPDATE: 工单状态已变化，请刷新重试")
+		}
+		if fee > 0 {
+			if s.wallet == nil {
+				return errors.New("ticket.WALLET_UNAVAILABLE")
+			}
+			if err := s.wallet.DebitInTx(ctx, walletport.Entry{UserID: userID, Direction: "out", Type: "ticket_urgent", Amount: money.Cents(fee), Reference: reference}); err != nil {
+				return err
+			}
+		}
+		reply.Paid, reply.FeeCents = true, fee
+		upgraded = t
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if t.Priority == ticket.PriorityUrgentPaid {
-		return &storefrontv1.PayUrgentReply{Paid: true}, nil // 已加急幂等
+	if upgraded != nil {
+		s.publish(ctx, events.TicketReplied, upgraded, map[string]any{"ticket_no": upgraded.TicketNo, "urgent": true})
 	}
-	userID := currentUserID(ctx)
-	if userID == 0 {
-		return nil, errors.New("ticket.UNAUTHORIZED: 游客工单请登录后加急")
-	}
-	fee := s.urgentFee(ctx)
-	if fee > 0 {
-		if s.wallet == nil {
-			return nil, errors.New("ticket.WALLET_UNAVAILABLE")
-		}
-		if err := s.wallet.DebitInTx(ctx, walletport.Entry{
-			UserID: userID, Direction: "out", Type: "ticket_urgent",
-			Amount: money.Cents(fee), Reference: fmt.Sprintf("ticket_urgent:%s", t.TicketNo),
-		}); err != nil {
-			return &storefrontv1.PayUrgentReply{Paid: false, FeeCents: fee, Error: "余额不足，请先充值"}, nil
-		}
-	}
-	// 升级 + 短 SLA（预留位）
-	if err := s.repo.SetPriority(ctx, t.ID, "urgent_paid"); err != nil {
-		return nil, err
-	}
-	sla := time.Now().UTC().Add(time.Duration(urgentSLAHours) * time.Hour)
-	_ = s.repo.SetSLA(ctx, t.ID, sla)
-	s.publish(ctx, events.TicketReplied, t, map[string]any{"ticket_no": t.TicketNo, "urgent": true})
-	return &storefrontv1.PayUrgentReply{Paid: true, FeeCents: fee}, nil
+	return reply, nil
 }
 
-// urgentFee 加急费（settings.ticket.urgent_fee；读取失败 0=免费）。
-func (s *StoreTicketService) urgentFee(ctx context.Context) int64 {
+// Read the scalar settings value strictly, accepting the legacy object shape.
+// Missing configuration defaults to free; a read/parse error must never become free.
+func (s *StoreTicketService) urgentFee(ctx context.Context) (int64, error) {
 	if s.settings == nil {
-		return 0
+		return 0, errors.New("settings unavailable")
 	}
-	raw, err := s.settings.GetJSON(ctx, urgentFeeGroup, urgentFeeKey)
-	if err != nil || len(raw) == 0 {
-		return 0
+	raw, err := s.settings.GetDefault(ctx, urgentFeeGroup, urgentFeeKey, json.RawMessage("0"))
+	if err != nil {
+		return 0, err
 	}
-	var cfg struct {
-		Fee int64 `json:"urgent_fee"`
+	var fee *int64
+	if err = json.Unmarshal(raw, &fee); err != nil {
+		var legacy struct {
+			Fee *int64 `json:"urgent_fee"`
+		}
+		if err = json.Unmarshal(raw, &legacy); err != nil {
+			return 0, err
+		}
+		fee = legacy.Fee
 	}
-	_ = jsonUnmarshalTicket(raw, &cfg)
-	return cfg.Fee
+	if fee == nil || *fee < 0 {
+		return 0, errors.New("invalid urgent fee")
+	}
+	return *fee, nil
 }
 
 // canAccess 归属判定（本人或游客无主单按号访问——游客凭单号+联系方式创建后即持有）。

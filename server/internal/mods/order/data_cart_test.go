@@ -36,7 +36,7 @@ func newCartEnv(t *testing.T) (*StoreCartService, *data.Data) {
 		t.Fatal(err)
 	}
 	d := &data.Data{Client: client, DB: handle, Dialect: db.SQLite}
-	return NewStoreCartService(d, nil, nil, settings.NewRepoImpl(d)), d // pricing/inv nil：快照降级路径不炸
+	return NewStoreCartService(d, nil, nil, settings.NewRepoImpl(d), nil), d // pricing/inv nil：快照降级路径不炸
 }
 
 func userCtx(userID uint64) context.Context {

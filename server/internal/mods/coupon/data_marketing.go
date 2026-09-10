@@ -5,6 +5,7 @@ package coupon
 import (
 	"context"
 	"encoding/json"
+	"entgo.io/ent/dialect/sql"
 	"fmt"
 	"time"
 
@@ -210,52 +211,56 @@ func (r *CouponRepoImpl) ListMyCoupons(ctx context.Context, userID uint64) ([]*e
 
 // Active 生效中秒杀（窗口判定无状态）。
 func (r *CouponRepoImpl) Active(ctx context.Context, productID, skuID uint64) (*port.FlashInfo, error) {
-	now := time.Now().UTC()
-	fs, err := data.Client(ctx, r.data).FlashSale.Query().
-		Where(
-			flashsale.ProductID(productID),
-			flashsale.SkuID(skuID),
-			flashsale.StartAtLTE(now),
-			flashsale.EndAtGTE(now),
-		).
-		Order(ent.Desc(flashsale.FieldID)).
-		First(ctx)
-	if ent.IsNotFound(err) {
-		return nil, nil
-	}
+	rows, err := r.ActiveBatch(ctx, []uint64{productID})
 	if err != nil {
 		return nil, err
 	}
-	return &port.FlashInfo{
-		ID: fs.ID, FlashPrice: money.Cents(fs.FlashPrice),
-		StartAt: fs.StartAt, PerUserLimit: fs.PerUserLimit,
-	}, nil
+	if offer := rows[port.FlashKey{ProductID: productID, SkuID: skuID}]; offer != nil {
+		return offer, nil
+	}
+	return rows[port.FlashKey{ProductID: productID}], nil // Product-wide campaign also applies to its SKUs.
 }
 
-// Consume 同锁扣减（inventory.Reserve 成功后同一事务内；CAS 防超卖：
-// 读 limit/sold → 校验余量 → UPDATE WHERE sold_qty=旧值（乐观锁），
-// affected==0 = 并发竞争/超卖 → 哨兵错误回滚整个下单事务）。
+func (r *CouponRepoImpl) ActiveBatch(ctx context.Context, productIDs []uint64) (map[port.FlashKey]*port.FlashInfo, error) {
+	out := map[port.FlashKey]*port.FlashInfo{}
+	now := time.Now().UTC()
+	for start := 0; start < len(productIDs); start += 500 {
+		end := start + 500
+		if end > len(productIDs) {
+			end = len(productIDs)
+		}
+		rows, err := data.Client(ctx, r.data).FlashSale.Query().Where(flashsale.ProductIDIn(productIDs[start:end]...), flashsale.StartAtLTE(now), flashsale.EndAtGT(now)).Order(ent.Desc(flashsale.FieldID)).All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, fs := range rows {
+			key := port.FlashKey{ProductID: fs.ProductID, SkuID: fs.SkuID}
+			if out[key] != nil {
+				continue
+			}
+			out[key] = &port.FlashInfo{ID: fs.ID, FlashPrice: money.Cents(fs.FlashPrice), StartAt: fs.StartAt, EndAt: fs.EndAt, Remaining: fs.LimitQty - fs.SoldQty, PerUserLimit: fs.PerUserLimit}
+		}
+	}
+	return out, nil
+}
+
+// Consume checks remaining quota and increments sold quantity in one atomic UPDATE.
+// Concurrent buyers cannot oversell or fail just because a previous read became stale.
 func (r *CouponRepoImpl) Consume(ctx context.Context, flashID uint64, qty int32) error {
 	if qty <= 0 {
 		return nil
 	}
-	client := data.Client(ctx, r.data)
-	fs, err := client.FlashSale.Get(ctx, flashID)
-	if err != nil {
-		return err
-	}
-	if fs.SoldQty+qty > fs.LimitQty {
-		return port.ErrFlashSoldOut
-	}
-	affected, err := client.FlashSale.Update().
-		Where(flashsale.ID(flashID), flashsale.SoldQty(fs.SoldQty)).
-		SetSoldQty(fs.SoldQty + qty).
-		Save(ctx)
+	affected, err := data.Client(ctx, r.data).FlashSale.Update().
+		Where(flashsale.ID(flashID), func(s *sql.Selector) {
+			s.Where(sql.P(func(b *sql.Builder) {
+				b.Ident(flashsale.FieldSoldQty).WriteString(" + ").Arg(qty).WriteString(" <= ").Ident(flashsale.FieldLimitQty)
+			}))
+		}).AddSoldQty(qty).Save(ctx)
 	if err != nil {
 		return err
 	}
 	if affected == 0 {
-		return port.ErrFlashSoldOut // 并发竞争：限量被抢空
+		return port.ErrFlashSoldOut
 	}
 	return nil
 }

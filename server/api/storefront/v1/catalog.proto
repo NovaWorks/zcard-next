@@ -71,6 +71,13 @@ message GetProductRequest {
 }
 
 // Product 顾客视角商品（管理字段与成本价绝不下发）。
+message FlashOffer {
+  int64 price_cents = 1;
+  int64 end_at = 2;
+  int32 remaining = 3;
+  int32 per_user_limit = 4;
+}
+
 message Product {
   uint64 id = 1;
   string name = 2;
@@ -101,6 +108,7 @@ message Product {
   string stock_status = 17; // current | stale | unknown
   int64 stock_reference = 18; // 仅供展示的上次库存，不作为购买校验依据
   int64 stock_checked_at = 19; // 上次库存查询时间
+  FlashOffer flash_sale = 20;
 
 }
 
@@ -129,4 +137,5 @@ message Sku {
   uint64 id = 1;
   string name = 2;
   int64 price_cents = 3;
+  FlashOffer flash_sale = 4;
 }

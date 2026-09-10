@@ -99,6 +99,9 @@ message TicketMessage {
 message GetTicketReply {
   Ticket ticket = 1;
   repeated TicketMessage messages = 2;
+  bool urgent_available = 3;
+  int64 urgent_fee_cents = 4;
+  string urgent_error = 5;
 }
 
 message ReplyTicketRequest {
@@ -114,10 +117,12 @@ message RateTicketRequest {
 
 message PayUrgentRequest {
   string ticket_no = 1 [(google.api.field_behavior) = REQUIRED];
+  optional int64 expected_fee_cents = 2; // 用户已确认的报价；缺失或变价拒绝扣费
 }
 
 message PayUrgentReply {
   bool paid = 1;
   int64 fee_cents = 2; // 实扣（分）
   string error = 3; // 余额不足等
+  bool already_urgent = 4;
 }

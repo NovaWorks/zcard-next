@@ -14,7 +14,7 @@
         <div class="pc-name" :title="p.name">{{ p.name }}</div>
         <span v-if="p.is_recommend" class="pc-recommend-tag">推荐</span>
       </div>
-      <div class="pc-price">{{ formatMoney(p.price_cents) }}</div>
+      <div class="pc-price">{{ formatMoney(flash.price(p.price_cents, p.flash_sale)) }}<span v-if="flash.active(p.flash_sale)" class="pc-flash-label">{{ (p.flash_sale?.remaining || 0) > 0 ? '秒杀' : '已抢完' }}</span></div>
       <div v-if="showSales || showStock" class="pc-meta">
         <span v-if="showSales" class="pc-sales">已售 {{ p.sales_count || 0 }}</span>
         <span v-if="showStock && p.stock_visible && p.stock_status === 'stale'" class="pc-stock-reference" :title="stockHint(p)">{{ p.stock_reference === -1 ? '上次库存不限' : `参考库存 ${p.stock_reference ?? 0}` }}</span>
@@ -29,6 +29,8 @@
 
 <script setup lang="ts">
 import type { Product } from '@/api';
+import { useFlashOffers } from '@/composables/flash-offers';
+const flash = useFlashOffers();
 import { formatMoney } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
 function stockValue(p: Product) { return p.stock ?? (p.stock_status === 'unknown' || p.stock_status === 'stale' ? -2 : 0); }
@@ -122,6 +124,7 @@ defineProps<{
   word-break: break-word; /* 不可断长词（连续英文/URL）换行，防横向溢出 */
   overflow-wrap: anywhere;
 }
+.pc-flash-label { display:inline-block; margin-left:5px; padding:1px 4px; font-size:12px; line-height:18px; font-weight:500; color:#b91c1c; background:#fef2f2; border-radius:4px; }
 .pc-price { color: #ff5722; font-size: 18px; font-weight: 700; }
 .pc-meta {
   display: flex;
@@ -170,7 +173,7 @@ defineProps<{
     white-space: normal;
     line-height: 20px;
   }
-  .list-mode .pc-price { grid-column: 1; grid-row: 2; white-space: nowrap; line-height: 22px; }
+  .list-mode .pc-price { grid-column: 1; grid-row: 2; white-space: normal; line-height: 22px; }
   .list-mode .pc-buy {
     grid-column: 2;
     grid-row: 1 / 4;

@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"context"
+	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"sort"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -20,6 +21,7 @@ import (
 // StoreCatalogService 前台目录服务（实现 storefrontv1.StoreCatalogService）。
 type StoreCatalogService struct {
 	stockLookup port.StockLookup
+	flash       couponport.FlashReader
 	storefrontv1.UnimplementedStoreCatalogServiceServer
 	uc *CatalogUsecase
 	// pricer 分站定价（：listing 与 checkout 共用同一 ResolveUnitPrice——1.x 铁律；
@@ -107,6 +109,10 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 	for _, p := range items {
 		ids = append(ids, p.ID)
 	}
+	offers, err := s.flashOffers(ctx, ids)
+	if err != nil {
+		return nil, errors.InternalServer("catalog.FLASH_FAILED", "读取活动价格失败，请重试")
+	}
 	snapshots, _ := s.uc.repo.StockSnapshotBatch(ctx, ids)
 	stocks := map[uint64]int64{}
 	for id, snapshot := range snapshots {
@@ -121,6 +127,7 @@ func (s *StoreCatalogService) ListProducts(ctx context.Context, req *storefrontv
 			}
 		}
 		item := toStorefrontProduct(p, stocks, solds[p.ID])
+		item.FlashSale = toFlashOffer(offers[couponport.FlashKey{ProductID: p.ID}])
 		snapshot, ok := snapshots[p.ID]
 		item.StockStatus = "unknown"
 		if ok {
@@ -166,6 +173,11 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	}
 	stocks, _ := s.uc.repo.StockBatch(ctx, []uint64{p.ID})
 	out := toStorefrontProduct(p, stocks, 0)
+	offers, err := s.flashOffers(ctx, []uint64{p.ID})
+	if err != nil {
+		return nil, errors.InternalServer("catalog.FLASH_FAILED", "读取活动价格失败，请重试")
+	}
+	out.FlashSale = toFlashOffer(offers[couponport.FlashKey{ProductID: p.ID}])
 	if p.UpstreamSourceID != 0 && s.stockLookup != nil {
 		n, err := s.stockLookup.DisplayStock(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
 		if err != nil {
@@ -213,8 +225,12 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 				skuPrice = sp
 			}
 		}
+		offer := offers[couponport.FlashKey{ProductID: p.ID, SkuID: sku.ID}]
+		if offer == nil {
+			offer = offers[couponport.FlashKey{ProductID: p.ID}]
+		}
 		out.Skus = append(out.Skus, &storefrontv1.Sku{
-			Id: sku.ID, Name: sku.Name, PriceCents: int64(skuPrice),
+			Id: sku.ID, Name: sku.Name, PriceCents: int64(skuPrice), FlashSale: toFlashOffer(offer),
 		})
 	}
 	return out, nil
@@ -245,3 +261,17 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 }
 
 func (s *StoreCatalogService) SetStockLookup(lookup port.StockLookup) { s.stockLookup = lookup }
+
+func (s *StoreCatalogService) SetFlashReader(reader couponport.FlashReader) { s.flash = reader }
+func (s *StoreCatalogService) flashOffers(ctx context.Context, ids []uint64) (map[couponport.FlashKey]*couponport.FlashInfo, error) {
+	if s.flash == nil {
+		return nil, nil
+	}
+	return s.flash.ActiveBatch(ctx, ids)
+}
+func toFlashOffer(f *couponport.FlashInfo) *storefrontv1.FlashOffer {
+	if f == nil {
+		return nil
+	}
+	return &storefrontv1.FlashOffer{PriceCents: int64(f.FlashPrice), EndAt: f.EndAt.Unix(), Remaining: f.Remaining, PerUserLimit: f.PerUserLimit}
+}

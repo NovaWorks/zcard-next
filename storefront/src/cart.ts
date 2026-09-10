@@ -3,6 +3,7 @@
 // 登录后自动把本地购物车合并到后端并清空本地。
 
 import { ref } from 'vue';
+import type { FlashOffer } from './api';
 import { listCart, addCart, updateCart, removeCart } from './api';
 import { api, getToken } from './api/client';
 
@@ -83,6 +84,7 @@ export function inCart(productId: number, skuId = 0) {
 }
 
 interface GuestCartItem {
+  flash_sale?: FlashOffer;
   id: number;
   product_id: number;
   sku_id: number;
@@ -134,7 +136,7 @@ export async function loadCart() {
 }
 
 /** 加购（登录 → 后端；游客/令牌失效 → 本地，同商品同 SKU 合并数量）；成功后同步角标 */
-export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number }, quantity: number, skuId = 0) {
+export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; flash_sale?: FlashOffer }, quantity: number, skuId = 0) {
   if (!(await refreshCartSetting(true))) return { data: null, error: unavailableMessage() };
   if ((product.stock ?? 0) === 0) return { data: null, error: '暂时缺货' };
   if ((product.stock ?? 0) < -1) return { data: null, error: '库存待确认，请稍后重试' };
@@ -155,11 +157,13 @@ export async function addToCart(product: { id: number; name: string; price_cents
 }
 
 /** 游客本地加购（同商品同 SKU 合并数量） */
-function addGuestLocal(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number }, quantity: number, skuId: number) {
+function addGuestLocal(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; flash_sale?: FlashOffer }, quantity: number, skuId: number) {
   const items = guestItems();
   const existing = items.find((i) => i.product_id === product.id && (i.sku_id || 0) === skuId);
   if (existing) {
     existing.quantity = Math.min(99, existing.quantity + quantity);
+    existing.price_cents=product.price_cents;
+    existing.flash_sale=product.flash_sale;
   } else {
     items.push({
       id: Date.now(),
@@ -168,6 +172,7 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
       quantity,
       product_name: product.name,
       price_cents: product.price_cents,
+      flash_sale: product.flash_sale,
       stock: product.stock ?? 0, // proto3 省略零库存，不能转换成不限。
       points_only: !!product.points_required,
       points_required: product.points_required || 0,

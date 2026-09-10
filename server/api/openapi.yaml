@@ -10953,6 +10953,8 @@ components:
                     type: string
                 valid:
                     type: boolean
+                flashSale:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.FlashOffer'
                 addedAt:
                     type: string
                 productCover:
@@ -11246,6 +11248,20 @@ components:
                     type: string
                 queryPassword:
                     type: string
+        zcard.api.storefront.v1.FlashOffer:
+            type: object
+            properties:
+                priceCents:
+                    type: string
+                endAt:
+                    type: string
+                remaining:
+                    type: integer
+                    format: int32
+                perUserLimit:
+                    type: integer
+                    format: int32
+            description: Product 顾客视角商品（管理字段与成本价绝不下发）。
         zcard.api.storefront.v1.ForgotPasswordReply:
             type: object
             properties: {}
@@ -11293,6 +11309,12 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.TicketMessage'
+                urgentAvailable:
+                    type: boolean
+                urgentFeeCents:
+                    type: string
+                urgentError:
+                    type: string
         zcard.api.storefront.v1.GuestOrderItem:
             type: object
             properties:
@@ -11821,12 +11843,16 @@ components:
                     type: string
                 error:
                     type: string
+                alreadyUrgent:
+                    type: boolean
         zcard.api.storefront.v1.PayUrgentRequest:
             required:
                 - ticketNo
             type: object
             properties:
                 ticketNo:
+                    type: string
+                expectedFeeCents:
                     type: string
         zcard.api.storefront.v1.Product:
             type: object
@@ -11885,7 +11911,8 @@ components:
                     type: string
                 stockCheckedAt:
                     type: string
-            description: Product 顾客视角商品（管理字段与成本价绝不下发）。
+                flashSale:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.FlashOffer'
         zcard.api.storefront.v1.ProductControl:
             type: object
             properties:
@@ -12107,6 +12134,8 @@ components:
                     type: string
                 priceCents:
                     type: string
+                flashSale:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.FlashOffer'
             description: Sku 顾客视角多规格（只下发 id/名称/价格）。
         zcard.api.storefront.v1.StoreBanner:
             type: object

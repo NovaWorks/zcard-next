@@ -28,7 +28,16 @@ type CouponResolver interface {
 }
 
 // FlashInfo 生效秒杀（管线步骤 4 输入）。
+type FlashKey struct{ ProductID, SkuID uint64 }
+
+// FlashReader batches display offers without consuming campaign quantities.
+type FlashReader interface {
+	ActiveBatch(context.Context, []uint64) (map[FlashKey]*FlashInfo, error)
+}
+
 type FlashInfo struct {
+	EndAt        time.Time
+	Remaining    int32
 	ID           uint64
 	FlashPrice   money.Cents
 	StartAt      time.Time // 限购累计窗口起点

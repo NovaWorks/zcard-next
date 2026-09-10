@@ -75,6 +75,12 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 // validateSettingValue 设置值业务校验（单键/批量共用）：
 // base_currency 必须存在、模板键必须在清单内。
 func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "ticket" && key == "urgent_fee" {
+		var fee *int64
+		if err := json.Unmarshal(value, &fee); err != nil || fee == nil || *fee < 0 {
+			return errors.BadRequest("settings.INVALID_VALUE", "工单加急费须为非负整数，单位分；0 为免费")
+		}
+	}
 	if group == "site" && key == "admin_path" {
 		var p string
 		if err := json.Unmarshal(value, &p); err != nil || strings.TrimSpace(string(value)) == "null" {

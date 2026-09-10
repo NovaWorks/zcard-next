@@ -47,7 +47,7 @@
             <div class="cart-item-sku muted" v-if="it.sku_id">SKU #{{ it.sku_id }}</div>
           </div>
           <div class="cart-item-price">
-            <div class="cart-price">{{ formatMoney(it.price_cents) }}</div>
+            <div class="cart-price">{{ formatMoney(flash.price(it.price_cents, it.flash_sale)) }}</div>
             <div class="muted">单价</div>
           </div>
           <div class="cart-item-qty">
@@ -57,7 +57,7 @@
             <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @click="changeQty(it, it.quantity + 1)">＋</button>
           </div>
           <div class="cart-item-subtotal">
-            <div class="cart-subtotal">{{ formatMoney(it.price_cents * it.quantity) }}</div>
+            <div class="cart-subtotal">{{ formatMoney(flash.price(it.price_cents, it.flash_sale) * it.quantity) }}</div>
             <div class="muted">小计</div>
           </div>
           <button class="cart-item-del" @click="remove(it.id)" title="删除">✕</button>
@@ -121,6 +121,8 @@
 </template>
 
 <script setup lang="ts">
+import { useFlashOffers } from '@/composables/flash-offers';
+const flash=useFlashOffers();
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -156,10 +158,10 @@ const controlAnswers = ref<Record<string, string>>({});
 const controlsNeeded = ref<{ productId: number; name: string; controls: ProductControl[] }[]>([]);
 
 // 自营/对接都按服务端各自库存判断；游客快照仍由后端下单复核。
-const validItems = computed(() => items.value.filter((i) => i.valid && (i.stock ?? 0) !== 0 && i.stock >= -1));
+const validItems = computed(() => items.value.filter((i) => i.valid && !(flash.active(i.flash_sale) && (i.flash_sale?.remaining || 0) <= 0) && (i.stock ?? 0) !== 0 && i.stock >= -1));
 const allSelected = computed(() => validItems.value.length > 0 && selected.value.length === validItems.value.length);
 const selectedItems = computed(() => validItems.value.filter((i) => selected.value.includes(i.id)));
-const rawTotal = computed(() => selectedItems.value.reduce((s, i) => s + i.price_cents * i.quantity, 0));
+const rawTotal = computed(() => selectedItems.value.reduce((s, i) => s + flash.price(i.price_cents, i.flash_sale) * i.quantity, 0));
 const controlsComplete = computed(() =>
   controlsNeeded.value.every((g) => g.controls.every((c) => (controlAnswers.value[String(c.id)] || '').trim() !== ''))
 );

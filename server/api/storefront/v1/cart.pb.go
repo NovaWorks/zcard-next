@@ -186,14 +186,15 @@ type CartItem struct {
 	SkuId     uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
 	Quantity  int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	// 商品快照（联查现值——结算前端展示用）
-	ProductName    string `protobuf:"bytes,5,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
-	PriceCents     int64  `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"` // 现价（SKU 解析后）
-	Stock          int64  `protobuf:"varint,7,opt,name=stock,proto3" json:"stock,omitempty"`                             // 可用库存（-1 不限）
-	PointsOnly     bool   `protobuf:"varint,8,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"` // 积分兑换商品（不可混合结算）
-	PointsRequired int64  `protobuf:"varint,9,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
-	Valid          bool   `protobuf:"varint,10,opt,name=valid,proto3" json:"valid,omitempty"` // false=已下架/隐藏（列表打标不可选）
-	AddedAt        int64  `protobuf:"varint,11,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`
-	ProductCover   string `protobuf:"bytes,12,opt,name=product_cover,json=productCover,proto3" json:"product_cover,omitempty"` // 商品封面（无图时前端显示默认占位）
+	ProductName    string      `protobuf:"bytes,5,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	PriceCents     int64       `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"` // 现价（SKU 解析后）
+	Stock          int64       `protobuf:"varint,7,opt,name=stock,proto3" json:"stock,omitempty"`                             // 可用库存（-1 不限）
+	PointsOnly     bool        `protobuf:"varint,8,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"` // 积分兑换商品（不可混合结算）
+	PointsRequired int64       `protobuf:"varint,9,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
+	Valid          bool        `protobuf:"varint,10,opt,name=valid,proto3" json:"valid,omitempty"` // false=已下架/隐藏（列表打标不可选）
+	FlashSale      *FlashOffer `protobuf:"bytes,13,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
+	AddedAt        int64       `protobuf:"varint,11,opt,name=added_at,json=addedAt,proto3" json:"added_at,omitempty"`
+	ProductCover   string      `protobuf:"bytes,12,opt,name=product_cover,json=productCover,proto3" json:"product_cover,omitempty"` // 商品封面（无图时前端显示默认占位）
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -298,6 +299,13 @@ func (x *CartItem) GetValid() bool {
 	return false
 }
 
+func (x *CartItem) GetFlashSale() *FlashOffer {
+	if x != nil {
+		return x.FlashSale
+	}
+	return nil
+}
+
 func (x *CartItem) GetAddedAt() int64 {
 	if x != nil {
 		return x.AddedAt
@@ -368,7 +376,7 @@ var File_storefront_v1_cart_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\n" +
-	"\x18storefront/v1/cart.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"p\n" +
+	"\x18storefront/v1/cart.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bstorefront/v1/catalog.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"p\n" +
 	"\x12AddCartItemRequest\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
@@ -378,7 +386,7 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1f\n" +
 	"\bquantity\x18\x02 \x01(\x05B\x03\xe0A\x02R\bquantity\",\n" +
 	"\x15RemoveCartItemRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xe6\x02\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xaa\x03\n" +
 	"\bCartItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -393,7 +401,9 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"pointsOnly\x12'\n" +
 	"\x0fpoints_required\x18\t \x01(\x03R\x0epointsRequired\x12\x14\n" +
 	"\x05valid\x18\n" +
-	" \x01(\bR\x05valid\x12\x19\n" +
+	" \x01(\bR\x05valid\x12B\n" +
+	"\n" +
+	"flash_sale\x18\r \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\x12\x19\n" +
 	"\badded_at\x18\v \x01(\x03R\aaddedAt\x12#\n" +
 	"\rproduct_cover\x18\f \x01(\tR\fproductCover\"^\n" +
 	"\rListCartReply\x127\n" +
@@ -424,23 +434,25 @@ var file_storefront_v1_cart_proto_goTypes = []any{
 	(*RemoveCartItemRequest)(nil), // 2: zcard.api.storefront.v1.RemoveCartItemRequest
 	(*CartItem)(nil),              // 3: zcard.api.storefront.v1.CartItem
 	(*ListCartReply)(nil),         // 4: zcard.api.storefront.v1.ListCartReply
-	(*emptypb.Empty)(nil),         // 5: google.protobuf.Empty
+	(*FlashOffer)(nil),            // 5: zcard.api.storefront.v1.FlashOffer
+	(*emptypb.Empty)(nil),         // 6: google.protobuf.Empty
 }
 var file_storefront_v1_cart_proto_depIdxs = []int32{
-	3, // 0: zcard.api.storefront.v1.ListCartReply.items:type_name -> zcard.api.storefront.v1.CartItem
-	0, // 1: zcard.api.storefront.v1.StoreCartService.AddCartItem:input_type -> zcard.api.storefront.v1.AddCartItemRequest
-	5, // 2: zcard.api.storefront.v1.StoreCartService.ListCart:input_type -> google.protobuf.Empty
-	1, // 3: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:input_type -> zcard.api.storefront.v1.UpdateCartItemRequest
-	2, // 4: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:input_type -> zcard.api.storefront.v1.RemoveCartItemRequest
-	3, // 5: zcard.api.storefront.v1.StoreCartService.AddCartItem:output_type -> zcard.api.storefront.v1.CartItem
-	4, // 6: zcard.api.storefront.v1.StoreCartService.ListCart:output_type -> zcard.api.storefront.v1.ListCartReply
-	3, // 7: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:output_type -> zcard.api.storefront.v1.CartItem
-	5, // 8: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:output_type -> google.protobuf.Empty
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	5, // 0: zcard.api.storefront.v1.CartItem.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	3, // 1: zcard.api.storefront.v1.ListCartReply.items:type_name -> zcard.api.storefront.v1.CartItem
+	0, // 2: zcard.api.storefront.v1.StoreCartService.AddCartItem:input_type -> zcard.api.storefront.v1.AddCartItemRequest
+	6, // 3: zcard.api.storefront.v1.StoreCartService.ListCart:input_type -> google.protobuf.Empty
+	1, // 4: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:input_type -> zcard.api.storefront.v1.UpdateCartItemRequest
+	2, // 5: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:input_type -> zcard.api.storefront.v1.RemoveCartItemRequest
+	3, // 6: zcard.api.storefront.v1.StoreCartService.AddCartItem:output_type -> zcard.api.storefront.v1.CartItem
+	4, // 7: zcard.api.storefront.v1.StoreCartService.ListCart:output_type -> zcard.api.storefront.v1.ListCartReply
+	3, // 8: zcard.api.storefront.v1.StoreCartService.UpdateCartItem:output_type -> zcard.api.storefront.v1.CartItem
+	6, // 9: zcard.api.storefront.v1.StoreCartService.RemoveCartItem:output_type -> google.protobuf.Empty
+	6, // [6:10] is the sub-list for method output_type
+	2, // [2:6] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_cart_proto_init() }
@@ -448,6 +460,7 @@ func file_storefront_v1_cart_proto_init() {
 	if File_storefront_v1_cart_proto != nil {
 		return
 	}
+	file_storefront_v1_catalog_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

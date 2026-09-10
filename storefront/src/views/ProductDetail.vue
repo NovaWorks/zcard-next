@@ -31,8 +31,10 @@
         <div class="pd-price-card">
           <div class="pd-price-row">
             <span class="pd-price">{{ formatMoney(displayPrice) }}</span>
+            <del v-if="selectedFlash && displayPrice < basePrice" class="muted">{{ formatMoney(basePrice) }}</del>
             <span v-if="p.points_required && p.points_required > 0" class="pd-price-points">或 {{ p.points_required }} 积分兑换</span>
           </div>
+          <p v-if="selectedFlash" class="pd-flash-info">{{ flashSoldOut ? '本场秒杀已抢完' : '限时秒杀' }} · {{ new Date(selectedFlash.end_at * 1000).toLocaleString() }} 结束<span v-if="!flashSoldOut"> · 剩余 {{ selectedFlash.remaining }} 件<span v-if="selectedFlash.per_user_limit > 0"> · 每人限购 {{ selectedFlash.per_user_limit }} 件</span></span></p>
         </div>
 
         <!-- 汇总条：销量/库存（template.show_sales/show_stock 后台开关可关） -->
@@ -60,7 +62,7 @@
               @click="selectedSku = s.id"
             >
               <span class="pd-sku-name">{{ s.name }}</span>
-              <span class="pd-sku-price">{{ formatMoney(s.price_cents) }}</span>
+              <span class="pd-sku-price">{{ formatMoney(flash.price(s.price_cents, s.flash_sale)) }}</span>
             </button>
           </div>
         </div>
@@ -149,14 +151,14 @@
 
         <!-- 缺货和未知库存禁购；不限库存仍由后端按货源验证。 -->
         <div class="pd-actions">
-          <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown" @click="buy">
+          <button class="pd-btn-buy" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="buy">
             {{ submitting ? '提交中…' : stockUnknown ? '库存待确认' : soldOut ? '暂时缺货' : '立即购买' }}
           </button>
           <button
             v-if="canCart"
             class="pd-btn-cart"
             :class="{ 'is-in': inCartNow }"
-            :disabled="submitting || cartBusy || soldOut || stockUnknown"
+            :disabled="submitting || cartBusy || soldOut || stockUnknown || flashSoldOut"
             :title="inCartNow ? '从购物车移除' : '加入购物车'"
             @click="inCartNow ? removeFromCart() : addToCart()"
           >
@@ -164,7 +166,7 @@
             <template v-else-if="inCartNow"><ThemeIcon name="trash" />移除购物车</template>
             <template v-else><ThemeIcon name="cart" />加入购物车</template>
           </button>
-          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown" @click="exchangePoints">
+          <button v-if="p.points_required && p.points_required > 0" class="pd-btn-points" :disabled="submitting || soldOut || stockUnknown || flashSoldOut" @click="exchangePoints">
             {{ stockUnknown ? '库存待确认' : soldOut ? '已兑完' : `积分兑换（${p.points_required} 分）` }}
           </button>
         </div>
@@ -204,6 +206,7 @@
 </template>
 
 <script setup lang="ts">
+import { useFlashOffers } from '@/composables/flash-offers';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -270,7 +273,10 @@ const inCartNow = computed(() => {
 const cartBusy = computed(() => addingCart.value || removingCart.value);
 
 // 当前显示价（跟随所选 SKU）
-const displayPrice = computed(() => {
+const flash = useFlashOffers();
+const selectedFlash = computed(() => flash.active((selectedSku.value ? p.value?.skus?.find(s => s.id === selectedSku.value)?.flash_sale : p.value?.flash_sale)));
+const flashSoldOut = computed(() => !!selectedFlash.value && (selectedFlash.value.remaining || 0) <= 0);
+const basePrice = computed(() => {
   if (!p.value) return 0;
   if (selectedSku.value) {
     const sku = p.value.skus?.find((s) => s.id === selectedSku.value);
@@ -278,6 +284,8 @@ const displayPrice = computed(() => {
   }
   return p.value.price_cents;
 });
+
+const displayPrice = computed(() => flash.price(basePrice.value, selectedFlash.value));
 
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
@@ -344,7 +352,7 @@ async function addToCart() {
   if (!p.value || soldOut.value || stockUnknown.value) return;
   addingCart.value = true;
   error.value = '';
-  const { error: err } = await addToCartStore(p.value, quantity.value, selectedSku.value || 0);
+  const { error: err } = await addToCartStore({ ...p.value, price_cents: basePrice.value, flash_sale: selectedFlash.value }, quantity.value, selectedSku.value || 0);
   addingCart.value = false;
   if (err) {
     error.value = err;
@@ -546,6 +554,7 @@ async function exchangePoints() {
 </script>
 
 <style scoped>
+.pd-flash-info { margin:8px 0 0; color:#b91c1c; font-size:13px; line-height:1.7; overflow-wrap:anywhere; }
 .pd-page { max-width: 1024px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 20px; }
 .pd-crumb { font-size: 13px; color: #9ca3af; display: flex; gap: 6px; align-items: center; }
 .pd-crumb a { color: #6b7280; text-decoration: none; }

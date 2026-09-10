@@ -347,6 +347,74 @@ func (x *GetProductRequest) GetId() uint64 {
 }
 
 // Product 顾客视角商品（管理字段与成本价绝不下发）。
+type FlashOffer struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PriceCents    int64                  `protobuf:"varint,1,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	EndAt         int64                  `protobuf:"varint,2,opt,name=end_at,json=endAt,proto3" json:"end_at,omitempty"`
+	Remaining     int32                  `protobuf:"varint,3,opt,name=remaining,proto3" json:"remaining,omitempty"`
+	PerUserLimit  int32                  `protobuf:"varint,4,opt,name=per_user_limit,json=perUserLimit,proto3" json:"per_user_limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlashOffer) Reset() {
+	*x = FlashOffer{}
+	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlashOffer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlashOffer) ProtoMessage() {}
+
+func (x *FlashOffer) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlashOffer.ProtoReflect.Descriptor instead.
+func (*FlashOffer) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *FlashOffer) GetPriceCents() int64 {
+	if x != nil {
+		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *FlashOffer) GetEndAt() int64 {
+	if x != nil {
+		return x.EndAt
+	}
+	return 0
+}
+
+func (x *FlashOffer) GetRemaining() int32 {
+	if x != nil {
+		return x.Remaining
+	}
+	return 0
+}
+
+func (x *FlashOffer) GetPerUserLimit() int32 {
+	if x != nil {
+		return x.PerUserLimit
+	}
+	return 0
+}
+
 type Product struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
 	Id          uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -374,17 +442,18 @@ type Product struct {
 	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；）
 	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 运营推荐（首页推荐位标记）
-	IsRecommend    bool   `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
-	StockStatus    string `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
-	StockReference int64  `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
-	StockCheckedAt int64  `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
+	IsRecommend    bool        `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	StockStatus    string      `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
+	StockReference int64       `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
+	StockCheckedAt int64       `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
+	FlashSale      *FlashOffer `protobuf:"bytes,20,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
 	*x = Product{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -396,7 +465,7 @@ func (x *Product) String() string {
 func (*Product) ProtoMessage() {}
 
 func (x *Product) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[5]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -409,7 +478,7 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{5}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Product) GetId() uint64 {
@@ -545,6 +614,13 @@ func (x *Product) GetStockCheckedAt() int64 {
 	return 0
 }
 
+func (x *Product) GetFlashSale() *FlashOffer {
+	if x != nil {
+		return x.FlashSale
+	}
+	return nil
+}
+
 // ProductControl 自定义控件定义（下单表单渲染）。
 type ProductControl struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -560,7 +636,7 @@ type ProductControl struct {
 
 func (x *ProductControl) Reset() {
 	*x = ProductControl{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -572,7 +648,7 @@ func (x *ProductControl) String() string {
 func (*ProductControl) ProtoMessage() {}
 
 func (x *ProductControl) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[6]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -585,7 +661,7 @@ func (x *ProductControl) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ProductControl.ProtoReflect.Descriptor instead.
 func (*ProductControl) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ProductControl) GetId() uint64 {
@@ -645,7 +721,7 @@ type ReviewItem struct {
 
 func (x *ReviewItem) Reset() {
 	*x = ReviewItem{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[7]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -657,7 +733,7 @@ func (x *ReviewItem) String() string {
 func (*ReviewItem) ProtoMessage() {}
 
 func (x *ReviewItem) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[7]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -670,7 +746,7 @@ func (x *ReviewItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReviewItem.ProtoReflect.Descriptor instead.
 func (*ReviewItem) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{7}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ReviewItem) GetId() uint64 {
@@ -721,13 +797,14 @@ type Sku struct {
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	PriceCents    int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	FlashSale     *FlashOffer            `protobuf:"bytes,4,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Sku) Reset() {
 	*x = Sku{}
-	mi := &file_storefront_v1_catalog_proto_msgTypes[8]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -739,7 +816,7 @@ func (x *Sku) String() string {
 func (*Sku) ProtoMessage() {}
 
 func (x *Sku) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_catalog_proto_msgTypes[8]
+	mi := &file_storefront_v1_catalog_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -752,7 +829,7 @@ func (x *Sku) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Sku.ProtoReflect.Descriptor instead.
 func (*Sku) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{8}
+	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *Sku) GetId() uint64 {
@@ -774,6 +851,13 @@ func (x *Sku) GetPriceCents() int64 {
 		return x.PriceCents
 	}
 	return 0
+}
+
+func (x *Sku) GetFlashSale() *FlashOffer {
+	if x != nil {
+		return x.FlashSale
+	}
+	return nil
 }
 
 var File_storefront_v1_catalog_proto protoreflect.FileDescriptor
@@ -806,7 +890,14 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xae\x05\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x88\x01\n" +
+	"\n" +
+	"FlashOffer\x12\x1f\n" +
+	"\vprice_cents\x18\x01 \x01(\x03R\n" +
+	"priceCents\x12\x15\n" +
+	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
+	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xf2\x05\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -831,7 +922,9 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\x12!\n" +
 	"\fstock_status\x18\x11 \x01(\tR\vstockStatus\x12'\n" +
 	"\x0fstock_reference\x18\x12 \x01(\x03R\x0estockReference\x12(\n" +
-	"\x10stock_checked_at\x18\x13 \x01(\x03R\x0estockCheckedAt\"\x92\x01\n" +
+	"\x10stock_checked_at\x18\x13 \x01(\x03R\x0estockCheckedAt\x12B\n" +
+	"\n" +
+	"flash_sale\x18\x14 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\"\x92\x01\n" +
 	"\x0eProductControl\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -848,12 +941,14 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"is_virtual\x18\x06 \x01(\bR\tisVirtual\"J\n" +
+	"is_virtual\x18\x06 \x01(\bR\tisVirtual\"\x8e\x01\n" +
 	"\x03Sku\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
 	"\vprice_cents\x18\x03 \x01(\x03R\n" +
-	"priceCents2\xab\x03\n" +
+	"priceCents\x12B\n" +
+	"\n" +
+	"flash_sale\x18\x04 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale2\xab\x03\n" +
 	"\x13StoreCatalogService\x12\x8d\x01\n" +
 	"\fListProducts\x12,.zcard.api.storefront.v1.ListProductsRequest\x1a*.zcard.api.storefront.v1.ListProductsReply\"#\x82\xd3\xe4\x93\x02\x1d\x12\x1b/api/v1/storefront/products\x12\x84\x01\n" +
 	"\n" +
@@ -872,36 +967,39 @@ func file_storefront_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_catalog_proto_rawDescData
 }
 
-var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_storefront_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_storefront_v1_catalog_proto_goTypes = []any{
 	(*ListCategoriesReply)(nil), // 0: zcard.api.storefront.v1.ListCategoriesReply
 	(*CategoryItem)(nil),        // 1: zcard.api.storefront.v1.CategoryItem
 	(*ListProductsRequest)(nil), // 2: zcard.api.storefront.v1.ListProductsRequest
 	(*ListProductsReply)(nil),   // 3: zcard.api.storefront.v1.ListProductsReply
 	(*GetProductRequest)(nil),   // 4: zcard.api.storefront.v1.GetProductRequest
-	(*Product)(nil),             // 5: zcard.api.storefront.v1.Product
-	(*ProductControl)(nil),      // 6: zcard.api.storefront.v1.ProductControl
-	(*ReviewItem)(nil),          // 7: zcard.api.storefront.v1.ReviewItem
-	(*Sku)(nil),                 // 8: zcard.api.storefront.v1.Sku
-	(*emptypb.Empty)(nil),       // 9: google.protobuf.Empty
+	(*FlashOffer)(nil),          // 5: zcard.api.storefront.v1.FlashOffer
+	(*Product)(nil),             // 6: zcard.api.storefront.v1.Product
+	(*ProductControl)(nil),      // 7: zcard.api.storefront.v1.ProductControl
+	(*ReviewItem)(nil),          // 8: zcard.api.storefront.v1.ReviewItem
+	(*Sku)(nil),                 // 9: zcard.api.storefront.v1.Sku
+	(*emptypb.Empty)(nil),       // 10: google.protobuf.Empty
 }
 var file_storefront_v1_catalog_proto_depIdxs = []int32{
-	1, // 0: zcard.api.storefront.v1.ListCategoriesReply.categories:type_name -> zcard.api.storefront.v1.CategoryItem
-	5, // 1: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
-	6, // 2: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
-	7, // 3: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
-	8, // 4: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
-	2, // 5: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
-	4, // 6: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
-	9, // 7: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
-	3, // 8: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
-	5, // 9: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
-	0, // 10: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
-	8, // [8:11] is the sub-list for method output_type
-	5, // [5:8] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	1,  // 0: zcard.api.storefront.v1.ListCategoriesReply.categories:type_name -> zcard.api.storefront.v1.CategoryItem
+	6,  // 1: zcard.api.storefront.v1.ListProductsReply.items:type_name -> zcard.api.storefront.v1.Product
+	7,  // 2: zcard.api.storefront.v1.Product.controls:type_name -> zcard.api.storefront.v1.ProductControl
+	8,  // 3: zcard.api.storefront.v1.Product.reviews:type_name -> zcard.api.storefront.v1.ReviewItem
+	9,  // 4: zcard.api.storefront.v1.Product.skus:type_name -> zcard.api.storefront.v1.Sku
+	5,  // 5: zcard.api.storefront.v1.Product.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	5,  // 6: zcard.api.storefront.v1.Sku.flash_sale:type_name -> zcard.api.storefront.v1.FlashOffer
+	2,  // 7: zcard.api.storefront.v1.StoreCatalogService.ListProducts:input_type -> zcard.api.storefront.v1.ListProductsRequest
+	4,  // 8: zcard.api.storefront.v1.StoreCatalogService.GetProduct:input_type -> zcard.api.storefront.v1.GetProductRequest
+	10, // 9: zcard.api.storefront.v1.StoreCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	3,  // 10: zcard.api.storefront.v1.StoreCatalogService.ListProducts:output_type -> zcard.api.storefront.v1.ListProductsReply
+	6,  // 11: zcard.api.storefront.v1.StoreCatalogService.GetProduct:output_type -> zcard.api.storefront.v1.Product
+	0,  // 12: zcard.api.storefront.v1.StoreCatalogService.ListCategories:output_type -> zcard.api.storefront.v1.ListCategoriesReply
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_catalog_proto_init() }
@@ -915,7 +1013,7 @@ func file_storefront_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_catalog_proto_rawDesc), len(file_storefront_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

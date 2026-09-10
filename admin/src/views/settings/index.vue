@@ -41,6 +41,7 @@ const groups = [
   { key: "promo", label: "推荐位" },
   { key: "footer", label: "页脚配置" },
   { key: "trade", label: "交易" },
+  { key: "ticket", label: "工单" },
   { key: "security", label: "安全" },
   { key: "ops", label: "运维" },
   { key: "recharge", label: "充值" },

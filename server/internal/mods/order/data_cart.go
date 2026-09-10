@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	kerrors "github.com/go-kratos/kratos/v3/errors"
 
@@ -28,14 +29,15 @@ import (
 type StoreCartService struct {
 	storefrontv1.UnimplementedStoreCartServiceServer
 	settings settingsport.Provider
+	flash    couponport.FlashResolver
 	data     *data.Data
 	pricing  catalogport.PricingResolver
 	inv      invport.Inventory // 库存快照（Stock 单查；批量留优化）
 }
 
 // NewStoreCartService 构造（wire；Pricing/Inventory 复用 order 依赖注入链）。
-func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv invport.Inventory, settings settingsport.Provider) *StoreCartService {
-	return &StoreCartService{data: d, pricing: pricing, inv: inv, settings: settings}
+func NewStoreCartService(d *data.Data, pricing catalogport.PricingResolver, inv invport.Inventory, settings settingsport.Provider, flash couponport.FlashResolver) *StoreCartService {
+	return &StoreCartService{data: d, pricing: pricing, inv: inv, settings: settings, flash: flash}
 }
 
 func mustUserClaims(ctx context.Context) (uint64, error) {
@@ -208,6 +210,15 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 		}
 	}
 	item.PriceCents = int64(price)
+	if s.flash != nil {
+		f, err := s.flash.Active(ctx, row.ProductID, row.SkuID)
+		if err != nil {
+			return nil, err
+		}
+		if f != nil {
+			item.FlashSale = &storefrontv1.FlashOffer{PriceCents: int64(f.FlashPrice), EndAt: f.EndAt.Unix(), Remaining: f.Remaining, PerUserLimit: f.PerUserLimit}
+		}
+	}
 	// 库存（inventory port 单查；失败降级 0——宁显无货不显假库存）
 	if p.UpstreamSourceID > 0 {
 		item.Stock = -2
