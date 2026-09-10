@@ -228,6 +228,8 @@ message UpdateProductRequest {
   string direct_content = 14;
   // 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
   bool is_recommend = 15;
+  // 空值保留原类型；card | url | code
+  string stock_type = 16;
 }
 
 message DeleteProductRequest {

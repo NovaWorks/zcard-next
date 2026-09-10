@@ -8,12 +8,13 @@
       </div>
     </div>
     <!-- 栏目筛选：横向滚动胶囊（选中高亮） -->
-    <div v-if="categories.length" class="cat-nav" style="margin-bottom: 16px;">
+    <div v-if="categories.length" ref="categoryNav" class="cat-nav" aria-label="文章栏目" style="margin-bottom: 16px;">
       <button :class="['cat-chip', { active: !categoryId }]" @click="pickCategory(0)">全部</button>
       <button
         v-for="c in categories"
         :key="c.id"
         :class="['cat-chip', { active: categoryId === c.id }]"
+        :aria-pressed="categoryId === c.id"
         @click="pickCategory(c.id)"
       >{{ c.name }}</button>
     </div>
@@ -36,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { listPosts, listPostCategories, type StorePost, type PostCategory } from '@/api';
 import { fetchSiteSeo, applySeo } from '@/seo';
@@ -66,29 +67,50 @@ function formatDate(unix?: number): string {
   return new Date(unix * 1000).toLocaleDateString('zh-CN');
 }
 
+const categoryNav = ref<HTMLElement | null>(null);
+
 function switchType(t: string) {
-  type.value = t;
-  syncQuery();
-  load(1);
+  syncQuery(t, categoryId.value);
 }
 
 function pickCategory(id: number) {
-  categoryId.value = id;
-  syncQuery();
-  load(1);
+  syncQuery(type.value, id);
 }
 
-function syncQuery() {
+function syncQuery(t: string, id: number) {
   const q: Record<string, string> = {};
-  if (type.value) q.type = type.value;
-  if (categoryId.value) q.category = String(categoryId.value);
+  if (t) q.type = t;
+  if (id) q.category = String(id);
   router.replace({ query: q });
 }
 
+// 仅移动栏目条，让选中项留在可见范围，避免 scrollIntoView 带动整页。
+async function revealCategory() {
+  await nextTick();
+  const nav = categoryNav.value;
+  const selected = nav?.querySelector<HTMLElement>('.active');
+  if (!nav || !selected) return;
+  const box = nav.getBoundingClientRect();
+  const chip = selected.getBoundingClientRect();
+  if (chip.left < box.left + 10) nav.scrollLeft += chip.left - box.left - 10;
+  else if (chip.right > box.right - 10) nav.scrollLeft += chip.right - box.right + 10;
+}
+
+watch(() => [route.query.type, route.query.category], () => {
+  type.value = (route.query.type as string) || '';
+  categoryId.value = Number(route.query.category) || 0;
+  void revealCategory();
+  void load(1);
+});
+watch(categoryNav, revealCategory);
+let requestID = 0;
+
 async function load(p = 1) {
+  const currentRequest = ++requestID;
   loading.value = true;
   error.value = '';
   const { data, error: err } = await listPosts(type.value || undefined, p, pageSize, undefined, categoryId.value);
+  if (currentRequest !== requestID) return;
   loading.value = false;
   if (err) { error.value = err; return; }
   posts.value = data?.posts || [];
@@ -137,7 +159,7 @@ async function applyListSeo() {
 }
 .cat-nav::-webkit-scrollbar { display: none; }
 .cat-chip {
-  flex-shrink: 0; padding: 6px 16px; border-radius: 999px; font-size: 13px;
+  flex-shrink: 0; min-height: 44px; padding: 6px 16px; border-radius: 999px; font-size: 13px;
   color: #374151; background: #f3f4f6; border: 1px solid transparent;
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }

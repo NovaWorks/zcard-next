@@ -194,29 +194,40 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		Description: sanitize.HTML(req.GetDescription()),
 		Cover:       req.GetCover(), Images: req.GetImages(),
 		Price: req.GetPriceCents(), FactoryPrice: req.GetFactoryPriceCents(),
-		DeliveryMode: req.GetDeliveryMode(),
+		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
 		StockVisible: req.GetStockVisible(),
 		Sort:         req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
 		IsRecommend: req.GetIsRecommend(), // PUT 全量语义（含 false=取消推荐）
 	}
-	old, _ := s.repo.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, req.GetId())
+	old, err := s.repo.GetAdmin(ctx, tenancy.FromContext(ctx).SubsiteID, req.GetId())
+	if ent.IsNotFound(err) {
+		return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
+	}
+	if err != nil {
+		return nil, errors.InternalServer("catalog.GET_FAILED", "读取商品失败")
+	}
+	stockType := req.GetStockType()
+	if stockType == "" {
+		stockType = string(old.StockType)
+	}
+	if stockType != "card" && stockType != "url" && stockType != "code" {
+		return nil, errors.BadRequest("catalog.INVALID_STOCK_TYPE", "请选择有效的发货类型")
+	}
+	// 切换直发类型时必须重新提供内容，防止旧链接被当作新兑换码发送。
+	if stockType != "card" && stockType != string(old.StockType) && strings.TrimSpace(req.GetDirectContent()) == "" {
+		return nil, errors.BadRequest("catalog.DIRECT_CONTENT_REQUIRED", "切换为链接或兑换码时，请填写对应的直发内容")
+	}
 	// 直发内容（url/code）：空=保持不变；非空且商品非卡密类 → 加密更新
-	if req.GetDirectContent() != "" {
+	if stockType != "card" && req.GetDirectContent() != "" {
 		if s.cipher == nil {
 			return nil, errors.InternalServer("catalog.CIPHER_UNAVAILABLE", "直发加密不可用")
 		}
-		var stockType string
-		if old != nil {
-			stockType = string(old.StockType)
+		ciphered, serr := s.sealDirect(ctx, req.GetDirectContent(), req.GetId())
+		if serr != nil {
+			return nil, errors.InternalServer("catalog.DIRECT_SEAL_FAILED", "直发内容加密失败")
 		}
-		if stockType != "card" {
-			ciphered, serr := s.sealDirect(ctx, req.GetDirectContent(), req.GetId())
-			if serr != nil {
-				return nil, errors.InternalServer("catalog.DIRECT_SEAL_FAILED", "直发内容加密失败")
-			}
-			in.DirectContent = ciphered
-		}
+		in.DirectContent = ciphered
 	}
 	p, err := s.repo.UpdateProduct(ctx, req.GetId(), in)
 	if err != nil {

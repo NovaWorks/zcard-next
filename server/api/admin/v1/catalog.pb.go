@@ -686,7 +686,9 @@ type UpdateProductRequest struct {
 	// 直发内容明文（空=保持不变；url/code 商品加密存储）
 	DirectContent string `protobuf:"bytes,14,opt,name=direct_content,json=directContent,proto3" json:"direct_content,omitempty"`
 	// 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
-	IsRecommend   bool `protobuf:"varint,15,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	IsRecommend bool `protobuf:"varint,15,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	// 空值保留原类型；card | url | code
+	StockType     string `protobuf:"bytes,16,opt,name=stock_type,json=stockType,proto3" json:"stock_type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -824,6 +826,13 @@ func (x *UpdateProductRequest) GetIsRecommend() bool {
 		return x.IsRecommend
 	}
 	return false
+}
+
+func (x *UpdateProductRequest) GetStockType() string {
+	if x != nil {
+		return x.StockType
+	}
+	return ""
 }
 
 type DeleteProductRequest struct {
@@ -3551,7 +3560,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x06status\x18\r \x01(\x05R\x06status\x12'\n" +
 	"\x0fpoints_required\x18\x0e \x01(\x03R\x0epointsRequired\x12%\n" +
 	"\x0edirect_content\x18\x0f \x01(\tR\rdirectContent\x12!\n" +
-	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\"\xea\x03\n" +
+	"\fis_recommend\x18\x10 \x01(\bR\visRecommend\"\x89\x04\n" +
 	"\x14UpdateProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -3570,7 +3579,9 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x06status\x18\f \x01(\x05R\x06status\x12'\n" +
 	"\x0fpoints_required\x18\r \x01(\x03R\x0epointsRequired\x12%\n" +
 	"\x0edirect_content\x18\x0e \x01(\tR\rdirectContent\x12!\n" +
-	"\fis_recommend\x18\x0f \x01(\bR\visRecommend\"\xa5\x01\n" +
+	"\fis_recommend\x18\x0f \x01(\bR\visRecommend\x12\x1d\n" +
+	"\n" +
+	"stock_type\x18\x10 \x01(\tR\tstockType\"\xa5\x01\n" +
 	"\x14DeleteProductRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12#\n" +
 	"\rdelete_orders\x18\x02 \x01(\bR\fdeleteOrders\x12!\n" +

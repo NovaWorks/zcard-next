@@ -91,7 +91,7 @@
 
         <!-- 自定义控件（下单收集） -->
         <div v-for="c in p.controls" :key="c.id" class="pd-field">
-          <label class="pd-label">{{ c.name }}{{ c.required ? ' <span class="pd-req">*</span>' : '' }}</label>
+          <label class="pd-label">{{ c.name }} <span v-if="c.required" class="pd-req" aria-label="必填">*</span></label>
           <input
             v-if="c.type === 'text' || c.type === 'number'"
             v-model="controlAnswers[String(c.id)]"

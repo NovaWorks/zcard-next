@@ -146,6 +146,7 @@ func (x *ListTxRequest) GetPageSize() int32 {
 type ListTxReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Transactions  []*Tx                  `protobuf:"bytes,1,rep,name=transactions,proto3" json:"transactions,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -185,6 +186,13 @@ func (x *ListTxReply) GetTransactions() []*Tx {
 		return x.Transactions
 	}
 	return nil
+}
+
+func (x *ListTxReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
 }
 
 type Tx struct {
@@ -899,9 +907,10 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\x06points\x18\x04 \x01(\x03R\x06points\"@\n" +
 	"\rListTxRequest\x12\x12\n" +
 	"\x04page\x18\x01 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"N\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"d\n" +
 	"\vListTxReply\x12?\n" +
-	"\ftransactions\x18\x01 \x03(\v2\x1b.zcard.api.storefront.v1.TxR\ftransactions\"\xee\x01\n" +
+	"\ftransactions\x18\x01 \x03(\v2\x1b.zcard.api.storefront.v1.TxR\ftransactions\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xee\x01\n" +
 	"\x02Tx\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1c\n" +
 	"\tdirection\x18\x02 \x01(\tR\tdirection\x12\x12\n" +

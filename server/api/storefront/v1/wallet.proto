@@ -59,6 +59,7 @@ message ListTxRequest {
 
 message ListTxReply {
   repeated Tx transactions = 1;
+  int64 total = 2;
 }
 
 message Tx {

@@ -120,6 +120,7 @@ func (r *ProductRepoImpl) StockSnapshotBatch(ctx context.Context, productIDs []u
 		if err != nil {
 			return nil, err
 		}
+		r.refreshDisplayStocks(ctx, rows, batch)
 		for id, n := range batch {
 			out[id] = port.StockSnapshot{Available: n.Available(), Quantity: n.Quantity, CheckedAt: n.CheckedAt, Status: n.Status}
 		}
@@ -199,6 +200,10 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 	}
 	if in.FactoryPrice >= 0 {
 		q.SetFactoryPrice(in.FactoryPrice)
+	}
+	if in.StockType != "" {
+		q.SetStockType(product.StockType(in.StockType))
+		// 保留旧直发密文供历史订单取货；新订单按 stock_type 走卡池。
 	}
 	if in.DeliveryMode != "" {
 		q.SetDeliveryMode(product.DeliveryMode(in.DeliveryMode))

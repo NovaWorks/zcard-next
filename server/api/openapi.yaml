@@ -10469,6 +10469,9 @@ components:
                 isRecommend:
                     type: boolean
                     description: 运营推荐（storefront 首页推荐位；PUT 全量语义，含 false=取消推荐）
+                stockType:
+                    type: string
+                    description: 空值保留原类型；card | url | code
         zcard.api.admin.v1.UpdateRolePermissionsRequest:
             required:
                 - id
@@ -11589,6 +11592,8 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.storefront.v1.Tx'
+                total:
+                    type: string
         zcard.api.storefront.v1.LoginReply:
             type: object
             properties:

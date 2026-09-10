@@ -24,8 +24,9 @@ var ErrProductNotFound = errors.New("catalog.PRODUCT_NOT_FOUND")
 
 // ProductRepoImpl 商品仓储实现。
 type ProductRepoImpl struct {
-	data     *data.Data
-	mediaRef mediaport.Referencer // 封面/图集引用计数（nil 跳过）
+	stockLookup port.StockLookup
+	data        *data.Data
+	mediaRef    mediaport.Referencer // 封面/图集引用计数（nil 跳过）
 }
 
 // NewProductRepoImpl 构造（mediaRef 素材引用计数，）。

@@ -84,7 +84,7 @@
         <!-- 保留目录浏览状态；会员页内切换复用表单，其余详情和支付页按导航重新创建。 -->
         <KeepAlive include="Home" :max="8">
           <Suspense>
-            <component :is="Component" :key="['/', '/member'].includes(viewRoute.path) ? viewRoute.path : viewRoute.fullPath" />
+            <component :is="Component" :key="['/', '/member', '/posts'].includes(viewRoute.path) ? viewRoute.path : viewRoute.fullPath" />
           </Suspense>
         </KeepAlive>
       </router-view>

@@ -32,6 +32,7 @@ export const routes: RouteRecordRaw[] = [
 const catalogPositions = new Map<string, { left: number; top: number }>();
 
 export const scrollBehavior: RouterScrollBehavior = async (to, from, savedPosition) => {
+  if (to.name === 'posts' && from.name === 'posts') return false;
   if (to.name === 'home') {
     // Filtering on the same page scrolls to its toolbar in Home.vue.
     if (from.name === 'home') return false;

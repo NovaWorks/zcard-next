@@ -260,7 +260,13 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 }
 
-func (s *StoreCatalogService) SetStockLookup(lookup port.StockLookup) { s.stockLookup = lookup }
+func (s *StoreCatalogService) SetStockLookup(lookup port.StockLookup) {
+	s.stockLookup = lookup
+	// Admin and storefront share this repository; both lists refresh stale stock.
+	if repo, ok := s.uc.repo.(interface{ SetStockLookup(port.StockLookup) }); ok {
+		repo.SetStockLookup(lookup)
+	}
+}
 
 func (s *StoreCatalogService) SetFlashReader(reader couponport.FlashReader) { s.flash = reader }
 func (s *StoreCatalogService) flashOffers(ctx context.Context, ids []uint64) (map[couponport.FlashKey]*couponport.FlashInfo, error) {

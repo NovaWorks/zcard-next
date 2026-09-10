@@ -74,16 +74,16 @@ func (s *StoreWalletService) ListTransactions(ctx context.Context, req *storefro
 	if size < 1 || size > 100 {
 		size = 20
 	}
-	rows, _, err := s.repo.ListTransactions(ctx, claims.Subject, page, size)
+	rows, total, err := s.repo.ListTransactions(ctx, claims.Subject, page, size)
 	if err != nil {
 		return nil, errors.InternalServer("wallet.TX_FAILED", "查询流水失败")
 	}
-	reply := &storefrontv1.ListTxReply{}
+	reply := &storefrontv1.ListTxReply{Total: total}
 	for _, r := range rows {
 		reply.Transactions = append(reply.Transactions, &storefrontv1.Tx{
 			Id: r.ID, Direction: r.Direction, Type: r.Type,
 			AmountCents: r.Amount, BalanceAfterCents: r.BalanceAfter,
-			Reference: r.Reference, Remark: r.Remark,
+			Reference: r.Reference, Remark: r.Remark, CreatedAt: r.CreatedAt.Unix(),
 		})
 	}
 	return reply, nil
@@ -345,7 +345,7 @@ func (s *AdminWalletService) ListTransactions(ctx context.Context, req *adminv1.
 			Id: r.ID, Direction: r.Direction, Type: r.Type,
 			AmountCents: r.Amount, BalanceBeforeCents: r.BalanceBefore,
 			BalanceAfterCents: r.BalanceAfter, Reference: r.Reference, Remark: r.Remark,
-			UserId: r.UserID, Username: names[r.UserID],
+			UserId: r.UserID, Username: names[r.UserID], CreatedAt: r.CreatedAt.Unix(),
 		})
 	}
 	return reply, nil

@@ -12,6 +12,7 @@ import (
 )
 
 var displayStockRequests singleflight.Group
+var displayStockSlots = make(chan struct{}, 4)
 
 func (g *Gateway) cacheStock(ctx context.Context, connectionID uint64, code string, n int32, queryErr error) {
 	if queryErr != nil || n < -1 {
@@ -31,6 +32,12 @@ func (g *Gateway) DisplayStock(ctx context.Context, connectionID uint64, code st
 		m, err := data.Client(bounded, g.repo.data).SupplyMapping.Query().Where(supplymapping.ConnectionID(connectionID), supplymapping.UpstreamProduct(code), supplymapping.UpstreamSkuEQ("")).Only(bounded)
 		if err == nil && !m.StockCheckedAt.IsZero() && time.Since(m.StockCheckedAt) < 15*time.Second {
 			return m.UpStock, nil
+		}
+		select {
+		case displayStockSlots <- struct{}{}:
+			defer func() { <-displayStockSlots }()
+		case <-bounded.Done():
+			return int32(-2), bounded.Err()
 		}
 		return g.CheckStock(bounded, connectionID, code, "")
 	})
