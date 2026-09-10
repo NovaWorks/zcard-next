@@ -188,6 +188,7 @@ message Payment {
 }
 
 message CreateRefundRequest {
+  optional int64 expected_refunded_cents = 5; // confirmed cumulative succeeded refunds
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED];
   string channel = 3 [(google.api.field_behavior) = REQUIRED]; // wallet | gateway | upstream

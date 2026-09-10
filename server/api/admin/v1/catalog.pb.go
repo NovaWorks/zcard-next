@@ -2863,9 +2863,9 @@ type UpdateSkuRequest struct {
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	SpecValues    map[string]string      `protobuf:"bytes,3,rep,name=spec_values,json=specValues,proto3" json:"spec_values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	PriceCents    int64                  `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
-	CostCents     int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
-	StockOffset   int32                  `protobuf:"varint,6,opt,name=stock_offset,json=stockOffset,proto3" json:"stock_offset,omitempty"`
+	PriceCents    *int64                 `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3,oneof" json:"price_cents,omitempty"`
+	CostCents     *int64                 `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3,oneof" json:"cost_cents,omitempty"`
+	StockOffset   *int32                 `protobuf:"varint,6,opt,name=stock_offset,json=stockOffset,proto3,oneof" json:"stock_offset,omitempty"`
 	UpstreamSkuId string                 `protobuf:"bytes,7,opt,name=upstream_sku_id,json=upstreamSkuId,proto3" json:"upstream_sku_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -2923,22 +2923,22 @@ func (x *UpdateSkuRequest) GetSpecValues() map[string]string {
 }
 
 func (x *UpdateSkuRequest) GetPriceCents() int64 {
-	if x != nil {
-		return x.PriceCents
+	if x != nil && x.PriceCents != nil {
+		return *x.PriceCents
 	}
 	return 0
 }
 
 func (x *UpdateSkuRequest) GetCostCents() int64 {
-	if x != nil {
-		return x.CostCents
+	if x != nil && x.CostCents != nil {
+		return *x.CostCents
 	}
 	return 0
 }
 
 func (x *UpdateSkuRequest) GetStockOffset() int32 {
-	if x != nil {
-		return x.StockOffset
+	if x != nil && x.StockOffset != nil {
+		return *x.StockOffset
 	}
 	return 0
 }
@@ -3746,21 +3746,24 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0fupstream_sku_id\x18\a \x01(\tR\rupstreamSkuId\x1a=\n" +
 	"\x0fSpecValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdc\x02\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9b\x03\n" +
 	"\x10UpdateSkuRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12U\n" +
 	"\vspec_values\x18\x03 \x03(\v24.zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntryR\n" +
-	"specValues\x12\x1f\n" +
-	"\vprice_cents\x18\x04 \x01(\x03R\n" +
-	"priceCents\x12\x1d\n" +
+	"specValues\x12$\n" +
+	"\vprice_cents\x18\x04 \x01(\x03H\x00R\n" +
+	"priceCents\x88\x01\x01\x12\"\n" +
 	"\n" +
-	"cost_cents\x18\x05 \x01(\x03R\tcostCents\x12!\n" +
-	"\fstock_offset\x18\x06 \x01(\x05R\vstockOffset\x12&\n" +
+	"cost_cents\x18\x05 \x01(\x03H\x01R\tcostCents\x88\x01\x01\x12&\n" +
+	"\fstock_offset\x18\x06 \x01(\x05H\x02R\vstockOffset\x88\x01\x01\x12&\n" +
 	"\x0fupstream_sku_id\x18\a \x01(\tR\rupstreamSkuId\x1a=\n" +
 	"\x0fSpecValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"'\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x0e\n" +
+	"\f_price_centsB\r\n" +
+	"\v_cost_centsB\x0f\n" +
+	"\r_stock_offset\"'\n" +
 	"\x10DeleteSkuRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"J\n" +
 	"\x0fMemberGroupList\x127\n" +
@@ -3996,6 +3999,7 @@ func file_admin_v1_catalog_proto_init() {
 		return
 	}
 	file_admin_v1_catalog_proto_msgTypes[13].OneofWrappers = []any{}
+	file_admin_v1_catalog_proto_msgTypes[37].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

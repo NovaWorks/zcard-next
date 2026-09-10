@@ -4,6 +4,7 @@ package order
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"strings"
 	"unicode/utf8"
 
@@ -286,7 +287,15 @@ func (s *AdminOrderService) GetOrder(ctx context.Context, req *adminv1.GetAdminO
 		Order(ent.Asc(orderstatusevent.FieldCreatedAt), ent.Asc(orderstatusevent.FieldID)).All(ctx)
 	// 商品/上游联查（ 修复：订单详情展示自营/上游渠道/链接/成本——老项目同款信息区）
 	products, connections := s.loadItemUpstream(ctx, items)
-	return toAdminOrderPB(o, items, lines, events, products, connections), nil
+	out := toAdminOrderPB(o, items, lines, events, products, connections)
+	refunds, err := client.RefundOrder.Query().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusSucceeded)).All(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("order.REFUND_QUERY_FAILED", "读取退款金额失败")
+	}
+	for _, r := range refunds {
+		out.RefundedCents += r.Amount
+	}
+	return out, nil
 }
 
 // loadItemUpstream 批量联查订单项的商品与上游货源连接（软外键——无 ent edge）。

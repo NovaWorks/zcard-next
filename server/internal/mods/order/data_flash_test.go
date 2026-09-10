@@ -32,20 +32,20 @@ func TestFlashCheckoutSkuLimitsAndReadFailure(t *testing.T) {
 	create := func(skuID uint64) (*CreateOrderResult, error) {
 		return uc.CreateOrder(ctx, CreateOrderInput{UserID: 7, QueryPassword: "abcd", Items: []OrderItemInput{{ProductID: 1, SkuID: skuID, Quantity: 1}}})
 	}
-	for _, id := range []uint64{0, sku.ID} {
+	for _, id := range []uint64{sku.ID, sku.ID} {
 		o, err := create(id)
 		if err != nil || o.TotalCents != 2000 {
 			t.Fatalf("checkout SKU %d: %+v %v", id, o, err)
 		}
 	}
-	if _, err := create(0); !errors.Is(err, couponport.ErrFlashUserLimit) {
+	if _, err := create(sku.ID); !errors.Is(err, couponport.ErrFlashUserLimit) {
 		t.Fatalf("limit bypassed: %v", err)
 	}
 	if got := d.Client.FlashSale.GetX(ctx, offer.ID); got.SoldQty != 2 {
 		t.Fatalf("incorrect consumed quantity %d", got.SoldQty)
 	}
 	uc.Flash = failingFlash{}
-	if _, err := create(0); err == nil {
+	if _, err := create(sku.ID); err == nil {
 		t.Fatal("read failure silently charged regular price")
 	}
 	if d.Client.Order.Query().CountX(ctx) != 2 {
@@ -53,8 +53,8 @@ func TestFlashCheckoutSkuLimitsAndReadFailure(t *testing.T) {
 	}
 	uc.Flash = flash
 	d.Client.FlashSale.UpdateOneID(offer.ID).SetEndAt(now.Add(-time.Second)).SaveX(ctx)
-	o, err := create(0)
-	if err != nil || o.TotalCents != 3000 {
+	o, err := create(sku.ID)
+	if err != nil || o.TotalCents != 4000 {
 		t.Fatalf("expired price: %+v %v", o, err)
 	}
 }

@@ -291,12 +291,14 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				pointsTotal += p.PointsRequired * int64(item.Quantity)
 			}
 
-			// SKU 价 > 商品价（订单取价经 catalog port 解析；失败降级商品价）
+			// Invalid/missing SKUs must not silently fall back to the product price.
 			basePrice := money.Cents(p.Price)
-			if item.SkuID > 0 && uc.Catalog != nil {
-				if sp, err := uc.Catalog.ResolvePrice(txCtx, item.ProductID, item.SkuID); err == nil && sp > 0 {
-					basePrice = sp
+			if uc.Catalog != nil {
+				sp, err := uc.Catalog.ResolvePrice(txCtx, item.ProductID, item.SkuID)
+				if err != nil {
+					return fmt.Errorf("order.SKU_INVALID: %w", err)
 				}
+				basePrice = sp
 			}
 			// 会员商品组折扣（万分比；不命中/解析失败为 0）
 			var groupRate int32

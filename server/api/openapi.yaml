@@ -6301,6 +6301,8 @@ components:
         zcard.api.admin.v1.AdminOrder:
             type: object
             properties:
+                refundedCents:
+                    type: string
                 id:
                     type: string
                 orderNo:
@@ -7314,6 +7316,8 @@ components:
                 - channel
             type: object
             properties:
+                expectedRefundedCents:
+                    type: string
                 orderNo:
                     type: string
                 amountCents:

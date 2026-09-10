@@ -67,6 +67,11 @@ func (r *CardRepoImpl) Reserve(ctx context.Context, subsiteID uint64, items []po
 				Limit(1)
 		}
 
+		// A selected SKU may only reserve its own cards.
+		if item.SkuID > 0 {
+			query = query.Where(card.SkuID(item.SkuID))
+		}
+
 		// 行锁（MySQL/PG；SQLite 单写者天然串行）
 		if supportsLock {
 			query = query.ForUpdate(entsql.WithLockAction(sql.SkipLocked))

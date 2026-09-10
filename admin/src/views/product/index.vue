@@ -39,6 +39,7 @@ const route = useRoute();
 const loading = ref(false);
 const saving = ref(false);
 const showCreate = ref(false);
+const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
 const keyword = ref("");
 const products = ref<any[]>([]);
@@ -747,6 +748,7 @@ async function handleSave() {
   if (!formData.name || formData.price_yuan <= 0) return;
   saving.value = true;
   try {
+    if (skuPanel.value && !await skuPanel.value.savePending()) return;
     const payload = buildPayload();
     const { error } = editingId.value
       ? await updateProduct(editingId.value, payload)
@@ -1078,10 +1080,10 @@ onMounted(() => {
       </div>
 
       <!-- 第 4 步：规格与控件（面板内嵌——编辑态直接生效；创建态先保存商品） -->
-      <div v-if="step === 4" class="px-12px">
+      <div v-if="showCreate" v-show="step === 4" class="px-12px">
         <template v-if="editingId">
           <NCard size="small" title="SKU 多规格" class="mb-12px">
-            <SkuPanel :product-id="editingId" />
+            <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" />
           </NCard>
           <NCard size="small" title="下单收集控件">
             <ControlPanel :product-id="editingId" />

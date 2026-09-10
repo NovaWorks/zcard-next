@@ -190,6 +190,7 @@ func (x *GetAdminOrderRequest) GetOrderNo() string {
 // AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
 type AdminOrder struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
+	RefundedCents  int64                  `protobuf:"varint,20,opt,name=refunded_cents,json=refundedCents,proto3" json:"refunded_cents,omitempty"` // succeeded refunds only
 	Id             uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	OrderNo        string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	Status         string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
@@ -241,6 +242,13 @@ func (x *AdminOrder) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrder.ProtoReflect.Descriptor instead.
 func (*AdminOrder) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AdminOrder) GetRefundedCents() int64 {
+	if x != nil {
+		return x.RefundedCents
+	}
+	return 0
 }
 
 func (x *AdminOrder) GetId() uint64 {
@@ -811,9 +819,10 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +
 	"nextCursor\"6\n" +
 	"\x14GetAdminOrderRequest\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xb9\x05\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xe0\x05\n" +
 	"\n" +
-	"AdminOrder\x12\x0e\n" +
+	"AdminOrder\x12%\n" +
+	"\x0erefunded_cents\x18\x14 \x01(\x03R\rrefundedCents\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1f\n" +

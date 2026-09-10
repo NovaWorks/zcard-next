@@ -58,8 +58,8 @@
               v-for="s in p.skus"
               :key="s.id"
               class="pd-sku"
-              :class="{ active: selectedSku === s.id }"
-              @click="selectedSku = s.id"
+              :class="{ active: selectedSku === Number(s.id) }"
+              @click="selectedSku = Number(s.id)"
             >
               <span class="pd-sku-name">{{ s.name }}</span>
               <span class="pd-sku-price">{{ formatMoney(flash.price(s.price_cents, s.flash_sale)) }}</span>
@@ -274,12 +274,12 @@ const cartBusy = computed(() => addingCart.value || removingCart.value);
 
 // 当前显示价（跟随所选 SKU）
 const flash = useFlashOffers();
-const selectedFlash = computed(() => flash.active((selectedSku.value ? p.value?.skus?.find(s => s.id === selectedSku.value)?.flash_sale : p.value?.flash_sale)));
+const selectedFlash = computed(() => flash.active((selectedSku.value ? p.value?.skus?.find(s => Number(s.id) === selectedSku.value)?.flash_sale : p.value?.flash_sale)));
 const flashSoldOut = computed(() => !!selectedFlash.value && (selectedFlash.value.remaining || 0) <= 0);
 const basePrice = computed(() => {
   if (!p.value) return 0;
   if (selectedSku.value) {
-    const sku = p.value.skus?.find((s) => s.id === selectedSku.value);
+    const sku = p.value.skus?.find((s) => Number(s.id) === selectedSku.value);
     if (sku && sku.price_cents) return sku.price_cents;
   }
   return p.value.price_cents;
@@ -408,6 +408,7 @@ if (productResp.error) {
   error.value = productResp.error;
 } else {
   p.value = productResp.data;
+  selectedSku.value = Number(productResp.data?.skus?.[0]?.id || 0);
   if (productResp.data) applyProductSeo(productResp.data);
 }
 

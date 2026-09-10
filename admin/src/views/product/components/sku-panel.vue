@@ -28,11 +28,12 @@ interface SkuRow {
 const loading = ref(false);
 const rows = ref<SkuRow[]>([]);
 const saving = ref(false);
+const definitionsDirty = ref(false);
 
 // 规格定义（如 [{name:'时长', values:'月卡,季卡'}]）
 const specs = ref<{ name: string; values: string }[]>([]);
 
-const newRows = computed(() => rows.value.filter((r) => r.id === 0));
+const pendingRows = computed(() => rows.value.filter((r) => r.id === 0 || r.dirty));
 
 function specKey(spec: Record<string, string>) {
   return Object.entries(spec || {})
@@ -87,15 +88,17 @@ watch(
 );
 
 function addSpec() {
+  definitionsDirty.value = true;
   specs.value.push({ name: "", values: "" });
 }
 
 function removeSpec(i: number) {
+  definitionsDirty.value = true;
   specs.value.splice(i, 1);
 }
 
 // 生成组合：笛卡尔积 → 跳过已存在（按 spec_values 判重），新行标记 id=0
-function generate() {
+function generate(quiet = false) {
   const dims: { name: string; values: string[] }[] = specs.value
     .map((s) => ({
       name: s.name.trim(),
@@ -133,75 +136,47 @@ function generate() {
     });
     added++;
   }
-  if (!added) window.$message?.info("组合均已存在，无新增");
-  else window.$message?.success(`已生成 ${added} 个新组合，填写价格后保存`);
+  definitionsDirty.value = false;
+  if (!quiet && !added) window.$message?.info("组合均已存在，无新增");
+  else if (!quiet) window.$message?.success(`已生成 ${added} 个新组合，填写价格后保存`);
 }
 
-// 单行保存（新→创建；已有→更新）
+// Parent and row buttons share the same persistence path; failed rows stay dirty.
+async function persistRow(row: SkuRow): Promise<boolean> {
+  if (!row.name.trim()) { window.$message?.warning("规格名不能为空"); return false; }
+  const payload = { name: row.name.trim(), spec_values: row.spec_values,
+    price_cents: yuanToFen(row.price_yuan || 0), cost_cents: yuanToFen(row.cost_yuan || 0), stock_offset: row.stock_offset || 0 };
+  const { data, error } = row.id ? await updateSku(row.id, payload) : await createSku(props.productId, payload);
+  if (error) return false;
+  if (!row.id) {
+    if (!(data as any)?.id) { window.$message?.error("规格保存结果不完整，请刷新核对"); return false; }
+    row.id = Number((data as any).id);
+  }
+  row.dirty = false;
+  return true;
+}
 async function saveRow(row: SkuRow) {
-  if (!row.name.trim()) {
-    window.$message?.warning("规格名不能为空");
-    return;
+  if (saving.value) return;
+  saving.value = true;
+  try { if (await persistRow(row)) window.$message?.success("规格已保存"); }
+  finally { saving.value = false; }
+}
+async function savePending(): Promise<boolean> {
+  if (saving.value) return false;
+  // A populated definition is also a draft: the main Save button persists its combinations.
+  if (definitionsDirty.value) {
+    if (specs.value.some(s => !s.name.trim() || !s.values.trim())) { window.$message?.warning("请补全规格名和规格值"); return false; }
+    generate(true);
   }
+  if (!pendingRows.value.length) return true;
   saving.value = true;
   try {
-    const payload = {
-      name: row.name.trim(),
-      spec_values: row.spec_values,
-      price_cents: yuanToFen(row.price_yuan || 0),
-      cost_cents: yuanToFen(row.cost_yuan || 0),
-      stock_offset: row.stock_offset || 0,
-    };
-    const { data, error } = row.id
-      ? await updateSku(row.id, payload)
-      : await createSku(props.productId, payload);
-    if (!error) {
-      if (!row.id && (data as any)?.id) row.id = (data as any).id;
-      row.dirty = false;
-      window.$message?.success("已保存");
-    }
-  } finally {
-    saving.value = false;
-  }
+    for (const row of [...pendingRows.value]) if (!await persistRow(row)) return false;
+    return true;
+  } finally { saving.value = false; }
 }
-
-// 保存全部新行（批量逐条创建）
-async function saveAllNew() {
-  const pending = rows.value.filter((r) => r.id === 0);
-  if (!pending.length) return;
-  for (const row of pending) {
-    if (!row.name.trim()) {
-      window.$message?.warning("存在未命名组合，请补全规格名");
-      return;
-    }
-  }
-  saving.value = true;
-  try {
-    for (const row of pending) {
-      await saveRowQuiet(row);
-    }
-    window.$message?.success(`已保存 ${pending.length} 个新组合`);
-  } finally {
-    saving.value = false;
-  }
-}
-
-async function saveRowQuiet(row: SkuRow) {
-  const payload = {
-    name: row.name.trim(),
-    spec_values: row.spec_values,
-    price_cents: yuanToFen(row.price_yuan || 0),
-    cost_cents: yuanToFen(row.cost_yuan || 0),
-    stock_offset: row.stock_offset || 0,
-  };
-  const { data, error } = row.id
-    ? await updateSku(row.id, payload)
-    : await createSku(props.productId, payload);
-  if (!error) {
-    if (!row.id && (data as any)?.id) row.id = (data as any).id;
-    row.dirty = false;
-  }
-}
+async function saveAll() { if (await savePending()) window.$message?.success("规格已全部保存"); }
+defineExpose({ savePending });
 
 async function handleDelete(row: SkuRow) {
   if (row.id) {
@@ -359,12 +334,14 @@ const columns: DataTableColumns<SkuRow> = [
         <span class="text-12px text-gray-400">规格{{ i + 1 }}</span>
         <NInput
           v-model:value="spec.name"
+          @update:value="definitionsDirty = true"
           size="small"
           placeholder="规格名（如 时长）"
           class="w-130px shrink-0"
         />
         <NInput
           v-model:value="spec.values"
+          @update:value="definitionsDirty = true"
           size="small"
           placeholder="规格值，逗号分隔（如 月卡,季卡,年卡）"
           class="min-w-220px flex-1"
@@ -372,16 +349,16 @@ const columns: DataTableColumns<SkuRow> = [
         <NButton v-auth="'catalog:sku_write'" size="small" quaternary type="error" @click="removeSpec(i)">删除</NButton>
       </div>
       <div class="mt-8px flex flex-wrap items-center gap-8px">
-        <NButton v-auth="'catalog:sku_write'" size="small" type="primary" ghost @click="generate">生成规格组合</NButton>
+        <NButton v-auth="'catalog:sku_write'" size="small" type="primary" ghost @click="generate(false)">生成规格组合</NButton>
         <NButton
           v-auth="'catalog:sku_write'"
           size="small"
           type="primary"
-          :disabled="!newRows.length"
+          :disabled="!pendingRows.length && !definitionsDirty"
           :loading="saving"
-          @click="saveAllNew"
+          @click="saveAll"
         >
-          保存全部新组合{{ newRows.length ? `（${newRows.length}）` : "" }}
+          保存全部规格{{ pendingRows.length ? `（${pendingRows.length}）` : "" }}
         </NButton>
         <span class="text-12px text-gray-400">售价填 0 = 继承商品价；已有组合自动跳过</span>
       </div>

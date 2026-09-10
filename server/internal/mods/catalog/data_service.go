@@ -464,6 +464,7 @@ func (s *AdminCatalogService) CreateSku(ctx context.Context, req *adminv1.Create
 // UpdateSku 更新 SKU。
 func (s *AdminCatalogService) UpdateSku(ctx context.Context, req *adminv1.UpdateSkuRequest) (*adminv1.Sku, error) {
 	sku, err := s.repo.UpdateSku(ctx, req.GetId(), SkuInput{
+		SetPrice: req.PriceCents != nil, SetCost: req.CostCents != nil, SetStockOffset: req.StockOffset != nil,
 		Name: req.GetName(), SpecValues: req.GetSpecValues(),
 		PriceCents: req.GetPriceCents(), CostCents: req.GetCostCents(),
 		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(),

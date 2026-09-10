@@ -265,3 +265,16 @@ func TestFulfillUpstreamPendingNotDelivered(t *testing.T) {
 		t.Fatalf("纯上游单未到卡应为 fulfilling: %s", got2.Status)
 	}
 }
+
+func TestRefundedOrderCannotBeDelivered(t *testing.T) {
+	d, cipher, r := newFulfillData(t)
+	ctx := context.Background()
+	_, o := seedPaidOrderWithCards(t, d, cipher, "status", 1)
+	d.Client.Order.UpdateOneID(o.ID).SetStatus(order.StatusRefunded).SaveX(ctx)
+	if err := r.FulfillOrder(ctx, o.OrderNo); err != nil {
+		t.Fatal(err)
+	}
+	if d.Client.OrderDelivery.Query().CountX(ctx) != 0 || d.Client.Card.Query().Where(card.StatusEQ(card.StatusUsed)).CountX(ctx) != 0 {
+		t.Fatal("refunded order was delivered")
+	}
+}

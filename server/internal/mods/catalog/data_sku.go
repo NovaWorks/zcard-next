@@ -17,13 +17,14 @@ import (
 
 // SkuInput SKU 创建/更新输入（price_cents=0 表示继承商品价）。
 type SkuInput struct {
-	ProductID     uint64
-	Name          string
-	SpecValues    map[string]string
-	PriceCents    int64
-	CostCents     int64
-	StockOffset   int32
-	UpstreamSkuID string
+	ProductID                         uint64
+	Name                              string
+	SpecValues                        map[string]string
+	PriceCents                        int64
+	CostCents                         int64
+	StockOffset                       int32
+	UpstreamSkuID                     string
+	SetPrice, SetCost, SetStockOffset bool
 }
 
 // ── admin CRUD ───────────────────────────────────────────────
@@ -57,7 +58,7 @@ func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (*ent.Prod
 	return create.Save(ctx)
 }
 
-// UpdateSku 更新 SKU（零值/空字段不动；price_cents 用 >0 判定，0 表示不改）。
+// UpdateSku applies explicitly supplied zero values (price 0 inherits product price).
 func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput) (*ent.ProductSku, error) {
 	q := data.Client(ctx, r.data).ProductSku.UpdateOneID(id)
 	if in.Name != "" {
@@ -66,13 +67,13 @@ func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput)
 	if in.SpecValues != nil {
 		q.SetSpecValues(in.SpecValues)
 	}
-	if in.PriceCents > 0 {
+	if in.SetPrice || in.PriceCents > 0 {
 		q.SetPrice(in.PriceCents)
 	}
-	if in.CostCents > 0 {
+	if in.SetCost || in.CostCents > 0 {
 		q.SetCost(in.CostCents)
 	}
-	if in.StockOffset != 0 {
+	if in.SetStockOffset || in.StockOffset != 0 {
 		q.SetStockOffset(in.StockOffset)
 	}
 	if in.UpstreamSkuID != "" {
@@ -116,13 +117,24 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 	return out, nil
 }
 
-// ResolvePrice 订单取价：SKU 价 > 商品价（SKU 未设独立价或不存在时回落商品价）。
+// ResolvePrice validates the SKU belongs to this product; zero price inherits the base price.
 func (r *ProductRepoImpl) ResolvePrice(ctx context.Context, productID, skuID uint64) (money.Cents, error) {
 	client := data.Client(ctx, r.data)
 	if skuID > 0 {
-		sku, err := client.ProductSku.Get(ctx, skuID)
-		if err == nil && sku != nil && sku.Price > 0 {
+		sku, err := client.ProductSku.Query().Where(productsku.ID(skuID), productsku.ProductID(productID)).Only(ctx)
+		if err != nil {
+			return 0, fmt.Errorf("catalog.SKU_NOT_FOUND: 规格不存在或不属于该商品: %w", err)
+		}
+		if sku.Price > 0 {
 			return money.Cents(sku.Price), nil
+		}
+	} else {
+		exists, err := client.ProductSku.Query().Where(productsku.ProductID(productID)).Exist(ctx)
+		if err != nil {
+			return 0, err
+		}
+		if exists {
+			return 0, fmt.Errorf("catalog.SKU_REQUIRED: 请选择商品规格")
 		}
 	}
 	p, err := client.Product.Get(ctx, productID)

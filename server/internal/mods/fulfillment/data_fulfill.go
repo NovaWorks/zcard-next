@@ -55,6 +55,10 @@ func NewDeliveryRepoImpl(d *data.Data, cipher *inventory.CardCipher, gate auditp
 // FulfillOrder 自动交付（order.paid 事件触发）：
 // 1) 取订单 reserved 卡密 → 2) MarkUsed/即删 → 3) 写交付记录（card_id + 令牌）
 func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error { return r.fulfillOrder(ctx, orderNo) })
+}
+
+func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) error {
 	client := data.Client(ctx, r.data)
 
 	// 查订单
@@ -64,6 +68,18 @@ func (r *DeliveryRepoImpl) FulfillOrder(ctx context.Context, orderNo string) err
 	}
 	if err != nil {
 		return err
+	}
+
+	// Refund and delivery serialize on the same order row before touching cards.
+	if o.Status != order.StatusPaid {
+		return nil
+	}
+	n, err := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusPaid), order.Version(o.Version)).AddVersion(1).Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return fmt.Errorf("fulfillment.ORDER_CHANGED")
 	}
 
 	// 幂等：已有交付记录直接返回

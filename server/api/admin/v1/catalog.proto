@@ -462,9 +462,9 @@ message UpdateSkuRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;
   map<string, string> spec_values = 3;
-  int64 price_cents = 4;
-  int64 cost_cents = 5;
-  int32 stock_offset = 6;
+  optional int64 price_cents = 4;
+  optional int64 cost_cents = 5;
+  optional int32 stock_offset = 6;
   string upstream_sku_id = 7;
 }
 

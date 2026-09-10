@@ -190,3 +190,22 @@ func NewTestCipher(t *testing.T) *CardCipher {
 	}
 	return c
 }
+
+func TestReserveOnlySelectedSku(t *testing.T) {
+	r, d := newTestRepo(t)
+	ctx := context.Background()
+	pid := seedCards(t, d, 2)
+	cards := d.Client.Card.Query().Order(ent.Asc(card.FieldID)).AllX(ctx)
+	d.Client.Card.UpdateOneID(cards[0].ID).SetSkuID(10).SaveX(ctx)
+	d.Client.Card.UpdateOneID(cards[1].ID).SetSkuID(20).SaveX(ctx)
+	got, err := r.Reserve(ctx, 0, []port.ReserveItem{{ProductID: pid, SkuID: 20, Quantity: 1}})
+	if err != nil || len(got.Cards) != 1 || got.Cards[0].CardID != cards[1].ID {
+		t.Fatalf("wrong SKU reserved %+v %v", got, err)
+	}
+	if _, err = r.Reserve(ctx, 0, []port.ReserveItem{{ProductID: pid, SkuID: 20, Quantity: 1}}); err == nil {
+		t.Fatal("other SKU used as fallback stock")
+	}
+	if d.Client.Card.GetX(ctx, cards[0].ID).Status != card.StatusAvailable {
+		t.Fatal("unselected SKU was consumed")
+	}
+}

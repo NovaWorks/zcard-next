@@ -352,9 +352,16 @@ func (s *AdminPaymentService) CreateRefund(ctx context.Context, req *adminv1.Cre
 	if err != nil {
 		return nil, err
 	}
-	rf, err := s.repo.CreateRefund(ctx, o.ID, req.GetAmountCents(), req.GetChannel(), req.GetReason())
+	if req.GetChannel() != "wallet" {
+		return nil, errors.BadRequest("payment.REFUND_CHANNEL_UNSUPPORTED", "当前仅支持自动退至会员余额；原路或上游退款请先向渠道核实")
+	}
+	var operatorID uint64
+	if claims := identity.ClaimsFromContext(ctx); claims != nil {
+		operatorID = claims.Subject
+	}
+	rf, err := s.repo.RefundToWallet(ctx, o.ID, req.GetAmountCents(), req.ExpectedRefundedCents, req.GetReason(), operatorID)
 	if err != nil {
-		return nil, errors.InternalServer("payment.REFUND_FAILED", "创建退款失败")
+		return nil, err
 	}
 	return ToRefundPB(rf, o.OrderNo), nil
 }

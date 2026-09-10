@@ -31,6 +31,7 @@ export function cancelOrder(orderNo: string, reason: string) {
 // ── 退款（payment 域，order:refund 超管专属）──
 
 export function createRefund(data: {
+  expected_refunded_cents: number;
   order_no: string;
   amount_cents: number;
   channel: string; // wallet | gateway | upstream

@@ -1245,13 +1245,14 @@ func (x *Payment) GetDriverSnapshot() string {
 }
 
 type CreateRefundRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	AmountCents   int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	Channel       string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"` // wallet | gateway | upstream
-	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	ExpectedRefundedCents *int64                 `protobuf:"varint,5,opt,name=expected_refunded_cents,json=expectedRefundedCents,proto3,oneof" json:"expected_refunded_cents,omitempty"` // confirmed cumulative succeeded refunds
+	OrderNo               string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	AmountCents           int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Channel               string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"` // wallet | gateway | upstream
+	Reason                string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *CreateRefundRequest) Reset() {
@@ -1282,6 +1283,13 @@ func (x *CreateRefundRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use CreateRefundRequest.ProtoReflect.Descriptor instead.
 func (*CreateRefundRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_payment_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateRefundRequest) GetExpectedRefundedCents() int64 {
+	if x != nil && x.ExpectedRefundedCents != nil {
+		return *x.ExpectedRefundedCents
+	}
+	return 0
 }
 
 func (x *CreateRefundRequest) GetOrderNo() string {
@@ -1623,12 +1631,14 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\rreview_reason\x18\f \x01(\tR\freviewReason\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\r \x01(\x03R\texpiresAt\x12'\n" +
-	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\x94\x01\n" +
-	"\x13CreateRefundRequest\x12\x1e\n" +
+	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\xed\x01\n" +
+	"\x13CreateRefundRequest\x12;\n" +
+	"\x17expected_refunded_cents\x18\x05 \x01(\x03H\x00R\x15expectedRefundedCents\x88\x01\x01\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12&\n" +
 	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
 	"\achannel\x18\x03 \x01(\tB\x03\xe0A\x02R\achannel\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\",\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reasonB\x1a\n" +
+	"\x18_expected_refunded_cents\",\n" +
 	"\x12ListRefundsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\"M\n" +
 	"\x10ListRefundsReply\x129\n" +
@@ -1737,6 +1747,7 @@ func file_admin_v1_payment_proto_init() {
 		return
 	}
 	file_admin_v1_payment_proto_msgTypes[9].OneofWrappers = []any{}
+	file_admin_v1_payment_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
