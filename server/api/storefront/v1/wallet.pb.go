@@ -205,6 +205,7 @@ type Tx struct {
 	Reference         string                 `protobuf:"bytes,6,opt,name=reference,proto3" json:"reference,omitempty"`
 	Remark            string                 `protobuf:"bytes,7,opt,name=remark,proto3" json:"remark,omitempty"`
 	CreatedAt         int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	DisplayReference  string                 `protobuf:"bytes,9,opt,name=display_reference,json=displayReference,proto3" json:"display_reference,omitempty"` // 展示用业务单号，reference 保留原始幂等键
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -293,6 +294,13 @@ func (x *Tx) GetCreatedAt() int64 {
 		return x.CreatedAt
 	}
 	return 0
+}
+
+func (x *Tx) GetDisplayReference() string {
+	if x != nil {
+		return x.DisplayReference
+	}
+	return ""
 }
 
 type CreateRechargeRequest struct {
@@ -910,7 +918,7 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\"d\n" +
 	"\vListTxReply\x12?\n" +
 	"\ftransactions\x18\x01 \x03(\v2\x1b.zcard.api.storefront.v1.TxR\ftransactions\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xee\x01\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\x9b\x02\n" +
 	"\x02Tx\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1c\n" +
 	"\tdirection\x18\x02 \x01(\tR\tdirection\x12\x12\n" +
@@ -920,7 +928,8 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\treference\x18\x06 \x01(\tR\treference\x12\x16\n" +
 	"\x06remark\x18\a \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\x03R\tcreatedAt\"\x86\x01\n" +
+	"created_at\x18\b \x01(\x03R\tcreatedAt\x12+\n" +
+	"\x11display_reference\x18\t \x01(\tR\x10displayReference\"\x86\x01\n" +
 	"\x15CreateRechargeRequest\x12&\n" +
 	"\famount_cents\x18\x01 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
 	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\x12\x1b\n" +

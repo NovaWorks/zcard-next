@@ -173,7 +173,7 @@ async function handleBanner() {
       ? await updateBanner(editingBannerId.value, payload)
       : await createBanner(payload);
     if (!error) {
-      window.$message?.success(editingBannerId.value ? "横幅已更新（storefront 首页即时消费）" : "横幅已创建（storefront 首页即时消费）");
+      window.$message?.success(editingBannerId.value ? "横幅已更新，刷新首页即可查看" : "横幅已创建，刷新首页即可查看");
       showBanner.value = false;
       loadBanners();
     }
@@ -207,7 +207,7 @@ onMounted(loadBanners);
           <NInput v-model:value="bannerForm.name" />
         </NFormItem>
         <NFormItem label="位置">
-          <NSelect v-model:value="bannerForm.position" :options="[{ label: '顶部', value: 'top' }, { label: '中部', value: 'middle' }, { label: '底部', value: 'bottom' }]" />
+          <NSelect v-model:value="bannerForm.position" :options="[{ label: '顶部', value: 'top' }, { label: '中部（公告下方、商品列表上方）', value: 'middle' }, { label: '底部（商品列表下方）', value: 'bottom' }]" />
         </NFormItem>
         <NFormItem label="图片" required>
           <MediaField v-model:value="bannerForm.image" />

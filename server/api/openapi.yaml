@@ -10871,6 +10871,8 @@ components:
                     type: string
                 username:
                     type: string
+                displayReference:
+                    type: string
         zcard.api.admin.v1.WithdrawalItem:
             type: object
             properties:
@@ -12369,6 +12371,8 @@ components:
                 remark:
                     type: string
                 createdAt:
+                    type: string
+                displayReference:
                     type: string
         zcard.api.storefront.v1.UnreadCountReply:
             type: object

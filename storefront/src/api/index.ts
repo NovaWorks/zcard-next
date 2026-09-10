@@ -464,6 +464,7 @@ export function contactValid(contact: string, mode: string): boolean {
 // ── 钱包：流水/充值/礼品卡/提现（ /）──
 
 export interface WalletTransaction {
+  display_reference?: string;
   id: number;
   direction: string; // in | out
   type: string;

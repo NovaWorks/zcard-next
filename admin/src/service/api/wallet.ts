@@ -10,6 +10,7 @@ export interface WalletBalance {
 }
 
 export interface WalletTransaction {
+  display_reference?: string;
   id: number;
   direction: string;
   type: string;

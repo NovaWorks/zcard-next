@@ -71,6 +71,7 @@ message Tx {
   string reference = 6;
   string remark = 7;
   int64 created_at = 8;
+  string display_reference = 9; // 展示用业务单号，reference 保留原始幂等键
 }
 
 message CreateRechargeRequest {

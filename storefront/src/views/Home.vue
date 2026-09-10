@@ -38,6 +38,8 @@
       <span v-if="latestNotice && !announcementText" class="muted">{{ formatDate(latestNotice.published_at) }}</span>
     </div>
 
+    <BannerStrip :banners="middleBanners" label="首页中部横幅" @open="openBanner" />
+
     <!-- 左右布局：PC 左侧多级分类树 + 右侧内容；移动端横向胶囊兜底 -->
     <div id="catalog" class="home-layout">
       <CategoryTree
@@ -119,10 +121,12 @@
         </div>
       </div>
     </div>
+    <BannerStrip :banners="bottomBanners" label="首页底部横幅" @open="openBanner" />
   </div>
 </template>
 
 <script setup lang="ts">
+import BannerStrip from '@/components/BannerStrip.vue';
 import CatalogToolbar from '@/components/CatalogToolbar.vue';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
@@ -149,6 +153,8 @@ const openNoticeModal: () => void = inject('openNotice', () => {
   window.location.href = '/posts?type=notice';
 });
 const banners = ref<Banner[]>([]);
+const middleBanners = ref<Banner[]>([]);
+const bottomBanners = ref<Banner[]>([]);
 const latestNotice = ref<StorePost | null>(null);
 const categories = ref<CategoryItem[]>([]);
 const hasRecommended = ref(false); // 推荐分类仅在存在可见推荐商品时显示
@@ -395,6 +401,8 @@ await loadTemplateSettings();
 readRouteFilters();
 routeQueryKey = JSON.stringify(route.query);
 await Promise.all([
+  listBanners('middle').then((b) => { middleBanners.value = b?.data?.banners || []; }),
+  listBanners('bottom').then((b) => { bottomBanners.value = b?.data?.banners || []; }),
   listBanners('top').then((b) => { banners.value = b?.data?.banners || []; }),
   listPosts('notice', 1, 1).then((n) => { latestNotice.value = n?.data?.posts?.[0] || null; }),
   listCategories().then((c) => { categories.value = c?.data?.categories || []; }),

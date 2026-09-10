@@ -165,8 +165,11 @@ func (s *AdminCouponService) UpsertPromotion(ctx context.Context, req *adminv1.U
 	scope := map[string]any{}
 	if req.GetScopeJson() != "" {
 		if err := json.Unmarshal([]byte(req.GetScopeJson()), &scope); err != nil {
-			return nil, fmt.Errorf("coupon.SCOPE_JSON_INVALID: %w", err)
+			return nil, errors.BadRequest("coupon.SCOPE_JSON_INVALID", "范围 JSON 格式不正确，请参考商品或分类编号示例")
 		}
+	}
+	if err := validatePromotionScope(scope); err != nil {
+		return nil, err
 	}
 	p, err := s.repo.UpsertPromotion(ctx, req.GetId(), req.GetName(), scope, req.GetType(),
 		req.GetThreshold(), req.GetDiscount(), req.GetSpecialPrice(),

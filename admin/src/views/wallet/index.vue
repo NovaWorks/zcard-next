@@ -9,7 +9,7 @@ import { ref, reactive, h } from "vue";
 import { NTag, NSelect, NRadioGroup, NRadioButton, NRadio } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWalletBalance, adjustWalletBalance, adjustWalletPoints, fetchWalletTransactions, fetchUsers, fetchCoupons, grantCoupon } from "@/service/api";
-import { formatTransactionRemark, formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
+import { transactionType, transactionAmount, transactionReference, transactionRemark, formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "WalletManagement" });
 
@@ -63,19 +63,6 @@ function directionType(d?: string): "success" | "error" | "default" {
   return "default";
 }
 
-function typeText(t?: string) {
-  if (!t) return "-";
-  const map: Record<string, string> = {
-    adjust: "调账",
-    recharge: "充值",
-    payment: "支付",
-    refund: "退款",
-    freeze: "冻结",
-    unfreeze: "解冻",
-  };
-  return map[t] || t;
-}
-
 function formatTime(ts?: number) {
   if (!ts) return "-";
   return new Date(ts * 1000).toLocaleString();
@@ -93,12 +80,12 @@ const columns: DataTableColumns<any> = [
         { default: () => directionText(row.direction) },
       ),
   },
-  { title: "类型", key: "type", width: 100, render: (row) => typeText(row.type) },
+  { title: "类型", key: "type", width: 132, render: (row) => transactionType(row.type) },
   {
     title: "金额",
     key: "amount_cents",
     width: 120,
-    render: (row) => formatSignedMoney(row.amount_cents),
+    render: (row) => formatSignedMoney(transactionAmount(row)),
   },
   {
     title: "余额前",
@@ -112,7 +99,8 @@ const columns: DataTableColumns<any> = [
     width: 120,
     render: (row) => formatMoney(row.balance_after_cents),
   },
-  { title: "备注", key: "remark", render: (row) => formatTransactionRemark(row.remark), minWidth: 140, ellipsis: { tooltip: true } },
+  { title: "关联单号", key: "reference", render: transactionReference, minWidth: 160 },
+  { title: "备注", key: "remark", render: (row) => transactionRemark(row), minWidth: 140, ellipsis: { tooltip: true } },
   { title: "时间", key: "created_at", width: 160, render: (row) => formatTime(row.created_at) },
 ];
 
@@ -336,7 +324,7 @@ async function handleAdjust() {
       </NGrid>
 
       <!-- 流水 -->
-      <NDataTable :columns="columns" :data="transactions" :loading="loading"  :max-height="540" />
+      <NDataTable :columns="columns" :data="transactions" :loading="loading" :scroll-x="1100"  :max-height="540" />
 
       <TablePager
         v-model:page="page"

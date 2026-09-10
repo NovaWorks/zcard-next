@@ -126,3 +126,32 @@ export function formatTransactionRemark(remark?: string): string {
     : formatMoney(principal);
   return `${match[1]} ${amount}${match[2] ? `（用户 #${match[2]}）` : ''}`;
 }
+
+export const TRANSACTION_TYPES: Record<string, string> = {
+  adjust: '人工调账', recharge: '余额充值', order_pay: '订单支付', payment: '订单支付',
+  order_refund: '订单退款', refund: '订单退款', ticket_urgent: '工单付费加急',
+  commission: '分销佣金入账', commission_debt: '佣金欠款扣回', commission_reversal: '佣金退回',
+  withdraw: '提现', freeze: '余额冻结', unfreeze: '余额解冻', giftcard: '礼品卡兑换',
+  earn_recharge: '充值赠送积分', redeem: '积分兑换',
+};
+export function transactionType(type?: string): string {
+  return TRANSACTION_TYPES[type || ''] || '其他收支';
+}
+export function transactionAmount(row: { direction: string; amount_cents: number }): number {
+  return (row.direction === 'out' ? -1 : 1) * Math.abs(row.amount_cents);
+}
+export function transactionReference(row: { id?: number; display_reference?: string; reference?: string }): string {
+  if (row.display_reference) return row.display_reference;
+  const [kind, id] = (row.reference || '').split(':');
+  const labels: Record<string, string> = { order_pay: '订单', order_refund: '退款记录', ticket_urgent: '工单', recharge: '充值支付记录', giftcard: '礼品卡', commission: '佣金记录', adjust: '调账记录' };
+  return labels[kind] && id ? `${labels[kind]} ${kind === 'ticket_urgent' ? '' : '#'}${id}` : `流水 #${row.id || '—'}`;
+}
+export function transactionRemark(row: { id?: number; type?: string; remark?: string; reference?: string; display_reference?: string }): string {
+  const remark = row.remark?.trim();
+  if (!remark || remark === row.reference) return transactionType(row.type);
+  if (TRANSACTION_TYPES[remark]) return TRANSACTION_TYPES[remark];
+  if (/^(order_pay|order_refund|ticket_urgent|recharge|giftcard|commission|adjust):[^\s]+$/.test(remark)) {
+    return transactionReference({ ...row, reference: remark, display_reference: remark === row.reference ? row.display_reference : undefined });
+  }
+  return formatTransactionRemark(row.remark);
+}

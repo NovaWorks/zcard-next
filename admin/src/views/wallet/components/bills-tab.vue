@@ -5,7 +5,7 @@ import { NDataTable, NInput, NSelect, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWalletTransactions } from "@/service/api";
 import TablePager from "@/components/common/table-pager.vue";
-import { formatTransactionRemark, formatMoney, formatSignedMoney } from "@/utils/money";
+import { TRANSACTION_TYPES, transactionType, transactionAmount, transactionReference, transactionRemark, formatMoney, formatSignedMoney } from "@/utils/money";
 
 defineOptions({ name: "WalletBillsTab" });
 
@@ -17,29 +17,11 @@ const pageSize = ref(20);
 // 类型筛选（客户端过滤当前页；服务端 type 筛选参数暂未开放）
 const typeFilter = ref<string | null>(null);
 
-const TYPE_TEXT: Record<string, string> = {
-  adjust: "调账",
-  recharge: "充值",
-  order_pay: "订单支付",
-  order_refund: "订单退款",
-  payment: "支付",
-  refund: "退款",
-  commission: "分销佣金",
-  withdraw: "提现",
-  freeze: "冻结",
-  unfreeze: "解冻",
-  giftcard: "礼品卡兑换",
-};
-
-function typeText(t?: string) {
-  return (t && TYPE_TEXT[t]) || t || "-";
-}
-
 function directionText(d?: string) {
   return d === "in" ? "入账" : d === "out" ? "出账" : d || "-";
 }
 
-const typeOptions = Object.entries(TYPE_TEXT).map(([value, label]) => ({ label, value }));
+const typeOptions = Object.entries(TRANSACTION_TYPES).map(([value, label]) => ({ label, value }));
 
 const filtered = () =>
   typeFilter.value ? bills.value.filter((b) => b.type === typeFilter.value) : bills.value;
@@ -96,12 +78,12 @@ const columns: DataTableColumns<any> = [
         { default: () => directionText(row.direction) },
       ),
   },
-  { title: "类型", key: "type", width: 100, render: (row) => typeText(row.type) },
+  { title: "类型", key: "type", width: 132, render: (row) => transactionType(row.type) },
   {
     title: "金额",
     key: "amount_cents",
     width: 110,
-    render: (row) => formatSignedMoney(row.amount_cents),
+    render: (row) => formatSignedMoney(transactionAmount(row)),
   },
   {
     title: "变动后余额",
@@ -109,8 +91,8 @@ const columns: DataTableColumns<any> = [
     width: 110,
     render: (row) => formatMoney(row.balance_after_cents),
   },
-  { title: "关联单号", key: "reference", minWidth: 150, ellipsis: { tooltip: true } },
-  { title: "备注", key: "remark", render: (row) => formatTransactionRemark(row.remark), minWidth: 120, ellipsis: { tooltip: true } },
+  { title: "关联单号", key: "reference", render: transactionReference, minWidth: 150, ellipsis: { tooltip: true } },
+  { title: "备注", key: "remark", render: (row) => transactionRemark(row), minWidth: 120, ellipsis: { tooltip: true } },
   { title: "时间", key: "created_at", width: 160, render: (row) => formatTime(row.created_at) },
 ];
 
@@ -134,7 +116,7 @@ onMounted(load);
         · 共 {{ total }} 笔（充值/消费/退款/佣金/提现/调账全量流水）
       </span>
     </div>
-    <NDataTable :columns="columns" :data="filtered()" :loading="loading" :max-height="540" />
+    <NDataTable :columns="columns" :data="filtered()" :loading="loading" :scroll-x="1200" :max-height="540" />
     <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />
   </div>
 </template>

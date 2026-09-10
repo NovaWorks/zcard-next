@@ -193,4 +193,5 @@ message WalletTx {
   int64 created_at = 9;
   uint64 user_id = 10; // 归属用户（全站流水场景展示）
   string username = 11; // 归属用户名（全站流水批量回填，可空）
+  string display_reference = 12; // 展示用业务单号，reference 保留原始幂等键
 }

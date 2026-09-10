@@ -1121,8 +1121,9 @@ type WalletTx struct {
 	Reference          string                 `protobuf:"bytes,7,opt,name=reference,proto3" json:"reference,omitempty"`
 	Remark             string                 `protobuf:"bytes,8,opt,name=remark,proto3" json:"remark,omitempty"`
 	CreatedAt          int64                  `protobuf:"varint,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UserId             uint64                 `protobuf:"varint,10,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // 归属用户（全站流水场景展示）
-	Username           string                 `protobuf:"bytes,11,opt,name=username,proto3" json:"username,omitempty"`            // 归属用户名（全站流水批量回填，可空）
+	UserId             uint64                 `protobuf:"varint,10,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                              // 归属用户（全站流水场景展示）
+	Username           string                 `protobuf:"bytes,11,opt,name=username,proto3" json:"username,omitempty"`                                         // 归属用户名（全站流水批量回填，可空）
+	DisplayReference   string                 `protobuf:"bytes,12,opt,name=display_reference,json=displayReference,proto3" json:"display_reference,omitempty"` // 展示用业务单号，reference 保留原始幂等键
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1234,6 +1235,13 @@ func (x *WalletTx) GetUsername() string {
 	return ""
 }
 
+func (x *WalletTx) GetDisplayReference() string {
+	if x != nil {
+		return x.DisplayReference
+	}
+	return ""
+}
+
 var File_admin_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_admin_v1_wallet_proto_rawDesc = "" +
@@ -1321,7 +1329,7 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"k\n" +
 	"\x11ListWalletTxReply\x12@\n" +
 	"\ftransactions\x18\x01 \x03(\v2\x1c.zcard.api.admin.v1.WalletTxR\ftransactions\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xdb\x02\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\x88\x03\n" +
 	"\bWalletTx\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1c\n" +
 	"\tdirection\x18\x02 \x01(\tR\tdirection\x12\x12\n" +
@@ -1335,7 +1343,8 @@ const file_admin_v1_wallet_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\x03R\tcreatedAt\x12\x17\n" +
 	"\auser_id\x18\n" +
 	" \x01(\x04R\x06userId\x12\x1a\n" +
-	"\busername\x18\v \x01(\tR\busername2\xd0\n" +
+	"\busername\x18\v \x01(\tR\busername\x12+\n" +
+	"\x11display_reference\x18\f \x01(\tR\x10displayReference2\xd0\n" +
 	"\n" +
 	"\x12AdminWalletService\x12\x91\x01\n" +
 	"\x0fListWithdrawals\x12*.zcard.api.admin.v1.ListWithdrawalsRequest\x1a(.zcard.api.admin.v1.ListWithdrawalsReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/wallet/withdrawals\x12\x9c\x01\n" +

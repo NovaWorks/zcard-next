@@ -41,11 +41,42 @@ const promoLoading = ref(false);
 const promos = ref<any[]>([]);
 const showPromo = ref(false);
 const promoSaving = ref(false);
+const scopeMode = ref('all');
+const scopeIDs = ref('');
+const scopeError = ref('');
+function promotionScope(): string {
+  if (scopeMode.value === 'all') return '{}';
+  let scope: Record<string, unknown>;
+  if (scopeMode.value === 'advanced') {
+    scope = JSON.parse(promoForm.value.scope_json || '{}');
+  } else {
+    const values = scopeIDs.value.trim().split(/[\s,，、]+/);
+    if (!values.length || values.some((v) => !/^\d+$/.test(v) || !Number.isSafeInteger(Number(v)) || Number(v) <= 0)) {
+      throw new Error('请填写有效的正整数编号，多个编号用逗号分隔，例如 318, 297');
+    }
+    scope = { [scopeMode.value]: [...new Set(values.map(Number))] };
+  }
+  if (!scope || Array.isArray(scope) || typeof scope !== 'object') throw new Error('范围必须是 JSON 对象，例如 {"product_ids":[318,297]}');
+  for (const [key, ids] of Object.entries(scope)) {
+    if (!['product_ids', 'category_ids'].includes(key)) throw new Error('范围仅支持 product_ids（商品）和 category_ids（分类）');
+    if (!Array.isArray(ids) || !ids.length || ids.some((id) => !Number.isSafeInteger(id) || id <= 0)) throw new Error('编号列表不能为空，且只能填写正整数；全场请使用 {}');
+  }
+  return JSON.stringify(scope);
+}
+function scopeText(raw?: string): string {
+  try {
+    const scope = JSON.parse(raw || '{}');
+    const parts = [];
+    if (scope.product_ids?.length) parts.push(`商品：${scope.product_ids.join('、')}`);
+    if (scope.category_ids?.length) parts.push(`分类：${scope.category_ids.join('、')}`);
+    return parts.join('；或 ') || '全场商品';
+  } catch { return '范围格式有误'; }
+}
 const promoForm = ref({ name: "", scope_json: "", type: "percent", thresholdYuan: 0, discount: 9500, special_priceYuan: 0, range: [Date.now(), Date.now() + 86400000 * 7] as [number, number], enabled: true });
 
 const promoColumns: DataTableColumns<any> = [
   { title: "名称", key: "name", width: 140, ellipsis: { tooltip: true } },
-  { title: "范围", key: "scope_json", width: 160, ellipsis: true, render: (row) => row.scope_json || "全场" },
+  { title: "范围", key: "scope_json", width: 160, ellipsis: true, render: (row) => scopeText(row.scope_json) },
   {
     title: "规则",
     key: "rule",
@@ -54,7 +85,7 @@ const promoColumns: DataTableColumns<any> = [
       row.type === "fixed"
         ? `满 ${formatMoney(row.threshold)} 减 ${formatMoney(row.discount)}`
         : row.type === "percent"
-          ? `满 ${formatMoney(row.threshold)} 打 ${(row.discount / 100).toFixed(1)}折`
+          ? `满 ${formatMoney(row.threshold)} 打 ${(row.discount / 1000).toFixed(2)}折`
           : `特价 ${formatMoney(row.special_price)}`,
   },
   { title: "开始", key: "start_at", width: 150, render: (row) => new Date(row.start_at * 1000).toLocaleString() },
@@ -119,11 +150,20 @@ async function handleDeleteFlash(id: number) {
 
 async function handlePromo() {
   if (!promoForm.value.name) return;
+  scopeError.value = '';
+  let scope: string;
+  try { scope = promotionScope(); } catch (error) {
+    scopeError.value = error instanceof SyntaxError ? 'JSON 格式不正确，请参考下方示例，使用英文双引号和逗号' : (error as Error).message;
+    return;
+  }
+  if (!promoForm.value.range || promoForm.value.range[1] <= promoForm.value.range[0]) {
+    window.$message?.error('请选择有效的开始和结束时间'); return;
+  }
   promoSaving.value = true;
   try {
     const { error } = await upsertPromotion({
       name: promoForm.value.name,
-      scope_json: promoForm.value.scope_json || undefined,
+      scope_json: scope,
       type: promoForm.value.type,
       threshold: Math.round(promoForm.value.thresholdYuan * 100),
       discount: promoForm.value.type === "percent" ? promoForm.value.discount : Math.round(promoForm.value.discount),
@@ -189,13 +229,30 @@ onMounted(() => {
       </template>
     </NModal>
 
-    <NModal v-model:show="showPromo" preset="dialog" title="新建促销" style="width: 520px">
+    <NModal v-model:show="showPromo" preset="dialog" title="新建促销" style="width: min(620px, 94vw)">
       <NForm :model="promoForm" label-placement="left" label-width="88">
         <NFormItem label="名称" required>
           <NInput v-model:value="promoForm.name" />
         </NFormItem>
-        <NFormItem label="范围JSON">
-          <NInput v-model:value="promoForm.scope_json" placeholder='{"product_ids":[1,2]} 或 {"category_ids":[3]}，空=全场' />
+        <NFormItem label="适用范围">
+          <NSelect v-model:value="scopeMode" :options="[{label:'全场商品',value:'all'}, {label:'指定商品',value:'product_ids'}, {label:'指定分类',value:'category_ids'}, {label:'高级 JSON',value:'advanced'}]" @update:value="scopeError = ''" />
+        </NFormItem>
+        <NFormItem v-if="scopeMode === 'product_ids' || scopeMode === 'category_ids'" :label="scopeMode === 'product_ids' ? '商品编号' : '分类编号'" :validation-status="scopeError ? 'error' : undefined" :feedback="scopeError">
+          <div class="w-full">
+            <NInput v-model:value="scopeIDs" placeholder="例如：318, 297（多个编号用逗号分隔）" />
+            <p class="mt-8px text-13px">编号可在后台商品或分类列表的 ID 列查看。指定分类仅包含直接归属该分类的商品，子分类需另填编号。</p>
+          </div>
+        </NFormItem>
+        <NFormItem v-if="scopeMode === 'advanced'" label="范围 JSON" :validation-status="scopeError ? 'error' : undefined" :feedback="scopeError">
+          <div class="w-full">
+            <NInput v-model:value="promoForm.scope_json" type="textarea" :autosize="{minRows: 3, maxRows: 8}" placeholder='{"product_ids":[318,297]}' />
+            <div class="mt-8px text-13px">
+              <p>全场商品：<code>{}</code></p>
+              <p>指定商品：<code>{"product_ids":[318,297]}</code></p>
+              <p>指定分类：<code>{"category_ids":[3,5]}</code></p>
+              <p>两者可同时填写，命中任一范围即生效。数字为示例，请替换为实际 ID；分类不自动包含子分类。</p>
+            </div>
+          </div>
         </NFormItem>
         <NFormItem label="类型">
           <NSelect v-model:value="promoForm.type" :options="[{ label: '折扣（万分比）', value: 'percent' }, { label: '满减（分）', value: 'fixed' }, { label: '特价（分）', value: 'special_price' }]" />

@@ -116,31 +116,33 @@
     <!-- 余额流水 -->
     <div v-if="tab === 'transactions'" class="card">
       <table class="list table-desktop">
-        <thead><tr><th>时间</th><th>类型</th><th>金额</th><th>余额</th><th>备注</th></tr></thead>
+        <thead><tr><th>时间</th><th>类型</th><th>方向</th><th>金额</th><th>余额</th><th>关联单号 / 备注</th></tr></thead>
         <tbody>
           <tr v-for="t in transactions" :key="t.id">
             <td class="muted">{{ fmtTime(t.created_at) }}</td>
-            <td>{{ t.type }}</td>
-            <td :class="t.amount_cents >= 0 ? 'success' : 'error'">{{ formatSignedMoney(t.amount_cents) }}</td>
+            <td>{{ transactionType(t.type) }}</td>
+            <td>{{ t.direction === "in" ? "入账" : "出账" }}</td>
+            <td :class="t.direction === 'in' ? 'success' : 'error'">{{ formatSignedMoney(transactionAmount(t)) }}</td>
             <td>{{ formatMoney(t.balance_after_cents) }}</td>
-            <td class="muted">{{ formatTransactionRemark(t.remark) || t.reference }}</td>
+            <td class="muted"><div>{{ transactionReference(t) }}</div>{{ transactionRemark(t) }}</td>
           </tr>
-          <tr v-if="!transactions.length"><td colspan="5" class="muted" style="text-align: center;">暂无流水</td></tr>
+          <tr v-if="!transactions.length"><td colspan="6" class="muted" style="text-align: center;">暂无流水</td></tr>
         </tbody>
       </table>
       <!-- 移动端流水卡片 -->
       <div class="table-cards">
         <div v-for="t in transactions" :key="t.id" class="mcard">
           <div class="mcard-row">
-            <span class="mcard-title">{{ t.type }}</span>
-            <span :class="t.amount_cents >= 0 ? 'success' : 'error'" style="font-weight: 700;">{{ formatSignedMoney(t.amount_cents) }}</span>
+            <span class="mcard-title">{{ transactionType(t.type) }} · {{ t.direction === "in" ? "入账" : "出账" }}</span>
+            <span :class="t.direction === 'in' ? 'success' : 'error'" style="font-weight: 700;">{{ formatSignedMoney(transactionAmount(t)) }}</span>
           </div>
           <div class="mcard-row">
             <span class="muted">{{ fmtTime(t.created_at) }}</span>
             <span class="muted">余额 {{ formatMoney(t.balance_after_cents) }}</span>
           </div>
-          <div class="mcard-row" v-if="formatTransactionRemark(t.remark) || t.reference">
-            <span class="muted" style="word-break: break-all;">{{ formatTransactionRemark(t.remark) || t.reference }}</span>
+          <div class="mcard-row"><span class="muted" style="overflow-wrap: anywhere;">{{ transactionReference(t) }}</span></div>
+          <div class="mcard-row" v-if="transactionRemark(t)">
+            <span class="muted" style="word-break: break-all;">{{ transactionRemark(t) }}</span>
           </div>
         </div>
         <div v-if="!transactions.length" class="muted" style="text-align: center; padding: 16px 0;">暂无流水</div>
@@ -331,7 +333,7 @@ import {
   fetchPaymentChannels, type ChannelItem,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
-import { api, formatMoney, formatSignedMoney, formatTransactionRemark, setToken, centsToYuan, getCurrency } from '@/api/client';
+import { api, formatMoney, formatSignedMoney, transactionType, transactionAmount, transactionReference, transactionRemark, setToken, centsToYuan, getCurrency } from '@/api/client';
 import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import Affiliate from './Affiliate.vue';

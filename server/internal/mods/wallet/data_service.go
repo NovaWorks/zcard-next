@@ -78,12 +78,16 @@ func (s *StoreWalletService) ListTransactions(ctx context.Context, req *storefro
 	if err != nil {
 		return nil, errors.InternalServer("wallet.TX_FAILED", "查询流水失败")
 	}
+	references, err := s.repo.DisplayReferences(ctx, rows)
+	if err != nil {
+		return nil, errors.InternalServer("wallet.TX_FAILED", "查询关联单号失败")
+	}
 	reply := &storefrontv1.ListTxReply{Total: total}
 	for _, r := range rows {
 		reply.Transactions = append(reply.Transactions, &storefrontv1.Tx{
 			Id: r.ID, Direction: r.Direction, Type: r.Type,
 			AmountCents: r.Amount, BalanceAfterCents: r.BalanceAfter,
-			Reference: r.Reference, Remark: r.Remark, CreatedAt: r.CreatedAt.Unix(),
+			DisplayReference: references[r.ID], Reference: r.Reference, Remark: r.Remark, CreatedAt: r.CreatedAt.Unix(),
 		})
 	}
 	return reply, nil
@@ -339,12 +343,16 @@ func (s *AdminWalletService) ListTransactions(ctx context.Context, req *adminv1.
 			names = map[uint64]string{} // 用户名回填失败不阻断流水列表
 		}
 	}
+	references, err := s.repo.DisplayReferences(ctx, rows)
+	if err != nil {
+		return nil, errors.InternalServer("wallet.TX_FAILED", "查询关联单号失败")
+	}
 	reply := &adminv1.ListWalletTxReply{Total: total}
 	for _, r := range rows {
 		reply.Transactions = append(reply.Transactions, &adminv1.WalletTx{
 			Id: r.ID, Direction: r.Direction, Type: r.Type,
 			AmountCents: r.Amount, BalanceBeforeCents: r.BalanceBefore,
-			BalanceAfterCents: r.BalanceAfter, Reference: r.Reference, Remark: r.Remark,
+			DisplayReference: references[r.ID], BalanceAfterCents: r.BalanceAfter, Reference: r.Reference, Remark: r.Remark,
 			UserId: r.UserID, Username: names[r.UserID], CreatedAt: r.CreatedAt.Unix(),
 		})
 	}
