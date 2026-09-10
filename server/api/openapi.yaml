@@ -9913,6 +9913,19 @@ components:
                     type: string
                 updatedAt:
                     type: string
+                scope:
+                    type: string
+                categoryId:
+                    type: string
+                discountBps:
+                    type: integer
+                    format: int32
+                productName:
+                    type: string
+                categoryName:
+                    type: string
+                skuName:
+                    type: string
         zcard.api.admin.v1.SupplyConnection:
             type: object
             properties:
@@ -10699,8 +10712,6 @@ components:
         zcard.api.admin.v1.UpsertSupplierPriceRequest:
             required:
                 - accountId
-                - productId
-                - price
             type: object
             properties:
                 accountId:
@@ -10711,6 +10722,13 @@ components:
                     type: string
                 price:
                     type: string
+                scope:
+                    type: string
+                categoryId:
+                    type: string
+                discountBps:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.UserCouponItem:
             type: object
             properties:

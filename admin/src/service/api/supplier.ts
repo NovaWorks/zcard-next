@@ -47,7 +47,7 @@ export function resendSupplierCallback(id: number) {
   return request({ url: `/api/v1/admin/supplier/callbacks/${id}/resend`, method: "post" });
 }
 
-export function upsertSupplierPrice(data: { account_id: number; product_id: number; sku_id?: number; price: number }) {
+export function upsertSupplierPrice(data: { account_id: number; product_id: number; sku_id?: number; price: number; scope?: string; category_id?: number; discount_bps?: number }) {
   // price 单位分（界面输入元，提交前换算）
   return request({ url: "/api/v1/admin/supplier/prices", method: "post", data });
 }

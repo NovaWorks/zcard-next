@@ -28,7 +28,13 @@ type SupplierProductPrice struct {
 	// 0=商品级（哨兵，参与唯一索引）
 	SkuID uint64 `json:"sku_id,omitempty"`
 	// 供货价（分）
-	Price        int64 `json:"price,omitempty"`
+	Price int64 `json:"price,omitempty"`
+	// product 固定价 / category 分类折扣 / global 整站折扣
+	Scope string `json:"scope,omitempty"`
+	// CategoryID holds the value of the "category_id" field.
+	CategoryID uint64 `json:"category_id,omitempty"`
+	// 折后比例，9000=9折
+	DiscountBps  int32 `json:"discount_bps,omitempty"`
 	selectValues sql.SelectValues
 }
 
@@ -37,8 +43,10 @@ func (*SupplierProductPrice) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case supplierproductprice.FieldID, supplierproductprice.FieldSupplierAccountID, supplierproductprice.FieldProductID, supplierproductprice.FieldSkuID, supplierproductprice.FieldPrice:
+		case supplierproductprice.FieldID, supplierproductprice.FieldSupplierAccountID, supplierproductprice.FieldProductID, supplierproductprice.FieldSkuID, supplierproductprice.FieldPrice, supplierproductprice.FieldCategoryID, supplierproductprice.FieldDiscountBps:
 			values[i] = new(sql.NullInt64)
+		case supplierproductprice.FieldScope:
+			values[i] = new(sql.NullString)
 		case supplierproductprice.FieldCreatedAt, supplierproductprice.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
@@ -98,6 +106,24 @@ func (_m *SupplierProductPrice) assignValues(columns []string, values []any) err
 			} else if value.Valid {
 				_m.Price = value.Int64
 			}
+		case supplierproductprice.FieldScope:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field scope", values[i])
+			} else if value.Valid {
+				_m.Scope = value.String
+			}
+		case supplierproductprice.FieldCategoryID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field category_id", values[i])
+			} else if value.Valid {
+				_m.CategoryID = uint64(value.Int64)
+			}
+		case supplierproductprice.FieldDiscountBps:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field discount_bps", values[i])
+			} else if value.Valid {
+				_m.DiscountBps = int32(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -151,6 +177,15 @@ func (_m *SupplierProductPrice) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Price))
+	builder.WriteString(", ")
+	builder.WriteString("scope=")
+	builder.WriteString(_m.Scope)
+	builder.WriteString(", ")
+	builder.WriteString("category_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))
+	builder.WriteString(", ")
+	builder.WriteString("discount_bps=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DiscountBps))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -193,9 +193,12 @@ message ListSupplierLedgerReply {
 
 message UpsertSupplierPriceRequest {
   uint64 account_id = 1 [(google.api.field_behavior) = REQUIRED];
-  uint64 product_id = 2 [(google.api.field_behavior) = REQUIRED];
+  uint64 product_id = 2;
   uint64 sku_id = 3;
-  int64 price = 4 [(google.api.field_behavior) = REQUIRED];
+  int64 price = 4;
+  string scope = 5; // 空或 product=专属价，category=分类折扣，global=整站折扣
+  uint64 category_id = 6;
+  int32 discount_bps = 7; // 9000=9折，1..10000
 }
 
 message ListSupplierPricesRequest {
@@ -208,6 +211,12 @@ message SupplierPriceItem {
   uint64 sku_id = 3; // 0 = 商品级默认价
   int64 price = 4; // 分
   int64 updated_at = 5;
+  string scope = 6;
+  uint64 category_id = 7;
+  int32 discount_bps = 8;
+  string product_name = 9;
+  string category_name = 10;
+  string sku_name = 11;
 }
 
 message ListSupplierPricesReply {

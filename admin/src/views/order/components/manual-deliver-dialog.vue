@@ -3,8 +3,9 @@ import { ref, watch, computed } from "vue";
 import { NModal, NForm, NFormItem, NInput, NSelect, NButton, NAlert } from "naive-ui";
 import { fetchOrder, manualDeliver } from "@/service/api";
 
-const props = defineProps<{ show: boolean; orderNo: string }>();
+const props = defineProps<{ show: boolean; orderNo: string; defaultItemId?: number }>();
 const emit = defineEmits<{ 'update:show': [boolean]; delivered: [] }>();
+let requestSeq = 0;
 const loading = ref(false);
 const saving = ref(false);
 const error = ref('');
@@ -17,17 +18,22 @@ const options = computed(() => items.value.map(it => ({
   label: `${it.name || '#' + it.product_id}${it.sku_name ? ' / ' + it.sku_name : ''} · 购买 ${it.quantity} 件${it.fulfillment_status === 'delivered' ? '（已发货）' : ''}`,
   value: Number(it.id), disabled: it.fulfillment_status === 'delivered' || it.fulfillment_status === 'refunded',
 })));
-watch(() => [props.show, props.orderNo], async () => {
+watch(() => [props.show, props.orderNo, props.defaultItemId], async () => {
+  const seq = ++requestSeq;
   if (!props.show || !props.orderNo) return;
   loading.value = true;
   error.value = ''; items.value = []; itemId.value = null;
   content.value = ''; logistics.value = ''; remark.value = '';
   try {
     const { data, error: err } = await fetchOrder(props.orderNo);
+    if (seq !== requestSeq) return;
     if (err || !data) { error.value = '读取订单失败，请关闭后重试'; return; }
     items.value = (data as any).items || [];
-    itemId.value = options.value.find(it => !it.disabled)?.value ?? null;
-  } finally { loading.value = false; }
+    itemId.value = props.defaultItemId
+      ? options.value.find(it => it.value === Number(props.defaultItemId) && !it.disabled)?.value ?? null
+      : options.value.find(it => !it.disabled)?.value ?? null;
+    if (!itemId.value) error.value = "该采购商品已发货或不可补发，请刷新采购单核对状态";
+  } finally { if (seq === requestSeq) loading.value = false; }
 });
 async function submit() {
   if (saving.value || !itemId.value) return;
@@ -48,7 +54,7 @@ async function submit() {
     <NAlert v-if="error" type="error" class="mb-12px">{{ error }}</NAlert>
     <NForm label-placement="top" :disabled="loading || saving">
       <NFormItem label="订单号"><NInput :value="orderNo" disabled /></NFormItem>
-      <NFormItem label="补发商品"><NSelect v-model:value="itemId" :options="options" :loading="loading" placeholder="请选择商品" /></NFormItem>
+      <NFormItem label="补发商品"><NSelect v-model:value="itemId" :options="options" :disabled="!!defaultItemId" :loading="loading" placeholder="请选择商品" /></NFormItem>
       <NFormItem label="卡密内容（每行一条）"><NInput v-model:value="content" type="textarea" :rows="6" placeholder="粘贴需要补发的卡密" /></NFormItem>
       <NFormItem label="物流单号（与卡密内容二选一）"><NInput v-model:value="logistics" /></NFormItem>
       <NFormItem label="处理备注"><NInput v-model:value="remark" placeholder="例如：上游余额不足，人工补卡" /></NFormItem>

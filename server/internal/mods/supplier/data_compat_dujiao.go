@@ -162,9 +162,14 @@ func (h *dujiaoCompat) products(w http.ResponseWriter, r *http.Request, account 
 		writeDujiaoErr(w, http.StatusInternalServerError, "internal_error", err.Error())
 		return
 	}
+	pricing, err := h.svc.repo.LoadPricing(r.Context(), account.ID)
+	if err != nil {
+		writeDujiaoErr(w, http.StatusInternalServerError, "pricing_unavailable", "供货定价读取失败")
+		return
+	}
 	out := make([]map[string]any, 0, len(items))
 	for _, p := range items {
-		out = append(out, h.dujiaoProduct(r, account, p))
+		out = append(out, h.dujiaoProduct(r, account, p, pricing))
 	}
 	writeDujiaoOK(w, map[string]any{
 		"items": out, "total": total, "page": page, "page_size": pageSize,
@@ -184,7 +189,12 @@ func (h *dujiaoCompat) productDetail(w http.ResponseWriter, r *http.Request, acc
 		writeDujiaoErr(w, http.StatusNotFound, "product_not_found", "商品不存在")
 		return
 	}
-	writeDujiaoOK(w, map[string]any{"product": h.dujiaoProduct(r, account, *p)})
+	pricing, err := h.svc.repo.LoadPricing(r.Context(), account.ID)
+	if err != nil {
+		writeDujiaoErr(w, http.StatusInternalServerError, "pricing_unavailable", "供货定价读取失败")
+		return
+	}
+	writeDujiaoOK(w, map[string]any{"product": h.dujiaoProduct(r, account, *p, pricing)})
 }
 
 func (h *dujiaoCompat) createOrder(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount) {
@@ -299,12 +309,9 @@ func (h *dujiaoCompat) orderAction(w http.ResponseWriter, r *http.Request, accou
 }
 
 // dujiaoProduct 商品行（单 SKU：SKU id = 商品 id；金额字符串元）。
-func (h *dujiaoCompat) dujiaoProduct(r *http.Request, account *ent.SupplierAccount, p catalogport.SupplierProduct) map[string]any {
+func (h *dujiaoCompat) dujiaoProduct(r *http.Request, account *ent.SupplierAccount, p catalogport.SupplierProduct, pricing *supplierPricing) map[string]any {
 	ctx := withAccount(r, account.ID)
-	price := p.Price
-	if override, err := h.svc.repo.PriceOf(ctx, account.ID, p.ID, 0); err == nil && override > 0 {
-		price = override
-	}
+	price := pricing.Price(p.ID, 0, p.CategoryID, p.Price)
 	stock := -1
 	if st, err := h.svc.inv.Stock(ctx, p.ID, 0); err == nil {
 		stock = int(st)

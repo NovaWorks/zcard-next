@@ -90,16 +90,17 @@ func (s *SupplyAPIService) ListProducts(ctx context.Context, req *supplyv1.ListP
 	if err != nil {
 		return nil, err
 	}
+	pricing, err := s.repo.LoadPricing(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
 	reply := &supplyv1.ListProductsReply{
 		Total:    total,
 		PageSize: int32(pageSize),
 		HasMore:  int64(page)*int64(pageSize) < total,
 	}
 	for _, p := range items {
-		price := p.Price
-		if override, err := s.repo.PriceOf(ctx, accountID, p.ID, 0); err == nil && override > 0 {
-			price = override
-		}
+		price := pricing.Price(p.ID, 0, p.CategoryID, p.Price)
 		reply.Items = append(reply.Items, &supplyv1.SupplyProduct{
 			Id:           strconv.FormatUint(p.ID, 10),
 			Name:         p.Name,
@@ -125,10 +126,11 @@ func (s *SupplyAPIService) GetProduct(ctx context.Context, req *supplyv1.GetProd
 	if err != nil {
 		return nil, errors.New("supplier.PRODUCT_NOT_FOUND")
 	}
-	price := row.Price
-	if override, err := s.repo.PriceOf(ctx, accountID, row.ID, 0); err == nil && override > 0 {
-		price = override
+	pricing, err := s.repo.LoadPricing(ctx, accountID)
+	if err != nil {
+		return nil, err
 	}
+	price := pricing.Price(row.ID, 0, row.CategoryID, row.Price)
 	return &supplyv1.GetProductReply{Product: &supplyv1.SupplyProduct{
 		Id: strconv.FormatUint(row.ID, 10), Name: row.Name, Price: price,
 		FactoryPrice: row.FactoryPrice, IsActive: row.Status == 1,
@@ -228,10 +230,11 @@ func (s *SupplyAPIService) fulfillOrder(ctx context.Context, accountID, productI
 		return &fulfillOutcome{rejected: true, errCode: "product_unavailable", errMsg: "商品不可用"}, nil
 	}
 	// 供货价（覆盖价 > 基础价）
-	price := p.Price
-	if override, err := s.repo.PriceOf(ctx, accountID, productID, 0); err == nil && override > 0 {
-		price = override
+	pricing, err := s.repo.LoadPricing(ctx, accountID)
+	if err != nil {
+		return nil, err
 	}
+	price := pricing.Price(p.ID, 0, p.CategoryID, p.Price)
 	amount := price * int64(quantity)
 	// 建单（pending）
 	items := []map[string]any{{

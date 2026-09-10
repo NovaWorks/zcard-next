@@ -15,5 +15,5 @@ export function retryProcurement(id: number) {
 }
 
 export function markProcurementManual(id: number, reason?: string) {
-  return request({ url: `/api/v1/admin/procurements/${id}/manual`, method: "post", data: { reason } });
+  return request({ url: `/api/v1/admin/procurements/${id}/manual`, method: "post", data: { remark: reason } });
 }

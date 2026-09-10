@@ -8,6 +8,7 @@ import type { DataTableColumns } from "naive-ui";
 import { fetchProcurement, fetchDeliveries, fetchProcurements, retryProcurement, markProcurementManual } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { formatMoney } from "@/utils/money";
+import ManualDeliverDialog from "@/views/order/components/manual-deliver-dialog.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import TablePager from "@/components/common/table-pager.vue";
 import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
@@ -19,6 +20,7 @@ const { te, t } = useI18n();
 /** 状态枚举 → 按当前语言渲染业务名称，未收录的状态回显原值 */
 function statusText(s?: string) {
   if (!s) return "-";
+  if (s === "manual") return "待人工处理";
   const key = `procurement.status.${s}`;
   return te(key) ? t(key) : s;
 }
@@ -91,10 +93,11 @@ async function handleRetry(row: any) {
 }
 
 async function handleManual(row: any) {
-  const { error } = await markProcurementManual(row.id, "管理员手动标记完成");
+  const { error } = await markProcurementManual(row.id, "管理员手动转人工，等待人工补发");
   if (!error) {
-    window.$message?.success("已转人工终态");
+    window.$message?.success("已转人工，请在采购详情点击人工补发完成处理");
     load();
+    await openDetail(row.id);
   }
 }
 
@@ -109,7 +112,7 @@ const orderNoCol = (tr: TableTier) => ({
 });
 
 const errorCol = () => ({
-  title: "失败原因",
+  title: "处理说明",
   key: "last_error",
   minWidth: 140,
   maxWidth: 420,
@@ -120,15 +123,17 @@ const errorCol = () => ({
 const actionsCol = () => ({
   title: "操作",
   key: "actions",
-  width: 148,
+  width: 172,
   render: (row: any) =>
     h("div", { class: "flex flex-wrap items-center gap-4px" }, [
       h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => openDetail(row.id) }, { default: () => "查看" }),
+      ["manual", "rejected", "refunding"].includes(row.status) && canDeliver()
+        ? h(NButton, { size: "tiny", type: "primary", onClick: () => openDetail(row.id) }, { default: () => "处理" }) : null,
       ["pending", "submitted", "polling", "failed"].includes(row.status) && canRetry()
         ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRetry(row) }, { default: () => "重试" })
         : null,
       ["pending", "submitted", "polling"].includes(row.status) && canRetry()
-        ? h(NPopconfirm, { onPositiveClick: () => handleManual(row) }, { trigger: () => h(NButton, { size: "tiny", quaternary: true }, { default: () => "转人工" }), default: () => "标记人工处理（不再自动重试）？" })
+        ? h(NPopconfirm, { onPositiveClick: () => handleManual(row) }, { trigger: () => h(NButton, { size: "tiny", quaternary: true }, { default: () => "转人工" }), default: () => "停止自动采购并转人工？转人工后需核实上游结果，再通过人工补发完成发货。" })
         : null,
     ]),
 });
@@ -161,6 +166,14 @@ const columns = computed<DataTableColumns<any>>(() => {
   return cols;
 });
 
+const showManualDeliver = ref(false);
+const canDeliver = () => checkAuth('order:read') && checkAuth('order:deliver');
+const canDeliverDetail = computed(() => detail.value && canDeliver() && ['manual','rejected','refunding'].includes(detail.value.status) && ['paid','fulfilling','partially_delivered'].includes(detail.value.order_status));
+async function afterManualDeliver() {
+  const id = detail.value?.id;
+  await load();
+  if (id) await openDetail(id);
+}
 const detailVisible = ref(false);
 const detailLoading = ref(false);
 const detail = ref<any>(null);
@@ -205,6 +218,15 @@ onMounted(load);
         <NSpin :show="detailLoading">
           <NAlert v-if="detailError" type="error">{{ detailError }}</NAlert>
           <template v-if="detail">
+            <NAlert v-if="detail.status === 'manual'" type="warning" class="mb-16px" title="等待人工处理">
+              自动采购已停止，转人工不代表订单已发货。请先核实上游是否已扣款或出货，拿到卡密后点击下方“人工补发”；买家继续使用原订单取货。
+            </NAlert>
+            <div v-if="canDeliverDetail" class="mb-16px flex flex-wrap items-center gap-12px">
+              <NButton type="primary" @click="showManualDeliver = true">人工补发</NButton>
+              <span>将自动选中本采购单对应商品，提交后同步更新订单与采购状态。</span>
+            </div>
+            <p v-else-if="detail.status === 'manual' && canDeliver()">销售订单当前为{{ orderStatusText(detail.order_status) }}，无法补发。请先核对订单状态。</p>
+            <p v-else-if="detail.status === 'manual' && !canDeliver()">当前账号缺少订单查看或发货权限，请联系管理员处理。</p>
             <NDescriptions bordered label-placement="top" :column="tier === 'compact' ? 1 : 3">
               <NDescriptionsItem label="销售订单">{{ detail.order_no }} · {{ orderStatusText(detail.order_status) }}</NDescriptionsItem>
               <NDescriptionsItem label="采购状态">{{ statusText(detail.status) }}</NDescriptionsItem>
@@ -237,6 +259,7 @@ onMounted(load);
         </NSpin>
       </NCard>
     </NModal>
+    <ManualDeliverDialog v-model:show="showManualDeliver" :order-no="detail?.order_no || ''" :default-item-id="detail?.order_item_id" @delivered="afterManualDeliver" />
     <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px" @change="onSearch" />
     <NDataTable :columns="columns" :data="rows" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" :scroll-x="300" />
     <div class="mt-12px flex justify-end">

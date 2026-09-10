@@ -140,12 +140,15 @@ func (SupplierProductPrice) Fields() []ent.Field {
 		field.Uint64("product_id"),
 		field.Uint64("sku_id").Default(0).Comment("0=商品级（哨兵，参与唯一索引）"),
 		field.Int64("price").Comment("供货价（分）"),
+		field.String("scope").Default("product").Comment("product 固定价 / category 分类折扣 / global 整站折扣"),
+		field.Uint64("category_id").Default(0),
+		field.Int32("discount_bps").Default(0).Comment("折后比例，9000=9折"),
 	}
 }
 
 func (SupplierProductPrice) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("supplier_account_id", "product_id", "sku_id").Unique(),
+		index.Fields("supplier_account_id", "scope", "product_id", "sku_id", "category_id").Unique().StorageKey("supplier_price_scope_unique"),
 	}
 }
 

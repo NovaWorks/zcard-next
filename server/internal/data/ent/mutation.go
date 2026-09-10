@@ -68405,6 +68405,11 @@ type SupplierProductPriceMutation struct {
 	addsku_id              *int64
 	price                  *int64
 	addprice               *int64
+	scope                  *string
+	category_id            *uint64
+	addcategory_id         *int64
+	discount_bps           *int32
+	adddiscount_bps        *int32
 	clearedFields          map[string]struct{}
 	done                   bool
 	oldValue               func(context.Context) (*SupplierProductPrice, error)
@@ -68811,6 +68816,154 @@ func (m *SupplierProductPriceMutation) ResetPrice() {
 	m.addprice = nil
 }
 
+// SetScope sets the "scope" field.
+func (m *SupplierProductPriceMutation) SetScope(s string) {
+	m.scope = &s
+}
+
+// Scope returns the value of the "scope" field in the mutation.
+func (m *SupplierProductPriceMutation) Scope() (r string, exists bool) {
+	v := m.scope
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldScope returns the old "scope" field's value of the SupplierProductPrice entity.
+// If the SupplierProductPrice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierProductPriceMutation) OldScope(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldScope is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldScope requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldScope: %w", err)
+	}
+	return oldValue.Scope, nil
+}
+
+// ResetScope resets all changes to the "scope" field.
+func (m *SupplierProductPriceMutation) ResetScope() {
+	m.scope = nil
+}
+
+// SetCategoryID sets the "category_id" field.
+func (m *SupplierProductPriceMutation) SetCategoryID(u uint64) {
+	m.category_id = &u
+	m.addcategory_id = nil
+}
+
+// CategoryID returns the value of the "category_id" field in the mutation.
+func (m *SupplierProductPriceMutation) CategoryID() (r uint64, exists bool) {
+	v := m.category_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategoryID returns the old "category_id" field's value of the SupplierProductPrice entity.
+// If the SupplierProductPrice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierProductPriceMutation) OldCategoryID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategoryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategoryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategoryID: %w", err)
+	}
+	return oldValue.CategoryID, nil
+}
+
+// AddCategoryID adds u to the "category_id" field.
+func (m *SupplierProductPriceMutation) AddCategoryID(u int64) {
+	if m.addcategory_id != nil {
+		*m.addcategory_id += u
+	} else {
+		m.addcategory_id = &u
+	}
+}
+
+// AddedCategoryID returns the value that was added to the "category_id" field in this mutation.
+func (m *SupplierProductPriceMutation) AddedCategoryID() (r int64, exists bool) {
+	v := m.addcategory_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCategoryID resets all changes to the "category_id" field.
+func (m *SupplierProductPriceMutation) ResetCategoryID() {
+	m.category_id = nil
+	m.addcategory_id = nil
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (m *SupplierProductPriceMutation) SetDiscountBps(i int32) {
+	m.discount_bps = &i
+	m.adddiscount_bps = nil
+}
+
+// DiscountBps returns the value of the "discount_bps" field in the mutation.
+func (m *SupplierProductPriceMutation) DiscountBps() (r int32, exists bool) {
+	v := m.discount_bps
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDiscountBps returns the old "discount_bps" field's value of the SupplierProductPrice entity.
+// If the SupplierProductPrice object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplierProductPriceMutation) OldDiscountBps(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDiscountBps is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDiscountBps requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDiscountBps: %w", err)
+	}
+	return oldValue.DiscountBps, nil
+}
+
+// AddDiscountBps adds i to the "discount_bps" field.
+func (m *SupplierProductPriceMutation) AddDiscountBps(i int32) {
+	if m.adddiscount_bps != nil {
+		*m.adddiscount_bps += i
+	} else {
+		m.adddiscount_bps = &i
+	}
+}
+
+// AddedDiscountBps returns the value that was added to the "discount_bps" field in this mutation.
+func (m *SupplierProductPriceMutation) AddedDiscountBps() (r int32, exists bool) {
+	v := m.adddiscount_bps
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDiscountBps resets all changes to the "discount_bps" field.
+func (m *SupplierProductPriceMutation) ResetDiscountBps() {
+	m.discount_bps = nil
+	m.adddiscount_bps = nil
+}
+
 // Where appends a list predicates to the SupplierProductPriceMutation builder.
 func (m *SupplierProductPriceMutation) Where(ps ...predicate.SupplierProductPrice) {
 	m.predicates = append(m.predicates, ps...)
@@ -68845,7 +68998,7 @@ func (m *SupplierProductPriceMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplierProductPriceMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, supplierproductprice.FieldCreatedAt)
 	}
@@ -68863,6 +69016,15 @@ func (m *SupplierProductPriceMutation) Fields() []string {
 	}
 	if m.price != nil {
 		fields = append(fields, supplierproductprice.FieldPrice)
+	}
+	if m.scope != nil {
+		fields = append(fields, supplierproductprice.FieldScope)
+	}
+	if m.category_id != nil {
+		fields = append(fields, supplierproductprice.FieldCategoryID)
+	}
+	if m.discount_bps != nil {
+		fields = append(fields, supplierproductprice.FieldDiscountBps)
 	}
 	return fields
 }
@@ -68884,6 +69046,12 @@ func (m *SupplierProductPriceMutation) Field(name string) (ent.Value, bool) {
 		return m.SkuID()
 	case supplierproductprice.FieldPrice:
 		return m.Price()
+	case supplierproductprice.FieldScope:
+		return m.Scope()
+	case supplierproductprice.FieldCategoryID:
+		return m.CategoryID()
+	case supplierproductprice.FieldDiscountBps:
+		return m.DiscountBps()
 	}
 	return nil, false
 }
@@ -68905,6 +69073,12 @@ func (m *SupplierProductPriceMutation) OldField(ctx context.Context, name string
 		return m.OldSkuID(ctx)
 	case supplierproductprice.FieldPrice:
 		return m.OldPrice(ctx)
+	case supplierproductprice.FieldScope:
+		return m.OldScope(ctx)
+	case supplierproductprice.FieldCategoryID:
+		return m.OldCategoryID(ctx)
+	case supplierproductprice.FieldDiscountBps:
+		return m.OldDiscountBps(ctx)
 	}
 	return nil, fmt.Errorf("unknown SupplierProductPrice field %s", name)
 }
@@ -68956,6 +69130,27 @@ func (m *SupplierProductPriceMutation) SetField(name string, value ent.Value) er
 		}
 		m.SetPrice(v)
 		return nil
+	case supplierproductprice.FieldScope:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetScope(v)
+		return nil
+	case supplierproductprice.FieldCategoryID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategoryID(v)
+		return nil
+	case supplierproductprice.FieldDiscountBps:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDiscountBps(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SupplierProductPrice field %s", name)
 }
@@ -68976,6 +69171,12 @@ func (m *SupplierProductPriceMutation) AddedFields() []string {
 	if m.addprice != nil {
 		fields = append(fields, supplierproductprice.FieldPrice)
 	}
+	if m.addcategory_id != nil {
+		fields = append(fields, supplierproductprice.FieldCategoryID)
+	}
+	if m.adddiscount_bps != nil {
+		fields = append(fields, supplierproductprice.FieldDiscountBps)
+	}
 	return fields
 }
 
@@ -68992,6 +69193,10 @@ func (m *SupplierProductPriceMutation) AddedField(name string) (ent.Value, bool)
 		return m.AddedSkuID()
 	case supplierproductprice.FieldPrice:
 		return m.AddedPrice()
+	case supplierproductprice.FieldCategoryID:
+		return m.AddedCategoryID()
+	case supplierproductprice.FieldDiscountBps:
+		return m.AddedDiscountBps()
 	}
 	return nil, false
 }
@@ -69028,6 +69233,20 @@ func (m *SupplierProductPriceMutation) AddField(name string, value ent.Value) er
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPrice(v)
+		return nil
+	case supplierproductprice.FieldCategoryID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCategoryID(v)
+		return nil
+	case supplierproductprice.FieldDiscountBps:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDiscountBps(v)
 		return nil
 	}
 	return fmt.Errorf("unknown SupplierProductPrice numeric field %s", name)
@@ -69073,6 +69292,15 @@ func (m *SupplierProductPriceMutation) ResetField(name string) error {
 		return nil
 	case supplierproductprice.FieldPrice:
 		m.ResetPrice()
+		return nil
+	case supplierproductprice.FieldScope:
+		m.ResetScope()
+		return nil
+	case supplierproductprice.FieldCategoryID:
+		m.ResetCategoryID()
+		return nil
+	case supplierproductprice.FieldDiscountBps:
+		m.ResetDiscountBps()
 		return nil
 	}
 	return fmt.Errorf("unknown SupplierProductPrice field %s", name)

@@ -945,6 +945,9 @@ type UpsertSupplierPriceRequest struct {
 	ProductId     uint64                 `protobuf:"varint,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	SkuId         uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
 	Price         int64                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`
+	Scope         string                 `protobuf:"bytes,5,opt,name=scope,proto3" json:"scope,omitempty"` // 空或 product=专属价，category=分类折扣，global=整站折扣
+	CategoryId    uint64                 `protobuf:"varint,6,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	DiscountBps   int32                  `protobuf:"varint,7,opt,name=discount_bps,json=discountBps,proto3" json:"discount_bps,omitempty"` // 9000=9折，1..10000
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1007,6 +1010,27 @@ func (x *UpsertSupplierPriceRequest) GetPrice() int64 {
 	return 0
 }
 
+func (x *UpsertSupplierPriceRequest) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *UpsertSupplierPriceRequest) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *UpsertSupplierPriceRequest) GetDiscountBps() int32 {
+	if x != nil {
+		return x.DiscountBps
+	}
+	return 0
+}
+
 type ListSupplierPricesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AccountId     uint64                 `protobuf:"varint,1,opt,name=account_id,json=accountId,proto3" json:"account_id,omitempty"`
@@ -1058,6 +1082,12 @@ type SupplierPriceItem struct {
 	SkuId         uint64                 `protobuf:"varint,3,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"` // 0 = 商品级默认价
 	Price         int64                  `protobuf:"varint,4,opt,name=price,proto3" json:"price,omitempty"`              // 分
 	UpdatedAt     int64                  `protobuf:"varint,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Scope         string                 `protobuf:"bytes,6,opt,name=scope,proto3" json:"scope,omitempty"`
+	CategoryId    uint64                 `protobuf:"varint,7,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	DiscountBps   int32                  `protobuf:"varint,8,opt,name=discount_bps,json=discountBps,proto3" json:"discount_bps,omitempty"`
+	ProductName   string                 `protobuf:"bytes,9,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	CategoryName  string                 `protobuf:"bytes,10,opt,name=category_name,json=categoryName,proto3" json:"category_name,omitempty"`
+	SkuName       string                 `protobuf:"bytes,11,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1125,6 +1155,48 @@ func (x *SupplierPriceItem) GetUpdatedAt() int64 {
 		return x.UpdatedAt
 	}
 	return 0
+}
+
+func (x *SupplierPriceItem) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *SupplierPriceItem) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *SupplierPriceItem) GetDiscountBps() int32 {
+	if x != nil {
+		return x.DiscountBps
+	}
+	return 0
+}
+
+func (x *SupplierPriceItem) GetProductName() string {
+	if x != nil {
+		return x.ProductName
+	}
+	return ""
+}
+
+func (x *SupplierPriceItem) GetCategoryName() string {
+	if x != nil {
+		return x.CategoryName
+	}
+	return ""
+}
+
+func (x *SupplierPriceItem) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
 }
 
 type ListSupplierPricesReply struct {
@@ -1642,17 +1714,21 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\aentries\x18\x01 \x03(\v2'.zcard.api.admin.v1.SupplierLedgerEntryR\aentries\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\x96\x01\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xe6\x01\n" +
 	"\x1aUpsertSupplierPriceRequest\x12\"\n" +
 	"\n" +
-	"account_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\taccountId\x12\"\n" +
+	"account_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\taccountId\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x02 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
-	"\x06sku_id\x18\x03 \x01(\x04R\x05skuId\x12\x19\n" +
-	"\x05price\x18\x04 \x01(\x03B\x03\xe0A\x02R\x05price\"?\n" +
+	"product_id\x18\x02 \x01(\x04R\tproductId\x12\x15\n" +
+	"\x06sku_id\x18\x03 \x01(\x04R\x05skuId\x12\x14\n" +
+	"\x05price\x18\x04 \x01(\x03R\x05price\x12\x14\n" +
+	"\x05scope\x18\x05 \x01(\tR\x05scope\x12\x1f\n" +
+	"\vcategory_id\x18\x06 \x01(\x04R\n" +
+	"categoryId\x12!\n" +
+	"\fdiscount_bps\x18\a \x01(\x05R\vdiscountBps\"?\n" +
 	"\x19ListSupplierPricesRequest\x12\"\n" +
 	"\n" +
-	"account_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\taccountId\"\x8e\x01\n" +
+	"account_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\taccountId\"\xcb\x02\n" +
 	"\x11SupplierPriceItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1660,7 +1736,15 @@ const file_admin_v1_supplier_proto_rawDesc = "" +
 	"\x06sku_id\x18\x03 \x01(\x04R\x05skuId\x12\x14\n" +
 	"\x05price\x18\x04 \x01(\x03R\x05price\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x05 \x01(\x03R\tupdatedAt\"X\n" +
+	"updated_at\x18\x05 \x01(\x03R\tupdatedAt\x12\x14\n" +
+	"\x05scope\x18\x06 \x01(\tR\x05scope\x12\x1f\n" +
+	"\vcategory_id\x18\a \x01(\x04R\n" +
+	"categoryId\x12!\n" +
+	"\fdiscount_bps\x18\b \x01(\x05R\vdiscountBps\x12!\n" +
+	"\fproduct_name\x18\t \x01(\tR\vproductName\x12#\n" +
+	"\rcategory_name\x18\n" +
+	" \x01(\tR\fcategoryName\x12\x19\n" +
+	"\bsku_name\x18\v \x01(\tR\askuName\"X\n" +
 	"\x17ListSupplierPricesReply\x12=\n" +
 	"\x06prices\x18\x01 \x03(\v2%.zcard.api.admin.v1.SupplierPriceItemR\x06prices\"1\n" +
 	"\x1aDeleteSupplierPriceRequest\x12\x13\n" +

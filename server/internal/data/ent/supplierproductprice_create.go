@@ -82,6 +82,48 @@ func (_c *SupplierProductPriceCreate) SetPrice(v int64) *SupplierProductPriceCre
 	return _c
 }
 
+// SetScope sets the "scope" field.
+func (_c *SupplierProductPriceCreate) SetScope(v string) *SupplierProductPriceCreate {
+	_c.mutation.SetScope(v)
+	return _c
+}
+
+// SetNillableScope sets the "scope" field if the given value is not nil.
+func (_c *SupplierProductPriceCreate) SetNillableScope(v *string) *SupplierProductPriceCreate {
+	if v != nil {
+		_c.SetScope(*v)
+	}
+	return _c
+}
+
+// SetCategoryID sets the "category_id" field.
+func (_c *SupplierProductPriceCreate) SetCategoryID(v uint64) *SupplierProductPriceCreate {
+	_c.mutation.SetCategoryID(v)
+	return _c
+}
+
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_c *SupplierProductPriceCreate) SetNillableCategoryID(v *uint64) *SupplierProductPriceCreate {
+	if v != nil {
+		_c.SetCategoryID(*v)
+	}
+	return _c
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (_c *SupplierProductPriceCreate) SetDiscountBps(v int32) *SupplierProductPriceCreate {
+	_c.mutation.SetDiscountBps(v)
+	return _c
+}
+
+// SetNillableDiscountBps sets the "discount_bps" field if the given value is not nil.
+func (_c *SupplierProductPriceCreate) SetNillableDiscountBps(v *int32) *SupplierProductPriceCreate {
+	if v != nil {
+		_c.SetDiscountBps(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *SupplierProductPriceCreate) SetID(v uint64) *SupplierProductPriceCreate {
 	_c.mutation.SetID(v)
@@ -135,6 +177,18 @@ func (_c *SupplierProductPriceCreate) defaults() {
 		v := supplierproductprice.DefaultSkuID
 		_c.mutation.SetSkuID(v)
 	}
+	if _, ok := _c.mutation.Scope(); !ok {
+		v := supplierproductprice.DefaultScope
+		_c.mutation.SetScope(v)
+	}
+	if _, ok := _c.mutation.CategoryID(); !ok {
+		v := supplierproductprice.DefaultCategoryID
+		_c.mutation.SetCategoryID(v)
+	}
+	if _, ok := _c.mutation.DiscountBps(); !ok {
+		v := supplierproductprice.DefaultDiscountBps
+		_c.mutation.SetDiscountBps(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -156,6 +210,15 @@ func (_c *SupplierProductPriceCreate) check() error {
 	}
 	if _, ok := _c.mutation.Price(); !ok {
 		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "SupplierProductPrice.price"`)}
+	}
+	if _, ok := _c.mutation.Scope(); !ok {
+		return &ValidationError{Name: "scope", err: errors.New(`ent: missing required field "SupplierProductPrice.scope"`)}
+	}
+	if _, ok := _c.mutation.CategoryID(); !ok {
+		return &ValidationError{Name: "category_id", err: errors.New(`ent: missing required field "SupplierProductPrice.category_id"`)}
+	}
+	if _, ok := _c.mutation.DiscountBps(); !ok {
+		return &ValidationError{Name: "discount_bps", err: errors.New(`ent: missing required field "SupplierProductPrice.discount_bps"`)}
 	}
 	return nil
 }
@@ -213,6 +276,18 @@ func (_c *SupplierProductPriceCreate) createSpec() (*SupplierProductPrice, *sqlg
 	if value, ok := _c.mutation.Price(); ok {
 		_spec.SetField(supplierproductprice.FieldPrice, field.TypeInt64, value)
 		_node.Price = value
+	}
+	if value, ok := _c.mutation.Scope(); ok {
+		_spec.SetField(supplierproductprice.FieldScope, field.TypeString, value)
+		_node.Scope = value
+	}
+	if value, ok := _c.mutation.CategoryID(); ok {
+		_spec.SetField(supplierproductprice.FieldCategoryID, field.TypeUint64, value)
+		_node.CategoryID = value
+	}
+	if value, ok := _c.mutation.DiscountBps(); ok {
+		_spec.SetField(supplierproductprice.FieldDiscountBps, field.TypeInt32, value)
+		_node.DiscountBps = value
 	}
 	return _node, _spec
 }
@@ -347,6 +422,54 @@ func (u *SupplierProductPriceUpsert) UpdatePrice() *SupplierProductPriceUpsert {
 // AddPrice adds v to the "price" field.
 func (u *SupplierProductPriceUpsert) AddPrice(v int64) *SupplierProductPriceUpsert {
 	u.Add(supplierproductprice.FieldPrice, v)
+	return u
+}
+
+// SetScope sets the "scope" field.
+func (u *SupplierProductPriceUpsert) SetScope(v string) *SupplierProductPriceUpsert {
+	u.Set(supplierproductprice.FieldScope, v)
+	return u
+}
+
+// UpdateScope sets the "scope" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsert) UpdateScope() *SupplierProductPriceUpsert {
+	u.SetExcluded(supplierproductprice.FieldScope)
+	return u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *SupplierProductPriceUpsert) SetCategoryID(v uint64) *SupplierProductPriceUpsert {
+	u.Set(supplierproductprice.FieldCategoryID, v)
+	return u
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsert) UpdateCategoryID() *SupplierProductPriceUpsert {
+	u.SetExcluded(supplierproductprice.FieldCategoryID)
+	return u
+}
+
+// AddCategoryID adds v to the "category_id" field.
+func (u *SupplierProductPriceUpsert) AddCategoryID(v uint64) *SupplierProductPriceUpsert {
+	u.Add(supplierproductprice.FieldCategoryID, v)
+	return u
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (u *SupplierProductPriceUpsert) SetDiscountBps(v int32) *SupplierProductPriceUpsert {
+	u.Set(supplierproductprice.FieldDiscountBps, v)
+	return u
+}
+
+// UpdateDiscountBps sets the "discount_bps" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsert) UpdateDiscountBps() *SupplierProductPriceUpsert {
+	u.SetExcluded(supplierproductprice.FieldDiscountBps)
+	return u
+}
+
+// AddDiscountBps adds v to the "discount_bps" field.
+func (u *SupplierProductPriceUpsert) AddDiscountBps(v int32) *SupplierProductPriceUpsert {
+	u.Add(supplierproductprice.FieldDiscountBps, v)
 	return u
 }
 
@@ -496,6 +619,62 @@ func (u *SupplierProductPriceUpsertOne) AddPrice(v int64) *SupplierProductPriceU
 func (u *SupplierProductPriceUpsertOne) UpdatePrice() *SupplierProductPriceUpsertOne {
 	return u.Update(func(s *SupplierProductPriceUpsert) {
 		s.UpdatePrice()
+	})
+}
+
+// SetScope sets the "scope" field.
+func (u *SupplierProductPriceUpsertOne) SetScope(v string) *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.SetScope(v)
+	})
+}
+
+// UpdateScope sets the "scope" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsertOne) UpdateScope() *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.UpdateScope()
+	})
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *SupplierProductPriceUpsertOne) SetCategoryID(v uint64) *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.SetCategoryID(v)
+	})
+}
+
+// AddCategoryID adds v to the "category_id" field.
+func (u *SupplierProductPriceUpsertOne) AddCategoryID(v uint64) *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.AddCategoryID(v)
+	})
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsertOne) UpdateCategoryID() *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.UpdateCategoryID()
+	})
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (u *SupplierProductPriceUpsertOne) SetDiscountBps(v int32) *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.SetDiscountBps(v)
+	})
+}
+
+// AddDiscountBps adds v to the "discount_bps" field.
+func (u *SupplierProductPriceUpsertOne) AddDiscountBps(v int32) *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.AddDiscountBps(v)
+	})
+}
+
+// UpdateDiscountBps sets the "discount_bps" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsertOne) UpdateDiscountBps() *SupplierProductPriceUpsertOne {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.UpdateDiscountBps()
 	})
 }
 
@@ -811,6 +990,62 @@ func (u *SupplierProductPriceUpsertBulk) AddPrice(v int64) *SupplierProductPrice
 func (u *SupplierProductPriceUpsertBulk) UpdatePrice() *SupplierProductPriceUpsertBulk {
 	return u.Update(func(s *SupplierProductPriceUpsert) {
 		s.UpdatePrice()
+	})
+}
+
+// SetScope sets the "scope" field.
+func (u *SupplierProductPriceUpsertBulk) SetScope(v string) *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.SetScope(v)
+	})
+}
+
+// UpdateScope sets the "scope" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsertBulk) UpdateScope() *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.UpdateScope()
+	})
+}
+
+// SetCategoryID sets the "category_id" field.
+func (u *SupplierProductPriceUpsertBulk) SetCategoryID(v uint64) *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.SetCategoryID(v)
+	})
+}
+
+// AddCategoryID adds v to the "category_id" field.
+func (u *SupplierProductPriceUpsertBulk) AddCategoryID(v uint64) *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.AddCategoryID(v)
+	})
+}
+
+// UpdateCategoryID sets the "category_id" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsertBulk) UpdateCategoryID() *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.UpdateCategoryID()
+	})
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (u *SupplierProductPriceUpsertBulk) SetDiscountBps(v int32) *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.SetDiscountBps(v)
+	})
+}
+
+// AddDiscountBps adds v to the "discount_bps" field.
+func (u *SupplierProductPriceUpsertBulk) AddDiscountBps(v int32) *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.AddDiscountBps(v)
+	})
+}
+
+// UpdateDiscountBps sets the "discount_bps" field to the value that was provided on create.
+func (u *SupplierProductPriceUpsertBulk) UpdateDiscountBps() *SupplierProductPriceUpsertBulk {
+	return u.Update(func(s *SupplierProductPriceUpsert) {
+		s.UpdateDiscountBps()
 	})
 }
 

@@ -136,9 +136,14 @@ func (h *acgCompat) items(w http.ResponseWriter, r *http.Request, account *ent.S
 		return
 	}
 	// 两级树：分类 → children 商品；未分类商品归入「默认分类」（id=0）
+	pricing, err := h.svc.repo.LoadPricing(ctx, account.ID)
+	if err != nil {
+		writeAcgErr(w, "供货定价读取失败")
+		return
+	}
 	byCat := map[uint64][]map[string]any{}
 	for _, p := range prods {
-		byCat[p.CategoryID] = append(byCat[p.CategoryID], h.acgProduct(ctx, account, p))
+		byCat[p.CategoryID] = append(byCat[p.CategoryID], h.acgProduct(ctx, account, p, pricing))
 	}
 	tree := make([]map[string]any, 0, len(cats)+1)
 	if uncategorized := byCat[0]; len(uncategorized) > 0 {
@@ -156,7 +161,12 @@ func (h *acgCompat) item(w http.ResponseWriter, r *http.Request, account *ent.Su
 		writeAcgErr(w, "商品不存在")
 		return
 	}
-	writeAcgOK(w, h.acgProduct(withAccount(r, account.ID), account, *p))
+	pricing, err := h.svc.repo.LoadPricing(r.Context(), account.ID)
+	if err != nil {
+		writeAcgErr(w, "供货定价读取失败")
+		return
+	}
+	writeAcgOK(w, h.acgProduct(withAccount(r, account.ID), account, *p, pricing))
 }
 
 func (h *acgCompat) stock(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount, form map[string]string) {
@@ -184,7 +194,12 @@ func (h *acgCompat) valuation(w http.ResponseWriter, r *http.Request, account *e
 		num = 1
 	}
 	ctx := withAccount(r, account.ID)
-	writeAcgOK(w, map[string]any{"price": centsToYuanFloat(h.supplyPrice(ctx, account, *p) * int64(num))})
+	pricing, err := h.svc.repo.LoadPricing(ctx, account.ID)
+	if err != nil {
+		writeAcgErr(w, "供货定价读取失败")
+		return
+	}
+	writeAcgOK(w, map[string]any{"price": centsToYuanFloat(pricing.Price(p.ID, 0, p.CategoryID, p.Price) * int64(num))})
 }
 
 func (h *acgCompat) trade(w http.ResponseWriter, r *http.Request, account *ent.SupplierAccount, form map[string]string) {
@@ -270,20 +285,12 @@ func (h *acgCompat) supplyProduct(r *http.Request, account *ent.SupplierAccount,
 	return p, true
 }
 
-// supplyPrice 供货价（覆盖价 > 基础价）。
-func (h *acgCompat) supplyPrice(ctx context.Context, account *ent.SupplierAccount, p catalogport.SupplierProduct) int64 {
-	if override, err := h.svc.repo.PriceOf(ctx, account.ID, p.ID, 0); err == nil && override > 0 {
-		return override
-	}
-	return p.Price
-}
-
 // acgProduct 商品行（字段对齐 acg commodity 语义；金额元字符串）。
 // 字段集合覆盖 acg 3.5.7+ 客户端 sync() 的读取全集——draft/seckill/contact
 // 为常量语义：本站不支持预选卡与秒杀，与 draft_status/seckill_status=0 一致；
 // contact_type=0（任意）避免对接站把 null 写进 NOT NULL 列而同步失败。
-func (h *acgCompat) acgProduct(ctx context.Context, account *ent.SupplierAccount, p catalogport.SupplierProduct) map[string]any {
-	price := h.supplyPrice(ctx, account, p)
+func (h *acgCompat) acgProduct(ctx context.Context, account *ent.SupplierAccount, p catalogport.SupplierProduct, pricing *supplierPricing) map[string]any {
+	price := pricing.Price(p.ID, 0, p.CategoryID, p.Price)
 	stock := -1
 	if st, err := h.svc.inv.Stock(ctx, p.ID, 0); err == nil {
 		stock = int(st)

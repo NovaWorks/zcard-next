@@ -2176,6 +2176,18 @@ func init() {
 	supplierproductpriceDescSkuID := supplierproductpriceFields[3].Descriptor()
 	// supplierproductprice.DefaultSkuID holds the default value on creation for the sku_id field.
 	supplierproductprice.DefaultSkuID = supplierproductpriceDescSkuID.Default.(uint64)
+	// supplierproductpriceDescScope is the schema descriptor for scope field.
+	supplierproductpriceDescScope := supplierproductpriceFields[5].Descriptor()
+	// supplierproductprice.DefaultScope holds the default value on creation for the scope field.
+	supplierproductprice.DefaultScope = supplierproductpriceDescScope.Default.(string)
+	// supplierproductpriceDescCategoryID is the schema descriptor for category_id field.
+	supplierproductpriceDescCategoryID := supplierproductpriceFields[6].Descriptor()
+	// supplierproductprice.DefaultCategoryID holds the default value on creation for the category_id field.
+	supplierproductprice.DefaultCategoryID = supplierproductpriceDescCategoryID.Default.(uint64)
+	// supplierproductpriceDescDiscountBps is the schema descriptor for discount_bps field.
+	supplierproductpriceDescDiscountBps := supplierproductpriceFields[7].Descriptor()
+	// supplierproductprice.DefaultDiscountBps holds the default value on creation for the discount_bps field.
+	supplierproductprice.DefaultDiscountBps = supplierproductpriceDescDiscountBps.Default.(int32)
 	supplyconnectionMixin := schema.SupplyConnection{}.Mixin()
 	supplyconnectionMixinFields0 := supplyconnectionMixin[0].Fields()
 	_ = supplyconnectionMixinFields0

@@ -14,11 +14,12 @@ import type { DataTableColumns, DropdownOption } from "naive-ui";
 import {
   fetchSupplierAccounts, createSupplierAccount, reviewSupplierAccount, toggleSupplierAccount,
   resetSupplierSecret, rechargeSupplierAccount, fetchSupplierLedger,
-  fetchSupplierCallbacks, resendSupplierCallback, upsertSupplierPrice,
-  fetchSupplierPrices, deleteSupplierPrice, setSupplierIPWhitelist,
+  fetchSupplierCallbacks, resendSupplierCallback,
+  setSupplierIPWhitelist,
 } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { formatTransactionRemark, formatMoney, yuanToFen, fenToYuan } from "@/utils/money";
+import SupplierPricingDialog from "./supplier-pricing-dialog.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
 
@@ -326,7 +327,7 @@ function moreMenu(row: any): DropdownOption[] {
   const opts: DropdownOption[] = [];
   if (canWrite()) opts.push({ label: "充值", key: "recharge" });
   opts.push({ label: "账本", key: "ledger" });
-  if (canWrite()) opts.push({ label: "专属价", key: "price" }, { label: "重置密钥", key: "reset" });
+  if (canWrite()) opts.push({ label: "供货定价", key: "price" }, { label: "重置密钥", key: "reset" });
   if (row.status !== "applying" && canWrite())
     opts.push({ type: "divider", key: "dv" }, { label: row.status === "disabled" ? "启用" : "禁用", key: "toggle" });
   return opts;
@@ -431,61 +432,9 @@ async function handleResend(row: any) {
   }
 }
 
-// ── 专属价（账号 × 商品覆盖价；空 SKU = 商品级默认）──
 const showPrice = ref(false);
 const priceTarget = ref<any>(null);
-const priceForm = reactive({ product_id: null as number | null, sku_id: null as number | null, priceYuan: null as number | null });
-const priceSaving = ref(false);
-const priceRows = ref<any[]>([]);
-const priceLoading = ref(false);
-function openPrice(row: any) {
-  priceTarget.value = row;
-  priceForm.product_id = null;
-  priceForm.sku_id = null;
-  priceForm.priceYuan = null;
-  showPrice.value = true;
-  loadPrices(row.id);
-}
-async function loadPrices(accountId: number) {
-  priceLoading.value = true;
-  try {
-    const { data, error } = await fetchSupplierPrices(accountId);
-    if (!error && data) priceRows.value = (data as any).prices || [];
-  } finally {
-    priceLoading.value = false;
-  }
-}
-async function handleDeletePrice(row: any) {
-  const { error } = await deleteSupplierPrice(row.id);
-  if (!error) {
-    window.$message?.success("已删除（恢复基础供货价）");
-    loadPrices(priceTarget.value.id);
-  }
-}
-async function submitPrice() {
-  if (!priceForm.product_id || priceForm.priceYuan === null) {
-    window.$message?.warning("请填写商品 ID 与价格");
-    return;
-  }
-  priceSaving.value = true;
-  try {
-    const { error } = await upsertSupplierPrice({
-      account_id: priceTarget.value.id,
-      product_id: priceForm.product_id,
-      sku_id: priceForm.sku_id ?? 0,
-      price: yuanToFen(priceForm.priceYuan),
-    });
-    if (!error) {
-      window.$message?.success("专属价已保存（优先于基础供货价）");
-      priceForm.product_id = null;
-      priceForm.sku_id = null;
-      priceForm.priceYuan = null;
-      loadPrices(priceTarget.value.id);
-    }
-  } finally {
-    priceSaving.value = false;
-  }
-}
+function openPrice(row: any) { priceTarget.value = row; showPrice.value = true; }
 
 onMounted(load);
 </script>
@@ -679,48 +628,7 @@ onMounted(load);
       />
     </NModal>
 
-    <!-- 专属价 -->
-    <NModal v-model:show="showPrice" preset="dialog" :title="`专属价：${priceTarget?.name || ''}`" style="width: 440px; max-width: 96vw">
-      <NForm label-placement="top">
-        <NAlert type="info" :bordered="false" class="mb-8px">专属价优先于商品基础供货价（该账号下单按此价扣款）。</NAlert>
-        <NFormItem label="商品 ID" required>
-          <NInputNumber v-model:value="priceForm.product_id" :min="1" class="w-full" />
-        </NFormItem>
-        <NFormItem label="SKU ID（可空 = 商品级默认价）">
-          <NInputNumber v-model:value="priceForm.sku_id" :min="0" class="w-full" />
-        </NFormItem>
-        <NFormItem label="专属价（元）" required>
-          <NInputNumber v-model:value="priceForm.priceYuan" :min="0.01" :precision="2" class="w-full" />
-        </NFormItem>
-      </NForm>
-      <div class="mb-12px">
-        <div class="mb-6px text-13px font-500">已有专属价（{{ priceRows.length }}）</div>
-        <NDataTable
-          size="small"
-          :loading="priceLoading"
-          :data="priceRows"
-          max-height="220"
-          :columns="[
-            { title: '商品ID', key: 'product_id', width: 80 },
-            { title: 'SKU', key: 'sku_id', width: 70, render: (r: any) => (r.sku_id ? r.sku_id : '商品级') },
-            { title: '价格', key: 'price', width: 100, render: (r: any) => fenToYuan(r.price) + ' 元' },
-            {
-              title: '',
-              key: 'actions',
-              width: 60,
-              render: (r: any) =>
-                canWrite()
-                  ? h(NPopconfirm, { onPositiveClick: () => handleDeletePrice(r) }, { trigger: () => h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }), default: () => '删除后恢复基础供货价？' })
-                  : null,
-            },
-          ]"
-        />
-      </div>
-      <template #action>
-        <NButton @click="showPrice = false">取消</NButton>
-        <NButton type="primary" :loading="priceSaving" @click="submitPrice">保存</NButton>
-      </template>
-    </NModal>
+    <SupplierPricingDialog v-model:show="showPrice" :account="priceTarget" />
 
     <!-- 账本 -->
     <NModal v-model:show="showLedger" preset="card" :title="`账本：${ledgerTarget?.name || ''}`" style="width: 720px; max-width: 96vw">

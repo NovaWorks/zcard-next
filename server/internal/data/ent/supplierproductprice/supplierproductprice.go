@@ -25,6 +25,12 @@ const (
 	FieldSkuID = "sku_id"
 	// FieldPrice holds the string denoting the price field in the database.
 	FieldPrice = "price"
+	// FieldScope holds the string denoting the scope field in the database.
+	FieldScope = "scope"
+	// FieldCategoryID holds the string denoting the category_id field in the database.
+	FieldCategoryID = "category_id"
+	// FieldDiscountBps holds the string denoting the discount_bps field in the database.
+	FieldDiscountBps = "discount_bps"
 	// Table holds the table name of the supplierproductprice in the database.
 	Table = "supplier_product_prices"
 )
@@ -38,6 +44,9 @@ var Columns = []string{
 	FieldProductID,
 	FieldSkuID,
 	FieldPrice,
+	FieldScope,
+	FieldCategoryID,
+	FieldDiscountBps,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -59,6 +68,12 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSkuID holds the default value on creation for the "sku_id" field.
 	DefaultSkuID uint64
+	// DefaultScope holds the default value on creation for the "scope" field.
+	DefaultScope string
+	// DefaultCategoryID holds the default value on creation for the "category_id" field.
+	DefaultCategoryID uint64
+	// DefaultDiscountBps holds the default value on creation for the "discount_bps" field.
+	DefaultDiscountBps int32
 )
 
 // OrderOption defines the ordering options for the SupplierProductPrice queries.
@@ -97,4 +112,19 @@ func BySkuID(opts ...sql.OrderTermOption) OrderOption {
 // ByPrice orders the results by the price field.
 func ByPrice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPrice, opts...).ToFunc()
+}
+
+// ByScope orders the results by the scope field.
+func ByScope(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldScope, opts...).ToFunc()
+}
+
+// ByCategoryID orders the results by the category_id field.
+func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
+}
+
+// ByDiscountBps orders the results by the discount_bps field.
+func ByDiscountBps(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDiscountBps, opts...).ToFunc()
 }

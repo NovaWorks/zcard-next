@@ -2028,6 +2028,9 @@ var (
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "sku_id", Type: field.TypeUint64, Default: 0},
 		{Name: "price", Type: field.TypeInt64},
+		{Name: "scope", Type: field.TypeString, Default: "product"},
+		{Name: "category_id", Type: field.TypeUint64, Default: 0},
+		{Name: "discount_bps", Type: field.TypeInt32, Default: 0},
 	}
 	// SupplierProductPricesTable holds the schema information for the "supplier_product_prices" table.
 	SupplierProductPricesTable = &schema.Table{
@@ -2036,9 +2039,9 @@ var (
 		PrimaryKey: []*schema.Column{SupplierProductPricesColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "supplierproductprice_supplier_account_id_product_id_sku_id",
+				Name:    "supplier_price_scope_unique",
 				Unique:  true,
-				Columns: []*schema.Column{SupplierProductPricesColumns[3], SupplierProductPricesColumns[4], SupplierProductPricesColumns[5]},
+				Columns: []*schema.Column{SupplierProductPricesColumns[3], SupplierProductPricesColumns[7], SupplierProductPricesColumns[4], SupplierProductPricesColumns[5], SupplierProductPricesColumns[8]},
 			},
 		},
 	}

@@ -71,7 +71,7 @@ func (s *AdminProcurementService) RetryProcurement(ctx context.Context, req *adm
 	return s.toProto(ctx, po), nil
 }
 
-// MarkProcurementManual 手动标记完成/转人工（人工拿货后回填）。
+// MarkProcurementManual 停止自动采购并转人工，后续通过订单人工补发完成交付。
 func (s *AdminProcurementService) MarkProcurementManual(ctx context.Context, req *adminv1.MarkProcurementManualRequest) (*adminv1.ProcurementOrder, error) {
 	po, err := s.repo.Get(ctx, req.GetId())
 	if err != nil {

@@ -84,6 +84,21 @@ func Price(v int64) predicate.SupplierProductPrice {
 	return predicate.SupplierProductPrice(sql.FieldEQ(FieldPrice, v))
 }
 
+// Scope applies equality check predicate on the "scope" field. It's identical to ScopeEQ.
+func Scope(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEQ(FieldScope, v))
+}
+
+// CategoryID applies equality check predicate on the "category_id" field. It's identical to CategoryIDEQ.
+func CategoryID(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEQ(FieldCategoryID, v))
+}
+
+// DiscountBps applies equality check predicate on the "discount_bps" field. It's identical to DiscountBpsEQ.
+func DiscountBps(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEQ(FieldDiscountBps, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.SupplierProductPrice {
 	return predicate.SupplierProductPrice(sql.FieldEQ(FieldCreatedAt, v))
@@ -322,6 +337,151 @@ func PriceLT(v int64) predicate.SupplierProductPrice {
 // PriceLTE applies the LTE predicate on the "price" field.
 func PriceLTE(v int64) predicate.SupplierProductPrice {
 	return predicate.SupplierProductPrice(sql.FieldLTE(FieldPrice, v))
+}
+
+// ScopeEQ applies the EQ predicate on the "scope" field.
+func ScopeEQ(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEQ(FieldScope, v))
+}
+
+// ScopeNEQ applies the NEQ predicate on the "scope" field.
+func ScopeNEQ(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldNEQ(FieldScope, v))
+}
+
+// ScopeIn applies the In predicate on the "scope" field.
+func ScopeIn(vs ...string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldIn(FieldScope, vs...))
+}
+
+// ScopeNotIn applies the NotIn predicate on the "scope" field.
+func ScopeNotIn(vs ...string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldNotIn(FieldScope, vs...))
+}
+
+// ScopeGT applies the GT predicate on the "scope" field.
+func ScopeGT(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldGT(FieldScope, v))
+}
+
+// ScopeGTE applies the GTE predicate on the "scope" field.
+func ScopeGTE(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldGTE(FieldScope, v))
+}
+
+// ScopeLT applies the LT predicate on the "scope" field.
+func ScopeLT(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldLT(FieldScope, v))
+}
+
+// ScopeLTE applies the LTE predicate on the "scope" field.
+func ScopeLTE(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldLTE(FieldScope, v))
+}
+
+// ScopeContains applies the Contains predicate on the "scope" field.
+func ScopeContains(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldContains(FieldScope, v))
+}
+
+// ScopeHasPrefix applies the HasPrefix predicate on the "scope" field.
+func ScopeHasPrefix(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldHasPrefix(FieldScope, v))
+}
+
+// ScopeHasSuffix applies the HasSuffix predicate on the "scope" field.
+func ScopeHasSuffix(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldHasSuffix(FieldScope, v))
+}
+
+// ScopeEqualFold applies the EqualFold predicate on the "scope" field.
+func ScopeEqualFold(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEqualFold(FieldScope, v))
+}
+
+// ScopeContainsFold applies the ContainsFold predicate on the "scope" field.
+func ScopeContainsFold(v string) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldContainsFold(FieldScope, v))
+}
+
+// CategoryIDEQ applies the EQ predicate on the "category_id" field.
+func CategoryIDEQ(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEQ(FieldCategoryID, v))
+}
+
+// CategoryIDNEQ applies the NEQ predicate on the "category_id" field.
+func CategoryIDNEQ(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldNEQ(FieldCategoryID, v))
+}
+
+// CategoryIDIn applies the In predicate on the "category_id" field.
+func CategoryIDIn(vs ...uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldIn(FieldCategoryID, vs...))
+}
+
+// CategoryIDNotIn applies the NotIn predicate on the "category_id" field.
+func CategoryIDNotIn(vs ...uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldNotIn(FieldCategoryID, vs...))
+}
+
+// CategoryIDGT applies the GT predicate on the "category_id" field.
+func CategoryIDGT(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldGT(FieldCategoryID, v))
+}
+
+// CategoryIDGTE applies the GTE predicate on the "category_id" field.
+func CategoryIDGTE(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldGTE(FieldCategoryID, v))
+}
+
+// CategoryIDLT applies the LT predicate on the "category_id" field.
+func CategoryIDLT(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldLT(FieldCategoryID, v))
+}
+
+// CategoryIDLTE applies the LTE predicate on the "category_id" field.
+func CategoryIDLTE(v uint64) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldLTE(FieldCategoryID, v))
+}
+
+// DiscountBpsEQ applies the EQ predicate on the "discount_bps" field.
+func DiscountBpsEQ(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldEQ(FieldDiscountBps, v))
+}
+
+// DiscountBpsNEQ applies the NEQ predicate on the "discount_bps" field.
+func DiscountBpsNEQ(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldNEQ(FieldDiscountBps, v))
+}
+
+// DiscountBpsIn applies the In predicate on the "discount_bps" field.
+func DiscountBpsIn(vs ...int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldIn(FieldDiscountBps, vs...))
+}
+
+// DiscountBpsNotIn applies the NotIn predicate on the "discount_bps" field.
+func DiscountBpsNotIn(vs ...int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldNotIn(FieldDiscountBps, vs...))
+}
+
+// DiscountBpsGT applies the GT predicate on the "discount_bps" field.
+func DiscountBpsGT(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldGT(FieldDiscountBps, v))
+}
+
+// DiscountBpsGTE applies the GTE predicate on the "discount_bps" field.
+func DiscountBpsGTE(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldGTE(FieldDiscountBps, v))
+}
+
+// DiscountBpsLT applies the LT predicate on the "discount_bps" field.
+func DiscountBpsLT(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldLT(FieldDiscountBps, v))
+}
+
+// DiscountBpsLTE applies the LTE predicate on the "discount_bps" field.
+func DiscountBpsLTE(v int32) predicate.SupplierProductPrice {
+	return predicate.SupplierProductPrice(sql.FieldLTE(FieldDiscountBps, v))
 }
 
 // And groups predicates with the AND operator between them.

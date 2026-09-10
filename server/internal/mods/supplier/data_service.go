@@ -149,10 +149,7 @@ func (s *AdminSupplierService) ListLedger(ctx context.Context, req *adminv1.List
 
 // UpsertPrice 供货定价。
 func (s *AdminSupplierService) UpsertPrice(ctx context.Context, req *adminv1.UpsertSupplierPriceRequest) (*emptypb.Empty, error) {
-	if req.GetPrice() <= 0 {
-		return nil, errors.New("supplier.INVALID_PRICE")
-	}
-	if _, err := s.repo.UpsertPrice(ctx, req.GetAccountId(), req.GetProductId(), req.GetSkuId(), req.GetPrice()); err != nil {
+	if err := s.repo.UpsertPriceRule(ctx, req.GetAccountId(), req.GetProductId(), req.GetSkuId(), req.GetCategoryId(), req.GetScope(), req.GetPrice(), req.GetDiscountBps()); err != nil {
 		return nil, err
 	}
 	return &emptypb.Empty{}, nil
@@ -164,11 +161,16 @@ func (s *AdminSupplierService) ListPrices(ctx context.Context, req *adminv1.List
 	if err != nil {
 		return nil, err
 	}
+	names, err := s.repo.PriceNames(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
 	reply := &adminv1.ListSupplierPricesReply{}
 	for _, r := range rows {
 		reply.Prices = append(reply.Prices, &adminv1.SupplierPriceItem{
 			Id: r.ID, ProductId: r.ProductID, SkuId: r.SkuID,
-			Price: r.Price, UpdatedAt: r.UpdatedAt.Unix(),
+			ProductName: names[r.ID][0], CategoryName: names[r.ID][1], SkuName: names[r.ID][2],
+			Price: r.Price, UpdatedAt: r.UpdatedAt.Unix(), Scope: r.Scope, CategoryId: r.CategoryID, DiscountBps: r.DiscountBps,
 		})
 	}
 	return reply, nil

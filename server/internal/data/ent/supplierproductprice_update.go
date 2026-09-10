@@ -118,6 +118,62 @@ func (_u *SupplierProductPriceUpdate) AddPrice(v int64) *SupplierProductPriceUpd
 	return _u
 }
 
+// SetScope sets the "scope" field.
+func (_u *SupplierProductPriceUpdate) SetScope(v string) *SupplierProductPriceUpdate {
+	_u.mutation.SetScope(v)
+	return _u
+}
+
+// SetNillableScope sets the "scope" field if the given value is not nil.
+func (_u *SupplierProductPriceUpdate) SetNillableScope(v *string) *SupplierProductPriceUpdate {
+	if v != nil {
+		_u.SetScope(*v)
+	}
+	return _u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (_u *SupplierProductPriceUpdate) SetCategoryID(v uint64) *SupplierProductPriceUpdate {
+	_u.mutation.ResetCategoryID()
+	_u.mutation.SetCategoryID(v)
+	return _u
+}
+
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_u *SupplierProductPriceUpdate) SetNillableCategoryID(v *uint64) *SupplierProductPriceUpdate {
+	if v != nil {
+		_u.SetCategoryID(*v)
+	}
+	return _u
+}
+
+// AddCategoryID adds value to the "category_id" field.
+func (_u *SupplierProductPriceUpdate) AddCategoryID(v int64) *SupplierProductPriceUpdate {
+	_u.mutation.AddCategoryID(v)
+	return _u
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (_u *SupplierProductPriceUpdate) SetDiscountBps(v int32) *SupplierProductPriceUpdate {
+	_u.mutation.ResetDiscountBps()
+	_u.mutation.SetDiscountBps(v)
+	return _u
+}
+
+// SetNillableDiscountBps sets the "discount_bps" field if the given value is not nil.
+func (_u *SupplierProductPriceUpdate) SetNillableDiscountBps(v *int32) *SupplierProductPriceUpdate {
+	if v != nil {
+		_u.SetDiscountBps(*v)
+	}
+	return _u
+}
+
+// AddDiscountBps adds value to the "discount_bps" field.
+func (_u *SupplierProductPriceUpdate) AddDiscountBps(v int32) *SupplierProductPriceUpdate {
+	_u.mutation.AddDiscountBps(v)
+	return _u
+}
+
 // Mutation returns the SupplierProductPriceMutation object of the builder.
 func (_u *SupplierProductPriceUpdate) Mutation() *SupplierProductPriceMutation {
 	return _u.mutation
@@ -194,6 +250,21 @@ func (_u *SupplierProductPriceUpdate) sqlSave(ctx context.Context) (_node int, e
 	}
 	if value, ok := _u.mutation.AddedPrice(); ok {
 		_spec.AddField(supplierproductprice.FieldPrice, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Scope(); ok {
+		_spec.SetField(supplierproductprice.FieldScope, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CategoryID(); ok {
+		_spec.SetField(supplierproductprice.FieldCategoryID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedCategoryID(); ok {
+		_spec.AddField(supplierproductprice.FieldCategoryID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.DiscountBps(); ok {
+		_spec.SetField(supplierproductprice.FieldDiscountBps, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedDiscountBps(); ok {
+		_spec.AddField(supplierproductprice.FieldDiscountBps, field.TypeInt32, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -305,6 +376,62 @@ func (_u *SupplierProductPriceUpdateOne) AddPrice(v int64) *SupplierProductPrice
 	return _u
 }
 
+// SetScope sets the "scope" field.
+func (_u *SupplierProductPriceUpdateOne) SetScope(v string) *SupplierProductPriceUpdateOne {
+	_u.mutation.SetScope(v)
+	return _u
+}
+
+// SetNillableScope sets the "scope" field if the given value is not nil.
+func (_u *SupplierProductPriceUpdateOne) SetNillableScope(v *string) *SupplierProductPriceUpdateOne {
+	if v != nil {
+		_u.SetScope(*v)
+	}
+	return _u
+}
+
+// SetCategoryID sets the "category_id" field.
+func (_u *SupplierProductPriceUpdateOne) SetCategoryID(v uint64) *SupplierProductPriceUpdateOne {
+	_u.mutation.ResetCategoryID()
+	_u.mutation.SetCategoryID(v)
+	return _u
+}
+
+// SetNillableCategoryID sets the "category_id" field if the given value is not nil.
+func (_u *SupplierProductPriceUpdateOne) SetNillableCategoryID(v *uint64) *SupplierProductPriceUpdateOne {
+	if v != nil {
+		_u.SetCategoryID(*v)
+	}
+	return _u
+}
+
+// AddCategoryID adds value to the "category_id" field.
+func (_u *SupplierProductPriceUpdateOne) AddCategoryID(v int64) *SupplierProductPriceUpdateOne {
+	_u.mutation.AddCategoryID(v)
+	return _u
+}
+
+// SetDiscountBps sets the "discount_bps" field.
+func (_u *SupplierProductPriceUpdateOne) SetDiscountBps(v int32) *SupplierProductPriceUpdateOne {
+	_u.mutation.ResetDiscountBps()
+	_u.mutation.SetDiscountBps(v)
+	return _u
+}
+
+// SetNillableDiscountBps sets the "discount_bps" field if the given value is not nil.
+func (_u *SupplierProductPriceUpdateOne) SetNillableDiscountBps(v *int32) *SupplierProductPriceUpdateOne {
+	if v != nil {
+		_u.SetDiscountBps(*v)
+	}
+	return _u
+}
+
+// AddDiscountBps adds value to the "discount_bps" field.
+func (_u *SupplierProductPriceUpdateOne) AddDiscountBps(v int32) *SupplierProductPriceUpdateOne {
+	_u.mutation.AddDiscountBps(v)
+	return _u
+}
+
 // Mutation returns the SupplierProductPriceMutation object of the builder.
 func (_u *SupplierProductPriceUpdateOne) Mutation() *SupplierProductPriceMutation {
 	return _u.mutation
@@ -411,6 +538,21 @@ func (_u *SupplierProductPriceUpdateOne) sqlSave(ctx context.Context) (_node *Su
 	}
 	if value, ok := _u.mutation.AddedPrice(); ok {
 		_spec.AddField(supplierproductprice.FieldPrice, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.Scope(); ok {
+		_spec.SetField(supplierproductprice.FieldScope, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.CategoryID(); ok {
+		_spec.SetField(supplierproductprice.FieldCategoryID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedCategoryID(); ok {
+		_spec.AddField(supplierproductprice.FieldCategoryID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.DiscountBps(); ok {
+		_spec.SetField(supplierproductprice.FieldDiscountBps, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedDiscountBps(); ok {
+		_spec.AddField(supplierproductprice.FieldDiscountBps, field.TypeInt32, value)
 	}
 	_node = &SupplierProductPrice{config: _u.config}
 	_spec.Assign = _node.assignValues
