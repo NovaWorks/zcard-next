@@ -7,6 +7,7 @@ package port
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
@@ -29,7 +30,7 @@ type CreatePaymentRequest struct {
 	// ── 方式级参数（收银台顾客选择的支付方式；空 = 渠道默认/旧单方式语义）──
 	// MethodCode 方式标识（alipay/wxpay/usdt-trc20…，透传网关时按 params 展开）；
 	// MethodParams 网关参数：易支付 {"type":"wxpay"}、USDT {"network":"tron","token":"USDT"}。
-	MethodCode  string
+	MethodCode   string
 	MethodParams map[string]string
 }
 
@@ -162,8 +163,11 @@ type OrderRefunder interface {
 	RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error
 }
 
-// SlowPaymentChecker 慢通道 pending 流水探测（ order 超时取消顺延判定，通道 A）：
-// usdt 族链上确认慢于订单 TTL——存在 pending 流水时超时任务顺延不误杀。
+// SlowPaymentGracePeriod caps confirmation waiting after the original order deadline.
+const SlowPaymentGracePeriod = 15 * time.Minute
+
+// SlowPaymentChecker reports unconfirmed slow payments still within that grace period.
+// A local pending attempt alone is not evidence of an on-chain transfer.
 type SlowPaymentChecker interface {
 	HasPendingSlowPayment(ctx context.Context, orderID uint64) (bool, error)
 }

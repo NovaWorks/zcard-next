@@ -18,6 +18,10 @@
           <ThemeIcon name="grid" />
           <span class="flex-1 text-left">全部商品</span>
         </button>
+        <button v-if="showRecommended" type="button" class="tree-all tree-recommended" :class="{ active: modelValue === -1 }" @click="select(-1)">
+          <ThemeIcon name="folder" />
+          <span>推荐商品</span>
+        </button>
         <!-- 分类树：递归渲染任意层级（三级/四级均可展开） -->
         <CategoryTreeNode
           v-for="c in tree"
@@ -45,8 +49,9 @@ import type { CategoryItem } from '@/api';
 const props = withDefaults(
   defineProps<{
     categories: CategoryItem[];
-    /** 当前选中分类 id（0=全部） */
+    /** 当前选中分类 id（0=全部，-1=推荐；仅前端筛选值） */
     modelValue: number;
+    showRecommended?: boolean;
     variant?: 'sidebar' | 'panel';
   }>(),
   { variant: 'sidebar' },

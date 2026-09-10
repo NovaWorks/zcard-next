@@ -135,3 +135,70 @@ func TestExpiryPagesPast500AndReviewsMissingDeadline(t *testing.T) {
 		t.Fatal("missing deadline silently skipped or canceled")
 	}
 }
+
+func TestSlowPaymentGraceAndLegacyReviewRecovery(t *testing.T) {
+	d, uc, repo := newIdemEnv(t)
+	uc.SetSlowPaymentChecker(repo)
+	ctx := context.Background()
+	now := time.Now().UTC()
+	seed := func(no string, deadline time.Time, review bool, reason string) *ent.Order {
+		o := d.Client.Order.Create().SetOrderNo(no).SetExpiredAt(deadline).SetExpiryReview(review).SetExpiryReason(reason).SaveX(ctx)
+		// A recent/retried payment attempt must not extend the order's original deadline.
+		d.Client.Payment.Create().SetOrderID(o.ID).SetChannel("usdt").SetDriverSnapshot("epusdt").SetAmount(100).SetExpiresAt(now.Add(time.Hour)).SaveX(ctx)
+		return o
+	}
+	waiting := seed("grace-wait", now.Add(-time.Minute), false, "")
+	nearEnd := seed("grace-near-end", now.Add(-14*time.Minute), false, "")
+	expired := seed("grace-expired", now.Add(-16*time.Minute), false, "")
+	oldReview := seed("legacy-pending-review", now.Add(-8*time.Hour), true, legacySlowPaymentReviewReason)
+	manual := seed("real-query-review", now.Add(-8*time.Hour), true, "支付状态查询失败，请核对支付流水")
+	paid := seed("already-paid", now.Add(-8*time.Hour), false, "")
+	d.Client.Order.UpdateOneID(paid.ID).SetStatus(order.StatusPaid).SaveX(ctx)
+	n, err := uc.ExpireOrder(ctx)
+	if err != nil || n != 2 {
+		t.Fatalf("canceled=%d: %v", n, err)
+	}
+	if got := d.Client.Order.GetX(ctx, nearEnd.ID); !got.ExpiryRetryAt.Equal(nearEnd.ExpiredAt.Add(15 * time.Minute)) {
+		t.Fatal("retry extended the grace deadline")
+	}
+	for _, o := range []*ent.Order{expired, oldReview} {
+		got := d.Client.Order.GetX(ctx, o.ID)
+		if got.Status != order.StatusCanceled || got.ExpiryReview || got.ClosedAt.IsZero() || !got.ExpiredAt.Equal(o.ExpiredAt) {
+			t.Fatalf("not canceled cleanly: %+v", got)
+		}
+	}
+	// More than three ordinary waits never put the order in permanent review.
+	for i := 0; i < 3; i++ {
+		d.Client.Order.UpdateOneID(waiting.ID).SetExpiryRetryAt(now.Add(-time.Minute)).SaveX(ctx)
+		if n, err = uc.ExpireOrder(ctx); err != nil || n != 0 {
+			t.Fatalf("grace scan %d: %v", n, err)
+		}
+	}
+	got := d.Client.Order.GetX(ctx, waiting.ID)
+	if got.Status != order.StatusPendingPayment || got.ExpiryReview || got.ExpiryAttempts != 4 {
+		t.Fatalf("bounded wait became manual review: %+v", got)
+	}
+	d.Client.Order.UpdateOneID(waiting.ID).SetExpiredAt(now.Add(-16 * time.Minute)).SetExpiryRetryAt(now.Add(-time.Minute)).SaveX(ctx)
+	if n, err = uc.ExpireOrder(ctx); err != nil || n != 1 {
+		t.Fatalf("grace end canceled=%d: %v", n, err)
+	}
+	if n, err = uc.ExpireOrder(ctx); err != nil || n != 0 {
+		t.Fatalf("duplicate expiry=%d: %v", n, err)
+	}
+	if d.Client.Order.GetX(ctx, manual.ID).Status != order.StatusPendingPayment || !d.Client.Order.GetX(ctx, manual.ID).ExpiryReview {
+		t.Fatal("query error review was automatically canceled")
+	}
+	if d.Client.Order.GetX(ctx, paid.ID).Status != order.StatusPaid {
+		t.Fatal("paid order was canceled")
+	}
+	// Normal confirmation waits must not exhaust retries for a new query error.
+	waitError := seed("wait-then-error", now.Add(-time.Minute), false, slowPaymentWaitingReason)
+	d.Client.Order.UpdateOneID(waitError.ID).SetExpiryAttempts(4).SaveX(ctx)
+	uc.SetSlowPaymentChecker(slowFailure{})
+	if _, err := uc.ExpireOrder(ctx); err == nil {
+		t.Fatal("query failure was hidden")
+	}
+	if got := d.Client.Order.GetX(ctx, waitError.ID); got.ExpiryAttempts != 1 || got.ExpiryReview {
+		t.Fatal("normal waits exhausted query-error retries")
+	}
+}

@@ -42,7 +42,7 @@
     <div class="home-layout">
       <CategoryTree
         v-if="navStyle !== 'grid'"
-        :categories="categories"
+        :categories="categories" :show-recommended="hasRecommended"
         :model-value="activeCategory"
         @update:model-value="pickCategory"
       />
@@ -59,7 +59,7 @@
         </div>
 
         <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级，替代胶囊） -->
-        <div v-if="navStyle === 'grid' && categories.length" class="card cat-chips">
+        <div v-if="navStyle === 'grid' && (categories.length || hasRecommended)" class="card cat-chips">
           <button class="mobile-cat-head" type="button" :aria-expanded="chipsExpanded" @click="chipsExpanded = !chipsExpanded">
             <span class="mcb-bar"></span><span class="mcb-title">全部分类</span>
             <span class="mcb-count">{{ categories.length }} 类</span>
@@ -68,32 +68,17 @@
           </button>
           <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
             <button class="chip" :class="{ active: !activeCategory }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />全部</button>
+            <button v-if="hasRecommended" class="chip" :class="{ active: activeCategory === -1 }" @click="pickCategory(-1)">推荐商品</button>
             <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: activeCategory === c.id }" @click="pickCategory(c.id)">
               <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
             </button>
           </div>
         </div>
-        <div v-else-if="categories.length" class="card mobile-cat mobile-only">
-          <CategoryTree variant="panel" :categories="categories" :model-value="activeCategory" @update:model-value="pickCategory" />
+        <div v-else-if="categories.length || hasRecommended" class="card mobile-cat mobile-only">
+          <CategoryTree variant="panel" :categories="categories" :show-recommended="hasRecommended" :model-value="activeCategory" @update:model-value="pickCategory" />
         </div>
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
-
-        <!-- 推荐商品（后台商品「首页推荐」开关；横滑一行，无推荐时整块隐藏） -->
-        <div v-if="recommended.length" class="rec-section">
-          <h2 class="section-title"><span class="title-bar"></span>推荐商品</h2>
-          <div class="rec-row">
-            <ProductCard
-              v-for="p in recommended"
-              :key="p.id"
-              :p="p"
-              mode="grid"
-              :show-sales="showSales"
-              :show-stock="showStock"
-              class="rec-card"
-            />
-          </div>
-        </div>
 
         <!-- 商品区标题 + 视图切换 -->
         <div class="section-head">
@@ -169,7 +154,7 @@ const openNoticeModal: () => void = inject('openNotice', () => {
 const banners = ref<Banner[]>([]);
 const latestNotice = ref<StorePost | null>(null);
 const categories = ref<CategoryItem[]>([]);
-const recommended = ref<Product[]>([]); // 首页推荐位（后台商品 is_recommend）
+const hasRecommended = ref(false); // 推荐分类仅在存在可见推荐商品时显示
 const activeCategory = ref(0);
 const viewMode = ref<'grid' | 'list'>('grid');
 const page = ref(1);
@@ -200,7 +185,7 @@ const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅�
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
 const sectionTitle = computed(() =>
-  activeCategory.value
+  activeCategory.value === -1 ? '推荐商品' : activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
     : '全部商品',
 );
@@ -289,7 +274,7 @@ function openBanner(b: Banner) {
 }
 
 function goSearch() {
-  router.push({ path: '/products', query: keyword.value ? { keyword: keyword.value } : {} });
+  router.push({ path: '/products', query: { ...(keyword.value ? { keyword: keyword.value } : {}), ...(activeCategory.value === -1 ? { recommend_only: '1' } : {}) } });
 }
 
 function pickCategory(id: number) {
@@ -304,6 +289,16 @@ function formatDate(unix?: number): string {
   return new Date(unix * 1000).toLocaleDateString('zh-CN');
 }
 
+async function refreshRecommendations() {
+  const { data, error: err } = await listProducts({ recommend_only: true, page: 1, page_size: 1 });
+  if (err) return; // Temporary failures must not discard the current selection.
+  hasRecommended.value = (data?.items?.length || 0) > 0;
+  if (!hasRecommended.value && activeCategory.value === -1) {
+    activeCategory.value = 0;
+    page.value = 1;
+  }
+}
+
 let loadSequence = 0;
 async function load() {
   const sequence = ++loadSequence;
@@ -311,7 +306,8 @@ async function load() {
   error.value = '';
   const { data, error: err } = await listProducts({
     keyword: keyword.value || undefined,
-    category_id: activeCategory.value || undefined,
+    category_id: activeCategory.value > 0 ? activeCategory.value : undefined,
+    recommend_only: activeCategory.value === -1 || undefined,
     sort: sort.value,
     page: page.value,
     page_size: pageSize.value,
@@ -330,7 +326,7 @@ onActivated(() => {
     void loadTemplateSettings();
     needsRefresh = false;
     // 保留浏览状态，同时重新获取价格、库存和首页标题。
-    void load();
+    void refreshRecommendations().then(load);
     void fetchSiteSeo().then(applyDefaultSeo);
   }
 });
@@ -345,8 +341,7 @@ await Promise.all([
   listBanners('top').then((b) => { banners.value = b?.data?.banners || []; }),
   listPosts('notice', 1, 1).then((n) => { latestNotice.value = n?.data?.posts?.[0] || null; }),
   listCategories().then((c) => { categories.value = c?.data?.categories || []; }),
-  // 推荐位：失败静默（区块隐藏，不影响主列表）
-  listProducts({ recommend_only: true, page: 1, page_size: 8 }).then((r) => { recommended.value = r?.data?.items || []; }).catch(() => {}),
+  refreshRecommendations(),
   fetchAnnouncement().then((a) => { announcement.value = a; }),
   // 首页默认 SEO（仅首页；页面级 SEO 由各自页面组件负责）
   fetchSiteSeo().then((site) => {
@@ -519,15 +514,6 @@ onUnmounted(stopHero);
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 4px;
 }
-/* 推荐位：横滑一行（大厂猜你喜欢；卡片定宽不随容器压缩） */
-.rec-section { display: flex; flex-direction: column; gap: 10px; }
-.rec-row {
-  display: flex; gap: 12px;
-  overflow-x: auto; -webkit-overflow-scrolling: touch;
-  padding-bottom: 4px;
-  scrollbar-width: thin;
-}
-.rec-card { flex: 0 0 184px; width: 184px; }
 .section-title {
   display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: #111827;
 }

@@ -10,7 +10,10 @@
       <span v-if="p.points_required" class="pc-points-tag">{{ p.points_required }} 积分</span>
     </div>
     <div class="pc-body">
-      <div class="pc-name" :title="p.name">{{ p.name }}</div>
+      <div class="pc-heading">
+        <div class="pc-name" :title="p.name">{{ p.name }}</div>
+        <span v-if="p.is_recommend" class="pc-recommend-tag">推荐</span>
+      </div>
       <div class="pc-price">{{ formatMoney(p.price_cents) }}</div>
       <div v-if="showSales || showStock" class="pc-meta">
         <span v-if="showSales" class="pc-sales">已售 {{ p.sales_count || 0 }}</span>
@@ -104,6 +107,9 @@ defineProps<{
 }
 /* 信息区 */
 .pc-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+.pc-heading { display:flex; align-items:flex-start; gap:6px; min-width:0; }
+.pc-heading .pc-name { flex:1; min-width:0; }
+.pc-recommend-tag { flex-shrink:0; white-space:nowrap; color:#1d4ed8; background:#eff6ff; border-radius:4px; padding:1px 5px; font-size:12px; line-height:18px; }
 .pc-name {
   font-size: 14px;
   font-weight: 600;
@@ -135,6 +141,7 @@ defineProps<{
 .product-card.list-mode:hover .pc-cover img { transform: none; }
 .list-mode .pc-cover-placeholder { font-size: 20px; }
 .list-mode .pc-body { padding: 0; flex-direction: row; align-items: center; gap: 14px; flex: 1; }
+.list-mode .pc-heading { flex:1; align-items:center; }
 .list-mode .pc-name { min-height: auto; flex: 1; -webkit-line-clamp: 1; min-width: 0; }
 .list-mode .pc-price { font-size: 16px; }
 .list-mode .pc-meta { margin-top: 0; gap: 12px; }
@@ -156,9 +163,8 @@ defineProps<{
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 3px 6px;
   }
+  .list-mode .pc-heading { grid-column:1; grid-row:1; align-items:flex-start; }
   .list-mode .pc-name {
-    grid-column: 1;
-    grid-row: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     white-space: normal;

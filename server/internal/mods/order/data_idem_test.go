@@ -99,7 +99,7 @@ func TestExpireSlowChannelDeferral(t *testing.T) {
 	d, uc, payRepo := newIdemEnv(t)
 	uc.SetSlowPaymentChecker(payRepo)
 	ctx := context.Background()
-	past := time.Now().UTC().Add(-2 * time.Hour)
+	past := time.Now().UTC().Add(-2 * time.Minute)
 
 	// 单 A：epusdt 慢通道 pending 流水（应顺延）；单 B：无流水（应取消）
 	a, err := uc.CreateOrder(ctx, CreateOrderInput{UserID: 3, QueryPassword: "test1234", Items: []OrderItemInput{{ProductID: 1, Quantity: 1}}})

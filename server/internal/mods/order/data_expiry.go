@@ -11,7 +11,23 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
+	paymentport "github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 )
+
+const slowPaymentWaitingReason = "慢支付确认等待，支付截止后最多顺延15分钟"
+const legacySlowPaymentReviewReason = "慢支付尚未确认，请核对到账状态"
+
+// Recover only the old pending-slow-payment hold. Other review causes remain manual.
+func (uc *OrderUsecase) expiryReviewFilter(now time.Time) predicate.Order {
+	if uc.SlowPay == nil {
+		return order.ExpiryReviewEQ(false)
+	}
+	return order.Or(order.ExpiryReviewEQ(false), order.And(
+		order.ExpiryReasonEQ(legacySlowPaymentReviewReason),
+		order.ExpiredAtLT(now.Add(-paymentport.SlowPaymentGracePeriod)),
+	))
+}
 
 func (uc *OrderUsecase) CancelOrder(ctx context.Context, no, reason, operator string, operatorID uint64) error {
 	return uc.cancelOrder(ctx, no, reason, operator, operatorID, false)
@@ -34,12 +50,12 @@ func (uc *OrderUsecase) cancelOrder(ctx context.Context, no, reason, operator st
 		now := time.Now().UTC()
 		q := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusPendingPayment), order.VersionEQ(o.Version))
 		if expiredOnly {
-			if o.ExpiredAt.IsZero() || !o.ExpiredAt.Before(now) || o.ExpiryReview {
+			if o.ExpiredAt.IsZero() || !o.ExpiredAt.Before(now) {
 				return fmt.Errorf("order.NOT_EXPIRED")
 			}
-			q.Where(order.ExpiredAtLT(now), order.ExpiryReviewEQ(false), order.Or(order.ExpiryRetryAtIsNil(), order.ExpiryRetryAtLTE(now)))
+			q.Where(order.ExpiredAtLT(now), uc.expiryReviewFilter(now), order.Or(order.ExpiryRetryAtIsNil(), order.ExpiryRetryAtLTE(now)))
 		}
-		n, err := q.SetStatus(order.StatusCanceled).SetClosedAt(now).SetVersion(o.Version + 1).Save(ctx)
+		n, err := q.SetStatus(order.StatusCanceled).SetClosedAt(now).SetExpiryReview(false).SetExpiryReason("").ClearExpiryRetryAt().SetVersion(o.Version + 1).Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -59,15 +75,22 @@ func (uc *OrderUsecase) cancelOrder(ctx context.Context, no, reason, operator st
 	})
 }
 
-// Retry metadata never changes the original payment deadline. Uncertain orders
-// stop automatic cancellation after three checks and remain visible for review.
+// Retry metadata never changes the original payment deadline. Query errors stop
+// after three checks; pending slow payments use the bounded confirmation grace.
 func (uc *OrderUsecase) deferExpiry(ctx context.Context, o *ent.Order, reason string, review bool) error {
 	return data.Tx(ctx, uc.Data, func(ctx context.Context) error {
 		client := data.Client(ctx, uc.Data)
 		attempts := o.ExpiryAttempts + 1
-		review = review || attempts >= 3
+		if o.ExpiryReason != reason {
+			attempts = 1
+		}
+		review = review || (reason != slowPaymentWaitingReason && attempts >= 3)
+		retryAt := time.Now().UTC().Add(5 * time.Minute)
+		if deadline := o.ExpiredAt.Add(paymentport.SlowPaymentGracePeriod); reason == slowPaymentWaitingReason && deadline.Before(retryAt) {
+			retryAt = deadline
+		}
 		n, err := client.Order.Update().Where(order.ID(o.ID), order.StatusEQ(order.StatusPendingPayment), order.VersionEQ(o.Version)).
-			SetExpiryRetryAt(time.Now().UTC().Add(5 * time.Minute)).SetExpiryAttempts(attempts).SetExpiryReview(review).SetExpiryReason(reason).SetVersion(o.Version + 1).Save(ctx)
+			SetExpiryRetryAt(retryAt).SetExpiryAttempts(attempts).SetExpiryReview(review).SetExpiryReason(reason).SetVersion(o.Version + 1).Save(ctx)
 		if err != nil {
 			return err
 		}
@@ -90,7 +113,7 @@ func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
 	}()
 	// Keyset pagination keeps a failing order from starving later batches.
 	for batch := 0; batch < 10; batch++ {
-		rows, err := client.Order.Query().Where(order.IDGT(cursor), order.StatusEQ(order.StatusPendingPayment), order.ExpiryReviewEQ(false),
+		rows, err := client.Order.Query().Where(order.IDGT(cursor), order.StatusEQ(order.StatusPendingPayment), uc.expiryReviewFilter(now),
 			order.Or(order.ExpiredAtIsNil(), order.ExpiredAtLT(now)), order.Or(order.ExpiryRetryAtIsNil(), order.ExpiryRetryAtLTE(now))).Order(ent.Asc(order.FieldID)).Limit(500).All(ctx)
 		if err != nil {
 			return count, errors.Join(append(errs, err)...)
@@ -111,7 +134,7 @@ func (uc *OrderUsecase) ExpireOrder(ctx context.Context) (int, error) {
 					failed++
 					errs = append(errs, fmt.Errorf("order %s payment check: %w", o.OrderNo, checkErr))
 				} else if slow {
-					reason = "慢支付尚未确认，请核对到账状态"
+					reason = slowPaymentWaitingReason
 				}
 			}
 			if reason != "" {

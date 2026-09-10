@@ -1,12 +1,13 @@
 <template>
   <div class="products-layout">
     <!-- PC 左侧多级分类树（template.category_nav_style=list 时显示） -->
-    <CategoryTree v-if="navStyle !== 'grid'" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
+    <CategoryTree v-if="navStyle !== 'grid'" :categories="categories" :show-recommended="hasRecommended" :model-value="categoryId" @update:model-value="pickCategory" />
     <div class="products-content">
       <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级） -->
-      <div v-if="navStyle === 'grid' && categories.length" class="card category-chips" style="margin-bottom: 12px;">
+      <div v-if="navStyle === 'grid' && (categories.length || hasRecommended)" class="card category-chips" style="margin-bottom: 12px;">
         <div class="cat-chips-row" :class="{ expanded: chipsExpanded }">
           <button class="chip" :class="{ active: !categoryId }" @click="pickCategory(0)"><ThemeIcon name="grid" class="chip-icon" />全部</button>
+          <button v-if="hasRecommended" class="chip" :class="{ active: categoryId === -1 }" @click="pickCategory(-1)">推荐商品</button>
           <button v-for="c in categories.filter((x) => !x.parent_id)" :key="c.id" class="chip" :class="{ active: categoryId === c.id }" @click="pickCategory(c.id)">
             <CategoryIcon :icon="c.icon" class="chip-icon" />{{ c.name }}
           </button>
@@ -16,8 +17,8 @@
           </button>
         </div>
       </div>
-      <div v-else-if="categories.length" class="card mobile-cat mobile-only" style="margin-bottom: 12px;">
-        <CategoryTree variant="panel" :categories="categories" :model-value="categoryId" @update:model-value="pickCategory" />
+      <div v-else-if="categories.length || hasRecommended" class="card mobile-cat mobile-only" style="margin-bottom: 12px;">
+        <CategoryTree variant="panel" :categories="categories" :show-recommended="hasRecommended" :model-value="categoryId" @update:model-value="pickCategory" />
       </div>
 
       <!-- 排序 + 搜索 + 视图切换 -->
@@ -64,7 +65,7 @@
 <script setup lang="ts">
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
-import { ref, computed, onMounted, onActivated, onDeactivated } from 'vue';
+import { ref, computed, onMounted, onActivated, onDeactivated, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { listProducts, listCategories, type Product, type CategoryItem } from '@/api';
 import { fetchSiteSeo, applySeo } from '@/seo';
@@ -76,6 +77,7 @@ const route = useRoute();
 useCatalogScroll();
 const products = ref<Product[]>([]);
 const categories = ref<CategoryItem[]>([]);
+const hasRecommended = ref(false);
 const keyword = ref('');
 const categoryId = ref(0);
 // 排序：default=综合（运营权重）| sales | newest | price_asc | price_desc（与后台 sort_by 同值域）
@@ -146,6 +148,16 @@ async function loadTemplateSettings() {
 }
 onMounted(loadTemplateSettings);
 
+async function refreshRecommendations() {
+  const { data, error: err } = await listProducts({ recommend_only: true, page: 1, page_size: 1 });
+  if (err) return; // Temporary failures must not discard the current selection.
+  hasRecommended.value = (data?.items?.length || 0) > 0;
+  if (!hasRecommended.value && categoryId.value === -1) {
+    categoryId.value = 0;
+    page.value = 1;
+  }
+}
+
 let loadSequence = 0;
 async function load() {
   const sequence = ++loadSequence;
@@ -153,7 +165,8 @@ async function load() {
   error.value = '';
   const { data, error: err } = await listProducts({
     keyword: keyword.value || undefined,
-    category_id: categoryId.value || undefined,
+    category_id: categoryId.value > 0 ? categoryId.value : undefined,
+    recommend_only: categoryId.value === -1 || undefined,
     sort: sort.value,
     page: page.value,
     page_size: pageSize.value,
@@ -187,20 +200,37 @@ onActivated(() => {
   if (needsRefresh) {
     void loadTemplateSettings();
     needsRefresh = false;
-    void load();
+    void refreshRecommendations().then(load);
     void applyListSeo();
   }
 });
 onDeactivated(() => { needsRefresh = true; });
 
+// A kept-alive list can receive a new recommendation/search link from the home page.
+// Returning from a detail page with the same URL preserves local category and page state.
+let routeQueryKey = JSON.stringify(route.query);
+watch(() => route.fullPath, () => {
+  const key = JSON.stringify(route.query);
+  if (route.path !== '/products' || key === routeQueryKey) return;
+  routeQueryKey = key;
+  readRouteFilters();
+  page.value = 1;
+  void refreshRecommendations().then(load);
+});
+function readRouteFilters() {
+  const q = route.query;
+  categoryId.value = Math.max(0, Number(q.category_id) || 0);
+  if (q.recommend_only === '1' || q.recommend_only === 'true') categoryId.value = -1;
+  keyword.value = typeof q.keyword === 'string' ? q.keyword : '';
+  if (typeof q.sort === 'string') sort.value = q.sort;
+}
+
 // 列表数据预取（setup 顶层：SSG 静态化列表页 + 输出 SEO head）
 {
-  const q = route.query;
-  if (q.category_id) categoryId.value = Number(q.category_id);
-  if (typeof q.keyword === 'string') keyword.value = q.keyword;
-  if (typeof q.sort === 'string') sort.value = q.sort;
+  readRouteFilters();
   const { data } = await listCategories();
   categories.value = data?.categories || [];
+  await refreshRecommendations();
   await load();
   await applyListSeo();
 }
@@ -210,7 +240,7 @@ onDeactivated(() => { needsRefresh = true; });
 async function applyListSeo() {
   const site = await fetchSiteSeo();
   const origin = typeof window !== "undefined" ? window.location.origin : site.url;
-  const catName = categories.value.find((c) => c.id === categoryId.value)?.name;
+  const catName = categoryId.value === -1 ? '推荐商品' : categories.value.find((c) => c.id === categoryId.value)?.name;
   const title = catName ? `${catName} - ${site.name}` : `全部商品 - ${site.name}`;
   applySeo({ title, canonical: `${origin}/products`, ogType: 'website' }, site);
 }

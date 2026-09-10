@@ -38,6 +38,7 @@ export interface Product {
   stock_status?: string;
   stock_reference?: number;
   stock_checked_at?: number;
+  is_recommend?: boolean;
   stock_visible: boolean;
   category_id: number;
   sales_count: number;
