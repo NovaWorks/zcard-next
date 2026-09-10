@@ -37,7 +37,6 @@
       </router-link>
       <nav class="nav-links">
         <router-link to="/" exact>首页</router-link>
-        <router-link to="/products"><ThemeIcon name="grid" />全部商品</router-link>
         <button class="nav-horn" @click="openNotice" title="系统公告"><ThemeIcon name="announcement" />公告</button>
         <router-link to="/fetch">取货查询</router-link>
         <!-- 顶部自定义按钮：外部链接新窗口；文章/公告站内路由（site.top_button {text,type,url|slug}） -->
@@ -83,9 +82,9 @@
       <!-- Suspense：路由组件 async setup（SSG 预取）在客户端水合时也能正常等待 -->
       <router-view v-slot="{ Component, route: viewRoute }">
         <!-- 保留目录浏览状态；会员页内切换复用表单，其余详情和支付页按导航重新创建。 -->
-        <KeepAlive include="Home,Products" :max="8">
+        <KeepAlive include="Home" :max="8">
           <Suspense>
-            <component :is="Component" :key="viewRoute.path === '/member' ? viewRoute.path : viewRoute.fullPath" />
+            <component :is="Component" :key="['/', '/member'].includes(viewRoute.path) ? viewRoute.path : viewRoute.fullPath" />
           </Suspense>
         </KeepAlive>
       </router-view>
@@ -136,7 +135,7 @@
             <a v-for="(n, i) in footerNav" :key="i" :href="n.url || '#'">{{ n.text }}</a>
           </template>
           <template v-else>
-            <router-link to="/products">全部商品</router-link>
+            <router-link to="/#catalog">选购商品</router-link>
             <router-link to="/points">积分商城</router-link>
             <router-link to="/coupons">优惠券</router-link>
             <router-link to="/affiliate">推广中心</router-link>

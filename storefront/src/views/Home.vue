@@ -39,7 +39,7 @@
     </div>
 
     <!-- 左右布局：PC 左侧多级分类树 + 右侧内容；移动端横向胶囊兜底 -->
-    <div class="home-layout">
+    <div id="catalog" class="home-layout">
       <CategoryTree
         v-if="navStyle !== 'grid'"
         :categories="categories" :show-recommended="hasRecommended"
@@ -48,15 +48,15 @@
       />
       <div class="home-content">
         <!-- 搜索 -->
-        <div class="search-bar">
+        <form class="search-bar" role="search" @submit.prevent="goSearch">
           <input
             v-model="keyword"
             class="input"
             placeholder="搜索商品名"
-            @keyup.enter="goSearch"
+            aria-label="搜索商品名"
           />
-          <button class="btn btn-primary" @click="goSearch">搜索</button>
-        </div>
+          <button class="btn btn-primary" type="submit">搜索</button>
+        </form>
 
         <!-- 分类导航：grid=顶部胶囊全断点；list 时 PC 左树，移动端「全部分类」折叠树（含全部层级，替代胶囊） -->
         <div v-if="navStyle === 'grid' && (categories.length || hasRecommended)" class="card cat-chips">
@@ -80,14 +80,7 @@
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-        <!-- 商品区标题 + 视图切换 -->
-        <div class="section-head">
-          <h2 class="section-title"><span class="title-bar"></span>{{ sectionTitle }}</h2>
-          <div class="view-switcher">
-            <button :class="{ active: viewMode === 'grid' }" @click="viewMode = 'grid'; bigGrid = false" title="网格视图">▦</button>
-            <button :class="{ active: viewMode === 'list' }" @click="viewMode = 'list'" title="列表视图">☰</button>
-          </div>
-        </div>
+        <CatalogToolbar :title="sectionTitle" :sort="sort" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
 
         <!-- 商品列表（网格/列表双视图） -->
         <div v-if="viewMode === 'grid'" class="product-grid" :class="{ 'catalog-big': bigGrid }" :style="gridStyle">
@@ -130,21 +123,25 @@
 </template>
 
 <script setup lang="ts">
+import CatalogToolbar from '@/components/CatalogToolbar.vue';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
-import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, inject } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, inject, watch, nextTick } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
 import { fetchSiteSeo, applyDefaultSeo, applyVerification } from '@/seo';
 import { formatMoney } from '@/api/client';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
-import { useCatalogScroll } from '@/composables/catalog-scroll';
 
 const router = useRouter();
-useCatalogScroll();
+const route = useRoute();
 const products = ref<Product[]>([]);
 const keyword = ref('');
+const searchTerm = ref('');
+const defaultSort = ref('default');
+let appliedDefaultView = '';
+let initialized = false;
 const loading = ref(false);
 const error = ref('');
 // 公告弹窗开启动词由 App.vue 提供（与导航📢公告同一弹窗；缺失时回退文章列表页）
@@ -184,11 +181,12 @@ const showStock = ref(true); // template.show_stock：卡片「库存」显示�
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
 
-const sectionTitle = computed(() =>
+const categoryTitle = computed(() =>
   activeCategory.value === -1 ? '推荐商品' : activeCategory.value
     ? categories.value.find((c) => c.id === activeCategory.value)?.name || '全部商品'
     : '全部商品',
 );
+const sectionTitle = computed(() => searchTerm.value ? `${categoryTitle.value} · 搜索结果` : categoryTitle.value);
 const totalPage = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));
 // 页码列表：当前页 ±2 + 首末页；越界段用 0 占位渲染省略号
 const pageList = computed(() => {
@@ -208,14 +206,13 @@ function goPage(p: number) {
   const target = Math.min(Math.max(1, p), totalPage.value);
   if (target === page.value) return;
   page.value = target;
-  load();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  void navigateCatalog();
 }
 
 function changePageSize() {
   // 即使当前已在第一页，也必须按新的每页条数重新请求。
   page.value = 1;
-  load();
+  void navigateCatalog();
 }
 
 // Hero 轮播：公告设置 image/carousel 优先；顶部横幅开启时用生效横幅；点击行为跟随来源
@@ -263,7 +260,7 @@ function openBanner(b: Banner) {
   if (b.link_type === 'product' && b.link_value) {
     router.push(`/product/${b.link_value}`);
   } else if (b.link_type === 'category' && b.link_value) {
-    router.push(`/products?category_id=${b.link_value}`);
+    router.push({ path: '/', query: { category_id: b.link_value }, hash: '#catalog' });
   } else if (b.link_type === 'post' && b.link_value) {
     router.push(`/posts/${b.link_value}`);
   } else if (b.link_type === 'notice') {
@@ -273,16 +270,72 @@ function openBanner(b: Banner) {
   }
 }
 
-function goSearch() {
-  router.push({ path: '/products', query: { ...(keyword.value ? { keyword: keyword.value } : {}), ...(activeCategory.value === -1 ? { recommend_only: '1' } : {}) } });
+const sorts = ['default', 'sales', 'newest', 'price_asc', 'price_desc'];
+function readRouteFilters() {
+  const q = route.query;
+  const id = Number(q.category_id);
+  activeCategory.value = Number.isSafeInteger(id) && id > 0 ? id : 0;
+  if (q.recommend_only === '1' || q.recommend_only === 'true') activeCategory.value = -1;
+  keyword.value = searchTerm.value = typeof q.keyword === 'string' ? q.keyword : '';
+  sort.value = typeof q.sort === 'string' && sorts.includes(q.sort) ? q.sort : defaultSort.value;
+  const size = Number(q.page_size);
+  pageSize.value = pageSizeOptions.value.includes(size) ? size : defaultPageSize.value;
+  const p = Number(q.page);
+  page.value = Number.isSafeInteger(p) && p > 0 ? p : 1;
 }
-
+function scrollToCatalog() {
+  const toolbar = document.querySelector('.catalog-toolbar');
+  if (!toolbar) return;
+  const headerHeight = document.querySelector('.topbar')?.getBoundingClientRect().height || 0;
+  window.scrollTo({ top: Math.max(0, window.scrollY + toolbar.getBoundingClientRect().top - headerHeight - 12) });
+}
+async function navigateCatalog() {
+  const query = { ...route.query };
+  for (const k of ['keyword', 'category_id', 'recommend_only', 'sort', 'page', 'page_size']) delete query[k];
+  if (searchTerm.value) query.keyword = searchTerm.value;
+  if (activeCategory.value > 0) query.category_id = String(activeCategory.value);
+  if (activeCategory.value === -1) query.recommend_only = '1';
+  query.sort = sort.value;
+  if (page.value > 1) query.page = String(page.value);
+  if (pageSize.value !== defaultPageSize.value) query.page_size = String(pageSize.value);
+  const target = { path: '/', query, hash: '#catalog' };
+  if (router.resolve(target).fullPath === route.fullPath) { await load(); scrollToCatalog(); }
+  else await router.push(target);
+}
+function goSearch() {
+  searchTerm.value = keyword.value.trim();
+  page.value = 1;
+  void navigateCatalog();
+}
 function pickCategory(id: number) {
   activeCategory.value = id;
   page.value = 1;
-  chipsExpanded.value = false; // 选完即收起，回紧凑单行
-  load();
+  chipsExpanded.value = false;
+  void navigateCatalog();
 }
+function changeSort(value: string) {
+  if (!sorts.includes(value)) return;
+  sort.value = value;
+  page.value = 1;
+  void navigateCatalog();
+}
+function changeView(value: 'grid' | 'list') {
+  viewMode.value = value;
+  if (value === 'grid') bigGrid.value = false;
+}
+let routeQueryKey = JSON.stringify(route.query);
+watch(() => route.fullPath, async (_path, previous) => {
+  if (!initialized || route.path !== '/') return;
+  const key = JSON.stringify(route.query);
+  if (key === routeQueryKey) {
+    if (route.hash === '#catalog' && (previous === '/' || previous.startsWith('/?'))) { await nextTick(); scrollToCatalog(); }
+    return;
+  }
+  routeQueryKey = key;
+  readRouteFilters();
+  await load();
+  if (route.path === '/') { await nextTick(); scrollToCatalog(); }
+});
 
 function formatDate(unix?: number): string {
   if (!unix) return '';
@@ -305,7 +358,7 @@ async function load() {
   loading.value = true;
   error.value = '';
   const { data, error: err } = await listProducts({
-    keyword: keyword.value || undefined,
+    keyword: searchTerm.value || undefined,
     category_id: activeCategory.value > 0 ? activeCategory.value : undefined,
     recommend_only: activeCategory.value === -1 || undefined,
     sort: sort.value,
@@ -323,10 +376,9 @@ let needsRefresh = false;
 onActivated(() => {
   startHero();
   if (needsRefresh) {
-    void loadTemplateSettings();
     needsRefresh = false;
     // 保留浏览状态，同时重新获取价格、库存和首页标题。
-    void refreshRecommendations().then(load);
+    void loadTemplateSettings().then(refreshRecommendations).then(load);
     void fetchSiteSeo().then(applyDefaultSeo);
   }
 });
@@ -335,9 +387,14 @@ onDeactivated(() => {
   needsRefresh = true;
 });
 
-// 首页数据预取（setup 顶层：SSG 构建时渲染完整内容；客户端水合复用后由 onMounted 启动轮播）
+onMounted(async () => { startHero(); if (route.hash === '#catalog') { await nextTick(); scrollToCatalog(); } });
+onUnmounted(stopHero);
+
+// 先读取后台默认值，再应用链接中的筛选条件。
+await loadTemplateSettings();
+readRouteFilters();
+routeQueryKey = JSON.stringify(route.query);
 await Promise.all([
-  load(),
   listBanners('top').then((b) => { banners.value = b?.data?.banners || []; }),
   listPosts('notice', 1, 1).then((n) => { latestNotice.value = n?.data?.posts?.[0] || null; }),
   listCategories().then((c) => { categories.value = c?.data?.categories || []; }),
@@ -349,12 +406,14 @@ await Promise.all([
     applyVerification(site);
   }),
 ]);
+await load();
 
-// Cached catalog pages refresh template settings when revisited.
-let appliedDefaultView = '';
+initialized = true;
+// Backend defaults apply on first entry; cached user choices remain intact.
 async function loadTemplateSettings() {
   try {
-    const resp = await fetch('/api/v1/storefront/config');
+    const apiBase = import.meta.env.SSR ? (import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000') : '';
+    const resp = await fetch(`${apiBase}/api/v1/storefront/config`);
     const json = await resp.json();
     const val = (k: string) => {
       const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
@@ -380,33 +439,27 @@ async function loadTemplateSettings() {
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
     // 每页商品数（防滥用夹在 6~60；与 /products 页同源消费）
     const pp = Number(val('template.per_page'));
-    let reload = false;
-    if (Number.isInteger(pp) && pp >= 6 && pp <= 60) {
+
+    if (Number.isInteger(pp) && pp >= 6 && pp <= 60 && pp !== defaultPageSize.value) {
       defaultPageSize.value = pp;
-      if (pp !== pageSize.value) {
+      if (!route.query.page_size) {
         pageSize.value = pp;
-        reload = true;
       }
     }
     const sb = val('template.sort_by');
-    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && sb !== sort.value) {
-      sort.value = sb;
-      reload = true;
-    }
-    if (reload) { page.value = 1; void load(); }
+    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb)) defaultSort.value = sb;
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
     if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }
 }
-onMounted(() => { startHero(); void loadTemplateSettings(); });
-onUnmounted(stopHero);
+
 </script>
 
 <style scoped>
 .home { display: flex; flex-direction: column; gap: 16px; }
 
 /* 左右布局：PC 左侧分类树 + 右侧内容 */
-.home-layout { display: flex; gap: 16px; align-items: flex-start; }
+.home-layout { scroll-margin-top: 100px; display: flex; gap: 16px; align-items: flex-start; }
 .home-content { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 .mobile-only { display: flex; }
 @media (min-width: 768px) {
@@ -510,21 +563,6 @@ onUnmounted(stopHero);
 .search-bar .input:focus { box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); border-radius: 8px; }
 
 /* ── 商品区 ── */
-.section-head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 4px;
-}
-.section-title {
-  display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700; color: #111827;
-}
-.title-bar { width: 4px; height: 18px; border-radius: 999px; background: #ff5722; display: inline-block; }
-.view-switcher { display: flex; gap: 4px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 3px; }
-.view-switcher button {
-  width: 30px; height: 26px; border: none; background: none; border-radius: 6px;
-  cursor: pointer; font-size: 14px; color: #9ca3af; transition: all 0.15s;
-}
-.view-switcher button.active { background: #2563eb; color: #fff; }
-
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -567,7 +605,7 @@ onUnmounted(stopHero);
 /* ── 移动端（≤768px）：轮播限高、分类胶囊单行横滑、商品双列 ── */
 @media (max-width: 768px) {
   .home { gap: 12px; }
-  .home-layout { gap: 12px; }
+  .home-layout { scroll-margin-top: 100px; gap: 12px; }
   /* 轮播高度按视口收窄（桌面 clamp 240-360px 在手机上过高） */
   .hero-slide img { height: clamp(110px, 30vw, 170px); }
   .hero-title { padding: 22px 14px 10px; font-size: 15px; }

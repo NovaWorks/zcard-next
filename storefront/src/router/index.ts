@@ -1,13 +1,14 @@
+import { nextTick } from 'vue';
 import { createRouter, createWebHistory } from 'vue-router';
-import type { Router, RouterScrollBehavior } from 'vue-router';
+import type { Router, RouterScrollBehavior, RouteRecordRaw } from 'vue-router';
 import { refreshCartSetting } from '@/cart';
 import { getToken } from '@/api/client';
 import Home from '@/views/Home.vue';
 
 // meta.auth：需登录页面（）——无 token 跳 /login 带回跳。
-export const routes = [
+export const routes: RouteRecordRaw[] = [
   { path: '/', name: 'home', component: Home },
-  { path: '/products', name: 'products', component: () => import('@/views/Products.vue') },
+  { path: '/products', name: 'products', redirect: to => ({ path: '/', query: to.query, hash: to.hash || '#catalog' }) },
   { path: '/product/:id', name: 'product', component: () => import('@/views/ProductDetail.vue') },
   { path: '/payment/:orderNo', name: 'payment', component: () => import('@/views/Payment.vue') },
   { path: '/order/:orderNo', name: 'order-detail', component: () => import('@/views/OrderDetail.vue') },
@@ -28,9 +29,19 @@ export const routes = [
   { path: '/posts/:slug', name: 'post-detail', component: () => import('@/views/PostDetail.vue') }
 ];
 
-export const scrollBehavior: RouterScrollBehavior = (to, _from, savedPosition) => {
-  // 目录由 useCatalogScroll 在缓存组件激活后恢复，避免被尚未移除的详情页高度截断。
-  if (to.name === 'home' || to.name === 'products') return false;
+const catalogPositions = new Map<string, { left: number; top: number }>();
+
+export const scrollBehavior: RouterScrollBehavior = async (to, from, savedPosition) => {
+  if (to.name === 'home') {
+    // Filtering on the same page scrolls to its toolbar in Home.vue.
+    if (from.name === 'home') return false;
+    await nextTick();
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    const position = savedPosition || catalogPositions.get(to.fullPath);
+    if (position) return position;
+    if (to.hash === '#catalog') return { el: '#catalog', top: (document.querySelector('.topbar')?.getBoundingClientRect().height || 0) + 12 };
+    return { left: 0, top: 0 };
+  }
   return savedPosition || { left: 0, top: 0 };
 };
 
@@ -46,7 +57,12 @@ export function createAppRouter(): Router {
 
 /** 登录守卫 + 尾斜杠规范化（注册到任意 router 实例；vite-ssg 与独立入口共用） */
 export function installRouterGuards(router: Router) {
-  router.beforeEach(async (to) => {
+  router.beforeEach(async (to, from) => {
+    // Capture before the route changes or a shorter detail page clamps scrollY.
+    if (from.name === 'home' && to.name !== 'home') {
+      catalogPositions.set(from.fullPath, { left: window.scrollX, top: window.scrollY });
+      if (catalogPositions.size > 50) catalogPositions.delete(catalogPositions.keys().next().value!);
+    }
     // 关闭时允许展示停用说明，无需先要求登录。
     const cartUnavailable = to.name === 'cart' && !(await refreshCartSetting(true));
     if (to.meta.auth && !cartUnavailable && !getToken()) {
