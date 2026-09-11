@@ -136,6 +136,10 @@ func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefront
 func mapRechargeErr(err error) error {
 	msg := err.Error()
 	switch {
+	case containsStr(msg, "SCENE_DISABLED"):
+		return errors.BadRequest("wallet.SCENE_DISABLED", "该支付方式未开放此充值用途，请更换支付方式")
+	case containsStr(msg, "CHANNEL_DISABLED"):
+		return errors.BadRequest("wallet.CHANNEL_DISABLED", "支付渠道已停用，请更换支付方式")
 	case containsStr(msg, "CHANNEL_NOT_FOUND"):
 		return errors.NotFound("wallet.CHANNEL_NOT_FOUND", "支付渠道不存在或未启用")
 	case containsStr(msg, "CHANNEL_INVALID"):

@@ -62,8 +62,16 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 	}
 	client := data.Client(ctx, s.data)
 	// 商品存在性（上架校验留给列表打标——允许下架商品留在车内可见）
-	if _, err := client.Product.Get(ctx, req.GetProductId()); err != nil {
+	p, err := client.Product.Get(ctx, req.GetProductId())
+	if err != nil {
 		return nil, errors.New("cart.PRODUCT_NOT_FOUND")
+	}
+	hidden, err := data.HiddenCategoryIDs(ctx, client, p.SubsiteID)
+	if err != nil {
+		return nil, err
+	}
+	if data.CategoryHidden(hidden, p.CategoryID) {
+		return nil, errors.New("cart.PRODUCT_NOT_AVAILABLE: 商品已下架")
 	}
 	// 合并：唯一索引 (user_id, product_id, sku_id) 冲突时数量累加（AddQuantity）
 	if err := client.CartItem.Create().
@@ -201,7 +209,11 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 	item.ProductCover = p.Cover
 	item.PointsRequired = p.PointsRequired
 	item.PointsOnly = p.PointsRequired > 0
-	item.Valid = p.Status == 1 // 上架 on_sale（隐藏/下架打标失效） // 上架才可选（隐藏/下架打标）
+	hidden, err := data.HiddenCategoryIDs(ctx, client, p.SubsiteID)
+	if err != nil {
+		return nil, err
+	}
+	item.Valid = p.Status == 1 && !data.CategoryHidden(hidden, p.CategoryID) // 上架 on_sale（隐藏/下架打标失效） // 上架才可选（隐藏/下架打标）
 	// 现价（SKU 解析；失败回落商品价）
 	var price money.Cents = money.Cents(p.Price)
 	if row.SkuID > 0 && s.pricing != nil {

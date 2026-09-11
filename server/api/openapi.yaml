@@ -5505,6 +5505,11 @@ paths:
                 - StorePaymentService
             description: ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
             operationId: StorePaymentService_ListChannels
+            parameters:
+                - name: scene
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -6819,6 +6824,12 @@ components:
                     type: string
                 methodsJson:
                     type: string
+                allowPurchase:
+                    type: boolean
+                allowMemberRecharge:
+                    type: boolean
+                allowSupplyRecharge:
+                    type: boolean
             description: Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
         zcard.api.admin.v1.ChannelList:
             type: object
@@ -7020,6 +7031,12 @@ components:
                     type: string
                 methodsJson:
                     type: string
+                allowPurchase:
+                    type: boolean
+                allowMemberRecharge:
+                    type: boolean
+                allowSupplyRecharge:
+                    type: boolean
         zcard.api.admin.v1.CreateConnectionRequest:
             required:
                 - name
@@ -10290,6 +10307,12 @@ components:
                     type: string
                 methodsJson:
                     type: string
+                allowPurchase:
+                    type: boolean
+                allowMemberRecharge:
+                    type: boolean
+                allowSupplyRecharge:
+                    type: boolean
         zcard.api.admin.v1.UpdateCheckResult:
             type: object
             properties:

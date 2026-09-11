@@ -286,6 +286,12 @@ func mapSupplierRechargeErr(err error) error {
 		return nil
 	}
 	msg := err.Error()
+	if strings.Contains(msg, "SCENE_DISABLED") {
+		return errors.BadRequest("supplier.SCENE_DISABLED", "该支付方式未开放供货账号充值，请更换支付方式")
+	}
+	if strings.Contains(msg, "METHOD_INVALID") {
+		return errors.BadRequest("supplier.METHOD_INVALID", "请选择该渠道支持的支付方式")
+	}
 	for _, prefix := range []string{"payment.CHANNEL_NOT_FOUND", "payment.CHANNEL_DISABLED", "payment.CONFIG_INVALID"} {
 		if strings.HasPrefix(msg, prefix) {
 			return errors.BadRequest("supplier.PAYMENT_CHANNEL_UNAVAILABLE", "支付渠道不可用，请更换支付方式")

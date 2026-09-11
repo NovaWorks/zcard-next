@@ -104,6 +104,21 @@ func Enabled(v bool) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldEQ(FieldEnabled, v))
 }
 
+// AllowPurchase applies equality check predicate on the "allow_purchase" field. It's identical to AllowPurchaseEQ.
+func AllowPurchase(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldAllowPurchase, v))
+}
+
+// AllowMemberRecharge applies equality check predicate on the "allow_member_recharge" field. It's identical to AllowMemberRechargeEQ.
+func AllowMemberRecharge(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldAllowMemberRecharge, v))
+}
+
+// AllowSupplyRecharge applies equality check predicate on the "allow_supply_recharge" field. It's identical to AllowSupplyRechargeEQ.
+func AllowSupplyRecharge(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldAllowSupplyRecharge, v))
+}
+
 // Icon applies equality check predicate on the "icon" field. It's identical to IconEQ.
 func Icon(v string) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldEQ(FieldIcon, v))
@@ -592,6 +607,36 @@ func EnabledEQ(v bool) predicate.PaymentChannel {
 // EnabledNEQ applies the NEQ predicate on the "enabled" field.
 func EnabledNEQ(v bool) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldNEQ(FieldEnabled, v))
+}
+
+// AllowPurchaseEQ applies the EQ predicate on the "allow_purchase" field.
+func AllowPurchaseEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldAllowPurchase, v))
+}
+
+// AllowPurchaseNEQ applies the NEQ predicate on the "allow_purchase" field.
+func AllowPurchaseNEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldAllowPurchase, v))
+}
+
+// AllowMemberRechargeEQ applies the EQ predicate on the "allow_member_recharge" field.
+func AllowMemberRechargeEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldAllowMemberRecharge, v))
+}
+
+// AllowMemberRechargeNEQ applies the NEQ predicate on the "allow_member_recharge" field.
+func AllowMemberRechargeNEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldAllowMemberRecharge, v))
+}
+
+// AllowSupplyRechargeEQ applies the EQ predicate on the "allow_supply_recharge" field.
+func AllowSupplyRechargeEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldAllowSupplyRecharge, v))
+}
+
+// AllowSupplyRechargeNEQ applies the NEQ predicate on the "allow_supply_recharge" field.
+func AllowSupplyRechargeNEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldAllowSupplyRecharge, v))
 }
 
 // IconEQ applies the EQ predicate on the "icon" field.

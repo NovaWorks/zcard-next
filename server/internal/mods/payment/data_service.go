@@ -87,7 +87,7 @@ func (s *AdminPaymentService) CreateChannel(ctx context.Context, req *adminv1.Cr
 	}
 	ch, err := s.repo.CreateChannel(ctx, req.GetName(), req.GetCode(), req.GetDriver(),
 		req.GetConfigJson(), req.GetFee(), feeType, req.GetEnabled(), req.GetSort(),
-		req.GetIcon(), methods)
+		req.GetIcon(), methods, ChannelUsage{req.AllowPurchase, req.AllowMemberRecharge, req.AllowSupplyRecharge})
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建失败（code 可能重复）")
 	}
@@ -253,7 +253,7 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 	}
 	ch, err := s.repo.UpdateChannel(ctx, req.GetId(), req.GetName(), configJSON,
 		req.GetFee(), req.GetFeeType(), req.GetEnabled(), req.GetSort(),
-		req.Icon != nil, req.GetIcon(), req.MethodsJson != nil, methods)
+		req.Icon != nil, req.GetIcon(), req.MethodsJson != nil, methods, ChannelUsage{req.AllowPurchase, req.AllowMemberRecharge, req.AllowSupplyRecharge})
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
@@ -442,7 +442,14 @@ func NewStorePaymentService(repo *PaymentRepoImpl, d *data.Data) *StorePaymentSe
 // ListChannels 启用渠道列表（：渠道下拉数据源——替代前端硬编码枚举）。
 // 过滤：启用 + 已配置（空凭据的「待配置」渠道不对顾客展示；wallet 内置无需配置）。
 // 游客不下发 wallet（余额支付需登录态；游客仅可用真实支付渠道）。
-func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty) (*storefrontv1.ChannelListReply, error) {
+func (s *StorePaymentService) ListChannels(ctx context.Context, req *storefrontv1.ListPaymentChannelsRequest) (*storefrontv1.ChannelListReply, error) {
+	scene := req.GetScene()
+	if scene == "" {
+		scene = scenePurchase
+	}
+	if scene != scenePurchase && scene != sceneMemberRecharge && scene != sceneSupplyRecharge {
+		return nil, errors.BadRequest("payment.SCENE_INVALID", "不支持的支付用途")
+	}
 	rows, err := data.Client(ctx, s.data).PaymentChannel.Query().
 		Where(paymentchannel.Enabled(true)).
 		Order(ent.Asc(paymentchannel.FieldSort)).
@@ -454,6 +461,9 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 	guest := identity.ClaimsFromContext(ctx) == nil
 	reply := &storefrontv1.ChannelListReply{}
 	for _, ch := range rows {
+		if !channelAllows(ch, scene) {
+			continue
+		}
 		if guest && ch.Driver == "wallet" {
 			continue // 游客不可用余额支付
 		}
@@ -462,10 +472,13 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, _ *emptypb.Empty
 		}
 		item := &storefrontv1.ChannelItem{Code: ch.Code, Name: ch.Name, Driver: ch.Driver, Icon: ch.Icon}
 		for _, m := range parseMethods(ch) {
-			if !m.Enabled {
+			if !m.Enabled || !m.ChannelUsage.allows(scene) {
 				continue
 			}
 			item.Methods = append(item.Methods, &storefrontv1.MethodItem{Code: m.Code, Name: m.Name, Icon: m.Icon})
+		}
+		if len(ch.Methods) > 0 && len(item.Methods) == 0 {
+			continue
 		}
 		reply.Channels = append(reply.Channels, item)
 	}
@@ -506,6 +519,9 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 
 	if !ch.Enabled {
 		return nil, errors.BadRequest("payment.CHANNEL_DISABLED", "支付渠道已停用")
+	}
+	if err := checkPaymentUsage(ch, req.GetMethod(), scenePurchase); err != nil {
+		return nil, errors.BadRequest("payment.SCENE_DISABLED", err.Error())
 	}
 	// wallet 渠道：余额支付（直接 markPaid—— 接 wallet.DebitInTx）
 	if ch.Driver == "wallet" {

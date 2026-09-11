@@ -39945,31 +39945,34 @@ func (m *PaymentMutation) ResetEdge(name string) error {
 // PaymentChannelMutation represents an operation that mutates the PaymentChannel nodes in the graph.
 type PaymentChannelMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	created_at    *time.Time
-	updated_at    *time.Time
-	subsite_id    *uint64
-	addsubsite_id *int64
-	name          *string
-	code          *string
-	_driver       *string
-	_config       *[]byte
-	fee           *int64
-	addfee        *int64
-	fee_type      *paymentchannel.FeeType
-	fee_bearer    *paymentchannel.FeeBearer
-	sort          *int32
-	addsort       *int32
-	enabled       *bool
-	icon          *string
-	methods       *[]map[string]interface{}
-	appendmethods []map[string]interface{}
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*PaymentChannel, error)
-	predicates    []predicate.PaymentChannel
+	op                    Op
+	typ                   string
+	id                    *uint64
+	created_at            *time.Time
+	updated_at            *time.Time
+	subsite_id            *uint64
+	addsubsite_id         *int64
+	name                  *string
+	code                  *string
+	_driver               *string
+	_config               *[]byte
+	fee                   *int64
+	addfee                *int64
+	fee_type              *paymentchannel.FeeType
+	fee_bearer            *paymentchannel.FeeBearer
+	sort                  *int32
+	addsort               *int32
+	enabled               *bool
+	allow_purchase        *bool
+	allow_member_recharge *bool
+	allow_supply_recharge *bool
+	icon                  *string
+	methods               *[]map[string]interface{}
+	appendmethods         []map[string]interface{}
+	clearedFields         map[string]struct{}
+	done                  bool
+	oldValue              func(context.Context) (*PaymentChannel, error)
+	predicates            []predicate.PaymentChannel
 }
 
 var _ ent.Mutation = (*PaymentChannelMutation)(nil)
@@ -40568,6 +40571,114 @@ func (m *PaymentChannelMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetAllowPurchase sets the "allow_purchase" field.
+func (m *PaymentChannelMutation) SetAllowPurchase(b bool) {
+	m.allow_purchase = &b
+}
+
+// AllowPurchase returns the value of the "allow_purchase" field in the mutation.
+func (m *PaymentChannelMutation) AllowPurchase() (r bool, exists bool) {
+	v := m.allow_purchase
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowPurchase returns the old "allow_purchase" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldAllowPurchase(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowPurchase is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowPurchase requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowPurchase: %w", err)
+	}
+	return oldValue.AllowPurchase, nil
+}
+
+// ResetAllowPurchase resets all changes to the "allow_purchase" field.
+func (m *PaymentChannelMutation) ResetAllowPurchase() {
+	m.allow_purchase = nil
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (m *PaymentChannelMutation) SetAllowMemberRecharge(b bool) {
+	m.allow_member_recharge = &b
+}
+
+// AllowMemberRecharge returns the value of the "allow_member_recharge" field in the mutation.
+func (m *PaymentChannelMutation) AllowMemberRecharge() (r bool, exists bool) {
+	v := m.allow_member_recharge
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowMemberRecharge returns the old "allow_member_recharge" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldAllowMemberRecharge(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowMemberRecharge is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowMemberRecharge requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowMemberRecharge: %w", err)
+	}
+	return oldValue.AllowMemberRecharge, nil
+}
+
+// ResetAllowMemberRecharge resets all changes to the "allow_member_recharge" field.
+func (m *PaymentChannelMutation) ResetAllowMemberRecharge() {
+	m.allow_member_recharge = nil
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (m *PaymentChannelMutation) SetAllowSupplyRecharge(b bool) {
+	m.allow_supply_recharge = &b
+}
+
+// AllowSupplyRecharge returns the value of the "allow_supply_recharge" field in the mutation.
+func (m *PaymentChannelMutation) AllowSupplyRecharge() (r bool, exists bool) {
+	v := m.allow_supply_recharge
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowSupplyRecharge returns the old "allow_supply_recharge" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldAllowSupplyRecharge(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowSupplyRecharge is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowSupplyRecharge requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowSupplyRecharge: %w", err)
+	}
+	return oldValue.AllowSupplyRecharge, nil
+}
+
+// ResetAllowSupplyRecharge resets all changes to the "allow_supply_recharge" field.
+func (m *PaymentChannelMutation) ResetAllowSupplyRecharge() {
+	m.allow_supply_recharge = nil
+}
+
 // SetIcon sets the "icon" field.
 func (m *PaymentChannelMutation) SetIcon(s string) {
 	m.icon = &s
@@ -40703,7 +40814,7 @@ func (m *PaymentChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentChannelMutation) Fields() []string {
-	fields := make([]string, 0, 14)
+	fields := make([]string, 0, 17)
 	if m.created_at != nil {
 		fields = append(fields, paymentchannel.FieldCreatedAt)
 	}
@@ -40739,6 +40850,15 @@ func (m *PaymentChannelMutation) Fields() []string {
 	}
 	if m.enabled != nil {
 		fields = append(fields, paymentchannel.FieldEnabled)
+	}
+	if m.allow_purchase != nil {
+		fields = append(fields, paymentchannel.FieldAllowPurchase)
+	}
+	if m.allow_member_recharge != nil {
+		fields = append(fields, paymentchannel.FieldAllowMemberRecharge)
+	}
+	if m.allow_supply_recharge != nil {
+		fields = append(fields, paymentchannel.FieldAllowSupplyRecharge)
 	}
 	if m.icon != nil {
 		fields = append(fields, paymentchannel.FieldIcon)
@@ -40778,6 +40898,12 @@ func (m *PaymentChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.Sort()
 	case paymentchannel.FieldEnabled:
 		return m.Enabled()
+	case paymentchannel.FieldAllowPurchase:
+		return m.AllowPurchase()
+	case paymentchannel.FieldAllowMemberRecharge:
+		return m.AllowMemberRecharge()
+	case paymentchannel.FieldAllowSupplyRecharge:
+		return m.AllowSupplyRecharge()
 	case paymentchannel.FieldIcon:
 		return m.Icon()
 	case paymentchannel.FieldMethods:
@@ -40815,6 +40941,12 @@ func (m *PaymentChannelMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldSort(ctx)
 	case paymentchannel.FieldEnabled:
 		return m.OldEnabled(ctx)
+	case paymentchannel.FieldAllowPurchase:
+		return m.OldAllowPurchase(ctx)
+	case paymentchannel.FieldAllowMemberRecharge:
+		return m.OldAllowMemberRecharge(ctx)
+	case paymentchannel.FieldAllowSupplyRecharge:
+		return m.OldAllowSupplyRecharge(ctx)
 	case paymentchannel.FieldIcon:
 		return m.OldIcon(ctx)
 	case paymentchannel.FieldMethods:
@@ -40911,6 +41043,27 @@ func (m *PaymentChannelMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnabled(v)
+		return nil
+	case paymentchannel.FieldAllowPurchase:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowPurchase(v)
+		return nil
+	case paymentchannel.FieldAllowMemberRecharge:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowMemberRecharge(v)
+		return nil
+	case paymentchannel.FieldAllowSupplyRecharge:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowSupplyRecharge(v)
 		return nil
 	case paymentchannel.FieldIcon:
 		v, ok := value.(string)
@@ -41058,6 +41211,15 @@ func (m *PaymentChannelMutation) ResetField(name string) error {
 		return nil
 	case paymentchannel.FieldEnabled:
 		m.ResetEnabled()
+		return nil
+	case paymentchannel.FieldAllowPurchase:
+		m.ResetAllowPurchase()
+		return nil
+	case paymentchannel.FieldAllowMemberRecharge:
+		m.ResetAllowMemberRecharge()
+		return nil
+	case paymentchannel.FieldAllowSupplyRecharge:
+		m.ResetAllowSupplyRecharge()
 		return nil
 	case paymentchannel.FieldIcon:
 		m.ResetIcon()

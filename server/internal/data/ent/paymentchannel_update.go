@@ -188,6 +188,48 @@ func (_u *PaymentChannelUpdate) SetNillableEnabled(v *bool) *PaymentChannelUpdat
 	return _u
 }
 
+// SetAllowPurchase sets the "allow_purchase" field.
+func (_u *PaymentChannelUpdate) SetAllowPurchase(v bool) *PaymentChannelUpdate {
+	_u.mutation.SetAllowPurchase(v)
+	return _u
+}
+
+// SetNillableAllowPurchase sets the "allow_purchase" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableAllowPurchase(v *bool) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetAllowPurchase(*v)
+	}
+	return _u
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (_u *PaymentChannelUpdate) SetAllowMemberRecharge(v bool) *PaymentChannelUpdate {
+	_u.mutation.SetAllowMemberRecharge(v)
+	return _u
+}
+
+// SetNillableAllowMemberRecharge sets the "allow_member_recharge" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableAllowMemberRecharge(v *bool) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetAllowMemberRecharge(*v)
+	}
+	return _u
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (_u *PaymentChannelUpdate) SetAllowSupplyRecharge(v bool) *PaymentChannelUpdate {
+	_u.mutation.SetAllowSupplyRecharge(v)
+	return _u
+}
+
+// SetNillableAllowSupplyRecharge sets the "allow_supply_recharge" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableAllowSupplyRecharge(v *bool) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetAllowSupplyRecharge(*v)
+	}
+	return _u
+}
+
 // SetIcon sets the "icon" field.
 func (_u *PaymentChannelUpdate) SetIcon(v string) *PaymentChannelUpdate {
 	_u.mutation.SetIcon(v)
@@ -349,6 +391,15 @@ func (_u *PaymentChannelUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AllowPurchase(); ok {
+		_spec.SetField(paymentchannel.FieldAllowPurchase, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AllowMemberRecharge(); ok {
+		_spec.SetField(paymentchannel.FieldAllowMemberRecharge, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AllowSupplyRecharge(); ok {
+		_spec.SetField(paymentchannel.FieldAllowSupplyRecharge, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Icon(); ok {
 		_spec.SetField(paymentchannel.FieldIcon, field.TypeString, value)
@@ -539,6 +590,48 @@ func (_u *PaymentChannelUpdateOne) SetEnabled(v bool) *PaymentChannelUpdateOne {
 func (_u *PaymentChannelUpdateOne) SetNillableEnabled(v *bool) *PaymentChannelUpdateOne {
 	if v != nil {
 		_u.SetEnabled(*v)
+	}
+	return _u
+}
+
+// SetAllowPurchase sets the "allow_purchase" field.
+func (_u *PaymentChannelUpdateOne) SetAllowPurchase(v bool) *PaymentChannelUpdateOne {
+	_u.mutation.SetAllowPurchase(v)
+	return _u
+}
+
+// SetNillableAllowPurchase sets the "allow_purchase" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableAllowPurchase(v *bool) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetAllowPurchase(*v)
+	}
+	return _u
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (_u *PaymentChannelUpdateOne) SetAllowMemberRecharge(v bool) *PaymentChannelUpdateOne {
+	_u.mutation.SetAllowMemberRecharge(v)
+	return _u
+}
+
+// SetNillableAllowMemberRecharge sets the "allow_member_recharge" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableAllowMemberRecharge(v *bool) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetAllowMemberRecharge(*v)
+	}
+	return _u
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (_u *PaymentChannelUpdateOne) SetAllowSupplyRecharge(v bool) *PaymentChannelUpdateOne {
+	_u.mutation.SetAllowSupplyRecharge(v)
+	return _u
+}
+
+// SetNillableAllowSupplyRecharge sets the "allow_supply_recharge" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableAllowSupplyRecharge(v *bool) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetAllowSupplyRecharge(*v)
 	}
 	return _u
 }
@@ -734,6 +827,15 @@ func (_u *PaymentChannelUpdateOne) sqlSave(ctx context.Context) (_node *PaymentC
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AllowPurchase(); ok {
+		_spec.SetField(paymentchannel.FieldAllowPurchase, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AllowMemberRecharge(); ok {
+		_spec.SetField(paymentchannel.FieldAllowMemberRecharge, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.AllowSupplyRecharge(); ok {
+		_spec.SetField(paymentchannel.FieldAllowSupplyRecharge, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Icon(); ok {
 		_spec.SetField(paymentchannel.FieldIcon, field.TypeString, value)

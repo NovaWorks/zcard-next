@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -31,7 +30,7 @@ const (
 // StorePaymentService 顾客支付。
 type StorePaymentServiceClient interface {
 	// ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
-	ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelListReply, error)
+	ListChannels(ctx context.Context, in *ListPaymentChannelsRequest, opts ...grpc.CallOption) (*ChannelListReply, error)
 	// CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(ctx context.Context, in *CreatePaymentRequest, opts ...grpc.CallOption) (*CreatePaymentReply, error)
 }
@@ -44,7 +43,7 @@ func NewStorePaymentServiceClient(cc grpc.ClientConnInterface) StorePaymentServi
 	return &storePaymentServiceClient{cc}
 }
 
-func (c *storePaymentServiceClient) ListChannels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ChannelListReply, error) {
+func (c *storePaymentServiceClient) ListChannels(ctx context.Context, in *ListPaymentChannelsRequest, opts ...grpc.CallOption) (*ChannelListReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ChannelListReply)
 	err := c.cc.Invoke(ctx, StorePaymentService_ListChannels_FullMethodName, in, out, cOpts...)
@@ -71,7 +70,7 @@ func (c *storePaymentServiceClient) CreatePayment(ctx context.Context, in *Creat
 // StorePaymentService 顾客支付。
 type StorePaymentServiceServer interface {
 	// ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
-	ListChannels(context.Context, *emptypb.Empty) (*ChannelListReply, error)
+	ListChannels(context.Context, *ListPaymentChannelsRequest) (*ChannelListReply, error)
 	// CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(context.Context, *CreatePaymentRequest) (*CreatePaymentReply, error)
 	mustEmbedUnimplementedStorePaymentServiceServer()
@@ -84,7 +83,7 @@ type StorePaymentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStorePaymentServiceServer struct{}
 
-func (UnimplementedStorePaymentServiceServer) ListChannels(context.Context, *emptypb.Empty) (*ChannelListReply, error) {
+func (UnimplementedStorePaymentServiceServer) ListChannels(context.Context, *ListPaymentChannelsRequest) (*ChannelListReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListChannels not implemented")
 }
 func (UnimplementedStorePaymentServiceServer) CreatePayment(context.Context, *CreatePaymentRequest) (*CreatePaymentReply, error) {
@@ -112,7 +111,7 @@ func RegisterStorePaymentServiceServer(s grpc.ServiceRegistrar, srv StorePayment
 }
 
 func _StorePaymentService_ListChannels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ListPaymentChannelsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -124,7 +123,7 @@ func _StorePaymentService_ListChannels_Handler(srv interface{}, ctx context.Cont
 		FullMethod: StorePaymentService_ListChannels_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorePaymentServiceServer).ListChannels(ctx, req.(*emptypb.Empty))
+		return srv.(StorePaymentServiceServer).ListChannels(ctx, req.(*ListPaymentChannelsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

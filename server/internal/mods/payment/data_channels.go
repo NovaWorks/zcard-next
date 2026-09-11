@@ -111,6 +111,7 @@ func (r *PaymentRepoImpl) ListChannels(ctx context.Context) ([]*ent.PaymentChann
 
 // ChannelMethod 支付方式（收银台顾客看到的选项；params 承载网关路由参数）。
 type ChannelMethod struct {
+	ChannelUsage
 	Code    string            `json:"code"`
 	Name    string            `json:"name"`
 	Icon    string            `json:"icon,omitempty"`
@@ -144,7 +145,12 @@ func methodsJSON(raw string) ([]map[string]any, error) {
 	if err := json.Unmarshal([]byte(raw), &ms); err != nil {
 		return nil, fmt.Errorf("payment.METHODS_INVALID: 支付方式列表格式错误: %w", err)
 	}
+	seen := map[string]bool{}
 	for _, m := range ms {
+		if seen[m.Code] {
+			return nil, fmt.Errorf("payment.METHODS_INVALID: 支付方式标识不能重复")
+		}
+		seen[m.Code] = true
 		if m.Code == "" || m.Name == "" {
 			return nil, fmt.Errorf("payment.METHODS_INVALID: 方式的 code/name 必填")
 		}
@@ -156,7 +162,7 @@ func methodsJSON(raw string) ([]map[string]any, error) {
 }
 
 // CreateChannel 创建渠道（凭据加密入库；methodsJSON=支付方式列表）。
-func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32, icon string, methods []map[string]any) (*ent.PaymentChannel, error) {
+func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32, icon string, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
 	enc, err := r.Cipher.Seal([]byte(configJSON), []byte("payment_channel:"+code))
 	if err != nil {
 		return nil, fmt.Errorf("payment: 凭据加密失败: %w", err)
@@ -171,6 +177,9 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 		SetEnabled(enabled).
 		SetSort(sort).
 		SetIcon(icon)
+	if len(usage) > 0 {
+		q.SetNillableAllowPurchase(usage[0].AllowPurchase).SetNillableAllowMemberRecharge(usage[0].AllowMemberRecharge).SetNillableAllowSupplyRecharge(usage[0].AllowSupplyRecharge)
+	}
 	if methods != nil {
 		q = q.SetMethods(methods)
 	}
@@ -179,8 +188,11 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 
 // UpdateChannel 更新渠道（config_json=**** 跳过凭据修改；feeType 空=不修改；
 // setIcon/setMethods=false 保持原值——proto optional 语义）。
-func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32, setIcon bool, icon string, setMethods bool, methods []map[string]any) (*ent.PaymentChannel, error) {
+func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32, setIcon bool, icon string, setMethods bool, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
 	q := data.Client(ctx, r.data).PaymentChannel.UpdateOneID(id)
+	if len(usage) > 0 {
+		q.SetNillableAllowPurchase(usage[0].AllowPurchase).SetNillableAllowMemberRecharge(usage[0].AllowMemberRecharge).SetNillableAllowSupplyRecharge(usage[0].AllowSupplyRecharge)
+	}
 	if name != "" {
 		q.SetName(name)
 	}
@@ -341,6 +353,13 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	}
 	if ch.Driver == "wallet" {
 		return nil, fmt.Errorf("payment.RECHARGE_CHANNEL_INVALID: 充值不支持余额渠道")
+	}
+	scene := sceneMemberRecharge
+	if ro.Target == rechargeorder.TargetSupply {
+		scene = sceneSupplyRecharge
+	}
+	if err := checkPaymentUsage(ch, method, scene); err != nil {
+		return nil, err
 	}
 	// 方式级路由（与订单支付同口径）：多方式渠道 method 必填且须在启用列表内
 	var methodCode string
@@ -705,7 +724,8 @@ func ToChannelPB(ch *ent.PaymentChannel) *adminv1.Channel {
 		ConfigJson: `"****"`, // 凭据永不明文下发
 		Fee:        ch.Fee, FeeType: string(ch.FeeType),
 		Enabled: ch.Enabled, Sort: ch.Sort,
-		Icon: ch.Icon,
+		Icon:          ch.Icon,
+		AllowPurchase: &ch.AllowPurchase, AllowMemberRecharge: &ch.AllowMemberRecharge, AllowSupplyRecharge: &ch.AllowSupplyRecharge,
 	}
 	if ms := parseMethods(ch); len(ms) > 0 {
 		if b, err := json.Marshal(ms); err == nil {

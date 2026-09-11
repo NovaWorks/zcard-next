@@ -5,6 +5,7 @@ package seo
 import (
 	"context"
 	"encoding/json"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -37,16 +38,20 @@ type ProductSEO struct {
 
 // PostSEO 文章动态渲染数据（爬虫视角；多语言已回落到单值）。
 type PostSEO struct {
-	Slug         string
-	Title        string
-	Summary      string
-	ContentHTML  string // 入库前已 sanitize
-	PublishedAt  int64
+	Slug        string
+	Title       string
+	Summary     string
+	ContentHTML string // 入库前已 sanitize
+	PublishedAt int64
 }
 
 // GetProductSEO 按 id 取上架商品（status=1；未上架/不存在 → nil）。
 func (r *SeoRepo) GetProductSEO(ctx context.Context, id uint64) (*ProductSEO, error) {
-	p, err := data.Client(ctx, r.data).Product.Query().
+	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), tenancy.FromContext(ctx).SubsiteID)
+	if err != nil {
+		return nil, err
+	}
+	p, err := data.Client(ctx, r.data).Product.Query().Where(data.VisibleProductCategory(hidden)).
 		Where(product.ID(id), product.Status(1)).
 		Only(ctx)
 	if err != nil {
@@ -107,7 +112,6 @@ func langValue(m map[string]string) string {
 	return ""
 }
 
-
 // SeoRepo sitemap 数据仓储。
 type SeoRepo struct {
 	data *data.Data
@@ -120,7 +124,11 @@ func NewSeoRepo(d *data.Data) *SeoRepo {
 
 // ListSitemapProducts 上架商品（status=1；隐藏商品不进收录）。
 func (r *SeoRepo) ListSitemapProducts(ctx context.Context) ([]SitemapProduct, error) {
-	rows, err := data.Client(ctx, r.data).Product.Query().
+	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), tenancy.FromContext(ctx).SubsiteID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := data.Client(ctx, r.data).Product.Query().Where(data.VisibleProductCategory(hidden)).
 		Where(product.Status(1)).
 		Select(product.FieldID, product.FieldUpdatedAt).
 		All(ctx)

@@ -143,6 +143,9 @@ func (s *SupplyAPIService) GetStock(ctx context.Context, req *supplyv1.GetStockR
 	if err != nil {
 		return nil, errors.New("supplier.INVALID_PRODUCT_ID")
 	}
+	if _, err := s.reader.GetForSupply(ctx, id); err != nil {
+		return nil, errors.New("supplier.PRODUCT_NOT_FOUND")
+	}
 	stock, err := s.inv.Stock(ctx, id, 0)
 	if err != nil {
 		return nil, err

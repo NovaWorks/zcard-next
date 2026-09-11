@@ -211,7 +211,7 @@ func TestStorefrontListChannels(t *testing.T) {
 	if _, err := svc.repo.CreateChannel(ctx, "待配置", "unconf1", "stripe", `{}`, 0, "fixed", true, 0, "", nil); err != nil {
 		t.Fatal(err)
 	}
-	reply, err := svc.ListChannels(ctx, &emptypb.Empty{})
+	reply, err := svc.ListChannels(ctx, &storefrontv1.ListPaymentChannelsRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +237,7 @@ func TestStorefrontListChannels(t *testing.T) {
 	}
 	// 登录态：余额渠道可见
 	authCtx := identity.WithClaims(ctx, &authn.Claims{Subject: 1, Realm: authn.RealmUser})
-	reply2, err := svc.ListChannels(authCtx, &emptypb.Empty{})
+	reply2, err := svc.ListChannels(authCtx, &storefrontv1.ListPaymentChannelsRequest{})
 	if err != nil {
 		t.Fatal(err)
 	}

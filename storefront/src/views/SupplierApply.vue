@@ -210,7 +210,7 @@
             <!-- 支付方式 -->
             <div class="recharge-section">
               <div class="recharge-label">支付方式</div>
-              <PayChannelGrid :options="supplierPayOptions" :channel="rechargeChannel" :method="rechargeMethod" @select="(channel, method) => { rechargeChannel = channel; rechargeMethod = method; }" />
+              <PayChannelGrid :options="supplierPayOptions" :channel="rechargeChannel" :method="rechargeMethod" @select="(channel, method) => { rechargeChannel = channel; rechargeMethod = method; }"><template #empty>暂无可用的供货充值方式，请联系管理员</template></PayChannelGrid>
             </div>
 
             <div v-if="rechargeError" style="color: #dc2626; font-size: 13px; margin: 8px 0;">{{ rechargeError }}</div>
@@ -364,7 +364,7 @@ async function openRecharge(a: SupplierAccount) {
   rechargeDone.value = false;
   rechargeOpen.value = true;
   // 支付渠道 + 供货充值限额（独立配置组 supplier_recharge，与钱包充值隔离）
-  const [ch, cfg] = await Promise.all([fetchPaymentChannels(), api.get<{ entries: { key: string; value_json: string }[] }>('/config')]);
+  const [ch, cfg] = await Promise.all([fetchPaymentChannels('supply_recharge'), api.get<{ entries: { key: string; value_json: string }[] }>('/config')]);
   rechargeChannels.value = ch.data?.channels || [];
   rechargeChannel.value = supplierPayOptions.value[0]?.channel || '';
   rechargeMethod.value = supplierPayOptions.value[0]?.method || '';

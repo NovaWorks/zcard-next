@@ -202,6 +202,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		// 支付后由 procurement 向上游采购回填（ 链路；本地池无其卡）。
 		// url/code 直发商品同样跳过——直发内容商品级共享（同一链接/兑换码
 		// 反复发货，无卡池概念），支付后由 fulfillment 直写交付记录。
+		hiddenCategories, err := data.HiddenCategoryIDs(txCtx, client, in.SubsiteID)
+		if err != nil {
+			return err
+		}
 		upstreamItem := map[uint64]bool{} // product_id → 是否上游项
 		directItem := map[uint64]bool{}   // product_id → 是否直发项（url/code）
 		var reserveItems []port.ReserveItem
@@ -281,7 +285,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if err != nil {
 				return err
 			}
-			if p.Status != 1 {
+			if p.Status != 1 || data.CategoryHidden(hiddenCategories, p.CategoryID) {
 				return fmt.Errorf("order.PRODUCT_NOT_AVAILABLE") // 下架/隐藏
 			}
 			// ：积分兑换单——全部商品须为积分商品（混合单拒绝，口径清晰）

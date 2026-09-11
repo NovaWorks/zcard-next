@@ -42,6 +42,12 @@ type PaymentChannel struct {
 	Sort int32 `json:"sort,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
+	// AllowPurchase holds the value of the "allow_purchase" field.
+	AllowPurchase bool `json:"allow_purchase,omitempty"`
+	// AllowMemberRecharge holds the value of the "allow_member_recharge" field.
+	AllowMemberRecharge bool `json:"allow_member_recharge,omitempty"`
+	// AllowSupplyRecharge holds the value of the "allow_supply_recharge" field.
+	AllowSupplyRecharge bool `json:"allow_supply_recharge,omitempty"`
 	// Icon holds the value of the "icon" field.
 	Icon string `json:"icon,omitempty"`
 	// Methods holds the value of the "methods" field.
@@ -56,7 +62,7 @@ func (*PaymentChannel) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case paymentchannel.FieldConfig, paymentchannel.FieldMethods:
 			values[i] = new([]byte)
-		case paymentchannel.FieldEnabled:
+		case paymentchannel.FieldEnabled, paymentchannel.FieldAllowPurchase, paymentchannel.FieldAllowMemberRecharge, paymentchannel.FieldAllowSupplyRecharge:
 			values[i] = new(sql.NullBool)
 		case paymentchannel.FieldID, paymentchannel.FieldSubsiteID, paymentchannel.FieldFee, paymentchannel.FieldSort:
 			values[i] = new(sql.NullInt64)
@@ -157,6 +163,24 @@ func (_m *PaymentChannel) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Enabled = value.Bool
 			}
+		case paymentchannel.FieldAllowPurchase:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field allow_purchase", values[i])
+			} else if value.Valid {
+				_m.AllowPurchase = value.Bool
+			}
+		case paymentchannel.FieldAllowMemberRecharge:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field allow_member_recharge", values[i])
+			} else if value.Valid {
+				_m.AllowMemberRecharge = value.Bool
+			}
+		case paymentchannel.FieldAllowSupplyRecharge:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field allow_supply_recharge", values[i])
+			} else if value.Valid {
+				_m.AllowSupplyRecharge = value.Bool
+			}
 		case paymentchannel.FieldIcon:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field icon", values[i])
@@ -242,6 +266,15 @@ func (_m *PaymentChannel) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
+	builder.WriteString(", ")
+	builder.WriteString("allow_purchase=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AllowPurchase))
+	builder.WriteString(", ")
+	builder.WriteString("allow_member_recharge=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AllowMemberRecharge))
+	builder.WriteString(", ")
+	builder.WriteString("allow_supply_recharge=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AllowSupplyRecharge))
 	builder.WriteString(", ")
 	builder.WriteString("icon=")
 	builder.WriteString(_m.Icon)

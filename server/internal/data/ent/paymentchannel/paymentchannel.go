@@ -38,6 +38,12 @@ const (
 	FieldSort = "sort"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
+	// FieldAllowPurchase holds the string denoting the allow_purchase field in the database.
+	FieldAllowPurchase = "allow_purchase"
+	// FieldAllowMemberRecharge holds the string denoting the allow_member_recharge field in the database.
+	FieldAllowMemberRecharge = "allow_member_recharge"
+	// FieldAllowSupplyRecharge holds the string denoting the allow_supply_recharge field in the database.
+	FieldAllowSupplyRecharge = "allow_supply_recharge"
 	// FieldIcon holds the string denoting the icon field in the database.
 	FieldIcon = "icon"
 	// FieldMethods holds the string denoting the methods field in the database.
@@ -61,6 +67,9 @@ var Columns = []string{
 	FieldFeeBearer,
 	FieldSort,
 	FieldEnabled,
+	FieldAllowPurchase,
+	FieldAllowMemberRecharge,
+	FieldAllowSupplyRecharge,
 	FieldIcon,
 	FieldMethods,
 }
@@ -96,6 +105,12 @@ var (
 	DefaultSort int32
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
+	// DefaultAllowPurchase holds the default value on creation for the "allow_purchase" field.
+	DefaultAllowPurchase bool
+	// DefaultAllowMemberRecharge holds the default value on creation for the "allow_member_recharge" field.
+	DefaultAllowMemberRecharge bool
+	// DefaultAllowSupplyRecharge holds the default value on creation for the "allow_supply_recharge" field.
+	DefaultAllowSupplyRecharge bool
 	// DefaultIcon holds the default value on creation for the "icon" field.
 	DefaultIcon string
 	// IconValidator is a validator for the "icon" field. It is called by the builders before save.
@@ -215,6 +230,21 @@ func BySort(opts ...sql.OrderTermOption) OrderOption {
 // ByEnabled orders the results by the enabled field.
 func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
+}
+
+// ByAllowPurchase orders the results by the allow_purchase field.
+func ByAllowPurchase(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAllowPurchase, opts...).ToFunc()
+}
+
+// ByAllowMemberRecharge orders the results by the allow_member_recharge field.
+func ByAllowMemberRecharge(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAllowMemberRecharge, opts...).ToFunc()
+}
+
+// ByAllowSupplyRecharge orders the results by the allow_supply_recharge field.
+func ByAllowSupplyRecharge(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAllowSupplyRecharge, opts...).ToFunc()
 }
 
 // ByIcon orders the results by the icon field.

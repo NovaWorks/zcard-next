@@ -6,12 +6,12 @@ option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;st
 
 import "google/api/annotations.proto";
 import "google/api/field_behavior.proto";
-import "google/protobuf/empty.proto";
+
 
 // StorePaymentService 顾客支付。
 service StorePaymentService {
   // ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
-  rpc ListChannels(google.protobuf.Empty) returns (ChannelListReply) {
+  rpc ListChannels(ListPaymentChannelsRequest) returns (ChannelListReply) {
     option (google.api.http) = { get: "/api/v1/storefront/payment/channels" };
   }
   // CreatePayment 创建支付（返回收银台/二维码跳转信息）。
@@ -21,6 +21,10 @@ service StorePaymentService {
       body: "*"
     };
   }
+}
+
+message ListPaymentChannelsRequest {
+  string scene = 1; // purchase (default) | member_recharge | supply_recharge
 }
 
 // ChannelListReply 启用渠道列表。

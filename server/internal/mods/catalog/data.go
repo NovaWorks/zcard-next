@@ -37,7 +37,11 @@ func NewProductRepoImpl(d *data.Data, mediaRef mediaport.Referencer) *ProductRep
 // ListVisible 上架商品分页（INDEX(subsite_id, status) 命中；只取列表所需列避免回表）。
 func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter) ([]port.Product, int64, error) {
 	client := data.Client(ctx, r.data)
-	q := client.Product.Query().
+	hidden, err := data.HiddenCategoryIDs(ctx, client, f.SubsiteID)
+	if err != nil {
+		return nil, 0, err
+	}
+	q := client.Product.Query().Where(data.VisibleProductCategory(hidden)).
 		Where(
 			product.SubsiteID(f.SubsiteID),
 			product.Status(1),
@@ -119,6 +123,13 @@ func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.
 		return nil, err
 	}
 	p := toPortProduct(row)
+	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), subsiteID)
+	if err != nil {
+		return nil, err
+	}
+	if data.CategoryHidden(hidden, row.CategoryID) {
+		p.Status = 0
+	}
 	return &p, nil
 }
 
@@ -157,8 +168,15 @@ func (r *ProductRepoImpl) ListVisibleCategories(ctx context.Context, subsiteID u
 	if err != nil {
 		return nil, err
 	}
+	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), subsiteID)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]port.Category, 0, len(rows))
 	for _, c := range rows {
+		if data.CategoryHidden(hidden, c.ID) {
+			continue
+		}
 		// 分站可见性白名单（空=全部可见；非空且不含本站 → 跳过）
 		if len(c.VisibleSubsites) > 0 && !containsUint64(c.VisibleSubsites, subsiteID) {
 			continue

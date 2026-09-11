@@ -113,11 +113,11 @@ const tree = computed(() => {
 
 const flatTree = computed(() => {
   const out: any[] = [];
-  const walk = (nodes: any[], depth = 0, parentPath = "") => {
+  const walk = (nodes: any[], depth = 0, parentPath = "", ancestorHidden = false) => {
     for (const n of nodes) {
       const path = [parentPath, n.name].filter(Boolean).join(" / ");
-      out.push({ ...n, depth, path });
-      walk(n.children, depth + 1, path);
+      out.push({ ...n, depth, path, ancestorHidden });
+      walk(n.children, depth + 1, path, ancestorHidden || n.hide);
     }
   };
   walk(tree.value);
@@ -205,6 +205,20 @@ async function handleDelete() {
     load();
     emit("refresh");
   }
+}
+
+const visibilityBusy = ref<number | null>(null);
+async function toggleVisibility(cat: any) {
+  if (visibilityBusy.value !== null) return;
+  visibilityBusy.value = cat.id;
+  try {
+    const { error } = await updateCategory(cat.id, { hide: !cat.hide });
+    if (!error) {
+      await load();
+      emit("refresh");
+      window.$message?.success(cat.hide ? "已恢复分类显示，商品沿用原上下架状态" : "已隐藏分类、子分类及其商品");
+    }
+  } finally { visibilityBusy.value = null; }
 }
 
 const menuOptions: DropdownOption[] = [
@@ -615,7 +629,6 @@ async function onSortBlur(cat: any) {
         </NPopover>
         <!-- 名称列：占满剩余宽度，超长截断不撑破行；悬浮显示全名 -->
         <div class="flex min-w-0 flex-1 items-center gap-6px">
-          <NTag v-if="cat.hide" size="tiny" :bordered="false" class="shrink-0">隐藏</NTag>
           <NTooltip  placement="top" :show-arrow="false">
             <template #trigger>
               <span class="category-full-name" :title="cat.path">{{ cat.name }}</span>
@@ -624,6 +637,11 @@ async function onSortBlur(cat: any) {
           </NTooltip>
         </div>
         <!-- 商品数/排序/操作：固定列宽，不随名称长度漂移 -->
+        <NTag size="small" :type="cat.hide || cat.ancestorHidden ? 'warning' : 'success'" :bordered="false">{{ cat.hide ? '已隐藏' : cat.ancestorHidden ? '随父级隐藏' : '显示中' }}</NTag>
+        <NPopconfirm v-if="!batchMode" @positive-click="toggleVisibility(cat)">
+          <template #trigger><NButton v-auth="'catalog:category_write'" size="small" secondary :loading="visibilityBusy === cat.id" :disabled="visibilityBusy !== null || (cat.ancestorHidden && !cat.hide)">{{ cat.hide ? '恢复显示' : '隐藏下架' }}</NButton></template>
+          {{ cat.hide ? `恢复「${cat.name}」的显示？若父级仍隐藏，本分类仍不会展示。商品保留原来的上下架状态。` : `隐藏「${cat.name}」及全部子分类？其中商品将从商城和供货目录隐藏，无法新下单。已有订单继续处理。` }}
+        </NPopconfirm>
         <span class="w-76px shrink-0 text-right text-12px text-gray-400">{{ cat.product_count || 0 }} 件</span>
         <NInputNumber
           v-model:value="cat.sort"
@@ -692,7 +710,7 @@ async function onSortBlur(cat: any) {
 </template>
 
 <style scoped>
-.category-manage-row { min-width: 650px; }
+.category-manage-row { min-width: 830px; }
 .category-full-name { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
 /* 图标槽：行内小按钮（空=虚框加号提示可设置） */
 .cat-icon-btn {

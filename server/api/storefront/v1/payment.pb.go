@@ -10,7 +10,6 @@ import (
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -23,6 +22,50 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ListPaymentChannelsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Scene         string                 `protobuf:"bytes,1,opt,name=scene,proto3" json:"scene,omitempty"` // purchase (default) | member_recharge | supply_recharge
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPaymentChannelsRequest) Reset() {
+	*x = ListPaymentChannelsRequest{}
+	mi := &file_storefront_v1_payment_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPaymentChannelsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPaymentChannelsRequest) ProtoMessage() {}
+
+func (x *ListPaymentChannelsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_payment_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPaymentChannelsRequest.ProtoReflect.Descriptor instead.
+func (*ListPaymentChannelsRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ListPaymentChannelsRequest) GetScene() string {
+	if x != nil {
+		return x.Scene
+	}
+	return ""
+}
+
 // ChannelListReply 启用渠道列表。
 type ChannelListReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -33,7 +76,7 @@ type ChannelListReply struct {
 
 func (x *ChannelListReply) Reset() {
 	*x = ChannelListReply{}
-	mi := &file_storefront_v1_payment_proto_msgTypes[0]
+	mi := &file_storefront_v1_payment_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +88,7 @@ func (x *ChannelListReply) String() string {
 func (*ChannelListReply) ProtoMessage() {}
 
 func (x *ChannelListReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_payment_proto_msgTypes[0]
+	mi := &file_storefront_v1_payment_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +101,7 @@ func (x *ChannelListReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChannelListReply.ProtoReflect.Descriptor instead.
 func (*ChannelListReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{0}
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ChannelListReply) GetChannels() []*ChannelItem {
@@ -81,7 +124,7 @@ type ChannelItem struct {
 
 func (x *ChannelItem) Reset() {
 	*x = ChannelItem{}
-	mi := &file_storefront_v1_payment_proto_msgTypes[1]
+	mi := &file_storefront_v1_payment_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -93,7 +136,7 @@ func (x *ChannelItem) String() string {
 func (*ChannelItem) ProtoMessage() {}
 
 func (x *ChannelItem) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_payment_proto_msgTypes[1]
+	mi := &file_storefront_v1_payment_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -106,7 +149,7 @@ func (x *ChannelItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChannelItem.ProtoReflect.Descriptor instead.
 func (*ChannelItem) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{1}
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ChannelItem) GetCode() string {
@@ -156,7 +199,7 @@ type MethodItem struct {
 
 func (x *MethodItem) Reset() {
 	*x = MethodItem{}
-	mi := &file_storefront_v1_payment_proto_msgTypes[2]
+	mi := &file_storefront_v1_payment_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -168,7 +211,7 @@ func (x *MethodItem) String() string {
 func (*MethodItem) ProtoMessage() {}
 
 func (x *MethodItem) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_payment_proto_msgTypes[2]
+	mi := &file_storefront_v1_payment_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -181,7 +224,7 @@ func (x *MethodItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MethodItem.ProtoReflect.Descriptor instead.
 func (*MethodItem) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{2}
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *MethodItem) GetCode() string {
@@ -216,7 +259,7 @@ type CreatePaymentRequest struct {
 
 func (x *CreatePaymentRequest) Reset() {
 	*x = CreatePaymentRequest{}
-	mi := &file_storefront_v1_payment_proto_msgTypes[3]
+	mi := &file_storefront_v1_payment_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -228,7 +271,7 @@ func (x *CreatePaymentRequest) String() string {
 func (*CreatePaymentRequest) ProtoMessage() {}
 
 func (x *CreatePaymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_payment_proto_msgTypes[3]
+	mi := &file_storefront_v1_payment_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -241,7 +284,7 @@ func (x *CreatePaymentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePaymentRequest.ProtoReflect.Descriptor instead.
 func (*CreatePaymentRequest) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{3}
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CreatePaymentRequest) GetOrderNo() string {
@@ -276,7 +319,7 @@ type CreatePaymentReply struct {
 
 func (x *CreatePaymentReply) Reset() {
 	*x = CreatePaymentReply{}
-	mi := &file_storefront_v1_payment_proto_msgTypes[4]
+	mi := &file_storefront_v1_payment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -288,7 +331,7 @@ func (x *CreatePaymentReply) String() string {
 func (*CreatePaymentReply) ProtoMessage() {}
 
 func (x *CreatePaymentReply) ProtoReflect() protoreflect.Message {
-	mi := &file_storefront_v1_payment_proto_msgTypes[4]
+	mi := &file_storefront_v1_payment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -301,7 +344,7 @@ func (x *CreatePaymentReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePaymentReply.ProtoReflect.Descriptor instead.
 func (*CreatePaymentReply) Descriptor() ([]byte, []int) {
-	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{4}
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CreatePaymentReply) GetPaymentId() uint64 {
@@ -329,7 +372,9 @@ var File_storefront_v1_payment_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_payment_proto_rawDesc = "" +
 	"\n" +
-	"\x1bstorefront/v1/payment.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"T\n" +
+	"\x1bstorefront/v1/payment.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\"2\n" +
+	"\x1aListPaymentChannelsRequest\x12\x14\n" +
+	"\x05scene\x18\x01 \x01(\tR\x05scene\"T\n" +
 	"\x10ChannelListReply\x12@\n" +
 	"\bchannels\x18\x01 \x03(\v2$.zcard.api.storefront.v1.ChannelItemR\bchannels\"\xa0\x01\n" +
 	"\vChannelItem\x12\x12\n" +
@@ -351,9 +396,9 @@ const file_storefront_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"payment_id\x18\x01 \x01(\x04R\tpaymentId\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\tR\apayload2\xab\x02\n" +
-	"\x13StorePaymentService\x12~\n" +
-	"\fListChannels\x12\x16.google.protobuf.Empty\x1a).zcard.api.storefront.v1.ChannelListReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/storefront/payment/channels\x12\x93\x01\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload2\xc9\x02\n" +
+	"\x13StorePaymentService\x12\x9b\x01\n" +
+	"\fListChannels\x123.zcard.api.storefront.v1.ListPaymentChannelsRequest\x1a).zcard.api.storefront.v1.ChannelListReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/storefront/payment/channels\x12\x93\x01\n" +
 	"\rCreatePayment\x12-.zcard.api.storefront.v1.CreatePaymentRequest\x1a+.zcard.api.storefront.v1.CreatePaymentReply\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/storefront/paymentsBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
 var (
@@ -368,22 +413,22 @@ func file_storefront_v1_payment_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_payment_proto_rawDescData
 }
 
-var file_storefront_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_storefront_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_storefront_v1_payment_proto_goTypes = []any{
-	(*ChannelListReply)(nil),     // 0: zcard.api.storefront.v1.ChannelListReply
-	(*ChannelItem)(nil),          // 1: zcard.api.storefront.v1.ChannelItem
-	(*MethodItem)(nil),           // 2: zcard.api.storefront.v1.MethodItem
-	(*CreatePaymentRequest)(nil), // 3: zcard.api.storefront.v1.CreatePaymentRequest
-	(*CreatePaymentReply)(nil),   // 4: zcard.api.storefront.v1.CreatePaymentReply
-	(*emptypb.Empty)(nil),        // 5: google.protobuf.Empty
+	(*ListPaymentChannelsRequest)(nil), // 0: zcard.api.storefront.v1.ListPaymentChannelsRequest
+	(*ChannelListReply)(nil),           // 1: zcard.api.storefront.v1.ChannelListReply
+	(*ChannelItem)(nil),                // 2: zcard.api.storefront.v1.ChannelItem
+	(*MethodItem)(nil),                 // 3: zcard.api.storefront.v1.MethodItem
+	(*CreatePaymentRequest)(nil),       // 4: zcard.api.storefront.v1.CreatePaymentRequest
+	(*CreatePaymentReply)(nil),         // 5: zcard.api.storefront.v1.CreatePaymentReply
 }
 var file_storefront_v1_payment_proto_depIdxs = []int32{
-	1, // 0: zcard.api.storefront.v1.ChannelListReply.channels:type_name -> zcard.api.storefront.v1.ChannelItem
-	2, // 1: zcard.api.storefront.v1.ChannelItem.methods:type_name -> zcard.api.storefront.v1.MethodItem
-	5, // 2: zcard.api.storefront.v1.StorePaymentService.ListChannels:input_type -> google.protobuf.Empty
-	3, // 3: zcard.api.storefront.v1.StorePaymentService.CreatePayment:input_type -> zcard.api.storefront.v1.CreatePaymentRequest
-	0, // 4: zcard.api.storefront.v1.StorePaymentService.ListChannels:output_type -> zcard.api.storefront.v1.ChannelListReply
-	4, // 5: zcard.api.storefront.v1.StorePaymentService.CreatePayment:output_type -> zcard.api.storefront.v1.CreatePaymentReply
+	2, // 0: zcard.api.storefront.v1.ChannelListReply.channels:type_name -> zcard.api.storefront.v1.ChannelItem
+	3, // 1: zcard.api.storefront.v1.ChannelItem.methods:type_name -> zcard.api.storefront.v1.MethodItem
+	0, // 2: zcard.api.storefront.v1.StorePaymentService.ListChannels:input_type -> zcard.api.storefront.v1.ListPaymentChannelsRequest
+	4, // 3: zcard.api.storefront.v1.StorePaymentService.CreatePayment:input_type -> zcard.api.storefront.v1.CreatePaymentRequest
+	1, // 4: zcard.api.storefront.v1.StorePaymentService.ListChannels:output_type -> zcard.api.storefront.v1.ChannelListReply
+	5, // 5: zcard.api.storefront.v1.StorePaymentService.CreatePayment:output_type -> zcard.api.storefront.v1.CreatePaymentReply
 	4, // [4:6] is the sub-list for method output_type
 	2, // [2:4] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -402,7 +447,7 @@ func file_storefront_v1_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_payment_proto_rawDesc), len(file_storefront_v1_payment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

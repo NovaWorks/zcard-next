@@ -491,7 +491,7 @@ function clearAmount() {
 }
 
 async function loadRechargeChannels() {
-  const { data, error } = await fetchPaymentChannels();
+  const { data, error } = await fetchPaymentChannels('member_recharge');
   if (!error && data) {
     rechargeChannels.value = data.channels || [];
     const first = payOptions.value[0];

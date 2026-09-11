@@ -73,6 +73,9 @@ message Channel {
   string callback_url = 11; // 回调地址（站点 URL 拼接；未配置站点时为相对路径）
   string icon = 12; // 渠道自定义图标（素材库 URL，空=回落内置徽标）
   string methods_json = 13; // 支付方式列表 JSON [{code,name,icon,enabled,params}]（空=单方式渠道）
+  optional bool allow_purchase = 14;
+  optional bool allow_member_recharge = 15;
+  optional bool allow_supply_recharge = 16;
 }
 
 // DriverList 驱动元数据列表。
@@ -131,6 +134,9 @@ message CreateChannelRequest {
   int32 sort = 8;
   string icon = 9;
   string methods_json = 10; // 支付方式列表 JSON（聚合网关按方式收银）
+  optional bool allow_purchase = 11;
+  optional bool allow_member_recharge = 12;
+  optional bool allow_supply_recharge = 13;
 }
 
 message UpdateChannelRequest {
@@ -143,6 +149,9 @@ message UpdateChannelRequest {
   int32 sort = 7;
   optional string icon = 8; // 有值=更新（空串=清除）；缺省=不修改
   optional string methods_json = 9; // 支付方式列表 JSON；缺省=不修改
+  optional bool allow_purchase = 10;
+  optional bool allow_member_recharge = 11;
+  optional bool allow_supply_recharge = 12;
 }
 
 message DeleteChannelRequest {

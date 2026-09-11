@@ -158,6 +158,48 @@ func (_c *PaymentChannelCreate) SetNillableEnabled(v *bool) *PaymentChannelCreat
 	return _c
 }
 
+// SetAllowPurchase sets the "allow_purchase" field.
+func (_c *PaymentChannelCreate) SetAllowPurchase(v bool) *PaymentChannelCreate {
+	_c.mutation.SetAllowPurchase(v)
+	return _c
+}
+
+// SetNillableAllowPurchase sets the "allow_purchase" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableAllowPurchase(v *bool) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetAllowPurchase(*v)
+	}
+	return _c
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (_c *PaymentChannelCreate) SetAllowMemberRecharge(v bool) *PaymentChannelCreate {
+	_c.mutation.SetAllowMemberRecharge(v)
+	return _c
+}
+
+// SetNillableAllowMemberRecharge sets the "allow_member_recharge" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableAllowMemberRecharge(v *bool) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetAllowMemberRecharge(*v)
+	}
+	return _c
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (_c *PaymentChannelCreate) SetAllowSupplyRecharge(v bool) *PaymentChannelCreate {
+	_c.mutation.SetAllowSupplyRecharge(v)
+	return _c
+}
+
+// SetNillableAllowSupplyRecharge sets the "allow_supply_recharge" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableAllowSupplyRecharge(v *bool) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetAllowSupplyRecharge(*v)
+	}
+	return _c
+}
+
 // SetIcon sets the "icon" field.
 func (_c *PaymentChannelCreate) SetIcon(v string) *PaymentChannelCreate {
 	_c.mutation.SetIcon(v)
@@ -251,6 +293,18 @@ func (_c *PaymentChannelCreate) defaults() {
 		v := paymentchannel.DefaultEnabled
 		_c.mutation.SetEnabled(v)
 	}
+	if _, ok := _c.mutation.AllowPurchase(); !ok {
+		v := paymentchannel.DefaultAllowPurchase
+		_c.mutation.SetAllowPurchase(v)
+	}
+	if _, ok := _c.mutation.AllowMemberRecharge(); !ok {
+		v := paymentchannel.DefaultAllowMemberRecharge
+		_c.mutation.SetAllowMemberRecharge(v)
+	}
+	if _, ok := _c.mutation.AllowSupplyRecharge(); !ok {
+		v := paymentchannel.DefaultAllowSupplyRecharge
+		_c.mutation.SetAllowSupplyRecharge(v)
+	}
 	if _, ok := _c.mutation.Icon(); !ok {
 		v := paymentchannel.DefaultIcon
 		_c.mutation.SetIcon(v)
@@ -319,6 +373,15 @@ func (_c *PaymentChannelCreate) check() error {
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "PaymentChannel.enabled"`)}
+	}
+	if _, ok := _c.mutation.AllowPurchase(); !ok {
+		return &ValidationError{Name: "allow_purchase", err: errors.New(`ent: missing required field "PaymentChannel.allow_purchase"`)}
+	}
+	if _, ok := _c.mutation.AllowMemberRecharge(); !ok {
+		return &ValidationError{Name: "allow_member_recharge", err: errors.New(`ent: missing required field "PaymentChannel.allow_member_recharge"`)}
+	}
+	if _, ok := _c.mutation.AllowSupplyRecharge(); !ok {
+		return &ValidationError{Name: "allow_supply_recharge", err: errors.New(`ent: missing required field "PaymentChannel.allow_supply_recharge"`)}
 	}
 	if _, ok := _c.mutation.Icon(); !ok {
 		return &ValidationError{Name: "icon", err: errors.New(`ent: missing required field "PaymentChannel.icon"`)}
@@ -408,6 +471,18 @@ func (_c *PaymentChannelCreate) createSpec() (*PaymentChannel, *sqlgraph.CreateS
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
 		_node.Enabled = value
+	}
+	if value, ok := _c.mutation.AllowPurchase(); ok {
+		_spec.SetField(paymentchannel.FieldAllowPurchase, field.TypeBool, value)
+		_node.AllowPurchase = value
+	}
+	if value, ok := _c.mutation.AllowMemberRecharge(); ok {
+		_spec.SetField(paymentchannel.FieldAllowMemberRecharge, field.TypeBool, value)
+		_node.AllowMemberRecharge = value
+	}
+	if value, ok := _c.mutation.AllowSupplyRecharge(); ok {
+		_spec.SetField(paymentchannel.FieldAllowSupplyRecharge, field.TypeBool, value)
+		_node.AllowSupplyRecharge = value
 	}
 	if value, ok := _c.mutation.Icon(); ok {
 		_spec.SetField(paymentchannel.FieldIcon, field.TypeString, value)
@@ -616,6 +691,42 @@ func (u *PaymentChannelUpsert) SetEnabled(v bool) *PaymentChannelUpsert {
 // UpdateEnabled sets the "enabled" field to the value that was provided on create.
 func (u *PaymentChannelUpsert) UpdateEnabled() *PaymentChannelUpsert {
 	u.SetExcluded(paymentchannel.FieldEnabled)
+	return u
+}
+
+// SetAllowPurchase sets the "allow_purchase" field.
+func (u *PaymentChannelUpsert) SetAllowPurchase(v bool) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldAllowPurchase, v)
+	return u
+}
+
+// UpdateAllowPurchase sets the "allow_purchase" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateAllowPurchase() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldAllowPurchase)
+	return u
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (u *PaymentChannelUpsert) SetAllowMemberRecharge(v bool) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldAllowMemberRecharge, v)
+	return u
+}
+
+// UpdateAllowMemberRecharge sets the "allow_member_recharge" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateAllowMemberRecharge() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldAllowMemberRecharge)
+	return u
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (u *PaymentChannelUpsert) SetAllowSupplyRecharge(v bool) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldAllowSupplyRecharge, v)
+	return u
+}
+
+// UpdateAllowSupplyRecharge sets the "allow_supply_recharge" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateAllowSupplyRecharge() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldAllowSupplyRecharge)
 	return u
 }
 
@@ -872,6 +983,48 @@ func (u *PaymentChannelUpsertOne) SetEnabled(v bool) *PaymentChannelUpsertOne {
 func (u *PaymentChannelUpsertOne) UpdateEnabled() *PaymentChannelUpsertOne {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetAllowPurchase sets the "allow_purchase" field.
+func (u *PaymentChannelUpsertOne) SetAllowPurchase(v bool) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetAllowPurchase(v)
+	})
+}
+
+// UpdateAllowPurchase sets the "allow_purchase" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateAllowPurchase() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateAllowPurchase()
+	})
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (u *PaymentChannelUpsertOne) SetAllowMemberRecharge(v bool) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetAllowMemberRecharge(v)
+	})
+}
+
+// UpdateAllowMemberRecharge sets the "allow_member_recharge" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateAllowMemberRecharge() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateAllowMemberRecharge()
+	})
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (u *PaymentChannelUpsertOne) SetAllowSupplyRecharge(v bool) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetAllowSupplyRecharge(v)
+	})
+}
+
+// UpdateAllowSupplyRecharge sets the "allow_supply_recharge" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateAllowSupplyRecharge() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateAllowSupplyRecharge()
 	})
 }
 
@@ -1299,6 +1452,48 @@ func (u *PaymentChannelUpsertBulk) SetEnabled(v bool) *PaymentChannelUpsertBulk 
 func (u *PaymentChannelUpsertBulk) UpdateEnabled() *PaymentChannelUpsertBulk {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetAllowPurchase sets the "allow_purchase" field.
+func (u *PaymentChannelUpsertBulk) SetAllowPurchase(v bool) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetAllowPurchase(v)
+	})
+}
+
+// UpdateAllowPurchase sets the "allow_purchase" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateAllowPurchase() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateAllowPurchase()
+	})
+}
+
+// SetAllowMemberRecharge sets the "allow_member_recharge" field.
+func (u *PaymentChannelUpsertBulk) SetAllowMemberRecharge(v bool) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetAllowMemberRecharge(v)
+	})
+}
+
+// UpdateAllowMemberRecharge sets the "allow_member_recharge" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateAllowMemberRecharge() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateAllowMemberRecharge()
+	})
+}
+
+// SetAllowSupplyRecharge sets the "allow_supply_recharge" field.
+func (u *PaymentChannelUpsertBulk) SetAllowSupplyRecharge(v bool) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetAllowSupplyRecharge(v)
+	})
+}
+
+// UpdateAllowSupplyRecharge sets the "allow_supply_recharge" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateAllowSupplyRecharge() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateAllowSupplyRecharge()
 	})
 }
 

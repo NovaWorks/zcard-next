@@ -1194,6 +1194,9 @@ var (
 		{Name: "fee_bearer", Type: field.TypeEnum, Enums: []string{"merchant", "user"}, Default: "merchant"},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "allow_purchase", Type: field.TypeBool, Default: true},
+		{Name: "allow_member_recharge", Type: field.TypeBool, Default: true},
+		{Name: "allow_supply_recharge", Type: field.TypeBool, Default: true},
 		{Name: "icon", Type: field.TypeString, Size: 500, Default: ""},
 		{Name: "methods", Type: field.TypeJSON, Nullable: true},
 	}

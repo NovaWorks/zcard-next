@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useMediaQuery } from "@vueuse/core";
+const narrowPaymentForm = useMediaQuery("(max-width: 639px)");
+import UsageSwitches from "./components/usage-switches.vue";
+type Usage = { allow_purchase?: boolean; allow_member_recharge?: boolean; allow_supply_recharge?: boolean };
 // 支付渠道管理（ 重写）——大厂交互：
 // 卡片网格（品牌徽标/状态 Tag/已配置判定）+ 勾选式添加（批量接入 + 引导配置）
 // + schema 驱动配置弹窗（敏感字段留空不修改、回调地址一键复制、手续费区）。
@@ -53,7 +57,7 @@ interface DriverMeta {
   description: string;
   fields: ConfigFieldSchema[];
 }
-interface ChannelRow {
+interface ChannelRow extends Usage {
   id: number;
   name: string;
   code: string;
@@ -69,7 +73,7 @@ interface ChannelRow {
 }
 
 // 支付方式（收银台顾客看到的选项；params=网关路由参数）
-interface MethodRow {
+interface MethodRow extends Usage {
   code: string;
   name: string;
   icon: string;
@@ -112,6 +116,9 @@ const currentFields = computed<ConfigFieldSchema[]>(() => {
 const form = reactive({
   name: "",
   enabled: true,
+  allow_purchase: true,
+  allow_member_recharge: true,
+  allow_supply_recharge: true,
   fee_type: "fixed",
   fee: 0,
   values: {} as Record<string, any>,
@@ -292,6 +299,9 @@ function openConfig(ch: ChannelRow) {
   current.value = ch;
   form.name = ch.name;
   form.enabled = ch.enabled;
+  form.allow_purchase = ch.allow_purchase !== false;
+  form.allow_member_recharge = ch.allow_member_recharge !== false;
+  form.allow_supply_recharge = ch.allow_supply_recharge !== false;
   form.fee_type = ch.fee_type || "fixed";
   // fee：fixed=分 → 元；percent=万分比 → 百分比（proto3 零值不输出——undefined 兜底 0）
   form.fee = Number(ch.fee || 0) / 100;
@@ -321,6 +331,7 @@ function openConfig(ch: ChannelRow) {
     form.methods = (JSON.parse(ch.methods_json || "[]") as MethodRow[]).map((m) => ({
       code: m.code, name: m.name, icon: m.icon || "", iconArr: m.icon ? [m.icon] : [],
       enabled: m.enabled !== false, params: m.params || {},
+      allow_purchase: m.allow_purchase !== false, allow_member_recharge: m.allow_member_recharge !== false, allow_supply_recharge: m.allow_supply_recharge !== false,
     }));
   } catch {
     form.methods = [];
@@ -370,6 +381,7 @@ function handleConfigSave() {
   const payload: Record<string, any> = {
     name: form.name.trim(),
     enabled: form.enabled,
+    allow_purchase: form.allow_purchase, allow_member_recharge: form.allow_member_recharge, allow_supply_recharge: form.allow_supply_recharge,
     fee_type: form.fee_type,
     fee: Math.round(form.fee * (form.fee_type === "percent" ? 100 : 100)),
     icon: form.icon[0] || "",
@@ -377,6 +389,7 @@ function handleConfigSave() {
       ? JSON.stringify(form.methods.map((m) => ({
           code: m.code.trim(), name: m.name.trim(), icon: (m.iconArr && m.iconArr[0]) || m.icon || "",
           enabled: m.enabled, params: m.params,
+          allow_purchase: m.allow_purchase !== false, allow_member_recharge: m.allow_member_recharge !== false, allow_supply_recharge: m.allow_supply_recharge !== false,
         })))
       : "",
   };
@@ -484,6 +497,11 @@ onMounted(() => {
             </NTag>
           </div>
 
+          <div class="flex flex-wrap gap-6px text-12px" aria-label="渠道用途">
+            <NTag size="small" :bordered="false" :type="ch.allow_purchase !== false ? 'info' : 'default'">购买{{ ch.allow_purchase !== false ? '已开' : '已关' }}</NTag>
+            <NTag v-if="ch.driver !== 'wallet'" size="small" :bordered="false" :type="ch.allow_member_recharge !== false ? 'info' : 'default'">会员充值{{ ch.allow_member_recharge !== false ? '已开' : '已关' }}</NTag>
+            <NTag v-if="ch.driver !== 'wallet'" size="small" :bordered="false" :type="ch.allow_supply_recharge !== false ? 'info' : 'default'">供货充值{{ ch.allow_supply_recharge !== false ? '已开' : '已关' }}</NTag>
+          </div>
           <!-- 驱动说明 -->
           <div class="text-12px opacity-60 flex-1">{{ driverOf(ch.driver)?.description || ch.driver }}</div>
 
@@ -549,10 +567,10 @@ onMounted(() => {
     </NModal>
 
     <!-- 配置弹窗：schema 驱动 -->
-    <NModal v-model:show="configVisible" preset="card" :title="`配置「${current?.name || ''}」`" style="width: 640px">
+    <NModal v-model:show="configVisible" preset="card" :title="`配置「${current?.name || ''}」`" style="width: 760px; max-width: 94vw; max-height: 92vh; overflow-y: auto">
       <div class="text-12px opacity-60 mb-16px">填写该支付通道所需的参数，保存后立即生效</div>
 
-      <NForm label-placement="left" label-width="110" class="config-form">
+      <NForm :label-placement="narrowPaymentForm ? 'top' : 'left'" label-width="110" class="config-form">
         <NFormItem label="渠道名称">
           <NInput v-model:value="form.name" placeholder="渠道显示名称" />
         </NFormItem>
@@ -565,6 +583,13 @@ onMounted(() => {
           <NSwitch v-model:value="form.enabled" />
         </NFormItem>
 
+        <NFormItem label="开放用途">
+          <div class="w-full">
+            <UsageSwitches :value="form" :wallet="current?.driver === 'wallet'" @change="(key, value) => form[key] = value" />
+            <div class="text-12px mt-8px">关闭某项后，该渠道不会出现在对应收银台，新的支付请求也会被拒绝。已发起的支付仍正常核对到账。</div>
+            <div v-if="isAggregateDriver" class="text-12px mt-4px">下方可进一步限制支付宝、微信等方式。渠道关闭的用途，对所有方式生效。</div>
+          </div>
+        </NFormItem>
         <!-- 支付方式（聚合网关）：易支付按支付宝/微信分开收、USDT 按链选择 -->
         <template v-if="isAggregateDriver">
           <NDivider title-placement="left" style="margin: 4px 0 16px">
@@ -607,10 +632,11 @@ onMounted(() => {
                 />
                 <NInput v-model:value="m.params.token" size="small" placeholder="代币" style="width: 90px" />
               </template>
-              <div class="w-80px">
+              <div style="min-width: 110px">
                 <MediaField v-model:value="m.iconArr" />
               </div>
               <NButton size="tiny" type="error" quaternary @click="form.methods.splice(i, 1)">删除</NButton>
+              <UsageSwitches :value="m" :parent="form" compact @change="(key, value) => m[key] = value" />
             </div>
             <div v-if="form.methods.length === 0" class="text-12px opacity-50 py-4px">
               尚未配置支付方式——顾客将看到渠道本身（或点「按模板生成」快速创建）

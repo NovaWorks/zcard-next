@@ -163,8 +163,8 @@ export interface ChannelItem {
   methods?: MethodItem[];
 }
 
-export function fetchPaymentChannels() {
-  return api.get<{ channels: ChannelItem[] }>('/payment/channels');
+export function fetchPaymentChannels(scene: 'purchase' | 'member_recharge' | 'supply_recharge' = 'purchase') {
+  return api.get<{ channels: ChannelItem[] }>('/payment/channels', { scene });
 }
 
 export function createPayment(order_no: string, channel: string, method?: string) {

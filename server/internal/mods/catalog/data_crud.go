@@ -339,6 +339,9 @@ func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, paren
 // 不能把分类设为自身或自身的后代，否则树成环）。
 func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (*ent.Category, error) {
 	client := data.Client(ctx, r.data)
+	if _, err := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx); err != nil {
+		return nil, err
+	}
 	q := client.Category.UpdateOneID(id)
 	if name != "" {
 		q.SetName(name)
@@ -843,7 +846,11 @@ func deleteProductCover(cover string) {
 
 // ListForSupply 供货目录分页（ supplier 消费；管理面语义含下架）。
 func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter) ([]port.SupplierProduct, int64, error) {
-	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0))
+	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), tenancy.FromContext(ctx).SubsiteID)
+	if err != nil {
+		return nil, 0, err
+	}
+	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0), data.VisibleProductCategory(hidden))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}
@@ -868,6 +875,13 @@ func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*
 	row, err := data.Client(ctx, r.data).Product.Get(ctx, productID)
 	if err != nil {
 		return nil, err
+	}
+	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), row.SubsiteID)
+	if err != nil {
+		return nil, err
+	}
+	if data.CategoryHidden(hidden, row.CategoryID) {
+		return nil, ErrProductNotFound
 	}
 	p := toSupplierProduct(row)
 	return &p, nil
