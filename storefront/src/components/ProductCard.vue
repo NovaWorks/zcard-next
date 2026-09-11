@@ -55,7 +55,7 @@ defineProps<{
 .product-card {
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  border-radius: var(--zc-card-radius, 12px);
   overflow: hidden;
   cursor: pointer;
   transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;

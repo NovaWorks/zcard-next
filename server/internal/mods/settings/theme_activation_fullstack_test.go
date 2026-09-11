@@ -164,3 +164,68 @@ func TestLegacyThemePinnedBeforeSameKeyUpload(t *testing.T) {
 		t.Fatal("legacy selection followed newly installed version")
 	}
 }
+
+func TestThemeSettingsPreviewAndRevisionRollbackHTTP(t *testing.T) {
+	t.Chdir(t.TempDir())
+	ctx := context.Background()
+	repo := &activationRepo{themeMemoryRepo: themeMemoryRepo{values: map[string]json.RawMessage{}}}
+	svc := NewAdminSettingsService(NewSettingsUsecase(repo))
+	server := khttp.NewServer(khttp.Filter(PreviewWriteGuard))
+	adminv1.RegisterAdminSettingsServiceHTTPServer(server, svc)
+	RegisterTemplateStatic(server)
+	server.HandlePrefix("/", svc.ThemeMiddleware(web.NewStorefrontHandler(nil, svc.ActiveTheme)))
+	request := func(method, path, body string) *httptest.ResponseRecorder {
+		r := httptest.NewRequest(method, path, strings.NewReader(body))
+		r.Header.Set("Content-Type", "application/json")
+		r.Header.Set("User-Agent", "Mozilla/5.0")
+		w := httptest.NewRecorder()
+		server.ServeHTTP(w, r)
+		return w
+	}
+	install := func(version string) {
+		z := buildZip(t, map[string]string{"demo/theme.json": `{"name":"Demo","version":"` + version + `","settings_schema":"settings.schema.json"}`, "demo/settings.schema.json": `{"version":1,"groups":[{"id":"appearance","label":"外观","fields":[{"key":"theme.title","label":"标题","type":"text","default":"default"}]}]}`, "demo/index.html": `<html><head><script src="main.js"></script></head><body>VERSION_` + version + `</body></html>`, "demo/main.js": "console.log('demo')"})
+		_, e := svc.InstallTemplate(ctx, &adminv1.InstallTemplateRequest{DataBase64: z})
+		if e != nil {
+			t.Fatal(e)
+		}
+	}
+	install("1")
+	if _, e := svc.UpdateSetting(ctx, &adminv1.UpdateSettingRequest{Group: "template", Key: "pc_template", ValueJson: `"demo"`}); e != nil {
+		t.Fatal(e)
+	}
+	v1 := svc.ActiveTheme(ctx)
+	install("2")
+	v2, e := theme.Resolve("demo")
+	if e != nil {
+		t.Fatal(e)
+	}
+	preview, e := svc.PreviewThemeSettings(ctx, &adminv1.SaveThemeSettingsRequest{Key: "demo", ThemeRevision: v2.Revision, ValuesJson: `{"theme.title":"preview only"}`})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if w := request("GET", preview.Url, ""); w.Code != 200 || !strings.Contains(w.Body.String(), "VERSION_2") || !strings.Contains(w.Body.String(), "preview only") || w.Header().Get("Cache-Control") != "no-store" {
+		t.Fatal("preview HTML mismatch", w.Code, w.Body.String())
+	}
+	if w := request("GET", "/", ""); !strings.Contains(w.Body.String(), "VERSION_1") || strings.Contains(w.Body.String(), "preview only") {
+		t.Fatal("preview switched production")
+	}
+	if w := request("GET", v2.BaseURL()+"settings.schema.json", ""); w.Code != 404 {
+		t.Fatal("schema exposed", w.Code)
+	}
+	if _, e = svc.SaveThemeSettings(ctx, &adminv1.SaveThemeSettingsRequest{Key: "demo", ThemeRevision: v2.Revision, Action: "publish", ValuesJson: `{"theme.title":"published"}`}); e != nil {
+		t.Fatal(e)
+	}
+	if w := request("GET", "/", ""); !strings.Contains(w.Body.String(), "VERSION_2") || !strings.Contains(w.Body.String(), "published") {
+		t.Fatal("publication missing")
+	}
+	st, _ := readThemeState(ctx, repo, "demo")
+	if _, e = svc.SaveThemeSettings(ctx, &adminv1.SaveThemeSettingsRequest{Key: "demo", ThemeRevision: v2.Revision, ExpectedRevision: st.Revision, Action: "rollback"}); e != nil {
+		t.Fatal(e)
+	}
+	if svc.ActiveTheme(ctx).Revision != v1.Revision {
+		t.Fatal("rollback did not restore artifact")
+	}
+	if w := request("GET", "/", ""); !strings.Contains(w.Body.String(), "VERSION_1") || strings.Contains(w.Body.String(), `"theme.title":"published"`) {
+		t.Fatal("rollback HTML mismatch")
+	}
+}

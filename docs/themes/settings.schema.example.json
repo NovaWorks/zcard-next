@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "appearance",
+      "label": "风格与背景",
+      "fields": [
+        {
+          "key": "theme.primary_color",
+          "label": "主题色",
+          "type": "color",
+          "default": "#2563eb"
+        },
+        {
+          "key": "theme.content_width",
+          "label": "电脑内容宽度",
+          "type": "number",
+          "default": 1120,
+          "min": 960,
+          "max": 1600,
+          "help": "单位 px；手机自动适配屏幕"
+        },
+        {
+          "key": "theme.font_size",
+          "label": "正文字号",
+          "type": "number",
+          "default": 14,
+          "min": 12,
+          "max": 20
+        },
+        {
+          "key": "theme.card_radius",
+          "label": "卡片圆角",
+          "type": "number",
+          "default": 12,
+          "min": 0,
+          "max": 32
+        },
+        {
+          "key": "template.bg_image",
+          "label": "电脑背景图",
+          "type": "image",
+          "default": ""
+        },
+        {
+          "key": "template.bg_image_mobile",
+          "label": "手机背景图",
+          "type": "image",
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "catalog",
+      "label": "首页与商品",
+      "fields": [
+        {
+          "key": "template.default_view",
+          "label": "商品默认视图",
+          "type": "select",
+          "default": "grid",
+          "options": [
+            {
+              "value": "grid",
+              "label": "网格"
+            },
+            {
+              "value": "list",
+              "label": "列表"
+            },
+            {
+              "value": "big",
+              "label": "大图"
+            }
+          ]
+        },
+        {
+          "key": "template.category_nav_style",
+          "label": "分类导航样式",
+          "type": "select",
+          "default": "list",
+          "options": [
+            {
+              "value": "list",
+              "label": "侧栏列表"
+            },
+            {
+              "value": "grid",
+              "label": "分类网格"
+            }
+          ]
+        },
+        {
+          "key": "template.per_row",
+          "label": "电脑每行商品数",
+          "type": "number",
+          "default": 4,
+          "min": 2,
+          "max": 8
+        },
+        {
+          "key": "template.per_page",
+          "label": "每页 / 每批商品数",
+          "type": "number",
+          "default": 20,
+          "min": 1,
+          "max": 100
+        },
+        {
+          "key": "template.sort_by",
+          "label": "默认排序",
+          "type": "select",
+          "default": "default",
+          "options": [
+            {
+              "value": "default",
+              "label": "综合排序"
+            },
+            {
+              "value": "price_asc",
+              "label": "价格从低到高"
+            },
+            {
+              "value": "price_desc",
+              "label": "价格从高到低"
+            },
+            {
+              "value": "newest",
+              "label": "最新上架"
+            },
+            {
+              "value": "sales",
+              "label": "销量"
+            }
+          ]
+        },
+        {
+          "key": "template.show_stock",
+          "label": "显示库存",
+          "type": "switch",
+          "default": true
+        },
+        {
+          "key": "template.show_sales",
+          "label": "显示销量",
+          "type": "switch",
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "notice",
+      "label": "公告与文章",
+      "fields": [
+        {
+          "key": "theme.notice_auto",
+          "label": "自动弹出公告",
+          "type": "switch",
+          "default": true
+        },
+        {
+          "key": "theme.notice_width",
+          "label": "电脑公告宽度",
+          "type": "number",
+          "default": 960,
+          "min": 480,
+          "max": 1280,
+          "visible_when": {
+            "field": "theme.notice_auto",
+            "equals": true
+          }
+        },
+        {
+          "key": "theme.article_width",
+          "label": "文章正文宽度",
+          "type": "number",
+          "default": 960,
+          "min": 640,
+          "max": 1280
+        }
+      ]
+    },
+    {
+      "id": "navigation",
+      "label": "导航入口",
+      "fields": [
+        {
+          "key": "theme.nav_cart",
+          "label": "显示购物车入口",
+          "type": "switch",
+          "default": true,
+          "capability": "cart",
+          "help": "仅控制入口展示；购物车业务需在系统设置中开启"
+        },
+        {
+          "key": "theme.nav_posts",
+          "label": "显示文章导航",
+          "type": "switch",
+          "default": true
+        },
+        {
+          "key": "theme.back_top",
+          "label": "显示返回顶部",
+          "type": "switch",
+          "default": true
+        }
+      ]
+    }
+  ]
+}

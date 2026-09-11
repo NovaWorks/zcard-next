@@ -20,12 +20,15 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminSettingsService_ListSettings_FullMethodName    = "/zcard.api.admin.v1.AdminSettingsService/ListSettings"
-	AdminSettingsService_ListTemplates_FullMethodName   = "/zcard.api.admin.v1.AdminSettingsService/ListTemplates"
-	AdminSettingsService_InstallTemplate_FullMethodName = "/zcard.api.admin.v1.AdminSettingsService/InstallTemplate"
-	AdminSettingsService_GetSetting_FullMethodName      = "/zcard.api.admin.v1.AdminSettingsService/GetSetting"
-	AdminSettingsService_UpdateSetting_FullMethodName   = "/zcard.api.admin.v1.AdminSettingsService/UpdateSetting"
-	AdminSettingsService_UpdateSettings_FullMethodName  = "/zcard.api.admin.v1.AdminSettingsService/UpdateSettings"
+	AdminSettingsService_ListSettings_FullMethodName         = "/zcard.api.admin.v1.AdminSettingsService/ListSettings"
+	AdminSettingsService_ListTemplates_FullMethodName        = "/zcard.api.admin.v1.AdminSettingsService/ListTemplates"
+	AdminSettingsService_InstallTemplate_FullMethodName      = "/zcard.api.admin.v1.AdminSettingsService/InstallTemplate"
+	AdminSettingsService_GetThemeSettings_FullMethodName     = "/zcard.api.admin.v1.AdminSettingsService/GetThemeSettings"
+	AdminSettingsService_SaveThemeSettings_FullMethodName    = "/zcard.api.admin.v1.AdminSettingsService/SaveThemeSettings"
+	AdminSettingsService_PreviewThemeSettings_FullMethodName = "/zcard.api.admin.v1.AdminSettingsService/PreviewThemeSettings"
+	AdminSettingsService_GetSetting_FullMethodName           = "/zcard.api.admin.v1.AdminSettingsService/GetSetting"
+	AdminSettingsService_UpdateSetting_FullMethodName        = "/zcard.api.admin.v1.AdminSettingsService/UpdateSetting"
+	AdminSettingsService_UpdateSettings_FullMethodName       = "/zcard.api.admin.v1.AdminSettingsService/UpdateSettings"
 )
 
 // AdminSettingsServiceClient is the client API for AdminSettingsService service.
@@ -42,6 +45,9 @@ type AdminSettingsServiceClient interface {
 	ListTemplates(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TemplateList, error)
 	// InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
 	InstallTemplate(ctx context.Context, in *InstallTemplateRequest, opts ...grpc.CallOption) (*TemplateItem, error)
+	GetThemeSettings(ctx context.Context, in *ThemeSettingsRequest, opts ...grpc.CallOption) (*ThemeSettingsReply, error)
+	SaveThemeSettings(ctx context.Context, in *SaveThemeSettingsRequest, opts ...grpc.CallOption) (*ThemeSettingsReply, error)
+	PreviewThemeSettings(ctx context.Context, in *SaveThemeSettingsRequest, opts ...grpc.CallOption) (*ThemePreviewReply, error)
 	// GetSetting 读取单个设置项。
 	GetSetting(ctx context.Context, in *GetSettingRequest, opts ...grpc.CallOption) (*Setting, error)
 	// UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
@@ -82,6 +88,36 @@ func (c *adminSettingsServiceClient) InstallTemplate(ctx context.Context, in *In
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TemplateItem)
 	err := c.cc.Invoke(ctx, AdminSettingsService_InstallTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSettingsServiceClient) GetThemeSettings(ctx context.Context, in *ThemeSettingsRequest, opts ...grpc.CallOption) (*ThemeSettingsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ThemeSettingsReply)
+	err := c.cc.Invoke(ctx, AdminSettingsService_GetThemeSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSettingsServiceClient) SaveThemeSettings(ctx context.Context, in *SaveThemeSettingsRequest, opts ...grpc.CallOption) (*ThemeSettingsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ThemeSettingsReply)
+	err := c.cc.Invoke(ctx, AdminSettingsService_SaveThemeSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSettingsServiceClient) PreviewThemeSettings(ctx context.Context, in *SaveThemeSettingsRequest, opts ...grpc.CallOption) (*ThemePreviewReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ThemePreviewReply)
+	err := c.cc.Invoke(ctx, AdminSettingsService_PreviewThemeSettings_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -132,6 +168,9 @@ type AdminSettingsServiceServer interface {
 	ListTemplates(context.Context, *emptypb.Empty) (*TemplateList, error)
 	// InstallTemplate 安装主题（zip base64；解压校验后原子落盘到模板目录）。
 	InstallTemplate(context.Context, *InstallTemplateRequest) (*TemplateItem, error)
+	GetThemeSettings(context.Context, *ThemeSettingsRequest) (*ThemeSettingsReply, error)
+	SaveThemeSettings(context.Context, *SaveThemeSettingsRequest) (*ThemeSettingsReply, error)
+	PreviewThemeSettings(context.Context, *SaveThemeSettingsRequest) (*ThemePreviewReply, error)
 	// GetSetting 读取单个设置项。
 	GetSetting(context.Context, *GetSettingRequest) (*Setting, error)
 	// UpdateSetting 更新单个设置项（value 为任意 JSON 文档）。
@@ -156,6 +195,15 @@ func (UnimplementedAdminSettingsServiceServer) ListTemplates(context.Context, *e
 }
 func (UnimplementedAdminSettingsServiceServer) InstallTemplate(context.Context, *InstallTemplateRequest) (*TemplateItem, error) {
 	return nil, status.Error(codes.Unimplemented, "method InstallTemplate not implemented")
+}
+func (UnimplementedAdminSettingsServiceServer) GetThemeSettings(context.Context, *ThemeSettingsRequest) (*ThemeSettingsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetThemeSettings not implemented")
+}
+func (UnimplementedAdminSettingsServiceServer) SaveThemeSettings(context.Context, *SaveThemeSettingsRequest) (*ThemeSettingsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SaveThemeSettings not implemented")
+}
+func (UnimplementedAdminSettingsServiceServer) PreviewThemeSettings(context.Context, *SaveThemeSettingsRequest) (*ThemePreviewReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewThemeSettings not implemented")
 }
 func (UnimplementedAdminSettingsServiceServer) GetSetting(context.Context, *GetSettingRequest) (*Setting, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetSetting not implemented")
@@ -241,6 +289,60 @@ func _AdminSettingsService_InstallTemplate_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSettingsService_GetThemeSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ThemeSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSettingsServiceServer).GetThemeSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSettingsService_GetThemeSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSettingsServiceServer).GetThemeSettings(ctx, req.(*ThemeSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminSettingsService_SaveThemeSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveThemeSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSettingsServiceServer).SaveThemeSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSettingsService_SaveThemeSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSettingsServiceServer).SaveThemeSettings(ctx, req.(*SaveThemeSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminSettingsService_PreviewThemeSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveThemeSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSettingsServiceServer).PreviewThemeSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSettingsService_PreviewThemeSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSettingsServiceServer).PreviewThemeSettings(ctx, req.(*SaveThemeSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminSettingsService_GetSetting_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetSettingRequest)
 	if err := dec(in); err != nil {
@@ -313,6 +415,18 @@ var AdminSettingsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "InstallTemplate",
 			Handler:    _AdminSettingsService_InstallTemplate_Handler,
+		},
+		{
+			MethodName: "GetThemeSettings",
+			Handler:    _AdminSettingsService_GetThemeSettings_Handler,
+		},
+		{
+			MethodName: "SaveThemeSettings",
+			Handler:    _AdminSettingsService_SaveThemeSettings_Handler,
+		},
+		{
+			MethodName: "PreviewThemeSettings",
+			Handler:    _AdminSettingsService_PreviewThemeSettings_Handler,
 		},
 		{
 			MethodName: "GetSetting",

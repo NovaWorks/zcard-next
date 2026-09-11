@@ -101,7 +101,7 @@ async function applyPostSeo(detail: { post: StorePost; content: string } | null)
 .post-head { margin-bottom: 16px; }
 .post-title { font-size: 22px; margin: 8px 0; }
 .post-body { min-width:0; color:#1f2937; line-height:1.85; font-size:16px; overflow-wrap:anywhere; }
-.post-page { min-width:0; }
+.post-page { min-width:0; max-width:var(--zc-article-width,100%); margin-inline:auto; }
 .post-page .muted { color:#64748b; }
 .post-title { overflow-wrap:anywhere; line-height:1.5; }
 .post-body :deep(h1), .post-body :deep(h2), .post-body :deep(h3), .post-body :deep(h4) {

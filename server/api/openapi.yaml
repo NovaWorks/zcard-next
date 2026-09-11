@@ -3567,6 +3567,75 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.TemplateItem'
+    /api/v1/admin/settings/themes/{key}:
+        get:
+            tags:
+                - AdminSettingsService
+            operationId: AdminSettingsService_GetThemeSettings
+            parameters:
+                - name: key
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: themeRevision
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ThemeSettingsReply'
+        put:
+            tags:
+                - AdminSettingsService
+            operationId: AdminSettingsService_SaveThemeSettings
+            parameters:
+                - name: key
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SaveThemeSettingsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ThemeSettingsReply'
+    /api/v1/admin/settings/themes/{key}/preview:
+        post:
+            tags:
+                - AdminSettingsService
+            operationId: AdminSettingsService_PreviewThemeSettings
+            parameters:
+                - name: key
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SaveThemeSettingsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ThemePreviewReply'
     /api/v1/admin/settings/{group}/{key}:
         get:
             tags:
@@ -9704,6 +9773,19 @@ components:
             properties:
                 id:
                     type: string
+        zcard.api.admin.v1.SaveThemeSettingsRequest:
+            type: object
+            properties:
+                key:
+                    type: string
+                themeRevision:
+                    type: string
+                expectedRevision:
+                    type: string
+                action:
+                    type: string
+                valuesJson:
+                    type: string
         zcard.api.admin.v1.SecurityLogItem:
             type: object
             properties:
@@ -10171,6 +10253,18 @@ components:
                 redisAddr:
                     type: string
                 redisPassword:
+                    type: string
+        zcard.api.admin.v1.ThemePreviewReply:
+            type: object
+            properties:
+                url:
+                    type: string
+                expiresAt:
+                    type: string
+        zcard.api.admin.v1.ThemeSettingsReply:
+            type: object
+            properties:
+                stateJson:
                     type: string
         zcard.api.admin.v1.TicketNoRequest:
             required:

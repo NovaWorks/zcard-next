@@ -1,3 +1,4 @@
+import { mergeThemeConfig } from '../../../packages/theme-sdk/src/index';
 // 前台 API 客户端：fetch 封装，金额一律「分」int64。
 // 认证（）：user realm JWT 存 localStorage，请求自动带 Bearer；
 // 401 且本地有 token → 判定过期，清 token 跳登录（游客端点 401 不误伤）。
@@ -56,6 +57,7 @@ async function request<T>(method: string, path: string, body?: unknown, params?:
     let json: any = null;
     try {
       json = text ? JSON.parse(text) : null;
+      if (path === '/config' && Array.isArray(json?.entries)) json.entries = mergeThemeConfig(json.entries);
     } catch {
       json = text;
     }

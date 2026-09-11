@@ -32,13 +32,14 @@ var revisionPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 // Meta is the theme.json contract. SchemaVersion defaults to 1 for older packages.
 type Meta struct {
-	Key           string `json:"key,omitempty"`
-	Name          string `json:"name"`
-	Desc          string `json:"desc,omitempty"`
-	Preview       string `json:"preview,omitempty"`
-	Author        string `json:"author,omitempty"`
-	Version       string `json:"version"`
-	SchemaVersion int    `json:"schema_version,omitempty"`
+	Key            string `json:"key,omitempty"`
+	Name           string `json:"name"`
+	Desc           string `json:"desc,omitempty"`
+	Preview        string `json:"preview,omitempty"`
+	Author         string `json:"author,omitempty"`
+	Version        string `json:"version"`
+	SchemaVersion  int    `json:"schema_version,omitempty"`
+	SettingsSchema string `json:"settings_schema,omitempty"`
 }
 
 type Theme struct {
@@ -211,6 +212,14 @@ func inspect(dir, key string) (*Theme, error) {
 	}
 	if strings.TrimSpace(m.Name) == "" || strings.TrimSpace(m.Version) == "" {
 		return nil, fmt.Errorf("theme.json 必须填写 name 和 version")
+	}
+	if m.SettingsSchema != "" {
+		if m.SettingsSchema != "settings.schema.json" {
+			return nil, fmt.Errorf("设置定义文件须为 settings.schema.json")
+		}
+		if _, err := LoadSettings(&Theme{Meta: m, Dir: dir}); err != nil {
+			return nil, err
+		}
 	}
 	if m.SchemaVersion != 0 && m.SchemaVersion != 1 {
 		return nil, fmt.Errorf("不支持的主题 schema_version，请使用 1")

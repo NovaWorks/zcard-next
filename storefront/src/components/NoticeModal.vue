@@ -151,7 +151,7 @@ function formatDate(unix?: number): string {
 }
 
 @media (min-width: 641px) {
-  .notice-modal { max-width: 800px; }
+  .notice-modal { max-width: var(--zc-notice-width, 800px); }
   .notice-head { padding: 16px 24px; gap: 12px; }
   .notice-head-title { font-size: 17px; }
   .notice-body { padding: 24px; }

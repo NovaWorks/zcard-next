@@ -136,6 +136,7 @@ func NewHTTPServer(
 			corsFilter,
 			// ：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
 			tenantFilter(tenancyMainDomain(c), resellerRepo),
+			settings.PreviewWriteGuard,
 			// 未安装守门（在线安装 Web 向导；Filter 层直写 302）
 			installGuard(func() bool { return settings.Installed(context.Background(), d) }),
 			// ：对外供货 HMAC 四头鉴权（Filter 层能拿原始请求字节——签名不变式；
@@ -285,7 +286,7 @@ func NewHTTPServer(
 	}
 	if web.Available() {
 		admin := web.NewAdminHandler()
-		srv.HandlePrefix("/", web.NewEntryHandler(web.NewStorefrontHandler(seoSvc, settingsSvc.ActiveTheme), admin.ServeAt, settingsSvc.AdminPath, "/"+strings.Trim(adminBase, "/")))
+		srv.HandlePrefix("/", web.NewEntryHandler(settingsSvc.ThemeMiddleware(web.NewStorefrontHandler(seoSvc, settingsSvc.ActiveTheme)), admin.ServeAt, settingsSvc.AdminPath, "/"+strings.Trim(adminBase, "/")))
 	}
 	return srv
 }

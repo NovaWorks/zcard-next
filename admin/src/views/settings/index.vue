@@ -13,6 +13,7 @@ import GiftTiersField from "./components/gift-tiers-field.vue";
 import LinkListField from "./components/link-list-field.vue";
 import AuditTab from "./components/audit-tab.vue";
 import UpdateTab from "./components/update-tab.vue";
+import ThemeSettingsModal from "./components/theme-settings-modal.vue";
 import ThemePickerModal from "./components/theme-picker-modal.vue";
 
 defineOptions({ name: "SettingsManagement" });
@@ -207,6 +208,7 @@ function currentTemplateName(item: any) {
 }
 
 // 主题选择弹窗状态（目标字段 + 显隐）
+const themeOptions = reactive({show:false,key:'classic'});
 const themePicker = reactive<{ show: boolean; item: any }>({ show: false, item: null });
 function openThemePicker(item: any) {
   themePicker.item = item;
@@ -359,7 +361,7 @@ onMounted(() => {
             </div>
 
             <div v-if="activeGroup === 'template'" class="mt-12px text-13px text-gray-500">
-              PC 和手机共用一个响应式主题，自动适配屏幕。上传只安装主题；在主题弹窗点击「切换为默认」后立即生效，无需再保存。Classic 可随时切回。
+              PC 和手机共用一个响应式主题，自动适配屏幕。上传只安装主题；在主题弹窗点击「切换为默认」后立即生效，无需再保存。Classic 可随时切回。每个主题卡片可进入「主题设置与预览」；已发布的主题专属配置优先于下方基础外观配置，业务开关仍由系统统一控制。
             </div>
 
             <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup) }">
@@ -382,7 +384,8 @@ onMounted(() => {
                   <template v-else-if="isTemplateKey(item)">
                     <div class="flex w-full items-center gap-8px">
                       <span class="min-w-0 flex-1 truncate text-13px">{{ currentTemplateName(item) }}</span>
-                      <NButton size="small" @click="openThemePicker(item)">选择主题</NButton>
+                      <NButton size="small" @click="openThemePicker(item)">管理主题</NButton>
+                      <NButton size="small" @click="themeOptions.key=getVal(item)||'classic';themeOptions.show=true">主题设置</NButton>
                     </div>
                   </template>
                   <template v-else-if="isTextareaKey(item)">
@@ -526,6 +529,7 @@ onMounted(() => {
       </template>
     </NModal>
 
+    <ThemeSettingsModal v-model:show="themeOptions.show" :theme-key="themeOptions.key" />
     <!-- 主题选择弹窗（模板字段点击「选择主题」打开） -->
     <ThemePickerModal
       :show="themePicker.show"

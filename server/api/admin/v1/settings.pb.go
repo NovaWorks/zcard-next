@@ -698,6 +698,230 @@ func (x *TemplateList) GetTemplates() []*TemplateItem {
 	return nil
 }
 
+type ThemeSettingsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	ThemeRevision string                 `protobuf:"bytes,2,opt,name=theme_revision,json=themeRevision,proto3" json:"theme_revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ThemeSettingsRequest) Reset() {
+	*x = ThemeSettingsRequest{}
+	mi := &file_admin_v1_settings_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ThemeSettingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ThemeSettingsRequest) ProtoMessage() {}
+
+func (x *ThemeSettingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_settings_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ThemeSettingsRequest.ProtoReflect.Descriptor instead.
+func (*ThemeSettingsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_settings_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ThemeSettingsRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *ThemeSettingsRequest) GetThemeRevision() string {
+	if x != nil {
+		return x.ThemeRevision
+	}
+	return ""
+}
+
+type SaveThemeSettingsRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Key              string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	ThemeRevision    string                 `protobuf:"bytes,2,opt,name=theme_revision,json=themeRevision,proto3" json:"theme_revision,omitempty"`
+	ExpectedRevision string                 `protobuf:"bytes,3,opt,name=expected_revision,json=expectedRevision,proto3" json:"expected_revision,omitempty"`
+	Action           string                 `protobuf:"bytes,4,opt,name=action,proto3" json:"action,omitempty"` // draft | publish | reset | rollback
+	ValuesJson       string                 `protobuf:"bytes,5,opt,name=values_json,json=valuesJson,proto3" json:"values_json,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *SaveThemeSettingsRequest) Reset() {
+	*x = SaveThemeSettingsRequest{}
+	mi := &file_admin_v1_settings_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SaveThemeSettingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SaveThemeSettingsRequest) ProtoMessage() {}
+
+func (x *SaveThemeSettingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_settings_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SaveThemeSettingsRequest.ProtoReflect.Descriptor instead.
+func (*SaveThemeSettingsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_settings_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *SaveThemeSettingsRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *SaveThemeSettingsRequest) GetThemeRevision() string {
+	if x != nil {
+		return x.ThemeRevision
+	}
+	return ""
+}
+
+func (x *SaveThemeSettingsRequest) GetExpectedRevision() string {
+	if x != nil {
+		return x.ExpectedRevision
+	}
+	return ""
+}
+
+func (x *SaveThemeSettingsRequest) GetAction() string {
+	if x != nil {
+		return x.Action
+	}
+	return ""
+}
+
+func (x *SaveThemeSettingsRequest) GetValuesJson() string {
+	if x != nil {
+		return x.ValuesJson
+	}
+	return ""
+}
+
+type ThemeSettingsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StateJson     string                 `protobuf:"bytes,1,opt,name=state_json,json=stateJson,proto3" json:"state_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ThemeSettingsReply) Reset() {
+	*x = ThemeSettingsReply{}
+	mi := &file_admin_v1_settings_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ThemeSettingsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ThemeSettingsReply) ProtoMessage() {}
+
+func (x *ThemeSettingsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_settings_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ThemeSettingsReply.ProtoReflect.Descriptor instead.
+func (*ThemeSettingsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_settings_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ThemeSettingsReply) GetStateJson() string {
+	if x != nil {
+		return x.StateJson
+	}
+	return ""
+}
+
+type ThemePreviewReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	ExpiresAt     int64                  `protobuf:"varint,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ThemePreviewReply) Reset() {
+	*x = ThemePreviewReply{}
+	mi := &file_admin_v1_settings_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ThemePreviewReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ThemePreviewReply) ProtoMessage() {}
+
+func (x *ThemePreviewReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_settings_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ThemePreviewReply.ProtoReflect.Descriptor instead.
+func (*ThemePreviewReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_settings_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ThemePreviewReply) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *ThemePreviewReply) GetExpiresAt() int64 {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return 0
+}
+
 var File_admin_v1_settings_proto protoreflect.FileDescriptor
 
 const file_admin_v1_settings_proto_rawDesc = "" +
@@ -748,11 +972,32 @@ const file_admin_v1_settings_proto_rawDesc = "" +
 	"\vdata_base64\x18\x01 \x01(\tB\x03\xe0A\x02R\n" +
 	"dataBase64\"N\n" +
 	"\fTemplateList\x12>\n" +
-	"\ttemplates\x18\x01 \x03(\v2 .zcard.api.admin.v1.TemplateItemR\ttemplates2\xb6\x06\n" +
+	"\ttemplates\x18\x01 \x03(\v2 .zcard.api.admin.v1.TemplateItemR\ttemplates\"O\n" +
+	"\x14ThemeSettingsRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
+	"\x0etheme_revision\x18\x02 \x01(\tR\rthemeRevision\"\xb9\x01\n" +
+	"\x18SaveThemeSettingsRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12%\n" +
+	"\x0etheme_revision\x18\x02 \x01(\tR\rthemeRevision\x12+\n" +
+	"\x11expected_revision\x18\x03 \x01(\tR\x10expectedRevision\x12\x16\n" +
+	"\x06action\x18\x04 \x01(\tR\x06action\x12\x1f\n" +
+	"\vvalues_json\x18\x05 \x01(\tR\n" +
+	"valuesJson\"3\n" +
+	"\x12ThemeSettingsReply\x12\x1d\n" +
+	"\n" +
+	"state_json\x18\x01 \x01(\tR\tstateJson\"D\n" +
+	"\x11ThemePreviewReply\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x02 \x01(\x03R\texpiresAt2\x8c\n" +
+	"\n" +
 	"\x14AdminSettingsService\x12~\n" +
 	"\fListSettings\x12'.zcard.api.admin.v1.ListSettingsRequest\x1a%.zcard.api.admin.v1.ListSettingsReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/admin/settings\x12s\n" +
 	"\rListTemplates\x12\x16.google.protobuf.Empty\x1a .zcard.api.admin.v1.TemplateList\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/settings/templates\x12\x94\x01\n" +
-	"\x0fInstallTemplate\x12*.zcard.api.admin.v1.InstallTemplateRequest\x1a .zcard.api.admin.v1.TemplateItem\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/admin/settings/templates/install\x12~\n" +
+	"\x0fInstallTemplate\x12*.zcard.api.admin.v1.InstallTemplateRequest\x1a .zcard.api.admin.v1.TemplateItem\"3\x82\xd3\xe4\x93\x02-:\x01*\"(/api/v1/admin/settings/templates/install\x12\x91\x01\n" +
+	"\x10GetThemeSettings\x12(.zcard.api.admin.v1.ThemeSettingsRequest\x1a&.zcard.api.admin.v1.ThemeSettingsReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/admin/settings/themes/{key}\x12\x99\x01\n" +
+	"\x11SaveThemeSettings\x12,.zcard.api.admin.v1.SaveThemeSettingsRequest\x1a&.zcard.api.admin.v1.ThemeSettingsReply\".\x82\xd3\xe4\x93\x02(:\x01*\x1a#/api/v1/admin/settings/themes/{key}\x12\xa3\x01\n" +
+	"\x14PreviewThemeSettings\x12,.zcard.api.admin.v1.SaveThemeSettingsRequest\x1a%.zcard.api.admin.v1.ThemePreviewReply\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/settings/themes/{key}/preview\x12~\n" +
 	"\n" +
 	"GetSetting\x12%.zcard.api.admin.v1.GetSettingRequest\x1a\x1b.zcard.api.admin.v1.Setting\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/admin/settings/{group}/{key}\x12\x87\x01\n" +
 	"\rUpdateSetting\x12(.zcard.api.admin.v1.UpdateSettingRequest\x1a\x1b.zcard.api.admin.v1.Setting\"/\x82\xd3\xe4\x93\x02):\x01*\x1a$/api/v1/admin/settings/{group}/{key}\x12\x87\x01\n" +
@@ -770,21 +1015,25 @@ func file_admin_v1_settings_proto_rawDescGZIP() []byte {
 	return file_admin_v1_settings_proto_rawDescData
 }
 
-var file_admin_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_admin_v1_settings_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_admin_v1_settings_proto_goTypes = []any{
-	(*ListSettingsRequest)(nil),    // 0: zcard.api.admin.v1.ListSettingsRequest
-	(*ListSettingsReply)(nil),      // 1: zcard.api.admin.v1.ListSettingsReply
-	(*GetSettingRequest)(nil),      // 2: zcard.api.admin.v1.GetSettingRequest
-	(*UpdateSettingRequest)(nil),   // 3: zcard.api.admin.v1.UpdateSettingRequest
-	(*Setting)(nil),                // 4: zcard.api.admin.v1.Setting
-	(*OptionItem)(nil),             // 5: zcard.api.admin.v1.OptionItem
-	(*UpdateSettingsRequest)(nil),  // 6: zcard.api.admin.v1.UpdateSettingsRequest
-	(*SettingUpdate)(nil),          // 7: zcard.api.admin.v1.SettingUpdate
-	(*UpdateSettingsReply)(nil),    // 8: zcard.api.admin.v1.UpdateSettingsReply
-	(*TemplateItem)(nil),           // 9: zcard.api.admin.v1.TemplateItem
-	(*InstallTemplateRequest)(nil), // 10: zcard.api.admin.v1.InstallTemplateRequest
-	(*TemplateList)(nil),           // 11: zcard.api.admin.v1.TemplateList
-	(*emptypb.Empty)(nil),          // 12: google.protobuf.Empty
+	(*ListSettingsRequest)(nil),      // 0: zcard.api.admin.v1.ListSettingsRequest
+	(*ListSettingsReply)(nil),        // 1: zcard.api.admin.v1.ListSettingsReply
+	(*GetSettingRequest)(nil),        // 2: zcard.api.admin.v1.GetSettingRequest
+	(*UpdateSettingRequest)(nil),     // 3: zcard.api.admin.v1.UpdateSettingRequest
+	(*Setting)(nil),                  // 4: zcard.api.admin.v1.Setting
+	(*OptionItem)(nil),               // 5: zcard.api.admin.v1.OptionItem
+	(*UpdateSettingsRequest)(nil),    // 6: zcard.api.admin.v1.UpdateSettingsRequest
+	(*SettingUpdate)(nil),            // 7: zcard.api.admin.v1.SettingUpdate
+	(*UpdateSettingsReply)(nil),      // 8: zcard.api.admin.v1.UpdateSettingsReply
+	(*TemplateItem)(nil),             // 9: zcard.api.admin.v1.TemplateItem
+	(*InstallTemplateRequest)(nil),   // 10: zcard.api.admin.v1.InstallTemplateRequest
+	(*TemplateList)(nil),             // 11: zcard.api.admin.v1.TemplateList
+	(*ThemeSettingsRequest)(nil),     // 12: zcard.api.admin.v1.ThemeSettingsRequest
+	(*SaveThemeSettingsRequest)(nil), // 13: zcard.api.admin.v1.SaveThemeSettingsRequest
+	(*ThemeSettingsReply)(nil),       // 14: zcard.api.admin.v1.ThemeSettingsReply
+	(*ThemePreviewReply)(nil),        // 15: zcard.api.admin.v1.ThemePreviewReply
+	(*emptypb.Empty)(nil),            // 16: google.protobuf.Empty
 }
 var file_admin_v1_settings_proto_depIdxs = []int32{
 	4,  // 0: zcard.api.admin.v1.ListSettingsReply.items:type_name -> zcard.api.admin.v1.Setting
@@ -792,19 +1041,25 @@ var file_admin_v1_settings_proto_depIdxs = []int32{
 	7,  // 2: zcard.api.admin.v1.UpdateSettingsRequest.items:type_name -> zcard.api.admin.v1.SettingUpdate
 	9,  // 3: zcard.api.admin.v1.TemplateList.templates:type_name -> zcard.api.admin.v1.TemplateItem
 	0,  // 4: zcard.api.admin.v1.AdminSettingsService.ListSettings:input_type -> zcard.api.admin.v1.ListSettingsRequest
-	12, // 5: zcard.api.admin.v1.AdminSettingsService.ListTemplates:input_type -> google.protobuf.Empty
+	16, // 5: zcard.api.admin.v1.AdminSettingsService.ListTemplates:input_type -> google.protobuf.Empty
 	10, // 6: zcard.api.admin.v1.AdminSettingsService.InstallTemplate:input_type -> zcard.api.admin.v1.InstallTemplateRequest
-	2,  // 7: zcard.api.admin.v1.AdminSettingsService.GetSetting:input_type -> zcard.api.admin.v1.GetSettingRequest
-	3,  // 8: zcard.api.admin.v1.AdminSettingsService.UpdateSetting:input_type -> zcard.api.admin.v1.UpdateSettingRequest
-	6,  // 9: zcard.api.admin.v1.AdminSettingsService.UpdateSettings:input_type -> zcard.api.admin.v1.UpdateSettingsRequest
-	1,  // 10: zcard.api.admin.v1.AdminSettingsService.ListSettings:output_type -> zcard.api.admin.v1.ListSettingsReply
-	11, // 11: zcard.api.admin.v1.AdminSettingsService.ListTemplates:output_type -> zcard.api.admin.v1.TemplateList
-	9,  // 12: zcard.api.admin.v1.AdminSettingsService.InstallTemplate:output_type -> zcard.api.admin.v1.TemplateItem
-	4,  // 13: zcard.api.admin.v1.AdminSettingsService.GetSetting:output_type -> zcard.api.admin.v1.Setting
-	4,  // 14: zcard.api.admin.v1.AdminSettingsService.UpdateSetting:output_type -> zcard.api.admin.v1.Setting
-	8,  // 15: zcard.api.admin.v1.AdminSettingsService.UpdateSettings:output_type -> zcard.api.admin.v1.UpdateSettingsReply
-	10, // [10:16] is the sub-list for method output_type
-	4,  // [4:10] is the sub-list for method input_type
+	12, // 7: zcard.api.admin.v1.AdminSettingsService.GetThemeSettings:input_type -> zcard.api.admin.v1.ThemeSettingsRequest
+	13, // 8: zcard.api.admin.v1.AdminSettingsService.SaveThemeSettings:input_type -> zcard.api.admin.v1.SaveThemeSettingsRequest
+	13, // 9: zcard.api.admin.v1.AdminSettingsService.PreviewThemeSettings:input_type -> zcard.api.admin.v1.SaveThemeSettingsRequest
+	2,  // 10: zcard.api.admin.v1.AdminSettingsService.GetSetting:input_type -> zcard.api.admin.v1.GetSettingRequest
+	3,  // 11: zcard.api.admin.v1.AdminSettingsService.UpdateSetting:input_type -> zcard.api.admin.v1.UpdateSettingRequest
+	6,  // 12: zcard.api.admin.v1.AdminSettingsService.UpdateSettings:input_type -> zcard.api.admin.v1.UpdateSettingsRequest
+	1,  // 13: zcard.api.admin.v1.AdminSettingsService.ListSettings:output_type -> zcard.api.admin.v1.ListSettingsReply
+	11, // 14: zcard.api.admin.v1.AdminSettingsService.ListTemplates:output_type -> zcard.api.admin.v1.TemplateList
+	9,  // 15: zcard.api.admin.v1.AdminSettingsService.InstallTemplate:output_type -> zcard.api.admin.v1.TemplateItem
+	14, // 16: zcard.api.admin.v1.AdminSettingsService.GetThemeSettings:output_type -> zcard.api.admin.v1.ThemeSettingsReply
+	14, // 17: zcard.api.admin.v1.AdminSettingsService.SaveThemeSettings:output_type -> zcard.api.admin.v1.ThemeSettingsReply
+	15, // 18: zcard.api.admin.v1.AdminSettingsService.PreviewThemeSettings:output_type -> zcard.api.admin.v1.ThemePreviewReply
+	4,  // 19: zcard.api.admin.v1.AdminSettingsService.GetSetting:output_type -> zcard.api.admin.v1.Setting
+	4,  // 20: zcard.api.admin.v1.AdminSettingsService.UpdateSetting:output_type -> zcard.api.admin.v1.Setting
+	8,  // 21: zcard.api.admin.v1.AdminSettingsService.UpdateSettings:output_type -> zcard.api.admin.v1.UpdateSettingsReply
+	13, // [13:22] is the sub-list for method output_type
+	4,  // [4:13] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -821,7 +1076,7 @@ func file_admin_v1_settings_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_settings_proto_rawDesc), len(file_admin_v1_settings_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

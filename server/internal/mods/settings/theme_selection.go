@@ -83,8 +83,15 @@ func (s *AdminSettingsService) ActiveTemplate(ctx context.Context) string {
 // ActiveTheme resolves the pinned revision, with legacy compatibility until the
 // first upload or explicit activation. Missing/corrupt packages fall back to Classic.
 func (s *AdminSettingsService) ActiveTheme(ctx context.Context) *theme.Theme {
+	if r := theme.RuntimeFromContext(ctx); r != nil {
+		return r.Theme
+	}
 	themeChanges.RLock()
 	defer themeChanges.RUnlock()
+	return s.activeThemeUnlocked(ctx)
+}
+
+func (s *AdminSettingsService) activeThemeUnlocked(ctx context.Context) *theme.Theme {
 	if s == nil || s.uc == nil {
 		return nil
 	}

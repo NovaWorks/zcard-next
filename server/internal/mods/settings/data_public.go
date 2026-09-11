@@ -6,6 +6,7 @@ package settings
 import (
 	"context"
 	"encoding/json"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/theme"
 	"sort"
 
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -62,6 +63,31 @@ func (s *StorefrontConfigService) GetPublicConfig(ctx context.Context, _ *emptyp
 					}
 				}
 			}
+		}
+	}
+	runtime := theme.RuntimeFromContext(ctx)
+	if runtime == nil {
+		var err error
+		runtime, err = NewAdminSettingsService(NewSettingsUsecase(s.repo)).runtime(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if runtime != nil {
+		values := map[string]string{}
+		for _, e := range out {
+			values[e.key] = e.val
+		}
+		for k, v := range runtime.Values {
+			raw, _ := json.Marshal(v)
+			values[k] = string(raw)
+		}
+		if !runtime.Capabilities["cart"] {
+			values["theme.nav_cart"] = "false"
+		}
+		out = nil
+		for k, v := range values {
+			out = append(out, entry{k, v})
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].key < out[j].key })

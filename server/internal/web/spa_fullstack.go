@@ -86,7 +86,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 爬虫动态渲染（仅 storefront；详情页实时渲染优先，保证内容新鲜）
-	if h.bot != nil && h.prefix == "" && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
+	if (theme.RuntimeFromContext(r.Context()) == nil || !theme.RuntimeFromContext(r.Context()).Preview) && h.bot != nil && h.prefix == "" && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
 		return
 	}
 	// Keep embedded assets available to already-open Classic pages. Reserved
@@ -142,6 +142,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // serveStaticHTML SSG 静态页：短缓存（内容随发布更新）。
 func (h *Handler) serveStaticHTML(w http.ResponseWriter, r *http.Request, f fs.File, st fs.FileInfo) {
+	if theme.RuntimeFromContext(r.Context()) != nil {
+		b, err := io.ReadAll(f)
+		if err != nil {
+			http.Error(w, "page unavailable", 500)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-store")
+		if r.Method != http.MethodHead {
+			_, _ = w.Write(theme.InjectRuntime(b, r.Context()))
+		}
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "public, max-age=300")
 	http.ServeContent(w, r, st.Name(), st.ModTime(), f.(io.ReadSeeker))
@@ -159,7 +172,7 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodHead {
 		return
 	}
-	_, _ = w.Write(h.indexBytes)
+	_, _ = w.Write(theme.InjectRuntime(h.indexBytes, r.Context()))
 }
 
 func themePagePath(p string) bool {

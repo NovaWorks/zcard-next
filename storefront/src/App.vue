@@ -189,6 +189,7 @@ import { authState, refreshAuth, logout } from '@/auth';
 import { listPosts, getPost, fetchAnnouncement, type StorePost, type AnnouncementConfig } from '@/api';
 import { mergeGuestCart, refreshCartState, cartState, cartEnabled, refreshCartSetting } from '@/cart';
 import { captureRefCode } from '@/ref';
+import { themeValue } from '../../packages/theme-sdk/src/index';
 import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
 import CurrencySwitcher from '@/components/CurrencySwitcher.vue';
@@ -454,7 +455,7 @@ onMounted(async () => {
   }
   // 公告：每会话首次访问自动弹出（sessionStorage 标记）
   await loadNotice();
-  if ((noticePost.value || noticeAnnouncement.value) && !sessionStorage.getItem('zc_notice_shown')) {
+  if (themeValue('theme.notice_auto', true) && (noticePost.value || noticeAnnouncement.value) && !sessionStorage.getItem('zc_notice_shown')) {
     sessionStorage.setItem('zc_notice_shown', '1');
     noticeShow.value = true;
   }

@@ -36,6 +36,7 @@ func ServePage(w http.ResponseWriter, r *http.Request, t *Theme) bool {
 	if err != nil {
 		return false
 	}
+	b = InjectRuntime(b, r.Context())
 	pos, err := indexHeadEnd(b)
 	if err != nil {
 		return false
@@ -100,7 +101,7 @@ func ServeStatic(w http.ResponseWriter, r *http.Request) {
 		}
 		dir = t.Dir
 	}
-	if !allowedFile(asset) || path.Base(asset) == "theme.json" || path.Base(asset) == "meta.json" {
+	if !allowedFile(asset) || path.Base(asset) == "theme.json" || path.Base(asset) == "meta.json" || path.Base(asset) == "settings.schema.json" {
 		http.NotFound(w, r)
 		return
 	}

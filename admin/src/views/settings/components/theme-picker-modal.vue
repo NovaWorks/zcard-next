@@ -4,6 +4,7 @@
  * 封面图/主题名/版本号/作者/描述；选中态高亮 + ✓ 角标；
  * 右上角支持本地上传 zip 安装（服务端解压校验后原子落盘）。
  */
+import ThemeSettingsModal from "./theme-settings-modal.vue";
 import { ref, watch } from "vue";
 import { NAlert, NButton, NModal, NSpin, NTag } from "naive-ui";
 import { fetchTemplates, installTemplate, updateSettings } from "@/service/api";
@@ -22,6 +23,8 @@ const emit = defineEmits<{
   (e: "installed"): void;
 }>();
 
+const optionsKey = ref("");
+const optionsShow = ref(false);
 const loading = ref(false);
 const installing = ref(false);
 const activating = ref(false);
@@ -168,6 +171,7 @@ async function confirm() {
             </div>
             <div v-if="tp.author" class="mt-4px truncate text-12px text-gray-400">作者：{{ tp.author }}</div>
             <div v-if="tp.desc" class="mt-2px truncate text-12px text-gray-400">{{ tp.desc }}</div>
+            <NButton class="mt-10px" size="small" block secondary @click.stop="optionsKey = tp.key; optionsShow = true">主题设置与预览</NButton>
           </div>
         </div>
       </div>
@@ -180,5 +184,6 @@ async function confirm() {
         <NButton type="primary" :disabled="!selected || installing || loading" :loading="activating" @click="confirm">切换为默认</NButton>
       </div>
     </template>
+    <ThemeSettingsModal v-model:show="optionsShow" :theme-key="optionsKey" @published="emit('installed')" />
   </NModal>
 </template>

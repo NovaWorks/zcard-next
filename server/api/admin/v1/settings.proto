@@ -31,6 +31,15 @@ service AdminSettingsService {
       body: "*"
     };
   }
+  rpc GetThemeSettings(ThemeSettingsRequest) returns (ThemeSettingsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/settings/themes/{key}" };
+  }
+  rpc SaveThemeSettings(SaveThemeSettingsRequest) returns (ThemeSettingsReply) {
+    option (google.api.http) = { put: "/api/v1/admin/settings/themes/{key}" body: "*" };
+  }
+  rpc PreviewThemeSettings(SaveThemeSettingsRequest) returns (ThemePreviewReply) {
+    option (google.api.http) = { post: "/api/v1/admin/settings/themes/{key}/preview" body: "*" };
+  }
   // GetSetting 读取单个设置项。
   rpc GetSetting(GetSettingRequest) returns (Setting) {
     option (google.api.http) = {
@@ -128,3 +137,14 @@ message InstallTemplateRequest {
 message TemplateList {
   repeated TemplateItem templates = 1;
 }
+
+message ThemeSettingsRequest { string key = 1; string theme_revision = 2; }
+message SaveThemeSettingsRequest {
+  string key = 1;
+  string theme_revision = 2;
+  string expected_revision = 3;
+  string action = 4; // draft | publish | reset | rollback
+  string values_json = 5;
+}
+message ThemeSettingsReply { string state_json = 1; }
+message ThemePreviewReply { string url = 1; int64 expires_at = 2; }
