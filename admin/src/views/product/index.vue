@@ -15,6 +15,7 @@ import {
   updateProduct,
   deleteProduct,
   batchUpdateProductStatus,
+  batchUpdateProductCategory,
   fetchCategories,
   fetchSupplyConnectionOptions,
 } from "@/service/api";
@@ -648,6 +649,50 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
   }
 }
 
+// 弹窗固定本次所选商品；取消或请求失败均保留原选择。
+const showBatchCategory = ref(false);
+const batchCategorySaving = ref(false);
+const batchCategoryIds = ref<number[]>([]);
+const batchCategoryId = ref<number | null>(null);
+const batchCategoryOptions = computed(() => {
+  const byId = new Map(categories.value.map(c => [c.id, c]));
+  return categories.value.map(c => {
+    const names: string[] = [];
+    const seen = new Set<number>();
+    let node = c;
+    let hidden = false;
+    while (node && !seen.has(node.id)) {
+      seen.add(node.id);
+      names.unshift(node.name);
+      hidden ||= Boolean(node.hide);
+      node = byId.get(node.parent_id);
+    }
+    return { label: names.join(" / ") + (hidden ? "（已隐藏）" : ""), value: c.id, hidden };
+  });
+});
+const batchCategoryTarget = computed(() => batchCategoryOptions.value.find(c => c.value === batchCategoryId.value));
+async function openBatchCategory() {
+  batchCategoryIds.value = [...checkedKeys.value];
+  batchCategoryId.value = null;
+  await loadCategories();
+  showBatchCategory.value = true;
+}
+async function saveBatchCategory() {
+  if (!batchCategoryId.value || batchCategorySaving.value) return;
+  batchCategorySaving.value = true;
+  try {
+    const { data, error } = await batchUpdateProductCategory(batchCategoryIds.value, batchCategoryId.value);
+    if (!error && data) {
+      window.$message?.success(`已将 ${data.updated} 件商品移至「${batchCategoryTarget.value?.label}」`);
+      showBatchCategory.value = false;
+      checkedKeys.value = [];
+      await loadList();
+    }
+  } finally {
+    batchCategorySaving.value = false;
+  }
+}
+
 // ── 批量删除（并发逐条调删除接口；未下架或仍有待处理订单/库存的商品后端会拒绝，成功失败分别计数）──
 const batchDeleting = ref(false);
 async function handleBatchDelete() {
@@ -876,7 +921,7 @@ onMounted(() => {
       <!-- 批量操作条（勾选后出现） -->
       <div
         v-if="checkedKeys.length"
-        class="mb-12px flex items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
+        class="mb-12px flex flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
       >
         <span class="text-13px"
           >已选 <b>{{ checkedKeys.length }}</b> 件</span
@@ -893,6 +938,7 @@ onMounted(() => {
           </template>
           确定下架选中的 {{ checkedKeys.length }} 件商品？
         </NPopconfirm>
+        <NButton v-auth="'catalog:write'" size="small" type="primary" @click="openBatchCategory">修改分类</NButton>
         <NPopconfirm @positive-click="handleBatchDelete">
           <template #trigger>
             <NButton v-auth="'catalog:delete'" size="small" type="error" :loading="batchDeleting">批量删除</NButton>
@@ -920,6 +966,26 @@ onMounted(() => {
         @change="loadList"
       />
     </NCard>
+
+    <NModal v-model:show="showBatchCategory" preset="card" title="批量修改分类"
+      class="w-560px max-w-[calc(100vw-32px)]" :mask-closable="!batchCategorySaving" :closable="!batchCategorySaving" :close-on-esc="!batchCategorySaving">
+      <p class="mb-16px">将选中的 <b>{{ batchCategoryIds.length }}</b> 件商品移至同一个分类。</p>
+      <NFormItem label="目标分类" required>
+        <NSelect v-model:value="batchCategoryId" :options="batchCategoryOptions" filterable
+          placeholder="搜索分类名称或完整路径" :disabled="batchCategorySaving" />
+      </NFormItem>
+      <p v-if="batchCategoryTarget" class="mb-12px break-words">目标：{{ batchCategoryTarget.label }}</p>
+      <NAlert v-if="batchCategoryTarget?.hidden" type="warning" class="mb-12px">
+        目标分类或其上级已隐藏，移入后这些商品将不在前台展示。
+      </NAlert>
+      <p class="text-13px text-gray-500">仅修改分类，商品价格、库存、规格和上下架状态保持不变。</p>
+      <template #footer>
+        <div class="flex justify-end gap-8px">
+          <NButton :disabled="batchCategorySaving" @click="showBatchCategory = false">取消</NButton>
+          <NButton type="primary" :loading="batchCategorySaving" :disabled="!batchCategoryId" @click="saveBatchCategory">确认修改</NButton>
+        </div>
+      </template>
+    </NModal>
 
     <!-- 新增/编辑弹窗（分步表单：基础 → 价格库存 → 商品描述 → 规格与控件 → 高级设置） -->
     <NModal

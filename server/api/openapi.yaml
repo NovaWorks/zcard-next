@@ -2939,6 +2939,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+    /api/v1/admin/products/batch-category:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_BatchUpdateProductCategory
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductCategoryRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductCategoryReply'
     /api/v1/admin/products/batch-status:
         post:
             tags:
@@ -6705,6 +6723,24 @@ components:
                     type: string
                 updatedAt:
                     type: string
+        zcard.api.admin.v1.BatchUpdateProductCategoryReply:
+            type: object
+            properties:
+                updated:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.BatchUpdateProductCategoryRequest:
+            required:
+                - ids
+                - categoryId
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                categoryId:
+                    type: string
         zcard.api.admin.v1.BatchUpdateProductStatusReply:
             type: object
             properties:
@@ -7627,6 +7663,12 @@ components:
                 lowStockProducts:
                     type: string
                 pendingSupplierApplications:
+                    type: string
+                openTickets:
+                    type: string
+                processingTickets:
+                    type: string
+                urgentTickets:
                     type: string
         zcard.api.admin.v1.DashboardReply:
             type: object

@@ -541,6 +541,9 @@ type DashboardPending struct {
 	FulfillingOrders            int64                  `protobuf:"varint,3,opt,name=fulfilling_orders,json=fulfillingOrders,proto3" json:"fulfilling_orders,omitempty"`                                    // 履约中订单
 	LowStockProducts            int64                  `protobuf:"varint,4,opt,name=low_stock_products,json=lowStockProducts,proto3" json:"low_stock_products,omitempty"`                                  // 库存预警商品数
 	PendingSupplierApplications int64                  `protobuf:"varint,5,opt,name=pending_supplier_applications,json=pendingSupplierApplications,proto3" json:"pending_supplier_applications,omitempty"` // 待审对接申请（supplier_accounts applying）
+	OpenTickets                 int64                  `protobuf:"varint,6,opt,name=open_tickets,json=openTickets,proto3" json:"open_tickets,omitempty"`                                                   // 待回复工单
+	ProcessingTickets           int64                  `protobuf:"varint,7,opt,name=processing_tickets,json=processingTickets,proto3" json:"processing_tickets,omitempty"`                                 // 处理中工单
+	UrgentTickets               int64                  `protobuf:"varint,8,opt,name=urgent_tickets,json=urgentTickets,proto3" json:"urgent_tickets,omitempty"`                                             // 未解决的付费加急工单，包含在上述两项中
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
 }
@@ -606,6 +609,27 @@ func (x *DashboardPending) GetLowStockProducts() int64 {
 func (x *DashboardPending) GetPendingSupplierApplications() int64 {
 	if x != nil {
 		return x.PendingSupplierApplications
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetOpenTickets() int64 {
+	if x != nil {
+		return x.OpenTickets
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetProcessingTickets() int64 {
+	if x != nil {
+		return x.ProcessingTickets
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetUrgentTickets() int64 {
+	if x != nil {
+		return x.UrgentTickets
 	}
 	return 0
 }
@@ -1839,13 +1863,16 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\vtotal_count\x18\x02 \x01(\x03R\n" +
 	"totalCount\x12#\n" +
 	"\rsuccess_count\x18\x03 \x01(\x03R\fsuccessCount\x12!\n" +
-	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\"\x8b\x02\n" +
+	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\"\x84\x03\n" +
 	"\x10DashboardPending\x12/\n" +
 	"\x13pending_withdrawals\x18\x01 \x01(\x03R\x12pendingWithdrawals\x12'\n" +
 	"\x0fpending_refunds\x18\x02 \x01(\x03R\x0ependingRefunds\x12+\n" +
 	"\x11fulfilling_orders\x18\x03 \x01(\x03R\x10fulfillingOrders\x12,\n" +
 	"\x12low_stock_products\x18\x04 \x01(\x03R\x10lowStockProducts\x12B\n" +
-	"\x1dpending_supplier_applications\x18\x05 \x01(\x03R\x1bpendingSupplierApplications\"'\n" +
+	"\x1dpending_supplier_applications\x18\x05 \x01(\x03R\x1bpendingSupplierApplications\x12!\n" +
+	"\fopen_tickets\x18\x06 \x01(\x03R\vopenTickets\x12-\n" +
+	"\x12processing_tickets\x18\a \x01(\x03R\x11processingTickets\x12%\n" +
+	"\x0eurgent_tickets\x18\b \x01(\x03R\rurgentTickets\"'\n" +
 	"\x11GetTrafficRequest\x12\x12\n" +
 	"\x04days\x18\x01 \x01(\x05R\x04days\"B\n" +
 	"\fTrafficPoint\x12\x12\n" +

@@ -37,6 +37,10 @@ service AdminCatalogService {
     };
   }
 
+  rpc BatchUpdateProductCategory(BatchUpdateProductCategoryRequest) returns (BatchUpdateProductCategoryReply) {
+    option (google.api.http) = { post: "/api/v1/admin/products/batch-category" body: "*" };
+  }
+
   // ── 分类 ──
   rpc ListCategories(google.protobuf.Empty) returns (CategoryList) {
     option (google.api.http) = { get: "/api/v1/admin/categories" };
@@ -254,6 +258,14 @@ message BatchUpdateProductStatusRequest {
 }
 
 message BatchUpdateProductStatusReply {
+  int32 updated = 1;
+}
+
+message BatchUpdateProductCategoryRequest {
+  repeated uint64 ids = 1 [(google.api.field_behavior) = REQUIRED];
+  uint64 category_id = 2 [(google.api.field_behavior) = REQUIRED];
+}
+message BatchUpdateProductCategoryReply {
   int32 updated = 1;
 }
 

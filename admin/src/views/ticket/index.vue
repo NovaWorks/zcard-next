@@ -3,8 +3,9 @@
 // 会话式详情：用户左灰泡 / 客服右蓝泡 / 内部备注左橙虚线（仅 ticket:read 可见）。
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
-import { ref, computed, onMounted, h } from "vue";
+import { ref, computed, onMounted, onActivated, watch, h } from "vue";
 import { NButton, NTag, NSpace, NPopconfirm, NModal, NDescriptions, NDescriptionsItem, NSelect, NInput, NSwitch } from "naive-ui";
+import { useRoute } from "vue-router";
 import type { DataTableColumns } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { fetchTickets, fetchTicket, replyTicket, resolveTicket, closeTicket } from "@/service/api";
@@ -18,7 +19,12 @@ const tickets = ref<any[]>([]);
 const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
-const statusFilter = ref<string>("");
+const route = useRoute();
+function routeStatus() {
+  const value = String(route.query.status || "");
+  return ["open", "processing", "resolved", "closed"].includes(value) ? value : "";
+}
+const statusFilter = ref<string>(routeStatus());
 const typeFilter = ref<string>("");
 const orderNoFilter = ref<string>("");
 
@@ -230,7 +236,16 @@ function senderName(m: any) {
   return m.sender_type;
 }
 
+watch(() => route.query.status, () => {
+  if (route.path !== "/ticket") return;
+  statusFilter.value = routeStatus();
+  resetList();
+});
 onMounted(loadTickets);
+onActivated(() => {
+  statusFilter.value = routeStatus();
+  resetList();
+});
 </script>
 
 <template>

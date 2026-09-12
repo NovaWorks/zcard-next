@@ -110,6 +110,9 @@ message DashboardPending {
   int64 fulfilling_orders = 3; // 履约中订单
   int64 low_stock_products = 4; // 库存预警商品数
   int64 pending_supplier_applications = 5; // 待审对接申请（supplier_accounts applying）
+  int64 open_tickets = 6; // 待回复工单
+  int64 processing_tickets = 7; // 处理中工单
+  int64 urgent_tickets = 8; // 未解决的付费加急工单，包含在上述两项中
 }
 
 message GetTrafficRequest {

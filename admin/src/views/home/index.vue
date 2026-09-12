@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, onActivated, onDeactivated, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { NRadioButton, NRadioGroup, NSpin } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
@@ -7,6 +7,7 @@ import { useEcharts } from "@/hooks/common/echarts";
 import { fetchDashboard, fetchTraffic } from "@/service/api";
 import { formatMoney, centsToYuan } from "@/utils/money";
 import type { DashboardData, DashboardStat, DashboardTopChannel, DashboardTopProduct, TrafficPoint } from "@/service/api";
+import { checkAuth } from "@/directives";
 import SponsorCard from "./components/sponsor-card.vue";
 
 defineOptions({ name: "Dashboard" });
@@ -204,6 +205,10 @@ const todos = computed(() => {
   const p = data.value?.pending;
   if (!p) return [];
   return [
+    ...(checkAuth("ticket:read") ? [
+      { label: "待回复工单", value: p.open_tickets || 0, path: { path: "/ticket", query: { status: "open" } }, warn: true },
+      { label: "处理中工单", value: p.processing_tickets || 0, path: { path: "/ticket", query: { status: "processing" } }, warn: true },
+    ] : []),
     // 待审对接申请 → 渠道管理·供货账号 tab（自动筛待审核）
     { label: "待审对接申请", value: p.pending_supplier_applications, path: { path: "/channel", query: { tab: "suppliers", status: "applying" } }, warn: true },
     { label: "待审核提现", value: p.pending_withdrawals, path: "/wallet", warn: true },
@@ -214,8 +219,10 @@ const todos = computed(() => {
   ];
 });
 
-async function loadDashboard() {
-  loading.value = true;
+async function loadDashboard(silent = false) {
+  if (requesting) return;
+  requesting = true;
+  if (!silent) loading.value = true;
   try {
     const { data: d, error } = await fetchDashboard(trendDays.value);
     if (!error && d) {
@@ -226,16 +233,41 @@ async function loadDashboard() {
     if (!tErr && t) renderTraffic(t.points || []);
   } finally {
     loading.value = false;
+    requesting = false;
   }
 }
 
-watch(trendDays, loadDashboard);
-onMounted(loadDashboard);
+// KeepAlive 返回首页立即刷新；停留首页时每分钟更新，离开/后台标签页不轮询。
+let requesting = false;
+let refreshTimer: ReturnType<typeof setInterval> | undefined;
+function startRefresh() {
+  if (refreshTimer) return;
+  void loadDashboard(Boolean(data.value));
+  refreshTimer = setInterval(() => {
+    if (!document.hidden) void loadDashboard(true);
+  }, 60_000);
+}
+function stopRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer = undefined;
+}
+watch(trendDays, () => loadDashboard());
+onMounted(startRefresh);
+onActivated(startRefresh);
+onDeactivated(stopRefresh);
+onUnmounted(stopRefresh);
 </script>
 
 <template>
   <NSpin :show="loading">
     <div class="flex flex-col gap-16px">
+      <NAlert v-if="checkAuth('ticket:read') && data?.pending && (data.pending.open_tickets > 0 || data.pending.processing_tickets > 0)"
+        type="warning" title="工单待处理">
+        <div class="flex flex-wrap items-center justify-between gap-12px">
+          <span>待回复 {{ data.pending.open_tickets || 0 }} 单，处理中 {{ data.pending.processing_tickets || 0 }} 单<span v-if="data.pending.urgent_tickets > 0">，其中 {{ data.pending.urgent_tickets }} 单已付费加急，请优先处理</span>。</span>
+          <NButton size="small" type="warning" @click="router.push({ path: '/ticket', query: { status: data.pending.open_tickets > 0 ? 'open' : 'processing' } })">处理工单</NButton>
+        </div>
+      </NAlert>
       <!-- 头部：标题 + 在线用户 + KPI 时间窗 -->
       <div class="flex items-center justify-between">
         <span class="flex items-center gap-8px">

@@ -35,6 +35,9 @@ export interface DashboardTopChannel {
 }
 
 export interface DashboardPending {
+  open_tickets: number;
+  processing_tickets: number;
+  urgent_tickets: number;
   pending_withdrawals: number;
   pending_refunds: number;
   fulfilling_orders: number;

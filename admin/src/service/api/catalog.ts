@@ -84,6 +84,14 @@ export function batchUpdateProductStatus(ids: number[], status: number) {
   });
 }
 
+export function batchUpdateProductCategory(ids: number[], categoryId: number) {
+  return request<{ updated: number }>({
+    url: "/api/v1/admin/products/batch-category",
+    method: "post",
+    data: { ids, category_id: categoryId },
+  });
+}
+
 // ── 分类管理 ──
 
 export function fetchCategories() {

@@ -87,6 +87,10 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "库存统计失败: "+err.Error())
 	}
+	openTickets, processingTickets, urgentTickets, err := s.repo.GetTicketPending(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "工单统计失败")
+	}
 	pendingSupplierApps := s.repo.GetPendingSupplierApplications(ctx)
 	onlineUsers := s.onlineUsers(ctx)
 
@@ -99,6 +103,9 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 		Prev30D:     toStatPB(prev30d),
 		OnlineUsers: onlineUsers,
 		Pending: &adminv1.DashboardPending{
+			OpenTickets:                 openTickets,
+			ProcessingTickets:           processingTickets,
+			UrgentTickets:               urgentTickets,
 			PendingWithdrawals:          withdrawals,
 			PendingRefunds:              refunds,
 			FulfillingOrders:            fulfilling,
