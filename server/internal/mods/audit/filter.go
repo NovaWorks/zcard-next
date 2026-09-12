@@ -142,6 +142,16 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 	if err := json.Unmarshal(body, &m); err != nil {
 		return nil
 	}
+	// 抽奖配置的 content 包含私密奖品；仅保留规则元数据，原请求体已恢复。
+	if strings.HasPrefix(r.URL.Path, "/api/v1/admin/lottery/") {
+		if prizes, ok := m["prizes"].([]any); ok {
+			for _, raw := range prizes {
+				if prize, ok := raw.(map[string]any); ok {
+					delete(prize, "content")
+				}
+			}
+		}
+	}
 	return redact(m)
 }
 

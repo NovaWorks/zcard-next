@@ -140,7 +140,7 @@ const cardColumns: DataTableColumns<any> = [
           size: "small",
         },
         {
-          default: () => cardStatusText(row.status),
+          default: () => row.lottery_draw_no ? "已发奖" : cardStatusText(row.status),
         },
       ),
   },
@@ -269,7 +269,7 @@ const premiumColumns: DataTableColumns<any> = [
   { title: "预选加价", key: "draft_premium", width: 100, render: (row) => formatMoney(row.draft_premium || 0) },
   { title: "预选成本", key: "draft_cost", width: 100, render: (row) => formatMoney(row.draft_cost || 0) },
   { title: "靓号价", key: "price_cents", width: 100, render: (row) => (row.price_cents ? formatMoney(row.price_cents) : "商品价+加价") },
-  { title: "状态", key: "status", width: 80, render: (row) => cardStatusText(row.status) },
+  { title: "状态", key: "status", width: 80, render: (row) => row.lottery_draw_no ? "已发奖" : cardStatusText(row.status) },
 ];
 async function loadPremium() {
   const request = ++premiumRequest;

@@ -228,6 +228,8 @@ func EnsureBuiltinRoles(ctx context.Context, client *ent.Client) error {
 		"order:view_delivery",
 		"memberlevel:read",
 		"coupon:read",
+		"lottery:read",
+		"lottery:deliver",
 		"dashboard:read",
 		// ：货源/采购/供货读权限（写操作超管专属）
 		"supply:read",

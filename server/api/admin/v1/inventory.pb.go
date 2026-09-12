@@ -581,6 +581,7 @@ type CardInfo struct {
 	Note          string                 `protobuf:"bytes,5,opt,name=note,proto3" json:"note,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UsedAt        int64                  `protobuf:"varint,7,opt,name=used_at,json=usedAt,proto3" json:"used_at,omitempty"`
+	LotteryDrawNo string                 `protobuf:"bytes,8,opt,name=lottery_draw_no,json=lotteryDrawNo,proto3" json:"lottery_draw_no,omitempty"` // 抽奖发放的中奖编号，不改变卡密库存状态
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -662,6 +663,13 @@ func (x *CardInfo) GetUsedAt() int64 {
 		return x.UsedAt
 	}
 	return 0
+}
+
+func (x *CardInfo) GetLotteryDrawNo() string {
+	if x != nil {
+		return x.LotteryDrawNo
+	}
+	return ""
 }
 
 type ExportCardsRequest struct {
@@ -1136,7 +1144,7 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"Z\n" +
 	"\x0eListCardsReply\x122\n" +
 	"\x05cards\x18\x01 \x03(\v2\x1c.zcard.api.admin.v1.CardInfoR\x05cards\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xc4\x01\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xec\x01\n" +
 	"\bCardInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1146,7 +1154,8 @@ const file_admin_v1_inventory_proto_rawDesc = "" +
 	"\x04note\x18\x05 \x01(\tR\x04note\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\x03R\tcreatedAt\x12\x17\n" +
-	"\aused_at\x18\a \x01(\x03R\x06usedAt\"8\n" +
+	"\aused_at\x18\a \x01(\x03R\x06usedAt\x12&\n" +
+	"\x0flottery_draw_no\x18\b \x01(\tR\rlotteryDrawNo\"8\n" +
 	"\x12ExportCardsRequest\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\"(\n" +

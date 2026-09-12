@@ -1946,6 +1946,259 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/lottery/activities:
+        get:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_ListLotteryActivities
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: activityId
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: userId
+                  in: query
+                  schema:
+                    type: string
+                - name: includeMissed
+                  in: query
+                  schema:
+                    type: boolean
+                - name: startAt
+                  in: query
+                  schema:
+                    type: string
+                - name: endAt
+                  in: query
+                  schema:
+                    type: string
+                - name: prizeId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryActivityList'
+        post:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_SaveLotteryActivity
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LotteryActivity'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryActivity'
+    /api/v1/admin/lottery/activities/{id}:
+        get:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_GetLotteryActivity
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryActivity'
+    /api/v1/admin/lottery/activities/{id}/grant:
+        post:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_GrantLotteryChances
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LotteryGrantRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/lottery/activities/{id}/history:
+        get:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_ListLotteryHistory
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryHistoryList'
+    /api/v1/admin/lottery/activities/{id}/status:
+        post:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_SetLotteryStatus
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LotteryStatusRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryActivity'
+    /api/v1/admin/lottery/draws:
+        get:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_ListLotteryDraws
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: activityId
+                  in: query
+                  schema:
+                    type: string
+                - name: keyword
+                  in: query
+                  schema:
+                    type: string
+                - name: status
+                  in: query
+                  schema:
+                    type: string
+                - name: userId
+                  in: query
+                  schema:
+                    type: string
+                - name: includeMissed
+                  in: query
+                  schema:
+                    type: boolean
+                - name: startAt
+                  in: query
+                  schema:
+                    type: string
+                - name: endAt
+                  in: query
+                  schema:
+                    type: string
+                - name: prizeId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryDrawList'
+    /api/v1/admin/lottery/draws/{drawNo}/deliver:
+        post:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_DeliverLotteryDraw
+            parameters:
+                - name: drawNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LotteryDrawRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/lottery/draws/{drawNo}/reveal:
+        post:
+            tags:
+                - AdminLotteryService
+            operationId: AdminLotteryService_RevealLotteryDraw
+            parameters:
+                - name: drawNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.LotteryDrawRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.LotteryDraw'
     /api/v1/admin/media:
         get:
             tags:
@@ -5363,6 +5616,125 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.PurchaseLicenseReply'
+    /api/v1/storefront/lottery/activities:
+        get:
+            tags:
+                - StoreLotteryService
+            operationId: StoreLotteryService_ListLotteryActivities
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryActivityList'
+    /api/v1/storefront/lottery/activities/{id}:
+        get:
+            tags:
+                - StoreLotteryService
+            operationId: StoreLotteryService_GetLotteryActivity
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryActivity'
+    /api/v1/storefront/lottery/activities/{id}/chances:
+        post:
+            tags:
+                - StoreLotteryService
+            operationId: StoreLotteryService_ClaimLotteryChances
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryIDRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryChances'
+    /api/v1/storefront/lottery/activities/{id}/draw:
+        post:
+            tags:
+                - StoreLotteryService
+            operationId: StoreLotteryService_DrawLottery
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryDrawRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryDraw'
+    /api/v1/storefront/lottery/draws:
+        get:
+            tags:
+                - StoreLotteryService
+            operationId: StoreLotteryService_ListMyLotteryDraws
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryDrawList'
+    /api/v1/storefront/lottery/draws/{drawNo}:
+        get:
+            tags:
+                - StoreLotteryService
+            operationId: StoreLotteryService_GetMyLotteryDraw
+            parameters:
+                - name: drawNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryDraw'
     /api/v1/storefront/media/upload:
         post:
             tags:
@@ -6865,6 +7237,8 @@ components:
                 createdAt:
                     type: string
                 usedAt:
+                    type: string
+                lotteryDrawNo:
                     type: string
             description: CardInfo 卡密信息（内容默认掩码 ****尾4位）。
         zcard.api.admin.v1.Category:
@@ -8823,6 +9197,173 @@ components:
             properties:
                 refreshToken:
                     type: string
+        zcard.api.admin.v1.LotteryActivity:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                image:
+                    type: string
+                status:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                timezone:
+                    type: string
+                chanceMode:
+                    type: string
+                chanceCount:
+                    type: integer
+                    format: int32
+                revision:
+                    type: integer
+                    format: int32
+                published:
+                    type: boolean
+                prizes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.LotteryPrize'
+        zcard.api.admin.v1.LotteryActivityList:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.LotteryActivity'
+                total:
+                    type: string
+        zcard.api.admin.v1.LotteryDraw:
+            type: object
+            properties:
+                drawNo:
+                    type: string
+                userId:
+                    type: string
+                username:
+                    type: string
+                activityId:
+                    type: string
+                activityName:
+                    type: string
+                prizeId:
+                    type: string
+                prizeName:
+                    type: string
+                mode:
+                    type: string
+                status:
+                    type: string
+                createdAt:
+                    type: string
+                deliveredAt:
+                    type: string
+                adminId:
+                    type: string
+                remark:
+                    type: string
+                costCents:
+                    type: string
+                content:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                revision:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.LotteryDrawList:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.LotteryDraw'
+                total:
+                    type: string
+        zcard.api.admin.v1.LotteryDrawRequest:
+            type: object
+            properties:
+                drawNo:
+                    type: string
+                remark:
+                    type: string
+        zcard.api.admin.v1.LotteryGrantRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                userId:
+                    type: string
+                count:
+                    type: integer
+                    format: int32
+                remark:
+                    type: string
+                requestKey:
+                    type: string
+        zcard.api.admin.v1.LotteryHistory:
+            type: object
+            properties:
+                revision:
+                    type: integer
+                    format: int32
+                createdAt:
+                    type: string
+                adminId:
+                    type: string
+                snapshotJson:
+                    type: string
+        zcard.api.admin.v1.LotteryHistoryList:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.LotteryHistory'
+        zcard.api.admin.v1.LotteryPrize:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                image:
+                    type: string
+                mode:
+                    type: string
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                probability:
+                    type: integer
+                    format: int32
+                quantity:
+                    type: integer
+                    format: int32
+                issued:
+                    type: integer
+                    format: int32
+                content:
+                    type: string
+        zcard.api.admin.v1.LotteryStatusRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                status:
+                    type: string
+                revision:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.ManualDeliverRequest:
             required:
                 - orderNo
@@ -11815,6 +12356,111 @@ components:
                     type: string
                 captchaCode:
                     type: string
+        zcard.api.storefront.v1.LotteryActivity:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                description:
+                    type: string
+                image:
+                    type: string
+                status:
+                    type: string
+                startAt:
+                    type: string
+                endAt:
+                    type: string
+                timezone:
+                    type: string
+                chanceMode:
+                    type: string
+                chanceCount:
+                    type: integer
+                    format: int32
+                prizes:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryPrize'
+                revision:
+                    type: integer
+                    format: int32
+        zcard.api.storefront.v1.LotteryActivityList:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryActivity'
+        zcard.api.storefront.v1.LotteryChances:
+            type: object
+            properties:
+                remaining:
+                    type: integer
+                    format: int32
+                period:
+                    type: string
+        zcard.api.storefront.v1.LotteryDraw:
+            type: object
+            properties:
+                drawNo:
+                    type: string
+                activityName:
+                    type: string
+                prizeName:
+                    type: string
+                mode:
+                    type: string
+                status:
+                    type: string
+                createdAt:
+                    type: string
+                deliveredAt:
+                    type: string
+                content:
+                    type: string
+                activityId:
+                    type: string
+        zcard.api.storefront.v1.LotteryDrawList:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.storefront.v1.LotteryDraw'
+                total:
+                    type: string
+        zcard.api.storefront.v1.LotteryDrawRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                requestKey:
+                    type: string
+        zcard.api.storefront.v1.LotteryIDRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+        zcard.api.storefront.v1.LotteryPrize:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                image:
+                    type: string
+                mode:
+                    type: string
+                probability:
+                    type: integer
+                    format: int32
+                remaining:
+                    type: integer
+                    format: int32
         zcard.api.storefront.v1.MarkReadRequest:
             type: object
             properties:
@@ -12807,6 +13453,7 @@ tags:
       description: |-
         AdminLicenseService 订阅许可证管理：安装/查询/清除。
          校验引擎 ed25519 签名 + 实例 ID/域名绑定 + 到期（fail-closed）。
+    - name: AdminLotteryService
     - name: AdminMediaService
       description: |-
         AdminMediaService 素材库管理：分类/上传/列表/改名/移动/批量删除
@@ -12892,6 +13539,7 @@ tags:
         StoreLicenseService 专业套餐在线购买(：发行侧部署配置签发私钥后开放；
          支付 = 钱包余额扣款（充值管线入账的钱），签发与扣款同事务；购买人下载许可证
          文件后在目标实例后台安装激活）。
+    - name: StoreLotteryService
     - name: StoreMediaService
       description: StoreMediaService 前台媒体（登录态；收款码上传——复用 media 安全三件套）。
     - name: StoreMemberLevelService

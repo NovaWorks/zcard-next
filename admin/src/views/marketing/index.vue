@@ -3,6 +3,7 @@
 import { NTabs, NTabPane, NCard } from "naive-ui";
 import LevelsTab from "./components/levels-tab.vue";
 import CouponsTab from "./components/coupons-tab.vue";
+import LotteryTab from "./components/lottery-tab.vue";
 import FlashTab from "./components/flash-tab.vue";
 import { checkAuth } from "@/directives";
 
@@ -22,6 +23,7 @@ defineOptions({ name: "MarketingManagement", route: "marketing" });
         <NTabPane v-if="checkAuth('coupon:read')" name="flash" tab="秒杀/促销">
           <FlashTab />
         </NTabPane>
+        <NTabPane v-if="checkAuth('lottery:read')" name="lottery" tab="抽奖活动"><LotteryTab /></NTabPane>
       </NTabs>
     </NCard>
   </div>

@@ -31,6 +31,7 @@ import (
 	identityport "github.com/NovaWorks/zcard-next/server/internal/mods/identity/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/license"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/lottery"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
@@ -108,6 +109,8 @@ func NewHTTPServer(
 	memberLevelStoreSvc *memberlevel.StoreMemberLevelService,
 	licenseStoreSvc *license.StoreLicenseService,
 	couponSvc *coupon.AdminCouponService,
+	lotteryAdmin *lottery.AdminService,
+	lotteryStore *lottery.StoreService,
 	dashboardSvc *dashboard.AdminDashboardService,
 	invSvc *inventory.AdminInventoryService,
 	orderAdminSvc *order.AdminOrderService,
@@ -207,6 +210,8 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreMemberLevelServiceHTTPServer(srv, memberLevelStoreSvc)
 	storefrontv1.RegisterStoreLicenseServiceHTTPServer(srv, licenseStoreSvc)
 	adminv1.RegisterAdminCouponServiceHTTPServer(srv, couponSvc)
+	adminv1.RegisterAdminLotteryServiceHTTPServer(srv, lotteryAdmin)
+	storefrontv1.RegisterStoreLotteryServiceHTTPServer(srv, lotteryStore)
 	adminv1.RegisterAdminDashboardServiceHTTPServer(srv, dashboardSvc)
 	storefrontv1.RegisterStorefrontConfigServiceHTTPServer(srv, confSvc)
 	storefrontv1.RegisterStoreCaptchaServiceHTTPServer(srv, captchaSvc)

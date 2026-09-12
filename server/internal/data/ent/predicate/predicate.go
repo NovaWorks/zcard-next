@@ -66,6 +66,24 @@ type GiftcardBatch func(*sql.Selector)
 // LicenseOrder is the predicate function for licenseorder builders.
 type LicenseOrder func(*sql.Selector)
 
+// LotteryAccount is the predicate function for lotteryaccount builders.
+type LotteryAccount func(*sql.Selector)
+
+// LotteryActivity is the predicate function for lotteryactivity builders.
+type LotteryActivity func(*sql.Selector)
+
+// LotteryChanceLog is the predicate function for lotterychancelog builders.
+type LotteryChanceLog func(*sql.Selector)
+
+// LotteryDraw is the predicate function for lotterydraw builders.
+type LotteryDraw func(*sql.Selector)
+
+// LotteryPrize is the predicate function for lotteryprize builders.
+type LotteryPrize func(*sql.Selector)
+
+// LotteryRevision is the predicate function for lotteryrevision builders.
+type LotteryRevision func(*sql.Selector)
+
 // Media is the predicate function for media builders.
 type Media func(*sql.Selector)
 

@@ -9,6 +9,8 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -87,6 +89,19 @@ func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput)
 
 // DeleteSku 删除 SKU。
 func (r *ProductRepoImpl) DeleteSku(ctx context.Context, id uint64) error {
+	c := data.Client(ctx, r.data)
+	activities, err := c.LotteryActivity.Query().Where(lotteryactivity.Published(true), lotteryactivity.StatusNotIn("ended", "archived")).IDs(ctx)
+	if err != nil {
+		return err
+	}
+	linked, err := c.LotteryPrize.Query().Where(lotteryprize.SkuID(id), lotteryprize.Enabled(true), lotteryprize.ActivityIDIn(activities...)).Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if linked {
+		return fmt.Errorf("该规格用于已发布的抽奖活动，请先结束或归档活动")
+	}
+
 	n, err := data.Client(ctx, r.data).ProductSku.Delete().Where(productsku.ID(id)).Exec(ctx)
 	if err != nil {
 		return err

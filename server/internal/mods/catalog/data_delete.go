@@ -10,6 +10,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cartitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterydraw"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
@@ -131,6 +134,24 @@ func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) 
 		if n > 0 {
 			reply.DeleteBlockReason = "存在尚未处理完成的上游采购，请处理后再删除"
 		}
+	}
+	activityIDs, err := c.LotteryActivity.Query().Where(lotteryactivity.SubsiteID(p.SubsiteID), lotteryactivity.Published(true), lotteryactivity.StatusNotIn("ended", "archived")).IDs(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	linked, err := c.LotteryPrize.Query().Where(lotteryprize.ProductID(p.ID), lotteryprize.Enabled(true), lotteryprize.ActivityIDIn(activityIDs...)).Exist(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if linked {
+		reply.DeleteBlockReason = "商品用于已发布的抽奖活动，请先结束或归档活动"
+	}
+	awarded, err := c.LotteryDraw.Query().Where(lotterydraw.ProductID(p.ID)).Exist(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	if awarded {
+		reply.DeleteOrdersBlockReason = "商品已有抽奖发放记录，只能删除商品并保留历史数据"
 	}
 	if reply.DeleteBlockReason != "" {
 		reply.DeleteOrdersBlockReason = reply.DeleteBlockReason

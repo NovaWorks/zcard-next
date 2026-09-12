@@ -36,6 +36,7 @@
         <span class="logo-name" :title="siteName">{{ siteName }}</span>
       </router-link>
       <nav class="nav-links">
+        <router-link v-if="lotteryVisible" to="/lottery">幸运抽奖</router-link>
         <router-link to="/" exact>首页</router-link>
         <button class="nav-horn" @click="openNotice" title="系统公告"><ThemeIcon name="announcement" />公告</button>
         <router-link to="/fetch">取货查询</router-link>
@@ -189,11 +190,14 @@ import { authState, refreshAuth, logout } from '@/auth';
 import { listPosts, getPost, fetchAnnouncement, type StorePost, type AnnouncementConfig } from '@/api';
 import { mergeGuestCart, refreshCartState, cartState, cartEnabled, refreshCartSetting } from '@/cart';
 import { captureRefCode } from '@/ref';
+import { listLotteryActivities } from '@/api/lottery';
 import { themeValue } from '../../packages/theme-sdk/src/index';
 import NoticeModal from '@/components/NoticeModal.vue';
 import ServiceWidget from '@/components/ServiceWidget.vue';
 import CurrencySwitcher from '@/components/CurrencySwitcher.vue';
 
+const lotteryVisible = ref(false);
+onMounted(async () => { const { data } = await listLotteryActivities(); lotteryVisible.value = !!data?.items?.length; });
 const router = useRouter();
 const route = useRoute();
 

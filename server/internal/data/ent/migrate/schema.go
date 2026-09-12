@@ -613,6 +613,211 @@ var (
 			},
 		},
 	}
+	// LotteryAccountsColumns holds the columns for the "lottery_accounts" table.
+	LotteryAccountsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "activity_id", Type: field.TypeUint64},
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "period", Type: field.TypeString, Size: 16},
+		{Name: "balance", Type: field.TypeInt32, Default: 0},
+		{Name: "auto_granted", Type: field.TypeBool, Default: false},
+		{Name: "version", Type: field.TypeInt32, Default: 0},
+	}
+	// LotteryAccountsTable holds the schema information for the "lottery_accounts" table.
+	LotteryAccountsTable = &schema.Table{
+		Name:       "lottery_accounts",
+		Columns:    LotteryAccountsColumns,
+		PrimaryKey: []*schema.Column{LotteryAccountsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lotteryaccount_subsite_id_activity_id_user_id_period",
+				Unique:  true,
+				Columns: []*schema.Column{LotteryAccountsColumns[3], LotteryAccountsColumns[4], LotteryAccountsColumns[5], LotteryAccountsColumns[6]},
+			},
+		},
+	}
+	// LotteryActivitiesColumns holds the columns for the "lottery_activities" table.
+	LotteryActivitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "description", Type: field.TypeString, Size: 2147483647, Default: ""},
+		{Name: "image", Type: field.TypeString, Size: 2048, Default: ""},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "draft"},
+		{Name: "start_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "end_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "timezone", Type: field.TypeString, Size: 64, Default: "Asia/Shanghai"},
+		{Name: "chance_mode", Type: field.TypeString, Size: 16, Default: "once"},
+		{Name: "chance_count", Type: field.TypeInt32, Default: 3},
+		{Name: "revision", Type: field.TypeInt32, Default: 1},
+		{Name: "published", Type: field.TypeBool, Default: false},
+	}
+	// LotteryActivitiesTable holds the schema information for the "lottery_activities" table.
+	LotteryActivitiesTable = &schema.Table{
+		Name:       "lottery_activities",
+		Columns:    LotteryActivitiesColumns,
+		PrimaryKey: []*schema.Column{LotteryActivitiesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lotteryactivity_subsite_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{LotteryActivitiesColumns[3], LotteryActivitiesColumns[7]},
+			},
+		},
+	}
+	// LotteryChanceLogsColumns holds the columns for the "lottery_chance_logs" table.
+	LotteryChanceLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "activity_id", Type: field.TypeUint64},
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "period", Type: field.TypeString, Size: 16},
+		{Name: "amount", Type: field.TypeInt32},
+		{Name: "kind", Type: field.TypeString, Size: 16},
+		{Name: "request_key", Type: field.TypeString, Size: 80},
+		{Name: "remark", Type: field.TypeString, Size: 500, Default: ""},
+		{Name: "admin_id", Type: field.TypeUint64, Default: 0},
+	}
+	// LotteryChanceLogsTable holds the schema information for the "lottery_chance_logs" table.
+	LotteryChanceLogsTable = &schema.Table{
+		Name:       "lottery_chance_logs",
+		Columns:    LotteryChanceLogsColumns,
+		PrimaryKey: []*schema.Column{LotteryChanceLogsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lotterychancelog_subsite_id_activity_id_user_id_request_key",
+				Unique:  true,
+				Columns: []*schema.Column{LotteryChanceLogsColumns[3], LotteryChanceLogsColumns[4], LotteryChanceLogsColumns[5], LotteryChanceLogsColumns[9]},
+			},
+		},
+	}
+	// LotteryDrawsColumns holds the columns for the "lottery_draws" table.
+	LotteryDrawsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "activity_id", Type: field.TypeUint64},
+		{Name: "user_id", Type: field.TypeUint64},
+		{Name: "draw_no", Type: field.TypeString, Unique: true, Size: 40},
+		{Name: "request_key", Type: field.TypeString, Size: 64},
+		{Name: "activity_name", Type: field.TypeString, Size: 100},
+		{Name: "prize_name", Type: field.TypeString, Size: 100, Default: ""},
+		{Name: "mode", Type: field.TypeString, Size: 16, Default: ""},
+		{Name: "status", Type: field.TypeString, Size: 20},
+		{Name: "prize_id", Type: field.TypeUint64, Default: 0},
+		{Name: "product_id", Type: field.TypeUint64, Default: 0},
+		{Name: "sku_id", Type: field.TypeUint64, Default: 0},
+		{Name: "card_id", Type: field.TypeUint64, Nullable: true},
+		{Name: "cost", Type: field.TypeInt64, Default: 0},
+		{Name: "revision", Type: field.TypeInt32},
+		{Name: "rule_snapshot", Type: field.TypeJSON, Nullable: true},
+		{Name: "content", Type: field.TypeBytes, Nullable: true},
+		{Name: "delivered_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "admin_id", Type: field.TypeUint64, Default: 0},
+		{Name: "remark", Type: field.TypeString, Size: 500, Default: ""},
+	}
+	// LotteryDrawsTable holds the schema information for the "lottery_draws" table.
+	LotteryDrawsTable = &schema.Table{
+		Name:       "lottery_draws",
+		Columns:    LotteryDrawsColumns,
+		PrimaryKey: []*schema.Column{LotteryDrawsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lotterydraw_subsite_id_activity_id_user_id_request_key",
+				Unique:  true,
+				Columns: []*schema.Column{LotteryDrawsColumns[3], LotteryDrawsColumns[4], LotteryDrawsColumns[5], LotteryDrawsColumns[7]},
+			},
+			{
+				Name:    "lotterydraw_card_id",
+				Unique:  true,
+				Columns: []*schema.Column{LotteryDrawsColumns[15]},
+			},
+			{
+				Name:    "lotterydraw_subsite_id_user_id_id",
+				Unique:  false,
+				Columns: []*schema.Column{LotteryDrawsColumns[3], LotteryDrawsColumns[5], LotteryDrawsColumns[0]},
+			},
+			{
+				Name:    "lotterydraw_subsite_id_activity_id_status",
+				Unique:  false,
+				Columns: []*schema.Column{LotteryDrawsColumns[3], LotteryDrawsColumns[4], LotteryDrawsColumns[11]},
+			},
+			{
+				Name:    "lotterydraw_product_id_sku_id",
+				Unique:  false,
+				Columns: []*schema.Column{LotteryDrawsColumns[13], LotteryDrawsColumns[14]},
+			},
+		},
+	}
+	// LotteryPrizesColumns holds the columns for the "lottery_prizes" table.
+	LotteryPrizesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "activity_id", Type: field.TypeUint64},
+		{Name: "name", Type: field.TypeString, Size: 100},
+		{Name: "image", Type: field.TypeString, Size: 2048, Default: ""},
+		{Name: "mode", Type: field.TypeString, Size: 16},
+		{Name: "product_id", Type: field.TypeUint64, Default: 0},
+		{Name: "sku_id", Type: field.TypeUint64, Default: 0},
+		{Name: "probability", Type: field.TypeInt32, Default: 0},
+		{Name: "quantity", Type: field.TypeInt32, Default: 1},
+		{Name: "issued", Type: field.TypeInt32, Default: 0},
+		{Name: "sort", Type: field.TypeInt32, Default: 0},
+		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "content", Type: field.TypeBytes, Nullable: true},
+	}
+	// LotteryPrizesTable holds the schema information for the "lottery_prizes" table.
+	LotteryPrizesTable = &schema.Table{
+		Name:       "lottery_prizes",
+		Columns:    LotteryPrizesColumns,
+		PrimaryKey: []*schema.Column{LotteryPrizesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lotteryprize_subsite_id_activity_id_enabled",
+				Unique:  false,
+				Columns: []*schema.Column{LotteryPrizesColumns[3], LotteryPrizesColumns[4], LotteryPrizesColumns[14]},
+			},
+			{
+				Name:    "lotteryprize_product_id_sku_id",
+				Unique:  false,
+				Columns: []*schema.Column{LotteryPrizesColumns[8], LotteryPrizesColumns[9]},
+			},
+		},
+	}
+	// LotteryRevisionsColumns holds the columns for the "lottery_revisions" table.
+	LotteryRevisionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "activity_id", Type: field.TypeUint64},
+		{Name: "revision", Type: field.TypeInt32},
+		{Name: "admin_id", Type: field.TypeUint64},
+		{Name: "snapshot", Type: field.TypeJSON},
+	}
+	// LotteryRevisionsTable holds the schema information for the "lottery_revisions" table.
+	LotteryRevisionsTable = &schema.Table{
+		Name:       "lottery_revisions",
+		Columns:    LotteryRevisionsColumns,
+		PrimaryKey: []*schema.Column{LotteryRevisionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "lotteryrevision_subsite_id_activity_id_revision",
+				Unique:  true,
+				Columns: []*schema.Column{LotteryRevisionsColumns[3], LotteryRevisionsColumns[4], LotteryRevisionsColumns[5]},
+			},
+		},
+	}
 	// MediaColumns holds the columns for the "media" table.
 	MediaColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
@@ -2560,6 +2765,12 @@ var (
 		GiftcardsTable,
 		GiftcardBatchesTable,
 		LicenseOrdersTable,
+		LotteryAccountsTable,
+		LotteryActivitiesTable,
+		LotteryChanceLogsTable,
+		LotteryDrawsTable,
+		LotteryPrizesTable,
+		LotteryRevisionsTable,
 		MediaTable,
 		MediaCategoriesTable,
 		MemberLevelsTable,

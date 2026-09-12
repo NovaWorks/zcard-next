@@ -52,6 +52,18 @@ type Tx struct {
 	GiftcardBatch *GiftcardBatchClient
 	// LicenseOrder is the client for interacting with the LicenseOrder builders.
 	LicenseOrder *LicenseOrderClient
+	// LotteryAccount is the client for interacting with the LotteryAccount builders.
+	LotteryAccount *LotteryAccountClient
+	// LotteryActivity is the client for interacting with the LotteryActivity builders.
+	LotteryActivity *LotteryActivityClient
+	// LotteryChanceLog is the client for interacting with the LotteryChanceLog builders.
+	LotteryChanceLog *LotteryChanceLogClient
+	// LotteryDraw is the client for interacting with the LotteryDraw builders.
+	LotteryDraw *LotteryDrawClient
+	// LotteryPrize is the client for interacting with the LotteryPrize builders.
+	LotteryPrize *LotteryPrizeClient
+	// LotteryRevision is the client for interacting with the LotteryRevision builders.
+	LotteryRevision *LotteryRevisionClient
 	// Media is the client for interacting with the Media builders.
 	Media *MediaClient
 	// MediaCategory is the client for interacting with the MediaCategory builders.
@@ -331,6 +343,12 @@ func (tx *Tx) init() {
 	tx.Giftcard = NewGiftcardClient(tx.config)
 	tx.GiftcardBatch = NewGiftcardBatchClient(tx.config)
 	tx.LicenseOrder = NewLicenseOrderClient(tx.config)
+	tx.LotteryAccount = NewLotteryAccountClient(tx.config)
+	tx.LotteryActivity = NewLotteryActivityClient(tx.config)
+	tx.LotteryChanceLog = NewLotteryChanceLogClient(tx.config)
+	tx.LotteryDraw = NewLotteryDrawClient(tx.config)
+	tx.LotteryPrize = NewLotteryPrizeClient(tx.config)
+	tx.LotteryRevision = NewLotteryRevisionClient(tx.config)
 	tx.Media = NewMediaClient(tx.config)
 	tx.MediaCategory = NewMediaCategoryClient(tx.config)
 	tx.MemberLevel = NewMemberLevelClient(tx.config)

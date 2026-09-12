@@ -56,11 +56,13 @@ const tabs = [
   { key: 'withdraw', label: '提现' },
   { key: 'security', label: '账户安全' },
   { key: 'tickets', label: '提交工单' },
+  { key: 'prizes', label: '我的奖品' },
 ];
 
 function go(key: string) {
   remember();
   if (key === props.active) return;
+  if (key === "prizes") { router.push("/lottery?tab=prizes"); return; }
   if (key === "tickets") { router.push("/tickets"); return; }
   if (key === 'withdraw') {
     router.push('/withdraw');

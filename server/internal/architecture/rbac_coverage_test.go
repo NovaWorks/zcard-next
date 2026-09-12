@@ -38,6 +38,8 @@ var operatorSeed = map[string]bool{
 	"order:view_delivery": true,
 	"memberlevel:read":    true,
 	"coupon:read":         true,
+	"lottery:read":        true,
+	"lottery:deliver":     true,
 	"dashboard:read":      true,
 	// ：货源/采购/供货读权限（运营可查看，写操作超管专属）
 	"supply:read":      true,

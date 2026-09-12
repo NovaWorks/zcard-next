@@ -32,6 +32,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryaccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterychancelog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterydraw"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryrevision"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
@@ -176,6 +182,12 @@ func checkColumn(t, c string) error {
 			giftcard.Table:               giftcard.ValidColumn,
 			giftcardbatch.Table:          giftcardbatch.ValidColumn,
 			licenseorder.Table:           licenseorder.ValidColumn,
+			lotteryaccount.Table:         lotteryaccount.ValidColumn,
+			lotteryactivity.Table:        lotteryactivity.ValidColumn,
+			lotterychancelog.Table:       lotterychancelog.ValidColumn,
+			lotterydraw.Table:            lotterydraw.ValidColumn,
+			lotteryprize.Table:           lotteryprize.ValidColumn,
+			lotteryrevision.Table:        lotteryrevision.ValidColumn,
 			media.Table:                  media.ValidColumn,
 			mediacategory.Table:          mediacategory.ValidColumn,
 			memberlevel.Table:            memberlevel.ValidColumn,

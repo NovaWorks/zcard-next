@@ -10,8 +10,10 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterydraw"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/securityauditlog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -108,12 +110,29 @@ func (s *AdminInventoryService) ListCards(ctx context.Context, req *adminv1.List
 	if err != nil {
 		return nil, errors.InternalServer("inventory.LIST_FAILED", "读取卡密失败")
 	}
+	awards := map[uint64]string{}
+	ids := make([]uint64, 0, len(rows))
+	for _, row := range rows {
+		ids = append(ids, row.ID)
+	}
+	if len(ids) > 0 {
+		draws, e := data.Client(ctx, s.data).LotteryDraw.Query().Where(lotterydraw.CardIDIn(ids...)).All(ctx)
+		if e != nil {
+			return nil, errors.InternalServer("inventory.LIST_FAILED", "读取发奖记录失败")
+		}
+		for _, draw := range draws {
+			if draw.CardID != nil {
+				awards[*draw.CardID] = draw.DrawNo
+			}
+		}
+	}
 	reply := &adminv1.ListCardsReply{Total: int64(total)}
 	for _, r := range rows {
 		reply.Cards = append(reply.Cards, &adminv1.CardInfo{
 			Id: r.ID, ProductId: r.ProductID, Status: string(r.Status),
 			MaskedContent: s.maskPlain(r),
 			Note:          r.Note,
+			LotteryDrawNo: awards[r.ID],
 		})
 	}
 	return reply, nil
@@ -142,13 +161,23 @@ func (s *AdminInventoryService) ExportCards(ctx context.Context, req *adminv1.Ex
 
 // ToggleCard 禁用/启用。
 func (s *AdminInventoryService) ToggleCard(ctx context.Context, req *adminv1.ToggleCardRequest) (*emptypb.Empty, error) {
-	status := card.StatusDisabled
+	from, to := card.StatusAvailable, card.StatusDisabled
 	if req.GetEnable() {
-		status = card.StatusAvailable
+		from, to = card.StatusDisabled, card.StatusAvailable
 	}
-	_, err := data.Client(ctx, s.data).Card.UpdateOneID(req.GetId()).SetStatus(status).Save(ctx)
+	c := data.Client(ctx, s.data)
+	n, err := c.Card.Update().Where(card.ID(req.Id), card.SubsiteID(tenancy.FromContext(ctx).SubsiteID), card.StatusEQ(from)).SetStatus(to).Save(ctx)
 	if err != nil {
-		return nil, errors.NotFound("inventory.CARD_NOT_FOUND", "卡密不存在")
+		return nil, err
+	}
+	if n == 0 {
+		ok, err := c.Card.Query().Where(card.ID(req.Id), card.SubsiteID(tenancy.FromContext(ctx).SubsiteID), card.StatusEQ(to)).Exist(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if !ok {
+			return nil, errors.BadRequest("inventory.STATUS_INVALID", "仅可启用已禁用卡密或禁用可用卡密，已售出、已发奖和锁定卡密不能修改")
+		}
 	}
 	return &emptypb.Empty{}, nil
 }

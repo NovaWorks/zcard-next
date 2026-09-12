@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/license"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/lottery"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/media"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/notify"
@@ -57,6 +58,7 @@ var ProviderSet = wire.NewSet(
 	fulfillment.ProviderSet,
 	memberlevel.ProviderSet,
 	coupon.ProviderSet,
+	lottery.ProviderSet,
 	dashboard.ProviderSet,
 	supply.ProviderSet,
 	procurement.ProviderSet,

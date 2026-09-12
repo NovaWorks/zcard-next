@@ -1,0 +1,28 @@
+syntax = "proto3";
+package zcard.api.admin.v1;
+option go_package = "github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+service AdminLotteryService {
+ rpc ListLotteryActivities(LotteryListRequest) returns (LotteryActivityList) { option (google.api.http) = {get:"/api/v1/admin/lottery/activities"}; }
+ rpc GetLotteryActivity(LotteryIDRequest) returns (LotteryActivity) { option (google.api.http) = {get:"/api/v1/admin/lottery/activities/{id}"}; }
+ rpc SaveLotteryActivity(LotteryActivity) returns (LotteryActivity) { option (google.api.http) = {post:"/api/v1/admin/lottery/activities" body:"*"}; }
+ rpc SetLotteryStatus(LotteryStatusRequest) returns (LotteryActivity) { option (google.api.http) = {post:"/api/v1/admin/lottery/activities/{id}/status" body:"*"}; }
+ rpc GrantLotteryChances(LotteryGrantRequest) returns (google.protobuf.Empty) { option (google.api.http) = {post:"/api/v1/admin/lottery/activities/{id}/grant" body:"*"}; }
+ rpc ListLotteryDraws(LotteryListRequest) returns (LotteryDrawList) { option (google.api.http) = {get:"/api/v1/admin/lottery/draws"}; }
+ rpc RevealLotteryDraw(LotteryDrawRequest) returns (LotteryDraw) { option (google.api.http) = {post:"/api/v1/admin/lottery/draws/{draw_no}/reveal" body:"*"}; }
+ rpc DeliverLotteryDraw(LotteryDrawRequest) returns (google.protobuf.Empty) { option (google.api.http) = {post:"/api/v1/admin/lottery/draws/{draw_no}/deliver" body:"*"}; }
+ rpc ListLotteryHistory(LotteryIDRequest) returns (LotteryHistoryList) { option (google.api.http) = {get:"/api/v1/admin/lottery/activities/{id}/history"}; }
+}
+message LotteryListRequest {int32 page=1;int32 page_size=2;uint64 activity_id=3;string keyword=4;string status=5;uint64 user_id=6;bool include_missed=7;int64 start_at=8;int64 end_at=9;uint64 prize_id=10;}
+message LotteryIDRequest {uint64 id=1;}
+message LotteryStatusRequest {uint64 id=1;string status=2;int32 revision=3;}
+message LotteryGrantRequest {uint64 id=1;uint64 user_id=2;int32 count=3;string remark=4;string request_key=5;}
+message LotteryDrawRequest {string draw_no=1;string remark=2;}
+message LotteryPrize {uint64 id=1;string name=2;string image=3;string mode=4;uint64 product_id=5;uint64 sku_id=6;int32 probability=7;int32 quantity=8;int32 issued=9;string content=10;}
+message LotteryActivity {uint64 id=1;string name=2;string description=3;string image=4;string status=5;int64 start_at=6;int64 end_at=7;string timezone=8;string chance_mode=9;int32 chance_count=10;int32 revision=11;bool published=12;repeated LotteryPrize prizes=13;}
+message LotteryActivityList {repeated LotteryActivity items=1;int64 total=2;}
+message LotteryDraw {string draw_no=1;uint64 user_id=2;string username=3;uint64 activity_id=4;string activity_name=5;uint64 prize_id=6;string prize_name=7;string mode=8;string status=9;int64 created_at=10;int64 delivered_at=11;uint64 admin_id=12;string remark=13;int64 cost_cents=14;string content=15;uint64 product_id=16;uint64 sku_id=17;int32 revision=18;}
+message LotteryDrawList {repeated LotteryDraw items=1;int64 total=2;}
+message LotteryHistory {int32 revision=1;int64 created_at=2;uint64 admin_id=3;string snapshot_json=4;}
+message LotteryHistoryList {repeated LotteryHistory items=1;}

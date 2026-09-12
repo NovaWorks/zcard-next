@@ -25,6 +25,12 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcard"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/giftcardbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/licenseorder"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryaccount"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterychancelog"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotterydraw"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryrevision"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/mediacategory"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
@@ -720,6 +726,310 @@ func init() {
 	licenseorderDescDomain := licenseorderFields[6].Descriptor()
 	// licenseorder.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
 	licenseorder.DomainValidator = licenseorderDescDomain.Validators[0].(func(string) error)
+	lotteryaccountMixin := schema.LotteryAccount{}.Mixin()
+	lotteryaccountMixinFields0 := lotteryaccountMixin[0].Fields()
+	_ = lotteryaccountMixinFields0
+	lotteryaccountMixinFields1 := lotteryaccountMixin[1].Fields()
+	_ = lotteryaccountMixinFields1
+	lotteryaccountFields := schema.LotteryAccount{}.Fields()
+	_ = lotteryaccountFields
+	// lotteryaccountDescCreatedAt is the schema descriptor for created_at field.
+	lotteryaccountDescCreatedAt := lotteryaccountMixinFields0[0].Descriptor()
+	// lotteryaccount.DefaultCreatedAt holds the default value on creation for the created_at field.
+	lotteryaccount.DefaultCreatedAt = lotteryaccountDescCreatedAt.Default.(func() time.Time)
+	// lotteryaccountDescUpdatedAt is the schema descriptor for updated_at field.
+	lotteryaccountDescUpdatedAt := lotteryaccountMixinFields0[1].Descriptor()
+	// lotteryaccount.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	lotteryaccount.DefaultUpdatedAt = lotteryaccountDescUpdatedAt.Default.(func() time.Time)
+	// lotteryaccount.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	lotteryaccount.UpdateDefaultUpdatedAt = lotteryaccountDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// lotteryaccountDescSubsiteID is the schema descriptor for subsite_id field.
+	lotteryaccountDescSubsiteID := lotteryaccountMixinFields1[0].Descriptor()
+	// lotteryaccount.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	lotteryaccount.DefaultSubsiteID = lotteryaccountDescSubsiteID.Default.(uint64)
+	// lotteryaccountDescPeriod is the schema descriptor for period field.
+	lotteryaccountDescPeriod := lotteryaccountFields[3].Descriptor()
+	// lotteryaccount.PeriodValidator is a validator for the "period" field. It is called by the builders before save.
+	lotteryaccount.PeriodValidator = lotteryaccountDescPeriod.Validators[0].(func(string) error)
+	// lotteryaccountDescBalance is the schema descriptor for balance field.
+	lotteryaccountDescBalance := lotteryaccountFields[4].Descriptor()
+	// lotteryaccount.DefaultBalance holds the default value on creation for the balance field.
+	lotteryaccount.DefaultBalance = lotteryaccountDescBalance.Default.(int32)
+	// lotteryaccountDescAutoGranted is the schema descriptor for auto_granted field.
+	lotteryaccountDescAutoGranted := lotteryaccountFields[5].Descriptor()
+	// lotteryaccount.DefaultAutoGranted holds the default value on creation for the auto_granted field.
+	lotteryaccount.DefaultAutoGranted = lotteryaccountDescAutoGranted.Default.(bool)
+	// lotteryaccountDescVersion is the schema descriptor for version field.
+	lotteryaccountDescVersion := lotteryaccountFields[6].Descriptor()
+	// lotteryaccount.DefaultVersion holds the default value on creation for the version field.
+	lotteryaccount.DefaultVersion = lotteryaccountDescVersion.Default.(int32)
+	lotteryactivityMixin := schema.LotteryActivity{}.Mixin()
+	lotteryactivityMixinFields0 := lotteryactivityMixin[0].Fields()
+	_ = lotteryactivityMixinFields0
+	lotteryactivityMixinFields1 := lotteryactivityMixin[1].Fields()
+	_ = lotteryactivityMixinFields1
+	lotteryactivityFields := schema.LotteryActivity{}.Fields()
+	_ = lotteryactivityFields
+	// lotteryactivityDescCreatedAt is the schema descriptor for created_at field.
+	lotteryactivityDescCreatedAt := lotteryactivityMixinFields0[0].Descriptor()
+	// lotteryactivity.DefaultCreatedAt holds the default value on creation for the created_at field.
+	lotteryactivity.DefaultCreatedAt = lotteryactivityDescCreatedAt.Default.(func() time.Time)
+	// lotteryactivityDescUpdatedAt is the schema descriptor for updated_at field.
+	lotteryactivityDescUpdatedAt := lotteryactivityMixinFields0[1].Descriptor()
+	// lotteryactivity.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	lotteryactivity.DefaultUpdatedAt = lotteryactivityDescUpdatedAt.Default.(func() time.Time)
+	// lotteryactivity.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	lotteryactivity.UpdateDefaultUpdatedAt = lotteryactivityDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// lotteryactivityDescSubsiteID is the schema descriptor for subsite_id field.
+	lotteryactivityDescSubsiteID := lotteryactivityMixinFields1[0].Descriptor()
+	// lotteryactivity.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	lotteryactivity.DefaultSubsiteID = lotteryactivityDescSubsiteID.Default.(uint64)
+	// lotteryactivityDescName is the schema descriptor for name field.
+	lotteryactivityDescName := lotteryactivityFields[1].Descriptor()
+	// lotteryactivity.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	lotteryactivity.NameValidator = lotteryactivityDescName.Validators[0].(func(string) error)
+	// lotteryactivityDescDescription is the schema descriptor for description field.
+	lotteryactivityDescDescription := lotteryactivityFields[2].Descriptor()
+	// lotteryactivity.DefaultDescription holds the default value on creation for the description field.
+	lotteryactivity.DefaultDescription = lotteryactivityDescDescription.Default.(string)
+	// lotteryactivityDescImage is the schema descriptor for image field.
+	lotteryactivityDescImage := lotteryactivityFields[3].Descriptor()
+	// lotteryactivity.DefaultImage holds the default value on creation for the image field.
+	lotteryactivity.DefaultImage = lotteryactivityDescImage.Default.(string)
+	// lotteryactivity.ImageValidator is a validator for the "image" field. It is called by the builders before save.
+	lotteryactivity.ImageValidator = lotteryactivityDescImage.Validators[0].(func(string) error)
+	// lotteryactivityDescStatus is the schema descriptor for status field.
+	lotteryactivityDescStatus := lotteryactivityFields[4].Descriptor()
+	// lotteryactivity.DefaultStatus holds the default value on creation for the status field.
+	lotteryactivity.DefaultStatus = lotteryactivityDescStatus.Default.(string)
+	// lotteryactivity.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	lotteryactivity.StatusValidator = lotteryactivityDescStatus.Validators[0].(func(string) error)
+	// lotteryactivityDescTimezone is the schema descriptor for timezone field.
+	lotteryactivityDescTimezone := lotteryactivityFields[7].Descriptor()
+	// lotteryactivity.DefaultTimezone holds the default value on creation for the timezone field.
+	lotteryactivity.DefaultTimezone = lotteryactivityDescTimezone.Default.(string)
+	// lotteryactivity.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
+	lotteryactivity.TimezoneValidator = lotteryactivityDescTimezone.Validators[0].(func(string) error)
+	// lotteryactivityDescChanceMode is the schema descriptor for chance_mode field.
+	lotteryactivityDescChanceMode := lotteryactivityFields[8].Descriptor()
+	// lotteryactivity.DefaultChanceMode holds the default value on creation for the chance_mode field.
+	lotteryactivity.DefaultChanceMode = lotteryactivityDescChanceMode.Default.(string)
+	// lotteryactivity.ChanceModeValidator is a validator for the "chance_mode" field. It is called by the builders before save.
+	lotteryactivity.ChanceModeValidator = lotteryactivityDescChanceMode.Validators[0].(func(string) error)
+	// lotteryactivityDescChanceCount is the schema descriptor for chance_count field.
+	lotteryactivityDescChanceCount := lotteryactivityFields[9].Descriptor()
+	// lotteryactivity.DefaultChanceCount holds the default value on creation for the chance_count field.
+	lotteryactivity.DefaultChanceCount = lotteryactivityDescChanceCount.Default.(int32)
+	// lotteryactivityDescRevision is the schema descriptor for revision field.
+	lotteryactivityDescRevision := lotteryactivityFields[10].Descriptor()
+	// lotteryactivity.DefaultRevision holds the default value on creation for the revision field.
+	lotteryactivity.DefaultRevision = lotteryactivityDescRevision.Default.(int32)
+	// lotteryactivityDescPublished is the schema descriptor for published field.
+	lotteryactivityDescPublished := lotteryactivityFields[11].Descriptor()
+	// lotteryactivity.DefaultPublished holds the default value on creation for the published field.
+	lotteryactivity.DefaultPublished = lotteryactivityDescPublished.Default.(bool)
+	lotterychancelogMixin := schema.LotteryChanceLog{}.Mixin()
+	lotterychancelogMixinFields0 := lotterychancelogMixin[0].Fields()
+	_ = lotterychancelogMixinFields0
+	lotterychancelogMixinFields1 := lotterychancelogMixin[1].Fields()
+	_ = lotterychancelogMixinFields1
+	lotterychancelogFields := schema.LotteryChanceLog{}.Fields()
+	_ = lotterychancelogFields
+	// lotterychancelogDescCreatedAt is the schema descriptor for created_at field.
+	lotterychancelogDescCreatedAt := lotterychancelogMixinFields0[0].Descriptor()
+	// lotterychancelog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	lotterychancelog.DefaultCreatedAt = lotterychancelogDescCreatedAt.Default.(func() time.Time)
+	// lotterychancelogDescUpdatedAt is the schema descriptor for updated_at field.
+	lotterychancelogDescUpdatedAt := lotterychancelogMixinFields0[1].Descriptor()
+	// lotterychancelog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	lotterychancelog.DefaultUpdatedAt = lotterychancelogDescUpdatedAt.Default.(func() time.Time)
+	// lotterychancelog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	lotterychancelog.UpdateDefaultUpdatedAt = lotterychancelogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// lotterychancelogDescSubsiteID is the schema descriptor for subsite_id field.
+	lotterychancelogDescSubsiteID := lotterychancelogMixinFields1[0].Descriptor()
+	// lotterychancelog.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	lotterychancelog.DefaultSubsiteID = lotterychancelogDescSubsiteID.Default.(uint64)
+	// lotterychancelogDescPeriod is the schema descriptor for period field.
+	lotterychancelogDescPeriod := lotterychancelogFields[3].Descriptor()
+	// lotterychancelog.PeriodValidator is a validator for the "period" field. It is called by the builders before save.
+	lotterychancelog.PeriodValidator = lotterychancelogDescPeriod.Validators[0].(func(string) error)
+	// lotterychancelogDescKind is the schema descriptor for kind field.
+	lotterychancelogDescKind := lotterychancelogFields[5].Descriptor()
+	// lotterychancelog.KindValidator is a validator for the "kind" field. It is called by the builders before save.
+	lotterychancelog.KindValidator = lotterychancelogDescKind.Validators[0].(func(string) error)
+	// lotterychancelogDescRequestKey is the schema descriptor for request_key field.
+	lotterychancelogDescRequestKey := lotterychancelogFields[6].Descriptor()
+	// lotterychancelog.RequestKeyValidator is a validator for the "request_key" field. It is called by the builders before save.
+	lotterychancelog.RequestKeyValidator = lotterychancelogDescRequestKey.Validators[0].(func(string) error)
+	// lotterychancelogDescRemark is the schema descriptor for remark field.
+	lotterychancelogDescRemark := lotterychancelogFields[7].Descriptor()
+	// lotterychancelog.DefaultRemark holds the default value on creation for the remark field.
+	lotterychancelog.DefaultRemark = lotterychancelogDescRemark.Default.(string)
+	// lotterychancelog.RemarkValidator is a validator for the "remark" field. It is called by the builders before save.
+	lotterychancelog.RemarkValidator = lotterychancelogDescRemark.Validators[0].(func(string) error)
+	// lotterychancelogDescAdminID is the schema descriptor for admin_id field.
+	lotterychancelogDescAdminID := lotterychancelogFields[8].Descriptor()
+	// lotterychancelog.DefaultAdminID holds the default value on creation for the admin_id field.
+	lotterychancelog.DefaultAdminID = lotterychancelogDescAdminID.Default.(uint64)
+	lotterydrawMixin := schema.LotteryDraw{}.Mixin()
+	lotterydrawMixinFields0 := lotterydrawMixin[0].Fields()
+	_ = lotterydrawMixinFields0
+	lotterydrawMixinFields1 := lotterydrawMixin[1].Fields()
+	_ = lotterydrawMixinFields1
+	lotterydrawFields := schema.LotteryDraw{}.Fields()
+	_ = lotterydrawFields
+	// lotterydrawDescCreatedAt is the schema descriptor for created_at field.
+	lotterydrawDescCreatedAt := lotterydrawMixinFields0[0].Descriptor()
+	// lotterydraw.DefaultCreatedAt holds the default value on creation for the created_at field.
+	lotterydraw.DefaultCreatedAt = lotterydrawDescCreatedAt.Default.(func() time.Time)
+	// lotterydrawDescUpdatedAt is the schema descriptor for updated_at field.
+	lotterydrawDescUpdatedAt := lotterydrawMixinFields0[1].Descriptor()
+	// lotterydraw.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	lotterydraw.DefaultUpdatedAt = lotterydrawDescUpdatedAt.Default.(func() time.Time)
+	// lotterydraw.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	lotterydraw.UpdateDefaultUpdatedAt = lotterydrawDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// lotterydrawDescSubsiteID is the schema descriptor for subsite_id field.
+	lotterydrawDescSubsiteID := lotterydrawMixinFields1[0].Descriptor()
+	// lotterydraw.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	lotterydraw.DefaultSubsiteID = lotterydrawDescSubsiteID.Default.(uint64)
+	// lotterydrawDescDrawNo is the schema descriptor for draw_no field.
+	lotterydrawDescDrawNo := lotterydrawFields[3].Descriptor()
+	// lotterydraw.DrawNoValidator is a validator for the "draw_no" field. It is called by the builders before save.
+	lotterydraw.DrawNoValidator = lotterydrawDescDrawNo.Validators[0].(func(string) error)
+	// lotterydrawDescRequestKey is the schema descriptor for request_key field.
+	lotterydrawDescRequestKey := lotterydrawFields[4].Descriptor()
+	// lotterydraw.RequestKeyValidator is a validator for the "request_key" field. It is called by the builders before save.
+	lotterydraw.RequestKeyValidator = lotterydrawDescRequestKey.Validators[0].(func(string) error)
+	// lotterydrawDescActivityName is the schema descriptor for activity_name field.
+	lotterydrawDescActivityName := lotterydrawFields[5].Descriptor()
+	// lotterydraw.ActivityNameValidator is a validator for the "activity_name" field. It is called by the builders before save.
+	lotterydraw.ActivityNameValidator = lotterydrawDescActivityName.Validators[0].(func(string) error)
+	// lotterydrawDescPrizeName is the schema descriptor for prize_name field.
+	lotterydrawDescPrizeName := lotterydrawFields[6].Descriptor()
+	// lotterydraw.DefaultPrizeName holds the default value on creation for the prize_name field.
+	lotterydraw.DefaultPrizeName = lotterydrawDescPrizeName.Default.(string)
+	// lotterydraw.PrizeNameValidator is a validator for the "prize_name" field. It is called by the builders before save.
+	lotterydraw.PrizeNameValidator = lotterydrawDescPrizeName.Validators[0].(func(string) error)
+	// lotterydrawDescMode is the schema descriptor for mode field.
+	lotterydrawDescMode := lotterydrawFields[7].Descriptor()
+	// lotterydraw.DefaultMode holds the default value on creation for the mode field.
+	lotterydraw.DefaultMode = lotterydrawDescMode.Default.(string)
+	// lotterydraw.ModeValidator is a validator for the "mode" field. It is called by the builders before save.
+	lotterydraw.ModeValidator = lotterydrawDescMode.Validators[0].(func(string) error)
+	// lotterydrawDescStatus is the schema descriptor for status field.
+	lotterydrawDescStatus := lotterydrawFields[8].Descriptor()
+	// lotterydraw.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	lotterydraw.StatusValidator = lotterydrawDescStatus.Validators[0].(func(string) error)
+	// lotterydrawDescPrizeID is the schema descriptor for prize_id field.
+	lotterydrawDescPrizeID := lotterydrawFields[9].Descriptor()
+	// lotterydraw.DefaultPrizeID holds the default value on creation for the prize_id field.
+	lotterydraw.DefaultPrizeID = lotterydrawDescPrizeID.Default.(uint64)
+	// lotterydrawDescProductID is the schema descriptor for product_id field.
+	lotterydrawDescProductID := lotterydrawFields[10].Descriptor()
+	// lotterydraw.DefaultProductID holds the default value on creation for the product_id field.
+	lotterydraw.DefaultProductID = lotterydrawDescProductID.Default.(uint64)
+	// lotterydrawDescSkuID is the schema descriptor for sku_id field.
+	lotterydrawDescSkuID := lotterydrawFields[11].Descriptor()
+	// lotterydraw.DefaultSkuID holds the default value on creation for the sku_id field.
+	lotterydraw.DefaultSkuID = lotterydrawDescSkuID.Default.(uint64)
+	// lotterydrawDescCost is the schema descriptor for cost field.
+	lotterydrawDescCost := lotterydrawFields[13].Descriptor()
+	// lotterydraw.DefaultCost holds the default value on creation for the cost field.
+	lotterydraw.DefaultCost = lotterydrawDescCost.Default.(int64)
+	// lotterydrawDescAdminID is the schema descriptor for admin_id field.
+	lotterydrawDescAdminID := lotterydrawFields[18].Descriptor()
+	// lotterydraw.DefaultAdminID holds the default value on creation for the admin_id field.
+	lotterydraw.DefaultAdminID = lotterydrawDescAdminID.Default.(uint64)
+	// lotterydrawDescRemark is the schema descriptor for remark field.
+	lotterydrawDescRemark := lotterydrawFields[19].Descriptor()
+	// lotterydraw.DefaultRemark holds the default value on creation for the remark field.
+	lotterydraw.DefaultRemark = lotterydrawDescRemark.Default.(string)
+	// lotterydraw.RemarkValidator is a validator for the "remark" field. It is called by the builders before save.
+	lotterydraw.RemarkValidator = lotterydrawDescRemark.Validators[0].(func(string) error)
+	lotteryprizeMixin := schema.LotteryPrize{}.Mixin()
+	lotteryprizeMixinFields0 := lotteryprizeMixin[0].Fields()
+	_ = lotteryprizeMixinFields0
+	lotteryprizeMixinFields1 := lotteryprizeMixin[1].Fields()
+	_ = lotteryprizeMixinFields1
+	lotteryprizeFields := schema.LotteryPrize{}.Fields()
+	_ = lotteryprizeFields
+	// lotteryprizeDescCreatedAt is the schema descriptor for created_at field.
+	lotteryprizeDescCreatedAt := lotteryprizeMixinFields0[0].Descriptor()
+	// lotteryprize.DefaultCreatedAt holds the default value on creation for the created_at field.
+	lotteryprize.DefaultCreatedAt = lotteryprizeDescCreatedAt.Default.(func() time.Time)
+	// lotteryprizeDescUpdatedAt is the schema descriptor for updated_at field.
+	lotteryprizeDescUpdatedAt := lotteryprizeMixinFields0[1].Descriptor()
+	// lotteryprize.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	lotteryprize.DefaultUpdatedAt = lotteryprizeDescUpdatedAt.Default.(func() time.Time)
+	// lotteryprize.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	lotteryprize.UpdateDefaultUpdatedAt = lotteryprizeDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// lotteryprizeDescSubsiteID is the schema descriptor for subsite_id field.
+	lotteryprizeDescSubsiteID := lotteryprizeMixinFields1[0].Descriptor()
+	// lotteryprize.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	lotteryprize.DefaultSubsiteID = lotteryprizeDescSubsiteID.Default.(uint64)
+	// lotteryprizeDescName is the schema descriptor for name field.
+	lotteryprizeDescName := lotteryprizeFields[2].Descriptor()
+	// lotteryprize.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	lotteryprize.NameValidator = lotteryprizeDescName.Validators[0].(func(string) error)
+	// lotteryprizeDescImage is the schema descriptor for image field.
+	lotteryprizeDescImage := lotteryprizeFields[3].Descriptor()
+	// lotteryprize.DefaultImage holds the default value on creation for the image field.
+	lotteryprize.DefaultImage = lotteryprizeDescImage.Default.(string)
+	// lotteryprize.ImageValidator is a validator for the "image" field. It is called by the builders before save.
+	lotteryprize.ImageValidator = lotteryprizeDescImage.Validators[0].(func(string) error)
+	// lotteryprizeDescMode is the schema descriptor for mode field.
+	lotteryprizeDescMode := lotteryprizeFields[4].Descriptor()
+	// lotteryprize.ModeValidator is a validator for the "mode" field. It is called by the builders before save.
+	lotteryprize.ModeValidator = lotteryprizeDescMode.Validators[0].(func(string) error)
+	// lotteryprizeDescProductID is the schema descriptor for product_id field.
+	lotteryprizeDescProductID := lotteryprizeFields[5].Descriptor()
+	// lotteryprize.DefaultProductID holds the default value on creation for the product_id field.
+	lotteryprize.DefaultProductID = lotteryprizeDescProductID.Default.(uint64)
+	// lotteryprizeDescSkuID is the schema descriptor for sku_id field.
+	lotteryprizeDescSkuID := lotteryprizeFields[6].Descriptor()
+	// lotteryprize.DefaultSkuID holds the default value on creation for the sku_id field.
+	lotteryprize.DefaultSkuID = lotteryprizeDescSkuID.Default.(uint64)
+	// lotteryprizeDescProbability is the schema descriptor for probability field.
+	lotteryprizeDescProbability := lotteryprizeFields[7].Descriptor()
+	// lotteryprize.DefaultProbability holds the default value on creation for the probability field.
+	lotteryprize.DefaultProbability = lotteryprizeDescProbability.Default.(int32)
+	// lotteryprizeDescQuantity is the schema descriptor for quantity field.
+	lotteryprizeDescQuantity := lotteryprizeFields[8].Descriptor()
+	// lotteryprize.DefaultQuantity holds the default value on creation for the quantity field.
+	lotteryprize.DefaultQuantity = lotteryprizeDescQuantity.Default.(int32)
+	// lotteryprizeDescIssued is the schema descriptor for issued field.
+	lotteryprizeDescIssued := lotteryprizeFields[9].Descriptor()
+	// lotteryprize.DefaultIssued holds the default value on creation for the issued field.
+	lotteryprize.DefaultIssued = lotteryprizeDescIssued.Default.(int32)
+	// lotteryprizeDescSort is the schema descriptor for sort field.
+	lotteryprizeDescSort := lotteryprizeFields[10].Descriptor()
+	// lotteryprize.DefaultSort holds the default value on creation for the sort field.
+	lotteryprize.DefaultSort = lotteryprizeDescSort.Default.(int32)
+	// lotteryprizeDescEnabled is the schema descriptor for enabled field.
+	lotteryprizeDescEnabled := lotteryprizeFields[11].Descriptor()
+	// lotteryprize.DefaultEnabled holds the default value on creation for the enabled field.
+	lotteryprize.DefaultEnabled = lotteryprizeDescEnabled.Default.(bool)
+	lotteryrevisionMixin := schema.LotteryRevision{}.Mixin()
+	lotteryrevisionMixinFields0 := lotteryrevisionMixin[0].Fields()
+	_ = lotteryrevisionMixinFields0
+	lotteryrevisionMixinFields1 := lotteryrevisionMixin[1].Fields()
+	_ = lotteryrevisionMixinFields1
+	lotteryrevisionFields := schema.LotteryRevision{}.Fields()
+	_ = lotteryrevisionFields
+	// lotteryrevisionDescCreatedAt is the schema descriptor for created_at field.
+	lotteryrevisionDescCreatedAt := lotteryrevisionMixinFields0[0].Descriptor()
+	// lotteryrevision.DefaultCreatedAt holds the default value on creation for the created_at field.
+	lotteryrevision.DefaultCreatedAt = lotteryrevisionDescCreatedAt.Default.(func() time.Time)
+	// lotteryrevisionDescUpdatedAt is the schema descriptor for updated_at field.
+	lotteryrevisionDescUpdatedAt := lotteryrevisionMixinFields0[1].Descriptor()
+	// lotteryrevision.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	lotteryrevision.DefaultUpdatedAt = lotteryrevisionDescUpdatedAt.Default.(func() time.Time)
+	// lotteryrevision.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	lotteryrevision.UpdateDefaultUpdatedAt = lotteryrevisionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// lotteryrevisionDescSubsiteID is the schema descriptor for subsite_id field.
+	lotteryrevisionDescSubsiteID := lotteryrevisionMixinFields1[0].Descriptor()
+	// lotteryrevision.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	lotteryrevision.DefaultSubsiteID = lotteryrevisionDescSubsiteID.Default.(uint64)
 	mediaMixin := schema.Media{}.Mixin()
 	mediaMixinFields0 := mediaMixin[0].Fields()
 	_ = mediaMixinFields0

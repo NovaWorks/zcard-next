@@ -124,6 +124,7 @@ message CardInfo {
   string note = 5;
   int64 created_at = 6;
   int64 used_at = 7;
+  string lottery_draw_no = 8; // 抽奖发放的中奖编号，不改变卡密库存状态
 }
 
 message ExportCardsRequest {

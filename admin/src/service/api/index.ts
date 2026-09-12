@@ -14,3 +14,5 @@ export * from "./supplier";
 export * from "./procurement";
 export * from "./ticket";
 export * from "./update";
+
+export * from "./lottery";
