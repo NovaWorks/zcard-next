@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { refundStatusText } from "@/utils/business-status";
 // 支付单流水（payment:read_detail）+ 补单（payment:capture 超管专属）+ 退款单列表。
 import { onMounted, ref, h } from "vue";
 import { NButton, NDataTable, NInput, NPopconfirm, NTag } from "naive-ui";
@@ -121,7 +122,7 @@ const refundColumns: DataTableColumns<any> = [
     render: (row) =>
       h(NTag, { size: "small" }, { default: () => ({ wallet: "钱包", gateway: "网关", upstream: "上游" } as any)[row.channel] || row.channel }),
   },
-  { title: "状态", key: "status", width: 90 },
+  { title: "状态", key: "status", width: 100, render: (row) => h(NTag, { size: "small", type: row.status === "succeeded" ? "success" : row.status === "failed" ? "error" : row.status === "processing" ? "info" : "warning" }, { default: () => refundStatusText(row.status) }) },
   { title: "原因", key: "reason", minWidth: 140, ellipsis: true },
   {
     title: "创建时间",

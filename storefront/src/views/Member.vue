@@ -671,14 +671,14 @@ function statusText(s: string): string {
   return ({
     pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货',
     delivered: '已发货', completed: '已完成', canceled: '已取消', expired: '已过期',
-    refund_pending: '退款中', refunded: '已退款',
+    refund_pending: '退款中', refunded: '已退款', manual_pending: '待人工发货',
   } as Record<string, string>)[s] || s;
 }
 function statusBadge(s: string): string {
   return ({
     pending_payment: 'badge orange', paid: 'badge blue', fulfilling: 'badge blue', partially_delivered: 'badge green',
     delivered: 'badge green', completed: 'badge green', canceled: 'badge gray', expired: 'badge gray',
-    refund_pending: 'badge orange', refunded: 'badge red',
+    refund_pending: 'badge orange', refunded: 'badge red', manual_pending: 'badge orange',
   } as Record<string, string>)[s] || 'badge gray';
 }
 function fmtTime(ts: number): string {

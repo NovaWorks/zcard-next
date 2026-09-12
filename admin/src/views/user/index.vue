@@ -10,7 +10,9 @@ import { grantCoupon, fetchCoupons } from "@/service/api/marketing";
 import { checkAuth } from "@/directives";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
-import { fenToYuan, yuanToFen } from "@/utils/money";
+import { couponStatusText, supplierStatusText } from "@/utils/business-status";
+import { orderStatusText, orderStatusType } from "@/utils/order-status";
+import { formatMoney, fenToYuan, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "UserManagement" });
 
@@ -211,7 +213,7 @@ function fmtTime(ts?: number) {
 
 const columns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 64 },
-  { title: "用户名", key: "username", width: 130, ellipsis: true, render: (row) => h("div", null, [h("div", null, row.username), row.is_supplier ? h(NTag, { size: "tiny", type: "info", bordered: false, class: "mt-2px" }, { default: () => `供货·${row.supplier_status || ""}` }) : null]) },
+  { title: "用户名", key: "username", width: 130, ellipsis: true, render: (row) => h("div", null, [h("div", null, row.username), row.is_supplier ? h(NTag, { size: "tiny", type: "info", bordered: false, class: "mt-2px" }, { default: () => `供货·${supplierStatusText(row.supplier_status)}` }) : null]) },
   { title: "邮箱", key: "email", width: 150, ellipsis: { tooltip: true }, render: (row) => row.email || "-" },
   { title: "等级", key: "level_name", width: 80, render: (row) => (row.level_id ? h(NTag, { size: "small", type: "warning", bordered: false }, { default: () => row.level_name || `#${row.level_id}` }) : "-") },
   { title: "余额", key: "balance_cents", width: 90, align: "right", render: (row) => (row.balance_cents ?? 0) === 0 ? "0" : h("b", null, fenToYuan(row.balance_cents ?? 0)) },
@@ -353,7 +355,7 @@ onMounted(load);
           <NDescriptionsItem label="订单数">{{ detailUser.user.order_count ?? 0 }}</NDescriptionsItem>
           <NDescriptionsItem label="累计消费"><b>{{ fenToYuan(detailUser.user.spent_cents ?? 0) }}</b></NDescriptionsItem>
           <NDescriptionsItem label="供货账户">
-            <NTag v-if="detailUser.user.is_supplier" size="small" type="info" :bordered="false">{{ detailUser.user.supplier_status }}</NTag>
+            <NTag v-if="detailUser.user.is_supplier" size="small" type="info" :bordered="false">{{ supplierStatusText(detailUser.user.supplier_status) }}</NTag>
             <template v-else>未开通</template>
           </NDescriptionsItem>
           <NDescriptionsItem label="邀请人">{{ detailUser.inviter_username || "-" }}</NDescriptionsItem>
@@ -368,8 +370,8 @@ onMounted(load);
               <div v-for="o in detailUser.recent_orders" :key="o.order_no" class="recent-order-row border-b border-gray-100 py-8px text-13px dark:border-gray-800">
                 <span class="font-mono">{{ o.order_no }}</span>
                 <div class="recent-order-products"><div v-for="(it, index) in o.items || []" :key="index">{{ it.name || `商品 #${it.product_id}` }}<span v-if="it.sku_name"> · {{ it.sku_name }}</span> ×{{ it.quantity }}</div><span v-if="!o.items?.length">—</span></div>
-                <span>{{ fenToYuan(o.amount_cents) }}</span>
-                <NTag size="tiny" :bordered="false">{{ o.status }}</NTag>
+                <span class="whitespace-nowrap">{{ formatMoney(o.amount_cents) }}</span>
+                <NTag size="tiny" :type="orderStatusType(o.status)" :bordered="false">{{ orderStatusText(o.status) }}</NTag>
                 <span class="w-130px text-right opacity-60">{{ fmtTime(o.created_at) }}</span>
               </div>
             </div>
@@ -379,7 +381,7 @@ onMounted(load);
             <div v-if="(detailUser.coupons || []).length" class="max-h-220px overflow-auto">
               <div v-for="c in detailUser.coupons" :key="c.id" class="flex items-center gap-12px border-b border-gray-100 py-6px text-13px dark:border-gray-800">
                 <span class="flex-1">{{ c.title || `#${c.id}` }}</span>
-                <NTag size="tiny" :type="c.status === 'unused' ? 'success' : 'default'" :bordered="false">{{ c.status }}</NTag>
+                <NTag size="tiny" :type="c.status === 'unused' ? 'success' : 'default'" :bordered="false">{{ couponStatusText(c.status) }}</NTag>
               </div>
             </div>
             <NEmpty v-else description="暂无优惠券" size="small" class="py-20px" />

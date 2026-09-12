@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { orderStatusText } from "@/utils/order-status";
 // 采购单管理（procurement:read / procurement:write）：上游拿货单（客户购买 →
 // 上游采购 → 卡密回填链路的运行轨迹）。状态筛选 + 手动重试 / 转人工。
 import { h, computed, onMounted, ref } from "vue";
@@ -25,9 +26,6 @@ function statusText(s?: string) {
   return te(key) ? t(key) : s;
 }
 
-function orderStatusText(status: string) {
-  return ({ pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货', delivered: '已发货', completed: '已完成', canceled: '已取消', expired: '已过期', refunded: '已退款', refund_pending: '退款中' } as Record<string, string>)[status] || status;
-}
 const loading = ref(false);
 const rows = ref<any[]>([]);
 const total = ref(0);

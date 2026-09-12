@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { cardStatusText } from "@/utils/business-status";
 import { ref, computed, onMounted, watch, h } from "vue";
 import { NButton, NTag, NPopconfirm, NAlert } from "naive-ui";
 import { checkAuth } from "@/directives";
@@ -139,14 +140,7 @@ const cardColumns: DataTableColumns<any> = [
           size: "small",
         },
         {
-          default: () =>
-            row.status === "available"
-              ? "可用"
-              : row.status === "used"
-                ? "已售"
-                : row.status === "reserved"
-                  ? "锁定"
-                  : "禁用",
+          default: () => cardStatusText(row.status),
         },
       ),
   },
@@ -263,7 +257,9 @@ async function handleExport() {
 }
 
 // ── 靓号库（card:premium 超管专属）──
+const inventoryTab = ref("cards");
 const premiumCards = ref<any[]>([]);
+let premiumRequest = 0;
 const premiumTotal = ref(0);
 const premiumLoading = ref(false);
 const premiumColumns: DataTableColumns<any> = [
@@ -273,21 +269,31 @@ const premiumColumns: DataTableColumns<any> = [
   { title: "预选加价", key: "draft_premium", width: 100, render: (row) => formatMoney(row.draft_premium || 0) },
   { title: "预选成本", key: "draft_cost", width: 100, render: (row) => formatMoney(row.draft_cost || 0) },
   { title: "靓号价", key: "price_cents", width: 100, render: (row) => (row.price_cents ? formatMoney(row.price_cents) : "商品价+加价") },
-  { title: "状态", key: "status", width: 80, render: (row) => row.status },
+  { title: "状态", key: "status", width: 80, render: (row) => cardStatusText(row.status) },
 ];
 async function loadPremium() {
-  if (!selectedProduct.value) return;
+  const request = ++premiumRequest;
+  const productId = selectedProduct.value;
+  if (!productId) return;
   premiumLoading.value = true;
   try {
-    const { data, error } = await fetchPremiumCards(selectedProduct.value);
+    const { data, error } = await fetchPremiumCards(productId);
+    if (request !== premiumRequest) return;
     if (!error && data) {
       premiumCards.value = (data as any).cards || [];
       premiumTotal.value = (data as any).total || 0;
     }
   } finally {
-    premiumLoading.value = false;
+    if (request === premiumRequest) premiumLoading.value = false;
   }
 }
+watch([inventoryTab, selectedProduct], () => {
+  premiumRequest++;
+  premiumCards.value = [];
+  premiumTotal.value = 0;
+  premiumLoading.value = false;
+  if (inventoryTab.value === "premium" && selectedProduct.value) loadPremium();
+});
 
 async function loadCards() {
   if (!selectedProduct.value) {
@@ -445,7 +451,7 @@ onMounted(() => {
         />
       </div>
 
-      <NTabs type="line">
+      <NTabs v-model:value="inventoryTab" type="line">
         <NTabPane name="cards" tab="卡密列表">
           <NEmpty
             v-if="!selectedProduct"
@@ -466,7 +472,7 @@ onMounted(() => {
         <NTabPane name="batches" tab="导入批次">
           <NDataTable :columns="batchColumns" :data="batches" :loading="batchLoading"  :max-height="540" />
         </NTabPane>
-        <NTabPane name="premium" tab="靓号库" @update:appears="loadPremium">
+        <NTabPane name="premium" tab="靓号库">
           <NEmpty
             v-if="!selectedProduct"
             size="small"

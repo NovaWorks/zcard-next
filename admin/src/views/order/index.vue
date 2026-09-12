@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { orderStatusText as statusText, orderStatusType as statusType } from "@/utils/order-status";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import { ref, reactive, onMounted, h } from "vue";
@@ -87,28 +88,6 @@ const statusTabs = [
   { label: "已过期", value: "expired", type: "error" as const },
   { label: "已退款", value: "refunded", type: "error" as const },
 ];
-
-function statusText(s: string) {
-  const map: Record<string, string> = {
-    pending_payment: "待支付",
-    paid: "已支付",
-    fulfilling: "履约中",
-    delivered: "已发货",
-    completed: "已完成",
-    canceled: "已取消",
-    expired: "已过期",
-    refunded: "已退款",
-    refund_pending: "退款中",
-  };
-  return map[s] || s;
-}
-
-function statusType(s: string): "success" | "error" | "warning" | "info" | "default" {
-  if (["paid", "delivered", "completed"].includes(s)) return "success";
-  if (["canceled", "expired", "refunded"].includes(s)) return "error";
-  if (s === "pending_payment") return "warning";
-  return "info";
-}
 
 // ── 枚举翻译（ 修复：业务名称化，未知值回显原值）──
 
