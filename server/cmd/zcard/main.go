@@ -506,7 +506,7 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 	// 事件订阅注册（）：order.refunded → 分站利润扣回（refund_deduct 负行/负债态）
 	dp.Register(data.HandlerReg{Consumer: "reseller.reversal", Type: events.OrderRefunded, Fn: resellerSettleSvc.OnOrderRefunded})
 	// 事件订阅注册（）：order.paid → 积分产生（等级 points_rule；幂等键 points:<orderID>）
-	dp.Register(data.HandlerReg{Consumer: "memberlevel.points_earn", Type: events.OrderPaid, Fn: pointsSvc.OnOrderPaid})
+	dp.Register(data.HandlerReg{Consumer: "memberlevel.points_earn", Type: events.OrderPaid, Fn: pointsSvc.OnOrderPaid, Transactional: true})
 	// 事件订阅注册（）：交易事件 → 通知分发（email/inbox 按模板逐通道投递）
 	for _, typ := range notify.SubscribedEvents() {
 		t := typ

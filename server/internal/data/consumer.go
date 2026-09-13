@@ -7,10 +7,12 @@ package data
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
@@ -22,6 +24,8 @@ type HandlerReg struct {
 	Consumer string // 消费者标识（processed_events 幂等键组成；建议 "模块.处理器"）
 	Type     string // 订阅的事件类型（如 events.OrderPaid）
 	Fn       events.Handler
+	// Transactional is for database-only handlers whose repositories join the context transaction.
+	Transactional bool
 }
 
 // Dispatcher 消费分发器：任务载荷 = events.Envelope JSON。
@@ -92,6 +96,10 @@ func (dp *Dispatcher) Dispatch(ctx context.Context, env events.Envelope) error {
 
 // runOnce 单订阅者执行：processed_events 唯一索引幂等（已处理直接返回 nil）。
 func (dp *Dispatcher) runOnce(ctx context.Context, env events.Envelope, sub HandlerReg) error {
+	if sub.Transactional {
+		return dp.runTransactional(ctx, env, sub)
+	}
+
 	_, err := Client(ctx, dp.data).ProcessedEvent.Create().
 		SetEventID(env.EventID).
 		SetConsumer(sub.Consumer).
@@ -109,4 +117,35 @@ func (dp *Dispatcher) runOnce(ctx context.Context, env events.Envelope, sub Hand
 		dp.log.Debug("consumer.dispatched", "type", env.Type, "consumer", sub.Consumer, "event_id", env.EventID)
 	}
 	return nil
+}
+
+var errAlreadyProcessed = errors.New("consumer: already processed")
+
+// Retry short database failures even in SyncQueue mode; each attempt starts a
+// fresh transaction. Permanent failures reach the queue's failure reporting.
+func (dp *Dispatcher) runTransactional(ctx context.Context, env events.Envelope, sub HandlerReg) error {
+	for attempt := 0; ; attempt++ {
+		err := Tx(ctx, dp.data, func(txCtx context.Context) error {
+			_, err := Client(txCtx, dp.data).ProcessedEvent.Create().SetEventID(env.EventID).SetConsumer(sub.Consumer).Save(txCtx)
+			if ent.IsConstraintError(err) {
+				return errAlreadyProcessed
+			}
+			if err != nil {
+				return err
+			}
+			return sub.Fn(txCtx, env)
+		})
+		// A duplicate insert must be rolled back before ACK (PostgreSQL aborts the transaction).
+		if errors.Is(err, errAlreadyProcessed) {
+			return nil
+		}
+		if err == nil || attempt >= 2 {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Duration(attempt+1) * 100 * time.Millisecond):
+		}
+	}
 }

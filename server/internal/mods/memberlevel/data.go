@@ -4,8 +4,8 @@ package memberlevel
 //
 // 口径（1.x 铁律平移）：
 // - 累计充值 = countAsRecharge：仅 type=recharge 真实充值入账（互转/调账/佣金不计——防小号互转刷级）
-// - 累计消费 = 已支付及之后状态订单总额
-// - 等级判定走阈值即时评估，不落 users 列（无双写不一致）；只升不降随累计值单调
+// - 累计消费 = 已支付及之后状态订单总额，排除已全额退款订单
+// - 等级判定走阈值即时评估，不落 users 列（无双写不一致）
 // - 等级阶梯按 sort 升序：当前级 = 命中的最高 sort；下一级 = 其后首个未命中级
 
 import (
@@ -14,7 +14,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberlevel"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/memberlevel/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 )
@@ -113,15 +112,11 @@ func (r *MemberLevelRepoImpl) cumulative(ctx context.Context, client *ent.Client
 		}
 		recharged = v
 	}
-	consumed := int64(0)
-	if sum, err := client.Order.Query().
-		Where(order.UserID(userID), order.StatusNotIn(
-			order.StatusPendingPayment, order.StatusCanceled, order.StatusExpired,
-		)).
-		Aggregate(ent.Sum(order.FieldTotalAmount)).Int(ctx); err == nil {
-		consumed = int64(sum)
+	totals, err := data.UserSpending(ctx, client, []uint64{userID})
+	if err != nil {
+		return 0, 0, err
 	}
-	return recharged, consumed, nil
+	return recharged, totals[userID], nil
 }
 
 // matchLevel 阈值矩阵判定（AND|OR）。

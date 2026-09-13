@@ -83,7 +83,10 @@ func (s *AdminUserManageService) ListUsers(ctx context.Context, req *adminv1.Lis
 		return nil, errors.InternalServer("identity.USER_LIST_FAILED", "读取用户列表失败")
 	}
 	reply := &adminv1.ListUsersReply{Total: int64(total)}
-	items := s.enrich(ctx, rows)
+	items, err := s.enrich(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
 	for _, r := range rows {
 		reply.Users = append(reply.Users, items[r.ID])
 	}
@@ -100,7 +103,11 @@ func (s *AdminUserManageService) GetUser(ctx context.Context, req *adminv1.GetUs
 	if err != nil {
 		return nil, errors.InternalServer("identity.USER_GET_FAILED", "读取用户失败")
 	}
-	item := s.enrich(ctx, []*ent.User{row})[row.ID]
+	items, err := s.enrich(ctx, []*ent.User{row})
+	if err != nil {
+		return nil, err
+	}
+	item := items[row.ID]
 
 	detail := &adminv1.UserDetail{User: item}
 	// 持有优惠券（最多 50，未使用在前）
@@ -163,7 +170,11 @@ func (s *AdminUserManageService) SetUserStatus(ctx context.Context, req *adminv1
 	if err != nil {
 		return nil, errors.InternalServer("identity.USER_STATUS_FAILED", "更新用户状态失败")
 	}
-	return s.enrich(ctx, []*ent.User{row})[row.ID], nil
+	items, err := s.enrich(ctx, []*ent.User{row})
+	if err != nil {
+		return nil, err
+	}
+	return items[row.ID], nil
 }
 
 // CreateUser 后台新增用户（复用注册管线：校验/密码哈希/推广码全同源）。
@@ -180,7 +191,11 @@ func (s *AdminUserManageService) CreateUser(ctx context.Context, req *adminv1.Cr
 	if err != nil {
 		return nil, errors.BadRequest("identity.CREATE_FAILED", strings.TrimPrefix(err.Error(), "identity."))
 	}
-	return s.enrich(ctx, []*ent.User{row})[row.ID], nil
+	items, err := s.enrich(ctx, []*ent.User{row})
+	if err != nil {
+		return nil, err
+	}
+	return items[row.ID], nil
 }
 
 // ResetUserPassword 重置密码（bcrypt 全新哈希；全部已登录态不受影响——JWT 无状态）。
@@ -206,10 +221,10 @@ func (s *AdminUserManageService) ResetUserPassword(ctx context.Context, req *adm
 
 // enrich 批量聚合（一页用户 5 类批查 + 等级逐条解析，杜绝 N+1 逐行查询）：
 // 钱包/积分/供货账户 in 查询；订单数与消费额 group by；等级名字典批查。
-func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) map[uint64]*adminv1.UserItem {
+func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) (map[uint64]*adminv1.UserItem, error) {
 	out := make(map[uint64]*adminv1.UserItem, len(rows))
 	if len(rows) == 0 {
-		return out
+		return out, nil
 	}
 	client := data.Client(ctx, s.repo.data)
 	ids := make([]uint64, 0, len(rows))
@@ -248,21 +263,9 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) m
 	for _, r := range cntRows {
 		orderCount[r.UserID] = r.Count
 	}
-	// 消费额 = 已支付族订单 amount 合计（排除待付款/已取消/已过期）
-	spent := map[uint64]int64{}
-	paidStates := []order.Status{order.StatusPaid, order.StatusFulfilling,
-		order.StatusPartiallyDelivered, order.StatusDelivered, order.StatusRefundPending}
-	var sumRows []struct {
-		UserID uint64 `json:"user_id"`
-		Sum    int64  `json:"sum"`
-	}
-	_ = client.Order.Query().
-		Where(order.UserIDIn(ids...), order.StatusIn(paidStates...)).
-		GroupBy(order.FieldUserID).
-		Aggregate(ent.Sum(order.FieldTotalAmount)).
-		Scan(ctx, &sumRows)
-	for _, r := range sumRows {
-		spent[r.UserID] = r.Sum
+	spent, err := data.UserSpending(ctx, client, ids)
+	if err != nil {
+		return nil, errors.InternalServer("identity.USER_STATS_FAILED", "读取用户消费统计失败")
 	}
 
 	// 等级:RateResolver 逐用户 + 名称字典批查
@@ -317,7 +320,7 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) m
 		}
 		out[r.ID] = item
 	}
-	return out
+	return out, nil
 }
 
 func validUserStatus(st string) bool {

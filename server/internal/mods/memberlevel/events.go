@@ -68,5 +68,5 @@ func (s *PointsService) OnOrderPaid(ctx context.Context, env events.Envelope) er
 	if err != nil {
 		s.log.Error("memberlevel.points_credit_failed", "order_id", payload.OrderID, "err", err)
 	}
-	return nil // 失败不重投整批（幂等键可人工补发；告警走日志）
+	return err // 失败交由队列重试；积分流水与消费标记在同一事务提交。
 }
