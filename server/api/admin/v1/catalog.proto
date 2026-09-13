@@ -142,6 +142,7 @@ message ListProductsRequest {
   uint64 upstream_source_id = 7; // 按供货渠道筛选（0=全部；商品列表渠道商下拉）
   bool out_of_stock_only = 9; // 仅库存为 0，按自营/上游货源分别计算
   bool local_only = 8; // 仅看自营（无上游渠道）
+  string stock_type = 10; // card | url | code，空表示全部
 }
 
 message ListProductsReply {

@@ -7,11 +7,12 @@ import (
 	"context"
 	"time"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/pageview"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/usersession"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 )
 
 // TrackRepo 访问埋点/统计仓储。
@@ -31,7 +32,7 @@ func (r *TrackRepo) RecordVisit(ctx context.Context, subsite uint64, path string
 	client := data.Client(ctx, r.data)
 	_, err := client.PageView.Create().
 		SetSubsiteID(subsite).
-		SetDay(now.Format("20060102")).
+		SetDay(businessday.Date(now, "20060102")).
 		SetPath(path).
 		SetUserID(userID).
 		SetIP(ip).
@@ -66,42 +67,31 @@ func (r *TrackRepo) TrafficByDay(ctx context.Context, subsite uint64, days int) 
 	if days > 90 {
 		days = 90
 	}
-	start := time.Now().UTC().AddDate(0, 0, -(days - 1)).Format("20060102")
+	// Use absolute request timestamps to repair old UTC day labels without rewriting history.
+	start := businessday.Start(businessday.Now()).In(businessday.Location).AddDate(0, 0, -(days - 1))
 	client := data.Client(ctx, r.data)
-	var pv []struct {
-		Day   string
-		Count int64
+	out := make([]auditport.TrafficDay, 0, days)
+	for i := 0; i < days; i++ {
+		day := start.AddDate(0, 0, i)
+		end := day.AddDate(0, 0, 1)
+		var counts []struct {
+			PV int64 `json:"pv"`
+			UV int64 `json:"uv"`
+		}
+		err := client.PageView.Query().Where(pageview.SubsiteID(subsite),
+			pageview.DayGTE(day.AddDate(0, 0, -1).Format("20060102")), pageview.DayLTE(day.Format("20060102")),
+			pageview.CreatedAtGTE(day.UTC()), pageview.CreatedAtLT(end.UTC())).Aggregate(
+			func(s *sql.Selector) string { return sql.As(sql.Count("*"), "pv") },
+			func(s *sql.Selector) string { return sql.As(sql.Count(sql.Distinct(s.C(pageview.FieldIP))), "uv") },
+		).Scan(ctx, &counts)
+		if err != nil {
+			return nil, err
+		}
+		if len(counts) > 0 {
+			out = append(out, auditport.TrafficDay{Date: day.Format("20060102"), PV: counts[0].PV, UV: counts[0].UV})
+		}
 	}
-	if err := client.PageView.Query().
-		Where(pageview.DayGTE(start), pageview.SubsiteID(subsite)).
-		GroupBy(pageview.FieldDay).
-		Aggregate(ent.Count()).
-		Scan(ctx, &pv); err != nil {
-		return nil, err
-	}
-	// UV = 按 (day, ip) 分组后内存按日去重（ent 无 COUNT(DISTINCT) 聚合）
-	var pairs []struct {
-		Day string
-		IP  string
-	}
-	if err := client.PageView.Query().
-		Where(pageview.DayGTE(start), pageview.SubsiteID(subsite)).
-		GroupBy(pageview.FieldDay, pageview.FieldIP).
-		Scan(ctx, &pairs); err != nil {
-		return nil, err
-	}
-	uvByDay := map[string]int64{}
-	for _, row := range pairs {
-		uvByDay[row.Day]++
-	}
-	byDay := make(map[string]*auditport.TrafficDay, len(pv))
-	for _, row := range pv {
-		byDay[row.Day] = &auditport.TrafficDay{Date: row.Day, PV: row.Count, UV: uvByDay[row.Day]}
-	}
-	out := make([]auditport.TrafficDay, 0, len(byDay))
-	for _, t := range byDay {
-		out = append(out, *t)
-	}
+
 	return out, nil
 }
 

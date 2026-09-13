@@ -6,11 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
-	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	identityport "github.com/NovaWorks/zcard-next/server/internal/mods/identity/port"
-
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -85,7 +84,7 @@ func (s *AdminAuditService) ListOpLogs(ctx context.Context, req *adminv1.ListOpL
 	for _, l := range rows {
 		item := &adminv1.OpLogItem{
 			Id: l.ID, OperatorType: string(l.OperatorType), OperatorId: l.OperatorID,
-			OperatorName:  names[l.OperatorID],
+			OperatorName:    names[l.OperatorID],
 			PermissionPoint: l.PermissionPoint, Action: l.Action, Route: l.Route,
 			Ip: l.IP, CreatedAt: l.CreatedAt.Unix(),
 		}
@@ -132,7 +131,7 @@ func (s *AdminAuditService) ListSecurityLogs(ctx context.Context, req *adminv1.L
 		item := &adminv1.SecurityLogItem{
 			Id: l.ID, ActorType: string(l.ActorType), ActorId: l.ActorID,
 			ActorName: name,
-			Action: l.Action, Ip: l.IP, CreatedAt: l.CreatedAt.Unix(),
+			Action:    l.Action, Ip: l.IP, CreatedAt: l.CreatedAt.Unix(),
 		}
 		if l.Metadata != nil {
 			if b, err := json.Marshal(l.Metadata); err == nil {
@@ -184,7 +183,7 @@ func (s *AdminAuditService) SetBlacklist(ctx context.Context, req *adminv1.SetBl
 	return &emptypb.Empty{}, nil
 }
 
-func latestDate() string { return time.Now().UTC().Format("20060102") }
+func latestDate() string { return businessday.Now().Format("20060102") }
 
 func auditPageParams(page, pageSize int32) (int, int) {
 	p := int(page)

@@ -15,7 +15,6 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
-
 	"github.com/go-kratos/kratos/v3/errors"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -115,6 +114,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 		OutOfStockOnly:    req.GetOutOfStockOnly(),
 		ConnectionID:      req.GetUpstreamSourceId(),
 		LocalOnly:         req.GetLocalOnly(),
+		StockType:         req.GetStockType(),
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品失败")
@@ -259,9 +259,15 @@ func (s *AdminCatalogService) ListCategories(ctx context.Context, _ *emptypb.Emp
 	if err != nil {
 		return nil, errors.InternalServer("catalog.CATEGORY_LIST_FAILED", "读取分类失败")
 	}
+	counts, err := s.repo.CategoryProductCounts(ctx, rows)
+	if err != nil {
+		return nil, errors.InternalServer("catalog.CATEGORY_LIST_FAILED", "读取分类商品数量失败")
+	}
 	reply := &adminv1.CategoryList{}
 	for _, c := range rows {
-		reply.Categories = append(reply.Categories, toCategoryPB(c))
+		p := toCategoryPB(c)
+		p.ProductCount = counts[c.ID]
+		reply.Categories = append(reply.Categories, p)
 	}
 	return reply, nil
 }

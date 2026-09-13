@@ -129,6 +129,8 @@ async function searchProducts(q = "") {
     const { data, error } = await fetchProducts({
       keyword: q,
       status: 1,
+      local_only: true,
+      stock_type: "card",
       page_size: 50,
     });
     if (seq !== productSearchSeq) return;
@@ -790,7 +792,7 @@ onMounted(load);
               :options="timezones"
               :disabled="form.published" /></NFormItem
           ><NFormItem label="活动图片（可选）"
-            ><MediaField v-model="form.image" /></NFormItem
+            ><MediaField :value="form.image ? [form.image] : []" @update:value="urls => form.image = urls[0] || ''" /></NFormItem
           ><NFormItem label="活动说明"
             ><NInput
               v-model:value="form.description"
@@ -856,7 +858,7 @@ onMounted(load);
                   remote
                   filterable
                   :disabled="!!p.issued"
-                  placeholder="搜索普通自营卡密商品"
+                  placeholder="搜索在售自营卡密商品（上游商品不自动发奖）"
                   @search="searchProducts"
                   @update:value="(id) => selectProduct(p, id)" /></NFormItem
               ><NFormItem
@@ -914,7 +916,7 @@ onMounted(load);
               /></NFormItem>
             </div>
             <NFormItem label="奖品图片（可选）"
-              ><MediaField v-model="p.image"
+              ><MediaField :value="p.image ? [p.image] : []" @update:value="urls => p.image = urls[0] || ''"
             /></NFormItem>
           </div>
           <NButton

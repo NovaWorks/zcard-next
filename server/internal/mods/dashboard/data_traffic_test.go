@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -18,14 +18,14 @@ func TestTrafficRecordedVisits(t *testing.T) {
 	tracker := audit.NewTrackRepo(d)
 	svc := &AdminDashboardService{traffic: tracker}
 	ctx := tenancy.WithContext(context.Background(), tenancy.Context{SubsiteID: 5})
-	today := time.Now().UTC()
+	today := businessday.Now()
 	for _, ip := range []string{"192.0.2.1", "192.0.2.1", "192.0.2.2"} {
 		tracker.RecordVisit(ctx, 5, "/products", 0, ip)
 	}
 	tracker.RecordVisit(ctx, 0, "/products", 0, "192.0.2.3")
 	for _, offset := range []int{1, 6, 13, 29, 30} {
 		d.Client.PageView.Create().SetSubsiteID(5).
-			SetDay(today.AddDate(0, 0, -offset).Format("20060102")).
+			SetDay(today.AddDate(0, 0, -offset).Format("20060102")).SetCreatedAt(today.AddDate(0, 0, -offset).UTC()).
 			SetPath("/products").SetIP("192.0.2.1").SaveX(ctx)
 	}
 	for _, days := range []int32{0, 7, 14, 30, 99} {

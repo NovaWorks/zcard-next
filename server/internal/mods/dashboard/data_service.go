@@ -12,8 +12,8 @@ import (
 	affiliateport "github.com/NovaWorks/zcard-next/server/internal/mods/affiliate/port"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	dashboardport "github.com/NovaWorks/zcard-next/server/internal/mods/dashboard/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
-
 	"github.com/go-kratos/kratos/v3/errors"
 )
 
@@ -163,7 +163,7 @@ func (s *AdminDashboardService) GetTraffic(ctx context.Context, req *adminv1.Get
 		byDay[r.Date] = &adminv1.TrafficPoint{Date: r.Date, Pv: r.PV, Uv: r.UV}
 	}
 	reply := &adminv1.GetTrafficReply{}
-	start := time.Now().UTC().AddDate(0, 0, -(days - 1))
+	start := businessday.Now().AddDate(0, 0, -(days - 1))
 	for i := 0; i < days; i++ {
 		day := start.AddDate(0, 0, i)
 		d := day.Format("2006-01-02")
@@ -206,7 +206,7 @@ func (s *AdminDashboardService) GetDailyStats(ctx context.Context, req *adminv1.
 	subsite := tenancy.FromContext(ctx).SubsiteID
 	start, end := req.GetStartDate(), req.GetEndDate()
 	if start == "" || end == "" {
-		now := time.Now().UTC()
+		now := businessday.Now()
 		start = now.AddDate(0, 0, -6).Format("20060102")
 		end = now.Format("20060102")
 	}

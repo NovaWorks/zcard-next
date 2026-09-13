@@ -113,7 +113,7 @@
       <div class="muted">使用{{ payingChannel?.name || '所选渠道' }}完成支付；支付后本页自动检测</div>
       <div class="pay-btn-row">
         <button class="btn btn-primary" @click="openRedirect">重新打开收银台</button>
-        <button class="btn btn-outline" @click="copyLink">复制支付链接</button>
+        <button v-if="!redirectParams" class="btn btn-outline" @click="copyLink">复制支付链接</button>
         <button class="btn btn-outline" @click="backToSelect">更换支付方式</button>
       </div>
       <div class="pay-qr-hint" style="margin-top: 14px;">
@@ -163,6 +163,7 @@
 </template>
 
 <script setup lang="ts">
+import { submitPaymentForm as submitForm } from "@/utils/payment-form";
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import QRCode from 'qrcode';
@@ -192,6 +193,7 @@ const retrying = ref(false);
 // 二维码 / 跳转
 const qrDataUrl = ref('');
 const redirectUrl = ref('');
+const redirectParams = ref<Record<string, string> | null>(null);
 
 // 自动取货结果
 const delivery = ref<FetchDeliveryReply | null>(null);
@@ -324,6 +326,7 @@ async function pay() {
   error.value = '';
   qrDataUrl.value = '';
   redirectUrl.value = '';
+  redirectParams.value = null;
   payingChannel.value = channels.value.find((c) => c.code === selected.value.channel) || null;
   const { data, error: err } = await createPayment(orderNo, selected.value.channel, selected.value.method);
   submitting.value = false;
@@ -346,9 +349,10 @@ async function pay() {
     // 易支付表单 POST：自动提交
     try {
       const p = JSON.parse(payload);
-      submitForm(p.url || '', p.params || {});
-      phase.value = 'redirect';
       redirectUrl.value = p.url || '';
+      redirectParams.value = p.params || {};
+      phase.value = 'redirect';
+      openRedirect();
     } catch { error.value = '支付参数异常'; }
   } else {
     let url = payload;
@@ -371,25 +375,9 @@ async function makeQr(content: string): Promise<string> {
 
 function openRedirect() {
   if (!redirectUrl.value) return;
+  if (redirectParams.value) { submitForm(redirectUrl.value, redirectParams.value); return; }
   // 新窗口打开 + noopener 防反向控制（大厂同款纪律）
   window.open(redirectUrl.value, '_blank', 'noopener');
-}
-
-function submitForm(url: string, params: Record<string, string>) {
-  const form = document.createElement('form');
-  form.action = url;
-  form.method = 'POST';
-  form.target = '_blank';
-  form.rel = 'noopener';
-  for (const [k, v] of Object.entries(params)) {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = k;
-    input.value = String(v);
-    form.appendChild(input);
-  }
-  document.body.appendChild(form);
-  form.submit();
 }
 
 async function copyLink() {
@@ -404,6 +392,7 @@ function backToSelect() {
   phase.value = 'select';
   qrDataUrl.value = '';
   redirectUrl.value = '';
+  redirectParams.value = null;
 }
 
 // ── 支付成功：自动取货（会话内记忆的查询密码；失败降级去取货页）──

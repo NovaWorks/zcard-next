@@ -217,7 +217,7 @@
 
             <!-- 支付跳转 -->
             <div v-if="rechargeRedirect" style="margin-top: 12px;">
-              <a class="btn" style="width: 100%; text-align: center; text-decoration: none;" :href="rechargeRedirect" target="_blank">去支付（跳转收银台）</a>
+              <button class="btn" style="width:100%" @click="openRechargeCheckout">去支付（跳转收银台）</button>
               <div class="muted" style="text-align: center; margin-top: 6px;">支付完成后余额自动到账</div>
             </div>
             <div v-else-if="rechargeQrcode" style="margin-top: 12px; text-align: center;">
@@ -242,6 +242,7 @@
 </template>
 
 <script setup lang="ts">
+import { submitPaymentForm } from "@/utils/payment-form";
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import { flattenPayOptions } from '@/composables/pay-options';
 import { computed, onMounted, ref } from 'vue';
@@ -347,6 +348,15 @@ const supplierPayOptions = computed(() => flattenPayOptions(rechargeChannels.val
 const recharging = ref(false);
 const rechargeError = ref('');
 const rechargeRedirect = ref('');
+const rechargeParams = ref<Record<string, string> | null>(null);
+function openRechargeCheckout() {
+  try {
+    if (rechargeParams.value) submitPaymentForm(rechargeRedirect.value, rechargeParams.value);
+    else window.open(rechargeRedirect.value, '_blank', 'noopener');
+  } catch {
+    rechargeError.value = '支付参数异常，请重新选择支付方式';
+  }
+}
 const rechargeQrcode = ref('');
 const rechargeMeta = ref<{ min_amount: number; max_amount: number } | null>(null);
 const rechargeDone = ref(false);
@@ -360,6 +370,7 @@ async function openRecharge(a: SupplierAccount) {
   focusCustom.value = false;
   rechargeError.value = '';
   rechargeRedirect.value = '';
+  rechargeParams.value = null;
   rechargeQrcode.value = '';
   rechargeDone.value = false;
   rechargeOpen.value = true;
@@ -416,6 +427,7 @@ async function doRecharge() {
   recharging.value = true;
   rechargeError.value = '';
   rechargeRedirect.value = '';
+  rechargeParams.value = null;
   rechargeQrcode.value = '';
   const { data, error } = await createSupplierRecharge(rechargeTarget.value.id, {
     amount_cents: Math.round(rechargeYuan.value * 100),
@@ -434,6 +446,7 @@ async function doRecharge() {
     try {
       const p = JSON.parse(data.payload);
       rechargeRedirect.value = p.url || '';
+      rechargeParams.value = p.params || {};
       rechargeError.value = p.url ? '' : '支付参数异常';
     } catch {
       rechargeError.value = '支付参数异常';

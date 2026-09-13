@@ -22,6 +22,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/visitlog"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 )
 
 // 闸门阈值（settings.security 可覆盖——读取侧 接线；默认值与文档一致）。
@@ -300,7 +301,7 @@ func NewVisitCounter() *VisitCounter { return &VisitCounter{rows: map[string]*vi
 
 // Record 记一次访问（内存）。
 func (c *VisitCounter) Record(subsiteID uint64, path string) {
-	now := time.Now().UTC()
+	now := businessday.Now()
 	key := fmt.Sprintf("%s|%d|%s", now.Format("20060102"), now.Hour(), path)
 	c.mu.Lock()
 	defer c.mu.Unlock()

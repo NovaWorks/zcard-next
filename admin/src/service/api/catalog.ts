@@ -12,6 +12,7 @@ export function fetchProducts(params?: {
   out_of_stock_only?: boolean;
   upstream_source_id?: number;
   local_only?: boolean;
+  stock_type?: "card" | "url" | "code";
 }) {
   return request({
     url: "/api/v1/admin/products",

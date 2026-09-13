@@ -237,7 +237,7 @@
         <div class="muted">使用{{ selectedOption?.name || '所选渠道' }}完成支付；充值单金额 {{ formatMoney(pendingAmountCents) }}</div>
         <div class="rc-btn-row">
           <button class="btn" @click="openRedirect">重新打开收银台</button>
-          <button class="btn secondary" @click="copyLink">复制支付链接</button>
+          <button v-if="!rechargeParams" class="btn secondary" @click="copyLink">复制支付链接</button>
           <button class="btn secondary" @click="backToForm">更换支付方式</button>
         </div>
       </div>
@@ -324,6 +324,7 @@
 </template>
 
 <script setup lang="ts">
+import { submitPaymentForm as submitForm } from "@/utils/payment-form";
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import QRCode from 'qrcode';
@@ -387,6 +388,7 @@ const rechargeMethod = ref('');
 const recharging = ref(false);
 const rechargeError = ref('');
 const rechargeRedirect = ref('');
+const rechargeParams = ref<Record<string,string>|null>(null);
 const rechargeQrcode = ref(''); // 二维码 data URL（本地生成，不依赖第三方服务）
 const pendingAmountCents = ref(0);
 const rechargeMeta = ref<{ min_amount: number; max_amount: number } | null>(null);
@@ -504,6 +506,7 @@ function backToForm() {
   rechargePhase.value = 'form';
   rechargeQrcode.value = '';
   rechargeRedirect.value = '';
+  rechargeParams.value = null;
 }
 
 async function doRecharge() {
@@ -541,7 +544,8 @@ async function doRecharge() {
     try {
       const p = JSON.parse(payload);
       if (p.url) {
-        submitForm(p.url, p.params || {});
+        rechargeParams.value = p.params || {};
+        submitForm(p.url, rechargeParams.value!);
         rechargeRedirect.value = p.url;
         rechargePhase.value = 'redirect';
       } else {
@@ -570,25 +574,9 @@ async function makeQr(content: string): Promise<string> {
 
 function openRedirect() {
   if (!rechargeRedirect.value) return;
+  if (rechargeParams.value) { submitForm(rechargeRedirect.value, rechargeParams.value); return; }
   // 新窗口打开 + noopener 防反向控制（与支付页同款纪律）
   window.open(rechargeRedirect.value, '_blank', 'noopener');
-}
-
-function submitForm(url: string, params: Record<string, string>) {
-  const form = document.createElement('form');
-  form.action = url;
-  form.method = 'POST';
-  form.target = '_blank';
-  form.rel = 'noopener';
-  for (const [k, v] of Object.entries(params)) {
-    const input = document.createElement('input');
-    input.type = 'hidden';
-    input.name = k;
-    input.value = String(v);
-    form.appendChild(input);
-  }
-  document.body.appendChild(form);
-  form.submit();
 }
 
 async function copyLink() {

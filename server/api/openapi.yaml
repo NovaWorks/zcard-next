@@ -3168,6 +3168,10 @@ paths:
                   in: query
                   schema:
                     type: boolean
+                - name: stockType
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK

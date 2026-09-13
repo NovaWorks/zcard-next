@@ -2,7 +2,7 @@ package dashboard
 
 // 日结任务：daily_stats 落表（报表只扫此表不扫大表）。
 // 幂等：唯一索引 (subsite_id, stat_date, metric, dimension_key) 重跑覆盖。
-// 调度：每小时检查 + 当日标记（00:10–01:00 窗口跑昨日聚合，防漏跑/重复跑）。
+// 调度：每小时检查 + 当日标记（按北京时间跑昨日聚合，错过零点仍可补跑）。
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/dailystat"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 )
 
 // settleMetrics 日结指标集（dimension_key 空=总量行）。
@@ -18,9 +19,9 @@ var settleMetrics = []string{"orders", "amount", "paid_orders"}
 
 // RunDailySettle 聚合指定日各租户指标并落 daily_stats（重跑覆盖同维度行）。
 func (r *DashboardRepoImpl) RunDailySettle(ctx context.Context, day time.Time) error {
-	start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, time.UTC)
+	start := businessday.Start(day)
 	end := start.AddDate(0, 0, 1)
-	date := start.Format("20060102")
+	date := businessday.Date(start, "20060102")
 	client := data.Client(ctx, r.data)
 
 	// 全部租户（主站 0 + 订单表中出现过的分站）
@@ -127,15 +128,11 @@ func (r *DashboardRepoImpl) GetDailyStats(ctx context.Context, subsiteID uint64,
 	return out, nil
 }
 
-// DailySettleCron 日结调度（每小时检查；00:10–01:00 窗口跑昨日，当日标记防重跑）。
+// DailySettleCron 日结调度（每小时检查；按北京时间跑昨日，当日标记防重跑）。
 func (r *DashboardRepoImpl) DailySettleCron() func(context.Context) {
 	lastRun := ""
 	return func(ctx context.Context) {
-		now := time.Now()
-		hour := now.Hour()
-		if hour != 0 && hour != 1 {
-			return // 仅 00–01 点窗口
-		}
+		now := r.now().In(businessday.Location)
 		today := now.Format("20060102")
 		if lastRun == today {
 			return

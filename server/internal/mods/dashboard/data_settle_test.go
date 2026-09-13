@@ -102,7 +102,8 @@ func TestDailySettleSubsiteIsolation(t *testing.T) {
 	d := newDashboardData(t)
 	repo := NewDashboardRepoImpl(d)
 	ctx := context.Background()
-	now := time.Now().UTC()
+	now := time.Date(2026, 9, 13, 4, 0, 0, 0, time.UTC)
+	repo.now = func() time.Time { return now }
 	seedOrder(t, d, 0, "paid", 1000, now.Add(-time.Hour))
 	seedOrder(t, d, 5, "paid", 2000, now.Add(-2*time.Hour))
 

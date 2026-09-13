@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -60,11 +61,12 @@ type TopChannel struct {
 // DashboardRepoImpl 报表仓储。
 type DashboardRepoImpl struct {
 	data *data.Data
+	now  func() time.Time
 }
 
 // NewDashboardRepoImpl 构造。
 func NewDashboardRepoImpl(d *data.Data) *DashboardRepoImpl {
-	return &DashboardRepoImpl{data: d}
+	return &DashboardRepoImpl{data: d, now: time.Now}
 }
 
 func paidStatuses() []order.Status {
@@ -79,8 +81,8 @@ func paidStatuses() []order.Status {
 // 过滤，分站后台只看本站；new_users 为全局注册用户，用户表不分站）。
 func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, yesterday, last7d, prev7d, last30d, prev30d Metric, err error) {
 	subsite := tenancy.FromContext(ctx).SubsiteID
-	now := time.Now().UTC()
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	now := r.now().In(businessday.Location)
+	todayStart := businessday.Start(now)
 	if m, e := r.metricBetween(ctx, subsite, todayStart, now); e == nil {
 		today = m
 	}
@@ -104,11 +106,12 @@ func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, yesterday, 
 
 // metricBetweenSubsite 指定租户区段聚合（日结任务用）。
 func (r *DashboardRepoImpl) metricBetweenSubsite(ctx context.Context, subsite uint64, start, end time.Time) (Metric, error) {
+	start, end = start.UTC(), end.UTC()
 	client := data.Client(ctx, r.data)
 	orders, err := client.Order.Query().
 		Where(
 			order.CreatedAtGTE(start),
-			order.CreatedAtLTE(end),
+			order.CreatedAtLT(end),
 			order.SubsiteID(subsite),
 		).
 		All(ctx)
@@ -129,7 +132,7 @@ func (r *DashboardRepoImpl) metricBetweenSubsite(ctx context.Context, subsite ui
 	}
 	m.Profit = m.Revenue - m.Cost
 	// 新增注册用户（全局表不分站；失败不阻断主统计）
-	if n, e := client.User.Query().Where(user.CreatedAtGTE(start), user.CreatedAtLTE(end)).Count(ctx); e == nil {
+	if n, e := client.User.Query().Where(user.CreatedAtGTE(start), user.CreatedAtLT(end)).Count(ctx); e == nil {
 		m.NewUsers = int64(n)
 	}
 	return m, nil
@@ -146,11 +149,11 @@ func (r *DashboardRepoImpl) GetTrend(ctx context.Context, days int) ([]TrendPoin
 		days = 7
 	}
 	subsite := tenancy.FromContext(ctx).SubsiteID
-	now := time.Now().UTC()
-	start := now.AddDate(0, 0, -(days - 1))
+	now := r.now().In(businessday.Location)
+	start := businessday.Start(now).In(businessday.Location).AddDate(0, 0, -(days - 1))
 	client := data.Client(ctx, r.data)
 	rows, err := client.Order.Query().
-		Where(order.CreatedAtGTE(start), order.SubsiteID(subsite)).
+		Where(order.CreatedAtGTE(start.UTC()), order.CreatedAtLT(now.UTC()), order.SubsiteID(subsite)).
 		All(ctx)
 	if err != nil {
 		return nil, err
@@ -166,7 +169,7 @@ func (r *DashboardRepoImpl) GetTrend(ctx context.Context, days int) ([]TrendPoin
 		buckets[d] = &TrendPoint{Date: d}
 	}
 	for _, o := range rows {
-		d := o.CreatedAt.Format("2006-01-02")
+		d := businessday.Date(o.CreatedAt, "2006-01-02")
 		bp, ok := buckets[d]
 		if !ok {
 			continue
@@ -361,11 +364,11 @@ type ReconciliationSummary struct {
 // GetReconciliation 当日对账（口径：本地时区日界——运营对账口径；金额一律分）。
 func (r *DashboardRepoImpl) GetReconciliation(ctx context.Context, date string) (*ReconciliationSummary, error) {
 	var day time.Time
-	if d, err := time.ParseInLocation("20060102", date, time.Local); err == nil {
+	if d, err := time.ParseInLocation("20060102", date, businessday.Location); err == nil {
 		day = d
 	} else {
-		now := time.Now()
-		day = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+		now := businessday.Now()
+		day = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, businessday.Location)
 	}
 	start := day.UTC()
 	end := day.AddDate(0, 0, 1).UTC()

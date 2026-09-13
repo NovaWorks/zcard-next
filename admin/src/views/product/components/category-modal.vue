@@ -642,7 +642,7 @@ async function onSortBlur(cat: any) {
           <template #trigger><NButton v-auth="'catalog:category_write'" size="small" secondary :loading="visibilityBusy === cat.id" :disabled="visibilityBusy !== null || (cat.ancestorHidden && !cat.hide)">{{ cat.hide ? '恢复显示' : '隐藏下架' }}</NButton></template>
           {{ cat.hide ? `恢复「${cat.name}」的显示？若父级仍隐藏，本分类仍不会展示。商品保留原来的上下架状态。` : `隐藏「${cat.name}」及全部子分类？其中商品将从商城和供货目录隐藏，无法新下单。已有订单继续处理。` }}
         </NPopconfirm>
-        <span class="w-76px shrink-0 text-right text-12px text-gray-400">{{ cat.product_count || 0 }} 件</span>
+        <span title="该分类及下级分类的未删除商品总数（含隐藏、下架商品）" class="w-76px shrink-0 text-right text-12px text-gray-500">{{ cat.product_count || 0 }} 件</span>
         <NInputNumber
           v-model:value="cat.sort"
           size="tiny"

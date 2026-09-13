@@ -185,7 +185,7 @@ func TestVisitCounter(t *testing.T) {
 	c.Record(0, "/api/v1/storefront/banners")
 	c.Flush() // 强制落库
 
-	date := time.Now().UTC().Format("20060102")
+	date := time.Now().In(time.FixedZone("CST", 8*3600)).Format("20060102")
 	rows, total, err := r.ListVisitStats(ctx, date, 1, 10)
 	if err != nil || total != 2 {
 		t.Fatalf("统计行应 2 条: %v %d", err, total)

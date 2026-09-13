@@ -42,6 +42,12 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		}
 		q = q.Where(product.CategoryIDIn(ids...))
 	}
+	if f.StockType != "" {
+		if f.StockType != "card" && f.StockType != "url" && f.StockType != "code" {
+			return nil, 0, fmt.Errorf("商品库存类型无效")
+		}
+		q = q.Where(product.StockTypeEQ(product.StockType(f.StockType)))
+	}
 	if f.Keyword != "" {
 		q = q.Where(product.NameContains(f.Keyword)) // 与前台一致：包含匹配（搜名称中段词可命中）
 	}
@@ -49,7 +55,7 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		q = q.Where(product.UpstreamSourceID(f.ConnectionID))
 	}
 	if f.LocalOnly {
-		q = q.Where(product.UpstreamSourceIDIsNil())
+		q = q.Where(product.Or(product.UpstreamSourceIDIsNil(), product.UpstreamSourceID(0)))
 	}
 	if f.Status != 0 { // 0=全部（proto3 默认值）；1=上架 2=隐藏 -1=仅下架（DB status=0）
 		st := f.Status

@@ -113,6 +113,7 @@ type PricingResolver interface {
 
 // AdminFilter 管理面商品过滤（含下架/隐藏；成本价下发）。
 type AdminFilter struct {
+	StockType  string
 	SubsiteID  uint64
 	CategoryID uint64
 	Keyword    string
