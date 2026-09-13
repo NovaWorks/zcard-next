@@ -616,11 +616,15 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 		if in.Status == 1 && !in.AutoOnshelf {
 			status = 0
 		}
+		price := in.Price
+		if price < 0 {
+			price = 0 // 待定价的新商品没有旧价，不能将“不改价”哨兵存为售价。
+		}
 		create := data.Client(ctx, r.data).Product.Create().
 			SetSubsiteID(tc.SubsiteID).
 			SetName(in.Name).
 			SetSlug(slug).
-			SetPrice(in.Price).
+			SetPrice(price).
 			SetFactoryPrice(in.FactoryPrice).
 			SetStockType(product.StockTypeCard).
 			SetStatus(status).
@@ -647,7 +651,25 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 
 	if existing.Status < 0 {
-		return 0, false, fmt.Errorf("商品已删除，禁止同步恢复；如需换品请导入其他商品")
+		if !in.ReimportDeleted {
+			return 0, false, fmt.Errorf("商品已在本地删除，自动同步不会恢复；如需重新导入，请在导入上游商品中勾选该商品")
+		}
+		// 只释放上游唯一标识；旧商品及其订单、卡密、SKU 继续保留归档。
+		// 释放与新建必须同一事务，失败时仍由归档记录阻止自动同步复活。
+		var id uint64
+		var created bool
+		err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+			if err := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).
+				Where(product.StatusLT(0), product.UpstreamSourceID(in.ConnectionID), product.UpstreamProductCode(in.UpstreamProductCode)).
+				ClearUpstreamProductCode().Exec(ctx); err != nil {
+				return err
+			}
+			in.ReimportDeleted = false
+			var err error
+			id, created, err = r.UpsertUpstreamProduct(ctx, in)
+			return err
+		})
+		return id, created, err
 	}
 
 	// 更新：名称/描述/封面/分类/状态/成本价；价格按保护语义（-1 不动）

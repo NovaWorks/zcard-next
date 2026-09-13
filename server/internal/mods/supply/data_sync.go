@@ -30,6 +30,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/queue"
 
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
@@ -860,40 +861,58 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,
+		ReimportDeleted:     true,
 		Price:               writePrice,
 	}
 	if localCat, ok := categoryMap[p.CategoryID]; ok {
 		write.CategoryID = localCat
 		write.CategorySet = true
 	}
-	productID, created, err := s.writeProductCategory(ctx, p.CategoryID, &write)
-	if err != nil {
-		return false, err
-	}
-	// 映射 upsert（价格基线：导入价；后续同步据此做运营改价保护）
-	override := map[string]any{}
-	if price > 0 {
-		override["last_synced_price"] = price
-	}
-	mapping, err = s.repo.GetMapping(ctx, conn.ID, p.ID, "")
-	if err != nil {
-		if err != ErrNotFound {
-			return created, err
+	// 手动导入也必须携带规格，上游下单使用 SKU ID。
+	for _, sk := range p.SKUs {
+		skuPrice := ApplyPricingImport(sk.Price, conn.ExchangeRate, markupPercent, markupAmount, mode, string(conn.PriceRoundingMode))
+		if mode == PriceModePending {
+			skuPrice = -1 // 待定价时保留已有规格价格，不写零元规格。
 		}
-		mapping = &ent.SupplyMapping{ConnectionID: conn.ID, UpstreamProduct: p.ID}
+		write.SKUs = append(write.SKUs, catalogport.UpstreamSKUInput{
+			Code: sk.Code, Name: sk.Name, SpecValues: sk.SpecValues,
+			PriceCents: skuPrice,
+		})
 	}
-	mapping.LocalProductID = productID
-	mapping.UpstreamCategory = p.CategoryID
-	if write.CategorySet {
-		mapping.LocalCategoryID = write.CategoryID
-	}
-	mapping.UpStock = p.Stock
-	mapping.StockCheckedAt = time.Now().UTC()
-	mapping.PricingOverride = override
-	if err := s.saveProductMapping(ctx, mapping); err != nil {
-		return created, err
-	}
-	return created, nil
+	// 商品、规格、映射一起提交，失败时保留原归档的同步保护。
+	created := false
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		productID, wasCreated, err := s.writeProductCategory(ctx, p.CategoryID, &write)
+		if err != nil {
+			return err
+		}
+		created = wasCreated
+		// 映射 upsert（价格基线：导入价；后续同步据此做运营改价保护）
+		override := map[string]any{}
+		if price > 0 {
+			override["last_synced_price"] = price
+		}
+		mapping, err = s.repo.GetMapping(ctx, conn.ID, p.ID, "")
+		if err != nil {
+			if err != ErrNotFound {
+				return err
+			}
+			mapping = &ent.SupplyMapping{ConnectionID: conn.ID, UpstreamProduct: p.ID}
+		}
+		mapping.LocalProductID = productID
+		mapping.UpstreamCategory = p.CategoryID
+		if write.CategorySet {
+			mapping.LocalCategoryID = write.CategoryID
+		}
+		mapping.UpStock = p.Stock
+		mapping.StockCheckedAt = time.Now().UTC()
+		mapping.PricingOverride = override
+		if err := s.saveProductMapping(ctx, mapping); err != nil {
+			return err
+		}
+		return nil
+	})
+	return created, err
 }
 
 // ── 失败自动重试（ 补强：上游暂不可用 15→30→60s 递进恢复）──

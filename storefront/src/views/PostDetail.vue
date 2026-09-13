@@ -9,7 +9,8 @@
           <template v-if="categoryName(post.category_id)">栏目：{{ categoryName(post.category_id) }} · </template>{{ formatDate(post.published_at) }}
         </div>
       </div>
-      <div class="card post-body" v-html="content"></div>
+      <div ref="postBody" class="card post-body" @click="openPostImage" @keydown="postImageKeydown" v-html="content"></div>
+      <ImageViewer v-if="previewImages.length" :images="previewImages" :initial-index="previewIndex" @close="previewImages = []" />
     </template>
     <div v-else class="muted" style="text-align: center; margin-top: 24px;">加载中…</div>
     <div style="margin-top: 16px;">
@@ -19,7 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, watch } from 'vue';
+import ImageViewer from '@/components/ImageViewer.vue';
 import { useRoute } from 'vue-router';
 import { getPost, listPostCategories, type StorePost, type PostCategory } from '@/api';
 import { fetchSiteSeo, applySeo, stripHtml, truncate } from '@/seo';
@@ -29,6 +31,31 @@ const post = ref<StorePost | null>(null);
 const content = ref('');
 const error = ref('');
 const categories = ref<PostCategory[]>([]);
+
+const postBody = ref<HTMLElement | null>(null);
+const previewImages = ref<{ src: string; alt: string }[]>([]);
+const previewIndex = ref(0);
+function openPostImage(event: Event) {
+  if (!(event.target instanceof HTMLImageElement)) return;
+  const images = [...(postBody.value?.querySelectorAll('img') || [])].filter(img => img.currentSrc || img.src);
+  const index = images.indexOf(event.target);
+  if (index < 0) return;
+  event.preventDefault();
+  event.target.focus({ preventScroll: true });
+  previewIndex.value = index;
+  previewImages.value = images.map(img => ({ src: img.currentSrc || img.src, alt: img.alt || post.value?.title || '文章图片' }));
+}
+function postImageKeydown(event: KeyboardEvent) {
+  if (event.key === 'Enter' || event.key === ' ') openPostImage(event);
+}
+watch([postBody, content], () => {
+  postBody.value?.querySelectorAll('img').forEach(img => {
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', `放大查看${img.alt || '文章图片'}`);
+  });
+}, { flush: 'post' });
+watch(() => route.params.slug, () => { previewImages.value = []; });
 
 function typeLabel(t: string) {
   return ({ notice: '公告', blog: '博客' } as Record<string, string>)[t] || t;
@@ -115,7 +142,8 @@ async function applyPostSeo(detail: { post: StorePost; content: string } | null)
 .post-body :deep(ul), .post-body :deep(ol) { margin: 0 0 12px; padding-left: 24px; }
 .post-body :deep(li) { margin-bottom: 4px; }
 .post-body :deep(a) { color: #2563eb; text-decoration: underline; word-break: break-all; }
-.post-body :deep(img) { max-width: 100%; height:auto; border-radius: 8px; margin: 6px 0; }
+.post-body :deep(img) { max-width: 100%; height:auto; border-radius: 8px; margin: 6px 0; cursor: zoom-in; }
+.post-body :deep(img:focus-visible) { outline: 2px solid #2563eb; outline-offset: 4px; }
 .post-body :deep(video), .post-body :deep(iframe) { max-width:100%; }
 .post-body :deep(iframe) { width:100%; height:auto; aspect-ratio:16/9; border:0; }
 .post-body :deep(blockquote) {

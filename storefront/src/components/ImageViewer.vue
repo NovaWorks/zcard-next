@@ -100,9 +100,9 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <dialog ref="dialog" class="image-viewer" aria-label="商品图片预览" @cancel.prevent="emit('close')" @keydown="keydown">
+    <dialog ref="dialog" class="image-viewer" aria-label="图片预览" @cancel.prevent="emit('close')" @keydown="keydown">
       <header class="iv-header">
-        <span class="iv-title">{{ current?.alt || '商品图片' }}</span>
+        <span class="iv-title">{{ current?.alt || '图片' }}</span>
         <span aria-live="polite">{{ index + 1 }} / {{ images.length }}</span>
         <button type="button" class="iv-close" aria-label="关闭图片预览" autofocus @click="emit('close')">关闭 ✕</button>
       </header>

@@ -178,6 +178,7 @@ type UpstreamProductInput struct {
 	FactoryPrice        int64              // 分（上游成本快照）
 	Status              int8               // 1=上架 2=隐藏 0=下架
 	AutoOnshelf         bool               // 新建商品时是否上架（settings.auto_onshelf）
+	ReimportDeleted     bool               // 仅交互导入：归档商品保留，释放上游标识后新建
 	SKUs                []UpstreamSKUInput // 上游规格组合（空=不动现有 SKU；显式空切片语义同空——上游无规格时不清理本地手建 SKU）
 }
 
