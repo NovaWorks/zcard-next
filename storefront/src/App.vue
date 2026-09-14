@@ -2,8 +2,8 @@
   <div class="app" :style="appBgStyle">
     <!-- 安装页：无商城布局（头部/尾部/客服/公告全隐藏，仅渲染向导自身） -->
     <template v-if="!isInstall">
-    <!-- 顶部品牌条（深蓝渐变；promo.top_banner_enabled 可关） -->
-    <div v-if="topBannerEnabled" class="brand-bar">
+    <!-- 顶部品牌条：主题自定义可独立关闭，不影响首页轮播。 -->
+    <div v-if="brandBarEnabled" class="brand-bar">
       <span class="brand-slogan">🎁 {{ siteName }} · 自动发货 秒速到账</span>
       <span class="brand-trust">
         <span>✓ 安全支付</span>
@@ -95,10 +95,13 @@
     <template v-if="!isInstall">
     <footer class="footer">
       <div class="footer-trust">
-        <div class="trust-item"><span class="trust-icon">⚡</span><div><b>极速发货</b><span class="muted">下单即自动发货</span></div></div>
-        <div class="trust-item"><span class="trust-icon">🛡️</span><div><b>正品保障</b><span class="muted">渠道直供货源</span></div></div>
-        <div class="trust-item"><span class="trust-icon">💬</span><div><b>在线客服</b><span class="muted">7×24 小时响应</span></div></div>
-        <div class="trust-item"><span class="trust-icon">↩️</span><div><b>售后无忧</b><span class="muted">问题订单快速处理</span></div></div>
+        <div v-for="(item, index) in footerTrust" :key="index" class="trust-item">
+          <span class="trust-icon" aria-hidden="true">
+            <img v-if="item.image" :src="item.image" alt="" @error="item.image = ''" />
+            <template v-else>{{ item.icon }}</template>
+          </span>
+          <div class="trust-copy"><b>{{ item.title }}</b><span class="muted">{{ item.description }}</span></div>
+        </div>
       </div>
       <nav class="footer-mobile-actions" aria-label="常用服务">
         <router-link to="/fetch">
@@ -272,8 +275,8 @@ const navRecommend = ref<{ text: string; url: string }[]>([]);
 const maintenance = ref(false);
 const maintenanceStyle = ref('modal'); // modal=全屏遮罩 | banner=顶部横幅
 const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=24 小时一次
-// promo.top_banner_enabled：顶部品牌条开关（false 隐藏，缺省显示）
-const topBannerEnabled = ref(true);
+// 无主题配置时兼容旧 promo 开关；主题自定义优先，缺省显示。
+const brandBarEnabled = ref(true);
 // template.bg_image：全站背景图（空=默认纯色背景）
 const bgImage = ref('');
 const bgImageMobile = ref('');
@@ -292,6 +295,24 @@ const appBgStyle = computed(() => {
 // ── 页脚配置（footer.* 公开下发：about/nav/social/contact/agreement/icp，空值回落默认）──
 const footerExpanded = ref(false);
 watch(() => route.fullPath, () => { footerExpanded.value = false; });
+const footerTrustDefaults = [
+  { icon: '⚡', image: '', title: '极速发货', description: '下单即自动发货' },
+  { icon: '🛡️', image: '', title: '正品保障', description: '渠道直供货源' },
+  { icon: '💬', image: '', title: '在线客服', description: '7×24 小时响应' },
+  { icon: '↩️', image: '', title: '售后无忧', description: '问题订单快速处理' },
+];
+const footerTrust = ref(footerTrustDefaults.map(item => ({ ...item })));
+function applyFooterTrustSettings(read: (key: string, fallback: string) => string) {
+  footerTrust.value = footerTrustDefaults.map((item, index) => {
+    const prefix = `theme.footer_service_${index + 1}`;
+    return {
+      icon: read(`${prefix}_icon`, item.icon),
+      image: read(`${prefix}_image`, item.image),
+      title: read(`${prefix}_title`, item.title),
+      description: read(`${prefix}_description`, item.description),
+    };
+  });
+}
 const footerAbout = ref('');
 const footerNav = ref<{ text: string; url: string }[]>([]);
 const footerSocial = ref<{ icon: string; url: string }[]>([]);
@@ -363,6 +384,8 @@ provide('openNotice', openNotice);
 onMounted(async () => {
   // 安装页：不加载商城业务（购物车/公告/统计/回顶监听等）
   if (isInstall.value) return;
+  brandBarEnabled.value = themeValue('theme.brand_bar_enabled', true);
+  applyFooterTrustSettings(themeValue);
   await refreshCartAvailability();
   window.addEventListener('focus', refreshCartAvailability);
   captureRefCode(); // 推广归因捕获（任何页面 ?ref= 进站即记 30 天）
@@ -371,6 +394,12 @@ onMounted(async () => {
     const resp = await fetch('/api/v1/storefront/config');
     const json = await resp.json();
     const find = (k: string) => json?.entries?.find((e: any) => e.key === k)?.value_json;
+    applyFooterTrustSettings((key, fallback) => {
+      try {
+        const value = JSON.parse(find(key));
+        return typeof value === 'string' ? value : fallback;
+      } catch { return themeValue(key, fallback); }
+    });
     // 顶部自定义按钮 {text,type,url|slug}
     const tb = find('site.top_button');
     if (tb) {
@@ -425,9 +454,9 @@ onMounted(async () => {
     // 维护模式与样式（modal=遮罩弹窗 / banner=顶部横幅）；弹窗频率 daily=24h 一次
     const mt = find('ops.maintenance');
     if (mt) { try { maintenance.value = JSON.parse(mt) === true; } catch { /* ignore */ } }
-    // 顶部品牌条开关（promo.top_banner_enabled；缺省/解析失败=显示）
-    const tbe = find('promo.top_banner_enabled');
-    if (tbe) { try { topBannerEnabled.value = JSON.parse(tbe) !== false; } catch { /* ignore */ } }
+    // 主题品牌条开关独立于首页横幅；未配置主题开关时沿用旧设置。
+    const tbe = find('theme.brand_bar_enabled') || find('promo.top_banner_enabled');
+    if (tbe) { try { brandBarEnabled.value = JSON.parse(tbe) !== false; } catch { /* ignore */ } }
     // 全站背景图（template.bg_image；空=默认纯色）
     const mobileBi = find('template.bg_image_mobile');
     if (mobileBi) { try { const v = JSON.parse(mobileBi); if (typeof v === 'string') bgImageMobile.value = v; } catch { /* ignore */ } }

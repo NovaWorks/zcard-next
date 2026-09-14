@@ -185,6 +185,13 @@
       "label": "导航入口",
       "fields": [
         {
+          "key": "theme.brand_bar_enabled",
+          "label": "显示顶部品牌条",
+          "type": "switch",
+          "default": true,
+          "help": "控制电脑端导航上方的蓝色品牌条；关闭后不显示且不占位，不影响首页轮播。手机端保持隐藏。"
+        },
+        {
           "key": "theme.nav_cart",
           "label": "显示购物车入口",
           "type": "switch",
@@ -203,6 +210,116 @@
           "label": "显示返回顶部",
           "type": "switch",
           "default": true
+        }
+      ]
+    },
+    {
+      "id": "footer_services",
+      "label": "页脚服务",
+      "fields": [
+        {
+          "key": "theme.footer_service_1_icon",
+          "label": "第 1 项 · 图标",
+          "type": "text",
+          "default": "⚡",
+          "help": "填写 Emoji 或简短符号；设置图标图片后优先显示图片。"
+        },
+        {
+          "key": "theme.footer_service_1_image",
+          "label": "第 1 项 · 图标图片",
+          "type": "image",
+          "default": "",
+          "help": "可从素材库选择或上传图片；留空使用上方图标，图片加载失败时也会回落到图标。"
+        },
+        {
+          "key": "theme.footer_service_1_title",
+          "label": "第 1 项 · 标题",
+          "type": "text",
+          "default": "极速发货"
+        },
+        {
+          "key": "theme.footer_service_1_description",
+          "label": "第 1 项 · 说明",
+          "type": "text",
+          "default": "下单即自动发货"
+        },
+        {
+          "key": "theme.footer_service_2_icon",
+          "label": "第 2 项 · 图标",
+          "type": "text",
+          "default": "🛡️",
+          "help": "填写 Emoji 或简短符号；设置图标图片后优先显示图片。"
+        },
+        {
+          "key": "theme.footer_service_2_image",
+          "label": "第 2 项 · 图标图片",
+          "type": "image",
+          "default": "",
+          "help": "可从素材库选择或上传图片；留空使用上方图标，图片加载失败时也会回落到图标。"
+        },
+        {
+          "key": "theme.footer_service_2_title",
+          "label": "第 2 项 · 标题",
+          "type": "text",
+          "default": "正品保障"
+        },
+        {
+          "key": "theme.footer_service_2_description",
+          "label": "第 2 项 · 说明",
+          "type": "text",
+          "default": "渠道直供货源"
+        },
+        {
+          "key": "theme.footer_service_3_icon",
+          "label": "第 3 项 · 图标",
+          "type": "text",
+          "default": "💬",
+          "help": "填写 Emoji 或简短符号；设置图标图片后优先显示图片。"
+        },
+        {
+          "key": "theme.footer_service_3_image",
+          "label": "第 3 项 · 图标图片",
+          "type": "image",
+          "default": "",
+          "help": "可从素材库选择或上传图片；留空使用上方图标，图片加载失败时也会回落到图标。"
+        },
+        {
+          "key": "theme.footer_service_3_title",
+          "label": "第 3 项 · 标题",
+          "type": "text",
+          "default": "在线客服"
+        },
+        {
+          "key": "theme.footer_service_3_description",
+          "label": "第 3 项 · 说明",
+          "type": "text",
+          "default": "7×24 小时响应"
+        },
+        {
+          "key": "theme.footer_service_4_icon",
+          "label": "第 4 项 · 图标",
+          "type": "text",
+          "default": "↩️",
+          "help": "填写 Emoji 或简短符号；设置图标图片后优先显示图片。"
+        },
+        {
+          "key": "theme.footer_service_4_image",
+          "label": "第 4 项 · 图标图片",
+          "type": "image",
+          "default": "",
+          "help": "可从素材库选择或上传图片；留空使用上方图标，图片加载失败时也会回落到图标。"
+        },
+        {
+          "key": "theme.footer_service_4_title",
+          "label": "第 4 项 · 标题",
+          "type": "text",
+          "default": "售后无忧"
+        },
+        {
+          "key": "theme.footer_service_4_description",
+          "label": "第 4 项 · 说明",
+          "type": "text",
+          "default": "问题订单快速处理"
         }
       ]
     }

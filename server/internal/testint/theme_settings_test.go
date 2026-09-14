@@ -39,6 +39,27 @@ func TestThemeSettingsConcurrentPublish(t *testing.T) {
 			if wins != 1 {
 				t.Fatalf("expected one publication, got %d", wins)
 			}
+			raw, err := r.Get(ctx, "_theme_settings", "0:classic")
+			if err != nil {
+				t.Fatal(err)
+			}
+			var current struct{ Revision string }
+			if err = json.Unmarshal(raw, &current); err != nil {
+				t.Fatal(err)
+			}
+			if err = r.PutThemeState(ctx, "0:classic", current.Revision, json.RawMessage(`{"revision":"published"}`), nil); err != nil {
+				t.Fatal("publishing an existing draft failed", err)
+			}
+			if err = r.PutThemeState(ctx, "0:classic", current.Revision, json.RawMessage(`{"revision":"stale"}`), nil); err == nil {
+				t.Fatal("stale publication accepted")
+			}
+			raw, err = r.Get(ctx, "_theme_settings", "0:classic")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err = json.Unmarshal(raw, &current); err != nil || current.Revision != "published" {
+				t.Fatal("published settings changed", string(raw), err)
+			}
 		})
 	}
 }

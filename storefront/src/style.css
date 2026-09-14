@@ -67,8 +67,10 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 12px; max-width: var(--zc-content-width, 1120px); margin: 0 auto; padding: 20px 16px;
 }
-.trust-item { display: flex; gap: 10px; align-items: center; }
-.trust-icon { font-size: 22px; }
+.trust-item { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.trust-icon { display: inline-flex; flex: 0 0 28px; justify-content: center; align-items: center; font-size: 22px; overflow-wrap: anywhere; }
+.trust-icon img { width: 28px; height: 28px; object-fit: contain; }
+.trust-copy { min-width: 0; overflow-wrap: anywhere; }
 .trust-item b { display: block; font-size: 13px; color: #111827; }
 .footer-cols {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

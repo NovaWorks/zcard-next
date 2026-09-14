@@ -14,7 +14,9 @@ import (
 func (r *RepoImpl) PutThemeState(ctx context.Context, key, expected string, raw json.RawMessage, extra []port.Item) error {
 	return data.Tx(ctx, r.data, func(ctx context.Context) error {
 		client := data.Client(ctx, r.data)
-		if err := client.Setting.Create().SetGroup(themeStateGroup).SetKey(key).SetValue(json.RawMessage(`{}`)).OnConflict(sql.ConflictColumns(setting.FieldGroup, setting.FieldKey)).DoNothing().Exec(ctx); err != nil {
+		// 保留已有状态并返回该行；DO NOTHING 在 SQLite/PG 冲突时不返回 ID，
+		// Ent 会报 sql.ErrNoRows，导致草稿之后的发布及再次保存失败。
+		if err := client.Setting.Create().SetGroup(themeStateGroup).SetKey(key).SetValue(json.RawMessage(`{}`)).OnConflict(sql.ConflictColumns(setting.FieldGroup, setting.FieldKey)).Ignore().Exec(ctx); err != nil {
 			return err
 		}
 		q := client.Setting.Query().Where(setting.Group(themeStateGroup), setting.Key(key))
