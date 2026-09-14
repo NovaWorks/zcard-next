@@ -20,6 +20,7 @@ func (Session) Fields() []ent.Field {
 		field.Enum("realm").Values("admin", "user").Comment("双 realm：admin_users.id 或 users.id"),
 		field.Uint64("user_id").Comment("按 realm 指向 admin_users/users"),
 		field.String("refresh_token_hash").MaxLen(128).Comment("refresh 令牌哈希（SHA-256，明文绝不落库）"),
+		field.Int("auth_version").Default(0),
 		field.String("device").MaxLen(120).Optional(),
 		field.String("ip").MaxLen(64).Optional(),
 		field.String("user_agent").MaxLen(255).Optional(),

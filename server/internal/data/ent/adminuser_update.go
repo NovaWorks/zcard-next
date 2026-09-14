@@ -135,6 +135,62 @@ func (_u *AdminUserUpdate) ClearTotpSecret() *AdminUserUpdate {
 	return _u
 }
 
+// SetAuthVersion sets the "auth_version" field.
+func (_u *AdminUserUpdate) SetAuthVersion(v int) *AdminUserUpdate {
+	_u.mutation.ResetAuthVersion()
+	_u.mutation.SetAuthVersion(v)
+	return _u
+}
+
+// SetNillableAuthVersion sets the "auth_version" field if the given value is not nil.
+func (_u *AdminUserUpdate) SetNillableAuthVersion(v *int) *AdminUserUpdate {
+	if v != nil {
+		_u.SetAuthVersion(*v)
+	}
+	return _u
+}
+
+// AddAuthVersion adds value to the "auth_version" field.
+func (_u *AdminUserUpdate) AddAuthVersion(v int) *AdminUserUpdate {
+	_u.mutation.AddAuthVersion(v)
+	return _u
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (_u *AdminUserUpdate) SetMfaRevision(v int) *AdminUserUpdate {
+	_u.mutation.ResetMfaRevision()
+	_u.mutation.SetMfaRevision(v)
+	return _u
+}
+
+// SetNillableMfaRevision sets the "mfa_revision" field if the given value is not nil.
+func (_u *AdminUserUpdate) SetNillableMfaRevision(v *int) *AdminUserUpdate {
+	if v != nil {
+		_u.SetMfaRevision(*v)
+	}
+	return _u
+}
+
+// AddMfaRevision adds value to the "mfa_revision" field.
+func (_u *AdminUserUpdate) AddMfaRevision(v int) *AdminUserUpdate {
+	_u.mutation.AddMfaRevision(v)
+	return _u
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (_u *AdminUserUpdate) SetMfaState(v string) *AdminUserUpdate {
+	_u.mutation.SetMfaState(v)
+	return _u
+}
+
+// SetNillableMfaState sets the "mfa_state" field if the given value is not nil.
+func (_u *AdminUserUpdate) SetNillableMfaState(v *string) *AdminUserUpdate {
+	if v != nil {
+		_u.SetMfaState(*v)
+	}
+	return _u
+}
+
 // SetEnabled sets the "enabled" field.
 func (_u *AdminUserUpdate) SetEnabled(v bool) *AdminUserUpdate {
 	_u.mutation.SetEnabled(v)
@@ -272,6 +328,11 @@ func (_u *AdminUserUpdate) check() error {
 			return &ValidationError{Name: "avatar", err: fmt.Errorf(`ent: validator failed for field "AdminUser.avatar": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.MfaState(); ok {
+		if err := adminuser.MfaStateValidator(v); err != nil {
+			return &ValidationError{Name: "mfa_state", err: fmt.Errorf(`ent: validator failed for field "AdminUser.mfa_state": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Remark(); ok {
 		if err := adminuser.RemarkValidator(v); err != nil {
 			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "AdminUser.remark": %w`, err)}
@@ -329,6 +390,21 @@ func (_u *AdminUserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.TotpSecretCleared() {
 		_spec.ClearField(adminuser.FieldTotpSecret, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.AuthVersion(); ok {
+		_spec.SetField(adminuser.FieldAuthVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAuthVersion(); ok {
+		_spec.AddField(adminuser.FieldAuthVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MfaRevision(); ok {
+		_spec.SetField(adminuser.FieldMfaRevision, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMfaRevision(); ok {
+		_spec.AddField(adminuser.FieldMfaRevision, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MfaState(); ok {
+		_spec.SetField(adminuser.FieldMfaState, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(adminuser.FieldEnabled, field.TypeBool, value)
@@ -475,6 +551,62 @@ func (_u *AdminUserUpdateOne) SetTotpSecret(v []byte) *AdminUserUpdateOne {
 // ClearTotpSecret clears the value of the "totp_secret" field.
 func (_u *AdminUserUpdateOne) ClearTotpSecret() *AdminUserUpdateOne {
 	_u.mutation.ClearTotpSecret()
+	return _u
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (_u *AdminUserUpdateOne) SetAuthVersion(v int) *AdminUserUpdateOne {
+	_u.mutation.ResetAuthVersion()
+	_u.mutation.SetAuthVersion(v)
+	return _u
+}
+
+// SetNillableAuthVersion sets the "auth_version" field if the given value is not nil.
+func (_u *AdminUserUpdateOne) SetNillableAuthVersion(v *int) *AdminUserUpdateOne {
+	if v != nil {
+		_u.SetAuthVersion(*v)
+	}
+	return _u
+}
+
+// AddAuthVersion adds value to the "auth_version" field.
+func (_u *AdminUserUpdateOne) AddAuthVersion(v int) *AdminUserUpdateOne {
+	_u.mutation.AddAuthVersion(v)
+	return _u
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (_u *AdminUserUpdateOne) SetMfaRevision(v int) *AdminUserUpdateOne {
+	_u.mutation.ResetMfaRevision()
+	_u.mutation.SetMfaRevision(v)
+	return _u
+}
+
+// SetNillableMfaRevision sets the "mfa_revision" field if the given value is not nil.
+func (_u *AdminUserUpdateOne) SetNillableMfaRevision(v *int) *AdminUserUpdateOne {
+	if v != nil {
+		_u.SetMfaRevision(*v)
+	}
+	return _u
+}
+
+// AddMfaRevision adds value to the "mfa_revision" field.
+func (_u *AdminUserUpdateOne) AddMfaRevision(v int) *AdminUserUpdateOne {
+	_u.mutation.AddMfaRevision(v)
+	return _u
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (_u *AdminUserUpdateOne) SetMfaState(v string) *AdminUserUpdateOne {
+	_u.mutation.SetMfaState(v)
+	return _u
+}
+
+// SetNillableMfaState sets the "mfa_state" field if the given value is not nil.
+func (_u *AdminUserUpdateOne) SetNillableMfaState(v *string) *AdminUserUpdateOne {
+	if v != nil {
+		_u.SetMfaState(*v)
+	}
 	return _u
 }
 
@@ -628,6 +760,11 @@ func (_u *AdminUserUpdateOne) check() error {
 			return &ValidationError{Name: "avatar", err: fmt.Errorf(`ent: validator failed for field "AdminUser.avatar": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.MfaState(); ok {
+		if err := adminuser.MfaStateValidator(v); err != nil {
+			return &ValidationError{Name: "mfa_state", err: fmt.Errorf(`ent: validator failed for field "AdminUser.mfa_state": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Remark(); ok {
 		if err := adminuser.RemarkValidator(v); err != nil {
 			return &ValidationError{Name: "remark", err: fmt.Errorf(`ent: validator failed for field "AdminUser.remark": %w`, err)}
@@ -702,6 +839,21 @@ func (_u *AdminUserUpdateOne) sqlSave(ctx context.Context) (_node *AdminUser, er
 	}
 	if _u.mutation.TotpSecretCleared() {
 		_spec.ClearField(adminuser.FieldTotpSecret, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.AuthVersion(); ok {
+		_spec.SetField(adminuser.FieldAuthVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAuthVersion(); ok {
+		_spec.AddField(adminuser.FieldAuthVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MfaRevision(); ok {
+		_spec.SetField(adminuser.FieldMfaRevision, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedMfaRevision(); ok {
+		_spec.AddField(adminuser.FieldMfaRevision, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.MfaState(); ok {
+		_spec.SetField(adminuser.FieldMfaState, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(adminuser.FieldEnabled, field.TypeBool, value)

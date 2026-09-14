@@ -94,6 +94,21 @@ func TotpSecret(v []byte) predicate.AdminUser {
 	return predicate.AdminUser(sql.FieldEQ(FieldTotpSecret, v))
 }
 
+// AuthVersion applies equality check predicate on the "auth_version" field. It's identical to AuthVersionEQ.
+func AuthVersion(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEQ(FieldAuthVersion, v))
+}
+
+// MfaRevision applies equality check predicate on the "mfa_revision" field. It's identical to MfaRevisionEQ.
+func MfaRevision(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEQ(FieldMfaRevision, v))
+}
+
+// MfaState applies equality check predicate on the "mfa_state" field. It's identical to MfaStateEQ.
+func MfaState(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEQ(FieldMfaState, v))
+}
+
 // Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
 func Enabled(v bool) predicate.AdminUser {
 	return predicate.AdminUser(sql.FieldEQ(FieldEnabled, v))
@@ -562,6 +577,151 @@ func TotpSecretIsNil() predicate.AdminUser {
 // TotpSecretNotNil applies the NotNil predicate on the "totp_secret" field.
 func TotpSecretNotNil() predicate.AdminUser {
 	return predicate.AdminUser(sql.FieldNotNull(FieldTotpSecret))
+}
+
+// AuthVersionEQ applies the EQ predicate on the "auth_version" field.
+func AuthVersionEQ(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEQ(FieldAuthVersion, v))
+}
+
+// AuthVersionNEQ applies the NEQ predicate on the "auth_version" field.
+func AuthVersionNEQ(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldNEQ(FieldAuthVersion, v))
+}
+
+// AuthVersionIn applies the In predicate on the "auth_version" field.
+func AuthVersionIn(vs ...int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldIn(FieldAuthVersion, vs...))
+}
+
+// AuthVersionNotIn applies the NotIn predicate on the "auth_version" field.
+func AuthVersionNotIn(vs ...int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldNotIn(FieldAuthVersion, vs...))
+}
+
+// AuthVersionGT applies the GT predicate on the "auth_version" field.
+func AuthVersionGT(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldGT(FieldAuthVersion, v))
+}
+
+// AuthVersionGTE applies the GTE predicate on the "auth_version" field.
+func AuthVersionGTE(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldGTE(FieldAuthVersion, v))
+}
+
+// AuthVersionLT applies the LT predicate on the "auth_version" field.
+func AuthVersionLT(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldLT(FieldAuthVersion, v))
+}
+
+// AuthVersionLTE applies the LTE predicate on the "auth_version" field.
+func AuthVersionLTE(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldLTE(FieldAuthVersion, v))
+}
+
+// MfaRevisionEQ applies the EQ predicate on the "mfa_revision" field.
+func MfaRevisionEQ(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEQ(FieldMfaRevision, v))
+}
+
+// MfaRevisionNEQ applies the NEQ predicate on the "mfa_revision" field.
+func MfaRevisionNEQ(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldNEQ(FieldMfaRevision, v))
+}
+
+// MfaRevisionIn applies the In predicate on the "mfa_revision" field.
+func MfaRevisionIn(vs ...int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldIn(FieldMfaRevision, vs...))
+}
+
+// MfaRevisionNotIn applies the NotIn predicate on the "mfa_revision" field.
+func MfaRevisionNotIn(vs ...int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldNotIn(FieldMfaRevision, vs...))
+}
+
+// MfaRevisionGT applies the GT predicate on the "mfa_revision" field.
+func MfaRevisionGT(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldGT(FieldMfaRevision, v))
+}
+
+// MfaRevisionGTE applies the GTE predicate on the "mfa_revision" field.
+func MfaRevisionGTE(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldGTE(FieldMfaRevision, v))
+}
+
+// MfaRevisionLT applies the LT predicate on the "mfa_revision" field.
+func MfaRevisionLT(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldLT(FieldMfaRevision, v))
+}
+
+// MfaRevisionLTE applies the LTE predicate on the "mfa_revision" field.
+func MfaRevisionLTE(v int) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldLTE(FieldMfaRevision, v))
+}
+
+// MfaStateEQ applies the EQ predicate on the "mfa_state" field.
+func MfaStateEQ(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEQ(FieldMfaState, v))
+}
+
+// MfaStateNEQ applies the NEQ predicate on the "mfa_state" field.
+func MfaStateNEQ(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldNEQ(FieldMfaState, v))
+}
+
+// MfaStateIn applies the In predicate on the "mfa_state" field.
+func MfaStateIn(vs ...string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldIn(FieldMfaState, vs...))
+}
+
+// MfaStateNotIn applies the NotIn predicate on the "mfa_state" field.
+func MfaStateNotIn(vs ...string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldNotIn(FieldMfaState, vs...))
+}
+
+// MfaStateGT applies the GT predicate on the "mfa_state" field.
+func MfaStateGT(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldGT(FieldMfaState, v))
+}
+
+// MfaStateGTE applies the GTE predicate on the "mfa_state" field.
+func MfaStateGTE(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldGTE(FieldMfaState, v))
+}
+
+// MfaStateLT applies the LT predicate on the "mfa_state" field.
+func MfaStateLT(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldLT(FieldMfaState, v))
+}
+
+// MfaStateLTE applies the LTE predicate on the "mfa_state" field.
+func MfaStateLTE(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldLTE(FieldMfaState, v))
+}
+
+// MfaStateContains applies the Contains predicate on the "mfa_state" field.
+func MfaStateContains(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldContains(FieldMfaState, v))
+}
+
+// MfaStateHasPrefix applies the HasPrefix predicate on the "mfa_state" field.
+func MfaStateHasPrefix(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldHasPrefix(FieldMfaState, v))
+}
+
+// MfaStateHasSuffix applies the HasSuffix predicate on the "mfa_state" field.
+func MfaStateHasSuffix(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldHasSuffix(FieldMfaState, v))
+}
+
+// MfaStateEqualFold applies the EqualFold predicate on the "mfa_state" field.
+func MfaStateEqualFold(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldEqualFold(FieldMfaState, v))
+}
+
+// MfaStateContainsFold applies the ContainsFold predicate on the "mfa_state" field.
+func MfaStateContainsFold(v string) predicate.AdminUser {
+	return predicate.AdminUser(sql.FieldContainsFold(FieldMfaState, v))
 }
 
 // EnabledEQ applies the EQ predicate on the "enabled" field.

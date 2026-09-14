@@ -20,6 +20,8 @@ const (
 	FieldUserID = "user_id"
 	// FieldRefreshTokenHash holds the string denoting the refresh_token_hash field in the database.
 	FieldRefreshTokenHash = "refresh_token_hash"
+	// FieldAuthVersion holds the string denoting the auth_version field in the database.
+	FieldAuthVersion = "auth_version"
 	// FieldDevice holds the string denoting the device field in the database.
 	FieldDevice = "device"
 	// FieldIP holds the string denoting the ip field in the database.
@@ -44,6 +46,7 @@ var Columns = []string{
 	FieldRealm,
 	FieldUserID,
 	FieldRefreshTokenHash,
+	FieldAuthVersion,
 	FieldDevice,
 	FieldIP,
 	FieldUserAgent,
@@ -66,6 +69,8 @@ func ValidColumn(column string) bool {
 var (
 	// RefreshTokenHashValidator is a validator for the "refresh_token_hash" field. It is called by the builders before save.
 	RefreshTokenHashValidator func(string) error
+	// DefaultAuthVersion holds the default value on creation for the "auth_version" field.
+	DefaultAuthVersion int
 	// DeviceValidator is a validator for the "device" field. It is called by the builders before save.
 	DeviceValidator func(string) error
 	// IPValidator is a validator for the "ip" field. It is called by the builders before save.
@@ -124,6 +129,11 @@ func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 // ByRefreshTokenHash orders the results by the refresh_token_hash field.
 func ByRefreshTokenHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRefreshTokenHash, opts...).ToFunc()
+}
+
+// ByAuthVersion orders the results by the auth_version field.
+func ByAuthVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthVersion, opts...).ToFunc()
 }
 
 // ByDevice orders the results by the device field.

@@ -239,11 +239,7 @@ func (s *AdminUserService) ResetAdminPassword(ctx context.Context, req *adminv1.
 // ResetAdminTOTP 解绑员工 TOTP（二因素移除属高危——吊销其全部管理面会话强制重登，
 // 员工下次登录自行重新绑定）。
 func (s *AdminUserService) ResetAdminTOTP(ctx context.Context, req *adminv1.ResetAdminTOTPRequest) (*adminv1.Admin, error) {
-	if err := s.mut.ClearTOTP(ctx, req.GetId()); err != nil {
-		return nil, errors.NotFound("identity.ADMIN_NOT_FOUND", "员工不存在")
-	}
-	_ = s.mut.RevokeAdminSessions(ctx, req.GetId())
-	return s.adminByID(ctx, req.GetId())
+	return nil, errors.BadRequest("identity.REAUTH_REQUIRED", "请使用新版身份验证流程重置，或在服务器执行 admin reset-2fa")
 }
 
 // adminByID 回读员工最新状态（含角色名）。

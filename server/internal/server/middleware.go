@@ -167,6 +167,9 @@ func adminAuthMiddleware(signer *authn.Signer, az port.Authorizer, dir *authz.Di
 			if err != nil || acc == nil {
 				return nil, errors.Unauthorized("identity.UNAUTHORIZED", "账户不存在")
 			}
+			if claims.AuthVersion != acc.AuthVersion {
+				return nil, errors.Unauthorized("identity.SESSION_INVALID", "安全设置已变更，请重新登录")
+			}
 			if !acc.Enabled {
 				return nil, errors.Unauthorized("identity.ADMIN_DISABLED", "账号已禁用")
 			}

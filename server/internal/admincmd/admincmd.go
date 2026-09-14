@@ -3,7 +3,7 @@
 //	zcard admin create --username admin --password <pwd> [--nickname <n>] [--role super_admin]
 //	zcard admin list
 //	zcard admin reset-password --username admin --password <newpwd>
-//	zcard admin reset-2fa --username admin        （M1）
+//	zcard admin reset-2fa --username admin
 package admincmd
 
 import (
@@ -18,6 +18,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminrole"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/adminuser"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/authz"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 )
 
@@ -28,6 +29,8 @@ func Run(args []string) error {
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
+	case "reset-2fa":
+		return runReset2FA(rest)
 	case "create":
 		return runCreate(rest)
 	case "list":
@@ -35,7 +38,7 @@ func Run(args []string) error {
 	case "reset-password":
 		return runResetPassword(rest)
 	default:
-		return fmt.Errorf("未知 admin 子命令 %q（create | list | reset-password）", sub)
+		return fmt.Errorf("未知 admin 子命令 %q（create | list | reset-password | reset-2fa）", sub)
 	}
 }
 
@@ -43,6 +46,7 @@ func usage() error {
 	fmt.Print(`zcard admin —— 管理员运维子命令
 
 用法:
+  zcard admin reset-2fa --username <u> [--conf configs] [--yes] [--dry-run]
   zcard admin create --username <u> --password <p> [--nickname <n>] [--role super_admin] [--conf configs]
   zcard admin list [--conf configs]
   zcard admin reset-password --username <u> --password <p> [--conf configs]
@@ -182,11 +186,7 @@ func runResetPassword(args []string) error {
 	if err != nil {
 		return err
 	}
-	hash, err := crypto.HashPassword(*password)
-	if err != nil {
-		return err
-	}
-	if err := client.AdminUser.UpdateOne(u).SetPasswordHash(hash).Exec(ctx); err != nil {
+	if err := identity.NewAdminUserRepoImpl(&data.Data{Client: client}).ResetPassword(ctx, u.ID, *password); err != nil {
 		return err
 	}
 	fmt.Printf("密码已重置：%s\n", u.Username)

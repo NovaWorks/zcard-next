@@ -1,3 +1,4 @@
+import { recoveryTicket } from "@/components/security/state";
 import { computed, reactive, ref } from "vue";
 import { useRoute } from "vue-router";
 import { defineStore } from "pinia";
@@ -43,6 +44,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     recordUserId();
 
     clearAuthStorage();
+    recoveryTicket.value = "";
 
     authStore.$reset();
 
@@ -100,14 +102,24 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
   async function login(
     userName: string,
     password: string,
-    captcha?: { captcha_id: string; captcha_code: string },
-    redirect = true
+    captcha?: {
+      captcha_id?: string;
+      captcha_code?: string;
+      challenge?: string;
+      totp_code?: string;
+    },
+    redirect = true,
   ) {
     startLoading();
 
     const { data: loginToken, error } = await fetchLogin(userName, password, captcha);
 
+    if (!error && loginToken?.requires_totp && loginToken.challenge) {
+      endLoading();
+      return { challenge: loginToken.challenge, reason: "" };
+    }
     if (!error) {
+      recoveryTicket.value = loginToken.recovery_ticket || "";
       const pass = await loginByToken(loginToken);
 
       if (pass) {
@@ -132,6 +144,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     }
 
     endLoading();
+    return { challenge: "", reason: (error as any)?.response?.data?.reason || "" };
   }
 
   async function loginByToken(loginToken: Api.Auth.LoginToken) {

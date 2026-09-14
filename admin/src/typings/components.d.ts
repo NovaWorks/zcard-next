@@ -12,6 +12,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AccountSecurity: typeof import('./../components/security/account-security.vue')['default']
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
     BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']
     ButtonIcon: typeof import('./../components/custom/button-icon.vue')['default']
@@ -83,12 +84,14 @@ declare module 'vue' {
     NTab: typeof import('naive-ui')['NTab']
     NTabPane: typeof import('naive-ui')['NTabPane']
     NTabs: typeof import('naive-ui')['NTabs']
+    NTag: typeof import('naive-ui')['NTag']
     NTooltip: typeof import('naive-ui')['NTooltip']
     NTree: typeof import('naive-ui')['NTree']
     NTreeSelect: typeof import('naive-ui')['NTreeSelect']
     NUpload: typeof import('naive-ui')['NUpload']
     NWatermark: typeof import('naive-ui')['NWatermark']
     PinToggler: typeof import('./../components/common/pin-toggler.vue')['default']
+    RecoveryCodes: typeof import('./../components/security/recovery-codes.vue')['default']
     ReloadButton: typeof import('./../components/common/reload-button.vue')['default']
     RichEditor: typeof import('./../components/common/rich-editor/index.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
@@ -105,6 +108,7 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const AccountSecurity: typeof import('./../components/security/account-security.vue')['default']
   const AppProvider: typeof import('./../components/common/app-provider.vue')['default']
   const BetterScroll: typeof import('./../components/custom/better-scroll.vue')['default']
   const ButtonIcon: typeof import('./../components/custom/button-icon.vue')['default']
@@ -176,12 +180,14 @@ declare global {
   const NTab: typeof import('naive-ui')['NTab']
   const NTabPane: typeof import('naive-ui')['NTabPane']
   const NTabs: typeof import('naive-ui')['NTabs']
+  const NTag: typeof import('naive-ui')['NTag']
   const NTooltip: typeof import('naive-ui')['NTooltip']
   const NTree: typeof import('naive-ui')['NTree']
   const NTreeSelect: typeof import('naive-ui')['NTreeSelect']
   const NUpload: typeof import('naive-ui')['NUpload']
   const NWatermark: typeof import('naive-ui')['NWatermark']
   const PinToggler: typeof import('./../components/common/pin-toggler.vue')['default']
+  const RecoveryCodes: typeof import('./../components/security/recovery-codes.vue')['default']
   const ReloadButton: typeof import('./../components/common/reload-button.vue')['default']
   const RichEditor: typeof import('./../components/common/rich-editor/index.vue')['default']
   const RouterLink: typeof import('vue-router')['RouterLink']

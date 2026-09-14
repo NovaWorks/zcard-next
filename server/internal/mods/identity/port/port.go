@@ -7,6 +7,7 @@ import "context"
 
 // AdminAccount 员工账户 DTO（供 audit 等模块取操作者信息；不含密码哈希等敏感字段）。
 type AdminAccount struct {
+	AuthVersion int
 	ID          uint64
 	Username    string
 	Nickname    string

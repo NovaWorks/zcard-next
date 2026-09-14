@@ -35,6 +35,9 @@ var (
 		{Name: "avatar", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "role_id", Type: field.TypeUint64},
 		{Name: "totp_secret", Type: field.TypeBytes, Nullable: true},
+		{Name: "auth_version", Type: field.TypeInt, Default: 0},
+		{Name: "mfa_revision", Type: field.TypeInt, Default: 0},
+		{Name: "mfa_state", Type: field.TypeString, Size: 4096, Default: "{}"},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "remark", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "last_login_ip", Type: field.TypeString, Nullable: true, Size: 64},
@@ -2117,6 +2120,7 @@ var (
 		{Name: "realm", Type: field.TypeEnum, Enums: []string{"admin", "user"}},
 		{Name: "user_id", Type: field.TypeUint64},
 		{Name: "refresh_token_hash", Type: field.TypeString, Size: 128},
+		{Name: "auth_version", Type: field.TypeInt, Default: 0},
 		{Name: "device", Type: field.TypeString, Nullable: true, Size: 120},
 		{Name: "ip", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 255},
@@ -2144,7 +2148,7 @@ var (
 			{
 				Name:    "session_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{SessionsColumns[7]},
+				Columns: []*schema.Column{SessionsColumns[8]},
 			},
 		},
 	}

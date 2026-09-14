@@ -23,6 +23,8 @@ type Session struct {
 	UserID uint64 `json:"user_id,omitempty"`
 	// refresh 令牌哈希（SHA-256，明文绝不落库）
 	RefreshTokenHash string `json:"refresh_token_hash,omitempty"`
+	// AuthVersion holds the value of the "auth_version" field.
+	AuthVersion int `json:"auth_version,omitempty"`
 	// Device holds the value of the "device" field.
 	Device string `json:"device,omitempty"`
 	// IP holds the value of the "ip" field.
@@ -45,7 +47,7 @@ func (*Session) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case session.FieldID, session.FieldUserID:
+		case session.FieldID, session.FieldUserID, session.FieldAuthVersion:
 			values[i] = new(sql.NullInt64)
 		case session.FieldRealm, session.FieldRefreshTokenHash, session.FieldDevice, session.FieldIP, session.FieldUserAgent:
 			values[i] = new(sql.NullString)
@@ -89,6 +91,12 @@ func (_m *Session) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field refresh_token_hash", values[i])
 			} else if value.Valid {
 				_m.RefreshTokenHash = value.String
+			}
+		case session.FieldAuthVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field auth_version", values[i])
+			} else if value.Valid {
+				_m.AuthVersion = int(value.Int64)
 			}
 		case session.FieldDevice:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -176,6 +184,9 @@ func (_m *Session) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("refresh_token_hash=")
 	builder.WriteString(_m.RefreshTokenHash)
+	builder.WriteString(", ")
+	builder.WriteString("auth_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AuthVersion))
 	builder.WriteString(", ")
 	builder.WriteString("device=")
 	builder.WriteString(_m.Device)

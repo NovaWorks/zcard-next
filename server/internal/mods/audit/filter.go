@@ -158,6 +158,7 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 // redact 敏感字段脱敏（凭据/密码/密钥永不入审计快照）。
 func redact(m map[string]any) map[string]any {
 	sensitive := map[string]bool{
+		"code": true, "totp_code": true, "captcha_code": true, "challenge": true, "recovery_ticket": true, "recovery_code": true, "recovery_codes": true, "otpauth_url": true, "refresh_token": true, "access_token": true, "new_password": true,
 		"password": true, "secret": true, "credentials": true, "api_secret": true,
 		"app_key": true, "config_json": true, "new_secret": true, "private_key": true,
 	}
@@ -167,7 +168,22 @@ func redact(m map[string]any) map[string]any {
 			out[k] = "****"
 			continue
 		}
-		out[k] = v
+		switch value := v.(type) {
+		case map[string]any:
+			out[k] = redact(value)
+		case []any:
+			items := make([]any, len(value))
+			for i, item := range value {
+				if child, ok := item.(map[string]any); ok {
+					items[i] = redact(child)
+				} else {
+					items[i] = item
+				}
+			}
+			out[k] = items
+		default:
+			out[k] = v
+		}
 	}
 	return out
 }

@@ -52,18 +52,24 @@ service AdminAuthService {
     };
   }
   // EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
-  rpc EnableTOTP(google.protobuf.Empty) returns (EnableTOTPReply) {
+  rpc EnableTOTP(ConfirmTOTPRequest) returns (EnableTOTPReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/auth/totp/enable"
       body: "*"
     };
   }
   // ConfirmTOTP 验证一次确认绑定。
-  rpc ConfirmTOTP(ConfirmTOTPRequest) returns (google.protobuf.Empty) {
+  rpc ConfirmTOTP(ConfirmTOTPRequest) returns (RecoveryCodesReply) {
     option (google.api.http) = {
       post: "/api/v1/admin/auth/totp/confirm"
       body: "*"
     };
+  }
+  rpc CancelTOTP(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/admin/auth/totp/cancel" body: "*" };
+  }
+  rpc ResetTOTP(ResetTOTPRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/admin/auth/totp/reset" body: "*" };
   }
   // DisableTOTP 解绑。
   rpc DisableTOTP(ConfirmTOTPRequest) returns (google.protobuf.Empty) {
@@ -74,9 +80,13 @@ service AdminAuthService {
   }
 }
 
+message RecoveryCodesReply { repeated string recovery_codes = 1; }
+message ResetTOTPRequest { uint64 admin_id = 1; string password = 2; string code = 3; string reason = 4; }
+
 message LoginRequest {
-  string username = 1 [(google.api.field_behavior) = REQUIRED];
-  string password = 2 [(google.api.field_behavior) = REQUIRED];
+  string challenge = 6;
+  string username = 1; // 第一阶段必填，挑战验证阶段不重复提交
+  string password = 2; // 第一阶段必填，由登录用例按阶段验证
   // TOTP 六位动态码（员工开启二步验证时必填）
   string totp_code = 3;
   // 图形验证码 ID/验证码（captcha_admin_login 开启时必填）
@@ -107,10 +117,15 @@ message EnableTOTPReply {
 }
 
 message ConfirmTOTPRequest {
-  string code = 1 [(google.api.field_behavior) = REQUIRED];
+  string password = 2;
+  string recovery_ticket = 3;
+  string code = 1; // 首次生成绑定密钥时为空；确认/解绑时由用例验证
 }
 
 message LoginReply {
+  bool requires_totp = 6;
+  string challenge = 7;
+  string recovery_ticket = 8;
   // admin realm 访问令牌（2h）
   string access_token = 1;
   // 令牌类型，固定 Bearer
@@ -129,6 +144,7 @@ message GetProfileReply {
 }
 
 message AdminProfile {
+  int64 totp_bound_at = 10;
   uint64 id = 1;
   string username = 2;
   string nickname = 3;

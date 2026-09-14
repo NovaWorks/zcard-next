@@ -40,6 +40,20 @@ func (_c *SessionCreate) SetRefreshTokenHash(v string) *SessionCreate {
 	return _c
 }
 
+// SetAuthVersion sets the "auth_version" field.
+func (_c *SessionCreate) SetAuthVersion(v int) *SessionCreate {
+	_c.mutation.SetAuthVersion(v)
+	return _c
+}
+
+// SetNillableAuthVersion sets the "auth_version" field if the given value is not nil.
+func (_c *SessionCreate) SetNillableAuthVersion(v *int) *SessionCreate {
+	if v != nil {
+		_c.SetAuthVersion(*v)
+	}
+	return _c
+}
+
 // SetDevice sets the "device" field.
 func (_c *SessionCreate) SetDevice(v string) *SessionCreate {
 	_c.mutation.SetDevice(v)
@@ -171,6 +185,10 @@ func (_c *SessionCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *SessionCreate) defaults() {
+	if _, ok := _c.mutation.AuthVersion(); !ok {
+		v := session.DefaultAuthVersion
+		_c.mutation.SetAuthVersion(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := session.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -201,6 +219,9 @@ func (_c *SessionCreate) check() error {
 		if err := session.RefreshTokenHashValidator(v); err != nil {
 			return &ValidationError{Name: "refresh_token_hash", err: fmt.Errorf(`ent: validator failed for field "Session.refresh_token_hash": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.AuthVersion(); !ok {
+		return &ValidationError{Name: "auth_version", err: errors.New(`ent: missing required field "Session.auth_version"`)}
 	}
 	if v, ok := _c.mutation.Device(); ok {
 		if err := session.DeviceValidator(v); err != nil {
@@ -270,6 +291,10 @@ func (_c *SessionCreate) createSpec() (*Session, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RefreshTokenHash(); ok {
 		_spec.SetField(session.FieldRefreshTokenHash, field.TypeString, value)
 		_node.RefreshTokenHash = value
+	}
+	if value, ok := _c.mutation.AuthVersion(); ok {
+		_spec.SetField(session.FieldAuthVersion, field.TypeInt, value)
+		_node.AuthVersion = value
 	}
 	if value, ok := _c.mutation.Device(); ok {
 		_spec.SetField(session.FieldDevice, field.TypeString, value)
@@ -390,6 +415,24 @@ func (u *SessionUpsert) SetRefreshTokenHash(v string) *SessionUpsert {
 // UpdateRefreshTokenHash sets the "refresh_token_hash" field to the value that was provided on create.
 func (u *SessionUpsert) UpdateRefreshTokenHash() *SessionUpsert {
 	u.SetExcluded(session.FieldRefreshTokenHash)
+	return u
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (u *SessionUpsert) SetAuthVersion(v int) *SessionUpsert {
+	u.Set(session.FieldAuthVersion, v)
+	return u
+}
+
+// UpdateAuthVersion sets the "auth_version" field to the value that was provided on create.
+func (u *SessionUpsert) UpdateAuthVersion() *SessionUpsert {
+	u.SetExcluded(session.FieldAuthVersion)
+	return u
+}
+
+// AddAuthVersion adds v to the "auth_version" field.
+func (u *SessionUpsert) AddAuthVersion(v int) *SessionUpsert {
+	u.Add(session.FieldAuthVersion, v)
 	return u
 }
 
@@ -586,6 +629,27 @@ func (u *SessionUpsertOne) SetRefreshTokenHash(v string) *SessionUpsertOne {
 func (u *SessionUpsertOne) UpdateRefreshTokenHash() *SessionUpsertOne {
 	return u.Update(func(s *SessionUpsert) {
 		s.UpdateRefreshTokenHash()
+	})
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (u *SessionUpsertOne) SetAuthVersion(v int) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetAuthVersion(v)
+	})
+}
+
+// AddAuthVersion adds v to the "auth_version" field.
+func (u *SessionUpsertOne) AddAuthVersion(v int) *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.AddAuthVersion(v)
+	})
+}
+
+// UpdateAuthVersion sets the "auth_version" field to the value that was provided on create.
+func (u *SessionUpsertOne) UpdateAuthVersion() *SessionUpsertOne {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateAuthVersion()
 	})
 }
 
@@ -964,6 +1028,27 @@ func (u *SessionUpsertBulk) SetRefreshTokenHash(v string) *SessionUpsertBulk {
 func (u *SessionUpsertBulk) UpdateRefreshTokenHash() *SessionUpsertBulk {
 	return u.Update(func(s *SessionUpsert) {
 		s.UpdateRefreshTokenHash()
+	})
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (u *SessionUpsertBulk) SetAuthVersion(v int) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.SetAuthVersion(v)
+	})
+}
+
+// AddAuthVersion adds v to the "auth_version" field.
+func (u *SessionUpsertBulk) AddAuthVersion(v int) *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.AddAuthVersion(v)
+	})
+}
+
+// UpdateAuthVersion sets the "auth_version" field to the value that was provided on create.
+func (u *SessionUpsertBulk) UpdateAuthVersion() *SessionUpsertBulk {
+	return u.Update(func(s *SessionUpsert) {
+		s.UpdateAuthVersion()
 	})
 }
 

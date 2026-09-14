@@ -28,6 +28,8 @@ const (
 	AdminAuthService_RefreshToken_FullMethodName     = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
 	AdminAuthService_EnableTOTP_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
 	AdminAuthService_ConfirmTOTP_FullMethodName      = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
+	AdminAuthService_CancelTOTP_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/CancelTOTP"
+	AdminAuthService_ResetTOTP_FullMethodName        = "/zcard.api.admin.v1.AdminAuthService/ResetTOTP"
 	AdminAuthService_DisableTOTP_FullMethodName      = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
 )
 
@@ -51,9 +53,11 @@ type AdminAuthServiceClient interface {
 	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*LoginReply, error)
 	// EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
-	EnableTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EnableTOTPReply, error)
+	EnableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*EnableTOTPReply, error)
 	// ConfirmTOTP 验证一次确认绑定。
-	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*RecoveryCodesReply, error)
+	CancelTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ResetTOTP(ctx context.Context, in *ResetTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// DisableTOTP 解绑。
 	DisableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -126,7 +130,7 @@ func (c *adminAuthServiceClient) RefreshToken(ctx context.Context, in *RefreshTo
 	return out, nil
 }
 
-func (c *adminAuthServiceClient) EnableTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*EnableTOTPReply, error) {
+func (c *adminAuthServiceClient) EnableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*EnableTOTPReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnableTOTPReply)
 	err := c.cc.Invoke(ctx, AdminAuthService_EnableTOTP_FullMethodName, in, out, cOpts...)
@@ -136,10 +140,30 @@ func (c *adminAuthServiceClient) EnableTOTP(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
-func (c *adminAuthServiceClient) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *adminAuthServiceClient) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*RecoveryCodesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecoveryCodesReply)
+	err := c.cc.Invoke(ctx, AdminAuthService_ConfirmTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) CancelTOTP(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, AdminAuthService_ConfirmTOTP_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AdminAuthService_CancelTOTP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminAuthServiceClient) ResetTOTP(ctx context.Context, in *ResetTOTPRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminAuthService_ResetTOTP_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +200,11 @@ type AdminAuthServiceServer interface {
 	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)
 	// EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
-	EnableTOTP(context.Context, *emptypb.Empty) (*EnableTOTPReply, error)
+	EnableTOTP(context.Context, *ConfirmTOTPRequest) (*EnableTOTPReply, error)
 	// ConfirmTOTP 验证一次确认绑定。
-	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
+	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*RecoveryCodesReply, error)
+	CancelTOTP(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	ResetTOTP(context.Context, *ResetTOTPRequest) (*emptypb.Empty, error)
 	// DisableTOTP 解绑。
 	DisableTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAdminAuthServiceServer()
@@ -209,11 +235,17 @@ func (UnimplementedAdminAuthServiceServer) GetProfile(context.Context, *emptypb.
 func (UnimplementedAdminAuthServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
 }
-func (UnimplementedAdminAuthServiceServer) EnableTOTP(context.Context, *emptypb.Empty) (*EnableTOTPReply, error) {
+func (UnimplementedAdminAuthServiceServer) EnableTOTP(context.Context, *ConfirmTOTPRequest) (*EnableTOTPReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method EnableTOTP not implemented")
 }
-func (UnimplementedAdminAuthServiceServer) ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error) {
+func (UnimplementedAdminAuthServiceServer) ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*RecoveryCodesReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ConfirmTOTP not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) CancelTOTP(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method CancelTOTP not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) ResetTOTP(context.Context, *ResetTOTPRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResetTOTP not implemented")
 }
 func (UnimplementedAdminAuthServiceServer) DisableTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DisableTOTP not implemented")
@@ -348,7 +380,7 @@ func _AdminAuthService_RefreshToken_Handler(srv interface{}, ctx context.Context
 }
 
 func _AdminAuthService_EnableTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ConfirmTOTPRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -360,7 +392,7 @@ func _AdminAuthService_EnableTOTP_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: AdminAuthService_EnableTOTP_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdminAuthServiceServer).EnableTOTP(ctx, req.(*emptypb.Empty))
+		return srv.(AdminAuthServiceServer).EnableTOTP(ctx, req.(*ConfirmTOTPRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -379,6 +411,42 @@ func _AdminAuthService_ConfirmTOTP_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminAuthServiceServer).ConfirmTOTP(ctx, req.(*ConfirmTOTPRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_CancelTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).CancelTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_CancelTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).CancelTOTP(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminAuthService_ResetTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetTOTPRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).ResetTOTP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_ResetTOTP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).ResetTOTP(ctx, req.(*ResetTOTPRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -439,6 +507,14 @@ var AdminAuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConfirmTOTP",
 			Handler:    _AdminAuthService_ConfirmTOTP_Handler,
+		},
+		{
+			MethodName: "CancelTOTP",
+			Handler:    _AdminAuthService_CancelTOTP_Handler,
+		},
+		{
+			MethodName: "ResetTOTP",
+			Handler:    _AdminAuthService_ResetTOTP_Handler,
 		},
 		{
 			MethodName: "DisableTOTP",

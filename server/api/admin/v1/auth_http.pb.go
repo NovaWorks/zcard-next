@@ -18,6 +18,7 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminAuthServiceCancelTOTP = "/zcard.api.admin.v1.AdminAuthService/CancelTOTP"
 const OperationAdminAuthServiceConfirmTOTP = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
 const OperationAdminAuthServiceDisableTOTP = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
 const OperationAdminAuthServiceEnableTOTP = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
@@ -27,14 +28,16 @@ const OperationAdminAuthServiceGetProfile = "/zcard.api.admin.v1.AdminAuthServic
 const OperationAdminAuthServiceLogin = "/zcard.api.admin.v1.AdminAuthService/Login"
 const OperationAdminAuthServiceLogout = "/zcard.api.admin.v1.AdminAuthService/Logout"
 const OperationAdminAuthServiceRefreshToken = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
+const OperationAdminAuthServiceResetTOTP = "/zcard.api.admin.v1.AdminAuthService/ResetTOTP"
 
 type AdminAuthServiceHTTPServer interface {
+	CancelTOTP(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
-	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
+	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*RecoveryCodesReply, error)
 	// DisableTOTP DisableTOTP 解绑。
 	DisableTOTP(context.Context, *ConfirmTOTPRequest) (*emptypb.Empty, error)
 	// EnableTOTP EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
-	EnableTOTP(context.Context, *emptypb.Empty) (*EnableTOTPReply, error)
+	EnableTOTP(context.Context, *ConfirmTOTPRequest) (*EnableTOTPReply, error)
 	// GetCaptchaConfig GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
 	GetCaptchaConfig(context.Context, *emptypb.Empty) (*CaptchaConfigReply, error)
 	// GetCaptchaImage GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
@@ -47,6 +50,7 @@ type AdminAuthServiceHTTPServer interface {
 	Logout(context.Context, *LogoutRequest) (*emptypb.Empty, error)
 	// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)
+	ResetTOTP(context.Context, *ResetTOTPRequest) (*emptypb.Empty, error)
 }
 
 func RegisterAdminAuthServiceHTTPServer(s *http.Server, srv AdminAuthServiceHTTPServer) {
@@ -59,6 +63,8 @@ func RegisterAdminAuthServiceHTTPServer(s *http.Server, srv AdminAuthServiceHTTP
 	r.Handle("POST", "/api/v1/admin/auth/refresh", _AdminAuthService_RefreshToken0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/totp/enable", _AdminAuthService_EnableTOTP0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/totp/confirm", _AdminAuthService_ConfirmTOTP0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/totp/cancel", _AdminAuthService_CancelTOTP0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/totp/reset", _AdminAuthService_ResetTOTP0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/totp/disable", _AdminAuthService_DisableTOTP0_HTTP_Handler(srv))
 }
 
@@ -178,13 +184,13 @@ func _AdminAuthService_RefreshToken0_HTTP_Handler(srv AdminAuthServiceHTTPServer
 
 func _AdminAuthService_EnableTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
-		var in emptypb.Empty
+		var in ConfirmTOTPRequest
 		if err := ctx.Bind(&in); err != nil {
 			return err
 		}
 		http.SetOperation(ctx, OperationAdminAuthServiceEnableTOTP)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
-			return srv.EnableTOTP(ctx, req.(*emptypb.Empty))
+			return srv.EnableTOTP(ctx, req.(*ConfirmTOTPRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -204,6 +210,44 @@ func _AdminAuthService_ConfirmTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer)
 		http.SetOperation(ctx, OperationAdminAuthServiceConfirmTOTP)
 		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
 			return srv.ConfirmTOTP(ctx, req.(*ConfirmTOTPRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*RecoveryCodesReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminAuthService_CancelTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceCancelTOTP)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.CancelTOTP(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminAuthService_ResetTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ResetTOTPRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceResetTOTP)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ResetTOTP(ctx, req.(*ResetTOTPRequest))
 		})
 		out, err := h(ctx, &in)
 		if err != nil {
@@ -234,12 +278,13 @@ func _AdminAuthService_DisableTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer)
 }
 
 type AdminAuthServiceHTTPClient interface {
+	CancelTOTP(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
-	ConfirmTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	ConfirmTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *RecoveryCodesReply, err error)
 	// DisableTOTP DisableTOTP 解绑。
 	DisableTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// EnableTOTP EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
-	EnableTOTP(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *EnableTOTPReply, err error)
+	EnableTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *EnableTOTPReply, err error)
 	// GetCaptchaConfig GetCaptchaConfig 登录验证码开关（免鉴权；登录页据此条件渲染验证码区）。
 	GetCaptchaConfig(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CaptchaConfigReply, err error)
 	// GetCaptchaImage GetCaptchaImage 登录图形验证码（免鉴权；captcha_admin_login 开启时登录页使用）。
@@ -252,6 +297,7 @@ type AdminAuthServiceHTTPClient interface {
 	Logout(ctx context.Context, req *LogoutRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// RefreshToken RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(ctx context.Context, req *RefreshTokenRequest, opts ...http.CallOption) (rsp *LoginReply, err error)
+	ResetTOTP(ctx context.Context, req *ResetTOTPRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 }
 
 type AdminAuthServiceHTTPClientImpl struct {
@@ -262,9 +308,26 @@ func NewAdminAuthServiceHTTPClient(client *http.Client) AdminAuthServiceHTTPClie
 	return &AdminAuthServiceHTTPClientImpl{client}
 }
 
-// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
-func (c *AdminAuthServiceHTTPClientImpl) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+func (c *AdminAuthServiceHTTPClientImpl) CancelTOTP(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
 	var out emptypb.Empty
+	pattern := "/api/v1/admin/auth/totp/cancel"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceCancelTOTP),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
+func (c *AdminAuthServiceHTTPClientImpl) ConfirmTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...http.CallOption) (*RecoveryCodesReply, error) {
+	var out RecoveryCodesReply
 	pattern := "/api/v1/admin/auth/totp/confirm"
 	path := http.BuildPath(pattern, in)
 	opts = append([]http.CallOption{
@@ -299,7 +362,7 @@ func (c *AdminAuthServiceHTTPClientImpl) DisableTOTP(ctx context.Context, in *Co
 }
 
 // EnableTOTP EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
-func (c *AdminAuthServiceHTTPClientImpl) EnableTOTP(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*EnableTOTPReply, error) {
+func (c *AdminAuthServiceHTTPClientImpl) EnableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...http.CallOption) (*EnableTOTPReply, error) {
 	var out EnableTOTPReply
 	pattern := "/api/v1/admin/auth/totp/enable"
 	path := http.BuildPath(pattern, in)
@@ -412,6 +475,23 @@ func (c *AdminAuthServiceHTTPClientImpl) RefreshToken(ctx context.Context, in *R
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminAuthServiceRefreshToken),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminAuthServiceHTTPClientImpl) ResetTOTP(ctx context.Context, in *ResetTOTPRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/auth/totp/reset"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceResetTOTP),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

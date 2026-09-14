@@ -102,6 +102,48 @@ func (_c *AdminUserCreate) SetTotpSecret(v []byte) *AdminUserCreate {
 	return _c
 }
 
+// SetAuthVersion sets the "auth_version" field.
+func (_c *AdminUserCreate) SetAuthVersion(v int) *AdminUserCreate {
+	_c.mutation.SetAuthVersion(v)
+	return _c
+}
+
+// SetNillableAuthVersion sets the "auth_version" field if the given value is not nil.
+func (_c *AdminUserCreate) SetNillableAuthVersion(v *int) *AdminUserCreate {
+	if v != nil {
+		_c.SetAuthVersion(*v)
+	}
+	return _c
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (_c *AdminUserCreate) SetMfaRevision(v int) *AdminUserCreate {
+	_c.mutation.SetMfaRevision(v)
+	return _c
+}
+
+// SetNillableMfaRevision sets the "mfa_revision" field if the given value is not nil.
+func (_c *AdminUserCreate) SetNillableMfaRevision(v *int) *AdminUserCreate {
+	if v != nil {
+		_c.SetMfaRevision(*v)
+	}
+	return _c
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (_c *AdminUserCreate) SetMfaState(v string) *AdminUserCreate {
+	_c.mutation.SetMfaState(v)
+	return _c
+}
+
+// SetNillableMfaState sets the "mfa_state" field if the given value is not nil.
+func (_c *AdminUserCreate) SetNillableMfaState(v *string) *AdminUserCreate {
+	if v != nil {
+		_c.SetMfaState(*v)
+	}
+	return _c
+}
+
 // SetEnabled sets the "enabled" field.
 func (_c *AdminUserCreate) SetEnabled(v bool) *AdminUserCreate {
 	_c.mutation.SetEnabled(v)
@@ -207,6 +249,18 @@ func (_c *AdminUserCreate) defaults() {
 		v := adminuser.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.AuthVersion(); !ok {
+		v := adminuser.DefaultAuthVersion
+		_c.mutation.SetAuthVersion(v)
+	}
+	if _, ok := _c.mutation.MfaRevision(); !ok {
+		v := adminuser.DefaultMfaRevision
+		_c.mutation.SetMfaRevision(v)
+	}
+	if _, ok := _c.mutation.MfaState(); !ok {
+		v := adminuser.DefaultMfaState
+		_c.mutation.SetMfaState(v)
+	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		v := adminuser.DefaultEnabled
 		_c.mutation.SetEnabled(v)
@@ -249,6 +303,20 @@ func (_c *AdminUserCreate) check() error {
 	}
 	if _, ok := _c.mutation.RoleID(); !ok {
 		return &ValidationError{Name: "role_id", err: errors.New(`ent: missing required field "AdminUser.role_id"`)}
+	}
+	if _, ok := _c.mutation.AuthVersion(); !ok {
+		return &ValidationError{Name: "auth_version", err: errors.New(`ent: missing required field "AdminUser.auth_version"`)}
+	}
+	if _, ok := _c.mutation.MfaRevision(); !ok {
+		return &ValidationError{Name: "mfa_revision", err: errors.New(`ent: missing required field "AdminUser.mfa_revision"`)}
+	}
+	if _, ok := _c.mutation.MfaState(); !ok {
+		return &ValidationError{Name: "mfa_state", err: errors.New(`ent: missing required field "AdminUser.mfa_state"`)}
+	}
+	if v, ok := _c.mutation.MfaState(); ok {
+		if err := adminuser.MfaStateValidator(v); err != nil {
+			return &ValidationError{Name: "mfa_state", err: fmt.Errorf(`ent: validator failed for field "AdminUser.mfa_state": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "AdminUser.enabled"`)}
@@ -327,6 +395,18 @@ func (_c *AdminUserCreate) createSpec() (*AdminUser, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.TotpSecret(); ok {
 		_spec.SetField(adminuser.FieldTotpSecret, field.TypeBytes, value)
 		_node.TotpSecret = value
+	}
+	if value, ok := _c.mutation.AuthVersion(); ok {
+		_spec.SetField(adminuser.FieldAuthVersion, field.TypeInt, value)
+		_node.AuthVersion = value
+	}
+	if value, ok := _c.mutation.MfaRevision(); ok {
+		_spec.SetField(adminuser.FieldMfaRevision, field.TypeInt, value)
+		_node.MfaRevision = value
+	}
+	if value, ok := _c.mutation.MfaState(); ok {
+		_spec.SetField(adminuser.FieldMfaState, field.TypeString, value)
+		_node.MfaState = value
 	}
 	if value, ok := _c.mutation.Enabled(); ok {
 		_spec.SetField(adminuser.FieldEnabled, field.TypeBool, value)
@@ -501,6 +581,54 @@ func (u *AdminUserUpsert) UpdateTotpSecret() *AdminUserUpsert {
 // ClearTotpSecret clears the value of the "totp_secret" field.
 func (u *AdminUserUpsert) ClearTotpSecret() *AdminUserUpsert {
 	u.SetNull(adminuser.FieldTotpSecret)
+	return u
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (u *AdminUserUpsert) SetAuthVersion(v int) *AdminUserUpsert {
+	u.Set(adminuser.FieldAuthVersion, v)
+	return u
+}
+
+// UpdateAuthVersion sets the "auth_version" field to the value that was provided on create.
+func (u *AdminUserUpsert) UpdateAuthVersion() *AdminUserUpsert {
+	u.SetExcluded(adminuser.FieldAuthVersion)
+	return u
+}
+
+// AddAuthVersion adds v to the "auth_version" field.
+func (u *AdminUserUpsert) AddAuthVersion(v int) *AdminUserUpsert {
+	u.Add(adminuser.FieldAuthVersion, v)
+	return u
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (u *AdminUserUpsert) SetMfaRevision(v int) *AdminUserUpsert {
+	u.Set(adminuser.FieldMfaRevision, v)
+	return u
+}
+
+// UpdateMfaRevision sets the "mfa_revision" field to the value that was provided on create.
+func (u *AdminUserUpsert) UpdateMfaRevision() *AdminUserUpsert {
+	u.SetExcluded(adminuser.FieldMfaRevision)
+	return u
+}
+
+// AddMfaRevision adds v to the "mfa_revision" field.
+func (u *AdminUserUpsert) AddMfaRevision(v int) *AdminUserUpsert {
+	u.Add(adminuser.FieldMfaRevision, v)
+	return u
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (u *AdminUserUpsert) SetMfaState(v string) *AdminUserUpsert {
+	u.Set(adminuser.FieldMfaState, v)
+	return u
+}
+
+// UpdateMfaState sets the "mfa_state" field to the value that was provided on create.
+func (u *AdminUserUpsert) UpdateMfaState() *AdminUserUpsert {
+	u.SetExcluded(adminuser.FieldMfaState)
 	return u
 }
 
@@ -744,6 +872,62 @@ func (u *AdminUserUpsertOne) UpdateTotpSecret() *AdminUserUpsertOne {
 func (u *AdminUserUpsertOne) ClearTotpSecret() *AdminUserUpsertOne {
 	return u.Update(func(s *AdminUserUpsert) {
 		s.ClearTotpSecret()
+	})
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (u *AdminUserUpsertOne) SetAuthVersion(v int) *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.SetAuthVersion(v)
+	})
+}
+
+// AddAuthVersion adds v to the "auth_version" field.
+func (u *AdminUserUpsertOne) AddAuthVersion(v int) *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.AddAuthVersion(v)
+	})
+}
+
+// UpdateAuthVersion sets the "auth_version" field to the value that was provided on create.
+func (u *AdminUserUpsertOne) UpdateAuthVersion() *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.UpdateAuthVersion()
+	})
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (u *AdminUserUpsertOne) SetMfaRevision(v int) *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.SetMfaRevision(v)
+	})
+}
+
+// AddMfaRevision adds v to the "mfa_revision" field.
+func (u *AdminUserUpsertOne) AddMfaRevision(v int) *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.AddMfaRevision(v)
+	})
+}
+
+// UpdateMfaRevision sets the "mfa_revision" field to the value that was provided on create.
+func (u *AdminUserUpsertOne) UpdateMfaRevision() *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.UpdateMfaRevision()
+	})
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (u *AdminUserUpsertOne) SetMfaState(v string) *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.SetMfaState(v)
+	})
+}
+
+// UpdateMfaState sets the "mfa_state" field to the value that was provided on create.
+func (u *AdminUserUpsertOne) UpdateMfaState() *AdminUserUpsertOne {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.UpdateMfaState()
 	})
 }
 
@@ -1164,6 +1348,62 @@ func (u *AdminUserUpsertBulk) UpdateTotpSecret() *AdminUserUpsertBulk {
 func (u *AdminUserUpsertBulk) ClearTotpSecret() *AdminUserUpsertBulk {
 	return u.Update(func(s *AdminUserUpsert) {
 		s.ClearTotpSecret()
+	})
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (u *AdminUserUpsertBulk) SetAuthVersion(v int) *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.SetAuthVersion(v)
+	})
+}
+
+// AddAuthVersion adds v to the "auth_version" field.
+func (u *AdminUserUpsertBulk) AddAuthVersion(v int) *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.AddAuthVersion(v)
+	})
+}
+
+// UpdateAuthVersion sets the "auth_version" field to the value that was provided on create.
+func (u *AdminUserUpsertBulk) UpdateAuthVersion() *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.UpdateAuthVersion()
+	})
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (u *AdminUserUpsertBulk) SetMfaRevision(v int) *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.SetMfaRevision(v)
+	})
+}
+
+// AddMfaRevision adds v to the "mfa_revision" field.
+func (u *AdminUserUpsertBulk) AddMfaRevision(v int) *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.AddMfaRevision(v)
+	})
+}
+
+// UpdateMfaRevision sets the "mfa_revision" field to the value that was provided on create.
+func (u *AdminUserUpsertBulk) UpdateMfaRevision() *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.UpdateMfaRevision()
+	})
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (u *AdminUserUpsertBulk) SetMfaState(v string) *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.SetMfaState(v)
+	})
+}
+
+// UpdateMfaState sets the "mfa_state" field to the value that was provided on create.
+func (u *AdminUserUpsertBulk) UpdateMfaState() *AdminUserUpsertBulk {
+	return u.Update(func(s *AdminUserUpsert) {
+		s.UpdateMfaState()
 	})
 }
 

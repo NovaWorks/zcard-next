@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import AccountSecurity from "@/components/security/account-security.vue";
+import { recoveryTicket } from "@/components/security/state";
 import type { VNode } from "vue";
 import { useAuthStore } from "@/store/modules/auth";
 import { useRouterPush } from "@/hooks/common/router";
@@ -11,14 +13,18 @@ defineOptions({
 });
 
 const authStore = useAuthStore();
-const { routerPushByKey, toLogin } = useRouterPush();
+const { toLogin } = useRouterPush();
 const { SvgIconVNode } = useSvgIcon();
 
 function loginOrRegister() {
   toLogin();
 }
 
-type DropdownKey = "logout";
+const showSecurity = ref(Boolean(recoveryTicket.value));
+watch(recoveryTicket, (value) => {
+  if (value) showSecurity.value = true;
+});
+type DropdownKey = "logout" | "security";
 
 type DropdownOption =
   | {
@@ -33,6 +39,11 @@ type DropdownOption =
 
 const options = computed(() => {
   const opts: DropdownOption[] = [
+    {
+      key: "security",
+      label: "账号安全",
+      icon: SvgIconVNode({ icon: "ph:shield-check", fontSize: 18 }),
+    },
     {
       label: $t("common.logout"),
       key: "logout",
@@ -59,8 +70,7 @@ function handleDropdown(key: DropdownKey) {
   if (key === "logout") {
     logout();
   } else {
-    // If your other options are jumps from other routes, they will be directly supported here
-    routerPushByKey(key);
+    showSecurity.value = true;
   }
 }
 </script>
@@ -77,6 +87,13 @@ function handleDropdown(key: DropdownKey) {
       </ButtonIcon>
     </div>
   </NDropdown>
+  <NModal
+    v-model:show="showSecurity"
+    preset="card"
+    title="账号安全"
+    style="width: 620px; max-width: calc(100vw - 24px)"
+    ><AccountSecurity
+  /></NModal>
 </template>
 
 <style scoped></style>

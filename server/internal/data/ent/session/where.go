@@ -64,6 +64,11 @@ func RefreshTokenHash(v string) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldRefreshTokenHash, v))
 }
 
+// AuthVersion applies equality check predicate on the "auth_version" field. It's identical to AuthVersionEQ.
+func AuthVersion(v int) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldAuthVersion, v))
+}
+
 // Device applies equality check predicate on the "device" field. It's identical to DeviceEQ.
 func Device(v string) predicate.Session {
 	return predicate.Session(sql.FieldEQ(FieldDevice, v))
@@ -222,6 +227,46 @@ func RefreshTokenHashEqualFold(v string) predicate.Session {
 // RefreshTokenHashContainsFold applies the ContainsFold predicate on the "refresh_token_hash" field.
 func RefreshTokenHashContainsFold(v string) predicate.Session {
 	return predicate.Session(sql.FieldContainsFold(FieldRefreshTokenHash, v))
+}
+
+// AuthVersionEQ applies the EQ predicate on the "auth_version" field.
+func AuthVersionEQ(v int) predicate.Session {
+	return predicate.Session(sql.FieldEQ(FieldAuthVersion, v))
+}
+
+// AuthVersionNEQ applies the NEQ predicate on the "auth_version" field.
+func AuthVersionNEQ(v int) predicate.Session {
+	return predicate.Session(sql.FieldNEQ(FieldAuthVersion, v))
+}
+
+// AuthVersionIn applies the In predicate on the "auth_version" field.
+func AuthVersionIn(vs ...int) predicate.Session {
+	return predicate.Session(sql.FieldIn(FieldAuthVersion, vs...))
+}
+
+// AuthVersionNotIn applies the NotIn predicate on the "auth_version" field.
+func AuthVersionNotIn(vs ...int) predicate.Session {
+	return predicate.Session(sql.FieldNotIn(FieldAuthVersion, vs...))
+}
+
+// AuthVersionGT applies the GT predicate on the "auth_version" field.
+func AuthVersionGT(v int) predicate.Session {
+	return predicate.Session(sql.FieldGT(FieldAuthVersion, v))
+}
+
+// AuthVersionGTE applies the GTE predicate on the "auth_version" field.
+func AuthVersionGTE(v int) predicate.Session {
+	return predicate.Session(sql.FieldGTE(FieldAuthVersion, v))
+}
+
+// AuthVersionLT applies the LT predicate on the "auth_version" field.
+func AuthVersionLT(v int) predicate.Session {
+	return predicate.Session(sql.FieldLT(FieldAuthVersion, v))
+}
+
+// AuthVersionLTE applies the LTE predicate on the "auth_version" field.
+func AuthVersionLTE(v int) predicate.Session {
+	return predicate.Session(sql.FieldLTE(FieldAuthVersion, v))
 }
 
 // DeviceEQ applies the EQ predicate on the "device" field.

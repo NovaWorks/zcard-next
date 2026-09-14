@@ -33,6 +33,12 @@ type AdminUser struct {
 	RoleID uint64 `json:"role_id,omitempty"`
 	// AES-256-GCM 加密的 TOTP 密钥
 	TotpSecret []byte `json:"totp_secret,omitempty"`
+	// AuthVersion holds the value of the "auth_version" field.
+	AuthVersion int `json:"auth_version,omitempty"`
+	// MfaRevision holds the value of the "mfa_revision" field.
+	MfaRevision int `json:"mfa_revision,omitempty"`
+	// MfaState holds the value of the "mfa_state" field.
+	MfaState string `json:"mfa_state,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
 	// Remark holds the value of the "remark" field.
@@ -53,9 +59,9 @@ func (*AdminUser) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case adminuser.FieldEnabled:
 			values[i] = new(sql.NullBool)
-		case adminuser.FieldID, adminuser.FieldRoleID:
+		case adminuser.FieldID, adminuser.FieldRoleID, adminuser.FieldAuthVersion, adminuser.FieldMfaRevision:
 			values[i] = new(sql.NullInt64)
-		case adminuser.FieldUsername, adminuser.FieldPasswordHash, adminuser.FieldNickname, adminuser.FieldAvatar, adminuser.FieldRemark, adminuser.FieldLastLoginIP:
+		case adminuser.FieldUsername, adminuser.FieldPasswordHash, adminuser.FieldNickname, adminuser.FieldAvatar, adminuser.FieldMfaState, adminuser.FieldRemark, adminuser.FieldLastLoginIP:
 			values[i] = new(sql.NullString)
 		case adminuser.FieldCreatedAt, adminuser.FieldUpdatedAt, adminuser.FieldLastLoginAt:
 			values[i] = new(sql.NullTime)
@@ -127,6 +133,24 @@ func (_m *AdminUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field totp_secret", values[i])
 			} else if value != nil {
 				_m.TotpSecret = *value
+			}
+		case adminuser.FieldAuthVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field auth_version", values[i])
+			} else if value.Valid {
+				_m.AuthVersion = int(value.Int64)
+			}
+		case adminuser.FieldMfaRevision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field mfa_revision", values[i])
+			} else if value.Valid {
+				_m.MfaRevision = int(value.Int64)
+			}
+		case adminuser.FieldMfaState:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field mfa_state", values[i])
+			} else if value.Valid {
+				_m.MfaState = value.String
 			}
 		case adminuser.FieldEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -211,6 +235,15 @@ func (_m *AdminUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("totp_secret=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TotpSecret))
+	builder.WriteString(", ")
+	builder.WriteString("auth_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AuthVersion))
+	builder.WriteString(", ")
+	builder.WriteString("mfa_revision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MfaRevision))
+	builder.WriteString(", ")
+	builder.WriteString("mfa_state=")
+	builder.WriteString(_m.MfaState)
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))

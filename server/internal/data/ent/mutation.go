@@ -833,26 +833,31 @@ func (m *AdminRoleMutation) ResetEdge(name string) error {
 // AdminUserMutation represents an operation that mutates the AdminUser nodes in the graph.
 type AdminUserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	created_at    *time.Time
-	updated_at    *time.Time
-	username      *string
-	password_hash *string
-	nickname      *string
-	avatar        *string
-	role_id       *uint64
-	addrole_id    *int64
-	totp_secret   *[]byte
-	enabled       *bool
-	remark        *string
-	last_login_ip *string
-	last_login_at *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*AdminUser, error)
-	predicates    []predicate.AdminUser
+	op              Op
+	typ             string
+	id              *uint64
+	created_at      *time.Time
+	updated_at      *time.Time
+	username        *string
+	password_hash   *string
+	nickname        *string
+	avatar          *string
+	role_id         *uint64
+	addrole_id      *int64
+	totp_secret     *[]byte
+	auth_version    *int
+	addauth_version *int
+	mfa_revision    *int
+	addmfa_revision *int
+	mfa_state       *string
+	enabled         *bool
+	remark          *string
+	last_login_ip   *string
+	last_login_at   *time.Time
+	clearedFields   map[string]struct{}
+	done            bool
+	oldValue        func(context.Context) (*AdminUser, error)
+	predicates      []predicate.AdminUser
 }
 
 var _ ent.Mutation = (*AdminUserMutation)(nil)
@@ -1306,6 +1311,154 @@ func (m *AdminUserMutation) ResetTotpSecret() {
 	delete(m.clearedFields, adminuser.FieldTotpSecret)
 }
 
+// SetAuthVersion sets the "auth_version" field.
+func (m *AdminUserMutation) SetAuthVersion(i int) {
+	m.auth_version = &i
+	m.addauth_version = nil
+}
+
+// AuthVersion returns the value of the "auth_version" field in the mutation.
+func (m *AdminUserMutation) AuthVersion() (r int, exists bool) {
+	v := m.auth_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthVersion returns the old "auth_version" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldAuthVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthVersion: %w", err)
+	}
+	return oldValue.AuthVersion, nil
+}
+
+// AddAuthVersion adds i to the "auth_version" field.
+func (m *AdminUserMutation) AddAuthVersion(i int) {
+	if m.addauth_version != nil {
+		*m.addauth_version += i
+	} else {
+		m.addauth_version = &i
+	}
+}
+
+// AddedAuthVersion returns the value that was added to the "auth_version" field in this mutation.
+func (m *AdminUserMutation) AddedAuthVersion() (r int, exists bool) {
+	v := m.addauth_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAuthVersion resets all changes to the "auth_version" field.
+func (m *AdminUserMutation) ResetAuthVersion() {
+	m.auth_version = nil
+	m.addauth_version = nil
+}
+
+// SetMfaRevision sets the "mfa_revision" field.
+func (m *AdminUserMutation) SetMfaRevision(i int) {
+	m.mfa_revision = &i
+	m.addmfa_revision = nil
+}
+
+// MfaRevision returns the value of the "mfa_revision" field in the mutation.
+func (m *AdminUserMutation) MfaRevision() (r int, exists bool) {
+	v := m.mfa_revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMfaRevision returns the old "mfa_revision" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldMfaRevision(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMfaRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMfaRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMfaRevision: %w", err)
+	}
+	return oldValue.MfaRevision, nil
+}
+
+// AddMfaRevision adds i to the "mfa_revision" field.
+func (m *AdminUserMutation) AddMfaRevision(i int) {
+	if m.addmfa_revision != nil {
+		*m.addmfa_revision += i
+	} else {
+		m.addmfa_revision = &i
+	}
+}
+
+// AddedMfaRevision returns the value that was added to the "mfa_revision" field in this mutation.
+func (m *AdminUserMutation) AddedMfaRevision() (r int, exists bool) {
+	v := m.addmfa_revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMfaRevision resets all changes to the "mfa_revision" field.
+func (m *AdminUserMutation) ResetMfaRevision() {
+	m.mfa_revision = nil
+	m.addmfa_revision = nil
+}
+
+// SetMfaState sets the "mfa_state" field.
+func (m *AdminUserMutation) SetMfaState(s string) {
+	m.mfa_state = &s
+}
+
+// MfaState returns the value of the "mfa_state" field in the mutation.
+func (m *AdminUserMutation) MfaState() (r string, exists bool) {
+	v := m.mfa_state
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMfaState returns the old "mfa_state" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldMfaState(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMfaState is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMfaState requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMfaState: %w", err)
+	}
+	return oldValue.MfaState, nil
+}
+
+// ResetMfaState resets all changes to the "mfa_state" field.
+func (m *AdminUserMutation) ResetMfaState() {
+	m.mfa_state = nil
+}
+
 // SetEnabled sets the "enabled" field.
 func (m *AdminUserMutation) SetEnabled(b bool) {
 	m.enabled = &b
@@ -1523,7 +1676,7 @@ func (m *AdminUserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AdminUserMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 15)
 	if m.created_at != nil {
 		fields = append(fields, adminuser.FieldCreatedAt)
 	}
@@ -1547,6 +1700,15 @@ func (m *AdminUserMutation) Fields() []string {
 	}
 	if m.totp_secret != nil {
 		fields = append(fields, adminuser.FieldTotpSecret)
+	}
+	if m.auth_version != nil {
+		fields = append(fields, adminuser.FieldAuthVersion)
+	}
+	if m.mfa_revision != nil {
+		fields = append(fields, adminuser.FieldMfaRevision)
+	}
+	if m.mfa_state != nil {
+		fields = append(fields, adminuser.FieldMfaState)
 	}
 	if m.enabled != nil {
 		fields = append(fields, adminuser.FieldEnabled)
@@ -1584,6 +1746,12 @@ func (m *AdminUserMutation) Field(name string) (ent.Value, bool) {
 		return m.RoleID()
 	case adminuser.FieldTotpSecret:
 		return m.TotpSecret()
+	case adminuser.FieldAuthVersion:
+		return m.AuthVersion()
+	case adminuser.FieldMfaRevision:
+		return m.MfaRevision()
+	case adminuser.FieldMfaState:
+		return m.MfaState()
 	case adminuser.FieldEnabled:
 		return m.Enabled()
 	case adminuser.FieldRemark:
@@ -1617,6 +1785,12 @@ func (m *AdminUserMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldRoleID(ctx)
 	case adminuser.FieldTotpSecret:
 		return m.OldTotpSecret(ctx)
+	case adminuser.FieldAuthVersion:
+		return m.OldAuthVersion(ctx)
+	case adminuser.FieldMfaRevision:
+		return m.OldMfaRevision(ctx)
+	case adminuser.FieldMfaState:
+		return m.OldMfaState(ctx)
 	case adminuser.FieldEnabled:
 		return m.OldEnabled(ctx)
 	case adminuser.FieldRemark:
@@ -1690,6 +1864,27 @@ func (m *AdminUserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetTotpSecret(v)
 		return nil
+	case adminuser.FieldAuthVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthVersion(v)
+		return nil
+	case adminuser.FieldMfaRevision:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMfaRevision(v)
+		return nil
+	case adminuser.FieldMfaState:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMfaState(v)
+		return nil
 	case adminuser.FieldEnabled:
 		v, ok := value.(bool)
 		if !ok {
@@ -1729,6 +1924,12 @@ func (m *AdminUserMutation) AddedFields() []string {
 	if m.addrole_id != nil {
 		fields = append(fields, adminuser.FieldRoleID)
 	}
+	if m.addauth_version != nil {
+		fields = append(fields, adminuser.FieldAuthVersion)
+	}
+	if m.addmfa_revision != nil {
+		fields = append(fields, adminuser.FieldMfaRevision)
+	}
 	return fields
 }
 
@@ -1739,6 +1940,10 @@ func (m *AdminUserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case adminuser.FieldRoleID:
 		return m.AddedRoleID()
+	case adminuser.FieldAuthVersion:
+		return m.AddedAuthVersion()
+	case adminuser.FieldMfaRevision:
+		return m.AddedMfaRevision()
 	}
 	return nil, false
 }
@@ -1754,6 +1959,20 @@ func (m *AdminUserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddRoleID(v)
+		return nil
+	case adminuser.FieldAuthVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAuthVersion(v)
+		return nil
+	case adminuser.FieldMfaRevision:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMfaRevision(v)
 		return nil
 	}
 	return fmt.Errorf("unknown AdminUser numeric field %s", name)
@@ -1844,6 +2063,15 @@ func (m *AdminUserMutation) ResetField(name string) error {
 		return nil
 	case adminuser.FieldTotpSecret:
 		m.ResetTotpSecret()
+		return nil
+	case adminuser.FieldAuthVersion:
+		m.ResetAuthVersion()
+		return nil
+	case adminuser.FieldMfaRevision:
+		m.ResetMfaRevision()
+		return nil
+	case adminuser.FieldMfaState:
+		m.ResetMfaState()
 		return nil
 	case adminuser.FieldEnabled:
 		m.ResetEnabled()
@@ -72066,6 +72294,8 @@ type SessionMutation struct {
 	user_id            *uint64
 	adduser_id         *int64
 	refresh_token_hash *string
+	auth_version       *int
+	addauth_version    *int
 	device             *string
 	ip                 *string
 	user_agent         *string
@@ -72309,6 +72539,62 @@ func (m *SessionMutation) OldRefreshTokenHash(ctx context.Context) (v string, er
 // ResetRefreshTokenHash resets all changes to the "refresh_token_hash" field.
 func (m *SessionMutation) ResetRefreshTokenHash() {
 	m.refresh_token_hash = nil
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (m *SessionMutation) SetAuthVersion(i int) {
+	m.auth_version = &i
+	m.addauth_version = nil
+}
+
+// AuthVersion returns the value of the "auth_version" field in the mutation.
+func (m *SessionMutation) AuthVersion() (r int, exists bool) {
+	v := m.auth_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthVersion returns the old "auth_version" field's value of the Session entity.
+// If the Session object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SessionMutation) OldAuthVersion(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthVersion: %w", err)
+	}
+	return oldValue.AuthVersion, nil
+}
+
+// AddAuthVersion adds i to the "auth_version" field.
+func (m *SessionMutation) AddAuthVersion(i int) {
+	if m.addauth_version != nil {
+		*m.addauth_version += i
+	} else {
+		m.addauth_version = &i
+	}
+}
+
+// AddedAuthVersion returns the value that was added to the "auth_version" field in this mutation.
+func (m *SessionMutation) AddedAuthVersion() (r int, exists bool) {
+	v := m.addauth_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAuthVersion resets all changes to the "auth_version" field.
+func (m *SessionMutation) ResetAuthVersion() {
+	m.auth_version = nil
+	m.addauth_version = nil
 }
 
 // SetDevice sets the "device" field.
@@ -72649,7 +72935,7 @@ func (m *SessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SessionMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.realm != nil {
 		fields = append(fields, session.FieldRealm)
 	}
@@ -72658,6 +72944,9 @@ func (m *SessionMutation) Fields() []string {
 	}
 	if m.refresh_token_hash != nil {
 		fields = append(fields, session.FieldRefreshTokenHash)
+	}
+	if m.auth_version != nil {
+		fields = append(fields, session.FieldAuthVersion)
 	}
 	if m.device != nil {
 		fields = append(fields, session.FieldDevice)
@@ -72694,6 +72983,8 @@ func (m *SessionMutation) Field(name string) (ent.Value, bool) {
 		return m.UserID()
 	case session.FieldRefreshTokenHash:
 		return m.RefreshTokenHash()
+	case session.FieldAuthVersion:
+		return m.AuthVersion()
 	case session.FieldDevice:
 		return m.Device()
 	case session.FieldIP:
@@ -72723,6 +73014,8 @@ func (m *SessionMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUserID(ctx)
 	case session.FieldRefreshTokenHash:
 		return m.OldRefreshTokenHash(ctx)
+	case session.FieldAuthVersion:
+		return m.OldAuthVersion(ctx)
 	case session.FieldDevice:
 		return m.OldDevice(ctx)
 	case session.FieldIP:
@@ -72766,6 +73059,13 @@ func (m *SessionMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRefreshTokenHash(v)
+		return nil
+	case session.FieldAuthVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthVersion(v)
 		return nil
 	case session.FieldDevice:
 		v, ok := value.(string)
@@ -72827,6 +73127,9 @@ func (m *SessionMutation) AddedFields() []string {
 	if m.adduser_id != nil {
 		fields = append(fields, session.FieldUserID)
 	}
+	if m.addauth_version != nil {
+		fields = append(fields, session.FieldAuthVersion)
+	}
 	return fields
 }
 
@@ -72837,6 +73140,8 @@ func (m *SessionMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case session.FieldUserID:
 		return m.AddedUserID()
+	case session.FieldAuthVersion:
+		return m.AddedAuthVersion()
 	}
 	return nil, false
 }
@@ -72852,6 +73157,13 @@ func (m *SessionMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddUserID(v)
+		return nil
+	case session.FieldAuthVersion:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAuthVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Session numeric field %s", name)
@@ -72915,6 +73227,9 @@ func (m *SessionMutation) ResetField(name string) error {
 		return nil
 	case session.FieldRefreshTokenHash:
 		m.ResetRefreshTokenHash()
+		return nil
+	case session.FieldAuthVersion:
+		m.ResetAuthVersion()
 		return nil
 	case session.FieldDevice:
 		m.ResetDevice()

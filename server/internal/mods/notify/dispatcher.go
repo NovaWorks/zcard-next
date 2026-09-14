@@ -44,14 +44,15 @@ func (d *Dispatcher) WithBrandResolver(r notifyport.BrandResolver) *Dispatcher {
 
 // 事件 → 默认通道矩阵（模板可覆盖；通道 enabled 逐个独立判定）。
 var defaultChannels = map[string][]string{
-	"order.paid":         {"email", "inbox"},
-	"order.delivered":    {"email", "inbox"},
-	"order.completed":    {"inbox"},
-	"order.canceled":     {"email", "inbox"},
-	"order.refunded":     {"email", "inbox"},
-	"payment.failed":     {"inbox"},
-	"recharge.succeeded": {"email", "inbox"},
-	"user.registered":    {"email", "inbox"},
+	events.AdminMFAChanged: {"telegram"},
+	"order.paid":           {"email", "inbox"},
+	"order.delivered":      {"email", "inbox"},
+	"order.completed":      {"inbox"},
+	"order.canceled":       {"email", "inbox"},
+	"order.refunded":       {"email", "inbox"},
+	"payment.failed":       {"inbox"},
+	"recharge.succeeded":   {"email", "inbox"},
+	"user.registered":      {"email", "inbox"},
 	// ：工单通知（用户侧新回复；客服侧新工单经 telegram 管理员通道）
 	"ticket.created": {"inbox"},
 	"ticket.replied": {"email", "inbox"},
@@ -59,6 +60,18 @@ var defaultChannels = map[string][]string{
 
 // HandleEvent outbox 消费入口（Dispatcher Register）。
 func (d *Dispatcher) HandleEvent(ctx context.Context, env events.Envelope) error {
+	if env.Type == events.AdminMFAChanged {
+		var payload struct {
+			AdminID    uint64 `json:"admin_id"`
+			OperatorID uint64 `json:"operator_id"`
+			Action     string `json:"action"`
+			At         string `json:"at"`
+		}
+		if err := json.Unmarshal(env.Payload, &payload); err != nil {
+			return err
+		}
+		return d.Send(ctx, notifyport.Message{EventType: env.Type, Channel: "telegram", Locale: "zh_CN", Subject: "ZCard 后台两步验证变更", Body: fmt.Sprintf("管理员 ID：%d\n操作：%s\n操作者 ID：%d（0 为服务器命令行）\n时间：%s\n若非预期操作，请立即检查服务器与管理员账号。", payload.AdminID, payload.Action, payload.OperatorID, payload.At), BizType: "admin_security", BizID: payload.AdminID})
+	}
 	channels := defaultChannels[env.Type]
 	if len(channels) == 0 {
 		return nil // 无订阅事件（管理员告警类由业务模块显式 Send）

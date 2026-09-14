@@ -164,16 +164,30 @@ func init() {
 	adminuserDescAvatar := adminuserFields[4].Descriptor()
 	// adminuser.AvatarValidator is a validator for the "avatar" field. It is called by the builders before save.
 	adminuser.AvatarValidator = adminuserDescAvatar.Validators[0].(func(string) error)
+	// adminuserDescAuthVersion is the schema descriptor for auth_version field.
+	adminuserDescAuthVersion := adminuserFields[7].Descriptor()
+	// adminuser.DefaultAuthVersion holds the default value on creation for the auth_version field.
+	adminuser.DefaultAuthVersion = adminuserDescAuthVersion.Default.(int)
+	// adminuserDescMfaRevision is the schema descriptor for mfa_revision field.
+	adminuserDescMfaRevision := adminuserFields[8].Descriptor()
+	// adminuser.DefaultMfaRevision holds the default value on creation for the mfa_revision field.
+	adminuser.DefaultMfaRevision = adminuserDescMfaRevision.Default.(int)
+	// adminuserDescMfaState is the schema descriptor for mfa_state field.
+	adminuserDescMfaState := adminuserFields[9].Descriptor()
+	// adminuser.DefaultMfaState holds the default value on creation for the mfa_state field.
+	adminuser.DefaultMfaState = adminuserDescMfaState.Default.(string)
+	// adminuser.MfaStateValidator is a validator for the "mfa_state" field. It is called by the builders before save.
+	adminuser.MfaStateValidator = adminuserDescMfaState.Validators[0].(func(string) error)
 	// adminuserDescEnabled is the schema descriptor for enabled field.
-	adminuserDescEnabled := adminuserFields[7].Descriptor()
+	adminuserDescEnabled := adminuserFields[10].Descriptor()
 	// adminuser.DefaultEnabled holds the default value on creation for the enabled field.
 	adminuser.DefaultEnabled = adminuserDescEnabled.Default.(bool)
 	// adminuserDescRemark is the schema descriptor for remark field.
-	adminuserDescRemark := adminuserFields[8].Descriptor()
+	adminuserDescRemark := adminuserFields[11].Descriptor()
 	// adminuser.RemarkValidator is a validator for the "remark" field. It is called by the builders before save.
 	adminuser.RemarkValidator = adminuserDescRemark.Validators[0].(func(string) error)
 	// adminuserDescLastLoginIP is the schema descriptor for last_login_ip field.
-	adminuserDescLastLoginIP := adminuserFields[9].Descriptor()
+	adminuserDescLastLoginIP := adminuserFields[12].Descriptor()
 	// adminuser.LastLoginIPValidator is a validator for the "last_login_ip" field. It is called by the builders before save.
 	adminuser.LastLoginIPValidator = adminuserDescLastLoginIP.Validators[0].(func(string) error)
 	affiliatecommissionMixin := schema.AffiliateCommission{}.Mixin()
@@ -2359,24 +2373,28 @@ func init() {
 	sessionDescRefreshTokenHash := sessionFields[3].Descriptor()
 	// session.RefreshTokenHashValidator is a validator for the "refresh_token_hash" field. It is called by the builders before save.
 	session.RefreshTokenHashValidator = sessionDescRefreshTokenHash.Validators[0].(func(string) error)
+	// sessionDescAuthVersion is the schema descriptor for auth_version field.
+	sessionDescAuthVersion := sessionFields[4].Descriptor()
+	// session.DefaultAuthVersion holds the default value on creation for the auth_version field.
+	session.DefaultAuthVersion = sessionDescAuthVersion.Default.(int)
 	// sessionDescDevice is the schema descriptor for device field.
-	sessionDescDevice := sessionFields[4].Descriptor()
+	sessionDescDevice := sessionFields[5].Descriptor()
 	// session.DeviceValidator is a validator for the "device" field. It is called by the builders before save.
 	session.DeviceValidator = sessionDescDevice.Validators[0].(func(string) error)
 	// sessionDescIP is the schema descriptor for ip field.
-	sessionDescIP := sessionFields[5].Descriptor()
+	sessionDescIP := sessionFields[6].Descriptor()
 	// session.IPValidator is a validator for the "ip" field. It is called by the builders before save.
 	session.IPValidator = sessionDescIP.Validators[0].(func(string) error)
 	// sessionDescUserAgent is the schema descriptor for user_agent field.
-	sessionDescUserAgent := sessionFields[6].Descriptor()
+	sessionDescUserAgent := sessionFields[7].Descriptor()
 	// session.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	session.UserAgentValidator = sessionDescUserAgent.Validators[0].(func(string) error)
 	// sessionDescCreatedAt is the schema descriptor for created_at field.
-	sessionDescCreatedAt := sessionFields[9].Descriptor()
+	sessionDescCreatedAt := sessionFields[10].Descriptor()
 	// session.DefaultCreatedAt holds the default value on creation for the created_at field.
 	session.DefaultCreatedAt = sessionDescCreatedAt.Default.(func() time.Time)
 	// sessionDescUpdatedAt is the schema descriptor for updated_at field.
-	sessionDescUpdatedAt := sessionFields[10].Descriptor()
+	sessionDescUpdatedAt := sessionFields[11].Descriptor()
 	// session.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	session.DefaultUpdatedAt = sessionDescUpdatedAt.Default.(func() time.Time)
 	// session.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -27,6 +27,9 @@ func (AdminUser) Fields() []ent.Field {
 		field.Uint64("role_id").Comment("所属角色"),
 		// TOTP 密钥（AES-GCM 加密存储，铁律：凭据加密；明文永不落库）
 		field.Bytes("totp_secret").Optional().Comment("AES-256-GCM 加密的 TOTP 密钥"),
+		field.Int("auth_version").Default(0),
+		field.Int("mfa_revision").Default(0),
+		field.String("mfa_state").MaxLen(4096).Default("{}"),
 		field.Bool("enabled").Default(true),
 		field.String("remark").MaxLen(255).Optional(),
 		field.String("last_login_ip").MaxLen(64).Optional(),

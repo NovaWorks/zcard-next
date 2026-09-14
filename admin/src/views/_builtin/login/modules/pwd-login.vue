@@ -23,31 +23,34 @@ const model: FormModel = reactive({
   password: "",
 });
 
-// ── 记住账号/密码（本机 localStorage；记住密码请仅在本机自用时勾选）──
+// 仅保存账号；进入登录页时清除旧版本曾保存的密码。
 const REMEMBER_KEY = "zcard.admin.remember";
-const rememberPwd = ref(false);
+const rememberAccount = ref(false);
+const challenge = ref("");
+const otpCode = ref("");
+const useRecovery = ref(false);
+const challengeUntil = ref(0);
 function loadRemembered() {
   try {
     const r = JSON.parse(localStorage.getItem(REMEMBER_KEY) || "{}");
     if (r.userName) model.userName = r.userName;
-    if (r.password && r.rememberPwd) {
-      model.password = r.password;
-      rememberPwd.value = true;
-    }
+    rememberAccount.value = Boolean(r.userName);
+    localStorage.setItem(REMEMBER_KEY, JSON.stringify({ userName: r.userName || "" }));
   } catch {
     /* 损坏忽略 */
   }
 }
 function saveRemembered() {
-  if (!rememberPwd.value) {
-    // 只记账号：清掉历史密码
+  if (rememberAccount.value)
     localStorage.setItem(REMEMBER_KEY, JSON.stringify({ userName: model.userName }));
-    return;
-  }
-  localStorage.setItem(
-    REMEMBER_KEY,
-    JSON.stringify({ userName: model.userName, password: model.password, rememberPwd: true })
-  );
+  else localStorage.removeItem(REMEMBER_KEY);
+}
+async function restartLogin() {
+  challenge.value = "";
+  otpCode.value = "";
+  model.password = "";
+  useRecovery.value = false;
+  if (showCaptcha.value) await loadCaptchaImage();
 }
 
 const rules = computed<Record<keyof FormModel, App.Global.FormRule[]>>(() => {
@@ -92,17 +95,48 @@ async function loadCaptchaImage() {
 }
 
 async function handleSubmit() {
+  if (authStore.loginLoading) return;
+  if (challenge.value) {
+    if (Date.now() >= challengeUntil.value) {
+      window.$message?.warning("验证已过期，请重新登录");
+      await restartLogin();
+      return;
+    }
+    if (
+      useRecovery.value
+        ? !/^[a-fA-F0-9]{20}$/.test(otpCode.value.trim())
+        : !/^\d{6}$/.test(otpCode.value.trim())
+    ) {
+      window.$message?.warning(useRecovery.value ? "请输入 20 位恢复码" : "请输入 6 位动态码");
+      return;
+    }
+    const result = await authStore.login("", "", {
+      challenge: challenge.value,
+      totp_code: otpCode.value.trim(),
+    });
+    otpCode.value = "";
+    if (result?.reason === "identity.MFA_EXPIRED") await restartLogin();
+    return;
+  }
   await validate();
   if (showCaptcha.value && !captchaCode.value.trim()) {
     window.$message?.warning("请输入图形验证码");
     return;
   }
   saveRemembered();
-  await authStore.login(
+  const result = await authStore.login(
     model.userName,
     model.password,
-    showCaptcha.value ? { captcha_id: captchaId.value, captcha_code: captchaCode.value.trim() } : undefined
+    showCaptcha.value
+      ? { captcha_id: captchaId.value, captcha_code: captchaCode.value.trim() }
+      : undefined,
   );
+  if (result?.challenge) {
+    challenge.value = result.challenge;
+    challengeUntil.value = Date.now() + 5 * 60_000;
+    model.password = "";
+    return;
+  }
   // 登录失败（错误消息已由 store 处理）或成功跳转后刷新验证码，下次登录用新图
   if (showCaptcha.value) await loadCaptchaImage();
 }
@@ -117,43 +151,73 @@ async function handleSubmit() {
     :show-label="false"
     @keyup.enter="handleSubmit"
   >
-    <NFormItem path="userName">
-      <NInput
-        v-model:value="model.userName"
-        :placeholder="$t('page.login.common.userNamePlaceholder')"
-      />
-    </NFormItem>
-    <NFormItem path="password">
-      <NInput
-        v-model:value="model.password"
-        type="password"
-        show-password-on="click"
-        :placeholder="$t('page.login.common.passwordPlaceholder')"
-      />
-    </NFormItem>
-    <!-- 后台登录验证码（安全 → 后台登录验证码 开启时显示） -->
-    <NFormItem v-if="showCaptcha" path="captchaCode">
-      <div class="flex w-full items-center gap-8px">
+    <template v-if="!challenge">
+      <NFormItem path="userName">
         <NInput
-          v-model:value="captchaCode"
-          class="flex-1"
-          :maxlength="4"
-          placeholder="图形验证码（4 位数字）"
+          v-model:value="model.userName"
+          autocomplete="username"
+          :placeholder="$t('page.login.common.userNamePlaceholder')"
         />
-        <img
-          v-if="captchaImage"
-          :src="captchaImage"
-          alt="验证码"
-          title="点击刷新"
-          class="h-40px cursor-pointer rounded-6px border border-#e5e7eb"
-          @click="loadCaptchaImage"
+      </NFormItem>
+      <NFormItem path="password">
+        <NInput
+          v-model:value="model.password"
+          autocomplete="current-password"
+          type="password"
+          show-password-on="click"
+          :placeholder="$t('page.login.common.passwordPlaceholder')"
         />
-        <NButton v-else quaternary size="small" @click="loadCaptchaImage">获取验证码</NButton>
+      </NFormItem>
+      <!-- 后台登录验证码（安全 → 后台登录验证码 开启时显示） -->
+      <NFormItem v-if="showCaptcha" path="captchaCode">
+        <div class="flex w-full items-center gap-8px">
+          <NInput
+            v-model:value="captchaCode"
+            class="flex-1"
+            :maxlength="4"
+            placeholder="图形验证码（4 位数字）"
+          />
+          <img
+            v-if="captchaImage"
+            :src="captchaImage"
+            alt="验证码"
+            title="点击刷新"
+            class="h-40px cursor-pointer rounded-6px border border-#e5e7eb"
+            @click="loadCaptchaImage"
+          />
+          <NButton v-else quaternary size="small" @click="loadCaptchaImage">获取验证码</NButton>
+        </div>
+      </NFormItem>
+      <div class="mb-8px">
+        <NCheckbox v-model:checked="rememberAccount" size="small">记住账号</NCheckbox>
       </div>
-    </NFormItem>
-    <div class="mb-8px">
-      <NCheckbox v-model:checked="rememberPwd" size="small" title="账号恒记住；勾选后密码一并保存在本机浏览器（仅建议自用电脑）">记住账号{{ rememberPwd ? '和密码' : '' }}</NCheckbox>
-    </div>
+    </template>
+    <template v-else>
+      <NAlert type="info" class="mb-16px">{{
+        useRecovery
+          ? "输入一个未使用的恢复码。每个恢复码只能使用一次。"
+          : "请输入 Google Authenticator 中的 6 位动态验证码。"
+      }}</NAlert>
+      <NFormItem :label="useRecovery ? '恢复码' : '动态验证码'" :show-label="true">
+        <NInput
+          v-model:value="otpCode"
+          :placeholder="useRecovery ? '20 位恢复码' : '6 位动态验证码'"
+          :maxlength="useRecovery ? 20 : 6"
+          autocomplete="one-time-code"
+          :input-props="{ inputmode: useRecovery ? 'text' : 'numeric' }"
+        />
+      </NFormItem>
+      <NSpace class="mb-16px"
+        ><NButton
+          text
+          @click="
+            useRecovery = !useRecovery;
+            otpCode = '';
+          "
+          >{{ useRecovery ? "使用动态验证码" : "手机丢失？使用恢复码" }}</NButton
+        ><NButton text @click="restartLogin">返回账号登录</NButton></NSpace
+      >
+    </template>
     <NSpace vertical :size="24">
       <!-- admin 面仅密码登录：验证码登录/注册/找回密码均为 storefront 能力，
            后端无对应端点，模板入口已移除（勿恢复——会切到无实现的登录模块） -->

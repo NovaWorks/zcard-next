@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AccountSecurity from "@/components/security/account-security.vue";
 import { ref, reactive, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -348,6 +349,7 @@ onMounted(() => {
           </div>
 
           <template v-else>
+            <AccountSecurity v-if="activeGroup === 'security'" />
             <!-- 页脚配置分区说明：每个设置项对应前台页脚的哪个区块（大厂模式：先给全局地图再进表单） -->
             <div v-if="activeGroup === 'footer'" class="footer-map mt-12px">
               <div class="text-13px font-600 text-gray-700">页脚设置 ↔ 前台位置对照</div>

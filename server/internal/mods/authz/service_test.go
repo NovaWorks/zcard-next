@@ -144,19 +144,14 @@ func TestResetAdminTOTPFlow(t *testing.T) {
 	reader := fakeReader{account: &port.AdminAccount{ID: 7, Username: "alice", RoleID: 3, Enabled: true, TOTPEnabled: false}}
 	svc := newAdminSvcForTest(mut, reader)
 
-	a, err := svc.ResetAdminTOTP(context.Background(), &adminv1.ResetAdminTOTPRequest{Id: 7})
-	if err != nil {
-		t.Fatal(err)
+	_, err := svc.ResetAdminTOTP(context.Background(), &adminv1.ResetAdminTOTPRequest{Id: 7})
+	if err == nil {
+		t.Fatal("legacy reset must require reauthentication")
 	}
-	if len(mut.clearedTOTP) != 1 || mut.clearedTOTP[0] != 7 {
-		t.Fatalf("应解绑一次: %v", mut.clearedTOTP)
+	if len(mut.clearedTOTP) != 0 || len(mut.revoked) != 0 {
+		t.Fatal("legacy endpoint mutated credentials")
 	}
-	if len(mut.revoked) != 1 || mut.revoked[0] != 7 {
-		t.Fatalf("应吊销会话: %v", mut.revoked)
-	}
-	if a.TotpEnabled {
-		t.Fatal("解绑后 totp_enabled 应为 false")
-	}
+
 }
 
 // TestResetOpsPermissionDeclared 新 op 的权限点已声明且 AdminOnly（启动对账前置）。

@@ -29,6 +29,12 @@ const (
 	FieldRoleID = "role_id"
 	// FieldTotpSecret holds the string denoting the totp_secret field in the database.
 	FieldTotpSecret = "totp_secret"
+	// FieldAuthVersion holds the string denoting the auth_version field in the database.
+	FieldAuthVersion = "auth_version"
+	// FieldMfaRevision holds the string denoting the mfa_revision field in the database.
+	FieldMfaRevision = "mfa_revision"
+	// FieldMfaState holds the string denoting the mfa_state field in the database.
+	FieldMfaState = "mfa_state"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
 	// FieldRemark holds the string denoting the remark field in the database.
@@ -52,6 +58,9 @@ var Columns = []string{
 	FieldAvatar,
 	FieldRoleID,
 	FieldTotpSecret,
+	FieldAuthVersion,
+	FieldMfaRevision,
+	FieldMfaState,
 	FieldEnabled,
 	FieldRemark,
 	FieldLastLoginIP,
@@ -83,6 +92,14 @@ var (
 	NicknameValidator func(string) error
 	// AvatarValidator is a validator for the "avatar" field. It is called by the builders before save.
 	AvatarValidator func(string) error
+	// DefaultAuthVersion holds the default value on creation for the "auth_version" field.
+	DefaultAuthVersion int
+	// DefaultMfaRevision holds the default value on creation for the "mfa_revision" field.
+	DefaultMfaRevision int
+	// DefaultMfaState holds the default value on creation for the "mfa_state" field.
+	DefaultMfaState string
+	// MfaStateValidator is a validator for the "mfa_state" field. It is called by the builders before save.
+	MfaStateValidator func(string) error
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
 	// RemarkValidator is a validator for the "remark" field. It is called by the builders before save.
@@ -132,6 +149,21 @@ func ByAvatar(opts ...sql.OrderTermOption) OrderOption {
 // ByRoleID orders the results by the role_id field.
 func ByRoleID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRoleID, opts...).ToFunc()
+}
+
+// ByAuthVersion orders the results by the auth_version field.
+func ByAuthVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthVersion, opts...).ToFunc()
+}
+
+// ByMfaRevision orders the results by the mfa_revision field.
+func ByMfaRevision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMfaRevision, opts...).ToFunc()
+}
+
+// ByMfaState orders the results by the mfa_state field.
+func ByMfaState(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMfaState, opts...).ToFunc()
 }
 
 // ByEnabled orders the results by the enabled field.

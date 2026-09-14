@@ -33,6 +33,10 @@ func init() {
 		Perm{Code: "auth:totp", Desc: "TOTP 绑定管理", Domain: "auth",
 			Op: "zcard.api.admin.v1.AdminAuthService/DisableTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/disable"},
 
+		Perm{Code: "identity:admin_totp_reset", Desc: "重新验证身份后重置员工 TOTP", Domain: "identity", AdminOnly: true, Op: "zcard.api.admin.v1.AdminAuthService/ResetTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/reset"},
+
+		Perm{Code: "auth:totp", Desc: "取消待确认绑定", Domain: "auth", Op: "zcard.api.admin.v1.AdminAuthService/CancelTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/cancel"},
+
 		// ── 设置中心（settings）──────────────────────────
 		Perm{Code: "settings:read", Desc: "查看设置", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminSettingsService/ListSettings", Method: "GET", Path: "/api/v1/admin/settings"},

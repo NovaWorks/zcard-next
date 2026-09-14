@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AccountSecurity from "@/components/security/account-security.vue";
 // 员工与权限一体化管理（大厂控制台模式）：员工为主轴、角色内聚为抽屉——
 // 行内「权限」直达该员工角色的权限配置，无需独立角色页。
 import { ref, reactive, computed, onMounted, h } from "vue";
@@ -17,7 +18,6 @@ import {
   toggleAdmin,
   deleteAdmin,
   resetAdminPassword,
-  resetAdminTOTP,
   fetchRoles,
   fetchPermissionTree,
 } from "@/service/api";
@@ -350,13 +350,10 @@ async function handleResetPwd() {
   }
 }
 
-async function handleResetTOTP(row: any) {
-  const { error } = await resetAdminTOTP(row.id);
-  if (!error) {
-    window.$message?.success("已解绑 TOTP（该员工下次登录可重新绑定）");
-    loadList();
-  }
-}
+const resetTotpTarget = ref<any>(null);
+function handleResetTOTP(row: any) { resetTotpTarget.value = row; }
+function finishResetTotp() { resetTotpTarget.value = null; loadList(); }
+
 
 onMounted(() => {
   loadList();
@@ -365,6 +362,7 @@ onMounted(() => {
 </script>
 
 <template>
+ <NModal :show="Boolean(resetTotpTarget)" preset="card" title="重置两步验证" style="width:620px;max-width:calc(100vw - 24px)" @update:show="value => { if (!value) resetTotpTarget = null; }"><AccountSecurity v-if="resetTotpTarget" :reset-target="resetTotpTarget" @completed="finishResetTotp" /></NModal>
   <div class="min-h-500px">
     <NCard title="员工管理">
       <!-- 顶栏：主操作「新增员工」+ 角色入口（权限表现层收敛于此页） -->

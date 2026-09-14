@@ -77,6 +77,27 @@ func (_u *SessionUpdate) SetNillableRefreshTokenHash(v *string) *SessionUpdate {
 	return _u
 }
 
+// SetAuthVersion sets the "auth_version" field.
+func (_u *SessionUpdate) SetAuthVersion(v int) *SessionUpdate {
+	_u.mutation.ResetAuthVersion()
+	_u.mutation.SetAuthVersion(v)
+	return _u
+}
+
+// SetNillableAuthVersion sets the "auth_version" field if the given value is not nil.
+func (_u *SessionUpdate) SetNillableAuthVersion(v *int) *SessionUpdate {
+	if v != nil {
+		_u.SetAuthVersion(*v)
+	}
+	return _u
+}
+
+// AddAuthVersion adds value to the "auth_version" field.
+func (_u *SessionUpdate) AddAuthVersion(v int) *SessionUpdate {
+	_u.mutation.AddAuthVersion(v)
+	return _u
+}
+
 // SetDevice sets the "device" field.
 func (_u *SessionUpdate) SetDevice(v string) *SessionUpdate {
 	_u.mutation.SetDevice(v)
@@ -272,6 +293,12 @@ func (_u *SessionUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.RefreshTokenHash(); ok {
 		_spec.SetField(session.FieldRefreshTokenHash, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.AuthVersion(); ok {
+		_spec.SetField(session.FieldAuthVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAuthVersion(); ok {
+		_spec.AddField(session.FieldAuthVersion, field.TypeInt, value)
+	}
 	if value, ok := _u.mutation.Device(); ok {
 		_spec.SetField(session.FieldDevice, field.TypeString, value)
 	}
@@ -368,6 +395,27 @@ func (_u *SessionUpdateOne) SetNillableRefreshTokenHash(v *string) *SessionUpdat
 	if v != nil {
 		_u.SetRefreshTokenHash(*v)
 	}
+	return _u
+}
+
+// SetAuthVersion sets the "auth_version" field.
+func (_u *SessionUpdateOne) SetAuthVersion(v int) *SessionUpdateOne {
+	_u.mutation.ResetAuthVersion()
+	_u.mutation.SetAuthVersion(v)
+	return _u
+}
+
+// SetNillableAuthVersion sets the "auth_version" field if the given value is not nil.
+func (_u *SessionUpdateOne) SetNillableAuthVersion(v *int) *SessionUpdateOne {
+	if v != nil {
+		_u.SetAuthVersion(*v)
+	}
+	return _u
+}
+
+// AddAuthVersion adds value to the "auth_version" field.
+func (_u *SessionUpdateOne) AddAuthVersion(v int) *SessionUpdateOne {
+	_u.mutation.AddAuthVersion(v)
 	return _u
 }
 
@@ -595,6 +643,12 @@ func (_u *SessionUpdateOne) sqlSave(ctx context.Context) (_node *Session, err er
 	}
 	if value, ok := _u.mutation.RefreshTokenHash(); ok {
 		_spec.SetField(session.FieldRefreshTokenHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.AuthVersion(); ok {
+		_spec.SetField(session.FieldAuthVersion, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAuthVersion(); ok {
+		_spec.AddField(session.FieldAuthVersion, field.TypeInt, value)
 	}
 	if value, ok := _u.mutation.Device(); ok {
 		_spec.SetField(session.FieldDevice, field.TypeString, value)

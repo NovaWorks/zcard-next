@@ -1,7 +1,7 @@
 import { request } from "../request";
 
 /** 管理员登录（Kratos：POST /api/v1/admin/auth/login；captcha_admin_login 开启时带验证码） */
-export function fetchLogin(username: string, password: string, captcha?: { captcha_id: string; captcha_code: string }) {
+export function fetchLogin(username: string, password: string, captcha?: { captcha_id?: string; captcha_code?: string; challenge?: string; totp_code?: string }) {
   return request<Api.Auth.LoginToken>({
     url: "/api/v1/admin/auth/login",
     method: "post",

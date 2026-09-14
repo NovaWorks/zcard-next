@@ -51,7 +51,7 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
         authStore.resetStore();
       }
 
-      if (response.status === 401) {
+      if (response.status === 401 && !/\/auth\/(login|refresh)$/.test(response.config?.url || '')) {
         const success = await handleExpiredRequest(request.state as RequestInstanceState);
         if (success) {
           const Authorization = getAuthorization();

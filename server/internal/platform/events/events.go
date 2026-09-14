@@ -12,6 +12,7 @@ import (
 
 // 事件目录 v1（附录 C，M1 冻结；向后兼容规则：只加字段不改语义）。
 const (
+	AdminMFAChanged      = "identity.admin_mfa_changed"
 	OrderCreated         = "order.created"
 	OrderPaid            = "order.paid"
 	OrderDelivered       = "order.delivered"
@@ -61,7 +62,7 @@ type Handler func(ctx context.Context, env Envelope) error
 // All 事件目录全集（worker mux 注册与 CI 目录校验用；新增事件必须同步此处）。
 func All() []string {
 	return []string{
-		OrderCreated, OrderPaid, OrderDelivered, OrderCompleted, OrderCanceled, OrderRefunded,
+		AdminMFAChanged, OrderCreated, OrderPaid, OrderDelivered, OrderCompleted, OrderCanceled, OrderRefunded,
 		PaymentSucceeded, PaymentFailed, RefundRequested, RefundSucceeded,
 		WithdrawalReviewed, TicketCreated, TicketReplied,
 		UserRegistered, RechargeSucceeded, SyncCompleted, SupplyRateLimited,

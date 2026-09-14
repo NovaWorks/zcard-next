@@ -24,10 +24,123 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type RecoveryCodesReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	RecoveryCodes []string               `protobuf:"bytes,1,rep,name=recovery_codes,json=recoveryCodes,proto3" json:"recovery_codes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RecoveryCodesReply) Reset() {
+	*x = RecoveryCodesReply{}
+	mi := &file_admin_v1_auth_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecoveryCodesReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecoveryCodesReply) ProtoMessage() {}
+
+func (x *RecoveryCodesReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_auth_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecoveryCodesReply.ProtoReflect.Descriptor instead.
+func (*RecoveryCodesReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *RecoveryCodesReply) GetRecoveryCodes() []string {
+	if x != nil {
+		return x.RecoveryCodes
+	}
+	return nil
+}
+
+type ResetTOTPRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AdminId       uint64                 `protobuf:"varint,1,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
+	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	Code          string                 `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
+	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResetTOTPRequest) Reset() {
+	*x = ResetTOTPRequest{}
+	mi := &file_admin_v1_auth_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResetTOTPRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResetTOTPRequest) ProtoMessage() {}
+
+func (x *ResetTOTPRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_auth_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResetTOTPRequest.ProtoReflect.Descriptor instead.
+func (*ResetTOTPRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ResetTOTPRequest) GetAdminId() uint64 {
+	if x != nil {
+		return x.AdminId
+	}
+	return 0
+}
+
+func (x *ResetTOTPRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *ResetTOTPRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *ResetTOTPRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 type LoginRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	Username string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Challenge string                 `protobuf:"bytes,6,opt,name=challenge,proto3" json:"challenge,omitempty"`
+	Username  string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"` // 第一阶段必填，挑战验证阶段不重复提交
+	Password  string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"` // 第一阶段必填，由登录用例按阶段验证
 	// TOTP 六位动态码（员工开启二步验证时必填）
 	TotpCode string `protobuf:"bytes,3,opt,name=totp_code,json=totpCode,proto3" json:"totp_code,omitempty"`
 	// 图形验证码 ID/验证码（captcha_admin_login 开启时必填）
@@ -39,7 +152,7 @@ type LoginRequest struct {
 
 func (x *LoginRequest) Reset() {
 	*x = LoginRequest{}
-	mi := &file_admin_v1_auth_proto_msgTypes[0]
+	mi := &file_admin_v1_auth_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -51,7 +164,7 @@ func (x *LoginRequest) String() string {
 func (*LoginRequest) ProtoMessage() {}
 
 func (x *LoginRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[0]
+	mi := &file_admin_v1_auth_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -64,7 +177,14 @@ func (x *LoginRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
 func (*LoginRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{0}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *LoginRequest) GetChallenge() string {
+	if x != nil {
+		return x.Challenge
+	}
+	return ""
 }
 
 func (x *LoginRequest) GetUsername() string {
@@ -112,7 +232,7 @@ type CaptchaImageReply struct {
 
 func (x *CaptchaImageReply) Reset() {
 	*x = CaptchaImageReply{}
-	mi := &file_admin_v1_auth_proto_msgTypes[1]
+	mi := &file_admin_v1_auth_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -124,7 +244,7 @@ func (x *CaptchaImageReply) String() string {
 func (*CaptchaImageReply) ProtoMessage() {}
 
 func (x *CaptchaImageReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[1]
+	mi := &file_admin_v1_auth_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -137,7 +257,7 @@ func (x *CaptchaImageReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CaptchaImageReply.ProtoReflect.Descriptor instead.
 func (*CaptchaImageReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{1}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CaptchaImageReply) GetCaptchaId() string {
@@ -163,7 +283,7 @@ type CaptchaConfigReply struct {
 
 func (x *CaptchaConfigReply) Reset() {
 	*x = CaptchaConfigReply{}
-	mi := &file_admin_v1_auth_proto_msgTypes[2]
+	mi := &file_admin_v1_auth_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -175,7 +295,7 @@ func (x *CaptchaConfigReply) String() string {
 func (*CaptchaConfigReply) ProtoMessage() {}
 
 func (x *CaptchaConfigReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[2]
+	mi := &file_admin_v1_auth_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -188,7 +308,7 @@ func (x *CaptchaConfigReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CaptchaConfigReply.ProtoReflect.Descriptor instead.
 func (*CaptchaConfigReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{2}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *CaptchaConfigReply) GetEnabled() bool {
@@ -207,7 +327,7 @@ type LogoutRequest struct {
 
 func (x *LogoutRequest) Reset() {
 	*x = LogoutRequest{}
-	mi := &file_admin_v1_auth_proto_msgTypes[3]
+	mi := &file_admin_v1_auth_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -219,7 +339,7 @@ func (x *LogoutRequest) String() string {
 func (*LogoutRequest) ProtoMessage() {}
 
 func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[3]
+	mi := &file_admin_v1_auth_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -232,7 +352,7 @@ func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
 func (*LogoutRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{3}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *LogoutRequest) GetRefreshToken() string {
@@ -251,7 +371,7 @@ type RefreshTokenRequest struct {
 
 func (x *RefreshTokenRequest) Reset() {
 	*x = RefreshTokenRequest{}
-	mi := &file_admin_v1_auth_proto_msgTypes[4]
+	mi := &file_admin_v1_auth_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -263,7 +383,7 @@ func (x *RefreshTokenRequest) String() string {
 func (*RefreshTokenRequest) ProtoMessage() {}
 
 func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[4]
+	mi := &file_admin_v1_auth_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -276,7 +396,7 @@ func (x *RefreshTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RefreshTokenRequest.ProtoReflect.Descriptor instead.
 func (*RefreshTokenRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{4}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RefreshTokenRequest) GetRefreshToken() string {
@@ -296,7 +416,7 @@ type EnableTOTPReply struct {
 
 func (x *EnableTOTPReply) Reset() {
 	*x = EnableTOTPReply{}
-	mi := &file_admin_v1_auth_proto_msgTypes[5]
+	mi := &file_admin_v1_auth_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -308,7 +428,7 @@ func (x *EnableTOTPReply) String() string {
 func (*EnableTOTPReply) ProtoMessage() {}
 
 func (x *EnableTOTPReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[5]
+	mi := &file_admin_v1_auth_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -321,7 +441,7 @@ func (x *EnableTOTPReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnableTOTPReply.ProtoReflect.Descriptor instead.
 func (*EnableTOTPReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{5}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *EnableTOTPReply) GetSecret() string {
@@ -339,15 +459,17 @@ func (x *EnableTOTPReply) GetOtpauthUrl() string {
 }
 
 type ConfirmTOTPRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Password       string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	RecoveryTicket string                 `protobuf:"bytes,3,opt,name=recovery_ticket,json=recoveryTicket,proto3" json:"recovery_ticket,omitempty"`
+	Code           string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"` // 首次生成绑定密钥时为空；确认/解绑时由用例验证
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ConfirmTOTPRequest) Reset() {
 	*x = ConfirmTOTPRequest{}
-	mi := &file_admin_v1_auth_proto_msgTypes[6]
+	mi := &file_admin_v1_auth_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -359,7 +481,7 @@ func (x *ConfirmTOTPRequest) String() string {
 func (*ConfirmTOTPRequest) ProtoMessage() {}
 
 func (x *ConfirmTOTPRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[6]
+	mi := &file_admin_v1_auth_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -372,7 +494,21 @@ func (x *ConfirmTOTPRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConfirmTOTPRequest.ProtoReflect.Descriptor instead.
 func (*ConfirmTOTPRequest) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{6}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ConfirmTOTPRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *ConfirmTOTPRequest) GetRecoveryTicket() string {
+	if x != nil {
+		return x.RecoveryTicket
+	}
+	return ""
 }
 
 func (x *ConfirmTOTPRequest) GetCode() string {
@@ -383,7 +519,10 @@ func (x *ConfirmTOTPRequest) GetCode() string {
 }
 
 type LoginReply struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	RequiresTotp   bool                   `protobuf:"varint,6,opt,name=requires_totp,json=requiresTotp,proto3" json:"requires_totp,omitempty"`
+	Challenge      string                 `protobuf:"bytes,7,opt,name=challenge,proto3" json:"challenge,omitempty"`
+	RecoveryTicket string                 `protobuf:"bytes,8,opt,name=recovery_ticket,json=recoveryTicket,proto3" json:"recovery_ticket,omitempty"`
 	// admin realm 访问令牌（2h）
 	AccessToken string `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
 	// 令牌类型，固定 Bearer
@@ -399,7 +538,7 @@ type LoginReply struct {
 
 func (x *LoginReply) Reset() {
 	*x = LoginReply{}
-	mi := &file_admin_v1_auth_proto_msgTypes[7]
+	mi := &file_admin_v1_auth_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -411,7 +550,7 @@ func (x *LoginReply) String() string {
 func (*LoginReply) ProtoMessage() {}
 
 func (x *LoginReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[7]
+	mi := &file_admin_v1_auth_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +563,28 @@ func (x *LoginReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LoginReply.ProtoReflect.Descriptor instead.
 func (*LoginReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{7}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *LoginReply) GetRequiresTotp() bool {
+	if x != nil {
+		return x.RequiresTotp
+	}
+	return false
+}
+
+func (x *LoginReply) GetChallenge() string {
+	if x != nil {
+		return x.Challenge
+	}
+	return ""
+}
+
+func (x *LoginReply) GetRecoveryTicket() string {
+	if x != nil {
+		return x.RecoveryTicket
+	}
+	return ""
 }
 
 func (x *LoginReply) GetAccessToken() string {
@@ -473,7 +633,7 @@ type GetProfileReply struct {
 
 func (x *GetProfileReply) Reset() {
 	*x = GetProfileReply{}
-	mi := &file_admin_v1_auth_proto_msgTypes[8]
+	mi := &file_admin_v1_auth_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -485,7 +645,7 @@ func (x *GetProfileReply) String() string {
 func (*GetProfileReply) ProtoMessage() {}
 
 func (x *GetProfileReply) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[8]
+	mi := &file_admin_v1_auth_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -498,7 +658,7 @@ func (x *GetProfileReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProfileReply.ProtoReflect.Descriptor instead.
 func (*GetProfileReply) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{8}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetProfileReply) GetAdmin() *AdminProfile {
@@ -517,6 +677,7 @@ func (x *GetProfileReply) GetPermissions() []string {
 
 type AdminProfile struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	TotpBoundAt   int64                  `protobuf:"varint,10,opt,name=totp_bound_at,json=totpBoundAt,proto3" json:"totp_bound_at,omitempty"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Nickname      string                 `protobuf:"bytes,3,opt,name=nickname,proto3" json:"nickname,omitempty"`
@@ -532,7 +693,7 @@ type AdminProfile struct {
 
 func (x *AdminProfile) Reset() {
 	*x = AdminProfile{}
-	mi := &file_admin_v1_auth_proto_msgTypes[9]
+	mi := &file_admin_v1_auth_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -544,7 +705,7 @@ func (x *AdminProfile) String() string {
 func (*AdminProfile) ProtoMessage() {}
 
 func (x *AdminProfile) ProtoReflect() protoreflect.Message {
-	mi := &file_admin_v1_auth_proto_msgTypes[9]
+	mi := &file_admin_v1_auth_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -557,7 +718,14 @@ func (x *AdminProfile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdminProfile.ProtoReflect.Descriptor instead.
 func (*AdminProfile) Descriptor() ([]byte, []int) {
-	return file_admin_v1_auth_proto_rawDescGZIP(), []int{9}
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *AdminProfile) GetTotpBoundAt() int64 {
+	if x != nil {
+		return x.TotpBoundAt
+	}
+	return 0
 }
 
 func (x *AdminProfile) GetId() uint64 {
@@ -627,10 +795,18 @@ var File_admin_v1_auth_proto protoreflect.FileDescriptor
 
 const file_admin_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x13admin/v1/auth.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xaf\x01\n" +
-	"\fLoginRequest\x12\x1f\n" +
-	"\busername\x18\x01 \x01(\tB\x03\xe0A\x02R\busername\x12\x1f\n" +
-	"\bpassword\x18\x02 \x01(\tB\x03\xe0A\x02R\bpassword\x12\x1b\n" +
+	"\x13admin/v1/auth.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1fgoogle/protobuf/timestamp.proto\";\n" +
+	"\x12RecoveryCodesReply\x12%\n" +
+	"\x0erecovery_codes\x18\x01 \x03(\tR\rrecoveryCodes\"u\n" +
+	"\x10ResetTOTPRequest\x12\x19\n" +
+	"\badmin_id\x18\x01 \x01(\x04R\aadminId\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x12\n" +
+	"\x04code\x18\x03 \x01(\tR\x04code\x12\x16\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\xc3\x01\n" +
+	"\fLoginRequest\x12\x1c\n" +
+	"\tchallenge\x18\x06 \x01(\tR\tchallenge\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1b\n" +
 	"\ttotp_code\x18\x03 \x01(\tR\btotpCode\x12\x1d\n" +
 	"\n" +
 	"captcha_id\x18\x04 \x01(\tR\tcaptchaId\x12!\n" +
@@ -648,11 +824,16 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\x0fEnableTOTPReply\x12\x16\n" +
 	"\x06secret\x18\x01 \x01(\tR\x06secret\x12\x1f\n" +
 	"\votpauth_url\x18\x02 \x01(\tR\n" +
-	"otpauthUrl\"-\n" +
-	"\x12ConfirmTOTPRequest\x12\x17\n" +
-	"\x04code\x18\x01 \x01(\tB\x03\xe0A\x02R\x04code\"\xca\x01\n" +
+	"otpauthUrl\"m\n" +
+	"\x12ConfirmTOTPRequest\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12'\n" +
+	"\x0frecovery_ticket\x18\x03 \x01(\tR\x0erecoveryTicket\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"\xb6\x02\n" +
 	"\n" +
-	"LoginReply\x12!\n" +
+	"LoginReply\x12#\n" +
+	"\rrequires_totp\x18\x06 \x01(\bR\frequiresTotp\x12\x1c\n" +
+	"\tchallenge\x18\a \x01(\tR\tchallenge\x12'\n" +
+	"\x0frecovery_ticket\x18\b \x01(\tR\x0erecoveryTicket\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12\x1d\n" +
 	"\n" +
 	"token_type\x18\x02 \x01(\tR\ttokenType\x12\x1d\n" +
@@ -662,8 +843,10 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\rrefresh_token\x18\x05 \x01(\tR\frefreshToken\"k\n" +
 	"\x0fGetProfileReply\x126\n" +
 	"\x05admin\x18\x01 \x01(\v2 .zcard.api.admin.v1.AdminProfileR\x05admin\x12 \n" +
-	"\vpermissions\x18\x02 \x03(\tR\vpermissions\"\xab\x02\n" +
-	"\fAdminProfile\x12\x0e\n" +
+	"\vpermissions\x18\x02 \x03(\tR\vpermissions\"\xcf\x02\n" +
+	"\fAdminProfile\x12\"\n" +
+	"\rtotp_bound_at\x18\n" +
+	" \x01(\x03R\vtotpBoundAt\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x1a\n" +
 	"\bnickname\x18\x03 \x01(\tR\bnickname\x12\x16\n" +
@@ -672,7 +855,8 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\trole_name\x18\x06 \x01(\tR\broleName\x12!\n" +
 	"\ftotp_enabled\x18\a \x01(\bR\vtotpEnabled\x12>\n" +
 	"\rlast_login_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastLoginAt\x12\"\n" +
-	"\rlast_login_ip\x18\t \x01(\tR\vlastLoginIp2\xc3\b\n" +
+	"\rlast_login_ip\x18\t \x01(\tR\vlastLoginIp2\xc3\n" +
+	"\n" +
 	"\x10AdminAuthService\x12n\n" +
 	"\x05Login\x12 .zcard.api.admin.v1.LoginRequest\x1a\x1e.zcard.api.admin.v1.LoginReply\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/auth/login\x12z\n" +
 	"\x0fGetCaptchaImage\x12\x16.google.protobuf.Empty\x1a%.zcard.api.admin.v1.CaptchaImageReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/auth/captcha/image\x12}\n" +
@@ -680,10 +864,13 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\x06Logout\x12!.zcard.api.admin.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/auth/logout\x12m\n" +
 	"\n" +
 	"GetProfile\x12\x16.google.protobuf.Empty\x1a#.zcard.api.admin.v1.GetProfileReply\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/auth/profile\x12~\n" +
-	"\fRefreshToken\x12'.zcard.api.admin.v1.RefreshTokenRequest\x1a\x1e.zcard.api.admin.v1.LoginReply\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/auth/refresh\x12t\n" +
+	"\fRefreshToken\x12'.zcard.api.admin.v1.RefreshTokenRequest\x1a\x1e.zcard.api.admin.v1.LoginReply\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/auth/refresh\x12\x84\x01\n" +
 	"\n" +
-	"EnableTOTP\x12\x16.google.protobuf.Empty\x1a#.zcard.api.admin.v1.EnableTOTPReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/auth/totp/enable\x12y\n" +
-	"\vConfirmTOTP\x12&.zcard.api.admin.v1.ConfirmTOTPRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/auth/totp/confirm\x12y\n" +
+	"EnableTOTP\x12&.zcard.api.admin.v1.ConfirmTOTPRequest\x1a#.zcard.api.admin.v1.EnableTOTPReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/auth/totp/enable\x12\x89\x01\n" +
+	"\vConfirmTOTP\x12&.zcard.api.admin.v1.ConfirmTOTPRequest\x1a&.zcard.api.admin.v1.RecoveryCodesReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/auth/totp/confirm\x12g\n" +
+	"\n" +
+	"CancelTOTP\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/auth/totp/cancel\x12s\n" +
+	"\tResetTOTP\x12$.zcard.api.admin.v1.ResetTOTPRequest\x1a\x16.google.protobuf.Empty\"(\x82\xd3\xe4\x93\x02\":\x01*\"\x1d/api/v1/admin/auth/totp/reset\x12y\n" +
 	"\vDisableTOTP\x12&.zcard.api.admin.v1.ConfirmTOTPRequest\x1a\x16.google.protobuf.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/auth/totp/disableB=Z;github.com/NovaWorks/zcard-next/server/api/admin/v1;adminv1b\x06proto3"
 
 var (
@@ -698,45 +885,51 @@ func file_admin_v1_auth_proto_rawDescGZIP() []byte {
 	return file_admin_v1_auth_proto_rawDescData
 }
 
-var file_admin_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_admin_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_admin_v1_auth_proto_goTypes = []any{
-	(*LoginRequest)(nil),          // 0: zcard.api.admin.v1.LoginRequest
-	(*CaptchaImageReply)(nil),     // 1: zcard.api.admin.v1.CaptchaImageReply
-	(*CaptchaConfigReply)(nil),    // 2: zcard.api.admin.v1.CaptchaConfigReply
-	(*LogoutRequest)(nil),         // 3: zcard.api.admin.v1.LogoutRequest
-	(*RefreshTokenRequest)(nil),   // 4: zcard.api.admin.v1.RefreshTokenRequest
-	(*EnableTOTPReply)(nil),       // 5: zcard.api.admin.v1.EnableTOTPReply
-	(*ConfirmTOTPRequest)(nil),    // 6: zcard.api.admin.v1.ConfirmTOTPRequest
-	(*LoginReply)(nil),            // 7: zcard.api.admin.v1.LoginReply
-	(*GetProfileReply)(nil),       // 8: zcard.api.admin.v1.GetProfileReply
-	(*AdminProfile)(nil),          // 9: zcard.api.admin.v1.AdminProfile
-	(*timestamppb.Timestamp)(nil), // 10: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 11: google.protobuf.Empty
+	(*RecoveryCodesReply)(nil),    // 0: zcard.api.admin.v1.RecoveryCodesReply
+	(*ResetTOTPRequest)(nil),      // 1: zcard.api.admin.v1.ResetTOTPRequest
+	(*LoginRequest)(nil),          // 2: zcard.api.admin.v1.LoginRequest
+	(*CaptchaImageReply)(nil),     // 3: zcard.api.admin.v1.CaptchaImageReply
+	(*CaptchaConfigReply)(nil),    // 4: zcard.api.admin.v1.CaptchaConfigReply
+	(*LogoutRequest)(nil),         // 5: zcard.api.admin.v1.LogoutRequest
+	(*RefreshTokenRequest)(nil),   // 6: zcard.api.admin.v1.RefreshTokenRequest
+	(*EnableTOTPReply)(nil),       // 7: zcard.api.admin.v1.EnableTOTPReply
+	(*ConfirmTOTPRequest)(nil),    // 8: zcard.api.admin.v1.ConfirmTOTPRequest
+	(*LoginReply)(nil),            // 9: zcard.api.admin.v1.LoginReply
+	(*GetProfileReply)(nil),       // 10: zcard.api.admin.v1.GetProfileReply
+	(*AdminProfile)(nil),          // 11: zcard.api.admin.v1.AdminProfile
+	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),         // 13: google.protobuf.Empty
 }
 var file_admin_v1_auth_proto_depIdxs = []int32{
-	9,  // 0: zcard.api.admin.v1.LoginReply.admin:type_name -> zcard.api.admin.v1.AdminProfile
-	9,  // 1: zcard.api.admin.v1.GetProfileReply.admin:type_name -> zcard.api.admin.v1.AdminProfile
-	10, // 2: zcard.api.admin.v1.AdminProfile.last_login_at:type_name -> google.protobuf.Timestamp
-	0,  // 3: zcard.api.admin.v1.AdminAuthService.Login:input_type -> zcard.api.admin.v1.LoginRequest
-	11, // 4: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:input_type -> google.protobuf.Empty
-	11, // 5: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:input_type -> google.protobuf.Empty
-	3,  // 6: zcard.api.admin.v1.AdminAuthService.Logout:input_type -> zcard.api.admin.v1.LogoutRequest
-	11, // 7: zcard.api.admin.v1.AdminAuthService.GetProfile:input_type -> google.protobuf.Empty
-	4,  // 8: zcard.api.admin.v1.AdminAuthService.RefreshToken:input_type -> zcard.api.admin.v1.RefreshTokenRequest
-	11, // 9: zcard.api.admin.v1.AdminAuthService.EnableTOTP:input_type -> google.protobuf.Empty
-	6,  // 10: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
-	6,  // 11: zcard.api.admin.v1.AdminAuthService.DisableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
-	7,  // 12: zcard.api.admin.v1.AdminAuthService.Login:output_type -> zcard.api.admin.v1.LoginReply
-	1,  // 13: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:output_type -> zcard.api.admin.v1.CaptchaImageReply
-	2,  // 14: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:output_type -> zcard.api.admin.v1.CaptchaConfigReply
-	11, // 15: zcard.api.admin.v1.AdminAuthService.Logout:output_type -> google.protobuf.Empty
-	8,  // 16: zcard.api.admin.v1.AdminAuthService.GetProfile:output_type -> zcard.api.admin.v1.GetProfileReply
-	7,  // 17: zcard.api.admin.v1.AdminAuthService.RefreshToken:output_type -> zcard.api.admin.v1.LoginReply
-	5,  // 18: zcard.api.admin.v1.AdminAuthService.EnableTOTP:output_type -> zcard.api.admin.v1.EnableTOTPReply
-	11, // 19: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:output_type -> google.protobuf.Empty
-	11, // 20: zcard.api.admin.v1.AdminAuthService.DisableTOTP:output_type -> google.protobuf.Empty
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
+	11, // 0: zcard.api.admin.v1.LoginReply.admin:type_name -> zcard.api.admin.v1.AdminProfile
+	11, // 1: zcard.api.admin.v1.GetProfileReply.admin:type_name -> zcard.api.admin.v1.AdminProfile
+	12, // 2: zcard.api.admin.v1.AdminProfile.last_login_at:type_name -> google.protobuf.Timestamp
+	2,  // 3: zcard.api.admin.v1.AdminAuthService.Login:input_type -> zcard.api.admin.v1.LoginRequest
+	13, // 4: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:input_type -> google.protobuf.Empty
+	13, // 5: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:input_type -> google.protobuf.Empty
+	5,  // 6: zcard.api.admin.v1.AdminAuthService.Logout:input_type -> zcard.api.admin.v1.LogoutRequest
+	13, // 7: zcard.api.admin.v1.AdminAuthService.GetProfile:input_type -> google.protobuf.Empty
+	6,  // 8: zcard.api.admin.v1.AdminAuthService.RefreshToken:input_type -> zcard.api.admin.v1.RefreshTokenRequest
+	8,  // 9: zcard.api.admin.v1.AdminAuthService.EnableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
+	8,  // 10: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
+	13, // 11: zcard.api.admin.v1.AdminAuthService.CancelTOTP:input_type -> google.protobuf.Empty
+	1,  // 12: zcard.api.admin.v1.AdminAuthService.ResetTOTP:input_type -> zcard.api.admin.v1.ResetTOTPRequest
+	8,  // 13: zcard.api.admin.v1.AdminAuthService.DisableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
+	9,  // 14: zcard.api.admin.v1.AdminAuthService.Login:output_type -> zcard.api.admin.v1.LoginReply
+	3,  // 15: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:output_type -> zcard.api.admin.v1.CaptchaImageReply
+	4,  // 16: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:output_type -> zcard.api.admin.v1.CaptchaConfigReply
+	13, // 17: zcard.api.admin.v1.AdminAuthService.Logout:output_type -> google.protobuf.Empty
+	10, // 18: zcard.api.admin.v1.AdminAuthService.GetProfile:output_type -> zcard.api.admin.v1.GetProfileReply
+	9,  // 19: zcard.api.admin.v1.AdminAuthService.RefreshToken:output_type -> zcard.api.admin.v1.LoginReply
+	7,  // 20: zcard.api.admin.v1.AdminAuthService.EnableTOTP:output_type -> zcard.api.admin.v1.EnableTOTPReply
+	0,  // 21: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:output_type -> zcard.api.admin.v1.RecoveryCodesReply
+	13, // 22: zcard.api.admin.v1.AdminAuthService.CancelTOTP:output_type -> google.protobuf.Empty
+	13, // 23: zcard.api.admin.v1.AdminAuthService.ResetTOTP:output_type -> google.protobuf.Empty
+	13, // 24: zcard.api.admin.v1.AdminAuthService.DisableTOTP:output_type -> google.protobuf.Empty
+	14, // [14:25] is the sub-list for method output_type
+	3,  // [3:14] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -753,7 +946,7 @@ func file_admin_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_auth_proto_rawDesc), len(file_admin_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

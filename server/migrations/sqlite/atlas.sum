@@ -1,4 +1,4 @@
-h1:OJ3uWPcaFqv5sShnDlNDiHt+jV4V6MhKZG//qlrGVck=
+h1:JXQvHQwxRLUwO5myjiQNE+66mvcGTj29nAsc4V5tsxE=
 20260815190720_init.sql h1:YQ1dapmjcvZ7lL1ftfCgd8Z/h8hqxnS6tCJpOhboLe4=
 20260815193738_add_failed_tasks.sql h1:ahRwWY2iyo38+hQ88AV8P3KYJrCt6AfoDNpKmDmjEXk=
 20260815201530_v1_full_schema.sql h1:oHn5bzaeNTXmlcaeCVn/rme4XxKu3P43XYAvOsQBwOs=
@@ -30,3 +30,4 @@ h1:OJ3uWPcaFqv5sShnDlNDiHt+jV4V6MhKZG//qlrGVck=
 20260910120000_giftcard_batch_delete.sql h1:gr935XpysLn8a2Qw/Y93YTzHs8KyuUcap0q3edzgv8c=
 20260911090000_payment_scenes.sql h1:iorrmHxpMRmuhZkyhOM03i5UDWz26pOX9gUX165FU/o=
 20260912134634_lottery.sql h1:nZwByDI8t/xNIOtt0AOL30crrc1i0FptwF696X7/ZwU=
+20260914142120_admin_two_factor.sql h1:ttCAcYHhtV3bjJNTlwqSuKtXGBYgf6jF+STIG3QS3cM=

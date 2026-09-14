@@ -448,3 +448,39 @@ func TestDispatcherBrandIsolation(t *testing.T) {
 		t.Fatalf("主站事件不应注入分站品牌: %q", msgs3[0].Content)
 	}
 }
+
+type mfaTestChannel struct {
+	fail      bool
+	delivered int
+	last      notifyport.Message
+}
+
+func (*mfaTestChannel) Name() string               { return "telegram" }
+func (*mfaTestChannel) Ready(context.Context) bool { return true }
+func (c *mfaTestChannel) Deliver(_ context.Context, msg notifyport.Message) error {
+	c.last = msg
+	c.delivered++
+	if c.fail {
+		return fmt.Errorf("temporary delivery failure")
+	}
+	return nil
+}
+func TestMFAChangeNotificationRetry(t *testing.T) {
+	repo := newNotifyRepo(t)
+	channel := &mfaTestChannel{fail: true}
+	dispatcher := NewDispatcher(repo, channel)
+	env := testEnvelope(events.AdminMFAChanged, []byte(`{"admin_id":42,"operator_id":0,"action":"identity.totp_reset","at":"2026-09-14T00:00:00Z"}`))
+	if err := dispatcher.HandleEvent(context.Background(), env); err == nil {
+		t.Fatal("delivery failure must propagate to queue retry")
+	}
+	channel.fail = false
+	if err := dispatcher.HandleEvent(context.Background(), env); err != nil {
+		t.Fatal(err)
+	}
+	if channel.delivered != 2 || channel.last.BizType != "admin_security" || channel.last.BizID != 42 {
+		t.Fatal("wrong notification target")
+	}
+	if !strings.Contains(channel.last.Body, "42") {
+		t.Fatal("missing affected account")
+	}
+}

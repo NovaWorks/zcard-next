@@ -4,6 +4,7 @@ package identity
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -37,7 +38,10 @@ func (r *AdminUserRepoImpl) FindByUsername(ctx context.Context, username string)
 	if err != nil {
 		return nil, err
 	}
+	var state mfaState
+	_ = json.Unmarshal([]byte(row.MfaState), &state)
 	return &AdminUser{
+		TOTPBoundAt:   state.BoundAt,
 		ID:            row.ID,
 		Username:      row.Username,
 		PasswordHash:  row.PasswordHash,
@@ -74,7 +78,7 @@ func (r *AdminUserRepoImpl) Admin(ctx context.Context, id uint64) (*port.AdminAc
 	}
 	return &port.AdminAccount{
 		ID: row.ID, Username: row.Username, Nickname: row.Nickname, Avatar: row.Avatar,
-		RoleID: row.RoleID, Enabled: row.Enabled, TOTPEnabled: len(row.TotpSecret) > 0,
+		AuthVersion: row.AuthVersion, RoleID: row.RoleID, Enabled: row.Enabled, TOTPEnabled: len(row.TotpSecret) > 0,
 	}, nil
 }
 
@@ -88,7 +92,7 @@ func (r *AdminUserRepoImpl) List(ctx context.Context) ([]port.AdminAccount, erro
 	for _, row := range rows {
 		out = append(out, port.AdminAccount{
 			ID: row.ID, Username: row.Username, Nickname: row.Nickname, Avatar: row.Avatar,
-			RoleID: row.RoleID, Enabled: row.Enabled, TOTPEnabled: len(row.TotpSecret) > 0,
+			AuthVersion: row.AuthVersion, RoleID: row.RoleID, Enabled: row.Enabled, TOTPEnabled: len(row.TotpSecret) > 0,
 		})
 	}
 	return out, nil
@@ -137,7 +141,7 @@ func (r *AdminUserRepoImpl) Update(ctx context.Context, id uint64, in port.Admin
 	if err != nil {
 		return nil, err
 	}
-	return &port.AdminAccount{ID: row.ID, Username: row.Username, Nickname: row.Nickname, RoleID: row.RoleID, Enabled: row.Enabled, TOTPEnabled: len(row.TotpSecret) > 0}, nil
+	return &port.AdminAccount{ID: row.ID, Username: row.Username, Nickname: row.Nickname, AuthVersion: row.AuthVersion, RoleID: row.RoleID, Enabled: row.Enabled, TOTPEnabled: len(row.TotpSecret) > 0}, nil
 }
 
 // RoleInUse 角色是否仍有员工挂载。
@@ -151,13 +155,19 @@ func (r *AdminUserRepoImpl) ResetPassword(ctx context.Context, id uint64, passwo
 	if err != nil {
 		return err
 	}
-	_, err = data.Client(ctx, r.data).AdminUser.UpdateOneID(id).SetPasswordHash(hash).Save(ctx)
-	return err
+	return mfaChange(ctx, r.data, id, func(ctx context.Context, u *ent.AdminUser, state *mfaState) error {
+		if err := data.Client(ctx, r.data).AdminUser.UpdateOneID(id).SetPasswordHash(hash).Exec(ctx); err != nil {
+			return err
+		}
+		state.Pending = nil
+		state.PendingUntil = 0
+		return invalidateMFA(ctx, r.data, u, state)
+	})
 }
 
 // ClearTOTP 解绑员工 TOTP（port.AdminMutator；幂等——未绑定时同样成功）。
 func (r *AdminUserRepoImpl) ClearTOTP(ctx context.Context, id uint64) error {
-	return r.ClearTOTPSecret(ctx, id)
+	return ResetAdminTwoFactor(ctx, r.data, id, 0, "server recovery")
 }
 
 // RevokeAdminSessions 吊销员工全部未吊销的管理面会话（密码重置/解绑 TOTP 后强制重登；
@@ -197,6 +207,5 @@ func (r *AdminUserRepoImpl) SetTOTPSecret(ctx context.Context, id uint64, secret
 
 // ClearTOTPSecret 清除 TOTP 绑定。
 func (r *AdminUserRepoImpl) ClearTOTPSecret(ctx context.Context, id uint64) error {
-	_, err := data.Client(ctx, r.data).AdminUser.UpdateOneID(id).ClearTotpSecret().Save(ctx)
-	return err
+	return ResetAdminTwoFactor(ctx, r.data, id, 0, "server recovery")
 }

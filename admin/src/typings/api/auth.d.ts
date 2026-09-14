@@ -2,6 +2,9 @@ declare namespace Api {
   namespace Auth {
     /** Kratos 登录响应（snake_case） */
     interface LoginToken {
+      requires_totp?: boolean;
+      challenge?: string;
+      recovery_ticket?: string;
       access_token: string;
       refresh_token: string;
       token_type: string;
@@ -17,6 +20,7 @@ declare namespace Api {
       avatar: string;
       role_id: number;
       totp_enabled: boolean;
+      totp_bound_at?: number | string;
       last_login_ip: string;
     }
 

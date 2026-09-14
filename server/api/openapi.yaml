@@ -576,6 +576,19 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.LoginReply'
+    /api/v1/admin/auth/totp/cancel:
+        post:
+            tags:
+                - AdminAuthService
+            operationId: AdminAuthService_CancelTOTP
+            requestBody:
+                content:
+                    application/json: {}
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/auth/totp/confirm:
         post:
             tags:
@@ -591,7 +604,10 @@ paths:
             responses:
                 "200":
                     description: OK
-                    content: {}
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.RecoveryCodesReply'
     /api/v1/admin/auth/totp/disable:
         post:
             tags:
@@ -616,7 +632,9 @@ paths:
             operationId: AdminAuthService_EnableTOTP
             requestBody:
                 content:
-                    application/json: {}
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ConfirmTOTPRequest'
                 required: true
             responses:
                 "200":
@@ -625,6 +643,21 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.EnableTOTPReply'
+    /api/v1/admin/auth/totp/reset:
+        post:
+            tags:
+                - AdminAuthService
+            operationId: AdminAuthService_ResetTOTP
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ResetTOTPRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/authz/permissions:
         get:
             tags:
@@ -6940,6 +6973,8 @@ components:
         zcard.api.admin.v1.AdminProfile:
             type: object
             properties:
+                totpBoundAt:
+                    type: string
                 id:
                     type: string
                 username:
@@ -7350,10 +7385,12 @@ components:
                     type: string
             description: ConfigField 配置字段 schema（前端按 type 动态渲染表单）。
         zcard.api.admin.v1.ConfirmTOTPRequest:
-            required:
-                - code
             type: object
             properties:
+                password:
+                    type: string
+                recoveryTicket:
+                    type: string
                 code:
                     type: string
         zcard.api.admin.v1.ControlList:
@@ -9164,6 +9201,12 @@ components:
         zcard.api.admin.v1.LoginReply:
             type: object
             properties:
+                requiresTotp:
+                    type: boolean
+                challenge:
+                    type: string
+                recoveryTicket:
+                    type: string
                 accessToken:
                     type: string
                     description: admin realm 访问令牌（2h）
@@ -9179,11 +9222,10 @@ components:
                     type: string
                     description: refresh 令牌（14d，一次性轮换）
         zcard.api.admin.v1.LoginRequest:
-            required:
-                - username
-                - password
             type: object
             properties:
+                challenge:
+                    type: string
                 username:
                     type: string
                 password:
@@ -10062,6 +10104,13 @@ components:
                     type: string
                 mismatchCount:
                     type: string
+        zcard.api.admin.v1.RecoveryCodesReply:
+            type: object
+            properties:
+                recoveryCodes:
+                    type: array
+                    items:
+                        type: string
         zcard.api.admin.v1.RefreshTokenRequest:
             required:
                 - refreshToken
@@ -10254,6 +10303,17 @@ components:
                 id:
                     type: string
                 newSecret:
+                    type: string
+        zcard.api.admin.v1.ResetTOTPRequest:
+            type: object
+            properties:
+                adminId:
+                    type: string
+                password:
+                    type: string
+                code:
+                    type: string
+                reason:
                     type: string
         zcard.api.admin.v1.ResetUserPasswordRequest:
             required:

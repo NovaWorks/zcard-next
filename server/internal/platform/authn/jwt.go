@@ -24,11 +24,12 @@ const (
 
 // Claims 自定义声明。
 type Claims struct {
-	Subject   uint64 `json:"sub"`            // admin_users.id / users.id
-	Username  string `json:"username"`       // 登录名快照
-	RoleID    uint64 `json:"role,omitempty"` // admin realm：角色 ID
-	Realm     Realm  `json:"realm"`          // admin | user（校验时必须匹配）
-	TokenType string `json:"typ"`            // access | refresh
+	AuthVersion int    `json:"auth_version"`
+	Subject     uint64 `json:"sub"`            // admin_users.id / users.id
+	Username    string `json:"username"`       // 登录名快照
+	RoleID      uint64 `json:"role,omitempty"` // admin realm：角色 ID
+	Realm       Realm  `json:"realm"`          // admin | user（校验时必须匹配）
+	TokenType   string `json:"typ"`            // access | refresh
 	jwt.RegisteredClaims
 }
 
@@ -57,9 +58,24 @@ func NewSigner(adminKey, userKey []byte, accessTTL time.Duration) (*Signer, erro
 func (s *Signer) AccessTTL() time.Duration { return s.ttl }
 
 // Issue 签发 access 令牌。
-func (s *Signer) Issue(realm Realm, subject uint64, username string, roleID uint64) (token string, expiresAt time.Time, err error) {
+func (s *Signer) Issue(realm Realm, subject uint64, username string, roleID uint64, version ...int) (token string, expiresAt time.Time, err error) {
+	v := 0
+	if len(version) > 0 {
+		v = version[0]
+	}
+	return s.IssueUntil(realm, subject, username, roleID, v, time.Time{})
+}
+
+// IssueUntil caps the final access token at the original session deadline.
+func (s *Signer) IssueUntil(realm Realm, subject uint64, username string, roleID uint64, version int, deadline time.Time) (token string, expiresAt time.Time, err error) {
 	now := time.Now()
 	expiresAt = now.Add(s.ttl)
+	if !deadline.IsZero() && deadline.Before(expiresAt) {
+		expiresAt = deadline
+	}
+	if !expiresAt.After(now) {
+		return "", time.Time{}, ErrInvalidToken
+	}
 	claims := &Claims{
 		Subject:   subject,
 		Username:  username,
@@ -72,6 +88,7 @@ func (s *Signer) Issue(realm Realm, subject uint64, username string, roleID uint
 			Issuer:    "zcard",
 		},
 	}
+	claims.AuthVersion = version
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	key := s.adminKey
 	if realm == RealmUser {

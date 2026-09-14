@@ -82,11 +82,11 @@ export function resetAdminPassword(id: number, password: string) {
   });
 }
 
-export function resetAdminTOTP(id: number) {
+export function resetAdminTOTP(id: number, proof: { password: string; code?: string; reason: string }) {
   return request({
-    url: `/api/v1/admin/admins/${id}/totp-reset`,
-    method: "put",
-    data: {},
+    url: "/api/v1/admin/auth/totp/reset",
+    method: "post",
+    data: { admin_id: id, ...proof },
   });
 }
 
