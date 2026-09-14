@@ -22,7 +22,7 @@ const emit = defineEmits<{ (e: "update:value", urls: string[]): void }>();
 const urls = computed(() => props.value || []);
 
 async function openPicker() {
-  const picked = await pickMedia({ multiple: props.multiple });
+  const picked = await pickMedia({ multiple: props.multiple, tip: props.tip });
   if (!picked?.length) return; // 取消
   emit("update:value", picked);
 }
@@ -51,7 +51,7 @@ function removeUrl(url: string) {
         </NButton>
       </div>
     </div>
-    <div class="flex items-center gap-8px">
+    <div class="flex flex-wrap items-center gap-8px">
       <NButton size="small" @click="openPicker">
         {{ multiple ? "从素材库选择" : urls.length ? "更换图片" : "从素材库选择" }}
       </NButton>

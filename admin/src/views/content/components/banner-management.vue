@@ -213,7 +213,7 @@ onMounted(loadBanners);
           显示在当前页商品中段，网格视图会对齐完整商品行。多个横幅在电脑端并排、手机端横滑；仅一行商品时显示在该行之后，无商品时隐藏。建议使用宽幅图片。
         </p>
         <NFormItem label="图片" required>
-          <MediaField v-model:value="bannerForm.image" />
+          <MediaField v-model:value="bannerForm.image" :tip="bannerForm.position === 'top' ? '推荐宽 1200 px × 高 400 px（3:1）；默认主题会随屏幕裁切，文字和主体请居中，多张图片建议尺寸一致。' : '从素材库选择或上传横幅图片'" />
         </NFormItem>
         <NFormItem label="跳转类型">
           <NSelect v-model:value="bannerForm.link_type" :options="linkTypeOptions" />

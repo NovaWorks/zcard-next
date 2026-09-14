@@ -459,6 +459,7 @@ const categorySelectOptions = computed(() => [
     :mask-closable="false"
     @update:show="(v: boolean) => !v && handleCancel()"
   >
+    <p v-if="mediaPickerState.tip" class="mb-12px text-13px" style="color: var(--text-color-2); overflow-wrap: anywhere">{{ mediaPickerState.tip }}</p>
     <div class="flex gap-16px" style="height: 560px">
       <!-- 左：素材网格 -->
       <div class="flex min-w-0 flex-1 flex-col gap-12px">

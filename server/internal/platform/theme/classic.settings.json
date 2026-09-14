@@ -40,7 +40,8 @@
           "key": "template.bg_image",
           "label": "电脑背景图",
           "type": "image",
-          "default": ""
+          "default": "",
+          "help": "推荐宽 1920 px × 高 1080 px（16:9）；背景铺满屏幕时可能裁切，重要内容请居中。"
         },
         {
           "key": "template.bg_image_mobile",

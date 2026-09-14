@@ -413,7 +413,7 @@ onMounted(() => {
                       class="flex-1"
                       multiple
                       :value="imageValueOf(item)"
-                      tip="多图轮播：依次在首页顶部轮播展示，可多选并调整顺序"
+                      tip="推荐宽 1200 px × 高 400 px（3:1）；默认主题会随屏幕裁切，文字和主体请居中，多张图片建议尺寸一致。 可多选并调整顺序。"
                       @update:value="(urls: string[]) => setImageValue(item, urls)"
                     />
                   </template>
@@ -421,7 +421,7 @@ onMounted(() => {
                     <MediaField
                       class="flex-1"
                       :value="imageValueOf(item)"
-                      :tip="item.key === 'bg_image_mobile' ? '建议上传竖版图片；留空时沿用电脑背景图' : '从素材库选择或上传；选中后即时预览'"
+                      :tip="item.key === 'bg_image' ? '推荐宽 1920 px × 高 1080 px（16:9）；背景铺满屏幕时可能裁切，重要内容请居中。' : item.key === 'bg_image_mobile' ? '建议上传竖版图片；留空时沿用电脑背景图' : item.group === 'ops' && item.key === 'announcement' ? '推荐宽 1200 px × 高 400 px（3:1）；默认主题会随屏幕裁切，文字和主体请居中，多张图片建议尺寸一致。' : '从素材库选择或上传；选中后即时预览'"
                       @update:value="(urls: string[]) => setImageValue(item, urls)"
                     />
                   </template>

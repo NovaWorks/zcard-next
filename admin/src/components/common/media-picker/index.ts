@@ -10,24 +10,29 @@ import { reactive } from "vue";
 interface MediaPickerState {
   show: boolean;
   multiple: boolean;
+  tip: string;
   resolve: ((urls: string[] | null) => void) | null;
 }
 
 export const mediaPickerState = reactive<MediaPickerState>({
   show: false,
   multiple: false,
+  tip: "",
   resolve: null,
 });
 
 export interface PickMediaOptions {
   /** 多选（图集）；默认单选 */
   multiple?: boolean;
+  /** 当前图片用途的上传提示 */
+  tip?: string;
 }
 
 export function pickMedia(options: PickMediaOptions = {}): Promise<string[] | null> {
   // 二次打开时废弃上一个等待（防悬挂 Promise）
   mediaPickerState.resolve?.(null);
   mediaPickerState.multiple = options.multiple ?? false;
+  mediaPickerState.tip = options.tip ?? "";
   return new Promise((resolve) => {
     mediaPickerState.resolve = resolve;
     mediaPickerState.show = true;

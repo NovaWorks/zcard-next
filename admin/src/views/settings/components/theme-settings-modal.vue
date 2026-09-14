@@ -343,6 +343,7 @@ function close() {
                 <MediaField
                   v-else-if="f.type === 'image' && canWrite && !saving"
                   :value="values[f.key] ? [values[f.key]] : []"
+                  :tip="f.help"
                   @update:value="values[f.key] = $event[0] || ''"
                 />
                 <NInput
@@ -352,7 +353,7 @@ function close() {
                   :type="f.type === 'textarea' ? 'textarea' : 'text'"
                   :disabled="!canWrite || saving"
                 />
-                <p v-if="f.help">{{ f.help }}</p>
+                <p v-if="f.help && (f.type !== 'image' || !canWrite || saving)">{{ f.help }}</p>
                 <NAlert v-if="blocked(f)" type="info" :show-icon="false"
                   >系统已关闭此业务。请在系统业务设置中开启后调整入口展示。</NAlert
                 >
