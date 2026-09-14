@@ -10,6 +10,7 @@
 export const ROUTE_PERMISSIONS: Record<string, string[]> = {
   home: ["dashboard:read"],
   product: ["catalog:read"],
+  category: ["catalog:category_read"],
   content: ["content:read"],
   marketing: ["memberlevel:read", "coupon:read", "lottery:read"],
   inventory: ["inventory:read"],

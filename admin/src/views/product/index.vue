@@ -28,6 +28,7 @@ import FilterTabs from "@/components/common/filter-tabs.vue";
 import SkuPanel from "./components/sku-panel.vue";
 import ControlPanel from "./components/control-panel.vue";
 import CategoryModal from "./components/category-modal.vue";
+import CategoryIcon from "@/components/common/category-icon.vue";
 import ReviewsDrawer from "./components/reviews-drawer.vue";
 import DeleteProductModal from "./components/delete-product-modal.vue";
 
@@ -294,7 +295,7 @@ const deliveryModeOptions = [
 const categoryTreeOptions = computed(() => {
   const map = new Map<number, any>();
   for (const c of categories.value)
-    map.set(c.id, { label: c.name, key: c.id, parent_id: c.parent_id || 0, children: [] });
+    map.set(c.id, { label: c.name, key: c.id, icon: c.icon, parent_id: c.parent_id || 0, children: [] });
   const roots: any[] = [];
   for (const node of map.values()) {
     const parent = map.get(node.parent_id);
@@ -592,10 +593,10 @@ function catNodeProps({ option }: { option: any }) {
   return { title: option.label || "", class: "cat-node" };
 }
 
-// 分类节点图标（大厂树形导航：根/含子级/叶子三级图标，一眼区分层级）
+// 优先展示分类自定义图标，缺省或图片加载失败时按节点类型回退。
 function catRenderPrefix({ option }: { option: any }) {
   const icon = option.key === 0 ? "🏠" : option.children?.length ? "📁" : "🏷️";
-  return h("span", { class: "cat-prefix" }, icon);
+  return h(CategoryIcon, { icon: option.icon, fallback: icon, class: "cat-prefix" });
 }
 
 // ── 展开/收缩全部（分类多时快速导航）──

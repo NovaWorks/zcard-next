@@ -1,12 +1,13 @@
 <script setup lang="ts">
 /**
- * 商品分类管理（ 前端面）：树形列表 + 新建（含父分类）/重命名/删除（非空拒绝）。
+ * 分类管理共用视图：独立页面与商品页弹窗复用，保留同一套分类操作。
  * 新建/变更后向父组件抛 refresh 事件（表单下拉联动刷新）。
  */
 import { ref, reactive, computed, watch } from "vue";
 import MediaField from "@/components/common/media-picker/media-field.vue";
-import { resolveMediaUrl } from "@/utils/media";
-import { NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm, NPopover } from "naive-ui";
+import CategoryIcon from "@/components/common/category-icon.vue";
+import { checkAuth } from "@/directives";
+import { NCard, NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm, NPopover } from "naive-ui";
 import type { DropdownOption } from "naive-ui";
 import {
   fetchCategories,
@@ -17,7 +18,10 @@ import {
   mergeCategories,
 } from "@/service/api";
 
-const props = defineProps<{ show: boolean }>();
+const props = withDefaults(defineProps<{ show?: boolean; embedded?: boolean }>(), { show: false, embedded: false });
+const canWrite = computed(() => checkAuth("catalog:category_write"));
+const canDelete = computed(() => checkAuth("catalog:category_delete"));
+const search = ref("");
 const emit = defineEmits<{
   (e: "update:show", v: boolean): void;
   (e: "refresh"): void;
@@ -51,13 +55,6 @@ const ICON_GROUPS: { label: string; icons: string[] }[] = [
 ];
 const iconPicking = ref<any | null>(null); // 正在选图标的分类（null=面板关闭）
 
-// 图标是否为图片（URL 相对/绝对或带扩展名；emoji 均不命中）——上传图标可能是
-// 相对路径 /uploads/...，此前仅判断 startsWith('http') 会把 URL 当 emoji 文本渲染
-function iconIsImage(icon?: string): boolean {
-  if (!icon) return false;
-  // 含 / 即路径形态(uploads/...、/uploads/...、完整 URL 均命中;emoji 不含 /)
-  return icon.includes("/") || /\.(png|jpe?g|gif|webp|svg|ico|bmp|avif)$/i.test(icon);
-}
 // 自定义图片图标（MediaField 数组值；选定即写入 newIcon=URL——icon 字段 emoji/URL 同存，前台按形态渲染）
 const customIconImage = ref<string[]>([]);
 // 行内快改面板的自定义图片（应用到 iconPicking 当前分类）
@@ -83,7 +80,8 @@ watch(customIconImage, (v) => {
 async function applyIcon(cat: any, icon: string) {
   const { error } = await updateCategory(cat.id, { icon }); // 空串=清除（服务端 optional 语义）
   if (!error) {
-    cat.icon = icon;
+    const source = categories.value.find(c => c.id === cat.id);
+    if (source) source.icon = icon;
     window.$message?.success(icon ? "图标已更新" : "图标已清除");
     iconPicking.value = null;
     emit("refresh");
@@ -91,7 +89,7 @@ async function applyIcon(cat: any, icon: string) {
 }
 
 const visible = computed({
-  get: () => props.show,
+  get: () => props.embedded || props.show,
   set: (v: boolean) => emit("update:show", v),
 });
 
@@ -124,6 +122,11 @@ const flatTree = computed(() => {
   return out;
 });
 
+const filteredTree = computed(() => {
+  const query = search.value.trim().toLocaleLowerCase();
+  return query ? flatTree.value.filter(c => c.path.toLocaleLowerCase().includes(query)) : flatTree.value;
+});
+
 const parentOptions = computed(() => [
   { label: "顶级分类", value: 0 },
   ...flatTree.value.map((c) => ({ label: c.path, value: c.id })),
@@ -140,24 +143,27 @@ async function load() {
 }
 
 watch(
-  () => props.show,
+  () => props.embedded || props.show,
   (v) => {
     if (v) {
       load();
       resetCreate();
     }
   },
+  { immediate: true },
 );
 
 function resetCreate() {
   newName.value = "";
   newParent.value = null;
   newIcon.value = "";
+  customIconImage.value = [];
+  iconPicking.value = null;
   showCreate.value = false;
 }
 
 async function handleCreate() {
-  if (!newName.value.trim()) return;
+  if (!newName.value.trim() || creating.value) return;
   creating.value = true;
   try {
     const parentId = newParent.value || 0;
@@ -221,18 +227,57 @@ async function toggleVisibility(cat: any) {
   } finally { visibilityBusy.value = null; }
 }
 
-const menuOptions: DropdownOption[] = [
-  { label: "重命名", key: "rename" },
-  {
-    label: "删除分类",
-    key: "delete",
-    divided: true,
-    props: { style: "color: var(--error-color, #d03050)" },
-  },
-];
+const menuOptions = computed<DropdownOption[]>(() => [
+  ...(canWrite.value ? [
+    { label: "添加子分类", key: "child" },
+    { label: "重命名", key: "rename" },
+    { label: "调整上级分类", key: "parent" },
+  ] : []),
+  ...(canDelete.value ? [{ label: "删除分类", key: "delete", divided: true, props: { style: "color: var(--error-color, #d03050)" } }] : []),
+]);
+const moving = ref<any | null>(null);
+const moveParent = ref<number | null>(0);
+const moveSaving = ref(false);
+const moveOptions = computed(() => {
+  const blocked = new Set<number>();
+  const children = new Map<number, number[]>();
+  for (const cat of categories.value) {
+    const parent = cat.parent_id || 0;
+    if (!children.has(parent)) children.set(parent, []);
+    children.get(parent)!.push(cat.id);
+  }
+  const pending = moving.value ? [moving.value.id] : [];
+  while (pending.length) {
+    const id = pending.pop()!;
+    if (blocked.has(id)) continue;
+    blocked.add(id);
+    pending.push(...(children.get(id) || []));
+  }
+  return parentOptions.value.map(option => ({ ...option, disabled: blocked.has(option.value) }));
+});
+async function saveParent() {
+  if (!moving.value || moveSaving.value) return;
+  moveSaving.value = true;
+  try {
+    const { error } = await updateCategory(moving.value.id, { parent_id: moveParent.value || 0 });
+    if (!error) {
+      moving.value = null;
+      await load();
+      emit("refresh");
+      window.$message?.success("上级分类已更新");
+    }
+  } finally { moveSaving.value = false; }
+}
 
 function handleMenu(key: string | number, cat: any) {
-  if (key === "rename") {
+  if (key === "child") {
+    resetCreate();
+    newParent.value = cat.id;
+    showCreate.value = true;
+  } else if (key === "parent") {
+    moving.value = cat;
+    moveParent.value = cat.parent_id || 0;
+  } else if (key === "rename") {
     renaming.value = cat;
     renameText.value = cat.name;
   } else if (key === "delete") {
@@ -465,10 +510,17 @@ async function onSortBlur(cat: any) {
 </script>
 
 <template>
-  <NModal v-model:show="visible" preset="card" title="分类管理" style="width: 960px; max-width: 94vw">
-    <div class="mb-12px flex items-center justify-between">
-      <div class="flex items-center gap-8px">
-        <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类</span>
+  <component :is="embedded ? NCard : NModal"
+    v-bind="embedded ? { title: '商品分类' } : { show: visible, preset: 'card', title: '分类管理', style: 'width: 960px; max-width: 94vw' }"
+    class="category-manager" :class="{ 'category-manager-page': embedded }"
+    @update:show="visible = $event">
+    <div class="mb-12px flex flex-wrap items-center gap-8px">
+      <NInput v-model:value="search" clearable placeholder="搜索分类名称或完整路径" :input-props="{ 'aria-label': '搜索分类' }" class="min-w-180px flex-1" />
+      <NButton :loading="loading" @click="load">刷新</NButton>
+    </div>
+    <div class="mb-12px flex flex-wrap items-center justify-between gap-8px">
+      <div class="flex flex-wrap items-center gap-8px">
+        <span class="text-13px text-gray-500">共 {{ flatTree.length }} 个分类<template v-if="search.trim()">，找到 {{ filteredTree.length }} 个</template></span>
         <template v-if="batchMode">
           <NTag size="small" :bordered="false">已选 {{ batchChecked.size }}</NTag>
           <NButton v-auth="'catalog:category_delete'" size="tiny" :disabled="!batchChecked.size" @click="openMerge">合并所选</NButton>
@@ -482,7 +534,7 @@ async function onSortBlur(cat: any) {
           </NPopconfirm>
         </template>
       </div>
-      <div class="flex items-center gap-8px">
+      <div class="flex flex-wrap items-center gap-8px">
         <NButton v-auth="'catalog:category_write'" size="small" quaternary @click="toggleBatchMode">
           {{ batchMode ? "退出批量" : "批量管理" }}
         </NButton>
@@ -493,7 +545,7 @@ async function onSortBlur(cat: any) {
     </div>
 
     <!-- 新建 -->
-    <div v-if="showCreate" class="mb-12px flex items-center gap-8px">
+    <div v-if="showCreate" class="category-create mb-12px flex flex-wrap items-center gap-8px">
       <NPopover trigger="manual" :show="iconPicking === 'new'" placement="bottom-start" style="max-width: 360px">
         <template #trigger>
           <button
@@ -502,8 +554,7 @@ async function onSortBlur(cat: any) {
             title="选择图标（可选）"
             @click="iconPicking = iconPicking === 'new' ? null : 'new'"
           >
-            <img v-if="iconIsImage(newIcon)" :src="resolveMediaUrl(newIcon)" class="cat-icon-img" alt="" />
-            <template v-else>{{ newIcon || "➕" }}</template>
+            <CategoryIcon :icon="newIcon" fallback="➕" />
           </button>
         </template>
         <div class="w-320px">
@@ -550,8 +601,9 @@ async function onSortBlur(cat: any) {
     </div>
 
     <!-- 树列表（行可拖拽：上/下边缘=排序插入，行中间=设为子级；顶部释放区=顶级） -->
-    <div class="mb-4px text-11px text-gray-400">拖到行上/下边缘 = 排序；拖到行中间 = 设为子级；拖到顶部虚线区 = 设为顶级</div>
+    <div v-if="canWrite" class="mb-4px text-12px text-gray-400">搜索时暂停拖拽；也可通过操作菜单调整上级。拖到行上/下边缘 = 排序；拖到行中间 = 设为子级；拖到顶部虚线区 = 设为顶级</div>
     <div
+      v-if="canWrite && !search.trim()"
       class="mb-4px rounded-4px border border-dashed px-10px py-6px text-center text-12px"
       :class="dropToRoot ? 'border-blue-400 bg-blue-50 text-blue-500' : 'border-gray-300 text-gray-400 dark:border-gray-600'"
       @dragover.prevent="dropToRoot = true"
@@ -560,21 +612,22 @@ async function onSortBlur(cat: any) {
     >
       {{ dropToRoot ? '松开设为顶级分类' : '拖拽分类到此处 = 设为顶级' }}
     </div>
-    <NScrollbar x-scrollable class="max-h-340px rounded-4px border border-gray-200 dark:border-gray-700">
+    <NScrollbar x-scrollable :style="{ maxHeight: embedded ? 'calc(100vh - 330px)' : '340px', minHeight: '160px' }" class="rounded-4px border border-gray-200 dark:border-gray-700">
       <NEmpty
-        v-if="!flatTree.length && !loading"
+        v-if="!filteredTree.length && !loading"
         size="small"
         class="mt-40px"
-        description="暂无分类"
+        :description="search.trim() ? '未找到分类，请换个关键词或清空搜索' : '暂无分类'"
       />
       <div
-        v-for="cat in flatTree"
+        v-for="cat in filteredTree"
         :key="cat.id"
-        draggable="true"
+        :draggable="canWrite && !search.trim()"
         class="category-manage-row group flex cursor-grab items-center gap-8px rounded-4px py-7px pr-8px text-13px hover:bg-gray-100 dark:hover:bg-gray-800 active:cursor-grabbing"
         :class="rowClass(cat)"
         :style="rowStyle(cat)"
         @dragstart="onDragStart(cat)"
+        @dragend="resetDragState"
         @dragover.prevent="onDragOver(cat, $event)"
         @dragleave="onDragLeave"
         @drop.prevent="onDrop(cat)"
@@ -587,7 +640,7 @@ async function onSortBlur(cat: any) {
           @update:checked="(v: boolean) => toggleBatchCheck(cat.id, v)"
         />
         <!-- 图标槽：点击开本地图标库（选择即存；支持清除）；前台分类树/胶囊同源展示 -->
-        <NPopover v-if="!batchMode" trigger="manual" :show="iconPicking === cat.id" placement="right" style="max-width: 360px">
+        <NPopover v-if="!batchMode && canWrite" trigger="manual" :show="iconPicking === cat.id" placement="right" style="max-width: 360px">
           <template #trigger>
             <button
               type="button"
@@ -595,8 +648,7 @@ async function onSortBlur(cat: any) {
               :title="cat.icon ? '更换图标' : '设置图标'"
               @click.stop="iconPicking = iconPicking === cat.id ? null : cat.id"
             >
-              <img v-if="iconIsImage(cat.icon)" :src="resolveMediaUrl(cat.icon)" class="cat-icon-img" alt="" />
-              <template v-else>{{ cat.icon || "➕" }}</template>
+              <CategoryIcon :icon="cat.icon" fallback="➕" />
             </button>
           </template>
           <div class="w-320px">
@@ -627,14 +679,16 @@ async function onSortBlur(cat: any) {
             </div>
           </div>
         </NPopover>
+        <CategoryIcon v-else :icon="cat.icon" />
         <!-- 名称列：占满剩余宽度，超长截断不撑破行；悬浮显示全名 -->
-        <div class="flex min-w-0 flex-1 items-center gap-6px">
+        <div class="category-name flex min-w-0 flex-1 items-center gap-6px">
           <NTooltip  placement="top" :show-arrow="false">
             <template #trigger>
               <span class="category-full-name" :title="cat.path">{{ cat.name }}</span>
             </template>
             {{ cat.name }}
           </NTooltip>
+          <span v-if="cat.depth > 0" class="category-path">{{ cat.path }}</span>
         </div>
         <!-- 商品数/排序/操作：固定列宽，不随名称长度漂移 -->
         <NTag size="small" :type="cat.hide || cat.ancestorHidden ? 'warning' : 'success'" :bordered="false">{{ cat.hide ? '已隐藏' : cat.ancestorHidden ? '随父级隐藏' : '显示中' }}</NTag>
@@ -645,6 +699,8 @@ async function onSortBlur(cat: any) {
         <span title="该分类及下级分类的未删除商品总数（含隐藏、下架商品）" class="w-76px shrink-0 text-right text-12px text-gray-500">{{ cat.product_count || 0 }} 件</span>
         <NInputNumber
           v-model:value="cat.sort"
+          :disabled="!canWrite"
+          :input-props="{ 'aria-label': `${cat.name}排序` }"
           size="tiny"
           :min="0"
           :show-button="false"
@@ -653,16 +709,26 @@ async function onSortBlur(cat: any) {
           @blur="onSortBlur(cat)"
           @keyup.enter="onSortBlur(cat)"
         />
-        <NDropdown
+        <NDropdown v-if="menuOptions.length"
           class="shrink-0"
           :options="menuOptions"
           trigger="click"
           @select="(key: string | number) => handleMenu(key, cat)"
         >
-          <NButton size="tiny" quaternary>⋯</NButton>
+          <NButton size="small" quaternary :aria-label="`${cat.name}操作`">操作</NButton>
         </NDropdown>
       </div>
     </NScrollbar>
+
+    <NModal :show="!!moving" preset="card" title="调整上级分类" style="width: 480px; max-width: 94vw"
+      :closable="!moveSaving" :mask-closable="!moveSaving" :close-on-esc="!moveSaving" @update:show="!$event && !moveSaving && (moving = null)">
+      <p class="mb-12px">为「{{ moving?.name }}」选择上级分类，子分类将随其一起移动。</p>
+      <NSelect v-model:value="moveParent" :options="moveOptions" filterable :disabled="moveSaving" placeholder="选择上级分类" />
+      <template #footer><div class="flex justify-end gap-8px">
+        <NButton :disabled="moveSaving" @click="moving = null">取消</NButton>
+        <NButton type="primary" :loading="moveSaving" @click="saveParent">保存</NButton>
+      </div></template>
+    </NModal>
 
     <!-- 重命名 -->
     <NModal
@@ -706,11 +772,20 @@ async function onSortBlur(cat: any) {
         <NButton v-auth="'catalog:category_delete'" type="error" @click="handleDelete">删除</NButton>
       </template>
     </NModal>
-  </NModal>
+  </component>
 </template>
 
 <style scoped>
 .category-manage-row { min-width: 830px; }
+.category-path { display: none; }
+@media (max-width: 640px) {
+  .category-manage-row { min-width: 0; flex-wrap: wrap; padding: 12px 8px !important; gap: 8px; border-bottom: 1px solid var(--n-border-color); }
+  .category-manage-row > .flex-1 { flex-basis: calc(100% - 70px); }
+  .category-name { flex-direction: column; align-items: flex-start; }
+  .category-path { display: block; color: var(--n-text-color-3); font-size: 12px; overflow-wrap: anywhere; }
+  .category-create > .n-input { min-width: 180px; }
+  .category-create > .n-select { width: 100%; }
+}
 .category-full-name { min-width: 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
 /* 图标槽：行内小按钮（空=虚框加号提示可设置） */
 .cat-icon-btn {
@@ -725,12 +800,6 @@ async function onSortBlur(cat: any) {
   background: transparent;
   cursor: pointer;
   transition: all 0.15s;
-}
-.cat-icon-img {
-  width: 16px;
-  height: 16px;
-  object-fit: contain;
-  display: block;
 }
 
 .cat-icon-btn:hover {

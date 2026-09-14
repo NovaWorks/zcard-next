@@ -40,6 +40,17 @@ export const generatedRoutes: GeneratedRoute[] = [
     }
   },
   {
+    name: 'category',
+    path: '/category',
+    component: 'layout.base$view.category',
+    meta: {
+      title: '商品分类',
+      i18nKey: 'route.category',
+      icon: 'mdi:folder-outline',
+      order: 2.1
+    }
+  },
+  {
     name: 'channel',
     path: '/channel',
     component: 'layout.base$view.channel',
