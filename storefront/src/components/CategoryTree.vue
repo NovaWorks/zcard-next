@@ -1,5 +1,5 @@
 <template>
-  <aside class="cat-tree" :class="{ 'cat-tree--panel': variant === 'panel' }">
+  <aside class="cat-tree" :class="{ 'cat-tree--panel': variant === 'panel' }" :style="{ '--cat-tree-top': `${stickyTop}px` }">
     <div class="cat-tree-card">
       <!-- 标题栏：品牌竖条 + 标题 + 分类数（与右侧「全部商品」区标题同一设计语言） -->
       <button class="cat-tree-head" type="button" :aria-expanded="allExpanded" :disabled="!branchIds.length" @click="toggleAll">
@@ -41,7 +41,7 @@
 
 <script setup lang="ts">
 import ThemeIcon from '@/components/ThemeIcon.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import CategoryTreeNode from './CategoryTreeNode.vue';
 import type { CategoryItem } from '@/api';
 
@@ -59,6 +59,20 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'update:modelValue', v: number): void;
 }>();
+
+// 跟随导航实际高度，避免平板换行或自定义站名把分类栏遮住。
+const stickyTop = ref(72);
+let headerObserver: ResizeObserver | undefined;
+onMounted(() => {
+  if (props.variant === 'panel') return;
+  const header = document.querySelector('.topbar');
+  if (!header) return;
+  const measure = () => { stickyTop.value = header.getBoundingClientRect().height + 12; };
+  measure();
+  headerObserver = new ResizeObserver(measure);
+  headerObserver.observe(header);
+});
+onBeforeUnmount(() => headerObserver?.disconnect());
 
 // 分类树（任意层级：parent_id 链构建 children；一级为根）
 const tree = computed(() => {
@@ -109,21 +123,25 @@ function select(id: number) {
 <style scoped>
 .cat-tree {
   display: none;
-  width: 240px;
+  width: 280px;
   flex-shrink: 0;
 }
 @media (min-width: 768px) {
-  .cat-tree { display: block; }
+  /* 吸顶必须放在参与首页两栏布局的外层，才能沿整个商品区滚动。 */
+  .cat-tree { display: block; position: sticky; top: var(--cat-tree-top, 72px); }
 }
 .cat-tree-card {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   overflow: hidden;
-  position: sticky;
-  top: 72px; /* 品牌条 + 主导航之下 */
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - var(--cat-tree-top, 72px) - 16px);
+  max-height: calc(100dvh - var(--cat-tree-top, 72px) - 16px);
 }
 .cat-tree-head {
+  flex-shrink: 0;
   width: 100%; border: none; font: inherit; text-align: left; cursor: pointer;
   display: flex; align-items: center; gap: 8px;
   padding: 14px 16px;
@@ -144,12 +162,21 @@ function select(id: number) {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.cat-tree-body { padding: 12px 10px; max-height: calc(100vh - 220px); overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.cat-tree-body {
+  padding: 12px 10px; min-height: 0; overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-gutter: stable;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.cat-tree-body > * { flex-shrink: 0; }
 
 .tree-all {
   width: 100%;
   display: flex; align-items: center; gap: 9px;
-  padding: 11px 12px;
+  min-height: 48px;
+  padding: 12px;
   border: none; background: none; cursor: pointer;
   border-radius: 8px; font-size: 15px; color: #374151;
   transition: all 0.15s; font-family: inherit;
@@ -162,8 +189,8 @@ function select(id: number) {
 
 /* 面板变体（移动端折叠面板内嵌）：全宽平铺、保留一级分类、限高滚动。
    双类名提升优先级，覆盖基础 .cat-tree 的移动端 display:none */
-.cat-tree.cat-tree--panel { display: block; width: 100%; }
-.cat-tree--panel .cat-tree-card { position: static; border: none; border-radius: 0; }
+.cat-tree.cat-tree--panel { display: block; width: 100%; position: static; }
+.cat-tree--panel .cat-tree-card { max-height: none; border: none; border-radius: 0; }
 .cat-tree-head:disabled { cursor: default; color: inherit; }
 .cat-tree--panel .cat-tree-body { max-height: 56vh; padding: 4px 4px 8px; }
 </style>

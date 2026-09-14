@@ -33,7 +33,7 @@ function activate() {
     >
       <span class="tree-dot" :class="{ active: modelValue === node.id }"></span>
       <CategoryIcon :icon="node.icon" class="tree-icon" />
-      <span class="flex-1 text-left truncate">{{ node.name }}</span>
+      <span class="tree-label">{{ node.name }}</span>
       <span v-if="hasChildren" class="tree-arrow" :class="{ open: expanded.has(node.id) }" aria-hidden="true"></span>
     </button>
     </div>
@@ -56,9 +56,9 @@ function activate() {
 .tree-row { display: flex; align-items: stretch; border-radius: 8px; }
 .tree-row.active { background: #2563eb; color: #fff; }
 .tree-node {
-  min-width: 0; min-height: 44px; flex: 1;
+  min-width: 0; min-height: 48px; flex: 1;
   display: flex; align-items: center; gap: 7px;
-  padding: 10px 12px;
+  padding: 12px;
   border: none; background: none; cursor: pointer;
   border-radius: 8px; font-size: 14px; color: #374151;
   transition: all 0.15s; font-family: inherit;
@@ -70,6 +70,7 @@ function activate() {
 .tree-node.active { font-weight: 600; }
 .tree-node:hover { background: #eff6ff; color: #2563eb; }
 .tree-node.active { background: #2563eb; color: #fff; }
+.tree-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .tree-dot {
   width: 5px; height: 5px; border-radius: 999px; flex-shrink: 0;
   background: #d1d5db;
