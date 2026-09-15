@@ -843,7 +843,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="min-h-500px flex gap-16px overflow-hidden">
+  <div class="product-management min-h-500px flex flex-1 gap-16px overflow-hidden">
     <DeleteProductModal :show="!!deleteTarget" :product="deleteTarget" @update:show="!$event && (deleteTarget = null)" @deleted="loadList" />
     <!-- 左侧：分类树（大厂后台交互——左树筛选 + 右列表；悬停显示完整分类名） -->
     <NCard
@@ -873,8 +873,12 @@ onMounted(() => {
       </div>
     </NCard>
     <!-- 右侧：商品列表 -->
-    <NCard title="商品管理" class="min-w-0 flex-1">
-      <div class="mb-16px flex items-center gap-12px">
+    <NCard
+      title="商品管理"
+      class="product-list-card min-w-0 flex-1"
+      :content-style="{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }"
+    >
+      <div class="mb-16px flex shrink-0 flex-wrap items-center gap-12px">
         <NButton
           v-auth="'catalog:write'"
           type="primary"
@@ -895,7 +899,7 @@ onMounted(() => {
           v-model:value="keyword"
           placeholder="搜索商品名"
           clearable
-          class="w-200px"
+          style="width: 200px; max-width: 100%"
           @keyup.enter="onSearch"
         />
         <NSelect
@@ -903,7 +907,7 @@ onMounted(() => {
           :options="supplyOptions"
           placeholder="全部渠道"
           clearable
-          class="w-170px"
+          style="width: 170px; max-width: 100%"
           @update:value="onSearch"
         />
         <NButton
@@ -917,12 +921,12 @@ onMounted(() => {
         <NButton @click="onSearch">搜索</NButton>
       </div>
 
-      <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px" @change="onSearch" />
+      <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px shrink-0" @change="onSearch" />
 
       <!-- 批量操作条（勾选后出现） -->
       <div
         v-if="checkedKeys.length"
-        class="mb-12px flex flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
+        class="mb-12px flex shrink-0 flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
       >
         <span class="text-13px"
           >已选 <b>{{ checkedKeys.length }}</b> 件</span
@@ -950,7 +954,8 @@ onMounted(() => {
       </div>
 
       <NDataTable
-        :max-height="540"
+        flex-height
+        class="min-h-0 flex-1"
         :columns="columns"
         :data="products"
         :loading="loading"
@@ -961,6 +966,7 @@ onMounted(() => {
 
       <!-- 可复用分页条（共N条/首页/页码/每页条数/跳页/末页） -->
       <TablePager
+        class="shrink-0"
         v-model:page="page"
         v-model:page-size="pageSize"
         :total="total"
