@@ -31,7 +31,7 @@
           <h3 class="wd-section-title">申请提现</h3>
 
           <div class="wd-field">
-            <label class="wd-label">提现金额（元）</label>
+            <label class="wd-label">提现金额（基础货币元）</label>
             <div class="wd-amount-row">
               <input v-model.number="amountYuan" type="number" min="0" :step="0.01" class="input" placeholder="提现金额" />
               <button class="btn secondary" @click="allIn">全部提现</button>
@@ -163,13 +163,17 @@ const recordPageSize = 8;
 const frozen = ref(0);
 const withdrawable = computed(() => Math.max(0, (my.value?.available_cents || 0) - frozen.value));
 
+const amountCents = computed(() => {
+  try { return yuanToFen(amountYuan.value || 0); } catch { return null; }
+});
+
 // 手续费试算
 const feeCents = computed(() => {
-  const amount = yuanToFen(amountYuan.value || 0);
+  const amount = amountCents.value ?? 0;
   if (amount <= 0) return 0;
   return cfg.value.feeType === 'percent' ? Math.floor(amount * cfg.value.feeValue / 10000) : cfg.value.feeValue;
 });
-const credited = computed(() => Math.max(0, yuanToFen(amountYuan.value || 0) - feeCents.value));
+const credited = computed(() => Math.max(0, (amountCents.value ?? 0) - feeCents.value));
 const feeDesc = computed(() =>
   cfg.value.feeType === 'percent' ? `按 ${(cfg.value.feeValue / 100).toFixed(2)}% 收取` : `固定 ${formatMoney(cfg.value.feeValue)}`
 );
@@ -200,7 +204,11 @@ async function onQrPick(e: Event) {
 }
 
 async function submit() {
-  const amount = yuanToFen(amountYuan.value || 0);
+  const amount = amountCents.value;
+  if (amount === null || amount <= 0) {
+    error.value = "请输入有效金额，最多精确到分（小数点后两位）";
+    return;
+  }
   if (amount < cfg.value.minAmountCents) {
     error.value = `最低提现 ${formatMoney(cfg.value.minAmountCents)}`;
     return;

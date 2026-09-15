@@ -61,10 +61,10 @@ message UpdateCurrencyRequest {
   string code = 1 [(google.api.field_behavior) = REQUIRED];
   string symbol = 2;
   string position = 3;
-  int32 precision = 4;
+  optional int32 precision = 4;
   string rate_json = 5;
-  bool enabled = 6;
-  int32 sort = 7;
+  optional bool enabled = 6;
+  optional int32 sort = 7;
 }
 
 message DeleteCurrencyRequest {

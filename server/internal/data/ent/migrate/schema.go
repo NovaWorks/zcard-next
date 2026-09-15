@@ -1348,6 +1348,7 @@ var (
 		{Name: "charged_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "charged_currency", Type: field.TypeString, Nullable: true, Size: 8},
 		{Name: "exchange_rate", Type: field.TypeFloat64, Default: 0, SchemaType: map[string]string{"mysql": "decimal(20,8)", "postgres": "numeric(20,8)", "sqlite3": "real"}},
+		{Name: "charged_precision", Type: field.TypeInt32, Default: -1},
 		{Name: "charged_units", Type: field.TypeInt64, Default: 0},
 		{Name: "fee", Type: field.TypeInt64, Default: 0},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "success", "failed"}, Default: "pending"},
@@ -1364,7 +1365,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payments_orders_payments",
-				Columns:    []*schema.Column{PaymentsColumns[21]},
+				Columns:    []*schema.Column{PaymentsColumns[22]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1373,7 +1374,7 @@ var (
 			{
 				Name:    "payment_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[21]},
+				Columns: []*schema.Column{PaymentsColumns[22]},
 			},
 			{
 				Name:    "payment_channel_channel_order_no",
@@ -1383,7 +1384,7 @@ var (
 			{
 				Name:    "payment_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[17], PaymentsColumns[1]},
+				Columns: []*schema.Column{PaymentsColumns[18], PaymentsColumns[1]},
 			},
 		},
 	}

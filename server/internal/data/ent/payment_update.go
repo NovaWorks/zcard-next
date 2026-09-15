@@ -291,6 +291,27 @@ func (_u *PaymentUpdate) AddExchangeRate(v float64) *PaymentUpdate {
 	return _u
 }
 
+// SetChargedPrecision sets the "charged_precision" field.
+func (_u *PaymentUpdate) SetChargedPrecision(v int32) *PaymentUpdate {
+	_u.mutation.ResetChargedPrecision()
+	_u.mutation.SetChargedPrecision(v)
+	return _u
+}
+
+// SetNillableChargedPrecision sets the "charged_precision" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableChargedPrecision(v *int32) *PaymentUpdate {
+	if v != nil {
+		_u.SetChargedPrecision(*v)
+	}
+	return _u
+}
+
+// AddChargedPrecision adds value to the "charged_precision" field.
+func (_u *PaymentUpdate) AddChargedPrecision(v int32) *PaymentUpdate {
+	_u.mutation.AddChargedPrecision(v)
+	return _u
+}
+
 // SetChargedUnits sets the "charged_units" field.
 func (_u *PaymentUpdate) SetChargedUnits(v int64) *PaymentUpdate {
 	_u.mutation.ResetChargedUnits()
@@ -577,6 +598,12 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedExchangeRate(); ok {
 		_spec.AddField(payment.FieldExchangeRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ChargedPrecision(); ok {
+		_spec.SetField(payment.FieldChargedPrecision, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedChargedPrecision(); ok {
+		_spec.AddField(payment.FieldChargedPrecision, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.ChargedUnits(); ok {
 		_spec.SetField(payment.FieldChargedUnits, field.TypeInt64, value)
@@ -925,6 +952,27 @@ func (_u *PaymentUpdateOne) AddExchangeRate(v float64) *PaymentUpdateOne {
 	return _u
 }
 
+// SetChargedPrecision sets the "charged_precision" field.
+func (_u *PaymentUpdateOne) SetChargedPrecision(v int32) *PaymentUpdateOne {
+	_u.mutation.ResetChargedPrecision()
+	_u.mutation.SetChargedPrecision(v)
+	return _u
+}
+
+// SetNillableChargedPrecision sets the "charged_precision" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableChargedPrecision(v *int32) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetChargedPrecision(*v)
+	}
+	return _u
+}
+
+// AddChargedPrecision adds value to the "charged_precision" field.
+func (_u *PaymentUpdateOne) AddChargedPrecision(v int32) *PaymentUpdateOne {
+	_u.mutation.AddChargedPrecision(v)
+	return _u
+}
+
 // SetChargedUnits sets the "charged_units" field.
 func (_u *PaymentUpdateOne) SetChargedUnits(v int64) *PaymentUpdateOne {
 	_u.mutation.ResetChargedUnits()
@@ -1241,6 +1289,12 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.AddedExchangeRate(); ok {
 		_spec.AddField(payment.FieldExchangeRate, field.TypeFloat64, value)
+	}
+	if value, ok := _u.mutation.ChargedPrecision(); ok {
+		_spec.SetField(payment.FieldChargedPrecision, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedChargedPrecision(); ok {
+		_spec.AddField(payment.FieldChargedPrecision, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.ChargedUnits(); ok {
 		_spec.SetField(payment.FieldChargedUnits, field.TypeInt64, value)

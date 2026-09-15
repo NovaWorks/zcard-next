@@ -5,7 +5,7 @@ import { NButton, NDataTable, NInput, NInputNumber, NModal, NForm, NFormItem, NP
 import type { DataTableColumns } from "naive-ui";
 import { listCurrencies, createCurrency, updateCurrency, deleteCurrency, fetchSettings } from "@/service/api";
 import { checkAuth } from "@/directives";
-import { getCurrency } from "@/utils/money";
+import { getCurrency, initCurrency } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "CurrencyTab" });
@@ -92,7 +92,7 @@ function openEdit(row: any) {
     code: row.code,
     symbol: row.symbol ?? "",
     position: row.position ?? "prefix",
-    precision: row.precision ?? 2,
+    precision: row.precision ?? 0,
     rate_json: row.rate_json ?? "1",
   };
   showModal.value = true;
@@ -102,7 +102,7 @@ const columns: DataTableColumns<any> = [
   { title: "代码", key: "code", width: 80 },
   { title: "符号", key: "symbol", width: 70 },
   { title: "符号位置", key: "position", width: 84 },
-  { title: "小数位", key: "precision", width: 70 },
+  { title: "小数位", key: "precision", width: 70, render: (row) => row.precision ?? 0 },
   { title: "汇率(JSON)", key: "rate_json", width: 140, ellipsis: true },
   { title: "排序", key: "sort", width: 56 },
   {
@@ -165,6 +165,7 @@ async function handleSave() {
     if (editing.value) {
       const { error } = await updateCurrency(editing.value, { ...form.value });
       if (!error) {
+        await initCurrency(true);
         window.$message?.success("货币已更新");
         showModal.value = false;
         load();
@@ -224,9 +225,10 @@ onMounted(() => {
             </NRadioGroup>
           </NFormItem>
           <NFormItem label="小数位">
-            <NInputNumber v-model:value="form.precision" :min="0" :max="4" class="w-full" />
+            <NInputNumber v-model:value="form.precision" :min="0" :max="8" :precision="0" class="w-full" />
           </NFormItem>
         </div>
+        <p class="mb-12px text-12px text-gray-500">小数位只控制显示，不改变价格、余额或支付渠道单位；金额输入仍以基础货币元为单位，最多精确到分。</p>
         <NFormItem label="汇率" required>
           <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" :placeholder="isBaseCurrency ? '基础货币，固定为 1' : '如 0.14（1 基础货币 = 0.14 本币）'" />
         </NFormItem>

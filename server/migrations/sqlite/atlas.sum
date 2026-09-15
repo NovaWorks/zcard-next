@@ -1,4 +1,4 @@
-h1:JXQvHQwxRLUwO5myjiQNE+66mvcGTj29nAsc4V5tsxE=
+h1:4fPSyLDsSRLQZv/XiFFy5QNCqOeLXRBXeianuFo2Ldk=
 20260815190720_init.sql h1:YQ1dapmjcvZ7lL1ftfCgd8Z/h8hqxnS6tCJpOhboLe4=
 20260815193738_add_failed_tasks.sql h1:ahRwWY2iyo38+hQ88AV8P3KYJrCt6AfoDNpKmDmjEXk=
 20260815201530_v1_full_schema.sql h1:oHn5bzaeNTXmlcaeCVn/rme4XxKu3P43XYAvOsQBwOs=
@@ -31,3 +31,4 @@ h1:JXQvHQwxRLUwO5myjiQNE+66mvcGTj29nAsc4V5tsxE=
 20260911090000_payment_scenes.sql h1:iorrmHxpMRmuhZkyhOM03i5UDWz26pOX9gUX165FU/o=
 20260912134634_lottery.sql h1:nZwByDI8t/xNIOtt0AOL30crrc1i0FptwF696X7/ZwU=
 20260914142120_admin_two_factor.sql h1:ttCAcYHhtV3bjJNTlwqSuKtXGBYgf6jF+STIG3QS3cM=
+20260915070138_payment_charge_precision.sql h1:gKaVSSxaE0NWEd9vPTcRGMo408J9Mivc8mXCryiUGfQ=

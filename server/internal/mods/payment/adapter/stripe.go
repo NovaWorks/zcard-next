@@ -86,7 +86,7 @@ func (a *StripeAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	if req.ChargedUnits > 0 {
 		units = req.ChargedUnits
 		currency = strings.ToLower(req.ChargedCurrency)
-	} else if c.TargetCurrency != "" {
+	} else if c.TargetCurrency != "" && !strings.EqualFold(strings.TrimSpace(c.TargetCurrency), "CNY") {
 		// 快照缺席（同币直收）但渠道声明跨币目标——配置矛盾，拒绝（fail-closed：
 		// 宁可拒单不错币种收款）
 		return nil, fmt.Errorf("stripe: 快照缺失（currency 表未配置 %s？）", c.TargetCurrency)

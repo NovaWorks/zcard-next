@@ -184,8 +184,8 @@
             </button>
           </div>
           <div class="rc-custom">
-            <span v-if="moneySymbol" class="rc-yen">{{ moneySymbol }}</span>
-            <input v-model.number="rechargeYuan" type="number" min="1" step="0.01" placeholder="输入充值金额" @input="pickedTier = 0" />
+            <input v-model.number="rechargeYuan" type="number" min="0.01" step="0.01" placeholder="输入充值金额（基础货币元）" @input="pickedTier = 0; rechargeError = ''" />
+            <span class="rc-yen">元</span>
             <button v-if="rechargeYuan" type="button" class="rc-clear" title="清空" @click="clearAmount">×</button>
           </div>
           <div v-if="rechargeMeta" class="muted rc-limit">单笔限额 {{ formatMoney(rechargeMeta.min_amount) }} ~ {{ formatMoney(rechargeMeta.max_amount) }}<template v-if="giftTiers.length && !giftTiers.some((t) => t.gift_balance || t.gift_points)">；充值赠送见支付结果</template></div>
@@ -206,7 +206,7 @@
           </PayChannelGrid>
           <div v-if="rechargeError" class="error" style="margin-top: 12px;">{{ rechargeError }}</div>
           <button class="rc-submit" :disabled="!rechargeChannel || !rechargeYuan || recharging" @click="doRecharge">
-            {{ recharging ? '创建充值单…' : rechargeYuan ? `立即充值 ${formatMoney(Math.round(rechargeYuan * 100))}` : '请输入充值金额' }}
+            {{ recharging ? '创建充值单…' : rechargeCents === null ? '请检查金额精度' : rechargeCents > 0 ? `立即充值 ${formatMoney(rechargeCents)}` : '请输入充值金额' }}
           </button>
           <div class="rc-assure">🔒 支付过程安全加密 · 支付成功后余额与赠送自动到账</div>
         </div>
@@ -334,7 +334,7 @@ import {
   fetchPaymentChannels, type ChannelItem,
   type BalanceReply, type MyLevelReply, type MyOrderItem, type WalletTransaction
 } from '@/api';
-import { api, formatMoney, formatSignedMoney, transactionType, transactionAmount, transactionReference, transactionRemark, setToken, centsToYuan, getCurrency } from '@/api/client';
+import { api, formatMoney, formatSignedMoney, transactionType, transactionAmount, transactionReference, transactionRemark, setToken, centsToYuan, yuanToFen } from '@/api/client';
 import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import Affiliate from './Affiliate.vue';
@@ -379,8 +379,6 @@ type RechargePhase = 'form' | 'qrcode' | 'redirect';
 const rechargePhase = ref<RechargePhase>('form');
 const rechargeYuan = ref<number | null>(null);
 
-// 货币符号（后台默认货币下发;后缀币种不显示前缀占位）
-const moneySymbol = computed(() => (getCurrency().position === 'prefix' ? getCurrency().symbol : ''));
 const pickedTier = ref(0); // 命中的赠送档位（amount 分）；自定义输入时清零
 const rechargeChannels = ref<ChannelItem[]>([]);
 const rechargeChannel = ref('');
@@ -400,10 +398,15 @@ const payOptions = computed(() => flattenPayOptions(rechargePayChannels.value));
 const selectedOption = computed(() =>
   payOptions.value.find((o) => o.channel === rechargeChannel.value && o.method === rechargeMethod.value) || null,
 );
+const rechargeCents = computed(() => {
+  try { return yuanToFen(rechargeYuan.value || 0); } catch { return null; }
+});
+
 // 到账预览：命中赠送档位时显示本金+赠送合计
 const giftPreview = computed(() => {
   if (!rechargeYuan.value || rechargeYuan.value <= 0) return null;
-  const cents = Math.round(rechargeYuan.value * 100);
+  const cents = rechargeCents.value;
+  if (cents === null) return null;
   const tier = giftTiers.value.find((t) => t.amount === cents);
   if (!tier || (!tier.gift_balance && !tier.gift_points)) return null;
   return { total: cents + (tier.gift_balance || 0), gift_balance: tier.gift_balance, gift_points: tier.gift_points };
@@ -510,7 +513,11 @@ function backToForm() {
 }
 
 async function doRecharge() {
-  const cents = rechargeYuan.value ? Math.round(rechargeYuan.value * 100) : 0;
+  const cents = rechargeCents.value;
+  if (cents === null) {
+    rechargeError.value = "金额最多精确到分（小数点后两位），请检查输入";
+    return;
+  }
   if (!cents || cents <= 0) {
     rechargeError.value = '请输入充值金额';
     return;

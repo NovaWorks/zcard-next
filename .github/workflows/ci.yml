@@ -95,6 +95,22 @@ jobs:
           ZCARD_TEST_PG_DSN: "postgres://postgres:pass@127.0.0.1:5432/postgres?sslmode=disable"
         run: make test-integration
 
+  frontend-money:
+    name: 前端金额单位回归
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 安装后台测试依赖
+        run: |
+          corepack enable
+          cd admin
+          pnpm install --frozen-lockfile
+      - name: 真实金额工具回归（后台与商城）
+        run: node scripts/test_money.cjs
+
   deployment:
     name: 部署脚本与干净 Docker 构建
     runs-on: ubuntu-latest

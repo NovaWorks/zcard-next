@@ -4,6 +4,7 @@ WORKDIR /fe
 RUN corepack enable
 COPY storefront/package.json storefront/pnpm-lock.yaml storefront/pnpm-workspace.yaml ./storefront/
 RUN cd storefront && pnpm install --frozen-lockfile
+COPY packages/ ./packages/
 COPY storefront/ ./storefront/
 RUN cd storefront && pnpm build
 # 工作区包必须随依赖安装一起提供；.env.prod 提供公开构建默认值。

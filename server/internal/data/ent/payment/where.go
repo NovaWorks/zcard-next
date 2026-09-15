@@ -130,6 +130,11 @@ func ExchangeRate(v float64) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldExchangeRate, v))
 }
 
+// ChargedPrecision applies equality check predicate on the "charged_precision" field. It's identical to ChargedPrecisionEQ.
+func ChargedPrecision(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChargedPrecision, v))
+}
+
 // ChargedUnits applies equality check predicate on the "charged_units" field. It's identical to ChargedUnitsEQ.
 func ChargedUnits(v int64) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldChargedUnits, v))
@@ -903,6 +908,46 @@ func ExchangeRateLT(v float64) predicate.Payment {
 // ExchangeRateLTE applies the LTE predicate on the "exchange_rate" field.
 func ExchangeRateLTE(v float64) predicate.Payment {
 	return predicate.Payment(sql.FieldLTE(FieldExchangeRate, v))
+}
+
+// ChargedPrecisionEQ applies the EQ predicate on the "charged_precision" field.
+func ChargedPrecisionEQ(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldChargedPrecision, v))
+}
+
+// ChargedPrecisionNEQ applies the NEQ predicate on the "charged_precision" field.
+func ChargedPrecisionNEQ(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldChargedPrecision, v))
+}
+
+// ChargedPrecisionIn applies the In predicate on the "charged_precision" field.
+func ChargedPrecisionIn(vs ...int32) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldChargedPrecision, vs...))
+}
+
+// ChargedPrecisionNotIn applies the NotIn predicate on the "charged_precision" field.
+func ChargedPrecisionNotIn(vs ...int32) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldChargedPrecision, vs...))
+}
+
+// ChargedPrecisionGT applies the GT predicate on the "charged_precision" field.
+func ChargedPrecisionGT(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldChargedPrecision, v))
+}
+
+// ChargedPrecisionGTE applies the GTE predicate on the "charged_precision" field.
+func ChargedPrecisionGTE(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldChargedPrecision, v))
+}
+
+// ChargedPrecisionLT applies the LT predicate on the "charged_precision" field.
+func ChargedPrecisionLT(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldChargedPrecision, v))
+}
+
+// ChargedPrecisionLTE applies the LTE predicate on the "charged_precision" field.
+func ChargedPrecisionLTE(v int32) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldChargedPrecision, v))
 }
 
 // ChargedUnitsEQ applies the EQ predicate on the "charged_units" field.

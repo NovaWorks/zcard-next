@@ -22,6 +22,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	orderport "github.com/NovaWorks/zcard-next/server/internal/mods/order/port"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/currencyunit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
@@ -51,53 +52,126 @@ func NewPaymentRepoImpl(d *data.Data, box *crypto.Box, reg *Registry, lifecycle 
 	return &PaymentRepoImpl{data: d, Cipher: box, reg: reg, lifecycle: lifecycle, wallet: wallet, points: points, outbox: outbox, currency: currency, settings: settings, supplier: supplier}
 }
 
-// ChargeSnapshot 币种快照换算（）：
-// 渠道凭据 target_currency（空/CNY）→ 同币直收（units=amount, rate=1, currency=CNY）；
-// 否则 currency 表 rate/precision → money.ToDisplay（decimal 精确、四舍五入）。
-// rate 缺失/非法 → 1:1 直通（safeRate 语义——宁可同币直收不错换）。
+// ChargeSnapshot freezes the exchange rate and provider unit before any gateway request.
+// Display precision never participates in charging or callback settlement.
 type ChargeSnapshot struct {
-	Units    int64
-	Currency string
-	Rate     float64
+	Units     int64
+	Currency  string
+	Rate      float64
+	Precision int32
 }
 
-func (r *PaymentRepoImpl) computeCharge(ctx context.Context, cfg json.RawMessage, amount money.Cents) ChargeSnapshot {
-	direct := ChargeSnapshot{Units: 0, Currency: "", Rate: 0} // 0 units = 同币直收路径
+func chargeUnits(amount money.Cents, rate decimal.Decimal, unit currencyunit.ChargeUnit) (int64, error) {
+	if amount <= 0 || !rate.IsPositive() || unit.Step <= 0 {
+		return 0, fmt.Errorf("payment.INVALID_CHARGE_AMOUNT")
+	}
+	d := decimal.NewFromInt(int64(amount)).Shift(-2).Mul(rate).Shift(unit.Precision).
+		Div(decimal.NewFromInt(unit.Step)).Round(0).Mul(decimal.NewFromInt(unit.Step))
+	if !d.IsPositive() || d.GreaterThan(decimal.NewFromInt(1<<63-1)) {
+		return 0, fmt.Errorf("payment.INVALID_CHARGE_AMOUNT: 换算金额过小或超出范围")
+	}
+	return d.IntPart(), nil
+}
+
+func (r *PaymentRepoImpl) computeCharge(ctx context.Context, driver string, cfg json.RawMessage, amount money.Cents) (ChargeSnapshot, error) {
+	direct := ChargeSnapshot{}
 	var probe struct {
 		TargetCurrency string `json:"target_currency"`
+		Currency       string `json:"currency"`
 	}
-	if json.Unmarshal(cfg, &probe) != nil || probe.TargetCurrency == "" {
-		return direct
+	if err := json.Unmarshal(cfg, &probe); err != nil {
+		return direct, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: %w", err)
 	}
 	tc := strings.ToUpper(strings.TrimSpace(probe.TargetCurrency))
-	if tc == "CNY" || r.currency == nil {
-		return direct
+	if driver == "epusdt" {
+		fiat := strings.ToUpper(strings.TrimSpace(probe.Currency))
+		if fiat == "" {
+			fiat = "CNY"
+		}
+		if tc != "" && tc != fiat {
+			return direct, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: GMPay 请使用 currency 配置法币")
+		}
+		tc = fiat
 	}
-	rateStr, precision, err := r.currency.CurrencyByCode(ctx, tc)
-	if err != nil || rateStr == "" {
-		return direct // 币种未配置：同币直收（fail-safe，渠道侧以 CNY 收）
+	if tc == "" || tc == "CNY" {
+		return direct, nil
+	}
+	unit, err := currencyunit.CurrencyChargeUnit(driver, tc)
+	if err != nil {
+		return direct, err
+	}
+	if r.currency == nil {
+		return direct, fmt.Errorf("payment.CURRENCY_MISSING: 未配置币种 %s", tc)
+	}
+	rateStr, _, err := r.currency.CurrencyByCode(ctx, tc)
+	if err != nil {
+		return direct, fmt.Errorf("payment.CURRENCY_MISSING: 未配置币种 %s", tc)
 	}
 	rate, err := decimal.NewFromString(rateStr)
-	if err != nil || rate.IsZero() || rate.IsNegative() {
-		return direct
+	if err != nil || !rate.IsPositive() {
+		return direct, fmt.Errorf("payment.INVALID_EXCHANGE_RATE")
 	}
-	ex := money.ToDisplay(amount, rate, precision)
+	// Match the existing decimal(20,8) snapshot storage before doing arithmetic.
+	rate = rate.Round(8)
 	rf, _ := rate.Float64()
-	return ChargeSnapshot{Units: ex.DisplayAmount, Currency: tc, Rate: rf}
+	if !rate.IsPositive() || rate.GreaterThan(decimal.RequireFromString("999999999999.99999999")) {
+		return direct, fmt.Errorf("payment.INVALID_EXCHANGE_RATE")
+	}
+	// Use exactly the rate that will be recovered from the existing float field.
+	rate = decimal.NewFromFloat(rf).Round(8)
+	units, err := chargeUnits(amount, rate, unit)
+	if err != nil {
+		return direct, err
+	}
+	return ChargeSnapshot{Units: units, Currency: tc, Rate: rf, Precision: unit.Precision}, nil
 }
 
-// snapshotCharge 渠道发起成功后固化快照三列（跨币路径；同币直收零写）。
-// 必须在发起网关请求前保存，失败则停止创建支付。
 func (r *PaymentRepoImpl) snapshotCharge(ctx context.Context, paymentID uint64, snap ChargeSnapshot) error {
 	if snap.Units == 0 {
 		return nil
 	}
 	_, err := data.Client(ctx, r.data).Payment.UpdateOneID(paymentID).
-		SetChargedUnits(snap.Units).
-		SetChargedCurrency(snap.Currency).
-		SetExchangeRate(snap.Rate).
-		Save(ctx)
+		SetChargedUnits(snap.Units).SetChargedCurrency(snap.Currency).
+		SetExchangeRate(snap.Rate).SetChargedPrecision(snap.Precision).Save(ctx)
 	return err
+}
+
+// callbackPrecision never consults current display settings. For legacy rows,
+// infer only when the original authoritative amount/rate reproduces the exact
+// stored provider units; otherwise retain the payment for manual review.
+func (r *PaymentRepoImpl) callbackPrecision(ctx context.Context, p *ent.Payment) (int32, bool) {
+	if p.ChargedPrecision >= 0 {
+		return p.ChargedPrecision, p.ChargedPrecision <= 3
+	}
+	driver := r.snapshotDriver(ctx, p)
+	unit, err := currencyunit.CurrencyChargeUnit(driver, p.ChargedCurrency)
+	if err != nil {
+		return -1, false
+	}
+	units, err := chargeUnits(money.Cents(p.Amount), decimal.NewFromFloat(p.ExchangeRate), unit)
+	if err == nil && units == p.ChargedUnits {
+		return unit.Precision, true
+	}
+	// Before the fix, PayPal strings/callbacks always used two decimals, even
+	// for JPY/HUF/TWD. Recover that legacy scale only when the snapshot matches.
+	if driver == "paypal" && unit.Precision == 0 {
+		legacy := currencyunit.ChargeUnit{Precision: 2, Step: 100}
+		units, err = chargeUnits(money.Cents(p.Amount), decimal.NewFromFloat(p.ExchangeRate), legacy)
+		if err == nil && units == p.ChargedUnits {
+			return 2, true
+		}
+	}
+	return unit.Precision, false
+}
+
+func (r *PaymentRepoImpl) snapshotDriver(ctx context.Context, p *ent.Payment) string {
+	if p.DriverSnapshot != "" {
+		return p.DriverSnapshot
+	}
+	if ch, err := r.channelForPayment(ctx, p); err == nil {
+		return ch.Driver
+	}
+	return ""
 }
 
 // ── 渠道管理（）────────────────────────────────────────────
@@ -393,7 +467,10 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	if err := provider.ValidateConfig(cfg); err != nil {
 		return nil, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: %w", err)
 	}
-	snap := r.computeCharge(ctx, cfg, amount)
+	snap, err := r.computeCharge(ctx, ch.Driver, cfg, amount)
+	if err != nil {
+		return nil, err
+	}
 	if err := r.snapshotCharge(ctx, p.ID, snap); err != nil {
 		return nil, err
 	}
@@ -488,22 +565,32 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 			return fmt.Errorf("payment.CHANNEL_MISMATCH")
 		}
 		chargedBase := fact.Amount
+		reviewReason := ""
+		precision := p.ChargedPrecision
 		if p.ChargedUnits > 0 {
+			// Old PayPal zero-decimal callback parsing used x100 units. Preserve
+			// the historical snapshot representation; new payments use protocol units.
+			if p.ChargedPrecision < 0 && r.snapshotDriver(txCtx, p) == "paypal" {
+				unit, err := currencyunit.CurrencyChargeUnit("paypal", p.ChargedCurrency)
+				if err == nil && unit.Precision == 0 && fact.Amount > 0 && fact.Amount <= (1<<63-1)/100 && fact.Amount*100 == p.ChargedUnits {
+					fact.Amount *= 100
+				}
+			}
 			if fact.Amount != p.ChargedUnits {
 				return fmt.Errorf("payment.AMOUNT_MISMATCH: want units %d got %d", p.ChargedUnits, fact.Amount)
 			}
 			if !strings.EqualFold(fact.Currency, p.ChargedCurrency) {
 				return fmt.Errorf("payment.CURRENCY_MISMATCH: want %s got %s", p.ChargedCurrency, fact.Currency)
 			}
-			// 实收换算回基础货币分（快照汇率；decimal 精确）
-			if rate := decimal.NewFromFloat(p.ExchangeRate); !rate.IsZero() {
-				prec := int32(2)
-				if r.currency != nil {
-					if _, p32, err := r.currency.CurrencyByCode(ctx, p.ChargedCurrency); err == nil {
-						prec = p32
-					}
-				}
-				base, _ := money.FromDisplay(fact.Amount, rate, prec)
+			var trustworthy bool
+			precision, trustworthy = r.callbackPrecision(txCtx, p)
+			rate := decimal.NewFromFloat(p.ExchangeRate)
+			if !trustworthy || !rate.IsPositive() {
+				// Record receipt without crediting wallet or fulfilling an ambiguous payment.
+				reviewReason = "历史跨币支付金额单位无法确认，请核对网关实收后补单或退款"
+				chargedBase = 0
+			} else {
+				base, _ := money.FromDisplay(fact.Amount, rate, precision)
 				chargedBase = int64(base)
 			}
 		} else {
@@ -531,6 +618,8 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 			Where(payment.ID(p.ID), payment.StatusNEQ(payment.StatusSuccess)).
 			SetStatus(payment.StatusSuccess).
 			SetChargedAmount(chargedBase).
+			SetChargedPrecision(precision).
+			SetReviewReason(reviewReason).
 			SetChannelOrderNo(fact.ChannelOrderNo).
 			SetPaidAt(now).
 			SetRaw(fact.Raw).
@@ -541,6 +630,9 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 
 		if affected != 1 {
 			return fmt.Errorf("payment.CONCURRENT_UPDATE")
+		}
+		if reviewReason != "" {
+			return nil
 		}
 		if p.OrderID > 0 {
 			o, err := client.Order.Get(txCtx, p.OrderID)

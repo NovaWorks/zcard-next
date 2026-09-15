@@ -241,10 +241,10 @@ type UpdateCurrencyRequest struct {
 	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
 	Symbol        string                 `protobuf:"bytes,2,opt,name=symbol,proto3" json:"symbol,omitempty"`
 	Position      string                 `protobuf:"bytes,3,opt,name=position,proto3" json:"position,omitempty"`
-	Precision     int32                  `protobuf:"varint,4,opt,name=precision,proto3" json:"precision,omitempty"`
+	Precision     *int32                 `protobuf:"varint,4,opt,name=precision,proto3,oneof" json:"precision,omitempty"`
 	RateJson      string                 `protobuf:"bytes,5,opt,name=rate_json,json=rateJson,proto3" json:"rate_json,omitempty"`
-	Enabled       bool                   `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Sort          int32                  `protobuf:"varint,7,opt,name=sort,proto3" json:"sort,omitempty"`
+	Enabled       *bool                  `protobuf:"varint,6,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
+	Sort          *int32                 `protobuf:"varint,7,opt,name=sort,proto3,oneof" json:"sort,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -301,8 +301,8 @@ func (x *UpdateCurrencyRequest) GetPosition() string {
 }
 
 func (x *UpdateCurrencyRequest) GetPrecision() int32 {
-	if x != nil {
-		return x.Precision
+	if x != nil && x.Precision != nil {
+		return *x.Precision
 	}
 	return 0
 }
@@ -315,15 +315,15 @@ func (x *UpdateCurrencyRequest) GetRateJson() string {
 }
 
 func (x *UpdateCurrencyRequest) GetEnabled() bool {
-	if x != nil {
-		return x.Enabled
+	if x != nil && x.Enabled != nil {
+		return *x.Enabled
 	}
 	return false
 }
 
 func (x *UpdateCurrencyRequest) GetSort() int32 {
-	if x != nil {
-		return x.Sort
+	if x != nil && x.Sort != nil {
+		return *x.Sort
 	}
 	return 0
 }
@@ -394,15 +394,20 @@ const file_admin_v1_currency_proto_rawDesc = "" +
 	"\x06symbol\x18\x02 \x01(\tB\x03\xe0A\x02R\x06symbol\x12\x1a\n" +
 	"\bposition\x18\x03 \x01(\tR\bposition\x12\x1c\n" +
 	"\tprecision\x18\x04 \x01(\x05R\tprecision\x12 \n" +
-	"\trate_json\x18\x05 \x01(\tB\x03\xe0A\x02R\brateJson\"\xcd\x01\n" +
+	"\trate_json\x18\x05 \x01(\tB\x03\xe0A\x02R\brateJson\"\xff\x01\n" +
 	"\x15UpdateCurrencyRequest\x12\x17\n" +
 	"\x04code\x18\x01 \x01(\tB\x03\xe0A\x02R\x04code\x12\x16\n" +
 	"\x06symbol\x18\x02 \x01(\tR\x06symbol\x12\x1a\n" +
-	"\bposition\x18\x03 \x01(\tR\bposition\x12\x1c\n" +
-	"\tprecision\x18\x04 \x01(\x05R\tprecision\x12\x1b\n" +
-	"\trate_json\x18\x05 \x01(\tR\brateJson\x12\x18\n" +
-	"\aenabled\x18\x06 \x01(\bR\aenabled\x12\x12\n" +
-	"\x04sort\x18\a \x01(\x05R\x04sort\"0\n" +
+	"\bposition\x18\x03 \x01(\tR\bposition\x12!\n" +
+	"\tprecision\x18\x04 \x01(\x05H\x00R\tprecision\x88\x01\x01\x12\x1b\n" +
+	"\trate_json\x18\x05 \x01(\tR\brateJson\x12\x1d\n" +
+	"\aenabled\x18\x06 \x01(\bH\x01R\aenabled\x88\x01\x01\x12\x17\n" +
+	"\x04sort\x18\a \x01(\x05H\x02R\x04sort\x88\x01\x01B\f\n" +
+	"\n" +
+	"_precisionB\n" +
+	"\n" +
+	"\b_enabledB\a\n" +
+	"\x05_sort\"0\n" +
 	"\x15DeleteCurrencyRequest\x12\x17\n" +
 	"\x04code\x18\x01 \x01(\tB\x03\xe0A\x02R\x04code2\x8a\x04\n" +
 	"\x14AdminCurrencyService\x12l\n" +
@@ -454,6 +459,7 @@ func file_admin_v1_currency_proto_init() {
 	if File_admin_v1_currency_proto != nil {
 		return
 	}
+	file_admin_v1_currency_proto_msgTypes[3].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

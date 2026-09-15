@@ -45,6 +45,8 @@ const (
 	FieldChargedCurrency = "charged_currency"
 	// FieldExchangeRate holds the string denoting the exchange_rate field in the database.
 	FieldExchangeRate = "exchange_rate"
+	// FieldChargedPrecision holds the string denoting the charged_precision field in the database.
+	FieldChargedPrecision = "charged_precision"
 	// FieldChargedUnits holds the string denoting the charged_units field in the database.
 	FieldChargedUnits = "charged_units"
 	// FieldFee holds the string denoting the fee field in the database.
@@ -88,6 +90,7 @@ var Columns = []string{
 	FieldChargedAmount,
 	FieldChargedCurrency,
 	FieldExchangeRate,
+	FieldChargedPrecision,
 	FieldChargedUnits,
 	FieldFee,
 	FieldStatus,
@@ -135,6 +138,8 @@ var (
 	ChargedCurrencyValidator func(string) error
 	// DefaultExchangeRate holds the default value on creation for the "exchange_rate" field.
 	DefaultExchangeRate float64
+	// DefaultChargedPrecision holds the default value on creation for the "charged_precision" field.
+	DefaultChargedPrecision int32
 	// DefaultChargedUnits holds the default value on creation for the "charged_units" field.
 	DefaultChargedUnits int64
 	// DefaultFee holds the default value on creation for the "fee" field.
@@ -251,6 +256,11 @@ func ByChargedCurrency(opts ...sql.OrderTermOption) OrderOption {
 // ByExchangeRate orders the results by the exchange_rate field.
 func ByExchangeRate(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExchangeRate, opts...).ToFunc()
+}
+
+// ByChargedPrecision orders the results by the charged_precision field.
+func ByChargedPrecision(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldChargedPrecision, opts...).ToFunc()
 }
 
 // ByChargedUnits orders the results by the charged_units field.

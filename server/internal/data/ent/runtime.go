@@ -1615,16 +1615,20 @@ func init() {
 	paymentDescExchangeRate := paymentFields[12].Descriptor()
 	// payment.DefaultExchangeRate holds the default value on creation for the exchange_rate field.
 	payment.DefaultExchangeRate = paymentDescExchangeRate.Default.(float64)
+	// paymentDescChargedPrecision is the schema descriptor for charged_precision field.
+	paymentDescChargedPrecision := paymentFields[13].Descriptor()
+	// payment.DefaultChargedPrecision holds the default value on creation for the charged_precision field.
+	payment.DefaultChargedPrecision = paymentDescChargedPrecision.Default.(int32)
 	// paymentDescChargedUnits is the schema descriptor for charged_units field.
-	paymentDescChargedUnits := paymentFields[13].Descriptor()
+	paymentDescChargedUnits := paymentFields[14].Descriptor()
 	// payment.DefaultChargedUnits holds the default value on creation for the charged_units field.
 	payment.DefaultChargedUnits = paymentDescChargedUnits.Default.(int64)
 	// paymentDescFee is the schema descriptor for fee field.
-	paymentDescFee := paymentFields[14].Descriptor()
+	paymentDescFee := paymentFields[15].Descriptor()
 	// payment.DefaultFee holds the default value on creation for the fee field.
 	payment.DefaultFee = paymentDescFee.Default.(int64)
 	// paymentDescIdempotencyKey is the schema descriptor for idempotency_key field.
-	paymentDescIdempotencyKey := paymentFields[18].Descriptor()
+	paymentDescIdempotencyKey := paymentFields[19].Descriptor()
 	// payment.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	payment.IdempotencyKeyValidator = paymentDescIdempotencyKey.Validators[0].(func(string) error)
 	paymentchannelMixin := schema.PaymentChannel{}.Mixin()

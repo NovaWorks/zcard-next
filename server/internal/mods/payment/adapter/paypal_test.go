@@ -510,3 +510,40 @@ func TestPaypalValidateConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPaypalZeroDecimalCreateAndCallback(t *testing.T) {
+	for _, code := range []string{"JPY", "HUF", "TWD"} {
+		t.Run(code, func(t *testing.T) {
+			var gotBody []byte
+			srv := ppServer(t, func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/v1/oauth2/token" {
+					w.Write([]byte(`{"access_token":"zero-decimal-token","expires_in":3600}`))
+					return
+				}
+				gotBody, _ = io.ReadAll(r.Body)
+				w.Write([]byte(`{"id":"` + ppOrderID + `","status":"CREATED"}`))
+			})
+			a := NewPaypal()
+			_, err := a.CreatePayment(context.Background(), port.CreatePaymentRequest{OrderNo: ppBusinessNo, Amount: 200, Channel: "paypal", Config: ppCfg(srv.URL), ChargedUnits: 40, ChargedCurrency: code})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Contains(gotBody, []byte(`"value":"40"`)) {
+				t.Fatalf("wrong charge: %s", gotBody)
+			}
+			raw := strings.ReplaceAll(strings.ReplaceAll(ppCaptureResp("COMPLETED"), "USD", code), "1.40", "40")
+			var order paypalOrder
+			if err := json.Unmarshal([]byte(raw), &order); err != nil {
+				t.Fatal(err)
+			}
+			fact := a.factFromOrder(order, true)
+			if !fact.Success || fact.Amount != 40 || fact.Currency != code {
+				t.Fatalf("wrong callback: %+v", fact)
+			}
+			order.PurchaseUnits[0].Payments.Captures[0].Amount.Value = "40.1"
+			if a.factFromOrder(order, true).Success {
+				t.Fatal("subunit callback accepted")
+			}
+		})
+	}
+}

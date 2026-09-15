@@ -576,7 +576,10 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建支付失败")
 	}
 	// 币种快照（）：target_currency → currency 表换算 → 适配器收渠道金额
-	snap := s.repo.computeCharge(ctx, cfg, money.Cents(o.TotalAmount))
+	snap, err := s.repo.computeCharge(ctx, ch.Driver, cfg, money.Cents(o.TotalAmount))
+	if err != nil {
+		return nil, errors.BadRequest("payment.CURRENCY_INVALID", err.Error())
+	}
 	if err := s.repo.snapshotCharge(ctx, p.ID, snap); err != nil {
 		return nil, errors.InternalServer("payment.SNAPSHOT_FAILED", "保存支付快照失败")
 	}

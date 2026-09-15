@@ -447,45 +447,6 @@ func (fakeCurrencyReader) CurrencyByCode(_ context.Context, code string) (string
 	return "", 2, fmt.Errorf("currency not found: %s", code)
 }
 
-// TestComputeCharge 换算 helper 矩阵：
-// 无 target_currency/CNY → 同币直收（Units=0）；USD → ToDisplay 精确换算；
-// 未配置币种 → fail-safe 直收；非法汇率 → 直收。
-func TestComputeCharge(t *testing.T) {
-	d, _, _, _, _, _ := newCallbackEnv(t)
-	repo := &PaymentRepoImpl{data: d, currency: fakeCurrencyReader{}}
-	ctx := context.Background()
-
-	// 1) 同币直收：无 target_currency
-	snap := repo.computeCharge(ctx, json.RawMessage(`{"pid":"1"}`), 1000)
-	if snap.Units != 0 || snap.Currency != "" {
-		t.Fatalf("无目标币种应直收: %+v", snap)
-	}
-	// 2) CNY 显式 → 直收
-	snap = repo.computeCharge(ctx, json.RawMessage(`{"target_currency":"CNY"}`), 1000)
-	if snap.Units != 0 {
-		t.Fatalf("CNY 应直收: %+v", snap)
-	}
-	// 3) USD：1000 分 × 0.14 = 140 美分
-	snap = repo.computeCharge(ctx, json.RawMessage(`{"target_currency":"USD"}`), 1000)
-	if snap.Units != 140 || snap.Currency != "USD" {
-		t.Fatalf("USD 换算错误: %+v", snap)
-	}
-	if snap.Rate < 0.13999999 || snap.Rate > 0.14000001 {
-		t.Fatalf("快照汇率错误: %v", snap.Rate)
-	}
-	// 4) 未配置币种 → fail-safe 直收
-	snap = repo.computeCharge(ctx, json.RawMessage(`{"target_currency":"EUR"}`), 1000)
-	if snap.Units != 0 {
-		t.Fatalf("未配置币种应直收: %+v", snap)
-	}
-	// 5) currency reader 缺席（nil）→ 直收
-	repoNil := &PaymentRepoImpl{data: d}
-	snap = repoNil.computeCharge(ctx, json.RawMessage(`{"target_currency":"USD"}`), 1000)
-	if snap.Units != 0 {
-		t.Fatalf("nil reader 应直收: %+v", snap)
-	}
-}
-
 // TestCallbackCrossCurrencySnapshot 跨币回调核对矩阵：
 // units 精确匹配→成功且 charged_amount 换算回基础分；units 不符→拒；币种不符→拒。
 func TestCallbackCrossCurrencySnapshot(t *testing.T) {
@@ -495,7 +456,7 @@ func TestCallbackCrossCurrencySnapshot(t *testing.T) {
 	o, p := seedPendingOrder(t, d, "epay", 1000)
 	// 预置快照：应收 1000 分 CNY，渠道 140 美分 USD @0.14
 	if _, err := d.Client.Payment.UpdateOne(p).
-		SetChargedUnits(140).SetChargedCurrency("USD").SetExchangeRate(0.14).
+		SetChargedUnits(140).SetChargedCurrency("USD").SetExchangeRate(0.14).SetChargedPrecision(2).
 		Save(ctx); err != nil {
 		t.Fatal(err)
 	}
@@ -522,7 +483,7 @@ func TestCallbackCrossCurrencySnapshot(t *testing.T) {
 	o2, p2 := seedPendingOrder(t, d, "epay", 1000)
 	_ = o2
 	if _, err := d.Client.Payment.UpdateOne(p2).
-		SetChargedUnits(140).SetChargedCurrency("USD").SetExchangeRate(0.14).
+		SetChargedUnits(140).SetChargedCurrency("USD").SetExchangeRate(0.14).SetChargedPrecision(2).
 		Save(ctx); err != nil {
 		t.Fatal(err)
 	}

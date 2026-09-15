@@ -36,6 +36,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/currencyunit"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
@@ -219,9 +220,13 @@ func (a *PaypalAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	if req.ChargedUnits > 0 {
 		units = req.ChargedUnits
 		currency = strings.ToUpper(req.ChargedCurrency)
-	} else if c.TargetCurrency != "" {
+	} else if c.TargetCurrency != "" && !strings.EqualFold(strings.TrimSpace(c.TargetCurrency), "CNY") {
 		// 快照缺席（同币直收）但渠道声明跨币目标——配置矛盾，拒绝（fail-closed）
 		return nil, fmt.Errorf("paypal: 快照缺失（currency 表未配置 %s？）", c.TargetCurrency)
+	}
+	unit, err := currencyunit.CurrencyChargeUnit("paypal", currency)
+	if err != nil {
+		return nil, err
 	}
 	returnURL := req.ReturnURL
 	if returnURL == "" {
@@ -240,7 +245,7 @@ func (a *PaypalAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 			"description":  req.Subject,
 			"amount": paypalMoney{
 				CurrencyCode: currency,
-				Value:        centsToYuan(units), // 两位小数字符串（ 钉死）
+				Value:        currencyunit.FormatChargeAmount(units, unit),
 			},
 		}},
 		"application_context": paypalAppContext(c, returnURL),
@@ -555,15 +560,21 @@ func (a *PaypalAdapter) factFromOrder(o paypalOrder, success bool) *port.Callbac
 	// 金额取实收捕获（回显下单金额—— 快照核对口径）；捕获缺席回落订单金额
 	if len(u.Payments.Captures) > 0 {
 		cap := u.Payments.Captures[0]
-		if cents, err := yuanToCents(cap.Amount.Value); err == nil {
-			fact.Amount = money.Cents(cents)
+		unit, unitErr := currencyunit.CurrencyChargeUnit("paypal", cap.Amount.CurrencyCode)
+		units, amountErr := currencyunit.ParseChargeAmount(cap.Amount.Value, unit)
+		if unitErr != nil || amountErr != nil {
+			return fact
 		}
+		fact.Amount = money.Cents(units)
 		fact.Currency = strings.ToUpper(cap.Amount.CurrencyCode)
 		fact.Success = success && cap.Status == "COMPLETED"
 	} else if u.Amount.Value != "" {
-		if cents, err := yuanToCents(u.Amount.Value); err == nil {
-			fact.Amount = money.Cents(cents)
+		unit, unitErr := currencyunit.CurrencyChargeUnit("paypal", u.Amount.CurrencyCode)
+		units, amountErr := currencyunit.ParseChargeAmount(u.Amount.Value, unit)
+		if unitErr != nil || amountErr != nil {
+			return fact
 		}
+		fact.Amount = money.Cents(units)
 		fact.Currency = strings.ToUpper(u.Amount.CurrencyCode)
 	}
 	return fact
@@ -593,9 +604,13 @@ func (a *PaypalAdapter) Refund(ctx context.Context, gatewayOrderNo string, amoun
 	cap := order.PurchaseUnits[0].Payments.Captures[0]
 	body := []byte("{}")
 	if int64(amount) > 0 {
+		unit, err := currencyunit.CurrencyChargeUnit("paypal", cap.Amount.CurrencyCode)
+		if err != nil {
+			return err
+		}
 		b, _ := json.Marshal(map[string]any{"amount": paypalMoney{
 			CurrencyCode: cap.Amount.CurrencyCode,
-			Value:        centsToYuan(int64(amount)),
+			Value:        currencyunit.FormatChargeAmount(int64(amount), unit),
 		}})
 		body = b
 	}

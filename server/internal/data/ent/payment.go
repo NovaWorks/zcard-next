@@ -49,6 +49,8 @@ type Payment struct {
 	ChargedCurrency string `json:"charged_currency,omitempty"`
 	// 快照汇率（1 基础货币=rate 渠道币；0=未换算）
 	ExchangeRate float64 `json:"exchange_rate,omitempty"`
+	// 渠道金额单位精度快照；-1 为历史未记录，不能使用显示精度推断
+	ChargedPrecision int32 `json:"charged_precision,omitempty"`
 	// 渠道币种应收最小单位（发适配器金额；回调精确核对）
 	ChargedUnits int64 `json:"charged_units,omitempty"`
 	// 手续费（分）
@@ -96,7 +98,7 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case payment.FieldExchangeRate:
 			values[i] = new(sql.NullFloat64)
-		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldChannelID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldChargedUnits, payment.FieldFee:
+		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldChannelID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldChargedPrecision, payment.FieldChargedUnits, payment.FieldFee:
 			values[i] = new(sql.NullInt64)
 		case payment.FieldChannel, payment.FieldDriverSnapshot, payment.FieldReviewReason, payment.FieldChannelOrderNo, payment.FieldChargedCurrency, payment.FieldStatus, payment.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
@@ -212,6 +214,12 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field exchange_rate", values[i])
 			} else if value.Valid {
 				_m.ExchangeRate = value.Float64
+			}
+		case payment.FieldChargedPrecision:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field charged_precision", values[i])
+			} else if value.Valid {
+				_m.ChargedPrecision = int32(value.Int64)
 			}
 		case payment.FieldChargedUnits:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -336,6 +344,9 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("exchange_rate=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ExchangeRate))
+	builder.WriteString(", ")
+	builder.WriteString("charged_precision=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ChargedPrecision))
 	builder.WriteString(", ")
 	builder.WriteString("charged_units=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ChargedUnits))

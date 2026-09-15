@@ -1,3 +1,4 @@
+import { displayPrecision, formatCents, fromCents, toCents } from '../../../packages/money/index';
 import { mergeThemeConfig } from '../../../packages/theme-sdk/src/index';
 // 前台 API 客户端：fetch 封装，金额一律「分」int64。
 // 认证（）：user realm JWT 存 localStorage，请求自动带 Bearer；
@@ -91,7 +92,7 @@ export const api = {
 
 // ── 金额工具（铁律 15：API 一律 int64「分」，显示 /100 为元、提交 *100 为分）──
 // 符号与小数位取后台默认货币（i18n.base_currency → /storefront/currencies）；
-// 未加载完成回退 ¥/2。纯整数运算：显示整数拆位，提交 Math.round 防浮点。
+// 未加载完成回退 ¥/2。显示与输入独立：显示可补位，提交按十进制精确换算并拒绝不足一分。
 // 全站金额显示/提交必须经本组函数，禁止内联 `/ 100` 或硬编码符号（架构测试守护）。
 
 export interface CurrencyMeta {
@@ -108,7 +109,7 @@ let currencyMeta: CurrencyMeta = { ...DEFAULT_META };
 
 export function setCurrency(meta: Partial<CurrencyMeta>) {
   currencyMeta = { ...DEFAULT_META, ...meta };
-  if (currencyMeta.precision < 0) currencyMeta.precision = 0;
+  currencyMeta.precision = displayPrecision(currencyMeta.precision);
 }
 
 export function getCurrency(): CurrencyMeta {
@@ -118,36 +119,20 @@ export function getCurrency(): CurrencyMeta {
 // fenToYuan 分 → 元字符串（不含符号；纯整数运算，禁止浮点参与）。
 // undefined/NaN 兜底 0（proto3 零值字段省略 → undefined 传入时显示 0.00 而非 NaN）。
 export function fenToYuan(cents: number): string {
-  if (!Number.isFinite(cents as number)) cents = 0;
-  const neg = cents < 0;
-  const v = Math.abs(cents);
-  const base = 10 ** currencyMeta.precision;
-  const whole = Math.floor(v / base);
-  const frac = v % base;
-  return (
-    `${neg ? '-' : ''}${whole}` +
-    (currencyMeta.precision > 0 ? `.${String(frac).padStart(currencyMeta.precision, '0')}` : '')
-  );
+  return formatCents(cents, currencyMeta.precision);
 }
 
-// yuanToFen 元 → 分（提交入口；Math.round 防浮点漂移，如 12.34*100=1233.9999...）。
 export function yuanToFen(yuan: number): number {
-  return Math.round((yuan || 0) * 10 ** currencyMeta.precision);
+  return toCents(yuan ?? 0);
 }
 
-// centsToYuan 分 → 元数值（输入框回填/图表数据用；界面展示一律走 formatMoney）。
 export function centsToYuan(cents: number): number {
-  return (Number.isFinite(cents as number) ? cents : 0) / 10 ** currencyMeta.precision;
+  return fromCents(cents);
 }
 
-// displayAmount 显示层金额（已按所选币种 rate 换算 + 精度格式化，不含符号）。
-// rate="1"（基准币）走 fenToYuan 整数拆位原路；换算币用浮点乘 rate 后按精度取整
-// （展示层可接受；提交链路 yuanToFen 恒为基准货币，不受切换影响）。
+// Display conversion is independent of base-currency form values.
 function displayAmount(cents: number): string {
-  if (currencyMeta.rate === '1') return fenToYuan(cents);
-  const base = 10 ** currencyMeta.precision;
-  const amount = ((Number.isFinite(cents) ? cents : 0) / 100) * Number(currencyMeta.rate || '1');
-  return (Math.round(amount * base) / base).toFixed(currencyMeta.precision);
+  return formatCents(cents, currencyMeta.precision, currencyMeta.rate);
 }
 
 // formatMoney 带符号格式化（显示唯一入口；符号位置感知）。
@@ -205,7 +190,7 @@ export function initCurrency(): Promise<void> {
         const all = (curRes.data?.currencies || []) as any[];
         currencyList = all.map((c) => ({
           code: c.code, symbol: c.symbol, position: c.position,
-          precision: Number(c.precision) || 2, rate: String(c.rate_json ?? '1'),
+          precision: displayPrecision(c.precision ?? 0), rate: String(c.rate_json ?? '1'),
         }));
         const stored = localStorage.getItem(CURRENCY_KEY);
         const picked =

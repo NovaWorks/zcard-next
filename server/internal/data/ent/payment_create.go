@@ -218,6 +218,20 @@ func (_c *PaymentCreate) SetNillableExchangeRate(v *float64) *PaymentCreate {
 	return _c
 }
 
+// SetChargedPrecision sets the "charged_precision" field.
+func (_c *PaymentCreate) SetChargedPrecision(v int32) *PaymentCreate {
+	_c.mutation.SetChargedPrecision(v)
+	return _c
+}
+
+// SetNillableChargedPrecision sets the "charged_precision" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableChargedPrecision(v *int32) *PaymentCreate {
+	if v != nil {
+		_c.SetChargedPrecision(*v)
+	}
+	return _c
+}
+
 // SetChargedUnits sets the "charged_units" field.
 func (_c *PaymentCreate) SetChargedUnits(v int64) *PaymentCreate {
 	_c.mutation.SetChargedUnits(v)
@@ -372,6 +386,10 @@ func (_c *PaymentCreate) defaults() {
 		v := payment.DefaultExchangeRate
 		_c.mutation.SetExchangeRate(v)
 	}
+	if _, ok := _c.mutation.ChargedPrecision(); !ok {
+		v := payment.DefaultChargedPrecision
+		_c.mutation.SetChargedPrecision(v)
+	}
 	if _, ok := _c.mutation.ChargedUnits(); !ok {
 		v := payment.DefaultChargedUnits
 		_c.mutation.SetChargedUnits(v)
@@ -442,6 +460,9 @@ func (_c *PaymentCreate) check() error {
 	}
 	if _, ok := _c.mutation.ExchangeRate(); !ok {
 		return &ValidationError{Name: "exchange_rate", err: errors.New(`ent: missing required field "Payment.exchange_rate"`)}
+	}
+	if _, ok := _c.mutation.ChargedPrecision(); !ok {
+		return &ValidationError{Name: "charged_precision", err: errors.New(`ent: missing required field "Payment.charged_precision"`)}
 	}
 	if _, ok := _c.mutation.ChargedUnits(); !ok {
 		return &ValidationError{Name: "charged_units", err: errors.New(`ent: missing required field "Payment.charged_units"`)}
@@ -550,6 +571,10 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExchangeRate(); ok {
 		_spec.SetField(payment.FieldExchangeRate, field.TypeFloat64, value)
 		_node.ExchangeRate = value
+	}
+	if value, ok := _c.mutation.ChargedPrecision(); ok {
+		_spec.SetField(payment.FieldChargedPrecision, field.TypeInt32, value)
+		_node.ChargedPrecision = value
 	}
 	if value, ok := _c.mutation.ChargedUnits(); ok {
 		_spec.SetField(payment.FieldChargedUnits, field.TypeInt64, value)
@@ -875,6 +900,24 @@ func (u *PaymentUpsert) UpdateExchangeRate() *PaymentUpsert {
 // AddExchangeRate adds v to the "exchange_rate" field.
 func (u *PaymentUpsert) AddExchangeRate(v float64) *PaymentUpsert {
 	u.Add(payment.FieldExchangeRate, v)
+	return u
+}
+
+// SetChargedPrecision sets the "charged_precision" field.
+func (u *PaymentUpsert) SetChargedPrecision(v int32) *PaymentUpsert {
+	u.Set(payment.FieldChargedPrecision, v)
+	return u
+}
+
+// UpdateChargedPrecision sets the "charged_precision" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateChargedPrecision() *PaymentUpsert {
+	u.SetExcluded(payment.FieldChargedPrecision)
+	return u
+}
+
+// AddChargedPrecision adds v to the "charged_precision" field.
+func (u *PaymentUpsert) AddChargedPrecision(v int32) *PaymentUpsert {
+	u.Add(payment.FieldChargedPrecision, v)
 	return u
 }
 
@@ -1301,6 +1344,27 @@ func (u *PaymentUpsertOne) AddExchangeRate(v float64) *PaymentUpsertOne {
 func (u *PaymentUpsertOne) UpdateExchangeRate() *PaymentUpsertOne {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateExchangeRate()
+	})
+}
+
+// SetChargedPrecision sets the "charged_precision" field.
+func (u *PaymentUpsertOne) SetChargedPrecision(v int32) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChargedPrecision(v)
+	})
+}
+
+// AddChargedPrecision adds v to the "charged_precision" field.
+func (u *PaymentUpsertOne) AddChargedPrecision(v int32) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddChargedPrecision(v)
+	})
+}
+
+// UpdateChargedPrecision sets the "charged_precision" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateChargedPrecision() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChargedPrecision()
 	})
 }
 
@@ -1910,6 +1974,27 @@ func (u *PaymentUpsertBulk) AddExchangeRate(v float64) *PaymentUpsertBulk {
 func (u *PaymentUpsertBulk) UpdateExchangeRate() *PaymentUpsertBulk {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateExchangeRate()
+	})
+}
+
+// SetChargedPrecision sets the "charged_precision" field.
+func (u *PaymentUpsertBulk) SetChargedPrecision(v int32) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetChargedPrecision(v)
+	})
+}
+
+// AddChargedPrecision adds v to the "charged_precision" field.
+func (u *PaymentUpsertBulk) AddChargedPrecision(v int32) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.AddChargedPrecision(v)
+	})
+}
+
+// UpdateChargedPrecision sets the "charged_precision" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateChargedPrecision() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateChargedPrecision()
 	})
 }
 

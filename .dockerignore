@@ -8,6 +8,8 @@
 !admin/**
 !storefront/
 !storefront/**
+!packages/
+!packages/**
 **/node_modules
 **/dist
 **/dist-theme

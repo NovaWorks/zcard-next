@@ -45457,6 +45457,8 @@ type PaymentMutation struct {
 	charged_currency     *string
 	exchange_rate        *float64
 	addexchange_rate     *float64
+	charged_precision    *int32
+	addcharged_precision *int32
 	charged_units        *int64
 	addcharged_units     *int64
 	fee                  *int64
@@ -46304,6 +46306,62 @@ func (m *PaymentMutation) ResetExchangeRate() {
 	m.addexchange_rate = nil
 }
 
+// SetChargedPrecision sets the "charged_precision" field.
+func (m *PaymentMutation) SetChargedPrecision(i int32) {
+	m.charged_precision = &i
+	m.addcharged_precision = nil
+}
+
+// ChargedPrecision returns the value of the "charged_precision" field in the mutation.
+func (m *PaymentMutation) ChargedPrecision() (r int32, exists bool) {
+	v := m.charged_precision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChargedPrecision returns the old "charged_precision" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldChargedPrecision(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChargedPrecision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChargedPrecision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChargedPrecision: %w", err)
+	}
+	return oldValue.ChargedPrecision, nil
+}
+
+// AddChargedPrecision adds i to the "charged_precision" field.
+func (m *PaymentMutation) AddChargedPrecision(i int32) {
+	if m.addcharged_precision != nil {
+		*m.addcharged_precision += i
+	} else {
+		m.addcharged_precision = &i
+	}
+}
+
+// AddedChargedPrecision returns the value that was added to the "charged_precision" field in this mutation.
+func (m *PaymentMutation) AddedChargedPrecision() (r int32, exists bool) {
+	v := m.addcharged_precision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetChargedPrecision resets all changes to the "charged_precision" field.
+func (m *PaymentMutation) ResetChargedPrecision() {
+	m.charged_precision = nil
+	m.addcharged_precision = nil
+}
+
 // SetChargedUnits sets the "charged_units" field.
 func (m *PaymentMutation) SetChargedUnits(i int64) {
 	m.charged_units = &i
@@ -46676,7 +46734,7 @@ func (m *PaymentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentMutation) Fields() []string {
-	fields := make([]string, 0, 21)
+	fields := make([]string, 0, 22)
 	if m.created_at != nil {
 		fields = append(fields, payment.FieldCreatedAt)
 	}
@@ -46721,6 +46779,9 @@ func (m *PaymentMutation) Fields() []string {
 	}
 	if m.exchange_rate != nil {
 		fields = append(fields, payment.FieldExchangeRate)
+	}
+	if m.charged_precision != nil {
+		fields = append(fields, payment.FieldChargedPrecision)
 	}
 	if m.charged_units != nil {
 		fields = append(fields, payment.FieldChargedUnits)
@@ -46778,6 +46839,8 @@ func (m *PaymentMutation) Field(name string) (ent.Value, bool) {
 		return m.ChargedCurrency()
 	case payment.FieldExchangeRate:
 		return m.ExchangeRate()
+	case payment.FieldChargedPrecision:
+		return m.ChargedPrecision()
 	case payment.FieldChargedUnits:
 		return m.ChargedUnits()
 	case payment.FieldFee:
@@ -46829,6 +46892,8 @@ func (m *PaymentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldChargedCurrency(ctx)
 	case payment.FieldExchangeRate:
 		return m.OldExchangeRate(ctx)
+	case payment.FieldChargedPrecision:
+		return m.OldChargedPrecision(ctx)
 	case payment.FieldChargedUnits:
 		return m.OldChargedUnits(ctx)
 	case payment.FieldFee:
@@ -46955,6 +47020,13 @@ func (m *PaymentMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetExchangeRate(v)
 		return nil
+	case payment.FieldChargedPrecision:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChargedPrecision(v)
+		return nil
 	case payment.FieldChargedUnits:
 		v, ok := value.(int64)
 		if !ok {
@@ -47023,6 +47095,9 @@ func (m *PaymentMutation) AddedFields() []string {
 	if m.addexchange_rate != nil {
 		fields = append(fields, payment.FieldExchangeRate)
 	}
+	if m.addcharged_precision != nil {
+		fields = append(fields, payment.FieldChargedPrecision)
+	}
 	if m.addcharged_units != nil {
 		fields = append(fields, payment.FieldChargedUnits)
 	}
@@ -47049,6 +47124,8 @@ func (m *PaymentMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedChargedAmount()
 	case payment.FieldExchangeRate:
 		return m.AddedExchangeRate()
+	case payment.FieldChargedPrecision:
+		return m.AddedChargedPrecision()
 	case payment.FieldChargedUnits:
 		return m.AddedChargedUnits()
 	case payment.FieldFee:
@@ -47103,6 +47180,13 @@ func (m *PaymentMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddExchangeRate(v)
+		return nil
+	case payment.FieldChargedPrecision:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChargedPrecision(v)
 		return nil
 	case payment.FieldChargedUnits:
 		v, ok := value.(int64)
@@ -47240,6 +47324,9 @@ func (m *PaymentMutation) ResetField(name string) error {
 		return nil
 	case payment.FieldExchangeRate:
 		m.ResetExchangeRate()
+		return nil
+	case payment.FieldChargedPrecision:
+		m.ResetChargedPrecision()
 		return nil
 	case payment.FieldChargedUnits:
 		m.ResetChargedUnits()

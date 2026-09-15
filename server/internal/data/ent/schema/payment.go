@@ -84,6 +84,7 @@ func (Payment) Fields() []ent.Field {
 				dialect.SQLite:   "real",
 			}).
 			Comment("快照汇率（1 基础货币=rate 渠道币；0=未换算）"),
+		field.Int32("charged_precision").Default(-1).Comment("渠道金额单位精度快照；-1 为历史未记录，不能使用显示精度推断"),
 		field.Int64("charged_units").Default(0).Comment("渠道币种应收最小单位（发适配器金额；回调精确核对）"),
 		field.Int64("fee").Default(0).Comment("手续费（分）"),
 		field.Enum("status").Values("pending", "success", "failed").Default("pending"),

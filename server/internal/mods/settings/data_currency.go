@@ -143,14 +143,19 @@ func (s *AdminCurrencyService) UpdateCurrency(ctx context.Context, req *adminv1.
 	if req.GetPosition() != "" {
 		q.SetPosition(currency.Position(req.GetPosition()))
 	}
-	if req.GetPrecision() > 0 {
+	if req.Precision != nil {
+		if req.GetPrecision() < 0 || req.GetPrecision() > 8 {
+			return nil, errors.BadRequest("settings.CURRENCY_BAD_PRECISION", "小数位必须为 0-8 的整数")
+		}
 		q.SetPrecision(req.GetPrecision())
 	}
 	if req.GetRateJson() != "" {
 		q.SetRate(rate)
 	}
-	q.SetEnabled(req.GetEnabled())
-	if req.GetSort() >= 0 {
+	if req.Enabled != nil {
+		q.SetEnabled(req.GetEnabled())
+	}
+	if req.Sort != nil && req.GetSort() >= 0 {
 		q.SetSort(req.GetSort())
 	}
 	rows, err := q.Save(ctx)
