@@ -39,6 +39,9 @@ export function formatCents(value: number, precision: number, rate = '1'): strin
   const abs = numerator < 0n ? -numerator : numerator;
   const rounded = (abs * 2n + denominator) / (denominator * 2n);
   const str = rounded.toString().padStart(digits + 1, '0');
-  const body = digits ? `${str.slice(0, -digits)}.${str.slice(-digits)}` : str;
+  // Keep up to the configured precision, trimming only zeros beyond two places.
+  // Explicit zero/one-place currency displays retain their original format.
+  const fraction = digits > 2 ? str.slice(-digits, -digits + 2) + str.slice(-digits + 2).replace(/0+$/, '') : str.slice(-digits);
+  const body = digits ? `${str.slice(0, -digits)}.${fraction}` : str;
   return numerator < 0n && rounded !== 0n ? `-${body}` : body;
 }

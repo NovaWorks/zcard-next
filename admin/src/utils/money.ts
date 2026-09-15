@@ -1,7 +1,7 @@
 import { displayPrecision, formatCents, fromCents, toCents } from '../../../packages/money/index';
 // 金额工具（铁律 15：DB/API 一律 int64「分」，前端显示 /100 为元、提交 *100 为分）。
 // 符号与小数位取后台默认货币（settings i18n.base_currency → currencies 表）；
-// 未加载完成回退 ¥/2。显示与输入独立：显示可补位，提交按十进制精确换算并拒绝不足一分。
+// 未加载完成回退 ¥/2。显示与输入独立：两位之后按有效位显示，提交按十进制精确换算并拒绝不足一分。
 // 全站金额显示/提交必须经本文件，禁止内联 `xxx / 100` 或硬编码符号（架构测试守护）。
 
 import { reactive } from "vue";

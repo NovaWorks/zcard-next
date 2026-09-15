@@ -6,6 +6,7 @@ import type { DataTableColumns } from "naive-ui";
 import { listCurrencies, createCurrency, updateCurrency, deleteCurrency, fetchSettings } from "@/service/api";
 import { checkAuth } from "@/directives";
 import { getCurrency, initCurrency } from "@/utils/money";
+import { formatCents } from "../../../../../packages/money/index";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "CurrencyTab" });
@@ -48,7 +49,7 @@ const rateHint = computed(() =>
 // 展示效果预览（符号 + 位置 + 小数位实时联动，以 10 元为例）
 const moneyPreview = computed(() => {
   const sym = form.value.symbol || getCurrency().symbol;
-  const num = (10).toFixed(form.value.precision ?? 2);
+  const num = formatCents(1000, form.value.precision ?? 2);
   return form.value.position === "suffix" ? `${num}${sym}` : `${sym}${num}`;
 });
 
@@ -228,7 +229,7 @@ onMounted(() => {
             <NInputNumber v-model:value="form.precision" :min="0" :max="8" :precision="0" class="w-full" />
           </NFormItem>
         </div>
-        <p class="mb-12px text-12px text-gray-500">小数位只控制显示，不改变价格、余额或支付渠道单位；金额输入仍以基础货币元为单位，最多精确到分。</p>
+        <p class="mb-12px text-12px text-gray-500">小数位为显示上限：设置 3～8 位时，自动省略两位之后多余的末尾零，例如 2.000000 显示为 2.00、2.123400 显示为 2.1234；设置 0 或 1 位时按所设位数显示。此设置不改变价格、余额或支付渠道单位；金额输入仍以基础货币元为单位，最多精确到分。</p>
         <NFormItem label="汇率" required>
           <NInput v-model:value="form.rate_json" :disabled="isBaseCurrency" :placeholder="isBaseCurrency ? '基础货币，固定为 1' : '如 0.14（1 基础货币 = 0.14 本币）'" />
         </NFormItem>
