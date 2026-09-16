@@ -29,7 +29,7 @@
           <span class="muted" style="font-size: 13px;">排序：</span>
           <select v-model="sort" class="input" style="max-width: 160px;" @change="onSearch">
             <option value="default">综合排序</option>
-            <option value="sales">销量优先</option>
+            <option v-if="showSales" value="sales">销量优先</option>
             <option value="newest">最新上架</option>
             <option value="price_asc">价格从低到高</option>
             <option value="price_desc">价格从高到低</option>
@@ -72,6 +72,7 @@ import { fetchSiteSeo, applySeo } from '@/seo';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
 import { useCatalogScroll } from '@/composables/catalog-scroll';
+import { useSalesVisibility } from '@/composables/sales-visibility';
 
 const route = useRoute();
 useCatalogScroll();
@@ -100,14 +101,17 @@ const gridStyle = computed(() =>
     ? { gridTemplateColumns: `repeat(${perRow.value}, 1fr)` }
     : { gridTemplateColumns: `repeat(auto-fill, minmax(${gridMinPx.value}px, 1fr))` },
 );
-const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
+const { showSales, applySalesConfig, normalizeSalesSort } = useSalesVisibility();
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关（叠加商品级 stock_visible）
 
 let appliedDefaultView = '';
 async function loadTemplateSettings() {
+  applySalesConfig(null);
   try {
     const resp = await fetch('/api/v1/storefront/config');
+    if (!resp.ok) { sort.value = normalizeSalesSort(sort.value); return; }
     const json = await resp.json();
+    applySalesConfig(json);
     const val = (k: string) => {
       const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
       if (raw === undefined) return undefined;
@@ -131,12 +135,15 @@ async function loadTemplateSettings() {
     // 默认排序方式（与后台 sort_by 同值域；default=综合）
     const sb = val('template.sort_by');
     if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb) && !route.query.sort && sb !== sort.value) {
-      sort.value = sb;
+      sort.value = normalizeSalesSort(sb);
+      reload = true;
+    }
+    if (sort.value !== normalizeSalesSort(sort.value)) {
+      sort.value = normalizeSalesSort(sort.value);
       reload = true;
     }
     if (reload) { page.value = 1; void load(); }
-    // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
-    if (val('template.show_sales') === false) showSales.value = false;
+    // 库存显示沿用原有开关。
     if (val('template.show_stock') === false) showStock.value = false;
     // 分类导航样式：grid=顶部胶囊（隐藏左侧树）
     const ns = val('template.category_nav_style');
@@ -144,7 +151,7 @@ async function loadTemplateSettings() {
     // 每行商品数（2-8）：显式固定列数
     const pr = val('template.per_row');
     if (typeof pr === 'number' && pr >= 2 && pr <= 8) perRow.value = Math.floor(pr);
-  } catch { /* 配置拉取失败保持默认 */ }
+  } catch { sort.value = normalizeSalesSort(sort.value); }
 }
 onMounted(loadTemplateSettings);
 
@@ -167,7 +174,7 @@ async function load() {
     keyword: keyword.value || undefined,
     category_id: categoryId.value > 0 ? categoryId.value : undefined,
     recommend_only: categoryId.value === -1 || undefined,
-    sort: sort.value,
+    sort: normalizeSalesSort(sort.value),
     page: page.value,
     page_size: pageSize.value,
   });

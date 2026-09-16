@@ -6,6 +6,7 @@ export interface ThemeRuntime {
   values: Record<string, unknown>;
   capabilities: Record<string, boolean>;
   preview?: boolean;
+  branding?: { name: string; logo: string };
 }
 export type ConfigEntry = { key: string; value_json: string };
 export function readThemeRuntime(): ThemeRuntime | null {

@@ -220,6 +220,7 @@ import { fetchCaptchaConfig, type CaptchaConfig } from '@/api';
 import { fetchSiteSeo, applySeo, stripHtml, truncate, type SiteSeoConfig } from '@/seo';
 import ImageViewer from '@/components/ImageViewer.vue';
 import CaptchaInput from '@/components/CaptchaInput.vue';
+import { useSalesVisibility } from '@/composables/sales-visibility';
 
 const route = useRoute();
 const router = useRouter();
@@ -325,8 +326,8 @@ const soldOut = computed(() => {
 // ── 评价（template.show_reviews 后台开关；入口锚点 + 折叠展开）──
 const showReviews = ref(true);
 const reviewsExpanded = ref(false);
-// 销量/库存显示（template.show_sales / show_stock；缺省显示，与商品卡片同源）
-const showSales = ref(true);
+// 销量在配置确认前隐藏；库存沿用原有开关。
+const { showSales, applySalesConfig } = useSalesVisibility();
 const showStock = ref(true);
 const reviewCollapsed = 3;
 const visibleReviews = computed(() =>
@@ -417,7 +418,7 @@ onMounted(async () => {
   const [cfg, capCfg, tplResp] = await Promise.all([
     fetchTradeConfig(),
     fetchCaptchaConfig(),
-    fetch('/api/v1/storefront/config').then((r) => r.json()).catch(() => null),
+    fetch('/api/v1/storefront/config').then((r) => r.ok ? r.json() : null).catch(() => null),
   ]);
   captchaCfg.value = capCfg;
   trade.value = cfg;
@@ -427,7 +428,7 @@ onMounted(async () => {
     try { return JSON.parse(raw) !== false; } catch { return true; }
   };
   showReviews.value = parseFlag(pick('template.show_reviews'));
-  showSales.value = parseFlag(pick('template.show_sales'));
+  applySalesConfig(tplResp);
   showStock.value = parseFlag(pick('template.show_stock'));
 });
 

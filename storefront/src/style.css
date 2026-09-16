@@ -43,6 +43,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--zc-primary); }
   background: linear-gradient(135deg, var(--zc-primary), var(--zc-primary-hover));
 }
 .nav-links { display: flex; gap: 4px; flex: 1; }
+.brand-placeholder { background: #e5e6e8; }
+.brand-name-placeholder { display: inline-block; width: 7em; max-width: 100%; min-height: 1em; border-radius: 4px; background: #e5e6e8; }
 .nav-links a { padding: 6px 12px; color: #4b5563; text-decoration: none; font-size: 14px; border-radius: 6px; transition: all 0.15s; }
 .nav-links a:hover { color: var(--zc-primary); background: var(--zc-primary-soft); }
 .nav-links a.router-link-exact-active { color: var(--zc-primary); font-weight: 600; }

@@ -153,8 +153,31 @@ func (s *AdminSettingsService) ThemeMiddleware(next http.Handler) http.Handler {
 			}
 		}
 		if runtime != nil {
+			// Preview runtimes are shared; keep request-time branding on a local copy.
+			local := *runtime
+			local.Branding = s.storefrontBranding(r.Context())
+			runtime = &local
 			r = r.WithContext(theme.WithRuntime(r.Context(), runtime))
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (s *AdminSettingsService) storefrontBranding(ctx context.Context) *theme.Branding {
+	g, _ := Group("site")
+	read := func(key string) (string, bool) {
+		def, _ := g.DefaultJSON(key)
+		raw, err := s.uc.GetDefault(ctx, "site", key, json.RawMessage(def))
+		var value string
+		if err != nil || json.Unmarshal(raw, &value) != nil {
+			return "", false
+		}
+		return value, true
+	}
+	name, nameOK := read("name")
+	logo, logoOK := read("logo")
+	if !nameOK || !logoOK {
+		return nil // Let the client retry the config API instead of caching a false identity.
+	}
+	return &theme.Branding{Name: name, Logo: logo}
 }

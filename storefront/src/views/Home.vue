@@ -20,7 +20,7 @@
     </div>
     <div v-else class="hero-banner">
       <div>
-        <h1>{{ siteName }}</h1>
+        <h1 :class="{ 'brand-name-placeholder': !brandReady }" :aria-busy="!brandReady">{{ siteName }}</h1>
         <p>自动发货 · 正品保障 · 售后无忧</p>
         <div class="hero-points">
           <span>⚡ 即时发货</span>
@@ -80,7 +80,7 @@
 
         <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }} <button v-if="mobileCatalog" class="feed-retry" @click="load(products.length > 0)">重新加载</button></div>
 
-        <CatalogToolbar :title="sectionTitle" :sort="sort" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
+        <CatalogToolbar :title="sectionTitle" :sort="!showSales && sort === 'sales' ? 'default' : sort" :show-sales="showSales" :view="viewMode" :loading="loading" @sort="changeSort" @view="changeView" />
 
         <!-- 商品列表（网格/列表双视图） -->
         <div ref="catalogItems" :class="[viewMode === 'grid' ? 'product-grid' : 'product-list', { 'catalog-big': viewMode === 'grid' && bigGrid }]"
@@ -142,6 +142,8 @@ import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, inje
 import { useRouter, useRoute } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
 import { fetchSiteSeo, applyDefaultSeo, applyVerification } from '@/seo';
+import { useBranding } from '@/branding';
+import { useSalesVisibility } from '@/composables/sales-visibility';
 import { formatMoney } from '@/api/client';
 import ProductCard from '@/components/ProductCard.vue';
 import CategoryTree from '@/components/CategoryTree.vue';
@@ -187,8 +189,7 @@ const announcement = ref<AnnouncementConfig>({ type: 'text', text: '', images: [
 // 每页选项跟随后台 template.per_page（默认 20 → 20/40/60），前台不再写死档位
 const pageSizeOptions = computed(() => [defaultPageSize.value, defaultPageSize.value * 2, defaultPageSize.value * 3]);
 
-const siteName = ref('ZCard 商店');
-onMounted(async () => { const cfg = await fetchSiteSeo(); if (cfg.name) siteName.value = cfg.name; });
+const { siteName, brandReady } = useBranding();
 
 // ── 模板设置（后台 系统设置 → 模板；与商品列表页同源消费，保证全站一致）──
 const navStyle = ref('list'); // template.category_nav_style：list=左侧树 | grid=顶部胶囊
@@ -224,7 +225,7 @@ const middleBannerIndex = computed(() => {
   return Math.min(lastBreak, Math.max(columns, Math.round(count / 2 / columns) * columns));
 });
 
-const showSales = ref(true); // template.show_sales：卡片「已售」显示开关
+const { showSales, applySalesConfig, normalizeSalesSort } = useSalesVisibility();
 const showStock = ref(true); // template.show_stock：卡片「库存」显示开关
 const topBannerEnabled = ref(true); // promo.top_banner_enabled：顶部横幅（首页 Hero 轮播）开关
 const chipsExpanded = ref(false); // 移动端 grid 胶囊：单行横滑 → 展开多行
@@ -325,7 +326,7 @@ function readRouteFilters() {
   activeCategory.value = Number.isSafeInteger(id) && id > 0 ? id : 0;
   if (q.recommend_only === '1' || q.recommend_only === 'true') activeCategory.value = -1;
   keyword.value = searchTerm.value = typeof q.keyword === 'string' ? q.keyword : '';
-  sort.value = typeof q.sort === 'string' && sorts.includes(q.sort) ? q.sort : defaultSort.value;
+  sort.value = normalizeSalesSort(typeof q.sort === 'string' && sorts.includes(q.sort) ? q.sort : defaultSort.value);
   const size = Number(q.page_size);
   pageSize.value = !mobileCatalog.value && pageSizeOptions.value.includes(size) ? size : defaultPageSize.value;
   const p = Number(q.page);
@@ -363,7 +364,7 @@ function pickCategory(id: number) {
 }
 function changeSort(value: string) {
   if (!sorts.includes(value)) return;
-  sort.value = value;
+  sort.value = normalizeSalesSort(value);
   page.value = 1;
   void navigateCatalog();
 }
@@ -406,7 +407,7 @@ function productRequest(requestPage: number, size: number) {
     keyword: searchTerm.value || undefined,
     category_id: activeCategory.value > 0 ? activeCategory.value : undefined,
     recommend_only: activeCategory.value === -1 || undefined,
-    sort: sort.value, page: requestPage, page_size: size,
+    sort: normalizeSalesSort(sort.value), page: requestPage, page_size: size,
   });
 }
 function uniqueProducts(items: Product[]) {
@@ -544,10 +545,13 @@ await load();
 initialized = true;
 // Backend defaults apply on first entry; cached user choices remain intact.
 async function loadTemplateSettings() {
+  applySalesConfig(null);
   try {
     const apiBase = import.meta.env.SSR ? (import.meta.env.VITE_SSG_API || 'http://127.0.0.1:8000') : '';
     const resp = await fetch(`${apiBase}/api/v1/storefront/config`);
+    if (!resp.ok) return;
     const json = await resp.json();
+    applySalesConfig(json);
     const val = (k: string) => {
       const raw = json?.entries?.find((e: any) => e.key === k)?.value_json;
       if (raw === undefined) return undefined;
@@ -564,8 +568,7 @@ async function loadTemplateSettings() {
       viewMode.value = nextView === 'list' ? 'list' : 'grid';
       appliedDefaultView = nextView;
     }
-    // 卡片销量/库存显示开关（显式 false 才关闭，兼容旧数据缺省）
-    if (val('template.show_sales') === false) showSales.value = false;
+    // 库存显示沿用原有开关。
     if (val('template.show_stock') === false) showStock.value = false;
     // 每行商品数（2-8）：显式固定列数，替代 auto-fill 的"装几个算几个"
     const pr = val('template.per_row');
@@ -580,7 +583,7 @@ async function loadTemplateSettings() {
       }
     }
     const sb = val('template.sort_by');
-    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb)) defaultSort.value = sb;
+    if (['default', 'newest', 'sales', 'price_asc', 'price_desc'].includes(sb)) defaultSort.value = normalizeSalesSort(sb);
     // 顶部横幅开关：关闭时 Hero 回退品牌渐变区（公告图片轮播不受影响）
     if (val('promo.top_banner_enabled') === false) topBannerEnabled.value = false;
   } catch { /* 配置拉取失败保持默认 */ }

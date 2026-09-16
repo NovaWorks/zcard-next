@@ -146,7 +146,8 @@
           "key": "template.show_sales",
           "label": "显示销量",
           "type": "switch",
-          "default": true
+          "default": true,
+          "help": "关闭后隐藏商品列表和详情中的销量，同时关闭销量排序；已有销量排序链接及默认排序将回退为综合排序。"
         }
       ]
     },

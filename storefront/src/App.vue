@@ -30,10 +30,11 @@
 
     <!-- 主导航（sticky） -->
     <header class="topbar">
-      <router-link to="/" class="logo">
+      <router-link to="/" class="logo" :aria-busy="!brandReady" aria-label="店铺首页">
         <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
-        <span v-else class="logo-mark">ZC</span>
-        <span class="logo-name" :title="siteName">{{ siteName }}</span>
+        <span v-else-if="brandReady" class="logo-mark">ZC</span>
+        <span v-else class="logo-mark brand-placeholder" aria-hidden="true"></span>
+        <span class="logo-name" :class="{ 'brand-name-placeholder': !brandReady }" :title="siteName">{{ siteName }}</span>
       </router-link>
       <nav class="nav-links">
         <router-link v-if="lotteryVisible" to="/lottery">幸运抽奖</router-link>
@@ -125,7 +126,8 @@
         <div class="footer-col">
           <div class="footer-brand">
             <img v-if="siteLogo" :src="siteLogo" alt="logo" class="logo-mark logo-img" />
-            <span v-else class="logo-mark">ZC</span>
+            <span v-else-if="brandReady" class="logo-mark">ZC</span>
+            <span v-else class="logo-mark brand-placeholder" aria-hidden="true"></span>
           </div>
           <p class="muted">{{ footerAbout || '专业的自动发卡商城系统，为你的数字商品交易保驾护航。' }}</p>
           <!-- 社交链接（footer.social = [{icon,url}]，配置后显示） -->
@@ -186,7 +188,7 @@
 <script setup lang="ts">
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, watch, onMounted, onUnmounted, provide } from 'vue';
-import { fetchSiteSeo } from './seo';
+import { useBranding } from './branding';
 import { useRoute, useRouter } from 'vue-router';
 import { initCurrency } from '@/api/client';
 import { authState, refreshAuth, logout } from '@/auth';
@@ -207,13 +209,9 @@ const route = useRoute();
 // 安装页：无商城布局（头部/尾部/客服/公告等全部不渲染，见模板 v-if）
 const isInstall = computed(() => route.path === '/install');
 
-// 站点名/LOGO（config 下发——后台设置 site.name / site.logo 实时生效；失败回退默认）
-const siteName = ref('ZCard 商店');
-const siteLogo = ref('');
-onMounted(async () => {
-  const cfg = await fetchSiteSeo();
-  if (cfg.name) siteName.value = cfg.name;
-  siteLogo.value = cfg.logo || '';
+const { siteName, siteLogo, brandReady } = useBranding();
+watch([siteLogo, brandReady], () => {
+  if (!brandReady.value) return;
   const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
   if (icon) { icon.removeAttribute('type'); icon.href = siteLogo.value || '/zcard-icon.png'; }
 });

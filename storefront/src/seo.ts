@@ -49,7 +49,7 @@ function parseStr(raw: string | undefined, dflt = ""): string {
 /** 站点 SEO 配置（失败回退默认值；SSR 构建期经 VITE_SSG_API 访问，客户端同源） */
 export async function fetchSiteSeo(): Promise<SiteSeoConfig> {
   if (cached) return cached;
-  const def: SiteSeoConfig = { name: "ZCard 商店", url: "", logo: "", seoTitle: "", seoKeywords: "", seoDesc: "", verificationGoogle: "", verificationBing: "" };
+  const def: SiteSeoConfig = { name: "商店", url: "", logo: "", seoTitle: "", seoKeywords: "", seoDesc: "", verificationGoogle: "", verificationBing: "" };
   try {
     const apiBase = import.meta.env.SSR ? (import.meta.env.VITE_SSG_API || "http://127.0.0.1:8000") : "";
     const resp = await fetch(`${apiBase}/api/v1/storefront/config`);

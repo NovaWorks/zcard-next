@@ -15,6 +15,13 @@ type Runtime struct {
 	Capabilities   map[string]bool `json:"capabilities"`
 	Preview        bool            `json:"preview"`
 	Theme          *Theme          `json:"-"`
+	Branding       *Branding       `json:"branding,omitempty"`
+}
+
+// Branding contains only the public identity needed before the config API loads.
+type Branding struct {
+	Name string `json:"name"`
+	Logo string `json:"logo"`
 }
 type runtimeKey struct{}
 
