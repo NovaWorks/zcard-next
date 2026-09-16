@@ -8,7 +8,7 @@ import (
 func TestContainerDetection(t *testing.T) {
 	for _, tc := range []struct {
 		name, env, path, content string
-		want                    bool
+		want                     bool
 	}{
 		{name: "bare process"},
 		{name: "image marker", env: "1", want: true},

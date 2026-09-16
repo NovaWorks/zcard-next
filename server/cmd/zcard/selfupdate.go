@@ -1,9 +1,11 @@
 // self-update 子命令（；2026-09 方案 / 重构）：在线更新 CLI 面。
 //
 //	zcard self-update [--check] [--rollback] [-conf <dir>]
+//
 // [-source auto|github|accel|static] [-repo <owner/repo>]
 // [-accel <prefix[,prefix...]>] [-base <url>] [-channel stable|beta]
 // [-pubkey <hex>] [-y]
+//
 //	zcard self-update genkey # 发行侧密钥对
 //	zcard self-update sign --key <file> --dir <dist> --version vX.Y.Z [--notes-file <md>]
 //
