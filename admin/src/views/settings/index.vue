@@ -158,7 +158,6 @@ function labelOf(item: any) {
 // ── 图片类设置键：走素材库选择（MediaField 预览 + 弹窗选择/上传）──
 const IMAGE_KEYS: Record<string, string[]> = {
   site: ["logo"],
-  template: ["bg_image", "bg_image_mobile"],
   ops: ["announcement"], // 仅 announcement_type 为 image/carousel 时是图片
 };
 
@@ -191,6 +190,12 @@ function imageValueOf(item: any) {
 function setImageValue(item: any, urls: string[]) {
   setVal(item, isCarouselKey(item) ? urls : urls[0] ?? "");
 }
+
+// 这些外观项统一由主题自定义编辑；旧设置保留给未发布主题和历史客户端兼容。
+const THEME_APPEARANCE_KEYS = new Set([
+  "bg_image", "bg_image_mobile", "category_nav_style", "default_view",
+  "per_row", "per_page", "sort_by", "show_stock", "show_sales",
+]);
 
 // ── 模板选择（WP 主题式：模板组 pc/mobile_template → 弹窗选择）──
 const TEMPLATE_KEYS: Record<string, string[]> = {
@@ -272,7 +277,9 @@ async function loadSettings() {
   try {
     const { data, error } = await fetchSettings(activeGroup.value);
     if (!error && data) {
-      items.value = (data as any).items || [];
+      items.value = ((data as any).items || []).filter(
+        (item: any) => item.group !== "template" || !THEME_APPEARANCE_KEYS.has(item.key),
+      );
     }
   } finally {
     loading.value = false;
@@ -363,7 +370,7 @@ onMounted(() => {
             </div>
 
             <div v-if="activeGroup === 'template'" class="mt-12px text-13px text-gray-500">
-              PC 和手机共用一个响应式主题，自动适配屏幕。上传只安装主题；在主题弹窗点击「切换为默认」后立即生效，无需再保存。Classic 可随时切回。每个主题卡片可进入「主题设置与预览」；已发布的主题专属配置优先于下方基础外观配置，业务开关仍由系统统一控制。
+              PC 和手机共用一个响应式主题。背景图、分类样式、商品布局和库存/销量显示统一在「主题自定义」中设置，修改或删除后点击「发布生效」。切换主题请点击「管理主题」；评价等业务开关仍在系统设置中管理。
             </div>
 
             <NForm label-placement="left" label-width="172" class="mt-16px max-w-760px settings-form" :class="{ 'settings-form-wide': ['ops', 'recharge', 'supplier_recharge'].includes(activeGroup) }">
@@ -384,10 +391,10 @@ onMounted(() => {
                     <GiftTiersField class="flex-1" :supplier="item.group === 'supplier_recharge'" :value="item.value_json" @update="(v: any) => setVal(item, v)" />
                   </template>
                   <template v-else-if="isTemplateKey(item)">
-                    <div class="flex w-full items-center gap-8px">
+                    <div class="flex w-full flex-wrap items-center gap-8px">
                       <span class="min-w-0 flex-1 truncate text-13px">{{ currentTemplateName(item) }}</span>
                       <NButton size="small" @click="openThemePicker(item)">管理主题</NButton>
-                      <NButton size="small" @click="themeOptions.key=getVal(item)||'classic';themeOptions.show=true">主题设置</NButton>
+                      <NButton size="small" @click="themeOptions.key=getVal(item)||'classic';themeOptions.show=true">主题自定义</NButton>
                     </div>
                   </template>
                   <template v-else-if="isTextareaKey(item)">
@@ -421,7 +428,7 @@ onMounted(() => {
                     <MediaField
                       class="flex-1"
                       :value="imageValueOf(item)"
-                      :tip="item.key === 'bg_image' ? '推荐宽 1920 px × 高 1080 px（16:9）；背景铺满屏幕时可能裁切，重要内容请居中。' : item.key === 'bg_image_mobile' ? '建议上传竖版图片；留空时沿用电脑背景图' : item.group === 'ops' && item.key === 'announcement' ? '推荐宽 1200 px × 高 400 px（3:1）；默认主题会随屏幕裁切，文字和主体请居中，多张图片建议尺寸一致。' : '从素材库选择或上传；选中后即时预览'"
+                      :tip="item.group === 'ops' && item.key === 'announcement' ? '推荐宽 1200 px × 高 400 px（3:1）；默认主题会随屏幕裁切，文字和主体请居中，多张图片建议尺寸一致。' : '从素材库选择或上传；选中后即时预览'"
                       @update:value="(urls: string[]) => setImageValue(item, urls)"
                     />
                   </template>

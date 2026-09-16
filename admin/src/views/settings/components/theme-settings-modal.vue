@@ -237,7 +237,7 @@ function close() {
   <NModal
     :show="show"
     preset="card"
-    :title="`主题设置 · ${themeKey === 'classic' ? '默认主题' : themeKey}`"
+    :title="`主题自定义 · ${themeKey === 'classic' ? '默认主题' : themeKey}`"
     style="width: 1480px; max-width: 96vw; height: 92vh"
     content-style="min-height:0;display:flex;flex-direction:column;overflow:hidden"
     :mask-closable="false"
@@ -273,11 +273,14 @@ function close() {
           : "此主题尚未启用，发布设置不会切换商城主题"
       }}</span>
     </div>
+    <NAlert v-if="state?.schema" type="info" :bordered="false" class="mb-10px">
+      外观修改统一在这里管理，点击「发布生效」后商城才会更新；「保存草稿」仅保存待发布内容。
+    </NAlert>
     <NAlert v-if="error" type="error" class="mb-10px">{{ error }}</NAlert>
     <NSpin :show="loading" class="theme-settings-body">
       <NEmpty
         v-if="state && !state.schema"
-        description="此主题未声明扩展设置，仍使用系统基础配置"
+        description="此主题未提供自定义设置，请使用支持自定义设置的主题版本；已有外观配置继续兼容。"
       />
       <div v-else-if="state?.schema" class="theme-settings-layout">
         <section class="theme-settings-editor">
@@ -423,7 +426,7 @@ function close() {
           :disabled="!canWrite || !state?.schema"
           :loading="saving"
           @click="save('publish')"
-          >发布设置</NButton
+          >发布生效</NButton
         >
       </div></template
     >

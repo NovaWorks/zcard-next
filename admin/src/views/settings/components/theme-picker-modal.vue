@@ -171,7 +171,7 @@ async function confirm() {
             </div>
             <div v-if="tp.author" class="mt-4px truncate text-12px text-gray-400">作者：{{ tp.author }}</div>
             <div v-if="tp.desc" class="mt-2px truncate text-12px text-gray-400">{{ tp.desc }}</div>
-            <NButton class="mt-10px" size="small" block secondary @click.stop="optionsKey = tp.key; optionsShow = true">主题设置与预览</NButton>
+            <NButton class="mt-10px" size="small" block secondary @click.stop="optionsKey = tp.key; optionsShow = true">主题自定义与预览</NButton>
           </div>
         </div>
       </div>
