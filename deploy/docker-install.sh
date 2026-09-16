@@ -10,6 +10,20 @@ for tool in curl python3; do
 done
 docker compose version >/dev/null
 docker info >/dev/null
+# 每次构建都使用当前源码版本，不沿用旧 .env 中的 dev 或上一次发行号。
+source_version="$(python3 - "$script_dir/../server/CHANGELOG.json" <<'VERSION_PY'
+import json, re, sys
+version = json.load(open(sys.argv[1]))[0]["version"]
+if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", version):
+    sys.exit("源码发行版本无效，停止构建")
+print(version)
+VERSION_PY
+)"
+case "${ZCARD_VERSION:-auto}" in
+  auto|dev|"$source_version") ;;
+  *) echo "ZCARD_VERSION 与当前源码版本 $source_version 不一致，请先检出对应源码" >&2; exit 1 ;;
+esac
+export ZCARD_VERSION="$source_version"
 if [ ! -e "$script_dir/.env" ]; then
   command -v openssl >/dev/null || { echo '请先安装 openssl' >&2; exit 1; }
   # 原子、不可覆盖发布，失败不留下半份密钥；并发首装最多一个成功。

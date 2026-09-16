@@ -208,7 +208,7 @@ func (s *Service) Check(ctx context.Context) (*CheckResult, error) {
 	}
 	res := &CheckResult{
 		Current: cur(), Latest: m.Version,
-		HasUpdate: updater.CompareSemver(m.Version, cur()) > 0,
+		HasUpdate: updater.HasUpdate(m.Version, cur()),
 		Notes:     m.Notes, Channel: m.Channel, Source: outcome.SourceDesc(),
 		History: m.History,
 	}
@@ -239,6 +239,9 @@ func (s *Service) pendingTargetLocked() bool {
 // Apply 触发更新（后台 goroutine 执行链；重复调用 ErrBusy）。
 // 链：磁盘预检 → DB 备份 → 落盘下载（进度）→ 原子替换 → 重启 hook。
 func (s *Service) Apply(ctx context.Context) error {
+	if updater.IsContainer() {
+		return updater.ErrContainerUpdate
+	}
 	s.mu.Lock()
 	if s.busy || s.checking || s.st.Phase == PhaseChecking {
 		s.mu.Unlock()
@@ -368,6 +371,9 @@ func (s *Service) run() {
 
 // Rollback 回滚 .prev 并重启（新版不健康时的面板逃生口）。
 func (s *Service) Rollback(ctx context.Context) error {
+	if updater.IsContainer() {
+		return updater.ErrContainerUpdate
+	}
 	if s.binPath == "" {
 		return errors.New("update: 无法定位当前二进制")
 	}
@@ -469,6 +475,9 @@ func (s *Service) SupervisorKind(ctx context.Context) string { return s.supervis
 // supervisorKind 配置显式覆盖 > 自动探测（宝塔等封装环境 env 探测有盲区，
 // 方案 §5——重启三分支正确分流是更新安全前提，配置是权威出口）。
 func (s *Service) supervisorKind(ctx context.Context) string {
+	if updater.IsContainer() {
+		return "docker"
+	}
 	cfg := s.sourceConfig(ctx)
 	switch cfg.Supervisor {
 	case "systemd", "supervisord", "pm2", "none":

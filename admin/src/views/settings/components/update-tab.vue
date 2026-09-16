@@ -69,9 +69,14 @@ const inFlight = computed(() => {
   return !!p && ["checking", "backing_up", "downloading", "applying", "restarting", "verifying"].includes(p);
 });
 
+const isContainer = computed(() => status.value?.supervisor_kind === "docker");
+const unknownContainerVersion = computed(() => isContainer.value && !/^v?\d+\.\d+\.\d+$/.test(status.value?.current_version || ""));
+const containerHint = "请在部署服务器检出目标版本源码，运行 bash deploy/docker-install.sh 重建镜像和容器。升级前请备份配置和数据卷。";
+
 const supervisorTag = computed(() => {
   if (!status.value) return { type: "default" as const, label: "状态未知" };
   const k = status.value.supervisor_kind;
+  if (k === "docker") return { type: "info" as const, label: "Docker / 容器部署" };
   if (k === "none") return { type: "warning" as const, label: "裸进程运行（无管理器）" };
   if (k === "systemd") return { type: "success" as const, label: "systemd" };
   if (k === "supervisord" || k === "pm2") return { type: "success" as const, label: k };
@@ -229,6 +234,8 @@ async function doCheck(silent = false) {
     if (data.has_update) {
       modalStage.value = "confirm";
       showConfirm.value = true; // 有新版：直接弹更新框（自动检查与手动一致）
+    } else if (!silent && unknownContainerVersion.value) {
+      message.warning("当前镜像未记录正式版本，无法判断是否最新。请重新构建镜像。");
     } else if (!silent) {
       message.success(`已是最新版本 ${data.current_version}`);
     }
@@ -249,6 +256,7 @@ function sanitizeHtml(html: string) {
 }
 
 async function doApply() {
+  if (isContainer.value) { message.info(containerHint); return; }
   updateDone.value = false;
   modalStage.value = "progress"; // 弹窗切换为分步进度（大厂范式：同一弹窗承接全流程）
   try {
@@ -310,6 +318,7 @@ async function retryFromFailed() {
 }
 
 async function doRollback() {
+  if (isContainer.value) { message.info(containerHint); return; }
   try {
     const { data, error } = await rollbackUpdate();
     if (error || !data) throw error || new Error("回滚响应为空");
@@ -447,7 +456,7 @@ watch(
           <div class="stat-value">
             <NSpace :size="8">
               <NButton size="tiny" type="primary" :loading="checking" :disabled="inFlight || waitingRestart" @click="doCheck()">检查更新</NButton>
-              <NPopconfirm @positive-click="doRollback">
+              <NPopconfirm v-if="!isContainer" @positive-click="doRollback">
                 <template #trigger>
                   <NButton size="tiny" :disabled="inFlight" quaternary type="warning">回滚上一版</NButton>
                 </template>
@@ -458,7 +467,7 @@ watch(
         </div>
       </div>
 
-      <NAlert v-if="status && status.backup_ready === false" type="warning" class="mb-3" :bordered="false">
+      <NAlert v-if="!isContainer && status && status.backup_ready === false" type="warning" class="mb-3" :bordered="false">
         <b>备份工具未就绪</b>
         <div class="mt-1">{{ status.backup_hint }}</div>
         <div class="mt-1 text-xs opacity-70">更新前会强制备份数据库（数据安全优先，不可跳过）；装好工具后本提示自动消失。</div>
@@ -471,6 +480,11 @@ watch(
           system:update 为超管专属权限——请确认当前账号为超级管理员；HTTP 401/403=权限或登录态，
           5xx=服务异常，网络错误=反代/服务未起。F12 → Network → update/status 可看原始响应。
         </div>
+      </NAlert>
+
+      <NAlert v-if="isContainer" type="info" :show-icon="true" class="mt-3" :bordered="false">
+        当前为 Docker / 容器部署，升级和回退均通过镜像完成。{{ containerHint }}
+        <div v-if="unknownContainerVersion" class="mt-1">当前镜像未记录正式版本，无法判断是否最新；重新构建后将显示源码对应的版本号。</div>
       </NAlert>
 
       <NAlert v-if="status?.supervisor_kind === 'none'" type="warning" :show-icon="true" class="mt-3" :bordered="false">
@@ -555,7 +569,7 @@ watch(
               placeholder="https://cdn.example.com/zcard（其下平铺 update.json 与二进制产物）"
             />
           </div>
-          <div class="field">
+          <div v-if="!isContainer" class="field">
             <div class="field-label">
               进程管理器
               <span class="text-xs opacity-55">（自动探测不准时手动指定——决定更新重启的分流方式）</span>
@@ -600,6 +614,7 @@ watch(
           <NTag size="small" round type="success">{{ checkResult?.latest_version }}</NTag>
           <NTag size="small" round :bordered="false" class="ml-2">{{ checkResult?.channel }} · {{ checkResult?.source || sourceText }}</NTag>
         </div>
+        <NAlert v-if="isContainer" type="info" class="my-3">{{ containerHint }}</NAlert>
         <div class="changelog" v-html="changelogHtml" />
       </template>
 
@@ -657,8 +672,8 @@ watch(
 
       <template #footer>
         <NSpace v-if="modalStage === 'confirm'" justify="end">
-          <NButton size="small" @click="showConfirm = false">取消</NButton>
-          <NButton size="small" type="primary" @click="doApply">立即更新</NButton>
+          <NButton size="small" @click="showConfirm = false">{{ isContainer ? "知道了" : "取消" }}</NButton>
+          <NButton v-if="!isContainer" size="small" type="primary" @click="doApply">立即更新</NButton>
         </NSpace>
         <div v-else class="text-center text-12px opacity-50">zcard 在线更新</div>
       </template>

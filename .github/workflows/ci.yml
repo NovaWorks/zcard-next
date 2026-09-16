@@ -120,6 +120,7 @@ jobs:
         run: |
           bash -n scripts/zcard-install.sh deploy/install.sh deploy/docker-install.sh
           python3 scripts/test_install.py
+          python3 scripts/test_docker_version.py
           for key in ZCARD_JWT_ADMIN_KEY ZCARD_JWT_USER_KEY ZCARD_CARD_KEY ZCARD_DATA_KEY MYSQL_PASSWORD MYSQL_ROOT_PASSWORD; do
             export "$key=deployment-ci"
           done

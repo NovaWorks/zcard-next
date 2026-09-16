@@ -1,4 +1,10 @@
 # docker build -f deploy/Dockerfile --build-arg VERSION=vX.Y.Z -t zcard:vX.Y.Z .
+FROM node:22-alpine AS version
+ARG VERSION=auto
+WORKDIR /version
+COPY server/CHANGELOG.json ./CHANGELOG.json
+RUN node -e 'const fs=require("fs"); const v=JSON.parse(fs.readFileSync("CHANGELOG.json"))[0]?.version; if(!/^v[0-9]+\.[0-9]+\.[0-9]+$/.test(v)) throw Error("Invalid source release version"); const requested=process.env.VERSION; if(requested && !["auto","dev",v].includes(requested)) throw Error("VERSION must match source CHANGELOG: " + v); fs.writeFileSync("version",v)'
+
 FROM node:22-alpine AS frontend
 WORKDIR /fe
 RUN corepack enable
@@ -12,14 +18,14 @@ COPY admin/ ./admin/
 RUN cd admin && pnpm install --frozen-lockfile && pnpm build
 
 FROM golang:1.26-alpine AS builder
-ARG VERSION=dev
 WORKDIR /src
 COPY server/go.mod server/go.sum ./
 RUN go mod download
 COPY server/ ./
 COPY --from=frontend /fe/storefront/dist ./web/storefront
 COPY --from=frontend /fe/admin/dist ./web/admin
-RUN CGO_ENABLED=0 go build -trimpath -tags fullstack \
+COPY --from=version /version/version /build-version
+RUN VERSION="$(cat /build-version)" && CGO_ENABLED=0 go build -trimpath -tags fullstack \
     -ldflags "-s -w -X main.Version=${VERSION}" -o /out/zcard ./cmd/zcard
 RUN mkdir -p /runtime/configs /runtime/data /runtime/backups
 
@@ -28,6 +34,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=builder /out/zcard /zcard
 COPY --from=builder --chown=65532:65532 /runtime/ /app/
 WORKDIR /app
+ENV ZCARD_CONTAINER=1
 VOLUME ["/app"]
 EXPOSE 8000
 USER nonroot:nonroot

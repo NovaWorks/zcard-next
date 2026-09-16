@@ -55,6 +55,10 @@ func runSelfUpdate(args []string) error {
 		return err
 	}
 
+	if updater.IsContainer() && (!*check || *rollback) {
+		return updater.ErrContainerUpdate
+	}
+
 	binPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("self-update: 定位当前二进制失败: %w", err)
@@ -100,7 +104,7 @@ func runSelfUpdate(args []string) error {
 			"current": orDev(Version), "latest": m.Version,
 			"channel": m.Channel, "notes": m.Notes, "manifest": manifestURL,
 			"source":           outcome.SourceDesc(),
-			"update_available": updater.CompareSemver(m.Version, Version) > 0,
+			"update_available": updater.HasUpdate(m.Version, Version),
 		}, "", "  ")
 		if err != nil {
 			return err

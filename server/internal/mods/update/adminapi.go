@@ -49,6 +49,9 @@ func (s *AdminUpdateService) CheckUpdate(ctx context.Context, _ *emptypb.Empty) 
 
 // ApplyUpdate 触发更新（单飞；进行中重复调用返回当前态）。
 func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateStatus, error) {
+	if updater.IsContainer() {
+		return nil, errors.Forbidden("update.CONTAINER", updater.ErrContainerUpdate.Error())
+	}
 	if err := s.svc.DisabledErr(); err != nil {
 		return nil, errors.Forbidden("update.DISABLED", err.Error())
 	}
@@ -60,6 +63,9 @@ func (s *AdminUpdateService) ApplyUpdate(ctx context.Context, _ *emptypb.Empty) 
 
 // RollbackUpdate 回滚上一版本并重启。
 func (s *AdminUpdateService) RollbackUpdate(ctx context.Context, _ *emptypb.Empty) (*adminv1.UpdateStatus, error) {
+	if updater.IsContainer() {
+		return nil, errors.Forbidden("update.CONTAINER", updater.ErrContainerUpdate.Error())
+	}
 	if err := s.svc.DisabledErr(); err != nil {
 		return nil, errors.Forbidden("update.DISABLED", err.Error())
 	}

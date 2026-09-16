@@ -294,6 +294,9 @@ func CheckDiskSpace(dir string, need int64) error {
 // systemd slice 内（误判即「优雅退出等拉起」而实际无人拉起，服务死透）。
 // 探测尽力的盲区由 settings system/update 的 supervisor 字段显式覆盖（service 层）。
 func DetectSupervisor() string {
+	if IsContainer() {
+		return "docker"
+	}
 	if v := os.Getenv("ZCARD_SUPERVISOR"); v != "" {
 		return v
 	}
