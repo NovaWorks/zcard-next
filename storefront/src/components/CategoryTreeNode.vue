@@ -54,7 +54,7 @@ function activate() {
 
 <style scoped>
 .tree-row { display: flex; align-items: stretch; border-radius: 8px; }
-.tree-row.active { background: #2563eb; color: #fff; }
+.tree-row.active { background: var(--zc-primary); color: #fff; }
 .tree-node {
   min-width: 0; min-height: 48px; flex: 1;
   display: flex; align-items: center; gap: 7px;
@@ -68,8 +68,8 @@ function activate() {
 .tree-node--root { font-size: 15px; font-weight: 500; }
 .tree-node--root.active,
 .tree-node.active { font-weight: 600; }
-.tree-node:hover { background: #eff6ff; color: #2563eb; }
-.tree-node.active { background: #2563eb; color: #fff; }
+.tree-node:hover { background: var(--zc-primary-soft); color: var(--zc-primary); }
+.tree-node.active { background: var(--zc-primary); color: #fff; }
 .tree-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .tree-dot {
   width: 5px; height: 5px; border-radius: 999px; flex-shrink: 0;

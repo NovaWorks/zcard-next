@@ -397,7 +397,7 @@ onMounted(load);
   margin: 4px 0;
 }
 .lottery-eyebrow {
-  color: var(--zc-primary, #2563eb);
+  color: var(--zc-primary);
   font-size: 13px;
   margin: 0;
 }
@@ -462,7 +462,7 @@ onMounted(load);
   background: #edf3ff;
   border-radius: 18px;
   font-size: 26px;
-  color: var(--zc-primary, #2563eb);
+  color: var(--zc-primary);
 }
 .lottery-primary,
 .lottery-secondary {
@@ -478,7 +478,7 @@ onMounted(load);
   box-sizing: border-box;
 }
 .lottery-primary {
-  background: var(--zc-primary, #2563eb);
+  background: var(--zc-primary);
   border: 1px solid transparent;
   color: #fff;
 }
@@ -497,7 +497,7 @@ onMounted(load);
 }
 .lottery-action strong {
   font-size: 24px;
-  color: var(--zc-primary, #2563eb);
+  color: var(--zc-primary);
 }
 .lottery-action .lottery-primary {
   min-width: 220px;

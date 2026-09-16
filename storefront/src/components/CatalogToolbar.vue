@@ -38,9 +38,9 @@ function selectSort(event: Event) { emit('sort', (event.target as HTMLSelectElem
 .catalog-progress:empty { display: none; }
 .catalog-sort-tabs, .catalog-views { display: flex; gap: 4px; padding: 3px; background: #fff; border: 1px solid #e2e8f0; border-radius: 9px; }
 .catalog-tools button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; height: 32px; padding: 0 12px; border: 0; border-radius: 6px; background: transparent; color: #475569; font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
-.catalog-tools button:hover { background: #eff6ff; color: #1d4ed8; }
-.catalog-tools button[aria-pressed="true"] { background: #2563eb; color: #fff; }
-.catalog-tools button:focus-visible, .catalog-sort-select:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+.catalog-tools button:hover { background: var(--zc-primary-soft); color: var(--zc-primary-hover); }
+.catalog-tools button[aria-pressed="true"] { background: var(--zc-primary); color: #fff; }
+.catalog-tools button:focus-visible, .catalog-sort-select:focus-visible { outline: 2px solid var(--zc-primary); outline-offset: 3px; }
 .catalog-views button { width: 34px; padding: 0; }
 .catalog-views svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 .catalog-sort-select { display: none; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #334155; font-size: 14px; }

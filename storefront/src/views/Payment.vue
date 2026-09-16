@@ -457,7 +457,7 @@ function fmtTime(ts?: number): string {
 /* ── 成功态卡密 ── */
 .pay-cards { text-align: left; background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 14px; margin-top: 18px; }
 .pay-cards-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; margin-bottom: 10px; }
-.pay-copy-all { border: none; background: none; color: #2563eb; font-size: 13px; cursor: pointer; }
+.pay-copy-all { border: none; background: none; color: var(--zc-primary); font-size: 13px; cursor: pointer; }
 .pay-copy-all:hover { text-decoration: underline; }
 .pay-card-row {
   display: flex; align-items: center; gap: 10px;
@@ -469,13 +469,13 @@ function fmtTime(ts?: number): string {
 .pay-card-code { flex: 1; font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; user-select: all; }
 .pay-card-copy {
   border: none; background: none; cursor: pointer; flex-shrink: 0;
-  font-size: 12px; color: #2563eb; padding: 4px 8px; border-radius: 6px; opacity: 0.55; transition: all 0.15s;
+  font-size: 12px; color: var(--zc-primary); padding: 4px 8px; border-radius: 6px; opacity: 0.55; transition: all 0.15s;
 }
 .pay-card-row:hover .pay-card-copy { opacity: 1; }
-.pay-card-copy:hover { background: #eff6ff; }
+.pay-card-copy:hover { background: var(--zc-primary-soft); }
 .pay-fetch-hint {
   display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;
-  background: #eff6ff; border: 1px solid #dbeafe; border-radius: 10px; padding: 14px; margin-top: 18px; font-size: 13px;
+  background: var(--zc-primary-soft); border: 1px solid var(--zc-primary-tint); border-radius: 10px; padding: 14px; margin-top: 18px; font-size: 13px;
 }
 
 /* ── 扫码态 ── */
@@ -502,14 +502,14 @@ function fmtTime(ts?: number): string {
 .pay-qr-amount { margin-top: 14px; font-size: 14px; }
 .pay-qr-hint { margin-top: 12px; font-size: 13px; color: #6b7280; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .pay-change {
-  margin-top: 14px; border: none; background: none; color: #2563eb; font-size: 13px; cursor: pointer;
+  margin-top: 14px; border: none; background: none; color: var(--zc-primary); font-size: 13px; cursor: pointer;
 }
 .pay-change:hover { text-decoration: underline; }
 
 /* 点动画（检测中） */
 .dot-loader { display: inline-flex; gap: 4px; }
 .dot-loader span {
-  width: 6px; height: 6px; border-radius: 999px; background: #2563eb;
+  width: 6px; height: 6px; border-radius: 999px; background: var(--zc-primary);
   animation: bounce 1.2s infinite ease-in-out;
 }
 .dot-loader span:nth-child(2) { animation-delay: 0.15s; }
@@ -529,7 +529,7 @@ function fmtTime(ts?: number): string {
 
 /* ── 选择态 ── */
 .pay-select { display: flex; flex-direction: column; gap: 16px; }
-.pay-summary { background: linear-gradient(135deg, #eff6ff, #fff); border: 1px solid #dbeafe; border-radius: 14px; padding: 20px; }
+.pay-summary { background: linear-gradient(135deg, var(--zc-primary-soft), #fff); border: 1px solid var(--zc-primary-tint); border-radius: 14px; padding: 20px; }
 .pay-summary-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pay-summary-head .pay-countdown { margin-left: auto; }
 .pay-summary-amount { display: flex; align-items: baseline; gap: 10px; margin-top: 10px; font-size: 14px; color: #374151; }
@@ -541,10 +541,10 @@ function fmtTime(ts?: number): string {
 .pay-submit {
   width: 100%; padding: 14px 0; border: none; cursor: pointer;
   border-radius: 12px; font-size: 16px; font-weight: 700; color: #fff;
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3); transition: all 0.15s;
+  background: linear-gradient(90deg, var(--zc-primary), var(--zc-primary-hover));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--zc-primary) 30%, transparent); transition: all 0.15s;
 }
-.pay-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); }
+.pay-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px color-mix(in srgb, var(--zc-primary) 40%, transparent); }
 .pay-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 .pay-assure { text-align: center; font-size: 12px; color: #9ca3af; }
 </style>

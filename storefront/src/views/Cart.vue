@@ -289,7 +289,7 @@ const queryPwd = ref('');
   background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
   padding: 60px 20px; text-align: center;
 }
-.cart-empty-icon { font-size: 48px; color: #2563eb; opacity: 0.65; margin-bottom: 12px; }
+.cart-empty-icon { font-size: 48px; color: var(--zc-primary); opacity: 0.65; margin-bottom: 12px; }
 .cart-empty-text { color: #6b7280; font-size: 15px; margin-bottom: 16px; }
 
 /* ── 工具栏 ── */
@@ -310,18 +310,18 @@ const queryPwd = ref('');
 .cart-item-check { width: 16px; height: 16px; flex-shrink: 0; }
 .cart-item-cover {
   width: 56px; height: 56px; border-radius: 10px; overflow: hidden; flex-shrink: 0;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  background: linear-gradient(135deg, var(--zc-primary-soft), var(--zc-primary-tint));
   display: flex; align-items: center; justify-content: center;
   text-decoration: none;
 }
 .cart-item-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cart-item-ph { font-size: 20px; font-weight: 700; color: #93c5fd; }
+.cart-item-ph { font-size: 20px; font-weight: 700; color: var(--zc-primary-muted); }
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name {
   font-size: 14px; font-weight: 600; color: #111827; text-decoration: none;
   display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.cart-item-name:hover { color: #2563eb; }
+.cart-item-name:hover { color: var(--zc-primary); }
 .cart-item-badges { display: flex; gap: 6px; margin-top: 4px; }
 .cart-item-sku { margin-top: 2px; }
 .cart-item-price, .cart-item-subtotal { text-align: center; width: 76px; flex-shrink: 0; }
@@ -333,7 +333,7 @@ const queryPwd = ref('');
   width: 30px; height: 32px; border: none; background: #f8fafc; cursor: pointer;
   font-size: 14px; color: #374151;
 }
-.cart-qty-btn:hover:not(:disabled) { background: #eff6ff; color: #2563eb; }
+.cart-qty-btn:hover:not(:disabled) { background: var(--zc-primary-soft); color: var(--zc-primary); }
 .cart-qty-input {
   width: 48px; height: 32px; border: none; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
   text-align: center; font-size: 13px; outline: none;

@@ -163,8 +163,8 @@ async function applyListSeo() {
   color: #374151; background: #f3f4f6; border: 1px solid transparent;
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.cat-chip:hover { border-color: rgba(37, 99, 235, 0.5); color: #2563eb; }
-.cat-chip.active { background: #2563eb; color: #fff; }
+.cat-chip:hover { border-color: color-mix(in srgb, var(--zc-primary) 50%, transparent); color: var(--zc-primary); }
+.cat-chip.active { background: var(--zc-primary); color: #fff; }
 
-.tag-category { background: #f0f9ff; color: #0284c7; }
+.tag-category { background: var(--zc-primary-tint); color: var(--zc-primary-strong); }
 </style>

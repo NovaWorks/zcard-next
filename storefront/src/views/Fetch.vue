@@ -250,7 +250,7 @@ function statusBadge(s: string): string {
 <style scoped>
 /* ── Hero 搜索区 ── */
 .query-hero {
-  background: linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6);
+  background: linear-gradient(135deg, var(--zc-primary-hover), var(--zc-primary), var(--zc-primary-bright));
   border-radius: 14px;
   padding: 36px 24px 40px;
   color: #fff;
@@ -274,7 +274,7 @@ function statusBadge(s: string): string {
 }
 .query-btn {
   border: none; cursor: pointer;
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
+  background: linear-gradient(90deg, var(--zc-primary), var(--zc-primary-hover));
   color: #fff; font-weight: 600; font-size: 14px;
   padding: 10px 22px; border-radius: 10px;
   transition: all 0.15s; white-space: nowrap;
@@ -311,7 +311,7 @@ function statusBadge(s: string): string {
 .guide-step { display: flex; gap: 12px; align-items: flex-start; }
 .guide-num {
   width: 26px; height: 26px; border-radius: 999px; flex-shrink: 0;
-  background: #2563eb; color: #fff; font-size: 13px; font-weight: 700;
+  background: var(--zc-primary); color: #fff; font-size: 13px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
 .guide-step b { display: block; font-size: 14px; margin-bottom: 2px; }
@@ -332,7 +332,7 @@ function statusBadge(s: string): string {
 }
 .copy-all {
   border: none; background: none; cursor: pointer;
-  font-size: 13px; color: #2563eb;
+  font-size: 13px; color: var(--zc-primary);
 }
 .copy-all:hover { text-decoration: underline; }
 
@@ -341,7 +341,7 @@ function statusBadge(s: string): string {
   background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 8px;
   padding: 10px 12px; margin-bottom: 8px;
 }
-.card-row:hover { border-color: rgba(37, 99, 235, 0.3); }
+.card-row:hover { border-color: color-mix(in srgb, var(--zc-primary) 30%, transparent); }
 .card-index { font-size: 11px; color: #9ca3af; width: 22px; flex-shrink: 0; }
 .card-content { flex: 1; min-width: 0; }
 .card-code {
@@ -352,11 +352,11 @@ function statusBadge(s: string): string {
 .card-mask-tip { display: block; font-size: 11px; color: #f59e0b; margin-top: 2px; }
 .card-copy {
   border: none; background: none; cursor: pointer; flex-shrink: 0;
-  font-size: 12px; color: #2563eb; padding: 4px 8px; border-radius: 6px;
+  font-size: 12px; color: var(--zc-primary); padding: 4px 8px; border-radius: 6px;
   opacity: 0.55; transition: all 0.15s;
 }
 .card-row:hover .card-copy { opacity: 1; }
-.card-copy:hover { background: #eff6ff; }
+.card-copy:hover { background: var(--zc-primary-soft); }
 
 .result-actions { display: flex; justify-content: center; }
 </style>

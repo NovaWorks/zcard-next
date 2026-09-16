@@ -257,8 +257,8 @@ async function applyListSeo() {
   padding: 9px 22px; border-radius: 999px; font-size: 15px; font-weight: 500; color: #374151;
   background: #f3f4f6; border: 1px solid transparent; cursor: pointer; transition: all .15s;
 }
-.chip:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
-.chip.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3); }
+.chip:hover { border-color: var(--zc-primary); color: var(--zc-primary); background: var(--zc-primary-soft); }
+.chip.active { background: var(--zc-primary); color: #fff; font-weight: 600; box-shadow: 0 3px 10px color-mix(in srgb, var(--zc-primary) 30%, transparent); }
 .chip-icon { margin-right: 5px; }
 /* 胶囊行：桌面多行 wrap；移动端单行横滑 + 「更多」展开（与首页同款） */
 .cat-chips-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -290,8 +290,8 @@ async function applyListSeo() {
 .mcb-bar { width: 4px; height: 16px; border-radius: 999px; background: #ff5722; flex-shrink: 0; }
 .mcb-title { font-size: 15px; font-weight: 700; color: #111827; letter-spacing: 0.5px; }
 .mcb-count {
-  margin-left: auto; font-size: 12px; color: #2563eb;
-  background: rgba(37, 99, 235, 0.08); padding: 2px 9px; border-radius: 999px;
+  margin-left: auto; font-size: 12px; color: var(--zc-primary);
+  background: color-mix(in srgb, var(--zc-primary) 8%, transparent); padding: 2px 9px; border-radius: 999px;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .mcb-arrow {
@@ -312,8 +312,8 @@ async function applyListSeo() {
 @media (max-width: 768px) {
   .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
 }
-.vt-btn:hover { color: #2563eb; }
-.vt-btn.active { background: #2563eb; color: #fff; }
+.vt-btn:hover { color: var(--zc-primary); }
+.vt-btn.active { background: var(--zc-primary); color: #fff; }
 .list-rows { display: flex; flex-direction: column; gap: 10px; }
 
 @media (max-width: 767px) { .catalog-big { grid-template-columns: minmax(0, 1fr) !important; } }

@@ -248,7 +248,7 @@ async function submit() {
 }
 .method-tab.active {
   background: #fff;
-  color: #2563eb;
+  color: var(--zc-primary);
   font-weight: 600;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }

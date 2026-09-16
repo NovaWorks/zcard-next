@@ -43,7 +43,7 @@
       <div class="card" style="margin-top: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; cursor: pointer;" @click="switchTab('promo')">
         <div>
           <div class="muted">我的推广码</div>
-          <div style="font-family: ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: #2563eb; margin-top: 2px;">{{ myPromoCode || '点击开通' }}</div>
+          <div style="font-family: ui-monospace, Menlo, monospace; font-size: 22px; font-weight: 800; letter-spacing: 2px; color: var(--zc-primary); margin-top: 2px;">{{ myPromoCode || '点击开通' }}</div>
         </div>
         <div style="flex: 1; min-width: 200px;" class="muted">
           分享推广链接给好友，符合推广规则的订单可获得佣金 →
@@ -704,7 +704,7 @@ function fmtTime(ts: number): string {
 .lv-name { font-size: 20px; font-weight: 800; color: #111827; line-height: 1.25; }
 .lv-next {
   flex-shrink: 0; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;
-  font-size: 13px; font-weight: 600; color: #2563eb; background: #eff6ff;
+  font-size: 13px; font-weight: 600; color: var(--zc-primary); background: var(--zc-primary-soft);
   padding: 4px 10px; border-radius: 999px; margin-top: 2px;
 }
 .lv-arrow { font-size: 15px; line-height: 1; }
@@ -714,7 +714,7 @@ function fmtTime(ts: number): string {
 }
 .lv-bar { display: flex; align-items: center; gap: 10px; }
 .lv-bar .progress { flex: 1; min-width: 0; }
-.lv-percent { flex-shrink: 0; font-size: 13px; font-weight: 700; color: #2563eb; font-variant-numeric: tabular-nums; }
+.lv-percent { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--zc-primary); font-variant-numeric: tabular-nums; }
 .lv-gaps { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .lv-gap {
   font-size: 13px; color: #6b7280; background: #f9fafb; border: 1px solid #f3f4f6;
@@ -727,7 +727,7 @@ function fmtTime(ts: number): string {
 .recharge-page { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .rc-balance {
   display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
-  background: linear-gradient(135deg, #eff6ff, #fff);
+  background: linear-gradient(135deg, var(--zc-primary-soft), #fff);
 }
 .rc-label { font-size: 13px; }
 .rc-balance-num { font-size: 26px; font-weight: 800; color: #111827; margin-top: 2px; }
@@ -753,8 +753,8 @@ function fmtTime(ts: number): string {
   border: 2px solid #e5e7eb; border-radius: 12px; padding: 12px 8px;
   background: #fff; cursor: pointer; transition: all 0.15s; font-family: inherit;
 }
-.rc-tier:hover { border-color: rgba(37, 99, 235, 0.4); }
-.rc-tier.active { border-color: #2563eb; background: #eff6ff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12); }
+.rc-tier:hover { border-color: color-mix(in srgb, var(--zc-primary) 40%, transparent); }
+.rc-tier.active { border-color: var(--zc-primary); background: var(--zc-primary-soft); box-shadow: 0 2px 8px color-mix(in srgb, var(--zc-primary) 12%, transparent); }
 .rc-tier-amount { font-size: 16px; font-weight: 700; color: #111827; }
 .rc-tier-gift {
   font-size: 12px; color: #b45309; background: #fef3c7;
@@ -767,7 +767,7 @@ function fmtTime(ts: number): string {
   border: 1px solid #e5e7eb; border-radius: 10px; padding: 0 12px;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.rc-custom:focus-within { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
+.rc-custom:focus-within { border-color: var(--zc-primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--zc-primary) 15%, transparent); }
 .rc-yen { font-size: 18px; font-weight: 700; color: #6b7280; }
 .rc-custom input {
   flex: 1; border: none; outline: none; padding: 12px 0;
@@ -792,11 +792,11 @@ function fmtTime(ts: number): string {
 .rc-submit {
   width: 100%; margin-top: 16px; padding: 14px 0; border: none; cursor: pointer;
   border-radius: 12px; font-size: 16px; font-weight: 700; color: #fff;
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3); transition: all 0.15s;
+  background: linear-gradient(90deg, var(--zc-primary), var(--zc-primary-hover));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--zc-primary) 30%, transparent); transition: all 0.15s;
   font-family: inherit;
 }
-.rc-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); }
+.rc-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px color-mix(in srgb, var(--zc-primary) 40%, transparent); }
 .rc-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 .rc-assure { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 10px; }
 
@@ -816,7 +816,7 @@ function fmtTime(ts: number): string {
 .rc-qr-amount { margin-top: 14px; font-size: 14px; }
 .rc-qr-amount b { color: #ff5722; font-size: 20px; }
 .rc-qr-hint { margin-top: 8px; font-size: 13px; }
-.rc-change { margin-top: 14px; border: none; background: none; color: #2563eb; font-size: 13px; cursor: pointer; }
+.rc-change { margin-top: 14px; border: none; background: none; color: var(--zc-primary); font-size: 13px; cursor: pointer; }
 .rc-change:hover { text-decoration: underline; }
 .rc-redirect-icon { font-size: 40px; margin-bottom: 10px; }
 .rc-btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
@@ -829,11 +829,11 @@ function fmtTime(ts: number): string {
 .gc-submit {
   width: 100%; margin-top: 18px; padding: 13px 0; border: none; cursor: pointer;
   border-radius: 12px; font-size: 16px; font-weight: 700; color: #fff;
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.3); transition: all 0.15s;
+  background: linear-gradient(90deg, var(--zc-primary), var(--zc-primary-hover));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--zc-primary) 30%, transparent); transition: all 0.15s;
   font-family: inherit;
 }
-.gc-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4); }
+.gc-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 24px color-mix(in srgb, var(--zc-primary) 40%, transparent); }
 .gc-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 总览快捷入口：移动端两列等宽（对齐大厂宫格按钮） */

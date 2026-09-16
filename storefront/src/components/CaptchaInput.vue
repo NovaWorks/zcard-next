@@ -83,7 +83,7 @@ defineExpose({ refresh });
   height: 40px; border-radius: 6px; cursor: pointer;
   border: 1px solid #e5e7eb; flex-shrink: 0;
 }
-.captcha-img:hover { border-color: #2563eb; }
+.captcha-img:hover { border-color: var(--zc-primary); }
 .captcha-loading {
   width: 100px; height: 40px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;

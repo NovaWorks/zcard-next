@@ -64,7 +64,7 @@ defineProps<{
   min-width: 0; /* 网格/flex 子项防长词撑爆列宽（grid item 默认 min-width:auto） */
 }
 .product-card:hover {
-  border-color: rgba(37, 99, 235, 0.45);
+  border-color: color-mix(in srgb, var(--zc-primary) 45%, transparent);
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   transform: translateY(-2px);
 }
@@ -91,8 +91,8 @@ defineProps<{
   justify-content: center;
   font-size: 32px;
   font-weight: 700;
-  color: #bfdbfe;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  color: var(--zc-primary-border);
+  background: linear-gradient(135deg, var(--zc-primary-soft), var(--zc-primary-tint));
 }
 /* 无图占位（SVG data URI）：contain 完整显示，不参与 hover 缩放 */
 .pc-noimg { object-fit: contain !important; }
@@ -111,7 +111,7 @@ defineProps<{
 .pc-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
 .pc-heading { display:flex; align-items:flex-start; gap:6px; min-width:0; }
 .pc-heading .pc-name { flex:1; min-width:0; }
-.pc-recommend-tag { flex-shrink:0; white-space:nowrap; color:#1d4ed8; background:#eff6ff; border-radius:4px; padding:1px 5px; font-size:12px; line-height:18px; }
+.pc-recommend-tag { flex-shrink:0; white-space:nowrap; color:var(--zc-primary-hover); background:var(--zc-primary-soft); border-radius:4px; padding:1px 5px; font-size:12px; line-height:18px; }
 .pc-name {
   font-size: 14px;
   font-weight: 600;

@@ -53,8 +53,8 @@ defineEmits<{ select: [channel: string, method: string] }>();
   background: #fff; cursor: pointer; text-align: left; transition: all 0.15s;
   font-family: inherit;
 }
-.pay-channel:hover { border-color: rgba(37, 99, 235, 0.4); }
-.pay-channel.active { border-color: #2563eb; background: #eff6ff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.12); }
+.pay-channel:hover { border-color: color-mix(in srgb, var(--zc-primary) 40%, transparent); }
+.pay-channel.active { border-color: var(--zc-primary); background: var(--zc-primary-soft); box-shadow: 0 2px 8px color-mix(in srgb, var(--zc-primary) 12%, transparent); }
 .pay-channel-icon {
   width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
   background: #f1f5f9; display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
@@ -69,7 +69,7 @@ defineEmits<{ select: [channel: string, method: string] }>();
 /* 勾选标常驻占位（对齐不跳），未选中透明缩小、选中放大浮现 */
 .pay-channel-check {
   flex-shrink: 0; width: 20px; height: 20px; border-radius: 999px;
-  background: #2563eb; color: #fff; font-size: 12px;
+  background: var(--zc-primary); color: #fff; font-size: 12px;
   display: flex; align-items: center; justify-content: center;
   opacity: 0; transform: scale(0.6); transition: opacity 0.15s, transform 0.15s;
 }

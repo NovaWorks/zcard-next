@@ -131,7 +131,7 @@ function fmtTime(ts: number): string {
 /* 页头 */
 .od-head { display: flex; align-items: center; gap: 14px; }
 .od-back { font-size: 13px; color: #6b7280; text-decoration: none; padding: 4px 8px; border-radius: 6px; transition: all 0.15s; }
-.od-back:hover { color: #2563eb; background: #eff6ff; }
+.od-back:hover { color: var(--zc-primary); background: var(--zc-primary-soft); }
 .od-title { font-size: 20px; margin: 0; color: #111827; }
 
 /* 状态条：全宽卡片 */

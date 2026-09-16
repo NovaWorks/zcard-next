@@ -90,6 +90,6 @@ function go(key: string) {
   border-radius: 8px; font-size: 14px; color: #4b5563; font-family: inherit;
   transition: background 0.15s, color 0.15s; white-space: nowrap;
 }
-.member-tabs button:hover:not(.active) { color: #2563eb; background: #f0f6ff; }
-.member-tabs button.active { background: #2563eb; color: #fff; font-weight: 600; }
+.member-tabs button:hover:not(.active) { color: var(--zc-primary); background: var(--zc-primary-soft); }
+.member-tabs button.active { background: var(--zc-primary); color: #fff; font-weight: 600; }
 </style>

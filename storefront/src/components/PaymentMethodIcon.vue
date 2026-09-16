@@ -24,8 +24,8 @@ watch(() => props.icon, () => { imageFailed.value = false; });
       <path d="M7 7h18v4h-7v4.2c4.9.2 8.5 1.1 8.5 2.2S21.9 20 16 20 5.5 18.9 5.5 17.4s3.6-2 8.5-2.2V11H7V7Zm7 9.2c-4 .2-6.5.9-6.5 1.3 0 .5 3.8 1.3 8.5 1.3s8.5-.8 8.5-1.3c0-.4-2.5-1.1-6.5-1.3v1.5h-4v-1.5ZM14 20h4v6h-4v-6Z" fill="white" />
     </svg>
     <svg v-else viewBox="0 0 32 32" fill="none">
-      <rect width="32" height="32" rx="7" fill="#eff6ff" />
-      <g stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect width="32" height="32" rx="7" fill="var(--zc-primary-soft)" />
+      <g stroke="var(--zc-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <template v-if="type === 'bank'">
           <path d="m5 12 11-7 11 7H5ZM7 26h18M9 15v8m7-8v8m7-8v8" />
         </template>

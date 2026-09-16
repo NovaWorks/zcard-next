@@ -57,7 +57,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
   border: 1px solid #e5e7eb; border-radius: 8px; background: #fff; cursor: pointer;
   font-size: 13px; color: #374151; font-family: inherit; transition: border-color 0.15s;
 }
-.cs-btn:hover { border-color: #2563eb; color: #2563eb; }
+.cs-btn:hover { border-color: var(--zc-primary); color: var(--zc-primary); }
 .cs-symbol { font-weight: 700; }
 .cs-code { font-weight: 600; letter-spacing: 0.3px; }
 .cs-caret { font-size: 10px; color: #9ca3af; }
@@ -71,8 +71,8 @@ onUnmounted(() => document.removeEventListener('click', onDocClick));
   padding: 8px 10px; border: none; border-radius: 8px; background: none;
   cursor: pointer; font-size: 13px; color: #374151; font-family: inherit; text-align: left;
 }
-.cs-item:hover { background: #f0f6ff; color: #2563eb; }
-.cs-item.active { color: #2563eb; font-weight: 600; }
+.cs-item:hover { background: var(--zc-primary-soft); color: var(--zc-primary); }
+.cs-item.active { color: var(--zc-primary); font-weight: 600; }
 .cs-item-symbol { width: 18px; text-align: center; font-weight: 700; }
 .cs-item-code { flex: 1; }
 .cs-item-check { font-size: 12px; }

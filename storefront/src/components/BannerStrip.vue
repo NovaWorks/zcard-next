@@ -20,14 +20,14 @@ defineEmits<{ open: [banner: Banner] }>();
 .banner-strip { display: grid; gap: 12px; margin: 16px 0; min-width: 0; }
 .banner-item { display: block; width: 100%; padding: 0; border: 0; border-radius: 12px; overflow: hidden; background: transparent; }
 button.banner-item { cursor: pointer; }
-button.banner-item:focus-visible { outline: 3px solid var(--primary, #2563eb); outline-offset: 3px; }
+button.banner-item:focus-visible { outline: 3px solid var(--zc-primary); outline-offset: 3px; }
 .banner-item picture, .banner-item img { display: block; width: 100%; height: auto; }
 /* 商品流横幅沿用商品间距，保留完整图片，避免高图撑满屏幕。 */
 .banner-strip--catalog { grid-column: 1 / -1; margin: 0; border-radius: 12px; }
 .banner-strip--catalog.banner-strip--multiple { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .banner-strip--catalog .banner-item { background: var(--card-bg, #fff); border: 1px solid var(--border-color, #e5e7eb); }
 .banner-strip--catalog .banner-item img { max-height: 180px; object-fit: contain; }
-.banner-strip--catalog:focus-visible { outline: 3px solid var(--primary, #2563eb); outline-offset: 3px; }
+.banner-strip--catalog:focus-visible { outline: 3px solid var(--zc-primary); outline-offset: 3px; }
 @media (max-width: 767px) {
   .banner-strip--catalog .banner-item img { max-height: 140px; }
   .banner-strip--catalog.banner-strip--multiple { display: flex; overflow-x: auto; gap: 10px; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; padding-bottom: 6px; }

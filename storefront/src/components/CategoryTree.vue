@@ -156,8 +156,8 @@ function select(id: number) {
 .cat-tree-title { font-size: 16px; font-weight: 700; color: #111827; letter-spacing: 0.5px; }
 .cat-tree-count {
   margin-left: auto;
-  font-size: 12px; font-weight: 500; color: #2563eb;
-  background: rgba(37, 99, 235, 0.08);
+  font-size: 12px; font-weight: 500; color: var(--zc-primary);
+  background: color-mix(in srgb, var(--zc-primary) 8%, transparent);
   padding: 2px 9px; border-radius: 999px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -182,8 +182,8 @@ function select(id: number) {
   transition: all 0.15s; font-family: inherit;
   text-align: left;
 }
-.tree-all:hover { background: #eff6ff; color: #2563eb; }
-.tree-all.active { background: #2563eb; color: #fff; font-weight: 600; box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25); }
+.tree-all:hover { background: var(--zc-primary-soft); color: var(--zc-primary); }
+.tree-all.active { background: var(--zc-primary); color: #fff; font-weight: 600; box-shadow: 0 2px 6px color-mix(in srgb, var(--zc-primary) 25%, transparent); }
 .tree-all > span:first-child { font-size: 16px; }
 .tree-empty { padding: 16px 0; text-align: center; }
 

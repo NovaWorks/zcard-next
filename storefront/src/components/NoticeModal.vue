@@ -103,10 +103,10 @@ function formatDate(unix?: number): string {
 }
 .notice-head {
   display: flex; align-items: center; gap: 8px;
-  padding: 14px 18px; background: linear-gradient(90deg, #eff6ff, #dbeafe);
+  padding: 14px 18px; background: linear-gradient(90deg, var(--zc-primary-soft), var(--zc-primary-tint));
   border-bottom: 1px solid #e5e7eb;
 }
-.notice-horn { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: #fff; color: #2563eb; font-size: 20px; }
+.notice-horn { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: #fff; color: var(--zc-primary); font-size: 20px; }
 .notice-head-title { flex: 1; font-weight: 700; font-size: 15px; color: #1f2329; }
 .notice-close {
   border: none; background: none; cursor: pointer; font-size: 14px; color: #9ca3af;
@@ -121,7 +121,7 @@ function formatDate(unix?: number): string {
 .notice-markdown :deep(h1) { font-size: 22px; }
 .notice-markdown :deep(h2) { font-size: 19px; }
 .notice-markdown :deep(h3) { font-size: 16px; }
-.notice-markdown :deep(a) { color: #2563eb; text-decoration: underline; }
+.notice-markdown :deep(a) { color: var(--zc-primary); text-decoration: underline; }
 .notice-content :deep(p) { margin: 0 0 10px; }
 .notice-content :deep(img) { max-width: 100%; border-radius: 8px; }
 .notice-content :deep(ul), .notice-content :deep(ol) { padding-left: 22px; margin: 0 0 10px; }
@@ -129,7 +129,7 @@ function formatDate(unix?: number): string {
 .notice-content :deep(th), .notice-content :deep(td) { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
 .notice-content :deep(th) { background: #f8fafc; }
 .notice-content :deep(pre) { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 10px 0; }
-.notice-content :deep(blockquote) { margin: 10px 0; padding: 8px 12px; border-left: 4px solid #2563eb; background: #f5f9ff; border-radius: 0 8px 8px 0; }
+.notice-content :deep(blockquote) { margin: 10px 0; padding: 8px 12px; border-left: 4px solid var(--zc-primary); background: var(--zc-primary-soft); border-radius: 0 8px 8px 0; }
 
 /* 设置公告图片轮播 */
 .ann-slider { position: relative; border-radius: 10px; overflow: hidden; }

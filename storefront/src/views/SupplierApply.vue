@@ -73,7 +73,7 @@
             </div>
             <div class="account-actions">
               <span v-if="a.status === 'approved'" class="account-balance">
-                余额 <b style="color: #2563eb; font-size: 16px;">{{ formatMoney(a.balance_cache || 0) }}</b>
+                余额 <b style="color: var(--zc-primary); font-size: 16px;">{{ formatMoney(a.balance_cache || 0) }}</b>
               </span>
               <button v-if="a.status === 'approved'" class="btn" style="padding: 6px 14px; font-size: 13px;" @click="openRecharge(a)">充值</button>
               <button v-if="a.status === 'applying'" class="btn secondary" @click="cancel(a)">撤销申请</button>
@@ -640,10 +640,10 @@ onMounted(load);
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   background: #fff;
 }
-.protocol-option:hover { border-color: #93c5fd; }
+.protocol-option:hover { border-color: var(--zc-primary-muted); }
 .protocol-option.active {
-  border-color: #2563eb; background: #f5f9ff;
-  box-shadow: 0 0 0 1px #2563eb inset;
+  border-color: var(--zc-primary); background: var(--zc-primary-soft);
+  box-shadow: 0 0 0 1px var(--zc-primary) inset;
 }
 .protocol-radio { position: absolute; opacity: 0; pointer-events: none; }
 .protocol-dot {
@@ -654,10 +654,10 @@ onMounted(load);
 }
 .protocol-dot::after {
   content: ''; position: absolute; inset: 2px;
-  border-radius: 50%; background: #2563eb;
+  border-radius: 50%; background: var(--zc-primary);
   transform: scale(0); transition: transform 0.12s;
 }
-.protocol-option.active .protocol-dot { border-color: #2563eb; }
+.protocol-option.active .protocol-dot { border-color: var(--zc-primary); }
 .protocol-option.active .protocol-dot::after { transform: scale(1); }
 .protocol-head { font-size: 14px; color: #1f2329; padding-right: 22px; }
 .protocol-desc { line-height: 1.6; }
@@ -711,7 +711,7 @@ onMounted(load);
 .balance-hero {
   margin: 14px 18px 0;
   border-radius: 12px;
-  background: linear-gradient(135deg, #1e40af, #2563eb 60%, #3b82f6);
+  background: linear-gradient(135deg, var(--zc-primary-strong), var(--zc-primary) 60%, var(--zc-primary-bright));
   color: #fff;
   padding: 16px 18px;
 }
@@ -739,12 +739,12 @@ onMounted(load);
   color: #1f2329;
   transition: all 0.12s;
 }
-.tier-card:hover { border-color: #93c5fd; }
+.tier-card:hover { border-color: var(--zc-primary-muted); }
 .tier-card.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #2563eb;
-  box-shadow: 0 0 0 1px #2563eb inset;
+  border-color: var(--zc-primary);
+  background: var(--zc-primary-soft);
+  color: var(--zc-primary);
+  box-shadow: 0 0 0 1px var(--zc-primary) inset;
 }
 .tier-symbol { font-size: 12px; font-weight: 500; margin-right: 2px; }
 .custom-input { margin-top: 8px; }
@@ -754,14 +754,14 @@ onMounted(load);
   padding: 13px;
   border: none;
   border-radius: 10px;
-  background: #2563eb;
+  background: var(--zc-primary);
   color: #fff;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s;
 }
-.recharge-submit:hover:not(:disabled) { background: #1d4ed8; }
+.recharge-submit:hover:not(:disabled) { background: var(--zc-primary-hover); }
 .recharge-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 .recharge-done { text-align: center; padding: 18px 0 6px; }
 
@@ -770,17 +770,17 @@ onMounted(load);
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
+  background: var(--zc-primary-soft);
+  border: 1px solid var(--zc-primary-border);
   border-radius: 6px;
   padding: 3px 4px 3px 10px;
   font-size: 13px;
 }
-.ip-chip code { font-size: 12.5px; color: #1d4ed8; }
+.ip-chip code { font-size: 12.5px; color: var(--zc-primary-hover); }
 .ip-chip-x {
   border: none;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--zc-primary-tint);
+  color: var(--zc-primary-hover);
   width: 18px;
   height: 18px;
   border-radius: 4px;
@@ -788,5 +788,5 @@ onMounted(load);
   font-size: 11px;
   line-height: 1;
 }
-.ip-chip-x:hover { background: #93c5fd; }
+.ip-chip-x:hover { background: var(--zc-primary-muted); }
 </style>

@@ -301,9 +301,9 @@ function fmtTime(ts: number): string {
 /* 余额区 */
 .wd-balance-card {
   display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-  background: linear-gradient(135deg, #1d4ed8, #2563eb, #3b82f6);
+  background: linear-gradient(135deg, var(--zc-primary-hover), var(--zc-primary), var(--zc-primary-bright));
   border-radius: 14px; padding: 22px 26px; color: #fff;
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--zc-primary) 25%, transparent);
 }
 .wd-balance-label { font-size: 13px; opacity: 0.85; }
 .wd-balance-num { font-size: 34px; font-weight: 800; margin: 4px 0; }
@@ -334,8 +334,8 @@ function fmtTime(ts: number): string {
   border: 2px solid #e5e7eb; border-radius: 10px; padding: 10px 16px;
   background: #fff; cursor: pointer; font-size: 13px; transition: all 0.15s;
 }
-.wd-method:hover { border-color: rgba(37, 99, 235, 0.4); }
-.wd-method.active { border-color: #2563eb; background: #eff6ff; }
+.wd-method:hover { border-color: color-mix(in srgb, var(--zc-primary) 40%, transparent); }
+.wd-method.active { border-color: var(--zc-primary); background: var(--zc-primary-soft); }
 
 
 /* 收款码 */
@@ -346,14 +346,14 @@ function fmtTime(ts: number): string {
   display: flex; align-items: center; justify-content: center;
   color: #9ca3af; font-size: 13px; cursor: pointer; transition: border-color 0.15s;
 }
-.wd-qr-placeholder:hover { border-color: #2563eb; color: #2563eb; }
+.wd-qr-placeholder:hover { border-color: var(--zc-primary); color: var(--zc-primary); }
 .wd-file-hidden { display: none; }
 
 .wd-submit {
   width: 100%; padding: 12px 0; border: none; cursor: pointer;
   border-radius: 10px; font-size: 15px; font-weight: 700; color: #fff;
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transition: all 0.15s;
+  background: linear-gradient(90deg, var(--zc-primary), var(--zc-primary-hover));
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--zc-primary) 30%, transparent); transition: all 0.15s;
 }
 .wd-submit:hover:not(:disabled) { transform: translateY(-1px); }
 .wd-submit:disabled { opacity: 0.5; cursor: not-allowed; }

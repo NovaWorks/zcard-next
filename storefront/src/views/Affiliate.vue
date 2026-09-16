@@ -292,8 +292,8 @@ function fmtTime(ts: number): string {
 /* 推广头部：左（码+链接）/ 右（二维码）经典两栏；窄屏纵向堆叠 */
 .promo-hero {
   display: flex; gap: 24px; align-items: center;
-  background: linear-gradient(135deg, #eff6ff, #fff);
-  border-color: #dbeafe;
+  background: linear-gradient(135deg, var(--zc-primary-soft), #fff);
+  border-color: var(--zc-primary-tint);
   flex-wrap: wrap;
 }
 @media (max-width: 640px) { .promo-hero { flex-direction: column-reverse; } }
@@ -301,12 +301,12 @@ function fmtTime(ts: number): string {
   flex: 1; min-width: 260px;
   display: flex; flex-direction: column; gap: 18px;
 }
-.promo-block + .promo-block { border-top: 1px dashed #dbeafe; padding-top: 16px; }
+.promo-block + .promo-block { border-top: 1px dashed var(--zc-primary-tint); padding-top: 16px; }
 .promo-block-title { font-size: 13px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
 .promo-code-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .promo-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 32px; font-weight: 800; letter-spacing: 4px; color: #2563eb;
+  font-size: 32px; font-weight: 800; letter-spacing: 4px; color: var(--zc-primary);
 }
 .promo-qr {
   background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;

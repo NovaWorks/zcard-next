@@ -15,7 +15,7 @@
     <div class="card">
       <h2 style="margin-bottom: 12px;">我的优惠券</h2>
       <div class="grid">
-        <div v-for="c in coupons" :key="c.id" class="card" style="border: 1px dashed #c7d2fe;">
+        <div v-for="c in coupons" :key="c.id" class="card" style="border: 1px dashed var(--zc-primary-border);">
           <div style="font-size: 18px; font-weight: 700; color: #e11d48;">
             <template v-if="c.type === 'fixed'">{{ formatMoney(c.value) }}</template>
             <template v-else>{{ (c.value / 100).toFixed(1) }} 折</template>

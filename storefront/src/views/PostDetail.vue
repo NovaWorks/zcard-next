@@ -141,14 +141,14 @@ async function applyPostSeo(detail: { post: StorePost; content: string } | null)
 .post-body :deep(p) { margin: 0 0 12px; }
 .post-body :deep(ul), .post-body :deep(ol) { margin: 0 0 12px; padding-left: 24px; }
 .post-body :deep(li) { margin-bottom: 4px; }
-.post-body :deep(a) { color: #2563eb; text-decoration: underline; word-break: break-all; }
+.post-body :deep(a) { color: var(--zc-primary); text-decoration: underline; word-break: break-all; }
 .post-body :deep(img) { max-width: 100%; height:auto; border-radius: 8px; margin: 6px 0; cursor: zoom-in; }
-.post-body :deep(img:focus-visible) { outline: 2px solid #2563eb; outline-offset: 4px; }
+.post-body :deep(img:focus-visible) { outline: 2px solid var(--zc-primary); outline-offset: 4px; }
 .post-body :deep(video), .post-body :deep(iframe) { max-width:100%; }
 .post-body :deep(iframe) { width:100%; height:auto; aspect-ratio:16/9; border:0; }
 .post-body :deep(blockquote) {
-  margin: 12px 0; padding: 10px 14px; border-left: 4px solid #2563eb;
-  background: #f5f9ff; color: #4b5563; border-radius: 0 8px 8px 0;
+  margin: 12px 0; padding: 10px 14px; border-left: 4px solid var(--zc-primary);
+  background: var(--zc-primary-soft); color: #4b5563; border-radius: 0 8px 8px 0;
 }
 .post-body :deep(pre) {
   background: #0f172a; color: #e2e8f0; padding: 14px 16px; border-radius: 10px;
