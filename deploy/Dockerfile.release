@@ -1,0 +1,21 @@
+# 下载官方发行包，不编译 Go / 前端；VERSION 应固定为正式发行 tag。
+FROM --platform=$BUILDPLATFORM python:3.13-alpine AS download
+ARG TARGETARCH
+ARG VERSION=latest
+ARG RELEASE_BASE=https://github.com/NovaWorks/zcard-next/releases/download
+RUN apk add --no-cache openssl
+COPY deploy/download-release.py /download-release.py
+RUN python3 /download-release.py --version "$VERSION" --arch "$TARGETARCH" \
+      --base-url "$RELEASE_BASE" --output /out/zcard \
+    && mkdir -p /runtime/configs /runtime/data /runtime/backups
+
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=download /out/zcard /zcard
+COPY --from=download --chown=65532:65532 /runtime/ /app/
+WORKDIR /app
+ENV ZCARD_CONTAINER=1
+VOLUME ["/app"]
+EXPOSE 8000
+USER nonroot:nonroot
+ENTRYPOINT ["/zcard"]
+CMD ["serve", "-conf", "/app/configs"]

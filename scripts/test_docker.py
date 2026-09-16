@@ -24,7 +24,7 @@ def docker(*args):
 
 def main():
     image = os.environ.get("ZCARD_TEST_IMAGE", "zcard:test")
-    expected_version = json.loads((Path(__file__).resolve().parents[1] / "server/CHANGELOG.json").read_text())[0]["version"]
+    expected_version = os.environ.get("ZCARD_TEST_VERSION") or json.loads((Path(__file__).resolve().parents[1] / "server/CHANGELOG.json").read_text())[0]["version"]
     assert docker("run", "--rm", image, "version").split()[1] == expected_version
     name = "zcard-smoke-" + uuid.uuid4().hex[:12]
     volume = name + "-data"

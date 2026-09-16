@@ -121,6 +121,7 @@ jobs:
           bash -n scripts/zcard-install.sh deploy/install.sh deploy/docker-install.sh
           python3 scripts/test_install.py
           python3 scripts/test_docker_version.py
+          python3 scripts/test_docker_release.py
           for key in ZCARD_JWT_ADMIN_KEY ZCARD_JWT_USER_KEY ZCARD_CARD_KEY ZCARD_DATA_KEY MYSQL_PASSWORD MYSQL_ROOT_PASSWORD; do
             export "$key=deployment-ci"
           done
@@ -131,3 +132,8 @@ jobs:
         env:
           ZCARD_TEST_IMAGE: zcard:test
         run: python3 scripts/test_docker.py
+
+      - name: 官方发行包下载构建与持久化验证
+        run: |
+          docker build -f deploy/Dockerfile.release --build-arg VERSION=v1.2.59 -t zcard:release-test .
+          ZCARD_TEST_IMAGE=zcard:release-test ZCARD_TEST_VERSION=v1.2.59 python3 scripts/test_docker.py

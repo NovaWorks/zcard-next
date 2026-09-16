@@ -2,12 +2,12 @@
 # /app 内保存配置、上传、主题与 SQLite 引导库；MySQL 单独持久化。
 services:
   zcard:
-    image: zcard-local:${ZCARD_VERSION:-auto}
+    image: zcard-local:${ZCARD_VERSION:-latest}
     build:
       context: ..
-      dockerfile: deploy/Dockerfile
+      dockerfile: ${ZCARD_DOCKERFILE:-deploy/Dockerfile.release}
       args:
-        VERSION: ${ZCARD_VERSION:-auto}
+        VERSION: ${ZCARD_VERSION:-latest}
     restart: unless-stopped
     ports:
       - "${ZCARD_BIND:-0.0.0.0}:${ZCARD_PORT:-8000}:8000"

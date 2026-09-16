@@ -71,7 +71,7 @@ const inFlight = computed(() => {
 
 const isContainer = computed(() => status.value?.supervisor_kind === "docker");
 const unknownContainerVersion = computed(() => isContainer.value && !/^v?\d+\.\d+\.\d+$/.test(status.value?.current_version || ""));
-const containerHint = "请在部署服务器检出目标版本源码，运行 bash deploy/docker-install.sh 重建镜像和容器。升级前请备份配置和数据卷。";
+const containerHint = "请在部署服务器运行 bash deploy/docker-install.sh，下载最新正式版并重建镜像和容器。升级前请备份配置和数据卷。";
 
 const supervisorTag = computed(() => {
   if (!status.value) return { type: "default" as const, label: "状态未知" };
@@ -484,7 +484,7 @@ watch(
 
       <NAlert v-if="isContainer" type="info" :show-icon="true" class="mt-3" :bordered="false">
         当前为 Docker / 容器部署，升级和回退均通过镜像完成。{{ containerHint }}
-        <div v-if="unknownContainerVersion" class="mt-1">当前镜像未记录正式版本，无法判断是否最新；重新构建后将显示源码对应的版本号。</div>
+        <div v-if="unknownContainerVersion" class="mt-1">当前镜像未记录正式版本，无法判断是否最新；重新构建后将显示实际安装的版本号。</div>
       </NAlert>
 
       <NAlert v-if="status?.supervisor_kind === 'none'" type="warning" :show-icon="true" class="mt-3" :bordered="false">

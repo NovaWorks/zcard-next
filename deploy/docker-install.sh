@@ -10,8 +10,17 @@ for tool in curl python3; do
 done
 docker compose version >/dev/null
 docker info >/dev/null
-# 每次构建都使用当前源码版本，不沿用旧 .env 中的 dev 或上一次发行号。
-source_version="$(python3 - "$script_dir/../server/CHANGELOG.json" <<'VERSION_PY'
+mode=release
+case "${1:-}" in
+  "") ;;
+  --source) mode=source; shift ;;
+  *) echo '用法：bash deploy/docker-install.sh [--source]' >&2; exit 1 ;;
+esac
+[ "$#" = 0 ] || { echo '不支持的参数' >&2; exit 1; }
+# 旧 .env 中的 dev/历史版本不决定本次升级；显式指定版本用环境变量。
+requested_version="${ZCARD_VERSION:-latest}"
+if [ "$mode" = source ]; then
+  source_version="$(python3 - "$script_dir/../server/CHANGELOG.json" <<'VERSION_PY'
 import json, re, sys
 version = json.load(open(sys.argv[1]))[0]["version"]
 if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", version):
@@ -19,18 +28,28 @@ if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", version):
 print(version)
 VERSION_PY
 )"
-case "${ZCARD_VERSION:-auto}" in
-  auto|dev|"$source_version") ;;
-  *) echo "ZCARD_VERSION 与当前源码版本 $source_version 不一致，请先检出对应源码" >&2; exit 1 ;;
-esac
-export ZCARD_VERSION="$source_version"
+  case "$requested_version" in
+    latest|auto|dev|"$source_version") ;;
+    *) echo "ZCARD_VERSION 与当前源码版本 $source_version 不一致，请先检出对应源码" >&2; exit 1 ;;
+  esac
+  export ZCARD_VERSION="$source_version" ZCARD_DOCKERFILE=deploy/Dockerfile
+else
+  case "$requested_version" in
+    latest|auto|dev)
+      requested_version="$(curl -fsSL --retry 3 --connect-timeout 15 https://api.github.com/repos/NovaWorks/zcard-next/releases/latest |
+        python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')" ;;
+  esac
+  [[ "$requested_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo '版本须为 vX.Y.Z 或 latest' >&2; exit 1; }
+  export ZCARD_VERSION="$requested_version" ZCARD_DOCKERFILE=deploy/Dockerfile.release
+fi
+printf '部署模式：%s，版本：%s\n' "$mode" "$ZCARD_VERSION"
 if [ ! -e "$script_dir/.env" ]; then
   command -v openssl >/dev/null || { echo '请先安装 openssl' >&2; exit 1; }
   # 原子、不可覆盖发布，失败不留下半份密钥；并发首装最多一个成功。
   tmp="$(mktemp "$script_dir/.env.tmp.XXXXXX")"
   trap 'rm -f "$tmp"' EXIT
   {
-    printf 'ZCARD_VERSION=%s\nZCARD_BIND=%s\nZCARD_PORT=%s\n' "${ZCARD_VERSION:-dev}" "${ZCARD_BIND:-0.0.0.0}" "${ZCARD_PORT:-8000}"
+    printf 'ZCARD_VERSION=%s\nZCARD_BIND=%s\nZCARD_PORT=%s\n' "$ZCARD_VERSION" "${ZCARD_BIND:-0.0.0.0}" "${ZCARD_PORT:-8000}"
     for key in ZCARD_JWT_ADMIN_KEY ZCARD_JWT_USER_KEY ZCARD_CARD_KEY ZCARD_DATA_KEY MYSQL_ROOT_PASSWORD MYSQL_PASSWORD; do
       secret_value="$(openssl rand -hex 32)"
       printf '%s=%s\n' "$key" "$secret_value"
@@ -42,18 +61,20 @@ if [ ! -e "$script_dir/.env" ]; then
 fi
 compose=(docker compose --env-file "$script_dir/.env" -f "$script_dir/docker-compose.yml")
 "${compose[@]}" config --quiet
-"${compose[@]}" up -d --build --wait --wait-timeout 180
+# 下载/验签/构建失败时不触碰正在运行的容器。
+"${compose[@]}" build zcard
+"${compose[@]}" up -d --no-build --wait --wait-timeout 180
 address="$("${compose[@]}" port zcard 8000)"
 address="${address/0.0.0.0/127.0.0.1}"
 ready=0
 for ((attempt=0; attempt<60; attempt++)); do
   if response="$(curl -fsS --max-time 2 "http://${address}/health")" &&
-    python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(not (d.get("status",{}).get("database") and d["status"].get("server")))' <<< "$response"; then
+    python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(not (d.get("status",{}).get("database") and d["status"].get("server") and d.get("version")==sys.argv[1]))' "$ZCARD_VERSION" <<< "$response"; then
     ready=1; break
   fi
   sleep 1
 done
-[ "$ready" = 1 ] || { echo '应用健康检查失败，请查看 docker compose logs zcard' >&2; exit 1; }
+[ "$ready" = 1 ] || { echo '应用健康或运行版本检查失败，请查看 docker compose logs zcard' >&2; exit 1; }
 printf '%s\n' '容器及应用健康检查通过。请打开配置端口的 /install 完成向导。' \
   'MySQL: 主机 mysql，端口 3306，用户/库名 zcard；密码为 deploy/.env 中 MYSQL_PASSWORD。' \
   'Redis: redis:6379，密码留空。请备份 deploy/.env 和 app-data / mysql-data / redis-data 卷。' \

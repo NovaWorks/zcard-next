@@ -60,6 +60,8 @@ cd zcard-next
 bash deploy/docker-install.sh
 ```
 
+默认下载官方 Linux 发行包并验证签名及 SHA256，无需在服务器编译 Go 或前端。指定版本可执行 `ZCARD_VERSION=v1.2.60 bash deploy/docker-install.sh`；开发者需要源码构建时使用 `bash deploy/docker-install.sh --source`。
+
 启动后，浏览器打开 **`http://服务器IP:8000/install`** 完成初始化。Docker 安装向导中的连接信息：
 
 | 配置项 | 填写内容 |

@@ -1,0 +1,4 @@
+# 发行包模式仅发送下载脚本，不发送源码、node_modules 或运行配置。
+**
+!deploy/
+!deploy/download-release.py
