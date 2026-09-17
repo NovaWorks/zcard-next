@@ -321,3 +321,7 @@ body { font-size: var(--zc-font-size, 14px); }
 html[data-theme-cart="false"] .cart-link,
 html[data-theme-posts="false"] .nav-links a[href^="/posts"],
 html[data-theme-back-top="false"] .back-top { display: none !important; }
+
+/* Public article/product videos keep their aspect ratio and do not overflow mobile cards. */
+.pd-desc video, .post-body video { display: block; width: 100%; max-width: 100%; height: auto; max-height: 75vh; margin: 16px 0; background: #111; border-radius: 8px; }
+.video-playback-error { padding: 12px; color: #9a3412; background: #fff7ed; border-radius: 8px; font-size: 14px; }

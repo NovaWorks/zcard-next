@@ -25,6 +25,7 @@ var StorageRoot = "data/uploads"
 
 // contentTypeByExt 静态服务 Content-Type（仅白名单扩展——其余一律 octet-stream 拒绝）。
 var contentTypeByExt = map[string]string{
+	".mp4": "video/mp4",
 	".jpg": "image/jpeg", ".jpeg": "image/jpeg",
 	".png": "image/png", ".webp": "image/webp", ".gif": "image/gif",
 	".avif": "image/avif", ".bmp": "image/bmp", ".ico": "image/x-icon", ".svg": "image/svg+xml",

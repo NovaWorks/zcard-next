@@ -125,7 +125,7 @@ function flattenTree(nodes: { children: any[] }[], out: any[] = []) {
 async function loadList() {
   loading.value = true;
   try {
-    const params: Record<string, any> = { page: page.value, page_size: pageSize.value };
+    const params: Record<string, any> = { page: page.value, page_size: pageSize.value, kind: mediaPickerState.kind };
     if (keyword.value) params.keyword = keyword.value;
     if (view.value === "uncategorized") params.uncategorized = true;
     else if (typeof view.value === "object") params.category_id = view.value.category;
@@ -184,7 +184,7 @@ function isSelected(item: MediaItem) {
 function handleConfirm() {
   const urls = items.value.filter((i) => selectedIds.value.has(i.id)).map((i) => i.url);
   if (!urls.length) {
-    window.$message?.warning("请先选择图片");
+    window.$message?.warning("请先选择素材");
     return;
   }
   settleMediaPicker(urls);
@@ -454,7 +454,7 @@ const categorySelectOptions = computed(() => [
   <NModal
     :show="mediaPickerState.show"
     preset="card"
-    :title="mediaPickerState.multiple ? '选择图片（可多选）' : '选择图片'"
+    :title="mediaPickerState.kind === 'video' ? '选择视频' : mediaPickerState.multiple ? '选择图片（可多选）' : '选择图片'"
     class="w-960px"
     :mask-closable="false"
     @update:show="(v: boolean) => !v && handleCancel()"
@@ -464,7 +464,7 @@ const categorySelectOptions = computed(() => [
       <!-- 左：素材网格 -->
       <div class="flex min-w-0 flex-1 flex-col gap-12px">
         <div class="flex flex-wrap items-center gap-8px">
-          <NUpload
+          <NUpload v-if="mediaPickerState.kind === 'image'"
             :custom-request="customRequest"
             :show-file-list="false"
             accept="image/*,.apng,.avif,.jfif,.tif,.tiff,.heic,.heif,.ico"
@@ -472,7 +472,7 @@ const categorySelectOptions = computed(() => [
           >
             <NButton v-auth="'media:upload'" size="small" type="primary" :loading="uploading > 0">上传图片</NButton>
           </NUpload>
-          <NButton v-auth="'media:upload'" size="small" @click="showImport = true">外链导入</NButton>
+          <NButton v-if="mediaPickerState.kind === 'image'" v-auth="'media:upload'" size="small" @click="showImport = true">外链导入</NButton>
           <NButton size="small" quaternary @click="togglePageAll">
             {{ pageAllSelected ? "取消全选" : "全选本页" }}
           </NButton>
@@ -508,7 +508,7 @@ const categorySelectOptions = computed(() => [
           <NEmpty
             v-else-if="!items.length"
             class="mt-80px"
-            description="暂无素材，点击「上传图片」或「外链导入」"
+            :description="mediaPickerState.kind === 'video' ? '暂无视频，请返回插入视频窗口上传' : '暂无素材，点击上传图片或外链导入'"
           />
           <div v-else class="grid grid-cols-4 gap-10px sm:grid-cols-5">
             <div
@@ -519,7 +519,8 @@ const categorySelectOptions = computed(() => [
               :style="isSelected(item) ? 'box-shadow: 0 0 0 2px var(--primary-color)' : ''"
               @click="toggleSelect(item, $event)"
             >
-              <NImage
+              <video v-if="item.mime.startsWith('video/')" :src="resolveMediaUrl(item.url)" preload="none" muted playsinline style="width:100%;height:110px;object-fit:contain;background:#111" />
+              <NImage v-else
                 :src="resolveMediaUrl(item.url)"
                 width="100%"
                 height="110"

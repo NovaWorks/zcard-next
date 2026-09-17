@@ -206,6 +206,7 @@
 </template>
 
 <script setup lang="ts">
+import { useContentVideos } from "@/composables/useContentVideos";
 import { useFlashOffers } from '@/composables/flash-offers';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import { ref, computed, onMounted, watch } from 'vue';
@@ -236,6 +237,7 @@ const error = ref('');
 const addingCart = ref(false);
 const removingCart = ref(false);
 const description = ref<HTMLElement | null>(null);
+useContentVideos(description);
 const previewImages = ref<{ src: string; alt: string }[]>([]);
 const previewIndex = ref(0);
 function openCover() {
@@ -324,7 +326,7 @@ const soldOut = computed(() => {
 });
 
 // ── 评价（template.show_reviews 后台开关；入口锚点 + 折叠展开）──
-const showReviews = ref(true);
+const showReviews = ref(false);
 const reviewsExpanded = ref(false);
 // 销量在配置确认前隐藏；库存沿用原有开关。
 const { showSales, applySalesConfig } = useSalesVisibility();
@@ -427,7 +429,7 @@ onMounted(async () => {
     if (raw === undefined) return true;
     try { return JSON.parse(raw) !== false; } catch { return true; }
   };
-  showReviews.value = parseFlag(pick('template.show_reviews'));
+  showReviews.value = Array.isArray(tplResp?.entries) && parseFlag(pick('template.show_reviews'));
   applySalesConfig(tplResp);
   showStock.value = parseFlag(pick('template.show_stock'));
 });

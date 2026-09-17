@@ -276,17 +276,17 @@ const maintenanceModalFreq = ref('every'); // every=每次进入都弹 | daily=2
 // 无主题配置时兼容旧 promo 开关；主题自定义优先，缺省显示。
 const brandBarEnabled = ref(true);
 // template.bg_image：全站背景图（空=默认纯色背景）
-const bgImage = ref('');
-const bgImageMobile = ref('');
-const mobileBackground = ref(false);
+const bgImage = ref(themeValue('template.bg_image', ''));
+const bgImageMobile = ref(themeValue('template.bg_image_mobile', ''));
+const mobileBackground = ref(typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches);
 let backgroundMedia: MediaQueryList | null = null;
 function updateBackgroundMedia() { mobileBackground.value = backgroundMedia?.matches ?? false; }
 onMounted(() => { backgroundMedia = window.matchMedia('(max-width: 768px)'); updateBackgroundMedia(); backgroundMedia.addEventListener('change', updateBackgroundMedia); });
 onUnmounted(() => backgroundMedia?.removeEventListener('change', updateBackgroundMedia));
-// 商品详情页排除全站背景图（详情页为白卡布局，重背景图会压过内容可读性）
+// 背景属于商城外壳，导航到商品详情时保持不变。
 const appBgStyle = computed(() => {
   const image = mobileBackground.value ? bgImageMobile.value || bgImage.value : bgImage.value;
-  if (!image || route.path.startsWith('/product/')) return undefined;
+  if (!image || isInstall.value) return undefined;
   return { backgroundImage: `url(${JSON.stringify(image)})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' };
 });
 

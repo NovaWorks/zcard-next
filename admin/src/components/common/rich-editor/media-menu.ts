@@ -1,4 +1,5 @@
 import { Boot, type IDomEditor } from "@wangeditor/editor";
+import { pickVideo } from "../video-picker";
 import { pickMedia } from "@/components/common/media-picker";
 
 class MediaLibraryMenu {
@@ -25,11 +26,28 @@ class MediaLibraryMenu {
   }
 }
 
+class VideoMenu extends MediaLibraryMenu {
+  title = "插入视频";
+  iconSvg =
+    '<svg aria-label="插入视频" role="img" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m10 8 6 4-6 4Z"/></svg>';
+  async exec(editor: IDomEditor) {
+    const selection = editor.selection;
+    const html = await pickVideo();
+    if (!html || editor.isDestroyed) return;
+    if (selection) editor.select(selection);
+    else editor.focus(true);
+    editor.dangerouslyInsertHtml(`<div data-w-e-type="video" data-w-e-is-void>${html}</div>`);
+    editor.focus();
+  }
+}
 let moduleRegistered = false;
 export function registerMediaMenu() {
   if (moduleRegistered) return;
   Boot.registerModule({
-    menus: [{ key: "zcMediaLibrary", factory: () => new MediaLibraryMenu() as any }],
+    menus: [
+      { key: "zcMediaLibrary", factory: () => new MediaLibraryMenu() as any },
+      { key: "zcVideo", factory: () => new VideoMenu() as any },
+    ],
   });
   moduleRegistered = true;
 }

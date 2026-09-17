@@ -147,6 +147,7 @@ message ListMediaRequest {
   int32 page_size = 4;
   // 仅未分类素材（category_id 为空；与 category_id=0「不过滤」区分）
   bool uncategorized = 5;
+  string kind = 6; // image (default), video, or all
 }
 
 message ListMediaReply {
@@ -154,6 +155,7 @@ message ListMediaReply {
   int64 total = 2;
   int32 page = 3;
   int32 page_size = 4;
+ int64 max_video_bytes = 5;
 }
 
 message RenameMediaRequest {

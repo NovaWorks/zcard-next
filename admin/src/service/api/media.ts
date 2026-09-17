@@ -85,11 +85,12 @@ export function importMediaFromURL(data: { url: string; category_id?: number }) 
 export function fetchMediaList(params?: {
   category_id?: number;
   uncategorized?: boolean;
+  kind?: "image" | "video" | "all";
   keyword?: string;
   page?: number;
   page_size?: number;
 }) {
-  return request<{ items: MediaItem[]; total: number }>({
+  return request<{ items: MediaItem[]; total: number; max_video_bytes?: number }>({
     url: "/api/v1/admin/media",
     method: "get",
     params,
@@ -120,4 +121,12 @@ export function deleteMedia(ids: number[], confirm = false) {
     method: "post",
     data: { ids, confirm },
   });
+}
+
+export function uploadVideo(file: File, signal: AbortSignal, progress: (percent: number) => void) {
+ const form = new FormData(); form.append("file", file);
+ return request<MediaItem>({ url: "/api/v1/admin/media/video", method: "post", data: form,
+  headers: { "Content-Type": undefined }, timeout: 600000, signal,
+  onUploadProgress: event => progress(Math.min(99, Math.round(event.loaded * 100 / (event.total || file.size))))
+ });
 }

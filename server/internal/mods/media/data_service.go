@@ -181,14 +181,14 @@ func (s *AdminMediaService) ListMedia(ctx context.Context, req *adminv1.ListMedi
 		err   error
 	)
 	if req.GetUncategorized() {
-		rows, total, err = s.repo.ListUncategorized(ctx, req.GetKeyword(), page, size)
+		rows, total, err = s.repo.ListUncategorized(ctx, req.GetKeyword(), page, size, req.GetKind())
 	} else {
-		rows, total, err = s.repo.ListMedia(ctx, req.GetCategoryId(), req.GetKeyword(), page, size)
+		rows, total, err = s.repo.ListMedia(ctx, req.GetCategoryId(), req.GetKeyword(), page, size, req.GetKind())
 	}
 	if err != nil {
 		return nil, mapMediaError(err)
 	}
-	reply := &adminv1.ListMediaReply{Total: int64(total), Page: int32(page), PageSize: int32(size)}
+	reply := &adminv1.ListMediaReply{Total: int64(total), Page: int32(page), PageSize: int32(size), MaxVideoBytes: MaxVideoBytes()}
 	for _, m := range rows {
 		reply.Items = append(reply.Items, toMediaPB(m))
 	}

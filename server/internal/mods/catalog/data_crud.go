@@ -142,7 +142,7 @@ func (r *ProductRepoImpl) GetAdmin(ctx context.Context, subsiteID, id uint64) (*
 }
 
 // CreateProduct 创建商品（description 已 sanitize）。
-func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInput) (*ent.Product, error) {
+func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInput) (*ent.Product, error) {
 	tc := tenancy.FromContext(ctx)
 	slug, err := r.genUniqueSlug(ctx, tc.SubsiteID, in.Name)
 	if err != nil {
@@ -184,7 +184,7 @@ func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphe
 }
 
 // UpdateProduct 更新（nil/零值字段不动）。
-func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
+func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
 	q := data.Client(ctx, r.data).Product.UpdateOneID(id).Where(product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID))
 	if in.Name != "" {
 		q.SetName(in.Name)
@@ -192,7 +192,7 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 	if in.CategoryID > 0 {
 		q.SetCategoryID(in.CategoryID)
 	}
-	if in.Description != "" {
+	if in.DescriptionSet || in.Description != "" {
 		q.SetDescription(in.Description)
 	}
 	if in.Cover != "" {
@@ -253,7 +253,7 @@ func (r *ProductRepoImpl) BatchUpdateStatus(ctx context.Context, ids []uint64, s
 }
 
 // DeleteProduct 删除（软外键约束：有卡密时拒删）。
-func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
+func (r *ProductRepoImpl) deleteProduct(ctx context.Context, id uint64) error {
 	// 删除前清理本地采集封面（失败不阻断删除）
 	if p, err := data.Client(ctx, r.data).Product.Get(ctx, id); err == nil {
 		deleteProductCover(p.Cover)
@@ -962,4 +962,48 @@ func (r *ProductRepoImpl) mediaIDFromPath(ctx context.Context, url string) uint6
 		return 0
 	}
 	return m.ID
+}
+
+func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInput) (out *ent.Product, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createProduct(ctx, in)
+		if e != nil {
+			return e
+		}
+		return data.SyncVideoRefs(ctx, r.data, "", out.Description)
+	})
+	return
+}
+func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.ProductInput) (out *ent.Product, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := data.Client(ctx, r.data).Product.UpdateOneID(id).AddSort(0).Exec(ctx); e != nil {
+			return e
+		}
+		old, e := data.Client(ctx, r.data).Product.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		out, e = r.updateProduct(ctx, id, in)
+		if e != nil {
+			return e
+		}
+		return data.SyncVideoRefs(ctx, r.data, old.Description, out.Description)
+	})
+	return
+}
+func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := data.Client(ctx, r.data).Product.UpdateOneID(id).AddSort(0).Exec(ctx); e != nil {
+			return e
+		}
+		old, e := data.Client(ctx, r.data).Product.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		if e = r.deleteProduct(ctx, id); e != nil {
+			return e
+		}
+		return data.SyncVideoRefs(ctx, r.data, old.Description, "")
+	})
 }

@@ -503,6 +503,9 @@ func init() {
 		Perm{Code: "media:delete", Desc: "删除素材（引用需确认）", Domain: "media", AdminOnly: true,
 			Op: "zcard.api.admin.v1.AdminMediaService/DeleteMedia", Method: "POST", Path: "/api/v1/admin/media/delete"},
 
+		Perm{Code: "media:upload", Desc: "上传视频", Domain: "media",
+			Op: "zcard.api.admin.v1.AdminMediaService/UploadVideo", Method: "POST", Path: "/api/v1/admin/media/video"},
+
 		// ── 工单（ticket，）────────────────────
 		Perm{Code: "ticket:read", Desc: "工单工作台", Domain: "ticket",
 			Op: "zcard.api.admin.v1.AdminTicketService/ListTickets", Method: "GET", Path: "/api/v1/admin/tickets"},

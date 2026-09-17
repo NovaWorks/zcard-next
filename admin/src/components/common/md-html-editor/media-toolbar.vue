@@ -5,6 +5,7 @@
  * 点击后经 pickMedia 选图，在光标处插入 Markdown 图片语法。
  * 注意：generate 必须返回 { targetValue } 对象（universal 替换路径只读 targetValue）。
  */
+import { pickVideo } from "../video-picker";
 import { pickMedia } from "@/components/common/media-picker";
 
 defineOptions({ name: "MediaLibraryMdToolbar" });
@@ -12,12 +13,18 @@ defineOptions({ name: "MediaLibraryMdToolbar" });
 const props = withDefaults(
   defineProps<{
     title?: string;
+    video?: boolean;
     insert?: (generate: (selected: string) => { targetValue: string; select?: boolean }) => void;
   }>(),
   { title: "素材库图片", insert: () => {} },
 );
 
 async function onPick() {
+  if (props.video) {
+    const html = await pickVideo();
+    if (html) props.insert(() => ({ targetValue: "\n\n" + html + "\n\n", select: false }));
+    return;
+  }
   const urls = await pickMedia({ multiple: true });
   if (!urls?.length) return;
   props.insert(() => ({
@@ -29,9 +36,25 @@ async function onPick() {
 
 <template>
   <button class="zc-md-media-btn" :title="title" @click="onPick">
-    <svg viewBox="0 0 1024 1024" width="15" height="15" fill="currentColor">
-      <path d="M896 128H128c-35.3 0-64 28.7-64 64v640c0 35.3 28.7 64 64 64h768c35.3 0 64-28.7 64-64V192c0-35.3-28.7-64-64-64z m0 704H128V192h768v640z" />
-      <path d="M320 480m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0zM208 768h608v-64l-160-192-128 160-96-96z" />
+    <svg
+      v-if="video"
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+    >
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m10 8 6 4-6 4Z" />
+    </svg>
+    <svg v-else viewBox="0 0 1024 1024" width="15" height="15" fill="currentColor">
+      <path
+        d="M896 128H128c-35.3 0-64 28.7-64 64v640c0 35.3 28.7 64 64 64h768c35.3 0 64-28.7 64-64V192c0-35.3-28.7-64-64-64z m0 704H128V192h768v640z"
+      />
+      <path
+        d="M320 480m-64 0a64 64 0 1 0 128 0 64 64 0 1 0-128 0zM208 768h608v-64l-160-192-128 160-96-96z"
+      />
     </svg>
   </button>
 </template>
@@ -39,9 +62,18 @@ async function onPick() {
 <style scoped>
 /* 纯图标按钮：与 md-editor-v3 内置工具栏按钮同尺寸（24×28），悬停 title 提示「素材库图片」 */
 .zc-md-media-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 28px; padding: 0; border: none; background: transparent;
-  color: #595959; cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #595959;
+  cursor: pointer;
 }
-.zc-md-media-btn:hover { color: #2563eb; }
+.zc-md-media-btn:hover {
+  color: #2563eb;
+}
 </style>

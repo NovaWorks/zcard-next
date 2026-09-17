@@ -586,7 +586,8 @@ type ListMediaRequest struct {
 	Page       int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize   int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
 	// 仅未分类素材（category_id 为空；与 category_id=0「不过滤」区分）
-	Uncategorized bool `protobuf:"varint,5,opt,name=uncategorized,proto3" json:"uncategorized,omitempty"`
+	Uncategorized bool   `protobuf:"varint,5,opt,name=uncategorized,proto3" json:"uncategorized,omitempty"`
+	Kind          string `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"` // image (default), video, or all
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -656,12 +657,20 @@ func (x *ListMediaRequest) GetUncategorized() bool {
 	return false
 }
 
+func (x *ListMediaRequest) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
 type ListMediaReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Items         []*MediaItem           `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	MaxVideoBytes int64                  `protobuf:"varint,5,opt,name=max_video_bytes,json=maxVideoBytes,proto3" json:"max_video_bytes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -720,6 +729,13 @@ func (x *ListMediaReply) GetPage() int32 {
 func (x *ListMediaReply) GetPageSize() int32 {
 	if x != nil {
 		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListMediaReply) GetMaxVideoBytes() int64 {
+	if x != nil {
+		return x.MaxVideoBytes
 	}
 	return 0
 }
@@ -990,19 +1006,21 @@ const file_admin_v1_media_proto_rawDesc = "" +
 	"\tref_count\x18\t \x01(\x05R\brefCount\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\x03R\tcreatedAt\"\xa4\x01\n" +
+	" \x01(\x03R\tcreatedAt\"\xb8\x01\n" +
 	"\x10ListMediaRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
 	"\akeyword\x18\x02 \x01(\tR\akeyword\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12$\n" +
-	"\runcategorized\x18\x05 \x01(\bR\runcategorized\"\x8c\x01\n" +
+	"\runcategorized\x18\x05 \x01(\bR\runcategorized\x12\x12\n" +
+	"\x04kind\x18\x06 \x01(\tR\x04kind\"\xb4\x01\n" +
 	"\x0eListMediaReply\x123\n" +
 	"\x05items\x18\x01 \x03(\v2\x1d.zcard.api.admin.v1.MediaItemR\x05items\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"B\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\x12&\n" +
+	"\x0fmax_video_bytes\x18\x05 \x01(\x03R\rmaxVideoBytes\"B\n" +
 	"\x12RenameMediaRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x17\n" +
 	"\x04name\x18\x02 \x01(\tB\x03\xe0A\x02R\x04name\"J\n" +

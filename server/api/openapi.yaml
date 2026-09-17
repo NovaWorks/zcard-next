@@ -2262,6 +2262,10 @@ paths:
                   description: 仅未分类素材（category_id 为空；与 category_id=0「不过滤」区分）
                   schema:
                     type: boolean
+                - name: kind
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -8867,6 +8871,8 @@ components:
                 pageSize:
                     type: integer
                     format: int32
+                maxVideoBytes:
+                    type: string
         zcard.api.admin.v1.ListNotifyLogsReply:
             type: object
             properties:

@@ -39,6 +39,7 @@ const turndown = new TurndownService({
   codeBlockStyle: "fenced",
   bulletListMarker: "-",
 });
+turndown.keep(["video", "source"]);
 marked.setOptions({ breaks: true, gfm: true });
 
 // 外部值变化同步：
@@ -106,6 +107,7 @@ const mdToolbars: ToolbarNames[] = [
   "code",
   "link",
   0, // 素材库图片（defToolbars 中第 0 个按钮）
+  1, // 视频
   "table",
   "-",
   "revoke",
@@ -116,7 +118,7 @@ const mdToolbars: ToolbarNames[] = [
   "fullscreen",
 ];
 // 自定义工具栏按钮：defToolbars 传 Fragment（children 为按钮数组），toolbars 数字下标引用
-const defToolbars = h(Fragment, [h(MediaToolbar, { title: "素材库图片" })]);
+const defToolbars = h(Fragment, [h(MediaToolbar, { title: "素材库图片" }), h(MediaToolbar, {title:"插入视频", video:true})]);
 </script>
 
 <template>
@@ -130,7 +132,7 @@ const defToolbars = h(Fragment, [h(MediaToolbar, { title: "素材库图片" })])
       <span class="text-11px text-gray-400">
         {{
           mode === "wysiwyg"
-            ? "富文本（插图走素材库）"
+            ? "富文本（支持图片和视频）"
             : mode === "markdown"
               ? "Markdown 代码模式（分屏预览，保存时自动转 HTML）"
               : "HTML 源码（保存时经服务端白名单清洗）"

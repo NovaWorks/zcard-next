@@ -54,6 +54,7 @@ const toolbarConfig: Partial<IToolbarConfig> = {
     "insertLink",
     "|",
     "zcMediaLibrary",
+    "zcVideo",
     "insertTable",
     "blockquote",
     "codeBlock",

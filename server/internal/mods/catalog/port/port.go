@@ -130,19 +130,20 @@ type AdminFilter struct {
 
 // ProductInput 商品创建/更新输入（description 已 sanitize）。
 type ProductInput struct {
-	Name         string
-	CategoryID   uint64
-	Description  string
-	Cover        string
-	Images       []string
-	Price        int64 // 分
-	FactoryPrice int64
-	StockType    string
-	DeliveryMode string
-	StockVisible bool
-	Dedup        bool
-	Sort         int32
-	Status       int8
+	Name           string
+	CategoryID     uint64
+	Description    string
+	DescriptionSet bool // distinguish clearing an admin description from omitted upstream fields
+	Cover          string
+	Images         []string
+	Price          int64 // 分
+	FactoryPrice   int64
+	StockType      string
+	DeliveryMode   string
+	StockVisible   bool
+	Dedup          bool
+	Sort           int32
+	Status         int8
 	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，）
 	PointsRequired    int64
 	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）

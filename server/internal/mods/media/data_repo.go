@@ -143,13 +143,24 @@ func (r *MediaRepo) CreateMedia(ctx context.Context, in port.UploadInput, relPat
 }
 
 // ListMedia 列表（分类过滤/关键词/分页）。
-func (r *MediaRepo) ListMedia(ctx context.Context, categoryID uint64, keyword string, page, size int) ([]*ent.Media, int, error) {
+func (r *MediaRepo) ListMedia(ctx context.Context, categoryID uint64, keyword string, page, size int, kinds ...string) ([]*ent.Media, int, error) {
 	q := data.Client(ctx, r.data).Media.Query().Order(ent.Desc(media.FieldID))
 	if categoryID > 0 {
 		q = q.Where(media.CategoryID(categoryID))
 	}
 	if keyword != "" {
 		q = q.Where(media.NameContains(keyword))
+	}
+	kind := "image"
+	if len(kinds) > 0 {
+		kind = kinds[0]
+	}
+	if kind != "all" {
+		if kind == "video" {
+			q.Where(media.MimeHasPrefix("video/"))
+		} else {
+			q.Where(media.MimeHasPrefix("image/"))
+		}
 	}
 	total, err := q.Count(ctx)
 	if err != nil {
@@ -160,12 +171,23 @@ func (r *MediaRepo) ListMedia(ctx context.Context, categoryID uint64, keyword st
 }
 
 // ListUncategorized 仅未分类素材（category_id 为空；素材选择器「未分类」视图）。
-func (r *MediaRepo) ListUncategorized(ctx context.Context, keyword string, page, size int) ([]*ent.Media, int, error) {
+func (r *MediaRepo) ListUncategorized(ctx context.Context, keyword string, page, size int, kinds ...string) ([]*ent.Media, int, error) {
 	q := data.Client(ctx, r.data).Media.Query().
 		Where(media.CategoryIDIsNil()).
 		Order(ent.Desc(media.FieldID))
 	if keyword != "" {
 		q = q.Where(media.NameContains(keyword))
+	}
+	kind := "image"
+	if len(kinds) > 0 {
+		kind = kinds[0]
+	}
+	if kind != "all" {
+		if kind == "video" {
+			q.Where(media.MimeHasPrefix("video/"))
+		} else {
+			q.Where(media.MimeHasPrefix("image/"))
+		}
 	}
 	total, err := q.Count(ctx)
 	if err != nil {
@@ -224,30 +246,46 @@ func (r *MediaRepo) ListReferenced(ctx context.Context, ids []uint64) ([]*ent.Me
 
 // DeleteMedia 删除（ref_count>0 且未 confirm → 拒绝并返回清单语义由 service 层组装）。
 func (r *MediaRepo) DeleteMedia(ctx context.Context, ids []uint64, force bool) (deleted int, refs []*ent.Media, err error) {
-	client := data.Client(ctx, r.data)
-	// 引用检查
-	referenced, err := client.Media.Query().
-		Where(media.IDIn(ids...), media.RefCountGT(0)).All(ctx)
+	var paths []string
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		client := data.Client(ctx, r.data)
+		var e error
+		refs, e = client.Media.Query().Where(media.IDIn(ids...), media.RefCountGT(0)).All(ctx)
+		if e != nil {
+			return e
+		}
+		if len(refs) > 0 && !force {
+			return ErrReferenced
+		}
+		rows, e := client.Media.Query().Where(media.IDIn(ids...)).All(ctx)
+		if e != nil {
+			return e
+		}
+		for _, m := range rows {
+			q := client.Media.Delete().Where(media.ID(m.ID))
+			if !force {
+				q.Where(media.RefCountEQ(0))
+			}
+			n, e := q.Exec(ctx)
+			if e != nil {
+				return e
+			}
+			if n != 1 {
+				refs = []*ent.Media{m}
+				return ErrReferenced
+			}
+			deleted += n
+			paths = append(paths, m.Path)
+		}
+		return nil
+	})
 	if err != nil {
-		return 0, nil, err
+		return 0, refs, err
 	}
-	if len(referenced) > 0 && !force {
-		return 0, referenced, ErrReferenced
+	for _, path := range paths {
+		_ = DeleteLocal(path)
 	}
-	// 物理路径先收集（删行后不可回查）
-	rows, err := client.Media.Query().Where(media.IDIn(ids...)).All(ctx)
-	if err != nil {
-		return 0, nil, err
-	}
-	n, err := client.Media.Delete().Where(media.IDIn(ids...)).Exec(ctx)
-	if err != nil {
-		return 0, nil, err
-	}
-	for _, m := range rows {
-		_ = DeleteLocal(m.Path)
-	}
-	// 物理文件清理（先取 path 再删行——顺序修正；失败不阻断，垃圾文件 cron 兜底）
-	return n, nil, nil
+	return deleted, nil, nil
 }
 
 // ── 引用计数（port.Referencer 实现）──────────────────────
@@ -266,19 +304,10 @@ func (r *MediaRepo) adjustRefs(ctx context.Context, ids []uint64, delta int32) e
 	if len(ids) == 0 {
 		return nil
 	}
-	client := data.Client(ctx, r.data)
-	rows, err := client.Media.Query().Where(media.IDIn(ids...)).All(ctx)
-	if err != nil {
-		return err
+	q := data.Client(ctx, r.data).Media.Update().Where(media.IDIn(ids...))
+	if delta < 0 {
+		q.Where(media.RefCountGT(0))
 	}
-	for _, m := range rows {
-		next := m.RefCount + delta
-		if next < 0 {
-			next = 0 // 下限 0（释放多于持有属调用方 bug，钳制防负）
-		}
-		if _, err := client.Media.UpdateOneID(m.ID).SetRefCount(next).Save(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+	_, err := q.AddRefCount(delta).Save(ctx)
+	return err
 }

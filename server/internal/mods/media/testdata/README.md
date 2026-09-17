@@ -13,3 +13,8 @@ Tests deliberately upload every format as `customer.jpg` / `image/jpeg` and
 verify the actual HTTP upload response, stored metadata and public image response.
 They verify GIF frame data/timing and byte-preserving APNG/WebP storage, and reject
 truncated files, active SVG, and excessive image dimensions.
+
+`tutorial.mp4` is an original one-second, silent, blue 160×90 H.264 fixture.
+It was generated with `ffmpeg -f lavfi -i color=c=blue:s=160x90:d=1
+-c:v libx264 -pix_fmt yuv420p -movflags +faststart tutorial.mp4` for upload,
+Range-response and browser-playback regressions.

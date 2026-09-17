@@ -152,8 +152,9 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 	}
 	in := port.ProductInput{
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
-		Description: sanitize.HTML(req.GetDescription()),
-		Cover:       req.GetCover(), Images: req.GetImages(),
+		Description:    sanitize.RichHTML(req.GetDescription()),
+		DescriptionSet: true,
+		Cover:          req.GetCover(), Images: req.GetImages(),
 		Price: req.GetPriceCents(), FactoryPrice: req.GetFactoryPriceCents(),
 		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
 		StockVisible: req.GetStockVisible(), Dedup: req.GetDedup(),
@@ -191,8 +192,9 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 	}
 	in := port.ProductInput{
 		Name: req.GetName(), CategoryID: req.GetCategoryId(),
-		Description: sanitize.HTML(req.GetDescription()),
-		Cover:       req.GetCover(), Images: req.GetImages(),
+		Description:    sanitize.RichHTML(req.GetDescription()),
+		DescriptionSet: true,
+		Cover:          req.GetCover(), Images: req.GetImages(),
 		Price: req.GetPriceCents(), FactoryPrice: req.GetFactoryPriceCents(),
 		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
 		StockVisible: req.GetStockVisible(),

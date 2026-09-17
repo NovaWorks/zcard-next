@@ -134,8 +134,13 @@ func NewHTTPServer(
 	// ⚠️ Kratos khttp.Filter 是整体替换（o.filters = filters）非追加——
 	// 多次调用只有最后一次生效（曾致 supplier HMAC/CORS/租户被 audit 静默覆盖）。
 	// 全部 Filter 必须合并为一次注册。
+	requestTimeout := 30 * time.Second
+	if c != nil && c.Http != nil && c.Http.Timeout != nil {
+		requestTimeout = c.Http.Timeout.AsDuration()
+	}
 	var opts = []khttp.ServerOption{
 		khttp.Filter(
+			requestDeadlineFilter(requestTimeout),
 			corsFilter,
 			// ：租户域名解析（Filter 层——中间件拿不到 Host；最外层确保全链路继承）
 			tenantFilter(tenancyMainDomain(c), resellerRepo),
@@ -184,7 +189,7 @@ func NewHTTPServer(
 				}).
 				Build(),
 		),
-		khttp.Timeout(30 * time.Second),
+		khttp.Timeout(0),
 	}
 	if c != nil && c.Http != nil {
 		if c.Http.Network != "" {
@@ -192,9 +197,6 @@ func NewHTTPServer(
 		}
 		if c.Http.Addr != "" {
 			opts = append(opts, khttp.Address(c.Http.Addr))
-		}
-		if c.Http.Timeout != nil {
-			opts = append(opts, khttp.Timeout(c.Http.Timeout.AsDuration()))
 		}
 	}
 	srv := khttp.NewServer(opts...)
@@ -242,6 +244,7 @@ func NewHTTPServer(
 	storefrontv1.RegisterStoreTicketServiceHTTPServer(srv, ticketStoreSvc)
 	adminv1.RegisterAdminTicketServiceHTTPServer(srv, ticketAdminSvc)
 	storefrontv1.RegisterStoreAffiliateServiceHTTPServer(srv, affiliateStoreSvc)
+	mediaAdminSvc.RegisterVideoUpload(srv)
 	adminv1.RegisterAdminMediaServiceHTTPServer(srv, mediaAdminSvc)
 	adminv1.RegisterAdminLicenseServiceHTTPServer(srv, licenseAdminSvc)
 	adminv1.RegisterAdminResellerServiceHTTPServer(srv, resellerAdminSvc)
@@ -386,4 +389,22 @@ func corsFilter(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func requestDeadlineFilter(normal time.Duration) khttp.FilterFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			timeout := normal
+			if r.Method == http.MethodPost && r.URL.Path == "/api/v1/admin/media/video" {
+				timeout = 10 * time.Minute
+			}
+			if timeout <= 0 {
+				next.ServeHTTP(w, r)
+				return
+			}
+			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			defer cancel()
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

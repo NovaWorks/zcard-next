@@ -12,6 +12,7 @@ services:
     ports:
       - "${ZCARD_BIND:-0.0.0.0}:${ZCARD_PORT:-8000}:8000"
     environment:
+      ZCARD_VIDEO_MAX_MB: ${ZCARD_VIDEO_MAX_MB:-100}
       ZCARD_JWT_ADMIN_KEY: ${ZCARD_JWT_ADMIN_KEY:?请先运行 deploy/docker-install.sh}
       ZCARD_JWT_USER_KEY: ${ZCARD_JWT_USER_KEY:?请先运行 deploy/docker-install.sh}
       ZCARD_CARD_KEY: ${ZCARD_CARD_KEY:?请先运行 deploy/docker-install.sh}

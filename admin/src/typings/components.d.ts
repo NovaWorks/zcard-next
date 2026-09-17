@@ -102,6 +102,7 @@ declare module 'vue' {
     TableHeaderOperation: typeof import('./../components/advanced/table-header-operation.vue')['default']
     TablePager: typeof import('./../components/common/table-pager.vue')['default']
     ThemeSchemaSwitch: typeof import('./../components/common/theme-schema-switch.vue')['default']
+    VideoPicker: typeof import('./../components/common/video-picker/video-picker.vue')['default']
     WaveBg: typeof import('./../components/custom/wave-bg.vue')['default']
   }
 }
@@ -198,5 +199,6 @@ declare global {
   const TableHeaderOperation: typeof import('./../components/advanced/table-header-operation.vue')['default']
   const TablePager: typeof import('./../components/common/table-pager.vue')['default']
   const ThemeSchemaSwitch: typeof import('./../components/common/theme-schema-switch.vue')['default']
+  const VideoPicker: typeof import('./../components/common/video-picker/video-picker.vue')['default']
   const WaveBg: typeof import('./../components/custom/wave-bg.vue')['default']
 }

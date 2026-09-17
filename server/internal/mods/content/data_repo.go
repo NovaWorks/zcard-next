@@ -214,7 +214,7 @@ type PostInput struct {
 }
 
 // CreatePost 创建（slug 唯一；content 逐语言 sanitize）。
-func (r *ContentRepo) CreatePost(ctx context.Context, in PostInput) (*ent.Post, error) {
+func (r *ContentRepo) createPost(ctx context.Context, in PostInput) (*ent.Post, error) {
 	title, err := mustLangJSON(in.TitleJSON)
 	if err != nil {
 		return nil, err
@@ -260,7 +260,7 @@ func (r *ContentRepo) CreatePost(ctx context.Context, in PostInput) (*ent.Post, 
 }
 
 // UpdatePost 更新（slug/type 不改；内容逐语言 sanitize）。
-func (r *ContentRepo) UpdatePost(ctx context.Context, id uint64, in PostInput) (*ent.Post, error) {
+func (r *ContentRepo) updatePost(ctx context.Context, id uint64, in PostInput) (*ent.Post, error) {
 	if _, err := data.Client(ctx, r.data).Post.Get(ctx, id); err != nil {
 		if ent.IsNotFound(err) {
 			return nil, ErrNotFound
@@ -317,7 +317,7 @@ func (r *ContentRepo) SetPublished(ctx context.Context, id uint64, publish bool)
 }
 
 // DeletePost 删除。
-func (r *ContentRepo) DeletePost(ctx context.Context, id uint64) error {
+func (r *ContentRepo) deletePost(ctx context.Context, id uint64) error {
 	err := data.Client(ctx, r.data).Post.DeleteOneID(id).Exec(ctx)
 	if err != nil && ent.IsNotFound(err) {
 		return ErrNotFound
@@ -456,7 +456,7 @@ func sanitizeLangContent(s string) (string, error) {
 	}
 	out := make(map[string]string, len(m))
 	for locale, html := range m {
-		out[locale] = sanitize.HTML(html)
+		out[locale] = sanitize.RichHTML(html)
 	}
 	b, err := json.Marshal(out)
 	if err != nil {
@@ -503,4 +503,75 @@ func mediaIDsOf(ctx context.Context, d *data.Data, urls ...string) []uint64 {
 		}
 	}
 	return ids
+}
+
+func postVideoHTML(content string) string {
+	var locales map[string]string
+	if json.Unmarshal([]byte(content), &locales) != nil {
+		return ""
+	}
+	var out strings.Builder
+	for _, value := range locales {
+		out.WriteString(value)
+		out.WriteByte('\n')
+	}
+	return out.String()
+}
+func (r *ContentRepo) CreatePost(ctx context.Context, in PostInput) (out *ent.Post, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		out, e = r.createPost(ctx, in)
+		if e != nil {
+			return e
+		}
+		return data.SyncVideoRefs(ctx, r.data, "", postVideoHTML(out.ContentJSON))
+	})
+	return
+}
+func (r *ContentRepo) UpdatePost(ctx context.Context, id uint64, in PostInput) (out *ent.Post, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := data.Client(ctx, r.data).Post.UpdateOneID(id).AddSort(0).Exec(ctx); e != nil {
+			if ent.IsNotFound(e) {
+				return ErrNotFound
+			}
+			return e
+		}
+		old, e := data.Client(ctx, r.data).Post.Get(ctx, id)
+		if e != nil {
+			if ent.IsNotFound(e) {
+				return ErrNotFound
+			}
+			return e
+		}
+		out, e = r.updatePost(ctx, id, in)
+		if e != nil {
+			if ent.IsNotFound(e) {
+				return ErrNotFound
+			}
+			return e
+		}
+		return data.SyncVideoRefs(ctx, r.data, postVideoHTML(old.ContentJSON), postVideoHTML(out.ContentJSON))
+	})
+	return
+}
+func (r *ContentRepo) DeletePost(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := data.Client(ctx, r.data).Post.UpdateOneID(id).AddSort(0).Exec(ctx); e != nil {
+			if ent.IsNotFound(e) {
+				return ErrNotFound
+			}
+			return e
+		}
+		old, e := data.Client(ctx, r.data).Post.Get(ctx, id)
+		if e != nil {
+			if ent.IsNotFound(e) {
+				return ErrNotFound
+			}
+			return e
+		}
+		if e = r.deletePost(ctx, id); e != nil {
+			return e
+		}
+		return data.SyncVideoRefs(ctx, r.data, postVideoHTML(old.ContentJSON), "")
+	})
 }

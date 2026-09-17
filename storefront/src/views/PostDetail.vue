@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { useContentVideos } from "@/composables/useContentVideos";
 import { ref, watch } from 'vue';
 import ImageViewer from '@/components/ImageViewer.vue';
 import { useRoute } from 'vue-router';
@@ -33,6 +34,7 @@ const error = ref('');
 const categories = ref<PostCategory[]>([]);
 
 const postBody = ref<HTMLElement | null>(null);
+useContentVideos(postBody);
 const previewImages = ref<{ src: string; alt: string }[]>([]);
 const previewIndex = ref(0);
 function openPostImage(event: Event) {
