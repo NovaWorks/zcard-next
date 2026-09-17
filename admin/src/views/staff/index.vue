@@ -362,8 +362,9 @@ onMounted(() => {
 </script>
 
 <template>
- <NModal :show="Boolean(resetTotpTarget)" preset="card" title="重置两步验证" style="width:620px;max-width:calc(100vw - 24px)" @update:show="value => { if (!value) resetTotpTarget = null; }"><AccountSecurity v-if="resetTotpTarget" :reset-target="resetTotpTarget" @completed="finishResetTotp" /></NModal>
   <div class="min-h-500px">
+    <!-- 路由动画要求单个根元素，弹窗与页面内容必须放在同一容器内。 -->
+    <NModal :show="Boolean(resetTotpTarget)" preset="card" title="重置两步验证" style="width:620px;max-width:calc(100vw - 24px)" @update:show="value => { if (!value) resetTotpTarget = null; }"><AccountSecurity v-if="resetTotpTarget" :reset-target="resetTotpTarget" @completed="finishResetTotp" /></NModal>
     <NCard title="员工管理">
       <!-- 顶栏：主操作「新增员工」+ 角色入口（权限表现层收敛于此页） -->
       <div class="mb-16px flex items-center gap-12px">
