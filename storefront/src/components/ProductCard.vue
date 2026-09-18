@@ -20,7 +20,7 @@
         <span v-if="showStock && p.stock_visible && p.stock_status === 'stale'" class="pc-stock-reference" :title="stockHint(p)">{{ p.stock_reference === -1 ? '上次库存不限' : `参考库存 ${p.stock_reference ?? 0}` }}</span>
         <span v-else-if="showStock && p.stock_visible && stockValue(p) >= 0">{{ stockValue(p) === 0 ? '暂时售罄' : `库存 ${stockValue(p)}` }}</span>
         <span v-else-if="showStock && p.stock_visible && p.stock === -1" class="pc-stock-free">不限库存</span>
-        <span v-else-if="showStock && p.stock_visible" title="上游暂未提供库存，进入商品详情即可查询">库存需查询</span>
+        <span v-else-if="showStock && p.stock_visible" title="上游暂未提供库存，进入商品详情查询或重试">库存待确认</span>
       </div>
       <button type="button" class="btn btn-primary pc-buy" :aria-label="`${buyLabel(p, mode)}：${p.name}`" @click.stop="$router.push(`/product/${p.id}`)">{{ buyLabel(p, mode) }}</button>
     </div>
@@ -34,7 +34,7 @@ const flash = useFlashOffers();
 import { formatMoney } from '@/api/client';
 import { NO_IMAGE, onImgError } from '@/no-image';
 function stockValue(p: Product) { return p.stock ?? (p.stock_status === 'unknown' || p.stock_status === 'stale' ? -2 : 0); }
-function buyLabel(p: Product, mode?: string) { return mode !== 'list' ? '查看详情' : stockValue(p) === 0 ? '查看' : stockValue(p) < -1 ? '查库存' : '购买'; }
+function buyLabel(p: Product, mode?: string) { return mode !== 'list' ? '查看详情' : stockValue(p) === 0 ? '查看' : stockValue(p) < -1 ? '查看详情' : '购买'; }
 function stockHint(p: Product) {
   const date = p.stock_checked_at ? new Date(p.stock_checked_at * 1000).toLocaleString() : '';
   return `上次同步${date ? '：' + date : ''}，仅供参考；进入商品详情重新核对库存`;

@@ -89,6 +89,9 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 				p := byID[m.LocalProductID]
 				if p != nil && p.UpstreamSourceID == m.ConnectionID && p.UpstreamProductCode == m.UpstreamProduct {
 					snapshot := ProductStockSnapshot{Quantity: -2, CheckedAt: m.StockCheckedAt, Status: "unknown"}
+					if m.StockReference >= -1 && !m.StockReferenceAt.IsZero() {
+						snapshot = ProductStockSnapshot{Quantity: int64(m.StockReference), CheckedAt: m.StockReferenceAt, Status: "stale"}
+					}
 					if m.UpStock >= -1 && !m.StockCheckedAt.IsZero() {
 						snapshot.Quantity = int64(m.UpStock)
 						snapshot.Status = "stale"

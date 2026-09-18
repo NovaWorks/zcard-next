@@ -386,7 +386,7 @@ onMounted(() => {
         </NFormItem>
         <NFormItem label="正文" required>
           <div class="w-full">
-            <MdHtmlEditor v-model="postForm.content" height="300px" />
+            <MdHtmlEditor v-if="showPost" v-model="postForm.content" height="300px" />
           </div>
         </NFormItem>
         <NFormItem label="直接发布">

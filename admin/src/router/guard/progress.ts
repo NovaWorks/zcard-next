@@ -5,6 +5,7 @@ export function createProgressGuard(router: Router) {
     window.NProgress?.start?.();
     return;
   });
+  router.onError(() => { window.NProgress?.done?.(); });
   router.afterEach(() => {
     window.NProgress?.done?.();
   });

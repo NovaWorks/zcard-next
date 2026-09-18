@@ -3,6 +3,7 @@ package catalog
 import (
 	"context"
 	"errors"
+	"fmt"
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"sync"
@@ -16,7 +17,7 @@ func (f displayLookupFunc) DisplayStock(ctx context.Context, id uint64, code str
 	return f(ctx, id, code)
 }
 
-func TestBothCatalogListsRefreshExpiredStock(t *testing.T) {
+func TestStoreRefreshAndAdminCachedStock(t *testing.T) {
 	d, _ := newStatsEnv(t)
 	ctx := context.Background()
 	repo := NewProductRepoImpl(d, nil)
@@ -79,11 +80,11 @@ func TestBothCatalogListsRefreshExpiredStock(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, p := range out.Products {
-		if p.Id == ids["unknown"] && (p.Stock != 32 || p.StockStatus != "current") {
+		if p.Id == ids["unknown"] && (p.Stock != -2 || p.StockStatus != "unknown") {
 			t.Fatalf("admin: %+v", p)
 		}
 	}
-	if calls["fresh"] != 0 || calls["unknown"] != 2 {
+	if calls["fresh"] != 0 || calls["unknown"] != 1 {
 		t.Fatalf("cache policy: %+v", calls)
 	}
 }
@@ -129,5 +130,59 @@ func TestStockRefreshDeadlineKeepsReferenceAndBoundsConcurrency(t *testing.T) {
 		if s.Available != -2 || s.Quantity != 18 || s.Status != "stale" {
 			t.Fatalf("lost reference: %+v", s)
 		}
+	}
+}
+
+func TestStockRefreshCompletesPageAfterResponseAndDeduplicates(t *testing.T) {
+	d, _ := newStatsEnv(t)
+	ctx := context.Background()
+	repo := NewProductRepoImpl(d, nil)
+	var ids []uint64
+	for i := 0; i < 12; i++ {
+		name := fmt.Sprintf("queued-%d", i)
+		p := d.Client.Product.Create().SetName(name).SetSlug(name).SetUpstreamSourceID(9).SetUpstreamProductCode(name).SaveX(ctx)
+		ids = append(ids, p.ID)
+	}
+	release := make(chan struct{})
+	complete := make(chan struct{}, len(ids))
+	repo.SetStockLookup(displayLookupFunc(func(ctx context.Context, _ uint64, _ string) (int32, error) {
+		select {
+		case <-release:
+		case <-ctx.Done():
+			return -2, ctx.Err()
+		}
+		complete <- struct{}{}
+		return 37, nil
+	}))
+	start := time.Now()
+	got, err := repo.StockSnapshotBatch(ctx, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if elapsed := time.Since(start); elapsed > 5*time.Second {
+		t.Fatalf("response blocked for %s", elapsed)
+	}
+	// A second visitor must not enqueue the same pending products again.
+	if _, err := repo.StockSnapshotBatch(ctx, ids); err != nil {
+		t.Fatal(err)
+	}
+	close(release)
+	for range ids {
+		select {
+		case <-complete:
+		case <-time.After(2 * time.Second):
+			t.Fatal("remaining page was abandoned")
+		}
+	}
+	// Background workers must not mutate response maps after return.
+	for _, snapshot := range got {
+		if snapshot.Status != "unknown" {
+			t.Fatalf("response changed: %+v", snapshot)
+		}
+	}
+	select {
+	case <-complete:
+		t.Fatal("duplicate refresh")
+	default:
 	}
 }

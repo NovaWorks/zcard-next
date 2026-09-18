@@ -138,6 +138,7 @@ import BannerStrip from '@/components/BannerStrip.vue';
 import CatalogToolbar from '@/components/CatalogToolbar.vue';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
+import { useStockRefresh, needsStockRefresh } from '@/composables/stock-refresh';
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, inject, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { listProducts, listBanners, listPosts, listCategories, fetchAnnouncement, type Product, type Banner, type StorePost, type CategoryItem, type AnnouncementConfig } from '@/api';
@@ -492,6 +493,16 @@ onMounted(() => {
   update();
 });
 onUnmounted(() => { stopViewportWatch?.(); ++loadSequence; });
+
+useStockRefresh(products, () => catalogActive.value && route.path === '/' && !loading.value && !loadingMore.value, async () => {
+  const mobile = mobileCatalog.value;
+  const size = mobile ? feedPageSize.value : pageSize.value;
+  const pages = new Set<number>();
+  products.value.forEach((p, index) => { if (needsStockRefresh(p)) pages.add(mobile ? Math.floor(index / size) + 1 : page.value); });
+  const rows: Product[] = [];
+  for (const nextPage of pages) { const response = await productRequest(nextPage, size); if (response.data) rows.push(...response.data.items); }
+  return rows;
+});
 
 let needsRefresh = false;
 onActivated(async () => {

@@ -14,6 +14,7 @@ package supply
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -173,6 +174,35 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			byCode[p.ID] = p
 		}
 	}
+	selectedItems := make([]adapter.Product, 0, len(req.Codes))
+	selectedCodes := map[string]bool{}
+	for _, code := range req.Codes {
+		if p, ok := byCode[code]; ok && !selectedCodes[code] {
+			selectedCodes[code] = true
+			if conn.Driver == "acg_faka" {
+				p.Stock = -2
+			}
+			if p.StockCheckedAt.IsZero() {
+				p.StockCheckedAt = entry.at
+			}
+			selectedItems = append(selectedItems, p)
+		}
+	}
+	// Keep large/manual imports responsive; unconfirmed stock can be repaired
+	// by the stock-only background task without importing the catalog again.
+	stockCtx, cancelStock := context.WithTimeout(ctx, 8*time.Second)
+	stockErr := s.sync.backfillStocks(stockCtx, a, loadScheduleSettings(conn), selectedItems, 0)
+	cancelStock()
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+	if stockErr != nil && !errors.Is(stockErr, context.DeadlineExceeded) {
+		return nil, stockErr
+	}
+	byCode = make(map[string]adapter.Product, len(selectedItems))
+	for _, p := range selectedItems {
+		byCode[p.ID] = p
+	}
 	// 定价策略（缺省回退连接默认 settings.import_pricing）
 	mode := req.GetPricingMode()
 	markupPercent := req.GetMarkupPercent()
@@ -193,6 +223,7 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 	}
 
 	reply := &adminv1.ImportProductsReply{CategoryMap: categoryMap}
+	stockFailed := 0
 	seen := map[string]bool{}
 	for _, code := range req.GetCodes() {
 		if seen[code] {
@@ -214,11 +245,17 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			}
 			continue
 		}
+		if p.Stock < -1 {
+			stockFailed++
+		}
 		if created {
 			reply.Imported++
 		} else {
 			reply.Updated++
 		}
+	}
+	if stockFailed > 0 {
+		reply.ErrorContext += fmt.Sprintf(" 商品已保存，但 %d 件库存查询失败；请到同步任务仅重试失败库存。", stockFailed)
 	}
 	// 预览缓存失效（导入后 already_imported 标注需刷新）
 	previewCache.Lock()

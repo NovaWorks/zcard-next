@@ -225,6 +225,47 @@ func (_u *SupplyMappingUpdate) ClearStockCheckedAt() *SupplyMappingUpdate {
 	return _u
 }
 
+// SetStockReference sets the "stock_reference" field.
+func (_u *SupplyMappingUpdate) SetStockReference(v int32) *SupplyMappingUpdate {
+	_u.mutation.ResetStockReference()
+	_u.mutation.SetStockReference(v)
+	return _u
+}
+
+// SetNillableStockReference sets the "stock_reference" field if the given value is not nil.
+func (_u *SupplyMappingUpdate) SetNillableStockReference(v *int32) *SupplyMappingUpdate {
+	if v != nil {
+		_u.SetStockReference(*v)
+	}
+	return _u
+}
+
+// AddStockReference adds value to the "stock_reference" field.
+func (_u *SupplyMappingUpdate) AddStockReference(v int32) *SupplyMappingUpdate {
+	_u.mutation.AddStockReference(v)
+	return _u
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (_u *SupplyMappingUpdate) SetStockReferenceAt(v time.Time) *SupplyMappingUpdate {
+	_u.mutation.SetStockReferenceAt(v)
+	return _u
+}
+
+// SetNillableStockReferenceAt sets the "stock_reference_at" field if the given value is not nil.
+func (_u *SupplyMappingUpdate) SetNillableStockReferenceAt(v *time.Time) *SupplyMappingUpdate {
+	if v != nil {
+		_u.SetStockReferenceAt(*v)
+	}
+	return _u
+}
+
+// ClearStockReferenceAt clears the value of the "stock_reference_at" field.
+func (_u *SupplyMappingUpdate) ClearStockReferenceAt() *SupplyMappingUpdate {
+	_u.mutation.ClearStockReferenceAt()
+	return _u
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (_u *SupplyMappingUpdate) SetPricingOverride(v map[string]interface{}) *SupplyMappingUpdate {
 	_u.mutation.SetPricingOverride(v)
@@ -369,6 +410,18 @@ func (_u *SupplyMappingUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	}
 	if _u.mutation.StockCheckedAtCleared() {
 		_spec.ClearField(supplymapping.FieldStockCheckedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.StockReference(); ok {
+		_spec.SetField(supplymapping.FieldStockReference, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedStockReference(); ok {
+		_spec.AddField(supplymapping.FieldStockReference, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.StockReferenceAt(); ok {
+		_spec.SetField(supplymapping.FieldStockReferenceAt, field.TypeTime, value)
+	}
+	if _u.mutation.StockReferenceAtCleared() {
+		_spec.ClearField(supplymapping.FieldStockReferenceAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.PricingOverride(); ok {
 		_spec.SetField(supplymapping.FieldPricingOverride, field.TypeJSON, value)
@@ -593,6 +646,47 @@ func (_u *SupplyMappingUpdateOne) ClearStockCheckedAt() *SupplyMappingUpdateOne 
 	return _u
 }
 
+// SetStockReference sets the "stock_reference" field.
+func (_u *SupplyMappingUpdateOne) SetStockReference(v int32) *SupplyMappingUpdateOne {
+	_u.mutation.ResetStockReference()
+	_u.mutation.SetStockReference(v)
+	return _u
+}
+
+// SetNillableStockReference sets the "stock_reference" field if the given value is not nil.
+func (_u *SupplyMappingUpdateOne) SetNillableStockReference(v *int32) *SupplyMappingUpdateOne {
+	if v != nil {
+		_u.SetStockReference(*v)
+	}
+	return _u
+}
+
+// AddStockReference adds value to the "stock_reference" field.
+func (_u *SupplyMappingUpdateOne) AddStockReference(v int32) *SupplyMappingUpdateOne {
+	_u.mutation.AddStockReference(v)
+	return _u
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (_u *SupplyMappingUpdateOne) SetStockReferenceAt(v time.Time) *SupplyMappingUpdateOne {
+	_u.mutation.SetStockReferenceAt(v)
+	return _u
+}
+
+// SetNillableStockReferenceAt sets the "stock_reference_at" field if the given value is not nil.
+func (_u *SupplyMappingUpdateOne) SetNillableStockReferenceAt(v *time.Time) *SupplyMappingUpdateOne {
+	if v != nil {
+		_u.SetStockReferenceAt(*v)
+	}
+	return _u
+}
+
+// ClearStockReferenceAt clears the value of the "stock_reference_at" field.
+func (_u *SupplyMappingUpdateOne) ClearStockReferenceAt() *SupplyMappingUpdateOne {
+	_u.mutation.ClearStockReferenceAt()
+	return _u
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (_u *SupplyMappingUpdateOne) SetPricingOverride(v map[string]interface{}) *SupplyMappingUpdateOne {
 	_u.mutation.SetPricingOverride(v)
@@ -767,6 +861,18 @@ func (_u *SupplyMappingUpdateOne) sqlSave(ctx context.Context) (_node *SupplyMap
 	}
 	if _u.mutation.StockCheckedAtCleared() {
 		_spec.ClearField(supplymapping.FieldStockCheckedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.StockReference(); ok {
+		_spec.SetField(supplymapping.FieldStockReference, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedStockReference(); ok {
+		_spec.AddField(supplymapping.FieldStockReference, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.StockReferenceAt(); ok {
+		_spec.SetField(supplymapping.FieldStockReferenceAt, field.TypeTime, value)
+	}
+	if _u.mutation.StockReferenceAtCleared() {
+		_spec.ClearField(supplymapping.FieldStockReferenceAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.PricingOverride(); ok {
 		_spec.SetField(supplymapping.FieldPricingOverride, field.TypeJSON, value)

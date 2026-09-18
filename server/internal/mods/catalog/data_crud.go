@@ -112,6 +112,16 @@ func (r *ProductRepoImpl) StockBatch(ctx context.Context, productIDs []uint64) (
 }
 
 func (r *ProductRepoImpl) StockSnapshotBatch(ctx context.Context, productIDs []uint64) (map[uint64]port.StockSnapshot, error) {
+	return r.stockSnapshotBatch(ctx, productIDs, true)
+}
+
+// Admin lists must not wait for external suppliers; display the cached quantity
+// and freshness. Stock-only sync and storefront reads continue refreshing it.
+func (r *ProductRepoImpl) cachedStockSnapshotBatch(ctx context.Context, productIDs []uint64) (map[uint64]port.StockSnapshot, error) {
+	return r.stockSnapshotBatch(ctx, productIDs, false)
+}
+
+func (r *ProductRepoImpl) stockSnapshotBatch(ctx context.Context, productIDs []uint64, refresh bool) (map[uint64]port.StockSnapshot, error) {
 	out := map[uint64]port.StockSnapshot{}
 	for start := 0; start < len(productIDs); start += 500 {
 		end := start + 500
@@ -126,7 +136,9 @@ func (r *ProductRepoImpl) StockSnapshotBatch(ctx context.Context, productIDs []u
 		if err != nil {
 			return nil, err
 		}
-		r.refreshDisplayStocks(ctx, rows, batch)
+		if refresh {
+			r.refreshDisplayStocks(ctx, rows, batch)
+		}
 		for id, n := range batch {
 			out[id] = port.StockSnapshot{Available: n.Available(), Quantity: n.Quantity, CheckedAt: n.CheckedAt, Status: n.Status}
 		}

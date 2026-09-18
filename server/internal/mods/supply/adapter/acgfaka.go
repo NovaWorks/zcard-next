@@ -19,14 +19,18 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
 // acgFakaAdapter acg-faka 协议适配器。
 type acgFakaAdapter struct {
-	protocol string
-	creds    Credentials
-	t        *transport
+	protocol   string
+	creds      Credentials
+	t          *transport
+	stockProbe sync.Mutex
+	stockMode  atomic.Int32
 }
 
 func newAcgFaka(baseURL string, creds Credentials, retryIntervals []int) (Adapter, error) {
@@ -172,20 +176,20 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 		ID       any    `json:"id"`
 		Name     string `json:"name"`
 		Children []struct {
-			Code         string   `json:"code"`
-			Name         string   `json:"name"`
-			Price        FlexNum  `json:"price"`
-			FactoryPrice FlexNum  `json:"factory_price"`
-			Description  string   `json:"description"`
-			Introduce    string   `json:"introduce"`
-			Cover        string   `json:"cover"`
-			Status       *int     `json:"status"` // 1=上架 0=下架；皮肤站可能缺省（接口语义为可对接商品）→ 指针区分缺失与显式 0
-			Stock        *FlexNum `json:"stock"`  // 仅自动发货商品有；手动发货缺省。PHP 站 string 直出（"stock":"990"）——FlexNum 兼容（GetStock 同款，列表此处曾漏）
-			CategoryID   any      `json:"category_id"`
-			DeliveryWay  int      `json:"delivery_way"`
-			DraftStatus  int      `json:"draft_status"`
-			OnlyUser     int      `json:"only_user"` // 1=货主专属（Order.php:878 非货主下单报「请先登录后再购买哦」）
-			Config       string   `json:"config"`    // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
+			Code         string          `json:"code"`
+			Name         string          `json:"name"`
+			Price        FlexNum         `json:"price"`
+			FactoryPrice FlexNum         `json:"factory_price"`
+			Description  string          `json:"description"`
+			Introduce    string          `json:"introduce"`
+			Cover        string          `json:"cover"`
+			Status       *int            `json:"status"` // 1=上架 0=下架；皮肤站可能缺省（接口语义为可对接商品）→ 指针区分缺失与显式 0
+			Stock        json.RawMessage `json:"stock"`  // 缺失/无效为未知；兼容 PHP 整数和数字字符串
+			CategoryID   any             `json:"category_id"`
+			DeliveryWay  int             `json:"delivery_way"`
+			DraftStatus  int             `json:"draft_status"`
+			OnlyUser     int             `json:"only_user"` // 1=货主专属（Order.php:878 非货主下单报「请先登录后再购买哦」）
+			Config       string          `json:"config"`    // INI 字符串（标准站 items 直出原始 INI；item 接口为数组——本适配器只消费 items）
 		} `json:"children"`
 	}
 	if err := json.Unmarshal(raw, &cats); err != nil {
@@ -215,10 +219,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			if selected != nil && !selected[p.Code] {
 				continue
 			}
-			stock := int32(-1)
-			if p.Stock != nil {
-				stock = int32(*p.Stock)
-			}
+			stock, _ := parseStock(p.Stock)
 			desc := p.Description
 			if desc == "" {
 				desc = p.Introduce
@@ -324,34 +325,6 @@ func (a *acgFakaAdapter) fetchInventory(ctx context.Context, code string) (*acgI
 		return nil, fmt.Errorf("adapter.acgfaka: 解析单品库存失败: %w", err)
 	}
 	return &inv, nil
-}
-
-func (a *acgFakaAdapter) GetStock(ctx context.Context, productCode, skuCode string) (int32, error) {
-	params := map[string]string{"code": productCode}
-	if skuCode != "" {
-		fields, err := AcgSpecFormFields(skuCode)
-		if err != nil {
-			return 0, fmt.Errorf("adapter.acgfaka: 规格编码非法: %w", err)
-		}
-		for k, v := range fields {
-			params[k] = v
-		}
-	}
-	data, err := a.signedPost(ctx, "/shared/commodity/stock", params)
-	if err != nil {
-		return 0, err
-	}
-	raw, err := parseResp(data)
-	if err != nil {
-		return 0, err
-	}
-	var d struct {
-		Stock FlexNum `json:"stock"` // PHP 侧 string 直出（{"stock":"990"}），FlexNum 兼容两种形态
-	}
-	if err := json.Unmarshal(raw, &d); err != nil {
-		return 0, fmt.Errorf("adapter.acgfaka: 解析库存失败: %w", err)
-	}
-	return int32(d.Stock), nil
 }
 
 // acgPlaceholderTexts 上游「非真实卡密」文案（手动发货占位 / 付款后库存被抢）。

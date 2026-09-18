@@ -224,13 +224,13 @@ async function submit() {
     if (!error && data) {
       const d = data as any;
       emit("imported");
-      if (Number(d.failed) > 0) {
-        resultMessage.value = `分类映射已保存。新建商品 ${d.imported ?? 0}，更新 ${d.updated ?? 0}，失败 ${d.failed}。${d.error_context || ""} 可重试失败商品。`;
+      if (Number(d.failed) > 0 || d.error_context) {
+        resultMessage.value = `分类映射已保存。新建商品 ${d.imported ?? 0}，更新 ${d.updated ?? 0}，失败 ${d.failed ?? 0}。${d.error_context || ""}${Number(d.failed) > 0 ? " 可重试导入失败的商品。" : " 请在货源操作中选择‘仅重试失败库存’。"}`;
         for (const key of Object.keys(drafts)) delete drafts[key];
         for (const [key, value] of Object.entries(d.category_map || {})) categoryMapDraft[key] = Number(value);
         if (d.failed_codes?.length) checked.value = d.failed_codes;
         await loadLocalCategories();
-        window.$message?.warning("部分商品导入失败，请查看结果并重试");
+        window.$message?.warning(Number(d.failed) > 0 ? "部分商品导入失败，请查看结果并重试" : "商品已导入，部分库存未确认，请查看结果");
       } else {
         window.$message?.success(`导入完成：新建 ${d.imported ?? 0}，更新 ${d.updated ?? 0}`);
         emit("update:show", false);

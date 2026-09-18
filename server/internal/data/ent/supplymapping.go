@@ -40,6 +40,10 @@ type SupplyMapping struct {
 	UpStock int32 `json:"up_stock,omitempty"`
 	// StockCheckedAt holds the value of the "stock_checked_at" field.
 	StockCheckedAt time.Time `json:"stock_checked_at,omitempty"`
+	// 上次成功库存，仅作展示参考
+	StockReference int32 `json:"stock_reference,omitempty"`
+	// StockReferenceAt holds the value of the "stock_reference_at" field.
+	StockReferenceAt time.Time `json:"stock_reference_at,omitempty"`
 	// PricingOverride holds the value of the "pricing_override" field.
 	PricingOverride map[string]interface{} `json:"pricing_override,omitempty"`
 	selectValues    sql.SelectValues
@@ -52,11 +56,11 @@ func (*SupplyMapping) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case supplymapping.FieldPricingOverride:
 			values[i] = new([]byte)
-		case supplymapping.FieldID, supplymapping.FieldConnectionID, supplymapping.FieldLocalCategoryID, supplymapping.FieldLocalProductID, supplymapping.FieldLocalSkuID, supplymapping.FieldUpStock:
+		case supplymapping.FieldID, supplymapping.FieldConnectionID, supplymapping.FieldLocalCategoryID, supplymapping.FieldLocalProductID, supplymapping.FieldLocalSkuID, supplymapping.FieldUpStock, supplymapping.FieldStockReference:
 			values[i] = new(sql.NullInt64)
 		case supplymapping.FieldUpstreamCategory, supplymapping.FieldUpstreamProduct, supplymapping.FieldUpstreamSku:
 			values[i] = new(sql.NullString)
-		case supplymapping.FieldCreatedAt, supplymapping.FieldUpdatedAt, supplymapping.FieldStockCheckedAt:
+		case supplymapping.FieldCreatedAt, supplymapping.FieldUpdatedAt, supplymapping.FieldStockCheckedAt, supplymapping.FieldStockReferenceAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -145,6 +149,18 @@ func (_m *SupplyMapping) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.StockCheckedAt = value.Time
 			}
+		case supplymapping.FieldStockReference:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_reference", values[i])
+			} else if value.Valid {
+				_m.StockReference = int32(value.Int64)
+			}
+		case supplymapping.FieldStockReferenceAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field stock_reference_at", values[i])
+			} else if value.Valid {
+				_m.StockReferenceAt = value.Time
+			}
 		case supplymapping.FieldPricingOverride:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field pricing_override", values[i])
@@ -221,6 +237,12 @@ func (_m *SupplyMapping) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("stock_checked_at=")
 	builder.WriteString(_m.StockCheckedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("stock_reference=")
+	builder.WriteString(fmt.Sprintf("%v", _m.StockReference))
+	builder.WriteString(", ")
+	builder.WriteString("stock_reference_at=")
+	builder.WriteString(_m.StockReferenceAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("pricing_override=")
 	builder.WriteString(fmt.Sprintf("%v", _m.PricingOverride))

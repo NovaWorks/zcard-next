@@ -166,6 +166,7 @@ func (a *dujiaoAdapter) listProducts(ctx context.Context, page, pageSize int, in
 }
 
 func (a *dujiaoAdapter) GetStock(ctx context.Context, productCode, _ string) (int32, error) {
+	ctx = stockReadContext(ctx)
 	// dujiao 无独立库存端点：走商品详情（stockQuantity，-1=无限）
 	path := "/api/v1/upstream/products/" + url.PathEscape(productCode)
 	data, err := a.request(ctx, "GET", path, nil, nil)

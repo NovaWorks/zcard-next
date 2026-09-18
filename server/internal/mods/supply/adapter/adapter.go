@@ -74,17 +74,19 @@ type SKU struct {
 
 // Product 上游商品（统一输出分）。
 type Product struct {
-	ID            string
-	Name          string
-	CategoryID    string
-	Price         int64 // 分
-	FactoryPrice  int64 // 分（上游成本快照）
-	Description   string
-	Cover         string
-	IsActive      bool
-	Stock         int32 // -1 = 无限（手动发货）
-	SKUs          []SKU
-	UpstreamExtra map[string]any // 协议私有字段（同步时原样入 settings/审计）
+	ID             string
+	Name           string
+	CategoryID     string
+	Price          int64 // 分
+	FactoryPrice   int64 // 分（上游成本快照）
+	Description    string
+	Cover          string
+	IsActive       bool
+	Stock          int32 // -1 = 明确无限，-2 = 未知
+	StockCheckedAt time.Time
+	StockError     string // 脱敏库存失败说明（仅供后台同步结果）
+	SKUs           []SKU
+	UpstreamExtra  map[string]any // 协议私有字段（同步时原样入 settings/审计）
 }
 
 // ProductList 商品列表（分页）。

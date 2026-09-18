@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import ChangePassword from "@/components/security/change-password.vue";
 import AccountSecurity from "@/components/security/account-security.vue";
 import { recoveryTicket } from "@/components/security/state";
 import type { VNode } from "vue";
@@ -20,11 +21,12 @@ function loginOrRegister() {
   toLogin();
 }
 
+const showPassword = ref(false);
 const showSecurity = ref(Boolean(recoveryTicket.value));
 watch(recoveryTicket, (value) => {
   if (value) showSecurity.value = true;
 });
-type DropdownKey = "logout" | "security";
+type DropdownKey = "logout" | "security" | "password";
 
 type DropdownOption =
   | {
@@ -43,6 +45,11 @@ const options = computed(() => {
       key: "security",
       label: "账号安全",
       icon: SvgIconVNode({ icon: "ph:shield-check", fontSize: 18 }),
+    },
+    {
+      key: "password",
+      label: "修改密码",
+      icon: SvgIconVNode({ icon: "ph:key", fontSize: 18 }),
     },
     {
       label: $t("common.logout"),
@@ -69,6 +76,8 @@ function logout() {
 function handleDropdown(key: DropdownKey) {
   if (key === "logout") {
     logout();
+  } else if (key === "password") {
+    showPassword.value = true;
   } else {
     showSecurity.value = true;
   }
@@ -87,6 +96,7 @@ function handleDropdown(key: DropdownKey) {
       </ButtonIcon>
     </div>
   </NDropdown>
+  <ChangePassword v-if="showPassword" @cancel="showPassword = false" @completed="showPassword = false" />
   <NModal
     v-model:show="showSecurity"
     preset="card"

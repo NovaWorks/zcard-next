@@ -63,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { useStockRefresh } from '@/composables/stock-refresh';
 import ThemeIcon from '@/components/ThemeIcon.vue';
 import CategoryIcon from '@/components/CategoryIcon.vue';
 import { ref, computed, onMounted, onActivated, onDeactivated, watch } from 'vue';
@@ -201,6 +202,11 @@ function onSearch() {
   page.value = 1;
   load();
 }
+
+useStockRefresh(products, () => route.path === '/products' && !loading.value, async () => {
+  const response = await listProducts({ keyword: keyword.value || undefined, category_id: categoryId.value > 0 ? categoryId.value : undefined, recommend_only: categoryId.value === -1 || undefined, sort: normalizeSalesSort(sort.value), page: page.value, page_size: pageSize.value });
+  return response.data?.items || [];
+});
 
 let needsRefresh = false;
 onActivated(() => {

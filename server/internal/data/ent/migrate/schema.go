@@ -2322,6 +2322,8 @@ var (
 		{Name: "local_sku_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "up_stock", Type: field.TypeInt32, Default: 0},
 		{Name: "stock_checked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "stock_reference", Type: field.TypeInt32, Default: -2},
+		{Name: "stock_reference_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "pricing_override", Type: field.TypeJSON, Nullable: true},
 	}
 	// SupplyMappingsTable holds the schema information for the "supply_mappings" table.

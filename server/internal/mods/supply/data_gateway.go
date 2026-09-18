@@ -185,13 +185,14 @@ func (g *Gateway) Query(ctx context.Context, connectionID uint64, upstreamOrderI
 // CheckStock 实时库存：-1 仅表示上游明确不限；错误不可伪装成不限。
 // skuCode 为上游规格标识（acg=race|k=v 编码 / dujiao=sku_id），可空走商品级口径。
 func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCode, skuCode string) (int32, error) {
+	started := time.Now().UTC()
 	a, err := g.adapterFor(ctx, connectionID)
 	if err != nil {
 		return 0, err
 	}
 	stock, err := a.GetStock(ctx, productCode, skuCode)
 	if skuCode == "" {
-		g.cacheStock(ctx, connectionID, productCode, stock, err)
+		g.cacheStockAt(ctx, connectionID, productCode, stock, err, started)
 	}
 	if err != nil {
 		return 0, err

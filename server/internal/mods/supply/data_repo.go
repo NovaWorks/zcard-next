@@ -260,32 +260,27 @@ func toInt64(v any) int64 {
 
 // ── 映射 CRUD ──────────────────────────────────────────────
 
-// UpsertMapping 创建或更新映射（单语句 ON CONFLICT，命中
-// UNIQUE(connection_id, upstream_product, upstream_sku)；旧实现先查后写
-// 2 次往返且并发可重复创建——PG/MySQL 走原生 upsert 消除竞态。
-// 同步热路径调用（每商品一次），只回报 error；需要实体由调用方回读。
+// UpsertMapping 用原生 upsert 更新映射元数据；库存观测按查询开始时间
+// 单独写入，避免同步/调价覆盖并发查询得到的较新库存。
 func (r *SupplyRepoImpl) UpsertMapping(ctx context.Context, m *ent.SupplyMapping) error {
-	return data.Client(ctx, r.data).SupplyMapping.Create().
-		SetConnectionID(m.ConnectionID).
-		SetUpstreamCategory(m.UpstreamCategory).
-		SetLocalCategoryID(m.LocalCategoryID).
-		SetUpstreamProduct(m.UpstreamProduct).
-		SetLocalProductID(m.LocalProductID).
-		SetUpstreamSku(m.UpstreamSku).
-		SetLocalSkuID(m.LocalSkuID).
-		SetUpStock(m.UpStock).
-		SetStockCheckedAt(m.StockCheckedAt).
-		SetPricingOverride(m.PricingOverride).
-		OnConflict(
-			entsql.ConflictColumns(
-				supplymapping.FieldConnectionID,
-				supplymapping.FieldUpstreamProduct,
-				supplymapping.FieldUpstreamSku,
-			),
-			// 冲突时全列取新值（含 TimeMixin 的 updated_at 提议值）
-			entsql.ResolveWithNewValues(),
-		).
-		Exec(ctx)
+	create := data.Client(ctx, r.data).SupplyMapping.Create().
+		SetConnectionID(m.ConnectionID).SetUpstreamCategory(m.UpstreamCategory).
+		SetLocalCategoryID(m.LocalCategoryID).SetUpstreamProduct(m.UpstreamProduct).
+		SetLocalProductID(m.LocalProductID).SetUpstreamSku(m.UpstreamSku).
+		SetLocalSkuID(m.LocalSkuID).SetUpStock(m.UpStock).SetPricingOverride(m.PricingOverride)
+	// Conflict updates must not copy a stale in-memory stock snapshot back over a
+	// concurrent lookup. Price/category-only writes never refresh stock age.
+	err := create.OnConflict(entsql.ConflictColumns(supplymapping.FieldConnectionID, supplymapping.FieldUpstreamProduct, supplymapping.FieldUpstreamSku)).
+		Update(func(u *ent.SupplyMappingUpsert) {
+			u.UpdateUpstreamCategory().UpdateLocalCategoryID().UpdateLocalProductID().UpdateLocalSkuID().UpdatePricingOverride().UpdateUpdatedAt()
+		}).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	if !m.StockCheckedAt.IsZero() {
+		return r.recordStock(ctx, m.ConnectionID, m.UpstreamProduct, m.UpstreamSku, m.UpStock, m.StockCheckedAt)
+	}
+	return nil
 }
 
 // ListMappings 映射列表（按连接过滤）。

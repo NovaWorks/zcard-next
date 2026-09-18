@@ -171,8 +171,14 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 			p.Price = sp
 		}
 	}
-	stocks, _ := s.uc.repo.StockBatch(ctx, []uint64{p.ID})
-	out := toStorefrontProduct(p, stocks, 0)
+	snapshots, _ := s.uc.repo.StockSnapshotBatch(ctx, []uint64{p.ID})
+	snapshot := snapshots[p.ID]
+	out := toStorefrontProduct(p, map[uint64]int64{p.ID: snapshot.Available}, 0)
+	out.StockStatus = snapshot.Status
+	out.StockReference = snapshot.Quantity
+	if !snapshot.CheckedAt.IsZero() {
+		out.StockCheckedAt = snapshot.CheckedAt.Unix()
+	}
 	offers, err := s.flashOffers(ctx, []uint64{p.ID})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.FLASH_FAILED", "读取活动价格失败，请重试")
@@ -180,10 +186,16 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	out.FlashSale = toFlashOffer(offers[couponport.FlashKey{ProductID: p.ID}])
 	if p.UpstreamSourceID != 0 && s.stockLookup != nil {
 		n, err := s.stockLookup.DisplayStock(ctx, p.UpstreamSourceID, p.UpstreamProductCode)
-		if err != nil {
+		if err != nil || n < -1 {
 			out.Stock = -2
+			out.StockStatus = "unknown"
+			if snapshot.Quantity >= -1 && !snapshot.CheckedAt.IsZero() {
+				out.StockStatus = "stale"
+			}
 		} else {
 			out.Stock = int64(n)
+			out.StockStatus = "current"
+			out.StockReference = int64(n)
 		}
 	}
 	controls, err := s.uc.ListControls(ctx, req.GetId())

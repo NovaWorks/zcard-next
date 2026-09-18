@@ -26,6 +26,7 @@ const (
 	AdminAuthService_Logout_FullMethodName           = "/zcard.api.admin.v1.AdminAuthService/Logout"
 	AdminAuthService_GetProfile_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/GetProfile"
 	AdminAuthService_RefreshToken_FullMethodName     = "/zcard.api.admin.v1.AdminAuthService/RefreshToken"
+	AdminAuthService_ChangePassword_FullMethodName   = "/zcard.api.admin.v1.AdminAuthService/ChangePassword"
 	AdminAuthService_EnableTOTP_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
 	AdminAuthService_ConfirmTOTP_FullMethodName      = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
 	AdminAuthService_CancelTOTP_FullMethodName       = "/zcard.api.admin.v1.AdminAuthService/CancelTOTP"
@@ -52,6 +53,8 @@ type AdminAuthServiceClient interface {
 	GetProfile(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetProfileReply, error)
 	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(ctx context.Context, in *RefreshTokenRequest, opts ...grpc.CallOption) (*LoginReply, error)
+	// ChangePassword 修改当前账号密码，并使全部旧会话失效。
+	ChangePassword(ctx context.Context, in *ChangeAdminPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
 	EnableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*EnableTOTPReply, error)
 	// ConfirmTOTP 验证一次确认绑定。
@@ -130,6 +133,16 @@ func (c *adminAuthServiceClient) RefreshToken(ctx context.Context, in *RefreshTo
 	return out, nil
 }
 
+func (c *adminAuthServiceClient) ChangePassword(ctx context.Context, in *ChangeAdminPasswordRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminAuthService_ChangePassword_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminAuthServiceClient) EnableTOTP(ctx context.Context, in *ConfirmTOTPRequest, opts ...grpc.CallOption) (*EnableTOTPReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnableTOTPReply)
@@ -199,6 +212,8 @@ type AdminAuthServiceServer interface {
 	GetProfile(context.Context, *emptypb.Empty) (*GetProfileReply, error)
 	// RefreshToken 用 refresh token 换新令牌对（一次性轮换）。
 	RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error)
+	// ChangePassword 修改当前账号密码，并使全部旧会话失效。
+	ChangePassword(context.Context, *ChangeAdminPasswordRequest) (*emptypb.Empty, error)
 	// EnableTOTP 生成 TOTP 密钥（返回 otpauth URL 供二维码）。
 	EnableTOTP(context.Context, *ConfirmTOTPRequest) (*EnableTOTPReply, error)
 	// ConfirmTOTP 验证一次确认绑定。
@@ -234,6 +249,9 @@ func (UnimplementedAdminAuthServiceServer) GetProfile(context.Context, *emptypb.
 }
 func (UnimplementedAdminAuthServiceServer) RefreshToken(context.Context, *RefreshTokenRequest) (*LoginReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method RefreshToken not implemented")
+}
+func (UnimplementedAdminAuthServiceServer) ChangePassword(context.Context, *ChangeAdminPasswordRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method ChangePassword not implemented")
 }
 func (UnimplementedAdminAuthServiceServer) EnableTOTP(context.Context, *ConfirmTOTPRequest) (*EnableTOTPReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method EnableTOTP not implemented")
@@ -379,6 +397,24 @@ func _AdminAuthService_RefreshToken_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminAuthService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangeAdminPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminAuthServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminAuthService_ChangePassword_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminAuthServiceServer).ChangePassword(ctx, req.(*ChangeAdminPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminAuthService_EnableTOTP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConfirmTOTPRequest)
 	if err := dec(in); err != nil {
@@ -499,6 +535,10 @@ var AdminAuthService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RefreshToken",
 			Handler:    _AdminAuthService_RefreshToken_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _AdminAuthService_ChangePassword_Handler,
 		},
 		{
 			MethodName: "EnableTOTP",

@@ -37,6 +37,11 @@ func init() {
 
 		Perm{Code: "auth:totp", Desc: "取消待确认绑定", Domain: "auth", Op: "zcard.api.admin.v1.AdminAuthService/CancelTOTP", Method: "POST", Path: "/api/v1/admin/auth/totp/cancel"},
 
+		// Self-service uses the existing profile permission so legacy staff roles
+		// can change only their own password without a role migration.
+		Perm{Code: "auth:profile", Desc: "修改当前账号密码", Domain: "auth",
+			Op: "zcard.api.admin.v1.AdminAuthService/ChangePassword", Method: "POST", Path: "/api/v1/admin/auth/password"},
+
 		// ── 设置中心（settings）──────────────────────────
 		Perm{Code: "settings:read", Desc: "查看设置", Domain: "settings",
 			Op: "zcard.api.admin.v1.AdminSettingsService/ListSettings", Method: "GET", Path: "/api/v1/admin/settings"},

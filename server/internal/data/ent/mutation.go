@@ -79277,6 +79277,9 @@ type SupplyMappingMutation struct {
 	up_stock             *int32
 	addup_stock          *int32
 	stock_checked_at     *time.Time
+	stock_reference      *int32
+	addstock_reference   *int32
+	stock_reference_at   *time.Time
 	pricing_override     *map[string]interface{}
 	clearedFields        map[string]struct{}
 	done                 bool
@@ -79952,6 +79955,111 @@ func (m *SupplyMappingMutation) ResetStockCheckedAt() {
 	delete(m.clearedFields, supplymapping.FieldStockCheckedAt)
 }
 
+// SetStockReference sets the "stock_reference" field.
+func (m *SupplyMappingMutation) SetStockReference(i int32) {
+	m.stock_reference = &i
+	m.addstock_reference = nil
+}
+
+// StockReference returns the value of the "stock_reference" field in the mutation.
+func (m *SupplyMappingMutation) StockReference() (r int32, exists bool) {
+	v := m.stock_reference
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockReference returns the old "stock_reference" field's value of the SupplyMapping entity.
+// If the SupplyMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyMappingMutation) OldStockReference(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockReference is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockReference requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockReference: %w", err)
+	}
+	return oldValue.StockReference, nil
+}
+
+// AddStockReference adds i to the "stock_reference" field.
+func (m *SupplyMappingMutation) AddStockReference(i int32) {
+	if m.addstock_reference != nil {
+		*m.addstock_reference += i
+	} else {
+		m.addstock_reference = &i
+	}
+}
+
+// AddedStockReference returns the value that was added to the "stock_reference" field in this mutation.
+func (m *SupplyMappingMutation) AddedStockReference() (r int32, exists bool) {
+	v := m.addstock_reference
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetStockReference resets all changes to the "stock_reference" field.
+func (m *SupplyMappingMutation) ResetStockReference() {
+	m.stock_reference = nil
+	m.addstock_reference = nil
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (m *SupplyMappingMutation) SetStockReferenceAt(t time.Time) {
+	m.stock_reference_at = &t
+}
+
+// StockReferenceAt returns the value of the "stock_reference_at" field in the mutation.
+func (m *SupplyMappingMutation) StockReferenceAt() (r time.Time, exists bool) {
+	v := m.stock_reference_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStockReferenceAt returns the old "stock_reference_at" field's value of the SupplyMapping entity.
+// If the SupplyMapping object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *SupplyMappingMutation) OldStockReferenceAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStockReferenceAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStockReferenceAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStockReferenceAt: %w", err)
+	}
+	return oldValue.StockReferenceAt, nil
+}
+
+// ClearStockReferenceAt clears the value of the "stock_reference_at" field.
+func (m *SupplyMappingMutation) ClearStockReferenceAt() {
+	m.stock_reference_at = nil
+	m.clearedFields[supplymapping.FieldStockReferenceAt] = struct{}{}
+}
+
+// StockReferenceAtCleared returns if the "stock_reference_at" field was cleared in this mutation.
+func (m *SupplyMappingMutation) StockReferenceAtCleared() bool {
+	_, ok := m.clearedFields[supplymapping.FieldStockReferenceAt]
+	return ok
+}
+
+// ResetStockReferenceAt resets all changes to the "stock_reference_at" field.
+func (m *SupplyMappingMutation) ResetStockReferenceAt() {
+	m.stock_reference_at = nil
+	delete(m.clearedFields, supplymapping.FieldStockReferenceAt)
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (m *SupplyMappingMutation) SetPricingOverride(value map[string]interface{}) {
 	m.pricing_override = &value
@@ -80035,7 +80143,7 @@ func (m *SupplyMappingMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *SupplyMappingMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, supplymapping.FieldCreatedAt)
 	}
@@ -80068,6 +80176,12 @@ func (m *SupplyMappingMutation) Fields() []string {
 	}
 	if m.stock_checked_at != nil {
 		fields = append(fields, supplymapping.FieldStockCheckedAt)
+	}
+	if m.stock_reference != nil {
+		fields = append(fields, supplymapping.FieldStockReference)
+	}
+	if m.stock_reference_at != nil {
+		fields = append(fields, supplymapping.FieldStockReferenceAt)
 	}
 	if m.pricing_override != nil {
 		fields = append(fields, supplymapping.FieldPricingOverride)
@@ -80102,6 +80216,10 @@ func (m *SupplyMappingMutation) Field(name string) (ent.Value, bool) {
 		return m.UpStock()
 	case supplymapping.FieldStockCheckedAt:
 		return m.StockCheckedAt()
+	case supplymapping.FieldStockReference:
+		return m.StockReference()
+	case supplymapping.FieldStockReferenceAt:
+		return m.StockReferenceAt()
 	case supplymapping.FieldPricingOverride:
 		return m.PricingOverride()
 	}
@@ -80135,6 +80253,10 @@ func (m *SupplyMappingMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldUpStock(ctx)
 	case supplymapping.FieldStockCheckedAt:
 		return m.OldStockCheckedAt(ctx)
+	case supplymapping.FieldStockReference:
+		return m.OldStockReference(ctx)
+	case supplymapping.FieldStockReferenceAt:
+		return m.OldStockReferenceAt(ctx)
 	case supplymapping.FieldPricingOverride:
 		return m.OldPricingOverride(ctx)
 	}
@@ -80223,6 +80345,20 @@ func (m *SupplyMappingMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStockCheckedAt(v)
 		return nil
+	case supplymapping.FieldStockReference:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockReference(v)
+		return nil
+	case supplymapping.FieldStockReferenceAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStockReferenceAt(v)
+		return nil
 	case supplymapping.FieldPricingOverride:
 		v, ok := value.(map[string]interface{})
 		if !ok {
@@ -80253,6 +80389,9 @@ func (m *SupplyMappingMutation) AddedFields() []string {
 	if m.addup_stock != nil {
 		fields = append(fields, supplymapping.FieldUpStock)
 	}
+	if m.addstock_reference != nil {
+		fields = append(fields, supplymapping.FieldStockReference)
+	}
 	return fields
 }
 
@@ -80271,6 +80410,8 @@ func (m *SupplyMappingMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedLocalSkuID()
 	case supplymapping.FieldUpStock:
 		return m.AddedUpStock()
+	case supplymapping.FieldStockReference:
+		return m.AddedStockReference()
 	}
 	return nil, false
 }
@@ -80315,6 +80456,13 @@ func (m *SupplyMappingMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddUpStock(v)
 		return nil
+	case supplymapping.FieldStockReference:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddStockReference(v)
+		return nil
 	}
 	return fmt.Errorf("unknown SupplyMapping numeric field %s", name)
 }
@@ -80337,6 +80485,9 @@ func (m *SupplyMappingMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(supplymapping.FieldStockCheckedAt) {
 		fields = append(fields, supplymapping.FieldStockCheckedAt)
+	}
+	if m.FieldCleared(supplymapping.FieldStockReferenceAt) {
+		fields = append(fields, supplymapping.FieldStockReferenceAt)
 	}
 	if m.FieldCleared(supplymapping.FieldPricingOverride) {
 		fields = append(fields, supplymapping.FieldPricingOverride)
@@ -80369,6 +80520,9 @@ func (m *SupplyMappingMutation) ClearField(name string) error {
 		return nil
 	case supplymapping.FieldStockCheckedAt:
 		m.ClearStockCheckedAt()
+		return nil
+	case supplymapping.FieldStockReferenceAt:
+		m.ClearStockReferenceAt()
 		return nil
 	case supplymapping.FieldPricingOverride:
 		m.ClearPricingOverride()
@@ -80413,6 +80567,12 @@ func (m *SupplyMappingMutation) ResetField(name string) error {
 		return nil
 	case supplymapping.FieldStockCheckedAt:
 		m.ResetStockCheckedAt()
+		return nil
+	case supplymapping.FieldStockReference:
+		m.ResetStockReference()
+		return nil
+	case supplymapping.FieldStockReferenceAt:
+		m.ResetStockReferenceAt()
 		return nil
 	case supplymapping.FieldPricingOverride:
 		m.ResetPricingOverride()

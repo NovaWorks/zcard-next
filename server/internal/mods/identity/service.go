@@ -265,3 +265,28 @@ func (s *AdminAuthService) CancelTOTP(ctx context.Context, _ *emptypb.Empty) (*e
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (s *AdminAuthService) ChangePassword(ctx context.Context, req *adminv1.ChangeAdminPasswordRequest) (*emptypb.Empty, error) {
+	noCache(ctx)
+	c := ClaimsFromContext(ctx)
+	if c == nil {
+		return nil, errors.Unauthorized("identity.UNAUTHORIZED", "请先登录")
+	}
+	err := s.uc.ChangeOwnPassword(ctx, c.Subject, c.AuthVersion, req.GetCurrentPassword(), req.GetNewPassword(), req.GetConfirmPassword())
+	switch {
+	case err == nil:
+		return &emptypb.Empty{}, nil
+	case errors.Is(err, ErrPasswordInput):
+		return nil, errors.BadRequest("identity.PASSWORD_INPUT", "请检查新密码长度（至少 6 个字符）、两次输入是否一致，以及是否与当前密码相同")
+	case errors.Is(err, ErrLoginFailed):
+		return nil, errors.BadRequest("identity.CURRENT_PASSWORD_INVALID", "当前密码不正确")
+	case errors.Is(err, ErrLocked):
+		return nil, errors.New(429, "identity.ACCOUNT_LOCKED", "密码验证失败次数过多，请稍后重试")
+	case errors.Is(err, ErrSessionInvalid), errors.Is(err, ErrAdminDisabled):
+		return nil, mapLoginErr(err)
+	case errors.Is(err, ErrMFAConflict):
+		return nil, errors.Conflict("identity.SECURITY_CONFLICT", "账号安全状态已变化，请重新登录后再试")
+	default:
+		return nil, errors.InternalServer("identity.PASSWORD_CHANGE_FAILED", "修改密码失败，请稍后重试")
+	}
+}

@@ -35,6 +35,10 @@ const (
 	FieldUpStock = "up_stock"
 	// FieldStockCheckedAt holds the string denoting the stock_checked_at field in the database.
 	FieldStockCheckedAt = "stock_checked_at"
+	// FieldStockReference holds the string denoting the stock_reference field in the database.
+	FieldStockReference = "stock_reference"
+	// FieldStockReferenceAt holds the string denoting the stock_reference_at field in the database.
+	FieldStockReferenceAt = "stock_reference_at"
 	// FieldPricingOverride holds the string denoting the pricing_override field in the database.
 	FieldPricingOverride = "pricing_override"
 	// Table holds the table name of the supplymapping in the database.
@@ -55,6 +59,8 @@ var Columns = []string{
 	FieldLocalSkuID,
 	FieldUpStock,
 	FieldStockCheckedAt,
+	FieldStockReference,
+	FieldStockReferenceAt,
 	FieldPricingOverride,
 }
 
@@ -85,6 +91,8 @@ var (
 	UpstreamSkuValidator func(string) error
 	// DefaultUpStock holds the default value on creation for the "up_stock" field.
 	DefaultUpStock int32
+	// DefaultStockReference holds the default value on creation for the "stock_reference" field.
+	DefaultStockReference int32
 )
 
 // OrderOption defines the ordering options for the SupplyMapping queries.
@@ -148,4 +156,14 @@ func ByUpStock(opts ...sql.OrderTermOption) OrderOption {
 // ByStockCheckedAt orders the results by the stock_checked_at field.
 func ByStockCheckedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStockCheckedAt, opts...).ToFunc()
+}
+
+// ByStockReference orders the results by the stock_reference field.
+func ByStockReference(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockReference, opts...).ToFunc()
+}
+
+// ByStockReferenceAt orders the results by the stock_reference_at field.
+func ByStockReferenceAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStockReferenceAt, opts...).ToFunc()
 }

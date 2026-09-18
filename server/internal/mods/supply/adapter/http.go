@@ -92,16 +92,22 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 	}
 	var lastErr error
 	attempts := 1 + len(t.retryIntervals)
+	if isStockRead(ctx) {
+		attempts = 2
+	}
 	for i := 0; i < attempts; i++ {
 		if i > 0 {
-			delay := time.Duration(t.retryIntervals[i-1]) * time.Second
+			delay := 250 * time.Millisecond
+			if !isStockRead(ctx) {
+				delay = time.Duration(t.retryIntervals[i-1]) * time.Second
+			}
 			if isRateLimitedErr(lastErr) {
 				delay *= 2 // 限流退避加倍（AIMD 前的传输层缓冲）
 			}
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
-				return nil, ctx.Err()
+				return nil, fmt.Errorf("%w: %w", ctx.Err(), lastErr)
 			}
 		}
 		resp, err := t.tryOnce(ctx, method, full, headers, body)
@@ -109,6 +115,9 @@ func (t *transport) do(ctx context.Context, method, path string, query url.Value
 			return resp, nil
 		}
 		lastErr = err
+		if isStockRead(ctx) && isRateLimitedErr(err) {
+			return nil, fmt.Errorf("%w: %w", ErrRateLimited, err)
+		}
 		// 业务错误（上游明确拒绝）不重试；网络错误/5xx/429/非 JSON 网关页重试
 		var he *httpError
 		if errors.As(err, &he) && he.Status < 500 && he.Status > 0 && he.Status != http.StatusTooManyRequests {
@@ -159,6 +168,9 @@ func (t *transport) tryOnce(ctx context.Context, method, full string, headers ma
 	// 2xx 但响应体非 JSON：疑似 WAF/Cloudflare/登录页拦截（三协议响应均为 JSON；
 	// 空体放行——zcard ping 等端点允许无体）。归一化为 429 口径参与重试与限流判定。
 	if !looksLikeJSON(respBody) {
+		if isStockRead(ctx) && (strings.HasSuffix(full, "/shared/commodity/stock") || strings.HasSuffix(full, "/shared/commodity/item") || strings.HasSuffix(full, "/shared/commodity/inventory")) && stockRouteMissing(respBody) {
+			return nil, &httpError{Status: http.StatusNotFound, Code: "stock_route_missing"}
+		}
 		return nil, &httpError{Status: http.StatusTooManyRequests, Code: "waf_non_json_response", Message: "上游 2xx 返回非 JSON 内容（疑似 WAF/网关页面）"}
 	}
 	return respBody, nil

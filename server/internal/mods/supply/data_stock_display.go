@@ -8,6 +8,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -15,11 +16,21 @@ var displayStockRequests singleflight.Group
 var displayStockSlots = make(chan struct{}, 4)
 
 func (g *Gateway) cacheStock(ctx context.Context, connectionID uint64, code string, n int32, queryErr error) {
+	g.cacheStockAt(ctx, connectionID, code, n, queryErr, time.Now().UTC())
+}
+
+func (g *Gateway) cacheStockAt(ctx context.Context, connectionID uint64, code string, n int32, queryErr error, started time.Time) {
 	if queryErr != nil || n < -1 {
 		n = -2
 	}
-	if _, err := data.Client(ctx, g.repo.data).SupplyMapping.Update().Where(supplymapping.ConnectionID(connectionID), supplymapping.UpstreamProduct(code), supplymapping.UpstreamSkuEQ("")).SetUpStock(n).SetStockCheckedAt(time.Now().UTC()).Save(ctx); err != nil {
+	// A timed-out upstream context must still record its failed attempt.
+	bounded, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
+	defer cancel()
+	if err := g.repo.recordStock(bounded, connectionID, code, "", n, started); err != nil {
 		slog.WarnContext(ctx, "supply.stock.cache_failed", "connection_id", connectionID, "error", err)
+	}
+	if queryErr != nil {
+		slog.WarnContext(ctx, "supply.stock.query_failed", "connection_id", connectionID, "product_code", code, "reason", adapter.StockErrorSummary(queryErr))
 	}
 }
 

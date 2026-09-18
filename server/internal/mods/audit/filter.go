@@ -159,6 +159,7 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 func redact(m map[string]any) map[string]any {
 	sensitive := map[string]bool{
 		"code": true, "totp_code": true, "captcha_code": true, "challenge": true, "recovery_ticket": true, "recovery_code": true, "recovery_codes": true, "otpauth_url": true, "refresh_token": true, "access_token": true, "new_password": true,
+		"current_password": true, "confirm_password": true, "currentpassword": true, "newpassword": true, "confirmpassword": true,
 		"password": true, "secret": true, "credentials": true, "api_secret": true,
 		"app_key": true, "config_json": true, "new_secret": true, "private_key": true,
 	}

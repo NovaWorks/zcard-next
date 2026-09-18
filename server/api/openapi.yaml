@@ -544,6 +544,22 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/auth/password:
+        post:
+            tags:
+                - AdminAuthService
+            description: ChangePassword 修改当前账号密码，并使全部旧会话失效。
+            operationId: AdminAuthService_ChangePassword
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ChangeAdminPasswordRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/auth/profile:
         get:
             tags:
@@ -7314,6 +7330,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+        zcard.api.admin.v1.ChangeAdminPasswordRequest:
+            type: object
+            properties:
+                currentPassword:
+                    type: string
+                newPassword:
+                    type: string
+                confirmPassword:
+                    type: string
         zcard.api.admin.v1.Channel:
             type: object
             properties:

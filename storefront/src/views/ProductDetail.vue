@@ -144,8 +144,8 @@
             <strong>暂时无法确认库存</strong>
             <p>{{ stockRefreshMessage || '尚未获取到有效库存，这不代表已售罄。请稍后重新查询，或联系客服确认。' }}</p>
           </div>
-          <button type="button" :disabled="stockRefreshing" @click="refreshStock">
-            {{ stockRefreshing ? '查询中…' : '重新查询库存' }}
+          <button type="button" :disabled="stockRefreshing || stockRetrySeconds > 0" :aria-busy="stockRefreshing" @click="refreshStock">
+            {{ stockRefreshing ? '查询中…' : stockRetrySeconds > 0 ? `${stockRetrySeconds} 秒后重试` : '重新查询库存' }}
           </button>
         </div>
 
@@ -209,7 +209,7 @@
 import { useContentVideos } from "@/composables/useContentVideos";
 import { useFlashOffers } from '@/composables/flash-offers';
 import ThemeIcon from '@/components/ThemeIcon.vue';
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getProduct, createOrder, rememberOrderPassword, fetchTradeConfig, contactRequiredLabel, contactValid, type Product, type TradeConfig } from '@/api';
 import { formatMoney, getToken } from '@/api/client';
@@ -293,7 +293,7 @@ const displayPrice = computed(() => flash.price(basePrice.value, selectedFlash.v
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
   const s = p.value.stock ?? 0;
-  if (s < -1) return '待确认';
+  if (s < -1) return p.value.stock_status === 'stale' && (p.value.stock_reference ?? -2) >= -1 ? `上次：${p.value.stock_reference === -1 ? '不限' : p.value.stock_reference}（待确认）` : '待确认';
   if (s === -1) return '不限';
   return String(s);
 });
@@ -301,8 +301,19 @@ const stockDisplay = computed(() => {
 const stockUnknown = computed(() => (p.value?.stock ?? 0) < -1);
 const stockRefreshing = ref(false);
 const stockRefreshMessage = ref('');
+const stockRetrySeconds = ref(0);
+let stockRetryTimer: ReturnType<typeof setInterval> | undefined;
+function startStockCooldown() {
+  if (stockRetryTimer) clearInterval(stockRetryTimer);
+  stockRetrySeconds.value = 15;
+  stockRetryTimer = setInterval(() => {
+    stockRetrySeconds.value = Math.max(0, stockRetrySeconds.value - 1);
+    if (!stockRetrySeconds.value) { clearInterval(stockRetryTimer); stockRetryTimer = undefined; }
+  }, 1000);
+}
+onUnmounted(() => clearInterval(stockRetryTimer));
 async function refreshStock() {
-  if (!p.value || stockRefreshing.value) return;
+  if (!p.value || stockRefreshing.value || stockRetrySeconds.value > 0) return;
   const productID = p.value.id;
   stockRefreshing.value = true;
   stockRefreshMessage.value = '';
@@ -312,9 +323,13 @@ async function refreshStock() {
     if (fresh.data) {
       // 只更新库存，保留用户已填写的规格、数量和取货信息。
       p.value.stock = fresh.data.stock ?? 0;
+      p.value.stock_status = fresh.data.stock_status;
+      p.value.stock_reference = fresh.data.stock_reference;
+      p.value.stock_checked_at = fresh.data.stock_checked_at;
     }
     if (fresh.error || stockUnknown.value) {
-      stockRefreshMessage.value = '仍未获取到有效库存，请 15 秒后重试，或联系客服确认。';
+      stockRefreshMessage.value = '仍未获取到有效库存，请稍后重试，或联系客服确认。';
+      startStockCooldown();
     }
   } finally {
     stockRefreshing.value = false;

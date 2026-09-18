@@ -11,7 +11,7 @@ package supply
 // - 请求节流：分页页间 request_delay（settings.schedule，防上游限流封 IP）；
 // 库存补查分批并发 + 批次间隔 + 600s 限速预算（1.x AcgFakaDriver 同款参数）
 // - 任务追踪：进度/心跳(30s)/统计/取消标志；失败 error_context 落库
-// - fail-open：库存补查失败项保持 -1（无限语义）仅告警；上游查询失败放行
+// - 库存失败保持未知，汇总失败商品；商品导入完成不等于库存查询成功
 // - 终态发布 sync.completed 事件（ 告警 / 对账数据源）
 
 import (
@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -44,6 +45,7 @@ const (
 	ScopeCollect = "collect"
 	ScopePrice   = "price"
 	ScopeStatus  = "status"
+	ScopeStock   = "stock" // 仅补查已映射商品库存，不写价格、分类、上下架
 )
 
 // 节流/补查默认参数（settings.schedule 可覆盖；对齐 1.x AcgFakaDriver）。
@@ -169,8 +171,8 @@ func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
 	if scope == "" {
 		scope = ScopeCollect // 历史任务兼容
 	}
-	if scope != ScopeCollect && scope != ScopePrice && scope != ScopeStatus {
-		_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "INVALID_SCOPE", "scope 必须为 collect|price|status")
+	if scope != ScopeCollect && scope != ScopePrice && scope != ScopeStatus && scope != ScopeStock {
+		_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "INVALID_SCOPE", "scope 必须为 collect|price|status|stock")
 		return nil
 	}
 	conn, err := s.repo.GetConnection(ctx, task.ConnectionID)
@@ -207,6 +209,14 @@ func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
 	}
 
 	sched := loadScheduleSettings(conn)
+	if scope == ScopeStock {
+		err := s.runStockOnly(ctx, task, conn, a, sched)
+		if err != nil {
+			_ = s.repo.FinishTask(ctx, task.ID, supplysynctask.StatusFailed, "STOCK_QUERY_FAILED", adapter.StockErrorSummary(err))
+			s.publishCompleted(ctx, conn.ID, task.ID, "failed")
+		}
+		return err
+	}
 
 	// 列表函数解析：增量（驱动支持 + 有锚点）→ 全量回落。
 	// 增量快照不具对账权威性（未见 ≠ 已删除）→ authoritative 仅在全量且回声完整时成立。
@@ -253,6 +263,8 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 	seen := map[string]bool{}
 	reportedTotal := 0
 	processed := 0
+	stockTotal, stockFailed := 0, 0
+	var stockErrors []string
 
 	page := 1
 	for {
@@ -271,6 +283,7 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 			heartbeat = time.Now()
 		}
 
+		listedAt := time.Now().UTC()
 		list0, err := list(ctx, page, 50)
 		if err != nil {
 			// fail-open：拉取失败 → 已处理部分保留，任务失败留痕（可重跑）。
@@ -300,7 +313,10 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		}
 		stats.Page = page
 
-		// 库存补查（仅 collect：列表缺库存的项分批查实时值；失败项保持 -1 放行）
+		for i := range list0.Items {
+			list0.Items[i].StockCheckedAt = listedAt
+		}
+		// 采集和状态同步统一补查；失败项保持未知并汇总。
 		if scope == ScopeCollect || scope == ScopeStatus {
 			if conn.Driver == "acg_faka" {
 				for i := range list0.Items {
@@ -308,12 +324,28 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 				}
 			}
 			if err := s.backfillStocks(ctx, a, sched, list0.Items, taskID); err != nil {
+				if errors.Is(err, errStockCanceled) {
+					_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusCanceled, "", "")
+					s.publishCompleted(ctx, conn.ID, taskID, "canceled")
+					return nil
+				}
 				_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "STOCK_BACKFILL_BUDGET", err.Error())
 				s.publishCompleted(ctx, conn.ID, taskID, "failed")
 				return nil
 			}
 		}
 
+		if scope == ScopeCollect || scope == ScopeStatus {
+			for _, p := range list0.Items {
+				stockTotal++
+				if p.Stock < -1 {
+					stockFailed++
+					if len(stockErrors) < 10 {
+						stockErrors = append(stockErrors, fmt.Sprintf("%s: %s", p.ID, p.StockError))
+					}
+				}
+			}
+		}
 		for i := range list0.Items {
 			cancel, err := s.syncOne(ctx, taskID, task, conn, &list0.Items[i], categoryMap, &stats)
 			if err != nil {
@@ -374,6 +406,11 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 			client := s.repo.entClient(ctx)
 			_, _ = client.SupplyConnection.UpdateOneID(conn.ID).SetLastSyncedAt(now).Save(ctx)
 		}
+	}
+	if stockFailed > 0 {
+		_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusFailed, "STOCK_QUERY_FAILED", fmt.Sprintf("商品同步已完成；库存成功 %d，失败 %d。可仅重试失败库存。%s", stockTotal-stockFailed, stockFailed, strings.Join(stockErrors, "；")))
+		s.publishCompleted(ctx, conn.ID, taskID, "failed")
+		return nil
 	}
 	_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusDone, "", "")
 	clearSyncRetry(taskID)
@@ -487,7 +524,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		mapping.LocalCategoryID = write.CategoryID
 	}
 	mapping.UpStock = p.Stock
-	mapping.StockCheckedAt = time.Now().UTC()
+	mapping.StockCheckedAt = stockObservationTime(p)
 	mapping.PricingOverride = override
 	if err := s.saveProductMapping(ctx, mapping); err != nil {
 		return false, err
@@ -542,7 +579,7 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 	}
 	if p.Stock >= -2 {
 		mapping.UpStock = p.Stock
-		mapping.StockCheckedAt = time.Now().UTC()
+		mapping.StockCheckedAt = stockObservationTime(p)
 	}
 	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
 		return err
@@ -589,15 +626,21 @@ func (s *SyncService) resolvePrice(ctx context.Context, conn *ent.SupplyConnecti
 	return priceToWrite, writePrice, priceUpdated, override
 }
 
-// backfillStocks 库存补查（collect scope；列表缺库存（-1）的项分批并发查实时值）。
-// 批次间隔节流 + 600s 预算护栏（超限报错提示调参，1.x 同款）；单项失败保持 -1
-// 放行（fail-open；传输层已内建网络错误/5xx 重试，此处不叠加外层重试）。
+// backfillStocks bounds each read independently; failures do not erase references.
+var errStockCanceled = errors.New("库存补查已取消")
+
+func stockObservationTime(p *adapter.Product) time.Time {
+	if p.StockCheckedAt.IsZero() {
+		return time.Now().UTC()
+	}
+	return p.StockCheckedAt
+}
+
 func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg scheduleSettings, items []adapter.Product, taskID uint64) error {
 	var missing []int
 	for i := range items {
-		// 缺失（-1）或为 0 都补查实时值：部分渠道（acg-faka 皮肤站）items 的
-		// stock 字段不可靠恒 0（真实库存需 GetStock），0 会误导「缺货」判断
-		if items[i].Stock <= 0 {
+		// ACG 的目录库存由调用方先标为未知；其他协议明确的 0/-1 保持原语义。
+		if items[i].Stock < -1 {
 			missing = append(missing, i)
 		}
 	}
@@ -609,7 +652,17 @@ func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg
 		return fmt.Errorf("库存补查限速配置预计等待 %d 秒（items=%d concurrency=%d batch_delay_ms=%d），请提高并发数或缩短批次间隔",
 			(throttleMs+999)/1000, len(missing), cfg.StockConc, cfg.StockBatchDelay.Milliseconds())
 	}
+	var rateLimited atomic.Bool
 	for ci := 0; ci < chunks; ci++ {
+		if taskID > 0 {
+			canceled, err := s.repo.TouchTask(ctx, taskID, TaskProgress{Stage: "fetching_stock"})
+			if err != nil {
+				return err
+			}
+			if canceled {
+				return errStockCanceled
+			}
+		}
 		lo := ci * cfg.StockConc
 		hi := lo + cfg.StockConc
 		if hi > len(missing) {
@@ -620,18 +673,36 @@ func (s *SyncService) backfillStocks(ctx context.Context, a adapter.Adapter, cfg
 			wg.Add(1)
 			go func(i int) {
 				defer wg.Done()
-				st, err := a.GetStock(ctx, items[i].ID, "")
+				items[i].StockCheckedAt = time.Now().UTC()
+				bounded, cancel := context.WithTimeout(ctx, 8*time.Second)
+				defer cancel()
+				st, err := a.GetStock(bounded, items[i].ID, "")
 				if err != nil {
-					s.log.Warn("supply.sync.stock_backfill_failed", "task_id", taskID, "code", items[i].ID, "err", err)
+					if errors.Is(err, adapter.ErrRateLimited) {
+						rateLimited.Store(true)
+					}
+					items[i].StockError = adapter.StockErrorSummary(err)
+					s.log.Warn("supply.sync.stock_backfill_failed", "task_id", taskID, "code", items[i].ID, "reason", items[i].StockError)
 					items[i].Stock = -2
 					return // 未知库存不可冒充无限或售罄
 				}
-				if st >= -1 {
-					items[i].Stock = st
+				items[i].Stock = st
+				if st < -1 {
+					items[i].Stock = -2
+					items[i].StockError = "上游未返回有效库存"
 				}
 			}(i)
 		}
 		wg.Wait()
+		if rateLimited.Load() {
+			// Do not continue probing the rest of a catalog after a WAF/429.
+			for _, i := range missing[hi:] {
+				items[i].Stock = -2
+				items[i].StockError = "货源限流或网关拦截，待稍后补查"
+				items[i].StockCheckedAt = time.Now().UTC()
+			}
+			return nil
+		}
 		if ci < chunks-1 {
 			if err := sleepCtx(ctx, cfg.StockBatchDelay); err != nil {
 				return err
@@ -905,7 +976,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 			mapping.LocalCategoryID = write.CategoryID
 		}
 		mapping.UpStock = p.Stock
-		mapping.StockCheckedAt = time.Now().UTC()
+		mapping.StockCheckedAt = stockObservationTime(p)
 		mapping.PricingOverride = override
 		if err := s.saveProductMapping(ctx, mapping); err != nil {
 			return err

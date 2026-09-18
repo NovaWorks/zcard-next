@@ -8,6 +8,7 @@ import (
 
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -24,9 +25,10 @@ var ErrProductNotFound = errors.New("catalog.PRODUCT_NOT_FOUND")
 
 // ProductRepoImpl 商品仓储实现。
 type ProductRepoImpl struct {
-	stockLookup port.StockLookup
-	data        *data.Data
-	mediaRef    mediaport.Referencer // 封面/图集引用计数（nil 跳过）
+	stockLookup     port.StockLookup
+	stockRefreshing sync.Map
+	data            *data.Data
+	mediaRef        mediaport.Referencer // 封面/图集引用计数（nil 跳过）
 }
 
 // NewProductRepoImpl 构造（mediaRef 素材引用计数，）。

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useMediaQuery } from "@vueuse/core";
 const narrowPaymentForm = useMediaQuery("(max-width: 639px)");
+import SponsorSlots from "@/components/common/sponsor-slots.vue";
 import UsageSwitches from "./components/usage-switches.vue";
 type Usage = { allow_purchase?: boolean; allow_member_recharge?: boolean; allow_supply_recharge?: boolean };
 // 支付渠道管理（ 重写）——大厂交互：
@@ -441,12 +442,13 @@ onMounted(() => {
 <template>
   <div class="min-h-500px">
     <!-- 页头：标题 + 说明 + 添加入口 -->
-    <div class="mb-16px flex items-center justify-between gap-16px">
+    <div class="payment-heading mb-16px">
       <div>
         <div class="text-16px font-600">支付渠道</div>
         <div class="text-12px opacity-60 mt-4px">接入支付渠道并在下方完成凭据配置，保存后立即生效</div>
       </div>
-      <NButton v-auth="'payment:write'" type="primary" @click="openAddDialog">添加渠道</NButton>
+      <SponsorSlots class="payment-sponsors" />
+      <NButton class="payment-add" v-auth="'payment:write'" type="primary" @click="openAddDialog">添加渠道</NButton>
     </div>
 
     <NTabs type="line">
@@ -743,3 +745,12 @@ onMounted(() => {
     </NModal>
   </div>
 </template>
+
+<style scoped>
+.payment-heading { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 1.2fr) auto; align-items: center; gap: 16px; }
+@media (max-width: 1199px) {
+  .payment-heading { grid-template-columns: minmax(0, 1fr) auto; }
+  .payment-sponsors { grid-column: 1 / -1; grid-row: 2; }
+  .payment-add { grid-column: 2; grid-row: 1; }
+}
+</style>

@@ -282,6 +282,8 @@ onUnmounted(stopRefresh);
         </NRadioGroup>
       </div>
 
+      <SponsorCard />
+
       <!-- KPI 指标卡（营收带迷你趋势线；环比红涨绿跌） -->
       <NGrid :x-gap="16" :y-gap="16" cols="1 m:2 l:4" responsive="screen">
         <NGi v-for="card in kpiCards" :key="card.key">
@@ -358,7 +360,6 @@ onUnmounted(stopRefresh);
             <NCard title="商品销量 Top5（近30天）" :bordered="false">
               <NDataTable :columns="topColumns" :data="topProducts" size="small" :bordered="false" :max-height="540" :scroll-x="400" />
             </NCard>
-            <SponsorCard />
           </div>
         </NGi>
         <NGi>

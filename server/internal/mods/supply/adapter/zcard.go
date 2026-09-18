@@ -143,6 +143,7 @@ func (a *zCardAdapter) ListProducts(ctx context.Context, page, pageSize int, inc
 }
 
 func (a *zCardAdapter) GetStock(ctx context.Context, productCode, _ string) (int32, error) {
+	ctx = stockReadContext(ctx)
 	path := "/api/supply/products/" + url.PathEscape(productCode) + "/stock"
 	data, err := a.request(ctx, "GET", path, nil, nil)
 	if err != nil {

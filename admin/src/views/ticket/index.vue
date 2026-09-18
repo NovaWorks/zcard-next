@@ -3,7 +3,7 @@
 // 会话式详情：用户左灰泡 / 客服右蓝泡 / 内部备注左橙虚线（仅 ticket:read 可见）。
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
-import { ref, computed, onMounted, onActivated, watch, h } from "vue";
+import { ref, computed, onMounted, onActivated, onDeactivated, watch, h } from "vue";
 import { NButton, NTag, NSpace, NPopconfirm, NModal, NDescriptions, NDescriptionsItem, NSelect, NInput, NSwitch } from "naive-ui";
 import { useRoute } from "vue-router";
 import type { DataTableColumns } from "naive-ui";
@@ -128,7 +128,9 @@ const columns: DataTableColumns<any> = [
   },
 ];
 
+let listRequest = 0;
 async function loadTickets() {
+  const requestId = ++listRequest;
   loading.value = true;
   nowTs.value = Math.floor(Date.now() / 1000);
   try {
@@ -139,12 +141,12 @@ async function loadTickets() {
       page: page.value,
       page_size: pageSize.value,
     });
-    if (!error && data) {
+    if (requestId === listRequest && !error && data) {
       tickets.value = (data as any).tickets || [];
       total.value = Number((data as any).total || 0);
     }
   } finally {
-    loading.value = false;
+    if (requestId === listRequest) loading.value = false;
   }
 }
 
@@ -241,8 +243,12 @@ watch(() => route.query.status, () => {
   statusFilter.value = routeStatus();
   resetList();
 });
+let needsRefresh = false;
 onMounted(loadTickets);
+onDeactivated(() => { needsRefresh = true; });
 onActivated(() => {
+  if (!needsRefresh) return;
+  needsRefresh = false;
   statusFilter.value = routeStatus();
   resetList();
 });

@@ -3,7 +3,7 @@
 // 连接 CRUD（三类驱动凭据动态表单）/ 测试连接 / 手动同步（采集全量|增量 / 仅价格 /
 // 仅状态）/ 定时计划对话框（三 scope 间隔+时间窗+请求节奏）/ 限流状态徽标与倒计时 /
 // 同步任务抽屉（进度统计与取消）。
-import { computed, h, onMounted, onUnmounted, reactive, ref } from "vue";
+import { computed, defineAsyncComponent, h, onMounted, onUnmounted, reactive, ref } from "vue";
 import {
   NButton, NDataTable, NDropdown, NInput, NInputNumber, NModal, NForm, NFormItem,
   NSelect, NSpace, NSwitch, NTag, NDrawer, NAlert,
@@ -17,7 +17,7 @@ import { checkAuth } from "@/directives";
 import { formatMoney, yuanToFen } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import TablePager from "@/components/common/table-pager.vue";
-import ImportModal from "./import-modal.vue";
+const ImportModal = defineAsyncComponent(() => import("./import-modal.vue"));
 import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
 
 defineOptions({ name: "SupplyConnectionsTab" });
@@ -306,8 +306,8 @@ function handleCancelTask(id: number) {
 async function handleRerunTask(row: any) {
   const { error } = await createSupplySyncTask({
     connection_id: row.connection_id,
-    scope: row.scope || "collect",
-    mode: row.mode || "full",
+    scope: row.error_code === "STOCK_QUERY_FAILED" ? "stock" : row.scope || "collect",
+    mode: row.error_code === "STOCK_QUERY_FAILED" ? "failed" : row.mode || "full",
   });
   if (!error) {
     window.$message?.success("已重新创建任务");
@@ -317,7 +317,7 @@ async function handleRerunTask(row: any) {
 
 const taskColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 48 },
-  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态" } as any)[r.scope || "collect"] || r.scope },
+  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态", stock: "库存" } as any)[r.scope || "collect"] || r.scope },
   { title: "模式", key: "mode", width: 64, ellipsis: { tooltip: true } },
   {
     title: "状态",
@@ -375,7 +375,7 @@ const taskColumns: DataTableColumns<any> = [
     ellipsis: { tooltip: true },
     render: (r) =>
       r.error_code
-        ? h("span", { title: r.error_context || "", class: "text-error" }, `${r.error_code}`)
+        ? h("span", { title: r.error_context || "", class: "text-error" }, r.error_code === "STOCK_QUERY_FAILED" ? r.error_context || "库存查询失败" : `${r.error_code}`)
         : h("span", { class: "text-gray-400" }, r.status === "done" ? "正常" : "-"),
   },
   {
@@ -388,7 +388,7 @@ const taskColumns: DataTableColumns<any> = [
           ? h(NButton, { size: "tiny", quaternary: true, onClick: () => handleCancelTask(r.id) }, { default: () => "取消" })
           : null,
         ["failed", "canceled", "done"].includes(r.status) && canWrite()
-          ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRerunTask(r) }, { default: () => "重跑" })
+          ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRerunTask(r) }, { default: () => r.error_code === "STOCK_QUERY_FAILED" ? "重试库存" : "重跑" })
           : null,
       ]),
   },
@@ -410,6 +410,8 @@ function syncActions(row: any): DropdownOption[] {
   return [
     { label: "采集（增量）", key: "collect:incremental", disabled: !canWrite() },
     { label: "采集（全量 + 删除对账）", key: "collect:full", disabled: !canWrite() },
+    { label: "仅补查库存", key: "stock:full", disabled: !canWrite() },
+    { label: "仅重试失败库存", key: "stock:failed", disabled: !canWrite() },
     { label: "仅同步价格", key: "price:incremental", disabled: !canWrite() },
     { label: "仅同步上下架/库存", key: "status:incremental", disabled: !canWrite() },
   ];
@@ -898,7 +900,7 @@ onMounted(load);
     </NModal>
 
     <!-- 交互式导入 -->
-    <ImportModal v-model:show="showImport" :connection="importConn" @imported="load" />
+    <ImportModal v-if="showImport" v-model:show="showImport" :connection="importConn" @imported="load" />
 
     <!-- 同步任务抽屉：桌面端加宽到 960 让全列一屏可见；小屏回退 100%，窄屏内部横向滚动 -->
     <NDrawer v-model:show="showTasks" width="min(960px, 100%)">

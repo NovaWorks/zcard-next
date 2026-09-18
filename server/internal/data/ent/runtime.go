@@ -2630,6 +2630,10 @@ func init() {
 	supplymappingDescUpStock := supplymappingFields[8].Descriptor()
 	// supplymapping.DefaultUpStock holds the default value on creation for the up_stock field.
 	supplymapping.DefaultUpStock = supplymappingDescUpStock.Default.(int32)
+	// supplymappingDescStockReference is the schema descriptor for stock_reference field.
+	supplymappingDescStockReference := supplymappingFields[10].Descriptor()
+	// supplymapping.DefaultStockReference holds the default value on creation for the stock_reference field.
+	supplymapping.DefaultStockReference = supplymappingDescStockReference.Default.(int32)
 	supplynonceFields := schema.SupplyNonce{}.Fields()
 	_ = supplynonceFields
 	// supplynonceDescKey is the schema descriptor for key field.

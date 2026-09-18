@@ -19,6 +19,7 @@ var _ = new(context.Context)
 const _ = http.SupportPackageIsVersion3
 
 const OperationAdminAuthServiceCancelTOTP = "/zcard.api.admin.v1.AdminAuthService/CancelTOTP"
+const OperationAdminAuthServiceChangePassword = "/zcard.api.admin.v1.AdminAuthService/ChangePassword"
 const OperationAdminAuthServiceConfirmTOTP = "/zcard.api.admin.v1.AdminAuthService/ConfirmTOTP"
 const OperationAdminAuthServiceDisableTOTP = "/zcard.api.admin.v1.AdminAuthService/DisableTOTP"
 const OperationAdminAuthServiceEnableTOTP = "/zcard.api.admin.v1.AdminAuthService/EnableTOTP"
@@ -32,6 +33,8 @@ const OperationAdminAuthServiceResetTOTP = "/zcard.api.admin.v1.AdminAuthService
 
 type AdminAuthServiceHTTPServer interface {
 	CancelTOTP(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	// ChangePassword ChangePassword 修改当前账号密码，并使全部旧会话失效。
+	ChangePassword(context.Context, *ChangeAdminPasswordRequest) (*emptypb.Empty, error)
 	// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
 	ConfirmTOTP(context.Context, *ConfirmTOTPRequest) (*RecoveryCodesReply, error)
 	// DisableTOTP DisableTOTP 解绑。
@@ -61,6 +64,7 @@ func RegisterAdminAuthServiceHTTPServer(s *http.Server, srv AdminAuthServiceHTTP
 	r.Handle("POST", "/api/v1/admin/auth/logout", _AdminAuthService_Logout0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/auth/profile", _AdminAuthService_GetProfile0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/refresh", _AdminAuthService_RefreshToken0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/auth/password", _AdminAuthService_ChangePassword0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/totp/enable", _AdminAuthService_EnableTOTP0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/totp/confirm", _AdminAuthService_ConfirmTOTP0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/auth/totp/cancel", _AdminAuthService_CancelTOTP0_HTTP_Handler(srv))
@@ -182,6 +186,25 @@ func _AdminAuthService_RefreshToken0_HTTP_Handler(srv AdminAuthServiceHTTPServer
 	}
 }
 
+func _AdminAuthService_ChangePassword0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ChangeAdminPasswordRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminAuthServiceChangePassword)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ChangePassword(ctx, req.(*ChangeAdminPasswordRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AdminAuthService_EnableTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in ConfirmTOTPRequest
@@ -279,6 +302,8 @@ func _AdminAuthService_DisableTOTP0_HTTP_Handler(srv AdminAuthServiceHTTPServer)
 
 type AdminAuthServiceHTTPClient interface {
 	CancelTOTP(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	// ChangePassword ChangePassword 修改当前账号密码，并使全部旧会话失效。
+	ChangePassword(ctx context.Context, req *ChangeAdminPasswordRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// ConfirmTOTP ConfirmTOTP 验证一次确认绑定。
 	ConfirmTOTP(ctx context.Context, req *ConfirmTOTPRequest, opts ...http.CallOption) (rsp *RecoveryCodesReply, err error)
 	// DisableTOTP DisableTOTP 解绑。
@@ -316,6 +341,24 @@ func (c *AdminAuthServiceHTTPClientImpl) CancelTOTP(ctx context.Context, in *emp
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminAuthServiceCancelTOTP),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// ChangePassword ChangePassword 修改当前账号密码，并使全部旧会话失效。
+func (c *AdminAuthServiceHTTPClientImpl) ChangePassword(ctx context.Context, in *ChangeAdminPasswordRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/auth/password"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminAuthServiceChangePassword),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

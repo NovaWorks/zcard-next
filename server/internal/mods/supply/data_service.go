@@ -214,6 +214,9 @@ func (s *AdminSupplyService) CreateSyncTask(ctx context.Context, req *adminv1.Cr
 	if mode == "" {
 		mode = "full"
 	}
+	if req.GetScope() == ScopeStock && mode != "full" && mode != "failed" {
+		return nil, fmt.Errorf("库存补查模式必须为 full 或 failed")
+	}
 	task, err := s.repo.CreateSyncTask(ctx, req.GetConnectionId(), mode, req.GetScope(), req.GetForceReprice())
 	if err != nil {
 		return nil, err

@@ -72,7 +72,7 @@ func (s *AdminCatalogService) fillStats(ctx context.Context, items []*adminv1.Ad
 	for _, p := range items {
 		ids = append(ids, p.Id)
 	}
-	snapshots, err := s.repo.StockSnapshotBatch(ctx, ids)
+	snapshots, err := s.repo.cachedStockSnapshotBatch(ctx, ids)
 	var solds map[uint64]int64
 	if s.sold != nil {
 		solds, _ = s.sold.SoldBatch(ctx, ids)

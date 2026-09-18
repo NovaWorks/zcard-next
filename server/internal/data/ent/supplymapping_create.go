@@ -160,6 +160,34 @@ func (_c *SupplyMappingCreate) SetNillableStockCheckedAt(v *time.Time) *SupplyMa
 	return _c
 }
 
+// SetStockReference sets the "stock_reference" field.
+func (_c *SupplyMappingCreate) SetStockReference(v int32) *SupplyMappingCreate {
+	_c.mutation.SetStockReference(v)
+	return _c
+}
+
+// SetNillableStockReference sets the "stock_reference" field if the given value is not nil.
+func (_c *SupplyMappingCreate) SetNillableStockReference(v *int32) *SupplyMappingCreate {
+	if v != nil {
+		_c.SetStockReference(*v)
+	}
+	return _c
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (_c *SupplyMappingCreate) SetStockReferenceAt(v time.Time) *SupplyMappingCreate {
+	_c.mutation.SetStockReferenceAt(v)
+	return _c
+}
+
+// SetNillableStockReferenceAt sets the "stock_reference_at" field if the given value is not nil.
+func (_c *SupplyMappingCreate) SetNillableStockReferenceAt(v *time.Time) *SupplyMappingCreate {
+	if v != nil {
+		_c.SetStockReferenceAt(*v)
+	}
+	return _c
+}
+
 // SetPricingOverride sets the "pricing_override" field.
 func (_c *SupplyMappingCreate) SetPricingOverride(v map[string]interface{}) *SupplyMappingCreate {
 	_c.mutation.SetPricingOverride(v)
@@ -223,6 +251,10 @@ func (_c *SupplyMappingCreate) defaults() {
 		v := supplymapping.DefaultUpStock
 		_c.mutation.SetUpStock(v)
 	}
+	if _, ok := _c.mutation.StockReference(); !ok {
+		v := supplymapping.DefaultStockReference
+		_c.mutation.SetStockReference(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -259,6 +291,9 @@ func (_c *SupplyMappingCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpStock(); !ok {
 		return &ValidationError{Name: "up_stock", err: errors.New(`ent: missing required field "SupplyMapping.up_stock"`)}
+	}
+	if _, ok := _c.mutation.StockReference(); !ok {
+		return &ValidationError{Name: "stock_reference", err: errors.New(`ent: missing required field "SupplyMapping.stock_reference"`)}
 	}
 	return nil
 }
@@ -336,6 +371,14 @@ func (_c *SupplyMappingCreate) createSpec() (*SupplyMapping, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.StockCheckedAt(); ok {
 		_spec.SetField(supplymapping.FieldStockCheckedAt, field.TypeTime, value)
 		_node.StockCheckedAt = value
+	}
+	if value, ok := _c.mutation.StockReference(); ok {
+		_spec.SetField(supplymapping.FieldStockReference, field.TypeInt32, value)
+		_node.StockReference = value
+	}
+	if value, ok := _c.mutation.StockReferenceAt(); ok {
+		_spec.SetField(supplymapping.FieldStockReferenceAt, field.TypeTime, value)
+		_node.StockReferenceAt = value
 	}
 	if value, ok := _c.mutation.PricingOverride(); ok {
 		_spec.SetField(supplymapping.FieldPricingOverride, field.TypeJSON, value)
@@ -570,6 +613,42 @@ func (u *SupplyMappingUpsert) UpdateStockCheckedAt() *SupplyMappingUpsert {
 // ClearStockCheckedAt clears the value of the "stock_checked_at" field.
 func (u *SupplyMappingUpsert) ClearStockCheckedAt() *SupplyMappingUpsert {
 	u.SetNull(supplymapping.FieldStockCheckedAt)
+	return u
+}
+
+// SetStockReference sets the "stock_reference" field.
+func (u *SupplyMappingUpsert) SetStockReference(v int32) *SupplyMappingUpsert {
+	u.Set(supplymapping.FieldStockReference, v)
+	return u
+}
+
+// UpdateStockReference sets the "stock_reference" field to the value that was provided on create.
+func (u *SupplyMappingUpsert) UpdateStockReference() *SupplyMappingUpsert {
+	u.SetExcluded(supplymapping.FieldStockReference)
+	return u
+}
+
+// AddStockReference adds v to the "stock_reference" field.
+func (u *SupplyMappingUpsert) AddStockReference(v int32) *SupplyMappingUpsert {
+	u.Add(supplymapping.FieldStockReference, v)
+	return u
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (u *SupplyMappingUpsert) SetStockReferenceAt(v time.Time) *SupplyMappingUpsert {
+	u.Set(supplymapping.FieldStockReferenceAt, v)
+	return u
+}
+
+// UpdateStockReferenceAt sets the "stock_reference_at" field to the value that was provided on create.
+func (u *SupplyMappingUpsert) UpdateStockReferenceAt() *SupplyMappingUpsert {
+	u.SetExcluded(supplymapping.FieldStockReferenceAt)
+	return u
+}
+
+// ClearStockReferenceAt clears the value of the "stock_reference_at" field.
+func (u *SupplyMappingUpsert) ClearStockReferenceAt() *SupplyMappingUpsert {
+	u.SetNull(supplymapping.FieldStockReferenceAt)
 	return u
 }
 
@@ -849,6 +928,48 @@ func (u *SupplyMappingUpsertOne) UpdateStockCheckedAt() *SupplyMappingUpsertOne 
 func (u *SupplyMappingUpsertOne) ClearStockCheckedAt() *SupplyMappingUpsertOne {
 	return u.Update(func(s *SupplyMappingUpsert) {
 		s.ClearStockCheckedAt()
+	})
+}
+
+// SetStockReference sets the "stock_reference" field.
+func (u *SupplyMappingUpsertOne) SetStockReference(v int32) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockReference(v)
+	})
+}
+
+// AddStockReference adds v to the "stock_reference" field.
+func (u *SupplyMappingUpsertOne) AddStockReference(v int32) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockReference(v)
+	})
+}
+
+// UpdateStockReference sets the "stock_reference" field to the value that was provided on create.
+func (u *SupplyMappingUpsertOne) UpdateStockReference() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockReference()
+	})
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (u *SupplyMappingUpsertOne) SetStockReferenceAt(v time.Time) *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockReferenceAt(v)
+	})
+}
+
+// UpdateStockReferenceAt sets the "stock_reference_at" field to the value that was provided on create.
+func (u *SupplyMappingUpsertOne) UpdateStockReferenceAt() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockReferenceAt()
+	})
+}
+
+// ClearStockReferenceAt clears the value of the "stock_reference_at" field.
+func (u *SupplyMappingUpsertOne) ClearStockReferenceAt() *SupplyMappingUpsertOne {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.ClearStockReferenceAt()
 	})
 }
 
@@ -1297,6 +1418,48 @@ func (u *SupplyMappingUpsertBulk) UpdateStockCheckedAt() *SupplyMappingUpsertBul
 func (u *SupplyMappingUpsertBulk) ClearStockCheckedAt() *SupplyMappingUpsertBulk {
 	return u.Update(func(s *SupplyMappingUpsert) {
 		s.ClearStockCheckedAt()
+	})
+}
+
+// SetStockReference sets the "stock_reference" field.
+func (u *SupplyMappingUpsertBulk) SetStockReference(v int32) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockReference(v)
+	})
+}
+
+// AddStockReference adds v to the "stock_reference" field.
+func (u *SupplyMappingUpsertBulk) AddStockReference(v int32) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.AddStockReference(v)
+	})
+}
+
+// UpdateStockReference sets the "stock_reference" field to the value that was provided on create.
+func (u *SupplyMappingUpsertBulk) UpdateStockReference() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockReference()
+	})
+}
+
+// SetStockReferenceAt sets the "stock_reference_at" field.
+func (u *SupplyMappingUpsertBulk) SetStockReferenceAt(v time.Time) *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.SetStockReferenceAt(v)
+	})
+}
+
+// UpdateStockReferenceAt sets the "stock_reference_at" field to the value that was provided on create.
+func (u *SupplyMappingUpsertBulk) UpdateStockReferenceAt() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.UpdateStockReferenceAt()
+	})
+}
+
+// ClearStockReferenceAt clears the value of the "stock_reference_at" field.
+func (u *SupplyMappingUpsertBulk) ClearStockReferenceAt() *SupplyMappingUpsertBulk {
+	return u.Update(func(s *SupplyMappingUpsert) {
+		s.ClearStockReferenceAt()
 	})
 }
 

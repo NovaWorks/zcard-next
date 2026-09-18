@@ -414,9 +414,9 @@ func TestBackfillStocks(t *testing.T) {
 	svc, _, _, _ := newTestSyncService(t)
 	up := &fakeUpstream{stocks: map[string]int32{"A": 5, "B": 0}}
 	items := []adapter.Product{
-		{ID: "A", Stock: -1},
-		{ID: "B", Stock: -1},
-		{ID: "C", Stock: -1}, // 查询失败 → 保持 -1（fail-open）
+		{ID: "A", Stock: -2},
+		{ID: "B", Stock: -2},
+		{ID: "C", Stock: -2}, // 查询失败 → 保持未知 -2
 		{ID: "D", Stock: 9},  // 已知库存不补查
 	}
 	if err := svc.backfillStocks(ctx, up, loadScheduleSettings(nil), items, 0); err != nil {

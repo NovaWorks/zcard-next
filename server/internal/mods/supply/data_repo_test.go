@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
@@ -178,6 +179,7 @@ func TestMappingUpsertIdempotent(t *testing.T) {
 			UpstreamSku:     "",
 			LocalProductID:  10 + uint64(i),
 			UpStock:         int32(5 + i),
+			StockCheckedAt:  time.Now().Add(time.Duration(i) * time.Second),
 			PricingOverride: map[string]any{"last_synced_price": int64(1000 + i)},
 		})
 		if err != nil {

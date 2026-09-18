@@ -791,6 +791,66 @@ func (x *AdminProfile) GetLastLoginIp() string {
 	return ""
 }
 
+type ChangeAdminPasswordRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	CurrentPassword string                 `protobuf:"bytes,1,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
+	NewPassword     string                 `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
+	ConfirmPassword string                 `protobuf:"bytes,3,opt,name=confirm_password,json=confirmPassword,proto3" json:"confirm_password,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ChangeAdminPasswordRequest) Reset() {
+	*x = ChangeAdminPasswordRequest{}
+	mi := &file_admin_v1_auth_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangeAdminPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeAdminPasswordRequest) ProtoMessage() {}
+
+func (x *ChangeAdminPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_auth_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeAdminPasswordRequest.ProtoReflect.Descriptor instead.
+func (*ChangeAdminPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_auth_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ChangeAdminPasswordRequest) GetCurrentPassword() string {
+	if x != nil {
+		return x.CurrentPassword
+	}
+	return ""
+}
+
+func (x *ChangeAdminPasswordRequest) GetNewPassword() string {
+	if x != nil {
+		return x.NewPassword
+	}
+	return ""
+}
+
+func (x *ChangeAdminPasswordRequest) GetConfirmPassword() string {
+	if x != nil {
+		return x.ConfirmPassword
+	}
+	return ""
+}
+
 var File_admin_v1_auth_proto protoreflect.FileDescriptor
 
 const file_admin_v1_auth_proto_rawDesc = "" +
@@ -855,8 +915,11 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\trole_name\x18\x06 \x01(\tR\broleName\x12!\n" +
 	"\ftotp_enabled\x18\a \x01(\bR\vtotpEnabled\x12>\n" +
 	"\rlast_login_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastLoginAt\x12\"\n" +
-	"\rlast_login_ip\x18\t \x01(\tR\vlastLoginIp2\xc3\n" +
-	"\n" +
+	"\rlast_login_ip\x18\t \x01(\tR\vlastLoginIp\"\x95\x01\n" +
+	"\x1aChangeAdminPasswordRequest\x12)\n" +
+	"\x10current_password\x18\x01 \x01(\tR\x0fcurrentPassword\x12!\n" +
+	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\x12)\n" +
+	"\x10confirm_password\x18\x03 \x01(\tR\x0fconfirmPassword2\xc6\v\n" +
 	"\x10AdminAuthService\x12n\n" +
 	"\x05Login\x12 .zcard.api.admin.v1.LoginRequest\x1a\x1e.zcard.api.admin.v1.LoginReply\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/auth/login\x12z\n" +
 	"\x0fGetCaptchaImage\x12\x16.google.protobuf.Empty\x1a%.zcard.api.admin.v1.CaptchaImageReply\"(\x82\xd3\xe4\x93\x02\"\x12 /api/v1/admin/auth/captcha/image\x12}\n" +
@@ -864,7 +927,8 @@ const file_admin_v1_auth_proto_rawDesc = "" +
 	"\x06Logout\x12!.zcard.api.admin.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\"\x19/api/v1/admin/auth/logout\x12m\n" +
 	"\n" +
 	"GetProfile\x12\x16.google.protobuf.Empty\x1a#.zcard.api.admin.v1.GetProfileReply\"\"\x82\xd3\xe4\x93\x02\x1c\x12\x1a/api/v1/admin/auth/profile\x12~\n" +
-	"\fRefreshToken\x12'.zcard.api.admin.v1.RefreshTokenRequest\x1a\x1e.zcard.api.admin.v1.LoginReply\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/auth/refresh\x12\x84\x01\n" +
+	"\fRefreshToken\x12'.zcard.api.admin.v1.RefreshTokenRequest\x1a\x1e.zcard.api.admin.v1.LoginReply\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/api/v1/admin/auth/refresh\x12\x80\x01\n" +
+	"\x0eChangePassword\x12..zcard.api.admin.v1.ChangeAdminPasswordRequest\x1a\x16.google.protobuf.Empty\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/admin/auth/password\x12\x84\x01\n" +
 	"\n" +
 	"EnableTOTP\x12&.zcard.api.admin.v1.ConfirmTOTPRequest\x1a#.zcard.api.admin.v1.EnableTOTPReply\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/auth/totp/enable\x12\x89\x01\n" +
 	"\vConfirmTOTP\x12&.zcard.api.admin.v1.ConfirmTOTPRequest\x1a&.zcard.api.admin.v1.RecoveryCodesReply\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/auth/totp/confirm\x12g\n" +
@@ -885,51 +949,54 @@ func file_admin_v1_auth_proto_rawDescGZIP() []byte {
 	return file_admin_v1_auth_proto_rawDescData
 }
 
-var file_admin_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_admin_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_admin_v1_auth_proto_goTypes = []any{
-	(*RecoveryCodesReply)(nil),    // 0: zcard.api.admin.v1.RecoveryCodesReply
-	(*ResetTOTPRequest)(nil),      // 1: zcard.api.admin.v1.ResetTOTPRequest
-	(*LoginRequest)(nil),          // 2: zcard.api.admin.v1.LoginRequest
-	(*CaptchaImageReply)(nil),     // 3: zcard.api.admin.v1.CaptchaImageReply
-	(*CaptchaConfigReply)(nil),    // 4: zcard.api.admin.v1.CaptchaConfigReply
-	(*LogoutRequest)(nil),         // 5: zcard.api.admin.v1.LogoutRequest
-	(*RefreshTokenRequest)(nil),   // 6: zcard.api.admin.v1.RefreshTokenRequest
-	(*EnableTOTPReply)(nil),       // 7: zcard.api.admin.v1.EnableTOTPReply
-	(*ConfirmTOTPRequest)(nil),    // 8: zcard.api.admin.v1.ConfirmTOTPRequest
-	(*LoginReply)(nil),            // 9: zcard.api.admin.v1.LoginReply
-	(*GetProfileReply)(nil),       // 10: zcard.api.admin.v1.GetProfileReply
-	(*AdminProfile)(nil),          // 11: zcard.api.admin.v1.AdminProfile
-	(*timestamppb.Timestamp)(nil), // 12: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),         // 13: google.protobuf.Empty
+	(*RecoveryCodesReply)(nil),         // 0: zcard.api.admin.v1.RecoveryCodesReply
+	(*ResetTOTPRequest)(nil),           // 1: zcard.api.admin.v1.ResetTOTPRequest
+	(*LoginRequest)(nil),               // 2: zcard.api.admin.v1.LoginRequest
+	(*CaptchaImageReply)(nil),          // 3: zcard.api.admin.v1.CaptchaImageReply
+	(*CaptchaConfigReply)(nil),         // 4: zcard.api.admin.v1.CaptchaConfigReply
+	(*LogoutRequest)(nil),              // 5: zcard.api.admin.v1.LogoutRequest
+	(*RefreshTokenRequest)(nil),        // 6: zcard.api.admin.v1.RefreshTokenRequest
+	(*EnableTOTPReply)(nil),            // 7: zcard.api.admin.v1.EnableTOTPReply
+	(*ConfirmTOTPRequest)(nil),         // 8: zcard.api.admin.v1.ConfirmTOTPRequest
+	(*LoginReply)(nil),                 // 9: zcard.api.admin.v1.LoginReply
+	(*GetProfileReply)(nil),            // 10: zcard.api.admin.v1.GetProfileReply
+	(*AdminProfile)(nil),               // 11: zcard.api.admin.v1.AdminProfile
+	(*ChangeAdminPasswordRequest)(nil), // 12: zcard.api.admin.v1.ChangeAdminPasswordRequest
+	(*timestamppb.Timestamp)(nil),      // 13: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),              // 14: google.protobuf.Empty
 }
 var file_admin_v1_auth_proto_depIdxs = []int32{
 	11, // 0: zcard.api.admin.v1.LoginReply.admin:type_name -> zcard.api.admin.v1.AdminProfile
 	11, // 1: zcard.api.admin.v1.GetProfileReply.admin:type_name -> zcard.api.admin.v1.AdminProfile
-	12, // 2: zcard.api.admin.v1.AdminProfile.last_login_at:type_name -> google.protobuf.Timestamp
+	13, // 2: zcard.api.admin.v1.AdminProfile.last_login_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: zcard.api.admin.v1.AdminAuthService.Login:input_type -> zcard.api.admin.v1.LoginRequest
-	13, // 4: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:input_type -> google.protobuf.Empty
-	13, // 5: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:input_type -> google.protobuf.Empty
+	14, // 4: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:input_type -> google.protobuf.Empty
+	14, // 5: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:input_type -> google.protobuf.Empty
 	5,  // 6: zcard.api.admin.v1.AdminAuthService.Logout:input_type -> zcard.api.admin.v1.LogoutRequest
-	13, // 7: zcard.api.admin.v1.AdminAuthService.GetProfile:input_type -> google.protobuf.Empty
+	14, // 7: zcard.api.admin.v1.AdminAuthService.GetProfile:input_type -> google.protobuf.Empty
 	6,  // 8: zcard.api.admin.v1.AdminAuthService.RefreshToken:input_type -> zcard.api.admin.v1.RefreshTokenRequest
-	8,  // 9: zcard.api.admin.v1.AdminAuthService.EnableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
-	8,  // 10: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
-	13, // 11: zcard.api.admin.v1.AdminAuthService.CancelTOTP:input_type -> google.protobuf.Empty
-	1,  // 12: zcard.api.admin.v1.AdminAuthService.ResetTOTP:input_type -> zcard.api.admin.v1.ResetTOTPRequest
-	8,  // 13: zcard.api.admin.v1.AdminAuthService.DisableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
-	9,  // 14: zcard.api.admin.v1.AdminAuthService.Login:output_type -> zcard.api.admin.v1.LoginReply
-	3,  // 15: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:output_type -> zcard.api.admin.v1.CaptchaImageReply
-	4,  // 16: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:output_type -> zcard.api.admin.v1.CaptchaConfigReply
-	13, // 17: zcard.api.admin.v1.AdminAuthService.Logout:output_type -> google.protobuf.Empty
-	10, // 18: zcard.api.admin.v1.AdminAuthService.GetProfile:output_type -> zcard.api.admin.v1.GetProfileReply
-	9,  // 19: zcard.api.admin.v1.AdminAuthService.RefreshToken:output_type -> zcard.api.admin.v1.LoginReply
-	7,  // 20: zcard.api.admin.v1.AdminAuthService.EnableTOTP:output_type -> zcard.api.admin.v1.EnableTOTPReply
-	0,  // 21: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:output_type -> zcard.api.admin.v1.RecoveryCodesReply
-	13, // 22: zcard.api.admin.v1.AdminAuthService.CancelTOTP:output_type -> google.protobuf.Empty
-	13, // 23: zcard.api.admin.v1.AdminAuthService.ResetTOTP:output_type -> google.protobuf.Empty
-	13, // 24: zcard.api.admin.v1.AdminAuthService.DisableTOTP:output_type -> google.protobuf.Empty
-	14, // [14:25] is the sub-list for method output_type
-	3,  // [3:14] is the sub-list for method input_type
+	12, // 9: zcard.api.admin.v1.AdminAuthService.ChangePassword:input_type -> zcard.api.admin.v1.ChangeAdminPasswordRequest
+	8,  // 10: zcard.api.admin.v1.AdminAuthService.EnableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
+	8,  // 11: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
+	14, // 12: zcard.api.admin.v1.AdminAuthService.CancelTOTP:input_type -> google.protobuf.Empty
+	1,  // 13: zcard.api.admin.v1.AdminAuthService.ResetTOTP:input_type -> zcard.api.admin.v1.ResetTOTPRequest
+	8,  // 14: zcard.api.admin.v1.AdminAuthService.DisableTOTP:input_type -> zcard.api.admin.v1.ConfirmTOTPRequest
+	9,  // 15: zcard.api.admin.v1.AdminAuthService.Login:output_type -> zcard.api.admin.v1.LoginReply
+	3,  // 16: zcard.api.admin.v1.AdminAuthService.GetCaptchaImage:output_type -> zcard.api.admin.v1.CaptchaImageReply
+	4,  // 17: zcard.api.admin.v1.AdminAuthService.GetCaptchaConfig:output_type -> zcard.api.admin.v1.CaptchaConfigReply
+	14, // 18: zcard.api.admin.v1.AdminAuthService.Logout:output_type -> google.protobuf.Empty
+	10, // 19: zcard.api.admin.v1.AdminAuthService.GetProfile:output_type -> zcard.api.admin.v1.GetProfileReply
+	9,  // 20: zcard.api.admin.v1.AdminAuthService.RefreshToken:output_type -> zcard.api.admin.v1.LoginReply
+	14, // 21: zcard.api.admin.v1.AdminAuthService.ChangePassword:output_type -> google.protobuf.Empty
+	7,  // 22: zcard.api.admin.v1.AdminAuthService.EnableTOTP:output_type -> zcard.api.admin.v1.EnableTOTPReply
+	0,  // 23: zcard.api.admin.v1.AdminAuthService.ConfirmTOTP:output_type -> zcard.api.admin.v1.RecoveryCodesReply
+	14, // 24: zcard.api.admin.v1.AdminAuthService.CancelTOTP:output_type -> google.protobuf.Empty
+	14, // 25: zcard.api.admin.v1.AdminAuthService.ResetTOTP:output_type -> google.protobuf.Empty
+	14, // 26: zcard.api.admin.v1.AdminAuthService.DisableTOTP:output_type -> google.protobuf.Empty
+	15, // [15:27] is the sub-list for method output_type
+	3,  // [3:15] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -946,7 +1013,7 @@ func file_admin_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_auth_proto_rawDesc), len(file_admin_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   12,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
