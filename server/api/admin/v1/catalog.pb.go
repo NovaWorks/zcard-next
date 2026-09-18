@@ -35,6 +35,7 @@ type ListProductsRequest struct {
 	OutOfStockOnly   bool                   `protobuf:"varint,9,opt,name=out_of_stock_only,json=outOfStockOnly,proto3" json:"out_of_stock_only,omitempty"`     // 仅库存为 0，按自营/上游货源分别计算
 	LocalOnly        bool                   `protobuf:"varint,8,opt,name=local_only,json=localOnly,proto3" json:"local_only,omitempty"`                        // 仅看自营（无上游渠道）
 	StockType        string                 `protobuf:"bytes,10,opt,name=stock_type,json=stockType,proto3" json:"stock_type,omitempty"`                        // card | url | code，空表示全部
+	OptionsOnly      bool                   `protobuf:"varint,11,opt,name=options_only,json=optionsOnly,proto3" json:"options_only,omitempty"`                 // 轻量下拉选项，不读取描述及库存/销量；默认保持完整列表
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -137,6 +138,13 @@ func (x *ListProductsRequest) GetStockType() string {
 		return x.StockType
 	}
 	return ""
+}
+
+func (x *ListProductsRequest) GetOptionsOnly() bool {
+	if x != nil {
+		return x.OptionsOnly
+	}
+	return false
 }
 
 type ListProductsReply struct {
@@ -3589,7 +3597,7 @@ var File_admin_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd6\x02\n" +
+	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf9\x02\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
@@ -3604,7 +3612,8 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"local_only\x18\b \x01(\bR\tlocalOnly\x12\x1d\n" +
 	"\n" +
 	"stock_type\x18\n" +
-	" \x01(\tR\tstockType\"\x98\x01\n" +
+	" \x01(\tR\tstockType\x12!\n" +
+	"\foptions_only\x18\v \x01(\bR\voptionsOnly\"\x98\x01\n" +
 	"\x11ListProductsReply\x12<\n" +
 	"\bproducts\x18\x01 \x03(\v2 .zcard.api.admin.v1.AdminProductR\bproducts\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +

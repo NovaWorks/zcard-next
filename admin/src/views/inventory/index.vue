@@ -322,10 +322,31 @@ function resetCards() {
   loadCards();
 }
 
+const productsLoading = ref(false);
+const productsLoadFailed = ref(false);
 async function loadProducts() {
-  const { data, error } = await fetchProducts({ page: 1, page_size: 100 });
-  if (!error && data) {
-    products.value = (data as any).products || [];
+  if (productsLoading.value) return;
+  productsLoading.value = true;
+  productsLoadFailed.value = false;
+  try {
+    const all: any[] = [];
+    for (let page = 1; ; page++) {
+      const { data, error } = await fetchProducts({ page, page_size: 500, options_only: true });
+      if (error || !data) {
+        productsLoadFailed.value = true;
+        return;
+      }
+      const result = data as any;
+      const batch = result.products || [];
+      all.push(...batch);
+      // Respect servers which cap page_size; do not stop at a short first page.
+      if (batch.length === 0 || all.length >= Number(result.total || 0)) break;
+    }
+    products.value = all;
+  } catch {
+    productsLoadFailed.value = true;
+  } finally {
+    productsLoading.value = false;
   }
 }
 
@@ -440,6 +461,7 @@ onMounted(() => {
         <NSelect
           v-model:value="selectedProduct"
           :options="productOptions"
+          :loading="productsLoading"
           placeholder="搜索/选择商品"
           class="w-280px"
           filterable
@@ -451,6 +473,10 @@ onMounted(() => {
         />
       </div>
 
+      <NAlert v-if="productsLoadFailed" type="error" class="mb-12px">
+        商品选项加载失败，请重试。
+        <NButton text type="primary" :loading="productsLoading" @click="loadProducts">重新加载</NButton>
+      </NAlert>
       <NTabs v-model:value="inventoryTab" type="line">
         <NTabPane name="cards" tab="卡密列表">
           <NEmpty
@@ -502,6 +528,7 @@ onMounted(() => {
             <NSelect
               v-model:value="importProductId"
               :options="importProductOptions"
+              :loading="productsLoading"
               placeholder="输入名称模糊搜索 / 选择商品"
               class="flex-1"
               filterable

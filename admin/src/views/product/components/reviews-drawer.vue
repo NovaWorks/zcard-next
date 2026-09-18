@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 评价管理抽屉：真实评价审核流（pending→通过/拒绝）+ 虚拟评价创建。
 // catalog:review_read 查看 / catalog:review_manage 审核+虚拟评价（超管专属）。
-import { onMounted, ref, computed, h } from "vue";
+import { watch, ref, computed, h } from "vue";
 import {
   NDrawer,
   NDrawerContent,
@@ -159,7 +159,9 @@ async function handleVirtual() {
   }
 }
 
-onMounted(load);
+watch(() => props.show, (show) => {
+  if (show) void load();
+}, { immediate: true });
 </script>
 
 <template>

@@ -143,6 +143,7 @@ message ListProductsRequest {
   bool out_of_stock_only = 9; // 仅库存为 0，按自营/上游货源分别计算
   bool local_only = 8; // 仅看自营（无上游渠道）
   string stock_type = 10; // card | url | code，空表示全部
+  bool options_only = 11; // 轻量下拉选项，不读取描述及库存/销量；默认保持完整列表
 }
 
 message ListProductsReply {

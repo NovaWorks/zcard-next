@@ -94,6 +94,9 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	if f.Page > 0 && f.PageSize > 0 {
 		q = q.Offset((int(f.Page) - 1) * int(f.PageSize)).Limit(int(f.PageSize))
 	}
+	if f.OptionsOnly {
+		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldSort)
+	}
 	rows, err := q.All(ctx)
 	return rows, int64(total), err
 }

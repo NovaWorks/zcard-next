@@ -115,18 +115,25 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 		ConnectionID:      req.GetUpstreamSourceId(),
 		LocalOnly:         req.GetLocalOnly(),
 		StockType:         req.GetStockType(),
+		OptionsOnly:       req.GetOptionsOnly(),
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品失败")
 	}
 	reply := &adminv1.ListProductsReply{Products: make([]*adminv1.AdminProduct, 0, len(rows))}
 	for _, p := range rows {
-		reply.Products = append(reply.Products, ToAdminPB(p))
+		if req.GetOptionsOnly() {
+			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, StockType: string(p.StockType)})
+		} else {
+			reply.Products = append(reply.Products, ToAdminPB(p))
+		}
 	}
 	reply.Total = total
 	reply.Page = page
 	reply.PageSize = size
-	s.fillStats(ctx, reply.Products)
+	if !req.GetOptionsOnly() {
+		s.fillStats(ctx, reply.Products)
+	}
 	return reply, nil
 }
 

@@ -108,26 +108,29 @@ func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, yesterday, 
 func (r *DashboardRepoImpl) metricBetweenSubsite(ctx context.Context, subsite uint64, start, end time.Time) (Metric, error) {
 	start, end = start.UTC(), end.UTC()
 	client := data.Client(ctx, r.data)
-	orders, err := client.Order.Query().
-		Where(
-			order.CreatedAtGTE(start),
-			order.CreatedAtLT(end),
-			order.SubsiteID(subsite),
-		).
-		All(ctx)
+	var groups []struct {
+		Status  order.Status `json:"status"`
+		Count   int64        `json:"count"`
+		Revenue int64        `json:"revenue"`
+		Cost    int64        `json:"cost"`
+	}
+	err := client.Order.Query().Where(order.CreatedAtGTE(start), order.CreatedAtLT(end), order.SubsiteID(subsite)).
+		GroupBy(order.FieldStatus).
+		Aggregate(ent.Count(), ent.As(ent.Sum(order.FieldTotalAmount), "revenue"), ent.As(ent.Sum(order.FieldCost), "cost")).Scan(ctx, &groups)
 	if err != nil {
 		return Metric{}, err
 	}
-	m := Metric{Orders: int64(len(orders))}
+	m := Metric{}
 	paid := map[order.Status]bool{}
 	for _, st := range paidStatuses() {
 		paid[st] = true
 	}
-	for _, o := range orders {
-		if paid[o.Status] {
-			m.PaidOrders++
-			m.Revenue += o.TotalAmount
-			m.Cost += o.Cost
+	for _, g := range groups {
+		m.Orders += g.Count
+		if paid[g.Status] {
+			m.PaidOrders += g.Count
+			m.Revenue += g.Revenue
+			m.Cost += g.Cost
 		}
 	}
 	m.Profit = m.Revenue - m.Cost
@@ -154,7 +157,7 @@ func (r *DashboardRepoImpl) GetTrend(ctx context.Context, days int) ([]TrendPoin
 	client := data.Client(ctx, r.data)
 	rows, err := client.Order.Query().
 		Where(order.CreatedAtGTE(start.UTC()), order.CreatedAtLT(now.UTC()), order.SubsiteID(subsite)).
-		All(ctx)
+		Select(order.FieldCreatedAt, order.FieldStatus, order.FieldTotalAmount, order.FieldCost).All(ctx)
 	if err != nil {
 		return nil, err
 	}

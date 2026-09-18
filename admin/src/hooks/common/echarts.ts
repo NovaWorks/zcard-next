@@ -1,15 +1,6 @@
 import { computed, effectScope, nextTick, onScopeDispose, shallowRef, watch } from "vue";
 import { useElementSize } from "@vueuse/core";
-import * as echarts from "echarts/core";
-import {
-  BarChart,
-  GaugeChart,
-  LineChart,
-  PictorialBarChart,
-  PieChart,
-  RadarChart,
-  ScatterChart,
-} from "echarts/charts";
+import type * as echarts from "echarts/core";
 import type {
   BarSeriesOption,
   GaugeSeriesOption,
@@ -19,15 +10,6 @@ import type {
   RadarSeriesOption,
   ScatterSeriesOption,
 } from "echarts/charts";
-import {
-  DatasetComponent,
-  GridComponent,
-  LegendComponent,
-  TitleComponent,
-  ToolboxComponent,
-  TooltipComponent,
-  TransformComponent,
-} from "echarts/components";
 import type {
   DatasetComponentOption,
   GridComponentOption,
@@ -36,8 +18,6 @@ import type {
   ToolboxComponentOption,
   TooltipComponentOption,
 } from "echarts/components";
-import { LabelLayout, UniversalTransition } from "echarts/features";
-import { CanvasRenderer } from "echarts/renderers";
 import { useThemeStore } from "@/store/modules/theme";
 
 export type ECOption = echarts.ComposeOption<
@@ -56,26 +36,6 @@ export type ECOption = echarts.ComposeOption<
   | DatasetComponentOption
 >;
 
-echarts.use([
-  TitleComponent,
-  LegendComponent,
-  TooltipComponent,
-  GridComponent,
-  DatasetComponent,
-  TransformComponent,
-  ToolboxComponent,
-  BarChart,
-  LineChart,
-  PieChart,
-  ScatterChart,
-  PictorialBarChart,
-  RadarChart,
-  GaugeChart,
-  LabelLayout,
-  UniversalTransition,
-  CanvasRenderer,
-]);
-
 interface ChartHooks {
   onRender?: (chart: echarts.ECharts) => void | Promise<void>;
   onUpdated?: (chart: echarts.ECharts) => void | Promise<void>;
@@ -90,6 +50,7 @@ interface ChartHooks {
  */
 export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: ChartHooks = {}) {
   const scope = effectScope();
+  let disposed = false;
 
   const themeStore = useThemeStore();
   const darkMode = computed(() => themeStore.darkMode);
@@ -155,7 +116,10 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
 
   /** render chart */
   async function render() {
-    if (isRendered()) return;
+    if (disposed || !domRef.value || isRendered()) return;
+    const { echarts } = await import("./echarts-runtime");
+    // Several charts/resize events can finish the shared import together.
+    if (disposed || !domRef.value || isRendered()) return;
 
     const chartTheme = darkMode.value ? "dark" : "light";
 
@@ -184,7 +148,7 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
   async function changeTheme() {
     await destroy();
     await render();
-    await onUpdated?.(chart.value!);
+    if (chart.value) await onUpdated?.(chart.value);
   }
 
   /**
@@ -227,6 +191,7 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
   });
 
   onScopeDispose(() => {
+    disposed = true;
     destroy();
     scope.stop();
   });

@@ -14,6 +14,7 @@ defineOptions({ name: "Dashboard" });
 
 const router = useRouter();
 const loading = ref(false);
+const trafficLoading = ref(false);
 const data = ref<DashboardData | null>(null);
 
 // KPI 时间窗（今日/近7天/近30天，切换联动 4 张指标卡 + 环比基准）
@@ -223,17 +224,34 @@ async function loadDashboard(silent = false) {
   if (requesting) return;
   requesting = true;
   if (!silent) loading.value = true;
+  trafficLoading.value = !silent;
+  const days = trendDays.value;
   try {
-    const { data: d, error } = await fetchDashboard(trendDays.value);
-    if (!error && d) {
-      data.value = d;
-      renderCharts(d);
-    }
-    const { data: t, error: tErr } = await fetchTraffic(trendDays.value);
-    if (!tErr && t) renderTraffic(t.points || []);
+    await Promise.allSettled([
+      (async () => {
+        try {
+          const { data: d, error } = await fetchDashboard(days);
+          if (!error && d) {
+            data.value = d;
+            renderCharts(d);
+          }
+        } finally {
+          loading.value = false;
+        }
+      })(),
+      (async () => {
+        try {
+          const { data: t, error } = await fetchTraffic(days);
+          if (!error && t) renderTraffic(t.points || []);
+        } finally {
+          trafficLoading.value = false;
+        }
+      })(),
+    ]);
   } finally {
-    loading.value = false;
     requesting = false;
+    // A range change during a pending refresh must not be lost.
+    if (days !== trendDays.value) void loadDashboard(true);
   }
 }
 
@@ -347,7 +365,9 @@ onUnmounted(stopRefresh);
               <div v-else class="py-20px text-center text-13px text-gray-400">近30天暂无支付数据</div>
             </NCard>
             <NCard title="流量趋势（PV/UV）" :bordered="false">
-              <div ref="trafficRef" class="h-180px"></div>
+              <NSpin :show="trafficLoading">
+                <div ref="trafficRef" class="h-180px"></div>
+              </NSpin>
             </NCard>
           </div>
         </NGi>

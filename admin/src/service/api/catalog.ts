@@ -8,6 +8,7 @@ export function fetchProducts(params?: {
   status?: number;
   page?: number;
   page_size?: number;
+  options_only?: boolean;
   low_stock_only?: boolean;
   out_of_stock_only?: boolean;
   upstream_source_id?: number;
