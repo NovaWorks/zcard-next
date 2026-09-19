@@ -66,6 +66,18 @@ const previewURL = ref(""),
   previewBusy = ref(false),
   size = ref("desktop"),
   live = ref(false);
+const editorRef = ref<HTMLElement | null>(null);
+const layoutRef = ref<HTMLElement | null>(null);
+watch(
+  group,
+  () => {
+    // Desktop scrolls the editor; mobile scrolls the surrounding layout.
+    // Do not carry a previous group's offset into the newly rendered fields.
+    if (editorRef.value) editorRef.value.scrollTop = 0;
+    if (layoutRef.value) layoutRef.value.scrollTop = 0;
+  },
+  { flush: "post" },
+);
 let sequence = 0,
   previewSequence = 0,
   timer: ReturnType<typeof setTimeout> | undefined;
@@ -282,8 +294,8 @@ function close() {
         v-if="state && !state.schema"
         description="此主题未提供自定义设置，请使用支持自定义设置的主题版本；已有外观配置继续兼容。"
       />
-      <div v-else-if="state?.schema" class="theme-settings-layout">
-        <section class="theme-settings-editor">
+      <div v-else-if="state?.schema" ref="layoutRef" class="theme-settings-layout">
+        <section ref="editorRef" class="theme-settings-editor">
           <nav class="theme-settings-groups" aria-label="主题设置分组">
             <button
               v-for="g in state.schema.groups"
