@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"context"
+	stderrors "errors"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"sort"
 
@@ -162,7 +163,10 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 	tc := tenancy.FromContext(ctx)
 	p, err := s.uc.GetVisible(ctx, tc.SubsiteID, req.GetId())
 	if err != nil {
-		return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
+		if stderrors.Is(err, ErrProductNotFound) {
+			return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
+		}
+		return nil, errors.InternalServer("catalog.GET_FAILED", "读取商品失败")
 	}
 	// ：分站单价（listing=checkout 同源；SKU 规则优先于商品规则由定价引擎裁定）
 	base := p.Price

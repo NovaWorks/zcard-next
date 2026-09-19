@@ -85,6 +85,7 @@ func (s *StoreContentService) ListPosts(ctx context.Context, req *storefrontv1.L
 		reply.Posts = append(reply.Posts, &storefrontv1.StorePost{
 			Id: p.ID, Slug: p.Slug, Type: string(p.Type),
 			Title: LangValue(p.TitleJSON, locale), Thumbnail: p.Thumbnail,
+			Summary:    LangValue(p.SummaryJSON, locale),
 			CategoryId: p.CategoryID,
 			PublishedAt: func() int64 {
 				if p.PublishedAt.IsZero() {
@@ -108,7 +109,14 @@ func (s *StoreContentService) GetPost(ctx context.Context, req *storefrontv1.Get
 		Post: &storefrontv1.StorePost{
 			Id: p.ID, Slug: p.Slug, Type: string(p.Type),
 			Title: LangValue(p.TitleJSON, locale), Thumbnail: p.Thumbnail,
+			Summary:    LangValue(p.SummaryJSON, locale),
 			CategoryId: p.CategoryID,
+			PublishedAt: func() int64 {
+				if p.PublishedAt.IsZero() {
+					return 0
+				}
+				return p.PublishedAt.Unix()
+			}(),
 		},
 		Content: LangContent(p.ContentJSON, locale),
 	}, nil

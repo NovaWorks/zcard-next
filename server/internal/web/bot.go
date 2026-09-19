@@ -13,7 +13,7 @@ type BotRenderer interface {
 }
 
 // botUARe 搜索引擎爬虫 UA（主流收录方；命中即走动态渲染——
-// Google 认可的 Dynamic Rendering 模式，真人与爬虫内容一致仅形态不同）。
+// Classic 使用专用正文回退；支持 server-v1 的主题对所有 UA 提供相同元数据）。
 var botUARe = regexp.MustCompile(`(?i)bot|spider|slurp|crawl`)
 
 func isBotRequest(r *http.Request) bool {

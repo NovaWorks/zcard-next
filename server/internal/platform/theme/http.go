@@ -24,9 +24,25 @@ func imageFile(n string) bool {
 	return strings.HasPrefix(contentTypes[strings.ToLower(path.Ext(n))], "image/")
 }
 
+// PageRenderer is supplied by the application; platform stays independent of SEO business code.
+type PageRenderer interface {
+	RenderThemeHTML(*http.Request, []byte) ([]byte, int, error)
+}
+
+// SupportsServerSEO reports the theme's opt-in to request-time SEO metadata.
+func SupportsServerSEO(t *Theme) bool {
+	root, err := os.OpenRoot(t.Dir)
+	if err != nil {
+		return false
+	}
+	defer root.Close()
+	b, err := root.ReadFile("index.html")
+	return err == nil && bytes.Contains(b, []byte(`name="zcard-seo" content="server-v1"`))
+}
+
 // ServePage returns false before writing if the theme cannot be read; callers
 // can safely fall back to the embedded Classic page.
-func ServePage(w http.ResponseWriter, r *http.Request, t *Theme) bool {
+func ServePage(w http.ResponseWriter, r *http.Request, t *Theme, renderers ...PageRenderer) bool {
 	root, err := os.OpenRoot(t.Dir)
 	if err != nil {
 		return false
@@ -35,6 +51,18 @@ func ServePage(w http.ResponseWriter, r *http.Request, t *Theme) bool {
 	b, err := root.ReadFile("index.html")
 	if err != nil {
 		return false
+	}
+	status := http.StatusOK
+	// Opt-in preserves third-party themes with their own rendering contracts.
+	if bytes.Contains(b, []byte(`name="zcard-seo" content="server-v1"`)) && len(renderers) > 0 && renderers[0] != nil {
+		b, status, err = renderers[0].RenderThemeHTML(r, b)
+		if err != nil {
+			http.Error(w, "page rendering failed", http.StatusServiceUnavailable)
+			return true
+		}
+		if status == http.StatusServiceUnavailable {
+			w.Header().Set("Retry-After", "60")
+		}
 	}
 	b = InjectRuntime(b, r.Context())
 	pos, err := indexHeadEnd(b)
@@ -48,7 +76,7 @@ func ServePage(w http.ResponseWriter, r *http.Request, t *Theme) bool {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(status)
 	if r.Method != http.MethodHead {
 		_, _ = w.Write(out.Bytes())
 	}

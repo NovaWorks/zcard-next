@@ -7,35 +7,29 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
+	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
 )
 
 // SeoService SEO 基础服务。
 type SeoService struct {
-	repo *SeoRepo
-	cfg  *settings.RepoImpl
+	catalog storefrontv1.StoreCatalogServiceServer
+	repo    *SeoRepo
+	cfg     *settings.RepoImpl
 }
 
 // NewSeoService 构造。
-func NewSeoService(repo *SeoRepo, cfg *settings.RepoImpl) *SeoService {
-	return &SeoService{repo: repo, cfg: cfg}
+func NewSeoService(repo *SeoRepo, cfg *settings.RepoImpl, catalog storefrontv1.StoreCatalogServiceServer) *SeoService {
+	return &SeoService{repo: repo, cfg: cfg, catalog: catalog}
 }
 
 // siteURL 站点 URL 基准：site.url 优先（去尾斜杠），空则 https://host 兜底。
 func (s *SeoService) siteURL(ctx context.Context, host string) string {
-	if raw, err := s.cfg.GetDefault(ctx, "site", "url", nil); err == nil && len(raw) > 0 {
-		var v string
-		if json.Unmarshal(raw, &v) == nil && v != "" {
-			return strings.TrimRight(v, "/")
-		}
-	}
-	if host == "" {
-		host = "localhost"
-	}
-	return "https://" + host
+	return s.loadSite(ctx).base(host)
 }
 
 // robotsDisallows 私有/工具页默认禁抓（登录注册、会员中心、安装向导等——
@@ -43,7 +37,7 @@ func (s *SeoService) siteURL(ctx context.Context, host string) string {
 var robotsDisallows = []string{
 	"/login", "/register", "/forgot-password",
 	"/member", "/cart", "/order", "/payment",
-	"/tickets", "/withdraw", "/affiliate", "/fetch", "/install",
+	"/coupons", "/tickets", "/withdraw", "/affiliate", "/fetch", "/install",
 }
 
 // RobotsTXT robots.txt：私有页禁抓 + 自定义规则追加 + Sitemap 指向。
@@ -73,8 +67,8 @@ type sitemapEntry struct {
 }
 
 type sitemapURLSet struct {
-	XMLName xml.Name      `xml:"urlset"`
-	Xmlns   string        `xml:"xmlns,attr"`
+	XMLName xml.Name       `xml:"urlset"`
+	Xmlns   string         `xml:"xmlns,attr"`
 	URLs    []sitemapEntry `xml:"url"`
 }
 
@@ -114,7 +108,7 @@ func (s *SeoService) SitemapXML(ctx context.Context, host string) (string, error
 	}
 	for _, p := range posts {
 		entries = append(entries, sitemapEntry{
-			Loc:     fmt.Sprintf("%s/posts/%s", base, p.Slug),
+			Loc:     fmt.Sprintf("%s/posts/%s", base, url.PathEscape(p.Slug)),
 			Lastmod: lastmodOf(p.PublishedAt),
 		})
 	}

@@ -39,7 +39,7 @@ func TestProductPageData(t *testing.T) {
 		`<meta property="og:type" content="product">`,
 		`<meta name="google-site-verification" content="g-token">`,
 		"<h1>测试月卡</h1>",
-		"¥12.00",
+		"CNY 12.00",
 		"自动发货", // description 纯文本进 meta（script 已被 strip）
 	} {
 		if !strings.Contains(html, want) {
@@ -86,5 +86,40 @@ func TestStripTags(t *testing.T) {
 	}
 	if got := truncateStr("一二三四五", 4); got != "一二三…" {
 		t.Fatalf("truncate = %q", got)
+	}
+}
+
+func TestTruthfulOffersAndSafeMetadata(t *testing.T) {
+	for _, tc := range []struct {
+		stock int64
+		want  string
+	}{{0, "OutOfStock"}, {3, "InStock"}, {-1, "InStock"}, {-2, ""}} {
+		site := testSite()
+		site.Currency = "USD"
+		d := productPageData(site, "", &ProductSEO{ID: 688, Name: `Digital </script><script>alert(1)</script>`, DescriptionHTML: `<p>Card &#x1F511; &amp; license</p><style>secret</style>`, Cover: "/uploads/card.png", Stock: tc.stock, PriceCents: 253})
+		if !strings.Contains(string(d.JSONLD), `"priceCurrency":"USD"`) || !strings.Contains(string(d.JSONLD), `"price":"2.53"`) {
+			t.Fatal(d.JSONLD)
+		}
+		if tc.want == "" {
+			if strings.Contains(string(d.JSONLD), "availability") {
+				t.Fatal("unknown stock advertised as available")
+			}
+		} else if !strings.Contains(string(d.JSONLD), "https://schema.org/"+tc.want) {
+			t.Fatal(d.JSONLD)
+		}
+		if d.OGImage != "https://shop.example.com/uploads/card.png" || d.Description != "Card 🔑 & license" {
+			t.Fatalf("%s %s", d.OGImage, d.Description)
+		}
+		out, err := injectThemeHTML([]byte(`<html><head><title>old</title><meta name="description" content="old"><script type="application/ld+json">{}</script><script src="./app.js"></script><link rel="stylesheet" href="./app.css"></head><body><div id="root"></div></body></html>`), d)
+		if err != nil {
+			t.Fatal(err)
+		}
+		result := string(out)
+		if strings.Count(result, "<title") != 1 || strings.Count(result, `type="application/ld+json"`) != 1 || !strings.Contains(result, `src="./app.js"`) || !strings.Contains(result, `id="root"`) || !strings.Contains(result, "<noscript") {
+			t.Fatal(result)
+		}
+		if strings.Contains(result, "<script>alert(1)</script>") {
+			t.Fatal("metadata escaped its script")
+		}
 	}
 }

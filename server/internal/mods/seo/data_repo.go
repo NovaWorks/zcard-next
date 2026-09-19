@@ -26,14 +26,20 @@ type SitemapPost struct {
 }
 
 // ProductSEO 商品动态渲染数据（爬虫视角）。
+type ProductOfferSEO struct {
+	SKU        uint64
+	PriceCents int64
+	Stock      int64
+}
+
 type ProductSEO struct {
+	Offers          []ProductOfferSEO
 	ID              uint64
 	Name            string
 	DescriptionHTML string // 入库前已 sanitize
 	Cover           string
-	Images          []string
+	Stock           int64 // >=0 finite, -1 unlimited, -2 unknown; shared with storefront
 	PriceCents      int64
-	UpdatedAt       int64
 }
 
 // PostSEO 文章动态渲染数据（爬虫视角；多语言已回落到单值）。
@@ -41,40 +47,15 @@ type PostSEO struct {
 	Slug        string
 	Title       string
 	Summary     string
+	Thumbnail   string
 	ContentHTML string // 入库前已 sanitize
 	PublishedAt int64
-}
-
-// GetProductSEO 按 id 取上架商品（status=1；未上架/不存在 → nil）。
-func (r *SeoRepo) GetProductSEO(ctx context.Context, id uint64) (*ProductSEO, error) {
-	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), tenancy.FromContext(ctx).SubsiteID)
-	if err != nil {
-		return nil, err
-	}
-	p, err := data.Client(ctx, r.data).Product.Query().Where(data.VisibleProductCategory(hidden)).
-		Where(product.ID(id), product.Status(1)).
-		Only(ctx)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &ProductSEO{
-		ID:              p.ID,
-		Name:            p.Name,
-		DescriptionHTML: p.Description,
-		Cover:           p.Cover,
-		Images:          p.Images,
-		PriceCents:      p.Price,
-		UpdatedAt:       p.UpdatedAt.Unix(),
-	}, nil
 }
 
 // GetPostSEO 按 slug 取已发布文章（未发布/不存在 → nil；多语言 zh_CN → zh → 首个非空）。
 func (r *SeoRepo) GetPostSEO(ctx context.Context, slug string) (*PostSEO, error) {
 	p, err := data.Client(ctx, r.data).Post.Query().
-		Where(post.Slug(slug), post.IsPublished(true)).
+		Where(post.Slug(slug), post.IsPublished(true), post.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Only(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
@@ -86,6 +67,7 @@ func (r *SeoRepo) GetPostSEO(ctx context.Context, slug string) (*PostSEO, error)
 	_ = json.Unmarshal([]byte(p.ContentJSON), &content)
 	out := &PostSEO{
 		Slug:        p.Slug,
+		Thumbnail:   p.Thumbnail,
 		Title:       langValue(p.TitleJSON),
 		Summary:     langValue(p.SummaryJSON),
 		ContentHTML: langValue(content),
@@ -129,7 +111,7 @@ func (r *SeoRepo) ListSitemapProducts(ctx context.Context) ([]SitemapProduct, er
 		return nil, err
 	}
 	rows, err := data.Client(ctx, r.data).Product.Query().Where(data.VisibleProductCategory(hidden)).
-		Where(product.Status(1)).
+		Where(product.Status(1), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Select(product.FieldID, product.FieldUpdatedAt).
 		All(ctx)
 	if err != nil {
@@ -145,7 +127,7 @@ func (r *SeoRepo) ListSitemapProducts(ctx context.Context) ([]SitemapProduct, er
 // ListSitemapPosts 已发布文章。
 func (r *SeoRepo) ListSitemapPosts(ctx context.Context) ([]SitemapPost, error) {
 	rows, err := data.Client(ctx, r.data).Post.Query().
-		Where(post.IsPublished(true)).
+		Where(post.IsPublished(true), post.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Select(post.FieldSlug, post.FieldPublishedAt).
 		All(ctx)
 	if err != nil {
@@ -160,4 +142,28 @@ func (r *SeoRepo) ListSitemapPosts(ctx context.Context) ([]SitemapPost, error) {
 		out = append(out, SitemapPost{Slug: p.Slug, PublishedAt: ts})
 	}
 	return out, nil
+}
+
+// ListPostSEO reads only public post summaries; delivery and account data never enter the fallback.
+func (r *SeoRepo) ListPostSEO(ctx context.Context, typ string, categoryID uint64, page, size int) ([]PostSEO, int64, error) {
+	q := data.Client(ctx, r.data).Post.Query().Where(post.IsPublished(true), post.SubsiteID(tenancy.FromContext(ctx).SubsiteID))
+	if typ != "" {
+		q = q.Where(post.TypeEQ(post.Type(typ)))
+	}
+	if categoryID > 0 {
+		q = q.Where(post.CategoryID(categoryID))
+	}
+	total, err := q.Clone().Count(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	rows, err := q.Order(ent.Asc(post.FieldSort), ent.Desc(post.FieldPublishedAt), ent.Desc(post.FieldID)).Offset((page - 1) * size).Limit(size).All(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]PostSEO, 0, len(rows))
+	for _, p := range rows {
+		out = append(out, PostSEO{Slug: p.Slug, Title: langValue(p.TitleJSON)})
+	}
+	return out, int64(total), nil
 }

@@ -76,17 +76,12 @@ func newHandler(root fs.FS, prefix string, bot BotRenderer) *Handler {
 	return h
 }
 
-// ServeHTTP 静态资源优先；未匹配回落 index.html（SPA 前端路由）。
-// 爬虫（UA 识别）+ 动态渲染器命中 SEO 路由时先行分流：商品/文章详情实时渲染
-// 完整 SEO HTML（内容永远新鲜、删除即真 404），优先于静态页/SPA 兜底。
-// SSG 静态页（vite-ssg 扁平产物）：/product/1 命中 product/1.html。
+// ServeHTTP keeps installed theme assets intact. SEO-enabled themes receive
+// request-time metadata for all UAs; Classic and legacy themes retain bot rendering.
+// Embedded SSG pages remain available as path + ".html".
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.NotFound(w, r)
-		return
-	}
-	// 爬虫动态渲染（仅 storefront；详情页实时渲染优先，保证内容新鲜）
-	if (theme.RuntimeFromContext(r.Context()) == nil || !theme.RuntimeFromContext(r.Context()).Preview) && h.bot != nil && h.prefix == "" && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
 		return
 	}
 	// Keep embedded assets available to already-open Classic pages. Reserved
@@ -97,9 +92,25 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				http.NotFound(w, r)
 				return
 			}
-			if theme.ServePage(w, r, t) {
+			// Existing themes continue to use Classic's crawler renderer unless opted in.
+			if !theme.SupportsServerSEO(t) && h.bot != nil {
+				w.Header().Add("Vary", "User-Agent")
+				if (theme.RuntimeFromContext(r.Context()) == nil || !theme.RuntimeFromContext(r.Context()).Preview) && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
+					return
+				}
+			}
+			renderer, _ := h.bot.(theme.PageRenderer)
+			if theme.ServePage(w, r, t, renderer) {
 				return
 			}
+		}
+	}
+	// SEO-enabled themes above use identical metadata and status codes for every UA.
+	// Classic retains its dedicated bot rendering path.
+	if h.bot != nil && h.prefix == "" && themePagePath(r.URL.Path) {
+		w.Header().Add("Vary", "User-Agent")
+		if (theme.RuntimeFromContext(r.Context()) == nil || !theme.RuntimeFromContext(r.Context()).Preview) && isBotRequest(r) && h.bot.TryRenderBot(w, r) {
+			return
 		}
 	}
 	p := r.URL.Path

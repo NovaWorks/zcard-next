@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"context"
+	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
 
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings"
@@ -45,5 +46,6 @@ var ProviderSet = wire.NewSet(
 	wire.Bind(new(port.SupplierCatalog), new(*ProductRepoImpl)),
 	NewStoreCatalogService,
 	NewStoreReviewService,
+	wire.Bind(new(storefrontv1.StoreCatalogServiceServer), new(*StoreCatalogService)),
 	NewAdminCatalogService,
 )
