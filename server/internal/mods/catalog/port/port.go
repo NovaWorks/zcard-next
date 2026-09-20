@@ -107,7 +107,7 @@ type ProductReader interface {
 type PricingResolver interface {
 	// ResolvePrice 解析商品/SKU 售价（分）。skuID=0 或 SKU 价为空时回落到商品价。
 	ResolvePrice(ctx context.Context, productID, skuID uint64) (price money.Cents, err error)
-	// ResolveGroupRate 解析命中的会员商品组折扣（万分比；0=不命中）。多组命中取最高折扣。
+	// ResolveGroupRate 返回商品组应付比例（万分比；9800=支付98%；0=不命中）。多组命中取最小应付比例。
 	ResolveGroupRate(ctx context.Context, productID uint64) (rate int32, err error)
 }
 

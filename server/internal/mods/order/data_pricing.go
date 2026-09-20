@@ -26,8 +26,8 @@ type AmountLine struct {
 type PriceInput struct {
 	BasePrice     money.Cents // 基础价（SKU > 商品）
 	Quantity      int32
-	MemberRate    int32       // 会员折扣（万分比；0=不折扣）
-	GroupRate     int32       // 商品组折扣（万分比）
+	MemberRate    int32       // 会员应付比例（万分比；9800=98%；0/10000=不折扣）
+	GroupRate     int32       // 商品组应付比例（万分比；同会员口径）
 	FlashPrice    money.Cents // 秒杀价（0=无秒杀）
 	PromoDiscount money.Cents // 促销折让（分；0=无促销——会员折扣后、券前）
 	PromoName     string      // 促销名（金额行 meta）
@@ -57,7 +57,8 @@ func PriceCalculator(in PriceInput) PriceResult {
 
 	// 2) 会员等级折扣
 	if in.MemberRate > 0 && in.MemberRate < 10000 {
-		discount := int64(in.BasePrice) * int64(in.MemberRate) / 10000
+		// 配置是应付比例，折让取其补数；保留整数分向下取整的折让规则。
+		discount := int64(in.BasePrice) * int64(10000-in.MemberRate) / 10000
 		lines = append(lines, AmountLine{
 			Type: "member_discount", Amount: -discount, SourceType: "member_level",
 			Seq: seq, Meta: map[string]any{"rate": in.MemberRate},
@@ -68,7 +69,7 @@ func PriceCalculator(in PriceInput) PriceResult {
 
 	// 3) 会员商品组折扣（叠加规则判定 ）
 	if in.GroupRate > 0 && in.GroupRate < 10000 {
-		discount := int64(current) * int64(in.GroupRate) / 10000
+		discount := int64(current) * int64(10000-in.GroupRate) / 10000
 		lines = append(lines, AmountLine{
 			Type: "group_discount", Amount: -discount, SourceType: "member_group",
 			Seq: seq, Meta: map[string]any{"rate": in.GroupRate},

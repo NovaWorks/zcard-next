@@ -4,7 +4,8 @@ package port
 import "context"
 
 // RateResolver 会员等级折扣解析（order 价格管线步骤 2 消费）。
-// 返回万分比折扣（0=不折扣）+ 命中的等级 ID。无等级/用户不存在返回 0。
+// 返回应付比例万分比（9800=支付98%；0/10000=不折扣）+ 命中的等级 ID。
+// 无等级/用户不存在返回 0。
 type RateResolver interface {
 	EffectiveRate(ctx context.Context, userID uint64) (rate int32, levelID uint64, err error)
 }
