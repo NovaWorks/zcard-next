@@ -144,7 +144,7 @@ func TestResellerOrderJourney(t *testing.T) {
 			markupLine = l
 		}
 	}
-	if markupLine == nil || markupLine.Amount != 100 {
+	if markupLine == nil || markupLine.Amount != 200 { // 两件各加价 100 分。
 		t.Fatalf("管线步骤 7 金额行缺失或金额错误: %+v", markupLine)
 	}
 

@@ -11,6 +11,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/memberproductgroup"
+	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -86,17 +87,18 @@ func (r *ProductRepoImpl) DeleteMemberGroup(ctx context.Context, id uint64) erro
 
 // ── 订单管线折扣解析 ─────────────────────────────────────────
 
-// ResolveGroupRate 解析命中商品的会员商品组折扣（万分比；0=不命中）。
+// ResolveGroupDiscount 解析命中商品的会员商品组优惠及叠加策略。
 // enabled 语义：discount ∈ (0, 10000)；多组命中取最高折扣（最小 discount 值）。
-func (r *ProductRepoImpl) ResolveGroupRate(ctx context.Context, productID uint64) (int32, error) {
+func (r *ProductRepoImpl) ResolveGroupDiscount(ctx context.Context, productID uint64) (port.GroupDiscount, error) {
 	tc := tenancy.FromContext(ctx)
 	rows, err := data.Client(ctx, r.data).MemberProductGroup.Query().
 		Where(memberproductgroup.SubsiteID(tc.SubsiteID)).
+		Order(ent.Asc(memberproductgroup.FieldID)).
 		All(ctx)
 	if err != nil {
-		return 0, err
+		return port.GroupDiscount{}, err
 	}
-	var best int32
+	var best port.GroupDiscount
 	for _, g := range rows {
 		if g.Discount <= 0 || g.Discount >= 10000 {
 			continue // 无效折扣视为未启用
@@ -104,8 +106,8 @@ func (r *ProductRepoImpl) ResolveGroupRate(ctx context.Context, productID uint64
 		if !slices.Contains(g.ProductIds, productID) {
 			continue
 		}
-		if best == 0 || g.Discount < best {
-			best = g.Discount
+		if best.Rate == 0 || g.Discount < best.Rate {
+			best = port.GroupDiscount{ID: g.ID, Rate: g.Discount, StackMember: g.StackMember, StackCoupon: g.StackCoupon}
 		}
 	}
 	return best, nil

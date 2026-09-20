@@ -6,7 +6,7 @@ package order
 // 每一步产出一条 order_amount_lines 行（有符号分；折扣为负、加价为正）。
 // 管线为纯函数——M1a 中 member/coupon/points/reseller 四 port 返回中性值，/ 接真实现。
 //
-// 不变量：total == SUM(lines.amount)；seq 单调递增对应管线顺序。
+// 不变量：total == SUM(lines.amount) × quantity；行金额在下单落库时乘数量。
 
 import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
@@ -40,7 +40,7 @@ type PriceInput struct {
 // PriceResult 管线输出。
 type PriceResult struct {
 	Lines []AmountLine
-	Total money.Cents // 应付 = SUM(lines)
+	Total money.Cents // 应付 = SUM(单件 lines) × quantity
 }
 
 // PriceCalculator 价格管线（纯函数，无副作用）。
@@ -138,8 +138,7 @@ func PriceCalculator(in PriceInput) PriceResult {
 		seq++
 	}
 
-	// 8) 数量倍增（修改所有行金额——实际实现：另起一行记录数量差异）
-	// 简化：每行已按单价计算，此处直接乘数量到总额
+	// 8) 金额行保持单件口径，调用方落库时乘数量；总额包含数量。
 	unitTotal := current
 	total := unitTotal.Mul(in.Quantity)
 

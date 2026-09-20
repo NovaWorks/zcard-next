@@ -135,6 +135,9 @@ func csvEscape(s string) string {
 
 // CreateBatch 批量生成券码。
 func (r *CouponRepoImpl) CreateBatch(ctx context.Context, name, typ string, value int64, count int32, expireAt *time.Time) (int32, error) {
+	if _, err := couponDiscount(coupon.Type(typ), value, 0); err != nil {
+		return 0, err
+	}
 	client := data.Client(ctx, r.data)
 	batchID := fmt.Sprintf("B%d", time.Now().UnixNano())
 	for i := int32(0); i < count; i++ {
@@ -181,17 +184,31 @@ func (r *CouponRepoImpl) Resolve(ctx context.Context, code string, userID uint64
 	if c.UserID != 0 && c.UserID != userID {
 		return 0, 0, fmt.Errorf("coupon.USER_MISMATCH")
 	}
-	var value int64
-	switch c.Type {
+	value, err := couponDiscount(c.Type, c.Value, orderAmount)
+	return value, c.ID, err
+}
+
+// couponDiscount 与后台券面显示一致：9500=9.5折；折让向下取整到分。
+func couponDiscount(typ coupon.Type, configured int64, base money.Cents) (money.Cents, error) {
+	var value money.Cents
+	switch typ {
 	case coupon.TypeFixed:
-		value = c.Value
+		if configured < 0 {
+			return 0, fmt.Errorf("coupon.VALUE_INVALID")
+		}
+		value = money.Cents(configured)
 	case coupon.TypePercent:
-		value = int64(orderAmount) * c.Value / 10000
+		if configured <= 0 || configured > 10000 {
+			return 0, fmt.Errorf("coupon.RATE_INVALID")
+		}
+		value = money.Cents(int64(base) * (10000 - configured) / 10000)
+	default:
+		return 0, fmt.Errorf("coupon.TYPE_INVALID")
 	}
-	if value > int64(orderAmount) {
-		value = int64(orderAmount) // 券不找零
+	if value > base {
+		value = base // 券不找零，且不得抵扣范围外商品。
 	}
-	return money.Cents(value), c.ID, nil
+	return value, nil
 }
 
 // MarkUsed 核销。

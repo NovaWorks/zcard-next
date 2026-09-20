@@ -305,13 +305,25 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				}
 				basePrice = sp
 			}
-			// 会员商品组折扣（万分比；不命中/解析失败为 0）
-			var groupRate int32
+			// 商品组必须携带叠加策略；解析失败不能绕过禁止叠加的设置。
+			var group catalogport.GroupDiscount
 			if uc.Catalog != nil {
-				if gr, err := uc.Catalog.ResolveGroupRate(txCtx, item.ProductID); err == nil {
-					groupRate = gr
+				group, err = uc.Catalog.ResolveGroupDiscount(txCtx, item.ProductID)
+				if err != nil {
+					return fmt.Errorf("order.GROUP_LOOKUP_FAILED: %w", err)
 				}
 			}
+			itemMemberRate, groupRate := memberRate, group.Rate
+			if !group.StackMember && groupRate > 0 && groupRate < 10000 && memberRate > 0 && memberRate < 10000 {
+				// 禁止叠加时取较低应付比例；同价优先会员，不触发商品组用券限制。
+				if memberRate <= groupRate {
+					groupRate = 0
+				} else {
+					itemMemberRate = 0
+				}
+			}
+			priceInput := PriceInput{BasePrice: basePrice, Quantity: 1, MemberRate: itemMemberRate, GroupRate: groupRate}
+			discountedUnit := PriceCalculator(priceInput).Total
 
 			// 步骤 4：秒杀（窗口判定 + 限购 + 待付款预占；正式扣减在 MarkPaid）
 			var flashPrice money.Cents
@@ -345,8 +357,8 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			var promoDiscount money.Cents
 			var promoName string
 			if uc.Promos != nil && flashPrice == 0 {
-				if pi, err := uc.Promos.BestFor(txCtx, item.ProductID, p.CategoryID, basePrice); err == nil && pi != nil {
-					if d := pi.DiscountFor(basePrice); d > 0 {
+				if pi, err := uc.Promos.BestFor(txCtx, item.ProductID, p.CategoryID, discountedUnit); err == nil && pi != nil {
+					if d := pi.DiscountFor(discountedUnit); d > 0 {
 						promoDiscount, promoName = d, pi.Name
 					}
 				}
@@ -362,25 +374,24 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			}
 			totalSubsiteMarkup += int64(subsiteMarkup) * int64(item.Quantity)
 
-			pr := PriceCalculator(PriceInput{
-				BasePrice:     basePrice,
-				Quantity:      item.Quantity,
-				MemberRate:    memberRate,
-				GroupRate:     groupRate,
-				FlashPrice:    flashPrice,
-				PromoDiscount: promoDiscount,
-				PromoName:     promoName,
-				SubsiteMarkup: subsiteMarkup,
-			})
+			priceInput.Quantity = item.Quantity
+			priceInput.FlashPrice = flashPrice
+			priceInput.PromoDiscount = promoDiscount
+			priceInput.PromoName = promoName
+			priceInput.SubsiteMarkup = subsiteMarkup
+			pr := PriceCalculator(priceInput)
 			results = append(results, itemResult{
 				input: item, res: pr, cost: int64(p.FactoryPrice),
 				productName: p.Name,
 			})
 			totalCents += int64(pr.Total)
-			cartItems = append(cartItems, couponport.CartItem{
-				ProductID: item.ProductID, CategoryID: p.CategoryID,
-				Quantity: item.Quantity, UnitPrice: basePrice,
-			})
+			if groupRate == 0 || group.StackCoupon {
+				// 券在会员/商品组/促销之后计算，不能抵扣分站加价或禁止用券的商品。
+				cartItems = append(cartItems, couponport.CartItem{
+					ProductID: item.ProductID, CategoryID: p.CategoryID,
+					Quantity: item.Quantity, UnitPrice: pr.Total/money.Cents(item.Quantity) - subsiteMarkup,
+				})
+			}
 		}
 
 		// 4.6) 优惠券（整单一次性；范围矩阵 + 每人限用；券×秒杀互斥默认开）
@@ -496,8 +507,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		// 7) 写 order_items + order_amount_lines
+		var amountSeq int32
 		for _, r := range results {
-			_, err := client.OrderItem.Create().
+			orderItem, err := client.OrderItem.Create().
 				SetOrderID(o.ID).
 				SetSubsiteID(in.SubsiteID).
 				SetProductID(r.input.ProductID).
@@ -516,16 +528,18 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			for _, line := range r.res.Lines {
 				_, err := client.OrderAmountLine.Create().
 					SetOrderID(o.ID).
-					SetNillableItemID(nil). // 简化： 接 itemID 回填
+					SetItemID(orderItem.ID).
 					SetType(orderamountline.Type(line.Type)).
-					SetAmount(line.Amount).
+					SetAmount(line.Amount * int64(r.input.Quantity)).
 					SetSourceType(line.SourceType).
 					SetSourceID(line.SourceID).
-					SetSeq(line.Seq).
+					SetSeq(amountSeq).
+					SetMeta(line.Meta).
 					Save(txCtx)
 				if err != nil {
 					return fmt.Errorf("order.AMOUNT_LINE_FAILED: %w", err)
 				}
+				amountSeq++
 			}
 		}
 
@@ -537,7 +551,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetAmount(-couponValue).
 				SetSourceType("coupon").
 				SetSourceID(couponID).
-				SetSeq(int32(len(results)*4 + 1)).
+				SetSeq(amountSeq).
 				Save(txCtx)
 			if err != nil {
 				return fmt.Errorf("order.COUPON_LINE_FAILED: %w", err)

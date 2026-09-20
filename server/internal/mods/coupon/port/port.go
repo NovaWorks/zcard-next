@@ -13,7 +13,7 @@ type CartItem struct {
 	ProductID  uint64
 	CategoryID uint64
 	Quantity   int32
-	UnitPrice  money.Cents
+	UnitPrice  money.Cents // 券前折后单价，不含分站加价；调用方剔除禁止用券的行
 }
 
 // CouponResolver 优惠券解析（order 价格管线步骤 5 消费）。
@@ -75,7 +75,7 @@ type PromotionInfo struct {
 	Type         string // fixed | percent | special_price
 	Threshold    money.Cents
 	Discount     money.Cents // fixed 面额（分）
-	DiscountRate int32       // percent 万分比
+	DiscountRate int32       // percent 应付比例（万分比；9500=9.5折）
 	SpecialPrice money.Cents
 	Name         string
 }
@@ -86,16 +86,18 @@ type PromotionResolver interface {
 	BestFor(ctx context.Context, productID, categoryID uint64, unitPrice money.Cents) (*PromotionInfo, error)
 }
 
-// DiscountFor 促销折让（fixed=面额；percent=价×万分比；special_price=价-特价）。
+// DiscountFor 促销折让（fixed=面额；percent=价×(1-应付比例)；special_price=价-特价）。
 // 纯函数——管线与测试共用同一口径。
 func (p *PromotionInfo) DiscountFor(unitPrice money.Cents) money.Cents {
 	switch p.Type {
 	case "fixed":
 		return p.Discount
 	case "percent":
-		return money.Cents(int64(unitPrice) * int64(p.DiscountRate) / 10000)
+		if p.DiscountRate > 0 && p.DiscountRate <= 10000 {
+			return money.Cents(int64(unitPrice) * int64(10000-p.DiscountRate) / 10000)
+		}
 	case "special_price":
-		if p.SpecialPrice < unitPrice {
+		if p.SpecialPrice >= 0 && p.SpecialPrice < unitPrice {
 			return unitPrice - p.SpecialPrice
 		}
 	}

@@ -102,13 +102,21 @@ type ProductReader interface {
 	SkuUpstreamCode(ctx context.Context, subsiteID, skuID uint64) string
 }
 
+// GroupDiscount 商品组优惠及其叠加策略；Rate=0 表示未命中。
+type GroupDiscount struct {
+	ID          uint64
+	Rate        int32 // 应付比例（万分比；9800=支付98%）
+	StackMember bool
+	StackCoupon bool
+}
+
 // PricingResolver 商品定价解析（order 价格管线消费，通道 A）：
 // SKU 价 > 商品价；会员商品组折扣万分比。
 type PricingResolver interface {
 	// ResolvePrice 解析商品/SKU 售价（分）。skuID=0 或 SKU 价为空时回落到商品价。
 	ResolvePrice(ctx context.Context, productID, skuID uint64) (price money.Cents, err error)
-	// ResolveGroupRate 返回商品组应付比例（万分比；9800=支付98%；0=不命中）。多组命中取最小应付比例。
-	ResolveGroupRate(ctx context.Context, productID uint64) (rate int32, err error)
+	// ResolveGroupDiscount 多组命中取最小应付比例；同率取最早创建的组，策略随组返回。
+	ResolveGroupDiscount(ctx context.Context, productID uint64) (GroupDiscount, error)
 }
 
 // AdminFilter 管理面商品过滤（含下架/隐藏；成本价下发）。

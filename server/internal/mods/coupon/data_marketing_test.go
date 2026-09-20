@@ -223,7 +223,7 @@ func TestPromotionBestFor(t *testing.T) {
 	// 候选：满 1000 减 100（命中）、满 5000 减 600（门槛不够）、9 折（折让 100）、特价 700（折让 300）
 	mk("满减小", "fixed", 1000, 100, 0, "")
 	mk("满减大", "fixed", 5000, 600, 0, "")
-	mk("折扣", "percent", 0, 1000, 0, "") // 10%
+	mk("折扣", "percent", 0, 9000, 0, "") // 应付90%，折让10%
 	mk("特价", "special_price", 0, 0, 700, `{"product_ids":[1]}`)
 
 	best, err := r.BestFor(ctx, 1, 0, money.Cents(1000))

@@ -45,7 +45,8 @@ func (r *CouponRepoImpl) ResolveScoped(ctx context.Context, code string, userID,
 		return 0, 0, fmt.Errorf("coupon.USER_MISMATCH")
 	}
 	// 范围矩阵（全场默认命中；商品/分类/等级三清单任一配置即精确匹配）
-	if !scopeMatches(c.Scope, items, levelID) {
+	eligible := scopeItems(c.Scope, items, levelID)
+	if len(eligible) == 0 {
 		return 0, 0, fmt.Errorf("coupon.SCOPE_MISMATCH")
 	}
 	// 每人限用：多次码按已用累计（同 code 历史核销次数）；单次码由 status 保证
@@ -58,44 +59,32 @@ func (r *CouponRepoImpl) ResolveScoped(ctx context.Context, code string, userID,
 		}
 	}
 	// 面额（percent 按命中行小计折算——范围受限时以命中商品金额为基数）
-	base := orderAmountOf(items)
-	var value int64
-	switch c.Type {
-	case coupon.TypeFixed:
-		value = c.Value
-	case coupon.TypePercent:
-		value = int64(base) * c.Value / 10000
-	}
-	if value > int64(base) {
-		value = int64(base) // 券不找零
-	}
-	return money.Cents(value), c.ID, nil
+	value, err := couponDiscount(c.Type, c.Value, orderAmountOf(eligible))
+	return value, c.ID, err
 }
 
-// scopeMatches 范围判定矩阵：空 scope/无清单 = 全场；配置任一清单则精确匹配
+// scopeItems 返回命中范围的商品行：空 scope/无清单 = 全场；配置任一清单则精确匹配
 // （商品 ∨ 分类 ∨ 等级——多清单间 OR，清单内多值 OR）。
-func scopeMatches(scope map[string]any, items []port.CartItem, levelID uint64) bool {
+func scopeItems(scope map[string]any, items []port.CartItem, levelID uint64) []port.CartItem {
 	if len(scope) == 0 {
-		return true
+		return items
 	}
 	productIDs := idList(scope["product_ids"])
 	categoryIDs := idList(scope["category_ids"])
 	levelIDs := idList(scope["level_ids"])
 	if len(productIDs) == 0 && len(categoryIDs) == 0 && len(levelIDs) == 0 {
-		return true // 空清单语义 = 全场
+		return items // 空清单语义 = 全场
 	}
 	if len(levelIDs) > 0 && levelID > 0 && levelIDs[levelID] {
-		return true
+		return items
 	}
+	var matched []port.CartItem
 	for _, it := range items {
-		if len(productIDs) > 0 && productIDs[it.ProductID] {
-			return true
-		}
-		if len(categoryIDs) > 0 && it.CategoryID > 0 && categoryIDs[it.CategoryID] {
-			return true
+		if productIDs[it.ProductID] || (it.CategoryID > 0 && categoryIDs[it.CategoryID]) {
+			matched = append(matched, it)
 		}
 	}
-	return false
+	return matched
 }
 
 // idList any 列表 → set（JSON 数字解析为 float64）。
@@ -331,40 +320,28 @@ func (r *CouponRepoImpl) BestFor(ctx context.Context, productID, categoryID uint
 		case promotion.TypeFixed:
 			info.Discount = money.Cents(p.Discount)
 		case promotion.TypePercent:
+			if p.Discount <= 0 || p.Discount > 10000 {
+				continue
+			}
 			info.DiscountRate = int32(p.Discount) // percent：discount 列存万分比
 		case promotion.TypeSpecialPrice:
 			info.SpecialPrice = money.Cents(p.SpecialPrice)
-			info.Discount = unitPrice - info.SpecialPrice // 折让 = 价 - 特价
 		}
 		// 门槛判定（满 X 按单价口径；多品购物车场景由调用方按行判定后聚合——管线为逐行）
 		if info.Threshold > 0 && unitPrice < info.Threshold {
 			continue
 		}
-		// 折让 <= 0 不参与
-		if info.Discount <= 0 {
+		// 与价格管线保持一致：促销必须产生正折让，且不将单价减为零。
+		// 不可应用的促销不能遮挡其他有效候选。
+		discount := info.DiscountFor(unitPrice)
+		if discount <= 0 || discount >= unitPrice {
 			continue
 		}
-		if info.Type == "percent" && info.DiscountRate <= 0 {
-			continue
-		}
-		if best == nil || promoDiscountOf(info, unitPrice) > promoDiscountOf(best, unitPrice) {
+		if best == nil || discount > best.DiscountFor(unitPrice) {
 			best = info
 		}
 	}
 	return best, nil
-}
-
-// promoDiscountOf 促销折让计算（fixed=面额；percent=价×率；special_price=价-特价）。
-func promoDiscountOf(p *port.PromotionInfo, unitPrice money.Cents) money.Cents {
-	switch p.Type {
-	case "fixed":
-		return p.Discount
-	case "percent":
-		return money.Cents(int64(unitPrice) * int64(p.DiscountRate) / 10000)
-	case "special_price":
-		return p.Discount // 已折算（价-特价）
-	}
-	return 0
 }
 
 // promoScopeHit 促销范围（空=全场；product_ids/category_ids OR）。
@@ -426,6 +403,9 @@ func (r *CouponRepoImpl) DeleteFlash(ctx context.Context, id uint64) error {
 
 // UpsertPromotion 创建/更新促销。
 func (r *CouponRepoImpl) UpsertPromotion(ctx context.Context, id uint64, name string, scope map[string]any, typ string, threshold, discount, specialPrice int64, startAt, endAt time.Time, enabled bool) (*ent.Promotion, error) {
+	if typ == "percent" && (discount <= 0 || discount > 10000) {
+		return nil, fmt.Errorf("coupon.PROMO_RATE_INVALID")
+	}
 	client := data.Client(ctx, r.data)
 	if id > 0 {
 		return client.Promotion.UpdateOneID(id).
