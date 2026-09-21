@@ -39,3 +39,26 @@ func TestPrivateAdminDocumentAndAssets(t *testing.T) {
 		t.Fatal("shared handler mutated")
 	}
 }
+
+func TestMissingAssetsNeverReturnSPA(t *testing.T) {
+	files := fstest.MapFS{"index.html": {Data: []byte("<html>app</html>")}, "assets/current.js": {Data: []byte("export default 1")}}
+	for _, prefix := range []string{"", "/admin", "/private/control"} {
+		h := newHandler(files, prefix, nil)
+		for _, method := range []string{"GET", "HEAD"} {
+			for _, asset := range []string{"assets/marketing-old.js", "assets/wallet-old.js", "assets/missing.css", "assets/no-extension", "missing.svg", "missing.woff2"} {
+				rec := httptest.NewRecorder()
+				h.ServeHTTP(rec, httptest.NewRequest(method, prefix+"/"+asset, nil))
+				if rec.Code != 404 || rec.Header().Get("Cache-Control") != "no-store" || strings.Contains(rec.Header().Get("Content-Type"), "text/html") {
+					t.Fatalf("%s %s/%s: %d %v", method, prefix, asset, rec.Code, rec.Header())
+				}
+			}
+		}
+		for _, route := range []string{"marketing", "wallet", "posts/release.v2"} {
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, httptest.NewRequest("GET", prefix+"/"+route, nil))
+			if rec.Code != 200 || !strings.Contains(rec.Body.String(), "<html>app</html>") {
+				t.Fatalf("SPA route broken: %s", route)
+			}
+		}
+	}
+}

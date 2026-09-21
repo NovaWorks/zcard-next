@@ -13,8 +13,10 @@ import { setupDirectives } from "./directives";
 import { setupRouter } from "./router";
 import { getLocale, setupI18n } from "./locales";
 import App from "./App.vue";
+import { setupAssetRecovery } from "./plugins/asset-recovery";
 
 async function setupApp() {
+  setupAssetRecovery();
   setupLoading();
 
   setupNProgress();

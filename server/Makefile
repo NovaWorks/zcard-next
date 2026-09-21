@@ -59,6 +59,7 @@ web-dist:
 	mkdir -p web/storefront web/admin
 	cp -R ../storefront/dist/ web/storefront/
 	cp -R ../admin/dist/ web/admin/
+	go test -tags fullstack ./internal/web -run TestEmbeddedBuildManifests -count=1
 
 .PHONY: build-fullstack
 # 完整交付形态（）：单二进制嵌入 admin+storefront（dist 缺失即编译失败）。

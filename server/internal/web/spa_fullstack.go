@@ -138,6 +138,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = f.Close()
 	}
+	// Missing build assets are not application routes. Never return HTML for JS/CSS.
+	if strings.HasPrefix(up, "assets/") || isAssetPath(up) {
+		w.Header().Set("Cache-Control", "no-store")
+		http.NotFound(w, r)
+		return
+	}
 	// SSG 静态页（vite-ssg 扁平产物）：路径 + .html（/product/1 → product/1.html）
 	if f, err := h.root.Open(up + ".html"); err == nil {
 		st, statErr := f.Stat()
@@ -193,4 +199,13 @@ func themePagePath(p string) bool {
 		}
 	}
 	return true
+}
+
+// Keep dotted application routes (for example /posts/release.v2) working.
+func isAssetPath(p string) bool {
+	switch strings.ToLower(path.Ext(p)) {
+	case ".js", ".mjs", ".css", ".map", ".json", ".wasm", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif", ".ico", ".woff", ".woff2", ".ttf", ".otf", ".mp4", ".webm", ".mp3":
+		return true
+	}
+	return false
 }
