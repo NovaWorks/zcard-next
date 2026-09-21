@@ -31,7 +31,7 @@ export function flattenPayOptions(channels: ChannelItem[]): PayOption[] {
         out.push({
           channel: c.code, method: m.code, name: m.name,
           icon: m.icon || c.icon || undefined, emoji: emojiOf(m.code, c.driver),
-          sub: c.driver === 'epusdt' ? 'USDT 链上收款' : '在线支付',
+          sub: c.name || (c.driver === 'epusdt' ? 'USDT 链上收款' : '在线支付'),
         });
       }
     } else {

@@ -250,8 +250,18 @@ function openAddDialog() {
 }
 
 const addableDrivers = computed(() =>
-  drivers.value.filter((d) => !channels.value.some((c) => c.code === d.code)),
+  drivers.value.filter((d) => d.code !== "wallet" || !channels.value.some((c) => c.driver === "wallet")),
 );
+
+function nextChannelIdentity(driver: DriverMeta, rows: ChannelRow[]) {
+  const usedCodes = new Set(rows.map((ch) => ch.code));
+  let sequence = 1;
+  let code = driver.code;
+  while (usedCodes.has(code) || (sequence === 1 && rows.some((ch) => ch.driver === driver.code))) {
+    code = `${driver.code}-${++sequence}`;
+  }
+  return { code, name: sequence === 1 ? driver.name : `${driver.name} ${sequence}` };
+}
 
 async function handleAdd() {
   const picked = drivers.value.filter((d) => checkedDrivers[d.code]);
@@ -261,27 +271,30 @@ async function handleAdd() {
   }
   adding.value = true;
   const created: ChannelRow[] = [];
-  for (const d of picked) {
-    const { data, error } = await createChannel({
-      name: d.name,
-      code: d.code,
-      driver: d.code,
-      config_json: "{}",
-      enabled: true,
-      fee: 0,
-      fee_type: "fixed",
-      // 易支付默认挂支付宝+微信两方式（配置弹窗可增删改）
-      methods_json:
-        d.code === "epay"
-          ? JSON.stringify([
-              { code: "alipay", name: "支付宝", icon: "", enabled: true, params: { type: "alipay" } },
-              { code: "wxpay", name: "微信支付", icon: "", enabled: true, params: { type: "wxpay" } },
-            ])
-          : "",
-    });
-    if (!error && data) created.push(data);
+  try {
+    for (const d of picked) {
+      const identity = nextChannelIdentity(d, [...channels.value, ...created]);
+      const { data, error } = await createChannel({
+        ...identity,
+        driver: d.code,
+        config_json: "{}",
+        enabled: d.code === "wallet",
+        fee: 0,
+        fee_type: "fixed",
+        // 易支付默认挂支付宝+微信两方式（配置弹窗可增删改）
+        methods_json:
+          d.code === "epay"
+            ? JSON.stringify([
+                { code: "alipay", name: "支付宝", icon: "", enabled: true, params: { type: "alipay" } },
+                { code: "wxpay", name: "微信支付", icon: "", enabled: true, params: { type: "wxpay" } },
+              ])
+            : "",
+      });
+      if (!error && data) created.push(data);
+    }
+  } finally {
+    adding.value = false;
   }
-  adding.value = false;
   if (created.length === 0) {
     message.error("添加失败，请重试");
     return;
@@ -291,6 +304,7 @@ async function handleAdd() {
   await loadList();
   // 引导式：自动打开第一个新渠道的配置弹窗补凭据
   openConfig(created[0]);
+  form.enabled = true;
 }
 
 // ── 配置弹窗：schema 驱动表单 ──
@@ -475,9 +489,9 @@ onMounted(() => {
           <div class="flex items-start gap-12px">
             <div
               class="w-44px h-44px rounded-12px flex items-center justify-center text-20px font-700 shrink-0"
-              :style="{ background: badgeOf(ch.code).bg, color: badgeOf(ch.code).color }"
+              :style="{ background: badgeOf(ch.driver).bg, color: badgeOf(ch.driver).color }"
             >
-              {{ badgeOf(ch.code).char }}
+              {{ badgeOf(ch.driver).char }}
             </div>
             <div class="flex-1 min-w-0">
               <div class="font-600 truncate">{{ ch.name }}</div>
@@ -529,8 +543,8 @@ onMounted(() => {
     </NTabs>
 
     <!-- 添加渠道：勾选式批量接入 -->
-    <NModal v-model:show="addVisible" preset="card" title="添加支付渠道" style="width: 560px">
-      <div class="text-12px opacity-60 mb-12px">选择要接入的支付渠道（可多选），创建后自动进入凭据配置</div>
+    <NModal v-model:show="addVisible" preset="card" title="添加支付渠道" style="width: 560px; max-width: 94vw">
+      <div class="text-12px opacity-60 mb-12px">同一支付类型可添加多个渠道，分别配置不同上游的网关、商户号和密钥。新渠道默认停用，请配置后启用。</div>
       <NSpin :show="driversLoading">
         <div class="flex flex-col gap-8px max-h-360px overflow-auto pr-4px">
           <NCheckbox
@@ -549,6 +563,7 @@ onMounted(() => {
               </div>
               <div class="min-w-0">
                 <div class="text-13px font-500">{{ d.name }}</div>
+                <div v-if="channels.some((ch) => ch.driver === d.code)" class="text-12px">已添加 {{ channels.filter((ch) => ch.driver === d.code).length }} 个，可继续添加独立配置</div>
                 <div class="text-12px opacity-50 truncate">{{ d.description }}</div>
               </div>
             </div>
