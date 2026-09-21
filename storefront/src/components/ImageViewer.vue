@@ -32,6 +32,10 @@ let previousFocus: HTMLElement | null = null;
 const pointers = new Map<number, { x: number; y: number }>();
 let backgroundTap = false;
 
+function measureStage() {
+  if (stage.value) area.value = { width: stage.value.clientWidth, height: stage.value.clientHeight };
+}
+
 function reset() { rotation.value = 0; zoom.value = 1; x.value = 0; y.value = 0; }
 function changeImage(step: number) {
   index.value = (index.value + step + props.images.length) % props.images.length;
@@ -73,7 +77,17 @@ function pointerUp(event: PointerEvent) {
   if (close) emit('close');
 }
 function keydown(event: KeyboardEvent) {
-  if (event.key === 'ArrowLeft' && props.images.length > 1) changeImage(-1);
+  if (event.key === 'Escape') emit('close');
+  else if (event.key === 'Tab') {
+    // Keep keyboard focus in the preview even without native dialog support.
+    const buttons = dialog.value?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
+    if (!buttons?.length) return;
+    const first = buttons[0], last = buttons[buttons.length - 1];
+    if (event.shiftKey && document.activeElement === first) last.focus();
+    else if (!event.shiftKey && document.activeElement === last) first.focus();
+    else return;
+  }
+  else if (event.key === 'ArrowLeft' && props.images.length > 1) changeImage(-1);
   else if (event.key === 'ArrowRight' && props.images.length > 1) changeImage(1);
   else if (event.key === '+' || event.key === '=') setZoom(zoom.value * 1.25);
   else if (event.key === '-') setZoom(zoom.value / 1.25);
@@ -84,23 +98,32 @@ onMounted(async () => {
   previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   previousOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
-  dialog.value?.showModal();
+  // Older embedded browsers can render <dialog> but do not implement showModal.
+  if (typeof dialog.value?.showModal === 'function') dialog.value.showModal();
+  else dialog.value?.setAttribute('open', '');
+  dialog.value?.querySelector<HTMLButtonElement>('.iv-close')?.focus();
   await nextTick();
   if (!stage.value) return;
-  observer = new ResizeObserver(([entry]) => { area.value = { width: entry.contentRect.width, height: entry.contentRect.height }; });
-  observer.observe(stage.value);
+  measureStage();
+  window.addEventListener('resize', measureStage);
+  if (typeof ResizeObserver !== 'undefined') {
+    observer = new ResizeObserver(measureStage);
+    observer.observe(stage.value);
+  }
 });
 onBeforeUnmount(() => {
   observer?.disconnect();
+  window.removeEventListener('resize', measureStage);
   document.body.style.overflow = previousOverflow;
-  dialog.value?.close();
+  if (typeof dialog.value?.close === 'function') dialog.value.close();
+  else dialog.value?.removeAttribute('open');
   if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
 });
 </script>
 
 <template>
   <Teleport to="body">
-    <dialog ref="dialog" class="image-viewer" aria-label="图片预览" @cancel.prevent="emit('close')" @keydown="keydown">
+    <dialog ref="dialog" class="image-viewer" role="dialog" aria-modal="true" aria-label="图片预览" @cancel.prevent="emit('close')" @keydown="keydown">
       <header class="iv-header">
         <span class="iv-title">{{ current?.alt || '图片' }}</span>
         <span aria-live="polite">{{ index + 1 }} / {{ images.length }}</span>
@@ -130,7 +153,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.image-viewer { position: fixed; inset: 0; width: 100%; max-width: none; height: 100%; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(12, 16, 23, .97); color: #fff; overscroll-behavior: contain; }
+.image-viewer { position: fixed; z-index: 10000; inset: 0; width: 100%; max-width: none; height: 100%; height: 100dvh; max-height: none; margin: 0; padding: 0; border: 0; background: rgba(12, 16, 23, .97); color: #fff; overscroll-behavior: contain; }
 .image-viewer[open] { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
 .image-viewer::backdrop { background: #0c1017; }
 .iv-header { display: flex; gap: 12px; align-items: center; padding: calc(8px + env(safe-area-inset-top)) 16px 8px; }
