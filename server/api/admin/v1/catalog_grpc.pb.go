@@ -20,39 +20,42 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminCatalogService_ListProducts_FullMethodName               = "/zcard.api.admin.v1.AdminCatalogService/ListProducts"
-	AdminCatalogService_GetProduct_FullMethodName                 = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
-	AdminCatalogService_CreateProduct_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
-	AdminCatalogService_UpdateProduct_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/UpdateProduct"
-	AdminCatalogService_DeleteProduct_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
-	AdminCatalogService_PreviewDeleteProduct_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
-	AdminCatalogService_BatchUpdateProductStatus_FullMethodName   = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus"
-	AdminCatalogService_BatchUpdateProductCategory_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductCategory"
-	AdminCatalogService_ListCategories_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
-	AdminCatalogService_CreateCategory_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
-	AdminCatalogService_UpdateCategory_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
-	AdminCatalogService_DeleteCategory_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/DeleteCategory"
-	AdminCatalogService_MergeCategories_FullMethodName            = "/zcard.api.admin.v1.AdminCatalogService/MergeCategories"
-	AdminCatalogService_ReorderCategories_FullMethodName          = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
-	AdminCatalogService_ListTags_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
-	AdminCatalogService_CreateTag_FullMethodName                  = "/zcard.api.admin.v1.AdminCatalogService/CreateTag"
-	AdminCatalogService_DeleteTag_FullMethodName                  = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
-	AdminCatalogService_ListControls_FullMethodName               = "/zcard.api.admin.v1.AdminCatalogService/ListControls"
-	AdminCatalogService_CreateControl_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/CreateControl"
-	AdminCatalogService_UpdateControl_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/UpdateControl"
-	AdminCatalogService_DeleteControl_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/DeleteControl"
-	AdminCatalogService_ListReviews_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/ListReviews"
-	AdminCatalogService_ApproveReview_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/ApproveReview"
-	AdminCatalogService_RejectReview_FullMethodName               = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
-	AdminCatalogService_CreateVirtualReview_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/CreateVirtualReview"
-	AdminCatalogService_ListSkus_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
-	AdminCatalogService_CreateSku_FullMethodName                  = "/zcard.api.admin.v1.AdminCatalogService/CreateSku"
-	AdminCatalogService_UpdateSku_FullMethodName                  = "/zcard.api.admin.v1.AdminCatalogService/UpdateSku"
-	AdminCatalogService_DeleteSku_FullMethodName                  = "/zcard.api.admin.v1.AdminCatalogService/DeleteSku"
-	AdminCatalogService_ListMemberGroups_FullMethodName           = "/zcard.api.admin.v1.AdminCatalogService/ListMemberGroups"
-	AdminCatalogService_CreateMemberGroup_FullMethodName          = "/zcard.api.admin.v1.AdminCatalogService/CreateMemberGroup"
-	AdminCatalogService_UpdateMemberGroup_FullMethodName          = "/zcard.api.admin.v1.AdminCatalogService/UpdateMemberGroup"
-	AdminCatalogService_DeleteMemberGroup_FullMethodName          = "/zcard.api.admin.v1.AdminCatalogService/DeleteMemberGroup"
+	AdminCatalogService_ListProducts_FullMethodName                     = "/zcard.api.admin.v1.AdminCatalogService/ListProducts"
+	AdminCatalogService_GetProduct_FullMethodName                       = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
+	AdminCatalogService_CreateProduct_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
+	AdminCatalogService_UpdateProduct_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/UpdateProduct"
+	AdminCatalogService_DeleteProduct_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
+	AdminCatalogService_PreviewDeleteProduct_FullMethodName             = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
+	AdminCatalogService_BatchUpdateProductStatus_FullMethodName         = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus"
+	AdminCatalogService_BatchUpdateProductCategory_FullMethodName       = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductCategory"
+	AdminCatalogService_PreviewBatchUpdateProductContent_FullMethodName = "/zcard.api.admin.v1.AdminCatalogService/PreviewBatchUpdateProductContent"
+	AdminCatalogService_BatchUpdateProductContent_FullMethodName        = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductContent"
+	AdminCatalogService_GetBatchProductContentResult_FullMethodName     = "/zcard.api.admin.v1.AdminCatalogService/GetBatchProductContentResult"
+	AdminCatalogService_ListCategories_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
+	AdminCatalogService_CreateCategory_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
+	AdminCatalogService_UpdateCategory_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
+	AdminCatalogService_DeleteCategory_FullMethodName                   = "/zcard.api.admin.v1.AdminCatalogService/DeleteCategory"
+	AdminCatalogService_MergeCategories_FullMethodName                  = "/zcard.api.admin.v1.AdminCatalogService/MergeCategories"
+	AdminCatalogService_ReorderCategories_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
+	AdminCatalogService_ListTags_FullMethodName                         = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
+	AdminCatalogService_CreateTag_FullMethodName                        = "/zcard.api.admin.v1.AdminCatalogService/CreateTag"
+	AdminCatalogService_DeleteTag_FullMethodName                        = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
+	AdminCatalogService_ListControls_FullMethodName                     = "/zcard.api.admin.v1.AdminCatalogService/ListControls"
+	AdminCatalogService_CreateControl_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/CreateControl"
+	AdminCatalogService_UpdateControl_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/UpdateControl"
+	AdminCatalogService_DeleteControl_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/DeleteControl"
+	AdminCatalogService_ListReviews_FullMethodName                      = "/zcard.api.admin.v1.AdminCatalogService/ListReviews"
+	AdminCatalogService_ApproveReview_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/ApproveReview"
+	AdminCatalogService_RejectReview_FullMethodName                     = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
+	AdminCatalogService_CreateVirtualReview_FullMethodName              = "/zcard.api.admin.v1.AdminCatalogService/CreateVirtualReview"
+	AdminCatalogService_ListSkus_FullMethodName                         = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
+	AdminCatalogService_CreateSku_FullMethodName                        = "/zcard.api.admin.v1.AdminCatalogService/CreateSku"
+	AdminCatalogService_UpdateSku_FullMethodName                        = "/zcard.api.admin.v1.AdminCatalogService/UpdateSku"
+	AdminCatalogService_DeleteSku_FullMethodName                        = "/zcard.api.admin.v1.AdminCatalogService/DeleteSku"
+	AdminCatalogService_ListMemberGroups_FullMethodName                 = "/zcard.api.admin.v1.AdminCatalogService/ListMemberGroups"
+	AdminCatalogService_CreateMemberGroup_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/CreateMemberGroup"
+	AdminCatalogService_UpdateMemberGroup_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/UpdateMemberGroup"
+	AdminCatalogService_DeleteMemberGroup_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/DeleteMemberGroup"
 )
 
 // AdminCatalogServiceClient is the client API for AdminCatalogService service.
@@ -71,6 +74,9 @@ type AdminCatalogServiceClient interface {
 	// BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(ctx context.Context, in *BatchUpdateProductStatusRequest, opts ...grpc.CallOption) (*BatchUpdateProductStatusReply, error)
 	BatchUpdateProductCategory(ctx context.Context, in *BatchUpdateProductCategoryRequest, opts ...grpc.CallOption) (*BatchUpdateProductCategoryReply, error)
+	PreviewBatchUpdateProductContent(ctx context.Context, in *PreviewBatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentPreview, error)
+	BatchUpdateProductContent(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error)
+	GetBatchProductContentResult(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error)
 	// ── 分类 ──
 	ListCategories(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*CategoryList, error)
 	CreateCategory(ctx context.Context, in *CreateCategoryRequest, opts ...grpc.CallOption) (*Category, error)
@@ -187,6 +193,36 @@ func (c *adminCatalogServiceClient) BatchUpdateProductCategory(ctx context.Conte
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchUpdateProductCategoryReply)
 	err := c.cc.Invoke(ctx, AdminCatalogService_BatchUpdateProductCategory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) PreviewBatchUpdateProductContent(ctx context.Context, in *PreviewBatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentPreview, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchProductContentPreview)
+	err := c.cc.Invoke(ctx, AdminCatalogService_PreviewBatchUpdateProductContent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) BatchUpdateProductContent(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchProductContentResult)
+	err := c.cc.Invoke(ctx, AdminCatalogService_BatchUpdateProductContent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) GetBatchProductContentResult(ctx context.Context, in *BatchProductContentRequest, opts ...grpc.CallOption) (*BatchProductContentResult, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BatchProductContentResult)
+	err := c.cc.Invoke(ctx, AdminCatalogService_GetBatchProductContentResult_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -459,6 +495,9 @@ type AdminCatalogServiceServer interface {
 	// BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(context.Context, *BatchUpdateProductStatusRequest) (*BatchUpdateProductStatusReply, error)
 	BatchUpdateProductCategory(context.Context, *BatchUpdateProductCategoryRequest) (*BatchUpdateProductCategoryReply, error)
+	PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error)
+	BatchUpdateProductContent(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
+	GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
 	// ── 分类 ──
 	ListCategories(context.Context, *emptypb.Empty) (*CategoryList, error)
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
@@ -524,6 +563,15 @@ func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductStatus(context.C
 }
 func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductCategory(context.Context, *BatchUpdateProductCategoryRequest) (*BatchUpdateProductCategoryReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchUpdateProductCategory not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error) {
+	return nil, status.Error(codes.Unimplemented, "method PreviewBatchUpdateProductContent not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) BatchUpdateProductContent(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchUpdateProductContent not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetBatchProductContentResult not implemented")
 }
 func (UnimplementedAdminCatalogServiceServer) ListCategories(context.Context, *emptypb.Empty) (*CategoryList, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCategories not implemented")
@@ -761,6 +809,60 @@ func _AdminCatalogService_BatchUpdateProductCategory_Handler(srv interface{}, ct
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AdminCatalogServiceServer).BatchUpdateProductCategory(ctx, req.(*BatchUpdateProductCategoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_PreviewBatchUpdateProductContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PreviewBatchProductContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).PreviewBatchUpdateProductContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_PreviewBatchUpdateProductContent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).PreviewBatchUpdateProductContent(ctx, req.(*PreviewBatchProductContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_BatchUpdateProductContent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchProductContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).BatchUpdateProductContent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_BatchUpdateProductContent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).BatchUpdateProductContent(ctx, req.(*BatchProductContentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_GetBatchProductContentResult_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BatchProductContentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).GetBatchProductContentResult(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_GetBatchProductContentResult_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).GetBatchProductContentResult(ctx, req.(*BatchProductContentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1253,6 +1355,18 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchUpdateProductCategory",
 			Handler:    _AdminCatalogService_BatchUpdateProductCategory_Handler,
+		},
+		{
+			MethodName: "PreviewBatchUpdateProductContent",
+			Handler:    _AdminCatalogService_PreviewBatchUpdateProductContent_Handler,
+		},
+		{
+			MethodName: "BatchUpdateProductContent",
+			Handler:    _AdminCatalogService_BatchUpdateProductContent_Handler,
+		},
+		{
+			MethodName: "GetBatchProductContentResult",
+			Handler:    _AdminCatalogService_GetBatchProductContentResult_Handler,
 		},
 		{
 			MethodName: "ListCategories",

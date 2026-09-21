@@ -56,6 +56,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontentbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
@@ -1901,46 +1902,91 @@ func init() {
 	productDescCover := productFields[5].Descriptor()
 	// product.CoverValidator is a validator for the "cover" field. It is called by the builders before save.
 	product.CoverValidator = productDescCover.Validators[0].(func(string) error)
+	// productDescCoverProtected is the schema descriptor for cover_protected field.
+	productDescCoverProtected := productFields[7].Descriptor()
+	// product.DefaultCoverProtected holds the default value on creation for the cover_protected field.
+	product.DefaultCoverProtected = productDescCoverProtected.Default.(bool)
+	// productDescDescriptionProtected is the schema descriptor for description_protected field.
+	productDescDescriptionProtected := productFields[8].Descriptor()
+	// product.DefaultDescriptionProtected holds the default value on creation for the description_protected field.
+	product.DefaultDescriptionProtected = productDescDescriptionProtected.Default.(bool)
 	// productDescPrice is the schema descriptor for price field.
-	productDescPrice := productFields[7].Descriptor()
+	productDescPrice := productFields[9].Descriptor()
 	// product.DefaultPrice holds the default value on creation for the price field.
 	product.DefaultPrice = productDescPrice.Default.(int64)
 	// productDescFactoryPrice is the schema descriptor for factory_price field.
-	productDescFactoryPrice := productFields[8].Descriptor()
+	productDescFactoryPrice := productFields[10].Descriptor()
 	// product.DefaultFactoryPrice holds the default value on creation for the factory_price field.
 	product.DefaultFactoryPrice = productDescFactoryPrice.Default.(int64)
 	// productDescDraftPremium is the schema descriptor for draft_premium field.
-	productDescDraftPremium := productFields[9].Descriptor()
+	productDescDraftPremium := productFields[11].Descriptor()
 	// product.DefaultDraftPremium holds the default value on creation for the draft_premium field.
 	product.DefaultDraftPremium = productDescDraftPremium.Default.(int64)
 	// productDescPointsRequired is the schema descriptor for points_required field.
-	productDescPointsRequired := productFields[11].Descriptor()
+	productDescPointsRequired := productFields[13].Descriptor()
 	// product.DefaultPointsRequired holds the default value on creation for the points_required field.
 	product.DefaultPointsRequired = productDescPointsRequired.Default.(int64)
 	// productDescStockVisible is the schema descriptor for stock_visible field.
-	productDescStockVisible := productFields[14].Descriptor()
+	productDescStockVisible := productFields[16].Descriptor()
 	// product.DefaultStockVisible holds the default value on creation for the stock_visible field.
 	product.DefaultStockVisible = productDescStockVisible.Default.(bool)
 	// productDescDedup is the schema descriptor for dedup field.
-	productDescDedup := productFields[17].Descriptor()
+	productDescDedup := productFields[19].Descriptor()
 	// product.DefaultDedup holds the default value on creation for the dedup field.
 	product.DefaultDedup = productDescDedup.Default.(bool)
 	// productDescSort is the schema descriptor for sort field.
-	productDescSort := productFields[18].Descriptor()
+	productDescSort := productFields[20].Descriptor()
 	// product.DefaultSort holds the default value on creation for the sort field.
 	product.DefaultSort = productDescSort.Default.(int32)
 	// productDescIsRecommend is the schema descriptor for is_recommend field.
-	productDescIsRecommend := productFields[19].Descriptor()
+	productDescIsRecommend := productFields[21].Descriptor()
 	// product.DefaultIsRecommend holds the default value on creation for the is_recommend field.
 	product.DefaultIsRecommend = productDescIsRecommend.Default.(bool)
 	// productDescStatus is the schema descriptor for status field.
-	productDescStatus := productFields[20].Descriptor()
+	productDescStatus := productFields[22].Descriptor()
 	// product.DefaultStatus holds the default value on creation for the status field.
 	product.DefaultStatus = productDescStatus.Default.(int8)
 	// productDescUpstreamProductCode is the schema descriptor for upstream_product_code field.
-	productDescUpstreamProductCode := productFields[22].Descriptor()
+	productDescUpstreamProductCode := productFields[24].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
+	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()
+	productcontentbatchMixinFields0 := productcontentbatchMixin[0].Fields()
+	_ = productcontentbatchMixinFields0
+	productcontentbatchMixinFields1 := productcontentbatchMixin[1].Fields()
+	_ = productcontentbatchMixinFields1
+	productcontentbatchFields := schema.ProductContentBatch{}.Fields()
+	_ = productcontentbatchFields
+	// productcontentbatchDescCreatedAt is the schema descriptor for created_at field.
+	productcontentbatchDescCreatedAt := productcontentbatchMixinFields0[0].Descriptor()
+	// productcontentbatch.DefaultCreatedAt holds the default value on creation for the created_at field.
+	productcontentbatch.DefaultCreatedAt = productcontentbatchDescCreatedAt.Default.(func() time.Time)
+	// productcontentbatchDescUpdatedAt is the schema descriptor for updated_at field.
+	productcontentbatchDescUpdatedAt := productcontentbatchMixinFields0[1].Descriptor()
+	// productcontentbatch.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	productcontentbatch.DefaultUpdatedAt = productcontentbatchDescUpdatedAt.Default.(func() time.Time)
+	// productcontentbatch.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	productcontentbatch.UpdateDefaultUpdatedAt = productcontentbatchDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// productcontentbatchDescSubsiteID is the schema descriptor for subsite_id field.
+	productcontentbatchDescSubsiteID := productcontentbatchMixinFields1[0].Descriptor()
+	// productcontentbatch.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	productcontentbatch.DefaultSubsiteID = productcontentbatchDescSubsiteID.Default.(uint64)
+	// productcontentbatchDescToken is the schema descriptor for token field.
+	productcontentbatchDescToken := productcontentbatchFields[1].Descriptor()
+	// productcontentbatch.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	productcontentbatch.TokenValidator = productcontentbatchDescToken.Validators[0].(func(string) error)
+	// productcontentbatchDescCompleted is the schema descriptor for completed field.
+	productcontentbatchDescCompleted := productcontentbatchFields[5].Descriptor()
+	// productcontentbatch.DefaultCompleted holds the default value on creation for the completed field.
+	productcontentbatch.DefaultCompleted = productcontentbatchDescCompleted.Default.(bool)
+	// productcontentbatchDescMatched is the schema descriptor for matched field.
+	productcontentbatchDescMatched := productcontentbatchFields[6].Descriptor()
+	// productcontentbatch.DefaultMatched holds the default value on creation for the matched field.
+	productcontentbatch.DefaultMatched = productcontentbatchDescMatched.Default.(int32)
+	// productcontentbatchDescChanged is the schema descriptor for changed field.
+	productcontentbatchDescChanged := productcontentbatchFields[7].Descriptor()
+	// productcontentbatch.DefaultChanged holds the default value on creation for the changed field.
+	productcontentbatch.DefaultChanged = productcontentbatchDescChanged.Default.(int32)
 	productcontrolMixin := schema.ProductControl{}.Mixin()
 	productcontrolMixinFields0 := productcontrolMixin[0].Fields()
 	_ = productcontrolMixinFields0

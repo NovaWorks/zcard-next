@@ -63,6 +63,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontentbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
@@ -213,6 +214,7 @@ func checkColumn(t, c string) error {
 			procurementitem.Table:        procurementitem.ValidColumn,
 			procurementorder.Table:       procurementorder.ValidColumn,
 			product.Table:                product.ValidColumn,
+			productcontentbatch.Table:    productcontentbatch.ValidColumn,
 			productcontrol.Table:         productcontrol.ValidColumn,
 			productsku.Table:             productsku.ValidColumn,
 			promotion.Table:              promotion.ValidColumn,

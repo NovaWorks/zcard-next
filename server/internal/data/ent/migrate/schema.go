@@ -1610,6 +1610,8 @@ var (
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "cover", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "images", Type: field.TypeJSON, Nullable: true},
+		{Name: "cover_protected", Type: field.TypeBool, Default: false},
+		{Name: "description_protected", Type: field.TypeBool, Default: false},
 		{Name: "price", Type: field.TypeInt64, Default: 0},
 		{Name: "factory_price", Type: field.TypeInt64, Default: 0},
 		{Name: "draft_premium", Type: field.TypeInt64, Default: 0},
@@ -1647,19 +1649,39 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[23]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[25]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[24]},
+				Columns: []*schema.Column{ProductsColumns[26]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[24], ProductsColumns[25]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[26], ProductsColumns[27]},
 			},
 		},
+	}
+	// ProductContentBatchesColumns holds the columns for the "product_content_batches" table.
+	ProductContentBatchesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "token", Type: field.TypeString, Unique: true, Size: 64},
+		{Name: "actor_id", Type: field.TypeUint64},
+		{Name: "payload", Type: field.TypeJSON},
+		{Name: "expires_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "completed", Type: field.TypeBool, Default: false},
+		{Name: "matched", Type: field.TypeInt32, Default: 0},
+		{Name: "changed", Type: field.TypeInt32, Default: 0},
+	}
+	// ProductContentBatchesTable holds the schema information for the "product_content_batches" table.
+	ProductContentBatchesTable = &schema.Table{
+		Name:       "product_content_batches",
+		Columns:    ProductContentBatchesColumns,
+		PrimaryKey: []*schema.Column{ProductContentBatchesColumns[0]},
 	}
 	// ProductControlsColumns holds the columns for the "product_controls" table.
 	ProductControlsColumns = []*schema.Column{
@@ -2803,6 +2825,7 @@ var (
 		ProcurementItemsTable,
 		ProcurementOrdersTable,
 		ProductsTable,
+		ProductContentBatchesTable,
 		ProductControlsTable,
 		ProductSkusTable,
 		PromotionsTable,

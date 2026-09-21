@@ -159,6 +159,9 @@ type ProcurementOrder func(*sql.Selector)
 // Product is the predicate function for product builders.
 type Product func(*sql.Selector)
 
+// ProductContentBatch is the predicate function for productcontentbatch builders.
+type ProductContentBatch func(*sql.Selector)
+
 // ProductControl is the predicate function for productcontrol builders.
 type ProductControl func(*sql.Selector)
 

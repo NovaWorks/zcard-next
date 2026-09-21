@@ -211,7 +211,7 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 		if _, err = c.SupplyMapping.Delete().Where(supplymapping.LocalProductID(p.ID)).Exec(ctx); err != nil {
 			return err
 		}
-		if err := data.SyncVideoRefs(ctx, s.repo.data, p.Description, ""); err != nil {
+		if err := data.SyncProductMediaRefs(ctx, s.repo.data, p, nil); err != nil {
 			return err
 		}
 		// 仅删除商品时保留历史卡密、封面与直发密文，历史订单可继续查询和取货。

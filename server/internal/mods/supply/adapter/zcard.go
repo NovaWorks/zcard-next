@@ -272,28 +272,30 @@ func (a *zCardAdapter) RefundOrder(ctx context.Context, upstreamOrderID string) 
 
 // zCardProduct 上游商品行（字段对齐 1.x mapProduct）。
 type zCardProduct struct {
-	ID           any    `json:"id"`
-	Name         string `json:"name"`
-	Price        int64  `json:"price"`
-	FactoryPrice int64  `json:"factory_price"`
-	CategoryID   any    `json:"category_id"`
-	Description  string `json:"description"`
-	Cover        string `json:"cover"`
-	IsActive     bool   `json:"is_active"`
-	Stock        int32  `json:"stock"`
+	ID             any    `json:"id"`
+	Name           string `json:"name"`
+	Price          int64  `json:"price"`
+	FactoryPrice   int64  `json:"factory_price"`
+	CategoryID     any    `json:"category_id"`
+	Description    string `json:"description"`
+	DescriptionSet bool   `json:"-"`
+	Cover          string `json:"cover"`
+	IsActive       bool   `json:"is_active"`
+	Stock          int32  `json:"stock"`
 }
 
 func (p zCardProduct) toProduct() Product {
 	return Product{
-		ID:           idString(p.ID),
-		Name:         p.Name,
-		CategoryID:   idString(p.CategoryID),
-		Price:        p.Price,
-		FactoryPrice: p.FactoryPrice,
-		Description:  p.Description,
-		Cover:        p.Cover,
-		IsActive:     p.IsActive,
-		Stock:        p.Stock,
+		ID:             idString(p.ID),
+		Name:           p.Name,
+		CategoryID:     idString(p.CategoryID),
+		Price:          p.Price,
+		FactoryPrice:   p.FactoryPrice,
+		Description:    p.Description,
+		DescriptionSet: p.DescriptionSet,
+		Cover:          p.Cover,
+		IsActive:       p.IsActive,
+		Stock:          p.Stock,
 	}
 }
 
@@ -330,4 +332,20 @@ func randSuffix(n int) string {
 		sb.WriteByte(chars[int(c)%len(chars)])
 	}
 	return sb.String()
+}
+
+func (p *zCardProduct) UnmarshalJSON(b []byte) error {
+	type plain zCardProduct
+	var v plain
+	if err := json.Unmarshal(b, &v); err != nil {
+		return err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(b, &fields); err != nil {
+		return err
+	}
+	*p = zCardProduct(v)
+	raw, ok := fields["description"]
+	p.DescriptionSet = ok && string(raw) != "null"
+	return nil
 }

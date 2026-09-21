@@ -171,6 +171,34 @@ func (_u *ProductUpdate) ClearImages() *ProductUpdate {
 	return _u
 }
 
+// SetCoverProtected sets the "cover_protected" field.
+func (_u *ProductUpdate) SetCoverProtected(v bool) *ProductUpdate {
+	_u.mutation.SetCoverProtected(v)
+	return _u
+}
+
+// SetNillableCoverProtected sets the "cover_protected" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableCoverProtected(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetCoverProtected(*v)
+	}
+	return _u
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (_u *ProductUpdate) SetDescriptionProtected(v bool) *ProductUpdate {
+	_u.mutation.SetDescriptionProtected(v)
+	return _u
+}
+
+// SetNillableDescriptionProtected sets the "description_protected" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableDescriptionProtected(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetDescriptionProtected(*v)
+	}
+	return _u
+}
+
 // SetPrice sets the "price" field.
 func (_u *ProductUpdate) SetPrice(v int64) *ProductUpdate {
 	_u.mutation.ResetPrice()
@@ -677,6 +705,12 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.ImagesCleared() {
 		_spec.ClearField(product.FieldImages, field.TypeJSON)
 	}
+	if value, ok := _u.mutation.CoverProtected(); ok {
+		_spec.SetField(product.FieldCoverProtected, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DescriptionProtected(); ok {
+		_spec.SetField(product.FieldDescriptionProtected, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.Price(); ok {
 		_spec.SetField(product.FieldPrice, field.TypeInt64, value)
 	}
@@ -1014,6 +1048,34 @@ func (_u *ProductUpdateOne) AppendImages(v []string) *ProductUpdateOne {
 // ClearImages clears the value of the "images" field.
 func (_u *ProductUpdateOne) ClearImages() *ProductUpdateOne {
 	_u.mutation.ClearImages()
+	return _u
+}
+
+// SetCoverProtected sets the "cover_protected" field.
+func (_u *ProductUpdateOne) SetCoverProtected(v bool) *ProductUpdateOne {
+	_u.mutation.SetCoverProtected(v)
+	return _u
+}
+
+// SetNillableCoverProtected sets the "cover_protected" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableCoverProtected(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetCoverProtected(*v)
+	}
+	return _u
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (_u *ProductUpdateOne) SetDescriptionProtected(v bool) *ProductUpdateOne {
+	_u.mutation.SetDescriptionProtected(v)
+	return _u
+}
+
+// SetNillableDescriptionProtected sets the "description_protected" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableDescriptionProtected(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetDescriptionProtected(*v)
+	}
 	return _u
 }
 
@@ -1552,6 +1614,12 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.ImagesCleared() {
 		_spec.ClearField(product.FieldImages, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.CoverProtected(); ok {
+		_spec.SetField(product.FieldCoverProtected, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DescriptionProtected(); ok {
+		_spec.SetField(product.FieldDescriptionProtected, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Price(); ok {
 		_spec.SetField(product.FieldPrice, field.TypeInt64, value)

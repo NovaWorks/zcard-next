@@ -95,6 +95,16 @@ func Cover(v string) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldCover, v))
 }
 
+// CoverProtected applies equality check predicate on the "cover_protected" field. It's identical to CoverProtectedEQ.
+func CoverProtected(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldCoverProtected, v))
+}
+
+// DescriptionProtected applies equality check predicate on the "description_protected" field. It's identical to DescriptionProtectedEQ.
+func DescriptionProtected(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldDescriptionProtected, v))
+}
+
 // Price applies equality check predicate on the "price" field. It's identical to PriceEQ.
 func Price(v int64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldPrice, v))
@@ -618,6 +628,26 @@ func ImagesIsNil() predicate.Product {
 // ImagesNotNil applies the NotNil predicate on the "images" field.
 func ImagesNotNil() predicate.Product {
 	return predicate.Product(sql.FieldNotNull(FieldImages))
+}
+
+// CoverProtectedEQ applies the EQ predicate on the "cover_protected" field.
+func CoverProtectedEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldCoverProtected, v))
+}
+
+// CoverProtectedNEQ applies the NEQ predicate on the "cover_protected" field.
+func CoverProtectedNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldCoverProtected, v))
+}
+
+// DescriptionProtectedEQ applies the EQ predicate on the "description_protected" field.
+func DescriptionProtectedEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldDescriptionProtected, v))
+}
+
+// DescriptionProtectedNEQ applies the NEQ predicate on the "description_protected" field.
+func DescriptionProtectedNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldDescriptionProtected, v))
 }
 
 // PriceEQ applies the EQ predicate on the "price" field.

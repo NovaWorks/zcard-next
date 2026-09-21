@@ -20,6 +20,7 @@ const _ = http.SupportPackageIsVersion3
 
 const OperationAdminCatalogServiceApproveReview = "/zcard.api.admin.v1.AdminCatalogService/ApproveReview"
 const OperationAdminCatalogServiceBatchUpdateProductCategory = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductCategory"
+const OperationAdminCatalogServiceBatchUpdateProductContent = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductContent"
 const OperationAdminCatalogServiceBatchUpdateProductStatus = "/zcard.api.admin.v1.AdminCatalogService/BatchUpdateProductStatus"
 const OperationAdminCatalogServiceCreateCategory = "/zcard.api.admin.v1.AdminCatalogService/CreateCategory"
 const OperationAdminCatalogServiceCreateControl = "/zcard.api.admin.v1.AdminCatalogService/CreateControl"
@@ -34,6 +35,7 @@ const OperationAdminCatalogServiceDeleteMemberGroup = "/zcard.api.admin.v1.Admin
 const OperationAdminCatalogServiceDeleteProduct = "/zcard.api.admin.v1.AdminCatalogService/DeleteProduct"
 const OperationAdminCatalogServiceDeleteSku = "/zcard.api.admin.v1.AdminCatalogService/DeleteSku"
 const OperationAdminCatalogServiceDeleteTag = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
+const OperationAdminCatalogServiceGetBatchProductContentResult = "/zcard.api.admin.v1.AdminCatalogService/GetBatchProductContentResult"
 const OperationAdminCatalogServiceGetProduct = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
 const OperationAdminCatalogServiceListCategories = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
 const OperationAdminCatalogServiceListControls = "/zcard.api.admin.v1.AdminCatalogService/ListControls"
@@ -43,6 +45,7 @@ const OperationAdminCatalogServiceListReviews = "/zcard.api.admin.v1.AdminCatalo
 const OperationAdminCatalogServiceListSkus = "/zcard.api.admin.v1.AdminCatalogService/ListSkus"
 const OperationAdminCatalogServiceListTags = "/zcard.api.admin.v1.AdminCatalogService/ListTags"
 const OperationAdminCatalogServiceMergeCategories = "/zcard.api.admin.v1.AdminCatalogService/MergeCategories"
+const OperationAdminCatalogServicePreviewBatchUpdateProductContent = "/zcard.api.admin.v1.AdminCatalogService/PreviewBatchUpdateProductContent"
 const OperationAdminCatalogServicePreviewDeleteProduct = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
 const OperationAdminCatalogServiceRejectReview = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
 const OperationAdminCatalogServiceReorderCategories = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
@@ -55,6 +58,7 @@ const OperationAdminCatalogServiceUpdateSku = "/zcard.api.admin.v1.AdminCatalogS
 type AdminCatalogServiceHTTPServer interface {
 	ApproveReview(context.Context, *ApproveReviewRequest) (*ReviewItem, error)
 	BatchUpdateProductCategory(context.Context, *BatchUpdateProductCategoryRequest) (*BatchUpdateProductCategoryReply, error)
+	BatchUpdateProductContent(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
 	// BatchUpdateProductStatus BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(context.Context, *BatchUpdateProductStatusRequest) (*BatchUpdateProductStatusReply, error)
 	CreateCategory(context.Context, *CreateCategoryRequest) (*Category, error)
@@ -70,6 +74,7 @@ type AdminCatalogServiceHTTPServer interface {
 	DeleteProduct(context.Context, *DeleteProductRequest) (*emptypb.Empty, error)
 	DeleteSku(context.Context, *DeleteSkuRequest) (*emptypb.Empty, error)
 	DeleteTag(context.Context, *DeleteTagRequest) (*emptypb.Empty, error)
+	GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
 	GetProduct(context.Context, *GetProductRequest) (*AdminProduct, error)
 	// ListCategories ── 分类 ──
 	ListCategories(context.Context, *emptypb.Empty) (*CategoryList, error)
@@ -86,6 +91,7 @@ type AdminCatalogServiceHTTPServer interface {
 	// ListTags ── 标签 ──
 	ListTags(context.Context, *emptypb.Empty) (*TagList, error)
 	MergeCategories(context.Context, *MergeCategoriesRequest) (*MergeCategoriesReply, error)
+	PreviewBatchUpdateProductContent(context.Context, *PreviewBatchProductContentRequest) (*BatchProductContentPreview, error)
 	PreviewDeleteProduct(context.Context, *GetProductRequest) (*DeleteProductPreview, error)
 	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
@@ -107,6 +113,9 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("GET", "/api/v1/admin/products/{id}/delete-preview", _AdminCatalogService_PreviewDeleteProduct0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/products/batch-status", _AdminCatalogService_BatchUpdateProductStatus0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/products/batch-category", _AdminCatalogService_BatchUpdateProductCategory0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/products/batch-content/preview", _AdminCatalogService_PreviewBatchUpdateProductContent0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/products/batch-content", _AdminCatalogService_BatchUpdateProductContent0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/products/batch-content/results/{request_id}", _AdminCatalogService_GetBatchProductContentResult0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/categories", _AdminCatalogService_ListCategories0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/categories", _AdminCatalogService_CreateCategory0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/categories/{id}", _AdminCatalogService_UpdateCategory0_HTTP_Handler(srv))
@@ -294,6 +303,66 @@ func _AdminCatalogService_BatchUpdateProductCategory0_HTTP_Handler(srv AdminCata
 			return err
 		}
 		reply := out.(*BatchUpdateProductCategoryReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_PreviewBatchUpdateProductContent0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in PreviewBatchProductContentRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServicePreviewBatchUpdateProductContent)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.PreviewBatchUpdateProductContent(ctx, req.(*PreviewBatchProductContentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*BatchProductContentPreview)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_BatchUpdateProductContent0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in BatchProductContentRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceBatchUpdateProductContent)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.BatchUpdateProductContent(ctx, req.(*BatchProductContentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*BatchProductContentResult)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_GetBatchProductContentResult0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in BatchProductContentRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceGetBatchProductContentResult)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetBatchProductContentResult(ctx, req.(*BatchProductContentRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*BatchProductContentResult)
 		return ctx.Result(200, reply)
 	}
 }
@@ -821,6 +890,7 @@ func _AdminCatalogService_DeleteMemberGroup0_HTTP_Handler(srv AdminCatalogServic
 type AdminCatalogServiceHTTPClient interface {
 	ApproveReview(ctx context.Context, req *ApproveReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	BatchUpdateProductCategory(ctx context.Context, req *BatchUpdateProductCategoryRequest, opts ...http.CallOption) (rsp *BatchUpdateProductCategoryReply, err error)
+	BatchUpdateProductContent(ctx context.Context, req *BatchProductContentRequest, opts ...http.CallOption) (rsp *BatchProductContentResult, err error)
 	// BatchUpdateProductStatus BatchUpdateProductStatus 批量上下架（列表多选操作；status 1=上架 0=下架 2=隐藏）。
 	BatchUpdateProductStatus(ctx context.Context, req *BatchUpdateProductStatusRequest, opts ...http.CallOption) (rsp *BatchUpdateProductStatusReply, err error)
 	CreateCategory(ctx context.Context, req *CreateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
@@ -836,6 +906,7 @@ type AdminCatalogServiceHTTPClient interface {
 	DeleteProduct(ctx context.Context, req *DeleteProductRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DeleteSku(ctx context.Context, req *DeleteSkuRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DeleteTag(ctx context.Context, req *DeleteTagRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	GetBatchProductContentResult(ctx context.Context, req *BatchProductContentRequest, opts ...http.CallOption) (rsp *BatchProductContentResult, err error)
 	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *AdminProduct, err error)
 	// ListCategories ── 分类 ──
 	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CategoryList, err error)
@@ -852,6 +923,7 @@ type AdminCatalogServiceHTTPClient interface {
 	// ListTags ── 标签 ──
 	ListTags(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *TagList, err error)
 	MergeCategories(ctx context.Context, req *MergeCategoriesRequest, opts ...http.CallOption) (rsp *MergeCategoriesReply, err error)
+	PreviewBatchUpdateProductContent(ctx context.Context, req *PreviewBatchProductContentRequest, opts ...http.CallOption) (rsp *BatchProductContentPreview, err error)
 	PreviewDeleteProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *DeleteProductPreview, err error)
 	RejectReview(ctx context.Context, req *RejectReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
@@ -896,6 +968,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) BatchUpdateProductCategory(ctx conte
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceBatchUpdateProductCategory),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) BatchUpdateProductContent(ctx context.Context, in *BatchProductContentRequest, opts ...http.CallOption) (*BatchProductContentResult, error) {
+	var out BatchProductContentResult
+	pattern := "/api/v1/admin/products/batch-content"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceBatchUpdateProductContent),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
@@ -1138,6 +1227,22 @@ func (c *AdminCatalogServiceHTTPClientImpl) DeleteTag(ctx context.Context, in *D
 	return &out, nil
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) GetBatchProductContentResult(ctx context.Context, in *BatchProductContentRequest, opts ...http.CallOption) (*BatchProductContentResult, error) {
+	var out BatchProductContentResult
+	pattern := "/api/v1/admin/products/batch-content/results/{request_id}"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceGetBatchProductContentResult),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) GetProduct(ctx context.Context, in *GetProductRequest, opts ...http.CallOption) (*AdminProduct, error) {
 	var out AdminProduct
 	pattern := "/api/v1/admin/products/{id}"
@@ -1281,6 +1386,23 @@ func (c *AdminCatalogServiceHTTPClientImpl) MergeCategories(ctx context.Context,
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminCatalogServiceMergeCategories),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) PreviewBatchUpdateProductContent(ctx context.Context, in *PreviewBatchProductContentRequest, opts ...http.CallOption) (*BatchProductContentPreview, error) {
+	var out BatchProductContentPreview
+	pattern := "/api/v1/admin/products/batch-content/preview"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServicePreviewBatchUpdateProductContent),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

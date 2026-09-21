@@ -28,12 +28,11 @@ type ProductRepoImpl struct {
 	stockLookup     port.StockLookup
 	stockRefreshing sync.Map
 	data            *data.Data
-	mediaRef        mediaport.Referencer // 封面/图集引用计数（nil 跳过）
 }
 
-// NewProductRepoImpl 构造（mediaRef 素材引用计数，）。
-func NewProductRepoImpl(d *data.Data, mediaRef mediaport.Referencer) *ProductRepoImpl {
-	return &ProductRepoImpl{data: d, mediaRef: mediaRef}
+// NewProductRepoImpl keeps the existing constructor contract; product media refs use the product transaction.
+func NewProductRepoImpl(d *data.Data, _ mediaport.Referencer) *ProductRepoImpl {
+	return &ProductRepoImpl{data: d}
 }
 
 // ListVisible 上架商品分页（INDEX(subsite_id, status) 命中；只取列表所需列避免回表）。

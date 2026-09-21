@@ -114,6 +114,8 @@ type Tx struct {
 	ProcurementOrder *ProcurementOrderClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// ProductContentBatch is the client for interacting with the ProductContentBatch builders.
+	ProductContentBatch *ProductContentBatchClient
 	// ProductControl is the client for interacting with the ProductControl builders.
 	ProductControl *ProductControlClient
 	// ProductSku is the client for interacting with the ProductSku builders.
@@ -374,6 +376,7 @@ func (tx *Tx) init() {
 	tx.ProcurementItem = NewProcurementItemClient(tx.config)
 	tx.ProcurementOrder = NewProcurementOrderClient(tx.config)
 	tx.Product = NewProductClient(tx.config)
+	tx.ProductContentBatch = NewProductContentBatchClient(tx.config)
 	tx.ProductControl = NewProductControlClient(tx.config)
 	tx.ProductSku = NewProductSkuClient(tx.config)
 	tx.Promotion = NewPromotionClient(tx.config)

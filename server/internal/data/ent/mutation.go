@@ -64,6 +64,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontentbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
@@ -165,6 +166,7 @@ const (
 	TypeProcurementItem        = "ProcurementItem"
 	TypeProcurementOrder       = "ProcurementOrder"
 	TypeProduct                = "Product"
+	TypeProductContentBatch    = "ProductContentBatch"
 	TypeProductControl         = "ProductControl"
 	TypeProductSku             = "ProductSku"
 	TypePromotion              = "Promotion"
@@ -54675,6 +54677,8 @@ type ProductMutation struct {
 	cover                 *string
 	images                *[]string
 	appendimages          []string
+	cover_protected       *bool
+	description_protected *bool
 	price                 *int64
 	addprice              *int64
 	factory_price         *int64
@@ -55246,6 +55250,78 @@ func (m *ProductMutation) ResetImages() {
 	m.images = nil
 	m.appendimages = nil
 	delete(m.clearedFields, product.FieldImages)
+}
+
+// SetCoverProtected sets the "cover_protected" field.
+func (m *ProductMutation) SetCoverProtected(b bool) {
+	m.cover_protected = &b
+}
+
+// CoverProtected returns the value of the "cover_protected" field in the mutation.
+func (m *ProductMutation) CoverProtected() (r bool, exists bool) {
+	v := m.cover_protected
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCoverProtected returns the old "cover_protected" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldCoverProtected(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCoverProtected is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCoverProtected requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCoverProtected: %w", err)
+	}
+	return oldValue.CoverProtected, nil
+}
+
+// ResetCoverProtected resets all changes to the "cover_protected" field.
+func (m *ProductMutation) ResetCoverProtected() {
+	m.cover_protected = nil
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (m *ProductMutation) SetDescriptionProtected(b bool) {
+	m.description_protected = &b
+}
+
+// DescriptionProtected returns the value of the "description_protected" field in the mutation.
+func (m *ProductMutation) DescriptionProtected() (r bool, exists bool) {
+	v := m.description_protected
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDescriptionProtected returns the old "description_protected" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldDescriptionProtected(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDescriptionProtected is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDescriptionProtected requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDescriptionProtected: %w", err)
+	}
+	return oldValue.DescriptionProtected, nil
+}
+
+// ResetDescriptionProtected resets all changes to the "description_protected" field.
+func (m *ProductMutation) ResetDescriptionProtected() {
+	m.description_protected = nil
 }
 
 // SetPrice sets the "price" field.
@@ -56221,7 +56297,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 26)
+	fields := make([]string, 0, 28)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -56248,6 +56324,12 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.images != nil {
 		fields = append(fields, product.FieldImages)
+	}
+	if m.cover_protected != nil {
+		fields = append(fields, product.FieldCoverProtected)
+	}
+	if m.description_protected != nil {
+		fields = append(fields, product.FieldDescriptionProtected)
 	}
 	if m.price != nil {
 		fields = append(fields, product.FieldPrice)
@@ -56326,6 +56408,10 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.Cover()
 	case product.FieldImages:
 		return m.Images()
+	case product.FieldCoverProtected:
+		return m.CoverProtected()
+	case product.FieldDescriptionProtected:
+		return m.DescriptionProtected()
 	case product.FieldPrice:
 		return m.Price()
 	case product.FieldFactoryPrice:
@@ -56387,6 +56473,10 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCover(ctx)
 	case product.FieldImages:
 		return m.OldImages(ctx)
+	case product.FieldCoverProtected:
+		return m.OldCoverProtected(ctx)
+	case product.FieldDescriptionProtected:
+		return m.OldDescriptionProtected(ctx)
 	case product.FieldPrice:
 		return m.OldPrice(ctx)
 	case product.FieldFactoryPrice:
@@ -56492,6 +56582,20 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetImages(v)
+		return nil
+	case product.FieldCoverProtected:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCoverProtected(v)
+		return nil
+	case product.FieldDescriptionProtected:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDescriptionProtected(v)
 		return nil
 	case product.FieldPrice:
 		v, ok := value.(int64)
@@ -56862,6 +56966,12 @@ func (m *ProductMutation) ResetField(name string) error {
 	case product.FieldImages:
 		m.ResetImages()
 		return nil
+	case product.FieldCoverProtected:
+		m.ResetCoverProtected()
+		return nil
+	case product.FieldDescriptionProtected:
+		m.ResetDescriptionProtected()
+		return nil
 	case product.FieldPrice:
 		m.ResetPrice()
 		return nil
@@ -57025,6 +57135,975 @@ func (m *ProductMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Product edge %s", name)
+}
+
+// ProductContentBatchMutation represents an operation that mutates the ProductContentBatch nodes in the graph.
+type ProductContentBatchMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uint64
+	created_at    *time.Time
+	updated_at    *time.Time
+	subsite_id    *uint64
+	addsubsite_id *int64
+	token         *string
+	actor_id      *uint64
+	addactor_id   *int64
+	payload       *json.RawMessage
+	appendpayload json.RawMessage
+	expires_at    *time.Time
+	completed     *bool
+	matched       *int32
+	addmatched    *int32
+	changed       *int32
+	addchanged    *int32
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*ProductContentBatch, error)
+	predicates    []predicate.ProductContentBatch
+}
+
+var _ ent.Mutation = (*ProductContentBatchMutation)(nil)
+
+// productcontentbatchOption allows management of the mutation configuration using functional options.
+type productcontentbatchOption func(*ProductContentBatchMutation)
+
+// newProductContentBatchMutation creates new mutation for the ProductContentBatch entity.
+func newProductContentBatchMutation(c config, op Op, opts ...productcontentbatchOption) *ProductContentBatchMutation {
+	m := &ProductContentBatchMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProductContentBatch,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProductContentBatchID sets the ID field of the mutation.
+func withProductContentBatchID(id uint64) productcontentbatchOption {
+	return func(m *ProductContentBatchMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProductContentBatch
+		)
+		m.oldValue = func(ctx context.Context) (*ProductContentBatch, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProductContentBatch.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProductContentBatch sets the old ProductContentBatch of the mutation.
+func withProductContentBatch(node *ProductContentBatch) productcontentbatchOption {
+	return func(m *ProductContentBatchMutation) {
+		m.oldValue = func(context.Context) (*ProductContentBatch, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProductContentBatchMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProductContentBatchMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ProductContentBatch entities.
+func (m *ProductContentBatchMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProductContentBatchMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProductContentBatchMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProductContentBatch.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProductContentBatchMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProductContentBatchMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProductContentBatchMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProductContentBatchMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProductContentBatchMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProductContentBatchMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSubsiteID sets the "subsite_id" field.
+func (m *ProductContentBatchMutation) SetSubsiteID(u uint64) {
+	m.subsite_id = &u
+	m.addsubsite_id = nil
+}
+
+// SubsiteID returns the value of the "subsite_id" field in the mutation.
+func (m *ProductContentBatchMutation) SubsiteID() (r uint64, exists bool) {
+	v := m.subsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubsiteID returns the old "subsite_id" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldSubsiteID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubsiteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubsiteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubsiteID: %w", err)
+	}
+	return oldValue.SubsiteID, nil
+}
+
+// AddSubsiteID adds u to the "subsite_id" field.
+func (m *ProductContentBatchMutation) AddSubsiteID(u int64) {
+	if m.addsubsite_id != nil {
+		*m.addsubsite_id += u
+	} else {
+		m.addsubsite_id = &u
+	}
+}
+
+// AddedSubsiteID returns the value that was added to the "subsite_id" field in this mutation.
+func (m *ProductContentBatchMutation) AddedSubsiteID() (r int64, exists bool) {
+	v := m.addsubsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubsiteID resets all changes to the "subsite_id" field.
+func (m *ProductContentBatchMutation) ResetSubsiteID() {
+	m.subsite_id = nil
+	m.addsubsite_id = nil
+}
+
+// SetToken sets the "token" field.
+func (m *ProductContentBatchMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *ProductContentBatchMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *ProductContentBatchMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetActorID sets the "actor_id" field.
+func (m *ProductContentBatchMutation) SetActorID(u uint64) {
+	m.actor_id = &u
+	m.addactor_id = nil
+}
+
+// ActorID returns the value of the "actor_id" field in the mutation.
+func (m *ProductContentBatchMutation) ActorID() (r uint64, exists bool) {
+	v := m.actor_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldActorID returns the old "actor_id" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldActorID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldActorID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldActorID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldActorID: %w", err)
+	}
+	return oldValue.ActorID, nil
+}
+
+// AddActorID adds u to the "actor_id" field.
+func (m *ProductContentBatchMutation) AddActorID(u int64) {
+	if m.addactor_id != nil {
+		*m.addactor_id += u
+	} else {
+		m.addactor_id = &u
+	}
+}
+
+// AddedActorID returns the value that was added to the "actor_id" field in this mutation.
+func (m *ProductContentBatchMutation) AddedActorID() (r int64, exists bool) {
+	v := m.addactor_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetActorID resets all changes to the "actor_id" field.
+func (m *ProductContentBatchMutation) ResetActorID() {
+	m.actor_id = nil
+	m.addactor_id = nil
+}
+
+// SetPayload sets the "payload" field.
+func (m *ProductContentBatchMutation) SetPayload(jm json.RawMessage) {
+	m.payload = &jm
+	m.appendpayload = nil
+}
+
+// Payload returns the value of the "payload" field in the mutation.
+func (m *ProductContentBatchMutation) Payload() (r json.RawMessage, exists bool) {
+	v := m.payload
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayload returns the old "payload" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldPayload(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayload is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayload requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayload: %w", err)
+	}
+	return oldValue.Payload, nil
+}
+
+// AppendPayload adds jm to the "payload" field.
+func (m *ProductContentBatchMutation) AppendPayload(jm json.RawMessage) {
+	m.appendpayload = append(m.appendpayload, jm...)
+}
+
+// AppendedPayload returns the list of values that were appended to the "payload" field in this mutation.
+func (m *ProductContentBatchMutation) AppendedPayload() (json.RawMessage, bool) {
+	if len(m.appendpayload) == 0 {
+		return nil, false
+	}
+	return m.appendpayload, true
+}
+
+// ResetPayload resets all changes to the "payload" field.
+func (m *ProductContentBatchMutation) ResetPayload() {
+	m.payload = nil
+	m.appendpayload = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *ProductContentBatchMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *ProductContentBatchMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *ProductContentBatchMutation) ResetExpiresAt() {
+	m.expires_at = nil
+}
+
+// SetCompleted sets the "completed" field.
+func (m *ProductContentBatchMutation) SetCompleted(b bool) {
+	m.completed = &b
+}
+
+// Completed returns the value of the "completed" field in the mutation.
+func (m *ProductContentBatchMutation) Completed() (r bool, exists bool) {
+	v := m.completed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCompleted returns the old "completed" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldCompleted(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCompleted is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCompleted requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCompleted: %w", err)
+	}
+	return oldValue.Completed, nil
+}
+
+// ResetCompleted resets all changes to the "completed" field.
+func (m *ProductContentBatchMutation) ResetCompleted() {
+	m.completed = nil
+}
+
+// SetMatched sets the "matched" field.
+func (m *ProductContentBatchMutation) SetMatched(i int32) {
+	m.matched = &i
+	m.addmatched = nil
+}
+
+// Matched returns the value of the "matched" field in the mutation.
+func (m *ProductContentBatchMutation) Matched() (r int32, exists bool) {
+	v := m.matched
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMatched returns the old "matched" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldMatched(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMatched is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMatched requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMatched: %w", err)
+	}
+	return oldValue.Matched, nil
+}
+
+// AddMatched adds i to the "matched" field.
+func (m *ProductContentBatchMutation) AddMatched(i int32) {
+	if m.addmatched != nil {
+		*m.addmatched += i
+	} else {
+		m.addmatched = &i
+	}
+}
+
+// AddedMatched returns the value that was added to the "matched" field in this mutation.
+func (m *ProductContentBatchMutation) AddedMatched() (r int32, exists bool) {
+	v := m.addmatched
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMatched resets all changes to the "matched" field.
+func (m *ProductContentBatchMutation) ResetMatched() {
+	m.matched = nil
+	m.addmatched = nil
+}
+
+// SetChanged sets the "changed" field.
+func (m *ProductContentBatchMutation) SetChanged(i int32) {
+	m.changed = &i
+	m.addchanged = nil
+}
+
+// Changed returns the value of the "changed" field in the mutation.
+func (m *ProductContentBatchMutation) Changed() (r int32, exists bool) {
+	v := m.changed
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldChanged returns the old "changed" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldChanged(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldChanged is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldChanged requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldChanged: %w", err)
+	}
+	return oldValue.Changed, nil
+}
+
+// AddChanged adds i to the "changed" field.
+func (m *ProductContentBatchMutation) AddChanged(i int32) {
+	if m.addchanged != nil {
+		*m.addchanged += i
+	} else {
+		m.addchanged = &i
+	}
+}
+
+// AddedChanged returns the value that was added to the "changed" field in this mutation.
+func (m *ProductContentBatchMutation) AddedChanged() (r int32, exists bool) {
+	v := m.addchanged
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetChanged resets all changes to the "changed" field.
+func (m *ProductContentBatchMutation) ResetChanged() {
+	m.changed = nil
+	m.addchanged = nil
+}
+
+// Where appends a list predicates to the ProductContentBatchMutation builder.
+func (m *ProductContentBatchMutation) Where(ps ...predicate.ProductContentBatch) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ProductContentBatchMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ProductContentBatchMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ProductContentBatch, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ProductContentBatchMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ProductContentBatchMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ProductContentBatch).
+func (m *ProductContentBatchMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProductContentBatchMutation) Fields() []string {
+	fields := make([]string, 0, 10)
+	if m.created_at != nil {
+		fields = append(fields, productcontentbatch.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, productcontentbatch.FieldUpdatedAt)
+	}
+	if m.subsite_id != nil {
+		fields = append(fields, productcontentbatch.FieldSubsiteID)
+	}
+	if m.token != nil {
+		fields = append(fields, productcontentbatch.FieldToken)
+	}
+	if m.actor_id != nil {
+		fields = append(fields, productcontentbatch.FieldActorID)
+	}
+	if m.payload != nil {
+		fields = append(fields, productcontentbatch.FieldPayload)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, productcontentbatch.FieldExpiresAt)
+	}
+	if m.completed != nil {
+		fields = append(fields, productcontentbatch.FieldCompleted)
+	}
+	if m.matched != nil {
+		fields = append(fields, productcontentbatch.FieldMatched)
+	}
+	if m.changed != nil {
+		fields = append(fields, productcontentbatch.FieldChanged)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProductContentBatchMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case productcontentbatch.FieldCreatedAt:
+		return m.CreatedAt()
+	case productcontentbatch.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case productcontentbatch.FieldSubsiteID:
+		return m.SubsiteID()
+	case productcontentbatch.FieldToken:
+		return m.Token()
+	case productcontentbatch.FieldActorID:
+		return m.ActorID()
+	case productcontentbatch.FieldPayload:
+		return m.Payload()
+	case productcontentbatch.FieldExpiresAt:
+		return m.ExpiresAt()
+	case productcontentbatch.FieldCompleted:
+		return m.Completed()
+	case productcontentbatch.FieldMatched:
+		return m.Matched()
+	case productcontentbatch.FieldChanged:
+		return m.Changed()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProductContentBatchMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case productcontentbatch.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case productcontentbatch.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case productcontentbatch.FieldSubsiteID:
+		return m.OldSubsiteID(ctx)
+	case productcontentbatch.FieldToken:
+		return m.OldToken(ctx)
+	case productcontentbatch.FieldActorID:
+		return m.OldActorID(ctx)
+	case productcontentbatch.FieldPayload:
+		return m.OldPayload(ctx)
+	case productcontentbatch.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case productcontentbatch.FieldCompleted:
+		return m.OldCompleted(ctx)
+	case productcontentbatch.FieldMatched:
+		return m.OldMatched(ctx)
+	case productcontentbatch.FieldChanged:
+		return m.OldChanged(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProductContentBatch field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductContentBatchMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case productcontentbatch.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case productcontentbatch.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case productcontentbatch.FieldSubsiteID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubsiteID(v)
+		return nil
+	case productcontentbatch.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case productcontentbatch.FieldActorID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetActorID(v)
+		return nil
+	case productcontentbatch.FieldPayload:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayload(v)
+		return nil
+	case productcontentbatch.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case productcontentbatch.FieldCompleted:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCompleted(v)
+		return nil
+	case productcontentbatch.FieldMatched:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMatched(v)
+		return nil
+	case productcontentbatch.FieldChanged:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetChanged(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProductContentBatch field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProductContentBatchMutation) AddedFields() []string {
+	var fields []string
+	if m.addsubsite_id != nil {
+		fields = append(fields, productcontentbatch.FieldSubsiteID)
+	}
+	if m.addactor_id != nil {
+		fields = append(fields, productcontentbatch.FieldActorID)
+	}
+	if m.addmatched != nil {
+		fields = append(fields, productcontentbatch.FieldMatched)
+	}
+	if m.addchanged != nil {
+		fields = append(fields, productcontentbatch.FieldChanged)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProductContentBatchMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case productcontentbatch.FieldSubsiteID:
+		return m.AddedSubsiteID()
+	case productcontentbatch.FieldActorID:
+		return m.AddedActorID()
+	case productcontentbatch.FieldMatched:
+		return m.AddedMatched()
+	case productcontentbatch.FieldChanged:
+		return m.AddedChanged()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductContentBatchMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case productcontentbatch.FieldSubsiteID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubsiteID(v)
+		return nil
+	case productcontentbatch.FieldActorID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddActorID(v)
+		return nil
+	case productcontentbatch.FieldMatched:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMatched(v)
+		return nil
+	case productcontentbatch.FieldChanged:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddChanged(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProductContentBatch numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProductContentBatchMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProductContentBatchMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProductContentBatchMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown ProductContentBatch nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProductContentBatchMutation) ResetField(name string) error {
+	switch name {
+	case productcontentbatch.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case productcontentbatch.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case productcontentbatch.FieldSubsiteID:
+		m.ResetSubsiteID()
+		return nil
+	case productcontentbatch.FieldToken:
+		m.ResetToken()
+		return nil
+	case productcontentbatch.FieldActorID:
+		m.ResetActorID()
+		return nil
+	case productcontentbatch.FieldPayload:
+		m.ResetPayload()
+		return nil
+	case productcontentbatch.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case productcontentbatch.FieldCompleted:
+		m.ResetCompleted()
+		return nil
+	case productcontentbatch.FieldMatched:
+		m.ResetMatched()
+		return nil
+	case productcontentbatch.FieldChanged:
+		m.ResetChanged()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductContentBatch field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProductContentBatchMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProductContentBatchMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProductContentBatchMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProductContentBatchMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProductContentBatchMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProductContentBatchMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProductContentBatchMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ProductContentBatch unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProductContentBatchMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ProductContentBatch edge %s", name)
 }
 
 // ProductControlMutation represents an operation that mutates the ProductControl nodes in the graph.

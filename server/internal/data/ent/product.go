@@ -36,6 +36,10 @@ type Product struct {
 	Cover string `json:"cover,omitempty"`
 	// 详情图集
 	Images []string `json:"images,omitempty"`
+	// CoverProtected holds the value of the "cover_protected" field.
+	CoverProtected bool `json:"cover_protected,omitempty"`
+	// DescriptionProtected holds the value of the "description_protected" field.
+	DescriptionProtected bool `json:"description_protected,omitempty"`
 	// 售价（分）
 	Price int64 `json:"price,omitempty"`
 	// 成本价（分，上游/自营成本快照）
@@ -112,7 +116,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
-		case product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend:
+		case product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend:
 			values[i] = new(sql.NullBool)
 		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
 			values[i] = new(sql.NullInt64)
@@ -196,6 +200,18 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Images); err != nil {
 					return fmt.Errorf("unmarshal field images: %w", err)
 				}
+			}
+		case product.FieldCoverProtected:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field cover_protected", values[i])
+			} else if value.Valid {
+				_m.CoverProtected = value.Bool
+			}
+		case product.FieldDescriptionProtected:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field description_protected", values[i])
+			} else if value.Valid {
+				_m.DescriptionProtected = value.Bool
 			}
 		case product.FieldPrice:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -375,6 +391,12 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("images=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Images))
+	builder.WriteString(", ")
+	builder.WriteString("cover_protected=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CoverProtected))
+	builder.WriteString(", ")
+	builder.WriteString("description_protected=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DescriptionProtected))
 	builder.WriteString(", ")
 	builder.WriteString("price=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Price))

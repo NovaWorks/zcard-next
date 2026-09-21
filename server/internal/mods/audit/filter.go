@@ -46,6 +46,11 @@ func OpAuditFilter(repo *AuditRepo, signer *authn.Signer, permOf func(op string)
 				next.ServeHTTP(w, r)
 				return
 			}
+			// Batch previews are read-only; execution writes a single transactional audit.
+			if r.URL.Path == "/api/v1/admin/products/batch-content" || r.URL.Path == "/api/v1/admin/products/batch-content/preview" {
+				next.ServeHTTP(w, r)
+				return
+			}
 			// 请求载荷读取（body 恢复供后续解码）
 			bodyAfter := ReadBodyJSON(r)
 

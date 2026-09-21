@@ -181,6 +181,7 @@ type UpstreamProductInput struct {
 	UpstreamSyncedAt    time.Time
 	Name                string
 	Description         string
+	DescriptionSet      bool // 上游显式提供空介绍时也更新
 	Cover               string
 	CategoryID          uint64 // 0 且 CategorySet=true 时清除分类
 	CategorySet         bool

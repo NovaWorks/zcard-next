@@ -190,7 +190,7 @@ func applyMigrationsIfEnabled(ctx context.Context, bc *conf.Bootstrap) error {
 	if err := data.ApplyMigrations(ctx, d.DB, d.Dialect, bc.Data.Database.Source); err != nil {
 		return fmt.Errorf("启动迁移失败（拒绝启动，规划 §10.4）: %w", err)
 	}
-	return nil
+	return data.UpgradeProductMediaRefs(ctx, d)
 }
 
 // completePendingInstall 在线安装接力（库切换重启后）：待装凭据存在 → 新库安装。

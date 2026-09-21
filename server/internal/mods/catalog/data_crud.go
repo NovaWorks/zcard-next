@@ -13,12 +13,13 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/tag"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	mediamods "github.com/NovaWorks/zcard-next/server/internal/mods/media"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/sanitize"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -537,6 +538,7 @@ func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 	out := &adminv1.AdminProduct{
 		Id: p.ID, CategoryId: p.CategoryID, Name: p.Name, Slug: p.Slug,
 		Description: p.Description, Cover: p.Cover, Images: p.Images,
+		CoverProtected: p.CoverProtected, DescriptionProtected: p.DescriptionProtected,
 		PriceCents: p.Price, FactoryPriceCents: p.FactoryPrice,
 		StockType: string(p.StockType), StockVisible: p.StockVisible,
 		DeliveryMode: string(p.DeliveryMode), Dedup: p.Dedup,
@@ -565,7 +567,16 @@ func nilOrZero(v uint64) *uint64 {
 // UpsertUpstreamProduct 货源同步商品 upsert（，supply 模块经 port 消费）。
 // 判据：subsite_id + upstream_source_id + upstream_product_code 幂等。
 // Price=-1 保持现有价（价格保护由 supply 侧决策后传入）。
-func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (uint64, bool, error) {
+func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (id uint64, created bool, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		var e error
+		id, created, e = r.upsertUpstreamProduct(ctx, in)
+		return e
+	})
+	return
+}
+
+func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.UpstreamProductInput) (uint64, bool, error) {
 	tc := tenancy.FromContext(ctx)
 	existing, err := data.Client(ctx, r.data).Product.Query().
 		Where(
@@ -578,6 +589,20 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 		return 0, false, err
 	}
 
+	if err == nil {
+		if err = data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).AddSort(0).Exec(ctx); err != nil {
+			return 0, false, err
+		}
+		locked := data.Client(ctx, r.data).Product.Query().Where(product.ID(existing.ID))
+		if r.data.Dialect != db.SQLite {
+			locked.ForUpdate()
+		}
+		existing, err = locked.Only(ctx)
+		if err != nil {
+			return 0, false, err
+		}
+	}
+	in.Description = sanitize.RichHTML(in.Description)
 	if ent.IsNotFound(err) {
 		// 新建：slug 用上游标识（稳定、幂等）；状态按 auto_onshelf 开关。
 		// 候选 slug（base、base-2 … base-21）一次 IN 查询判重——替代逐个
@@ -662,6 +687,9 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 		if err := r.syncUpstreamSkus(ctx, tc.SubsiteID, created.ID, in.SKUs); err != nil {
 			return 0, false, err
 		}
+		if err := data.SyncProductMediaRefs(ctx, r.data, nil, created); err != nil {
+			return 0, false, err
+		}
 		return created.ID, true, nil
 	}
 
@@ -702,16 +730,21 @@ func (r *ProductRepoImpl) UpsertUpstreamProduct(ctx context.Context, in port.Ups
 	} else if in.CategorySet {
 		upd.ClearCategoryID()
 	}
-	if in.Description != "" {
+	if !existing.DescriptionProtected && (in.DescriptionSet || in.Description != "") {
 		upd.SetDescription(in.Description)
 	}
 	// cover 恒设（空 = 清空：上游下架/删图时镜像清空，同时调用方已删本地文件）
-	upd.SetCover(in.Cover)
+	if !existing.CoverProtected {
+		upd.SetCover(in.Cover)
+	}
 	updated, err := upd.Save(ctx)
 	if err != nil {
 		return 0, false, err
 	}
 	if err := r.syncUpstreamSkus(ctx, tc.SubsiteID, updated.ID, in.SKUs); err != nil {
+		return 0, false, err
+	}
+	if err := data.SyncProductMediaRefs(ctx, r.data, existing, updated); err != nil {
 		return 0, false, err
 	}
 	return updated.ID, false, nil
@@ -943,42 +976,6 @@ func toSupplierProduct(row *ent.Product) port.SupplierProduct {
 	}
 }
 
-// AdjustCoverRefs 封面/图集引用调整（旧集合释放 + 新集合引用；id 从 media URL 解析）。
-// 旧 catalog 字段存的是 URL（/uploads/<path>）或外链——本方法只对 /uploads/media/<id> 形态计数；
-// 简化口径：调用方传新旧 URL 列表，本方法解析出 media id 做增减。
-func (r *ProductRepoImpl) AdjustCoverRefs(ctx context.Context, oldURLs, newURLs []string) {
-	if r.mediaRef == nil {
-		return
-	}
-	var oldIDs, newIDs []uint64
-	for _, u := range oldURLs {
-		if id := r.mediaIDFromPath(ctx, u); id > 0 {
-			oldIDs = append(oldIDs, id)
-		}
-	}
-	for _, u := range newURLs {
-		if id := r.mediaIDFromPath(ctx, u); id > 0 {
-			newIDs = append(newIDs, id)
-		}
-	}
-	_ = r.mediaRef.ReleaseRefs(ctx, oldIDs)
-	_ = r.mediaRef.AddRefs(ctx, newIDs)
-}
-
-// mediaIDFromURL 由素材 URL 反查 id：需要查库（path → media.id）。
-// URL 形态 /uploads/YYYY/MM/name.ext —— media 表按 path 索引查。
-func (r *ProductRepoImpl) mediaIDFromPath(ctx context.Context, url string) uint64 {
-	trimmed := strings.TrimPrefix(url, "/uploads/")
-	if trimmed == url {
-		return 0 // 外链/非素材库路径不计
-	}
-	m, err := data.Client(ctx, r.data).Media.Query().Where(media.PathEQ(trimmed)).Only(ctx)
-	if err != nil {
-		return 0
-	}
-	return m.ID
-}
-
 func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInput) (out *ent.Product, err error) {
 	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
 		var e error
@@ -986,7 +983,7 @@ func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInpu
 		if e != nil {
 			return e
 		}
-		return data.SyncVideoRefs(ctx, r.data, "", out.Description)
+		return data.SyncProductMediaRefs(ctx, r.data, nil, out)
 	})
 	return
 }
@@ -1003,7 +1000,7 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 		if e != nil {
 			return e
 		}
-		return data.SyncVideoRefs(ctx, r.data, old.Description, out.Description)
+		return data.SyncProductMediaRefs(ctx, r.data, old, out)
 	})
 	return
 }
@@ -1019,6 +1016,6 @@ func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
 		if e = r.deleteProduct(ctx, id); e != nil {
 			return e
 		}
-		return data.SyncVideoRefs(ctx, r.data, old.Description, "")
+		return data.SyncProductMediaRefs(ctx, r.data, old, nil)
 	})
 }

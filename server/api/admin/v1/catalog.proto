@@ -41,6 +41,16 @@ service AdminCatalogService {
     option (google.api.http) = { post: "/api/v1/admin/products/batch-category" body: "*" };
   }
 
+  rpc PreviewBatchUpdateProductContent(PreviewBatchProductContentRequest) returns (BatchProductContentPreview) {
+    option (google.api.http) = { post: "/api/v1/admin/products/batch-content/preview" body: "*" };
+  }
+  rpc BatchUpdateProductContent(BatchProductContentRequest) returns (BatchProductContentResult) {
+    option (google.api.http) = { post: "/api/v1/admin/products/batch-content" body: "*" };
+  }
+  rpc GetBatchProductContentResult(BatchProductContentRequest) returns (BatchProductContentResult) {
+    option (google.api.http) = { get: "/api/v1/admin/products/batch-content/results/{request_id}" };
+  }
+
   // ── 分类 ──
   rpc ListCategories(google.protobuf.Empty) returns (CategoryList) {
     option (google.api.http) = { get: "/api/v1/admin/categories" };
@@ -190,6 +200,8 @@ message AdminProduct {
   string stock_status = 25; // current | stale | unknown
   int64 stock_reference = 26; // 仅供展示的上次库存，不作为购买校验依据
   int64 stock_checked_at = 27; // 上次库存查询时间
+  bool cover_protected = 28;
+  bool description_protected = 29;
 
 }
 
@@ -538,4 +550,50 @@ message MergeCategoriesReply {
   int32 categories = 1;
   int32 products = 2;
   int32 children = 3;
+}
+
+// Operations: KEEP=0, REPLACE=1, CLEAR=2, FOLLOW_UPSTREAM=3 (cover/description only).
+message ProductContentPatch {
+  int32 cover_action = 1;
+  string cover = 2;
+  int32 images_action = 3;
+  repeated string images = 4;
+  int32 description_action = 5;
+  string description = 6;
+}
+message PreviewBatchProductContentRequest {
+  repeated uint64 ids = 1;
+  uint64 category_id = 2;
+  optional bool include_descendants = 3;
+  ProductContentPatch patch = 4;
+}
+message BatchProductContentTarget {
+  uint64 id = 1;
+  string name = 2;
+  string cover = 3;
+  repeated string images = 4;
+  string description = 5;
+  bool upstream = 6;
+  bool changed = 7;
+  bool content_changed = 8;
+  bool protection_changed = 9;
+}
+message BatchProductContentPreview {
+  string request_id = 1;
+  int64 expires_at = 2;
+  int32 matched = 3;
+  int32 changed = 4;
+  int32 unchanged = 5;
+  int32 upstream_count = 6;
+  ProductContentPatch patch = 7;
+  repeated BatchProductContentTarget targets = 8;
+  int32 content_changed = 9;
+  int32 protection_changed = 10;
+}
+message BatchProductContentRequest { string request_id = 1; }
+message BatchProductContentResult {
+  bool completed = 1;
+  int32 matched = 2;
+  int32 changed = 3;
+  int32 unchanged = 4;
 }

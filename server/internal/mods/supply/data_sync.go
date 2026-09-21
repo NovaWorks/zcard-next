@@ -33,6 +33,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 )
@@ -454,7 +455,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 	if !p.IsActive {
 		status = 0
 		if old := s.currentProductCover(ctx, mapping.LocalProductID); old != "" {
-			deleteLocalCover(old)
+			s.deleteHarvestedCover(ctx, old)
 		}
 		p.Cover = ""
 	} else if !notFound && s.localProductShelvedOff(ctx, mapping.LocalProductID) {
@@ -472,6 +473,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
+		DescriptionSet:      p.DescriptionSet,
 		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
@@ -824,12 +826,18 @@ func (s *SyncService) ensureCoverDir(ctx context.Context, conn *ent.SupplyConnec
 func (s *SyncService) coverFor(ctx context.Context, mapping *ent.SupplyMapping, conn *ent.SupplyConnection, cover string) string {
 	old := ""
 	if mapping != nil {
-		old = s.currentProductCover(ctx, mapping.LocalProductID)
+		row, err := data.Client(ctx, s.repo.data).Product.Get(ctx, mapping.LocalProductID)
+		if err == nil {
+			if row.CoverProtected {
+				return row.Cover
+			}
+			old = row.Cover
+		}
 	}
 	dir := s.ensureCoverDir(ctx, conn)
 	newCover := s.downloadCover(ctx, conn.BaseURL, cover, dir)
 	if newCover != old && strings.HasPrefix(old, "/uploads/") {
-		deleteLocalCover(old)
+		s.deleteHarvestedCover(ctx, old)
 	}
 	return newCover
 }
@@ -928,6 +936,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		UpstreamSyncedAt:    time.Now().UTC(),
 		Name:                p.Name,
 		Description:         p.Description,
+		DescriptionSet:      p.DescriptionSet,
 		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
 		FactoryPrice:        p.FactoryPrice,
 		Status:              status,
@@ -1056,4 +1065,16 @@ func clearSyncRetry(taskID uint64) {
 	syncRetryTracker.Lock()
 	delete(syncRetryTracker.m, taskID)
 	syncRetryTracker.Unlock()
+}
+
+// Shared library assets are never disposable upstream download cache files.
+func (s *SyncService) deleteHarvestedCover(ctx context.Context, cover string) {
+	if !strings.HasPrefix(cover, "/uploads/") {
+		return
+	}
+	exists, err := data.Client(ctx, s.repo.data).Media.Query().Where(media.PathEQ(strings.TrimPrefix(cover, "/uploads/"))).Exist(ctx)
+	if err != nil || exists {
+		return
+	}
+	deleteLocalCover(cover)
 }

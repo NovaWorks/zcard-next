@@ -187,8 +187,6 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		}
 		p.DirectContent = ciphered
 	}
-	// 素材引用：封面 + 图集（新建全为引用）
-	s.repo.AdjustCoverRefs(ctx, nil, append([]string{in.Cover}, in.Images...))
 	return ToAdminPB(p), nil
 }
 
@@ -241,12 +239,6 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 	p, err := s.repo.UpdateProduct(ctx, req.GetId(), in)
 	if err != nil {
 		return nil, errors.InternalServer("catalog.UPDATE_FAILED", "更新失败")
-	}
-	// 素材引用 diff：旧集合释放 + 新集合引用
-	if old != nil {
-		oldSet := append([]string{old.Cover}, old.Images...)
-		newSet := append([]string{in.Cover}, in.Images...)
-		s.repo.AdjustCoverRefs(ctx, oldSet, newSet)
 	}
 	return ToAdminPB(p), nil
 }

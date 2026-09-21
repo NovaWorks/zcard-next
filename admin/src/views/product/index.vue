@@ -4,7 +4,7 @@
  * 全字段表单（分类/描述/封面+图集 media 上传/排序/上下架三态/发货模式/库存显示/积分价）
  * + SKU 规格管理子表格 + 下单控件配置（独立弹窗）。
  */
-import { ref, reactive, computed, onMounted, h } from "vue";
+import { ref, reactive, computed, onMounted, h, watch } from "vue";
 import { useRoute } from "vue-router";
 import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
@@ -31,6 +31,7 @@ import CategoryModal from "./components/category-modal.vue";
 import CategoryIcon from "@/components/common/category-icon.vue";
 import ReviewsDrawer from "./components/reviews-drawer.vue";
 import DeleteProductModal from "./components/delete-product-modal.vue";
+import BatchContentModal from "./components/batch-content-modal.vue";
 
 const deleteTarget = ref<{ id: number; name: string } | null>(null);
 
@@ -74,6 +75,24 @@ function openReviews(row: any) {
 }
 
 const checkedKeys = ref<number[]>([]);
+const showBatchContent = ref(false);
+const batchContentIDs = ref<number[]>([]);
+const batchContentCategory = ref<number | null>(null);
+const offPageSelected = computed(() => checkedKeys.value.filter(id => !products.value.some(p => p.id === id)).length);
+const contentProtection = ref({ cover: false, description: false });
+watch([keyword, categoryFilter, supplyFilter, statusFilter], () => { checkedKeys.value = []; }, { flush: "sync" });
+function updateCheckedKeys(keys: Array<string | number>) {
+  if (loading.value) return;
+  const pageIDs = new Set(products.value.map(p => p.id));
+  checkedKeys.value = [...new Set([...checkedKeys.value.filter(id => !pageIDs.has(id)), ...keys.map(Number)])];
+}
+function openBatchContent() {
+  batchContentIDs.value = [...checkedKeys.value];
+  batchContentCategory.value = categoryFilter.value;
+  showBatchContent.value = true;
+}
+function contentSaved() { checkedKeys.value = []; loadList(); }
+
 
 // ── 单元格价格编辑（售价/成本）：铅笔图标 → 气泡输入（大厂轻量编辑模式）──
 // 金额纯文本居中展示；点笔弹 NPopover（受控显隐），气泡内输入金额 → 确定/Enter 保存、Esc 关闭。
@@ -545,7 +564,9 @@ const columns: DataTableColumns<any> = [
   },
 ];
 
+let listSequence = 0;
 async function loadList() {
+  const sequence = ++listSequence;
   loading.value = true;
   try {
     const { data, error } = await fetchProducts({
@@ -559,12 +580,13 @@ async function loadList() {
       page: page.value,
       page_size: pageSize.value,
     });
+    if (sequence !== listSequence) return;
     if (!error && data) {
       products.value = (data as any).products || [];
       total.value = (data as any).total || 0;
     }
   } finally {
-    loading.value = false;
+    if (sequence === listSequence) loading.value = false;
   }
 }
 
@@ -673,6 +695,7 @@ const batchCategoryOptions = computed(() => {
 });
 const batchCategoryTarget = computed(() => batchCategoryOptions.value.find(c => c.value === batchCategoryId.value));
 async function openBatchCategory() {
+  if (!checkedKeys.value.length) return;
   batchCategoryIds.value = [...checkedKeys.value];
   batchCategoryId.value = null;
   await loadCategories();
@@ -716,6 +739,7 @@ async function handleBatchDelete() {
 }
 
 function resetForm() {
+  contentProtection.value = { cover: false, description: false };
   editingId.value = 0;
   step.value = 1; // 新开弹窗回到第一步
   Object.assign(formData, {
@@ -744,6 +768,7 @@ async function handleEdit(row: any) {
   const { data, error } = await fetchProduct(row.id);
   const p = !error && data ? data : row;
   editingId.value = p.id;
+  contentProtection.value = { cover: !!p.cover_protected, description: !!p.description_protected };
   Object.assign(formData, {
     name: p.name,
     category_id: p.category_id || null,
@@ -925,32 +950,33 @@ onMounted(() => {
 
       <!-- 批量操作条（勾选后出现） -->
       <div
-        v-if="checkedKeys.length"
+        v-if="checkedKeys.length || categoryFilter"
         class="mb-12px flex shrink-0 flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
       >
         <span class="text-13px"
-          >已选 <b>{{ checkedKeys.length }}</b> 件</span
+          >已选 <b>{{ checkedKeys.length }}</b> 件<span v-if="offPageSelected">（其他页 {{ offPageSelected }} 件）</span></span
         >
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 1, '上架')">
           <template #trigger>
-            <NButton v-auth="'catalog:write'" size="small" type="success">批量上架</NButton>
+            <NButton v-auth="'catalog:write'" size="small" type="success" :disabled="!checkedKeys.length">批量上架</NButton>
           </template>
           确定上架选中的 {{ checkedKeys.length }} 件商品？
         </NPopconfirm>
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 0, '下架')">
           <template #trigger>
-            <NButton v-auth="'catalog:write'" size="small" type="warning">批量下架</NButton>
+            <NButton v-auth="'catalog:write'" size="small" type="warning" :disabled="!checkedKeys.length">批量下架</NButton>
           </template>
           确定下架选中的 {{ checkedKeys.length }} 件商品？
         </NPopconfirm>
-        <NButton v-auth="'catalog:write'" size="small" type="primary" @click="openBatchCategory">修改分类</NButton>
+        <NButton v-auth="'catalog:write'" size="small" type="primary" @click="openBatchContent">批量修改内容</NButton>
+        <NButton v-auth="'catalog:write'" size="small" type="primary" :disabled="!checkedKeys.length" @click="openBatchCategory">修改分类</NButton>
         <NPopconfirm @positive-click="handleBatchDelete">
           <template #trigger>
-            <NButton v-auth="'catalog:delete'" size="small" type="error" :loading="batchDeleting">批量删除</NButton>
+            <NButton v-auth="'catalog:delete'" size="small" type="error" :loading="batchDeleting" :disabled="!checkedKeys.length">批量删除</NButton>
           </template>
           确定删除选中的 {{ checkedKeys.length }} 件商品？仅删除已下架且可删除的商品，保留历史订单；失败不影响其余商品。
         </NPopconfirm>
-        <NButton size="small" quaternary @click="checkedKeys = []">取消选择</NButton>
+        <NButton v-if="checkedKeys.length" size="small" quaternary @click="checkedKeys = []">取消选择</NButton>
       </div>
 
       <NDataTable
@@ -961,7 +987,7 @@ onMounted(() => {
         :loading="loading"
         :row-key="(row: any) => row.id"
         :checked-row-keys="checkedKeys"
-        @update:checked-row-keys="(keys: any) => (checkedKeys = keys)"
+        @update:checked-row-keys="updateCheckedKeys"
       />
 
       <!-- 可复用分页条（共N条/首页/页码/每页条数/跳页/末页） -->
@@ -973,6 +999,8 @@ onMounted(() => {
         @change="loadList"
       />
     </NCard>
+
+    <BatchContentModal v-model:show="showBatchContent" :ids="batchContentIDs" :category-id="batchContentCategory" :categories="batchCategoryOptions" @saved="contentSaved" />
 
     <NModal v-model:show="showBatchCategory" preset="card" title="批量修改分类"
       class="w-560px max-w-[calc(100vw-32px)]" :mask-closable="!batchCategorySaving" :closable="!batchCategorySaving" :close-on-esc="!batchCategorySaving">
@@ -1128,6 +1156,10 @@ onMounted(() => {
 
       <!-- 第 3 步：商品描述（完全展开——封面/图集/编辑器整高可见，不内滚；弹窗整体上移） -->
       <div v-if="step === 3" class="px-12px">
+        <NAlert v-if="contentProtection.cover || contentProtection.description" type="info" class="mb-12px">
+          本地内容保护：{{ [contentProtection.cover ? '封面' : '', contentProtection.description ? '产品介绍' : ''].filter(Boolean).join('、') }}。
+          可在「批量修改内容」中选择该商品并恢复跟随上游。
+        </NAlert>
         <NForm :model="formData" label-placement="top">
           <div class="flex gap-24px">
             <NFormItem label="封面图" class="w-240px">

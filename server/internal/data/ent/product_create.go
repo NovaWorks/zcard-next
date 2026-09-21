@@ -126,6 +126,34 @@ func (_c *ProductCreate) SetImages(v []string) *ProductCreate {
 	return _c
 }
 
+// SetCoverProtected sets the "cover_protected" field.
+func (_c *ProductCreate) SetCoverProtected(v bool) *ProductCreate {
+	_c.mutation.SetCoverProtected(v)
+	return _c
+}
+
+// SetNillableCoverProtected sets the "cover_protected" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableCoverProtected(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetCoverProtected(*v)
+	}
+	return _c
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (_c *ProductCreate) SetDescriptionProtected(v bool) *ProductCreate {
+	_c.mutation.SetDescriptionProtected(v)
+	return _c
+}
+
+// SetNillableDescriptionProtected sets the "description_protected" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableDescriptionProtected(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetDescriptionProtected(*v)
+	}
+	return _c
+}
+
 // SetPrice sets the "price" field.
 func (_c *ProductCreate) SetPrice(v int64) *ProductCreate {
 	_c.mutation.SetPrice(v)
@@ -423,6 +451,14 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.CoverProtected(); !ok {
+		v := product.DefaultCoverProtected
+		_c.mutation.SetCoverProtected(v)
+	}
+	if _, ok := _c.mutation.DescriptionProtected(); !ok {
+		v := product.DefaultDescriptionProtected
+		_c.mutation.SetDescriptionProtected(v)
+	}
 	if _, ok := _c.mutation.Price(); !ok {
 		v := product.DefaultPrice
 		_c.mutation.SetPrice(v)
@@ -500,6 +536,12 @@ func (_c *ProductCreate) check() error {
 		if err := product.CoverValidator(v); err != nil {
 			return &ValidationError{Name: "cover", err: fmt.Errorf(`ent: validator failed for field "Product.cover": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.CoverProtected(); !ok {
+		return &ValidationError{Name: "cover_protected", err: errors.New(`ent: missing required field "Product.cover_protected"`)}
+	}
+	if _, ok := _c.mutation.DescriptionProtected(); !ok {
+		return &ValidationError{Name: "description_protected", err: errors.New(`ent: missing required field "Product.description_protected"`)}
 	}
 	if _, ok := _c.mutation.Price(); !ok {
 		return &ValidationError{Name: "price", err: errors.New(`ent: missing required field "Product.price"`)}
@@ -617,6 +659,14 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Images(); ok {
 		_spec.SetField(product.FieldImages, field.TypeJSON, value)
 		_node.Images = value
+	}
+	if value, ok := _c.mutation.CoverProtected(); ok {
+		_spec.SetField(product.FieldCoverProtected, field.TypeBool, value)
+		_node.CoverProtected = value
+	}
+	if value, ok := _c.mutation.DescriptionProtected(); ok {
+		_spec.SetField(product.FieldDescriptionProtected, field.TypeBool, value)
+		_node.DescriptionProtected = value
 	}
 	if value, ok := _c.mutation.Price(); ok {
 		_spec.SetField(product.FieldPrice, field.TypeInt64, value)
@@ -899,6 +949,30 @@ func (u *ProductUpsert) UpdateImages() *ProductUpsert {
 // ClearImages clears the value of the "images" field.
 func (u *ProductUpsert) ClearImages() *ProductUpsert {
 	u.SetNull(product.FieldImages)
+	return u
+}
+
+// SetCoverProtected sets the "cover_protected" field.
+func (u *ProductUpsert) SetCoverProtected(v bool) *ProductUpsert {
+	u.Set(product.FieldCoverProtected, v)
+	return u
+}
+
+// UpdateCoverProtected sets the "cover_protected" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateCoverProtected() *ProductUpsert {
+	u.SetExcluded(product.FieldCoverProtected)
+	return u
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (u *ProductUpsert) SetDescriptionProtected(v bool) *ProductUpsert {
+	u.Set(product.FieldDescriptionProtected, v)
+	return u
+}
+
+// UpdateDescriptionProtected sets the "description_protected" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateDescriptionProtected() *ProductUpsert {
+	u.SetExcluded(product.FieldDescriptionProtected)
 	return u
 }
 
@@ -1386,6 +1460,34 @@ func (u *ProductUpsertOne) UpdateImages() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearImages() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearImages()
+	})
+}
+
+// SetCoverProtected sets the "cover_protected" field.
+func (u *ProductUpsertOne) SetCoverProtected(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetCoverProtected(v)
+	})
+}
+
+// UpdateCoverProtected sets the "cover_protected" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateCoverProtected() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateCoverProtected()
+	})
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (u *ProductUpsertOne) SetDescriptionProtected(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetDescriptionProtected(v)
+	})
+}
+
+// UpdateDescriptionProtected sets the "description_protected" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateDescriptionProtected() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateDescriptionProtected()
 	})
 }
 
@@ -2086,6 +2188,34 @@ func (u *ProductUpsertBulk) UpdateImages() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearImages() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearImages()
+	})
+}
+
+// SetCoverProtected sets the "cover_protected" field.
+func (u *ProductUpsertBulk) SetCoverProtected(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetCoverProtected(v)
+	})
+}
+
+// UpdateCoverProtected sets the "cover_protected" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateCoverProtected() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateCoverProtected()
+	})
+}
+
+// SetDescriptionProtected sets the "description_protected" field.
+func (u *ProductUpsertBulk) SetDescriptionProtected(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetDescriptionProtected(v)
+	})
+}
+
+// UpdateDescriptionProtected sets the "description_protected" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateDescriptionProtected() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateDescriptionProtected()
 	})
 }
 

@@ -33,6 +33,10 @@ const (
 	FieldCover = "cover"
 	// FieldImages holds the string denoting the images field in the database.
 	FieldImages = "images"
+	// FieldCoverProtected holds the string denoting the cover_protected field in the database.
+	FieldCoverProtected = "cover_protected"
+	// FieldDescriptionProtected holds the string denoting the description_protected field in the database.
+	FieldDescriptionProtected = "description_protected"
 	// FieldPrice holds the string denoting the price field in the database.
 	FieldPrice = "price"
 	// FieldFactoryPrice holds the string denoting the factory_price field in the database.
@@ -101,6 +105,8 @@ var Columns = []string{
 	FieldDescription,
 	FieldCover,
 	FieldImages,
+	FieldCoverProtected,
+	FieldDescriptionProtected,
 	FieldPrice,
 	FieldFactoryPrice,
 	FieldDraftPremium,
@@ -145,6 +151,10 @@ var (
 	SlugValidator func(string) error
 	// CoverValidator is a validator for the "cover" field. It is called by the builders before save.
 	CoverValidator func(string) error
+	// DefaultCoverProtected holds the default value on creation for the "cover_protected" field.
+	DefaultCoverProtected bool
+	// DefaultDescriptionProtected holds the default value on creation for the "description_protected" field.
+	DefaultDescriptionProtected bool
 	// DefaultPrice holds the default value on creation for the "price" field.
 	DefaultPrice int64
 	// DefaultFactoryPrice holds the default value on creation for the "factory_price" field.
@@ -266,6 +276,16 @@ func ByDescription(opts ...sql.OrderTermOption) OrderOption {
 // ByCover orders the results by the cover field.
 func ByCover(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCover, opts...).ToFunc()
+}
+
+// ByCoverProtected orders the results by the cover_protected field.
+func ByCoverProtected(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCoverProtected, opts...).ToFunc()
+}
+
+// ByDescriptionProtected orders the results by the description_protected field.
+func ByDescriptionProtected(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDescriptionProtected, opts...).ToFunc()
 }
 
 // ByPrice orders the results by the price field.

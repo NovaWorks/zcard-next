@@ -180,8 +180,8 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 			Name         string          `json:"name"`
 			Price        FlexNum         `json:"price"`
 			FactoryPrice FlexNum         `json:"factory_price"`
-			Description  string          `json:"description"`
-			Introduce    string          `json:"introduce"`
+			Description  *string         `json:"description"`
+			Introduce    *string         `json:"introduce"`
 			Cover        string          `json:"cover"`
 			Status       *int            `json:"status"` // 1=上架 0=下架；皮肤站可能缺省（接口语义为可对接商品）→ 指针区分缺失与显式 0
 			Stock        json.RawMessage `json:"stock"`  // 缺失/无效为未知；兼容 PHP 整数和数字字符串
@@ -220,9 +220,14 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 				continue
 			}
 			stock, _ := parseStock(p.Stock)
-			desc := p.Description
+			desc := ""
+			if p.Description != nil {
+				desc = *p.Description
+			}
 			if desc == "" {
-				desc = p.Introduce
+				if p.Introduce != nil {
+					desc = *p.Introduce
+				}
 			}
 			// 皮肤站（如 tghao）items 不直出 config/拿货价：inventory 兜底拿
 			// 规格 INI + 当前对接身份的 factory_price（失败不致命，按无规格品继续）
@@ -275,16 +280,17 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 				}
 			}
 			out.Items = append(out.Items, Product{
-				ID:           p.Code,
-				Name:         p.Name,
-				CategoryID:   catID,
-				Price:        p.Price.Cents(),
-				FactoryPrice: factory,
-				Description:  desc,
-				Cover:        p.Cover,
-				IsActive:     active,
-				Stock:        stock,
-				SKUs:         skus,
+				ID:             p.Code,
+				Name:           p.Name,
+				CategoryID:     catID,
+				Price:          p.Price.Cents(),
+				FactoryPrice:   factory,
+				Description:    desc,
+				DescriptionSet: p.Description != nil || p.Introduce != nil,
+				Cover:          p.Cover,
+				IsActive:       active,
+				Stock:          stock,
+				SKUs:           skus,
 			})
 		}
 	}

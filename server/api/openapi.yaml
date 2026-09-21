@@ -3271,6 +3271,60 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductCategoryReply'
+    /api/v1/admin/products/batch-content:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_BatchUpdateProductContent
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.BatchProductContentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BatchProductContentResult'
+    /api/v1/admin/products/batch-content/preview:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_PreviewBatchUpdateProductContent
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.PreviewBatchProductContentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BatchProductContentPreview'
+    /api/v1/admin/products/batch-content/results/{requestId}:
+        get:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_GetBatchProductContentResult
+            parameters:
+                - name: requestId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.BatchProductContentResult'
     /api/v1/admin/products/batch-status:
         post:
             tags:
@@ -6993,6 +7047,10 @@ components:
                     type: string
                 stockCheckedAt:
                     type: string
+                coverProtected:
+                    type: boolean
+                descriptionProtected:
+                    type: boolean
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -7158,6 +7216,79 @@ components:
                     type: string
                 updatedAt:
                     type: string
+        zcard.api.admin.v1.BatchProductContentPreview:
+            type: object
+            properties:
+                requestId:
+                    type: string
+                expiresAt:
+                    type: string
+                matched:
+                    type: integer
+                    format: int32
+                changed:
+                    type: integer
+                    format: int32
+                unchanged:
+                    type: integer
+                    format: int32
+                upstreamCount:
+                    type: integer
+                    format: int32
+                patch:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.ProductContentPatch'
+                targets:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.BatchProductContentTarget'
+                contentChanged:
+                    type: integer
+                    format: int32
+                protectionChanged:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.BatchProductContentRequest:
+            type: object
+            properties:
+                requestId:
+                    type: string
+        zcard.api.admin.v1.BatchProductContentResult:
+            type: object
+            properties:
+                completed:
+                    type: boolean
+                matched:
+                    type: integer
+                    format: int32
+                changed:
+                    type: integer
+                    format: int32
+                unchanged:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.BatchProductContentTarget:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                cover:
+                    type: string
+                images:
+                    type: array
+                    items:
+                        type: string
+                description:
+                    type: string
+                upstream:
+                    type: boolean
+                changed:
+                    type: boolean
+                contentChanged:
+                    type: boolean
+                protectionChanged:
+                    type: boolean
         zcard.api.admin.v1.BatchUpdateProductCategoryReply:
             type: object
             properties:
@@ -9897,6 +10028,19 @@ components:
                 status:
                     type: string
             description: PremiumCardInfo 靓号卡（内容掩码；draft_premium 预选加价）。
+        zcard.api.admin.v1.PreviewBatchProductContentRequest:
+            type: object
+            properties:
+                ids:
+                    type: array
+                    items:
+                        type: string
+                categoryId:
+                    type: string
+                includeDescendants:
+                    type: boolean
+                patch:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.ProductContentPatch'
         zcard.api.admin.v1.PreviewCategory:
             type: object
             properties:
@@ -10035,6 +10179,27 @@ components:
                     type: string
                 costBasis:
                     type: string
+        zcard.api.admin.v1.ProductContentPatch:
+            type: object
+            properties:
+                coverAction:
+                    type: integer
+                    format: int32
+                cover:
+                    type: string
+                imagesAction:
+                    type: integer
+                    format: int32
+                images:
+                    type: array
+                    items:
+                        type: string
+                descriptionAction:
+                    type: integer
+                    format: int32
+                description:
+                    type: string
+            description: 'Operations: KEEP=0, REPLACE=1, CLEAR=2, FOLLOW_UPSTREAM=3 (cover/description only).'
         zcard.api.admin.v1.PromotionItem:
             type: object
             properties:

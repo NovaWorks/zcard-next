@@ -62,6 +62,19 @@ const deleteCatConfirm = reactive({ show: false, cat: null as MediaCategory | nu
 
 // 选择集（按 id；跨分类/跨页保留）
 const selectedIds = ref<Set<number>>(new Set());
+const knownMedia = new Map<number, { url: string; name: string }>();
+let listSequence = 0;
+function rememberMedia(item: Pick<MediaItem, "id" | "url" | "name">) {
+  knownMedia.set(item.id, item);
+  const previous = [...selectedIds.value].find(id => id < 0 && knownMedia.get(id)?.url === item.url);
+  if (previous !== undefined) {
+    selectedIds.value = new Set([...selectedIds.value].map(id => id === previous ? item.id : id));
+    knownMedia.delete(previous);
+  }
+}
+const canManageSelection = computed(() => selectedIds.value.size > 0 && [...selectedIds.value].every(id => id > 0));
+const selectedPreview = computed(() => [...selectedIds.value].map(id => ({ id, ...knownMedia.get(id) })));
+
 // 本页全选态（批量操作/全部删除入口）
 const pageAllSelected = computed(
   () => items.value.length > 0 && items.value.every((i) => selectedIds.value.has(i.id)),
@@ -123,6 +136,7 @@ function flattenTree(nodes: { children: any[] }[], out: any[] = []) {
 }
 
 async function loadList() {
+  const sequence = ++listSequence;
   loading.value = true;
   try {
     const params: Record<string, any> = { page: page.value, page_size: pageSize.value, kind: mediaPickerState.kind };
@@ -130,12 +144,14 @@ async function loadList() {
     if (view.value === "uncategorized") params.uncategorized = true;
     else if (typeof view.value === "object") params.category_id = view.value.category;
     const { data, error } = await fetchMediaList(params);
+    if (sequence !== listSequence) return;
     if (!error && data) {
       items.value = (data as any).items || [];
       total.value = (data as any).total || 0;
+      items.value.forEach(rememberMedia);
     }
   } finally {
-    loading.value = false;
+    if (sequence === listSequence) loading.value = false;
   }
 }
 
@@ -158,14 +174,17 @@ watch(
       view.value = "all";
       page.value = 1;
       keyword.value = "";
-      selectedIds.value = new Set();
+      knownMedia.clear();
+      const initial = mediaPickerState.multiple ? mediaPickerState.initialURLs : mediaPickerState.initialURLs.slice(0, 1);
+      initial.forEach((url, index) => knownMedia.set(-index - 1, { url, name: "已选素材" }));
+      selectedIds.value = new Set(initial.map((_, index) => -index - 1));
       loadCategories();
       loadList();
     }
   },
 );
 
-function toggleSelect(item: MediaItem, e: MouseEvent) {
+function toggleSelect(item: MediaItem, e: MouseEvent | KeyboardEvent) {
   e.stopPropagation();
   if (!mediaPickerState.multiple) {
     selectedIds.value = new Set([item.id]);
@@ -182,12 +201,12 @@ function isSelected(item: MediaItem) {
 }
 
 function handleConfirm() {
-  const urls = items.value.filter((i) => selectedIds.value.has(i.id)).map((i) => i.url);
+  const urls = [...new Set([...selectedIds.value].map(id => knownMedia.get(id)?.url).filter((url): url is string => Boolean(url)))];
   if (!urls.length) {
     window.$message?.warning("请先选择素材");
     return;
   }
-  settleMediaPicker(urls);
+  settleMediaPicker(mediaPickerState.multiple ? urls : urls.slice(0, 1));
 }
 
 function handleCancel() {
@@ -216,6 +235,7 @@ async function customRequest({ file, onFinish, onError }: UploadCustomRequestOpt
     await loadList();
     // 上传即选中（单选覆盖，多选追加）
     if (data.id) {
+      rememberMedia(data);
       if (mediaPickerState.multiple) selectedIds.value = new Set([...selectedIds.value, data.id]);
       else selectedIds.value = new Set([data.id]);
     }
@@ -263,8 +283,8 @@ async function handleImport() {
       page.value = 1;
       loadList();
       if ((data as any)?.id) {
-        if (mediaPickerState.multiple)
-          selectedIds.value = new Set([...selectedIds.value, (data as any).id]);
+        rememberMedia(data as MediaItem);
+        if (mediaPickerState.multiple) selectedIds.value = new Set([...selectedIds.value, (data as any).id]);
         else selectedIds.value = new Set([(data as any).id]);
       }
     }
@@ -276,8 +296,8 @@ async function handleImport() {
 // ── 批量移动 ──
 
 async function handleMove() {
-  if (!selectedIds.value.size || moveTarget.value === null) return;
-  const { error } = await moveMedia([...selectedIds.value], moveTarget.value);
+  if (!canManageSelection.value || moveTarget.value === null) return;
+  const { error } = await moveMedia([...selectedIds.value].filter(id => id > 0), moveTarget.value);
   if (!error) {
     window.$message?.success("已移动");
     showMove.value = false;
@@ -289,7 +309,7 @@ async function handleMove() {
 // ── 批量删除（两段式引用确认）──
 
 async function handleDelete(force = false) {
-  const ids = deleteConfirm.show ? deleteConfirm.ids : [...selectedIds.value];
+  const ids = deleteConfirm.show ? deleteConfirm.ids : [...selectedIds.value].filter(id => id > 0);
   if (!ids.length) return;
   const { data, error } = await deleteMedia(ids, force);
   if (error) return;
@@ -455,12 +475,14 @@ const categorySelectOptions = computed(() => [
     :show="mediaPickerState.show"
     preset="card"
     :title="mediaPickerState.kind === 'video' ? '选择视频' : mediaPickerState.multiple ? '选择图片（可多选）' : '选择图片'"
-    class="w-960px"
+    class="w-960px max-w-[calc(100vw-24px)]"
+    style="max-height: calc(100dvh - 24px); overflow-y: auto"
     :mask-closable="false"
     @update:show="(v: boolean) => !v && handleCancel()"
   >
     <p v-if="mediaPickerState.tip" class="mb-12px text-13px" style="color: var(--text-color-2); overflow-wrap: anywhere">{{ mediaPickerState.tip }}</p>
-    <div class="flex gap-16px" style="height: 560px">
+    <NSelect class="mb-12px sm:hidden" :value="viewKey" :options="[{ label: '全部素材', value: 'all' }, { label: '未分类', value: 'uncategorized' }, ...categories.map(c => ({ label: c.name, value: `cat:${c.id}` }))]" @update:value="(value: string) => switchView(value === 'all' || value === 'uncategorized' ? value : { category: Number(value.slice(4)) })" />
+    <div class="flex gap-16px" style="height: min(560px, 62dvh)">
       <!-- 左：素材网格 -->
       <div class="flex min-w-0 flex-1 flex-col gap-12px">
         <div class="flex flex-wrap items-center gap-8px">
@@ -473,15 +495,15 @@ const categorySelectOptions = computed(() => [
             <NButton v-auth="'media:upload'" size="small" type="primary" :loading="uploading > 0">上传图片</NButton>
           </NUpload>
           <NButton v-if="mediaPickerState.kind === 'image'" v-auth="'media:upload'" size="small" @click="showImport = true">外链导入</NButton>
-          <NButton size="small" quaternary @click="togglePageAll">
+          <NButton v-if="mediaPickerState.multiple" size="small" quaternary @click="togglePageAll">
             {{ pageAllSelected ? "取消全选" : "全选本页" }}
           </NButton>
-          <NButton v-auth="'media:write'" size="small" :disabled="!selectedIds.size" @click="showMove = true">
+          <NButton v-auth="'media:write'" size="small" :disabled="!canManageSelection" title="请先在素材列表中选中要管理的素材" @click="showMove = true">
             移动到分类{{ selectedIds.size ? `（${selectedIds.size}）` : "" }}
           </NButton>
           <NPopconfirm @positive-click="handleDelete(false)">
             <template #trigger>
-              <NButton v-auth="'media:delete'" size="small" type="error" ghost :disabled="!selectedIds.size">
+              <NButton v-auth="'media:delete'" size="small" type="error" ghost :disabled="!canManageSelection" title="请先在素材列表中选中要管理的素材">
                 删除{{ selectedIds.size ? `（${selectedIds.size}）` : "" }}
               </NButton>
             </template>
@@ -510,23 +532,19 @@ const categorySelectOptions = computed(() => [
             class="mt-80px"
             :description="mediaPickerState.kind === 'video' ? '暂无视频，请返回插入视频窗口上传' : '暂无素材，点击上传图片或外链导入'"
           />
-          <div v-else class="grid grid-cols-4 gap-10px sm:grid-cols-5">
+          <div v-else class="grid grid-cols-2 gap-10px sm:grid-cols-5">
             <div
               v-for="item in items"
               :key="item.id"
               class="group relative cursor-pointer overflow-hidden rounded-6px border"
               :class="isSelected(item) ? 'border-primary' : 'border-gray-200 dark:border-gray-700'"
               :style="isSelected(item) ? 'box-shadow: 0 0 0 2px var(--primary-color)' : ''"
+              role="button" tabindex="0" :aria-label="`选择素材 ${item.name}`" :aria-pressed="isSelected(item)"
+              @keydown.enter.prevent="toggleSelect(item, $event)" @keydown.space.prevent="toggleSelect(item, $event)"
               @click="toggleSelect(item, $event)"
             >
               <video v-if="item.mime.startsWith('video/')" :src="resolveMediaUrl(item.url)" preload="none" muted playsinline style="width:100%;height:110px;object-fit:contain;background:#111" />
-              <NImage v-else
-                :src="resolveMediaUrl(item.url)"
-                width="100%"
-                height="110"
-                object-fit="cover"
-                :preview-disabled="true"
-              />
+              <img v-else :src="resolveMediaUrl(item.url)" :alt="item.name" loading="lazy" class="block w-full h-110px object-cover" />
               <div class="flex items-center justify-between px-4px py-2px text-11px text-gray-500">
                 <span class="truncate">{{ item.name }}</span>
                 <NTag v-if="item.ref_count > 0" size="tiny" type="warning" :bordered="false"
@@ -562,18 +580,22 @@ const categorySelectOptions = computed(() => [
           </div>
         </NScrollbar>
 
-        <TablePager
+        <div class="hidden sm:block"><TablePager
           v-model:page="page"
           v-model:page-size="pageSize"
           :total="total"
           :page-sizes="[24, 48, 96]"
           @change="loadList"
-        />
+        /></div>
+        <div class="sm:hidden flex flex-wrap items-center justify-between gap-8px mt-12px">
+          <span class="text-12px text-gray-400">共 {{ total }} 项</span>
+          <NPagination v-model:page="page" :page-size="pageSize" :item-count="total" simple size="small" @update:page="loadList" />
+        </div>
       </div>
 
       <!-- 右：分类面板 -->
       <div
-        class="flex w-190px shrink-0 flex-col border-l border-gray-200 pl-12px dark:border-gray-700"
+        class="hidden sm:flex w-190px shrink-0 flex-col border-l border-gray-200 pl-12px dark:border-gray-700"
       >
         <div class="mb-8px flex items-center justify-between">
           <span class="text-13px font-medium">素材分类</span>
@@ -661,9 +683,12 @@ const categorySelectOptions = computed(() => [
     </div>
 
     <template #footer>
-      <div class="flex justify-end gap-12px">
+      <div class="flex flex-wrap justify-end gap-12px">
         <NButton @click="handleCancel">取消</NButton>
-        <NButton type="primary" :disabled="!selectedIds.size" @click="handleConfirm">
+        <div v-if="selectedPreview.length" class="order-first w-full flex flex-wrap gap-8px" aria-label="已选素材">
+          <NTag v-for="item in selectedPreview" :key="item.id" closable @close="selectedIds = new Set([...selectedIds].filter(id => id !== item.id))"><span class="inline-block max-w-180px truncate">{{ item.name }}</span></NTag>
+        </div>
+        <NButton type="primary" :disabled="!selectedIds.size || loading" @click="handleConfirm">
           确定{{ selectedIds.size ? `（已选 ${selectedIds.size} 张）` : "" }}
         </NButton>
       </div>

@@ -66,6 +66,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontentbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
@@ -214,6 +215,8 @@ type Client struct {
 	ProcurementOrder *ProcurementOrderClient
 	// Product is the client for interacting with the Product builders.
 	Product *ProductClient
+	// ProductContentBatch is the client for interacting with the ProductContentBatch builders.
+	ProductContentBatch *ProductContentBatchClient
 	// ProductControl is the client for interacting with the ProductControl builders.
 	ProductControl *ProductControlClient
 	// ProductSku is the client for interacting with the ProductSku builders.
@@ -354,6 +357,7 @@ func (c *Client) init() {
 	c.ProcurementItem = NewProcurementItemClient(c.config)
 	c.ProcurementOrder = NewProcurementOrderClient(c.config)
 	c.Product = NewProductClient(c.config)
+	c.ProductContentBatch = NewProductContentBatchClient(c.config)
 	c.ProductControl = NewProductControlClient(c.config)
 	c.ProductSku = NewProductSkuClient(c.config)
 	c.Promotion = NewPromotionClient(c.config)
@@ -536,6 +540,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ProcurementItem:        NewProcurementItemClient(cfg),
 		ProcurementOrder:       NewProcurementOrderClient(cfg),
 		Product:                NewProductClient(cfg),
+		ProductContentBatch:    NewProductContentBatchClient(cfg),
 		ProductControl:         NewProductControlClient(cfg),
 		ProductSku:             NewProductSkuClient(cfg),
 		Promotion:              NewPromotionClient(cfg),
@@ -645,6 +650,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ProcurementItem:        NewProcurementItemClient(cfg),
 		ProcurementOrder:       NewProcurementOrderClient(cfg),
 		Product:                NewProductClient(cfg),
+		ProductContentBatch:    NewProductContentBatchClient(cfg),
 		ProductControl:         NewProductControlClient(cfg),
 		ProductSku:             NewProductSkuClient(cfg),
 		Promotion:              NewPromotionClient(cfg),
@@ -723,17 +729,17 @@ func (c *Client) Use(hooks ...Hook) {
 		c.NotifyTemplate, c.Order, c.OrderAmountLine, c.OrderDelivery, c.OrderItem,
 		c.OrderStatusEvent, c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel,
 		c.PointAccount, c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
-		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductControl,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
-		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
-		c.Withdrawal,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
+		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
+		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
+		c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -753,17 +759,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.NotifyTemplate, c.Order, c.OrderAmountLine, c.OrderDelivery, c.OrderItem,
 		c.OrderStatusEvent, c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel,
 		c.PointAccount, c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
-		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductControl,
-		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
-		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
-		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
-		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
-		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
-		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
-		c.SupplyMapping, c.SupplyNonce, c.SupplyOrder, c.SupplySyncTask, c.Tag,
-		c.Ticket, c.TicketMessage, c.User, c.UserGroup, c.UserSession, c.V1IDMap,
-		c.VirtualReview, c.VisitLog, c.WalletAccount, c.WalletTransaction,
-		c.Withdrawal,
+		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
+		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
+		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
+		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
+		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
+		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
+		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
+		c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -874,6 +880,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProcurementOrder.mutate(ctx, m)
 	case *ProductMutation:
 		return c.Product.mutate(ctx, m)
+	case *ProductContentBatchMutation:
+		return c.ProductContentBatch.mutate(ctx, m)
 	case *ProductControlMutation:
 		return c.ProductControl.mutate(ctx, m)
 	case *ProductSkuMutation:
@@ -7964,6 +7972,139 @@ func (c *ProductClient) mutate(ctx context.Context, m *ProductMutation) (Value, 
 	}
 }
 
+// ProductContentBatchClient is a client for the ProductContentBatch schema.
+type ProductContentBatchClient struct {
+	config
+}
+
+// NewProductContentBatchClient returns a client for the ProductContentBatch from the given config.
+func NewProductContentBatchClient(c config) *ProductContentBatchClient {
+	return &ProductContentBatchClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `productcontentbatch.Hooks(f(g(h())))`.
+func (c *ProductContentBatchClient) Use(hooks ...Hook) {
+	c.hooks.ProductContentBatch = append(c.hooks.ProductContentBatch, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `productcontentbatch.Intercept(f(g(h())))`.
+func (c *ProductContentBatchClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProductContentBatch = append(c.inters.ProductContentBatch, interceptors...)
+}
+
+// Create returns a builder for creating a ProductContentBatch entity.
+func (c *ProductContentBatchClient) Create() *ProductContentBatchCreate {
+	mutation := newProductContentBatchMutation(c.config, OpCreate)
+	return &ProductContentBatchCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProductContentBatch entities.
+func (c *ProductContentBatchClient) CreateBulk(builders ...*ProductContentBatchCreate) *ProductContentBatchCreateBulk {
+	return &ProductContentBatchCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProductContentBatchClient) MapCreateBulk(slice any, setFunc func(*ProductContentBatchCreate, int)) *ProductContentBatchCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProductContentBatchCreateBulk{err: fmt.Errorf("calling to ProductContentBatchClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProductContentBatchCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProductContentBatchCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProductContentBatch.
+func (c *ProductContentBatchClient) Update() *ProductContentBatchUpdate {
+	mutation := newProductContentBatchMutation(c.config, OpUpdate)
+	return &ProductContentBatchUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProductContentBatchClient) UpdateOne(_m *ProductContentBatch) *ProductContentBatchUpdateOne {
+	mutation := newProductContentBatchMutation(c.config, OpUpdateOne, withProductContentBatch(_m))
+	return &ProductContentBatchUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProductContentBatchClient) UpdateOneID(id uint64) *ProductContentBatchUpdateOne {
+	mutation := newProductContentBatchMutation(c.config, OpUpdateOne, withProductContentBatchID(id))
+	return &ProductContentBatchUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProductContentBatch.
+func (c *ProductContentBatchClient) Delete() *ProductContentBatchDelete {
+	mutation := newProductContentBatchMutation(c.config, OpDelete)
+	return &ProductContentBatchDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProductContentBatchClient) DeleteOne(_m *ProductContentBatch) *ProductContentBatchDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProductContentBatchClient) DeleteOneID(id uint64) *ProductContentBatchDeleteOne {
+	builder := c.Delete().Where(productcontentbatch.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProductContentBatchDeleteOne{builder}
+}
+
+// Query returns a query builder for ProductContentBatch.
+func (c *ProductContentBatchClient) Query() *ProductContentBatchQuery {
+	return &ProductContentBatchQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProductContentBatch},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProductContentBatch entity by its id.
+func (c *ProductContentBatchClient) Get(ctx context.Context, id uint64) (*ProductContentBatch, error) {
+	return c.Query().Where(productcontentbatch.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProductContentBatchClient) GetX(ctx context.Context, id uint64) *ProductContentBatch {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProductContentBatchClient) Hooks() []Hook {
+	return c.hooks.ProductContentBatch
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProductContentBatchClient) Interceptors() []Interceptor {
+	return c.inters.ProductContentBatch
+}
+
+func (c *ProductContentBatchClient) mutate(ctx context.Context, m *ProductContentBatchMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProductContentBatchCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProductContentBatchUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProductContentBatchUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProductContentBatchDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProductContentBatch mutation op: %q", m.Op())
+	}
+}
+
 // ProductControlClient is a client for the ProductControl schema.
 type ProductControlClient struct {
 	config
@@ -13195,8 +13336,8 @@ type (
 		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
 		OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel, PointAccount,
 		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
-		ProcurementOrder, Product, ProductControl, ProductSku, Promotion,
-		RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ProcurementOrder, Product, ProductContentBatch, ProductControl, ProductSku,
+		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
 		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
 		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
@@ -13215,8 +13356,8 @@ type (
 		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
 		OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel, PointAccount,
 		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
-		ProcurementOrder, Product, ProductControl, ProductSku, Promotion,
-		RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
+		ProcurementOrder, Product, ProductContentBatch, ProductControl, ProductSku,
+		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
 		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
 		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
 		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,

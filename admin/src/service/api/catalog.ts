@@ -241,3 +241,42 @@ export function createVirtualReview(data: { product_id: number; nickname?: strin
 export function mergeCategories(data: { source_ids: number[]; target_id: number; preview: boolean }) {
   return request<{ categories: number; products: number; children: number }>({ url: "/api/v1/admin/categories/merge", method: "post", data });
 }
+
+export interface ProductContentPatch {
+  cover_action: number;
+  cover: string;
+  images_action: number;
+  images: string[];
+  description_action: number;
+  description: string;
+}
+export interface BatchContentTarget {
+  id: number; name: string; cover: string; images: string[]; description: string;
+  upstream: boolean; changed: boolean; content_changed: boolean; protection_changed: boolean;
+}
+export interface BatchContentPreview {
+  request_id: string; expires_at: number; matched: number; changed: number; unchanged: number;
+  upstream_count: number; content_changed: number; protection_changed: number;
+  patch: ProductContentPatch; targets: BatchContentTarget[];
+}
+export interface BatchContentResult { completed: boolean; matched: number; changed: number; unchanged: number }
+export async function previewBatchProductContent(data: { ids?: number[]; category_id?: number; include_descendants?: boolean; patch: ProductContentPatch }) {
+  const response = await request<BatchContentPreview>({ url: "/api/v1/admin/products/batch-content/preview", method: "post", data });
+  if (response.data) {
+    const value = response.data;
+    response.data = { ...value, changed: value.changed || 0, unchanged: value.unchanged || 0, upstream_count: value.upstream_count || 0, content_changed: value.content_changed || 0, protection_changed: value.protection_changed || 0,
+      patch: Object.assign({ cover_action: 0, cover: "", images_action: 0, images: [], description_action: 0, description: "" }, value.patch),
+      targets: (value.targets || []).map(row => Object.assign({ cover: "", images: [], description: "", upstream: false, changed: false, content_changed: false, protection_changed: false }, row)) };
+  }
+  return response;
+}
+export async function batchUpdateProductContent(request_id: string) {
+  const response = await request<BatchContentResult>({ url: "/api/v1/admin/products/batch-content", method: "post", data: { request_id } });
+  if (response.data) response.data = Object.assign({ completed: false, matched: 0, changed: 0, unchanged: 0 }, response.data);
+  return response;
+}
+export async function getBatchProductContentResult(requestId: string) {
+  const response = await request<BatchContentResult>({ url: `/api/v1/admin/products/batch-content/results/${encodeURIComponent(requestId)}` });
+  if (response.data) response.data = Object.assign({ completed: false, matched: 0, changed: 0, unchanged: 0 }, response.data);
+  return response;
+}

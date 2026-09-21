@@ -621,6 +621,18 @@ func (f ProductFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductMutation", m)
 }
 
+// The ProductContentBatchFunc type is an adapter to allow the use of ordinary
+// function as ProductContentBatch mutator.
+type ProductContentBatchFunc func(context.Context, *ent.ProductContentBatchMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProductContentBatchFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProductContentBatchMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductContentBatchMutation", m)
+}
+
 // The ProductControlFunc type is an adapter to allow the use of ordinary
 // function as ProductControl mutator.
 type ProductControlFunc func(context.Context, *ent.ProductControlMutation) (ent.Value, error)

@@ -80,6 +80,7 @@ type Product struct {
 	Price          int64 // 分
 	FactoryPrice   int64 // 分（上游成本快照）
 	Description    string
+	DescriptionSet bool
 	Cover          string
 	IsActive       bool
 	Stock          int32 // -1 = 明确无限，-2 = 未知

@@ -25,6 +25,8 @@ func (Product) Fields() []ent.Field {
 		field.Text("description").Optional().Comment("详情（服务端 sanitize 后存储）"),
 		field.String("cover").MaxLen(255).Optional(),
 		field.JSON("images", []string{}).Optional().Comment("详情图集"),
+		field.Bool("cover_protected").Default(false),
+		field.Bool("description_protected").Default(false),
 		// 金额一律 int64 分（铁律 1）
 		field.Int64("price").Default(0).Comment("售价（分）"),
 		field.Int64("factory_price").Default(0).Comment("成本价（分，上游/自营成本快照）"),

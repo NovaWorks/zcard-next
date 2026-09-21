@@ -344,14 +344,15 @@ type dujiaoProduct struct {
 
 func (p dujiaoProduct) toProduct() Product {
 	out := Product{
-		ID:          idString(p.ID),
-		Name:        LocalizedText(p.Title),
-		CategoryID:  idString(p.CategoryID),
-		Price:       parseYuanToCents(p.PriceAmount),
-		Description: firstNonEmpty(LocalizedText(p.Content), LocalizedText(p.Description)),
-		IsActive:    p.IsActive,
-		Stock:       -1,
-		Cover:       firstNonEmpty(p.Images...),
+		ID:             idString(p.ID),
+		Name:           LocalizedText(p.Title),
+		CategoryID:     idString(p.CategoryID),
+		Price:          parseYuanToCents(p.PriceAmount),
+		Description:    firstNonEmpty(LocalizedText(p.Content), LocalizedText(p.Description)),
+		DescriptionSet: p.Content != nil || p.Description != nil,
+		IsActive:       p.IsActive,
+		Stock:          -1,
+		Cover:          firstNonEmpty(p.Images...),
 	}
 	// 拿货价：批发价第一档 unit_price，缺省回退售价（1.x DujiaoNextDriver 同款）
 	out.FactoryPrice = out.Price
