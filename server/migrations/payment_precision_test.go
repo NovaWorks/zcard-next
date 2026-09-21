@@ -1,7 +1,6 @@
 package migrations_test
 
 import (
-	"context"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -54,13 +53,18 @@ func TestPaymentPrecisionUpgrade(t *testing.T) {
 			if _, err = d.DB.Exec(string(upgrade)); err != nil {
 				t.Fatal(err)
 			}
-			row, err := d.Client.Payment.Get(context.Background(), 1)
+			var amount, charged, units int64
+			var currency string
+			var rate float64
+			var precision int32
+			err = d.DB.QueryRow(`SELECT amount,charged_amount,charged_units,charged_currency,exchange_rate,charged_precision FROM payments WHERE id=1`).Scan(&amount, &charged, &units, &currency, &rate, &precision)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if row.Amount != 200 || row.ChargedAmount != 200 || row.ChargedUnits != 28 || row.ChargedCurrency != "USD" || row.ExchangeRate != 0.14 || row.ChargedPrecision != -1 {
-				t.Fatalf("migration altered money: %+v", row)
+			if amount != 200 || charged != 200 || units != 28 || currency != "USD" || rate != 0.14 || precision != -1 {
+				t.Fatal("migration altered money")
 			}
+
 		})
 	}
 }

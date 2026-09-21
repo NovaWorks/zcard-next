@@ -71,6 +71,8 @@ func (Payment) Fields() []ent.Field {
 		field.String("driver_snapshot").MaxLen(100).Default(""),
 		field.Time("expires_at").SchemaType(mysqlTime).Optional(),
 		field.String("review_reason").MaxLen(255).Default(""),
+		field.String("gateway_order_ref").MaxLen(64).Optional().Comment("支付尝试的稳定网关订单号；旧流水保持 NULL"),
+		field.JSON("gateway_context", json.RawMessage{}).Optional().Comment("非敏感网关请求快照、租约及收银台地址"),
 		field.String("channel_order_no").MaxLen(80).Optional().Comment("网关单号（回调时回填）"),
 		field.Int64("amount").Comment("应收（分，基础货币）"),
 		field.Int64("charged_amount").Default(0).Comment("实收（分，回调核对；金额核对永远对基础货币）"),
@@ -97,6 +99,7 @@ func (Payment) Fields() []ent.Field {
 func (Payment) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("order_id"),
+		index.Fields("gateway_order_ref").Unique(),
 		index.Fields("channel", "channel_order_no").Unique(),
 		index.Fields("status", "created_at"),
 	}

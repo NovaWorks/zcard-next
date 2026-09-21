@@ -258,6 +258,9 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "payment.CHANNEL_BUSY") || strings.HasPrefix(err.Error(), "payment.METHODS_INVALID") {
+			return nil, errors.BadRequest("payment.UPDATE_FAILED", err.Error())
+		}
 		return nil, errors.InternalServer("payment.UPDATE_FAILED", "更新失败")
 	}
 	return s.channelPB(ctx, ch), nil
@@ -266,6 +269,9 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 // DeleteChannel 删除渠道。
 func (s *AdminPaymentService) DeleteChannel(ctx context.Context, req *adminv1.DeleteChannelRequest) (*emptypb.Empty, error) {
 	if err := s.repo.DeleteChannel(ctx, req.GetId()); err != nil {
+		if strings.HasPrefix(err.Error(), "payment.CHANNEL_IN_USE") {
+			return nil, errors.BadRequest("payment.CHANNEL_IN_USE", err.Error())
+		}
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
 	return &emptypb.Empty{}, nil
@@ -571,6 +577,13 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 			return nil, errors.BadRequest("payment.METHOD_INVALID", "请选择该渠道支持的支付方式")
 		}
 	}
+	if ch.Driver == "bepusdt" {
+		info, err := s.repo.createBepusdtPayment(ctx, ch.ID, o.ID, 0, req.GetMethod())
+		if err != nil {
+			return nil, errors.BadRequest("payment.CREATE_FAILED", err.Error())
+		}
+		return &storefrontv1.CreatePaymentReply{PaymentId: info.PaymentID, Type: info.Type, Payload: info.Payload}, nil
+	}
 	p, err := s.repo.CreatePayment(ctx, o.ID, ch.Code, o.TotalAmount, "")
 	if err != nil {
 		return nil, errors.InternalServer("payment.CREATE_FAILED", "创建支付失败")
@@ -684,25 +697,34 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 				return ctx.JSON(http.StatusUnauthorized, map[string]string{"error": "verify failed"})
 			}
 		}
-		if !f.Success {
+		if !f.Success && ch.Driver != "bepusdt" {
 			return ctx.JSON(http.StatusOK, map[string]string{"status": "ignored"})
 		}
 
 		// 6) 定位支付单（订单号定位；充值单 RCH<id> 前缀走 recharge 关联）
-		paymentID := locatePaymentByFact(ctx, d, channelCode, f)
+		paymentID := uint64(0)
+		if ch.Driver == "bepusdt" {
+			matched, lookupErr := data.Client(ctx, d).Payment.Query().Where(payment.ChannelID(ch.ID), payment.DriverSnapshot("bepusdt"), payment.GatewayOrderRef(f.GatewayOrderRef)).Only(ctx)
+			if lookupErr == nil {
+				paymentID = matched.ID
+			}
+		} else {
+			paymentID = locatePaymentByFact(ctx, d, channelCode, f)
+		}
 		if paymentID == 0 {
 			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment not found"})
 		}
 
 		// 7) 走回调管线（四重校验 + 幂等 + markPaid）
 		fact := CallbackFact{
-			Channel:        channelCode,
-			ChannelOrderNo: f.ChannelOrderNo,
-			OrderNo:        f.OrderNo,
-			Amount:         int64(f.Amount),
-			Currency:       f.Currency,
-			Success:        f.Success,
-			Raw:            f.Raw,
+			Channel:         channelCode,
+			GatewayOrderRef: f.GatewayOrderRef,
+			ChannelOrderNo:  f.ChannelOrderNo,
+			OrderNo:         f.OrderNo,
+			Amount:          int64(f.Amount),
+			Currency:        f.Currency,
+			Success:         f.Success,
+			Raw:             f.Raw,
 		}
 		p, checkErr := repo.GetPayment(ctx, paymentID)
 		if checkErr != nil {
@@ -711,6 +733,12 @@ func RegisterPaymentCallback(srv *khttp.Server, repo *PaymentRepoImpl, d *data.D
 		resolved, checkErr := repo.channelForPayment(ctx, p)
 		if checkErr != nil || resolved.ID != ch.ID {
 			return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment channel mismatch"})
+		}
+		if !f.Success {
+			if p.GatewayOrderRef != f.GatewayOrderRef || (p.ChannelOrderNo != "" && p.ChannelOrderNo != f.ChannelOrderNo) || p.Amount != int64(f.Amount) {
+				return ctx.JSON(http.StatusBadRequest, map[string]string{"error": "payment mismatch"})
+			}
+			return ctx.String(http.StatusOK, "success")
 		}
 		if err := repo.HandleCallback(ctx, paymentID, fact); err != nil {
 			return ctx.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})

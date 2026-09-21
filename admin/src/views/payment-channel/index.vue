@@ -88,6 +88,7 @@ const driverBadges: Record<string, { char: string; bg: string; color?: string }>
   alipay: { char: "支", bg: "linear-gradient(135deg,#1677ff,#0e5fd8)", color: "#fff" },
   wechat: { char: "微", bg: "linear-gradient(135deg,#07c160,#06ad56)", color: "#fff" },
   epay: { char: "易", bg: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "#fff" },
+  bepusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   epusdt: { char: "₮", bg: "linear-gradient(135deg,#26a17b,#1d8a68)", color: "#fff" },
   stripe: { char: "S", bg: "linear-gradient(135deg,#635bff,#5851ea)", color: "#fff" },
   paypal: { char: "P", bg: "linear-gradient(135deg,#003087,#012169)", color: "#fff" },
@@ -329,8 +330,10 @@ function openConfig(ch: ChannelRow) {
     echo = {};
   }
   for (const f of currentFields.value) {
-    const v = echo[f.key];
-    if (Array.isArray(v) && v.length > 0) {
+    const v = echo[f.key] ?? (ch.driver === "bepusdt" ? f.default : undefined);
+    if (f.type === "number" && v !== undefined && v !== "" && Number.isFinite(Number(v))) {
+      form.values[f.key] = Number(v);
+    } else if (Array.isArray(v) && v.length > 0) {
       form.values[f.key] = v; // 多选字段回显
     } else if (typeof v === "string" && v !== "****" && v !== "") {
       form.values[f.key] = v;
@@ -361,7 +364,7 @@ function handleConfigSave() {
   // 必填校验：未配置过的必填字段必须填写（数组=非空）
   for (const f of currentFields.value) {
     const v = form.values[f.key];
-    const filled = Array.isArray(v) ? v.length > 0 : !!((v as string) || "").trim();
+    const filled = Array.isArray(v) ? v.length > 0 : f.type === "number" ? typeof v === "number" && Number.isFinite(v) : !!String(v ?? "").trim();
     if (f.required && !configuredKeys.value.has(f.key) && !filled) {
       message.warning(`请填写「${f.label}」`);
       return;
@@ -371,10 +374,12 @@ function handleConfigSave() {
   const cfg: Record<string, any> = {};
   for (const f of currentFields.value) {
     const v = form.values[f.key];
-    if (Array.isArray(v)) {
+    if (f.type === "number") {
+      if (typeof v === "number" && Number.isFinite(v)) cfg[f.key] = v;
+    } else if (Array.isArray(v)) {
       cfg[f.key] = v; // 空数组也提交，允许清空旧的币种/网络限制
     } else {
-      const sv = ((v as string) || "").trim();
+      const sv = String(v ?? "").trim();
       if (sv && sv !== "****") cfg[f.key] = sv;
     }
   }
@@ -718,7 +723,12 @@ onMounted(() => {
               <NInput v-model:value="form.values[f.key]" type="textarea" :rows="4" :placeholder="fieldHint(f)" />
             </template>
             <template v-else-if="f.type === 'number'">
-              <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" :placeholder="fieldHint(f)" />
+              <div class="w-full">
+                <NInputNumber v-model:value="form.values[f.key] as any" style="width: 100%" :placeholder="fieldHint(f)"
+                  :min="current?.driver === 'bepusdt' && f.key === 'timeout' ? 180 : undefined"
+                  :max="current?.driver === 'bepusdt' && f.key === 'timeout' ? 3600 : undefined" />
+                <div v-if="current?.driver === 'bepusdt' && f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
+              </div>
             </template>
             <template v-else>
               <div class="w-full">
@@ -728,7 +738,7 @@ onMounted(() => {
                   show-password-on="click"
                   :placeholder="fieldHint(f)"
                 />
-                <div v-if="current?.driver === 'epusdt' && f.key === 'api_url' && f.help" class="text-12px opacity-70 mt-4px">
+                <div v-if="['epusdt', 'bepusdt'].includes(current?.driver || '') && f.key === 'api_url' && f.help" class="text-12px opacity-70 mt-4px">
                   {{ f.help }}
                 </div>
               </div>

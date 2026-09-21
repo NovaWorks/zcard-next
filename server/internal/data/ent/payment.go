@@ -39,6 +39,10 @@ type Payment struct {
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// ReviewReason holds the value of the "review_reason" field.
 	ReviewReason string `json:"review_reason,omitempty"`
+	// 支付尝试的稳定网关订单号；旧流水保持 NULL
+	GatewayOrderRef string `json:"gateway_order_ref,omitempty"`
+	// 非敏感网关请求快照、租约及收银台地址
+	GatewayContext json.RawMessage `json:"gateway_context,omitempty"`
 	// 网关单号（回调时回填）
 	ChannelOrderNo string `json:"channel_order_no,omitempty"`
 	// 应收（分，基础货币）
@@ -94,13 +98,13 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case payment.FieldRaw:
+		case payment.FieldGatewayContext, payment.FieldRaw:
 			values[i] = new([]byte)
 		case payment.FieldExchangeRate:
 			values[i] = new(sql.NullFloat64)
 		case payment.FieldID, payment.FieldSubsiteID, payment.FieldOrderID, payment.FieldRechargeOrderID, payment.FieldChannelID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldChargedPrecision, payment.FieldChargedUnits, payment.FieldFee:
 			values[i] = new(sql.NullInt64)
-		case payment.FieldChannel, payment.FieldDriverSnapshot, payment.FieldReviewReason, payment.FieldChannelOrderNo, payment.FieldChargedCurrency, payment.FieldStatus, payment.FieldIdempotencyKey:
+		case payment.FieldChannel, payment.FieldDriverSnapshot, payment.FieldReviewReason, payment.FieldGatewayOrderRef, payment.FieldChannelOrderNo, payment.FieldChargedCurrency, payment.FieldStatus, payment.FieldIdempotencyKey:
 			values[i] = new(sql.NullString)
 		case payment.FieldCreatedAt, payment.FieldUpdatedAt, payment.FieldExpiresAt, payment.FieldPaidAt:
 			values[i] = new(sql.NullTime)
@@ -184,6 +188,20 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field review_reason", values[i])
 			} else if value.Valid {
 				_m.ReviewReason = value.String
+			}
+		case payment.FieldGatewayOrderRef:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field gateway_order_ref", values[i])
+			} else if value.Valid {
+				_m.GatewayOrderRef = value.String
+			}
+		case payment.FieldGatewayContext:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field gateway_context", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.GatewayContext); err != nil {
+					return fmt.Errorf("unmarshal field gateway_context: %w", err)
+				}
 			}
 		case payment.FieldChannelOrderNo:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -329,6 +347,12 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("review_reason=")
 	builder.WriteString(_m.ReviewReason)
+	builder.WriteString(", ")
+	builder.WriteString("gateway_order_ref=")
+	builder.WriteString(_m.GatewayOrderRef)
+	builder.WriteString(", ")
+	builder.WriteString("gateway_context=")
+	builder.WriteString(fmt.Sprintf("%v", _m.GatewayContext))
 	builder.WriteString(", ")
 	builder.WriteString("channel_order_no=")
 	builder.WriteString(_m.ChannelOrderNo)

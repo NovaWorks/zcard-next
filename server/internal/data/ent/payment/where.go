@@ -105,6 +105,11 @@ func ReviewReason(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldReviewReason, v))
 }
 
+// GatewayOrderRef applies equality check predicate on the "gateway_order_ref" field. It's identical to GatewayOrderRefEQ.
+func GatewayOrderRef(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldGatewayOrderRef, v))
+}
+
 // ChannelOrderNo applies equality check predicate on the "channel_order_no" field. It's identical to ChannelOrderNoEQ.
 func ChannelOrderNo(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldChannelOrderNo, v))
@@ -638,6 +643,91 @@ func ReviewReasonEqualFold(v string) predicate.Payment {
 // ReviewReasonContainsFold applies the ContainsFold predicate on the "review_reason" field.
 func ReviewReasonContainsFold(v string) predicate.Payment {
 	return predicate.Payment(sql.FieldContainsFold(FieldReviewReason, v))
+}
+
+// GatewayOrderRefEQ applies the EQ predicate on the "gateway_order_ref" field.
+func GatewayOrderRefEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEQ(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefNEQ applies the NEQ predicate on the "gateway_order_ref" field.
+func GatewayOrderRefNEQ(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldNEQ(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefIn applies the In predicate on the "gateway_order_ref" field.
+func GatewayOrderRefIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldIn(FieldGatewayOrderRef, vs...))
+}
+
+// GatewayOrderRefNotIn applies the NotIn predicate on the "gateway_order_ref" field.
+func GatewayOrderRefNotIn(vs ...string) predicate.Payment {
+	return predicate.Payment(sql.FieldNotIn(FieldGatewayOrderRef, vs...))
+}
+
+// GatewayOrderRefGT applies the GT predicate on the "gateway_order_ref" field.
+func GatewayOrderRefGT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGT(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefGTE applies the GTE predicate on the "gateway_order_ref" field.
+func GatewayOrderRefGTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldGTE(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefLT applies the LT predicate on the "gateway_order_ref" field.
+func GatewayOrderRefLT(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLT(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefLTE applies the LTE predicate on the "gateway_order_ref" field.
+func GatewayOrderRefLTE(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldLTE(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefContains applies the Contains predicate on the "gateway_order_ref" field.
+func GatewayOrderRefContains(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContains(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefHasPrefix applies the HasPrefix predicate on the "gateway_order_ref" field.
+func GatewayOrderRefHasPrefix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasPrefix(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefHasSuffix applies the HasSuffix predicate on the "gateway_order_ref" field.
+func GatewayOrderRefHasSuffix(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldHasSuffix(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefIsNil applies the IsNil predicate on the "gateway_order_ref" field.
+func GatewayOrderRefIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldGatewayOrderRef))
+}
+
+// GatewayOrderRefNotNil applies the NotNil predicate on the "gateway_order_ref" field.
+func GatewayOrderRefNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldGatewayOrderRef))
+}
+
+// GatewayOrderRefEqualFold applies the EqualFold predicate on the "gateway_order_ref" field.
+func GatewayOrderRefEqualFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldEqualFold(FieldGatewayOrderRef, v))
+}
+
+// GatewayOrderRefContainsFold applies the ContainsFold predicate on the "gateway_order_ref" field.
+func GatewayOrderRefContainsFold(v string) predicate.Payment {
+	return predicate.Payment(sql.FieldContainsFold(FieldGatewayOrderRef, v))
+}
+
+// GatewayContextIsNil applies the IsNil predicate on the "gateway_context" field.
+func GatewayContextIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldGatewayContext))
+}
+
+// GatewayContextNotNil applies the NotNil predicate on the "gateway_context" field.
+func GatewayContextNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldGatewayContext))
 }
 
 // ChannelOrderNoEQ applies the EQ predicate on the "channel_order_no" field.

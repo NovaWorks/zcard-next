@@ -27,6 +27,7 @@ import (
 	settingsport "github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
 	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 	"github.com/shopspring/decimal"
@@ -237,6 +238,9 @@ func methodsJSON(raw string) ([]map[string]any, error) {
 
 // CreateChannel 创建渠道（凭据加密入库；methodsJSON=支付方式列表）。
 func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32, icon string, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
+	if driver == "bepusdt" && len(methods) > 0 {
+		return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 每个渠道固定一条链")
+	}
 	enc, err := r.Cipher.Seal([]byte(configJSON), []byte("payment_channel:"+code))
 	if err != nil {
 		return nil, fmt.Errorf("payment: 凭据加密失败: %w", err)
@@ -263,6 +267,28 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 // UpdateChannel 更新渠道（config_json=**** 跳过凭据修改；feeType 空=不修改；
 // setIcon/setMethods=false 保持原值——proto optional 语义）。
 func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32, setIcon bool, icon string, setMethods bool, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
+	var result *ent.PaymentChannel
+	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
+		if _, err := data.Client(txCtx, r.data).PaymentChannel.UpdateOneID(id).AddSort(0).Save(txCtx); err != nil {
+			return err
+		}
+		var err error
+		result, err = r.updateChannel(txCtx, id, name, configJSON, fee, feeType, enabled, sort, setIcon, icon, setMethods, methods, usage...)
+		return err
+	})
+	return result, err
+}
+
+func (r *PaymentRepoImpl) updateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32, setIcon bool, icon string, setMethods bool, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
+	if setMethods && len(methods) > 0 {
+		ch, err := data.Client(ctx, r.data).PaymentChannel.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if ch.Driver == "bepusdt" {
+			return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 每个渠道固定一条链")
+		}
+	}
 	q := data.Client(ctx, r.data).PaymentChannel.UpdateOneID(id)
 	if len(usage) > 0 {
 		q.SetNillableAllowPurchase(usage[0].AllowPurchase).SetNillableAllowMemberRecharge(usage[0].AllowMemberRecharge).SetNillableAllowSupplyRecharge(usage[0].AllowSupplyRecharge)
@@ -273,6 +299,9 @@ func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, co
 	if configJSON != "" && configJSON != `"****"` {
 		ch, err := data.Client(ctx, r.data).PaymentChannel.Get(ctx, id)
 		if err != nil {
+			return nil, err
+		}
+		if err := r.checkBepusdtConfigChange(ctx, ch, configJSON); err != nil {
 			return nil, err
 		}
 		enc, err := r.Cipher.Seal([]byte(configJSON), []byte("payment_channel:"+ch.Code))
@@ -306,7 +335,23 @@ func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, co
 
 // DeleteChannel 删除渠道。
 func (r *PaymentRepoImpl) DeleteChannel(ctx context.Context, id uint64) error {
-	return data.Client(ctx, r.data).PaymentChannel.DeleteOneID(id).Exec(ctx)
+	return data.Tx(ctx, r.data, func(txCtx context.Context) error {
+		c := data.Client(txCtx, r.data)
+		ch, err := c.PaymentChannel.UpdateOneID(id).AddSort(0).Save(txCtx)
+		if err != nil {
+			return err
+		}
+		if ch.Driver == "bepusdt" {
+			used, err := c.Payment.Query().Where(payment.ChannelID(id)).Exist(txCtx)
+			if err != nil {
+				return err
+			}
+			if used {
+				return fmt.Errorf("payment.CHANNEL_IN_USE: 此渠道存在支付记录，请停用以保留回调处理")
+			}
+		}
+		return c.PaymentChannel.DeleteOneID(id).Exec(txCtx)
+	})
 }
 
 // DecryptConfig 解密凭据（失败降级为空，铁律 5）。
@@ -449,6 +494,9 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 			return nil, fmt.Errorf("payment.METHOD_INVALID: 请选择该渠道支持的支付方式")
 		}
 	}
+	if ch.Driver == "bepusdt" {
+		return r.createBepusdtPayment(ctx, ch.ID, 0, ro.ID, method)
+	}
 	p, err := client.Payment.Create().
 		SetRechargeOrderID(ro.ID).
 		SetSubsiteID(0).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).
@@ -550,6 +598,20 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 		}
 		if err != nil {
 			return err
+		}
+
+		// Native BEpusdt must bind the exact attempt even for duplicate callbacks.
+		if p.DriverSnapshot == "bepusdt" {
+			p, err = r.lockBepusdtPayment(txCtx, p.ID)
+			if err != nil {
+				return err
+			}
+			if fact.GatewayOrderRef == "" || fact.GatewayOrderRef != p.GatewayOrderRef || fact.ChannelOrderNo == "" || (p.ChannelOrderNo != "" && p.ChannelOrderNo != fact.ChannelOrderNo) {
+				return fmt.Errorf("payment.GATEWAY_ORDER_MISMATCH")
+			}
+			if fact.Channel != p.Channel || fact.Amount != p.Amount || fact.Currency != "CNY" {
+				return fmt.Errorf("payment.AMOUNT_MISMATCH")
+			}
 		}
 
 		// 2) 幂等第一层：已 success 直接 ACK
@@ -706,19 +768,41 @@ func (r *PaymentRepoImpl) settleOrder(ctx context.Context, p *ent.Payment, fact 
 // → outbox recharge.succeeded。金额与赠送全部取服务端落库值（铁律 16）。
 func (r *PaymentRepoImpl) settleRecharge(ctx context.Context, p *ent.Payment, fact CallbackFact) error {
 	client := data.Client(ctx, r.data)
-	ro, err := client.RechargeOrder.Get(ctx, p.RechargeOrderID)
+	var ro *ent.RechargeOrder
+	var err error
+	if p.DriverSnapshot == "bepusdt" {
+		if r.data.Dialect != db.SQLite {
+			ro, err = client.RechargeOrder.Query().Where(rechargeorder.ID(p.RechargeOrderID)).ForUpdate().Only(ctx)
+		} else {
+			ro, err = client.RechargeOrder.UpdateOneID(p.RechargeOrderID).AddAmount(0).Save(ctx)
+		}
+	} else {
+		ro, err = client.RechargeOrder.Get(ctx, p.RechargeOrderID)
+	}
 	if err != nil {
 		return err
 	}
-	if ro.Status != rechargeorder.StatusPending {
+	reviewOrReject := func() error {
+		if p.DriverSnapshot == "bepusdt" {
+			_, err := client.Payment.UpdateOneID(p.ID).SetReviewReason("充值单已处理，本次到账待核对，请处理退款").Save(ctx)
+			return err
+		}
 		return fmt.Errorf("payment.RECHARGE_NOT_PENDING")
 	}
-	if _, err := client.RechargeOrder.UpdateOneID(ro.ID).
-		SetStatus(rechargeorder.StatusSuccess).
-		SetPaymentID(p.ID).
-		SetPaidAt(time.Now().UTC()).
-		Save(ctx); err != nil {
+	if ro.Status != rechargeorder.StatusPending {
+		return reviewOrReject()
+	}
+	// A second channel can pay the same recharge concurrently. The status CAS
+	// claims settlement across channels before either wallet or supplier credit.
+	affected, err := client.RechargeOrder.Update().
+		Where(rechargeorder.ID(ro.ID), rechargeorder.StatusEQ(rechargeorder.StatusPending)).
+		SetStatus(rechargeorder.StatusSuccess).SetPaymentID(p.ID).
+		SetPaidAt(time.Now().UTC()).Save(ctx)
+	if err != nil {
 		return err
+	}
+	if affected != 1 {
+		return reviewOrReject()
 	}
 	// 入账分支（target 由建单时定；金额全部取服务端落库值，铁律 16）：
 	// balance → 用户钱包余额（本金+赠送）+ 赠送积分；
@@ -774,13 +858,14 @@ func (r *PaymentRepoImpl) isWalletChannel(ctx context.Context, code string) bool
 
 // CallbackFact 回调事实（适配器产出）。
 type CallbackFact struct {
-	Channel        string
-	ChannelOrderNo string
-	OrderNo        string
-	Amount         int64 // 分（基础货币）
-	Currency       string
-	Success        bool
-	Raw            json.RawMessage
+	GatewayOrderRef string
+	Channel         string
+	ChannelOrderNo  string
+	OrderNo         string
+	Amount          int64 // 分（基础货币）
+	Currency        string
+	Success         bool
+	Raw             json.RawMessage
 }
 
 // ── 退款（）───────────────────────────────────────────────

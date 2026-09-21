@@ -45436,46 +45436,49 @@ func (m *PageViewMutation) ResetEdge(name string) error {
 // PaymentMutation represents an operation that mutates the Payment nodes in the graph.
 type PaymentMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uint64
-	created_at           *time.Time
-	updated_at           *time.Time
-	subsite_id           *uint64
-	addsubsite_id        *int64
-	recharge_order_id    *uint64
-	addrecharge_order_id *int64
-	channel              *string
-	channel_id           *uint64
-	addchannel_id        *int64
-	driver_snapshot      *string
-	expires_at           *time.Time
-	review_reason        *string
-	channel_order_no     *string
-	amount               *int64
-	addamount            *int64
-	charged_amount       *int64
-	addcharged_amount    *int64
-	charged_currency     *string
-	exchange_rate        *float64
-	addexchange_rate     *float64
-	charged_precision    *int32
-	addcharged_precision *int32
-	charged_units        *int64
-	addcharged_units     *int64
-	fee                  *int64
-	addfee               *int64
-	status               *payment.Status
-	paid_at              *time.Time
-	raw                  *json.RawMessage
-	appendraw            json.RawMessage
-	idempotency_key      *string
-	clearedFields        map[string]struct{}
-	_order               *uint64
-	cleared_order        bool
-	done                 bool
-	oldValue             func(context.Context) (*Payment, error)
-	predicates           []predicate.Payment
+	op                    Op
+	typ                   string
+	id                    *uint64
+	created_at            *time.Time
+	updated_at            *time.Time
+	subsite_id            *uint64
+	addsubsite_id         *int64
+	recharge_order_id     *uint64
+	addrecharge_order_id  *int64
+	channel               *string
+	channel_id            *uint64
+	addchannel_id         *int64
+	driver_snapshot       *string
+	expires_at            *time.Time
+	review_reason         *string
+	gateway_order_ref     *string
+	gateway_context       *json.RawMessage
+	appendgateway_context json.RawMessage
+	channel_order_no      *string
+	amount                *int64
+	addamount             *int64
+	charged_amount        *int64
+	addcharged_amount     *int64
+	charged_currency      *string
+	exchange_rate         *float64
+	addexchange_rate      *float64
+	charged_precision     *int32
+	addcharged_precision  *int32
+	charged_units         *int64
+	addcharged_units      *int64
+	fee                   *int64
+	addfee                *int64
+	status                *payment.Status
+	paid_at               *time.Time
+	raw                   *json.RawMessage
+	appendraw             json.RawMessage
+	idempotency_key       *string
+	clearedFields         map[string]struct{}
+	_order                *uint64
+	cleared_order         bool
+	done                  bool
+	oldValue              func(context.Context) (*Payment, error)
+	predicates            []predicate.Payment
 }
 
 var _ ent.Mutation = (*PaymentMutation)(nil)
@@ -46040,6 +46043,120 @@ func (m *PaymentMutation) OldReviewReason(ctx context.Context) (v string, err er
 // ResetReviewReason resets all changes to the "review_reason" field.
 func (m *PaymentMutation) ResetReviewReason() {
 	m.review_reason = nil
+}
+
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (m *PaymentMutation) SetGatewayOrderRef(s string) {
+	m.gateway_order_ref = &s
+}
+
+// GatewayOrderRef returns the value of the "gateway_order_ref" field in the mutation.
+func (m *PaymentMutation) GatewayOrderRef() (r string, exists bool) {
+	v := m.gateway_order_ref
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGatewayOrderRef returns the old "gateway_order_ref" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldGatewayOrderRef(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGatewayOrderRef is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGatewayOrderRef requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGatewayOrderRef: %w", err)
+	}
+	return oldValue.GatewayOrderRef, nil
+}
+
+// ClearGatewayOrderRef clears the value of the "gateway_order_ref" field.
+func (m *PaymentMutation) ClearGatewayOrderRef() {
+	m.gateway_order_ref = nil
+	m.clearedFields[payment.FieldGatewayOrderRef] = struct{}{}
+}
+
+// GatewayOrderRefCleared returns if the "gateway_order_ref" field was cleared in this mutation.
+func (m *PaymentMutation) GatewayOrderRefCleared() bool {
+	_, ok := m.clearedFields[payment.FieldGatewayOrderRef]
+	return ok
+}
+
+// ResetGatewayOrderRef resets all changes to the "gateway_order_ref" field.
+func (m *PaymentMutation) ResetGatewayOrderRef() {
+	m.gateway_order_ref = nil
+	delete(m.clearedFields, payment.FieldGatewayOrderRef)
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (m *PaymentMutation) SetGatewayContext(jm json.RawMessage) {
+	m.gateway_context = &jm
+	m.appendgateway_context = nil
+}
+
+// GatewayContext returns the value of the "gateway_context" field in the mutation.
+func (m *PaymentMutation) GatewayContext() (r json.RawMessage, exists bool) {
+	v := m.gateway_context
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGatewayContext returns the old "gateway_context" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldGatewayContext(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGatewayContext is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGatewayContext requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGatewayContext: %w", err)
+	}
+	return oldValue.GatewayContext, nil
+}
+
+// AppendGatewayContext adds jm to the "gateway_context" field.
+func (m *PaymentMutation) AppendGatewayContext(jm json.RawMessage) {
+	m.appendgateway_context = append(m.appendgateway_context, jm...)
+}
+
+// AppendedGatewayContext returns the list of values that were appended to the "gateway_context" field in this mutation.
+func (m *PaymentMutation) AppendedGatewayContext() (json.RawMessage, bool) {
+	if len(m.appendgateway_context) == 0 {
+		return nil, false
+	}
+	return m.appendgateway_context, true
+}
+
+// ClearGatewayContext clears the value of the "gateway_context" field.
+func (m *PaymentMutation) ClearGatewayContext() {
+	m.gateway_context = nil
+	m.appendgateway_context = nil
+	m.clearedFields[payment.FieldGatewayContext] = struct{}{}
+}
+
+// GatewayContextCleared returns if the "gateway_context" field was cleared in this mutation.
+func (m *PaymentMutation) GatewayContextCleared() bool {
+	_, ok := m.clearedFields[payment.FieldGatewayContext]
+	return ok
+}
+
+// ResetGatewayContext resets all changes to the "gateway_context" field.
+func (m *PaymentMutation) ResetGatewayContext() {
+	m.gateway_context = nil
+	m.appendgateway_context = nil
+	delete(m.clearedFields, payment.FieldGatewayContext)
 }
 
 // SetChannelOrderNo sets the "channel_order_no" field.
@@ -46736,7 +46853,7 @@ func (m *PaymentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentMutation) Fields() []string {
-	fields := make([]string, 0, 22)
+	fields := make([]string, 0, 24)
 	if m.created_at != nil {
 		fields = append(fields, payment.FieldCreatedAt)
 	}
@@ -46766,6 +46883,12 @@ func (m *PaymentMutation) Fields() []string {
 	}
 	if m.review_reason != nil {
 		fields = append(fields, payment.FieldReviewReason)
+	}
+	if m.gateway_order_ref != nil {
+		fields = append(fields, payment.FieldGatewayOrderRef)
+	}
+	if m.gateway_context != nil {
+		fields = append(fields, payment.FieldGatewayContext)
 	}
 	if m.channel_order_no != nil {
 		fields = append(fields, payment.FieldChannelOrderNo)
@@ -46831,6 +46954,10 @@ func (m *PaymentMutation) Field(name string) (ent.Value, bool) {
 		return m.ExpiresAt()
 	case payment.FieldReviewReason:
 		return m.ReviewReason()
+	case payment.FieldGatewayOrderRef:
+		return m.GatewayOrderRef()
+	case payment.FieldGatewayContext:
+		return m.GatewayContext()
 	case payment.FieldChannelOrderNo:
 		return m.ChannelOrderNo()
 	case payment.FieldAmount:
@@ -46884,6 +47011,10 @@ func (m *PaymentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldExpiresAt(ctx)
 	case payment.FieldReviewReason:
 		return m.OldReviewReason(ctx)
+	case payment.FieldGatewayOrderRef:
+		return m.OldGatewayOrderRef(ctx)
+	case payment.FieldGatewayContext:
+		return m.OldGatewayContext(ctx)
 	case payment.FieldChannelOrderNo:
 		return m.OldChannelOrderNo(ctx)
 	case payment.FieldAmount:
@@ -46986,6 +47117,20 @@ func (m *PaymentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetReviewReason(v)
+		return nil
+	case payment.FieldGatewayOrderRef:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGatewayOrderRef(v)
+		return nil
+	case payment.FieldGatewayContext:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGatewayContext(v)
 		return nil
 	case payment.FieldChannelOrderNo:
 		v, ok := value.(string)
@@ -47221,6 +47366,12 @@ func (m *PaymentMutation) ClearedFields() []string {
 	if m.FieldCleared(payment.FieldExpiresAt) {
 		fields = append(fields, payment.FieldExpiresAt)
 	}
+	if m.FieldCleared(payment.FieldGatewayOrderRef) {
+		fields = append(fields, payment.FieldGatewayOrderRef)
+	}
+	if m.FieldCleared(payment.FieldGatewayContext) {
+		fields = append(fields, payment.FieldGatewayContext)
+	}
 	if m.FieldCleared(payment.FieldChannelOrderNo) {
 		fields = append(fields, payment.FieldChannelOrderNo)
 	}
@@ -47258,6 +47409,12 @@ func (m *PaymentMutation) ClearField(name string) error {
 		return nil
 	case payment.FieldExpiresAt:
 		m.ClearExpiresAt()
+		return nil
+	case payment.FieldGatewayOrderRef:
+		m.ClearGatewayOrderRef()
+		return nil
+	case payment.FieldGatewayContext:
+		m.ClearGatewayContext()
 		return nil
 	case payment.FieldChannelOrderNo:
 		m.ClearChannelOrderNo()
@@ -47311,6 +47468,12 @@ func (m *PaymentMutation) ResetField(name string) error {
 		return nil
 	case payment.FieldReviewReason:
 		m.ResetReviewReason()
+		return nil
+	case payment.FieldGatewayOrderRef:
+		m.ResetGatewayOrderRef()
+		return nil
+	case payment.FieldGatewayContext:
+		m.ResetGatewayContext()
 		return nil
 	case payment.FieldChannelOrderNo:
 		m.ResetChannelOrderNo()

@@ -12,8 +12,9 @@ import (
 
 // slowDrivers 慢支付渠道驱动名单（usdt 族）。
 var slowDrivers = map[string]bool{
-	"epusdt": true,
-	"usdt":   true,
+	"epusdt":  true,
+	"bepusdt": true,
+	"usdt":    true,
 }
 
 // HasPendingSlowPayment bounds waiting by the order deadline, never by retry time.

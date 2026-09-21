@@ -188,6 +188,44 @@ func (_u *PaymentUpdate) SetNillableReviewReason(v *string) *PaymentUpdate {
 	return _u
 }
 
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (_u *PaymentUpdate) SetGatewayOrderRef(v string) *PaymentUpdate {
+	_u.mutation.SetGatewayOrderRef(v)
+	return _u
+}
+
+// SetNillableGatewayOrderRef sets the "gateway_order_ref" field if the given value is not nil.
+func (_u *PaymentUpdate) SetNillableGatewayOrderRef(v *string) *PaymentUpdate {
+	if v != nil {
+		_u.SetGatewayOrderRef(*v)
+	}
+	return _u
+}
+
+// ClearGatewayOrderRef clears the value of the "gateway_order_ref" field.
+func (_u *PaymentUpdate) ClearGatewayOrderRef() *PaymentUpdate {
+	_u.mutation.ClearGatewayOrderRef()
+	return _u
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (_u *PaymentUpdate) SetGatewayContext(v json.RawMessage) *PaymentUpdate {
+	_u.mutation.SetGatewayContext(v)
+	return _u
+}
+
+// AppendGatewayContext appends value to the "gateway_context" field.
+func (_u *PaymentUpdate) AppendGatewayContext(v json.RawMessage) *PaymentUpdate {
+	_u.mutation.AppendGatewayContext(v)
+	return _u
+}
+
+// ClearGatewayContext clears the value of the "gateway_context" field.
+func (_u *PaymentUpdate) ClearGatewayContext() *PaymentUpdate {
+	_u.mutation.ClearGatewayContext()
+	return _u
+}
+
 // SetChannelOrderNo sets the "channel_order_no" field.
 func (_u *PaymentUpdate) SetChannelOrderNo(v string) *PaymentUpdate {
 	_u.mutation.SetChannelOrderNo(v)
@@ -495,6 +533,11 @@ func (_u *PaymentUpdate) check() error {
 			return &ValidationError{Name: "review_reason", err: fmt.Errorf(`ent: validator failed for field "Payment.review_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.GatewayOrderRef(); ok {
+		if err := payment.GatewayOrderRefValidator(v); err != nil {
+			return &ValidationError{Name: "gateway_order_ref", err: fmt.Errorf(`ent: validator failed for field "Payment.gateway_order_ref": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ChannelOrderNo(); ok {
 		if err := payment.ChannelOrderNoValidator(v); err != nil {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
@@ -568,6 +611,23 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.ReviewReason(); ok {
 		_spec.SetField(payment.FieldReviewReason, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.GatewayOrderRef(); ok {
+		_spec.SetField(payment.FieldGatewayOrderRef, field.TypeString, value)
+	}
+	if _u.mutation.GatewayOrderRefCleared() {
+		_spec.ClearField(payment.FieldGatewayOrderRef, field.TypeString)
+	}
+	if value, ok := _u.mutation.GatewayContext(); ok {
+		_spec.SetField(payment.FieldGatewayContext, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedGatewayContext(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, payment.FieldGatewayContext, value)
+		})
+	}
+	if _u.mutation.GatewayContextCleared() {
+		_spec.ClearField(payment.FieldGatewayContext, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ChannelOrderNo(); ok {
 		_spec.SetField(payment.FieldChannelOrderNo, field.TypeString, value)
@@ -846,6 +906,44 @@ func (_u *PaymentUpdateOne) SetNillableReviewReason(v *string) *PaymentUpdateOne
 	if v != nil {
 		_u.SetReviewReason(*v)
 	}
+	return _u
+}
+
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (_u *PaymentUpdateOne) SetGatewayOrderRef(v string) *PaymentUpdateOne {
+	_u.mutation.SetGatewayOrderRef(v)
+	return _u
+}
+
+// SetNillableGatewayOrderRef sets the "gateway_order_ref" field if the given value is not nil.
+func (_u *PaymentUpdateOne) SetNillableGatewayOrderRef(v *string) *PaymentUpdateOne {
+	if v != nil {
+		_u.SetGatewayOrderRef(*v)
+	}
+	return _u
+}
+
+// ClearGatewayOrderRef clears the value of the "gateway_order_ref" field.
+func (_u *PaymentUpdateOne) ClearGatewayOrderRef() *PaymentUpdateOne {
+	_u.mutation.ClearGatewayOrderRef()
+	return _u
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (_u *PaymentUpdateOne) SetGatewayContext(v json.RawMessage) *PaymentUpdateOne {
+	_u.mutation.SetGatewayContext(v)
+	return _u
+}
+
+// AppendGatewayContext appends value to the "gateway_context" field.
+func (_u *PaymentUpdateOne) AppendGatewayContext(v json.RawMessage) *PaymentUpdateOne {
+	_u.mutation.AppendGatewayContext(v)
+	return _u
+}
+
+// ClearGatewayContext clears the value of the "gateway_context" field.
+func (_u *PaymentUpdateOne) ClearGatewayContext() *PaymentUpdateOne {
+	_u.mutation.ClearGatewayContext()
 	return _u
 }
 
@@ -1169,6 +1267,11 @@ func (_u *PaymentUpdateOne) check() error {
 			return &ValidationError{Name: "review_reason", err: fmt.Errorf(`ent: validator failed for field "Payment.review_reason": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.GatewayOrderRef(); ok {
+		if err := payment.GatewayOrderRefValidator(v); err != nil {
+			return &ValidationError{Name: "gateway_order_ref", err: fmt.Errorf(`ent: validator failed for field "Payment.gateway_order_ref": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.ChannelOrderNo(); ok {
 		if err := payment.ChannelOrderNoValidator(v); err != nil {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
@@ -1259,6 +1362,23 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.ReviewReason(); ok {
 		_spec.SetField(payment.FieldReviewReason, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.GatewayOrderRef(); ok {
+		_spec.SetField(payment.FieldGatewayOrderRef, field.TypeString, value)
+	}
+	if _u.mutation.GatewayOrderRefCleared() {
+		_spec.ClearField(payment.FieldGatewayOrderRef, field.TypeString)
+	}
+	if value, ok := _u.mutation.GatewayContext(); ok {
+		_spec.SetField(payment.FieldGatewayContext, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedGatewayContext(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, payment.FieldGatewayContext, value)
+		})
+	}
+	if _u.mutation.GatewayContextCleared() {
+		_spec.ClearField(payment.FieldGatewayContext, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.ChannelOrderNo(); ok {
 		_spec.SetField(payment.FieldChannelOrderNo, field.TypeString, value)

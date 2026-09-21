@@ -1343,6 +1343,8 @@ var (
 		{Name: "driver_snapshot", Type: field.TypeString, Size: 100, Default: ""},
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "review_reason", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "gateway_order_ref", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "gateway_context", Type: field.TypeJSON, Nullable: true},
 		{Name: "channel_order_no", Type: field.TypeString, Nullable: true, Size: 80},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "charged_amount", Type: field.TypeInt64, Default: 0},
@@ -1365,7 +1367,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payments_orders_payments",
-				Columns:    []*schema.Column{PaymentsColumns[22]},
+				Columns:    []*schema.Column{PaymentsColumns[24]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1374,17 +1376,22 @@ var (
 			{
 				Name:    "payment_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[22]},
+				Columns: []*schema.Column{PaymentsColumns[24]},
+			},
+			{
+				Name:    "payment_gateway_order_ref",
+				Unique:  true,
+				Columns: []*schema.Column{PaymentsColumns[10]},
 			},
 			{
 				Name:    "payment_channel_channel_order_no",
 				Unique:  true,
-				Columns: []*schema.Column{PaymentsColumns[5], PaymentsColumns[10]},
+				Columns: []*schema.Column{PaymentsColumns[5], PaymentsColumns[12]},
 			},
 			{
 				Name:    "payment_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[18], PaymentsColumns[1]},
+				Columns: []*schema.Column{PaymentsColumns[20], PaymentsColumns[1]},
 			},
 		},
 	}

@@ -156,6 +156,26 @@ func (_c *PaymentCreate) SetNillableReviewReason(v *string) *PaymentCreate {
 	return _c
 }
 
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (_c *PaymentCreate) SetGatewayOrderRef(v string) *PaymentCreate {
+	_c.mutation.SetGatewayOrderRef(v)
+	return _c
+}
+
+// SetNillableGatewayOrderRef sets the "gateway_order_ref" field if the given value is not nil.
+func (_c *PaymentCreate) SetNillableGatewayOrderRef(v *string) *PaymentCreate {
+	if v != nil {
+		_c.SetGatewayOrderRef(*v)
+	}
+	return _c
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (_c *PaymentCreate) SetGatewayContext(v json.RawMessage) *PaymentCreate {
+	_c.mutation.SetGatewayContext(v)
+	return _c
+}
+
 // SetChannelOrderNo sets the "channel_order_no" field.
 func (_c *PaymentCreate) SetChannelOrderNo(v string) *PaymentCreate {
 	_c.mutation.SetChannelOrderNo(v)
@@ -442,6 +462,11 @@ func (_c *PaymentCreate) check() error {
 			return &ValidationError{Name: "review_reason", err: fmt.Errorf(`ent: validator failed for field "Payment.review_reason": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.GatewayOrderRef(); ok {
+		if err := payment.GatewayOrderRefValidator(v); err != nil {
+			return &ValidationError{Name: "gateway_order_ref", err: fmt.Errorf(`ent: validator failed for field "Payment.gateway_order_ref": %w`, err)}
+		}
+	}
 	if v, ok := _c.mutation.ChannelOrderNo(); ok {
 		if err := payment.ChannelOrderNoValidator(v); err != nil {
 			return &ValidationError{Name: "channel_order_no", err: fmt.Errorf(`ent: validator failed for field "Payment.channel_order_no": %w`, err)}
@@ -551,6 +576,14 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ReviewReason(); ok {
 		_spec.SetField(payment.FieldReviewReason, field.TypeString, value)
 		_node.ReviewReason = value
+	}
+	if value, ok := _c.mutation.GatewayOrderRef(); ok {
+		_spec.SetField(payment.FieldGatewayOrderRef, field.TypeString, value)
+		_node.GatewayOrderRef = value
+	}
+	if value, ok := _c.mutation.GatewayContext(); ok {
+		_spec.SetField(payment.FieldGatewayContext, field.TypeJSON, value)
+		_node.GatewayContext = value
 	}
 	if value, ok := _c.mutation.ChannelOrderNo(); ok {
 		_spec.SetField(payment.FieldChannelOrderNo, field.TypeString, value)
@@ -810,6 +843,42 @@ func (u *PaymentUpsert) SetReviewReason(v string) *PaymentUpsert {
 // UpdateReviewReason sets the "review_reason" field to the value that was provided on create.
 func (u *PaymentUpsert) UpdateReviewReason() *PaymentUpsert {
 	u.SetExcluded(payment.FieldReviewReason)
+	return u
+}
+
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (u *PaymentUpsert) SetGatewayOrderRef(v string) *PaymentUpsert {
+	u.Set(payment.FieldGatewayOrderRef, v)
+	return u
+}
+
+// UpdateGatewayOrderRef sets the "gateway_order_ref" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateGatewayOrderRef() *PaymentUpsert {
+	u.SetExcluded(payment.FieldGatewayOrderRef)
+	return u
+}
+
+// ClearGatewayOrderRef clears the value of the "gateway_order_ref" field.
+func (u *PaymentUpsert) ClearGatewayOrderRef() *PaymentUpsert {
+	u.SetNull(payment.FieldGatewayOrderRef)
+	return u
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (u *PaymentUpsert) SetGatewayContext(v json.RawMessage) *PaymentUpsert {
+	u.Set(payment.FieldGatewayContext, v)
+	return u
+}
+
+// UpdateGatewayContext sets the "gateway_context" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdateGatewayContext() *PaymentUpsert {
+	u.SetExcluded(payment.FieldGatewayContext)
+	return u
+}
+
+// ClearGatewayContext clears the value of the "gateway_context" field.
+func (u *PaymentUpsert) ClearGatewayContext() *PaymentUpsert {
+	u.SetNull(payment.FieldGatewayContext)
 	return u
 }
 
@@ -1239,6 +1308,48 @@ func (u *PaymentUpsertOne) SetReviewReason(v string) *PaymentUpsertOne {
 func (u *PaymentUpsertOne) UpdateReviewReason() *PaymentUpsertOne {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateReviewReason()
+	})
+}
+
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (u *PaymentUpsertOne) SetGatewayOrderRef(v string) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetGatewayOrderRef(v)
+	})
+}
+
+// UpdateGatewayOrderRef sets the "gateway_order_ref" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateGatewayOrderRef() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateGatewayOrderRef()
+	})
+}
+
+// ClearGatewayOrderRef clears the value of the "gateway_order_ref" field.
+func (u *PaymentUpsertOne) ClearGatewayOrderRef() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearGatewayOrderRef()
+	})
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (u *PaymentUpsertOne) SetGatewayContext(v json.RawMessage) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetGatewayContext(v)
+	})
+}
+
+// UpdateGatewayContext sets the "gateway_context" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdateGatewayContext() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateGatewayContext()
+	})
+}
+
+// ClearGatewayContext clears the value of the "gateway_context" field.
+func (u *PaymentUpsertOne) ClearGatewayContext() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearGatewayContext()
 	})
 }
 
@@ -1869,6 +1980,48 @@ func (u *PaymentUpsertBulk) SetReviewReason(v string) *PaymentUpsertBulk {
 func (u *PaymentUpsertBulk) UpdateReviewReason() *PaymentUpsertBulk {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateReviewReason()
+	})
+}
+
+// SetGatewayOrderRef sets the "gateway_order_ref" field.
+func (u *PaymentUpsertBulk) SetGatewayOrderRef(v string) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetGatewayOrderRef(v)
+	})
+}
+
+// UpdateGatewayOrderRef sets the "gateway_order_ref" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateGatewayOrderRef() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateGatewayOrderRef()
+	})
+}
+
+// ClearGatewayOrderRef clears the value of the "gateway_order_ref" field.
+func (u *PaymentUpsertBulk) ClearGatewayOrderRef() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearGatewayOrderRef()
+	})
+}
+
+// SetGatewayContext sets the "gateway_context" field.
+func (u *PaymentUpsertBulk) SetGatewayContext(v json.RawMessage) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetGatewayContext(v)
+	})
+}
+
+// UpdateGatewayContext sets the "gateway_context" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdateGatewayContext() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdateGatewayContext()
+	})
+}
+
+// ClearGatewayContext clears the value of the "gateway_context" field.
+func (u *PaymentUpsertBulk) ClearGatewayContext() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearGatewayContext()
 	})
 }
 

@@ -34,7 +34,7 @@ func TestListDrivers(t *testing.T) {
 		byCode[d.Code] = d
 	}
 	// 内置驱动齐备
-	for _, code := range []string{"wallet", "alipay", "wechat", "epay", "epusdt", "stripe", "paypal"} {
+	for _, code := range []string{"wallet", "alipay", "wechat", "epay", "epusdt", "bepusdt", "stripe", "paypal"} {
 		if byCode[code] == nil {
 			t.Fatalf("缺驱动 %s", code)
 		}

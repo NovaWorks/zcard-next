@@ -35,6 +35,10 @@ const (
 	FieldExpiresAt = "expires_at"
 	// FieldReviewReason holds the string denoting the review_reason field in the database.
 	FieldReviewReason = "review_reason"
+	// FieldGatewayOrderRef holds the string denoting the gateway_order_ref field in the database.
+	FieldGatewayOrderRef = "gateway_order_ref"
+	// FieldGatewayContext holds the string denoting the gateway_context field in the database.
+	FieldGatewayContext = "gateway_context"
 	// FieldChannelOrderNo holds the string denoting the channel_order_no field in the database.
 	FieldChannelOrderNo = "channel_order_no"
 	// FieldAmount holds the string denoting the amount field in the database.
@@ -85,6 +89,8 @@ var Columns = []string{
 	FieldDriverSnapshot,
 	FieldExpiresAt,
 	FieldReviewReason,
+	FieldGatewayOrderRef,
+	FieldGatewayContext,
 	FieldChannelOrderNo,
 	FieldAmount,
 	FieldChargedAmount,
@@ -130,6 +136,8 @@ var (
 	DefaultReviewReason string
 	// ReviewReasonValidator is a validator for the "review_reason" field. It is called by the builders before save.
 	ReviewReasonValidator func(string) error
+	// GatewayOrderRefValidator is a validator for the "gateway_order_ref" field. It is called by the builders before save.
+	GatewayOrderRefValidator func(string) error
 	// ChannelOrderNoValidator is a validator for the "channel_order_no" field. It is called by the builders before save.
 	ChannelOrderNoValidator func(string) error
 	// DefaultChargedAmount holds the default value on creation for the "charged_amount" field.
@@ -231,6 +239,11 @@ func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 // ByReviewReason orders the results by the review_reason field.
 func ByReviewReason(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldReviewReason, opts...).ToFunc()
+}
+
+// ByGatewayOrderRef orders the results by the gateway_order_ref field.
+func ByGatewayOrderRef(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGatewayOrderRef, opts...).ToFunc()
 }
 
 // ByChannelOrderNo orders the results by the channel_order_no field.

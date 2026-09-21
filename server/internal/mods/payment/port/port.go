@@ -14,14 +14,16 @@ import (
 
 // CreatePaymentRequest 创建支付请求。
 type CreatePaymentRequest struct {
-	OrderNo        string
-	Channel        string      // 渠道码
-	Amount         money.Cents // 应收（基础货币分；记账与核对权威值）
-	Subject        string
-	ReturnURL      string
-	NotifyBaseURL  string
-	IdempotencyKey string          // 写接口幂等（）
-	Config         json.RawMessage // 解密后的渠道凭据 JSON（每渠道独立，adapter 无状态）
+	OrderNo         string
+	GatewayOrderRef string // Stable reference persisted before the gateway request.
+	Deadline        time.Time
+	Channel         string      // 渠道码
+	Amount          money.Cents // 应收（基础货币分；记账与核对权威值）
+	Subject         string
+	ReturnURL       string
+	NotifyBaseURL   string
+	IdempotencyKey  string          // 写接口幂等（）
+	Config          json.RawMessage // 解密后的渠道凭据 JSON（每渠道独立，adapter 无状态）
 	// ── 币种快照（：服务端按 currency 表换算后的渠道金额）──
 	// ChargedUnits==0 即同币直收（CNY）——适配器用 Amount（向后兼容 alipay/wechat/epay）；
 	// 非 0 时适配器以 ChargedUnits/ChargedCurrency 构造协议金额，回调亦以此口径核对。
@@ -36,8 +38,10 @@ type CreatePaymentRequest struct {
 
 // RedirectInfo 支付发起结果（收银台/二维码/参数包）。
 type RedirectInfo struct {
-	Type    string // redirect / qrcode / params
-	Payload json.RawMessage
+	ChannelOrderNo string
+	Deadline       time.Time
+	Type           string // redirect / qrcode / params
+	Payload        json.RawMessage
 }
 
 // RechargePaymentInfo 充值支付单发起结果（wallet 模块消费）。
@@ -62,13 +66,14 @@ type SupplierRecharger interface {
 
 // CallbackFact 回调事实（VerifyCallback/ParseWebhook 的统一产出，四重校验的输入）。
 type CallbackFact struct {
-	Provider       string
-	ChannelOrderNo string // 网关单号（独立字段隔离下游回传格式）
-	OrderNo        string // 业务单号
-	Amount         money.Cents
-	Currency       string
-	Success        bool
-	Raw            json.RawMessage // 回调原文（审计）
+	GatewayOrderRef string
+	Provider        string
+	ChannelOrderNo  string // 网关单号（独立字段隔离下游回传格式）
+	OrderNo         string // 业务单号
+	Amount          money.Cents
+	Currency        string
+	Success         bool
+	Raw             json.RawMessage // 回调原文（审计）
 }
 
 // Provider 渠道基础能力（所有渠道必须实现）。

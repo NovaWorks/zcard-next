@@ -188,6 +188,7 @@ const channelNames: Record<string, string> = {
   wechat: "微信支付",
   epay: "易支付",
   epusdt: "EPUSDT",
+  bepusdt: "BEpusdt",
   stripe: "Stripe",
   paypal: "PayPal",
   wallet: "余额",

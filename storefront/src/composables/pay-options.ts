@@ -13,7 +13,7 @@ export interface PayOption {
 // 方式/渠道内置 emoji 回落（未配置自定义图标时）
 const EMOJI: Record<string, string> = {
   wallet: '💰', alipay: '🅰️', wxpay: '💬', wechat: '💬', qqpay: '🐧',
-  epay: '⚡', epusdt: '₮', stripe: '🟦', paypal: '🅿️',
+  epay: '⚡', epusdt: '₮', bepusdt: '₮', stripe: '🟦', paypal: '🅿️',
 };
 
 export function emojiOf(code: string, driver: string) {
@@ -31,7 +31,7 @@ export function flattenPayOptions(channels: ChannelItem[]): PayOption[] {
         out.push({
           channel: c.code, method: m.code, name: m.name,
           icon: m.icon || c.icon || undefined, emoji: emojiOf(m.code, c.driver),
-          sub: c.name || (c.driver === 'epusdt' ? 'USDT 链上收款' : '在线支付'),
+          sub: c.name || (['epusdt', 'bepusdt'].includes(c.driver) ? 'USDT 链上收款' : '在线支付'),
         });
       }
     } else {

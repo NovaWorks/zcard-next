@@ -23,7 +23,7 @@ import (
 )
 
 func TestHTTPCallbackPaysAndDelivers(t *testing.T) {
-	for _, method := range []string{"POST", "GET", "JSON"} {
+	for _, method := range []string{"POST", "GET", "JSON", "BEPUSDT"} {
 		t.Run(method, func(t *testing.T) { testHTTPCallbackPaysAndDelivers(t, method) })
 	}
 }
@@ -36,11 +36,20 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 	if method == "JSON" {
 		driver, cfg, ack = "epusdt", `{"pid":"1","secret_key":"test-secret","currency":"cny"}`, "ok"
 	}
+	if method == "BEPUSDT" {
+		driver, cfg = "bepusdt", `{"api_url":"https://pay.example","api_token":"contract-test-token"}`
+	}
 	ch, err := repo.CreateChannel(ctx, "form gateway", "form-test", driver, cfg, 0, "fixed", true, 0, "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	o, p := seedPendingOrder(t, d, "form-test", 1000)
+	if method == "BEPUSDT" {
+		p, err = d.Client.Payment.UpdateOneID(p.ID).SetChannelID(ch.ID).SetDriverSnapshot("bepusdt").SetGatewayOrderRef("BE-delivery").Save(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	prod, err := d.Client.Product.Create().SetName("callback product").SetSlug("callback-product").SetPrice(1000).SetStatus(1).SetStockType("card").SetDeliveryMode("status").Save(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -94,6 +103,10 @@ func testHTTPCallbackPaysAndDelivers(t *testing.T, method string) {
 			contentType = "application/json"
 			// Numeric 10.00 must retain its exact spelling during JSON signature verification.
 			body = fmt.Sprintf(`{"order_id":%q,"trade_id":"T-json","amount":10.00,"status":2,"signature":%q}`, o.OrderNo, form.Get("signature"))
+		}
+		if method == "BEPUSDT" {
+			contentType = "application/json"
+			body = string(beTestCallbackBody("BE-delivery", "T-delivery", 10, 2))
 		}
 		req := httptest.NewRequest(requestMethod, target, strings.NewReader(body))
 		req.Header.Set("Content-Type", contentType)
