@@ -24,8 +24,10 @@ type RefundOrder struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// OrderID holds the value of the "order_id" field.
 	OrderID uint64 `json:"order_id,omitempty"`
-	// 退款金额（分，可部分退款）
+	// 退款本金（分，可部分退款）
 	Amount int64 `json:"amount,omitempty"`
+	// 本次退还的支付手续费（分）
+	FeeAmount int64 `json:"fee_amount,omitempty"`
 	// 退款通道
 	Channel refundorder.Channel `json:"channel,omitempty"`
 	// Status holds the value of the "status" field.
@@ -67,7 +69,7 @@ func (*RefundOrder) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case refundorder.FieldID, refundorder.FieldOrderID, refundorder.FieldAmount, refundorder.FieldOperatorID:
+		case refundorder.FieldID, refundorder.FieldOrderID, refundorder.FieldAmount, refundorder.FieldFeeAmount, refundorder.FieldOperatorID:
 			values[i] = new(sql.NullInt64)
 		case refundorder.FieldChannel, refundorder.FieldStatus, refundorder.FieldReason, refundorder.FieldUpstreamRefundID:
 			values[i] = new(sql.NullString)
@@ -117,6 +119,12 @@ func (_m *RefundOrder) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field amount", values[i])
 			} else if value.Valid {
 				_m.Amount = value.Int64
+			}
+		case refundorder.FieldFeeAmount:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field fee_amount", values[i])
+			} else if value.Valid {
+				_m.FeeAmount = value.Int64
 			}
 		case refundorder.FieldChannel:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -200,6 +208,9 @@ func (_m *RefundOrder) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("amount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Amount))
+	builder.WriteString(", ")
+	builder.WriteString("fee_amount=")
+	builder.WriteString(fmt.Sprintf("%v", _m.FeeAmount))
 	builder.WriteString(", ")
 	builder.WriteString("channel=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Channel))

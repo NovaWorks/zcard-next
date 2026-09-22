@@ -181,7 +181,7 @@
 
           <template v-else>
             <!-- 金额档位 -->
-            <div class="recharge-section">
+            <div v-if="!rechargeRedirect && !rechargeQrcode" class="recharge-section">
               <div class="recharge-label">充值金额</div>
               <div class="tier-grid">
                 <button
@@ -208,13 +208,14 @@
             </div>
 
             <!-- 支付方式 -->
-            <div class="recharge-section">
+            <div v-if="!rechargeRedirect && !rechargeQrcode" class="recharge-section">
               <div class="recharge-label">支付方式</div>
               <PayChannelGrid :options="supplierPayOptions" :channel="rechargeChannel" :method="rechargeMethod" @select="(channel, method) => { rechargeChannel = channel; rechargeMethod = method; }"><template #empty>暂无可用的供货充值方式，请联系管理员</template></PayChannelGrid>
             </div>
 
             <div v-if="rechargeError" style="color: #dc2626; font-size: 13px; margin: 8px 0;">{{ rechargeError }}</div>
 
+            <PaymentBreakdown :quote="(rechargeRedirect || rechargeQrcode) ? paidQuote : quote" :loading="!rechargeRedirect && !rechargeQrcode && quoteLoading" :error="quoteError" recharge @retry="refreshQuote" />
             <!-- 支付跳转 -->
             <div v-if="rechargeRedirect" style="margin-top: 12px;">
               <button class="btn" style="width:100%" @click="openRechargeCheckout">去支付（跳转收银台）</button>
@@ -229,10 +230,10 @@
             <button
               v-if="!rechargeRedirect && !rechargeQrcode"
               class="recharge-submit"
-              :disabled="recharging || !rechargeYuan || rechargeYuan <= 0 || !rechargeChannel"
+              :disabled="recharging || !rechargeYuan || rechargeYuan <= 0 || !rechargeChannel || !quote || quoteLoading"
               @click="doRecharge"
             >
-              {{ recharging ? '创建支付单…' : `立即充值 ${formatMoney((rechargeYuan ?? 0) * 100)}` }}
+              {{ recharging ? '创建支付单…' : quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' }}
             </button>
           </template>
         </div>
@@ -244,6 +245,9 @@
 <script setup lang="ts">
 import { submitPaymentForm } from "@/utils/payment-form";
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
+import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
+import { usePaymentQuote } from '@/composables/payment-quote';
+import type { PaymentQuote } from '@/api';
 import { flattenPayOptions } from '@/composables/pay-options';
 import { computed, onMounted, ref } from 'vue';
 import {
@@ -344,6 +348,12 @@ const focusCustom = ref(false);
 const rechargeChannels = ref<ChannelItem[]>([]);
 const rechargeChannel = ref('');
 const rechargeMethod = ref('');
+const paidQuote = ref<PaymentQuote | null>(null);
+const { quote, quoteLoading, quoteError, refreshQuote } = usePaymentQuote(() =>
+  rechargeChannel.value && rechargeYuan.value && rechargeYuan.value > 0 ? {
+    channel: rechargeChannel.value, method: rechargeMethod.value, scene: 'supply_recharge', amount_cents: Math.round(rechargeYuan.value * 100),
+  } : null,
+);
 const supplierPayOptions = computed(() => flattenPayOptions(rechargeChannels.value.filter(c => c.driver !== 'wallet')));
 const recharging = ref(false);
 const rechargeError = ref('');
@@ -415,6 +425,7 @@ function closeRecharge() {
 }
 
 async function doRecharge() {
+  if (recharging.value || !quote.value || quoteLoading.value) return;
   if (!rechargeTarget.value) return;
   if (!rechargeYuan.value || rechargeYuan.value <= 0) {
     rechargeError.value = '请输入充值金额';
@@ -433,12 +444,15 @@ async function doRecharge() {
     amount_cents: Math.round(rechargeYuan.value * 100),
     channel: rechargeChannel.value,
     method: rechargeMethod.value || undefined,
+    quote_key: quote.value.quote_key,
   });
   recharging.value = false;
   if (error || !data) {
     rechargeError.value = error || '创建失败';
+    await refreshQuote();
     return;
   }
+  paidQuote.value = data.quote || quote.value;
   // 支付载荷三形态（与充值/支付页同构）
   if (data.type === 'redirect') rechargeRedirect.value = data.payload;
   else if (data.type === 'qrcode') rechargeQrcode.value = data.payload;

@@ -69,25 +69,29 @@ func (x *ChannelList) GetChannels() []*Channel {
 
 // Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
 type Channel struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Id                  uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Code                string                 `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
-	Driver              string                 `protobuf:"bytes,4,opt,name=driver,proto3" json:"driver,omitempty"`
-	ConfigJson          string                 `protobuf:"bytes,5,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // 脱敏后
-	Fee                 int64                  `protobuf:"varint,6,opt,name=fee,proto3" json:"fee,omitempty"`
-	FeeType             string                 `protobuf:"bytes,7,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
-	Enabled             bool                   `protobuf:"varint,8,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Sort                int32                  `protobuf:"varint,9,opt,name=sort,proto3" json:"sort,omitempty"`
-	ConfiguredFields    []string               `protobuf:"bytes,10,rep,name=configured_fields,json=configuredFields,proto3" json:"configured_fields,omitempty"` // 已配置字段名（仅名不显值——脱敏）
-	CallbackUrl         string                 `protobuf:"bytes,11,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`                // 回调地址（站点 URL 拼接；未配置站点时为相对路径）
-	Icon                string                 `protobuf:"bytes,12,opt,name=icon,proto3" json:"icon,omitempty"`                                                 // 渠道自定义图标（素材库 URL，空=回落内置徽标）
-	MethodsJson         string                 `protobuf:"bytes,13,opt,name=methods_json,json=methodsJson,proto3" json:"methods_json,omitempty"`                // 支付方式列表 JSON [{code,name,icon,enabled,params}]（空=单方式渠道）
-	AllowPurchase       *bool                  `protobuf:"varint,14,opt,name=allow_purchase,json=allowPurchase,proto3,oneof" json:"allow_purchase,omitempty"`
-	AllowMemberRecharge *bool                  `protobuf:"varint,15,opt,name=allow_member_recharge,json=allowMemberRecharge,proto3,oneof" json:"allow_member_recharge,omitempty"`
-	AllowSupplyRecharge *bool                  `protobuf:"varint,16,opt,name=allow_supply_recharge,json=allowSupplyRecharge,proto3,oneof" json:"allow_supply_recharge,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Id                   uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Code                 string                 `protobuf:"bytes,3,opt,name=code,proto3" json:"code,omitempty"`
+	Driver               string                 `protobuf:"bytes,4,opt,name=driver,proto3" json:"driver,omitempty"`
+	ConfigJson           string                 `protobuf:"bytes,5,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // 脱敏后
+	Fee                  int64                  `protobuf:"varint,6,opt,name=fee,proto3" json:"fee,omitempty"`
+	FeeType              string                 `protobuf:"bytes,7,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
+	Enabled              bool                   `protobuf:"varint,8,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Sort                 int32                  `protobuf:"varint,9,opt,name=sort,proto3" json:"sort,omitempty"`
+	ConfiguredFields     []string               `protobuf:"bytes,10,rep,name=configured_fields,json=configuredFields,proto3" json:"configured_fields,omitempty"` // 已配置字段名（仅名不显值——脱敏）
+	CallbackUrl          string                 `protobuf:"bytes,11,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`                // 回调地址（站点 URL 拼接；未配置站点时为相对路径）
+	Icon                 string                 `protobuf:"bytes,12,opt,name=icon,proto3" json:"icon,omitempty"`                                                 // 渠道自定义图标（素材库 URL，空=回落内置徽标）
+	MethodsJson          string                 `protobuf:"bytes,13,opt,name=methods_json,json=methodsJson,proto3" json:"methods_json,omitempty"`                // 支付方式列表 JSON [{code,name,icon,enabled,params}]（空=单方式渠道）
+	AllowPurchase        *bool                  `protobuf:"varint,14,opt,name=allow_purchase,json=allowPurchase,proto3,oneof" json:"allow_purchase,omitempty"`
+	AllowMemberRecharge  *bool                  `protobuf:"varint,15,opt,name=allow_member_recharge,json=allowMemberRecharge,proto3,oneof" json:"allow_member_recharge,omitempty"`
+	AllowSupplyRecharge  *bool                  `protobuf:"varint,16,opt,name=allow_supply_recharge,json=allowSupplyRecharge,proto3,oneof" json:"allow_supply_recharge,omitempty"`
+	FeeBearer            string                 `protobuf:"bytes,17,opt,name=fee_bearer,json=feeBearer,proto3" json:"fee_bearer,omitempty"`
+	Recommended          bool                   `protobuf:"varint,18,opt,name=recommended,proto3" json:"recommended,omitempty"`
+	RecommendLabel       string                 `protobuf:"bytes,19,opt,name=recommend_label,json=recommendLabel,proto3" json:"recommend_label,omitempty"`
+	RecommendDescription string                 `protobuf:"bytes,20,opt,name=recommend_description,json=recommendDescription,proto3" json:"recommend_description,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *Channel) Reset() {
@@ -230,6 +234,34 @@ func (x *Channel) GetAllowSupplyRecharge() bool {
 		return *x.AllowSupplyRecharge
 	}
 	return false
+}
+
+func (x *Channel) GetFeeBearer() string {
+	if x != nil {
+		return x.FeeBearer
+	}
+	return ""
+}
+
+func (x *Channel) GetRecommended() bool {
+	if x != nil {
+		return x.Recommended
+	}
+	return false
+}
+
+func (x *Channel) GetRecommendLabel() string {
+	if x != nil {
+		return x.RecommendLabel
+	}
+	return ""
+}
+
+func (x *Channel) GetRecommendDescription() string {
+	if x != nil {
+		return x.RecommendDescription
+	}
+	return ""
 }
 
 // DriverList 驱动元数据列表。
@@ -644,22 +676,26 @@ func (x *FieldOptionsReply) GetFallback() bool {
 }
 
 type CreateChannelRequest struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Name                string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Code                string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
-	Driver              string                 `protobuf:"bytes,3,opt,name=driver,proto3" json:"driver,omitempty"`
-	ConfigJson          string                 `protobuf:"bytes,4,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // 凭据 JSON 明文（入库前加密）
-	Fee                 int64                  `protobuf:"varint,5,opt,name=fee,proto3" json:"fee,omitempty"`
-	FeeType             string                 `protobuf:"bytes,6,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
-	Enabled             bool                   `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Sort                int32                  `protobuf:"varint,8,opt,name=sort,proto3" json:"sort,omitempty"`
-	Icon                string                 `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
-	MethodsJson         string                 `protobuf:"bytes,10,opt,name=methods_json,json=methodsJson,proto3" json:"methods_json,omitempty"` // 支付方式列表 JSON（聚合网关按方式收银）
-	AllowPurchase       *bool                  `protobuf:"varint,11,opt,name=allow_purchase,json=allowPurchase,proto3,oneof" json:"allow_purchase,omitempty"`
-	AllowMemberRecharge *bool                  `protobuf:"varint,12,opt,name=allow_member_recharge,json=allowMemberRecharge,proto3,oneof" json:"allow_member_recharge,omitempty"`
-	AllowSupplyRecharge *bool                  `protobuf:"varint,13,opt,name=allow_supply_recharge,json=allowSupplyRecharge,proto3,oneof" json:"allow_supply_recharge,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Name                 string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Code                 string                 `protobuf:"bytes,2,opt,name=code,proto3" json:"code,omitempty"`
+	Driver               string                 `protobuf:"bytes,3,opt,name=driver,proto3" json:"driver,omitempty"`
+	ConfigJson           string                 `protobuf:"bytes,4,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // 凭据 JSON 明文（入库前加密）
+	Fee                  int64                  `protobuf:"varint,5,opt,name=fee,proto3" json:"fee,omitempty"`
+	FeeType              string                 `protobuf:"bytes,6,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
+	Enabled              bool                   `protobuf:"varint,7,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	Sort                 int32                  `protobuf:"varint,8,opt,name=sort,proto3" json:"sort,omitempty"`
+	Icon                 string                 `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
+	MethodsJson          string                 `protobuf:"bytes,10,opt,name=methods_json,json=methodsJson,proto3" json:"methods_json,omitempty"` // 支付方式列表 JSON（聚合网关按方式收银）
+	AllowPurchase        *bool                  `protobuf:"varint,11,opt,name=allow_purchase,json=allowPurchase,proto3,oneof" json:"allow_purchase,omitempty"`
+	AllowMemberRecharge  *bool                  `protobuf:"varint,12,opt,name=allow_member_recharge,json=allowMemberRecharge,proto3,oneof" json:"allow_member_recharge,omitempty"`
+	AllowSupplyRecharge  *bool                  `protobuf:"varint,13,opt,name=allow_supply_recharge,json=allowSupplyRecharge,proto3,oneof" json:"allow_supply_recharge,omitempty"`
+	FeeBearer            string                 `protobuf:"bytes,14,opt,name=fee_bearer,json=feeBearer,proto3" json:"fee_bearer,omitempty"`
+	Recommended          bool                   `protobuf:"varint,15,opt,name=recommended,proto3" json:"recommended,omitempty"`
+	RecommendLabel       string                 `protobuf:"bytes,16,opt,name=recommend_label,json=recommendLabel,proto3" json:"recommend_label,omitempty"`
+	RecommendDescription string                 `protobuf:"bytes,17,opt,name=recommend_description,json=recommendDescription,proto3" json:"recommend_description,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CreateChannelRequest) Reset() {
@@ -783,22 +819,54 @@ func (x *CreateChannelRequest) GetAllowSupplyRecharge() bool {
 	return false
 }
 
+func (x *CreateChannelRequest) GetFeeBearer() string {
+	if x != nil {
+		return x.FeeBearer
+	}
+	return ""
+}
+
+func (x *CreateChannelRequest) GetRecommended() bool {
+	if x != nil {
+		return x.Recommended
+	}
+	return false
+}
+
+func (x *CreateChannelRequest) GetRecommendLabel() string {
+	if x != nil {
+		return x.RecommendLabel
+	}
+	return ""
+}
+
+func (x *CreateChannelRequest) GetRecommendDescription() string {
+	if x != nil {
+		return x.RecommendDescription
+	}
+	return ""
+}
+
 type UpdateChannelRequest struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	Id                  uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	ConfigJson          string                 `protobuf:"bytes,3,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // **** = 未修改
-	Fee                 int64                  `protobuf:"varint,4,opt,name=fee,proto3" json:"fee,omitempty"`
-	FeeType             string                 `protobuf:"bytes,5,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"` // percent | fixed；空=不修改
-	Enabled             bool                   `protobuf:"varint,6,opt,name=enabled,proto3" json:"enabled,omitempty"`
-	Sort                int32                  `protobuf:"varint,7,opt,name=sort,proto3" json:"sort,omitempty"`
-	Icon                *string                `protobuf:"bytes,8,opt,name=icon,proto3,oneof" json:"icon,omitempty"`                                  // 有值=更新（空串=清除）；缺省=不修改
-	MethodsJson         *string                `protobuf:"bytes,9,opt,name=methods_json,json=methodsJson,proto3,oneof" json:"methods_json,omitempty"` // 支付方式列表 JSON；缺省=不修改
-	AllowPurchase       *bool                  `protobuf:"varint,10,opt,name=allow_purchase,json=allowPurchase,proto3,oneof" json:"allow_purchase,omitempty"`
-	AllowMemberRecharge *bool                  `protobuf:"varint,11,opt,name=allow_member_recharge,json=allowMemberRecharge,proto3,oneof" json:"allow_member_recharge,omitempty"`
-	AllowSupplyRecharge *bool                  `protobuf:"varint,12,opt,name=allow_supply_recharge,json=allowSupplyRecharge,proto3,oneof" json:"allow_supply_recharge,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Id                   uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ConfigJson           string                 `protobuf:"bytes,3,opt,name=config_json,json=configJson,proto3" json:"config_json,omitempty"` // **** = 未修改
+	Fee                  *int64                 `protobuf:"varint,4,opt,name=fee,proto3,oneof" json:"fee,omitempty"`
+	FeeType              string                 `protobuf:"bytes,5,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"` // percent | fixed；空=不修改
+	Enabled              *bool                  `protobuf:"varint,6,opt,name=enabled,proto3,oneof" json:"enabled,omitempty"`
+	Sort                 *int32                 `protobuf:"varint,7,opt,name=sort,proto3,oneof" json:"sort,omitempty"`
+	Icon                 *string                `protobuf:"bytes,8,opt,name=icon,proto3,oneof" json:"icon,omitempty"`                                  // 有值=更新（空串=清除）；缺省=不修改
+	MethodsJson          *string                `protobuf:"bytes,9,opt,name=methods_json,json=methodsJson,proto3,oneof" json:"methods_json,omitempty"` // 支付方式列表 JSON；缺省=不修改
+	AllowPurchase        *bool                  `protobuf:"varint,10,opt,name=allow_purchase,json=allowPurchase,proto3,oneof" json:"allow_purchase,omitempty"`
+	AllowMemberRecharge  *bool                  `protobuf:"varint,11,opt,name=allow_member_recharge,json=allowMemberRecharge,proto3,oneof" json:"allow_member_recharge,omitempty"`
+	AllowSupplyRecharge  *bool                  `protobuf:"varint,12,opt,name=allow_supply_recharge,json=allowSupplyRecharge,proto3,oneof" json:"allow_supply_recharge,omitempty"`
+	FeeBearer            *string                `protobuf:"bytes,13,opt,name=fee_bearer,json=feeBearer,proto3,oneof" json:"fee_bearer,omitempty"`
+	Recommended          *bool                  `protobuf:"varint,14,opt,name=recommended,proto3,oneof" json:"recommended,omitempty"`
+	RecommendLabel       *string                `protobuf:"bytes,15,opt,name=recommend_label,json=recommendLabel,proto3,oneof" json:"recommend_label,omitempty"`
+	RecommendDescription *string                `protobuf:"bytes,16,opt,name=recommend_description,json=recommendDescription,proto3,oneof" json:"recommend_description,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *UpdateChannelRequest) Reset() {
@@ -853,8 +921,8 @@ func (x *UpdateChannelRequest) GetConfigJson() string {
 }
 
 func (x *UpdateChannelRequest) GetFee() int64 {
-	if x != nil {
-		return x.Fee
+	if x != nil && x.Fee != nil {
+		return *x.Fee
 	}
 	return 0
 }
@@ -867,15 +935,15 @@ func (x *UpdateChannelRequest) GetFeeType() string {
 }
 
 func (x *UpdateChannelRequest) GetEnabled() bool {
-	if x != nil {
-		return x.Enabled
+	if x != nil && x.Enabled != nil {
+		return *x.Enabled
 	}
 	return false
 }
 
 func (x *UpdateChannelRequest) GetSort() int32 {
-	if x != nil {
-		return x.Sort
+	if x != nil && x.Sort != nil {
+		return *x.Sort
 	}
 	return 0
 }
@@ -913,6 +981,34 @@ func (x *UpdateChannelRequest) GetAllowSupplyRecharge() bool {
 		return *x.AllowSupplyRecharge
 	}
 	return false
+}
+
+func (x *UpdateChannelRequest) GetFeeBearer() string {
+	if x != nil && x.FeeBearer != nil {
+		return *x.FeeBearer
+	}
+	return ""
+}
+
+func (x *UpdateChannelRequest) GetRecommended() bool {
+	if x != nil && x.Recommended != nil {
+		return *x.Recommended
+	}
+	return false
+}
+
+func (x *UpdateChannelRequest) GetRecommendLabel() string {
+	if x != nil && x.RecommendLabel != nil {
+		return *x.RecommendLabel
+	}
+	return ""
+}
+
+func (x *UpdateChannelRequest) GetRecommendDescription() string {
+	if x != nil && x.RecommendDescription != nil {
+		return *x.RecommendDescription
+	}
+	return ""
 }
 
 type DeleteChannelRequest struct {
@@ -1325,14 +1421,16 @@ func (x *Payment) GetDriverSnapshot() string {
 }
 
 type CreateRefundRequest struct {
-	state                 protoimpl.MessageState `protogen:"open.v1"`
-	ExpectedRefundedCents *int64                 `protobuf:"varint,5,opt,name=expected_refunded_cents,json=expectedRefundedCents,proto3,oneof" json:"expected_refunded_cents,omitempty"` // confirmed cumulative succeeded refunds
-	OrderNo               string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	AmountCents           int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	Channel               string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"` // wallet | gateway | upstream
-	Reason                string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"open.v1"`
+	ExpectedRefundedCents    *int64                 `protobuf:"varint,5,opt,name=expected_refunded_cents,json=expectedRefundedCents,proto3,oneof" json:"expected_refunded_cents,omitempty"` // confirmed cumulative succeeded refunds
+	OrderNo                  string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	AmountCents              int64                  `protobuf:"varint,2,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	Channel                  string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"` // wallet | gateway | upstream
+	Reason                   string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`
+	FeeCents                 int64                  `protobuf:"varint,6,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
+	ExpectedRefundedFeeCents *int64                 `protobuf:"varint,7,opt,name=expected_refunded_fee_cents,json=expectedRefundedFeeCents,proto3,oneof" json:"expected_refunded_fee_cents,omitempty"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *CreateRefundRequest) Reset() {
@@ -1398,6 +1496,20 @@ func (x *CreateRefundRequest) GetReason() string {
 		return x.Reason
 	}
 	return ""
+}
+
+func (x *CreateRefundRequest) GetFeeCents() int64 {
+	if x != nil {
+		return x.FeeCents
+	}
+	return 0
+}
+
+func (x *CreateRefundRequest) GetExpectedRefundedFeeCents() int64 {
+	if x != nil && x.ExpectedRefundedFeeCents != nil {
+		return *x.ExpectedRefundedFeeCents
+	}
+	return 0
 }
 
 type ListRefundsRequest struct {
@@ -1500,6 +1612,7 @@ type RefundOrder struct {
 	Reason           string                 `protobuf:"bytes,7,opt,name=reason,proto3" json:"reason,omitempty"`
 	UpstreamRefundId string                 `protobuf:"bytes,8,opt,name=upstream_refund_id,json=upstreamRefundId,proto3" json:"upstream_refund_id,omitempty"`
 	CreatedAt        int64                  `protobuf:"varint,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	FeeCents         int64                  `protobuf:"varint,10,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1597,13 +1710,20 @@ func (x *RefundOrder) GetCreatedAt() int64 {
 	return 0
 }
 
+func (x *RefundOrder) GetFeeCents() int64 {
+	if x != nil {
+		return x.FeeCents
+	}
+	return 0
+}
+
 var File_admin_v1_payment_proto protoreflect.FileDescriptor
 
 const file_admin_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"\x16admin/v1/payment.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"F\n" +
 	"\vChannelList\x127\n" +
-	"\bchannels\x18\x01 \x03(\v2\x1b.zcard.api.admin.v1.ChannelR\bchannels\"\xc1\x04\n" +
+	"\bchannels\x18\x01 \x03(\v2\x1b.zcard.api.admin.v1.ChannelR\bchannels\"\xe0\x05\n" +
 	"\aChannel\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
@@ -1622,7 +1742,12 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\fmethods_json\x18\r \x01(\tR\vmethodsJson\x12*\n" +
 	"\x0eallow_purchase\x18\x0e \x01(\bH\x00R\rallowPurchase\x88\x01\x01\x127\n" +
 	"\x15allow_member_recharge\x18\x0f \x01(\bH\x01R\x13allowMemberRecharge\x88\x01\x01\x127\n" +
-	"\x15allow_supply_recharge\x18\x10 \x01(\bH\x02R\x13allowSupplyRecharge\x88\x01\x01B\x11\n" +
+	"\x15allow_supply_recharge\x18\x10 \x01(\bH\x02R\x13allowSupplyRecharge\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"fee_bearer\x18\x11 \x01(\tR\tfeeBearer\x12 \n" +
+	"\vrecommended\x18\x12 \x01(\bR\vrecommended\x12'\n" +
+	"\x0frecommend_label\x18\x13 \x01(\tR\x0erecommendLabel\x123\n" +
+	"\x15recommend_description\x18\x14 \x01(\tR\x14recommendDescriptionB\x11\n" +
 	"\x0f_allow_purchaseB\x18\n" +
 	"\x16_allow_member_rechargeB\x18\n" +
 	"\x16_allow_supply_recharge\"B\n" +
@@ -1658,7 +1783,7 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"configJson\"e\n" +
 	"\x11FieldOptionsReply\x124\n" +
 	"\aoptions\x18\x01 \x03(\v2\x1a.zcard.api.admin.v1.OptionR\aoptions\x12\x1a\n" +
-	"\bfallback\x18\x02 \x01(\bR\bfallback\"\x82\x04\n" +
+	"\bfallback\x18\x02 \x01(\bR\bfallback\"\xa1\x05\n" +
 	"\x14CreateChannelRequest\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\x02R\x04name\x12\x17\n" +
 	"\x04code\x18\x02 \x01(\tB\x03\xe0A\x02R\x04code\x12\x1b\n" +
@@ -1674,30 +1799,49 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	" \x01(\tR\vmethodsJson\x12*\n" +
 	"\x0eallow_purchase\x18\v \x01(\bH\x00R\rallowPurchase\x88\x01\x01\x127\n" +
 	"\x15allow_member_recharge\x18\f \x01(\bH\x01R\x13allowMemberRecharge\x88\x01\x01\x127\n" +
-	"\x15allow_supply_recharge\x18\r \x01(\bH\x02R\x13allowSupplyRecharge\x88\x01\x01B\x11\n" +
+	"\x15allow_supply_recharge\x18\r \x01(\bH\x02R\x13allowSupplyRecharge\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"fee_bearer\x18\x0e \x01(\tR\tfeeBearer\x12 \n" +
+	"\vrecommended\x18\x0f \x01(\bR\vrecommended\x12'\n" +
+	"\x0frecommend_label\x18\x10 \x01(\tR\x0erecommendLabel\x123\n" +
+	"\x15recommend_description\x18\x11 \x01(\tR\x14recommendDescriptionB\x11\n" +
 	"\x0f_allow_purchaseB\x18\n" +
 	"\x16_allow_member_rechargeB\x18\n" +
-	"\x16_allow_supply_recharge\"\xfb\x03\n" +
+	"\x16_allow_supply_recharge\"\xa7\x06\n" +
 	"\x14UpdateChannelRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
 	"\vconfig_json\x18\x03 \x01(\tR\n" +
-	"configJson\x12\x10\n" +
-	"\x03fee\x18\x04 \x01(\x03R\x03fee\x12\x19\n" +
-	"\bfee_type\x18\x05 \x01(\tR\afeeType\x12\x18\n" +
-	"\aenabled\x18\x06 \x01(\bR\aenabled\x12\x12\n" +
-	"\x04sort\x18\a \x01(\x05R\x04sort\x12\x17\n" +
-	"\x04icon\x18\b \x01(\tH\x00R\x04icon\x88\x01\x01\x12&\n" +
-	"\fmethods_json\x18\t \x01(\tH\x01R\vmethodsJson\x88\x01\x01\x12*\n" +
+	"configJson\x12\x15\n" +
+	"\x03fee\x18\x04 \x01(\x03H\x00R\x03fee\x88\x01\x01\x12\x19\n" +
+	"\bfee_type\x18\x05 \x01(\tR\afeeType\x12\x1d\n" +
+	"\aenabled\x18\x06 \x01(\bH\x01R\aenabled\x88\x01\x01\x12\x17\n" +
+	"\x04sort\x18\a \x01(\x05H\x02R\x04sort\x88\x01\x01\x12\x17\n" +
+	"\x04icon\x18\b \x01(\tH\x03R\x04icon\x88\x01\x01\x12&\n" +
+	"\fmethods_json\x18\t \x01(\tH\x04R\vmethodsJson\x88\x01\x01\x12*\n" +
 	"\x0eallow_purchase\x18\n" +
-	" \x01(\bH\x02R\rallowPurchase\x88\x01\x01\x127\n" +
-	"\x15allow_member_recharge\x18\v \x01(\bH\x03R\x13allowMemberRecharge\x88\x01\x01\x127\n" +
-	"\x15allow_supply_recharge\x18\f \x01(\bH\x04R\x13allowSupplyRecharge\x88\x01\x01B\a\n" +
+	" \x01(\bH\x05R\rallowPurchase\x88\x01\x01\x127\n" +
+	"\x15allow_member_recharge\x18\v \x01(\bH\x06R\x13allowMemberRecharge\x88\x01\x01\x127\n" +
+	"\x15allow_supply_recharge\x18\f \x01(\bH\aR\x13allowSupplyRecharge\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"fee_bearer\x18\r \x01(\tH\bR\tfeeBearer\x88\x01\x01\x12%\n" +
+	"\vrecommended\x18\x0e \x01(\bH\tR\vrecommended\x88\x01\x01\x12,\n" +
+	"\x0frecommend_label\x18\x0f \x01(\tH\n" +
+	"R\x0erecommendLabel\x88\x01\x01\x128\n" +
+	"\x15recommend_description\x18\x10 \x01(\tH\vR\x14recommendDescription\x88\x01\x01B\x06\n" +
+	"\x04_feeB\n" +
+	"\n" +
+	"\b_enabledB\a\n" +
+	"\x05_sortB\a\n" +
 	"\x05_iconB\x0f\n" +
 	"\r_methods_jsonB\x11\n" +
 	"\x0f_allow_purchaseB\x18\n" +
 	"\x16_allow_member_rechargeB\x18\n" +
-	"\x16_allow_supply_recharge\"+\n" +
+	"\x16_allow_supply_rechargeB\r\n" +
+	"\v_fee_bearerB\x0e\n" +
+	"\f_recommendedB\x12\n" +
+	"\x10_recommend_labelB\x18\n" +
+	"\x16_recommend_description\"+\n" +
 	"\x14DeleteChannelRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x97\x01\n" +
 	"\x13ListPaymentsRequest\x12\x16\n" +
@@ -1732,18 +1876,21 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\rreview_reason\x18\f \x01(\tR\freviewReason\x12\x1d\n" +
 	"\n" +
 	"expires_at\x18\r \x01(\x03R\texpiresAt\x12'\n" +
-	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\xed\x01\n" +
+	"\x0fdriver_snapshot\x18\x0e \x01(\tR\x0edriverSnapshot\"\xe9\x02\n" +
 	"\x13CreateRefundRequest\x12;\n" +
 	"\x17expected_refunded_cents\x18\x05 \x01(\x03H\x00R\x15expectedRefundedCents\x88\x01\x01\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12&\n" +
-	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12!\n" +
+	"\famount_cents\x18\x02 \x01(\x03R\vamountCents\x12\x1d\n" +
 	"\achannel\x18\x03 \x01(\tB\x03\xe0A\x02R\achannel\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reasonB\x1a\n" +
-	"\x18_expected_refunded_cents\",\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\x12\x1b\n" +
+	"\tfee_cents\x18\x06 \x01(\x03R\bfeeCents\x12B\n" +
+	"\x1bexpected_refunded_fee_cents\x18\a \x01(\x03H\x01R\x18expectedRefundedFeeCents\x88\x01\x01B\x1a\n" +
+	"\x18_expected_refunded_centsB\x1e\n" +
+	"\x1c_expected_refunded_fee_cents\",\n" +
 	"\x12ListRefundsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\"M\n" +
 	"\x10ListRefundsReply\x129\n" +
-	"\arefunds\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.RefundOrderR\arefunds\"\x8d\x02\n" +
+	"\arefunds\x18\x01 \x03(\v2\x1f.zcard.api.admin.v1.RefundOrderR\arefunds\"\xaa\x02\n" +
 	"\vRefundOrder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\x04R\aorderId\x12\x19\n" +
@@ -1754,7 +1901,9 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x06reason\x18\a \x01(\tR\x06reason\x12,\n" +
 	"\x12upstream_refund_id\x18\b \x01(\tR\x10upstreamRefundId\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\x03R\tcreatedAt2\x98\v\n" +
+	"created_at\x18\t \x01(\x03R\tcreatedAt\x12\x1b\n" +
+	"\tfee_cents\x18\n" +
+	" \x01(\x03R\bfeeCents2\x98\v\n" +
 	"\x13AdminPaymentService\x12o\n" +
 	"\fListChannels\x12\x16.google.protobuf.Empty\x1a\x1f.zcard.api.admin.v1.ChannelList\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/payment/channels\x12l\n" +
 	"\vListDrivers\x12\x16.google.protobuf.Empty\x1a\x1e.zcard.api.admin.v1.DriverList\"%\x82\xd3\xe4\x93\x02\x1f\x12\x1d/api/v1/admin/payment/drivers\x12\x9a\x01\n" +

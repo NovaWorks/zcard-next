@@ -75,6 +75,11 @@ func Amount(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldEQ(FieldAmount, v))
 }
 
+// FeeAmount applies equality check predicate on the "fee_amount" field. It's identical to FeeAmountEQ.
+func FeeAmount(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldFeeAmount, v))
+}
+
 // Reason applies equality check predicate on the "reason" field. It's identical to ReasonEQ.
 func Reason(v string) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldEQ(FieldReason, v))
@@ -228,6 +233,46 @@ func AmountLT(v int64) predicate.RefundOrder {
 // AmountLTE applies the LTE predicate on the "amount" field.
 func AmountLTE(v int64) predicate.RefundOrder {
 	return predicate.RefundOrder(sql.FieldLTE(FieldAmount, v))
+}
+
+// FeeAmountEQ applies the EQ predicate on the "fee_amount" field.
+func FeeAmountEQ(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldEQ(FieldFeeAmount, v))
+}
+
+// FeeAmountNEQ applies the NEQ predicate on the "fee_amount" field.
+func FeeAmountNEQ(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNEQ(FieldFeeAmount, v))
+}
+
+// FeeAmountIn applies the In predicate on the "fee_amount" field.
+func FeeAmountIn(vs ...int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldIn(FieldFeeAmount, vs...))
+}
+
+// FeeAmountNotIn applies the NotIn predicate on the "fee_amount" field.
+func FeeAmountNotIn(vs ...int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldNotIn(FieldFeeAmount, vs...))
+}
+
+// FeeAmountGT applies the GT predicate on the "fee_amount" field.
+func FeeAmountGT(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGT(FieldFeeAmount, v))
+}
+
+// FeeAmountGTE applies the GTE predicate on the "fee_amount" field.
+func FeeAmountGTE(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldGTE(FieldFeeAmount, v))
+}
+
+// FeeAmountLT applies the LT predicate on the "fee_amount" field.
+func FeeAmountLT(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLT(FieldFeeAmount, v))
+}
+
+// FeeAmountLTE applies the LTE predicate on the "fee_amount" field.
+func FeeAmountLTE(v int64) predicate.RefundOrder {
+	return predicate.RefundOrder(sql.FieldLTE(FieldFeeAmount, v))
 }
 
 // ChannelEQ applies the EQ predicate on the "channel" field.

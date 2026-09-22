@@ -1353,6 +1353,7 @@ var (
 		{Name: "charged_precision", Type: field.TypeInt32, Default: -1},
 		{Name: "charged_units", Type: field.TypeInt64, Default: 0},
 		{Name: "fee", Type: field.TypeInt64, Default: 0},
+		{Name: "pricing_snapshot", Type: field.TypeJSON, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "success", "failed"}, Default: "pending"},
 		{Name: "paid_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "raw", Type: field.TypeJSON, Nullable: true},
@@ -1367,7 +1368,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "payments_orders_payments",
-				Columns:    []*schema.Column{PaymentsColumns[24]},
+				Columns:    []*schema.Column{PaymentsColumns[25]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -1376,7 +1377,7 @@ var (
 			{
 				Name:    "payment_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[24]},
+				Columns: []*schema.Column{PaymentsColumns[25]},
 			},
 			{
 				Name:    "payment_gateway_order_ref",
@@ -1391,7 +1392,7 @@ var (
 			{
 				Name:    "payment_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{PaymentsColumns[20], PaymentsColumns[1]},
+				Columns: []*schema.Column{PaymentsColumns[21], PaymentsColumns[1]},
 			},
 		},
 	}
@@ -1408,6 +1409,9 @@ var (
 		{Name: "fee", Type: field.TypeInt64, Default: 0},
 		{Name: "fee_type", Type: field.TypeEnum, Enums: []string{"percent", "fixed"}, Default: "fixed"},
 		{Name: "fee_bearer", Type: field.TypeEnum, Enums: []string{"merchant", "user"}, Default: "merchant"},
+		{Name: "recommended", Type: field.TypeBool, Default: false},
+		{Name: "recommend_label", Type: field.TypeString, Size: 24, Default: ""},
+		{Name: "recommend_description", Type: field.TypeString, Size: 180, Default: ""},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
@@ -1863,6 +1867,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "amount", Type: field.TypeInt64},
+		{Name: "fee_amount", Type: field.TypeInt64, Default: 0},
 		{Name: "channel", Type: field.TypeEnum, Enums: []string{"gateway", "wallet", "upstream"}},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"created", "processing", "succeeded", "failed"}, Default: "created"},
 		{Name: "reason", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -1878,7 +1883,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "refund_orders_orders_refunds",
-				Columns:    []*schema.Column{RefundOrdersColumns[9]},
+				Columns:    []*schema.Column{RefundOrdersColumns[10]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1887,12 +1892,12 @@ var (
 			{
 				Name:    "refundorder_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{RefundOrdersColumns[9]},
+				Columns: []*schema.Column{RefundOrdersColumns[10]},
 			},
 			{
 				Name:    "refundorder_status",
 				Unique:  false,
-				Columns: []*schema.Column{RefundOrdersColumns[5]},
+				Columns: []*schema.Column{RefundOrdersColumns[6]},
 			},
 		},
 	}

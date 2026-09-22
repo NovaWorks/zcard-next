@@ -58,6 +58,9 @@ message GetAdminOrderRequest {
 
 // AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
 message AdminOrder {
+  int64 paid_total_cents = 21;
+  int64 paid_fee_cents = 22;
+  int64 refunded_fee_cents = 23;
   int64 refunded_cents = 20; // succeeded refunds only
   uint64 id = 1;
   string order_no = 2;

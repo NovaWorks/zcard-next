@@ -11,6 +11,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 )
 
@@ -56,7 +57,7 @@ func TestBepusdtAttemptUpgrade(t *testing.T) {
 			if _, err := d.DB.Exec(string(upgrade)); err != nil {
 				t.Fatal(err)
 			}
-			p, err := d.Client.Payment.Get(context.Background(), 41)
+			p, err := d.Client.Payment.Query().Where(payment.ID(41)).Select(payment.FieldID, payment.FieldAmount, payment.FieldChargedAmount, payment.FieldStatus, payment.FieldChannelOrderNo, payment.FieldGatewayOrderRef, payment.FieldGatewayContext).Only(context.Background())
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -67,11 +68,11 @@ func TestBepusdtAttemptUpgrade(t *testing.T) {
 			if err := d.DB.QueryRow("SELECT gateway_order_ref FROM payments WHERE id=42").Scan(&ref); err != nil || ref.Valid {
 				t.Fatal("legacy ref must be NULL", err)
 			}
-			_, err = d.Client.Payment.UpdateOneID(41).SetGatewayOrderRef("BE-unique").SetGatewayContext([]byte(`{"lease":"test"}`)).Save(context.Background())
+			err = d.Client.Payment.Update().Where(payment.ID(41)).SetGatewayOrderRef("BE-unique").SetGatewayContext([]byte(`{"lease":"test"}`)).Exec(context.Background())
 			if err != nil {
 				t.Fatal(err)
 			}
-			if _, err = d.Client.Payment.UpdateOneID(42).SetGatewayOrderRef("BE-unique").Save(context.Background()); err == nil {
+			if err = d.Client.Payment.Update().Where(payment.ID(42)).SetGatewayOrderRef("BE-unique").Exec(context.Background()); err == nil {
 				t.Fatal("reference unique index missing")
 			}
 		})

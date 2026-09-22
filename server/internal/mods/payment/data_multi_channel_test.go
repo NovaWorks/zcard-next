@@ -73,7 +73,7 @@ func TestEpayIndependentChannels(t *testing.T) {
 			if !strings.HasSuffix(payload.Params["notify_url"], notify) {
 				t.Fatalf("wrong callback: %s", payload.Params["notify_url"])
 			}
-			form := url.Values{"pid": {tc.pid}, "out_trade_no": {o.OrderNo}, "trade_no": {"trade-" + tc.code}, "money": {"10.00"}, "trade_status": {"TRADE_SUCCESS"}, "type": {"alipay"}}
+			form := url.Values{"pid": {tc.pid}, "out_trade_no": {payload.Params["out_trade_no"]}, "trade_no": {"trade-" + tc.code}, "money": {"10.00"}, "trade_status": {"TRADE_SUCCESS"}, "type": {"alipay"}}
 			sign := func(key string) {
 				keys := make([]string, 0, len(form))
 				for k := range form {

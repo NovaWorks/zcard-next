@@ -392,6 +392,24 @@ func (_u *PaymentUpdate) AddFee(v int64) *PaymentUpdate {
 	return _u
 }
 
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (_u *PaymentUpdate) SetPricingSnapshot(v json.RawMessage) *PaymentUpdate {
+	_u.mutation.SetPricingSnapshot(v)
+	return _u
+}
+
+// AppendPricingSnapshot appends value to the "pricing_snapshot" field.
+func (_u *PaymentUpdate) AppendPricingSnapshot(v json.RawMessage) *PaymentUpdate {
+	_u.mutation.AppendPricingSnapshot(v)
+	return _u
+}
+
+// ClearPricingSnapshot clears the value of the "pricing_snapshot" field.
+func (_u *PaymentUpdate) ClearPricingSnapshot() *PaymentUpdate {
+	_u.mutation.ClearPricingSnapshot()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *PaymentUpdate) SetStatus(v payment.Status) *PaymentUpdate {
 	_u.mutation.SetStatus(v)
@@ -676,6 +694,17 @@ func (_u *PaymentUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.AddedFee(); ok {
 		_spec.AddField(payment.FieldFee, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PricingSnapshot(); ok {
+		_spec.SetField(payment.FieldPricingSnapshot, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPricingSnapshot(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, payment.FieldPricingSnapshot, value)
+		})
+	}
+	if _u.mutation.PricingSnapshotCleared() {
+		_spec.ClearField(payment.FieldPricingSnapshot, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(payment.FieldStatus, field.TypeEnum, value)
@@ -1113,6 +1142,24 @@ func (_u *PaymentUpdateOne) AddFee(v int64) *PaymentUpdateOne {
 	return _u
 }
 
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (_u *PaymentUpdateOne) SetPricingSnapshot(v json.RawMessage) *PaymentUpdateOne {
+	_u.mutation.SetPricingSnapshot(v)
+	return _u
+}
+
+// AppendPricingSnapshot appends value to the "pricing_snapshot" field.
+func (_u *PaymentUpdateOne) AppendPricingSnapshot(v json.RawMessage) *PaymentUpdateOne {
+	_u.mutation.AppendPricingSnapshot(v)
+	return _u
+}
+
+// ClearPricingSnapshot clears the value of the "pricing_snapshot" field.
+func (_u *PaymentUpdateOne) ClearPricingSnapshot() *PaymentUpdateOne {
+	_u.mutation.ClearPricingSnapshot()
+	return _u
+}
+
 // SetStatus sets the "status" field.
 func (_u *PaymentUpdateOne) SetStatus(v payment.Status) *PaymentUpdateOne {
 	_u.mutation.SetStatus(v)
@@ -1427,6 +1474,17 @@ func (_u *PaymentUpdateOne) sqlSave(ctx context.Context) (_node *Payment, err er
 	}
 	if value, ok := _u.mutation.AddedFee(); ok {
 		_spec.AddField(payment.FieldFee, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.PricingSnapshot(); ok {
+		_spec.SetField(payment.FieldPricingSnapshot, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedPricingSnapshot(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, payment.FieldPricingSnapshot, value)
+		})
+	}
+	if _u.mutation.PricingSnapshotCleared() {
+		_spec.ClearField(payment.FieldPricingSnapshot, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(payment.FieldStatus, field.TypeEnum, value)

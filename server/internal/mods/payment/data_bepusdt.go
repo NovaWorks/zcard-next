@@ -69,6 +69,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 		}
 		var amount int64
 		var subsite uint64
+		scope := ""
 		deadline := time.Now().UTC().Add(time.Duration(conf.Timeout) * time.Second)
 		q := c.Payment.Query().Where(payment.ChannelID(chID), payment.DriverSnapshot("bepusdt"))
 		if orderID > 0 && rechargeID == 0 {
@@ -83,6 +84,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 				return err
 			}
 			amount, subsite = o.TotalAmount, o.SubsiteID
+			scope = o.OrderNo
 			if o.ExpiredAt.Before(deadline) {
 				deadline = o.ExpiredAt
 			}
@@ -105,6 +107,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 				return err
 			}
 			amount = ro.Amount
+			scope = scene
 			a.Subject = "余额充值"
 			a.ReturnURL = absolutePayURL(ctx, "/member?tab=recharge")
 			q.Where(payment.RechargeOrderID(rechargeID))
@@ -124,7 +127,14 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 				return err
 			}
 			a.NotifyURL = absolutePayURL(ctx, r.callbackURLFor(ctx, ch))
-			b := c.Payment.Create().SetSubsiteID(subsite).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetChannel(ch.Code).SetAmount(amount).SetExpiresAt(deadline).SetGatewayOrderRef("BE" + ref).SetStatus(payment.StatusPending)
+			price, e := r.price(txCtx, ch, amount, method)
+			if e != nil {
+				return e
+			}
+			if e = checkQuote(ctx, pricingQuote(price, ch.Code, ch.ID, scope, 0)); e != nil {
+				return e
+			}
+			b := c.Payment.Create().SetPricingSnapshot(pricingJSON(price)).SetFee(price.Fee).SetSubsiteID(subsite).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetChannel(ch.Code).SetAmount(price.Total).SetExpiresAt(deadline).SetGatewayOrderRef("BE" + ref).SetStatus(payment.StatusPending)
 			if orderID > 0 {
 				b.SetOrderID(orderID)
 			} else {
@@ -140,8 +150,13 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			if p.Status != payment.StatusPending {
 				return fmt.Errorf("payment.NOT_PENDING: 支付已处理，请刷新页面")
 			}
-			if p.Amount != amount {
+			if pricingOf(p).Base != amount {
 				return fmt.Errorf("payment.AMOUNT_MISMATCH")
+			}
+			if e := checkQuote(ctx, pricingQuote(pricingOf(p), ch.Code, ch.ID, scope, p.ID)); e != nil {
+				if e = checkQuote(ctx, pricingQuote(pricingOf(p), ch.Code, ch.ID, scope, 0)); e != nil {
+					return e
+				}
 			}
 			if json.Unmarshal(p.GatewayContext, &a) != nil {
 				return fmt.Errorf("payment.ATTEMPT_INVALID")
@@ -169,7 +184,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 		return nil, err
 	}
 	if cached {
-		return &port.RechargePaymentInfo{PaymentID: p.ID, Type: "redirect", Payload: a.PaymentURL}, nil
+		return &port.RechargePaymentInfo{BaseCents: pricingOf(p).Base, FeeCents: p.Fee, TotalCents: p.Amount, PaymentID: p.ID, Type: "redirect", Payload: a.PaymentURL}, nil
 	}
 	provider, err := r.reg.Provider("bepusdt")
 	if err != nil {
@@ -221,7 +236,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			return nil, fmt.Errorf("payment.ORDER_NOT_PENDING: 订单状态已变化，请刷新页面查看结果")
 		}
 	}
-	return &port.RechargePaymentInfo{PaymentID: p.ID, Type: info.Type, Payload: string(info.Payload)}, nil
+	return &port.RechargePaymentInfo{BaseCents: pricingOf(p).Base, FeeCents: p.Fee, TotalCents: p.Amount, PaymentID: p.ID, Type: info.Type, Payload: string(info.Payload)}, nil
 }
 
 func (r *PaymentRepoImpl) checkBepusdtConfigChange(ctx context.Context, ch *ent.PaymentChannel, raw string) error {

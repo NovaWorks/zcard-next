@@ -5,6 +5,7 @@ package zcard.api.storefront.v1;
 option go_package = "github.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1";
 
 import "google/api/annotations.proto";
+import "storefront/v1/payment.proto";
 import "google/api/field_behavior.proto";
 import "google/protobuf/empty.proto";
 
@@ -79,6 +80,7 @@ message CreateRechargeRequest {
   string channel = 2 [(google.api.field_behavior) = REQUIRED];
   // 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
   optional string method = 3;
+  string quote_key = 4;
 }
 
 message CreateRechargeReply {
@@ -86,6 +88,7 @@ message CreateRechargeReply {
   uint64 payment_id = 2;
   string type = 3; // redirect | qrcode | params（与 CreatePaymentReply 同构）
   string payload = 4; // 支付跳转 URL / 二维码内容 / 参数 JSON
+  PaymentQuote quote = 5;
 }
 
 // RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破限流；余额入账幂等键 giftcard:<id>）。

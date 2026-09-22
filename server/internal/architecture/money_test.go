@@ -77,11 +77,16 @@ func TestMoneyRuleM1TransactionRequestsNoAmount(t *testing.T) {
 	} {
 		src := readFile(t, protoFile)
 		// 逐 message *Request 块解析字段名
-		blockRe := regexp.MustCompile(`(?s)message\s+\w*Request\s*\{([^}]*)\}`)
+		blockRe := regexp.MustCompile(`(?s)message\s+(\w*Request)\s*\{([^}]*)\}`)
 		fieldRe := regexp.MustCompile(`(?m)^\s*(?:repeated\s+|map<[^>]+>\s+)?[A-Za-z0-9_.]+\s+(\w+)\s*=`)
 		for _, m := range blockRe.FindAllStringSubmatch(src, -1) {
-			for _, f := range fieldRe.FindAllStringSubmatch(m[1], -1) {
+			for _, f := range fieldRe.FindAllStringSubmatch(m[2], -1) {
 				name := f[1]
+				// Read-only recharge quote accepts a desired principal, as CreateRecharge does.
+				// Purchase quotes ignore it; CreatePayment still has no amount input.
+				if m[1] == "PaymentQuoteRequest" && name == "amount_cents" {
+					continue
+				}
 				if strings.Contains(name, "cent") || name == "amount" || name == "total" {
 					t.Errorf("%s: 交易请求字段 %q 携带金额——订单/支付金额必须后端权威计算（铁律 16），抓包改金额在协议层零入口", protoFile, name)
 				}

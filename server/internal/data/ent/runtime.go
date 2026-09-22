@@ -1633,7 +1633,7 @@ func init() {
 	// payment.DefaultFee holds the default value on creation for the fee field.
 	payment.DefaultFee = paymentDescFee.Default.(int64)
 	// paymentDescIdempotencyKey is the schema descriptor for idempotency_key field.
-	paymentDescIdempotencyKey := paymentFields[21].Descriptor()
+	paymentDescIdempotencyKey := paymentFields[22].Descriptor()
 	// payment.IdempotencyKeyValidator is a validator for the "idempotency_key" field. It is called by the builders before save.
 	payment.IdempotencyKeyValidator = paymentDescIdempotencyKey.Validators[0].(func(string) error)
 	paymentchannelMixin := schema.PaymentChannel{}.Mixin()
@@ -1673,28 +1673,44 @@ func init() {
 	paymentchannelDescFee := paymentchannelFields[5].Descriptor()
 	// paymentchannel.DefaultFee holds the default value on creation for the fee field.
 	paymentchannel.DefaultFee = paymentchannelDescFee.Default.(int64)
+	// paymentchannelDescRecommended is the schema descriptor for recommended field.
+	paymentchannelDescRecommended := paymentchannelFields[8].Descriptor()
+	// paymentchannel.DefaultRecommended holds the default value on creation for the recommended field.
+	paymentchannel.DefaultRecommended = paymentchannelDescRecommended.Default.(bool)
+	// paymentchannelDescRecommendLabel is the schema descriptor for recommend_label field.
+	paymentchannelDescRecommendLabel := paymentchannelFields[9].Descriptor()
+	// paymentchannel.DefaultRecommendLabel holds the default value on creation for the recommend_label field.
+	paymentchannel.DefaultRecommendLabel = paymentchannelDescRecommendLabel.Default.(string)
+	// paymentchannel.RecommendLabelValidator is a validator for the "recommend_label" field. It is called by the builders before save.
+	paymentchannel.RecommendLabelValidator = paymentchannelDescRecommendLabel.Validators[0].(func(string) error)
+	// paymentchannelDescRecommendDescription is the schema descriptor for recommend_description field.
+	paymentchannelDescRecommendDescription := paymentchannelFields[10].Descriptor()
+	// paymentchannel.DefaultRecommendDescription holds the default value on creation for the recommend_description field.
+	paymentchannel.DefaultRecommendDescription = paymentchannelDescRecommendDescription.Default.(string)
+	// paymentchannel.RecommendDescriptionValidator is a validator for the "recommend_description" field. It is called by the builders before save.
+	paymentchannel.RecommendDescriptionValidator = paymentchannelDescRecommendDescription.Validators[0].(func(string) error)
 	// paymentchannelDescSort is the schema descriptor for sort field.
-	paymentchannelDescSort := paymentchannelFields[8].Descriptor()
+	paymentchannelDescSort := paymentchannelFields[11].Descriptor()
 	// paymentchannel.DefaultSort holds the default value on creation for the sort field.
 	paymentchannel.DefaultSort = paymentchannelDescSort.Default.(int32)
 	// paymentchannelDescEnabled is the schema descriptor for enabled field.
-	paymentchannelDescEnabled := paymentchannelFields[9].Descriptor()
+	paymentchannelDescEnabled := paymentchannelFields[12].Descriptor()
 	// paymentchannel.DefaultEnabled holds the default value on creation for the enabled field.
 	paymentchannel.DefaultEnabled = paymentchannelDescEnabled.Default.(bool)
 	// paymentchannelDescAllowPurchase is the schema descriptor for allow_purchase field.
-	paymentchannelDescAllowPurchase := paymentchannelFields[11].Descriptor()
+	paymentchannelDescAllowPurchase := paymentchannelFields[14].Descriptor()
 	// paymentchannel.DefaultAllowPurchase holds the default value on creation for the allow_purchase field.
 	paymentchannel.DefaultAllowPurchase = paymentchannelDescAllowPurchase.Default.(bool)
 	// paymentchannelDescAllowMemberRecharge is the schema descriptor for allow_member_recharge field.
-	paymentchannelDescAllowMemberRecharge := paymentchannelFields[12].Descriptor()
+	paymentchannelDescAllowMemberRecharge := paymentchannelFields[15].Descriptor()
 	// paymentchannel.DefaultAllowMemberRecharge holds the default value on creation for the allow_member_recharge field.
 	paymentchannel.DefaultAllowMemberRecharge = paymentchannelDescAllowMemberRecharge.Default.(bool)
 	// paymentchannelDescAllowSupplyRecharge is the schema descriptor for allow_supply_recharge field.
-	paymentchannelDescAllowSupplyRecharge := paymentchannelFields[13].Descriptor()
+	paymentchannelDescAllowSupplyRecharge := paymentchannelFields[16].Descriptor()
 	// paymentchannel.DefaultAllowSupplyRecharge holds the default value on creation for the allow_supply_recharge field.
 	paymentchannel.DefaultAllowSupplyRecharge = paymentchannelDescAllowSupplyRecharge.Default.(bool)
 	// paymentchannelDescIcon is the schema descriptor for icon field.
-	paymentchannelDescIcon := paymentchannelFields[14].Descriptor()
+	paymentchannelDescIcon := paymentchannelFields[17].Descriptor()
 	// paymentchannel.DefaultIcon holds the default value on creation for the icon field.
 	paymentchannel.DefaultIcon = paymentchannelDescIcon.Default.(string)
 	// paymentchannel.IconValidator is a validator for the "icon" field. It is called by the builders before save.
@@ -2183,8 +2199,12 @@ func init() {
 	refundorder.DefaultUpdatedAt = refundorderDescUpdatedAt.Default.(func() time.Time)
 	// refundorder.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	refundorder.UpdateDefaultUpdatedAt = refundorderDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// refundorderDescFeeAmount is the schema descriptor for fee_amount field.
+	refundorderDescFeeAmount := refundorderFields[3].Descriptor()
+	// refundorder.DefaultFeeAmount holds the default value on creation for the fee_amount field.
+	refundorder.DefaultFeeAmount = refundorderDescFeeAmount.Default.(int64)
 	// refundorderDescUpstreamRefundID is the schema descriptor for upstream_refund_id field.
-	refundorderDescUpstreamRefundID := refundorderFields[7].Descriptor()
+	refundorderDescUpstreamRefundID := refundorderFields[8].Descriptor()
 	// refundorder.UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
 	refundorder.UpstreamRefundIDValidator = refundorderDescUpstreamRefundID.Validators[0].(func(string) error)
 	resellerbalanceaccountFields := schema.ResellerBalanceAccount{}.Fields()

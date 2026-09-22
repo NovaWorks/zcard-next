@@ -23,6 +23,8 @@ const (
 	FieldOrderID = "order_id"
 	// FieldAmount holds the string denoting the amount field in the database.
 	FieldAmount = "amount"
+	// FieldFeeAmount holds the string denoting the fee_amount field in the database.
+	FieldFeeAmount = "fee_amount"
 	// FieldChannel holds the string denoting the channel field in the database.
 	FieldChannel = "channel"
 	// FieldStatus holds the string denoting the status field in the database.
@@ -53,6 +55,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldOrderID,
 	FieldAmount,
+	FieldFeeAmount,
 	FieldChannel,
 	FieldStatus,
 	FieldReason,
@@ -77,6 +80,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultFeeAmount holds the default value on creation for the "fee_amount" field.
+	DefaultFeeAmount int64
 	// UpstreamRefundIDValidator is a validator for the "upstream_refund_id" field. It is called by the builders before save.
 	UpstreamRefundIDValidator func(string) error
 )
@@ -159,6 +164,11 @@ func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 // ByAmount orders the results by the amount field.
 func ByAmount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAmount, opts...).ToFunc()
+}
+
+// ByFeeAmount orders the results by the fee_amount field.
+func ByFeeAmount(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFeeAmount, opts...).ToFunc()
 }
 
 // ByChannel orders the results by the channel field.

@@ -10,6 +10,8 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/paymentchannel"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 )
 
@@ -57,11 +59,11 @@ func TestPaymentChannelDeleteUpgrade(t *testing.T) {
 			if _, err := d.DB.Exec(string(upgrade)); err != nil {
 				t.Fatal(err)
 			}
-			ch := d.Client.PaymentChannel.GetX(context.Background(), 41)
+			ch := d.Client.PaymentChannel.Query().Where(paymentchannel.ID(41)).Select(paymentchannel.FieldID, paymentchannel.FieldDeletedAt, paymentchannel.FieldEnabled, paymentchannel.FieldCode, paymentchannel.FieldConfig).OnlyX(context.Background())
 			if !ch.DeletedAt.IsZero() || ch.Enabled || ch.Code != "be-old" || string(ch.Config) != "ciphertext" {
 				t.Fatal("upgrade changed historical channel or credentials")
 			}
-			p := d.Client.Payment.GetX(context.Background(), 42)
+			p := d.Client.Payment.Query().Where(payment.ID(42)).Select(payment.FieldID, payment.FieldChannelID, payment.FieldAmount, payment.FieldStatus).OnlyX(context.Background())
 			if p.ChannelID != ch.ID || p.Amount != 1000 || p.Status != "pending" {
 				t.Fatal("upgrade changed historical payment")
 			}

@@ -189,11 +189,14 @@ func (r *PaymentRepoImpl) ListChannels(ctx context.Context) ([]*ent.PaymentChann
 // ChannelMethod 支付方式（收银台顾客看到的选项；params 承载网关路由参数）。
 type ChannelMethod struct {
 	ChannelUsage
-	Code    string            `json:"code"`
-	Name    string            `json:"name"`
-	Icon    string            `json:"icon,omitempty"`
-	Enabled bool              `json:"enabled"`
-	Params  map[string]string `json:"params,omitempty"`
+	Code                 string            `json:"code"`
+	Name                 string            `json:"name"`
+	Icon                 string            `json:"icon,omitempty"`
+	Enabled              bool              `json:"enabled"`
+	Params               map[string]string `json:"params,omitempty"`
+	Recommended          bool              `json:"recommended,omitempty"`
+	RecommendLabel       string            `json:"recommend_label,omitempty"`
+	RecommendDescription string            `json:"recommend_description,omitempty"`
 }
 
 // parseMethods 渠道方式列表解析（methods JSON 空 → nil = 单方式渠道旧语义）。
@@ -224,6 +227,9 @@ func methodsJSON(raw string) ([]map[string]any, error) {
 	}
 	seen := map[string]bool{}
 	for _, m := range ms {
+		if err := validateRecommendation(m.RecommendLabel, m.RecommendDescription); err != nil {
+			return nil, err
+		}
 		if seen[m.Code] {
 			return nil, fmt.Errorf("payment.METHODS_INVALID: 支付方式标识不能重复")
 		}
@@ -386,6 +392,9 @@ func (r *PaymentRepoImpl) DeleteChannel(ctx context.Context, id uint64) error {
 
 // DecryptConfig 解密凭据（失败降级为空，铁律 5）。
 func (r *PaymentRepoImpl) DecryptConfig(ch *ent.PaymentChannel) json.RawMessage {
+	if r.Cipher == nil {
+		return json.RawMessage("{}")
+	}
 	plain, err := r.Cipher.Open(ch.Config, []byte("payment_channel:"+ch.Code))
 	if err != nil {
 		return json.RawMessage(`{}`)
@@ -448,7 +457,7 @@ func (r *PaymentRepoImpl) ConfiguredFields(ch *ent.PaymentChannel) []string {
 // ── 支付单（）────────────────────────────────────────────
 
 // CreatePayment 创建支付单。
-func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, channel string, amount int64, idemKey string) (*ent.Payment, error) {
+func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, channel string, amount int64, idemKey string, methods ...string) (*ent.Payment, error) {
 	var result *ent.Payment
 	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
 		client := data.Client(ctx, r.data)
@@ -476,7 +485,34 @@ func (r *PaymentRepoImpl) CreatePayment(ctx context.Context, orderID uint64, cha
 		if n != 1 {
 			return fmt.Errorf("payment.ORDER_CHANGED")
 		}
-		result, err = client.Payment.Create().SetOrderID(orderID).SetSubsiteID(o.SubsiteID).SetChannel(channel).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetExpiresAt(o.ExpiredAt).SetAmount(amount).SetStatus(payment.StatusPending).SetIdempotencyKey(idemKey).Save(ctx)
+		method := ""
+		if len(methods) > 0 {
+			method = methods[0]
+		}
+		price, err := r.price(ctx, ch, o.TotalAmount, method)
+		if err != nil {
+			return err
+		}
+		if err = checkQuote(ctx, pricingQuote(price, ch.Code, ch.ID, o.OrderNo, 0)); err != nil {
+			return err
+		}
+		if port.QuoteKey(ctx) != "" {
+			candidates, e := client.Payment.Query().Where(payment.OrderID(o.ID), payment.ChannelID(ch.ID), payment.StatusEQ(payment.StatusPending)).Order(ent.Desc(payment.FieldID)).All(ctx)
+			if e != nil {
+				return e
+			}
+			for _, prev := range candidates {
+				if prev.GatewayOrderRef != "" && len(prev.PricingSnapshot) > 0 && pricingOf(prev) == price {
+					result = prev
+					return nil
+				}
+			}
+		}
+		ref, err := bepusdtNonce()
+		if err != nil {
+			return err
+		}
+		result, err = client.Payment.Create().SetPricingSnapshot(pricingJSON(price)).SetFee(price.Fee).SetGatewayOrderRef("ZP" + ref[:30]).SetOrderID(orderID).SetSubsiteID(o.SubsiteID).SetChannel(channel).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).SetExpiresAt(o.ExpiredAt).SetAmount(price.Total).SetChargedUnits(price.Charge.Units).SetChargedCurrency(price.Charge.Currency).SetChargedPrecision(price.Charge.Precision).SetExchangeRate(price.Charge.Rate).SetStatus(payment.StatusPending).SetIdempotencyKey(idemKey).Save(ctx)
 		return err
 	})
 	return result, err
@@ -527,11 +563,23 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	if ch.Driver == "bepusdt" {
 		return r.createBepusdtPayment(ctx, ch.ID, 0, ro.ID, method)
 	}
-	p, err := client.Payment.Create().
+	price, err := r.price(ctx, ch, ro.Amount, method)
+	if err != nil {
+		return nil, err
+	}
+	if err = checkQuote(ctx, pricingQuote(price, ch.Code, ch.ID, scene, 0)); err != nil {
+		return nil, err
+	}
+	ref, err := bepusdtNonce()
+	if err != nil {
+		return nil, err
+	}
+	p, err := client.Payment.Create().SetPricingSnapshot(pricingJSON(price)).SetFee(price.Fee).SetGatewayOrderRef("ZP" + ref[:30]).
+		SetChargedUnits(price.Charge.Units).SetChargedCurrency(price.Charge.Currency).SetChargedPrecision(price.Charge.Precision).SetExchangeRate(price.Charge.Rate).
 		SetRechargeOrderID(ro.ID).
 		SetSubsiteID(0).SetChannelID(ch.ID).SetDriverSnapshot(ch.Driver).
 		SetChannel(channel).
-		SetAmount(ro.Amount).
+		SetAmount(price.Total).
 		SetStatus(payment.StatusPending).
 		Save(ctx)
 	if err != nil {
@@ -545,19 +593,13 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 	if err := provider.ValidateConfig(cfg); err != nil {
 		return nil, fmt.Errorf("payment.CHANNEL_CONFIG_INVALID: %w", err)
 	}
-	snap, err := r.computeCharge(ctx, ch.Driver, cfg, amount)
-	if err != nil {
-		return nil, err
-	}
-	if err := r.snapshotCharge(ctx, p.ID, snap); err != nil {
-		return nil, err
-	}
+	snap := price.Charge
 	// 回跳/回调绝对化（同订单支付口径）：return 回充值 tab——曾不传，
 	// 网关回跳空地址即 404；notify 走 site/url 或请求 Host
-	info, err := provider.CreatePayment(ctx, port.CreatePaymentRequest{
-		OrderNo:      fmt.Sprintf("RCH%d", ro.ID),
+	info, err := r.dispatchPayment(ctx, p, provider, port.CreatePaymentRequest{
+		OrderNo: p.GatewayOrderRef, GatewayOrderRef: p.GatewayOrderRef,
 		Channel:      channel,
-		Amount:       amount,
+		Amount:       money.Cents(p.Amount),
 		Subject:      "余额充值",
 		ChargedUnits: snap.Units, ChargedCurrency: snap.Currency,
 		ReturnURL:     absolutePayURL(ctx, "/member?tab=recharge"),
@@ -569,7 +611,7 @@ func (r *PaymentRepoImpl) CreateRechargePayment(ctx context.Context, rechargeOrd
 		return nil, fmt.Errorf("payment.CREATE_FAILED: %w", err)
 	}
 	return &port.RechargePaymentInfo{
-		PaymentID: p.ID, Type: info.Type, Payload: string(info.Payload),
+		PaymentID: p.ID, Type: info.Type, Payload: string(info.Payload), BaseCents: price.Base, FeeCents: price.Fee, TotalCents: price.Total,
 	}, nil
 }
 
@@ -703,7 +745,7 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 			if err != nil {
 				return err
 			}
-			if fact.OrderNo != "" && fact.OrderNo != o.OrderNo {
+			if fact.OrderNo != "" && fact.OrderNo != o.OrderNo && fact.OrderNo != p.GatewayOrderRef {
 				return fmt.Errorf("payment.ORDER_MISMATCH")
 			}
 			fact.OrderNo = o.OrderNo
@@ -754,7 +796,7 @@ func (r *PaymentRepoImpl) HandleCallback(ctx context.Context, paymentID uint64, 
 		if p.RechargeOrderID > 0 {
 			return r.settleRecharge(txCtx, p, fact)
 		}
-		if fact.OrderNo == "" && p.OrderID > 0 {
+		if p.OrderID > 0 {
 			// 钱包直付等内部路径 fact 不带单号——按支付单回填（MarkPaid 判据）
 			if o, err := client.Order.Get(txCtx, p.OrderID); err == nil {
 				fact.OrderNo = o.OrderNo
@@ -933,7 +975,7 @@ func ToChannelPB(ch *ent.PaymentChannel) *adminv1.Channel {
 	pb := &adminv1.Channel{
 		Id: ch.ID, Name: ch.Name, Code: ch.Code, Driver: ch.Driver,
 		ConfigJson: `"****"`, // 凭据永不明文下发
-		Fee:        ch.Fee, FeeType: string(ch.FeeType),
+		Fee:        ch.Fee, FeeType: string(ch.FeeType), FeeBearer: string(ch.FeeBearer), Recommended: ch.Recommended, RecommendLabel: ch.RecommendLabel, RecommendDescription: ch.RecommendDescription,
 		Enabled: ch.Enabled, Sort: ch.Sort,
 		Icon:          ch.Icon,
 		AllowPurchase: &ch.AllowPurchase, AllowMemberRecharge: &ch.AllowMemberRecharge, AllowSupplyRecharge: &ch.AllowSupplyRecharge,
@@ -972,7 +1014,7 @@ func ToPaymentPB(p *ent.Payment, orderNo string) *adminv1.Payment {
 func ToRefundPB(rf *ent.RefundOrder, orderNo string) *adminv1.RefundOrder {
 	return &adminv1.RefundOrder{
 		Id: rf.ID, OrderId: rf.OrderID, OrderNo: orderNo,
-		AmountCents: rf.Amount, Channel: string(rf.Channel),
+		AmountCents: rf.Amount, FeeCents: rf.FeeAmount, Channel: string(rf.Channel),
 		Status: string(rf.Status), Reason: rf.Reason,
 		UpstreamRefundId: rf.UpstreamRefundID,
 	}

@@ -14,6 +14,9 @@ service StorePaymentService {
   rpc ListChannels(ListPaymentChannelsRequest) returns (ChannelListReply) {
     option (google.api.http) = { get: "/api/v1/storefront/payment/channels" };
   }
+  rpc QuotePayment(PaymentQuoteRequest) returns (PaymentQuote) {
+    option (google.api.http) = { post: "/api/v1/storefront/payment/quote" body: "*" };
+  }
   // CreatePayment 创建支付（返回收银台/二维码跳转信息）。
   rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentReply) {
     option (google.api.http) = {
@@ -37,6 +40,12 @@ message ChannelItem {
   string name = 2; // 渠道名称（管理端配置）
   string driver = 3;
   string icon = 4; // 渠道自定义图标 URL（空=前端回落内置徽标）
+  int64 fee = 6;
+  string fee_type = 7;
+  string fee_bearer = 8;
+  bool recommended = 9;
+  string recommend_label = 10;
+  string recommend_description = 11;
   repeated MethodItem methods = 5; // 支付方式列表（聚合网关；空=单方式渠道）
 }
 
@@ -44,17 +53,47 @@ message ChannelItem {
 message MethodItem {
   string code = 1;
   string name = 2;
+  bool recommended = 4;
+  string recommend_label = 5;
+  string recommend_description = 6;
   string icon = 3; // 方式级自定义图标（空=回落渠道图标/内置徽标）
 }
 
 message CreatePaymentRequest {
+  string quote_key = 4;
+  string query_password = 5;
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   string channel = 2 [(google.api.field_behavior) = REQUIRED];
   string method = 3; // 支付方式 code（多方式渠道必选；单方式渠道可空）
 }
 
 message CreatePaymentReply {
+  PaymentQuote quote = 4;
   uint64 payment_id = 1;
   string type = 2; // redirect | qrcode | params
   string payload = 3; // URL / 二维码内容 / 参数 JSON
+}
+
+message PaymentQuoteRequest {
+  string order_no = 1;
+  string channel = 2;
+  string method = 3;
+  string scene = 4;
+  int64 amount_cents = 5;
+  string query_password = 6;
+}
+message PaymentQuote {
+  int64 base_cents = 1;
+  int64 fee_cents = 2;
+  int64 total_cents = 3;
+  string fee_type = 4;
+  int64 fee_rate = 5;
+  string fee_bearer = 6;
+  string quote_key = 7;
+  uint64 payment_id = 8;
+  string channel = 9;
+  string method = 10;
+  string charged_currency = 11;
+  int64 charged_units = 12;
+  int32 charged_precision = 13;
 }

@@ -80,6 +80,8 @@ message GetOrderReply {
   repeated OrderItemReply items = 4;
   int64 created_at = 5;
   int64 expires_at = 6; // 订单过期时间（倒计时；0=无过期）
+  int64 paid_total_cents = 7;
+  int64 paid_fee_cents = 8;
 }
 
 message OrderItemReply {

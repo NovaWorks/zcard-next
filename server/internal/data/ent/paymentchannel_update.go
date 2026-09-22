@@ -153,6 +153,48 @@ func (_u *PaymentChannelUpdate) SetNillableFeeBearer(v *paymentchannel.FeeBearer
 	return _u
 }
 
+// SetRecommended sets the "recommended" field.
+func (_u *PaymentChannelUpdate) SetRecommended(v bool) *PaymentChannelUpdate {
+	_u.mutation.SetRecommended(v)
+	return _u
+}
+
+// SetNillableRecommended sets the "recommended" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableRecommended(v *bool) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetRecommended(*v)
+	}
+	return _u
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (_u *PaymentChannelUpdate) SetRecommendLabel(v string) *PaymentChannelUpdate {
+	_u.mutation.SetRecommendLabel(v)
+	return _u
+}
+
+// SetNillableRecommendLabel sets the "recommend_label" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableRecommendLabel(v *string) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetRecommendLabel(*v)
+	}
+	return _u
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (_u *PaymentChannelUpdate) SetRecommendDescription(v string) *PaymentChannelUpdate {
+	_u.mutation.SetRecommendDescription(v)
+	return _u
+}
+
+// SetNillableRecommendDescription sets the "recommend_description" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableRecommendDescription(v *string) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetRecommendDescription(*v)
+	}
+	return _u
+}
+
 // SetSort sets the "sort" field.
 func (_u *PaymentChannelUpdate) SetSort(v int32) *PaymentChannelUpdate {
 	_u.mutation.ResetSort()
@@ -350,6 +392,16 @@ func (_u *PaymentChannelUpdate) check() error {
 			return &ValidationError{Name: "fee_bearer", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.fee_bearer": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RecommendLabel(); ok {
+		if err := paymentchannel.RecommendLabelValidator(v); err != nil {
+			return &ValidationError{Name: "recommend_label", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.recommend_label": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RecommendDescription(); ok {
+		if err := paymentchannel.RecommendDescriptionValidator(v); err != nil {
+			return &ValidationError{Name: "recommend_description", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.recommend_description": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Icon(); ok {
 		if err := paymentchannel.IconValidator(v); err != nil {
 			return &ValidationError{Name: "icon", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.icon": %w`, err)}
@@ -402,6 +454,15 @@ func (_u *PaymentChannelUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.FeeBearer(); ok {
 		_spec.SetField(paymentchannel.FieldFeeBearer, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Recommended(); ok {
+		_spec.SetField(paymentchannel.FieldRecommended, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RecommendLabel(); ok {
+		_spec.SetField(paymentchannel.FieldRecommendLabel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RecommendDescription(); ok {
+		_spec.SetField(paymentchannel.FieldRecommendDescription, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Sort(); ok {
 		_spec.SetField(paymentchannel.FieldSort, field.TypeInt32, value)
@@ -581,6 +642,48 @@ func (_u *PaymentChannelUpdateOne) SetFeeBearer(v paymentchannel.FeeBearer) *Pay
 func (_u *PaymentChannelUpdateOne) SetNillableFeeBearer(v *paymentchannel.FeeBearer) *PaymentChannelUpdateOne {
 	if v != nil {
 		_u.SetFeeBearer(*v)
+	}
+	return _u
+}
+
+// SetRecommended sets the "recommended" field.
+func (_u *PaymentChannelUpdateOne) SetRecommended(v bool) *PaymentChannelUpdateOne {
+	_u.mutation.SetRecommended(v)
+	return _u
+}
+
+// SetNillableRecommended sets the "recommended" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableRecommended(v *bool) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetRecommended(*v)
+	}
+	return _u
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (_u *PaymentChannelUpdateOne) SetRecommendLabel(v string) *PaymentChannelUpdateOne {
+	_u.mutation.SetRecommendLabel(v)
+	return _u
+}
+
+// SetNillableRecommendLabel sets the "recommend_label" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableRecommendLabel(v *string) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetRecommendLabel(*v)
+	}
+	return _u
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (_u *PaymentChannelUpdateOne) SetRecommendDescription(v string) *PaymentChannelUpdateOne {
+	_u.mutation.SetRecommendDescription(v)
+	return _u
+}
+
+// SetNillableRecommendDescription sets the "recommend_description" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableRecommendDescription(v *string) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetRecommendDescription(*v)
 	}
 	return _u
 }
@@ -795,6 +898,16 @@ func (_u *PaymentChannelUpdateOne) check() error {
 			return &ValidationError{Name: "fee_bearer", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.fee_bearer": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RecommendLabel(); ok {
+		if err := paymentchannel.RecommendLabelValidator(v); err != nil {
+			return &ValidationError{Name: "recommend_label", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.recommend_label": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RecommendDescription(); ok {
+		if err := paymentchannel.RecommendDescriptionValidator(v); err != nil {
+			return &ValidationError{Name: "recommend_description", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.recommend_description": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Icon(); ok {
 		if err := paymentchannel.IconValidator(v); err != nil {
 			return &ValidationError{Name: "icon", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.icon": %w`, err)}
@@ -864,6 +977,15 @@ func (_u *PaymentChannelUpdateOne) sqlSave(ctx context.Context) (_node *PaymentC
 	}
 	if value, ok := _u.mutation.FeeBearer(); ok {
 		_spec.SetField(paymentchannel.FieldFeeBearer, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Recommended(); ok {
+		_spec.SetField(paymentchannel.FieldRecommended, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RecommendLabel(); ok {
+		_spec.SetField(paymentchannel.FieldRecommendLabel, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.RecommendDescription(); ok {
+		_spec.SetField(paymentchannel.FieldRecommendDescription, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Sort(); ok {
 		_spec.SetField(paymentchannel.FieldSort, field.TypeInt32, value)

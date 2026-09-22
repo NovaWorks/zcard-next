@@ -63,6 +63,20 @@ func (_c *RefundOrderCreate) SetAmount(v int64) *RefundOrderCreate {
 	return _c
 }
 
+// SetFeeAmount sets the "fee_amount" field.
+func (_c *RefundOrderCreate) SetFeeAmount(v int64) *RefundOrderCreate {
+	_c.mutation.SetFeeAmount(v)
+	return _c
+}
+
+// SetNillableFeeAmount sets the "fee_amount" field if the given value is not nil.
+func (_c *RefundOrderCreate) SetNillableFeeAmount(v *int64) *RefundOrderCreate {
+	if v != nil {
+		_c.SetFeeAmount(*v)
+	}
+	return _c
+}
+
 // SetChannel sets the "channel" field.
 func (_c *RefundOrderCreate) SetChannel(v refundorder.Channel) *RefundOrderCreate {
 	_c.mutation.SetChannel(v)
@@ -179,6 +193,10 @@ func (_c *RefundOrderCreate) defaults() {
 		v := refundorder.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.FeeAmount(); !ok {
+		v := refundorder.DefaultFeeAmount
+		_c.mutation.SetFeeAmount(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := refundorder.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -198,6 +216,9 @@ func (_c *RefundOrderCreate) check() error {
 	}
 	if _, ok := _c.mutation.Amount(); !ok {
 		return &ValidationError{Name: "amount", err: errors.New(`ent: missing required field "RefundOrder.amount"`)}
+	}
+	if _, ok := _c.mutation.FeeAmount(); !ok {
+		return &ValidationError{Name: "fee_amount", err: errors.New(`ent: missing required field "RefundOrder.fee_amount"`)}
 	}
 	if _, ok := _c.mutation.Channel(); !ok {
 		return &ValidationError{Name: "channel", err: errors.New(`ent: missing required field "RefundOrder.channel"`)}
@@ -267,6 +288,10 @@ func (_c *RefundOrderCreate) createSpec() (*RefundOrder, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Amount(); ok {
 		_spec.SetField(refundorder.FieldAmount, field.TypeInt64, value)
 		_node.Amount = value
+	}
+	if value, ok := _c.mutation.FeeAmount(); ok {
+		_spec.SetField(refundorder.FieldFeeAmount, field.TypeInt64, value)
+		_node.FeeAmount = value
 	}
 	if value, ok := _c.mutation.Channel(); ok {
 		_spec.SetField(refundorder.FieldChannel, field.TypeEnum, value)
@@ -396,6 +421,24 @@ func (u *RefundOrderUpsert) UpdateAmount() *RefundOrderUpsert {
 // AddAmount adds v to the "amount" field.
 func (u *RefundOrderUpsert) AddAmount(v int64) *RefundOrderUpsert {
 	u.Add(refundorder.FieldAmount, v)
+	return u
+}
+
+// SetFeeAmount sets the "fee_amount" field.
+func (u *RefundOrderUpsert) SetFeeAmount(v int64) *RefundOrderUpsert {
+	u.Set(refundorder.FieldFeeAmount, v)
+	return u
+}
+
+// UpdateFeeAmount sets the "fee_amount" field to the value that was provided on create.
+func (u *RefundOrderUpsert) UpdateFeeAmount() *RefundOrderUpsert {
+	u.SetExcluded(refundorder.FieldFeeAmount)
+	return u
+}
+
+// AddFeeAmount adds v to the "fee_amount" field.
+func (u *RefundOrderUpsert) AddFeeAmount(v int64) *RefundOrderUpsert {
+	u.Add(refundorder.FieldFeeAmount, v)
 	return u
 }
 
@@ -580,6 +623,27 @@ func (u *RefundOrderUpsertOne) AddAmount(v int64) *RefundOrderUpsertOne {
 func (u *RefundOrderUpsertOne) UpdateAmount() *RefundOrderUpsertOne {
 	return u.Update(func(s *RefundOrderUpsert) {
 		s.UpdateAmount()
+	})
+}
+
+// SetFeeAmount sets the "fee_amount" field.
+func (u *RefundOrderUpsertOne) SetFeeAmount(v int64) *RefundOrderUpsertOne {
+	return u.Update(func(s *RefundOrderUpsert) {
+		s.SetFeeAmount(v)
+	})
+}
+
+// AddFeeAmount adds v to the "fee_amount" field.
+func (u *RefundOrderUpsertOne) AddFeeAmount(v int64) *RefundOrderUpsertOne {
+	return u.Update(func(s *RefundOrderUpsert) {
+		s.AddFeeAmount(v)
+	})
+}
+
+// UpdateFeeAmount sets the "fee_amount" field to the value that was provided on create.
+func (u *RefundOrderUpsertOne) UpdateFeeAmount() *RefundOrderUpsertOne {
+	return u.Update(func(s *RefundOrderUpsert) {
+		s.UpdateFeeAmount()
 	})
 }
 
@@ -944,6 +1008,27 @@ func (u *RefundOrderUpsertBulk) AddAmount(v int64) *RefundOrderUpsertBulk {
 func (u *RefundOrderUpsertBulk) UpdateAmount() *RefundOrderUpsertBulk {
 	return u.Update(func(s *RefundOrderUpsert) {
 		s.UpdateAmount()
+	})
+}
+
+// SetFeeAmount sets the "fee_amount" field.
+func (u *RefundOrderUpsertBulk) SetFeeAmount(v int64) *RefundOrderUpsertBulk {
+	return u.Update(func(s *RefundOrderUpsert) {
+		s.SetFeeAmount(v)
+	})
+}
+
+// AddFeeAmount adds v to the "fee_amount" field.
+func (u *RefundOrderUpsertBulk) AddFeeAmount(v int64) *RefundOrderUpsertBulk {
+	return u.Update(func(s *RefundOrderUpsert) {
+		s.AddFeeAmount(v)
+	})
+}
+
+// UpdateFeeAmount sets the "fee_amount" field to the value that was provided on create.
+func (u *RefundOrderUpsertBulk) UpdateFeeAmount() *RefundOrderUpsertBulk {
+	return u.Update(func(s *RefundOrderUpsert) {
+		s.UpdateFeeAmount()
 	})
 }
 

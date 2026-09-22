@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -122,13 +123,13 @@ func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefront
 	if s.payer == nil {
 		return nil, errors.InternalServer("wallet.PAYMENT_UNBOUND", "支付管线未装配")
 	}
-	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), req.GetMethod(), money.Cents(amount))
+	info, err := s.payer.CreateRechargePayment(paymentport.WithQuoteKey(ctx, req.GetQuoteKey()), ro.ID, req.GetChannel(), req.GetMethod(), money.Cents(amount))
 	if err != nil {
 		return nil, mapRechargeErr(err)
 	}
 	return &storefrontv1.CreateRechargeReply{
 		RechargeId: ro.ID, PaymentId: info.PaymentID,
-		Type: info.Type, Payload: info.Payload,
+		Type: info.Type, Payload: info.Payload, Quote: &storefrontv1.PaymentQuote{BaseCents: info.BaseCents, FeeCents: info.FeeCents, TotalCents: info.TotalCents},
 	}, nil
 }
 
@@ -136,6 +137,8 @@ func (s *StoreWalletService) CreateRecharge(ctx context.Context, req *storefront
 func mapRechargeErr(err error) error {
 	msg := err.Error()
 	switch {
+	case strings.Contains(msg, "QUOTE_CHANGED"):
+		return errors.BadRequest("payment.QUOTE_CHANGED", "支付金额已变化，请刷新费用明细后再次确认")
 	case containsStr(msg, "SCENE_DISABLED"):
 		return errors.BadRequest("wallet.SCENE_DISABLED", "该支付方式未开放此充值用途，请更换支付方式")
 	case containsStr(msg, "CHANNEL_DISABLED"):

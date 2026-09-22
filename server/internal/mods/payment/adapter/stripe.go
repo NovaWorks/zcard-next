@@ -114,12 +114,15 @@ func (a *StripeAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		}},
 	}
 	params.Context = ctx
+	if req.IdempotencyKey != "" {
+		params.SetIdempotencyKey(req.IdempotencyKey)
+	}
 	sess, err := stripeClient(c.SecretKey).CheckoutSessions.New(params)
 	if err != nil {
 		return nil, fmt.Errorf("stripe: 下单失败: %w", err)
 	}
 	payload, _ := json.Marshal(map[string]string{"url": sess.URL})
-	return &port.RedirectInfo{Type: "redirect", Payload: payload}, nil
+	return &port.RedirectInfo{ChannelOrderNo: sess.ID, Type: "redirect", Payload: payload}, nil
 }
 
 // ParseWebhook Stripe-Signature 构造验证（SDK ConstructEvent，默认 tolerance）→ CallbackFact。

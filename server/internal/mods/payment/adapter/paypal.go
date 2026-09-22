@@ -153,7 +153,7 @@ func paypalFetchToken(ctx context.Context, base string, c paypalConfig) (string,
 var paypalHTTPClient = &http.Client{Timeout: 15 * time.Second}
 
 // paypalDo JSON 请求（Bearer 认证）。
-func paypalDo(ctx context.Context, base, method, path, token string, body []byte) ([]byte, int, error) {
+func paypalDo(ctx context.Context, base, method, path, token string, body []byte, idempotencyKey ...string) ([]byte, int, error) {
 	req, err := http.NewRequestWithContext(ctx, method, base+path, bytes.NewReader(body))
 	if err != nil {
 		return nil, 0, fmt.Errorf("paypal: 构造请求失败: %w", err)
@@ -161,6 +161,9 @@ func paypalDo(ctx context.Context, base, method, path, token string, body []byte
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", "Bearer "+token)
+	if len(idempotencyKey) > 0 && idempotencyKey[0] != "" {
+		req.Header.Set("PayPal-Request-Id", idempotencyKey[0])
+	}
 	resp, err := paypalHTTPClient.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("paypal: 请求失败: %w", err)
@@ -251,7 +254,7 @@ func (a *PaypalAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		"application_context": paypalAppContext(c, returnURL),
 	}
 	body, _ := json.Marshal(payload)
-	raw, status, err := paypalDo(ctx, paypalBaseURL(c), http.MethodPost, "/v2/checkout/orders", token, body)
+	raw, status, err := paypalDo(ctx, paypalBaseURL(c), http.MethodPost, "/v2/checkout/orders", token, body, req.IdempotencyKey)
 	if err != nil {
 		return nil, fmt.Errorf("paypal: 下单失败: %w", err)
 	}
@@ -277,7 +280,7 @@ func (a *PaypalAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 		approve = host + "/checkoutnow?token=" + order.ID
 	}
 	payload2, _ := json.Marshal(map[string]string{"url": approve})
-	return &port.RedirectInfo{Type: "redirect", Payload: payload2}, nil
+	return &port.RedirectInfo{ChannelOrderNo: order.ID, Type: "redirect", Payload: payload2}, nil
 }
 
 // paypalAppContext 授权上下文（brand_name 可选——空值不发送）。

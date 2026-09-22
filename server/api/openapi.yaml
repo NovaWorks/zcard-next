@@ -6119,6 +6119,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.storefront.v1.ChannelListReply'
+    /api/v1/storefront/payment/quote:
+        post:
+            tags:
+                - StorePaymentService
+            operationId: StorePaymentService_QuotePayment
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.storefront.v1.PaymentQuoteRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.storefront.v1.PaymentQuote'
     /api/v1/storefront/payments:
         post:
             tags:
@@ -6924,6 +6942,12 @@ components:
         zcard.api.admin.v1.AdminOrder:
             type: object
             properties:
+                paidTotalCents:
+                    type: string
+                paidFeeCents:
+                    type: string
+                refundedFeeCents:
+                    type: string
                 refundedCents:
                     type: string
                 id:
@@ -7540,6 +7564,14 @@ components:
                     type: boolean
                 allowSupplyRecharge:
                     type: boolean
+                feeBearer:
+                    type: string
+                recommended:
+                    type: boolean
+                recommendLabel:
+                    type: string
+                recommendDescription:
+                    type: string
             description: Channel 渠道（config 为 AES-GCM 加密凭据，列表返回 ****）。
         zcard.api.admin.v1.ChannelList:
             type: object
@@ -7749,6 +7781,14 @@ components:
                     type: boolean
                 allowSupplyRecharge:
                     type: boolean
+                feeBearer:
+                    type: string
+                recommended:
+                    type: boolean
+                recommendLabel:
+                    type: string
+                recommendDescription:
+                    type: string
         zcard.api.admin.v1.CreateConnectionRequest:
             required:
                 - name
@@ -8059,7 +8099,6 @@ components:
         zcard.api.admin.v1.CreateRefundRequest:
             required:
                 - orderNo
-                - amountCents
                 - channel
             type: object
             properties:
@@ -8072,6 +8111,10 @@ components:
                 channel:
                     type: string
                 reason:
+                    type: string
+                feeCents:
+                    type: string
+                expectedRefundedFeeCents:
                     type: string
         zcard.api.admin.v1.CreateResellerProductRequest:
             required:
@@ -10395,6 +10438,8 @@ components:
                     type: string
                 createdAt:
                     type: string
+                feeCents:
+                    type: string
             description: RefundOrder 退款单。
         zcard.api.admin.v1.RejectReviewRequest:
             required:
@@ -11310,6 +11355,14 @@ components:
                     type: boolean
                 allowSupplyRecharge:
                     type: boolean
+                feeBearer:
+                    type: string
+                recommended:
+                    type: boolean
+                recommendLabel:
+                    type: string
+                recommendDescription:
+                    type: string
         zcard.api.admin.v1.UpdateCheckResult:
             type: object
             properties:
@@ -12068,6 +12121,18 @@ components:
                     type: string
                 icon:
                     type: string
+                fee:
+                    type: string
+                feeType:
+                    type: string
+                feeBearer:
+                    type: string
+                recommended:
+                    type: boolean
+                recommendLabel:
+                    type: string
+                recommendDescription:
+                    type: string
                 methods:
                     type: array
                     items:
@@ -12145,6 +12210,8 @@ components:
         zcard.api.storefront.v1.CreatePaymentReply:
             type: object
             properties:
+                quote:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.PaymentQuote'
                 paymentId:
                     type: string
                 type:
@@ -12157,6 +12224,10 @@ components:
                 - channel
             type: object
             properties:
+                quoteKey:
+                    type: string
+                queryPassword:
+                    type: string
                 orderNo:
                     type: string
                 channel:
@@ -12174,6 +12245,8 @@ components:
                     type: string
                 payload:
                     type: string
+                quote:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.PaymentQuote'
         zcard.api.storefront.v1.CreateRechargeRequest:
             required:
                 - amountCents
@@ -12187,6 +12260,8 @@ components:
                 method:
                     type: string
                     description: 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
+                quoteKey:
+                    type: string
         zcard.api.storefront.v1.CreateSupplierRechargeReply:
             type: object
             properties:
@@ -12198,6 +12273,8 @@ components:
                     type: string
                 payload:
                     type: string
+                quote:
+                    $ref: '#/components/schemas/zcard.api.storefront.v1.PaymentQuote'
         zcard.api.storefront.v1.CreateSupplierRechargeRequest:
             required:
                 - id
@@ -12214,6 +12291,8 @@ components:
                 method:
                     type: string
                     description: 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
+                quoteKey:
+                    type: string
         zcard.api.storefront.v1.CreateTicketRequest:
             required:
                 - type
@@ -12362,6 +12441,10 @@ components:
                 createdAt:
                     type: string
                 expiresAt:
+                    type: string
+                paidTotalCents:
+                    type: string
+                paidFeeCents:
                     type: string
         zcard.api.storefront.v1.GetPostReply:
             type: object
@@ -12829,6 +12912,12 @@ components:
                     type: string
                 name:
                     type: string
+                recommended:
+                    type: boolean
+                recommendLabel:
+                    type: string
+                recommendDescription:
+                    type: string
                 icon:
                     type: string
             description: MethodItem 支付方式（收银台顾客看到的选项：支付宝/微信/USDT-TRC20…）。
@@ -13030,6 +13119,51 @@ components:
                 ticketNo:
                     type: string
                 expectedFeeCents:
+                    type: string
+        zcard.api.storefront.v1.PaymentQuote:
+            type: object
+            properties:
+                baseCents:
+                    type: string
+                feeCents:
+                    type: string
+                totalCents:
+                    type: string
+                feeType:
+                    type: string
+                feeRate:
+                    type: string
+                feeBearer:
+                    type: string
+                quoteKey:
+                    type: string
+                paymentId:
+                    type: string
+                channel:
+                    type: string
+                method:
+                    type: string
+                chargedCurrency:
+                    type: string
+                chargedUnits:
+                    type: string
+                chargedPrecision:
+                    type: integer
+                    format: int32
+        zcard.api.storefront.v1.PaymentQuoteRequest:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                channel:
+                    type: string
+                method:
+                    type: string
+                scene:
+                    type: string
+                amountCents:
+                    type: string
+                queryPassword:
                     type: string
         zcard.api.storefront.v1.Product:
             type: object

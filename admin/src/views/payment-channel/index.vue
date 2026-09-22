@@ -62,7 +62,9 @@ interface DriverMeta {
   description: string;
   fields: ConfigFieldSchema[];
 }
-interface ChannelRow extends Usage {
+interface Recommendation { recommended?: boolean; recommend_label?: string; recommend_description?: string; }
+interface ChannelRow extends Usage, Recommendation {
+  fee_bearer?: string;
   id: number;
   name: string;
   code: string;
@@ -78,7 +80,7 @@ interface ChannelRow extends Usage {
 }
 
 // 支付方式（收银台顾客看到的选项；params=网关路由参数）
-interface MethodRow extends Usage {
+interface MethodRow extends Usage, Recommendation {
   code: string;
   name: string;
   icon: string;
@@ -127,6 +129,8 @@ const form = reactive({
   allow_supply_recharge: true,
   fee_type: "fixed",
   fee: 0,
+  fee_bearer: "merchant",
+  recommended: false, recommend_label: "", recommend_description: "",
   values: {} as Record<string, any>,
   icon: [] as string[], // 渠道图标（MediaField 单图；空=回落内置徽标）
   methods: [] as MethodRow[], // 支付方式列表（聚合网关按方式收银）
@@ -323,8 +327,10 @@ function openConfig(ch: ChannelRow) {
   form.allow_member_recharge = ch.allow_member_recharge !== false;
   form.allow_supply_recharge = ch.allow_supply_recharge !== false;
   form.fee_type = ch.fee_type || "fixed";
+  form.fee_bearer = ch.driver === "wallet" ? "merchant" : ch.fee_bearer || "merchant";
+  form.recommended = !!ch.recommended; form.recommend_label = ch.recommend_label || ""; form.recommend_description = ch.recommend_description || "";
   // fee：fixed=分 → 元；percent=万分比 → 百分比（proto3 零值不输出——undefined 兜底 0）
-  form.fee = Number(ch.fee || 0) / 100;
+  form.fee = ch.driver === "wallet" ? 0 : Number(ch.fee || 0) / 100;
   form.values = {};
   // 脱敏回显：非敏感字段显值；敏感字段 **** → 显示为空（留空=不修改）
   let echo: Record<string, any> = {};
@@ -351,6 +357,7 @@ function openConfig(ch: ChannelRow) {
   form.icon = ch.icon ? [ch.icon] : [];
   try {
     form.methods = (JSON.parse(ch.methods_json || "[]") as MethodRow[]).map((m) => ({
+      recommended: !!m.recommended, recommend_label: m.recommend_label || "", recommend_description: m.recommend_description || "",
       code: m.code, name: m.name, icon: m.icon || "", iconArr: m.icon ? [m.icon] : [],
       enabled: m.enabled !== false, params: m.params || {},
       allow_purchase: m.allow_purchase !== false, allow_member_recharge: m.allow_member_recharge !== false, allow_supply_recharge: m.allow_supply_recharge !== false,
@@ -407,12 +414,14 @@ function handleConfigSave() {
     enabled: form.enabled,
     allow_purchase: form.allow_purchase, allow_member_recharge: form.allow_member_recharge, allow_supply_recharge: form.allow_supply_recharge,
     fee_type: form.fee_type,
+    fee_bearer: form.fee_bearer, recommended: form.recommended, recommend_label: form.recommend_label.trim(), recommend_description: form.recommend_description.trim(),
     fee: Math.round(form.fee * (form.fee_type === "percent" ? 100 : 100)),
     icon: form.icon[0] || "",
     methods_json: isAggregateDriver.value
       ? JSON.stringify(form.methods.map((m) => ({
           code: m.code.trim(), name: m.name.trim(), icon: (m.iconArr && m.iconArr[0]) || m.icon || "",
           enabled: m.enabled, params: m.params,
+          recommended: !!m.recommended, recommend_label: (m.recommend_label || "").trim(), recommend_description: (m.recommend_description || "").trim(),
           allow_purchase: m.allow_purchase !== false, allow_member_recharge: m.allow_member_recharge !== false, allow_supply_recharge: m.allow_supply_recharge !== false,
         })))
       : "",
@@ -518,7 +527,7 @@ onMounted(() => {
               {{ ch.driver === "wallet" ? "无需凭据" : isConfigured(ch) ? "已配置" : "待配置" }}
             </NTag>
             <NTag v-if="(ch.fee || 0) > 0" size="small" type="info" :bordered="false">
-              {{ ch.fee_type === "percent" ? `费率 ${((ch.fee || 0) / 100).toFixed(2)}%` : `手续费 ${((ch.fee || 0) / 100).toFixed(2)} 元` }}
+              {{ ch.fee_type === "percent" ? `费率 ${((ch.fee || 0) / 100).toFixed(2)}%` : `手续费 ${((ch.fee || 0) / 100).toFixed(2)} 元` }} · {{ ch.fee_bearer === 'user' ? '用户承担' : '商家承担' }}
             </NTag>
           </div>
 
@@ -662,6 +671,11 @@ onMounted(() => {
                 <MediaField v-model:value="m.iconArr" />
               </div>
               <NButton size="tiny" type="error" quaternary @click="form.methods.splice(i, 1)">删除</NButton>
+              <div class="w-full flex items-center gap-8px flex-wrap">
+                <span class="text-12px">推荐此方式</span><NSwitch v-model:value="m.recommended" size="small" />
+                <NInput v-if="m.recommended" v-model:value="m.recommend_label" placeholder="推荐标签，默认推荐" :maxlength="6" style="width: 170px" size="small" />
+                <NInput v-if="m.recommended" v-model:value="m.recommend_description" placeholder="推荐说明（选填）" :maxlength="60" style="flex: 1; min-width: 160px" size="small" />
+              </div>
               <UsageSwitches :value="m" :parent="form" compact @change="(key, value) => m[key] = value" />
             </div>
             <div v-if="form.methods.length === 0" class="text-12px opacity-50 py-4px">
@@ -670,10 +684,20 @@ onMounted(() => {
           </div>
         </template>
 
+        <template v-if="!isAggregateDriver || !form.methods.length">
+          <NDivider title-placement="left">收银台推荐</NDivider>
+          <NFormItem label="推荐此渠道"><NSwitch v-model:value="form.recommended" /></NFormItem>
+          <NFormItem v-if="form.recommended" label="推荐标签"><NInput v-model:value="form.recommend_label" placeholder="默认：推荐" :maxlength="6" show-count /></NFormItem>
+          <NFormItem v-if="form.recommended" label="推荐说明"><NInput v-model:value="form.recommend_description" placeholder="选填，如支持 USDT 支付" :maxlength="60" show-count /></NFormItem>
+        </template>
         <!-- 手续费 -->
         <NDivider title-placement="left" style="margin: 4px 0 16px">手续费</NDivider>
+        <NFormItem label="承担方">
+          <NRadioGroup v-model:value="form.fee_bearer" :disabled="current?.driver === 'wallet'"><NRadio value="merchant">商家承担</NRadio><NRadio value="user">用户承担</NRadio></NRadioGroup>
+        </NFormItem>
+        <p class="text-12px mb-12px opacity-70">{{ current?.driver === 'wallet' ? '余额支付固定免手续费。' : form.fee_bearer === 'user' ? '在优惠后的订单金额上加收，按分四舍五入；充值手续费不计入余额。已创建支付沿用原费用。' : '不增加顾客实付金额，收银台显示免手续费。' }}</p>
         <NFormItem label="计费方式">
-          <NRadioGroup v-model:value="form.fee_type">
+          <NRadioGroup v-model:value="form.fee_type" :disabled="current?.driver === 'wallet'">
             <NRadio value="fixed">固定金额</NRadio>
             <NRadio value="percent">按比例</NRadio>
           </NRadioGroup>
@@ -681,6 +705,7 @@ onMounted(() => {
         <NFormItem :label="feeLabel">
           <NInputNumber
             v-model:value="form.fee"
+            :disabled="current?.driver === 'wallet'"
             :min="0"
             :max="form.fee_type === 'percent' ? 100 : 1000000"
             :step="form.fee_type === 'percent' ? 0.1 : 0.01"

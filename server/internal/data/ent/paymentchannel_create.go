@@ -130,6 +130,48 @@ func (_c *PaymentChannelCreate) SetNillableFeeBearer(v *paymentchannel.FeeBearer
 	return _c
 }
 
+// SetRecommended sets the "recommended" field.
+func (_c *PaymentChannelCreate) SetRecommended(v bool) *PaymentChannelCreate {
+	_c.mutation.SetRecommended(v)
+	return _c
+}
+
+// SetNillableRecommended sets the "recommended" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableRecommended(v *bool) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetRecommended(*v)
+	}
+	return _c
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (_c *PaymentChannelCreate) SetRecommendLabel(v string) *PaymentChannelCreate {
+	_c.mutation.SetRecommendLabel(v)
+	return _c
+}
+
+// SetNillableRecommendLabel sets the "recommend_label" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableRecommendLabel(v *string) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetRecommendLabel(*v)
+	}
+	return _c
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (_c *PaymentChannelCreate) SetRecommendDescription(v string) *PaymentChannelCreate {
+	_c.mutation.SetRecommendDescription(v)
+	return _c
+}
+
+// SetNillableRecommendDescription sets the "recommend_description" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableRecommendDescription(v *string) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetRecommendDescription(*v)
+	}
+	return _c
+}
+
 // SetSort sets the "sort" field.
 func (_c *PaymentChannelCreate) SetSort(v int32) *PaymentChannelCreate {
 	_c.mutation.SetSort(v)
@@ -299,6 +341,18 @@ func (_c *PaymentChannelCreate) defaults() {
 		v := paymentchannel.DefaultFeeBearer
 		_c.mutation.SetFeeBearer(v)
 	}
+	if _, ok := _c.mutation.Recommended(); !ok {
+		v := paymentchannel.DefaultRecommended
+		_c.mutation.SetRecommended(v)
+	}
+	if _, ok := _c.mutation.RecommendLabel(); !ok {
+		v := paymentchannel.DefaultRecommendLabel
+		_c.mutation.SetRecommendLabel(v)
+	}
+	if _, ok := _c.mutation.RecommendDescription(); !ok {
+		v := paymentchannel.DefaultRecommendDescription
+		_c.mutation.SetRecommendDescription(v)
+	}
 	if _, ok := _c.mutation.Sort(); !ok {
 		v := paymentchannel.DefaultSort
 		_c.mutation.SetSort(v)
@@ -380,6 +434,25 @@ func (_c *PaymentChannelCreate) check() error {
 	if v, ok := _c.mutation.FeeBearer(); ok {
 		if err := paymentchannel.FeeBearerValidator(v); err != nil {
 			return &ValidationError{Name: "fee_bearer", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.fee_bearer": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Recommended(); !ok {
+		return &ValidationError{Name: "recommended", err: errors.New(`ent: missing required field "PaymentChannel.recommended"`)}
+	}
+	if _, ok := _c.mutation.RecommendLabel(); !ok {
+		return &ValidationError{Name: "recommend_label", err: errors.New(`ent: missing required field "PaymentChannel.recommend_label"`)}
+	}
+	if v, ok := _c.mutation.RecommendLabel(); ok {
+		if err := paymentchannel.RecommendLabelValidator(v); err != nil {
+			return &ValidationError{Name: "recommend_label", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.recommend_label": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.RecommendDescription(); !ok {
+		return &ValidationError{Name: "recommend_description", err: errors.New(`ent: missing required field "PaymentChannel.recommend_description"`)}
+	}
+	if v, ok := _c.mutation.RecommendDescription(); ok {
+		if err := paymentchannel.RecommendDescriptionValidator(v); err != nil {
+			return &ValidationError{Name: "recommend_description", err: fmt.Errorf(`ent: validator failed for field "PaymentChannel.recommend_description": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.Sort(); !ok {
@@ -477,6 +550,18 @@ func (_c *PaymentChannelCreate) createSpec() (*PaymentChannel, *sqlgraph.CreateS
 	if value, ok := _c.mutation.FeeBearer(); ok {
 		_spec.SetField(paymentchannel.FieldFeeBearer, field.TypeEnum, value)
 		_node.FeeBearer = value
+	}
+	if value, ok := _c.mutation.Recommended(); ok {
+		_spec.SetField(paymentchannel.FieldRecommended, field.TypeBool, value)
+		_node.Recommended = value
+	}
+	if value, ok := _c.mutation.RecommendLabel(); ok {
+		_spec.SetField(paymentchannel.FieldRecommendLabel, field.TypeString, value)
+		_node.RecommendLabel = value
+	}
+	if value, ok := _c.mutation.RecommendDescription(); ok {
+		_spec.SetField(paymentchannel.FieldRecommendDescription, field.TypeString, value)
+		_node.RecommendDescription = value
 	}
 	if value, ok := _c.mutation.Sort(); ok {
 		_spec.SetField(paymentchannel.FieldSort, field.TypeInt32, value)
@@ -679,6 +764,42 @@ func (u *PaymentChannelUpsert) SetFeeBearer(v paymentchannel.FeeBearer) *Payment
 // UpdateFeeBearer sets the "fee_bearer" field to the value that was provided on create.
 func (u *PaymentChannelUpsert) UpdateFeeBearer() *PaymentChannelUpsert {
 	u.SetExcluded(paymentchannel.FieldFeeBearer)
+	return u
+}
+
+// SetRecommended sets the "recommended" field.
+func (u *PaymentChannelUpsert) SetRecommended(v bool) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldRecommended, v)
+	return u
+}
+
+// UpdateRecommended sets the "recommended" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateRecommended() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldRecommended)
+	return u
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (u *PaymentChannelUpsert) SetRecommendLabel(v string) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldRecommendLabel, v)
+	return u
+}
+
+// UpdateRecommendLabel sets the "recommend_label" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateRecommendLabel() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldRecommendLabel)
+	return u
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (u *PaymentChannelUpsert) SetRecommendDescription(v string) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldRecommendDescription, v)
+	return u
+}
+
+// UpdateRecommendDescription sets the "recommend_description" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateRecommendDescription() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldRecommendDescription)
 	return u
 }
 
@@ -984,6 +1105,48 @@ func (u *PaymentChannelUpsertOne) SetFeeBearer(v paymentchannel.FeeBearer) *Paym
 func (u *PaymentChannelUpsertOne) UpdateFeeBearer() *PaymentChannelUpsertOne {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateFeeBearer()
+	})
+}
+
+// SetRecommended sets the "recommended" field.
+func (u *PaymentChannelUpsertOne) SetRecommended(v bool) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetRecommended(v)
+	})
+}
+
+// UpdateRecommended sets the "recommended" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateRecommended() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateRecommended()
+	})
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (u *PaymentChannelUpsertOne) SetRecommendLabel(v string) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetRecommendLabel(v)
+	})
+}
+
+// UpdateRecommendLabel sets the "recommend_label" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateRecommendLabel() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateRecommendLabel()
+	})
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (u *PaymentChannelUpsertOne) SetRecommendDescription(v string) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetRecommendDescription(v)
+	})
+}
+
+// UpdateRecommendDescription sets the "recommend_description" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateRecommendDescription() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateRecommendDescription()
 	})
 }
 
@@ -1474,6 +1637,48 @@ func (u *PaymentChannelUpsertBulk) SetFeeBearer(v paymentchannel.FeeBearer) *Pay
 func (u *PaymentChannelUpsertBulk) UpdateFeeBearer() *PaymentChannelUpsertBulk {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateFeeBearer()
+	})
+}
+
+// SetRecommended sets the "recommended" field.
+func (u *PaymentChannelUpsertBulk) SetRecommended(v bool) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetRecommended(v)
+	})
+}
+
+// UpdateRecommended sets the "recommended" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateRecommended() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateRecommended()
+	})
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (u *PaymentChannelUpsertBulk) SetRecommendLabel(v string) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetRecommendLabel(v)
+	})
+}
+
+// UpdateRecommendLabel sets the "recommend_label" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateRecommendLabel() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateRecommendLabel()
+	})
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (u *PaymentChannelUpsertBulk) SetRecommendDescription(v string) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetRecommendDescription(v)
+	})
+}
+
+// UpdateRecommendDescription sets the "recommend_description" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateRecommendDescription() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateRecommendDescription()
 	})
 }
 

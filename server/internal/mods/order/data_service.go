@@ -115,6 +115,14 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		OrderNo: o.OrderNo, Status: string(o.Status), TotalCents: o.TotalAmount,
 		CreatedAt: o.CreatedAt.Unix(),
 	}
+	paid, payErr := data.Client(ctx, s.uc.Data).Payment.Query().Where(payment.OrderID(o.ID), payment.StatusEQ(payment.StatusSuccess), payment.ReviewReasonEQ("")).Order(ent.Asc(payment.FieldID)).First(ctx)
+	if payErr != nil && !ent.IsNotFound(payErr) {
+		return nil, payErr
+	}
+	if payErr == nil {
+		reply.PaidTotalCents = paid.Amount
+		reply.PaidFeeCents = paid.Fee
+	}
 	if !o.ExpiredAt.IsZero() {
 		reply.ExpiresAt = o.ExpiredAt.Unix()
 	}
@@ -327,6 +335,15 @@ func (s *AdminOrderService) GetOrder(ctx context.Context, req *adminv1.GetAdminO
 	}
 	for _, r := range refunds {
 		out.RefundedCents += r.Amount
+		out.RefundedFeeCents += r.FeeAmount
+	}
+	paid, payErr := client.Payment.Query().Where(payment.OrderID(o.ID), payment.StatusEQ(payment.StatusSuccess), payment.ReviewReasonEQ("")).Order(ent.Asc(payment.FieldID)).First(ctx)
+	if payErr != nil && !ent.IsNotFound(payErr) {
+		return nil, payErr
+	}
+	if payErr == nil {
+		out.PaidTotalCents = paid.Amount
+		out.PaidFeeCents = paid.Fee
 	}
 	return out, nil
 }

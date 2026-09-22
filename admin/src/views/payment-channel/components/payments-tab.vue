@@ -52,11 +52,13 @@ const columns: DataTableColumns<any> = [
   { title: "到账核对", key: "review_reason", width: 240, render: (row) => row.review_reason || "-" },
   { title: "渠道单号", key: "channel_order_no", width: 180, ellipsis: { tooltip: true } },
   {
-    title: "金额",
+    title: "应收（含手续费）",
     key: "amount_cents",
     width: 100,
     render: (row) => formatMoney(row.amount_cents),
   },
+  { title: "用户手续费", key: "fee_cents", width: 110, render: (row) => formatMoney(row.fee_cents || 0) },
+  { title: "实收", key: "charged_cents", width: 110, render: (row) => row.status === "success" ? formatMoney(row.charged_cents || 0) : "—" },
   {
     title: "状态",
     key: "status",

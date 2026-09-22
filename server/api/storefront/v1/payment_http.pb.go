@@ -19,17 +19,20 @@ const _ = http.SupportPackageIsVersion3
 
 const OperationStorePaymentServiceCreatePayment = "/zcard.api.storefront.v1.StorePaymentService/CreatePayment"
 const OperationStorePaymentServiceListChannels = "/zcard.api.storefront.v1.StorePaymentService/ListChannels"
+const OperationStorePaymentServiceQuotePayment = "/zcard.api.storefront.v1.StorePaymentService/QuotePayment"
 
 type StorePaymentServiceHTTPServer interface {
 	// CreatePayment CreatePayment 创建支付（返回收银台/二维码跳转信息）。
 	CreatePayment(context.Context, *CreatePaymentRequest) (*CreatePaymentReply, error)
 	// ListChannels ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
 	ListChannels(context.Context, *ListPaymentChannelsRequest) (*ChannelListReply, error)
+	QuotePayment(context.Context, *PaymentQuoteRequest) (*PaymentQuote, error)
 }
 
 func RegisterStorePaymentServiceHTTPServer(s *http.Server, srv StorePaymentServiceHTTPServer) {
 	r := s.Route("/")
 	r.Handle("GET", "/api/v1/storefront/payment/channels", _StorePaymentService_ListChannels0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/storefront/payment/quote", _StorePaymentService_QuotePayment0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/storefront/payments", _StorePaymentService_CreatePayment0_HTTP_Handler(srv))
 }
 
@@ -48,6 +51,25 @@ func _StorePaymentService_ListChannels0_HTTP_Handler(srv StorePaymentServiceHTTP
 			return err
 		}
 		reply := out.(*ChannelListReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _StorePaymentService_QuotePayment0_HTTP_Handler(srv StorePaymentServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in PaymentQuoteRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationStorePaymentServiceQuotePayment)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.QuotePayment(ctx, req.(*PaymentQuoteRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*PaymentQuote)
 		return ctx.Result(200, reply)
 	}
 }
@@ -76,6 +98,7 @@ type StorePaymentServiceHTTPClient interface {
 	CreatePayment(ctx context.Context, req *CreatePaymentRequest, opts ...http.CallOption) (rsp *CreatePaymentReply, err error)
 	// ListChannels ListChannels 启用渠道列表（支付页渠道下拉数据源—— 替代前端硬编码枚举）。
 	ListChannels(ctx context.Context, req *ListPaymentChannelsRequest, opts ...http.CallOption) (rsp *ChannelListReply, err error)
+	QuotePayment(ctx context.Context, req *PaymentQuoteRequest, opts ...http.CallOption) (rsp *PaymentQuote, err error)
 }
 
 type StorePaymentServiceHTTPClientImpl struct {
@@ -115,6 +138,23 @@ func (c *StorePaymentServiceHTTPClientImpl) ListChannels(ctx context.Context, in
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *StorePaymentServiceHTTPClientImpl) QuotePayment(ctx context.Context, in *PaymentQuoteRequest, opts ...http.CallOption) (*PaymentQuote, error) {
+	var out PaymentQuote
+	pattern := "/api/v1/storefront/payment/quote"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationStorePaymentServiceQuotePayment),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

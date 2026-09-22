@@ -94,6 +94,21 @@ func Fee(v int64) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldEQ(FieldFee, v))
 }
 
+// Recommended applies equality check predicate on the "recommended" field. It's identical to RecommendedEQ.
+func Recommended(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldRecommended, v))
+}
+
+// RecommendLabel applies equality check predicate on the "recommend_label" field. It's identical to RecommendLabelEQ.
+func RecommendLabel(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldRecommendLabel, v))
+}
+
+// RecommendDescription applies equality check predicate on the "recommend_description" field. It's identical to RecommendDescriptionEQ.
+func RecommendDescription(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldRecommendDescription, v))
+}
+
 // Sort applies equality check predicate on the "sort" field. It's identical to SortEQ.
 func Sort(v int32) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldEQ(FieldSort, v))
@@ -562,6 +577,146 @@ func FeeBearerIn(vs ...FeeBearer) predicate.PaymentChannel {
 // FeeBearerNotIn applies the NotIn predicate on the "fee_bearer" field.
 func FeeBearerNotIn(vs ...FeeBearer) predicate.PaymentChannel {
 	return predicate.PaymentChannel(sql.FieldNotIn(FieldFeeBearer, vs...))
+}
+
+// RecommendedEQ applies the EQ predicate on the "recommended" field.
+func RecommendedEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldRecommended, v))
+}
+
+// RecommendedNEQ applies the NEQ predicate on the "recommended" field.
+func RecommendedNEQ(v bool) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldRecommended, v))
+}
+
+// RecommendLabelEQ applies the EQ predicate on the "recommend_label" field.
+func RecommendLabelEQ(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldRecommendLabel, v))
+}
+
+// RecommendLabelNEQ applies the NEQ predicate on the "recommend_label" field.
+func RecommendLabelNEQ(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldRecommendLabel, v))
+}
+
+// RecommendLabelIn applies the In predicate on the "recommend_label" field.
+func RecommendLabelIn(vs ...string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldIn(FieldRecommendLabel, vs...))
+}
+
+// RecommendLabelNotIn applies the NotIn predicate on the "recommend_label" field.
+func RecommendLabelNotIn(vs ...string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNotIn(FieldRecommendLabel, vs...))
+}
+
+// RecommendLabelGT applies the GT predicate on the "recommend_label" field.
+func RecommendLabelGT(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldGT(FieldRecommendLabel, v))
+}
+
+// RecommendLabelGTE applies the GTE predicate on the "recommend_label" field.
+func RecommendLabelGTE(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldGTE(FieldRecommendLabel, v))
+}
+
+// RecommendLabelLT applies the LT predicate on the "recommend_label" field.
+func RecommendLabelLT(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldLT(FieldRecommendLabel, v))
+}
+
+// RecommendLabelLTE applies the LTE predicate on the "recommend_label" field.
+func RecommendLabelLTE(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldLTE(FieldRecommendLabel, v))
+}
+
+// RecommendLabelContains applies the Contains predicate on the "recommend_label" field.
+func RecommendLabelContains(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldContains(FieldRecommendLabel, v))
+}
+
+// RecommendLabelHasPrefix applies the HasPrefix predicate on the "recommend_label" field.
+func RecommendLabelHasPrefix(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldHasPrefix(FieldRecommendLabel, v))
+}
+
+// RecommendLabelHasSuffix applies the HasSuffix predicate on the "recommend_label" field.
+func RecommendLabelHasSuffix(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldHasSuffix(FieldRecommendLabel, v))
+}
+
+// RecommendLabelEqualFold applies the EqualFold predicate on the "recommend_label" field.
+func RecommendLabelEqualFold(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEqualFold(FieldRecommendLabel, v))
+}
+
+// RecommendLabelContainsFold applies the ContainsFold predicate on the "recommend_label" field.
+func RecommendLabelContainsFold(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldContainsFold(FieldRecommendLabel, v))
+}
+
+// RecommendDescriptionEQ applies the EQ predicate on the "recommend_description" field.
+func RecommendDescriptionEQ(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEQ(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionNEQ applies the NEQ predicate on the "recommend_description" field.
+func RecommendDescriptionNEQ(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNEQ(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionIn applies the In predicate on the "recommend_description" field.
+func RecommendDescriptionIn(vs ...string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldIn(FieldRecommendDescription, vs...))
+}
+
+// RecommendDescriptionNotIn applies the NotIn predicate on the "recommend_description" field.
+func RecommendDescriptionNotIn(vs ...string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldNotIn(FieldRecommendDescription, vs...))
+}
+
+// RecommendDescriptionGT applies the GT predicate on the "recommend_description" field.
+func RecommendDescriptionGT(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldGT(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionGTE applies the GTE predicate on the "recommend_description" field.
+func RecommendDescriptionGTE(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldGTE(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionLT applies the LT predicate on the "recommend_description" field.
+func RecommendDescriptionLT(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldLT(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionLTE applies the LTE predicate on the "recommend_description" field.
+func RecommendDescriptionLTE(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldLTE(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionContains applies the Contains predicate on the "recommend_description" field.
+func RecommendDescriptionContains(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldContains(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionHasPrefix applies the HasPrefix predicate on the "recommend_description" field.
+func RecommendDescriptionHasPrefix(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldHasPrefix(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionHasSuffix applies the HasSuffix predicate on the "recommend_description" field.
+func RecommendDescriptionHasSuffix(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldHasSuffix(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionEqualFold applies the EqualFold predicate on the "recommend_description" field.
+func RecommendDescriptionEqualFold(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldEqualFold(FieldRecommendDescription, v))
+}
+
+// RecommendDescriptionContainsFold applies the ContainsFold predicate on the "recommend_description" field.
+func RecommendDescriptionContainsFold(v string) predicate.PaymentChannel {
+	return predicate.PaymentChannel(sql.FieldContainsFold(FieldRecommendDescription, v))
 }
 
 // SortEQ applies the EQ predicate on the "sort" field.

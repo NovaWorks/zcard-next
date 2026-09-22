@@ -566,6 +566,9 @@ func TestCallbackFindsRetriedOrderPayment(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Explicitly model pre-upgrade attempts without a unique merchant reference.
+	d.Client.Payment.UpdateOneID(latest.ID).ClearGatewayOrderRef().ExecX(ctx)
+
 	f := &port.CallbackFact{OrderNo: o.OrderNo, ChannelOrderNo: "T-retry", Amount: 1000, Currency: "CNY", Success: true}
 	id := locatePaymentByFact(ctx, d, "ep-retry", f)
 	if id != latest.ID {

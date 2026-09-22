@@ -415,6 +415,7 @@ type CreateSupplierRechargeRequest struct {
 	Channel     string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`                             // 支付渠道 code
 	// 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
 	Method        *string `protobuf:"bytes,4,opt,name=method,proto3,oneof" json:"method,omitempty"`
+	QuoteKey      string  `protobuf:"bytes,5,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -477,6 +478,13 @@ func (x *CreateSupplierRechargeRequest) GetMethod() string {
 	return ""
 }
 
+func (x *CreateSupplierRechargeRequest) GetQuoteKey() string {
+	if x != nil {
+		return x.QuoteKey
+	}
+	return ""
+}
+
 type SetSupplierIPWhitelistRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -535,6 +543,7 @@ type CreateSupplierRechargeReply struct {
 	PaymentId     uint64                 `protobuf:"varint,2,opt,name=payment_id,json=paymentId,proto3" json:"payment_id,omitempty"`
 	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`       // redirect | qrcode | params（与 CreateRechargeReply 同构）
 	Payload       string                 `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"` // 支付跳转 URL / 二维码内容 / 参数 JSON
+	Quote         *PaymentQuote          `protobuf:"bytes,5,opt,name=quote,proto3" json:"quote,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -595,6 +604,13 @@ func (x *CreateSupplierRechargeReply) GetPayload() string {
 		return x.Payload
 	}
 	return ""
+}
+
+func (x *CreateSupplierRechargeReply) GetQuote() *PaymentQuote {
+	if x != nil {
+		return x.Quote
+	}
+	return nil
 }
 
 type SupplierCredentialsReply struct {
@@ -677,7 +693,7 @@ var File_storefront_v1_supplier_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_supplier_proto_rawDesc = "" +
 	"\n" +
-	"\x1cstorefront/v1/supplier.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc7\x01\n" +
+	"\x1cstorefront/v1/supplier.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bstorefront/v1/payment.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xc7\x01\n" +
 	" SubmitSupplierApplicationRequest\x12\x1f\n" +
 	"\bprotocol\x18\x01 \x01(\tB\x03\xe0A\x02R\bprotocol\x12&\n" +
 	"\fdisplay_name\x18\x02 \x01(\tB\x03\xe0A\x02R\vdisplayName\x12\x18\n" +
@@ -709,23 +725,25 @@ const file_storefront_v1_supplier_proto_rawDesc = "" +
 	"\x1fRegenerateSupplierSecretRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\"2\n" +
 	" CancelSupplierApplicationRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\"\xa3\x01\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\"\xc0\x01\n" +
 	"\x1dCreateSupplierRechargeRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12&\n" +
 	"\famount_cents\x18\x02 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
 	"\achannel\x18\x03 \x01(\tB\x03\xe0A\x02R\achannel\x12\x1b\n" +
-	"\x06method\x18\x04 \x01(\tH\x00R\x06method\x88\x01\x01B\t\n" +
+	"\x06method\x18\x04 \x01(\tH\x00R\x06method\x88\x01\x01\x12\x1b\n" +
+	"\tquote_key\x18\x05 \x01(\tR\bquoteKeyB\t\n" +
 	"\a_method\"F\n" +
 	"\x1dSetSupplierIPWhitelistRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x10\n" +
-	"\x03ips\x18\x02 \x03(\tR\x03ips\"\x8b\x01\n" +
+	"\x03ips\x18\x02 \x03(\tR\x03ips\"\xc8\x01\n" +
 	"\x1bCreateSupplierRechargeReply\x12\x1f\n" +
 	"\vrecharge_id\x18\x01 \x01(\x04R\n" +
 	"rechargeId\x12\x1d\n" +
 	"\n" +
 	"payment_id\x18\x02 \x01(\x04R\tpaymentId\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x18\n" +
-	"\apayload\x18\x04 \x01(\tR\apayload\"\x96\x01\n" +
+	"\apayload\x18\x04 \x01(\tR\apayload\x12;\n" +
+	"\x05quote\x18\x05 \x01(\v2%.zcard.api.storefront.v1.PaymentQuoteR\x05quote\"\x96\x01\n" +
 	"\x18SupplierCredentialsReply\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
 	"\bprotocol\x18\x02 \x01(\tR\bprotocol\x12\x16\n" +
@@ -767,29 +785,31 @@ var file_storefront_v1_supplier_proto_goTypes = []any{
 	(*SetSupplierIPWhitelistRequest)(nil),    // 7: zcard.api.storefront.v1.SetSupplierIPWhitelistRequest
 	(*CreateSupplierRechargeReply)(nil),      // 8: zcard.api.storefront.v1.CreateSupplierRechargeReply
 	(*SupplierCredentialsReply)(nil),         // 9: zcard.api.storefront.v1.SupplierCredentialsReply
-	(*emptypb.Empty)(nil),                    // 10: google.protobuf.Empty
+	(*PaymentQuote)(nil),                     // 10: zcard.api.storefront.v1.PaymentQuote
+	(*emptypb.Empty)(nil),                    // 11: google.protobuf.Empty
 }
 var file_storefront_v1_supplier_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.storefront.v1.ListSupplierAccountsReply.accounts:type_name -> zcard.api.storefront.v1.SupplierAccountReply
-	0,  // 1: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:input_type -> zcard.api.storefront.v1.SubmitSupplierApplicationRequest
-	10, // 2: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:input_type -> google.protobuf.Empty
-	3,  // 3: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:input_type -> zcard.api.storefront.v1.GetSupplierCredentialsRequest
-	4,  // 4: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:input_type -> zcard.api.storefront.v1.RegenerateSupplierSecretRequest
-	5,  // 5: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:input_type -> zcard.api.storefront.v1.CancelSupplierApplicationRequest
-	6,  // 6: zcard.api.storefront.v1.StoreSupplierService.CreateSupplierRecharge:input_type -> zcard.api.storefront.v1.CreateSupplierRechargeRequest
-	7,  // 7: zcard.api.storefront.v1.StoreSupplierService.SetSupplierIPWhitelist:input_type -> zcard.api.storefront.v1.SetSupplierIPWhitelistRequest
-	1,  // 8: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:output_type -> zcard.api.storefront.v1.SupplierAccountReply
-	2,  // 9: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:output_type -> zcard.api.storefront.v1.ListSupplierAccountsReply
-	9,  // 10: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
-	9,  // 11: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
-	10, // 12: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:output_type -> google.protobuf.Empty
-	8,  // 13: zcard.api.storefront.v1.StoreSupplierService.CreateSupplierRecharge:output_type -> zcard.api.storefront.v1.CreateSupplierRechargeReply
-	1,  // 14: zcard.api.storefront.v1.StoreSupplierService.SetSupplierIPWhitelist:output_type -> zcard.api.storefront.v1.SupplierAccountReply
-	8,  // [8:15] is the sub-list for method output_type
-	1,  // [1:8] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	10, // 1: zcard.api.storefront.v1.CreateSupplierRechargeReply.quote:type_name -> zcard.api.storefront.v1.PaymentQuote
+	0,  // 2: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:input_type -> zcard.api.storefront.v1.SubmitSupplierApplicationRequest
+	11, // 3: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:input_type -> google.protobuf.Empty
+	3,  // 4: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:input_type -> zcard.api.storefront.v1.GetSupplierCredentialsRequest
+	4,  // 5: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:input_type -> zcard.api.storefront.v1.RegenerateSupplierSecretRequest
+	5,  // 6: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:input_type -> zcard.api.storefront.v1.CancelSupplierApplicationRequest
+	6,  // 7: zcard.api.storefront.v1.StoreSupplierService.CreateSupplierRecharge:input_type -> zcard.api.storefront.v1.CreateSupplierRechargeRequest
+	7,  // 8: zcard.api.storefront.v1.StoreSupplierService.SetSupplierIPWhitelist:input_type -> zcard.api.storefront.v1.SetSupplierIPWhitelistRequest
+	1,  // 9: zcard.api.storefront.v1.StoreSupplierService.SubmitSupplierApplication:output_type -> zcard.api.storefront.v1.SupplierAccountReply
+	2,  // 10: zcard.api.storefront.v1.StoreSupplierService.ListMySupplierAccounts:output_type -> zcard.api.storefront.v1.ListSupplierAccountsReply
+	9,  // 11: zcard.api.storefront.v1.StoreSupplierService.GetSupplierCredentials:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
+	9,  // 12: zcard.api.storefront.v1.StoreSupplierService.RegenerateSupplierSecret:output_type -> zcard.api.storefront.v1.SupplierCredentialsReply
+	11, // 13: zcard.api.storefront.v1.StoreSupplierService.CancelSupplierApplication:output_type -> google.protobuf.Empty
+	8,  // 14: zcard.api.storefront.v1.StoreSupplierService.CreateSupplierRecharge:output_type -> zcard.api.storefront.v1.CreateSupplierRechargeReply
+	1,  // 15: zcard.api.storefront.v1.StoreSupplierService.SetSupplierIPWhitelist:output_type -> zcard.api.storefront.v1.SupplierAccountReply
+	9,  // [9:16] is the sub-list for method output_type
+	2,  // [2:9] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_supplier_proto_init() }
@@ -797,6 +817,7 @@ func file_storefront_v1_supplier_proto_init() {
 	if File_storefront_v1_supplier_proto != nil {
 		return
 	}
+	file_storefront_v1_payment_proto_init()
 	file_storefront_v1_supplier_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

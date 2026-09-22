@@ -107,10 +107,10 @@ func TestAggregateMethodUsageAndLegacyUpdates(t *testing.T) {
 	}
 	no := false
 	admin := NewAdminPaymentService(repo, d)
-	if _, err = admin.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.ID, Enabled: true, AllowSupplyRecharge: &no}); err != nil {
+	if _, err = admin.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.ID, Enabled: checkoutPtr(true), AllowSupplyRecharge: &no}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = admin.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.ID, Name: "重命名", Enabled: true}); err != nil {
+	if _, err = admin.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.ID, Name: "重命名", Enabled: checkoutPtr(true)}); err != nil {
 		t.Fatal(err)
 	}
 	ch = d.Client.PaymentChannel.GetX(ctx, ch.ID)

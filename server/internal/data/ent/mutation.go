@@ -45436,49 +45436,51 @@ func (m *PageViewMutation) ResetEdge(name string) error {
 // PaymentMutation represents an operation that mutates the Payment nodes in the graph.
 type PaymentMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *uint64
-	created_at            *time.Time
-	updated_at            *time.Time
-	subsite_id            *uint64
-	addsubsite_id         *int64
-	recharge_order_id     *uint64
-	addrecharge_order_id  *int64
-	channel               *string
-	channel_id            *uint64
-	addchannel_id         *int64
-	driver_snapshot       *string
-	expires_at            *time.Time
-	review_reason         *string
-	gateway_order_ref     *string
-	gateway_context       *json.RawMessage
-	appendgateway_context json.RawMessage
-	channel_order_no      *string
-	amount                *int64
-	addamount             *int64
-	charged_amount        *int64
-	addcharged_amount     *int64
-	charged_currency      *string
-	exchange_rate         *float64
-	addexchange_rate      *float64
-	charged_precision     *int32
-	addcharged_precision  *int32
-	charged_units         *int64
-	addcharged_units      *int64
-	fee                   *int64
-	addfee                *int64
-	status                *payment.Status
-	paid_at               *time.Time
-	raw                   *json.RawMessage
-	appendraw             json.RawMessage
-	idempotency_key       *string
-	clearedFields         map[string]struct{}
-	_order                *uint64
-	cleared_order         bool
-	done                  bool
-	oldValue              func(context.Context) (*Payment, error)
-	predicates            []predicate.Payment
+	op                     Op
+	typ                    string
+	id                     *uint64
+	created_at             *time.Time
+	updated_at             *time.Time
+	subsite_id             *uint64
+	addsubsite_id          *int64
+	recharge_order_id      *uint64
+	addrecharge_order_id   *int64
+	channel                *string
+	channel_id             *uint64
+	addchannel_id          *int64
+	driver_snapshot        *string
+	expires_at             *time.Time
+	review_reason          *string
+	gateway_order_ref      *string
+	gateway_context        *json.RawMessage
+	appendgateway_context  json.RawMessage
+	channel_order_no       *string
+	amount                 *int64
+	addamount              *int64
+	charged_amount         *int64
+	addcharged_amount      *int64
+	charged_currency       *string
+	exchange_rate          *float64
+	addexchange_rate       *float64
+	charged_precision      *int32
+	addcharged_precision   *int32
+	charged_units          *int64
+	addcharged_units       *int64
+	fee                    *int64
+	addfee                 *int64
+	pricing_snapshot       *json.RawMessage
+	appendpricing_snapshot json.RawMessage
+	status                 *payment.Status
+	paid_at                *time.Time
+	raw                    *json.RawMessage
+	appendraw              json.RawMessage
+	idempotency_key        *string
+	clearedFields          map[string]struct{}
+	_order                 *uint64
+	cleared_order          bool
+	done                   bool
+	oldValue               func(context.Context) (*Payment, error)
+	predicates             []predicate.Payment
 }
 
 var _ ent.Mutation = (*PaymentMutation)(nil)
@@ -46593,6 +46595,71 @@ func (m *PaymentMutation) ResetFee() {
 	m.addfee = nil
 }
 
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (m *PaymentMutation) SetPricingSnapshot(jm json.RawMessage) {
+	m.pricing_snapshot = &jm
+	m.appendpricing_snapshot = nil
+}
+
+// PricingSnapshot returns the value of the "pricing_snapshot" field in the mutation.
+func (m *PaymentMutation) PricingSnapshot() (r json.RawMessage, exists bool) {
+	v := m.pricing_snapshot
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPricingSnapshot returns the old "pricing_snapshot" field's value of the Payment entity.
+// If the Payment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentMutation) OldPricingSnapshot(ctx context.Context) (v json.RawMessage, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPricingSnapshot is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPricingSnapshot requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPricingSnapshot: %w", err)
+	}
+	return oldValue.PricingSnapshot, nil
+}
+
+// AppendPricingSnapshot adds jm to the "pricing_snapshot" field.
+func (m *PaymentMutation) AppendPricingSnapshot(jm json.RawMessage) {
+	m.appendpricing_snapshot = append(m.appendpricing_snapshot, jm...)
+}
+
+// AppendedPricingSnapshot returns the list of values that were appended to the "pricing_snapshot" field in this mutation.
+func (m *PaymentMutation) AppendedPricingSnapshot() (json.RawMessage, bool) {
+	if len(m.appendpricing_snapshot) == 0 {
+		return nil, false
+	}
+	return m.appendpricing_snapshot, true
+}
+
+// ClearPricingSnapshot clears the value of the "pricing_snapshot" field.
+func (m *PaymentMutation) ClearPricingSnapshot() {
+	m.pricing_snapshot = nil
+	m.appendpricing_snapshot = nil
+	m.clearedFields[payment.FieldPricingSnapshot] = struct{}{}
+}
+
+// PricingSnapshotCleared returns if the "pricing_snapshot" field was cleared in this mutation.
+func (m *PaymentMutation) PricingSnapshotCleared() bool {
+	_, ok := m.clearedFields[payment.FieldPricingSnapshot]
+	return ok
+}
+
+// ResetPricingSnapshot resets all changes to the "pricing_snapshot" field.
+func (m *PaymentMutation) ResetPricingSnapshot() {
+	m.pricing_snapshot = nil
+	m.appendpricing_snapshot = nil
+	delete(m.clearedFields, payment.FieldPricingSnapshot)
+}
+
 // SetStatus sets the "status" field.
 func (m *PaymentMutation) SetStatus(pa payment.Status) {
 	m.status = &pa
@@ -46853,7 +46920,7 @@ func (m *PaymentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentMutation) Fields() []string {
-	fields := make([]string, 0, 24)
+	fields := make([]string, 0, 25)
 	if m.created_at != nil {
 		fields = append(fields, payment.FieldCreatedAt)
 	}
@@ -46913,6 +46980,9 @@ func (m *PaymentMutation) Fields() []string {
 	}
 	if m.fee != nil {
 		fields = append(fields, payment.FieldFee)
+	}
+	if m.pricing_snapshot != nil {
+		fields = append(fields, payment.FieldPricingSnapshot)
 	}
 	if m.status != nil {
 		fields = append(fields, payment.FieldStatus)
@@ -46974,6 +47044,8 @@ func (m *PaymentMutation) Field(name string) (ent.Value, bool) {
 		return m.ChargedUnits()
 	case payment.FieldFee:
 		return m.Fee()
+	case payment.FieldPricingSnapshot:
+		return m.PricingSnapshot()
 	case payment.FieldStatus:
 		return m.Status()
 	case payment.FieldPaidAt:
@@ -47031,6 +47103,8 @@ func (m *PaymentMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldChargedUnits(ctx)
 	case payment.FieldFee:
 		return m.OldFee(ctx)
+	case payment.FieldPricingSnapshot:
+		return m.OldPricingSnapshot(ctx)
 	case payment.FieldStatus:
 		return m.OldStatus(ctx)
 	case payment.FieldPaidAt:
@@ -47187,6 +47261,13 @@ func (m *PaymentMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFee(v)
+		return nil
+	case payment.FieldPricingSnapshot:
+		v, ok := value.(json.RawMessage)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPricingSnapshot(v)
 		return nil
 	case payment.FieldStatus:
 		v, ok := value.(payment.Status)
@@ -47378,6 +47459,9 @@ func (m *PaymentMutation) ClearedFields() []string {
 	if m.FieldCleared(payment.FieldChargedCurrency) {
 		fields = append(fields, payment.FieldChargedCurrency)
 	}
+	if m.FieldCleared(payment.FieldPricingSnapshot) {
+		fields = append(fields, payment.FieldPricingSnapshot)
+	}
 	if m.FieldCleared(payment.FieldPaidAt) {
 		fields = append(fields, payment.FieldPaidAt)
 	}
@@ -47421,6 +47505,9 @@ func (m *PaymentMutation) ClearField(name string) error {
 		return nil
 	case payment.FieldChargedCurrency:
 		m.ClearChargedCurrency()
+		return nil
+	case payment.FieldPricingSnapshot:
+		m.ClearPricingSnapshot()
 		return nil
 	case payment.FieldPaidAt:
 		m.ClearPaidAt()
@@ -47498,6 +47585,9 @@ func (m *PaymentMutation) ResetField(name string) error {
 		return nil
 	case payment.FieldFee:
 		m.ResetFee()
+		return nil
+	case payment.FieldPricingSnapshot:
+		m.ResetPricingSnapshot()
 		return nil
 	case payment.FieldStatus:
 		m.ResetStatus()
@@ -47607,6 +47697,9 @@ type PaymentChannelMutation struct {
 	addfee                *int64
 	fee_type              *paymentchannel.FeeType
 	fee_bearer            *paymentchannel.FeeBearer
+	recommended           *bool
+	recommend_label       *string
+	recommend_description *string
 	sort                  *int32
 	addsort               *int32
 	enabled               *bool
@@ -48127,6 +48220,114 @@ func (m *PaymentChannelMutation) ResetFeeBearer() {
 	m.fee_bearer = nil
 }
 
+// SetRecommended sets the "recommended" field.
+func (m *PaymentChannelMutation) SetRecommended(b bool) {
+	m.recommended = &b
+}
+
+// Recommended returns the value of the "recommended" field in the mutation.
+func (m *PaymentChannelMutation) Recommended() (r bool, exists bool) {
+	v := m.recommended
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecommended returns the old "recommended" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldRecommended(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecommended is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecommended requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecommended: %w", err)
+	}
+	return oldValue.Recommended, nil
+}
+
+// ResetRecommended resets all changes to the "recommended" field.
+func (m *PaymentChannelMutation) ResetRecommended() {
+	m.recommended = nil
+}
+
+// SetRecommendLabel sets the "recommend_label" field.
+func (m *PaymentChannelMutation) SetRecommendLabel(s string) {
+	m.recommend_label = &s
+}
+
+// RecommendLabel returns the value of the "recommend_label" field in the mutation.
+func (m *PaymentChannelMutation) RecommendLabel() (r string, exists bool) {
+	v := m.recommend_label
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecommendLabel returns the old "recommend_label" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldRecommendLabel(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecommendLabel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecommendLabel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecommendLabel: %w", err)
+	}
+	return oldValue.RecommendLabel, nil
+}
+
+// ResetRecommendLabel resets all changes to the "recommend_label" field.
+func (m *PaymentChannelMutation) ResetRecommendLabel() {
+	m.recommend_label = nil
+}
+
+// SetRecommendDescription sets the "recommend_description" field.
+func (m *PaymentChannelMutation) SetRecommendDescription(s string) {
+	m.recommend_description = &s
+}
+
+// RecommendDescription returns the value of the "recommend_description" field in the mutation.
+func (m *PaymentChannelMutation) RecommendDescription() (r string, exists bool) {
+	v := m.recommend_description
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRecommendDescription returns the old "recommend_description" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldRecommendDescription(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRecommendDescription is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRecommendDescription requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRecommendDescription: %w", err)
+	}
+	return oldValue.RecommendDescription, nil
+}
+
+// ResetRecommendDescription resets all changes to the "recommend_description" field.
+func (m *PaymentChannelMutation) ResetRecommendDescription() {
+	m.recommend_description = nil
+}
+
 // SetSort sets the "sort" field.
 func (m *PaymentChannelMutation) SetSort(i int32) {
 	m.sort = &i
@@ -48511,7 +48712,7 @@ func (m *PaymentChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentChannelMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 21)
 	if m.created_at != nil {
 		fields = append(fields, paymentchannel.FieldCreatedAt)
 	}
@@ -48541,6 +48742,15 @@ func (m *PaymentChannelMutation) Fields() []string {
 	}
 	if m.fee_bearer != nil {
 		fields = append(fields, paymentchannel.FieldFeeBearer)
+	}
+	if m.recommended != nil {
+		fields = append(fields, paymentchannel.FieldRecommended)
+	}
+	if m.recommend_label != nil {
+		fields = append(fields, paymentchannel.FieldRecommendLabel)
+	}
+	if m.recommend_description != nil {
+		fields = append(fields, paymentchannel.FieldRecommendDescription)
 	}
 	if m.sort != nil {
 		fields = append(fields, paymentchannel.FieldSort)
@@ -48594,6 +48804,12 @@ func (m *PaymentChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.FeeType()
 	case paymentchannel.FieldFeeBearer:
 		return m.FeeBearer()
+	case paymentchannel.FieldRecommended:
+		return m.Recommended()
+	case paymentchannel.FieldRecommendLabel:
+		return m.RecommendLabel()
+	case paymentchannel.FieldRecommendDescription:
+		return m.RecommendDescription()
 	case paymentchannel.FieldSort:
 		return m.Sort()
 	case paymentchannel.FieldEnabled:
@@ -48639,6 +48855,12 @@ func (m *PaymentChannelMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldFeeType(ctx)
 	case paymentchannel.FieldFeeBearer:
 		return m.OldFeeBearer(ctx)
+	case paymentchannel.FieldRecommended:
+		return m.OldRecommended(ctx)
+	case paymentchannel.FieldRecommendLabel:
+		return m.OldRecommendLabel(ctx)
+	case paymentchannel.FieldRecommendDescription:
+		return m.OldRecommendDescription(ctx)
 	case paymentchannel.FieldSort:
 		return m.OldSort(ctx)
 	case paymentchannel.FieldEnabled:
@@ -48733,6 +48955,27 @@ func (m *PaymentChannelMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetFeeBearer(v)
+		return nil
+	case paymentchannel.FieldRecommended:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecommended(v)
+		return nil
+	case paymentchannel.FieldRecommendLabel:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecommendLabel(v)
+		return nil
+	case paymentchannel.FieldRecommendDescription:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRecommendDescription(v)
 		return nil
 	case paymentchannel.FieldSort:
 		v, ok := value.(int32)
@@ -48922,6 +49165,15 @@ func (m *PaymentChannelMutation) ResetField(name string) error {
 		return nil
 	case paymentchannel.FieldFeeBearer:
 		m.ResetFeeBearer()
+		return nil
+	case paymentchannel.FieldRecommended:
+		m.ResetRecommended()
+		return nil
+	case paymentchannel.FieldRecommendLabel:
+		m.ResetRecommendLabel()
+		return nil
+	case paymentchannel.FieldRecommendDescription:
+		m.ResetRecommendDescription()
 		return nil
 	case paymentchannel.FieldSort:
 		m.ResetSort()
@@ -64356,6 +64608,8 @@ type RefundOrderMutation struct {
 	updated_at         *time.Time
 	amount             *int64
 	addamount          *int64
+	fee_amount         *int64
+	addfee_amount      *int64
 	channel            *refundorder.Channel
 	status             *refundorder.Status
 	reason             *string
@@ -64636,6 +64890,62 @@ func (m *RefundOrderMutation) AddedAmount() (r int64, exists bool) {
 func (m *RefundOrderMutation) ResetAmount() {
 	m.amount = nil
 	m.addamount = nil
+}
+
+// SetFeeAmount sets the "fee_amount" field.
+func (m *RefundOrderMutation) SetFeeAmount(i int64) {
+	m.fee_amount = &i
+	m.addfee_amount = nil
+}
+
+// FeeAmount returns the value of the "fee_amount" field in the mutation.
+func (m *RefundOrderMutation) FeeAmount() (r int64, exists bool) {
+	v := m.fee_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFeeAmount returns the old "fee_amount" field's value of the RefundOrder entity.
+// If the RefundOrder object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RefundOrderMutation) OldFeeAmount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFeeAmount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFeeAmount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFeeAmount: %w", err)
+	}
+	return oldValue.FeeAmount, nil
+}
+
+// AddFeeAmount adds i to the "fee_amount" field.
+func (m *RefundOrderMutation) AddFeeAmount(i int64) {
+	if m.addfee_amount != nil {
+		*m.addfee_amount += i
+	} else {
+		m.addfee_amount = &i
+	}
+}
+
+// AddedFeeAmount returns the value that was added to the "fee_amount" field in this mutation.
+func (m *RefundOrderMutation) AddedFeeAmount() (r int64, exists bool) {
+	v := m.addfee_amount
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetFeeAmount resets all changes to the "fee_amount" field.
+func (m *RefundOrderMutation) ResetFeeAmount() {
+	m.fee_amount = nil
+	m.addfee_amount = nil
 }
 
 // SetChannel sets the "channel" field.
@@ -64939,7 +65249,7 @@ func (m *RefundOrderMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *RefundOrderMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, refundorder.FieldCreatedAt)
 	}
@@ -64951,6 +65261,9 @@ func (m *RefundOrderMutation) Fields() []string {
 	}
 	if m.amount != nil {
 		fields = append(fields, refundorder.FieldAmount)
+	}
+	if m.fee_amount != nil {
+		fields = append(fields, refundorder.FieldFeeAmount)
 	}
 	if m.channel != nil {
 		fields = append(fields, refundorder.FieldChannel)
@@ -64983,6 +65296,8 @@ func (m *RefundOrderMutation) Field(name string) (ent.Value, bool) {
 		return m.OrderID()
 	case refundorder.FieldAmount:
 		return m.Amount()
+	case refundorder.FieldFeeAmount:
+		return m.FeeAmount()
 	case refundorder.FieldChannel:
 		return m.Channel()
 	case refundorder.FieldStatus:
@@ -65010,6 +65325,8 @@ func (m *RefundOrderMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldOrderID(ctx)
 	case refundorder.FieldAmount:
 		return m.OldAmount(ctx)
+	case refundorder.FieldFeeAmount:
+		return m.OldFeeAmount(ctx)
 	case refundorder.FieldChannel:
 		return m.OldChannel(ctx)
 	case refundorder.FieldStatus:
@@ -65057,6 +65374,13 @@ func (m *RefundOrderMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetAmount(v)
 		return nil
+	case refundorder.FieldFeeAmount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFeeAmount(v)
+		return nil
 	case refundorder.FieldChannel:
 		v, ok := value.(refundorder.Channel)
 		if !ok {
@@ -65103,6 +65427,9 @@ func (m *RefundOrderMutation) AddedFields() []string {
 	if m.addamount != nil {
 		fields = append(fields, refundorder.FieldAmount)
 	}
+	if m.addfee_amount != nil {
+		fields = append(fields, refundorder.FieldFeeAmount)
+	}
 	if m.addoperator_id != nil {
 		fields = append(fields, refundorder.FieldOperatorID)
 	}
@@ -65116,6 +65443,8 @@ func (m *RefundOrderMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case refundorder.FieldAmount:
 		return m.AddedAmount()
+	case refundorder.FieldFeeAmount:
+		return m.AddedFeeAmount()
 	case refundorder.FieldOperatorID:
 		return m.AddedOperatorID()
 	}
@@ -65133,6 +65462,13 @@ func (m *RefundOrderMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddAmount(v)
+		return nil
+	case refundorder.FieldFeeAmount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddFeeAmount(v)
 		return nil
 	case refundorder.FieldOperatorID:
 		v, ok := value.(int64)
@@ -65200,6 +65536,9 @@ func (m *RefundOrderMutation) ResetField(name string) error {
 		return nil
 	case refundorder.FieldAmount:
 		m.ResetAmount()
+		return nil
+	case refundorder.FieldFeeAmount:
+		m.ResetFeeAmount()
 		return nil
 	case refundorder.FieldChannel:
 		m.ResetChannel()

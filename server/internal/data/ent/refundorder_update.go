@@ -70,6 +70,27 @@ func (_u *RefundOrderUpdate) AddAmount(v int64) *RefundOrderUpdate {
 	return _u
 }
 
+// SetFeeAmount sets the "fee_amount" field.
+func (_u *RefundOrderUpdate) SetFeeAmount(v int64) *RefundOrderUpdate {
+	_u.mutation.ResetFeeAmount()
+	_u.mutation.SetFeeAmount(v)
+	return _u
+}
+
+// SetNillableFeeAmount sets the "fee_amount" field if the given value is not nil.
+func (_u *RefundOrderUpdate) SetNillableFeeAmount(v *int64) *RefundOrderUpdate {
+	if v != nil {
+		_u.SetFeeAmount(*v)
+	}
+	return _u
+}
+
+// AddFeeAmount adds value to the "fee_amount" field.
+func (_u *RefundOrderUpdate) AddFeeAmount(v int64) *RefundOrderUpdate {
+	_u.mutation.AddFeeAmount(v)
+	return _u
+}
+
 // SetChannel sets the "channel" field.
 func (_u *RefundOrderUpdate) SetChannel(v refundorder.Channel) *RefundOrderUpdate {
 	_u.mutation.SetChannel(v)
@@ -261,6 +282,12 @@ func (_u *RefundOrderUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.AddedAmount(); ok {
 		_spec.AddField(refundorder.FieldAmount, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.FeeAmount(); ok {
+		_spec.SetField(refundorder.FieldFeeAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeeAmount(); ok {
+		_spec.AddField(refundorder.FieldFeeAmount, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.Channel(); ok {
 		_spec.SetField(refundorder.FieldChannel, field.TypeEnum, value)
 	}
@@ -375,6 +402,27 @@ func (_u *RefundOrderUpdateOne) SetNillableAmount(v *int64) *RefundOrderUpdateOn
 // AddAmount adds value to the "amount" field.
 func (_u *RefundOrderUpdateOne) AddAmount(v int64) *RefundOrderUpdateOne {
 	_u.mutation.AddAmount(v)
+	return _u
+}
+
+// SetFeeAmount sets the "fee_amount" field.
+func (_u *RefundOrderUpdateOne) SetFeeAmount(v int64) *RefundOrderUpdateOne {
+	_u.mutation.ResetFeeAmount()
+	_u.mutation.SetFeeAmount(v)
+	return _u
+}
+
+// SetNillableFeeAmount sets the "fee_amount" field if the given value is not nil.
+func (_u *RefundOrderUpdateOne) SetNillableFeeAmount(v *int64) *RefundOrderUpdateOne {
+	if v != nil {
+		_u.SetFeeAmount(*v)
+	}
+	return _u
+}
+
+// AddFeeAmount adds value to the "fee_amount" field.
+func (_u *RefundOrderUpdateOne) AddFeeAmount(v int64) *RefundOrderUpdateOne {
+	_u.mutation.AddFeeAmount(v)
 	return _u
 }
 
@@ -598,6 +646,12 @@ func (_u *RefundOrderUpdateOne) sqlSave(ctx context.Context) (_node *RefundOrder
 	}
 	if value, ok := _u.mutation.AddedAmount(); ok {
 		_spec.AddField(refundorder.FieldAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.FeeAmount(); ok {
+		_spec.SetField(refundorder.FieldFeeAmount, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedFeeAmount(); ok {
+		_spec.AddField(refundorder.FieldFeeAmount, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.Channel(); ok {
 		_spec.SetField(refundorder.FieldChannel, field.TypeEnum, value)

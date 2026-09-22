@@ -100,6 +100,9 @@ func TestPaypalCreatePaymentMock(t *testing.T) {
 		case r.URL.Path == "/v1/oauth2/token" && r.Method == http.MethodPost:
 			_, _ = w.Write([]byte(`{"access_token":"tok-1","expires_in":3600}`))
 		case r.URL.Path == "/v2/checkout/orders" && r.Method == http.MethodPost:
+			if r.Header.Get("PayPal-Request-Id") != "checkout-paypal-stable" {
+				t.Error("missing stable gateway idempotency key")
+			}
 			gotBody, _ = io.ReadAll(r.Body)
 			_, _ = w.Write([]byte(`{"id":"` + ppOrderID + `","status":"CREATED","links":[{"href":"https://www.sandbox.paypal.com/checkoutnow?token=` + ppOrderID + `","rel":"approve","method":"GET"}]}`))
 		default:
@@ -108,11 +111,15 @@ func TestPaypalCreatePaymentMock(t *testing.T) {
 	})
 	a := NewPaypal()
 	info, err := a.CreatePayment(context.Background(), port.CreatePaymentRequest{
-		OrderNo: ppBusinessNo, Amount: money.Cents(1000), Subject: "订单 " + ppBusinessNo,
+		IdempotencyKey: "checkout-paypal-stable",
+		OrderNo:        ppBusinessNo, Amount: money.Cents(1000), Subject: "订单 " + ppBusinessNo,
 		Channel: "paypal", Config: ppCfg(srv.URL), ChargedUnits: 140, ChargedCurrency: "USD",
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if info.ChannelOrderNo != ppOrderID {
+		t.Fatal("missing gateway order locator")
 	}
 	var payload struct {
 		URL string `json:"url"`

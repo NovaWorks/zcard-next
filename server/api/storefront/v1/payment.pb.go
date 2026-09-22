@@ -112,14 +112,20 @@ func (x *ChannelListReply) GetChannels() []*ChannelItem {
 }
 
 type ChannelItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // 渠道名称（管理端配置）
-	Driver        string                 `protobuf:"bytes,3,opt,name=driver,proto3" json:"driver,omitempty"`
-	Icon          string                 `protobuf:"bytes,4,opt,name=icon,proto3" json:"icon,omitempty"`       // 渠道自定义图标 URL（空=前端回落内置徽标）
-	Methods       []*MethodItem          `protobuf:"bytes,5,rep,name=methods,proto3" json:"methods,omitempty"` // 支付方式列表（聚合网关；空=单方式渠道）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Code                 string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // 渠道名称（管理端配置）
+	Driver               string                 `protobuf:"bytes,3,opt,name=driver,proto3" json:"driver,omitempty"`
+	Icon                 string                 `protobuf:"bytes,4,opt,name=icon,proto3" json:"icon,omitempty"` // 渠道自定义图标 URL（空=前端回落内置徽标）
+	Fee                  int64                  `protobuf:"varint,6,opt,name=fee,proto3" json:"fee,omitempty"`
+	FeeType              string                 `protobuf:"bytes,7,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
+	FeeBearer            string                 `protobuf:"bytes,8,opt,name=fee_bearer,json=feeBearer,proto3" json:"fee_bearer,omitempty"`
+	Recommended          bool                   `protobuf:"varint,9,opt,name=recommended,proto3" json:"recommended,omitempty"`
+	RecommendLabel       string                 `protobuf:"bytes,10,opt,name=recommend_label,json=recommendLabel,proto3" json:"recommend_label,omitempty"`
+	RecommendDescription string                 `protobuf:"bytes,11,opt,name=recommend_description,json=recommendDescription,proto3" json:"recommend_description,omitempty"`
+	Methods              []*MethodItem          `protobuf:"bytes,5,rep,name=methods,proto3" json:"methods,omitempty"` // 支付方式列表（聚合网关；空=单方式渠道）
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ChannelItem) Reset() {
@@ -180,6 +186,48 @@ func (x *ChannelItem) GetIcon() string {
 	return ""
 }
 
+func (x *ChannelItem) GetFee() int64 {
+	if x != nil {
+		return x.Fee
+	}
+	return 0
+}
+
+func (x *ChannelItem) GetFeeType() string {
+	if x != nil {
+		return x.FeeType
+	}
+	return ""
+}
+
+func (x *ChannelItem) GetFeeBearer() string {
+	if x != nil {
+		return x.FeeBearer
+	}
+	return ""
+}
+
+func (x *ChannelItem) GetRecommended() bool {
+	if x != nil {
+		return x.Recommended
+	}
+	return false
+}
+
+func (x *ChannelItem) GetRecommendLabel() string {
+	if x != nil {
+		return x.RecommendLabel
+	}
+	return ""
+}
+
+func (x *ChannelItem) GetRecommendDescription() string {
+	if x != nil {
+		return x.RecommendDescription
+	}
+	return ""
+}
+
 func (x *ChannelItem) GetMethods() []*MethodItem {
 	if x != nil {
 		return x.Methods
@@ -189,12 +237,15 @@ func (x *ChannelItem) GetMethods() []*MethodItem {
 
 // MethodItem 支付方式（收银台顾客看到的选项：支付宝/微信/USDT-TRC20…）。
 type MethodItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Icon          string                 `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"` // 方式级自定义图标（空=回落渠道图标/内置徽标）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	Code                 string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Name                 string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Recommended          bool                   `protobuf:"varint,4,opt,name=recommended,proto3" json:"recommended,omitempty"`
+	RecommendLabel       string                 `protobuf:"bytes,5,opt,name=recommend_label,json=recommendLabel,proto3" json:"recommend_label,omitempty"`
+	RecommendDescription string                 `protobuf:"bytes,6,opt,name=recommend_description,json=recommendDescription,proto3" json:"recommend_description,omitempty"`
+	Icon                 string                 `protobuf:"bytes,3,opt,name=icon,proto3" json:"icon,omitempty"` // 方式级自定义图标（空=回落渠道图标/内置徽标）
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *MethodItem) Reset() {
@@ -241,6 +292,27 @@ func (x *MethodItem) GetName() string {
 	return ""
 }
 
+func (x *MethodItem) GetRecommended() bool {
+	if x != nil {
+		return x.Recommended
+	}
+	return false
+}
+
+func (x *MethodItem) GetRecommendLabel() string {
+	if x != nil {
+		return x.RecommendLabel
+	}
+	return ""
+}
+
+func (x *MethodItem) GetRecommendDescription() string {
+	if x != nil {
+		return x.RecommendDescription
+	}
+	return ""
+}
+
 func (x *MethodItem) GetIcon() string {
 	if x != nil {
 		return x.Icon
@@ -250,6 +322,8 @@ func (x *MethodItem) GetIcon() string {
 
 type CreatePaymentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuoteKey      string                 `protobuf:"bytes,4,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
+	QueryPassword string                 `protobuf:"bytes,5,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
 	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"` // 支付方式 code（多方式渠道必选；单方式渠道可空）
@@ -287,6 +361,20 @@ func (*CreatePaymentRequest) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{4}
 }
 
+func (x *CreatePaymentRequest) GetQuoteKey() string {
+	if x != nil {
+		return x.QuoteKey
+	}
+	return ""
+}
+
+func (x *CreatePaymentRequest) GetQueryPassword() string {
+	if x != nil {
+		return x.QueryPassword
+	}
+	return ""
+}
+
 func (x *CreatePaymentRequest) GetOrderNo() string {
 	if x != nil {
 		return x.OrderNo
@@ -310,6 +398,7 @@ func (x *CreatePaymentRequest) GetMethod() string {
 
 type CreatePaymentReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Quote         *PaymentQuote          `protobuf:"bytes,4,opt,name=quote,proto3" json:"quote,omitempty"`
 	PaymentId     uint64                 `protobuf:"varint,1,opt,name=payment_id,json=paymentId,proto3" json:"payment_id,omitempty"`
 	Type          string                 `protobuf:"bytes,2,opt,name=type,proto3" json:"type,omitempty"`       // redirect | qrcode | params
 	Payload       string                 `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"` // URL / 二维码内容 / 参数 JSON
@@ -347,6 +436,13 @@ func (*CreatePaymentReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{5}
 }
 
+func (x *CreatePaymentReply) GetQuote() *PaymentQuote {
+	if x != nil {
+		return x.Quote
+	}
+	return nil
+}
+
 func (x *CreatePaymentReply) GetPaymentId() uint64 {
 	if x != nil {
 		return x.PaymentId
@@ -368,6 +464,230 @@ func (x *CreatePaymentReply) GetPayload() string {
 	return ""
 }
 
+type PaymentQuoteRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Channel       string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
+	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
+	Scene         string                 `protobuf:"bytes,4,opt,name=scene,proto3" json:"scene,omitempty"`
+	AmountCents   int64                  `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	QueryPassword string                 `protobuf:"bytes,6,opt,name=query_password,json=queryPassword,proto3" json:"query_password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PaymentQuoteRequest) Reset() {
+	*x = PaymentQuoteRequest{}
+	mi := &file_storefront_v1_payment_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaymentQuoteRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaymentQuoteRequest) ProtoMessage() {}
+
+func (x *PaymentQuoteRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_payment_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaymentQuoteRequest.ProtoReflect.Descriptor instead.
+func (*PaymentQuoteRequest) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *PaymentQuoteRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
+}
+
+func (x *PaymentQuoteRequest) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *PaymentQuoteRequest) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *PaymentQuoteRequest) GetScene() string {
+	if x != nil {
+		return x.Scene
+	}
+	return ""
+}
+
+func (x *PaymentQuoteRequest) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
+}
+
+func (x *PaymentQuoteRequest) GetQueryPassword() string {
+	if x != nil {
+		return x.QueryPassword
+	}
+	return ""
+}
+
+type PaymentQuote struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	BaseCents        int64                  `protobuf:"varint,1,opt,name=base_cents,json=baseCents,proto3" json:"base_cents,omitempty"`
+	FeeCents         int64                  `protobuf:"varint,2,opt,name=fee_cents,json=feeCents,proto3" json:"fee_cents,omitempty"`
+	TotalCents       int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	FeeType          string                 `protobuf:"bytes,4,opt,name=fee_type,json=feeType,proto3" json:"fee_type,omitempty"`
+	FeeRate          int64                  `protobuf:"varint,5,opt,name=fee_rate,json=feeRate,proto3" json:"fee_rate,omitempty"`
+	FeeBearer        string                 `protobuf:"bytes,6,opt,name=fee_bearer,json=feeBearer,proto3" json:"fee_bearer,omitempty"`
+	QuoteKey         string                 `protobuf:"bytes,7,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
+	PaymentId        uint64                 `protobuf:"varint,8,opt,name=payment_id,json=paymentId,proto3" json:"payment_id,omitempty"`
+	Channel          string                 `protobuf:"bytes,9,opt,name=channel,proto3" json:"channel,omitempty"`
+	Method           string                 `protobuf:"bytes,10,opt,name=method,proto3" json:"method,omitempty"`
+	ChargedCurrency  string                 `protobuf:"bytes,11,opt,name=charged_currency,json=chargedCurrency,proto3" json:"charged_currency,omitempty"`
+	ChargedUnits     int64                  `protobuf:"varint,12,opt,name=charged_units,json=chargedUnits,proto3" json:"charged_units,omitempty"`
+	ChargedPrecision int32                  `protobuf:"varint,13,opt,name=charged_precision,json=chargedPrecision,proto3" json:"charged_precision,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *PaymentQuote) Reset() {
+	*x = PaymentQuote{}
+	mi := &file_storefront_v1_payment_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PaymentQuote) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PaymentQuote) ProtoMessage() {}
+
+func (x *PaymentQuote) ProtoReflect() protoreflect.Message {
+	mi := &file_storefront_v1_payment_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PaymentQuote.ProtoReflect.Descriptor instead.
+func (*PaymentQuote) Descriptor() ([]byte, []int) {
+	return file_storefront_v1_payment_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *PaymentQuote) GetBaseCents() int64 {
+	if x != nil {
+		return x.BaseCents
+	}
+	return 0
+}
+
+func (x *PaymentQuote) GetFeeCents() int64 {
+	if x != nil {
+		return x.FeeCents
+	}
+	return 0
+}
+
+func (x *PaymentQuote) GetTotalCents() int64 {
+	if x != nil {
+		return x.TotalCents
+	}
+	return 0
+}
+
+func (x *PaymentQuote) GetFeeType() string {
+	if x != nil {
+		return x.FeeType
+	}
+	return ""
+}
+
+func (x *PaymentQuote) GetFeeRate() int64 {
+	if x != nil {
+		return x.FeeRate
+	}
+	return 0
+}
+
+func (x *PaymentQuote) GetFeeBearer() string {
+	if x != nil {
+		return x.FeeBearer
+	}
+	return ""
+}
+
+func (x *PaymentQuote) GetQuoteKey() string {
+	if x != nil {
+		return x.QuoteKey
+	}
+	return ""
+}
+
+func (x *PaymentQuote) GetPaymentId() uint64 {
+	if x != nil {
+		return x.PaymentId
+	}
+	return 0
+}
+
+func (x *PaymentQuote) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
+}
+
+func (x *PaymentQuote) GetMethod() string {
+	if x != nil {
+		return x.Method
+	}
+	return ""
+}
+
+func (x *PaymentQuote) GetChargedCurrency() string {
+	if x != nil {
+		return x.ChargedCurrency
+	}
+	return ""
+}
+
+func (x *PaymentQuote) GetChargedUnits() int64 {
+	if x != nil {
+		return x.ChargedUnits
+	}
+	return 0
+}
+
+func (x *PaymentQuote) GetChargedPrecision() int32 {
+	if x != nil {
+		return x.ChargedPrecision
+	}
+	return 0
+}
+
 var File_storefront_v1_payment_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_payment_proto_rawDesc = "" +
@@ -376,29 +696,70 @@ const file_storefront_v1_payment_proto_rawDesc = "" +
 	"\x1aListPaymentChannelsRequest\x12\x14\n" +
 	"\x05scene\x18\x01 \x01(\tR\x05scene\"T\n" +
 	"\x10ChannelListReply\x12@\n" +
-	"\bchannels\x18\x01 \x03(\v2$.zcard.api.storefront.v1.ChannelItemR\bchannels\"\xa0\x01\n" +
+	"\bchannels\x18\x01 \x03(\v2$.zcard.api.storefront.v1.ChannelItemR\bchannels\"\xec\x02\n" +
 	"\vChannelItem\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x16\n" +
 	"\x06driver\x18\x03 \x01(\tR\x06driver\x12\x12\n" +
-	"\x04icon\x18\x04 \x01(\tR\x04icon\x12=\n" +
-	"\amethods\x18\x05 \x03(\v2#.zcard.api.storefront.v1.MethodItemR\amethods\"H\n" +
+	"\x04icon\x18\x04 \x01(\tR\x04icon\x12\x10\n" +
+	"\x03fee\x18\x06 \x01(\x03R\x03fee\x12\x19\n" +
+	"\bfee_type\x18\a \x01(\tR\afeeType\x12\x1d\n" +
+	"\n" +
+	"fee_bearer\x18\b \x01(\tR\tfeeBearer\x12 \n" +
+	"\vrecommended\x18\t \x01(\bR\vrecommended\x12'\n" +
+	"\x0frecommend_label\x18\n" +
+	" \x01(\tR\x0erecommendLabel\x123\n" +
+	"\x15recommend_description\x18\v \x01(\tR\x14recommendDescription\x12=\n" +
+	"\amethods\x18\x05 \x03(\v2#.zcard.api.storefront.v1.MethodItemR\amethods\"\xc8\x01\n" +
 	"\n" +
 	"MethodItem\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04icon\x18\x03 \x01(\tR\x04icon\"m\n" +
-	"\x14CreatePaymentRequest\x12\x1e\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
+	"\vrecommended\x18\x04 \x01(\bR\vrecommended\x12'\n" +
+	"\x0frecommend_label\x18\x05 \x01(\tR\x0erecommendLabel\x123\n" +
+	"\x15recommend_description\x18\x06 \x01(\tR\x14recommendDescription\x12\x12\n" +
+	"\x04icon\x18\x03 \x01(\tR\x04icon\"\xb1\x01\n" +
+	"\x14CreatePaymentRequest\x12\x1b\n" +
+	"\tquote_key\x18\x04 \x01(\tR\bquoteKey\x12%\n" +
+	"\x0equery_password\x18\x05 \x01(\tR\rqueryPassword\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12\x1d\n" +
 	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\x12\x16\n" +
-	"\x06method\x18\x03 \x01(\tR\x06method\"a\n" +
-	"\x12CreatePaymentReply\x12\x1d\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\"\x9e\x01\n" +
+	"\x12CreatePaymentReply\x12;\n" +
+	"\x05quote\x18\x04 \x01(\v2%.zcard.api.storefront.v1.PaymentQuoteR\x05quote\x12\x1d\n" +
 	"\n" +
 	"payment_id\x18\x01 \x01(\x04R\tpaymentId\x12\x12\n" +
 	"\x04type\x18\x02 \x01(\tR\x04type\x12\x18\n" +
-	"\apayload\x18\x03 \x01(\tR\apayload2\xc9\x02\n" +
+	"\apayload\x18\x03 \x01(\tR\apayload\"\xc2\x01\n" +
+	"\x13PaymentQuoteRequest\x12\x19\n" +
+	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x18\n" +
+	"\achannel\x18\x02 \x01(\tR\achannel\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12\x14\n" +
+	"\x05scene\x18\x04 \x01(\tR\x05scene\x12!\n" +
+	"\famount_cents\x18\x05 \x01(\x03R\vamountCents\x12%\n" +
+	"\x0equery_password\x18\x06 \x01(\tR\rqueryPassword\"\xab\x03\n" +
+	"\fPaymentQuote\x12\x1d\n" +
+	"\n" +
+	"base_cents\x18\x01 \x01(\x03R\tbaseCents\x12\x1b\n" +
+	"\tfee_cents\x18\x02 \x01(\x03R\bfeeCents\x12\x1f\n" +
+	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
+	"totalCents\x12\x19\n" +
+	"\bfee_type\x18\x04 \x01(\tR\afeeType\x12\x19\n" +
+	"\bfee_rate\x18\x05 \x01(\x03R\afeeRate\x12\x1d\n" +
+	"\n" +
+	"fee_bearer\x18\x06 \x01(\tR\tfeeBearer\x12\x1b\n" +
+	"\tquote_key\x18\a \x01(\tR\bquoteKey\x12\x1d\n" +
+	"\n" +
+	"payment_id\x18\b \x01(\x04R\tpaymentId\x12\x18\n" +
+	"\achannel\x18\t \x01(\tR\achannel\x12\x16\n" +
+	"\x06method\x18\n" +
+	" \x01(\tR\x06method\x12)\n" +
+	"\x10charged_currency\x18\v \x01(\tR\x0fchargedCurrency\x12#\n" +
+	"\rcharged_units\x18\f \x01(\x03R\fchargedUnits\x12+\n" +
+	"\x11charged_precision\x18\r \x01(\x05R\x10chargedPrecision2\xdc\x03\n" +
 	"\x13StorePaymentService\x12\x9b\x01\n" +
-	"\fListChannels\x123.zcard.api.storefront.v1.ListPaymentChannelsRequest\x1a).zcard.api.storefront.v1.ChannelListReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/storefront/payment/channels\x12\x93\x01\n" +
+	"\fListChannels\x123.zcard.api.storefront.v1.ListPaymentChannelsRequest\x1a).zcard.api.storefront.v1.ChannelListReply\"+\x82\xd3\xe4\x93\x02%\x12#/api/v1/storefront/payment/channels\x12\x90\x01\n" +
+	"\fQuotePayment\x12,.zcard.api.storefront.v1.PaymentQuoteRequest\x1a%.zcard.api.storefront.v1.PaymentQuote\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/storefront/payment/quote\x12\x93\x01\n" +
 	"\rCreatePayment\x12-.zcard.api.storefront.v1.CreatePaymentRequest\x1a+.zcard.api.storefront.v1.CreatePaymentReply\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/api/v1/storefront/paymentsBGZEgithub.com/NovaWorks/zcard-next/server/api/storefront/v1;storefrontv1b\x06proto3"
 
 var (
@@ -413,7 +774,7 @@ func file_storefront_v1_payment_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_payment_proto_rawDescData
 }
 
-var file_storefront_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_storefront_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_storefront_v1_payment_proto_goTypes = []any{
 	(*ListPaymentChannelsRequest)(nil), // 0: zcard.api.storefront.v1.ListPaymentChannelsRequest
 	(*ChannelListReply)(nil),           // 1: zcard.api.storefront.v1.ChannelListReply
@@ -421,19 +782,24 @@ var file_storefront_v1_payment_proto_goTypes = []any{
 	(*MethodItem)(nil),                 // 3: zcard.api.storefront.v1.MethodItem
 	(*CreatePaymentRequest)(nil),       // 4: zcard.api.storefront.v1.CreatePaymentRequest
 	(*CreatePaymentReply)(nil),         // 5: zcard.api.storefront.v1.CreatePaymentReply
+	(*PaymentQuoteRequest)(nil),        // 6: zcard.api.storefront.v1.PaymentQuoteRequest
+	(*PaymentQuote)(nil),               // 7: zcard.api.storefront.v1.PaymentQuote
 }
 var file_storefront_v1_payment_proto_depIdxs = []int32{
 	2, // 0: zcard.api.storefront.v1.ChannelListReply.channels:type_name -> zcard.api.storefront.v1.ChannelItem
 	3, // 1: zcard.api.storefront.v1.ChannelItem.methods:type_name -> zcard.api.storefront.v1.MethodItem
-	0, // 2: zcard.api.storefront.v1.StorePaymentService.ListChannels:input_type -> zcard.api.storefront.v1.ListPaymentChannelsRequest
-	4, // 3: zcard.api.storefront.v1.StorePaymentService.CreatePayment:input_type -> zcard.api.storefront.v1.CreatePaymentRequest
-	1, // 4: zcard.api.storefront.v1.StorePaymentService.ListChannels:output_type -> zcard.api.storefront.v1.ChannelListReply
-	5, // 5: zcard.api.storefront.v1.StorePaymentService.CreatePayment:output_type -> zcard.api.storefront.v1.CreatePaymentReply
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	7, // 2: zcard.api.storefront.v1.CreatePaymentReply.quote:type_name -> zcard.api.storefront.v1.PaymentQuote
+	0, // 3: zcard.api.storefront.v1.StorePaymentService.ListChannels:input_type -> zcard.api.storefront.v1.ListPaymentChannelsRequest
+	6, // 4: zcard.api.storefront.v1.StorePaymentService.QuotePayment:input_type -> zcard.api.storefront.v1.PaymentQuoteRequest
+	4, // 5: zcard.api.storefront.v1.StorePaymentService.CreatePayment:input_type -> zcard.api.storefront.v1.CreatePaymentRequest
+	1, // 6: zcard.api.storefront.v1.StorePaymentService.ListChannels:output_type -> zcard.api.storefront.v1.ChannelListReply
+	7, // 7: zcard.api.storefront.v1.StorePaymentService.QuotePayment:output_type -> zcard.api.storefront.v1.PaymentQuote
+	5, // 8: zcard.api.storefront.v1.StorePaymentService.CreatePayment:output_type -> zcard.api.storefront.v1.CreatePaymentReply
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_payment_proto_init() }
@@ -447,7 +813,7 @@ func file_storefront_v1_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_payment_proto_rawDesc), len(file_storefront_v1_payment_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

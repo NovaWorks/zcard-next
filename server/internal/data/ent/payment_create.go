@@ -280,6 +280,12 @@ func (_c *PaymentCreate) SetNillableFee(v *int64) *PaymentCreate {
 	return _c
 }
 
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (_c *PaymentCreate) SetPricingSnapshot(v json.RawMessage) *PaymentCreate {
+	_c.mutation.SetPricingSnapshot(v)
+	return _c
+}
+
 // SetStatus sets the "status" field.
 func (_c *PaymentCreate) SetStatus(v payment.Status) *PaymentCreate {
 	_c.mutation.SetStatus(v)
@@ -616,6 +622,10 @@ func (_c *PaymentCreate) createSpec() (*Payment, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Fee(); ok {
 		_spec.SetField(payment.FieldFee, field.TypeInt64, value)
 		_node.Fee = value
+	}
+	if value, ok := _c.mutation.PricingSnapshot(); ok {
+		_spec.SetField(payment.FieldPricingSnapshot, field.TypeJSON, value)
+		_node.PricingSnapshot = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(payment.FieldStatus, field.TypeEnum, value)
@@ -1023,6 +1033,24 @@ func (u *PaymentUpsert) UpdateFee() *PaymentUpsert {
 // AddFee adds v to the "fee" field.
 func (u *PaymentUpsert) AddFee(v int64) *PaymentUpsert {
 	u.Add(payment.FieldFee, v)
+	return u
+}
+
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (u *PaymentUpsert) SetPricingSnapshot(v json.RawMessage) *PaymentUpsert {
+	u.Set(payment.FieldPricingSnapshot, v)
+	return u
+}
+
+// UpdatePricingSnapshot sets the "pricing_snapshot" field to the value that was provided on create.
+func (u *PaymentUpsert) UpdatePricingSnapshot() *PaymentUpsert {
+	u.SetExcluded(payment.FieldPricingSnapshot)
+	return u
+}
+
+// ClearPricingSnapshot clears the value of the "pricing_snapshot" field.
+func (u *PaymentUpsert) ClearPricingSnapshot() *PaymentUpsert {
+	u.SetNull(payment.FieldPricingSnapshot)
 	return u
 }
 
@@ -1518,6 +1546,27 @@ func (u *PaymentUpsertOne) AddFee(v int64) *PaymentUpsertOne {
 func (u *PaymentUpsertOne) UpdateFee() *PaymentUpsertOne {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateFee()
+	})
+}
+
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (u *PaymentUpsertOne) SetPricingSnapshot(v json.RawMessage) *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetPricingSnapshot(v)
+	})
+}
+
+// UpdatePricingSnapshot sets the "pricing_snapshot" field to the value that was provided on create.
+func (u *PaymentUpsertOne) UpdatePricingSnapshot() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdatePricingSnapshot()
+	})
+}
+
+// ClearPricingSnapshot clears the value of the "pricing_snapshot" field.
+func (u *PaymentUpsertOne) ClearPricingSnapshot() *PaymentUpsertOne {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearPricingSnapshot()
 	})
 }
 
@@ -2190,6 +2239,27 @@ func (u *PaymentUpsertBulk) AddFee(v int64) *PaymentUpsertBulk {
 func (u *PaymentUpsertBulk) UpdateFee() *PaymentUpsertBulk {
 	return u.Update(func(s *PaymentUpsert) {
 		s.UpdateFee()
+	})
+}
+
+// SetPricingSnapshot sets the "pricing_snapshot" field.
+func (u *PaymentUpsertBulk) SetPricingSnapshot(v json.RawMessage) *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.SetPricingSnapshot(v)
+	})
+}
+
+// UpdatePricingSnapshot sets the "pricing_snapshot" field to the value that was provided on create.
+func (u *PaymentUpsertBulk) UpdatePricingSnapshot() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.UpdatePricingSnapshot()
+	})
+}
+
+// ClearPricingSnapshot clears the value of the "pricing_snapshot" field.
+func (u *PaymentUpsertBulk) ClearPricingSnapshot() *PaymentUpsertBulk {
+	return u.Update(func(s *PaymentUpsert) {
+		s.ClearPricingSnapshot()
 	})
 }
 

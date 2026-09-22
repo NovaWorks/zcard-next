@@ -316,15 +316,17 @@ func (x *GetOrderRequest) GetQueryPassword() string {
 }
 
 type GetOrderReply struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	TotalCents    int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	Items         []*OrderItemReply      `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ExpiresAt     int64                  `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // 订单过期时间（倒计时；0=无过期）
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo        string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status         string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents     int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	Items          []*OrderItemReply      `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
+	CreatedAt      int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ExpiresAt      int64                  `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // 订单过期时间（倒计时；0=无过期）
+	PaidTotalCents int64                  `protobuf:"varint,7,opt,name=paid_total_cents,json=paidTotalCents,proto3" json:"paid_total_cents,omitempty"`
+	PaidFeeCents   int64                  `protobuf:"varint,8,opt,name=paid_fee_cents,json=paidFeeCents,proto3" json:"paid_fee_cents,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetOrderReply) Reset() {
@@ -395,6 +397,20 @@ func (x *GetOrderReply) GetCreatedAt() int64 {
 func (x *GetOrderReply) GetExpiresAt() int64 {
 	if x != nil {
 		return x.ExpiresAt
+	}
+	return 0
+}
+
+func (x *GetOrderReply) GetPaidTotalCents() int64 {
+	if x != nil {
+		return x.PaidTotalCents
+	}
+	return 0
+}
+
+func (x *GetOrderReply) GetPaidFeeCents() int64 {
+	if x != nil {
+		return x.PaidFeeCents
 	}
 	return 0
 }
@@ -909,7 +925,7 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"expires_at\x18\x03 \x01(\x03R\texpiresAt\"X\n" +
 	"\x0fGetOrderRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12%\n" +
-	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\xe0\x01\n" +
+	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\xb0\x02\n" +
 	"\rGetOrderReply\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
@@ -919,7 +935,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x06 \x01(\x03R\texpiresAt\"\x98\x01\n" +
+	"expires_at\x18\x06 \x01(\x03R\texpiresAt\x12(\n" +
+	"\x10paid_total_cents\x18\a \x01(\x03R\x0epaidTotalCents\x12$\n" +
+	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\"\x98\x01\n" +
 	"\x0eOrderItemReply\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12!\n" +

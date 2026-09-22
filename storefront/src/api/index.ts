@@ -72,6 +72,7 @@ export interface CreateOrderReply {
 }
 
 export interface CreatePaymentReply {
+  quote?: PaymentQuote;
   payment_id: number;
   type: string;
   payload: string;
@@ -150,12 +151,21 @@ export function createOrder(body: {
 }
 
 export interface MethodItem {
+  recommended?: boolean;
+  recommend_label?: string;
+  recommend_description?: string;
   code: string;
   name: string;
   icon?: string;
 }
 
 export interface ChannelItem {
+  fee?: number;
+  fee_type?: string;
+  fee_bearer?: string;
+  recommended?: boolean;
+  recommend_label?: string;
+  recommend_description?: string;
   code: string;
   name: string;
   driver: string;
@@ -167,8 +177,8 @@ export function fetchPaymentChannels(scene: 'purchase' | 'member_recharge' | 'su
   return api.get<{ channels: ChannelItem[] }>('/payment/channels', { scene });
 }
 
-export function createPayment(order_no: string, channel: string, method?: string) {
-  return api.post<CreatePaymentReply>('/payments', { order_no, channel, method: method || '' });
+export function createPayment(order_no: string, channel: string, method?: string, quote_key?: string, query_password?: string) {
+  return api.post<CreatePaymentReply>('/payments', { order_no, channel, method: method || '', quote_key, query_password });
 }
 
 export function fetchDelivery(order_no: string, query_password: string) {
@@ -382,6 +392,8 @@ export interface OrderItemReply {
 }
 
 export interface OrderDetail {
+  paid_total_cents?: number;
+  paid_fee_cents?: number;
   order_no: string;
   status: string;
   total_cents: number;
@@ -480,14 +492,15 @@ export function listTransactions(page = 1, pageSize = 15) {
 }
 
 export interface CreateRechargeReply {
+  quote?: PaymentQuote;
   recharge_id: number;
   payment_id: number;
   type: string; // redirect | qrcode | params（同支付管线）
   payload: string;
 }
 
-export function createRecharge(amountCents: number, channel: string, method?: string) {
-  return api.post<CreateRechargeReply>('/wallet/recharge', { amount_cents: amountCents, channel, method: method || '' });
+export function createRecharge(amountCents: number, channel: string, method?: string, quote_key?: string) {
+  return api.post<CreateRechargeReply>('/wallet/recharge', { amount_cents: amountCents, channel, method: method || '', quote_key });
 }
 
 export function redeemGiftcard(code: string) {
@@ -878,8 +891,8 @@ export function cancelSupplierApplication(id: number) {
   return api.post<{ ok: boolean }>(`/supplier/accounts/${id}/cancel`, {});
 }
 
-export function createSupplierRecharge(id: number, body: { amount_cents: number; channel: string; method?: string }) {
-  return api.post<{ recharge_id: number; payment_id: number; type: string; payload: string }>(
+export function createSupplierRecharge(id: number, body: { amount_cents: number; channel: string; method?: string; quote_key?: string }) {
+  return api.post<{ recharge_id: number; payment_id: number; type: string; payload: string; quote?: PaymentQuote }>(
     `/supplier/accounts/${id}/recharge`,
     body,
   );
@@ -887,4 +900,18 @@ export function createSupplierRecharge(id: number, body: { amount_cents: number;
 
 export function setSupplierIPWhitelist(id: number, ips: string[]) {
   return api.post<SupplierAccount>(`/supplier/accounts/${id}/ip-whitelist`, { ips });
+}
+
+export interface PaymentQuote {
+  base_cents: number; fee_cents: number; total_cents: number;
+  fee_type: string; fee_rate: number; fee_bearer: string; quote_key: string;
+  payment_id?: number; channel: string; method: string;
+  charged_currency?: string; charged_units?: number; charged_precision?: number;
+}
+export interface PaymentQuoteRequest {
+  order_no?: string; channel: string; method?: string;
+  scene?: 'purchase' | 'member_recharge' | 'supply_recharge'; amount_cents?: number; query_password?: string;
+}
+export function quotePayment(body: PaymentQuoteRequest) {
+  return api.post<PaymentQuote>('/payment/quote', body);
 }

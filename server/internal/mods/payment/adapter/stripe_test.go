@@ -112,17 +112,24 @@ func TestStripeCreatePaymentMock(t *testing.T) {
 			w.WriteHeader(404)
 			return
 		}
+		if r.Header.Get("Idempotency-Key") != "checkout-stripe-stable" {
+			t.Error("missing stable gateway idempotency key")
+		}
 		b, _ := io.ReadAll(r.Body)
 		gotBody = string(b)
 		_, _ = w.Write([]byte(`{"id":"cs_1","object":"checkout_session","url":"https://checkout.stripe.com/c/pay/cs_1"}`))
 	})
 	a := NewStripe()
 	info, err := a.CreatePayment(context.Background(), port.CreatePaymentRequest{
-		OrderNo: "S215161659327512576", Amount: money.Cents(1000), Subject: "订单 S215161659327512576",
+		IdempotencyKey: "checkout-stripe-stable",
+		OrderNo:        "S215161659327512576", Amount: money.Cents(1000), Subject: "订单 S215161659327512576",
 		Config: goldenCfg(), ChargedUnits: 140, ChargedCurrency: "USD",
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if info.ChannelOrderNo != "cs_1" {
+		t.Fatal("missing gateway order locator")
 	}
 	var payload struct {
 		URL string `json:"url"`

@@ -34,6 +34,12 @@ const (
 	FieldFeeType = "fee_type"
 	// FieldFeeBearer holds the string denoting the fee_bearer field in the database.
 	FieldFeeBearer = "fee_bearer"
+	// FieldRecommended holds the string denoting the recommended field in the database.
+	FieldRecommended = "recommended"
+	// FieldRecommendLabel holds the string denoting the recommend_label field in the database.
+	FieldRecommendLabel = "recommend_label"
+	// FieldRecommendDescription holds the string denoting the recommend_description field in the database.
+	FieldRecommendDescription = "recommend_description"
 	// FieldSort holds the string denoting the sort field in the database.
 	FieldSort = "sort"
 	// FieldEnabled holds the string denoting the enabled field in the database.
@@ -67,6 +73,9 @@ var Columns = []string{
 	FieldFee,
 	FieldFeeType,
 	FieldFeeBearer,
+	FieldRecommended,
+	FieldRecommendLabel,
+	FieldRecommendDescription,
 	FieldSort,
 	FieldEnabled,
 	FieldDeletedAt,
@@ -104,6 +113,16 @@ var (
 	DriverValidator func(string) error
 	// DefaultFee holds the default value on creation for the "fee" field.
 	DefaultFee int64
+	// DefaultRecommended holds the default value on creation for the "recommended" field.
+	DefaultRecommended bool
+	// DefaultRecommendLabel holds the default value on creation for the "recommend_label" field.
+	DefaultRecommendLabel string
+	// RecommendLabelValidator is a validator for the "recommend_label" field. It is called by the builders before save.
+	RecommendLabelValidator func(string) error
+	// DefaultRecommendDescription holds the default value on creation for the "recommend_description" field.
+	DefaultRecommendDescription string
+	// RecommendDescriptionValidator is a validator for the "recommend_description" field. It is called by the builders before save.
+	RecommendDescriptionValidator func(string) error
 	// DefaultSort holds the default value on creation for the "sort" field.
 	DefaultSort int32
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
@@ -223,6 +242,21 @@ func ByFeeType(opts ...sql.OrderTermOption) OrderOption {
 // ByFeeBearer orders the results by the fee_bearer field.
 func ByFeeBearer(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFeeBearer, opts...).ToFunc()
+}
+
+// ByRecommended orders the results by the recommended field.
+func ByRecommended(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecommended, opts...).ToFunc()
+}
+
+// ByRecommendLabel orders the results by the recommend_label field.
+func ByRecommendLabel(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecommendLabel, opts...).ToFunc()
+}
+
+// ByRecommendDescription orders the results by the recommend_description field.
+func ByRecommendDescription(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRecommendDescription, opts...).ToFunc()
 }
 
 // BySort orders the results by the sort field.

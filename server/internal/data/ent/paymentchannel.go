@@ -38,6 +38,12 @@ type PaymentChannel struct {
 	FeeType paymentchannel.FeeType `json:"fee_type,omitempty"`
 	// 手续费承担方
 	FeeBearer paymentchannel.FeeBearer `json:"fee_bearer,omitempty"`
+	// Recommended holds the value of the "recommended" field.
+	Recommended bool `json:"recommended,omitempty"`
+	// RecommendLabel holds the value of the "recommend_label" field.
+	RecommendLabel string `json:"recommend_label,omitempty"`
+	// RecommendDescription holds the value of the "recommend_description" field.
+	RecommendDescription string `json:"recommend_description,omitempty"`
 	// Sort holds the value of the "sort" field.
 	Sort int32 `json:"sort,omitempty"`
 	// Enabled holds the value of the "enabled" field.
@@ -64,11 +70,11 @@ func (*PaymentChannel) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case paymentchannel.FieldConfig, paymentchannel.FieldMethods:
 			values[i] = new([]byte)
-		case paymentchannel.FieldEnabled, paymentchannel.FieldAllowPurchase, paymentchannel.FieldAllowMemberRecharge, paymentchannel.FieldAllowSupplyRecharge:
+		case paymentchannel.FieldRecommended, paymentchannel.FieldEnabled, paymentchannel.FieldAllowPurchase, paymentchannel.FieldAllowMemberRecharge, paymentchannel.FieldAllowSupplyRecharge:
 			values[i] = new(sql.NullBool)
 		case paymentchannel.FieldID, paymentchannel.FieldSubsiteID, paymentchannel.FieldFee, paymentchannel.FieldSort:
 			values[i] = new(sql.NullInt64)
-		case paymentchannel.FieldName, paymentchannel.FieldCode, paymentchannel.FieldDriver, paymentchannel.FieldFeeType, paymentchannel.FieldFeeBearer, paymentchannel.FieldIcon:
+		case paymentchannel.FieldName, paymentchannel.FieldCode, paymentchannel.FieldDriver, paymentchannel.FieldFeeType, paymentchannel.FieldFeeBearer, paymentchannel.FieldRecommendLabel, paymentchannel.FieldRecommendDescription, paymentchannel.FieldIcon:
 			values[i] = new(sql.NullString)
 		case paymentchannel.FieldCreatedAt, paymentchannel.FieldUpdatedAt, paymentchannel.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
@@ -152,6 +158,24 @@ func (_m *PaymentChannel) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field fee_bearer", values[i])
 			} else if value.Valid {
 				_m.FeeBearer = paymentchannel.FeeBearer(value.String)
+			}
+		case paymentchannel.FieldRecommended:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field recommended", values[i])
+			} else if value.Valid {
+				_m.Recommended = value.Bool
+			}
+		case paymentchannel.FieldRecommendLabel:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field recommend_label", values[i])
+			} else if value.Valid {
+				_m.RecommendLabel = value.String
+			}
+		case paymentchannel.FieldRecommendDescription:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field recommend_description", values[i])
+			} else if value.Valid {
+				_m.RecommendDescription = value.String
 			}
 		case paymentchannel.FieldSort:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -268,6 +292,15 @@ func (_m *PaymentChannel) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("fee_bearer=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FeeBearer))
+	builder.WriteString(", ")
+	builder.WriteString("recommended=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Recommended))
+	builder.WriteString(", ")
+	builder.WriteString("recommend_label=")
+	builder.WriteString(_m.RecommendLabel)
+	builder.WriteString(", ")
+	builder.WriteString("recommend_description=")
+	builder.WriteString(_m.RecommendDescription)
 	builder.WriteString(", ")
 	builder.WriteString("sort=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Sort))

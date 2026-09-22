@@ -55,6 +55,8 @@ const (
 	FieldChargedUnits = "charged_units"
 	// FieldFee holds the string denoting the fee field in the database.
 	FieldFee = "fee"
+	// FieldPricingSnapshot holds the string denoting the pricing_snapshot field in the database.
+	FieldPricingSnapshot = "pricing_snapshot"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldPaidAt holds the string denoting the paid_at field in the database.
@@ -99,6 +101,7 @@ var Columns = []string{
 	FieldChargedPrecision,
 	FieldChargedUnits,
 	FieldFee,
+	FieldPricingSnapshot,
 	FieldStatus,
 	FieldPaidAt,
 	FieldRaw,

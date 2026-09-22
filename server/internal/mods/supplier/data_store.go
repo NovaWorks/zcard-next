@@ -226,13 +226,13 @@ func (s *StoreSupplierService) CreateSupplierRecharge(ctx context.Context, req *
 	if err != nil {
 		return nil, errors.InternalServer("supplier.RECHARGE_FAILED", "创建充值单失败")
 	}
-	info, err := s.payer.CreateRechargePayment(ctx, ro.ID, req.GetChannel(), req.GetMethod(), money.Cents(amount))
+	info, err := s.payer.CreateRechargePayment(paymentport.WithQuoteKey(ctx, req.GetQuoteKey()), ro.ID, req.GetChannel(), req.GetMethod(), money.Cents(amount))
 	if err != nil {
 		return nil, mapSupplierRechargeErr(err)
 	}
 	return &storefrontv1.CreateSupplierRechargeReply{
 		RechargeId: ro.ID, PaymentId: info.PaymentID,
-		Type: info.Type, Payload: info.Payload,
+		Type: info.Type, Payload: info.Payload, Quote: &storefrontv1.PaymentQuote{BaseCents: info.BaseCents, FeeCents: info.FeeCents, TotalCents: info.TotalCents},
 	}, nil
 }
 
@@ -286,6 +286,9 @@ func mapSupplierRechargeErr(err error) error {
 		return nil
 	}
 	msg := err.Error()
+	if strings.Contains(msg, "QUOTE_CHANGED") {
+		return errors.BadRequest("payment.QUOTE_CHANGED", "支付金额已变化，请刷新费用明细后再次确认")
+	}
 	if strings.Contains(msg, "SCENE_DISABLED") {
 		return errors.BadRequest("supplier.SCENE_DISABLED", "该支付方式未开放供货账号充值，请更换支付方式")
 	}

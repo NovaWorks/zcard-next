@@ -46,9 +46,12 @@ type RedirectInfo struct {
 
 // RechargePaymentInfo 充值支付单发起结果（wallet 模块消费）。
 type RechargePaymentInfo struct {
-	PaymentID uint64
-	Type      string // redirect / qrcode / params
-	Payload   string
+	BaseCents  int64
+	FeeCents   int64
+	TotalCents int64
+	PaymentID  uint64
+	Type       string // redirect / qrcode / params
+	Payload    string
 }
 
 // RechargePayer 充值支付单创建端口（wallet 模块消费，通道 A）：

@@ -13,7 +13,7 @@ const server = http.createServer((req, res) => {
  const browser = await chromium.launch({ headless:true, ...(process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {}) });
  try {
   for (const width of [1440,390]) {
-   const page = await browser.newPage({viewport:{width,height:1000}}), errors=[], creates=[];
+   const page = await browser.newPage({viewport:{width,height:1000}}), errors=[], creates=[], updates=[];
    const channels = [{id:1,code:'epay',name:'上游 A',driver:'epay',config_json:'{"pid":"1000","key":"****"}',configured_fields:['pid','key'],enabled:true}, {id:2,code:'balance',name:'余额支付',driver:'wallet',config_json:'{}',enabled:true}];
    const original = JSON.stringify(channels[0]);
    const drivers = [{code:'wallet',name:'余额支付',fields:[]}, {code:'epay',name:'易支付',description:'易支付兼容网关',fields:[{key:'pid',label:'商户号',type:'text',required:true},{key:'key',label:'商户密钥',type:'password',required:true,sensitive:true}]}];
@@ -32,7 +32,7 @@ const server = http.createServer((req, res) => {
      } else data={channels};
     }
     if(/\/payment\/channels\/\d+$/.test(p)&&method==='PUT') {
-     const ch=channels.find(c=>c.id===Number(p.split('/').pop())); Object.assign(ch,route.request().postDataJSON());
+     const ch=channels.find(c=>c.id===Number(p.split('/').pop())); updates.push(route.request().postDataJSON()); Object.assign(ch,updates.at(-1));
      ch.configured_fields=['pid','key']; data=ch;
     }
     await route.fulfill({json:data});
@@ -53,6 +53,12 @@ const server = http.createServer((req, res) => {
     await config.locator('.n-form-item').filter({has:page.locator('.n-form-item-label',{hasText:'渠道名称'})}).locator('input').fill(`上游 ${sequence}`);
     await config.locator('.n-form-item').filter({has:page.locator('.n-form-item-label',{hasText:'商户号'})}).locator('input').fill(`200${sequence}`);
     await config.locator('.n-form-item').filter({has:page.locator('.n-form-item-label',{hasText:'商户密钥'})}).locator('input').fill(`fixture-key-${sequence}`);
+    await config.getByText('用户承担',{exact:true}).click();
+    await config.getByText('按比例',{exact:true}).click();
+    await config.locator('.n-form-item').filter({has:page.locator('.n-form-item-label',{hasText:'比例（%）'})}).locator('input').fill('0.5');
+    await config.getByText('推荐此方式',{exact:true}).first().locator('..').getByRole('switch').click();
+    await config.getByPlaceholder('推荐标签，默认推荐').fill('推荐使用');
+    await config.getByPlaceholder('推荐说明（选填）').fill('支付宝快捷支付');
     await config.getByRole('button',{name:'保存',exact:true}).click();
     await expect(config).toHaveCount(0);
     assert.equal(channels.at(-1).enabled,true);

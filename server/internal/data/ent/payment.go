@@ -57,8 +57,10 @@ type Payment struct {
 	ChargedPrecision int32 `json:"charged_precision,omitempty"`
 	// 渠道币种应收最小单位（发适配器金额；回调精确核对）
 	ChargedUnits int64 `json:"charged_units,omitempty"`
-	// 手续费（分）
+	// 用户支付手续费（分）
 	Fee int64 `json:"fee,omitempty"`
+	// 支付本金、费率、承担方及方式快照；空为历史流水
+	PricingSnapshot json.RawMessage `json:"pricing_snapshot,omitempty"`
 	// Status holds the value of the "status" field.
 	Status payment.Status `json:"status,omitempty"`
 	// PaidAt holds the value of the "paid_at" field.
@@ -98,7 +100,7 @@ func (*Payment) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case payment.FieldGatewayContext, payment.FieldRaw:
+		case payment.FieldGatewayContext, payment.FieldPricingSnapshot, payment.FieldRaw:
 			values[i] = new([]byte)
 		case payment.FieldExchangeRate:
 			values[i] = new(sql.NullFloat64)
@@ -251,6 +253,14 @@ func (_m *Payment) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Fee = value.Int64
 			}
+		case payment.FieldPricingSnapshot:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field pricing_snapshot", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.PricingSnapshot); err != nil {
+					return fmt.Errorf("unmarshal field pricing_snapshot: %w", err)
+				}
+			}
 		case payment.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
@@ -377,6 +387,9 @@ func (_m *Payment) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("fee=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Fee))
+	builder.WriteString(", ")
+	builder.WriteString("pricing_snapshot=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PricingSnapshot))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))

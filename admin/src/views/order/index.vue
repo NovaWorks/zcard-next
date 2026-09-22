@@ -63,6 +63,8 @@ const detail = ref<{
   status: string;
   total_cents: number;
   refunded_cents?: number;
+  paid_fee_cents?: number;
+  refunded_fee_cents?: number;
   cost_cents: number;
   expired_at?: number;
   expiry_retry_at?: number;
@@ -461,13 +463,14 @@ const showRefund = ref(false);
 const refunding = ref(false);
 const refundForm = reactive({
   expected_refunded_cents: 0,
+  expected_refunded_fee_cents: 0, fee_yuan: 0, max_fee_cents: 0,
   max_cents: 0,
   order_no: "",
   amount_yuan: 0,
   channel: "wallet" as string,
   reason: "",
 });
-const refundableStatuses = ["paid", "fulfilling", "delivered", "completed"];
+const refundableStatuses = ["paid", "fulfilling", "delivered", "completed", "partially_delivered", "refunded"];
 
 async function openRefund(row: any) {
   const {data,error}=await fetchOrder(row.order_no);
@@ -477,7 +480,10 @@ async function openRefund(row: any) {
   refundForm.order_no=current.order_no;
   refundForm.expected_refunded_cents=Number(current.refunded_cents || 0);
   refundForm.max_cents=Number(current.total_cents)-refundForm.expected_refunded_cents;
-  if(refundForm.max_cents<=0) {window.$message?.info("订单已全部退款");return;}
+  refundForm.expected_refunded_fee_cents=Number(current.refunded_fee_cents || 0);
+  refundForm.max_fee_cents=Math.max(0, Number(current.paid_fee_cents || 0)-refundForm.expected_refunded_fee_cents);
+  refundForm.fee_yuan=Number((refundForm.max_fee_cents/100).toFixed(2));
+  if(refundForm.max_cents<=0 && refundForm.max_fee_cents<=0) {window.$message?.info("订单已全部退款");return;}
   refundForm.amount_yuan=Number((refundForm.max_cents / 100).toFixed(2));
   refundForm.channel="wallet";
   refundForm.reason="";
@@ -485,11 +491,13 @@ async function openRefund(row: any) {
 }
 
 async function handleRefund() {
-  if (refunding.value || !refundForm.amount_yuan || refundForm.amount_yuan <= 0) return;
+  if (refunding.value || Number(refundForm.amount_yuan || 0) + Number(refundForm.fee_yuan || 0) <= 0) return;
   refunding.value = true;
   try {
     const { data, error } = await createRefund({
       expected_refunded_cents: refundForm.expected_refunded_cents,
+      expected_refunded_fee_cents: refundForm.expected_refunded_fee_cents,
+      fee_cents: Math.round(Number(refundForm.fee_yuan || 0) * 100),
       order_no: refundForm.order_no,
       amount_cents: Math.round(refundForm.amount_yuan * 100),
       channel: refundForm.channel,
@@ -570,7 +578,9 @@ onMounted(loadOrders);
         <NDescriptions :column="2" bordered size="small">
           <NDescriptionsItem label="订单号">{{ detail.order_no }}</NDescriptionsItem>
           <NDescriptionsItem label="状态">{{ statusText(detail.status) }}</NDescriptionsItem>
-          <NDescriptionsItem label="已退余额">{{ formatMoney(detail.refunded_cents || 0) }}</NDescriptionsItem>
+          <NDescriptionsItem label="已退本金">{{ formatMoney(detail.refunded_cents || 0) }}</NDescriptionsItem>
+          <NDescriptionsItem label="支付手续费">{{ formatMoney(detail.paid_fee_cents || 0) }}</NDescriptionsItem>
+          <NDescriptionsItem label="已退手续费">{{ formatMoney(detail.refunded_fee_cents || 0) }}</NDescriptionsItem>
           <NDescriptionsItem label="总额">{{ formatMoney(detail.total_cents) }}</NDescriptionsItem>
           <NDescriptionsItem label="成本">{{ formatMoney(detail.cost_cents) }}</NDescriptionsItem>
           <NDescriptionsItem label="联系方式">{{ detail.contact || detail.guest_contact || "-" }}</NDescriptionsItem>
@@ -715,9 +725,11 @@ onMounted(loadOrders);
           />
         </NFormItem>
         <p class="mb-12px text-13px">退款将进入下单会员余额；关联佣金或分站利润的订单须全额退款。</p>
-        <NFormItem label="金额(元)" required>
-          <NInputNumber v-model:value="refundForm.amount_yuan" :min="0.01" :max="refundForm.max_cents / 100" :precision="2" class="w-full" />
+        <NFormItem label="退本金(元)" required>
+          <NInputNumber v-model:value="refundForm.amount_yuan" :min="0" :max="refundForm.max_cents / 100" :precision="2" class="w-full" />
         </NFormItem>
+        <NFormItem label="退手续费"><NInputNumber v-model:value="refundForm.fee_yuan" :min="0" :max="refundForm.max_fee_cents / 100" :precision="2" class="w-full" /></NFormItem>
+        <p class="text-12px mb-12px">合计退至余额 {{ formatMoney(Math.round((Number(refundForm.amount_yuan || 0) + Number(refundForm.fee_yuan || 0)) * 100)) }}。手续费单独退还，部分退款可调整或填 0。</p>
         <NFormItem label="原因">
           <NInput v-model:value="refundForm.reason" placeholder="选填，会记入订单状态事件与审计" :maxlength="180" />
         </NFormItem>

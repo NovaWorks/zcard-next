@@ -309,6 +309,7 @@ type CreateRechargeRequest struct {
 	Channel     string                 `protobuf:"bytes,2,opt,name=channel,proto3" json:"channel,omitempty"`
 	// 方式标识（多方式渠道必填：易支付 alipay/wxpay、USDT 选链；单方式渠道留空）
 	Method        *string `protobuf:"bytes,3,opt,name=method,proto3,oneof" json:"method,omitempty"`
+	QuoteKey      string  `protobuf:"bytes,4,opt,name=quote_key,json=quoteKey,proto3" json:"quote_key,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -364,12 +365,20 @@ func (x *CreateRechargeRequest) GetMethod() string {
 	return ""
 }
 
+func (x *CreateRechargeRequest) GetQuoteKey() string {
+	if x != nil {
+		return x.QuoteKey
+	}
+	return ""
+}
+
 type CreateRechargeReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RechargeId    uint64                 `protobuf:"varint,1,opt,name=recharge_id,json=rechargeId,proto3" json:"recharge_id,omitempty"`
 	PaymentId     uint64                 `protobuf:"varint,2,opt,name=payment_id,json=paymentId,proto3" json:"payment_id,omitempty"`
 	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`       // redirect | qrcode | params（与 CreatePaymentReply 同构）
 	Payload       string                 `protobuf:"bytes,4,opt,name=payload,proto3" json:"payload,omitempty"` // 支付跳转 URL / 二维码内容 / 参数 JSON
+	Quote         *PaymentQuote          `protobuf:"bytes,5,opt,name=quote,proto3" json:"quote,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -430,6 +439,13 @@ func (x *CreateRechargeReply) GetPayload() string {
 		return x.Payload
 	}
 	return ""
+}
+
+func (x *CreateRechargeReply) GetQuote() *PaymentQuote {
+	if x != nil {
+		return x.Quote
+	}
+	return nil
 }
 
 // RedeemGiftcard 礼品卡兑换（哈希检索 + 防爆破限流；余额入账幂等键 giftcard:<id>）。
@@ -906,7 +922,7 @@ var File_storefront_v1_wallet_proto protoreflect.FileDescriptor
 
 const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\n" +
-	"\x1astorefront/v1/wallet.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x93\x01\n" +
+	"\x1astorefront/v1/wallet.proto\x12\x17zcard.api.storefront.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1bstorefront/v1/payment.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x93\x01\n" +
 	"\fBalanceReply\x12'\n" +
 	"\x0favailable_cents\x18\x01 \x01(\x03R\x0eavailableCents\x12!\n" +
 	"\flocked_cents\x18\x02 \x01(\x03R\vlockedCents\x12\x1f\n" +
@@ -929,19 +945,21 @@ const file_storefront_v1_wallet_proto_rawDesc = "" +
 	"\x06remark\x18\a \x01(\tR\x06remark\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\b \x01(\x03R\tcreatedAt\x12+\n" +
-	"\x11display_reference\x18\t \x01(\tR\x10displayReference\"\x86\x01\n" +
+	"\x11display_reference\x18\t \x01(\tR\x10displayReference\"\xa3\x01\n" +
 	"\x15CreateRechargeRequest\x12&\n" +
 	"\famount_cents\x18\x01 \x01(\x03B\x03\xe0A\x02R\vamountCents\x12\x1d\n" +
 	"\achannel\x18\x02 \x01(\tB\x03\xe0A\x02R\achannel\x12\x1b\n" +
-	"\x06method\x18\x03 \x01(\tH\x00R\x06method\x88\x01\x01B\t\n" +
-	"\a_method\"\x83\x01\n" +
+	"\x06method\x18\x03 \x01(\tH\x00R\x06method\x88\x01\x01\x12\x1b\n" +
+	"\tquote_key\x18\x04 \x01(\tR\bquoteKeyB\t\n" +
+	"\a_method\"\xc0\x01\n" +
 	"\x13CreateRechargeReply\x12\x1f\n" +
 	"\vrecharge_id\x18\x01 \x01(\x04R\n" +
 	"rechargeId\x12\x1d\n" +
 	"\n" +
 	"payment_id\x18\x02 \x01(\x04R\tpaymentId\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x18\n" +
-	"\apayload\x18\x04 \x01(\tR\apayload\"0\n" +
+	"\apayload\x18\x04 \x01(\tR\apayload\x12;\n" +
+	"\x05quote\x18\x05 \x01(\v2%.zcard.api.storefront.v1.PaymentQuoteR\x05quote\"0\n" +
 	"\x15RedeemGiftcardRequest\x12\x17\n" +
 	"\x04code\x18\x01 \x01(\tB\x03\xe0A\x02R\x04code\"h\n" +
 	"\x13RedeemGiftcardReply\x12!\n" +
@@ -1018,28 +1036,30 @@ var file_storefront_v1_wallet_proto_goTypes = []any{
 	(*MyWithdrawalItem)(nil),         // 10: zcard.api.storefront.v1.MyWithdrawalItem
 	(*CreateWithdrawalRequest)(nil),  // 11: zcard.api.storefront.v1.CreateWithdrawalRequest
 	(*CreateWithdrawalReply)(nil),    // 12: zcard.api.storefront.v1.CreateWithdrawalReply
-	(*emptypb.Empty)(nil),            // 13: google.protobuf.Empty
+	(*PaymentQuote)(nil),             // 13: zcard.api.storefront.v1.PaymentQuote
+	(*emptypb.Empty)(nil),            // 14: google.protobuf.Empty
 }
 var file_storefront_v1_wallet_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.storefront.v1.ListTxReply.transactions:type_name -> zcard.api.storefront.v1.Tx
-	10, // 1: zcard.api.storefront.v1.ListMyWithdrawalsReply.withdrawals:type_name -> zcard.api.storefront.v1.MyWithdrawalItem
-	13, // 2: zcard.api.storefront.v1.StoreWalletService.GetBalance:input_type -> google.protobuf.Empty
-	1,  // 3: zcard.api.storefront.v1.StoreWalletService.ListTransactions:input_type -> zcard.api.storefront.v1.ListTxRequest
-	4,  // 4: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:input_type -> zcard.api.storefront.v1.CreateRechargeRequest
-	6,  // 5: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:input_type -> zcard.api.storefront.v1.RedeemGiftcardRequest
-	8,  // 6: zcard.api.storefront.v1.StoreWalletService.ListMyWithdrawals:input_type -> zcard.api.storefront.v1.ListMyWithdrawalsRequest
-	11, // 7: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:input_type -> zcard.api.storefront.v1.CreateWithdrawalRequest
-	0,  // 8: zcard.api.storefront.v1.StoreWalletService.GetBalance:output_type -> zcard.api.storefront.v1.BalanceReply
-	2,  // 9: zcard.api.storefront.v1.StoreWalletService.ListTransactions:output_type -> zcard.api.storefront.v1.ListTxReply
-	5,  // 10: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:output_type -> zcard.api.storefront.v1.CreateRechargeReply
-	7,  // 11: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:output_type -> zcard.api.storefront.v1.RedeemGiftcardReply
-	9,  // 12: zcard.api.storefront.v1.StoreWalletService.ListMyWithdrawals:output_type -> zcard.api.storefront.v1.ListMyWithdrawalsReply
-	12, // 13: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:output_type -> zcard.api.storefront.v1.CreateWithdrawalReply
-	8,  // [8:14] is the sub-list for method output_type
-	2,  // [2:8] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	13, // 1: zcard.api.storefront.v1.CreateRechargeReply.quote:type_name -> zcard.api.storefront.v1.PaymentQuote
+	10, // 2: zcard.api.storefront.v1.ListMyWithdrawalsReply.withdrawals:type_name -> zcard.api.storefront.v1.MyWithdrawalItem
+	14, // 3: zcard.api.storefront.v1.StoreWalletService.GetBalance:input_type -> google.protobuf.Empty
+	1,  // 4: zcard.api.storefront.v1.StoreWalletService.ListTransactions:input_type -> zcard.api.storefront.v1.ListTxRequest
+	4,  // 5: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:input_type -> zcard.api.storefront.v1.CreateRechargeRequest
+	6,  // 6: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:input_type -> zcard.api.storefront.v1.RedeemGiftcardRequest
+	8,  // 7: zcard.api.storefront.v1.StoreWalletService.ListMyWithdrawals:input_type -> zcard.api.storefront.v1.ListMyWithdrawalsRequest
+	11, // 8: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:input_type -> zcard.api.storefront.v1.CreateWithdrawalRequest
+	0,  // 9: zcard.api.storefront.v1.StoreWalletService.GetBalance:output_type -> zcard.api.storefront.v1.BalanceReply
+	2,  // 10: zcard.api.storefront.v1.StoreWalletService.ListTransactions:output_type -> zcard.api.storefront.v1.ListTxReply
+	5,  // 11: zcard.api.storefront.v1.StoreWalletService.CreateRecharge:output_type -> zcard.api.storefront.v1.CreateRechargeReply
+	7,  // 12: zcard.api.storefront.v1.StoreWalletService.RedeemGiftcard:output_type -> zcard.api.storefront.v1.RedeemGiftcardReply
+	9,  // 13: zcard.api.storefront.v1.StoreWalletService.ListMyWithdrawals:output_type -> zcard.api.storefront.v1.ListMyWithdrawalsReply
+	12, // 14: zcard.api.storefront.v1.StoreWalletService.CreateWithdrawal:output_type -> zcard.api.storefront.v1.CreateWithdrawalReply
+	9,  // [9:15] is the sub-list for method output_type
+	3,  // [3:9] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_wallet_proto_init() }
@@ -1047,6 +1067,7 @@ func file_storefront_v1_wallet_proto_init() {
 	if File_storefront_v1_wallet_proto != nil {
 		return
 	}
+	file_storefront_v1_payment_proto_init()
 	file_storefront_v1_wallet_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

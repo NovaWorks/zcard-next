@@ -32,6 +32,8 @@ export function cancelOrder(orderNo: string, reason: string) {
 
 export function createRefund(data: {
   expected_refunded_cents: number;
+  expected_refunded_fee_cents?: number;
+  fee_cents?: number;
   order_no: string;
   amount_cents: number;
   channel: string; // wallet | gateway | upstream

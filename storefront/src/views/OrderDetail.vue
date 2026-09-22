@@ -49,7 +49,8 @@
             <div class="od-section-title">订单金额</div>
             <div class="od-amount-row">
               <span>实付合计</span>
-              <b class="od-amount">{{ formatMoney(order.total_cents) }}</b>
+              <b class="od-amount">{{ formatMoney(order.paid_total_cents || order.total_cents) }}</b>
+              <span v-if="Number(order.paid_fee_cents) > 0" class="muted">含手续费 {{ formatMoney(order.paid_fee_cents || 0) }}</span>
             </div>
           </div>
           <div class="card">

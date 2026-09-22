@@ -237,29 +237,32 @@ func (x *GetAdminOrderRequest) GetOrderNo() string {
 
 // AdminOrder 管理面订单（含成本；StripCostPrice 由 service 判权限）。
 type AdminOrder struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	RefundedCents  int64                  `protobuf:"varint,20,opt,name=refunded_cents,json=refundedCents,proto3" json:"refunded_cents,omitempty"` // succeeded refunds only
-	Id             uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrderNo        string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Status         string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	TotalCents     int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	CostCents      int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
-	UserId         uint64                 `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	GuestContact   string                 `protobuf:"bytes,7,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
-	Contact        string                 `protobuf:"bytes,8,opt,name=contact,proto3" json:"contact,omitempty"`
-	ClientIp       string                 `protobuf:"bytes,9,opt,name=client_ip,json=clientIp,proto3" json:"client_ip,omitempty"`
-	CreatedAt      int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	PaidAt         int64                  `protobuf:"varint,11,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
-	ExpiredAt      int64                  `protobuf:"varint,12,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
-	Items          []*AdminOrderItem      `protobuf:"bytes,13,rep,name=items,proto3" json:"items,omitempty"`
-	AmountLines    []*AmountLine          `protobuf:"bytes,14,rep,name=amount_lines,json=amountLines,proto3" json:"amount_lines,omitempty"`
-	StatusEvents   []*StatusEvent         `protobuf:"bytes,15,rep,name=status_events,json=statusEvents,proto3" json:"status_events,omitempty"`
-	ExpiryRetryAt  int64                  `protobuf:"varint,16,opt,name=expiry_retry_at,json=expiryRetryAt,proto3" json:"expiry_retry_at,omitempty"`
-	ExpiryAttempts int32                  `protobuf:"varint,17,opt,name=expiry_attempts,json=expiryAttempts,proto3" json:"expiry_attempts,omitempty"`
-	ExpiryReview   bool                   `protobuf:"varint,18,opt,name=expiry_review,json=expiryReview,proto3" json:"expiry_review,omitempty"`
-	ExpiryReason   string                 `protobuf:"bytes,19,opt,name=expiry_reason,json=expiryReason,proto3" json:"expiry_reason,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	PaidTotalCents   int64                  `protobuf:"varint,21,opt,name=paid_total_cents,json=paidTotalCents,proto3" json:"paid_total_cents,omitempty"`
+	PaidFeeCents     int64                  `protobuf:"varint,22,opt,name=paid_fee_cents,json=paidFeeCents,proto3" json:"paid_fee_cents,omitempty"`
+	RefundedFeeCents int64                  `protobuf:"varint,23,opt,name=refunded_fee_cents,json=refundedFeeCents,proto3" json:"refunded_fee_cents,omitempty"`
+	RefundedCents    int64                  `protobuf:"varint,20,opt,name=refunded_cents,json=refundedCents,proto3" json:"refunded_cents,omitempty"` // succeeded refunds only
+	Id               uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrderNo          string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status           string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents       int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	CostCents        int64                  `protobuf:"varint,5,opt,name=cost_cents,json=costCents,proto3" json:"cost_cents,omitempty"`
+	UserId           uint64                 `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	GuestContact     string                 `protobuf:"bytes,7,opt,name=guest_contact,json=guestContact,proto3" json:"guest_contact,omitempty"`
+	Contact          string                 `protobuf:"bytes,8,opt,name=contact,proto3" json:"contact,omitempty"`
+	ClientIp         string                 `protobuf:"bytes,9,opt,name=client_ip,json=clientIp,proto3" json:"client_ip,omitempty"`
+	CreatedAt        int64                  `protobuf:"varint,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PaidAt           int64                  `protobuf:"varint,11,opt,name=paid_at,json=paidAt,proto3" json:"paid_at,omitempty"`
+	ExpiredAt        int64                  `protobuf:"varint,12,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	Items            []*AdminOrderItem      `protobuf:"bytes,13,rep,name=items,proto3" json:"items,omitempty"`
+	AmountLines      []*AmountLine          `protobuf:"bytes,14,rep,name=amount_lines,json=amountLines,proto3" json:"amount_lines,omitempty"`
+	StatusEvents     []*StatusEvent         `protobuf:"bytes,15,rep,name=status_events,json=statusEvents,proto3" json:"status_events,omitempty"`
+	ExpiryRetryAt    int64                  `protobuf:"varint,16,opt,name=expiry_retry_at,json=expiryRetryAt,proto3" json:"expiry_retry_at,omitempty"`
+	ExpiryAttempts   int32                  `protobuf:"varint,17,opt,name=expiry_attempts,json=expiryAttempts,proto3" json:"expiry_attempts,omitempty"`
+	ExpiryReview     bool                   `protobuf:"varint,18,opt,name=expiry_review,json=expiryReview,proto3" json:"expiry_review,omitempty"`
+	ExpiryReason     string                 `protobuf:"bytes,19,opt,name=expiry_reason,json=expiryReason,proto3" json:"expiry_reason,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *AdminOrder) Reset() {
@@ -290,6 +293,27 @@ func (x *AdminOrder) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrder.ProtoReflect.Descriptor instead.
 func (*AdminOrder) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AdminOrder) GetPaidTotalCents() int64 {
+	if x != nil {
+		return x.PaidTotalCents
+	}
+	return 0
+}
+
+func (x *AdminOrder) GetPaidFeeCents() int64 {
+	if x != nil {
+		return x.PaidFeeCents
+	}
+	return 0
+}
+
+func (x *AdminOrder) GetRefundedFeeCents() int64 {
+	if x != nil {
+		return x.RefundedFeeCents
+	}
+	return 0
 }
 
 func (x *AdminOrder) GetRefundedCents() int64 {
@@ -886,9 +910,12 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +
 	"nextCursor\"6\n" +
 	"\x14GetAdminOrderRequest\x12\x1e\n" +
-	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xe0\x05\n" +
+	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\"\xde\x06\n" +
 	"\n" +
-	"AdminOrder\x12%\n" +
+	"AdminOrder\x12(\n" +
+	"\x10paid_total_cents\x18\x15 \x01(\x03R\x0epaidTotalCents\x12$\n" +
+	"\x0epaid_fee_cents\x18\x16 \x01(\x03R\fpaidFeeCents\x12,\n" +
+	"\x12refunded_fee_cents\x18\x17 \x01(\x03R\x10refundedFeeCents\x12%\n" +
 	"\x0erefunded_cents\x18\x14 \x01(\x03R\rrefundedCents\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x19\n" +
 	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x16\n" +

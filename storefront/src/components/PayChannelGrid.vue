@@ -19,6 +19,8 @@ defineEmits<{ select: [channel: string, method: string] }>();
       <button
         v-for="o in options"
         :key="o.channel + ':' + o.method"
+        type="button"
+        :aria-pressed="channel === o.channel && method === o.method"
         class="pay-channel"
         :class="{ active: channel === o.channel && method === o.method }"
         @click="$emit('select', o.channel, o.method)"
@@ -28,8 +30,8 @@ defineEmits<{ select: [channel: string, method: string] }>();
           <template v-else>{{ o.emoji }}</template>
         </span>
         <span class="pay-channel-info">
-          <span class="pay-channel-name">{{ o.name }}</span>
-          <span v-if="o.sub" class="pay-channel-sub">{{ o.sub }}</span>
+          <span class="pay-channel-heading"><span class="pay-channel-name">{{ o.name }}</span><span v-if="o.recommended" class="pay-recommend">{{ o.recommendLabel }}</span></span>
+          <span class="pay-channel-sub">{{ o.feeText }}</span><span v-if="o.recommended && o.recommendDescription" class="pay-channel-description">{{ o.recommendDescription }}</span>
         </span>
         <span class="pay-channel-check" aria-hidden="true">✓</span>
       </button>
@@ -60,10 +62,14 @@ defineEmits<{ select: [channel: string, method: string] }>();
   background: #f1f5f9; display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
 }
 .pay-channel-img { width: 26px; height: 26px; object-fit: contain; border-radius: 6px; display: block; }
+.pay-channel-heading { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.pay-recommend { flex-shrink:0; white-space:nowrap; border-radius:5px; padding:2px 6px; font-size:11px; line-height:1.5; color:#9a4b08; background:#fff1dc; font-weight:600; }
+.pay-channel-description { font-size:12px; line-height:1.5; color:#64748b; overflow-wrap:anywhere; }
+.pay-channel:focus-visible { outline:2px solid var(--zc-primary); outline-offset:3px; }
 .pay-channel-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .pay-channel-name { font-size: 14px; font-weight: 600; color: #111827; line-height: 1.3; }
 .pay-channel-sub {
-  font-size: 12px; color: #9ca3af; line-height: 1.3;
+  font-size: 12px; color: #64748b; line-height: 1.5;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* 勾选标常驻占位（对齐不跳），未选中透明缩小、选中放大浮现 */

@@ -36,8 +36,9 @@
       <div class="pay-state-icon green pop">✓</div>
       <div class="pay-state-title">支付成功</div>
       <div class="muted" style="margin-bottom: 4px;">订单号：{{ orderNo }}</div>
-      <div style="margin-bottom: 6px;">支付金额 <b class="pay-amount">{{ formatMoney(order?.total_cents || 0) }}</b></div>
+      <div style="margin-bottom: 6px;">支付金额 <b class="pay-amount">{{ formatMoney(order?.paid_total_cents || order?.total_cents || 0) }}</b></div>
 
+      <div v-if="Number(order?.paid_fee_cents) > 0" class="muted">含支付手续费 {{ formatMoney(order?.paid_fee_cents || 0) }}</div>
       <!-- 自动取货：卡密直接展示（会话内记忆查询密码；失败降级提示去取货页） -->
       <div v-if="delivery?.items.length" class="pay-cards">
         <div class="pay-cards-head">
@@ -91,7 +92,7 @@
           <img v-if="qrDataUrl" :src="qrDataUrl" alt="支付二维码" />
           <div v-else class="pay-qr-loading">生成二维码中…</div>
         </div>
-        <div class="pay-qr-amount">支付金额 <b>{{ formatMoney(order?.total_cents || 0) }}</b></div>
+        <PaymentBreakdown :quote="paidQuote" />
         <div class="pay-qr-hint">
           <span class="dot-loader"><span></span><span></span><span></span></span>
           正在检测支付结果，完成后自动展示卡密
@@ -102,7 +103,7 @@
         <div class="pay-side-row"><span class="muted">订单号</span><span class="pay-mono">{{ orderNo }}</span></div>
         <div class="pay-side-row"><span class="muted">下单时间</span><span>{{ fmtTime(order?.created_at) }}</span></div>
         <div class="pay-side-row"><span class="muted">商品</span><span>{{ itemCount }} 件</span></div>
-        <div class="pay-side-row total"><span>应付</span><b class="pay-amount">{{ formatMoney(order?.total_cents || 0) }}</b></div>
+        <div class="pay-side-row total"><span>实付</span><b class="pay-amount">{{ formatMoney(paidQuote?.total_cents || order?.total_cents || 0) }}</b></div>
       </aside>
     </div>
 
@@ -110,6 +111,7 @@
     <div v-else-if="phase === 'redirect'" class="pay-center-card">
       <div class="pay-state-icon blue">🚀</div>
       <div class="pay-state-title">正在前往收银台</div>
+      <PaymentBreakdown :quote="paidQuote" />
       <div class="muted">使用{{ payingChannel?.name || '所选渠道' }}完成支付；支付后本页自动检测</div>
       <div class="pay-btn-row">
         <button class="btn btn-primary" @click="openRedirect">重新打开收银台</button>
@@ -132,7 +134,7 @@
           <span v-if="countdownText" class="pay-countdown" :class="{ danger: countdownDanger }">⏱ {{ countdownText }}</span>
         </div>
         <div class="pay-summary-amount">
-          <span>应付金额</span>
+          <span>订单金额</span>
           <b class="pay-amount">{{ formatMoney(order?.total_cents || 0) }}</b>
         </div>
         <div class="pay-summary-meta">
@@ -154,8 +156,9 @@
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
-      <button class="pay-submit" :disabled="!selected.channel || submitting" @click="pay">
-        {{ submitting ? '创建支付中…' : `立即支付 ${formatMoney(order?.total_cents || 0)}` }}
+      <PaymentBreakdown :quote="quote" :loading="quoteLoading" :error="quoteError" @retry="refreshQuote" />
+      <button class="pay-submit" :disabled="!selected.channel || submitting || !quote || quoteLoading" @click="pay">
+        {{ submitting ? '创建支付中…' : quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' }}
       </button>
       <div class="pay-assure">🔒 支付过程安全加密 · 支付成功后自动发放卡密</div>
     </div>
@@ -171,6 +174,9 @@ import { createPayment, fetchPaymentChannels, getOrder, fetchDelivery, getOrderP
 import { formatMoney } from '@/api/client';
 import { flattenPayOptions, emojiOf } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
+import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
+import { usePaymentQuote } from '@/composables/payment-quote';
+import type { PaymentQuote } from '@/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -189,6 +195,14 @@ const submitting = ref(false);
 const error = ref('');
 const queryPassword = ref('');
 const retrying = ref(false);
+const paidQuote = ref<PaymentQuote | null>(null);
+const { quote, quoteLoading, quoteError, refreshQuote } = usePaymentQuote(() =>
+  order.value?.status === 'pending_payment' && selected.value.channel ? {
+    order_no: orderNo, channel: selected.value.channel, method: selected.value.method,
+    scene: 'purchase', query_password: getOrderPassword(orderNo),
+  } : null,
+);
+
 
 // 二维码 / 跳转
 const qrDataUrl = ref('');
@@ -321,16 +335,17 @@ function stopCountdown() {
 
 // ── 支付创建 ──
 async function pay() {
-  if (!selected.value.channel) return;
+  if (!selected.value.channel || submitting.value || !quote.value || quoteLoading.value) return;
   submitting.value = true;
   error.value = '';
   qrDataUrl.value = '';
   redirectUrl.value = '';
   redirectParams.value = null;
   payingChannel.value = channels.value.find((c) => c.code === selected.value.channel) || null;
-  const { data, error: err } = await createPayment(orderNo, selected.value.channel, selected.value.method);
+  const { data, error: err } = await createPayment(orderNo, selected.value.channel, selected.value.method, quote.value.quote_key, getOrderPassword(orderNo));
   submitting.value = false;
-  if (err || !data) { error.value = err || '创建支付失败'; return; }
+  if (err || !data) { error.value = err || '创建支付失败'; await refreshQuote(); return; }
+  paidQuote.value = data.quote || quote.value;
 
   const payload = data.payload || '';
   // 余额支付：同步扣款即完成，不走收银台跳转（后端 payload 为本页地址，避免弹窗）

@@ -1120,6 +1120,16 @@ func FeeLTE(v int64) predicate.Payment {
 	return predicate.Payment(sql.FieldLTE(FieldFee, v))
 }
 
+// PricingSnapshotIsNil applies the IsNil predicate on the "pricing_snapshot" field.
+func PricingSnapshotIsNil() predicate.Payment {
+	return predicate.Payment(sql.FieldIsNull(FieldPricingSnapshot))
+}
+
+// PricingSnapshotNotNil applies the NotNil predicate on the "pricing_snapshot" field.
+func PricingSnapshotNotNil() predicate.Payment {
+	return predicate.Payment(sql.FieldNotNull(FieldPricingSnapshot))
+}
+
 // StatusEQ applies the EQ predicate on the "status" field.
 func StatusEQ(v Status) predicate.Payment {
 	return predicate.Payment(sql.FieldEQ(FieldStatus, v))

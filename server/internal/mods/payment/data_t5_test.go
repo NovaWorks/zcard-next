@@ -176,7 +176,7 @@ func TestUpdateChannelFeeTypeAndValidate(t *testing.T) {
 	}
 	// 敏感字段留空不覆盖（config_json=****）+ fee_type 更新
 	upd, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{
-		Id: ch.Id, ConfigJson: `"****"`, Fee: 150, FeeType: "percent", Enabled: false,
+		Id: ch.Id, ConfigJson: `"****"`, Fee: checkoutPtr(int64(150)), FeeType: "percent", Enabled: checkoutPtr(false),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -316,7 +316,7 @@ func TestEpusdtEditPreservesCredentialsAndClearsSelection(t *testing.T) {
 		`{"token":[],"network":[],"secret_key":"****"}`,
 		`{"secret_key":""}`,
 	} {
-		if _, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.Id, ConfigJson: patch, Enabled: true}); err != nil {
+		if _, err := svc.UpdateChannel(ctx, &adminv1.UpdateChannelRequest{Id: ch.Id, ConfigJson: patch, Enabled: checkoutPtr(true)}); err != nil {
 			t.Fatalf("partial edit: %v", err)
 		}
 	}

@@ -76,6 +76,10 @@ message Channel {
   optional bool allow_purchase = 14;
   optional bool allow_member_recharge = 15;
   optional bool allow_supply_recharge = 16;
+  string fee_bearer = 17;
+  bool recommended = 18;
+  string recommend_label = 19;
+  string recommend_description = 20;
 }
 
 // DriverList 驱动元数据列表。
@@ -137,21 +141,29 @@ message CreateChannelRequest {
   optional bool allow_purchase = 11;
   optional bool allow_member_recharge = 12;
   optional bool allow_supply_recharge = 13;
+  string fee_bearer = 14;
+  bool recommended = 15;
+  string recommend_label = 16;
+  string recommend_description = 17;
 }
 
 message UpdateChannelRequest {
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;
   string config_json = 3; // **** = 未修改
-  int64 fee = 4;
+  optional int64 fee = 4;
   string fee_type = 5; // percent | fixed；空=不修改
-  bool enabled = 6;
-  int32 sort = 7;
+  optional bool enabled = 6;
+  optional int32 sort = 7;
   optional string icon = 8; // 有值=更新（空串=清除）；缺省=不修改
   optional string methods_json = 9; // 支付方式列表 JSON；缺省=不修改
   optional bool allow_purchase = 10;
   optional bool allow_member_recharge = 11;
   optional bool allow_supply_recharge = 12;
+  optional string fee_bearer = 13;
+  optional bool recommended = 14;
+  optional string recommend_label = 15;
+  optional string recommend_description = 16;
 }
 
 message DeleteChannelRequest {
@@ -200,9 +212,11 @@ message Payment {
 message CreateRefundRequest {
   optional int64 expected_refunded_cents = 5; // confirmed cumulative succeeded refunds
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
-  int64 amount_cents = 2 [(google.api.field_behavior) = REQUIRED];
+  int64 amount_cents = 2;
   string channel = 3 [(google.api.field_behavior) = REQUIRED]; // wallet | gateway | upstream
   string reason = 4;
+  int64 fee_cents = 6;
+  optional int64 expected_refunded_fee_cents = 7;
 }
 
 message ListRefundsRequest {
@@ -224,4 +238,5 @@ message RefundOrder {
   string reason = 7;
   string upstream_refund_id = 8;
   int64 created_at = 9;
+  int64 fee_cents = 10;
 }

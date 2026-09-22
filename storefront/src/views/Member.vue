@@ -205,8 +205,9 @@
             <template #empty>暂无可用的充值渠道，请联系客服</template>
           </PayChannelGrid>
           <div v-if="rechargeError" class="error" style="margin-top: 12px;">{{ rechargeError }}</div>
-          <button class="rc-submit" :disabled="!rechargeChannel || !rechargeYuan || recharging" @click="doRecharge">
-            {{ recharging ? '创建充值单…' : rechargeCents === null ? '请检查金额精度' : rechargeCents > 0 ? `立即充值 ${formatMoney(rechargeCents)}` : '请输入充值金额' }}
+          <PaymentBreakdown :quote="quote" :loading="quoteLoading" :error="quoteError" recharge @retry="refreshQuote" />
+          <button class="rc-submit" :disabled="!rechargeChannel || !rechargeYuan || recharging || !quote || quoteLoading" @click="doRecharge">
+            {{ recharging ? '创建充值单…' : rechargeCents === null ? '请检查金额精度' : rechargeCents > 0 ? quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' : '请输入充值金额' }}
           </button>
           <div class="rc-assure">🔒 支付过程安全加密 · 支付成功后余额与赠送自动到账</div>
         </div>
@@ -225,7 +226,7 @@
           <img v-if="rechargeQrcode" :src="rechargeQrcode" alt="支付二维码" />
           <div v-else class="muted" style="padding: 60px 0;">生成二维码中…</div>
         </div>
-        <div class="rc-qr-amount">充值金额 <b>{{ formatMoney(pendingAmountCents) }}</b></div>
+        <PaymentBreakdown :quote="paidQuote" recharge />
         <div class="muted rc-qr-hint">支付完成后余额与赠送自动到账（如未到账请刷新本页）</div>
         <button class="rc-change" @click="backToForm">← 更换支付方式</button>
       </div>
@@ -234,6 +235,7 @@
       <div v-else class="card rc-result">
         <div class="rc-redirect-icon">🚀</div>
         <div class="rc-qr-title">正在前往收银台</div>
+        <PaymentBreakdown :quote="paidQuote" recharge />
         <div class="muted">使用{{ selectedOption?.name || '所选渠道' }}完成支付；充值单金额 {{ formatMoney(pendingAmountCents) }}</div>
         <div class="rc-btn-row">
           <button class="btn" @click="openRedirect">重新打开收银台</button>
@@ -337,6 +339,9 @@ import {
 import { api, formatMoney, formatSignedMoney, transactionType, transactionAmount, transactionReference, transactionRemark, setToken, centsToYuan, yuanToFen } from '@/api/client';
 import { flattenPayOptions } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
+import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
+import { usePaymentQuote } from '@/composables/payment-quote';
+import type { PaymentQuote } from '@/api';
 import Affiliate from './Affiliate.vue';
 import SupplierApply from './SupplierApply.vue';
 import MemberLevelBenefits from '@/components/MemberLevelBenefits.vue';
@@ -401,6 +406,13 @@ const selectedOption = computed(() =>
 const rechargeCents = computed(() => {
   try { return yuanToFen(rechargeYuan.value || 0); } catch { return null; }
 });
+
+const paidQuote = ref<PaymentQuote | null>(null);
+const { quote, quoteLoading, quoteError, refreshQuote } = usePaymentQuote(() =>
+  rechargeChannel.value && rechargeCents.value && rechargeCents.value > 0 ? {
+    channel: rechargeChannel.value, method: rechargeMethod.value, scene: 'member_recharge', amount_cents: rechargeCents.value,
+  } : null,
+);
 
 // 到账预览：命中赠送档位时显示本金+赠送合计
 const giftPreview = computed(() => {
@@ -513,6 +525,7 @@ function backToForm() {
 }
 
 async function doRecharge() {
+  if (recharging.value || !quote.value || quoteLoading.value) return;
   const cents = rechargeCents.value;
   if (cents === null) {
     rechargeError.value = "金额最多精确到分（小数点后两位），请检查输入";
@@ -534,14 +547,16 @@ async function doRecharge() {
   rechargeError.value = '';
   pendingAmountCents.value = cents;
   // 充值单创建（金额分 + 方式级 channel/method；服务端按档位裁决与赠送计算）
-  const { data, error: err } = await createRecharge(cents, rechargeChannel.value, rechargeMethod.value);
+  const { data, error: err } = await createRecharge(cents, rechargeChannel.value, rechargeMethod.value, quote.value.quote_key);
   recharging.value = false;
   if (err || !data) {
     rechargeError.value = err || '创建失败';
+    await refreshQuote();
     return;
   }
   // 支付载荷三形态（与 Payment.vue 同构）：qrcode 本地渲染；params 自动表单提交
   const payload = data.payload || '';
+  paidQuote.value = data.quote || quote.value;
   if (data.type === 'qrcode') {
     let content = payload;
     try { const parsed = JSON.parse(payload); content = parsed.code_url || payload; } catch { /* 原文即内容 */ }
