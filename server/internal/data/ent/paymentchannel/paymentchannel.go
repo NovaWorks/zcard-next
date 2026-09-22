@@ -38,6 +38,8 @@ const (
 	FieldSort = "sort"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
+	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
+	FieldDeletedAt = "deleted_at"
 	// FieldAllowPurchase holds the string denoting the allow_purchase field in the database.
 	FieldAllowPurchase = "allow_purchase"
 	// FieldAllowMemberRecharge holds the string denoting the allow_member_recharge field in the database.
@@ -67,6 +69,7 @@ var Columns = []string{
 	FieldFeeBearer,
 	FieldSort,
 	FieldEnabled,
+	FieldDeletedAt,
 	FieldAllowPurchase,
 	FieldAllowMemberRecharge,
 	FieldAllowSupplyRecharge,
@@ -230,6 +233,11 @@ func BySort(opts ...sql.OrderTermOption) OrderOption {
 // ByEnabled orders the results by the enabled field.
 func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
+}
+
+// ByDeletedAt orders the results by the deleted_at field.
+func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
 }
 
 // ByAllowPurchase orders the results by the allow_purchase field.

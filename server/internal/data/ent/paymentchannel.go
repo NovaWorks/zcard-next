@@ -42,6 +42,8 @@ type PaymentChannel struct {
 	Sort int32 `json:"sort,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
+	// 已删除渠道从管理列表隐藏；保留历史支付回调凭据
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
 	// AllowPurchase holds the value of the "allow_purchase" field.
 	AllowPurchase bool `json:"allow_purchase,omitempty"`
 	// AllowMemberRecharge holds the value of the "allow_member_recharge" field.
@@ -68,7 +70,7 @@ func (*PaymentChannel) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullInt64)
 		case paymentchannel.FieldName, paymentchannel.FieldCode, paymentchannel.FieldDriver, paymentchannel.FieldFeeType, paymentchannel.FieldFeeBearer, paymentchannel.FieldIcon:
 			values[i] = new(sql.NullString)
-		case paymentchannel.FieldCreatedAt, paymentchannel.FieldUpdatedAt:
+		case paymentchannel.FieldCreatedAt, paymentchannel.FieldUpdatedAt, paymentchannel.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -162,6 +164,12 @@ func (_m *PaymentChannel) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field enabled", values[i])
 			} else if value.Valid {
 				_m.Enabled = value.Bool
+			}
+		case paymentchannel.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
+			} else if value.Valid {
+				_m.DeletedAt = value.Time
 			}
 		case paymentchannel.FieldAllowPurchase:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -266,6 +274,9 @@ func (_m *PaymentChannel) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
+	builder.WriteString(", ")
+	builder.WriteString("deleted_at=")
+	builder.WriteString(_m.DeletedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("allow_purchase=")
 	builder.WriteString(fmt.Sprintf("%v", _m.AllowPurchase))

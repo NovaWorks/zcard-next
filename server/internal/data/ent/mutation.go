@@ -47610,6 +47610,7 @@ type PaymentChannelMutation struct {
 	sort                  *int32
 	addsort               *int32
 	enabled               *bool
+	deleted_at            *time.Time
 	allow_purchase        *bool
 	allow_member_recharge *bool
 	allow_supply_recharge *bool
@@ -48218,6 +48219,55 @@ func (m *PaymentChannelMutation) ResetEnabled() {
 	m.enabled = nil
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (m *PaymentChannelMutation) SetDeletedAt(t time.Time) {
+	m.deleted_at = &t
+}
+
+// DeletedAt returns the value of the "deleted_at" field in the mutation.
+func (m *PaymentChannelMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deleted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deleted_at" field's value of the PaymentChannel entity.
+// If the PaymentChannel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PaymentChannelMutation) OldDeletedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (m *PaymentChannelMutation) ClearDeletedAt() {
+	m.deleted_at = nil
+	m.clearedFields[paymentchannel.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deleted_at" field was cleared in this mutation.
+func (m *PaymentChannelMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[paymentchannel.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deleted_at" field.
+func (m *PaymentChannelMutation) ResetDeletedAt() {
+	m.deleted_at = nil
+	delete(m.clearedFields, paymentchannel.FieldDeletedAt)
+}
+
 // SetAllowPurchase sets the "allow_purchase" field.
 func (m *PaymentChannelMutation) SetAllowPurchase(b bool) {
 	m.allow_purchase = &b
@@ -48461,7 +48511,7 @@ func (m *PaymentChannelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PaymentChannelMutation) Fields() []string {
-	fields := make([]string, 0, 17)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, paymentchannel.FieldCreatedAt)
 	}
@@ -48497,6 +48547,9 @@ func (m *PaymentChannelMutation) Fields() []string {
 	}
 	if m.enabled != nil {
 		fields = append(fields, paymentchannel.FieldEnabled)
+	}
+	if m.deleted_at != nil {
+		fields = append(fields, paymentchannel.FieldDeletedAt)
 	}
 	if m.allow_purchase != nil {
 		fields = append(fields, paymentchannel.FieldAllowPurchase)
@@ -48545,6 +48598,8 @@ func (m *PaymentChannelMutation) Field(name string) (ent.Value, bool) {
 		return m.Sort()
 	case paymentchannel.FieldEnabled:
 		return m.Enabled()
+	case paymentchannel.FieldDeletedAt:
+		return m.DeletedAt()
 	case paymentchannel.FieldAllowPurchase:
 		return m.AllowPurchase()
 	case paymentchannel.FieldAllowMemberRecharge:
@@ -48588,6 +48643,8 @@ func (m *PaymentChannelMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldSort(ctx)
 	case paymentchannel.FieldEnabled:
 		return m.OldEnabled(ctx)
+	case paymentchannel.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
 	case paymentchannel.FieldAllowPurchase:
 		return m.OldAllowPurchase(ctx)
 	case paymentchannel.FieldAllowMemberRecharge:
@@ -48690,6 +48747,13 @@ func (m *PaymentChannelMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetEnabled(v)
+		return nil
+	case paymentchannel.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
 		return nil
 	case paymentchannel.FieldAllowPurchase:
 		v, ok := value.(bool)
@@ -48795,6 +48859,9 @@ func (m *PaymentChannelMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *PaymentChannelMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(paymentchannel.FieldDeletedAt) {
+		fields = append(fields, paymentchannel.FieldDeletedAt)
+	}
 	if m.FieldCleared(paymentchannel.FieldMethods) {
 		fields = append(fields, paymentchannel.FieldMethods)
 	}
@@ -48812,6 +48879,9 @@ func (m *PaymentChannelMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *PaymentChannelMutation) ClearField(name string) error {
 	switch name {
+	case paymentchannel.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
 	case paymentchannel.FieldMethods:
 		m.ClearMethods()
 		return nil
@@ -48858,6 +48928,9 @@ func (m *PaymentChannelMutation) ResetField(name string) error {
 		return nil
 	case paymentchannel.FieldEnabled:
 		m.ResetEnabled()
+		return nil
+	case paymentchannel.FieldDeletedAt:
+		m.ResetDeletedAt()
 		return nil
 	case paymentchannel.FieldAllowPurchase:
 		m.ResetAllowPurchase()

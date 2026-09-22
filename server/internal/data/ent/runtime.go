@@ -1682,19 +1682,19 @@ func init() {
 	// paymentchannel.DefaultEnabled holds the default value on creation for the enabled field.
 	paymentchannel.DefaultEnabled = paymentchannelDescEnabled.Default.(bool)
 	// paymentchannelDescAllowPurchase is the schema descriptor for allow_purchase field.
-	paymentchannelDescAllowPurchase := paymentchannelFields[10].Descriptor()
+	paymentchannelDescAllowPurchase := paymentchannelFields[11].Descriptor()
 	// paymentchannel.DefaultAllowPurchase holds the default value on creation for the allow_purchase field.
 	paymentchannel.DefaultAllowPurchase = paymentchannelDescAllowPurchase.Default.(bool)
 	// paymentchannelDescAllowMemberRecharge is the schema descriptor for allow_member_recharge field.
-	paymentchannelDescAllowMemberRecharge := paymentchannelFields[11].Descriptor()
+	paymentchannelDescAllowMemberRecharge := paymentchannelFields[12].Descriptor()
 	// paymentchannel.DefaultAllowMemberRecharge holds the default value on creation for the allow_member_recharge field.
 	paymentchannel.DefaultAllowMemberRecharge = paymentchannelDescAllowMemberRecharge.Default.(bool)
 	// paymentchannelDescAllowSupplyRecharge is the schema descriptor for allow_supply_recharge field.
-	paymentchannelDescAllowSupplyRecharge := paymentchannelFields[12].Descriptor()
+	paymentchannelDescAllowSupplyRecharge := paymentchannelFields[13].Descriptor()
 	// paymentchannel.DefaultAllowSupplyRecharge holds the default value on creation for the allow_supply_recharge field.
 	paymentchannel.DefaultAllowSupplyRecharge = paymentchannelDescAllowSupplyRecharge.Default.(bool)
 	// paymentchannelDescIcon is the schema descriptor for icon field.
-	paymentchannelDescIcon := paymentchannelFields[13].Descriptor()
+	paymentchannelDescIcon := paymentchannelFields[14].Descriptor()
 	// paymentchannel.DefaultIcon holds the default value on creation for the icon field.
 	paymentchannel.DefaultIcon = paymentchannelDescIcon.Default.(string)
 	// paymentchannel.IconValidator is a validator for the "icon" field. It is called by the builders before save.

@@ -158,6 +158,20 @@ func (_c *PaymentChannelCreate) SetNillableEnabled(v *bool) *PaymentChannelCreat
 	return _c
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_c *PaymentChannelCreate) SetDeletedAt(v time.Time) *PaymentChannelCreate {
+	_c.mutation.SetDeletedAt(v)
+	return _c
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_c *PaymentChannelCreate) SetNillableDeletedAt(v *time.Time) *PaymentChannelCreate {
+	if v != nil {
+		_c.SetDeletedAt(*v)
+	}
+	return _c
+}
+
 // SetAllowPurchase sets the "allow_purchase" field.
 func (_c *PaymentChannelCreate) SetAllowPurchase(v bool) *PaymentChannelCreate {
 	_c.mutation.SetAllowPurchase(v)
@@ -472,6 +486,10 @@ func (_c *PaymentChannelCreate) createSpec() (*PaymentChannel, *sqlgraph.CreateS
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
 		_node.Enabled = value
 	}
+	if value, ok := _c.mutation.DeletedAt(); ok {
+		_spec.SetField(paymentchannel.FieldDeletedAt, field.TypeTime, value)
+		_node.DeletedAt = value
+	}
 	if value, ok := _c.mutation.AllowPurchase(); ok {
 		_spec.SetField(paymentchannel.FieldAllowPurchase, field.TypeBool, value)
 		_node.AllowPurchase = value
@@ -691,6 +709,24 @@ func (u *PaymentChannelUpsert) SetEnabled(v bool) *PaymentChannelUpsert {
 // UpdateEnabled sets the "enabled" field to the value that was provided on create.
 func (u *PaymentChannelUpsert) UpdateEnabled() *PaymentChannelUpsert {
 	u.SetExcluded(paymentchannel.FieldEnabled)
+	return u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *PaymentChannelUpsert) SetDeletedAt(v time.Time) *PaymentChannelUpsert {
+	u.Set(paymentchannel.FieldDeletedAt, v)
+	return u
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *PaymentChannelUpsert) UpdateDeletedAt() *PaymentChannelUpsert {
+	u.SetExcluded(paymentchannel.FieldDeletedAt)
+	return u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *PaymentChannelUpsert) ClearDeletedAt() *PaymentChannelUpsert {
+	u.SetNull(paymentchannel.FieldDeletedAt)
 	return u
 }
 
@@ -983,6 +1019,27 @@ func (u *PaymentChannelUpsertOne) SetEnabled(v bool) *PaymentChannelUpsertOne {
 func (u *PaymentChannelUpsertOne) UpdateEnabled() *PaymentChannelUpsertOne {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *PaymentChannelUpsertOne) SetDeletedAt(v time.Time) *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *PaymentChannelUpsertOne) UpdateDeletedAt() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *PaymentChannelUpsertOne) ClearDeletedAt() *PaymentChannelUpsertOne {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 
@@ -1452,6 +1509,27 @@ func (u *PaymentChannelUpsertBulk) SetEnabled(v bool) *PaymentChannelUpsertBulk 
 func (u *PaymentChannelUpsertBulk) UpdateEnabled() *PaymentChannelUpsertBulk {
 	return u.Update(func(s *PaymentChannelUpsert) {
 		s.UpdateEnabled()
+	})
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (u *PaymentChannelUpsertBulk) SetDeletedAt(v time.Time) *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.SetDeletedAt(v)
+	})
+}
+
+// UpdateDeletedAt sets the "deleted_at" field to the value that was provided on create.
+func (u *PaymentChannelUpsertBulk) UpdateDeletedAt() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.UpdateDeletedAt()
+	})
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (u *PaymentChannelUpsertBulk) ClearDeletedAt() *PaymentChannelUpsertBulk {
+	return u.Update(func(s *PaymentChannelUpsert) {
+		s.ClearDeletedAt()
 	})
 }
 

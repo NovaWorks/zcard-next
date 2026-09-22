@@ -180,6 +180,7 @@ func (r *PaymentRepoImpl) snapshotDriver(ctx context.Context, p *ent.Payment) st
 // ListChannels 渠道列表（凭据脱敏）。
 func (r *PaymentRepoImpl) ListChannels(ctx context.Context) ([]*ent.PaymentChannel, error) {
 	return data.Client(ctx, r.data).PaymentChannel.Query().
+		Where(paymentchannel.DeletedAtIsNil()).
 		Order(ent.Asc(paymentchannel.FieldSort)).
 		All(ctx)
 }
@@ -241,6 +242,29 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 	if driver == "bepusdt" && len(methods) > 0 {
 		return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 每个渠道固定一条链")
 	}
+	// A deleted channel keeps its code for historical callbacks. A replacement
+	// requested from the visible list must receive a fresh code and encryption AAD.
+	if driver == "bepusdt" {
+		c := data.Client(ctx, r.data)
+		reserved, err := c.PaymentChannel.Query().Where(paymentchannel.SubsiteID(0), paymentchannel.Code(code), paymentchannel.DeletedAtNotNil()).Exist(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if reserved {
+			base := code
+			for n := 2; ; n++ {
+				suffix := fmt.Sprintf("-%d", n)
+				code = base[:min(len(base), 30-len(suffix))] + suffix
+				exists, err := c.PaymentChannel.Query().Where(paymentchannel.SubsiteID(0), paymentchannel.Code(code)).Exist(ctx)
+				if err != nil {
+					return nil, err
+				}
+				if !exists {
+					break
+				}
+			}
+		}
+	}
 	enc, err := r.Cipher.Seal([]byte(configJSON), []byte("payment_channel:"+code))
 	if err != nil {
 		return nil, fmt.Errorf("payment: 凭据加密失败: %w", err)
@@ -269,10 +293,13 @@ func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver,
 func (r *PaymentRepoImpl) UpdateChannel(ctx context.Context, id uint64, name, configJSON string, fee int64, feeType string, enabled bool, sort int32, setIcon bool, icon string, setMethods bool, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
 	var result *ent.PaymentChannel
 	err := data.Tx(ctx, r.data, func(txCtx context.Context) error {
-		if _, err := data.Client(txCtx, r.data).PaymentChannel.UpdateOneID(id).AddSort(0).Save(txCtx); err != nil {
+		ch, err := data.Client(txCtx, r.data).PaymentChannel.UpdateOneID(id).AddSort(0).Save(txCtx)
+		if err != nil {
 			return err
 		}
-		var err error
+		if !ch.DeletedAt.IsZero() {
+			return fmt.Errorf("payment.CHANNEL_DELETED: 渠道已删除，请新建渠道")
+		}
 		result, err = r.updateChannel(txCtx, id, name, configJSON, fee, feeType, enabled, sort, setIcon, icon, setMethods, methods, usage...)
 		return err
 	})
@@ -342,13 +369,15 @@ func (r *PaymentRepoImpl) DeleteChannel(ctx context.Context, id uint64) error {
 			return err
 		}
 		if ch.Driver == "bepusdt" {
-			used, err := c.Payment.Query().Where(payment.ChannelID(id)).Exist(txCtx)
-			if err != nil {
-				return err
+			if !ch.DeletedAt.IsZero() {
+				return nil
 			}
-			if used {
-				return fmt.Errorf("payment.CHANNEL_IN_USE: 此渠道存在支付记录，请停用以保留回调处理")
+			if ch.Enabled {
+				return fmt.Errorf("payment.CHANNEL_ENABLED: 请先停用渠道再删除")
 			}
+			// Keep the original identity and encrypted credentials for late callbacks.
+			_, err = c.PaymentChannel.UpdateOneID(id).SetDeletedAt(time.Now().UTC()).Save(txCtx)
+			return err
 		}
 		return c.PaymentChannel.DeleteOneID(id).Exec(txCtx)
 	})

@@ -13,7 +13,7 @@ const server = http.createServer((req, res) => {
  const browser = await chromium.launch({headless:true,...(process.env.CHROME_PATH ? {executablePath:process.env.CHROME_PATH} : {})});
  try {
   for (const width of [1440,390]) {
-   const page=await browser.newPage({viewport:{width,height:1000}}), errors=[], creates=[], updates=[];
+   const page=await browser.newPage({viewport:{width,height:1000}}), errors=[], creates=[], updates=[], deletes=[];
    const channels=[];
    const drivers=[{code:'bepusdt',name:'BEpusdt',description:'BEpusdt 原生接口 · CNY 计价、USDT 收款（每个渠道固定一条链）',fields:[
     {key:'api_url',label:'网关地址',type:'text',required:true,placeholder:'https://pay.example.com',help:'BEpusdt 服务根地址，不含 /api/v1/order/create-transaction'},
@@ -33,6 +33,9 @@ const server = http.createServer((req, res) => {
     if(/\/payment\/channels\/\d+$/.test(p)&&method==='PUT'){
      const body=route.request().postDataJSON();updates.push(body);data=Object.assign(channels.find(c=>c.id===Number(p.split('/').pop())),body);data.configured_fields=['api_url','api_token','trade_type','timeout'];
     }
+    if(/\/payment\/channels\/\d+$/.test(p)&&method==='DELETE'){
+     const id=Number(p.split('/').pop());deletes.push(id);channels.splice(channels.findIndex(c=>c.id===id),1);data={};
+    }
     await route.fulfill({json:data});
    });
    await page.goto(`http://127.0.0.1:${server.address().port}/admin/payment-channel`);
@@ -51,7 +54,15 @@ const server = http.createServer((req, res) => {
    if(process.env.BEPUSDT_SCREENSHOT_DIR){fs.mkdirSync(process.env.BEPUSDT_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.BEPUSDT_SCREENSHOT_DIR,`bepusdt-${width}.png`),fullPage:true});}
    await config.getByRole('button',{name:'保存',exact:true}).click();await config.waitFor({state:'hidden'});
    const cfg=JSON.parse(updates.at(-1).config_json);assert.equal(cfg.trade_type,'usdt.bep20');assert.equal(Number(cfg.timeout),1200);assert.equal(cfg.api_token,'fixture-token');assert.deepEqual(errors,[]);
-   await page.close();console.log(`PASS BEpusdt create, masked token, chain selection, fixed CNY fields, timeout and layout width=${width}`);
+   await page.reload();await page.locator('.n-tag__content').filter({hasText:/^已启用$/}).waitFor();
+   const remove=page.getByRole('button',{name:'删除',exact:true});
+   assert(await remove.isDisabled(),'enabled channel must be stopped before deletion');
+   await page.getByRole('switch').click();await page.locator('.n-tag__content').filter({hasText:/^已停用$/}).waitFor();
+   assert(await remove.isEnabled(),'disabled channel must allow deletion');
+   await remove.click();await page.getByText('删除后将从渠道列表移除，历史支付记录和到账通知仍会保留，确定删除？',{exact:true}).waitFor();
+   await page.getByRole('button',{name:'确认',exact:true}).click();await page.getByText('尚未接入任何支付渠道',{exact:true}).waitFor();
+   assert.deepEqual(deletes,[1]);await page.reload();await page.getByText('尚未接入任何支付渠道',{exact:true}).waitFor();assert.deepEqual(errors,[]);
+   await page.close();console.log(`PASS BEpusdt create/configure, disable/delete confirmation and list removal after reload width=${width}`);
   }
  } finally {await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});

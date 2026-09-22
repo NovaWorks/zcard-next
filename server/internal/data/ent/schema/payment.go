@@ -33,6 +33,7 @@ func (PaymentChannel) Fields() []ent.Field {
 		field.Enum("fee_bearer").Values("merchant", "user").Default("merchant").Comment("手续费承担方"),
 		field.Int32("sort").Default(0),
 		field.Bool("enabled").Default(true),
+		field.Time("deleted_at").SchemaType(mysqlTime).Optional().Comment("已删除渠道从管理列表隐藏；保留历史支付回调凭据"),
 		field.Bool("allow_purchase").Default(true),
 		field.Bool("allow_member_recharge").Default(true),
 		field.Bool("allow_supply_recharge").Default(true),

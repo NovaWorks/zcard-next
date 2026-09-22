@@ -533,9 +533,9 @@ onMounted(() => {
             </NButton>
             <NPopconfirm :on-positive-click="() => handleDelete(ch)">
               <template #trigger>
-                <NButton v-auth="'payment:delete'" size="small" type="error" secondary>删除</NButton>
+                <NButton v-auth="'payment:delete'" size="small" type="error" secondary :disabled="ch.driver === 'bepusdt' && ch.enabled" :title="ch.driver === 'bepusdt' && ch.enabled ? '请先停用渠道再删除' : undefined">删除</NButton>
               </template>
-              删除后该渠道将无法继续收款，确定删除？
+              {{ ch.driver === 'bepusdt' ? (ch.enabled ? '请先停用渠道再删除。' : '删除后将从渠道列表移除，历史支付记录和到账通知仍会保留，确定删除？') : '删除后该渠道将无法继续收款，确定删除？' }}
             </NPopconfirm>
           </div>
         </div>

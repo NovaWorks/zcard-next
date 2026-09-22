@@ -188,6 +188,26 @@ func (_u *PaymentChannelUpdate) SetNillableEnabled(v *bool) *PaymentChannelUpdat
 	return _u
 }
 
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *PaymentChannelUpdate) SetDeletedAt(v time.Time) *PaymentChannelUpdate {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *PaymentChannelUpdate) SetNillableDeletedAt(v *time.Time) *PaymentChannelUpdate {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *PaymentChannelUpdate) ClearDeletedAt() *PaymentChannelUpdate {
+	_u.mutation.ClearDeletedAt()
+	return _u
+}
+
 // SetAllowPurchase sets the "allow_purchase" field.
 func (_u *PaymentChannelUpdate) SetAllowPurchase(v bool) *PaymentChannelUpdate {
 	_u.mutation.SetAllowPurchase(v)
@@ -392,6 +412,12 @@ func (_u *PaymentChannelUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
 	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(paymentchannel.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(paymentchannel.FieldDeletedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.AllowPurchase(); ok {
 		_spec.SetField(paymentchannel.FieldAllowPurchase, field.TypeBool, value)
 	}
@@ -591,6 +617,26 @@ func (_u *PaymentChannelUpdateOne) SetNillableEnabled(v *bool) *PaymentChannelUp
 	if v != nil {
 		_u.SetEnabled(*v)
 	}
+	return _u
+}
+
+// SetDeletedAt sets the "deleted_at" field.
+func (_u *PaymentChannelUpdateOne) SetDeletedAt(v time.Time) *PaymentChannelUpdateOne {
+	_u.mutation.SetDeletedAt(v)
+	return _u
+}
+
+// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
+func (_u *PaymentChannelUpdateOne) SetNillableDeletedAt(v *time.Time) *PaymentChannelUpdateOne {
+	if v != nil {
+		_u.SetDeletedAt(*v)
+	}
+	return _u
+}
+
+// ClearDeletedAt clears the value of the "deleted_at" field.
+func (_u *PaymentChannelUpdateOne) ClearDeletedAt() *PaymentChannelUpdateOne {
+	_u.mutation.ClearDeletedAt()
 	return _u
 }
 
@@ -827,6 +873,12 @@ func (_u *PaymentChannelUpdateOne) sqlSave(ctx context.Context) (_node *PaymentC
 	}
 	if value, ok := _u.mutation.Enabled(); ok {
 		_spec.SetField(paymentchannel.FieldEnabled, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DeletedAt(); ok {
+		_spec.SetField(paymentchannel.FieldDeletedAt, field.TypeTime, value)
+	}
+	if _u.mutation.DeletedAtCleared() {
+		_spec.ClearField(paymentchannel.FieldDeletedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.AllowPurchase(); ok {
 		_spec.SetField(paymentchannel.FieldAllowPurchase, field.TypeBool, value)

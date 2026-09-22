@@ -258,7 +258,7 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
 	if err != nil {
-		if strings.HasPrefix(err.Error(), "payment.CHANNEL_BUSY") || strings.HasPrefix(err.Error(), "payment.METHODS_INVALID") {
+		if strings.HasPrefix(err.Error(), "payment.CHANNEL_BUSY") || strings.HasPrefix(err.Error(), "payment.CHANNEL_DELETED") || strings.HasPrefix(err.Error(), "payment.METHODS_INVALID") {
 			return nil, errors.BadRequest("payment.UPDATE_FAILED", err.Error())
 		}
 		return nil, errors.InternalServer("payment.UPDATE_FAILED", "更新失败")
@@ -269,8 +269,8 @@ func (s *AdminPaymentService) UpdateChannel(ctx context.Context, req *adminv1.Up
 // DeleteChannel 删除渠道。
 func (s *AdminPaymentService) DeleteChannel(ctx context.Context, req *adminv1.DeleteChannelRequest) (*emptypb.Empty, error) {
 	if err := s.repo.DeleteChannel(ctx, req.GetId()); err != nil {
-		if strings.HasPrefix(err.Error(), "payment.CHANNEL_IN_USE") {
-			return nil, errors.BadRequest("payment.CHANNEL_IN_USE", err.Error())
+		if strings.HasPrefix(err.Error(), "payment.CHANNEL_ENABLED") {
+			return nil, errors.BadRequest("payment.CHANNEL_ENABLED", err.Error())
 		}
 		return nil, errors.NotFound("payment.CHANNEL_NOT_FOUND", "渠道不存在")
 	}
@@ -457,7 +457,7 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, req *storefrontv
 		return nil, errors.BadRequest("payment.SCENE_INVALID", "不支持的支付用途")
 	}
 	rows, err := data.Client(ctx, s.data).PaymentChannel.Query().
-		Where(paymentchannel.Enabled(true)).
+		Where(paymentchannel.Enabled(true), paymentchannel.DeletedAtIsNil()).
 		Order(ent.Asc(paymentchannel.FieldSort)).
 		All(ctx)
 	if err != nil {

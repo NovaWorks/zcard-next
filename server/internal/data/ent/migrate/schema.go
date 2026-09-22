@@ -1410,6 +1410,7 @@ var (
 		{Name: "fee_bearer", Type: field.TypeEnum, Enums: []string{"merchant", "user"}, Default: "merchant"},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
 		{Name: "enabled", Type: field.TypeBool, Default: true},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "allow_purchase", Type: field.TypeBool, Default: true},
 		{Name: "allow_member_recharge", Type: field.TypeBool, Default: true},
 		{Name: "allow_supply_recharge", Type: field.TypeBool, Default: true},

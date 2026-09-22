@@ -56,7 +56,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 		if err != nil {
 			return err
 		}
-		if ch.Driver != "bepusdt" || !ch.Enabled {
+		if ch.Driver != "bepusdt" || !ch.Enabled || !ch.DeletedAt.IsZero() {
 			return fmt.Errorf("payment.CHANNEL_DISABLED")
 		}
 		cfg = r.DecryptConfig(ch)
