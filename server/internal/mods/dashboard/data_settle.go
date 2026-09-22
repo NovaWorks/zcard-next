@@ -1,11 +1,12 @@
 package dashboard
 
-// 日结任务：daily_stats 落表（报表只扫此表不扫大表）。
+// 日结任务：daily_stats 落表；历史查询按当前可见订单重新核算。
 // 幂等：唯一索引 (subsite_id, stat_date, metric, dimension_key) 重跑覆盖。
 // 调度：每小时检查 + 当日标记（按北京时间跑昨日聚合，错过零点仍可补跑）。
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -26,7 +27,7 @@ func (r *DashboardRepoImpl) RunDailySettle(ctx context.Context, day time.Time) e
 
 	// 全部租户（主站 0 + 订单表中出现过的分站）
 	subsites := []uint64{0}
-	rows, err := client.Order.Query().All(ctx)
+	rows, err := client.Order.Query().Select("subsite_id").All(ctx)
 	if err != nil {
 		return err
 	}
@@ -55,31 +56,12 @@ func (r *DashboardRepoImpl) RunDailySettle(ctx context.Context, day time.Time) e
 	return nil
 }
 
-// upsertDailyStat 唯一索引幂等：存在更新、不存在创建（重跑覆盖）。
+// upsertDailyStat 使用唯一索引原子覆盖，允许日结与历史查询并发刷新。
 func (r *DashboardRepoImpl) upsertDailyStat(ctx context.Context, subsite uint64, date, metric string, value int64) error {
-	client := data.Client(ctx, r.data)
-	existing, err := client.DailyStat.Query().
-		Where(
-			dailystat.SubsiteIDEQ(subsite),
-			dailystat.StatDateEQ(date),
-			dailystat.MetricEQ(metric),
-			dailystat.DimensionKeyEQ(""),
-		).Only(ctx)
-	if err == nil {
-		_, err = client.DailyStat.UpdateOneID(existing.ID).SetValue(value).Save(ctx)
-		return err
-	}
-	if !isNotFound(err) {
-		return err
-	}
-	_, err = client.DailyStat.Create().
-		SetSubsiteID(subsite).
-		SetStatDate(date).
-		SetMetric(metric).
-		SetDimensionKey("").
-		SetValue(value).
-		Save(ctx)
-	return err
+	return data.Client(ctx, r.data).DailyStat.Create().
+		SetSubsiteID(subsite).SetStatDate(date).SetMetric(metric).SetDimensionKey("").SetValue(value).
+		OnConflictColumns(dailystat.FieldSubsiteID, dailystat.FieldStatDate, dailystat.FieldMetric, dailystat.FieldDimensionKey).
+		Update(func(u *ent.DailyStatUpsert) { u.SetValue(value).UpdateUpdatedAt() }).Exec(ctx)
 }
 
 // DailyStatPoint 日结查询点。
@@ -90,40 +72,36 @@ type DailyStatPoint struct {
 	Paid   int64
 }
 
-// GetDailyStats 历史日结查询（只扫 daily_stats，不扫大表）。
+// GetDailyStats 历史日结查询，重算请求范围并修正过期快照。
 func (r *DashboardRepoImpl) GetDailyStats(ctx context.Context, subsiteID uint64, startDate, endDate string) ([]DailyStatPoint, error) {
-	rows, err := data.Client(ctx, r.data).DailyStat.Query().
-		Where(
-			dailystat.SubsiteIDEQ(subsiteID),
-			dailystat.StatDateGTE(startDate),
-			dailystat.StatDateLTE(endDate),
-		).
-		Order(dailystat.ByStatDate()).
-		All(ctx)
+	// Rebuild requested business dates from source facts, so deleting old invalid
+	// orders or receiving late refunds cannot leave cached daily_stats stale.
+	start, err := time.ParseInLocation("20060102", startDate, businessday.Location)
 	if err != nil {
 		return nil, err
 	}
-	byDate := map[string]*DailyStatPoint{}
-	var order []string
-	for _, row := range rows {
-		p, ok := byDate[row.StatDate]
-		if !ok {
-			p = &DailyStatPoint{Date: row.StatDate}
-			byDate[row.StatDate] = p
-			order = append(order, row.StatDate)
-		}
-		switch row.Metric {
-		case "orders":
-			p.Orders = row.Value
-		case "amount":
-			p.Amount = row.Value
-		case "paid_orders":
-			p.Paid = row.Value
-		}
+	end, err := time.ParseInLocation("20060102", endDate, businessday.Location)
+	if err != nil {
+		return nil, err
 	}
-	out := make([]DailyStatPoint, 0, len(order))
-	for _, d := range order {
-		out = append(out, *byDate[d])
+	end = end.AddDate(0, 0, 1)
+	if !end.After(start) || end.Sub(start) > 366*24*time.Hour {
+		return nil, fmt.Errorf("日期范围须在 1 至 366 天内")
+	}
+	l, err := r.loadLedger(ctx, subsiteID, start, end)
+	if err != nil {
+		return nil, err
+	}
+	out := []DailyStatPoint{}
+	for day := start; day.Before(end); day = day.AddDate(0, 0, 1) {
+		m := l.between(day, day.AddDate(0, 0, 1))
+		date := businessday.Date(day, "20060102")
+		for metric, value := range map[string]int64{"orders": m.Orders, "amount": m.Revenue, "paid_orders": m.PaidOrders} {
+			if err := r.upsertDailyStat(ctx, subsiteID, date, metric, value); err != nil {
+				return nil, err
+			}
+		}
+		out = append(out, DailyStatPoint{Date: date, Orders: m.Orders, Amount: m.Revenue, Paid: m.PaidOrders})
 	}
 	return out, nil
 }
@@ -143,8 +121,4 @@ func (r *DashboardRepoImpl) DailySettleCron() func(context.Context) {
 		}
 		lastRun = today
 	}
-}
-
-func isNotFound(err error) bool {
-	return ent.IsNotFound(err)
 }

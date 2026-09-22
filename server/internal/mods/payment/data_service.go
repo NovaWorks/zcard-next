@@ -283,7 +283,7 @@ func (s *AdminPaymentService) ListPayments(ctx context.Context, req *adminv1.Lis
 	if limit <= 0 || limit > 100 {
 		limit = 20
 	}
-	rows, err := s.repo.ListPayments(ctx, req.GetStatus(), req.GetOrderNo(), req.GetCursor(), limit)
+	rows, err := s.repo.ListPayments(ctx, req.GetStatus(), req.GetOrderNo(), req.GetCursor(), limit, req.GetReviewOnly())
 	if err != nil {
 		return nil, errors.InternalServer("payment.LIST_FAILED", "读取支付单失败")
 	}

@@ -62,39 +62,51 @@ func (s *AdminDashboardService) ListCommissions(ctx context.Context, req *adminv
 
 // GetDashboard 工作台指标（6 统计窗口 + 趋势 + 商品/渠道排行 + 待办）。
 func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.GetDashboardRequest) (*adminv1.DashboardReply, error) {
-	today, yesterday, last7d, prev7d, last30d, prev30d, err := s.repo.GetOverview(ctx)
+	now := s.repo.now().UTC().Truncate(time.Second)
+	repo := *s.repo
+	repo.now = func() time.Time { return now }
+	today, yesterday, last7d, prev7d, last30d, prev30d, err := repo.GetOverview(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "统计失败: "+err.Error())
 	}
 	trendDays := int(req.GetTrendDays())
-	trend, err := s.repo.GetTrend(ctx, trendDays)
+	trend, err := repo.GetTrend(ctx, trendDays)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "趋势失败: "+err.Error())
 	}
-	top, err := s.repo.GetTopProducts(ctx)
+	top, err := repo.GetTopProducts(ctx, trendDays)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "排行失败: "+err.Error())
 	}
-	channels, err := s.repo.GetTopChannels(ctx)
+	channels, err := repo.GetTopChannels(ctx, trendDays)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "渠道统计失败: "+err.Error())
 	}
-	withdrawals, refunds, fulfilling, err := s.repo.GetPending(ctx)
+	withdrawals, refunds, fulfilling, err := repo.GetPending(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "待办统计失败: "+err.Error())
 	}
-	lowStock, err := s.repo.GetLowStockCount(ctx, s.lowStockThreshold(ctx))
+	lowStock, err := repo.GetLowStockCount(ctx, s.lowStockThreshold(ctx))
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "库存统计失败: "+err.Error())
 	}
-	openTickets, processingTickets, urgentTickets, err := s.repo.GetTicketPending(ctx)
+	openTickets, processingTickets, urgentTickets, err := repo.GetTicketPending(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "工单统计失败")
 	}
-	pendingSupplierApps := s.repo.GetPendingSupplierApplications(ctx)
+	pendingSupplierApps, err := repo.GetPendingSupplierApplications(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "对接申请统计失败")
+	}
 	onlineUsers := s.onlineUsers(ctx)
 
+	reviews, err := repo.PaymentReviewCount(ctx)
+	if err != nil {
+		return nil, errors.InternalServer("dashboard.QUERY_FAILED", "到账核对统计失败")
+	}
+	start, end := reportWindow(now, trendDays)
 	reply := &adminv1.DashboardReply{
+		RangeStart: start.Unix(), RangeEnd: end.Unix(), GeneratedAt: now.Unix(), SubsiteId: tenancy.FromContext(ctx).SubsiteID,
 		Today:       toStatPB(today),
 		Yesterday:   toStatPB(yesterday),
 		Last7D:      toStatPB(last7d),
@@ -103,6 +115,7 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 		Prev30D:     toStatPB(prev30d),
 		OnlineUsers: onlineUsers,
 		Pending: &adminv1.DashboardPending{
+			PaymentReviews:              reviews,
 			OpenTickets:                 openTickets,
 			ProcessingTickets:           processingTickets,
 			UrgentTickets:               urgentTickets,
@@ -116,7 +129,7 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 	for _, tp := range trend {
 		reply.Trend = append(reply.Trend, &adminv1.DashboardTrendPoint{
 			Date: tp.Date, Orders: tp.Orders, Revenue: tp.Revenue,
-			PaidCount: tp.PaidCount, Cost: tp.Cost, Profit: tp.Profit,
+			PaidCount: tp.PaidCount, Cost: tp.Cost, Profit: tp.Profit, Refunds: tp.Refunds, NetRevenue: tp.NetRevenue,
 		})
 	}
 	for _, p := range top {
@@ -126,7 +139,7 @@ func (s *AdminDashboardService) GetDashboard(ctx context.Context, req *adminv1.G
 	}
 	for _, c := range channels {
 		reply.TopChannels = append(reply.TopChannels, &adminv1.DashboardTopChannel{
-			Channel: c.Channel, TotalCount: c.TotalCount,
+			Channel: c.Channel, TotalCount: c.TotalCount, ChannelId: c.ChannelID, Name: c.Name, ChannelState: c.ChannelState, Amount: c.Amount,
 			SuccessCount: c.SuccessCount, FailedCount: c.FailedCount,
 		})
 	}
@@ -148,7 +161,7 @@ func (s *AdminDashboardService) onlineUsers(ctx context.Context) int64 {
 // GetTraffic 流量统计（PV/UV 按天；缺日补 0，与趋势图同口径连续日期）。
 func (s *AdminDashboardService) GetTraffic(ctx context.Context, req *adminv1.GetTrafficRequest) (*adminv1.GetTrafficReply, error) {
 	days := int(req.GetDays())
-	if days != 14 && days != 30 {
+	if days != 1 && days != 14 && days != 30 {
 		days = 7
 	}
 	if s.traffic == nil {
@@ -181,7 +194,7 @@ func (s *AdminDashboardService) GetTraffic(ctx context.Context, req *adminv1.Get
 func toStatPB(m Metric) *adminv1.DashboardStat {
 	return &adminv1.DashboardStat{
 		Orders: m.Orders, Revenue: m.Revenue, PaidOrders: m.PaidOrders,
-		Cost: m.Cost, Profit: m.Profit, NewUsers: m.NewUsers,
+		Cost: m.Cost, Profit: m.Profit, NewUsers: m.NewUsers, Refunds: m.Refunds, NetRevenue: m.NetRevenue, UnknownCostOrders: m.UnknownCostOrders,
 	}
 }
 

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { refundStatusText } from "@/utils/business-status";
 // 支付单流水（payment:read_detail）+ 补单（payment:capture 超管专属）+ 退款单列表。
-import { onMounted, ref, h } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { onMounted, ref, h, watch } from "vue";
 import { NButton, NDataTable, NInput, NPopconfirm, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchPayments, capturePayment, fetchRefunds } from "@/service/api";
@@ -10,6 +11,18 @@ import { formatMoney } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "PaymentsTab" });
+const route = useRoute();
+const router = useRouter();
+const reviewOnly = ref(route.query.review_only === "1");
+watch(() => route.query.review_only, value => {
+  reviewOnly.value = value === "1";
+  statusFilter.value = "";
+  orderNo.value = "";
+  load();
+});
+function toggleReviewFilter() {
+  router.replace({ query: { ...route.query, review_only: reviewOnly.value ? undefined : "1" } });
+}
 
 const loading = ref(false);
 const payments = ref<any[]>([]);
@@ -86,6 +99,7 @@ async function load(reset = true) {
   try {
     const { data, error } = await fetchPayments({
       status: statusFilter.value || undefined,
+      review_only: reviewOnly.value,
       order_no: orderNo.value.trim() || undefined,
       cursor: reset ? undefined : nextCursor.value || undefined,
       limit: 20,
@@ -152,7 +166,9 @@ onMounted(() => {
   <div class="flex flex-col gap-16px">
     <!-- 支付单 -->
     <div>
-      <div class="mb-8px text-13px font-500">支付单流水</div>
+      <div class="mb-8px flex flex-wrap gap-8px items-center text-13px font-500">支付单流水
+        <NButton size="small" :type="reviewOnly ? 'warning' : 'default'" @click="toggleReviewFilter">{{ reviewOnly ? '到账待核对 · 查看全部' : '只看到账待核对' }}</NButton>
+      </div>
       <FilterTabs v-model:value="statusFilter" :options="statusTabs" size="small" class="mb-8px" @change="load()" />
       <div class="mb-8px flex items-center gap-8px">
         <NInput

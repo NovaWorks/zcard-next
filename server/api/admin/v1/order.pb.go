@@ -29,6 +29,12 @@ type ListOrdersRequest struct {
 	Cursor        uint64                 `protobuf:"varint,2,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
 	Keyword       string                 `protobuf:"bytes,4,opt,name=keyword,proto3" json:"keyword,omitempty"` // 订单号或联系方式（包含匹配）。
+	StartTime     int64                  `protobuf:"varint,5,opt,name=start_time,json=startTime,proto3" json:"start_time,omitempty"`
+	EndTime       int64                  `protobuf:"varint,6,opt,name=end_time,json=endTime,proto3" json:"end_time,omitempty"`
+	TimeField     string                 `protobuf:"bytes,7,opt,name=time_field,json=timeField,proto3" json:"time_field,omitempty"` // created/paid
+	ChannelId     uint64                 `protobuf:"varint,8,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	ChannelCode   string                 `protobuf:"bytes,9,opt,name=channel_code,json=channelCode,proto3" json:"channel_code,omitempty"` // 历史无 channel_id 流水
+	ProductId     uint64                 `protobuf:"varint,10,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -89,6 +95,48 @@ func (x *ListOrdersRequest) GetKeyword() string {
 		return x.Keyword
 	}
 	return ""
+}
+
+func (x *ListOrdersRequest) GetStartTime() int64 {
+	if x != nil {
+		return x.StartTime
+	}
+	return 0
+}
+
+func (x *ListOrdersRequest) GetEndTime() int64 {
+	if x != nil {
+		return x.EndTime
+	}
+	return 0
+}
+
+func (x *ListOrdersRequest) GetTimeField() string {
+	if x != nil {
+		return x.TimeField
+	}
+	return ""
+}
+
+func (x *ListOrdersRequest) GetChannelId() uint64 {
+	if x != nil {
+		return x.ChannelId
+	}
+	return 0
+}
+
+func (x *ListOrdersRequest) GetChannelCode() string {
+	if x != nil {
+		return x.ChannelCode
+	}
+	return ""
+}
+
+func (x *ListOrdersRequest) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
 }
 
 type ListOrdersReply struct {
@@ -816,12 +864,23 @@ var File_admin_v1_order_proto protoreflect.FileDescriptor
 
 const file_admin_v1_order_proto_rawDesc = "" +
 	"\n" +
-	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"s\n" +
+	"\x14admin/v1/order.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xad\x02\n" +
 	"\x11ListOrdersRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x16\n" +
 	"\x06cursor\x18\x02 \x01(\x04R\x06cursor\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x18\n" +
-	"\akeyword\x18\x04 \x01(\tR\akeyword\"j\n" +
+	"\akeyword\x18\x04 \x01(\tR\akeyword\x12\x1d\n" +
+	"\n" +
+	"start_time\x18\x05 \x01(\x03R\tstartTime\x12\x19\n" +
+	"\bend_time\x18\x06 \x01(\x03R\aendTime\x12\x1d\n" +
+	"\n" +
+	"time_field\x18\a \x01(\tR\ttimeField\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\b \x01(\x04R\tchannelId\x12!\n" +
+	"\fchannel_code\x18\t \x01(\tR\vchannelCode\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\n" +
+	" \x01(\x04R\tproductId\"j\n" +
 	"\x0fListOrdersReply\x126\n" +
 	"\x06orders\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.AdminOrderR\x06orders\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +

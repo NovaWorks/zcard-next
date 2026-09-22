@@ -2,7 +2,7 @@ import { request } from "../request";
 
 // ── 订单管理 ──
 
-export function fetchOrders(params?: { status?: string; cursor?: number; limit?: number; keyword?: string }) {
+export function fetchOrders(params?: { status?: string; cursor?: number; limit?: number; keyword?: string; start_time?: number; end_time?: number; time_field?: string; channel_id?: number; channel_code?: string; product_id?: number }) {
   return request({
     url: "/api/v1/admin/orders",
     method: "get",

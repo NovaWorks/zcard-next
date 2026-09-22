@@ -2830,6 +2830,30 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: startTime
+                  in: query
+                  schema:
+                    type: string
+                - name: endTime
+                  in: query
+                  schema:
+                    type: string
+                - name: timeField
+                  in: query
+                  schema:
+                    type: string
+                - name: channelId
+                  in: query
+                  schema:
+                    type: string
+                - name: channelCode
+                  in: query
+                  schema:
+                    type: string
+                - name: productId
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -3028,6 +3052,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: reviewOnly
+                  in: query
+                  schema:
+                    type: boolean
             responses:
                 "200":
                     description: OK
@@ -8247,6 +8275,8 @@ components:
                     type: string
                 processingTickets:
                     type: string
+                paymentReviews:
+                    type: string
                 urgentTickets:
                     type: string
         zcard.api.admin.v1.DashboardReply:
@@ -8278,6 +8308,14 @@ components:
                         $ref: '#/components/schemas/zcard.api.admin.v1.DashboardTopChannel'
                 pending:
                     $ref: '#/components/schemas/zcard.api.admin.v1.DashboardPending'
+                rangeStart:
+                    type: string
+                rangeEnd:
+                    type: string
+                generatedAt:
+                    type: string
+                subsiteId:
+                    type: string
                 onlineUsers:
                     type: string
         zcard.api.admin.v1.DashboardStat:
@@ -8295,6 +8333,12 @@ components:
                     type: string
                 newUsers:
                     type: string
+                refunds:
+                    type: string
+                netRevenue:
+                    type: string
+                unknownCostOrders:
+                    type: string
         zcard.api.admin.v1.DashboardTopChannel:
             type: object
             properties:
@@ -8305,6 +8349,14 @@ components:
                 successCount:
                     type: string
                 failedCount:
+                    type: string
+                channelId:
+                    type: string
+                name:
+                    type: string
+                channelState:
+                    type: string
+                amount:
                     type: string
         zcard.api.admin.v1.DashboardTopProduct:
             type: object
@@ -8331,6 +8383,10 @@ components:
                 cost:
                     type: string
                 profit:
+                    type: string
+                refunds:
+                    type: string
+                netRevenue:
                     type: string
         zcard.api.admin.v1.DeleteCouponsReply:
             type: object

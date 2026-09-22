@@ -210,7 +210,7 @@ export function fetchCurrencies() {
 
 // ── 支付单（payment:read_detail / payment:capture）──
 
-export function fetchPayments(params: { status?: string; order_no?: string; cursor?: number; limit?: number }) {
+export function fetchPayments(params: { status?: string; order_no?: string; cursor?: number; limit?: number; review_only?: boolean }) {
   return request({ url: "/api/v1/admin/payments", params });
 }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 提现审核/打款（wallet:withdraw 列表 / wallet:withdraw_review 超管专属）。
-import { onMounted, ref, h } from "vue";
+import { useRoute } from "vue-router";
+import { onMounted, ref, h, watch } from "vue";
 import { NButton, NDataTable, NInput, NModal, NForm, NFormItem, NPopconfirm, NTag } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWithdrawals, reviewWithdrawal, payWithdrawal } from "@/service/api";
@@ -9,6 +10,7 @@ import { formatMoney } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 
 defineOptions({ name: "WithdrawTab" });
+const route = useRoute();
 
 const loading = ref(false);
 const showQr = ref(""); // 收款码大图
@@ -24,7 +26,8 @@ function methodText(t: string) {
 const withdrawals = ref<any[]>([]);
 const total = ref(0);
 const page = ref(1);
-const statusFilter = ref<string>("");
+const statusFilter = ref<string>(String(route.query.status || ""));
+watch(() => route.query.status, status => { statusFilter.value = String(status || ""); page.value = 1; load(); });
 
 const showReject = ref(false);
 const rejecting = ref(false);

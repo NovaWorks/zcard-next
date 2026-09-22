@@ -17,14 +17,18 @@ func TestMetricAggregatePreservesPaidStatusesAndWindow(t *testing.T) {
 	end := start.Add(time.Hour)
 	statuses := []order.Status{order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered, order.StatusDelivered, order.StatusCompleted, order.StatusPendingPayment, order.StatusCanceled, order.StatusExpired, order.StatusRefundPending, order.StatusRefunded}
 	for i, status := range statuses {
-		d.Client.Order.Create().SetOrderNo(fmt.Sprintf("aggregate-%d", i)).SetSubsiteID(0).SetStatus(status).
-			SetTotalAmount(101).SetCost(31).SetBaseCurrency("CNY").SetCreatedAt(start).SetVersion(0).SaveX(ctx)
+		create := d.Client.Order.Create().SetOrderNo(fmt.Sprintf("aggregate-%d", i)).SetSubsiteID(0).SetStatus(status).
+			SetTotalAmount(101).SetCost(31).SetBaseCurrency("CNY").SetCreatedAt(start).SetVersion(0)
+		if status != order.StatusPendingPayment && status != order.StatusCanceled && status != order.StatusExpired {
+			create.SetPaidAt(start)
+		}
+		create.SaveX(ctx)
 	}
 	seedOrder(t, d, 0, "paid", 999, end) // exclusive end
 	seedOrder(t, d, 0, "paid", 999, start.Add(-time.Nanosecond))
 	seedOrder(t, d, 9, "paid", 999, start.Add(time.Second))
 	m, err := r.metricBetweenSubsite(ctx, 0, start, end)
-	if err != nil || m.Orders != 10 || m.PaidOrders != 5 || m.Revenue != 505 || m.Cost != 155 || m.Profit != 350 {
+	if err != nil || m.Orders != 10 || m.PaidOrders != 7 || m.Revenue != 707 || m.Cost != 217 || m.Profit != 490 {
 		t.Fatalf("aggregate=%+v err=%v", m, err)
 	}
 	empty, err := r.metricBetweenSubsite(ctx, 88, start, end)

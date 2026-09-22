@@ -8,6 +8,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -18,6 +19,8 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/captcha"
@@ -251,7 +254,34 @@ func (s *AdminOrderService) ListOrders(ctx context.Context, req *adminv1.ListOrd
 	if utf8.RuneCountInString(keyword) > 150 {
 		return nil, errors.BadRequest("order.INVALID_KEYWORD", "搜索关键词不能超过 150 个字符")
 	}
-	rows, err := s.uc.ListOrders(ctx, tc.SubsiteID, req.GetStatus(), req.GetCursor(), limit, keyword)
+	var filters []predicate.Order
+	if req.GetProductId() > 0 {
+		filters = append(filters, order.HasItemsWith(orderitem.ProductID(req.GetProductId())))
+	}
+	if req.GetStartTime() != 0 || req.GetEndTime() != 0 {
+		if req.GetStartTime() <= 0 || req.GetEndTime() <= req.GetStartTime() || req.GetEndTime()-req.GetStartTime() > 366*86400 {
+			return nil, errors.BadRequest("order.INVALID_RANGE", "时间范围须在 1 至 366 天内")
+		}
+		start, end := time.Unix(req.GetStartTime(), 0).UTC(), time.Unix(req.GetEndTime(), 0).UTC()
+		switch req.GetTimeField() {
+		case "", "created":
+			filters = append(filters, order.CreatedAtGTE(start), order.CreatedAtLT(end))
+		case "paid":
+			filters = append(filters, order.PaidAtGTE(start), order.PaidAtLT(end))
+		default:
+			return nil, errors.BadRequest("order.INVALID_RANGE", "不支持的时间类型")
+		}
+	}
+	if req.GetChannelId() > 0 || req.GetChannelCode() != "" {
+		ps := []predicate.Payment{payment.StatusEQ(payment.StatusSuccess), payment.ReviewReasonEQ(""), payment.SubsiteID(tc.SubsiteID)}
+		if req.GetChannelId() > 0 {
+			ps = append(ps, payment.ChannelID(req.GetChannelId()))
+		} else {
+			ps = append(ps, payment.ChannelID(0), payment.Channel(req.GetChannelCode()))
+		}
+		filters = append(filters, order.HasPaymentsWith(ps...))
+	}
+	rows, err := s.uc.ListOrders(ctx, tc.SubsiteID, req.GetStatus(), req.GetCursor(), limit, keyword, filters...)
 	if err != nil {
 		return nil, errors.InternalServer("order.LIST_FAILED", "读取订单失败")
 	}

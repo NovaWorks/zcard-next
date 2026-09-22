@@ -8,7 +8,8 @@ type Usage = { allow_purchase?: boolean; allow_member_recharge?: boolean; allow_
 // 卡片网格（品牌徽标/状态 Tag/已配置判定）+ 勾选式添加（批量接入 + 引导配置）
 // + schema 驱动配置弹窗（敏感字段留空不修改、回调地址一键复制、手续费区）。
 // 设计参照：1.x sysadmin 卡片式 + Filament 配置弹窗（回调地址展示先例）。
-import { ref, reactive, computed, onMounted, h } from "vue";
+import { useRoute } from "vue-router";
+import { ref, reactive, computed, onMounted, h, watch } from "vue";
 import {
   NButton,
   NPopconfirm,
@@ -35,6 +36,9 @@ import MediaField from "@/components/common/media-picker/media-field.vue";
 import { checkAuth } from "@/directives";
 
 defineOptions({ name: "PaymentChannelManagement" });
+const route = useRoute();
+const activeTab = ref(route.query.tab === "payments" && checkAuth("payment:read_detail") ? "payments" : "channels");
+watch(() => route.query.tab, tab => { activeTab.value = tab === "payments" && checkAuth("payment:read_detail") ? "payments" : "channels"; });
 
 const message = useMessage();
 
@@ -470,7 +474,7 @@ onMounted(() => {
       <NButton class="payment-add" v-auth="'payment:write'" type="primary" @click="openAddDialog">添加渠道</NButton>
     </div>
 
-    <NTabs type="line">
+    <NTabs v-model:value="activeTab" type="line">
       <NTabPane name="channels" tab="渠道管理">
             <!-- 渠道卡片网格 -->
     <NSpin :show="loading">

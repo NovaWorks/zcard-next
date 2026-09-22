@@ -9,6 +9,9 @@ export interface DashboardStat {
   cost: number;
   profit: number;
   new_users: number;
+  refunds: number;
+  net_revenue: number;
+  unknown_cost_orders: number;
 }
 
 export interface DashboardTrendPoint {
@@ -28,6 +31,10 @@ export interface DashboardTopProduct {
 }
 
 export interface DashboardTopChannel {
+  channel_id: number;
+  name: string;
+  channel_state: string;
+  amount: number;
   channel: string;
   total_count: number;
   success_count: number;
@@ -38,6 +45,7 @@ export interface DashboardPending {
   open_tickets: number;
   processing_tickets: number;
   urgent_tickets: number;
+  payment_reviews: number;
   pending_withdrawals: number;
   pending_refunds: number;
   fulfilling_orders: number;
@@ -46,6 +54,10 @@ export interface DashboardPending {
 }
 
 export interface DashboardData {
+  range_start: number;
+  range_end: number;
+  generated_at: number;
+  subsite_id: number;
   today: DashboardStat;
   yesterday: DashboardStat;
   last7d: DashboardStat;

@@ -188,7 +188,7 @@ func (x *GetDailyStatsReply) GetPoints() []*DailyStatPoint {
 
 type GetDashboardRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TrendDays     int32                  `protobuf:"varint,1,opt,name=trend_days,json=trendDays,proto3" json:"trend_days,omitempty"` // 趋势天数：7/14/30，默认 7
+	TrendDays     int32                  `protobuf:"varint,1,opt,name=trend_days,json=trendDays,proto3" json:"trend_days,omitempty"` // 全部图表与排行天数：1/7/14/30，默认 7
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -231,15 +231,18 @@ func (x *GetDashboardRequest) GetTrendDays() int32 {
 }
 
 type DashboardStat struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Orders        int64                  `protobuf:"varint,1,opt,name=orders,proto3" json:"orders,omitempty"`
-	Revenue       int64                  `protobuf:"varint,2,opt,name=revenue,proto3" json:"revenue,omitempty"` // 分
-	PaidOrders    int64                  `protobuf:"varint,3,opt,name=paid_orders,json=paidOrders,proto3" json:"paid_orders,omitempty"`
-	Cost          int64                  `protobuf:"varint,4,opt,name=cost,proto3" json:"cost,omitempty"`                         // 已支付订单成本（分）
-	Profit        int64                  `protobuf:"varint,5,opt,name=profit,proto3" json:"profit,omitempty"`                     // 利润 = revenue - cost（分）
-	NewUsers      int64                  `protobuf:"varint,6,opt,name=new_users,json=newUsers,proto3" json:"new_users,omitempty"` // 新增注册用户
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Orders            int64                  `protobuf:"varint,1,opt,name=orders,proto3" json:"orders,omitempty"`
+	Revenue           int64                  `protobuf:"varint,2,opt,name=revenue,proto3" json:"revenue,omitempty"` // 分
+	PaidOrders        int64                  `protobuf:"varint,3,opt,name=paid_orders,json=paidOrders,proto3" json:"paid_orders,omitempty"`
+	Cost              int64                  `protobuf:"varint,4,opt,name=cost,proto3" json:"cost,omitempty"`                                                      // 已支付订单成本（分）
+	Profit            int64                  `protobuf:"varint,5,opt,name=profit,proto3" json:"profit,omitempty"`                                                  // 预估毛利 = net_revenue - cost（分）；成本不完整时不可用
+	NewUsers          int64                  `protobuf:"varint,6,opt,name=new_users,json=newUsers,proto3" json:"new_users,omitempty"`                              // 全站新增注册用户
+	Refunds           int64                  `protobuf:"varint,7,opt,name=refunds,proto3" json:"refunds,omitempty"`                                                // 时段内成功退款
+	NetRevenue        int64                  `protobuf:"varint,8,opt,name=net_revenue,json=netRevenue,proto3" json:"net_revenue,omitempty"`                        // 支付金额减成功退款
+	UnknownCostOrders int64                  `protobuf:"varint,9,opt,name=unknown_cost_orders,json=unknownCostOrders,proto3" json:"unknown_cost_orders,omitempty"` // 成本不完整时不展示利润
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *DashboardStat) Reset() {
@@ -314,6 +317,27 @@ func (x *DashboardStat) GetNewUsers() int64 {
 	return 0
 }
 
+func (x *DashboardStat) GetRefunds() int64 {
+	if x != nil {
+		return x.Refunds
+	}
+	return 0
+}
+
+func (x *DashboardStat) GetNetRevenue() int64 {
+	if x != nil {
+		return x.NetRevenue
+	}
+	return 0
+}
+
+func (x *DashboardStat) GetUnknownCostOrders() int64 {
+	if x != nil {
+		return x.UnknownCostOrders
+	}
+	return 0
+}
+
 type DashboardTrendPoint struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Date          string                 `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
@@ -321,7 +345,9 @@ type DashboardTrendPoint struct {
 	Revenue       int64                  `protobuf:"varint,3,opt,name=revenue,proto3" json:"revenue,omitempty"`                      // 分
 	PaidCount     int64                  `protobuf:"varint,4,opt,name=paid_count,json=paidCount,proto3" json:"paid_count,omitempty"` // 已支付单数
 	Cost          int64                  `protobuf:"varint,5,opt,name=cost,proto3" json:"cost,omitempty"`                            // 已支付订单成本（分）
-	Profit        int64                  `protobuf:"varint,6,opt,name=profit,proto3" json:"profit,omitempty"`                        // 利润（分）
+	Profit        int64                  `protobuf:"varint,6,opt,name=profit,proto3" json:"profit,omitempty"`                        // 预估毛利（分）
+	Refunds       int64                  `protobuf:"varint,7,opt,name=refunds,proto3" json:"refunds,omitempty"`
+	NetRevenue    int64                  `protobuf:"varint,8,opt,name=net_revenue,json=netRevenue,proto3" json:"net_revenue,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -394,6 +420,20 @@ func (x *DashboardTrendPoint) GetCost() int64 {
 func (x *DashboardTrendPoint) GetProfit() int64 {
 	if x != nil {
 		return x.Profit
+	}
+	return 0
+}
+
+func (x *DashboardTrendPoint) GetRefunds() int64 {
+	if x != nil {
+		return x.Refunds
+	}
+	return 0
+}
+
+func (x *DashboardTrendPoint) GetNetRevenue() int64 {
+	if x != nil {
+		return x.NetRevenue
 	}
 	return 0
 }
@@ -472,6 +512,10 @@ type DashboardTopChannel struct {
 	TotalCount    int64                  `protobuf:"varint,2,opt,name=total_count,json=totalCount,proto3" json:"total_count,omitempty"`
 	SuccessCount  int64                  `protobuf:"varint,3,opt,name=success_count,json=successCount,proto3" json:"success_count,omitempty"`
 	FailedCount   int64                  `protobuf:"varint,4,opt,name=failed_count,json=failedCount,proto3" json:"failed_count,omitempty"`
+	ChannelId     uint64                 `protobuf:"varint,5,opt,name=channel_id,json=channelId,proto3" json:"channel_id,omitempty"`
+	Name          string                 `protobuf:"bytes,6,opt,name=name,proto3" json:"name,omitempty"`
+	ChannelState  string                 `protobuf:"bytes,7,opt,name=channel_state,json=channelState,proto3" json:"channel_state,omitempty"` // active/disabled/deleted/legacy
+	Amount        int64                  `protobuf:"varint,8,opt,name=amount,proto3" json:"amount,omitempty"`                                // 订单支付金额，基础币分
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -534,6 +578,34 @@ func (x *DashboardTopChannel) GetFailedCount() int64 {
 	return 0
 }
 
+func (x *DashboardTopChannel) GetChannelId() uint64 {
+	if x != nil {
+		return x.ChannelId
+	}
+	return 0
+}
+
+func (x *DashboardTopChannel) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DashboardTopChannel) GetChannelState() string {
+	if x != nil {
+		return x.ChannelState
+	}
+	return ""
+}
+
+func (x *DashboardTopChannel) GetAmount() int64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
 type DashboardPending struct {
 	state                       protoimpl.MessageState `protogen:"open.v1"`
 	PendingWithdrawals          int64                  `protobuf:"varint,1,opt,name=pending_withdrawals,json=pendingWithdrawals,proto3" json:"pending_withdrawals,omitempty"`                              // 待审核提现
@@ -543,6 +615,7 @@ type DashboardPending struct {
 	PendingSupplierApplications int64                  `protobuf:"varint,5,opt,name=pending_supplier_applications,json=pendingSupplierApplications,proto3" json:"pending_supplier_applications,omitempty"` // 待审对接申请（supplier_accounts applying）
 	OpenTickets                 int64                  `protobuf:"varint,6,opt,name=open_tickets,json=openTickets,proto3" json:"open_tickets,omitempty"`                                                   // 待回复工单
 	ProcessingTickets           int64                  `protobuf:"varint,7,opt,name=processing_tickets,json=processingTickets,proto3" json:"processing_tickets,omitempty"`                                 // 处理中工单
+	PaymentReviews              int64                  `protobuf:"varint,9,opt,name=payment_reviews,json=paymentReviews,proto3" json:"payment_reviews,omitempty"`                                          // 到账待核对，包含已删除订单
 	UrgentTickets               int64                  `protobuf:"varint,8,opt,name=urgent_tickets,json=urgentTickets,proto3" json:"urgent_tickets,omitempty"`                                             // 未解决的付费加急工单，包含在上述两项中
 	unknownFields               protoimpl.UnknownFields
 	sizeCache                   protoimpl.SizeCache
@@ -623,6 +696,13 @@ func (x *DashboardPending) GetOpenTickets() int64 {
 func (x *DashboardPending) GetProcessingTickets() int64 {
 	if x != nil {
 		return x.ProcessingTickets
+	}
+	return 0
+}
+
+func (x *DashboardPending) GetPaymentReviews() int64 {
+	if x != nil {
+		return x.PaymentReviews
 	}
 	return 0
 }
@@ -794,6 +874,10 @@ type DashboardReply struct {
 	Prev30D       *DashboardStat         `protobuf:"bytes,8,opt,name=prev30d,proto3" json:"prev30d,omitempty"`     // 环比基准（近30天 vs 前30天）
 	TopChannels   []*DashboardTopChannel `protobuf:"bytes,9,rep,name=top_channels,json=topChannels,proto3" json:"top_channels,omitempty"`
 	Pending       *DashboardPending      `protobuf:"bytes,10,opt,name=pending,proto3" json:"pending,omitempty"`
+	RangeStart    int64                  `protobuf:"varint,12,opt,name=range_start,json=rangeStart,proto3" json:"range_start,omitempty"`
+	RangeEnd      int64                  `protobuf:"varint,13,opt,name=range_end,json=rangeEnd,proto3" json:"range_end,omitempty"`
+	GeneratedAt   int64                  `protobuf:"varint,14,opt,name=generated_at,json=generatedAt,proto3" json:"generated_at,omitempty"`
+	SubsiteId     uint64                 `protobuf:"varint,15,opt,name=subsite_id,json=subsiteId,proto3" json:"subsite_id,omitempty"`
 	OnlineUsers   int64                  `protobuf:"varint,11,opt,name=online_users,json=onlineUsers,proto3" json:"online_users,omitempty"` // 当前在线用户数（5 分钟活跃窗口）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -897,6 +981,34 @@ func (x *DashboardReply) GetPending() *DashboardPending {
 		return x.Pending
 	}
 	return nil
+}
+
+func (x *DashboardReply) GetRangeStart() int64 {
+	if x != nil {
+		return x.RangeStart
+	}
+	return 0
+}
+
+func (x *DashboardReply) GetRangeEnd() int64 {
+	if x != nil {
+		return x.RangeEnd
+	}
+	return 0
+}
+
+func (x *DashboardReply) GetGeneratedAt() int64 {
+	if x != nil {
+		return x.GeneratedAt
+	}
+	return 0
+}
+
+func (x *DashboardReply) GetSubsiteId() uint64 {
+	if x != nil {
+		return x.SubsiteId
+	}
+	return 0
 }
 
 func (x *DashboardReply) GetOnlineUsers() int64 {
@@ -1835,7 +1947,7 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\x06points\x18\x01 \x03(\v2\".zcard.api.admin.v1.DailyStatPointR\x06points\"4\n" +
 	"\x13GetDashboardRequest\x12\x1d\n" +
 	"\n" +
-	"trend_days\x18\x01 \x01(\x05R\ttrendDays\"\xab\x01\n" +
+	"trend_days\x18\x01 \x01(\x05R\ttrendDays\"\x96\x02\n" +
 	"\rDashboardStat\x12\x16\n" +
 	"\x06orders\x18\x01 \x01(\x03R\x06orders\x12\x18\n" +
 	"\arevenue\x18\x02 \x01(\x03R\arevenue\x12\x1f\n" +
@@ -1843,7 +1955,11 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"paidOrders\x12\x12\n" +
 	"\x04cost\x18\x04 \x01(\x03R\x04cost\x12\x16\n" +
 	"\x06profit\x18\x05 \x01(\x03R\x06profit\x12\x1b\n" +
-	"\tnew_users\x18\x06 \x01(\x03R\bnewUsers\"\xa6\x01\n" +
+	"\tnew_users\x18\x06 \x01(\x03R\bnewUsers\x12\x18\n" +
+	"\arefunds\x18\a \x01(\x03R\arefunds\x12\x1f\n" +
+	"\vnet_revenue\x18\b \x01(\x03R\n" +
+	"netRevenue\x12.\n" +
+	"\x13unknown_cost_orders\x18\t \x01(\x03R\x11unknownCostOrders\"\xe1\x01\n" +
 	"\x13DashboardTrendPoint\x12\x12\n" +
 	"\x04date\x18\x01 \x01(\tR\x04date\x12\x16\n" +
 	"\x06orders\x18\x02 \x01(\x03R\x06orders\x12\x18\n" +
@@ -1851,19 +1967,27 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\n" +
 	"paid_count\x18\x04 \x01(\x03R\tpaidCount\x12\x12\n" +
 	"\x04cost\x18\x05 \x01(\x03R\x04cost\x12\x16\n" +
-	"\x06profit\x18\x06 \x01(\x03R\x06profit\"}\n" +
+	"\x06profit\x18\x06 \x01(\x03R\x06profit\x12\x18\n" +
+	"\arefunds\x18\a \x01(\x03R\arefunds\x12\x1f\n" +
+	"\vnet_revenue\x18\b \x01(\x03R\n" +
+	"netRevenue\"}\n" +
 	"\x13DashboardTopProduct\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
 	"\bsold_qty\x18\x03 \x01(\x03R\asoldQty\x12\x18\n" +
-	"\arevenue\x18\x04 \x01(\x03R\arevenue\"\x98\x01\n" +
+	"\arevenue\x18\x04 \x01(\x03R\arevenue\"\x88\x02\n" +
 	"\x13DashboardTopChannel\x12\x18\n" +
 	"\achannel\x18\x01 \x01(\tR\achannel\x12\x1f\n" +
 	"\vtotal_count\x18\x02 \x01(\x03R\n" +
 	"totalCount\x12#\n" +
 	"\rsuccess_count\x18\x03 \x01(\x03R\fsuccessCount\x12!\n" +
-	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\"\x84\x03\n" +
+	"\ffailed_count\x18\x04 \x01(\x03R\vfailedCount\x12\x1d\n" +
+	"\n" +
+	"channel_id\x18\x05 \x01(\x04R\tchannelId\x12\x12\n" +
+	"\x04name\x18\x06 \x01(\tR\x04name\x12#\n" +
+	"\rchannel_state\x18\a \x01(\tR\fchannelState\x12\x16\n" +
+	"\x06amount\x18\b \x01(\x03R\x06amount\"\xad\x03\n" +
 	"\x10DashboardPending\x12/\n" +
 	"\x13pending_withdrawals\x18\x01 \x01(\x03R\x12pendingWithdrawals\x12'\n" +
 	"\x0fpending_refunds\x18\x02 \x01(\x03R\x0ependingRefunds\x12+\n" +
@@ -1871,7 +1995,8 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\x12low_stock_products\x18\x04 \x01(\x03R\x10lowStockProducts\x12B\n" +
 	"\x1dpending_supplier_applications\x18\x05 \x01(\x03R\x1bpendingSupplierApplications\x12!\n" +
 	"\fopen_tickets\x18\x06 \x01(\x03R\vopenTickets\x12-\n" +
-	"\x12processing_tickets\x18\a \x01(\x03R\x11processingTickets\x12%\n" +
+	"\x12processing_tickets\x18\a \x01(\x03R\x11processingTickets\x12'\n" +
+	"\x0fpayment_reviews\x18\t \x01(\x03R\x0epaymentReviews\x12%\n" +
 	"\x0eurgent_tickets\x18\b \x01(\x03R\rurgentTickets\"'\n" +
 	"\x11GetTrafficRequest\x12\x12\n" +
 	"\x04days\x18\x01 \x01(\x05R\x04days\"B\n" +
@@ -1880,7 +2005,7 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\x02pv\x18\x02 \x01(\x03R\x02pv\x12\x0e\n" +
 	"\x02uv\x18\x03 \x01(\x03R\x02uv\"K\n" +
 	"\x0fGetTrafficReply\x128\n" +
-	"\x06points\x18\x01 \x03(\v2 .zcard.api.admin.v1.TrafficPointR\x06points\"\xb4\x05\n" +
+	"\x06points\x18\x01 \x03(\v2 .zcard.api.admin.v1.TrafficPointR\x06points\"\xb4\x06\n" +
 	"\x0eDashboardReply\x127\n" +
 	"\x05today\x18\x01 \x01(\v2!.zcard.api.admin.v1.DashboardStatR\x05today\x129\n" +
 	"\x06last7d\x18\x02 \x01(\v2!.zcard.api.admin.v1.DashboardStatR\x06last7d\x12;\n" +
@@ -1892,7 +2017,13 @@ const file_admin_v1_dashboard_proto_rawDesc = "" +
 	"\aprev30d\x18\b \x01(\v2!.zcard.api.admin.v1.DashboardStatR\aprev30d\x12J\n" +
 	"\ftop_channels\x18\t \x03(\v2'.zcard.api.admin.v1.DashboardTopChannelR\vtopChannels\x12>\n" +
 	"\apending\x18\n" +
-	" \x01(\v2$.zcard.api.admin.v1.DashboardPendingR\apending\x12!\n" +
+	" \x01(\v2$.zcard.api.admin.v1.DashboardPendingR\apending\x12\x1f\n" +
+	"\vrange_start\x18\f \x01(\x03R\n" +
+	"rangeStart\x12\x1b\n" +
+	"\trange_end\x18\r \x01(\x03R\brangeEnd\x12!\n" +
+	"\fgenerated_at\x18\x0e \x01(\x03R\vgeneratedAt\x12\x1d\n" +
+	"\n" +
+	"subsite_id\x18\x0f \x01(\x04R\tsubsiteId\x12!\n" +
 	"\fonline_users\x18\v \x01(\x03R\vonlineUsers\"a\n" +
 	"\x16ListCommissionsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +

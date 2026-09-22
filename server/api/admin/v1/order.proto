@@ -39,6 +39,12 @@ message ListOrdersRequest {
   uint64 cursor = 2;
   int32 limit = 3;
   string keyword = 4; // 订单号或联系方式（包含匹配）。
+  int64 start_time = 5;
+  int64 end_time = 6;
+  string time_field = 7; // created/paid
+  uint64 channel_id = 8;
+  string channel_code = 9; // 历史无 channel_id 流水
+  uint64 product_id = 10;
 }
 
 message ListOrdersReply {

@@ -35,15 +35,18 @@ func newDashboardData(t *testing.T) *data.Data {
 func seedOrder(t *testing.T, d *data.Data, subsite uint64, status string, amount int64, at time.Time) {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := d.Client.Order.Create().
+	create := d.Client.Order.Create().
 		SetOrderNo(fmt.Sprintf("S-%d-%d", subsite, at.UnixNano())).
 		SetSubsiteID(subsite).
 		SetStatus(order.Status(status)).
 		SetTotalAmount(amount).
 		SetBaseCurrency("CNY").
 		SetCreatedAt(at).
-		SetVersion(0).
-		Save(ctx); err != nil {
+		SetVersion(0)
+	if status != "pending_payment" && status != "canceled" && status != "expired" {
+		create.SetPaidAt(at)
+	}
+	if _, err := create.Save(ctx); err != nil {
 		t.Fatal(err)
 	}
 }

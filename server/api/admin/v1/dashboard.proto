@@ -69,7 +69,7 @@ message GetDailyStatsReply {
 }
 
 message GetDashboardRequest {
-  int32 trend_days = 1; // 趋势天数：7/14/30，默认 7
+  int32 trend_days = 1; // 全部图表与排行天数：1/7/14/30，默认 7
 }
 
 message DashboardStat {
@@ -77,8 +77,11 @@ message DashboardStat {
   int64 revenue = 2; // 分
   int64 paid_orders = 3;
   int64 cost = 4; // 已支付订单成本（分）
-  int64 profit = 5; // 利润 = revenue - cost（分）
-  int64 new_users = 6; // 新增注册用户
+  int64 profit = 5; // 预估毛利 = net_revenue - cost（分）；成本不完整时不可用
+  int64 new_users = 6; // 全站新增注册用户
+  int64 refunds = 7; // 时段内成功退款
+  int64 net_revenue = 8; // 支付金额减成功退款
+  int64 unknown_cost_orders = 9; // 成本不完整时不展示利润
 }
 
 message DashboardTrendPoint {
@@ -87,7 +90,9 @@ message DashboardTrendPoint {
   int64 revenue = 3; // 分
   int64 paid_count = 4; // 已支付单数
   int64 cost = 5; // 已支付订单成本（分）
-  int64 profit = 6; // 利润（分）
+  int64 profit = 6; // 预估毛利（分）
+  int64 refunds = 7;
+  int64 net_revenue = 8;
 }
 
 message DashboardTopProduct {
@@ -102,6 +107,10 @@ message DashboardTopChannel {
   int64 total_count = 2;
   int64 success_count = 3;
   int64 failed_count = 4;
+  uint64 channel_id = 5;
+  string name = 6;
+  string channel_state = 7; // active/disabled/deleted/legacy
+  int64 amount = 8; // 订单支付金额，基础币分
 }
 
 message DashboardPending {
@@ -112,6 +121,7 @@ message DashboardPending {
   int64 pending_supplier_applications = 5; // 待审对接申请（supplier_accounts applying）
   int64 open_tickets = 6; // 待回复工单
   int64 processing_tickets = 7; // 处理中工单
+  int64 payment_reviews = 9; // 到账待核对，包含已删除订单
   int64 urgent_tickets = 8; // 未解决的付费加急工单，包含在上述两项中
 }
 
@@ -140,6 +150,10 @@ message DashboardReply {
   DashboardStat prev30d = 8; // 环比基准（近30天 vs 前30天）
   repeated DashboardTopChannel top_channels = 9;
   DashboardPending pending = 10;
+  int64 range_start = 12;
+  int64 range_end = 13;
+  int64 generated_at = 14;
+  uint64 subsite_id = 15;
   int64 online_users = 11; // 当前在线用户数（5 分钟活跃窗口）
 }
 

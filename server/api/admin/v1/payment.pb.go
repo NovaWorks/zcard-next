@@ -965,6 +965,7 @@ type ListPaymentsRequest struct {
 	OrderNo       string                 `protobuf:"bytes,2,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
 	Cursor        uint64                 `protobuf:"varint,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	ReviewOnly    bool                   `protobuf:"varint,5,opt,name=review_only,json=reviewOnly,proto3" json:"review_only,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1025,6 +1026,13 @@ func (x *ListPaymentsRequest) GetLimit() int32 {
 		return x.Limit
 	}
 	return 0
+}
+
+func (x *ListPaymentsRequest) GetReviewOnly() bool {
+	if x != nil {
+		return x.ReviewOnly
+	}
+	return false
 }
 
 type ListPaymentsReply struct {
@@ -1691,12 +1699,14 @@ const file_admin_v1_payment_proto_rawDesc = "" +
 	"\x16_allow_member_rechargeB\x18\n" +
 	"\x16_allow_supply_recharge\"+\n" +
 	"\x14DeleteChannelRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"v\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x97\x01\n" +
 	"\x13ListPaymentsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x19\n" +
 	"\border_no\x18\x02 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06cursor\x18\x03 \x01(\x04R\x06cursor\x12\x14\n" +
-	"\x05limit\x18\x04 \x01(\x05R\x05limit\"m\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x1f\n" +
+	"\vreview_only\x18\x05 \x01(\bR\n" +
+	"reviewOnly\"m\n" +
 	"\x11ListPaymentsReply\x127\n" +
 	"\bpayments\x18\x01 \x03(\v2\x1b.zcard.api.admin.v1.PaymentR\bpayments\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\x04R\n" +

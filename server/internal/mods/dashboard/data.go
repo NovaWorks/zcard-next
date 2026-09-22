@@ -1,21 +1,18 @@
 package dashboard
 
-// 工作台指标聚合（ v1）：今日/近7天/近30天订单数与营收 + 趋势 + 商品 Top5。
-// 金额口径：已支付订单（status 非 pending_payment/canceled/expired）的 total_amount 求和（分）。
+// 工作台按北京时间聚合可见订单；支付与成功退款分别按发生时间统计。
 
 import (
 	"context"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/affiliatecommission"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/payment"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplieraccount"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/withdrawal"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
@@ -24,22 +21,27 @@ import (
 
 // Metric 统计项。
 type Metric struct {
-	Orders     int64
-	Revenue    int64
-	PaidOrders int64
-	Cost       int64
-	Profit     int64
-	NewUsers   int64
+	Orders            int64
+	Revenue           int64
+	PaidOrders        int64
+	Cost              int64
+	Profit            int64
+	Refunds           int64
+	NetRevenue        int64
+	UnknownCostOrders int64
+	NewUsers          int64
 }
 
 // TrendPoint 趋势点。
 type TrendPoint struct {
-	Date      string
-	Orders    int64
-	Revenue   int64
-	PaidCount int64
-	Cost      int64
-	Profit    int64
+	Refunds    int64
+	NetRevenue int64
+	Date       string
+	Orders     int64
+	Revenue    int64
+	PaidCount  int64
+	Cost       int64
+	Profit     int64
 }
 
 // TopProduct 商品排行。
@@ -52,6 +54,10 @@ type TopProduct struct {
 
 // TopChannel 支付渠道排行。
 type TopChannel struct {
+	ChannelID    uint64
+	Name         string
+	ChannelState string
+	Amount       int64
 	Channel      string
 	TotalCount   int64
 	SuccessCount int64
@@ -67,171 +73,6 @@ type DashboardRepoImpl struct {
 // NewDashboardRepoImpl 构造。
 func NewDashboardRepoImpl(d *data.Data) *DashboardRepoImpl {
 	return &DashboardRepoImpl{data: d, now: time.Now}
-}
-
-func paidStatuses() []order.Status {
-	return []order.Status{
-		order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered,
-		order.StatusDelivered, order.StatusCompleted,
-	}
-}
-
-// GetOverview 返回 6 个统计窗口：today/yesterday/last7d/prev7d/last30d/prev30d
-// （后三者为环比基准； ：分站视角自动隔离——按 tenancy.Context.SubsiteID
-// 过滤，分站后台只看本站；new_users 为全局注册用户，用户表不分站）。
-func (r *DashboardRepoImpl) GetOverview(ctx context.Context) (today, yesterday, last7d, prev7d, last30d, prev30d Metric, err error) {
-	subsite := tenancy.FromContext(ctx).SubsiteID
-	now := r.now().In(businessday.Location)
-	todayStart := businessday.Start(now)
-	if m, e := r.metricBetween(ctx, subsite, todayStart, now); e == nil {
-		today = m
-	}
-	if m, e := r.metricBetween(ctx, subsite, todayStart.AddDate(0, 0, -1), todayStart); e == nil {
-		yesterday = m
-	}
-	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -7), now); e == nil {
-		last7d = m
-	}
-	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -14), now.AddDate(0, 0, -7)); e == nil {
-		prev7d = m
-	}
-	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -30), now); e == nil {
-		last30d = m
-	}
-	if m, e := r.metricBetween(ctx, subsite, now.AddDate(0, 0, -60), now.AddDate(0, 0, -30)); e == nil {
-		prev30d = m
-	}
-	return today, yesterday, last7d, prev7d, last30d, prev30d, nil
-}
-
-// metricBetweenSubsite 指定租户区段聚合（日结任务用）。
-func (r *DashboardRepoImpl) metricBetweenSubsite(ctx context.Context, subsite uint64, start, end time.Time) (Metric, error) {
-	start, end = start.UTC(), end.UTC()
-	client := data.Client(ctx, r.data)
-	var groups []struct {
-		Status  order.Status `json:"status"`
-		Count   int64        `json:"count"`
-		Revenue int64        `json:"revenue"`
-		Cost    int64        `json:"cost"`
-	}
-	err := client.Order.Query().Where(order.CreatedAtGTE(start), order.CreatedAtLT(end), order.SubsiteID(subsite)).
-		GroupBy(order.FieldStatus).
-		Aggregate(ent.Count(), ent.As(ent.Sum(order.FieldTotalAmount), "revenue"), ent.As(ent.Sum(order.FieldCost), "cost")).Scan(ctx, &groups)
-	if err != nil {
-		return Metric{}, err
-	}
-	m := Metric{}
-	paid := map[order.Status]bool{}
-	for _, st := range paidStatuses() {
-		paid[st] = true
-	}
-	for _, g := range groups {
-		m.Orders += g.Count
-		if paid[g.Status] {
-			m.PaidOrders += g.Count
-			m.Revenue += g.Revenue
-			m.Cost += g.Cost
-		}
-	}
-	m.Profit = m.Revenue - m.Cost
-	// 新增注册用户（全局表不分站；失败不阻断主统计）
-	if n, e := client.User.Query().Where(user.CreatedAtGTE(start), user.CreatedAtLT(end)).Count(ctx); e == nil {
-		m.NewUsers = int64(n)
-	}
-	return m, nil
-}
-
-func (r *DashboardRepoImpl) metricBetween(ctx context.Context, subsite uint64, start, end time.Time) (Metric, error) {
-	return r.metricBetweenSubsite(ctx, subsite, start, end)
-}
-
-// GetTrend 近 N 天每日订单数/已支付数/营收/成本/利润（含今日，共 N 个桶；分站隔离）。
-// days 支持 7/14/30，非法值回落 7。
-func (r *DashboardRepoImpl) GetTrend(ctx context.Context, days int) ([]TrendPoint, error) {
-	if days != 14 && days != 30 {
-		days = 7
-	}
-	subsite := tenancy.FromContext(ctx).SubsiteID
-	now := r.now().In(businessday.Location)
-	start := businessday.Start(now).In(businessday.Location).AddDate(0, 0, -(days - 1))
-	client := data.Client(ctx, r.data)
-	rows, err := client.Order.Query().
-		Where(order.CreatedAtGTE(start.UTC()), order.CreatedAtLT(now.UTC()), order.SubsiteID(subsite)).
-		Select(order.FieldCreatedAt, order.FieldStatus, order.FieldTotalAmount, order.FieldCost).All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	paid := map[order.Status]bool{}
-	for _, s := range paidStatuses() {
-		paid[s] = true
-	}
-	// 初始化 N 天桶
-	buckets := map[string]*TrendPoint{}
-	for i := 0; i < days; i++ {
-		d := start.AddDate(0, 0, i).Format("2006-01-02")
-		buckets[d] = &TrendPoint{Date: d}
-	}
-	for _, o := range rows {
-		d := businessday.Date(o.CreatedAt, "2006-01-02")
-		bp, ok := buckets[d]
-		if !ok {
-			continue
-		}
-		bp.Orders++
-		if paid[o.Status] {
-			bp.PaidCount++
-			bp.Revenue += o.TotalAmount
-			bp.Cost += o.Cost
-		}
-	}
-	out := make([]TrendPoint, 0, days)
-	for i := 0; i < days; i++ {
-		d := start.AddDate(0, 0, i).Format("2006-01-02")
-		bp := buckets[d]
-		bp.Profit = bp.Revenue - bp.Cost
-		out = append(out, *bp)
-	}
-	return out, nil
-}
-
-// GetTopChannels 近 30 天支付渠道排行（分站隔离；按 channel 分组计数）。
-func (r *DashboardRepoImpl) GetTopChannels(ctx context.Context) ([]TopChannel, error) {
-	subsite := tenancy.FromContext(ctx).SubsiteID
-	start := time.Now().UTC().AddDate(0, 0, -30)
-	client := data.Client(ctx, r.data)
-	rows, err := client.Payment.Query().
-		Where(payment.CreatedAtGTE(start), payment.SubsiteID(subsite)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	m := map[string]*TopChannel{}
-	for _, p := range rows {
-		c := m[p.Channel]
-		if c == nil {
-			c = &TopChannel{Channel: p.Channel}
-			m[p.Channel] = c
-		}
-		c.TotalCount++
-		switch p.Status {
-		case payment.StatusSuccess:
-			c.SuccessCount++
-		case payment.StatusFailed:
-			c.FailedCount++
-		}
-	}
-	out := make([]TopChannel, 0, len(m))
-	for _, c := range m {
-		out = append(out, *c)
-	}
-	for i := 0; i < len(out); i++ {
-		for j := i + 1; j < len(out); j++ {
-			if out[j].TotalCount > out[i].TotalCount {
-				out[i], out[j] = out[j], out[i]
-			}
-		}
-	}
-	return out, nil
 }
 
 // GetLowStockCount 库存预警商品数：上架商品（status=1）按本地/上游分别统计有限库存 < threshold。
@@ -259,99 +100,33 @@ func (r *DashboardRepoImpl) GetLowStockCount(ctx context.Context, threshold int)
 	return low, nil
 }
 
-// GetPendingSupplierApplications 待审对接申请数（supplier_accounts status=applying；前台申请后台审核）。
-func (r *DashboardRepoImpl) GetPendingSupplierApplications(ctx context.Context) int64 {
-	if n, e := data.Client(ctx, r.data).SupplierAccount.Query().
-		Where(supplieraccount.StatusEQ(supplieraccount.StatusApplying)).
-		Count(ctx); e == nil {
-		return int64(n)
-	}
-	return 0
+func (r *DashboardRepoImpl) GetPendingSupplierApplications(ctx context.Context) (int64, error) {
+	n, err := data.Client(ctx, r.data).SupplierAccount.Query().Where(supplieraccount.StatusEQ(supplieraccount.StatusApplying)).Count(ctx)
+	return int64(n), err
 }
 
-// GetPending 待办统计：待审核提现（全局）、待处理退款、履约中订单（分站）。
+// GetPending returns current actionable orders; payment review receipts are separate.
 func (r *DashboardRepoImpl) GetPending(ctx context.Context) (withdrawals, refunds, fulfilling int64, err error) {
 	subsite := tenancy.FromContext(ctx).SubsiteID
-	client := data.Client(ctx, r.data)
-	if n, e := client.Withdrawal.Query().Where(withdrawal.StatusEQ(withdrawal.StatusPending)).Count(ctx); e == nil {
-		withdrawals = int64(n)
-	}
-	if n, e := client.Order.Query().
-		Where(order.StatusEQ(order.StatusRefundPending), order.SubsiteID(subsite)).
-		Count(ctx); e == nil {
-		refunds = int64(n)
-	}
-	if n, e := client.Order.Query().
-		Where(order.StatusEQ(order.StatusFulfilling), order.SubsiteID(subsite)).
-		Count(ctx); e == nil {
-		fulfilling = int64(n)
-	}
-	return withdrawals, refunds, fulfilling, nil
-}
-
-// GetTopProducts 近 30 天销量 Top5（分站隔离）。
-func (r *DashboardRepoImpl) GetTopProducts(ctx context.Context) ([]TopProduct, error) {
-	subsite := tenancy.FromContext(ctx).SubsiteID
-	now := time.Now().UTC()
-	start := now.AddDate(0, 0, -30)
-	client := data.Client(ctx, r.data)
-	paidOrders, err := client.Order.Query().
-		Where(order.CreatedAtGTE(start), order.StatusIn(paidStatuses()...), order.SubsiteID(subsite)).
-		All(ctx)
+	c := data.Client(ctx, r.data)
+	n, err := c.Withdrawal.Query().Where(withdrawal.StatusEQ(withdrawal.StatusPending)).Count(ctx)
 	if err != nil {
-		return nil, err
+		return 0, 0, 0, err
 	}
-	orderIDs := make([]uint64, 0, len(paidOrders))
-	for _, o := range paidOrders {
-		orderIDs = append(orderIDs, o.ID)
-	}
-	if len(orderIDs) == 0 {
-		return nil, nil
-	}
-	items, err := client.OrderItem.Query().
-		Where(orderitem.OrderIDIn(orderIDs...)).
-		All(ctx)
+	withdrawals = int64(n)
+	n, err = c.Order.Query().Where(order.SubsiteID(subsite), order.AdminDeletedAtIsNil(), order.Or(order.StatusEQ(order.StatusRefundPending), order.HasRefundsWith(refundorder.StatusIn(refundorder.StatusCreated, refundorder.StatusProcessing)))).Count(ctx)
 	if err != nil {
-		return nil, err
+		return 0, 0, 0, err
 	}
-	type agg struct {
-		qty, revenue int64
+	refunds = int64(n)
+	n, err = c.Order.Query().Where(order.SubsiteID(subsite), order.AdminDeletedAtIsNil(), order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered)).Count(ctx)
+	if err != nil {
+		return 0, 0, 0, err
 	}
-	m := map[uint64]*agg{}
-	for _, it := range items {
-		a := m[it.ProductID]
-		if a == nil {
-			a = &agg{}
-			m[it.ProductID] = a
-		}
-		a.qty += int64(it.Quantity)
-		a.revenue += it.Amount
-	}
-	// 取 Top5 by revenue
-	top := make([]TopProduct, 0, 5)
-	for pid, a := range m {
-		top = append(top, TopProduct{ProductID: pid, SoldQty: a.qty, Revenue: a.revenue})
-	}
-	for i := 0; i < len(top); i++ {
-		for j := i + 1; j < len(top); j++ {
-			if top[j].Revenue > top[i].Revenue {
-				top[i], top[j] = top[j], top[i]
-			}
-		}
-	}
-	if len(top) > 5 {
-		top = top[:5]
-	}
-	// 回填商品名
-	for i := range top {
-		if p, err := client.Product.Get(ctx, top[i].ProductID); err == nil {
-			top[i].Name = p.Name
-		}
-	}
-	return top, nil
-}
+	fulfilling = int64(n)
+	return
 
-var _ = ent.Asc // 保持引用
+}
 
 // ReconciliationSummary 对账汇总（：订单×支付×充值×佣金四向基础核对）。
 type ReconciliationSummary struct {

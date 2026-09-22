@@ -19,7 +19,7 @@ func TestBeijingMidnightOverviewTrendAndSettle(t *testing.T) {
 	seedOrder(t, d, 0, "paid", 200, midnight)
 	seedOrder(t, d, 0, "paid", 300, midnight.Add(-6*24*time.Hour+time.Hour))
 	today, yesterday, _, _, _, _, e := r.GetOverview(ctx)
-	if e != nil || today.Orders != 1 || today.Revenue != 200 || yesterday.Revenue != 100 {
+	if e != nil || today.Orders != 1 || today.Revenue != 200 || yesterday.Revenue != 0 {
 		t.Fatalf("midnight: %+v %+v %v", today, yesterday, e)
 	}
 	points, e := r.GetTrend(ctx, 7)
@@ -68,8 +68,8 @@ func TestDailySettleCronCatchesLateStart(t *testing.T) {
 	seedOrder(t, d, 0, "paid", 200, now.Add(-23*time.Hour))
 	run(ctx)
 	rows, _ = r.GetDailyStats(ctx, 0, "20260912", "20260912")
-	if rows[0].Amount != 100 {
-		t.Fatal("same-day cron reran")
+	if rows[0].Amount != 300 {
+		t.Fatal("daily query did not reconcile late changes")
 	}
 	now = now.Add(24 * time.Hour)
 	run(ctx)

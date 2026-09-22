@@ -5,13 +5,17 @@ import { checkAuth } from "@/directives";
 import WithdrawTab from "./components/withdraw-tab.vue";
 import GiftcardTab from "./components/giftcard-tab.vue";
 import BillsTab from "./components/bills-tab.vue";
-import { ref, reactive, h } from "vue";
+import { useRoute } from "vue-router";
+import { ref, reactive, h, watch } from "vue";
 import { NTag, NSelect, NRadioGroup, NRadioButton, NRadio } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchWalletBalance, adjustWalletBalance, adjustWalletPoints, fetchWalletTransactions, fetchUsers, fetchCoupons, grantCoupon } from "@/service/api";
 import { transactionType, transactionAmount, transactionReference, transactionRemark, formatMoney, formatSignedMoney, yuanToFen } from "@/utils/money";
 
 defineOptions({ name: "WalletManagement" });
+const route = useRoute();
+const activeTab = ref(route.query.tab === "withdraw" && checkAuth("wallet:withdraw") ? "withdraw" : "bills");
+watch(() => route.query.tab, tab => { activeTab.value = tab === "withdraw" && checkAuth("wallet:withdraw") ? "withdraw" : "bills"; });
 
 const userId = ref<number | null>(null);
 const selectedUser = ref<any>(null);
@@ -268,7 +272,7 @@ async function handleAdjust() {
 <template>
   <div class="min-h-500px flex-col gap-16px overflow-hidden">
     <NCard title="钱包管理" class="flex-1">
-      <NTabs type="line">
+      <NTabs v-model:value="activeTab" type="line">
       <NTabPane name="bills" tab="账单流水">
         <BillsTab />
       </NTabPane>

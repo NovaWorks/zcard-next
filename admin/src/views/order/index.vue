@@ -2,7 +2,8 @@
 import { orderStatusText as statusText, orderStatusType as statusType } from "@/utils/order-status";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
-import { ref, reactive, onMounted, h } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { ref, reactive, onMounted, h, watch, computed } from "vue";
 import {
   NButton,
   NTag,
@@ -32,6 +33,11 @@ import PendingDeliverTab from "./components/pending-deliver-tab.vue";
 import { formatMoney, formatSignedMoney } from "@/utils/money";
 
 defineOptions({ name: "OrderManagement" });
+const route = useRoute();
+const router = useRouter();
+const reportFilter = computed(() => ({product_id: Number(route.query.product_id) || undefined,start_time: Number(route.query.start_time) || undefined, end_time: Number(route.query.end_time) || undefined, time_field: String(route.query.time_field || "created"), channel_id: Number(route.query.channel_id) || undefined, channel_code: String(route.query.channel_code || "") || undefined}));
+const fromDashboard = computed(() => Boolean(reportFilter.value.start_time || route.query.status));
+
 
 const loading = ref(false);
 const orders = ref<any[]>([]);
@@ -40,7 +46,7 @@ const pageSize = ref(20);
 // 游标链：cursors[p-1] = 第 p 页起始游标（next_cursor = 满页时末行 ID；0 = 无更多）
 const cursors = ref<number[]>([0]);
 const hasMore = ref(false);
-const statusFilter = ref<string>("");
+const statusFilter = ref<string>(String(route.query.status || ""));
 const keywordInput = ref("");
 const keyword = ref("");
 const selectedOrders = ref<string[]>([]);
@@ -78,6 +84,8 @@ const detail = ref<{
 
 // 快捷筛选卡片（statusType 同色系：成功绿/待付黄/取消红/其余蓝）
 const statusTabs = [
+  { label: "待完成发货", value: "needs_delivery", type: "info" as const },
+  { label: "待处理退款", value: "needs_refund", type: "warning" as const },
   { label: "全部", value: "", type: "default" as const },
   { label: "待支付", value: "pending_payment", type: "warning" as const },
   { label: "已支付", value: "paid", type: "success" as const },
@@ -353,6 +361,7 @@ async function loadOrders() {
   try {
     const cur = cursors.value[page.value - 1] || 0;
     const { data, error } = await fetchOrders({
+      ...reportFilter.value,
       status: statusFilter.value || undefined,
       cursor: cur || undefined,
       limit: pageSize.value,
@@ -506,12 +515,23 @@ async function handleCancel(orderNo: string) {
 }
 
 const appStore = useAppStore();
+watch(() => route.fullPath, () => {
+  if (route.path !== "/order") return;
+  statusFilter.value = String(route.query.status || "");
+  keywordInput.value = "";
+  keyword.value = "";
+  resetOrderList();
+});
 onMounted(loadOrders);
 </script>
 
 <template>
   <div class="order-page min-h-500px min-w-0 flex-col gap-16px">
     <NCard title="订单管理" class="flex-1">
+      <div v-if="fromDashboard" class="mb-12px flex flex-wrap gap-8px items-center text-13px">
+        <span>工作台筛选<span v-if="reportFilter.start_time && reportFilter.end_time"> · {{ reportFilter.time_field === 'paid' ? '付款' : '创建' }}时间 {{ new Date(reportFilter.start_time * 1000).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}) }} — {{ new Date(reportFilter.end_time * 1000).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'}) }}（北京时间）</span><span v-if="reportFilter.product_id"> · 商品 #{{ reportFilter.product_id }}</span><span v-if="reportFilter.channel_code"> · 渠道 {{ reportFilter.channel_code }}</span></span>
+        <NButton size="small" @click="router.replace({path:'/order',query:{}})">清除筛选</NButton>
+      </div>
       <NTabs type="line">
         <NTabPane name="orders" tab="订单列表">
           <form class="mb-12px flex flex-wrap items-center gap-8px" @submit.prevent="searchOrders">

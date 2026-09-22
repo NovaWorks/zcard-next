@@ -30,6 +30,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/platform/db"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 	"github.com/shopspring/decimal"
 )
 
@@ -578,10 +579,14 @@ func (r *PaymentRepoImpl) GetPayment(ctx context.Context, id uint64) (*ent.Payme
 }
 
 // ListPayments 支付单列表。
-func (r *PaymentRepoImpl) ListPayments(ctx context.Context, status, orderNo string, cursor uint64, limit int32) ([]*ent.Payment, error) {
+func (r *PaymentRepoImpl) ListPayments(ctx context.Context, status, orderNo string, cursor uint64, limit int32, reviewOnly ...bool) ([]*ent.Payment, error) {
 	q := data.Client(ctx, r.data).Payment.Query().
+		Where(payment.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		Order(ent.Desc(payment.FieldID)).
 		Limit(int(limit))
+	if len(reviewOnly) > 0 && reviewOnly[0] {
+		q = q.Where(payment.ReviewReasonNEQ(""))
+	}
 	if status != "" {
 		q = q.Where(payment.StatusEQ(payment.Status(status)))
 	}

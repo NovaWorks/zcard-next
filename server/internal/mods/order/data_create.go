@@ -25,7 +25,9 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderamountline"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderstatusevent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -742,12 +744,19 @@ func (uc *OrderUsecase) GetByOrderNo(ctx context.Context, orderNo string) (*ent.
 }
 
 // ListOrders 订单列表（游标分页）。
-func (uc *OrderUsecase) ListOrders(ctx context.Context, subsiteID uint64, status string, cursor uint64, limit int32, keyword string) ([]*ent.Order, error) {
+func (uc *OrderUsecase) ListOrders(ctx context.Context, subsiteID uint64, status string, cursor uint64, limit int32, keyword string, filters ...predicate.Order) ([]*ent.Order, error) {
 	q := data.Client(ctx, uc.Data).Order.Query().
 		Where(order.SubsiteID(subsiteID), order.AdminDeletedAtIsNil()).
 		Order(ent.Desc(order.FieldID)).
 		Limit(int(limit))
-	if status != "" {
+	q = q.Where(filters...)
+	switch status {
+	case "needs_delivery":
+		q = q.Where(order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered))
+	case "needs_refund":
+		q = q.Where(order.Or(order.StatusEQ(order.StatusRefundPending), order.HasRefundsWith(refundorder.StatusIn(refundorder.StatusCreated, refundorder.StatusProcessing))))
+	case "":
+	default:
 		q = q.Where(order.StatusEQ(order.Status(status)))
 	}
 	if cursor > 0 {

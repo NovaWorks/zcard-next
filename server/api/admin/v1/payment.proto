@@ -163,6 +163,7 @@ message ListPaymentsRequest {
   string order_no = 2;
   uint64 cursor = 3;
   int32 limit = 4;
+  bool review_only = 5;
 }
 
 message ListPaymentsReply {
