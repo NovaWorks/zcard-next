@@ -33,12 +33,19 @@ func runAdminLoading(h *Harness) {
 	now := time.Now().UTC().Add(-time.Minute)
 	statuses := []order.Status{order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered, order.StatusDelivered, order.StatusCompleted, order.StatusPendingPayment, order.StatusCanceled, order.StatusRefunded}
 	for i, status := range statuses {
-		c.Order.Create().SetOrderNo(fmt.Sprintf("metric-%d", i)).SetSubsiteID(0).SetStatus(status).SetTotalAmount(101).SetCost(31).SetCreatedAt(now).SaveX(ctx)
+		b := c.Order.Create().SetOrderNo(fmt.Sprintf("metric-%d", i)).SetSubsiteID(0).SetStatus(status).SetTotalAmount(101).SetCost(31).SetCreatedAt(now)
+		if status != order.StatusPendingPayment && status != order.StatusCanceled {
+			b.SetPaidAt(now)
+		}
+		o := b.SaveX(ctx)
+		if status == order.StatusRefunded {
+			c.RefundOrder.Create().SetOrderID(o.ID).SetChannel("wallet").SetAmount(101).SetStatus("succeeded").SetCreatedAt(now).SaveX(ctx)
+		}
 	}
-	c.Order.Create().SetOrderNo("other-tenant").SetSubsiteID(9).SetStatus(order.StatusPaid).SetTotalAmount(99999).SetCreatedAt(now).SaveX(ctx)
+	c.Order.Create().SetOrderNo("other-tenant").SetSubsiteID(9).SetStatus(order.StatusPaid).SetTotalAmount(99999).SetCreatedAt(now).SetPaidAt(now).SaveX(ctx)
 	repo := dashboard.NewDashboardRepoImpl(h.Data)
 	_, _, week, _, _, _, err := repo.GetOverview(ctx)
-	if err != nil || week.Orders != 8 || week.PaidOrders != 5 || week.Revenue != 505 || week.Cost != 155 || week.Profit != 350 {
+	if err != nil || week.Orders != 8 || week.PaidOrders != 6 || week.Revenue != 606 || week.Cost != 186 || week.Refunds != 101 || week.NetRevenue != 505 || week.Profit != 319 {
 		t.Fatalf("metric=%+v err=%v", week, err)
 	}
 }

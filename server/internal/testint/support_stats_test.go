@@ -26,8 +26,8 @@ func runSupportStats(h *Harness) {
 	if err != nil || len(rows) != 2 || rows[0].PV != 1 || rows[1].PV != 2 || rows[1].UV != 1 {
 		t.Fatalf("traffic %+v %v", rows, err)
 	}
-	c.Order.Create().SetOrderNo("before-midnight").SetStatus(order.StatusPaid).SetTotalAmount(100).SetCreatedAt(start.Add(-time.Second)).SaveX(ctx)
-	c.Order.Create().SetOrderNo("at-midnight").SetStatus(order.StatusPaid).SetTotalAmount(200).SetCreatedAt(start).SaveX(ctx)
+	c.Order.Create().SetOrderNo("before-midnight").SetStatus(order.StatusPaid).SetTotalAmount(100).SetCreatedAt(start.Add(-time.Second)).SetPaidAt(start.Add(-time.Second)).SaveX(ctx)
+	c.Order.Create().SetOrderNo("at-midnight").SetStatus(order.StatusPaid).SetTotalAmount(200).SetCreatedAt(start).SetPaidAt(start).SaveX(ctx)
 	repo := dashboard.NewDashboardRepoImpl(h.Data)
 	if err = repo.RunDailySettle(ctx, start.Add(-time.Second)); err != nil {
 		t.Fatal(err)
