@@ -4551,12 +4551,16 @@ paths:
                 - AdminSupplyService
             description: |-
                 ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-                 PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+                 PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
             operationId: AdminSupplyService_PreviewProducts
             parameters:
                 - name: connectionId
                   in: path
                   required: true
+                  schema:
+                    type: string
+                - name: quoteCode
+                  in: query
                   schema:
                     type: string
             responses:
@@ -10275,6 +10279,12 @@ components:
                     type: integer
                     format: int32
                 alreadyImported:
+                    type: boolean
+                quoteStatus:
+                    type: string
+                costPriceCents:
+                    type: string
+                costIsMinimum:
                     type: boolean
         zcard.api.admin.v1.PreviewProductsReply:
             type: object

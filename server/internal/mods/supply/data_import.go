@@ -23,6 +23,7 @@ import (
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
+	"google.golang.org/protobuf/proto"
 )
 
 // previewCache 连接级预览缓存（60s）。
@@ -49,10 +50,73 @@ func (s *AdminSupplyService) PreviewProducts(ctx context.Context, req *adminv1.P
 	if err != nil {
 		return nil, err
 	}
+	conn, a, err := s.adapterForConnection(ctx, req.GetConnectionId())
+	if err != nil {
+		return nil, err
+	}
+	return s.pricePreview(ctx, conn, a, entry, req.GetQuoteCode())
+}
+
+// pricePreview never writes quotes into the shared catalog cache. Expanding the
+// UI quotes one product at a time, rather than blocking a large catalog load.
+func (s *AdminSupplyService) pricePreview(ctx context.Context, conn *ent.SupplyConnection, a adapter.Adapter, entry *previewEntry, code string) (*adminv1.PreviewProductsReply, error) {
+	if entry.identity != previewIdentity(conn) {
+		return nil, fmt.Errorf("货源账号已变化，请刷新商品目录")
+	}
+	if code != "" {
+		if _, ok := entry.byCode[code]; !ok {
+			return nil, fmt.Errorf("商品已不在预览目录，请重新加载")
+		}
+	}
+	quoter, needsQuote := a.(adapter.AccountQuoter)
 	reply := &adminv1.PreviewProductsReply{}
 	for _, cat := range entry.categories {
-		reply.Categories = append(reply.Categories, cat)
-		reply.Total += int32(len(cat.Products))
+		out := &adminv1.PreviewCategory{Code: cat.Code, Name: cat.Name}
+		for _, cached := range cat.Products {
+			if code != "" && cached.Code != code {
+				continue
+			}
+			p := proto.Clone(cached).(*adminv1.PreviewProduct)
+			source := entry.byCode[p.Code]
+			p.QuoteStatus, p.CostPriceCents = "pending", -1
+			if needsQuote {
+				p.PriceCents, p.FactoryPriceCents = -1, -1
+				if code != "" {
+					quoteCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+					quoted, err := quoter.QuoteProduct(quoteCtx, &source)
+					cancel()
+					if err == nil && quoted != nil {
+						source = *quoted
+						p.PriceCents, p.FactoryPriceCents = source.Price, source.FactoryPrice
+					} else {
+						p.QuoteStatus = "failed"
+					}
+				}
+			}
+			if !needsQuote || (code != "" && p.QuoteStatus != "failed") {
+				p.CostPriceCents = accountCost(conn, &source)
+				p.QuoteStatus = "ready"
+				p.CostIsMinimum = len(source.SKUs) > 0
+				if p.CostPriceCents < 0 {
+					p.QuoteStatus = "failed"
+				}
+			}
+			out.Products = append(out.Products, p)
+			reply.Total++
+		}
+		if len(out.Products) > 0 {
+			reply.Categories = append(reply.Categories, out)
+		}
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	current, err := s.repo.GetConnection(ctx, conn.ID)
+	if err != nil {
+		return nil, err
+	}
+	if previewIdentity(current) != previewIdentity(conn) || current.ExchangeRate != conn.ExchangeRate {
+		return nil, fmt.Errorf("货源账号或汇率已变化，请重新加载商品目录")
 	}
 	return reply, nil
 }

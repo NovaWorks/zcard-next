@@ -71,7 +71,7 @@ type AdminSupplyServiceClient interface {
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(ctx context.Context, in *CancelSyncTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...grpc.CallOption) (*PreviewProductsReply, error)
 	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 	ImportProducts(ctx context.Context, in *ImportProductsRequest, opts ...grpc.CallOption) (*ImportProductsReply, error)
@@ -270,7 +270,7 @@ type AdminSupplyServiceServer interface {
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(context.Context, *CancelSyncTaskRequest) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
 	// ImportProducts 勾选导入（定价策略 + 类目映射 + 存为连接默认； D）。
 	ImportProducts(context.Context, *ImportProductsRequest) (*ImportProductsReply, error)

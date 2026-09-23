@@ -72,6 +72,9 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
     },
     onError(err: any) {
       if (suppressUpdateRestartError(err)) return;
+      // Closing an import preview intentionally aborts its in-flight quotes.
+      if (err.code === "ERR_CANCELED" && err.config?.params?.quote_code
+        && /^\/api\/v1\/admin\/supply\/connections\/\d+\/preview$/.test(err.config?.url || "")) return;
       const msg = err.response?.data?.message || err.message || "网络异常";
       showErrorMsg(request.state as RequestInstanceState, msg);
     },

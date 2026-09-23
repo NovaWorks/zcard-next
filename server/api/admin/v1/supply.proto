@@ -84,7 +84,7 @@ service AdminSupplyService {
     };
   }
   // ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-  // PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+  // PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
   rpc PreviewProducts(PreviewProductsRequest) returns (PreviewProductsReply) {
     option (google.api.http) = { get: "/api/v1/admin/supply/connections/{connection_id}/preview" };
   }
@@ -278,6 +278,7 @@ message CreateSyncTaskRequest {
 
 message PreviewProductsRequest {
   uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
+  string quote_code = 2; // 非空时仅返回该商品，并实时获取账号单件报价（含各规格）
 }
 
 message PreviewProduct {
@@ -290,6 +291,9 @@ message PreviewProduct {
   bool is_active = 7;
   int32 stock = 8; // -1 = 无限/未知
   bool already_imported = 9; // 已存在映射（勾选导入 = 更新）
+  string quote_status = 10; // pending | ready | failed；未确认时不能使用目录原价作为成本
+  int64 cost_price_cents = 11; // 本地币种成本，账号单件报价乘汇率，不含加价；未知=-1
+  bool cost_is_minimum = 12; // 多规格商品显示最低规格成本
 }
 
 message PreviewCategory {

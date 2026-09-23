@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // 上游商品导入弹窗（ D）：预览分类树 → 勾选商品 → 定价策略（四模式）→
 // 类目映射（上游分类 → 本地分类）→ 存为连接默认。已导入商品标注（重导 = 更新）。
-import { computed, reactive, ref, watch } from "vue";
+import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
 import {
   NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInputNumber,
   NModal, NSelect, NSpace, NSpin, NTag, NTreeSelect, NInput,
@@ -19,6 +19,9 @@ interface PreviewCategory {
     code: string;
     name: string;
     price_cents: number;
+    cost_price_cents?: number;
+    cost_is_minimum?: boolean;
+    quote_status?: "pending" | "loading" | "ready" | "failed";
     is_active: boolean;
     stock: number;
     already_imported: boolean;
@@ -31,6 +34,7 @@ const emit = defineEmits<{ (e: "update:show", v: boolean): void; (e: "imported")
 const loading = ref(false);
 const previewError = ref("");
 let previewRequest = 0;
+const quoteRequests = new Set<AbortController>();
 const importing = ref(false);
 const categories = ref<PreviewCategory[]>([]);
 const localCategories = ref<any[]>([]);
@@ -104,6 +108,7 @@ watch(
       loadLocalCategories();
     } else {
       previewRequest++;
+      stopQuotes();
     }
   },
   { immediate: true },
@@ -111,6 +116,7 @@ watch(
 
 async function loadPreview() {
   const requestId = ++previewRequest;
+  stopQuotes();
   const connection = props.connection;
   loading.value = true;
   previewError.value = "";
@@ -134,7 +140,9 @@ async function loadPreview() {
       return;
     }
     if (!error && data) {
-      categories.value = (data as any).categories || [];
+      categories.value = ((data as any).categories || []).map((cat: PreviewCategory) => ({
+        ...cat, products: cat.products.map(p => ({ ...p, quote_status: p.quote_status || "pending" })),
+      }));
       // 连接默认定价回填
       try {
         const def = JSON.parse(connection.settings || "{}").import_pricing;
@@ -164,6 +172,56 @@ async function loadPreview() {
     if (requestId === previewRequest) loading.value = false;
   }
 }
+
+type PreviewItem = PreviewCategory["products"][number];
+const expandedProducts = computed(() => visibleCategories.value
+  .filter(cat => expandedCats.value.has(cat.code)).flatMap(cat => cat.products));
+
+function stopQuotes() {
+  for (const controller of quoteRequests) controller.abort();
+  quoteRequests.clear();
+}
+onBeforeUnmount(() => { previewRequest++; stopQuotes(); });
+
+// At most two visible-category products query the upstream concurrently. The
+// catalog stays usable, and closing/switching the modal cancels stale requests.
+function pumpQuotes() {
+  if (!props.show || loading.value || importing.value) return;
+  for (const p of expandedProducts.value) {
+    if (quoteRequests.size >= 2) break;
+    if (p.quote_status === "pending") void loadQuote(p);
+  }
+}
+async function loadQuote(p: PreviewItem) {
+  const requestId = previewRequest;
+  const controller = new AbortController();
+  quoteRequests.add(controller);
+  p.quote_status = "loading";
+  try {
+    const { data, error } = await previewSupplyProducts(props.connection.id, p.code, controller.signal);
+    if (requestId !== previewRequest) return;
+    const quoted = (data as { categories?: PreviewCategory[] } | null)?.categories
+      ?.flatMap(cat => cat.products).find(item => item.code === p.code);
+    if (!error && quoted?.quote_status === "ready" && Number(quoted.cost_price_cents) > 0) {
+      p.cost_price_cents = Number(quoted.cost_price_cents);
+      p.cost_is_minimum = quoted.cost_is_minimum;
+      p.quote_status = "ready";
+    } else {
+      p.quote_status = "failed";
+    }
+  } catch {
+    if (requestId === previewRequest) p.quote_status = "failed";
+  } finally {
+    quoteRequests.delete(controller);
+    if (requestId === previewRequest) pumpQuotes();
+  }
+}
+function retryQuote(p: PreviewItem) { p.quote_status = "pending"; pumpQuotes(); }
+function refreshCosts() {
+  for (const p of expandedProducts.value) if (p.quote_status !== "loading") p.quote_status = "pending";
+  pumpQuotes();
+}
+watch([expandedProducts, loading, importing], pumpQuotes);
 
 async function loadLocalCategories() {
   const requestId = previewRequest;
@@ -257,8 +315,9 @@ async function submit() {
         <div class="import-toolbar">
           <NInput v-model:value="keyword" clearable placeholder="搜索上游分类或商品名称" aria-label="搜索上游分类或商品名称" />
           <NButton size="small" @click="toggleAllExpand">{{ allExpanded ? '全部收起' : '全部展开' }}</NButton>
+          <NButton size="small" :disabled="!expandedProducts.length || loading" @click="refreshCosts">刷新成本</NButton>
         </div>
-        <div class="text-12px text-gray-400">分类默认折叠；勾选整类包含该分类全部商品，搜索不会取消已选商品。目录价格仅供参考，正式导入按账号报价计算。</div>
+        <div class="text-12px text-gray-400">展开分类后查询账号成本，已按渠道汇率换算，不含加价；多规格显示最低成本。正式导入会重新核价。勾选整类包含全部商品，搜索不会取消已选商品。</div>
         <div class="category-list">
           <div v-for="cat in visibleCategories" :key="cat.code" class="category-item">
             <div class="category-row">
@@ -284,12 +343,20 @@ async function submit() {
             </div>
             <NCheckboxGroup v-if="expandedCats.has(cat.code)" v-model:value="checked">
               <div class="product-list">
-                <NCheckbox v-for="p in cat.products" :key="p.code" :value="p.code">
+                <div v-for="p in cat.products" :key="p.code" class="product-item">
+                <NCheckbox :value="p.code">
                   <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}</span>
-                  <span class="ml-4px text-12px text-gray-400">{{ formatMoney(p.price_cents) }} <template v-if="p.stock >= 0">· 库存 {{ p.stock }}</template></span>
+                  <span class="ml-4px text-12px" aria-live="polite">
+                    <template v-if="p.quote_status === 'ready'">成本 {{ formatMoney(p.cost_price_cents ?? 0) }}{{ p.cost_is_minimum ? ' 起' : '' }}</template>
+                    <template v-else-if="p.quote_status === 'failed'">成本查询失败</template>
+                    <template v-else>成本查询中…</template>
+                    <template v-if="p.stock >= 0"> · 库存 {{ p.stock }}</template>
+                  </span>
                   <NTag v-if="p.already_imported" size="tiny" type="info" :bordered="false" class="ml-4px">已导入</NTag>
                   <NTag v-if="!p.is_active" size="tiny" type="warning" :bordered="false" class="ml-4px">已下架</NTag>
                 </NCheckbox>
+                <NButton v-if="p.quote_status === 'failed'" size="small" :aria-label="`重试${p.name}成本`" @click="retryQuote(p)">重试</NButton>
+                </div>
               </div>
             </NCheckboxGroup>
           </div>
@@ -360,11 +427,15 @@ async function submit() {
 .category-destination { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .draft-name { display: flex; gap: 6px; }
 .product-list { display: flex; flex-direction: column; gap: 5px; padding: 2px 10px 8px 38px; }
+.product-item { display: flex; align-items: center; gap: 8px; }
+.product-item > .n-checkbox { flex: 1; min-width: 0; }
 .mapping-actions { display: flex; align-items: center; gap: 8px; }
 .mapping-actions > :first-child { flex: 1; min-width: 0; }
 .pricing-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 16px; padding: 8px 10px; border: 1px solid var(--n-border-color); border-radius: 8px; }
 .pricing-default { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; }
 @media (max-width: 640px) {
+  .import-toolbar { flex-wrap: wrap; gap: 6px; }
+  .import-toolbar > :first-child { flex-basis: 100%; }
   .category-row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .mapping-actions { flex-wrap: wrap; }
   .mapping-actions > :first-child { flex-basis: 100%; }

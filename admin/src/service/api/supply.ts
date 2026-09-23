@@ -81,8 +81,9 @@ export function fetchSupplyHealth() {
 
 // ── 交互式导入（ D）──
 
-export function previewSupplyProducts(connectionId: number) {
-  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview`, timeout: 60000 });
+export function previewSupplyProducts(connectionId: number, quoteCode?: string, signal?: AbortSignal) {
+  return request({ url: `/api/v1/admin/supply/connections/${connectionId}/preview`,
+    params: quoteCode ? { quote_code: quoteCode } : undefined, signal, timeout: quoteCode ? 25000 : 60000 });
 }
 
 export function importSupplyProducts(

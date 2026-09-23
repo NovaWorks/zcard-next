@@ -1559,6 +1559,7 @@ func (x *CreateSyncTaskRequest) GetForceReprice() bool {
 type PreviewProductsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId  uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	QuoteCode     string                 `protobuf:"bytes,2,opt,name=quote_code,json=quoteCode,proto3" json:"quote_code,omitempty"` // 非空时仅返回该商品，并实时获取账号单件报价（含各规格）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1600,6 +1601,13 @@ func (x *PreviewProductsRequest) GetConnectionId() uint64 {
 	return 0
 }
 
+func (x *PreviewProductsRequest) GetQuoteCode() string {
+	if x != nil {
+		return x.QuoteCode
+	}
+	return ""
+}
+
 type PreviewProduct struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	Code              string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
@@ -1611,6 +1619,9 @@ type PreviewProduct struct {
 	IsActive          bool                   `protobuf:"varint,7,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
 	Stock             int32                  `protobuf:"varint,8,opt,name=stock,proto3" json:"stock,omitempty"`                                            // -1 = 无限/未知
 	AlreadyImported   bool                   `protobuf:"varint,9,opt,name=already_imported,json=alreadyImported,proto3" json:"already_imported,omitempty"` // 已存在映射（勾选导入 = 更新）
+	QuoteStatus       string                 `protobuf:"bytes,10,opt,name=quote_status,json=quoteStatus,proto3" json:"quote_status,omitempty"`             // pending | ready | failed；未确认时不能使用目录原价作为成本
+	CostPriceCents    int64                  `protobuf:"varint,11,opt,name=cost_price_cents,json=costPriceCents,proto3" json:"cost_price_cents,omitempty"` // 本地币种成本，账号单件报价乘汇率，不含加价；未知=-1
+	CostIsMinimum     bool                   `protobuf:"varint,12,opt,name=cost_is_minimum,json=costIsMinimum,proto3" json:"cost_is_minimum,omitempty"`    // 多规格商品显示最低规格成本
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1704,6 +1715,27 @@ func (x *PreviewProduct) GetStock() int32 {
 func (x *PreviewProduct) GetAlreadyImported() bool {
 	if x != nil {
 		return x.AlreadyImported
+	}
+	return false
+}
+
+func (x *PreviewProduct) GetQuoteStatus() string {
+	if x != nil {
+		return x.QuoteStatus
+	}
+	return ""
+}
+
+func (x *PreviewProduct) GetCostPriceCents() int64 {
+	if x != nil {
+		return x.CostPriceCents
+	}
+	return 0
+}
+
+func (x *PreviewProduct) GetCostIsMinimum() bool {
+	if x != nil {
+		return x.CostIsMinimum
 	}
 	return false
 }
@@ -2652,9 +2684,11 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x12\n" +
 	"\x04mode\x18\x02 \x01(\tR\x04mode\x12\x14\n" +
 	"\x05scope\x18\x03 \x01(\tR\x05scope\x12#\n" +
-	"\rforce_reprice\x18\x04 \x01(\bR\fforceReprice\"B\n" +
+	"\rforce_reprice\x18\x04 \x01(\bR\fforceReprice\"a\n" +
 	"\x16PreviewProductsRequest\x12(\n" +
-	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\"\xb1\x02\n" +
+	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x1d\n" +
+	"\n" +
+	"quote_code\x18\x02 \x01(\tR\tquoteCode\"\xa6\x03\n" +
 	"\x0ePreviewProduct\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -2665,7 +2699,11 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\rcategory_name\x18\x06 \x01(\tR\fcategoryName\x12\x1b\n" +
 	"\tis_active\x18\a \x01(\bR\bisActive\x12\x14\n" +
 	"\x05stock\x18\b \x01(\x05R\x05stock\x12)\n" +
-	"\x10already_imported\x18\t \x01(\bR\x0falreadyImported\"y\n" +
+	"\x10already_imported\x18\t \x01(\bR\x0falreadyImported\x12!\n" +
+	"\fquote_status\x18\n" +
+	" \x01(\tR\vquoteStatus\x12(\n" +
+	"\x10cost_price_cents\x18\v \x01(\x03R\x0ecostPriceCents\x12&\n" +
+	"\x0fcost_is_minimum\x18\f \x01(\bR\rcostIsMinimum\"y\n" +
 	"\x0fPreviewCategory\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12>\n" +

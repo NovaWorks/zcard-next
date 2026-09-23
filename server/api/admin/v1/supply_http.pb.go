@@ -59,7 +59,7 @@ type AdminSupplyServiceHTTPServer interface {
 	// PingConnection PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
 	PingConnection(context.Context, *PingConnectionRequest) (*PingConnectionReply, error)
 	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(context.Context, *UpdateConnectionRequest) (*SupplyConnection, error)
@@ -420,7 +420,7 @@ type AdminSupplyServiceHTTPClient interface {
 	// PingConnection PingConnection 探活（更新 last_ping_at/last_ping_ok/balance_cache）。
 	PingConnection(ctx context.Context, req *PingConnectionRequest, opts ...http.CallOption) (rsp *PingConnectionReply, err error)
 	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-	// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(ctx context.Context, req *PreviewProductsRequest, opts ...http.CallOption) (rsp *PreviewProductsReply, err error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(ctx context.Context, req *UpdateConnectionRequest, opts ...http.CallOption) (rsp *SupplyConnection, err error)
@@ -645,7 +645,7 @@ func (c *AdminSupplyServiceHTTPClientImpl) PingConnection(ctx context.Context, i
 }
 
 // PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
-// PreviewProducts 上游商品预览（交互式导入：实时拉取 ≤20 页，60s 缓存； D）。
+// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 func (c *AdminSupplyServiceHTTPClientImpl) PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...http.CallOption) (*PreviewProductsReply, error) {
 	var out PreviewProductsReply
 	pattern := "/api/v1/admin/supply/connections/{connection_id}/preview"
