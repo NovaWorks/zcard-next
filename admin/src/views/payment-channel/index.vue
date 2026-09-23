@@ -136,6 +136,13 @@ const form = reactive({
   methods: [] as MethodRow[], // 支付方式列表（聚合网关按方式收银）
 });
 
+// BEpusdt selects networks on its own cashier; GM Pay uses local method rows.
+const visibleFields = computed(() => currentFields.value.filter(f => {
+  if (current.value?.driver !== "bepusdt") return true;
+  const cashier = form.values.checkout_mode === "cashier";
+  return (f.key !== "trade_type" || !cashier) && (f.key !== "currencies" || cashier);
+}));
+
 // 聚合网关（一个渠道多种支付方式）：epay 协议 type 路由 / USDT 按链选择
 const isAggregateDriver = computed(() => ["epay", "epusdt"].includes(current.value?.driver || ""));
 
@@ -405,8 +412,10 @@ function openConfig(ch: ChannelRow) {
     const v = echo[f.key] ?? (ch.driver === "bepusdt" ? f.default : undefined);
     if (f.type === "number" && v !== undefined && v !== "" && Number.isFinite(Number(v))) {
       form.values[f.key] = Number(v);
-    } else if (Array.isArray(v) && v.length > 0) {
+    } else if (Array.isArray(v)) {
       form.values[f.key] = v; // 多选字段回显
+    } else if (ch.driver === "bepusdt" && f.multiple) {
+      form.values[f.key] = [];
     } else if (typeof v === "string" && v !== "****" && v !== "") {
       form.values[f.key] = v;
     }
@@ -801,33 +810,36 @@ onMounted(() => {
         <template v-if="currentFields.length > 0">
           <NDivider title-placement="left" style="margin: 4px 0 16px">渠道参数</NDivider>
           <NFormItem
-            v-for="f in currentFields"
+            v-for="f in visibleFields"
             :key="f.key"
             :label="f.label"
             :required="f.required && !configuredKeys.has(f.key)"
           >
             <template v-if="f.type === 'select'">
-              <NSelect
-                v-model:value="form.values[f.key]"
-                :options="fieldOptionsOf(f)"
-                :multiple="f.multiple"
-                :collapse-tags="f.multiple"
-                :max-tag-count="f.multiple ? 3 : undefined"
-                :loading="!!dynamicLoading[f.key]"
-                :placeholder="f.multiple ? '选择支持的选项（可多选）' : f.placeholder || '请选择'"
-                style="width: 100%"
-                @update:value="
-                  (v) => {
-                    // 级联：network 变化 → 刷新 token 选项（已选链的代币并集）
-                    if (f.dynamic && f.key === 'network') {
-                      const tokenField = currentFields.find((x) => x.key === 'token');
-                      if (tokenField) loadFieldOptions(tokenField);
+              <div class="w-full">
+                <NSelect
+                  v-model:value="form.values[f.key]"
+                  :options="fieldOptionsOf(f)"
+                  :multiple="f.multiple"
+                  :collapse-tags="f.multiple"
+                  :max-tag-count="f.multiple ? 3 : undefined"
+                  :loading="!!dynamicLoading[f.key]"
+                  :placeholder="f.multiple ? '选择支持的选项（可多选）' : f.placeholder || '请选择'"
+                  style="width: 100%"
+                  @update:value="
+                    (v) => {
+                      // 级联：network 变化 → 刷新 token 选项（已选链的代币并集）
+                      if (f.dynamic && f.key === 'network') {
+                        const tokenField = currentFields.find((x) => x.key === 'token');
+                        if (tokenField) loadFieldOptions(tokenField);
+                      }
                     }
-                  }
-                "
-              />
-              <div v-if="f.dynamic && dynamicOpts[f.key]?.fallback" class="text-12px opacity-50 mt-4px">
-                无法连接网关，当前为内置选项（配置网关地址后自动刷新）
+                  "
+                />
+                <div v-if="f.dynamic && dynamicOpts[f.key]?.fallback" class="text-12px opacity-50 mt-4px">
+                  无法连接网关，当前为内置选项（配置网关地址后自动刷新）
+                </div>
+                <div v-if="current?.driver === 'bepusdt' && f.help" class="text-12px opacity-70 mt-4px">{{ f.help }}</div>
               </div>
             </template>
             <template v-else-if="f.type === 'textarea'">

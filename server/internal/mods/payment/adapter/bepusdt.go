@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -21,10 +22,43 @@ import (
 )
 
 type BepusdtConfig struct {
-	APIURL    string `json:"api_url"`
-	APIToken  string `json:"api_token"`
-	TradeType string `json:"trade_type"`
-	Timeout   int64  `json:"timeout"`
+	APIURL       string   `json:"api_url"`
+	APIToken     string   `json:"api_token"`
+	TradeType    string   `json:"trade_type"`
+	Timeout      int64    `json:"timeout"`
+	CheckoutMode string   `json:"checkout_mode"`
+	Currencies   []string `json:"currencies"`
+}
+
+// Official v1.24.2 trade types. Availability still depends on gateway wallets and rates.
+var bepusdtTrades = []port.ConfigOption{
+	{Label: "USDT · TRC20", Value: "usdt.trc20"},
+	{Label: "USDC · TRC20", Value: "usdc.trc20"},
+	{Label: "TRX · Tron", Value: "tron.trx"},
+	{Label: "USDT · ERC20", Value: "usdt.erc20"},
+	{Label: "USDC · ERC20", Value: "usdc.erc20"},
+	{Label: "ETH · Ethereum", Value: "ethereum.eth"},
+	{Label: "USDT · Polygon", Value: "usdt.polygon"},
+	{Label: "USDC · Polygon", Value: "usdc.polygon"},
+	{Label: "USDT · BEP20", Value: "usdt.bep20"},
+	{Label: "USDC · BEP20", Value: "usdc.bep20"},
+	{Label: "BNB · BSC", Value: "bsc.bnb"},
+	{Label: "USDT · Aptos", Value: "usdt.aptos"},
+	{Label: "USDC · Aptos", Value: "usdc.aptos"},
+	{Label: "USDT · Solana", Value: "usdt.solana"},
+	{Label: "USDC · Solana", Value: "usdc.solana"},
+	{Label: "USDT · X-Layer", Value: "usdt.xlayer"},
+	{Label: "USDC · X-Layer", Value: "usdc.xlayer"},
+	{Label: "USDT · Arbitrum-One", Value: "usdt.arbitrum"},
+	{Label: "USDC · Arbitrum-One", Value: "usdc.arbitrum"},
+	{Label: "USDC · Base", Value: "usdc.base"},
+	{Label: "USDT · Plasma", Value: "usdt.plasma"},
+	{Label: "USDT · Ton", Value: "usdt.ton"},
+	{Label: "TON · Ton", Value: "ton.gram"},
+}
+
+func (c BepusdtConfig) Equal(other BepusdtConfig) bool {
+	return c.APIURL == other.APIURL && c.APIToken == other.APIToken && c.TradeType == other.TradeType && c.Timeout == other.Timeout && c.CheckoutMode == other.CheckoutMode && slices.Equal(c.Currencies, other.Currencies)
 }
 
 func ParseBepusdtConfig(raw json.RawMessage) (BepusdtConfig, error) {
@@ -46,11 +80,26 @@ func ParseBepusdtConfig(raw json.RawMessage) (BepusdtConfig, error) {
 	if strings.TrimSpace(c.APIToken) == "" {
 		return c, fmt.Errorf("BEpusdt API Token 必填")
 	}
-	switch c.TradeType {
-	case "usdt.trc20", "usdt.erc20", "usdt.bep20":
-	default:
-		return c, fmt.Errorf("BEpusdt 暂仅支持 USDT TRC20/ERC20/BEP20")
+	if c.CheckoutMode == "" {
+		c.CheckoutMode = "fixed"
 	}
+	if c.CheckoutMode != "fixed" && c.CheckoutMode != "cashier" {
+		return c, fmt.Errorf("BEpusdt 收款模式无效")
+	}
+	if !slices.ContainsFunc(bepusdtTrades, func(o port.ConfigOption) bool { return o.Value == c.TradeType }) {
+		return c, fmt.Errorf("BEpusdt 不支持该币种与网络组合")
+	}
+	for i, currency := range c.Currencies {
+		currency = strings.ToUpper(strings.TrimSpace(currency))
+		switch currency {
+		case "USDT", "USDC", "TRX", "ETH", "BNB", "GRAM":
+		default:
+			return c, fmt.Errorf("BEpusdt 收银台币种无效")
+		}
+		c.Currencies[i] = currency
+	}
+	slices.Sort(c.Currencies)
+	c.Currencies = slices.Compact(c.Currencies)
 	if c.Timeout < 180 || c.Timeout > 3600 {
 		return c, fmt.Errorf("BEpusdt 支付期限应为 180–3600 秒")
 	}
@@ -79,13 +128,15 @@ func (*Bepusdt) ValidateConfig(raw json.RawMessage) error {
 	return err
 }
 func (*Bepusdt) Meta() port.DriverMeta {
-	return port.DriverMeta{Name: "BEpusdt", Icon: "usdt", Description: "BEpusdt 原生接口 · CNY 计价、USDT 收款（每个渠道固定一条链）"}
+	return port.DriverMeta{Name: "BEpusdt", Icon: "usdt", Description: "BEpusdt 原生接口 · CNY 计价，支持固定链与多链多币种收银台"}
 }
 func (*Bepusdt) ConfigFields() []port.ConfigField {
 	return []port.ConfigField{
 		{Key: "api_url", Label: "网关地址", Type: "text", Required: true, Placeholder: "https://pay.example.com", Help: "BEpusdt 服务根地址，不含 /api/v1/order/create-transaction"},
 		{Key: "api_token", Label: "API Token", Type: "password", Required: true, Sensitive: true, Help: "BEpusdt 后台 API 认证令牌"},
-		{Key: "trade_type", Label: "收款网络", Type: "select", Required: true, Default: "usdt.trc20", Options: []port.ConfigOption{{Label: "USDT · TRC20", Value: "usdt.trc20"}, {Label: "USDT · ERC20", Value: "usdt.erc20"}, {Label: "USDT · BEP20", Value: "usdt.bep20"}}, Help: "网关需已配置对应钱包；支持新建多个渠道分别收款"},
+		{Key: "checkout_mode", Label: "收款模式", Type: "select", Required: true, Default: "fixed", Options: []port.ConfigOption{{Label: "固定币种与网络（兼容原配置）", Value: "fixed"}, {Label: "多链收银台（用户选择币种与网络）", Value: "cashier"}}, Help: "多链模式在 BEpusdt 收银台选择实际可用的币种与网络；存在未完成或待核对支付时不能切换配置。"},
+		{Key: "trade_type", Label: "收款网络", Type: "select", Required: true, Default: "usdt.trc20", Options: append([]port.ConfigOption(nil), bepusdtTrades...), Help: "固定模式使用；网关需已配置该币种、网络的钱包和汇率。"},
+		{Key: "currencies", Label: "收银台币种", Type: "select", Multiple: true, Options: []port.ConfigOption{{Label: "USDT", Value: "USDT"}, {Label: "USDC", Value: "USDC"}, {Label: "TRX", Value: "TRX"}, {Label: "ETH", Value: "ETH"}, {Label: "BNB", Value: "BNB"}, {Label: "TON（GRAM）", Value: "GRAM"}}, Help: "多链模式使用；不选表示允许网关全部可用币种，网络由 BEpusdt 已启用的钱包和汇率决定。"},
 		{Key: "timeout", Label: "支付期限（秒）", Type: "number", Default: "1200", Help: "180–3600 秒；同时受商品订单剩余期限限制。重试不会延长期限"},
 	}
 }
@@ -159,7 +210,14 @@ func (b *Bepusdt) CreatePayment(ctx context.Context, req port.CreatePaymentReque
 	if !decimal.NewFromFloat(f).Equal(decimal.NewFromInt(int64(req.Amount)).Shift(-2)) {
 		return nil, fmt.Errorf("BEpusdt amount exceeds exact protocol range")
 	}
-	fields := map[string]any{"order_id": req.GatewayOrderRef, "amount": amount, "fiat": "CNY", "trade_type": c.TradeType, "timeout": timeout, "notify_url": req.NotifyBaseURL, "redirect_url": req.ReturnURL, "name": req.Subject}
+	fields := map[string]any{"order_id": req.GatewayOrderRef, "amount": amount, "fiat": "CNY", "timeout": timeout, "notify_url": req.NotifyBaseURL, "redirect_url": req.ReturnURL, "name": req.Subject}
+	endpoint := "/api/v1/order/create-transaction"
+	if c.CheckoutMode == "cashier" {
+		endpoint = "/api/v1/order/create-order"
+		fields["currencies"] = strings.Join(c.Currencies, ",")
+	} else {
+		fields["trade_type"] = c.TradeType
+	}
 	body, _ := json.Marshal(fields)
 	sig, err := bepusdtSign(body, c.APIToken)
 	if err != nil {
@@ -167,7 +225,7 @@ func (b *Bepusdt) CreatePayment(ctx context.Context, req port.CreatePaymentReque
 	}
 	fields["signature"] = sig
 	body, _ = json.Marshal(fields)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.APIURL+"/api/v1/order/create-transaction", bytes.NewReader(body))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.APIURL+endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +260,7 @@ func (b *Bepusdt) CreatePayment(ctx context.Context, req port.CreatePaymentReque
 	}
 	d := result.Data
 	got, err := bepusdtAmount(d.Amount)
-	if err != nil || got != req.Amount || d.OrderID != req.GatewayOrderRef || d.Fiat != "CNY" || d.TradeType != c.TradeType || d.TradeID == "" || len(d.TradeID) > 80 {
+	if err != nil || got != req.Amount || d.OrderID != req.GatewayOrderRef || d.Fiat != "CNY" || (c.CheckoutMode == "fixed" && d.TradeType != c.TradeType) || d.TradeID == "" || len(d.TradeID) > 80 {
 		return nil, fmt.Errorf("BEpusdt 返回订单信息不一致")
 	}
 	if d.Status != 1 && d.Status != 2 && d.Status != 5 {

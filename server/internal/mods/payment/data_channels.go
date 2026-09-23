@@ -248,7 +248,7 @@ func methodsJSON(raw string) ([]map[string]any, error) {
 // CreateChannel 创建渠道（凭据加密入库；methodsJSON=支付方式列表）。
 func (r *PaymentRepoImpl) CreateChannel(ctx context.Context, name, code, driver, configJSON string, fee int64, feeType string, enabled bool, sort int32, icon string, methods []map[string]any, usage ...ChannelUsage) (*ent.PaymentChannel, error) {
 	if driver == "bepusdt" && len(methods) > 0 {
-		return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 每个渠道固定一条链")
+		return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 请通过收款模式配置多链收银台，不支持本地支付方式列表")
 	}
 	// A deleted channel keeps its code for historical callbacks. A replacement
 	// requested from the visible list must receive a fresh code and encryption AAD.
@@ -321,7 +321,7 @@ func (r *PaymentRepoImpl) updateChannel(ctx context.Context, id uint64, name, co
 			return nil, err
 		}
 		if ch.Driver == "bepusdt" {
-			return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 每个渠道固定一条链")
+			return nil, fmt.Errorf("payment.METHODS_INVALID: BEpusdt 请通过收款模式配置多链收银台，不支持本地支付方式列表")
 		}
 	}
 	q := data.Client(ctx, r.data).PaymentChannel.UpdateOneID(id)

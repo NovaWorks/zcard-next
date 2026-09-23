@@ -65,7 +65,7 @@ func (r *PaymentRepoImpl) createBepusdtPayment(ctx context.Context, chID, orderI
 			return err
 		}
 		if len(ch.Methods) > 0 {
-			return fmt.Errorf("payment.METHODS_INVALID: BEpusdt 每个渠道固定一条链")
+			return fmt.Errorf("payment.METHODS_INVALID: BEpusdt 请通过收款模式配置多链收银台，不支持本地支付方式列表")
 		}
 		var amount int64
 		var subsite uint64
@@ -248,7 +248,7 @@ func (r *PaymentRepoImpl) checkBepusdtConfigChange(ctx context.Context, ch *ent.
 		return err
 	}
 	old, err := adapter.ParseBepusdtConfig(r.DecryptConfig(ch))
-	if err == nil && old == next {
+	if err == nil && old.Equal(next) {
 		return nil
 	}
 	pending, err := data.Client(ctx, r.data).Payment.Query().Where(payment.ChannelID(ch.ID), payment.Or(payment.StatusEQ(payment.StatusPending), payment.ReviewReasonNEQ(""))).Exist(ctx)

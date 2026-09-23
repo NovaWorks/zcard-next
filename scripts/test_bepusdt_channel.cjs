@@ -1,5 +1,5 @@
 /** Built admin smoke test with disposable API fixtures: no production credentials. */
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const { chromium, expect } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../admin/dist');
 const server = http.createServer((req, res) => {
@@ -14,11 +14,14 @@ const server = http.createServer((req, res) => {
  try {
   for (const width of [1440,390]) {
    const page=await browser.newPage({viewport:{width,height:1000}}), errors=[], creates=[], updates=[], deletes=[];
+   page.setDefaultTimeout(15000);
    const channels=[];
-   const drivers=[{code:'bepusdt',name:'BEpusdt',description:'BEpusdt 原生接口 · CNY 计价、USDT 收款（每个渠道固定一条链）',fields:[
+   const drivers=[{code:'bepusdt',name:'BEpusdt',description:'BEpusdt 原生接口 · CNY 计价，支持固定链与多链多币种收银台',fields:[
     {key:'api_url',label:'网关地址',type:'text',required:true,placeholder:'https://pay.example.com',help:'BEpusdt 服务根地址，不含 /api/v1/order/create-transaction'},
     {key:'api_token',label:'API Token',type:'password',required:true,sensitive:true},
-    {key:'trade_type',label:'收款网络',type:'select',required:true,default:'usdt.trc20',options:[{label:'USDT · TRC20',value:'usdt.trc20'},{label:'USDT · ERC20',value:'usdt.erc20'},{label:'USDT · BEP20',value:'usdt.bep20'}]},
+    {key:'checkout_mode',label:'收款模式',type:'select',required:true,default:'fixed',options:[{label:'固定币种与网络（兼容原配置）',value:'fixed'},{label:'多链收银台（用户选择币种与网络）',value:'cashier'}]},
+    {key:'currencies',label:'收银台币种',type:'select',multiple:true,options:[{label:'USDT',value:'USDT'},{label:'USDC',value:'USDC'},{label:'TON（GRAM）',value:'GRAM'}],help:'不选表示允许网关全部可用币种'},
+    {key:'trade_type',label:'收款网络',type:'select',required:true,default:'usdt.trc20',options:[{label:'USDT · TRC20',value:'usdt.trc20'},{label:'USDT · ERC20',value:'usdt.erc20'},{label:'USDT · BEP20',value:'usdt.bep20'},{label:'USDC · Solana',value:'usdc.solana'}]},
     {key:'timeout',label:'支付期限（秒）',type:'number',default:'1200',help:'180–3600 秒；同时受商品订单剩余期限限制。重试不会延长期限'},
    ]},{code:"epusdt",name:"GM Pay",description:"GM Pay 多链多币种收款",fields:[]}];
    page.on('pageerror',e=>errors.push(e.message));
@@ -31,7 +34,7 @@ const server = http.createServer((req, res) => {
      if(method==='POST'){const body=route.request().postDataJSON();creates.push(body);data={...body,id:channels.length+1,configured_fields:[],callback_url:'https://shop.example/payments/callback/'+body.code};channels.push(data);}else data={channels};
     }
     if(/\/payment\/channels\/\d+$/.test(p)&&method==='PUT'){
-     const body=route.request().postDataJSON();updates.push(body);data=Object.assign(channels.find(c=>c.id===Number(p.split('/').pop())),body);data.configured_fields=['api_url','api_token','trade_type','timeout'];
+     const body=route.request().postDataJSON();updates.push(body);data=Object.assign(channels.find(c=>c.id===Number(p.split('/').pop())),body);data.configured_fields=['api_url','api_token','trade_type','timeout','checkout_mode','currencies'];
     }
     if(/\/payment\/channels\/\d+$/.test(p)&&method==='DELETE'){
      const id=Number(p.split('/').pop());deletes.push(id);channels.splice(channels.findIndex(c=>c.id===id),1);data={};
@@ -54,6 +57,25 @@ const server = http.createServer((req, res) => {
    if(process.env.BEPUSDT_SCREENSHOT_DIR){fs.mkdirSync(process.env.BEPUSDT_SCREENSHOT_DIR,{recursive:true});await page.screenshot({path:path.join(process.env.BEPUSDT_SCREENSHOT_DIR,`bepusdt-${width}.png`),fullPage:true});}
    await config.getByRole('button',{name:'保存',exact:true}).click();await config.waitFor({state:'hidden'});
    const cfg=JSON.parse(updates.at(-1).config_json);assert.equal(cfg.trade_type,'usdt.bep20');assert.equal(Number(cfg.timeout),1200);assert.equal(cfg.api_token,'fixture-token');assert.deepEqual(errors,[]);
+   assert.equal(cfg.checkout_mode,'fixed');assert.deepEqual(cfg.currencies,[]);
+   await page.getByRole('button',{name:'配置',exact:true}).click();await config.waitFor();
+   assert.equal(await field('收银台币种').count(),0);
+   await field('收款网络').locator('.n-base-selection').click();await page.getByText('USDC · Solana',{exact:true}).click();
+   await field('收款模式').locator('.n-base-selection').click();await page.getByText('多链收银台（用户选择币种与网络）',{exact:true}).click();
+   assert.equal(await field('收款网络').count(),0);
+   await field('收银台币种').locator('.n-base-selection').click();
+   await page.locator('.n-base-select-option').filter({hasText:/^USDC$/}).click();
+   await page.locator('.n-base-select-option').filter({hasText:'TON（GRAM）'}).click();
+   await config.getByText('渠道参数',{exact:true}).click();
+   await config.getByRole('button',{name:'保存',exact:true}).click();await config.waitFor({state:'hidden'});
+   let cashier=JSON.parse(updates.at(-1).config_json);assert.equal(cashier.checkout_mode,'cashier');assert.deepEqual(cashier.currencies,['USDC','GRAM']);assert.equal(cashier.trade_type,'usdc.solana');
+   await page.reload();await page.getByRole('button',{name:'配置',exact:true}).click();await config.waitFor();
+   assert.equal(await field('收款网络').count(),0);assert((await field('收银台币种').innerText()).includes('USDC'));
+   // Removing all selections must send [], otherwise the backend merge retains old limits.
+   const close=field('收银台币种').locator('.n-tag__close');
+   for(let i=await close.count();i>0;i--) { await close.first().click(); await expect(close).toHaveCount(i-1); }
+   await config.getByRole('button',{name:'保存',exact:true}).click();await config.waitFor({state:'hidden'});
+   assert.deepEqual(JSON.parse(updates.at(-1).config_json).currencies,[]);
    await page.reload();await page.locator('.n-tag__content').filter({hasText:/^已启用$/}).waitFor();
    const remove=page.getByRole('button',{name:'删除',exact:true});
    assert(await remove.isDisabled(),'enabled channel must be stopped before deletion');
@@ -62,7 +84,7 @@ const server = http.createServer((req, res) => {
    await remove.click();await page.getByText('删除后将从渠道列表移除，历史支付记录和到账通知仍会保留，确定删除？',{exact:true}).waitFor();
    await page.getByRole('button',{name:'确认',exact:true}).click();await page.getByText('尚未接入任何支付渠道',{exact:true}).waitFor();
    assert.deepEqual(deletes,[1]);await page.reload();await page.getByText('尚未接入任何支付渠道',{exact:true}).waitFor();assert.deepEqual(errors,[]);
-   await page.close();console.log(`PASS BEpusdt create/configure, disable/delete confirmation and list removal after reload width=${width}`);
+   await page.close();console.log(`PASS BEpusdt fixed/cashier configuration, currency clear/reload, disable/delete confirmation and list removal after reload width=${width}`);
   }
  } finally {await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});

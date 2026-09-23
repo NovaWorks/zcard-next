@@ -49,7 +49,7 @@ func TestBepusdtWebhookUpstreamFixture(t *testing.T) {
 }
 
 func TestBepusdtCreateProtocol(t *testing.T) {
-	for _, chain := range []string{"usdt.trc20", "usdt.erc20", "usdt.bep20"} {
+	for _, chain := range strings.Fields("usdt.trc20 usdc.trc20 tron.trx usdt.erc20 usdc.erc20 ethereum.eth usdt.polygon usdc.polygon usdt.bep20 usdc.bep20 bsc.bnb usdt.aptos usdc.aptos usdt.solana usdc.solana usdt.xlayer usdc.xlayer usdt.arbitrum usdc.arbitrum usdc.base usdt.plasma usdt.ton ton.gram") {
 		t.Run(chain, func(t *testing.T) {
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != "POST" || r.URL.Path != "/api/v1/order/create-transaction" {
@@ -91,7 +91,7 @@ func TestBepusdtRejectGatewayMismatch(t *testing.T) {
 }
 
 func TestBepusdtConfigAndExactAmounts(t *testing.T) {
-	for _, extra := range []string{`,"timeout":179`, `,"timeout":3601`, `,"trade_type":"tron"`, `,"fiat":"USD"`, `,"target_currency":"USD"`, `,"currency":false`} {
+	for _, extra := range []string{`,"timeout":179`, `,"timeout":3601`, `,"trade_type":"tron"`, `,"fiat":"USD"`, `,"target_currency":"USD"`, `,"currency":false`, `,"checkout_mode":"unknown"`, `,"currencies":["POL"]`, `,"currencies":["TON"]`, `,"currencies":"USDT,USDC"`} {
 		if err := NewBepusdt().ValidateConfig(json.RawMessage(`{"api_url":"https://pay.example","api_token":"token"` + extra + `}`)); err == nil {
 			t.Fatalf("accepted %s", extra)
 		}
@@ -115,7 +115,7 @@ func TestBepusdtNativeSourceContract(t *testing.T) {
 	if gateway == "" {
 		t.Skip("requires isolated upstream source harness")
 	}
-	for _, chain := range []string{"usdt.trc20", "usdt.erc20", "usdt.bep20"} {
+	for _, chain := range strings.Fields("usdt.trc20 usdc.trc20 tron.trx usdt.erc20 usdc.erc20 ethereum.eth usdt.polygon usdc.polygon usdt.bep20 usdc.bep20 bsc.bnb usdt.aptos usdc.aptos usdt.solana usdc.solana usdt.xlayer usdc.xlayer usdt.arbitrum usdc.arbitrum usdc.base usdt.plasma usdt.ton ton.gram") {
 		t.Run(chain, func(t *testing.T) {
 			cfg, _ := json.Marshal(BepusdtConfig{APIURL: gateway, APIToken: "contract-test-token", TradeType: chain})
 			req := port.CreatePaymentRequest{GatewayOrderRef: fmt.Sprintf("source-%d", time.Now().UnixNano()), Amount: 1000, Deadline: time.Now().Add(600 * time.Second), Subject: "source contract", ReturnURL: "https://example.com/return", NotifyBaseURL: "https://example.com/notify", Config: cfg}
@@ -131,6 +131,116 @@ func TestBepusdtNativeSourceContract(t *testing.T) {
 			}
 			if second.ChannelOrderNo != first.ChannelOrderNo || second.Deadline.Sub(first.Deadline) > time.Second {
 				t.Fatalf("upstream reuse changed: first=%+v second=%+v", first, second)
+			}
+		})
+	}
+}
+
+// CreateOrder deliberately returns no trade_type: the user chooses later on BEpusdt.
+func TestBepusdtCashierProtocol(t *testing.T) {
+	for _, currencies := range [][]string{nil, {"usdt", " USDC ", "USDT"}, {"GRAM"}} {
+		t.Run(fmt.Sprint(currencies), func(t *testing.T) {
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				body, _ := io.ReadAll(r.Body)
+				var m map[string]any
+				_ = json.Unmarshal(body, &m)
+				sig, _ := bepusdtSign(body, "test-token")
+				want := ""
+				if len(currencies) == 3 {
+					want = "USDC,USDT"
+				} else if len(currencies) == 1 {
+					want = "GRAM"
+				}
+				if r.URL.Path != "/api/v1/order/create-order" || r.Method != "POST" || m["currencies"] != want || m["trade_type"] != nil || m["signature"] != sig || m["amount"] != 10.0 || m["fiat"] != "CNY" {
+					t.Errorf("incorrect cashier request: %s", body)
+				}
+				fmt.Fprint(w, `{"status_code":200,"data":{"order_id":"BE-test","trade_id":"cashier-1","fiat":"CNY","amount":"10","status":1,"payment_url":"https://pay.example/pay/cashier/cashier-1","expiration_time":200,"reselect":true}}`)
+			}))
+			defer srv.Close()
+			cfg, _ := json.Marshal(BepusdtConfig{APIURL: srv.URL, APIToken: "test-token", CheckoutMode: "cashier", Currencies: currencies})
+			info, err := NewBepusdt().CreatePayment(context.Background(), port.CreatePaymentRequest{GatewayOrderRef: "BE-test", Amount: 1000, Deadline: time.Now().Add(300 * time.Second), Config: cfg})
+			if err != nil || info.ChannelOrderNo != "cashier-1" || time.Until(info.Deadline) > 201*time.Second {
+				t.Fatalf("cashier: %+v %v", info, err)
+			}
+		})
+	}
+}
+
+func TestBepusdtConfigCompatibility(t *testing.T) {
+	old, err := ParseBepusdtConfig([]byte(`{"api_url":"https://pay.example","api_token":"token"}`))
+	if err != nil || old.CheckoutMode != "fixed" || old.TradeType != "usdt.trc20" {
+		t.Fatalf("legacy config: %+v %v", old, err)
+	}
+	explicit, _ := ParseBepusdtConfig([]byte(`{"api_url":"https://pay.example","api_token":"token","checkout_mode":"fixed","trade_type":"usdt.trc20","timeout":1200,"currencies":[]}`))
+	if !old.Equal(explicit) {
+		t.Fatal("defaults changed legacy config semantics")
+	}
+	a, _ := ParseBepusdtConfig([]byte(`{"api_url":"https://pay.example","api_token":"token","checkout_mode":"cashier","currencies":["USDT","USDC"]}`))
+	b, _ := ParseBepusdtConfig([]byte(`{"api_url":"https://pay.example","api_token":"token","checkout_mode":"cashier","currencies":["usdc","USDT","USDC"]}`))
+	if !a.Equal(b) || a.Equal(old) {
+		t.Fatal("config comparison lost mode or currency semantics")
+	}
+}
+
+// Requires the real upstream SignVerify, CreateOrder, GetMethods and UpdateOrder
+// handlers with disposable wallets/rates and no chain monitor or real funds.
+func TestBepusdtCashierSourceContract(t *testing.T) {
+	gateway := os.Getenv("BEPUSDT_SOURCE_TEST_URL")
+	if gateway == "" {
+		t.Skip("requires isolated upstream source harness")
+	}
+	call := func(t *testing.T, path string, body map[string]string) map[string]json.RawMessage {
+		t.Helper()
+		encoded, _ := json.Marshal(body)
+		resp, err := http.Post(gateway+path, "application/json", strings.NewReader(string(encoded)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var result struct {
+			Status  int                        `json:"status_code"`
+			Data    map[string]json.RawMessage `json:"data"`
+			Message string                     `json:"message"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil || result.Status != 200 {
+			t.Fatalf("%s: %v %+v", path, err, result)
+		}
+		return result.Data
+	}
+	for _, currency := range []string{"USDT", "USDC", "TRX", "ETH", "BNB", "GRAM"} {
+		t.Run(currency, func(t *testing.T) {
+			cfg, _ := json.Marshal(BepusdtConfig{APIURL: gateway, APIToken: "contract-test-token", CheckoutMode: "cashier", Currencies: []string{currency}})
+			req := port.CreatePaymentRequest{GatewayOrderRef: fmt.Sprintf("cashier-source-%d", time.Now().UnixNano()), Amount: 1000, Deadline: time.Now().Add(600 * time.Second), Subject: "source contract", ReturnURL: "https://example.com/return", NotifyBaseURL: "https://example.com/notify", Config: cfg}
+			first, err := NewBepusdt().CreatePayment(context.Background(), req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data := call(t, "/api/v1/pay/methods", map[string]string{"trade_id": first.ChannelOrderNo})
+			var methods []struct {
+				Currency string `json:"currency"`
+				Network  string `json:"network"`
+			}
+			if err := json.Unmarshal(data["methods"], &methods); err != nil || len(methods) == 0 {
+				t.Fatalf("no methods: %s %v", data["methods"], err)
+			}
+			for _, method := range methods {
+				if method.Currency != currency {
+					t.Fatalf("currency restriction ignored: %+v", methods)
+				}
+				selected := call(t, "/api/v1/pay/update-order", map[string]string{"trade_id": first.ChannelOrderNo, "currency": method.Currency, "network": method.Network})
+				var tradeID string
+				_ = json.Unmarshal(selected["trade_id"], &tradeID)
+				if tradeID != first.ChannelOrderNo {
+					t.Fatal("reselection replaced trade")
+				}
+			}
+			req.Deadline = req.Deadline.Add(10 * time.Minute)
+			second, err := NewBepusdt().CreatePayment(context.Background(), req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if second.ChannelOrderNo != first.ChannelOrderNo || second.Deadline.Sub(first.Deadline) > 2*time.Second {
+				t.Fatalf("cashier retry changed trade/deadline: %+v %+v", first, second)
 			}
 		})
 	}
