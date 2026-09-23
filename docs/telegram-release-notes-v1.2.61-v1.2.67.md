@@ -352,7 +352,7 @@ https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.72
 
 ## 后续版本公告
 
-v1.2.73 与 v1.2.74 公告分别见 [v1.2.73](releases/v1.2.73.md)、[v1.2.74](releases/v1.2.74.md)。
+v1.2.73 与 v1.2.74 公告分别见 [v1.2.73](https://github.com/NovaWorks/zcard-next/releases/tag/v1.2.73)、[v1.2.74](releases/v1.2.74.md)。
 
 ### v1.2.75（用户手动发送）
 
