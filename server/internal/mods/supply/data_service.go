@@ -11,6 +11,7 @@ import (
 	"math"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
@@ -87,6 +88,19 @@ func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.
 
 // UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 func (s *AdminSupplyService) UpdateConnection(ctx context.Context, req *adminv1.UpdateConnectionRequest) (*adminv1.SupplyConnection, error) {
+	var result *adminv1.SupplyConnection
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		if err := s.repo.entClient(ctx).SupplyConnection.UpdateOneID(req.GetId()).AddRetryMax(0).Exec(ctx); err != nil {
+			return err
+		}
+		var err error
+		result, err = s.updateConnection(ctx, req)
+		return err
+	})
+	return result, err
+}
+
+func (s *AdminSupplyService) updateConnection(ctx context.Context, req *adminv1.UpdateConnectionRequest) (*adminv1.SupplyConnection, error) {
 	conn, err := s.repo.GetConnection(ctx, req.GetId())
 	if err != nil {
 		return nil, err
@@ -137,6 +151,9 @@ func (s *AdminSupplyService) UpdateConnection(ctx context.Context, req *adminv1.
 			return nil, err
 		}
 	}
+	previewCache.Lock()
+	delete(previewCache.m, conn.ID)
+	previewCache.Unlock()
 	return toProtoConnection(updated), nil
 }
 
@@ -195,23 +212,58 @@ func (s *AdminSupplyService) ListMappings(ctx context.Context, req *adminv1.List
 
 // UpsertMapping 创建/更新映射。
 func (s *AdminSupplyService) UpsertMapping(ctx context.Context, req *adminv1.UpsertMappingRequest) (*adminv1.SupplyMapping, error) {
-	if err := s.repo.UpsertMapping(ctx, &ent.SupplyMapping{
-		ConnectionID:     req.GetConnectionId(),
-		UpstreamCategory: req.GetUpstreamCategory(),
-		LocalCategoryID:  req.GetLocalCategoryId(),
-		UpstreamProduct:  req.GetUpstreamProduct(),
-		LocalProductID:   req.GetLocalProductId(),
-		UpstreamSku:      req.GetUpstreamSku(),
-		LocalSkuID:       req.GetLocalSkuId(),
-		PricingOverride:  mustJSONMap(req.GetPricingOverride()),
-	}); err != nil {
-		return nil, err
-	}
-	m, err := s.repo.GetMapping(ctx, req.GetConnectionId(), req.GetUpstreamProduct(), req.GetUpstreamSku())
+	var result *ent.SupplyMapping
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		if err := s.repo.entClient(ctx).SupplyConnection.UpdateOneID(req.GetConnectionId()).AddRetryMax(0).Exec(ctx); err != nil {
+			return err
+		}
+		existing, err := s.repo.GetMapping(ctx, req.GetConnectionId(), req.GetUpstreamProduct(), req.GetUpstreamSku())
+		if err != nil && err != ErrNotFound {
+			return err
+		}
+		override := map[string]any{}
+		if existing != nil {
+			override = copyPricingMap(existing.PricingOverride)
+		}
+		if req.GetPricingOverride() != "" {
+			var patch map[string]any
+			if err := json.Unmarshal([]byte(req.GetPricingOverride()), &patch); err != nil || patch == nil {
+				return fmt.Errorf("定价规则必须为 JSON 对象")
+			}
+			// Baselines are internal observations, never replaced by an admin form.
+			for k, v := range patch {
+				if k == "last_synced_price" || k == "sku_prices" {
+					continue
+				}
+				if v == nil && (k == "price" || k == "rule") {
+					delete(override, k)
+				} else {
+					override[k] = v
+				}
+			}
+			if _, err := readProductRule(override); err != nil {
+				return err
+			}
+			if fixed, ok := override["price"]; ok {
+				n, ok := fixed.(float64)
+				if !ok || n <= 0 || n != math.Trunc(n) || n > float64(1<<53-1) {
+					return fmt.Errorf("固定售价必须为正整数分")
+				}
+			}
+		}
+		if err := s.repo.UpsertMapping(ctx, &ent.SupplyMapping{
+			ConnectionID: req.GetConnectionId(), UpstreamCategory: req.GetUpstreamCategory(), LocalCategoryID: req.GetLocalCategoryId(),
+			UpstreamProduct: req.GetUpstreamProduct(), LocalProductID: req.GetLocalProductId(), UpstreamSku: req.GetUpstreamSku(), LocalSkuID: req.GetLocalSkuId(), PricingOverride: override,
+		}); err != nil {
+			return err
+		}
+		result, err = s.repo.GetMapping(ctx, req.GetConnectionId(), req.GetUpstreamProduct(), req.GetUpstreamSku())
+		return err
+	})
 	if err != nil {
 		return nil, err
 	}
-	return toProtoMapping(m), nil
+	return toProtoMapping(result), nil
 }
 
 // DeleteMapping 删除映射。

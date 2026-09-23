@@ -258,7 +258,7 @@ async function submit() {
           <NInput v-model:value="keyword" clearable placeholder="搜索上游分类或商品名称" aria-label="搜索上游分类或商品名称" />
           <NButton size="small" @click="toggleAllExpand">{{ allExpanded ? '全部收起' : '全部展开' }}</NButton>
         </div>
-        <div class="text-12px text-gray-400">分类默认折叠；勾选整类包含该分类全部商品，搜索不会取消已选商品。</div>
+        <div class="text-12px text-gray-400">分类默认折叠；勾选整类包含该分类全部商品，搜索不会取消已选商品。目录价格仅供参考，正式导入按账号报价计算。</div>
         <div class="category-list">
           <div v-for="cat in visibleCategories" :key="cat.code" class="category-item">
             <div class="category-row">
@@ -303,9 +303,9 @@ async function submit() {
         <div class="text-12px text-gray-400">只处理所选商品涉及的分类；草稿保存前不会出现在商城。保存后的映射也用于后续全量同步及该上游分类的其他已导入商品。</div>
           <NAlert :type="pricing.mode === 'channel' ? 'info' : 'warning'" class="mb-12px">
             <template v-if="pricing.mode === 'channel'">
-              跟随渠道：上游价 × {{ connection.exchange_rate || 1 }} ×（1 + {{ connection.price_markup_percent || 0 }}%）+ {{ formatMoney(connection.price_markup_amount || 0) }}，再按渠道取整规则计算；商品和规格使用同一规则。
+              跟随渠道：账号报价 × {{ connection.exchange_rate || 1 }} ×（1 + {{ connection.price_markup_percent || 0 }}%）+ {{ formatMoney(connection.price_markup_amount || 0) }}，再按渠道取整规则计算；商品和规格使用同一规则。
             </template>
-            <template v-else>当前为独立导入策略，不叠加渠道加价。后续价格同步仍使用渠道规则，可能改变本次导入价；需长期保留手工价格时，请关闭渠道的「同步自动改价」。</template>
+            <template v-else>当前为独立导入策略，不叠加渠道加价。规则会保存到所选商品，后续同步继续使用；待定价商品保持现价和下架状态。重新导入会替换所选商品的定价规则。</template>
           </NAlert>
           <NForm label-placement="left" size="small" class="pricing-grid">
             <NFormItem label="定价策略" :show-feedback="false">
@@ -313,9 +313,9 @@ async function submit() {
                 v-model:value="pricing.mode"
                 :options="[
                   { label: '跟随渠道定价', value: 'channel' },
-                  { label: '本次按加价比例（%）', value: 'percent' },
+                  { label: '独立加价比例（%）', value: 'percent' },
                   { label: '加固定金额（元）', value: 'fixed' },
-                  { label: '原价导入（不加价）', value: 'equal' },
+                  { label: '账号报价导入（不加价）', value: 'equal' },
                   { label: '待定价（导入后不上架）', value: 'pending' },
                 ]"
               />

@@ -78,7 +78,7 @@ type Product struct {
 	Name           string
 	CategoryID     string
 	Price          int64 // 分
-	FactoryPrice   int64 // 分（上游成本快照）
+	FactoryPrice   int64 // 上游币种分：账号单件报价，-1=未询价；本地成本另做汇率换算
 	Description    string
 	DescriptionSet bool
 	Cover          string

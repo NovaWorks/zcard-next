@@ -229,9 +229,9 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 					desc = *p.Introduce
 				}
 			}
-			// 皮肤站（如 tghao）items 不直出 config/拿货价：inventory 兜底拿
-			// 规格 INI + 当前对接身份的 factory_price（失败不致命，按无规格品继续）
-			cfg, factory := p.Config, p.FactoryPrice.Cents()
+			// 目录缺 config 时补查规格。账号售价由 QuoteProduct 再次确认；
+			// 目录和 inventory 的 factory_price 均不能代替最终估价。
+			cfg := p.Config
 			draftStatus := p.DraftStatus
 			if !preview && cfg == "" && p.DeliveryWay == 0 && !siteHasConfig {
 				inv, err := a.fetchInventory(ctx, p.Code)
@@ -242,9 +242,6 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 				if err == nil {
 					if inv.Config != "" {
 						cfg = inv.Config
-					}
-					if fp := inv.FactoryPrice.Cents(); fp > 0 {
-						factory = fp
 					}
 					draftStatus = inv.DraftStatus
 				}
@@ -284,7 +281,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 				Name:           p.Name,
 				CategoryID:     catID,
 				Price:          p.Price.Cents(),
-				FactoryPrice:   factory,
+				FactoryPrice:   -1, // account cost is resolved by QuoteProduct, never catalog factory_price
 				Description:    desc,
 				DescriptionSet: p.Description != nil || p.Introduce != nil,
 				Cover:          p.Cover,
@@ -303,7 +300,7 @@ func (a *acgFakaAdapter) listProducts(ctx context.Context, selected map[string]b
 
 // acgInventory /shared/commodity/inventory 响应（参数 sharedCode 驼峰）：
 // 单品库存/发货方式/预选状态/价格 + 规格 INI 原文（标准站 items 已直出 config，
-// 此接口仅作皮肤站 items 缺 config 时的兜底数据源）。
+// 导入/报价也用它确认完整规格，再逐规格调用 valuation）。
 // is_category 站点间类型不定（int/bool 混用——tghao 实测 bool）→ any 兼容，
 // 仅调试用不参与逻辑。
 type acgInventory struct {
@@ -311,12 +308,12 @@ type acgInventory struct {
 	DeliveryWay  int     `json:"delivery_way"`
 	DraftStatus  int     `json:"draft_status"`
 	Price        FlexNum `json:"price"`
-	FactoryPrice FlexNum `json:"factory_price"` // 当前对接身份的拿货价
+	FactoryPrice FlexNum `json:"factory_price"` // inventory 参考价，不能代替 valuation 的最终账号报价
 	Config       string  `json:"config"`        // INI 文本
 	IsCategory   any     `json:"is_category"`
 }
 
-// fetchInventory 拉单品库存与规格配置（ListProducts 兜底用；调用方 fail-open）。
+// fetchInventory 拉单品库存与规格配置；正式报价时失败必须保留旧价。
 func (a *acgFakaAdapter) fetchInventory(ctx context.Context, code string) (*acgInventory, error) {
 	data, err := a.signedPost(ctx, "/shared/commodity/inventory", map[string]string{"sharedCode": code})
 	if err != nil {

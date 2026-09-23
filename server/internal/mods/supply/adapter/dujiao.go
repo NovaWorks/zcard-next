@@ -354,11 +354,9 @@ func (p dujiaoProduct) toProduct() Product {
 		Stock:          -1,
 		Cover:          firstNonEmpty(p.Images...),
 	}
-	// 拿货价：批发价第一档 unit_price，缺省回退售价（1.x DujiaoNextDriver 同款）
+	// price_amount already includes the authenticated account price. Volume tiers are not single-unit quotes.
 	out.FactoryPrice = out.Price
-	if len(p.WholesalePrices) > 0 {
-		out.FactoryPrice = parseYuanToCents(p.WholesalePrices[0].UnitPrice)
-	}
+
 	for _, s := range p.SKUs {
 		if !s.IsActive {
 			continue // 下架 SKU 不同步（1.x 同款）

@@ -13,6 +13,7 @@ package supply
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,6 +32,7 @@ var previewCache = struct {
 }{m: map[uint64]previewEntry{}}
 
 type previewEntry struct {
+	identity   [32]byte
 	at         time.Time
 	categories []*adminv1.PreviewCategory
 	byCode     map[string]adapter.Product
@@ -56,9 +58,17 @@ func (s *AdminSupplyService) PreviewProducts(ctx context.Context, req *adminv1.P
 }
 
 // loadPreview 取/建预览缓存。
+func previewIdentity(conn *ent.SupplyConnection) [32]byte {
+	return sha256.Sum256([]byte(conn.Driver + "\x00" + conn.BaseURL + "\x00" + string(conn.Credentials)))
+}
+
 func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint64) (*previewEntry, error) {
+	current, err := s.repo.GetConnection(ctx, connectionID)
+	if err != nil {
+		return nil, err
+	}
 	previewCache.Lock()
-	if e, ok := previewCache.m[connectionID]; ok && time.Since(e.at) < previewTTL {
+	if e, ok := previewCache.m[connectionID]; ok && e.identity == previewIdentity(current) && time.Since(e.at) < previewTTL {
 		previewCache.Unlock()
 		return &e, nil
 	}
@@ -116,7 +126,7 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 		return nil, err
 	}
 	// 聚合（分类顺序稳定：按首个商品出现顺序不可控 → 用 catNames/ID 排序太重，保持 map 迭代 + 排序键）
-	entry := &previewEntry{at: time.Now(), byCode: byCode}
+	entry := &previewEntry{at: time.Now(), byCode: byCode, identity: previewIdentity(conn)}
 	orderedCats := make([]string, 0, len(byCat))
 	for c := range byCat {
 		orderedCats = append(orderedCats, c)
@@ -182,6 +192,9 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 	if err != nil {
 		return nil, err
 	}
+	if entry.identity != previewIdentity(conn) {
+		return nil, fmt.Errorf("货源账号已变化，请刷新后重新导入")
+	}
 	// 轻量目录不可直接导入：只为勾选商品补齐规格与拿货价，不修改共享预览缓存。
 	_, a, err := s.adapterForConnection(ctx, conn.ID)
 	if err != nil {
@@ -234,6 +247,13 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 
 	reply := &adminv1.ImportProductsReply{CategoryMap: categoryMap}
 	stockFailed := 0
+	// Leave time to commit and return the failed-code list before the HTTP deadline.
+	quoteDeadline := time.Now().Add(20 * time.Second)
+	if deadline, ok := ctx.Deadline(); ok && deadline.Add(-5*time.Second).Before(quoteDeadline) {
+		quoteDeadline = deadline.Add(-5 * time.Second)
+	}
+	quoteCtx, cancelQuotes := context.WithDeadline(ctx, quoteDeadline)
+	defer cancelQuotes()
 	seen := map[string]bool{}
 	for _, code := range req.GetCodes() {
 		if seen[code] {
@@ -245,6 +265,18 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 			reply.Failed++
 			reply.FailedCodes = append(reply.FailedCodes, code)
 			continue
+		}
+		if quoter, ok := a.(adapter.AccountQuoter); ok && p.IsActive {
+			quoted, err := quoter.QuoteProduct(quoteCtx, &p)
+			if err != nil {
+				reply.Failed++
+				reply.FailedCodes = append(reply.FailedCodes, code)
+				if reply.ErrorContext == "" {
+					reply.ErrorContext = "商品 " + code + " 账号报价失败，未改价，请重试"
+				}
+				continue
+			}
+			p = *quoted
 		}
 		created, err := s.sync.ImportOne(ctx, conn, &p, categoryMap, mode, markupPercent, markupAmount)
 		if err != nil {

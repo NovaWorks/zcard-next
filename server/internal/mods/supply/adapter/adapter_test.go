@@ -170,8 +170,8 @@ func TestDujiaoAdapterParsing(t *testing.T) {
 	if list.Items[0].Name != "A" || list.Items[0].Description != "详情A" {
 		t.Fatalf("多语言字段提取错误: %+v", list.Items[0])
 	}
-	if list.Items[0].FactoryPrice != 1000 {
-		t.Fatalf("批发价拿货价错误: got %d want 1000", list.Items[0].FactoryPrice)
+	if list.Items[0].FactoryPrice != 1234 {
+		t.Fatalf("单件账号报价不得使用批发档位: got %d want 1234", list.Items[0].FactoryPrice)
 	}
 	if list.Items[0].Cover != "https://img/a.png" {
 		t.Fatalf("封面提取错误: %+v", list.Items[0])
@@ -233,7 +233,7 @@ func TestAcgFakaParsing(t *testing.T) {
 	if len(list.Items) != 2 {
 		t.Fatalf("商品数错误: %d", len(list.Items))
 	}
-	if list.Items[0].Price != 1050 || list.Items[0].FactoryPrice != 800 || list.Items[0].Stock != 3 {
+	if list.Items[0].Price != 1050 || list.Items[0].FactoryPrice != -1 || list.Items[0].Stock != 3 {
 		t.Fatalf("acg 商品解析错误: %+v", list.Items[0])
 	}
 	if list.Items[0].CategoryID != "5" || list.Items[1].IsActive {

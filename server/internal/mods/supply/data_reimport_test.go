@@ -39,7 +39,7 @@ func TestImportProductsReimportsDeletedDujiaoProduct(t *testing.T) {
 	// 使用已解析的独角目录预览，网络协议解析由 adapter 契约测试覆盖。
 	importProducts := func() (*adminv1.ImportProductsReply, error) {
 		previewCache.Lock()
-		previewCache.m[conn.ID] = previewEntry{at: time.Now(), byCode: map[string]adapter.Product{
+		previewCache.m[conn.ID] = previewEntry{identity: previewIdentity(conn), at: time.Now(), byCode: map[string]adapter.Product{
 			"13": {ID: "13", Name: "Instagram", Description: "新详情", CategoryID: "6", Price: 1200, FactoryPrice: 1200, IsActive: true, Stock: 8,
 				SKUs: []adapter.SKU{{ID: "27", Code: "27", Name: "标准", Price: 1200, Stock: 8, IsActive: true, SpecValues: map[string]string{"类型": "标准"}}}},
 		}}

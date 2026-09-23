@@ -62,7 +62,7 @@ func TestAcgLargeCatalogPreviewAndSelectedImport(t *testing.T) {
 		t.Fatalf("只应补齐仍存在的勾选商品: inventory=%v products=%d", inventoryCodes, len(resolved.Items))
 	}
 	for _, p := range resolved.Items {
-		if p.FactoryPrice != 250 || len(p.SKUs) != 2 || p.SKUs[1].Price != 500 {
+		if p.FactoryPrice != -1 || len(p.SKUs) != 2 || p.SKUs[1].Price != 500 {
 			t.Fatalf("导入丢失拿货价或规格: %+v", p)
 		}
 		if p.IsActive != (p.ID == "P2") {

@@ -10,7 +10,7 @@ const server = http.createServer((req, res) => {
 });
 (async () => {
   await new Promise(r => server.listen(0, '127.0.0.1', r));
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}) });
   try {
     for (const width of [1440, 390]) {
       const page = await browser.newPage({ viewport: { width, height: 1050 } }), errors = [], writes = [];
@@ -80,7 +80,7 @@ const server = http.createServer((req, res) => {
       assert.equal(writes.at(-1).body.pricing_mode, 'channel');
       connection.settings = JSON.stringify({ import_pricing: { mode: 'percent', markup_percent: 0 } });
       await page.reload(); await more().click(); await page.getByText('导入商品', { exact: true }).last().click();
-      await expect(importing.getByText('本次按加价比例（%）', { exact: true })).toBeVisible();
+      await expect(importing.getByText('独立加价比例（%）', { exact: true })).toBeVisible();
       await expect(importing.getByText(/当前为独立导入策略/)).toBeVisible();
       await importing.getByRole('checkbox', { name: '选择上游分类全部商品' }).check();
       await importing.getByRole('button', { name: '保存并导入', exact: true }).click(); await expect(importing).not.toBeVisible();

@@ -693,7 +693,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 			SetName(in.Name).
 			SetSlug(slug).
 			SetPrice(price).
-			SetFactoryPrice(in.FactoryPrice).
+			SetFactoryPrice(max(in.FactoryPrice, 0)).
 			SetStockType(product.StockTypeCard).
 			SetStatus(status).
 			SetUpstreamSourceID(in.ConnectionID).
@@ -746,8 +746,10 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	// 更新：名称/描述/封面/分类/状态/成本价；价格按保护语义（-1 不动）
 	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).Where(product.StatusGTE(0)).
 		SetName(in.Name).
-		SetFactoryPrice(in.FactoryPrice).
 		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+	if in.FactoryPrice >= 0 {
+		upd.SetFactoryPrice(in.FactoryPrice)
+	}
 	if in.Price >= 0 {
 		upd.SetPrice(in.Price)
 	}
@@ -778,7 +780,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	return updated.ID, false, nil
 }
 
-// syncUpstreamSkus 上游规格组合差量同步到 product_skus（按 name 唯一键）：
+// syncUpstreamSkus 上游规格组合差量同步到 product_skus（按上游 SKU 标识匹配）：
 // 新集合有 → 更新价格/规格/上游标识；没有 → 删除（仅删本同步来源的，
 // upstream_sku_id 非空的记录——本地手建 SKU 不受影响）。nil 入参 = 不动。
 // 价格 -1 = 价格保护语义：已有 SKU 跳过改价，新增组合不创建。
@@ -804,10 +806,13 @@ func (r *ProductRepoImpl) syncUpstreamSkus(ctx context.Context, subsiteID, produ
 		if name == "" {
 			name = s.Code
 		}
-		want[name] = wanted{id: s.Code, name: name, price: s.PriceCents, spec: s.SpecValues}
+		want[s.Code] = wanted{id: s.Code, name: name, price: s.PriceCents, spec: s.SpecValues}
 	}
 	for _, e := range existing {
-		w, ok := want[e.Name]
+		if e.UpstreamSkuID == "" {
+			continue
+		}
+		w, ok := want[e.UpstreamSkuID]
 		if !ok {
 			// 上游已无此组合：仅删同步来源的 SKU（本地手建 upstream_sku_id 为空）
 			if e.UpstreamSkuID != "" {
@@ -817,7 +822,7 @@ func (r *ProductRepoImpl) syncUpstreamSkus(ctx context.Context, subsiteID, produ
 			}
 			continue
 		}
-		delete(want, e.Name)
+		delete(want, e.UpstreamSkuID)
 		upd := client.ProductSku.UpdateOneID(e.ID).
 			SetName(w.name).
 			SetSpecValues(w.spec).
@@ -880,11 +885,15 @@ func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID 
 		if err != nil {
 			return err
 		}
-		if err := client.Product.UpdateOneID(p.ID).SetPrice(priceCents).SetUpstreamSyncedAt(time.Now().UTC()).Exec(ctx); err != nil {
+		update := client.Product.UpdateOneID(p.ID).SetUpstreamSyncedAt(time.Now().UTC())
+		if priceCents >= 0 {
+			update.SetPrice(priceCents)
+		}
+		if err := update.Exec(ctx); err != nil {
 			return err
 		}
 		for _, sk := range skus {
-			if sk.Code == "" {
+			if sk.Code == "" || sk.PriceCents < 0 {
 				continue
 			}
 			if err := client.ProductSku.Update().Where(productsku.ProductID(p.ID), productsku.SubsiteID(tc.SubsiteID), productsku.UpstreamSkuID(sk.Code)).SetPrice(sk.PriceCents).Exec(ctx); err != nil {

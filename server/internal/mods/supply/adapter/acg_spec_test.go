@@ -377,8 +377,8 @@ func TestAcgSkinSiteInventoryFallback(t *testing.T) {
 	if len(tg1.SKUs) != 4 {
 		t.Fatalf("inventory 兜底规格组合数 = %d, want 4", len(tg1.SKUs))
 	}
-	if tg1.FactoryPrice != 550 {
-		t.Fatalf("拿货价应取 inventory 对接身份价: %d", tg1.FactoryPrice)
+	if tg1.FactoryPrice != -1 {
+		t.Fatalf("目录/库存价格不能冒充账号最终报价: %d", tg1.FactoryPrice)
 	}
 	if !tg1.IsActive {
 		t.Fatal("缺省 status + 自动发货 + 非预选 → 应在售")

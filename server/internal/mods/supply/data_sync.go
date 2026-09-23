@@ -3,8 +3,8 @@ package supply
 // 货源同步服务（// + S1 同步引擎改造）：
 // - 三类 scope：collect（采集：upsert + 库存 + 删除对账）/ price（仅刷价格）/
 // status（仅刷上下架 + up_stock）——轻量 scope 走 maintainer 端口不建不删
-// - 增量同步：驱动实现 adapter.IncrementalLister 时按锚点拉取变更
-// （锚点存 settings.sync_anchors，-1 分钟安全窗）；否则自动回落全量
+// - 状态增量：支持 IncrementalLister 时按锚点拉取变更；价格/采集全量核价，
+// 避免账号优惠变化却未更新商品时间时漏同步。
 // - 删除对账：仅权威快照（全量 + IncludesInactive 回声）做——seenCodes 对账
 // 把上游已消失商品批量下架；护栏：上游声称 total > 实际处理数 → 任务失败
 // 不删（宁可保守，1.x「不能批量误删」纪律）
@@ -225,10 +225,12 @@ func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
 	return s.runLoop(ctx, taskID, task, conn, a, sched, scope, incremental, list)
 }
 
-// resolveLister 列表函数决策（collect/price 共用）：
+// resolveLister 列表函数决策：
 // 驱动实现 IncrementalLister 且锚点有效 → 增量（含下架变更）；否则全量。
 func resolveLister(a adapter.Adapter, task *ent.SupplySyncTask, anchor time.Time, log *slog.Logger) (func(ctx context.Context, page, pageSize int) (*adapter.ProductList, error), bool) {
-	if task.Mode != "incremental" || anchor.IsZero() {
+	// Account discounts can change without a product updated_at change. Any scope
+	// that writes prices must inspect the full catalog, even when incremental was requested.
+	if task.Mode != "incremental" || anchor.IsZero() || task.Scope == ScopePrice || task.Scope == ScopeCollect || task.Scope == "" {
 		return func(ctx context.Context, page, pageSize int) (*adapter.ProductList, error) {
 			return a.ListProducts(ctx, page, pageSize, true)
 		}, false
@@ -348,6 +350,42 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 			}
 		}
 		for i := range list0.Items {
+			if time.Since(heartbeat) >= 30*time.Second {
+				canceled, err := s.repo.TouchTask(ctx, taskID, stats)
+				if err != nil {
+					return err
+				}
+				stats = TaskProgress{Stage: "pricing", Page: page}
+				heartbeat = time.Now()
+				if canceled {
+					_ = s.repo.FinishTask(ctx, taskID, supplysynctask.StatusCanceled, "", "")
+					s.publishCompleted(ctx, conn.ID, taskID, "canceled")
+					return nil
+				}
+			}
+			if quoter, ok := a.(adapter.AccountQuoter); ok && list0.Items[i].IsActive && (scope == ScopeCollect || scope == ScopePrice) {
+				shouldQuote := true
+				if scope == ScopePrice {
+					_, err := s.repo.GetMapping(ctx, conn.ID, list0.Items[i].ID, "")
+					if err == ErrNotFound {
+						shouldQuote = false
+					} else if err != nil {
+						return err
+					}
+				}
+				if shouldQuote {
+					quoted, err := quoter.QuoteProduct(ctx, &list0.Items[i])
+					if err != nil {
+						if s.pacer != nil && errors.Is(err, adapter.ErrRateLimited) {
+							s.pacer.OnRateLimited(ctx, conn, err.Error())
+						}
+						s.failAndMaybeRetry(ctx, taskID, conn.ID, "PRICE_QUOTE_FAILED", "商品 "+list0.Items[i].ID+" 账号报价失败，已保留原价格，请重试")
+						s.publishCompleted(ctx, conn.ID, taskID, "failed")
+						return nil
+					}
+					list0.Items[i] = *quoted
+				}
+			}
 			cancel, err := s.syncOne(ctx, taskID, task, conn, &list0.Items[i], categoryMap, &stats)
 			if err != nil {
 				s.failAndMaybeRetry(ctx, taskID, conn.ID, "SYNC_ITEM_FAILED", err.Error())
@@ -426,6 +464,34 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 //
 // 返回 (cancelRequested, error)。
 func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.SupplySyncTask, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, stats *TaskProgress) (bool, error) {
+	// Fetch media before opening the pricing transaction.
+	cover := ""
+	if task.Scope == "" || task.Scope == ScopeCollect {
+		m, err := s.repo.GetMapping(ctx, conn.ID, p.ID, "")
+		if err != nil && err != ErrNotFound {
+			return false, err
+		}
+		if p.IsActive {
+			cover = s.coverFor(ctx, m, conn, p.Cover)
+		}
+	}
+	next := *stats
+	canceled := false
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		if err := s.checkPricingConnection(ctx, conn); err != nil {
+			return err
+		}
+		var err error
+		canceled, err = s.syncOneLocked(ctx, taskID, task, conn, p, categoryMap, &next, cover)
+		return err
+	})
+	if err == nil {
+		*stats = next
+	}
+	return canceled, err
+}
+
+func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *ent.SupplySyncTask, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, stats *TaskProgress, preparedCover string) (bool, error) {
 	mapping, err := s.repo.GetMapping(ctx, conn.ID, p.ID, "")
 	notFound := err == ErrNotFound
 	if err != nil && !notFound {
@@ -462,9 +528,17 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		status = 0 // 保持本地手动下架（不写 1 拉回）
 	}
 
-	// 定价（价格保护三级判定；force_reprice 覆盖运营改价保护）
-	newPrice := ApplyPricing(p.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
-	priceToWrite, writePrice, priceUpdated, override := s.resolvePrice(ctx, conn, mapping, p.Price, newPrice, task.ForceReprice)
+	if err := s.lockProductPricing(ctx, mapping); err != nil {
+		return false, err
+	}
+	priceToWrite, skus, override, err := s.productPrices(ctx, conn, mapping, p, task.ForceReprice)
+	if err != nil {
+		return false, err
+	}
+	writePrice := priceToWrite >= 0
+	if !writePrice && mapping.LocalProductID == 0 {
+		status = 0
+	}
 
 	// upsert 本地商品（价格 -1 = 不更新）
 	write := catalogport.UpstreamProductInput{
@@ -474,8 +548,8 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		Name:                p.Name,
 		Description:         p.Description,
 		DescriptionSet:      p.DescriptionSet,
-		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
-		FactoryPrice:        p.FactoryPrice,
+		Cover:               preparedCover,
+		FactoryPrice:        accountCost(conn, p),
 		Status:              status,
 		AutoOnshelf:         autoOnshelf(conn.Settings),
 	}
@@ -488,26 +562,10 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		stats.ManualSkipped++
 	} else {
 		write.Price = priceToWrite
-		if priceUpdated {
-			stats.PriceUpdated++
-		}
+		stats.PriceUpdated++
 	}
-	// 规格组合 SKU（acg race×sku 笛卡尔积 / dujiao SKU）：组合价套用同一定价管线；
-	// 恒下发 SKUs 保证规格/组合与上游对齐（缺了会导致规格品无法下单），
-	// 价格保护开启（writePrice=false）时组合价传 -1 —— 差量同步对已有 SKU
-	// 跳过改价（保护运营改价）、对新增组合不创建（无安全价格），解除保护后补齐
-	for _, sk := range p.SKUs {
-		skuPrice := ApplyPricing(sk.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
-		if !writePrice {
-			skuPrice = -1
-		}
-		write.SKUs = append(write.SKUs, catalogport.UpstreamSKUInput{
-			Code:       sk.Code,
-			Name:       sk.Name,
-			PriceCents: skuPrice,
-			SpecValues: sk.SpecValues,
-		})
-	}
+	write.SKUs = skus
+
 	productID, created, err := s.writeProductCategory(ctx, p.CategoryID, &write)
 	if err != nil {
 		return false, err
@@ -538,24 +596,62 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 
 // syncPriceOnly price scope 轻路径：价格保护 → 仅更新价格 + 基线持久化。
 func (s *SyncService) syncPriceOnly(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, p *adapter.Product, force bool, stats *TaskProgress) error {
-	newPrice := ApplyPricing(p.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
-	priceToWrite, writePrice, priceUpdated, override := s.resolvePrice(ctx, conn, mapping, p.Price, newPrice, force)
-	if writePrice && s.maintainer != nil {
-		if _, err := s.maintainer.UpdateUpstreamPrice(ctx, conn.ID, p.ID, priceToWrite, priceSKUs(conn, p.SKUs)...); err != nil {
+	next := *stats
+	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		c := s.repo.entClient(ctx)
+		if err := s.checkPricingConnection(ctx, conn); err != nil {
 			return err
 		}
-		if priceUpdated {
-			stats.PriceUpdated++
+		latest, err := s.repo.GetMapping(ctx, conn.ID, p.ID, "")
+		if err != nil {
+			return err
 		}
-	} else {
-		stats.ManualSkipped++
+		if err := s.lockProductPricing(ctx, latest); err != nil {
+			return err
+		}
+		price, skus, override, err := s.productPrices(ctx, conn, latest, p, force)
+		if err != nil {
+			return err
+		}
+		if s.maintainer == nil {
+			return nil
+		}
+		hasPrice := price >= 0
+		for _, sk := range skus {
+			hasPrice = hasPrice || sk.PriceCents >= 0
+		}
+		if hasPrice {
+			found, err := s.maintainer.UpdateUpstreamPrice(ctx, conn.ID, p.ID, price, skus...)
+			if err != nil {
+				return err
+			}
+			if !found {
+				return nil
+			}
+		}
+
+		if price >= 0 {
+			next.PriceUpdated++
+		} else {
+			next.ManualSkipped++
+		}
+		// Cost is an account quote, independent of local sale-price protection.
+		if cost := accountCost(conn, p); cost > 0 {
+			if err := c.Product.Update().Where(product.ID(latest.LocalProductID), product.StatusGTE(0)).SetFactoryPrice(cost).Exec(ctx); err != nil {
+				return err
+			}
+		}
+		latest.PricingOverride = override
+		if err := s.repo.UpsertMapping(ctx, latest); err != nil {
+			return err
+		}
+		next.Processed++
+		return nil
+	})
+	if err == nil {
+		*stats = next
 	}
-	mapping.PricingOverride = override
-	if err := s.repo.UpsertMapping(ctx, mapping); err != nil {
-		return err
-	}
-	stats.Processed++
-	return nil
+	return err
 }
 
 // localProductShelvedOff 本地商品当前是否下架(0)——手动下架保持判据。
@@ -589,42 +685,6 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 	stats.Updated++
 	stats.Processed++
 	return nil
-}
-
-// resolvePrice 价格保护三级判定（collect/price 共用口径）：
-// 1. auto_sync_price=false → 不写（运营手工定价域）
-// 2. pricing_override.price 固定覆盖价 → 恒用固定价
-// 3. 本地当前价 ≠ last_synced_price 基线 → 运营改过价 → 保护；保留上次同步基线
-// （force=true 时跳过本条——管理员强制重价）
-//
-// 返回 (写入价, 是否写价, 是否计 price_updated, 更新后的 override)。
-func (s *SyncService) resolvePrice(ctx context.Context, conn *ent.SupplyConnection, mapping *ent.SupplyMapping, upstreamPrice, newPrice int64, force bool) (int64, bool, bool, map[string]any) {
-	priceToWrite := newPrice
-	writePrice := true
-	priceUpdated := false
-
-	override := mapping.PricingOverride
-	if override == nil {
-		override = map[string]any{}
-	}
-	if !conn.AutoSyncPrice {
-		writePrice = false // 关自动同步：运营手工定价，同步永不覆盖
-	} else if fixed, ok := override["price"]; ok {
-		priceToWrite = toInt64(fixed) // 固定覆盖价
-		priceUpdated = true
-	} else if lastSync, ok := override["last_synced_price"]; ok && upstreamPrice > 0 && !force {
-		// 本地当前价 != 上次同步价 → 运营改过价 → 保护
-		current, err := s.currentProductPrice(ctx, mapping.LocalProductID)
-		if err == nil && current != toInt64(lastSync) && current != newPrice {
-			writePrice = false
-		}
-	}
-	if writePrice && !priceUpdated {
-		// 记录新基线（价格更新或首次同步都算 price_updated）
-		priceUpdated = newPrice > 0
-		override["last_synced_price"] = newPrice
-	}
-	return priceToWrite, writePrice, priceUpdated, override
 }
 
 // backfillStocks bounds each read independently; failures do not erase references.
@@ -914,13 +974,12 @@ func autoOnshelf(settings map[string]any) bool {
 // 定价四模式（pricing.go ApplyPricingImport）：pending 不算价不上架（Price=-1
 // 不覆盖既有价，运营补价后手动上架）；导入价写入基线（后续同步走价格保护）。
 func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64) (bool, error) {
-	importPrice := func(upstream int64) int64 {
-		if mode == PriceModeChannel {
-			return ApplyPricing(upstream, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
-		}
-		return ApplyPricingImport(upstream, conn.ExchangeRate, markupPercent, markupAmount, mode, string(conn.PriceRoundingMode))
-	}
+	rule := productPricingRule{Mode: mode, Percent: markupPercent, Amount: markupAmount}
+	importPrice := func(upstream int64) int64 { return rule.price(conn, upstream) }
 	price := importPrice(p.Price)
+	if p.IsActive && mode != PriceModePending && (p.Price <= 0 || price <= 0) {
+		return false, fmt.Errorf("商品 %s 报价无效，未导入", p.ID)
+	}
 	status := int8(1)
 	writePrice := price
 	if mode == PriceModePending {
@@ -943,7 +1002,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		Description:         p.Description,
 		DescriptionSet:      p.DescriptionSet,
 		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
-		FactoryPrice:        p.FactoryPrice,
+		FactoryPrice:        accountCost(conn, p),
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,
 		ReimportDeleted:     true,
@@ -956,6 +1015,9 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	// 手动导入也必须携带规格，上游下单使用 SKU ID。
 	for _, sk := range p.SKUs {
 		skuPrice := importPrice(sk.Price)
+		if p.IsActive && mode != PriceModePending && (sk.Price <= 0 || skuPrice <= 0) {
+			return false, fmt.Errorf("商品 %s 规格报价无效，未导入", p.ID)
+		}
 		if mode == PriceModePending {
 			skuPrice = -1 // 待定价时保留已有规格价格，不写零元规格。
 		}
@@ -967,13 +1029,23 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	// 商品、规格、映射一起提交，失败时保留原归档的同步保护。
 	created := false
 	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		if err := s.checkPricingConnection(ctx, conn); err != nil {
+			return err
+		}
 		productID, wasCreated, err := s.writeProductCategory(ctx, p.CategoryID, &write)
 		if err != nil {
 			return err
 		}
 		created = wasCreated
 		// 映射 upsert（价格基线：导入价；后续同步据此做运营改价保护）
-		override := map[string]any{}
+		override := map[string]any{"rule": rule}
+		skuPrices := map[string]any{}
+		for _, sk := range write.SKUs {
+			if sk.PriceCents >= 0 {
+				skuPrices[sk.Code] = sk.PriceCents
+			}
+		}
+		override["sku_prices"] = skuPrices
 		if price > 0 {
 			override["last_synced_price"] = price
 		}
@@ -1017,7 +1089,7 @@ var syncRetryTracker = struct {
 // retryableSyncCode 可重试错误码判定。
 func retryableSyncCode(code string) bool {
 	switch code {
-	case "LIST_PRODUCTS_FAILED", "SYNC_ITEM_FAILED", "HEARTBEAT_FAILED":
+	case "LIST_PRODUCTS_FAILED", "SYNC_ITEM_FAILED", "HEARTBEAT_FAILED", "PRICE_QUOTE_FAILED":
 		return true
 	}
 	return false
@@ -1082,13 +1154,4 @@ func (s *SyncService) deleteHarvestedCover(ctx context.Context, cover string) {
 		return
 	}
 	deleteLocalCover(cover)
-}
-
-// Price-only sync updates existing upstream SKU prices without collecting content or stock.
-func priceSKUs(conn *ent.SupplyConnection, skus []adapter.SKU) []catalogport.UpstreamSKUInput {
-	out := make([]catalogport.UpstreamSKUInput, 0, len(skus))
-	for _, sk := range skus {
-		out = append(out, catalogport.UpstreamSKUInput{Code: sk.Code, PriceCents: ApplyPricing(sk.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))})
-	}
-	return out
 }

@@ -89,13 +89,13 @@ func TestImportChannelPricingAndPriceOnlySKU(t *testing.T) {
 	svc := NewAdminSupplyService(repo, syncSvc)
 	upstream := adapter.Product{ID: "P", Name: "product", Price: 1000, IsActive: true, Stock: 8, SKUs: []adapter.SKU{{ID: "S", Code: "S", Name: "sku", Price: 2000, Stock: 8, IsActive: true, SpecValues: map[string]string{"size": "S"}}}}
 	previewCache.Lock()
-	previewCache.m[conn.ID] = previewEntry{at: time.Now(), byCode: map[string]adapter.Product{"P": upstream}}
+	previewCache.m[conn.ID] = previewEntry{identity: previewIdentity(conn), at: time.Now(), byCode: map[string]adapter.Product{"P": upstream}}
 	previewCache.Unlock()
 	t.Cleanup(func() { previewCache.Lock(); delete(previewCache.m, conn.ID); previewCache.Unlock() })
 	req := &adminv1.ImportProductsRequest{ConnectionId: conn.ID, Codes: []string{"P"}}
 	importProducts := func() (*adminv1.ImportProductsReply, error) {
 		previewCache.Lock()
-		previewCache.m[conn.ID] = previewEntry{at: time.Now(), byCode: map[string]adapter.Product{"P": upstream}}
+		previewCache.m[conn.ID] = previewEntry{identity: previewIdentity(conn), at: time.Now(), byCode: map[string]adapter.Product{"P": upstream}}
 		previewCache.Unlock()
 		return svc.ImportProducts(ctx, req)
 	}
@@ -140,7 +140,7 @@ func TestImportChannelPricingAndPriceOnlySKU(t *testing.T) {
 	manual := d.Client.ProductSku.Create().SetProductID(m.LocalProductID).SetName("local only").SetSpecValues(map[string]string{"size": "L"}).SetPrice(888).SaveX(ctx)
 	other := d.Client.Product.Create().SetName("other").SetSlug("other").SaveX(ctx)
 	otherSKU := d.Client.ProductSku.Create().SetProductID(other.ID).SetName("other sku").SetSpecValues(map[string]string{}).SetUpstreamSkuID("S").SetPrice(777).SaveX(ctx)
-	conn.PriceMarkupPercent = 40
+	conn = d.Client.SupplyConnection.UpdateOneID(conn.ID).SetPriceMarkupPercent(40).SaveX(ctx)
 	m, _ = repo.GetMapping(ctx, conn.ID, "P", "")
 	if err := syncSvc.syncPriceOnly(ctx, conn, m, &upstream, false, &TaskProgress{}); err != nil {
 		t.Fatal(err)

@@ -290,7 +290,7 @@ func (p zCardProduct) toProduct() Product {
 		Name:           p.Name,
 		CategoryID:     idString(p.CategoryID),
 		Price:          p.Price,
-		FactoryPrice:   p.FactoryPrice,
+		FactoryPrice:   p.Price,
 		Description:    p.Description,
 		DescriptionSet: p.DescriptionSet,
 		Cover:          p.Cover,

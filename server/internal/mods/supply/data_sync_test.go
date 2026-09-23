@@ -6,6 +6,7 @@ package supply
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"testing"
 	"time"
@@ -70,12 +71,18 @@ func collectTask() *ent.SupplySyncTask {
 func seedConnAndMapping(t *testing.T, repo *SupplyRepoImpl, autoSync bool, override map[string]any) *ent.SupplyConnection {
 	t.Helper()
 	conn := mustConn(t, repo, nil, "保护测试")
-	conn.AutoSyncPrice = autoSync
+	conn = repo.entClient(context.Background()).SupplyConnection.UpdateOneID(conn.ID).SetAutoSyncPrice(autoSync).SaveX(context.Background())
 	ctx := context.Background()
+	if override == nil {
+		override = map[string]any{}
+	}
+	override["rule"] = productPricingRule{Mode: PriceModeChannel}
+	override["last_synced_price"] = int64(1000)
+	local := repo.entClient(ctx).Product.Create().SetName("fixture").SetSlug(fmt.Sprintf("fixture-%d", conn.ID)).SetPrice(1000).SaveX(ctx)
 	if err := repo.UpsertMapping(ctx, &ent.SupplyMapping{
 		ConnectionID:    conn.ID,
 		UpstreamProduct: "P1",
-		LocalProductID:  50,
+		LocalProductID:  local.ID,
 		PricingOverride: override,
 	}); err != nil {
 		t.Fatal(err)
@@ -345,7 +352,7 @@ func TestReconcileGuardAndShelve(t *testing.T) {
 		conn := mustConn(t, repo, nil, "护栏")
 		task, _ := repo.CreateSyncTask(ctx, conn.ID, "full", ScopeCollect, false)
 		up := &fakeUpstream{
-			products: []adapter.Product{{ID: "A", Name: "A", IsActive: true}, {ID: "B", Name: "B", IsActive: true}},
+			products: []adapter.Product{{ID: "A", Name: "A", IsActive: true, Price: 100}, {ID: "B", Name: "B", IsActive: true, Price: 100}},
 			total:    5, // 声称 5 件只给 2 件（分页不完整）
 			echo:     true,
 		}
@@ -366,7 +373,7 @@ func TestReconcileGuardAndShelve(t *testing.T) {
 		conn := mustConn(t, repo, nil, "对账")
 		task, _ := repo.CreateSyncTask(ctx, conn.ID, "full", ScopeCollect, false)
 		up := &fakeUpstream{
-			products: []adapter.Product{{ID: "A", Name: "A", IsActive: true}, {ID: "B", Name: "B", IsActive: true}},
+			products: []adapter.Product{{ID: "A", Name: "A", IsActive: true, Price: 100}, {ID: "B", Name: "B", IsActive: true, Price: 100}},
 			total:    2,
 			echo:     true,
 		}
@@ -392,7 +399,7 @@ func TestReconcileGuardAndShelve(t *testing.T) {
 		conn := mustConn(t, repo, nil, "无回声")
 		task, _ := repo.CreateSyncTask(ctx, conn.ID, "full", ScopeCollect, false)
 		up := &fakeUpstream{
-			products: []adapter.Product{{ID: "A", Name: "A", IsActive: true}},
+			products: []adapter.Product{{ID: "A", Name: "A", IsActive: true, Price: 100}},
 			total:    1,
 			echo:     false, // 旧版上游不识别 include_inactive
 		}

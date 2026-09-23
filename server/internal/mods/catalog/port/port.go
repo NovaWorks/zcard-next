@@ -194,7 +194,7 @@ type UpstreamProductInput struct {
 	CategoryID          uint64 // 0 且 CategorySet=true 时清除分类
 	CategorySet         bool
 	Price               int64              // 分；-1 = 保持现有价
-	FactoryPrice        int64              // 分（上游成本快照）
+	FactoryPrice        int64              // 本币分：账号成本快照；-1=保留已有成本
 	Status              int8               // 1=上架 2=隐藏 0=下架
 	AutoOnshelf         bool               // 新建商品时是否上架（settings.auto_onshelf）
 	ReimportDeleted     bool               // 仅交互导入：归档商品保留，释放上游标识后新建
@@ -205,7 +205,7 @@ type UpstreamProductInput struct {
 type UpstreamSKUInput struct {
 	Code       string            // 上游 SKU 标识（acg 规格选择编码；dujiao sku_id）→ product_skus.upstream_sku_id
 	Name       string            // 展示名（缺省回退 Code）
-	PriceCents int64             // 组合价（已过定价管线）
+	PriceCents int64             // 组合价（已过定价管线）；-1=保留已有价
 	SpecValues map[string]string // 结构化规格 {规格: 值}
 }
 

@@ -817,10 +817,13 @@ onMounted(load);
           />
         </NFormItem>
         <NFormItem label="同步自动改价">
-          <NSpace align="center">
-            <NSwitch v-model:value="form.auto_sync_price" />
-            <span class="text-12px text-gray-400">关闭后保留本地价；开启后仍遵循固定覆盖价和手动改价保护</span>
-          </NSpace>
+          <div>
+            <NSpace align="center">
+              <NSwitch v-model:value="form.auto_sync_price" />
+              <span class="text-12px text-gray-400">关闭后保留本地价；开启后仍遵循固定覆盖价和手动改价保护</span>
+            </NSpace>
+            <div class="text-12px opacity-70">按商品已保存的定价规则同步。历史商品缺少规则时保留现价，可在导入商品中重新选择策略；手工商品价和规格价会受到保护。</div>
+          </div>
         </NFormItem>
       </NForm>
       <template #footer>

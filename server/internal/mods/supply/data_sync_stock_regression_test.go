@@ -17,7 +17,7 @@ func TestRecheckAllStockFailuresReportedDone(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	up := &fakeUpstream{products: []adapter.Product{{ID: "A", Name: "A", IsActive: true, Stock: -2}, {ID: "B", Name: "B", IsActive: true, Stock: -2}}, total: 2, echo: true}
+	up := &fakeUpstream{products: []adapter.Product{{ID: "A", Name: "A", Price: 100, IsActive: true, Stock: -2}, {ID: "B", Name: "B", Price: 100, IsActive: true, Stock: -2}}, total: 2, echo: true}
 	if err := svc.runLoop(ctx, task.ID, task, conn, up, loadScheduleSettings(conn), ScopeCollect, false, listOf(up)); err != nil {
 		t.Fatal(err)
 	}
