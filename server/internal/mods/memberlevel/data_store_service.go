@@ -48,7 +48,7 @@ func (s *StoreMemberLevelService) GetMyLevel(ctx context.Context, _ *emptypb.Emp
 			reply.Points = pts
 		}
 	}
-	if p.Next != nil {
+	if p.Next != nil && p.Next.DisplayMode == "public" {
 		reply.Progress = &storefrontv1.LevelProgress{
 			RechargeGapCents: p.RechargeGap,
 			ConsumeGapCents:  p.ConsumeGap,
@@ -60,7 +60,7 @@ func (s *StoreMemberLevelService) GetMyLevel(ctx context.Context, _ *emptypb.Emp
 		return nil, errors.InternalServer("memberlevel.LIST_FAILED", "读取等级列表失败")
 	}
 	for _, lv := range levels {
-		if lv.Enabled {
+		if lv.Enabled && lv.DisplayMode != "hidden" {
 			reply.Levels = append(reply.Levels, toLevelBrief(lv))
 		}
 	}
@@ -68,10 +68,14 @@ func (s *StoreMemberLevelService) GetMyLevel(ctx context.Context, _ *emptypb.Emp
 }
 
 func toLevelBrief(lv *ent.MemberLevel) *storefrontv1.LevelBrief {
-	if lv == nil {
+	if lv == nil || lv.DisplayMode == "hidden" {
 		return nil
 	}
+	if lv.DisplayMode == "contact" {
+		return &storefrontv1.LevelBrief{Name: lv.Name, DisplayMode: "contact", DisplayText: "联系客服", AcquireMode: lv.AcquireMode}
+	}
 	brief := &storefrontv1.LevelBrief{
+		DisplayMode: lv.DisplayMode, AcquireMode: lv.AcquireMode,
 		Id: lv.ID, Name: lv.Name, Discount: lv.Discount,
 		ThresholdType:     string(lv.ThresholdType),
 		ThresholdRecharge: lv.ThresholdRecharge,

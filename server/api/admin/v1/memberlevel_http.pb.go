@@ -18,12 +18,14 @@ var _ = new(context.Context)
 
 const _ = http.SupportPackageIsVersion3
 
+const OperationAdminMemberLevelServiceAssignUserLevel = "/zcard.api.admin.v1.AdminMemberLevelService/AssignUserLevel"
 const OperationAdminMemberLevelServiceCreateMemberLevel = "/zcard.api.admin.v1.AdminMemberLevelService/CreateMemberLevel"
 const OperationAdminMemberLevelServiceDeleteMemberLevel = "/zcard.api.admin.v1.AdminMemberLevelService/DeleteMemberLevel"
 const OperationAdminMemberLevelServiceListMemberLevels = "/zcard.api.admin.v1.AdminMemberLevelService/ListMemberLevels"
 const OperationAdminMemberLevelServiceUpdateMemberLevel = "/zcard.api.admin.v1.AdminMemberLevelService/UpdateMemberLevel"
 
 type AdminMemberLevelServiceHTTPServer interface {
+	AssignUserLevel(context.Context, *AssignUserLevelRequest) (*emptypb.Empty, error)
 	CreateMemberLevel(context.Context, *CreateMemberLevelRequest) (*MemberLevel, error)
 	DeleteMemberLevel(context.Context, *DeleteMemberLevelRequest) (*emptypb.Empty, error)
 	ListMemberLevels(context.Context, *emptypb.Empty) (*MemberLevelList, error)
@@ -32,10 +34,33 @@ type AdminMemberLevelServiceHTTPServer interface {
 
 func RegisterAdminMemberLevelServiceHTTPServer(s *http.Server, srv AdminMemberLevelServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("PUT", "/api/v1/admin/users/{user_id}/member-level", _AdminMemberLevelService_AssignUserLevel0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/member-levels", _AdminMemberLevelService_ListMemberLevels0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/member-levels", _AdminMemberLevelService_CreateMemberLevel0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/member-levels/{id}", _AdminMemberLevelService_UpdateMemberLevel0_HTTP_Handler(srv))
 	r.Handle("DELETE", "/api/v1/admin/member-levels/{id}", _AdminMemberLevelService_DeleteMemberLevel0_HTTP_Handler(srv))
+}
+
+func _AdminMemberLevelService_AssignUserLevel0_HTTP_Handler(srv AdminMemberLevelServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in AssignUserLevelRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminMemberLevelServiceAssignUserLevel)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.AssignUserLevel(ctx, req.(*AssignUserLevelRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminMemberLevelService_ListMemberLevels0_HTTP_Handler(srv AdminMemberLevelServiceHTTPServer) func(ctx http.Context) error {
@@ -121,6 +146,7 @@ func _AdminMemberLevelService_DeleteMemberLevel0_HTTP_Handler(srv AdminMemberLev
 }
 
 type AdminMemberLevelServiceHTTPClient interface {
+	AssignUserLevel(ctx context.Context, req *AssignUserLevelRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	CreateMemberLevel(ctx context.Context, req *CreateMemberLevelRequest, opts ...http.CallOption) (rsp *MemberLevel, err error)
 	DeleteMemberLevel(ctx context.Context, req *DeleteMemberLevelRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	ListMemberLevels(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *MemberLevelList, err error)
@@ -133,6 +159,23 @@ type AdminMemberLevelServiceHTTPClientImpl struct {
 
 func NewAdminMemberLevelServiceHTTPClient(client *http.Client) AdminMemberLevelServiceHTTPClient {
 	return &AdminMemberLevelServiceHTTPClientImpl{client}
+}
+
+func (c *AdminMemberLevelServiceHTTPClientImpl) AssignUserLevel(ctx context.Context, in *AssignUserLevelRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/users/{user_id}/member-level"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminMemberLevelServiceAssignUserLevel),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 func (c *AdminMemberLevelServiceHTTPClientImpl) CreateMemberLevel(ctx context.Context, in *CreateMemberLevelRequest, opts ...http.CallOption) (*MemberLevel, error) {

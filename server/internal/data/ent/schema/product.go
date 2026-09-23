@@ -36,6 +36,8 @@ func (Product) Fields() []ent.Field {
 		field.Enum("stock_type").Values("card", "url", "code").Default("card").Comment("卡密/链接/兑换码"),
 		field.Bytes("direct_content").Optional().Comment("直发内容密文（url/code 商品：网盘链接/兑换码，AES-GCM AAD=product/subsite；同一内容发给每个买家"),
 		field.Bool("stock_visible").Default(true).Comment("是否显示库存"),
+		field.String("fulfillment_mode").Default("auto"),
+		field.Int64("manual_stock").Default(-1).Comment("人工共享总额度（含已售及预占），-1不限"),
 		field.Enum("delivery_mode").Values("status", "delete").Default("status").Comment("发货模式：标记/即删"),
 		field.JSON("control_config", map[string]any{}).Optional().Comment("自定义控件配置（结构化控件走 product_controls 表，M1）"),
 		field.Bool("dedup").Default(true).Comment("导入去重开关"),
@@ -81,6 +83,7 @@ func (ProductSku) Fields() []ent.Field {
 		field.JSON("spec_values", map[string]string{}).Comment("规格值组合 {规格: 值}"),
 		field.Int64("price").Optional().Comment("独立售价（分，NULL=继承商品价）"),
 		field.Int64("cost").Optional().Comment("独立成本（分）"),
+		field.String("fulfillment_mode").Default("follow"),
 		field.Int32("stock_offset").Default(0).Comment("独立库存位"),
 		field.String("upstream_sku_id").MaxLen(64).Optional().Comment("上游 SKU 标识（M2）"),
 	}

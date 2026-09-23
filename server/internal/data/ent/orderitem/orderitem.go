@@ -27,6 +27,12 @@ const (
 	FieldProductID = "product_id"
 	// FieldSkuID holds the string denoting the sku_id field in the database.
 	FieldSkuID = "sku_id"
+	// FieldProductName holds the string denoting the product_name field in the database.
+	FieldProductName = "product_name"
+	// FieldFormAnswers holds the string denoting the form_answers field in the database.
+	FieldFormAnswers = "form_answers"
+	// FieldAssignedAdminID holds the string denoting the assigned_admin_id field in the database.
+	FieldAssignedAdminID = "assigned_admin_id"
 	// FieldSkuName holds the string denoting the sku_name field in the database.
 	FieldSkuName = "sku_name"
 	// FieldUnitPrice holds the string denoting the unit_price field in the database.
@@ -67,6 +73,9 @@ var Columns = []string{
 	FieldOrderID,
 	FieldProductID,
 	FieldSkuID,
+	FieldProductName,
+	FieldFormAnswers,
+	FieldAssignedAdminID,
 	FieldSkuName,
 	FieldUnitPrice,
 	FieldQuantity,
@@ -97,6 +106,10 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSubsiteID holds the default value on creation for the "subsite_id" field.
 	DefaultSubsiteID uint64
+	// DefaultProductName holds the default value on creation for the "product_name" field.
+	DefaultProductName string
+	// DefaultAssignedAdminID holds the default value on creation for the "assigned_admin_id" field.
+	DefaultAssignedAdminID uint64
 	// SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
 	SkuNameValidator func(string) error
 	// DefaultCost holds the default value on creation for the "cost" field.
@@ -167,6 +180,16 @@ func ByProductID(opts ...sql.OrderTermOption) OrderOption {
 // BySkuID orders the results by the sku_id field.
 func BySkuID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSkuID, opts...).ToFunc()
+}
+
+// ByProductName orders the results by the product_name field.
+func ByProductName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldProductName, opts...).ToFunc()
+}
+
+// ByAssignedAdminID orders the results by the assigned_admin_id field.
+func ByAssignedAdminID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAssignedAdminID, opts...).ToFunc()
 }
 
 // BySkuName orders the results by the sku_name field.

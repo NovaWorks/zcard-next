@@ -164,6 +164,7 @@ func (s *AdminCatalogService) CreateProduct(ctx context.Context, req *adminv1.Cr
 		Cover:          req.GetCover(), Images: req.GetImages(),
 		Price: req.GetPriceCents(), FactoryPrice: req.GetFactoryPriceCents(),
 		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
+		FulfillmentMode: req.GetFulfillmentMode(), ManualStock: req.ManualStock,
 		StockVisible: req.GetStockVisible(), Dedup: req.GetDedup(),
 		Sort: req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
@@ -202,6 +203,7 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		Cover:          req.GetCover(), Images: req.GetImages(),
 		Price: req.GetPriceCents(), FactoryPrice: req.GetFactoryPriceCents(),
 		StockType: req.GetStockType(), DeliveryMode: req.GetDeliveryMode(),
+		FulfillmentMode: req.GetFulfillmentMode(), ManualStock: req.ManualStock,
 		StockVisible: req.GetStockVisible(),
 		Sort:         req.GetSort(), Status: int8(req.GetStatus()),
 		PointsRequired: req.GetPointsRequired(), PointsRequiredSet: true,
@@ -371,7 +373,7 @@ func (s *AdminCatalogService) CreateControl(ctx context.Context, req *adminv1.Cr
 	if req.GetProductId() == 0 || req.GetName() == "" || req.GetType() == "" {
 		return nil, errors.BadRequest("catalog.CONTROL_INVALID", "商品/名称/类型必填")
 	}
-	c, err := s.repo.CreateProductControl(ctx, req.GetProductId(), 0, req.GetName(), req.GetType(), req.GetRequired(), req.GetOptions(), req.GetSort())
+	c, err := s.repo.CreateProductControl(ctx, req.GetProductId(), 0, req.GetName(), req.GetType(), req.GetRequired(), req.GetOptions(), req.GetSort(), ControlSettings{Placeholder: req.GetPlaceholder(), Validation: req.GetValidation(), MaxLength: req.MaxLength})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.CONTROL_CREATE_FAILED", "创建失败")
 	}
@@ -380,7 +382,7 @@ func (s *AdminCatalogService) CreateControl(ctx context.Context, req *adminv1.Cr
 
 // UpdateControl 更新控件。
 func (s *AdminCatalogService) UpdateControl(ctx context.Context, req *adminv1.UpdateControlRequest) (*adminv1.AdminControl, error) {
-	c, err := s.repo.UpdateProductControl(ctx, req.GetId(), req.GetName(), req.GetType(), req.GetRequired(), req.GetOptions(), req.GetSort())
+	c, err := s.repo.UpdateProductControl(ctx, req.GetId(), req.GetName(), req.GetType(), req.GetRequired(), req.GetOptions(), req.GetSort(), ControlSettings{Placeholder: req.GetPlaceholder(), Validation: req.GetValidation(), MaxLength: req.MaxLength})
 	if err != nil {
 		return nil, errors.NotFound("catalog.CONTROL_NOT_FOUND", "控件不存在")
 	}
@@ -471,7 +473,7 @@ func (s *AdminCatalogService) CreateSku(ctx context.Context, req *adminv1.Create
 	sku, err := s.repo.CreateSku(ctx, SkuInput{
 		ProductID: req.GetProductId(), Name: req.GetName(), SpecValues: req.GetSpecValues(),
 		PriceCents: req.GetPriceCents(), CostCents: req.GetCostCents(),
-		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(),
+		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(), FulfillmentMode: req.GetFulfillmentMode(),
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.SKU_CREATE_FAILED", "创建失败（规格名可能重复）")
@@ -485,7 +487,7 @@ func (s *AdminCatalogService) UpdateSku(ctx context.Context, req *adminv1.Update
 		SetPrice: req.PriceCents != nil, SetCost: req.CostCents != nil, SetStockOffset: req.StockOffset != nil,
 		Name: req.GetName(), SpecValues: req.GetSpecValues(),
 		PriceCents: req.GetPriceCents(), CostCents: req.GetCostCents(),
-		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(),
+		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(), FulfillmentMode: req.GetFulfillmentMode(),
 	})
 	if ent.IsNotFound(err) {
 		return nil, errors.NotFound("catalog.SKU_NOT_FOUND", "SKU 不存在")
@@ -572,7 +574,7 @@ func toSkuPB(sku *ent.ProductSku) *adminv1.Sku {
 	return &adminv1.Sku{
 		Id: sku.ID, ProductId: sku.ProductID, Name: sku.Name,
 		SpecValues: sku.SpecValues, PriceCents: sku.Price, CostCents: sku.Cost,
-		StockOffset: sku.StockOffset, UpstreamSkuId: sku.UpstreamSkuID,
+		StockOffset: sku.StockOffset, UpstreamSkuId: sku.UpstreamSkuID, FulfillmentMode: sku.FulfillmentMode,
 	}
 }
 
@@ -602,6 +604,7 @@ func toControlPB(c *ent.ProductControl) *adminv1.AdminControl {
 	return &adminv1.AdminControl{
 		Id: c.ID, ProductId: c.ProductID, Name: c.Name,
 		Type: string(c.Type), Required: c.Required, Options: c.Options, Sort: c.Sort,
+		Placeholder: c.Placeholder, Validation: c.Validation, MaxLength: &c.MaxLength,
 	}
 }
 

@@ -335,6 +335,41 @@ func (_u *ProductUpdate) SetNillableStockVisible(v *bool) *ProductUpdate {
 	return _u
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (_u *ProductUpdate) SetFulfillmentMode(v string) *ProductUpdate {
+	_u.mutation.SetFulfillmentMode(v)
+	return _u
+}
+
+// SetNillableFulfillmentMode sets the "fulfillment_mode" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableFulfillmentMode(v *string) *ProductUpdate {
+	if v != nil {
+		_u.SetFulfillmentMode(*v)
+	}
+	return _u
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (_u *ProductUpdate) SetManualStock(v int64) *ProductUpdate {
+	_u.mutation.ResetManualStock()
+	_u.mutation.SetManualStock(v)
+	return _u
+}
+
+// SetNillableManualStock sets the "manual_stock" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableManualStock(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetManualStock(*v)
+	}
+	return _u
+}
+
+// AddManualStock adds value to the "manual_stock" field.
+func (_u *ProductUpdate) AddManualStock(v int64) *ProductUpdate {
+	_u.mutation.AddManualStock(v)
+	return _u
+}
+
 // SetDeliveryMode sets the "delivery_mode" field.
 func (_u *ProductUpdate) SetDeliveryMode(v product.DeliveryMode) *ProductUpdate {
 	_u.mutation.SetDeliveryMode(v)
@@ -752,6 +787,15 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.StockVisible(); ok {
 		_spec.SetField(product.FieldStockVisible, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.FulfillmentMode(); ok {
+		_spec.SetField(product.FieldFulfillmentMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ManualStock(); ok {
+		_spec.SetField(product.FieldManualStock, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedManualStock(); ok {
+		_spec.AddField(product.FieldManualStock, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.DeliveryMode(); ok {
 		_spec.SetField(product.FieldDeliveryMode, field.TypeEnum, value)
@@ -1215,6 +1259,41 @@ func (_u *ProductUpdateOne) SetNillableStockVisible(v *bool) *ProductUpdateOne {
 	return _u
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (_u *ProductUpdateOne) SetFulfillmentMode(v string) *ProductUpdateOne {
+	_u.mutation.SetFulfillmentMode(v)
+	return _u
+}
+
+// SetNillableFulfillmentMode sets the "fulfillment_mode" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableFulfillmentMode(v *string) *ProductUpdateOne {
+	if v != nil {
+		_u.SetFulfillmentMode(*v)
+	}
+	return _u
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (_u *ProductUpdateOne) SetManualStock(v int64) *ProductUpdateOne {
+	_u.mutation.ResetManualStock()
+	_u.mutation.SetManualStock(v)
+	return _u
+}
+
+// SetNillableManualStock sets the "manual_stock" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableManualStock(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetManualStock(*v)
+	}
+	return _u
+}
+
+// AddManualStock adds value to the "manual_stock" field.
+func (_u *ProductUpdateOne) AddManualStock(v int64) *ProductUpdateOne {
+	_u.mutation.AddManualStock(v)
+	return _u
+}
+
 // SetDeliveryMode sets the "delivery_mode" field.
 func (_u *ProductUpdateOne) SetDeliveryMode(v product.DeliveryMode) *ProductUpdateOne {
 	_u.mutation.SetDeliveryMode(v)
@@ -1662,6 +1741,15 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if value, ok := _u.mutation.StockVisible(); ok {
 		_spec.SetField(product.FieldStockVisible, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.FulfillmentMode(); ok {
+		_spec.SetField(product.FieldFulfillmentMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ManualStock(); ok {
+		_spec.SetField(product.FieldManualStock, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedManualStock(); ok {
+		_spec.AddField(product.FieldManualStock, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.DeliveryMode(); ok {
 		_spec.SetField(product.FieldDeliveryMode, field.TypeEnum, value)

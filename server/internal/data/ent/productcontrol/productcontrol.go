@@ -26,6 +26,12 @@ const (
 	FieldName = "name"
 	// FieldType holds the string denoting the type field in the database.
 	FieldType = "type"
+	// FieldPlaceholder holds the string denoting the placeholder field in the database.
+	FieldPlaceholder = "placeholder"
+	// FieldValidation holds the string denoting the validation field in the database.
+	FieldValidation = "validation"
+	// FieldMaxLength holds the string denoting the max_length field in the database.
+	FieldMaxLength = "max_length"
 	// FieldRequired holds the string denoting the required field in the database.
 	FieldRequired = "required"
 	// FieldOptions holds the string denoting the options field in the database.
@@ -45,6 +51,9 @@ var Columns = []string{
 	FieldProductID,
 	FieldName,
 	FieldType,
+	FieldPlaceholder,
+	FieldValidation,
+	FieldMaxLength,
 	FieldRequired,
 	FieldOptions,
 	FieldSort,
@@ -71,6 +80,12 @@ var (
 	DefaultSubsiteID uint64
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultPlaceholder holds the default value on creation for the "placeholder" field.
+	DefaultPlaceholder string
+	// DefaultValidation holds the default value on creation for the "validation" field.
+	DefaultValidation string
+	// DefaultMaxLength holds the default value on creation for the "max_length" field.
+	DefaultMaxLength int32
 	// DefaultRequired holds the default value on creation for the "required" field.
 	DefaultRequired bool
 	// DefaultSort holds the default value on creation for the "sort" field.
@@ -140,6 +155,21 @@ func ByName(opts ...sql.OrderTermOption) OrderOption {
 // ByType orders the results by the type field.
 func ByType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldType, opts...).ToFunc()
+}
+
+// ByPlaceholder orders the results by the placeholder field.
+func ByPlaceholder(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlaceholder, opts...).ToFunc()
+}
+
+// ByValidation orders the results by the validation field.
+func ByValidation(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldValidation, opts...).ToFunc()
+}
+
+// ByMaxLength orders the results by the max_length field.
+func ByMaxLength(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMaxLength, opts...).ToFunc()
 }
 
 // ByRequired orders the results by the required field.

@@ -34,6 +34,10 @@ type MemberLevel struct {
 	ThresholdRecharge int64 `json:"threshold_recharge,omitempty"`
 	// 累计消费阈值（分）
 	ThresholdConsume int64 `json:"threshold_consume,omitempty"`
+	// AcquireMode holds the value of the "acquire_mode" field.
+	AcquireMode string `json:"acquire_mode,omitempty"`
+	// DisplayMode holds the value of the "display_mode" field.
+	DisplayMode string `json:"display_mode,omitempty"`
 	// 等级折扣（万分比）
 	Discount int32 `json:"discount,omitempty"`
 	// 积分产生规则（消费 X 元产 Y 分）
@@ -56,7 +60,7 @@ func (*MemberLevel) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case memberlevel.FieldID, memberlevel.FieldThresholdRecharge, memberlevel.FieldThresholdConsume, memberlevel.FieldDiscount, memberlevel.FieldSort:
 			values[i] = new(sql.NullInt64)
-		case memberlevel.FieldName, memberlevel.FieldLogo, memberlevel.FieldBadgeColor, memberlevel.FieldThresholdType:
+		case memberlevel.FieldName, memberlevel.FieldLogo, memberlevel.FieldBadgeColor, memberlevel.FieldThresholdType, memberlevel.FieldAcquireMode, memberlevel.FieldDisplayMode:
 			values[i] = new(sql.NullString)
 		case memberlevel.FieldCreatedAt, memberlevel.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -128,6 +132,18 @@ func (_m *MemberLevel) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field threshold_consume", values[i])
 			} else if value.Valid {
 				_m.ThresholdConsume = value.Int64
+			}
+		case memberlevel.FieldAcquireMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field acquire_mode", values[i])
+			} else if value.Valid {
+				_m.AcquireMode = value.String
+			}
+		case memberlevel.FieldDisplayMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field display_mode", values[i])
+			} else if value.Valid {
+				_m.DisplayMode = value.String
 			}
 		case memberlevel.FieldDiscount:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -214,6 +230,12 @@ func (_m *MemberLevel) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("threshold_consume=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ThresholdConsume))
+	builder.WriteString(", ")
+	builder.WriteString("acquire_mode=")
+	builder.WriteString(_m.AcquireMode)
+	builder.WriteString(", ")
+	builder.WriteString("display_mode=")
+	builder.WriteString(_m.DisplayMode)
 	builder.WriteString(", ")
 	builder.WriteString("discount=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Discount))

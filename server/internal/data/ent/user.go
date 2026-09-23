@@ -21,6 +21,8 @@ type User struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// ManualLevelID holds the value of the "manual_level_id" field.
+	ManualLevelID uint64 `json:"manual_level_id,omitempty"`
 	// Username holds the value of the "username" field.
 	Username string `json:"username,omitempty"`
 	// 第三方登录用户可无邮箱
@@ -49,7 +51,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case user.FieldID, user.FieldInviteL1, user.FieldInviteL2, user.FieldInviteL3:
+		case user.FieldID, user.FieldManualLevelID, user.FieldInviteL1, user.FieldInviteL2, user.FieldInviteL3:
 			values[i] = new(sql.NullInt64)
 		case user.FieldUsername, user.FieldEmail, user.FieldPhone, user.FieldPasswordHash, user.FieldStatus, user.FieldPromoCode:
 			values[i] = new(sql.NullString)
@@ -87,6 +89,12 @@ func (_m *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case user.FieldManualLevelID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field manual_level_id", values[i])
+			} else if value.Valid {
+				_m.ManualLevelID = uint64(value.Int64)
 			}
 		case user.FieldUsername:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -189,6 +197,9 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("manual_level_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ManualLevelID))
 	builder.WriteString(", ")
 	builder.WriteString("username=")
 	builder.WriteString(_m.Username)

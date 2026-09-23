@@ -138,3 +138,22 @@ func TestProcurementRefundCannotPretendToSettle(t *testing.T) {
 		t.Fatal("created an unexecutable receipt")
 	}
 }
+
+func TestUnfinishedManualServiceRefundBoundary(t *testing.T) {
+	d, r, _, _, _, _ := newCallbackEnv(t)
+	ctx := context.Background()
+	o := d.Client.Order.Create().SetOrderNo("MANUAL-REFUND").SetUserID(1).SetStatus(order.StatusFulfilling).SetTotalAmount(1000).SaveX(ctx)
+	it := d.Client.OrderItem.Create().SetOrderID(o.ID).SetProductID(1).SetUnitPrice(1000).SetQuantity(1).SetAmount(1000).SetFulfillmentType("manual").SaveX(ctx)
+	if _, err := r.RefundToWallet(ctx, o.ID, 400, refundPtr(0), "部分退款", 2); err == nil {
+		t.Fatal("unallocated partial service refund accepted")
+	}
+	if d.Client.RefundOrder.Query().CountX(ctx) != 0 {
+		t.Fatal("rejected refund changed money")
+	}
+	if _, err := r.RefundToWallet(ctx, o.ID, 1000, refundPtr(0), "核实服务未执行，全额退款", 2); err != nil {
+		t.Fatal(err)
+	}
+	if d.Client.OrderItem.GetX(ctx, it.ID).FulfillmentStatus != "refunded" {
+		t.Fatal("refunded service remains deliverable")
+	}
+}

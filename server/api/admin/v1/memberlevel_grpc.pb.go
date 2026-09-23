@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminMemberLevelService_AssignUserLevel_FullMethodName   = "/zcard.api.admin.v1.AdminMemberLevelService/AssignUserLevel"
 	AdminMemberLevelService_ListMemberLevels_FullMethodName  = "/zcard.api.admin.v1.AdminMemberLevelService/ListMemberLevels"
 	AdminMemberLevelService_CreateMemberLevel_FullMethodName = "/zcard.api.admin.v1.AdminMemberLevelService/CreateMemberLevel"
 	AdminMemberLevelService_UpdateMemberLevel_FullMethodName = "/zcard.api.admin.v1.AdminMemberLevelService/UpdateMemberLevel"
@@ -32,6 +33,7 @@ const (
 //
 // AdminMemberLevelService 会员等级管理。
 type AdminMemberLevelServiceClient interface {
+	AssignUserLevel(ctx context.Context, in *AssignUserLevelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	ListMemberLevels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MemberLevelList, error)
 	CreateMemberLevel(ctx context.Context, in *CreateMemberLevelRequest, opts ...grpc.CallOption) (*MemberLevel, error)
 	UpdateMemberLevel(ctx context.Context, in *UpdateMemberLevelRequest, opts ...grpc.CallOption) (*MemberLevel, error)
@@ -44,6 +46,16 @@ type adminMemberLevelServiceClient struct {
 
 func NewAdminMemberLevelServiceClient(cc grpc.ClientConnInterface) AdminMemberLevelServiceClient {
 	return &adminMemberLevelServiceClient{cc}
+}
+
+func (c *adminMemberLevelServiceClient) AssignUserLevel(ctx context.Context, in *AssignUserLevelRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminMemberLevelService_AssignUserLevel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminMemberLevelServiceClient) ListMemberLevels(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*MemberLevelList, error) {
@@ -92,6 +104,7 @@ func (c *adminMemberLevelServiceClient) DeleteMemberLevel(ctx context.Context, i
 //
 // AdminMemberLevelService 会员等级管理。
 type AdminMemberLevelServiceServer interface {
+	AssignUserLevel(context.Context, *AssignUserLevelRequest) (*emptypb.Empty, error)
 	ListMemberLevels(context.Context, *emptypb.Empty) (*MemberLevelList, error)
 	CreateMemberLevel(context.Context, *CreateMemberLevelRequest) (*MemberLevel, error)
 	UpdateMemberLevel(context.Context, *UpdateMemberLevelRequest) (*MemberLevel, error)
@@ -106,6 +119,9 @@ type AdminMemberLevelServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminMemberLevelServiceServer struct{}
 
+func (UnimplementedAdminMemberLevelServiceServer) AssignUserLevel(context.Context, *AssignUserLevelRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method AssignUserLevel not implemented")
+}
 func (UnimplementedAdminMemberLevelServiceServer) ListMemberLevels(context.Context, *emptypb.Empty) (*MemberLevelList, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMemberLevels not implemented")
 }
@@ -138,6 +154,24 @@ func RegisterAdminMemberLevelServiceServer(s grpc.ServiceRegistrar, srv AdminMem
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminMemberLevelService_ServiceDesc, srv)
+}
+
+func _AdminMemberLevelService_AssignUserLevel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AssignUserLevelRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminMemberLevelServiceServer).AssignUserLevel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminMemberLevelService_AssignUserLevel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminMemberLevelServiceServer).AssignUserLevel(ctx, req.(*AssignUserLevelRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminMemberLevelService_ListMemberLevels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -219,6 +253,10 @@ var AdminMemberLevelService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminMemberLevelService",
 	HandlerType: (*AdminMemberLevelServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "AssignUserLevel",
+			Handler:    _AdminMemberLevelService_AssignUserLevel_Handler,
+		},
 		{
 			MethodName: "ListMemberLevels",
 			Handler:    _AdminMemberLevelService_ListMemberLevels_Handler,

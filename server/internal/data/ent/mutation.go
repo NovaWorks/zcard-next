@@ -29661,6 +29661,8 @@ type MemberLevelMutation struct {
 	addthreshold_recharge *int64
 	threshold_consume     *int64
 	addthreshold_consume  *int64
+	acquire_mode          *string
+	display_mode          *string
 	discount              *int32
 	adddiscount           *int32
 	points_rule           *map[string]interface{}
@@ -30131,6 +30133,78 @@ func (m *MemberLevelMutation) ResetThresholdConsume() {
 	m.addthreshold_consume = nil
 }
 
+// SetAcquireMode sets the "acquire_mode" field.
+func (m *MemberLevelMutation) SetAcquireMode(s string) {
+	m.acquire_mode = &s
+}
+
+// AcquireMode returns the value of the "acquire_mode" field in the mutation.
+func (m *MemberLevelMutation) AcquireMode() (r string, exists bool) {
+	v := m.acquire_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAcquireMode returns the old "acquire_mode" field's value of the MemberLevel entity.
+// If the MemberLevel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MemberLevelMutation) OldAcquireMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAcquireMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAcquireMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAcquireMode: %w", err)
+	}
+	return oldValue.AcquireMode, nil
+}
+
+// ResetAcquireMode resets all changes to the "acquire_mode" field.
+func (m *MemberLevelMutation) ResetAcquireMode() {
+	m.acquire_mode = nil
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (m *MemberLevelMutation) SetDisplayMode(s string) {
+	m.display_mode = &s
+}
+
+// DisplayMode returns the value of the "display_mode" field in the mutation.
+func (m *MemberLevelMutation) DisplayMode() (r string, exists bool) {
+	v := m.display_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisplayMode returns the old "display_mode" field's value of the MemberLevel entity.
+// If the MemberLevel object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *MemberLevelMutation) OldDisplayMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisplayMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisplayMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisplayMode: %w", err)
+	}
+	return oldValue.DisplayMode, nil
+}
+
+// ResetDisplayMode resets all changes to the "display_mode" field.
+func (m *MemberLevelMutation) ResetDisplayMode() {
+	m.display_mode = nil
+}
+
 // SetDiscount sets the "discount" field.
 func (m *MemberLevelMutation) SetDiscount(i int32) {
 	m.discount = &i
@@ -30362,7 +30436,7 @@ func (m *MemberLevelMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *MemberLevelMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, memberlevel.FieldCreatedAt)
 	}
@@ -30386,6 +30460,12 @@ func (m *MemberLevelMutation) Fields() []string {
 	}
 	if m.threshold_consume != nil {
 		fields = append(fields, memberlevel.FieldThresholdConsume)
+	}
+	if m.acquire_mode != nil {
+		fields = append(fields, memberlevel.FieldAcquireMode)
+	}
+	if m.display_mode != nil {
+		fields = append(fields, memberlevel.FieldDisplayMode)
 	}
 	if m.discount != nil {
 		fields = append(fields, memberlevel.FieldDiscount)
@@ -30423,6 +30503,10 @@ func (m *MemberLevelMutation) Field(name string) (ent.Value, bool) {
 		return m.ThresholdRecharge()
 	case memberlevel.FieldThresholdConsume:
 		return m.ThresholdConsume()
+	case memberlevel.FieldAcquireMode:
+		return m.AcquireMode()
+	case memberlevel.FieldDisplayMode:
+		return m.DisplayMode()
 	case memberlevel.FieldDiscount:
 		return m.Discount()
 	case memberlevel.FieldPointsRule:
@@ -30456,6 +30540,10 @@ func (m *MemberLevelMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldThresholdRecharge(ctx)
 	case memberlevel.FieldThresholdConsume:
 		return m.OldThresholdConsume(ctx)
+	case memberlevel.FieldAcquireMode:
+		return m.OldAcquireMode(ctx)
+	case memberlevel.FieldDisplayMode:
+		return m.OldDisplayMode(ctx)
 	case memberlevel.FieldDiscount:
 		return m.OldDiscount(ctx)
 	case memberlevel.FieldPointsRule:
@@ -30528,6 +30616,20 @@ func (m *MemberLevelMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetThresholdConsume(v)
+		return nil
+	case memberlevel.FieldAcquireMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAcquireMode(v)
+		return nil
+	case memberlevel.FieldDisplayMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisplayMode(v)
 		return nil
 	case memberlevel.FieldDiscount:
 		v, ok := value.(int32)
@@ -30701,6 +30803,12 @@ func (m *MemberLevelMutation) ResetField(name string) error {
 		return nil
 	case memberlevel.FieldThresholdConsume:
 		m.ResetThresholdConsume()
+		return nil
+	case memberlevel.FieldAcquireMode:
+		m.ResetAcquireMode()
+		return nil
+	case memberlevel.FieldDisplayMode:
+		m.ResetDisplayMode()
 		return nil
 	case memberlevel.FieldDiscount:
 		m.ResetDiscount()
@@ -40374,30 +40482,33 @@ func (m *OrderAmountLineMutation) ResetEdge(name string) error {
 // OrderDeliveryMutation represents an operation that mutates the OrderDelivery nodes in the graph.
 type OrderDeliveryMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uint64
-	created_at          *time.Time
-	updated_at          *time.Time
-	item_id             *uint64
-	additem_id          *int64
-	card_id             *uint64
-	addcard_id          *int64
-	delivery_token_hash *string
-	delivered_mode      *orderdelivery.DeliveredMode
-	delivered_by        *uint64
-	adddelivered_by     *int64
-	logistics           *map[string]interface{}
-	fetch_count         *int32
-	addfetch_count      *int32
-	delivered_at        *time.Time
-	fetched_ip          *string
-	clearedFields       map[string]struct{}
-	_order              *uint64
-	cleared_order       bool
-	done                bool
-	oldValue            func(context.Context) (*OrderDelivery, error)
-	predicates          []predicate.OrderDelivery
+	op                    Op
+	typ                   string
+	id                    *uint64
+	created_at            *time.Time
+	updated_at            *time.Time
+	item_id               *uint64
+	additem_id            *int64
+	card_id               *uint64
+	addcard_id            *int64
+	delivery_token_hash   *string
+	service_content       *[]byte
+	delivered_quantity    *int32
+	adddelivered_quantity *int32
+	delivered_mode        *orderdelivery.DeliveredMode
+	delivered_by          *uint64
+	adddelivered_by       *int64
+	logistics             *map[string]interface{}
+	fetch_count           *int32
+	addfetch_count        *int32
+	delivered_at          *time.Time
+	fetched_ip            *string
+	clearedFields         map[string]struct{}
+	_order                *uint64
+	cleared_order         bool
+	done                  bool
+	oldValue              func(context.Context) (*OrderDelivery, error)
+	predicates            []predicate.OrderDelivery
 }
 
 var _ ent.Mutation = (*OrderDeliveryMutation)(nil)
@@ -40760,6 +40871,111 @@ func (m *OrderDeliveryMutation) ResetDeliveryTokenHash() {
 	m.delivery_token_hash = nil
 }
 
+// SetServiceContent sets the "service_content" field.
+func (m *OrderDeliveryMutation) SetServiceContent(b []byte) {
+	m.service_content = &b
+}
+
+// ServiceContent returns the value of the "service_content" field in the mutation.
+func (m *OrderDeliveryMutation) ServiceContent() (r []byte, exists bool) {
+	v := m.service_content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldServiceContent returns the old "service_content" field's value of the OrderDelivery entity.
+// If the OrderDelivery object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderDeliveryMutation) OldServiceContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldServiceContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldServiceContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldServiceContent: %w", err)
+	}
+	return oldValue.ServiceContent, nil
+}
+
+// ClearServiceContent clears the value of the "service_content" field.
+func (m *OrderDeliveryMutation) ClearServiceContent() {
+	m.service_content = nil
+	m.clearedFields[orderdelivery.FieldServiceContent] = struct{}{}
+}
+
+// ServiceContentCleared returns if the "service_content" field was cleared in this mutation.
+func (m *OrderDeliveryMutation) ServiceContentCleared() bool {
+	_, ok := m.clearedFields[orderdelivery.FieldServiceContent]
+	return ok
+}
+
+// ResetServiceContent resets all changes to the "service_content" field.
+func (m *OrderDeliveryMutation) ResetServiceContent() {
+	m.service_content = nil
+	delete(m.clearedFields, orderdelivery.FieldServiceContent)
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (m *OrderDeliveryMutation) SetDeliveredQuantity(i int32) {
+	m.delivered_quantity = &i
+	m.adddelivered_quantity = nil
+}
+
+// DeliveredQuantity returns the value of the "delivered_quantity" field in the mutation.
+func (m *OrderDeliveryMutation) DeliveredQuantity() (r int32, exists bool) {
+	v := m.delivered_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeliveredQuantity returns the old "delivered_quantity" field's value of the OrderDelivery entity.
+// If the OrderDelivery object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderDeliveryMutation) OldDeliveredQuantity(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeliveredQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeliveredQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeliveredQuantity: %w", err)
+	}
+	return oldValue.DeliveredQuantity, nil
+}
+
+// AddDeliveredQuantity adds i to the "delivered_quantity" field.
+func (m *OrderDeliveryMutation) AddDeliveredQuantity(i int32) {
+	if m.adddelivered_quantity != nil {
+		*m.adddelivered_quantity += i
+	} else {
+		m.adddelivered_quantity = &i
+	}
+}
+
+// AddedDeliveredQuantity returns the value that was added to the "delivered_quantity" field in this mutation.
+func (m *OrderDeliveryMutation) AddedDeliveredQuantity() (r int32, exists bool) {
+	v := m.adddelivered_quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDeliveredQuantity resets all changes to the "delivered_quantity" field.
+func (m *OrderDeliveryMutation) ResetDeliveredQuantity() {
+	m.delivered_quantity = nil
+	m.adddelivered_quantity = nil
+}
+
 // SetDeliveredMode sets the "delivered_mode" field.
 func (m *OrderDeliveryMutation) SetDeliveredMode(om orderdelivery.DeliveredMode) {
 	m.delivered_mode = &om
@@ -41116,7 +41332,7 @@ func (m *OrderDeliveryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderDeliveryMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 14)
 	if m.created_at != nil {
 		fields = append(fields, orderdelivery.FieldCreatedAt)
 	}
@@ -41134,6 +41350,12 @@ func (m *OrderDeliveryMutation) Fields() []string {
 	}
 	if m.delivery_token_hash != nil {
 		fields = append(fields, orderdelivery.FieldDeliveryTokenHash)
+	}
+	if m.service_content != nil {
+		fields = append(fields, orderdelivery.FieldServiceContent)
+	}
+	if m.delivered_quantity != nil {
+		fields = append(fields, orderdelivery.FieldDeliveredQuantity)
 	}
 	if m.delivered_mode != nil {
 		fields = append(fields, orderdelivery.FieldDeliveredMode)
@@ -41173,6 +41395,10 @@ func (m *OrderDeliveryMutation) Field(name string) (ent.Value, bool) {
 		return m.CardID()
 	case orderdelivery.FieldDeliveryTokenHash:
 		return m.DeliveryTokenHash()
+	case orderdelivery.FieldServiceContent:
+		return m.ServiceContent()
+	case orderdelivery.FieldDeliveredQuantity:
+		return m.DeliveredQuantity()
 	case orderdelivery.FieldDeliveredMode:
 		return m.DeliveredMode()
 	case orderdelivery.FieldDeliveredBy:
@@ -41206,6 +41432,10 @@ func (m *OrderDeliveryMutation) OldField(ctx context.Context, name string) (ent.
 		return m.OldCardID(ctx)
 	case orderdelivery.FieldDeliveryTokenHash:
 		return m.OldDeliveryTokenHash(ctx)
+	case orderdelivery.FieldServiceContent:
+		return m.OldServiceContent(ctx)
+	case orderdelivery.FieldDeliveredQuantity:
+		return m.OldDeliveredQuantity(ctx)
 	case orderdelivery.FieldDeliveredMode:
 		return m.OldDeliveredMode(ctx)
 	case orderdelivery.FieldDeliveredBy:
@@ -41269,6 +41499,20 @@ func (m *OrderDeliveryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDeliveryTokenHash(v)
 		return nil
+	case orderdelivery.FieldServiceContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetServiceContent(v)
+		return nil
+	case orderdelivery.FieldDeliveredQuantity:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeliveredQuantity(v)
+		return nil
 	case orderdelivery.FieldDeliveredMode:
 		v, ok := value.(orderdelivery.DeliveredMode)
 		if !ok {
@@ -41325,6 +41569,9 @@ func (m *OrderDeliveryMutation) AddedFields() []string {
 	if m.addcard_id != nil {
 		fields = append(fields, orderdelivery.FieldCardID)
 	}
+	if m.adddelivered_quantity != nil {
+		fields = append(fields, orderdelivery.FieldDeliveredQuantity)
+	}
 	if m.adddelivered_by != nil {
 		fields = append(fields, orderdelivery.FieldDeliveredBy)
 	}
@@ -41343,6 +41590,8 @@ func (m *OrderDeliveryMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedItemID()
 	case orderdelivery.FieldCardID:
 		return m.AddedCardID()
+	case orderdelivery.FieldDeliveredQuantity:
+		return m.AddedDeliveredQuantity()
 	case orderdelivery.FieldDeliveredBy:
 		return m.AddedDeliveredBy()
 	case orderdelivery.FieldFetchCount:
@@ -41370,6 +41619,13 @@ func (m *OrderDeliveryMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddCardID(v)
 		return nil
+	case orderdelivery.FieldDeliveredQuantity:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeliveredQuantity(v)
+		return nil
 	case orderdelivery.FieldDeliveredBy:
 		v, ok := value.(int64)
 		if !ok {
@@ -41392,6 +41648,9 @@ func (m *OrderDeliveryMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *OrderDeliveryMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(orderdelivery.FieldServiceContent) {
+		fields = append(fields, orderdelivery.FieldServiceContent)
+	}
 	if m.FieldCleared(orderdelivery.FieldLogistics) {
 		fields = append(fields, orderdelivery.FieldLogistics)
 	}
@@ -41415,6 +41674,9 @@ func (m *OrderDeliveryMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *OrderDeliveryMutation) ClearField(name string) error {
 	switch name {
+	case orderdelivery.FieldServiceContent:
+		m.ClearServiceContent()
+		return nil
 	case orderdelivery.FieldLogistics:
 		m.ClearLogistics()
 		return nil
@@ -41449,6 +41711,12 @@ func (m *OrderDeliveryMutation) ResetField(name string) error {
 		return nil
 	case orderdelivery.FieldDeliveryTokenHash:
 		m.ResetDeliveryTokenHash()
+		return nil
+	case orderdelivery.FieldServiceContent:
+		m.ResetServiceContent()
+		return nil
+	case orderdelivery.FieldDeliveredQuantity:
+		m.ResetDeliveredQuantity()
 		return nil
 	case orderdelivery.FieldDeliveredMode:
 		m.ResetDeliveredMode()
@@ -41549,36 +41817,41 @@ func (m *OrderDeliveryMutation) ResetEdge(name string) error {
 // OrderItemMutation represents an operation that mutates the OrderItem nodes in the graph.
 type OrderItemMutation struct {
 	config
-	op                  Op
-	typ                 string
-	id                  *uint64
-	created_at          *time.Time
-	updated_at          *time.Time
-	subsite_id          *uint64
-	addsubsite_id       *int64
-	product_id          *uint64
-	addproduct_id       *int64
-	sku_id              *uint64
-	addsku_id           *int64
-	sku_name            *string
-	unit_price          *int64
-	addunit_price       *int64
-	quantity            *int32
-	addquantity         *int32
-	amount              *int64
-	addamount           *int64
-	cost                *int64
-	addcost             *int64
-	fulfillment_type    *orderitem.FulfillmentType
-	fulfillment_status  *string
-	commission_snapshot *map[string]interface{}
-	profit_snapshot     *map[string]interface{}
-	clearedFields       map[string]struct{}
-	_order              *uint64
-	cleared_order       bool
-	done                bool
-	oldValue            func(context.Context) (*OrderItem, error)
-	predicates          []predicate.OrderItem
+	op                   Op
+	typ                  string
+	id                   *uint64
+	created_at           *time.Time
+	updated_at           *time.Time
+	subsite_id           *uint64
+	addsubsite_id        *int64
+	product_id           *uint64
+	addproduct_id        *int64
+	sku_id               *uint64
+	addsku_id            *int64
+	product_name         *string
+	form_answers         *[]map[string]string
+	appendform_answers   []map[string]string
+	assigned_admin_id    *uint64
+	addassigned_admin_id *int64
+	sku_name             *string
+	unit_price           *int64
+	addunit_price        *int64
+	quantity             *int32
+	addquantity          *int32
+	amount               *int64
+	addamount            *int64
+	cost                 *int64
+	addcost              *int64
+	fulfillment_type     *orderitem.FulfillmentType
+	fulfillment_status   *string
+	commission_snapshot  *map[string]interface{}
+	profit_snapshot      *map[string]interface{}
+	clearedFields        map[string]struct{}
+	_order               *uint64
+	cleared_order        bool
+	done                 bool
+	oldValue             func(context.Context) (*OrderItem, error)
+	predicates           []predicate.OrderItem
 }
 
 var _ ent.Mutation = (*OrderItemMutation)(nil)
@@ -41973,6 +42246,163 @@ func (m *OrderItemMutation) ResetSkuID() {
 	m.sku_id = nil
 	m.addsku_id = nil
 	delete(m.clearedFields, orderitem.FieldSkuID)
+}
+
+// SetProductName sets the "product_name" field.
+func (m *OrderItemMutation) SetProductName(s string) {
+	m.product_name = &s
+}
+
+// ProductName returns the value of the "product_name" field in the mutation.
+func (m *OrderItemMutation) ProductName() (r string, exists bool) {
+	v := m.product_name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductName returns the old "product_name" field's value of the OrderItem entity.
+// If the OrderItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderItemMutation) OldProductName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductName: %w", err)
+	}
+	return oldValue.ProductName, nil
+}
+
+// ResetProductName resets all changes to the "product_name" field.
+func (m *OrderItemMutation) ResetProductName() {
+	m.product_name = nil
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (m *OrderItemMutation) SetFormAnswers(value []map[string]string) {
+	m.form_answers = &value
+	m.appendform_answers = nil
+}
+
+// FormAnswers returns the value of the "form_answers" field in the mutation.
+func (m *OrderItemMutation) FormAnswers() (r []map[string]string, exists bool) {
+	v := m.form_answers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFormAnswers returns the old "form_answers" field's value of the OrderItem entity.
+// If the OrderItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderItemMutation) OldFormAnswers(ctx context.Context) (v []map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFormAnswers is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFormAnswers requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFormAnswers: %w", err)
+	}
+	return oldValue.FormAnswers, nil
+}
+
+// AppendFormAnswers adds value to the "form_answers" field.
+func (m *OrderItemMutation) AppendFormAnswers(value []map[string]string) {
+	m.appendform_answers = append(m.appendform_answers, value...)
+}
+
+// AppendedFormAnswers returns the list of values that were appended to the "form_answers" field in this mutation.
+func (m *OrderItemMutation) AppendedFormAnswers() ([]map[string]string, bool) {
+	if len(m.appendform_answers) == 0 {
+		return nil, false
+	}
+	return m.appendform_answers, true
+}
+
+// ClearFormAnswers clears the value of the "form_answers" field.
+func (m *OrderItemMutation) ClearFormAnswers() {
+	m.form_answers = nil
+	m.appendform_answers = nil
+	m.clearedFields[orderitem.FieldFormAnswers] = struct{}{}
+}
+
+// FormAnswersCleared returns if the "form_answers" field was cleared in this mutation.
+func (m *OrderItemMutation) FormAnswersCleared() bool {
+	_, ok := m.clearedFields[orderitem.FieldFormAnswers]
+	return ok
+}
+
+// ResetFormAnswers resets all changes to the "form_answers" field.
+func (m *OrderItemMutation) ResetFormAnswers() {
+	m.form_answers = nil
+	m.appendform_answers = nil
+	delete(m.clearedFields, orderitem.FieldFormAnswers)
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (m *OrderItemMutation) SetAssignedAdminID(u uint64) {
+	m.assigned_admin_id = &u
+	m.addassigned_admin_id = nil
+}
+
+// AssignedAdminID returns the value of the "assigned_admin_id" field in the mutation.
+func (m *OrderItemMutation) AssignedAdminID() (r uint64, exists bool) {
+	v := m.assigned_admin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAssignedAdminID returns the old "assigned_admin_id" field's value of the OrderItem entity.
+// If the OrderItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderItemMutation) OldAssignedAdminID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAssignedAdminID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAssignedAdminID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAssignedAdminID: %w", err)
+	}
+	return oldValue.AssignedAdminID, nil
+}
+
+// AddAssignedAdminID adds u to the "assigned_admin_id" field.
+func (m *OrderItemMutation) AddAssignedAdminID(u int64) {
+	if m.addassigned_admin_id != nil {
+		*m.addassigned_admin_id += u
+	} else {
+		m.addassigned_admin_id = &u
+	}
+}
+
+// AddedAssignedAdminID returns the value that was added to the "assigned_admin_id" field in this mutation.
+func (m *OrderItemMutation) AddedAssignedAdminID() (r int64, exists bool) {
+	v := m.addassigned_admin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAssignedAdminID resets all changes to the "assigned_admin_id" field.
+func (m *OrderItemMutation) ResetAssignedAdminID() {
+	m.assigned_admin_id = nil
+	m.addassigned_admin_id = nil
 }
 
 // SetSkuName sets the "sku_name" field.
@@ -42479,7 +42909,7 @@ func (m *OrderItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderItemMutation) Fields() []string {
-	fields := make([]string, 0, 15)
+	fields := make([]string, 0, 18)
 	if m.created_at != nil {
 		fields = append(fields, orderitem.FieldCreatedAt)
 	}
@@ -42497,6 +42927,15 @@ func (m *OrderItemMutation) Fields() []string {
 	}
 	if m.sku_id != nil {
 		fields = append(fields, orderitem.FieldSkuID)
+	}
+	if m.product_name != nil {
+		fields = append(fields, orderitem.FieldProductName)
+	}
+	if m.form_answers != nil {
+		fields = append(fields, orderitem.FieldFormAnswers)
+	}
+	if m.assigned_admin_id != nil {
+		fields = append(fields, orderitem.FieldAssignedAdminID)
 	}
 	if m.sku_name != nil {
 		fields = append(fields, orderitem.FieldSkuName)
@@ -42545,6 +42984,12 @@ func (m *OrderItemMutation) Field(name string) (ent.Value, bool) {
 		return m.ProductID()
 	case orderitem.FieldSkuID:
 		return m.SkuID()
+	case orderitem.FieldProductName:
+		return m.ProductName()
+	case orderitem.FieldFormAnswers:
+		return m.FormAnswers()
+	case orderitem.FieldAssignedAdminID:
+		return m.AssignedAdminID()
 	case orderitem.FieldSkuName:
 		return m.SkuName()
 	case orderitem.FieldUnitPrice:
@@ -42584,6 +43029,12 @@ func (m *OrderItemMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldProductID(ctx)
 	case orderitem.FieldSkuID:
 		return m.OldSkuID(ctx)
+	case orderitem.FieldProductName:
+		return m.OldProductName(ctx)
+	case orderitem.FieldFormAnswers:
+		return m.OldFormAnswers(ctx)
+	case orderitem.FieldAssignedAdminID:
+		return m.OldAssignedAdminID(ctx)
 	case orderitem.FieldSkuName:
 		return m.OldSkuName(ctx)
 	case orderitem.FieldUnitPrice:
@@ -42652,6 +43103,27 @@ func (m *OrderItemMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSkuID(v)
+		return nil
+	case orderitem.FieldProductName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductName(v)
+		return nil
+	case orderitem.FieldFormAnswers:
+		v, ok := value.([]map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFormAnswers(v)
+		return nil
+	case orderitem.FieldAssignedAdminID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAssignedAdminID(v)
 		return nil
 	case orderitem.FieldSkuName:
 		v, ok := value.(string)
@@ -42733,6 +43205,9 @@ func (m *OrderItemMutation) AddedFields() []string {
 	if m.addsku_id != nil {
 		fields = append(fields, orderitem.FieldSkuID)
 	}
+	if m.addassigned_admin_id != nil {
+		fields = append(fields, orderitem.FieldAssignedAdminID)
+	}
 	if m.addunit_price != nil {
 		fields = append(fields, orderitem.FieldUnitPrice)
 	}
@@ -42759,6 +43234,8 @@ func (m *OrderItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedProductID()
 	case orderitem.FieldSkuID:
 		return m.AddedSkuID()
+	case orderitem.FieldAssignedAdminID:
+		return m.AddedAssignedAdminID()
 	case orderitem.FieldUnitPrice:
 		return m.AddedUnitPrice()
 	case orderitem.FieldQuantity:
@@ -42796,6 +43273,13 @@ func (m *OrderItemMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSkuID(v)
+		return nil
+	case orderitem.FieldAssignedAdminID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAssignedAdminID(v)
 		return nil
 	case orderitem.FieldUnitPrice:
 		v, ok := value.(int64)
@@ -42836,6 +43320,9 @@ func (m *OrderItemMutation) ClearedFields() []string {
 	if m.FieldCleared(orderitem.FieldSkuID) {
 		fields = append(fields, orderitem.FieldSkuID)
 	}
+	if m.FieldCleared(orderitem.FieldFormAnswers) {
+		fields = append(fields, orderitem.FieldFormAnswers)
+	}
 	if m.FieldCleared(orderitem.FieldSkuName) {
 		fields = append(fields, orderitem.FieldSkuName)
 	}
@@ -42861,6 +43348,9 @@ func (m *OrderItemMutation) ClearField(name string) error {
 	switch name {
 	case orderitem.FieldSkuID:
 		m.ClearSkuID()
+		return nil
+	case orderitem.FieldFormAnswers:
+		m.ClearFormAnswers()
 		return nil
 	case orderitem.FieldSkuName:
 		m.ClearSkuName()
@@ -42896,6 +43386,15 @@ func (m *OrderItemMutation) ResetField(name string) error {
 		return nil
 	case orderitem.FieldSkuID:
 		m.ResetSkuID()
+		return nil
+	case orderitem.FieldProductName:
+		m.ResetProductName()
+		return nil
+	case orderitem.FieldFormAnswers:
+		m.ResetFormAnswers()
+		return nil
+	case orderitem.FieldAssignedAdminID:
+		m.ResetAssignedAdminID()
 		return nil
 	case orderitem.FieldSkuName:
 		m.ResetSkuName()
@@ -55179,6 +55678,9 @@ type ProductMutation struct {
 	stock_type            *product.StockType
 	direct_content        *[]byte
 	stock_visible         *bool
+	fulfillment_mode      *string
+	manual_stock          *int64
+	addmanual_stock       *int64
 	delivery_mode         *product.DeliveryMode
 	control_config        *map[string]interface{}
 	dedup                 *bool
@@ -56206,6 +56708,98 @@ func (m *ProductMutation) ResetStockVisible() {
 	m.stock_visible = nil
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (m *ProductMutation) SetFulfillmentMode(s string) {
+	m.fulfillment_mode = &s
+}
+
+// FulfillmentMode returns the value of the "fulfillment_mode" field in the mutation.
+func (m *ProductMutation) FulfillmentMode() (r string, exists bool) {
+	v := m.fulfillment_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFulfillmentMode returns the old "fulfillment_mode" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldFulfillmentMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFulfillmentMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFulfillmentMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFulfillmentMode: %w", err)
+	}
+	return oldValue.FulfillmentMode, nil
+}
+
+// ResetFulfillmentMode resets all changes to the "fulfillment_mode" field.
+func (m *ProductMutation) ResetFulfillmentMode() {
+	m.fulfillment_mode = nil
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (m *ProductMutation) SetManualStock(i int64) {
+	m.manual_stock = &i
+	m.addmanual_stock = nil
+}
+
+// ManualStock returns the value of the "manual_stock" field in the mutation.
+func (m *ProductMutation) ManualStock() (r int64, exists bool) {
+	v := m.manual_stock
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManualStock returns the old "manual_stock" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldManualStock(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManualStock is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManualStock requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManualStock: %w", err)
+	}
+	return oldValue.ManualStock, nil
+}
+
+// AddManualStock adds i to the "manual_stock" field.
+func (m *ProductMutation) AddManualStock(i int64) {
+	if m.addmanual_stock != nil {
+		*m.addmanual_stock += i
+	} else {
+		m.addmanual_stock = &i
+	}
+}
+
+// AddedManualStock returns the value that was added to the "manual_stock" field in this mutation.
+func (m *ProductMutation) AddedManualStock() (r int64, exists bool) {
+	v := m.addmanual_stock
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetManualStock resets all changes to the "manual_stock" field.
+func (m *ProductMutation) ResetManualStock() {
+	m.manual_stock = nil
+	m.addmanual_stock = nil
+}
+
 // SetDeliveryMode sets the "delivery_mode" field.
 func (m *ProductMutation) SetDeliveryMode(pm product.DeliveryMode) {
 	m.delivery_mode = &pm
@@ -56785,7 +57379,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 28)
+	fields := make([]string, 0, 30)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -56842,6 +57436,12 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.stock_visible != nil {
 		fields = append(fields, product.FieldStockVisible)
+	}
+	if m.fulfillment_mode != nil {
+		fields = append(fields, product.FieldFulfillmentMode)
+	}
+	if m.manual_stock != nil {
+		fields = append(fields, product.FieldManualStock)
 	}
 	if m.delivery_mode != nil {
 		fields = append(fields, product.FieldDeliveryMode)
@@ -56916,6 +57516,10 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.DirectContent()
 	case product.FieldStockVisible:
 		return m.StockVisible()
+	case product.FieldFulfillmentMode:
+		return m.FulfillmentMode()
+	case product.FieldManualStock:
+		return m.ManualStock()
 	case product.FieldDeliveryMode:
 		return m.DeliveryMode()
 	case product.FieldControlConfig:
@@ -56981,6 +57585,10 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldDirectContent(ctx)
 	case product.FieldStockVisible:
 		return m.OldStockVisible(ctx)
+	case product.FieldFulfillmentMode:
+		return m.OldFulfillmentMode(ctx)
+	case product.FieldManualStock:
+		return m.OldManualStock(ctx)
 	case product.FieldDeliveryMode:
 		return m.OldDeliveryMode(ctx)
 	case product.FieldControlConfig:
@@ -57141,6 +57749,20 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetStockVisible(v)
 		return nil
+	case product.FieldFulfillmentMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFulfillmentMode(v)
+		return nil
+	case product.FieldManualStock:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManualStock(v)
+		return nil
 	case product.FieldDeliveryMode:
 		v, ok := value.(product.DeliveryMode)
 		if !ok {
@@ -57230,6 +57852,9 @@ func (m *ProductMutation) AddedFields() []string {
 	if m.addpoints_required != nil {
 		fields = append(fields, product.FieldPointsRequired)
 	}
+	if m.addmanual_stock != nil {
+		fields = append(fields, product.FieldManualStock)
+	}
 	if m.addsort != nil {
 		fields = append(fields, product.FieldSort)
 	}
@@ -57259,6 +57884,8 @@ func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedDraftPremium()
 	case product.FieldPointsRequired:
 		return m.AddedPointsRequired()
+	case product.FieldManualStock:
+		return m.AddedManualStock()
 	case product.FieldSort:
 		return m.AddedSort()
 	case product.FieldStatus:
@@ -57315,6 +57942,13 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddPointsRequired(v)
+		return nil
+	case product.FieldManualStock:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddManualStock(v)
 		return nil
 	case product.FieldSort:
 		v, ok := value.(int32)
@@ -57483,6 +58117,12 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldStockVisible:
 		m.ResetStockVisible()
+		return nil
+	case product.FieldFulfillmentMode:
+		m.ResetFulfillmentMode()
+		return nil
+	case product.FieldManualStock:
+		m.ResetManualStock()
 		return nil
 	case product.FieldDeliveryMode:
 		m.ResetDeliveryMode()
@@ -58608,6 +59248,10 @@ type ProductControlMutation struct {
 	addproduct_id *int64
 	name          *string
 	_type         *productcontrol.Type
+	placeholder   *string
+	validation    *string
+	max_length    *int32
+	addmax_length *int32
 	required      *bool
 	options       *[]string
 	appendoptions []string
@@ -58979,6 +59623,134 @@ func (m *ProductControlMutation) ResetType() {
 	m._type = nil
 }
 
+// SetPlaceholder sets the "placeholder" field.
+func (m *ProductControlMutation) SetPlaceholder(s string) {
+	m.placeholder = &s
+}
+
+// Placeholder returns the value of the "placeholder" field in the mutation.
+func (m *ProductControlMutation) Placeholder() (r string, exists bool) {
+	v := m.placeholder
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlaceholder returns the old "placeholder" field's value of the ProductControl entity.
+// If the ProductControl object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductControlMutation) OldPlaceholder(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlaceholder is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlaceholder requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlaceholder: %w", err)
+	}
+	return oldValue.Placeholder, nil
+}
+
+// ResetPlaceholder resets all changes to the "placeholder" field.
+func (m *ProductControlMutation) ResetPlaceholder() {
+	m.placeholder = nil
+}
+
+// SetValidation sets the "validation" field.
+func (m *ProductControlMutation) SetValidation(s string) {
+	m.validation = &s
+}
+
+// Validation returns the value of the "validation" field in the mutation.
+func (m *ProductControlMutation) Validation() (r string, exists bool) {
+	v := m.validation
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidation returns the old "validation" field's value of the ProductControl entity.
+// If the ProductControl object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductControlMutation) OldValidation(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValidation is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValidation requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidation: %w", err)
+	}
+	return oldValue.Validation, nil
+}
+
+// ResetValidation resets all changes to the "validation" field.
+func (m *ProductControlMutation) ResetValidation() {
+	m.validation = nil
+}
+
+// SetMaxLength sets the "max_length" field.
+func (m *ProductControlMutation) SetMaxLength(i int32) {
+	m.max_length = &i
+	m.addmax_length = nil
+}
+
+// MaxLength returns the value of the "max_length" field in the mutation.
+func (m *ProductControlMutation) MaxLength() (r int32, exists bool) {
+	v := m.max_length
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxLength returns the old "max_length" field's value of the ProductControl entity.
+// If the ProductControl object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductControlMutation) OldMaxLength(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxLength is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxLength requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxLength: %w", err)
+	}
+	return oldValue.MaxLength, nil
+}
+
+// AddMaxLength adds i to the "max_length" field.
+func (m *ProductControlMutation) AddMaxLength(i int32) {
+	if m.addmax_length != nil {
+		*m.addmax_length += i
+	} else {
+		m.addmax_length = &i
+	}
+}
+
+// AddedMaxLength returns the value that was added to the "max_length" field in this mutation.
+func (m *ProductControlMutation) AddedMaxLength() (r int32, exists bool) {
+	v := m.addmax_length
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxLength resets all changes to the "max_length" field.
+func (m *ProductControlMutation) ResetMaxLength() {
+	m.max_length = nil
+	m.addmax_length = nil
+}
+
 // SetRequired sets the "required" field.
 func (m *ProductControlMutation) SetRequired(b bool) {
 	m.required = &b
@@ -59170,7 +59942,7 @@ func (m *ProductControlMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductControlMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 12)
 	if m.created_at != nil {
 		fields = append(fields, productcontrol.FieldCreatedAt)
 	}
@@ -59188,6 +59960,15 @@ func (m *ProductControlMutation) Fields() []string {
 	}
 	if m._type != nil {
 		fields = append(fields, productcontrol.FieldType)
+	}
+	if m.placeholder != nil {
+		fields = append(fields, productcontrol.FieldPlaceholder)
+	}
+	if m.validation != nil {
+		fields = append(fields, productcontrol.FieldValidation)
+	}
+	if m.max_length != nil {
+		fields = append(fields, productcontrol.FieldMaxLength)
 	}
 	if m.required != nil {
 		fields = append(fields, productcontrol.FieldRequired)
@@ -59218,6 +59999,12 @@ func (m *ProductControlMutation) Field(name string) (ent.Value, bool) {
 		return m.Name()
 	case productcontrol.FieldType:
 		return m.GetType()
+	case productcontrol.FieldPlaceholder:
+		return m.Placeholder()
+	case productcontrol.FieldValidation:
+		return m.Validation()
+	case productcontrol.FieldMaxLength:
+		return m.MaxLength()
 	case productcontrol.FieldRequired:
 		return m.Required()
 	case productcontrol.FieldOptions:
@@ -59245,6 +60032,12 @@ func (m *ProductControlMutation) OldField(ctx context.Context, name string) (ent
 		return m.OldName(ctx)
 	case productcontrol.FieldType:
 		return m.OldType(ctx)
+	case productcontrol.FieldPlaceholder:
+		return m.OldPlaceholder(ctx)
+	case productcontrol.FieldValidation:
+		return m.OldValidation(ctx)
+	case productcontrol.FieldMaxLength:
+		return m.OldMaxLength(ctx)
 	case productcontrol.FieldRequired:
 		return m.OldRequired(ctx)
 	case productcontrol.FieldOptions:
@@ -59302,6 +60095,27 @@ func (m *ProductControlMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetType(v)
 		return nil
+	case productcontrol.FieldPlaceholder:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlaceholder(v)
+		return nil
+	case productcontrol.FieldValidation:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidation(v)
+		return nil
+	case productcontrol.FieldMaxLength:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxLength(v)
+		return nil
 	case productcontrol.FieldRequired:
 		v, ok := value.(bool)
 		if !ok {
@@ -59337,6 +60151,9 @@ func (m *ProductControlMutation) AddedFields() []string {
 	if m.addproduct_id != nil {
 		fields = append(fields, productcontrol.FieldProductID)
 	}
+	if m.addmax_length != nil {
+		fields = append(fields, productcontrol.FieldMaxLength)
+	}
 	if m.addsort != nil {
 		fields = append(fields, productcontrol.FieldSort)
 	}
@@ -59352,6 +60169,8 @@ func (m *ProductControlMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedSubsiteID()
 	case productcontrol.FieldProductID:
 		return m.AddedProductID()
+	case productcontrol.FieldMaxLength:
+		return m.AddedMaxLength()
 	case productcontrol.FieldSort:
 		return m.AddedSort()
 	}
@@ -59376,6 +60195,13 @@ func (m *ProductControlMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddProductID(v)
+		return nil
+	case productcontrol.FieldMaxLength:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxLength(v)
 		return nil
 	case productcontrol.FieldSort:
 		v, ok := value.(int32)
@@ -59437,6 +60263,15 @@ func (m *ProductControlMutation) ResetField(name string) error {
 		return nil
 	case productcontrol.FieldType:
 		m.ResetType()
+		return nil
+	case productcontrol.FieldPlaceholder:
+		m.ResetPlaceholder()
+		return nil
+	case productcontrol.FieldValidation:
+		m.ResetValidation()
+		return nil
+	case productcontrol.FieldMaxLength:
+		m.ResetMaxLength()
 		return nil
 	case productcontrol.FieldRequired:
 		m.ResetRequired()
@@ -59502,28 +60337,29 @@ func (m *ProductControlMutation) ResetEdge(name string) error {
 // ProductSkuMutation represents an operation that mutates the ProductSku nodes in the graph.
 type ProductSkuMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uint64
-	created_at      *time.Time
-	updated_at      *time.Time
-	subsite_id      *uint64
-	addsubsite_id   *int64
-	name            *string
-	spec_values     *map[string]string
-	price           *int64
-	addprice        *int64
-	cost            *int64
-	addcost         *int64
-	stock_offset    *int32
-	addstock_offset *int32
-	upstream_sku_id *string
-	clearedFields   map[string]struct{}
-	product         *uint64
-	clearedproduct  bool
-	done            bool
-	oldValue        func(context.Context) (*ProductSku, error)
-	predicates      []predicate.ProductSku
+	op               Op
+	typ              string
+	id               *uint64
+	created_at       *time.Time
+	updated_at       *time.Time
+	subsite_id       *uint64
+	addsubsite_id    *int64
+	name             *string
+	spec_values      *map[string]string
+	price            *int64
+	addprice         *int64
+	cost             *int64
+	addcost          *int64
+	fulfillment_mode *string
+	stock_offset     *int32
+	addstock_offset  *int32
+	upstream_sku_id  *string
+	clearedFields    map[string]struct{}
+	product          *uint64
+	clearedproduct   bool
+	done             bool
+	oldValue         func(context.Context) (*ProductSku, error)
+	predicates       []predicate.ProductSku
 }
 
 var _ ent.Mutation = (*ProductSkuMutation)(nil)
@@ -60006,6 +60842,42 @@ func (m *ProductSkuMutation) ResetCost() {
 	delete(m.clearedFields, productsku.FieldCost)
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (m *ProductSkuMutation) SetFulfillmentMode(s string) {
+	m.fulfillment_mode = &s
+}
+
+// FulfillmentMode returns the value of the "fulfillment_mode" field in the mutation.
+func (m *ProductSkuMutation) FulfillmentMode() (r string, exists bool) {
+	v := m.fulfillment_mode
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldFulfillmentMode returns the old "fulfillment_mode" field's value of the ProductSku entity.
+// If the ProductSku object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductSkuMutation) OldFulfillmentMode(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldFulfillmentMode is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldFulfillmentMode requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldFulfillmentMode: %w", err)
+	}
+	return oldValue.FulfillmentMode, nil
+}
+
+// ResetFulfillmentMode resets all changes to the "fulfillment_mode" field.
+func (m *ProductSkuMutation) ResetFulfillmentMode() {
+	m.fulfillment_mode = nil
+}
+
 // SetStockOffset sets the "stock_offset" field.
 func (m *ProductSkuMutation) SetStockOffset(i int32) {
 	m.stock_offset = &i
@@ -60172,7 +61044,7 @@ func (m *ProductSkuMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductSkuMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, productsku.FieldCreatedAt)
 	}
@@ -60196,6 +61068,9 @@ func (m *ProductSkuMutation) Fields() []string {
 	}
 	if m.cost != nil {
 		fields = append(fields, productsku.FieldCost)
+	}
+	if m.fulfillment_mode != nil {
+		fields = append(fields, productsku.FieldFulfillmentMode)
 	}
 	if m.stock_offset != nil {
 		fields = append(fields, productsku.FieldStockOffset)
@@ -60227,6 +61102,8 @@ func (m *ProductSkuMutation) Field(name string) (ent.Value, bool) {
 		return m.Price()
 	case productsku.FieldCost:
 		return m.Cost()
+	case productsku.FieldFulfillmentMode:
+		return m.FulfillmentMode()
 	case productsku.FieldStockOffset:
 		return m.StockOffset()
 	case productsku.FieldUpstreamSkuID:
@@ -60256,6 +61133,8 @@ func (m *ProductSkuMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldPrice(ctx)
 	case productsku.FieldCost:
 		return m.OldCost(ctx)
+	case productsku.FieldFulfillmentMode:
+		return m.OldFulfillmentMode(ctx)
 	case productsku.FieldStockOffset:
 		return m.OldStockOffset(ctx)
 	case productsku.FieldUpstreamSkuID:
@@ -60324,6 +61203,13 @@ func (m *ProductSkuMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCost(v)
+		return nil
+	case productsku.FieldFulfillmentMode:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetFulfillmentMode(v)
 		return nil
 	case productsku.FieldStockOffset:
 		v, ok := value.(int32)
@@ -60483,6 +61369,9 @@ func (m *ProductSkuMutation) ResetField(name string) error {
 		return nil
 	case productsku.FieldCost:
 		m.ResetCost()
+		return nil
+	case productsku.FieldFulfillmentMode:
+		m.ResetFulfillmentMode()
 		return nil
 	case productsku.FieldStockOffset:
 		m.ResetStockOffset()
@@ -88648,28 +89537,30 @@ func (m *TicketMessageMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	created_at    *time.Time
-	updated_at    *time.Time
-	username      *string
-	email         *string
-	phone         *string
-	password_hash *string
-	status        *user.Status
-	last_login_at *time.Time
-	invite_l1     *uint64
-	addinvite_l1  *int64
-	invite_l2     *uint64
-	addinvite_l2  *int64
-	invite_l3     *uint64
-	addinvite_l3  *int64
-	promo_code    *string
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*User, error)
-	predicates    []predicate.User
+	op                 Op
+	typ                string
+	id                 *uint64
+	created_at         *time.Time
+	updated_at         *time.Time
+	manual_level_id    *uint64
+	addmanual_level_id *int64
+	username           *string
+	email              *string
+	phone              *string
+	password_hash      *string
+	status             *user.Status
+	last_login_at      *time.Time
+	invite_l1          *uint64
+	addinvite_l1       *int64
+	invite_l2          *uint64
+	addinvite_l2       *int64
+	invite_l3          *uint64
+	addinvite_l3       *int64
+	promo_code         *string
+	clearedFields      map[string]struct{}
+	done               bool
+	oldValue           func(context.Context) (*User, error)
+	predicates         []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -88846,6 +89737,62 @@ func (m *UserMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error
 // ResetUpdatedAt resets all changes to the "updated_at" field.
 func (m *UserMutation) ResetUpdatedAt() {
 	m.updated_at = nil
+}
+
+// SetManualLevelID sets the "manual_level_id" field.
+func (m *UserMutation) SetManualLevelID(u uint64) {
+	m.manual_level_id = &u
+	m.addmanual_level_id = nil
+}
+
+// ManualLevelID returns the value of the "manual_level_id" field in the mutation.
+func (m *UserMutation) ManualLevelID() (r uint64, exists bool) {
+	v := m.manual_level_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldManualLevelID returns the old "manual_level_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldManualLevelID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldManualLevelID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldManualLevelID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldManualLevelID: %w", err)
+	}
+	return oldValue.ManualLevelID, nil
+}
+
+// AddManualLevelID adds u to the "manual_level_id" field.
+func (m *UserMutation) AddManualLevelID(u int64) {
+	if m.addmanual_level_id != nil {
+		*m.addmanual_level_id += u
+	} else {
+		m.addmanual_level_id = &u
+	}
+}
+
+// AddedManualLevelID returns the value that was added to the "manual_level_id" field in this mutation.
+func (m *UserMutation) AddedManualLevelID() (r int64, exists bool) {
+	v := m.addmanual_level_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetManualLevelID resets all changes to the "manual_level_id" field.
+func (m *UserMutation) ResetManualLevelID() {
+	m.manual_level_id = nil
+	m.addmanual_level_id = nil
 }
 
 // SetUsername sets the "username" field.
@@ -89409,12 +90356,15 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
 		fields = append(fields, user.FieldUpdatedAt)
+	}
+	if m.manual_level_id != nil {
+		fields = append(fields, user.FieldManualLevelID)
 	}
 	if m.username != nil {
 		fields = append(fields, user.FieldUsername)
@@ -89458,6 +90408,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case user.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case user.FieldManualLevelID:
+		return m.ManualLevelID()
 	case user.FieldUsername:
 		return m.Username()
 	case user.FieldEmail:
@@ -89491,6 +90443,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldCreatedAt(ctx)
 	case user.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case user.FieldManualLevelID:
+		return m.OldManualLevelID(ctx)
 	case user.FieldUsername:
 		return m.OldUsername(ctx)
 	case user.FieldEmail:
@@ -89533,6 +90487,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case user.FieldManualLevelID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetManualLevelID(v)
 		return nil
 	case user.FieldUsername:
 		v, ok := value.(string)
@@ -89612,6 +90573,9 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *UserMutation) AddedFields() []string {
 	var fields []string
+	if m.addmanual_level_id != nil {
+		fields = append(fields, user.FieldManualLevelID)
+	}
 	if m.addinvite_l1 != nil {
 		fields = append(fields, user.FieldInviteL1)
 	}
@@ -89629,6 +90593,8 @@ func (m *UserMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case user.FieldManualLevelID:
+		return m.AddedManualLevelID()
 	case user.FieldInviteL1:
 		return m.AddedInviteL1()
 	case user.FieldInviteL2:
@@ -89644,6 +90610,13 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *UserMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case user.FieldManualLevelID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddManualLevelID(v)
+		return nil
 	case user.FieldInviteL1:
 		v, ok := value.(int64)
 		if !ok {
@@ -89748,6 +90721,9 @@ func (m *UserMutation) ResetField(name string) error {
 		return nil
 	case user.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case user.FieldManualLevelID:
+		m.ResetManualLevelID()
 		return nil
 	case user.FieldUsername:
 		m.ResetUsername()

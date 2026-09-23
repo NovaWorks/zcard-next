@@ -1138,16 +1138,24 @@ func init() {
 	memberlevelDescThresholdConsume := memberlevelFields[6].Descriptor()
 	// memberlevel.DefaultThresholdConsume holds the default value on creation for the threshold_consume field.
 	memberlevel.DefaultThresholdConsume = memberlevelDescThresholdConsume.Default.(int64)
+	// memberlevelDescAcquireMode is the schema descriptor for acquire_mode field.
+	memberlevelDescAcquireMode := memberlevelFields[7].Descriptor()
+	// memberlevel.DefaultAcquireMode holds the default value on creation for the acquire_mode field.
+	memberlevel.DefaultAcquireMode = memberlevelDescAcquireMode.Default.(string)
+	// memberlevelDescDisplayMode is the schema descriptor for display_mode field.
+	memberlevelDescDisplayMode := memberlevelFields[8].Descriptor()
+	// memberlevel.DefaultDisplayMode holds the default value on creation for the display_mode field.
+	memberlevel.DefaultDisplayMode = memberlevelDescDisplayMode.Default.(string)
 	// memberlevelDescDiscount is the schema descriptor for discount field.
-	memberlevelDescDiscount := memberlevelFields[7].Descriptor()
+	memberlevelDescDiscount := memberlevelFields[9].Descriptor()
 	// memberlevel.DefaultDiscount holds the default value on creation for the discount field.
 	memberlevel.DefaultDiscount = memberlevelDescDiscount.Default.(int32)
 	// memberlevelDescSort is the schema descriptor for sort field.
-	memberlevelDescSort := memberlevelFields[9].Descriptor()
+	memberlevelDescSort := memberlevelFields[11].Descriptor()
 	// memberlevel.DefaultSort holds the default value on creation for the sort field.
 	memberlevel.DefaultSort = memberlevelDescSort.Default.(int32)
 	// memberlevelDescEnabled is the schema descriptor for enabled field.
-	memberlevelDescEnabled := memberlevelFields[10].Descriptor()
+	memberlevelDescEnabled := memberlevelFields[12].Descriptor()
 	// memberlevel.DefaultEnabled holds the default value on creation for the enabled field.
 	memberlevel.DefaultEnabled = memberlevelDescEnabled.Default.(bool)
 	memberproductgroupMixin := schema.MemberProductGroup{}.Mixin()
@@ -1431,16 +1439,20 @@ func init() {
 	orderdeliveryDescDeliveryTokenHash := orderdeliveryFields[4].Descriptor()
 	// orderdelivery.DeliveryTokenHashValidator is a validator for the "delivery_token_hash" field. It is called by the builders before save.
 	orderdelivery.DeliveryTokenHashValidator = orderdeliveryDescDeliveryTokenHash.Validators[0].(func(string) error)
+	// orderdeliveryDescDeliveredQuantity is the schema descriptor for delivered_quantity field.
+	orderdeliveryDescDeliveredQuantity := orderdeliveryFields[6].Descriptor()
+	// orderdelivery.DefaultDeliveredQuantity holds the default value on creation for the delivered_quantity field.
+	orderdelivery.DefaultDeliveredQuantity = orderdeliveryDescDeliveredQuantity.Default.(int32)
 	// orderdeliveryDescDeliveredBy is the schema descriptor for delivered_by field.
-	orderdeliveryDescDeliveredBy := orderdeliveryFields[6].Descriptor()
+	orderdeliveryDescDeliveredBy := orderdeliveryFields[8].Descriptor()
 	// orderdelivery.DefaultDeliveredBy holds the default value on creation for the delivered_by field.
 	orderdelivery.DefaultDeliveredBy = orderdeliveryDescDeliveredBy.Default.(uint64)
 	// orderdeliveryDescFetchCount is the schema descriptor for fetch_count field.
-	orderdeliveryDescFetchCount := orderdeliveryFields[8].Descriptor()
+	orderdeliveryDescFetchCount := orderdeliveryFields[10].Descriptor()
 	// orderdelivery.DefaultFetchCount holds the default value on creation for the fetch_count field.
 	orderdelivery.DefaultFetchCount = orderdeliveryDescFetchCount.Default.(int32)
 	// orderdeliveryDescFetchedIP is the schema descriptor for fetched_ip field.
-	orderdeliveryDescFetchedIP := orderdeliveryFields[10].Descriptor()
+	orderdeliveryDescFetchedIP := orderdeliveryFields[12].Descriptor()
 	// orderdelivery.FetchedIPValidator is a validator for the "fetched_ip" field. It is called by the builders before save.
 	orderdelivery.FetchedIPValidator = orderdeliveryDescFetchedIP.Validators[0].(func(string) error)
 	orderitemMixin := schema.OrderItem{}.Mixin()
@@ -1464,16 +1476,24 @@ func init() {
 	orderitemDescSubsiteID := orderitemMixinFields1[0].Descriptor()
 	// orderitem.DefaultSubsiteID holds the default value on creation for the subsite_id field.
 	orderitem.DefaultSubsiteID = orderitemDescSubsiteID.Default.(uint64)
+	// orderitemDescProductName is the schema descriptor for product_name field.
+	orderitemDescProductName := orderitemFields[4].Descriptor()
+	// orderitem.DefaultProductName holds the default value on creation for the product_name field.
+	orderitem.DefaultProductName = orderitemDescProductName.Default.(string)
+	// orderitemDescAssignedAdminID is the schema descriptor for assigned_admin_id field.
+	orderitemDescAssignedAdminID := orderitemFields[6].Descriptor()
+	// orderitem.DefaultAssignedAdminID holds the default value on creation for the assigned_admin_id field.
+	orderitem.DefaultAssignedAdminID = orderitemDescAssignedAdminID.Default.(uint64)
 	// orderitemDescSkuName is the schema descriptor for sku_name field.
-	orderitemDescSkuName := orderitemFields[4].Descriptor()
+	orderitemDescSkuName := orderitemFields[7].Descriptor()
 	// orderitem.SkuNameValidator is a validator for the "sku_name" field. It is called by the builders before save.
 	orderitem.SkuNameValidator = orderitemDescSkuName.Validators[0].(func(string) error)
 	// orderitemDescCost is the schema descriptor for cost field.
-	orderitemDescCost := orderitemFields[8].Descriptor()
+	orderitemDescCost := orderitemFields[11].Descriptor()
 	// orderitem.DefaultCost holds the default value on creation for the cost field.
 	orderitem.DefaultCost = orderitemDescCost.Default.(int64)
 	// orderitemDescFulfillmentStatus is the schema descriptor for fulfillment_status field.
-	orderitemDescFulfillmentStatus := orderitemFields[10].Descriptor()
+	orderitemDescFulfillmentStatus := orderitemFields[13].Descriptor()
 	// orderitem.DefaultFulfillmentStatus holds the default value on creation for the fulfillment_status field.
 	orderitem.DefaultFulfillmentStatus = orderitemDescFulfillmentStatus.Default.(string)
 	// orderitem.FulfillmentStatusValidator is a validator for the "fulfillment_status" field. It is called by the builders before save.
@@ -1950,24 +1970,32 @@ func init() {
 	productDescStockVisible := productFields[16].Descriptor()
 	// product.DefaultStockVisible holds the default value on creation for the stock_visible field.
 	product.DefaultStockVisible = productDescStockVisible.Default.(bool)
+	// productDescFulfillmentMode is the schema descriptor for fulfillment_mode field.
+	productDescFulfillmentMode := productFields[17].Descriptor()
+	// product.DefaultFulfillmentMode holds the default value on creation for the fulfillment_mode field.
+	product.DefaultFulfillmentMode = productDescFulfillmentMode.Default.(string)
+	// productDescManualStock is the schema descriptor for manual_stock field.
+	productDescManualStock := productFields[18].Descriptor()
+	// product.DefaultManualStock holds the default value on creation for the manual_stock field.
+	product.DefaultManualStock = productDescManualStock.Default.(int64)
 	// productDescDedup is the schema descriptor for dedup field.
-	productDescDedup := productFields[19].Descriptor()
+	productDescDedup := productFields[21].Descriptor()
 	// product.DefaultDedup holds the default value on creation for the dedup field.
 	product.DefaultDedup = productDescDedup.Default.(bool)
 	// productDescSort is the schema descriptor for sort field.
-	productDescSort := productFields[20].Descriptor()
+	productDescSort := productFields[22].Descriptor()
 	// product.DefaultSort holds the default value on creation for the sort field.
 	product.DefaultSort = productDescSort.Default.(int32)
 	// productDescIsRecommend is the schema descriptor for is_recommend field.
-	productDescIsRecommend := productFields[21].Descriptor()
+	productDescIsRecommend := productFields[23].Descriptor()
 	// product.DefaultIsRecommend holds the default value on creation for the is_recommend field.
 	product.DefaultIsRecommend = productDescIsRecommend.Default.(bool)
 	// productDescStatus is the schema descriptor for status field.
-	productDescStatus := productFields[22].Descriptor()
+	productDescStatus := productFields[24].Descriptor()
 	// product.DefaultStatus holds the default value on creation for the status field.
 	product.DefaultStatus = productDescStatus.Default.(int8)
 	// productDescUpstreamProductCode is the schema descriptor for upstream_product_code field.
-	productDescUpstreamProductCode := productFields[24].Descriptor()
+	productDescUpstreamProductCode := productFields[26].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
 	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()
@@ -2032,12 +2060,24 @@ func init() {
 	productcontrolDescName := productcontrolFields[2].Descriptor()
 	// productcontrol.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	productcontrol.NameValidator = productcontrolDescName.Validators[0].(func(string) error)
+	// productcontrolDescPlaceholder is the schema descriptor for placeholder field.
+	productcontrolDescPlaceholder := productcontrolFields[4].Descriptor()
+	// productcontrol.DefaultPlaceholder holds the default value on creation for the placeholder field.
+	productcontrol.DefaultPlaceholder = productcontrolDescPlaceholder.Default.(string)
+	// productcontrolDescValidation is the schema descriptor for validation field.
+	productcontrolDescValidation := productcontrolFields[5].Descriptor()
+	// productcontrol.DefaultValidation holds the default value on creation for the validation field.
+	productcontrol.DefaultValidation = productcontrolDescValidation.Default.(string)
+	// productcontrolDescMaxLength is the schema descriptor for max_length field.
+	productcontrolDescMaxLength := productcontrolFields[6].Descriptor()
+	// productcontrol.DefaultMaxLength holds the default value on creation for the max_length field.
+	productcontrol.DefaultMaxLength = productcontrolDescMaxLength.Default.(int32)
 	// productcontrolDescRequired is the schema descriptor for required field.
-	productcontrolDescRequired := productcontrolFields[4].Descriptor()
+	productcontrolDescRequired := productcontrolFields[7].Descriptor()
 	// productcontrol.DefaultRequired holds the default value on creation for the required field.
 	productcontrol.DefaultRequired = productcontrolDescRequired.Default.(bool)
 	// productcontrolDescSort is the schema descriptor for sort field.
-	productcontrolDescSort := productcontrolFields[6].Descriptor()
+	productcontrolDescSort := productcontrolFields[9].Descriptor()
 	// productcontrol.DefaultSort holds the default value on creation for the sort field.
 	productcontrol.DefaultSort = productcontrolDescSort.Default.(int32)
 	productskuMixin := schema.ProductSku{}.Mixin()
@@ -2065,12 +2105,16 @@ func init() {
 	productskuDescName := productskuFields[2].Descriptor()
 	// productsku.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	productsku.NameValidator = productskuDescName.Validators[0].(func(string) error)
+	// productskuDescFulfillmentMode is the schema descriptor for fulfillment_mode field.
+	productskuDescFulfillmentMode := productskuFields[6].Descriptor()
+	// productsku.DefaultFulfillmentMode holds the default value on creation for the fulfillment_mode field.
+	productsku.DefaultFulfillmentMode = productskuDescFulfillmentMode.Default.(string)
 	// productskuDescStockOffset is the schema descriptor for stock_offset field.
-	productskuDescStockOffset := productskuFields[6].Descriptor()
+	productskuDescStockOffset := productskuFields[7].Descriptor()
 	// productsku.DefaultStockOffset holds the default value on creation for the stock_offset field.
 	productsku.DefaultStockOffset = productskuDescStockOffset.Default.(int32)
 	// productskuDescUpstreamSkuID is the schema descriptor for upstream_sku_id field.
-	productskuDescUpstreamSkuID := productskuFields[7].Descriptor()
+	productskuDescUpstreamSkuID := productskuFields[8].Descriptor()
 	// productsku.UpstreamSkuIDValidator is a validator for the "upstream_sku_id" field. It is called by the builders before save.
 	productsku.UpstreamSkuIDValidator = productskuDescUpstreamSkuID.Validators[0].(func(string) error)
 	promotionMixin := schema.Promotion{}.Mixin()
@@ -2895,24 +2939,28 @@ func init() {
 	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
 	// user.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescManualLevelID is the schema descriptor for manual_level_id field.
+	userDescManualLevelID := userFields[1].Descriptor()
+	// user.DefaultManualLevelID holds the default value on creation for the manual_level_id field.
+	user.DefaultManualLevelID = userDescManualLevelID.Default.(uint64)
 	// userDescUsername is the schema descriptor for username field.
-	userDescUsername := userFields[1].Descriptor()
+	userDescUsername := userFields[2].Descriptor()
 	// user.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	user.UsernameValidator = userDescUsername.Validators[0].(func(string) error)
 	// userDescEmail is the schema descriptor for email field.
-	userDescEmail := userFields[2].Descriptor()
+	userDescEmail := userFields[3].Descriptor()
 	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
 	// userDescPhone is the schema descriptor for phone field.
-	userDescPhone := userFields[3].Descriptor()
+	userDescPhone := userFields[4].Descriptor()
 	// user.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
 	user.PhoneValidator = userDescPhone.Validators[0].(func(string) error)
 	// userDescPasswordHash is the schema descriptor for password_hash field.
-	userDescPasswordHash := userFields[4].Descriptor()
+	userDescPasswordHash := userFields[5].Descriptor()
 	// user.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
 	user.PasswordHashValidator = userDescPasswordHash.Validators[0].(func(string) error)
 	// userDescPromoCode is the schema descriptor for promo_code field.
-	userDescPromoCode := userFields[10].Descriptor()
+	userDescPromoCode := userFields[11].Descriptor()
 	// user.PromoCodeValidator is a validator for the "promo_code" field. It is called by the builders before save.
 	user.PromoCodeValidator = userDescPromoCode.Validators[0].(func(string) error)
 	usergroupMixin := schema.UserGroup{}.Mixin()

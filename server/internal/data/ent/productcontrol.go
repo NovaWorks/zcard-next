@@ -30,6 +30,12 @@ type ProductControl struct {
 	Name string `json:"name,omitempty"`
 	// Type holds the value of the "type" field.
 	Type productcontrol.Type `json:"type,omitempty"`
+	// Placeholder holds the value of the "placeholder" field.
+	Placeholder string `json:"placeholder,omitempty"`
+	// Validation holds the value of the "validation" field.
+	Validation string `json:"validation,omitempty"`
+	// MaxLength holds the value of the "max_length" field.
+	MaxLength int32 `json:"max_length,omitempty"`
 	// Required holds the value of the "required" field.
 	Required bool `json:"required,omitempty"`
 	// 选项（select/checkbox/radio）
@@ -48,9 +54,9 @@ func (*ProductControl) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case productcontrol.FieldRequired:
 			values[i] = new(sql.NullBool)
-		case productcontrol.FieldID, productcontrol.FieldSubsiteID, productcontrol.FieldProductID, productcontrol.FieldSort:
+		case productcontrol.FieldID, productcontrol.FieldSubsiteID, productcontrol.FieldProductID, productcontrol.FieldMaxLength, productcontrol.FieldSort:
 			values[i] = new(sql.NullInt64)
-		case productcontrol.FieldName, productcontrol.FieldType:
+		case productcontrol.FieldName, productcontrol.FieldType, productcontrol.FieldPlaceholder, productcontrol.FieldValidation:
 			values[i] = new(sql.NullString)
 		case productcontrol.FieldCreatedAt, productcontrol.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -110,6 +116,24 @@ func (_m *ProductControl) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field type", values[i])
 			} else if value.Valid {
 				_m.Type = productcontrol.Type(value.String)
+			}
+		case productcontrol.FieldPlaceholder:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field placeholder", values[i])
+			} else if value.Valid {
+				_m.Placeholder = value.String
+			}
+		case productcontrol.FieldValidation:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field validation", values[i])
+			} else if value.Valid {
+				_m.Validation = value.String
+			}
+		case productcontrol.FieldMaxLength:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field max_length", values[i])
+			} else if value.Valid {
+				_m.MaxLength = int32(value.Int64)
 			}
 		case productcontrol.FieldRequired:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -184,6 +208,15 @@ func (_m *ProductControl) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Type))
+	builder.WriteString(", ")
+	builder.WriteString("placeholder=")
+	builder.WriteString(_m.Placeholder)
+	builder.WriteString(", ")
+	builder.WriteString("validation=")
+	builder.WriteString(_m.Validation)
+	builder.WriteString(", ")
+	builder.WriteString("max_length=")
+	builder.WriteString(fmt.Sprintf("%v", _m.MaxLength))
 	builder.WriteString(", ")
 	builder.WriteString("required=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Required))

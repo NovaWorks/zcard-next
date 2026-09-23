@@ -85,6 +85,16 @@ func SkuID(v uint64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldSkuID, v))
 }
 
+// ProductName applies equality check predicate on the "product_name" field. It's identical to ProductNameEQ.
+func ProductName(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldProductName, v))
+}
+
+// AssignedAdminID applies equality check predicate on the "assigned_admin_id" field. It's identical to AssignedAdminIDEQ.
+func AssignedAdminID(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldAssignedAdminID, v))
+}
+
 // SkuName applies equality check predicate on the "sku_name" field. It's identical to SkuNameEQ.
 func SkuName(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldSkuName, v))
@@ -343,6 +353,121 @@ func SkuIDIsNil() predicate.OrderItem {
 // SkuIDNotNil applies the NotNil predicate on the "sku_id" field.
 func SkuIDNotNil() predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldNotNull(FieldSkuID))
+}
+
+// ProductNameEQ applies the EQ predicate on the "product_name" field.
+func ProductNameEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldProductName, v))
+}
+
+// ProductNameNEQ applies the NEQ predicate on the "product_name" field.
+func ProductNameNEQ(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldProductName, v))
+}
+
+// ProductNameIn applies the In predicate on the "product_name" field.
+func ProductNameIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldProductName, vs...))
+}
+
+// ProductNameNotIn applies the NotIn predicate on the "product_name" field.
+func ProductNameNotIn(vs ...string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldProductName, vs...))
+}
+
+// ProductNameGT applies the GT predicate on the "product_name" field.
+func ProductNameGT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldProductName, v))
+}
+
+// ProductNameGTE applies the GTE predicate on the "product_name" field.
+func ProductNameGTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldProductName, v))
+}
+
+// ProductNameLT applies the LT predicate on the "product_name" field.
+func ProductNameLT(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldProductName, v))
+}
+
+// ProductNameLTE applies the LTE predicate on the "product_name" field.
+func ProductNameLTE(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldProductName, v))
+}
+
+// ProductNameContains applies the Contains predicate on the "product_name" field.
+func ProductNameContains(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContains(FieldProductName, v))
+}
+
+// ProductNameHasPrefix applies the HasPrefix predicate on the "product_name" field.
+func ProductNameHasPrefix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasPrefix(FieldProductName, v))
+}
+
+// ProductNameHasSuffix applies the HasSuffix predicate on the "product_name" field.
+func ProductNameHasSuffix(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldHasSuffix(FieldProductName, v))
+}
+
+// ProductNameEqualFold applies the EqualFold predicate on the "product_name" field.
+func ProductNameEqualFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEqualFold(FieldProductName, v))
+}
+
+// ProductNameContainsFold applies the ContainsFold predicate on the "product_name" field.
+func ProductNameContainsFold(v string) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldContainsFold(FieldProductName, v))
+}
+
+// FormAnswersIsNil applies the IsNil predicate on the "form_answers" field.
+func FormAnswersIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldFormAnswers))
+}
+
+// FormAnswersNotNil applies the NotNil predicate on the "form_answers" field.
+func FormAnswersNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldFormAnswers))
+}
+
+// AssignedAdminIDEQ applies the EQ predicate on the "assigned_admin_id" field.
+func AssignedAdminIDEQ(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldAssignedAdminID, v))
+}
+
+// AssignedAdminIDNEQ applies the NEQ predicate on the "assigned_admin_id" field.
+func AssignedAdminIDNEQ(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldAssignedAdminID, v))
+}
+
+// AssignedAdminIDIn applies the In predicate on the "assigned_admin_id" field.
+func AssignedAdminIDIn(vs ...uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldAssignedAdminID, vs...))
+}
+
+// AssignedAdminIDNotIn applies the NotIn predicate on the "assigned_admin_id" field.
+func AssignedAdminIDNotIn(vs ...uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldAssignedAdminID, vs...))
+}
+
+// AssignedAdminIDGT applies the GT predicate on the "assigned_admin_id" field.
+func AssignedAdminIDGT(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldAssignedAdminID, v))
+}
+
+// AssignedAdminIDGTE applies the GTE predicate on the "assigned_admin_id" field.
+func AssignedAdminIDGTE(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldAssignedAdminID, v))
+}
+
+// AssignedAdminIDLT applies the LT predicate on the "assigned_admin_id" field.
+func AssignedAdminIDLT(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldAssignedAdminID, v))
+}
+
+// AssignedAdminIDLTE applies the LTE predicate on the "assigned_admin_id" field.
+func AssignedAdminIDLTE(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldAssignedAdminID, v))
 }
 
 // SkuNameEQ applies the EQ predicate on the "sku_name" field.

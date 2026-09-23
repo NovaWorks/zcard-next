@@ -23,7 +23,7 @@
       </div>
 
       <div v-if="['paid', 'fulfilling', 'partially_delivered'].includes(order.status)" class="card">
-        <p>已付款，{{ order.status === 'partially_delivered' ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服补发。</p>
+        <p>已付款，{{ order.status === 'partially_delivered' ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。请勿重复付款；长时间未发货请凭订单号联系客服。</p>
         <button class="btn secondary" @click="loadOrder">刷新订单状态</button>
       </div>
       <div class="od-body">
@@ -35,10 +35,13 @@
               <span>商品</span><span class="od-ta-r">单价</span><span class="od-ta-c">数量</span><span class="od-ta-r">小计</span>
             </div>
             <div v-for="(it, i) in order.items" :key="i" class="od-item">
-              <div class="od-item-name">{{ it.product_name }}</div>
+              <div class="od-item-name">{{ it.product_name }}
+                <p class="muted">{{it.fulfillment_type === 'manual' ? '人工服务' : it.fulfillment_type === 'upstream' ? '上游交付' : '自动交付'}} · {{itemStatus(it.fulfillment_status)}}</p>
+                <dl v-if="answers(it.form_answers_json).length" class="od-answers"><div v-for="(a,j) in answers(it.form_answers_json)" :key="j"><dt>{{a.name}}</dt><dd>{{a.value}}</dd></div></dl>
+              </div>
               <div class="od-item-price">{{ formatMoney(it.unit_price_cents) }}</div>
               <div class="od-item-qty">×{{ it.quantity }}</div>
-              <div class="od-item-sub">{{ formatMoney(it.unit_price_cents * it.quantity) }}</div>
+              <div class="od-item-sub">{{ formatMoney(it.amount_cents ?? it.unit_price_cents * it.quantity) }}</div>
             </div>
           </div>
         </div>
@@ -48,10 +51,12 @@
           <div class="card">
             <div class="od-section-title">订单金额</div>
             <div class="od-amount-row">
-              <span>实付合计</span>
+              <span>{{order.status === 'pending_payment' ? '订单应付' : ['canceled','expired'].includes(order.status) ? '订单金额' : '实付合计'}}</span>
               <b class="od-amount">{{ formatMoney(order.paid_total_cents || order.total_cents) }}</b>
               <span v-if="Number(order.paid_fee_cents) > 0" class="muted">含手续费 {{ formatMoney(order.paid_fee_cents || 0) }}</span>
             </div>
+            <p v-if="Number(order.refunded_cents) > 0 || Number(order.refunded_fee_cents) > 0" class="muted">已退款 {{ formatMoney(Number(order.refunded_cents || 0) + Number(order.refunded_fee_cents || 0)) }}（含已退手续费 {{formatMoney(order.refunded_fee_cents || 0)}}）</p>
+            <p class="muted">商品小计为下单优惠后的金额；手续费与整单优惠以订单金额为准。</p>
           </div>
           <div class="card">
             <div class="od-section-title">可用操作</div>
@@ -61,7 +66,7 @@
                 class="btn secondary od-action-btn"
                 :to="`/fetch?order_no=${order.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(order.status)"
-              >取货</router-link>
+              >查看交付结果</router-link>
               <button class="btn secondary od-action-btn" v-if="isLoggedIn && order.status === 'pending_payment'" @click="cancelOrder">取消订单</button>
             </div>
           </div>
@@ -107,6 +112,8 @@ async function cancelOrder() {
   order.value = data;
 }
 
+function answers(raw?:string):{name:string;value:string}[]{try{const x=JSON.parse(raw || '[]');return Array.isArray(x)?x:[]}catch{return []}}
+function itemStatus(s?:string){return ({pending:'待处理',delivering:'处理中',manual:'待人工核对',failed:'处理异常',delivered:'已完成交付',refunded:'已退款'} as Record<string,string>)[s || 'pending'] || s;}
 function statusText(s: string): string {
   return ({
     pending_payment: '待支付', paid: '已支付', fulfilling: '履约中', partially_delivered: '部分发货',
@@ -127,6 +134,7 @@ function fmtTime(ts: number): string {
 </script>
 
 <style scoped>
+.od-answers{margin:8px 0;font-size:13px}.od-answers>div{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.od-answers dt{font-weight:600}.od-answers dd{margin:0;overflow-wrap:anywhere;white-space:pre-wrap;min-width:0}
 .order-detail { display: flex; flex-direction: column; gap: 16px; }
 
 /* 页头 */

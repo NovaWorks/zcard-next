@@ -26,6 +26,8 @@ func (MemberLevel) Fields() []ent.Field {
 		field.Enum("threshold_type").Values("recharge", "consume", "both_and", "both_or").Default("recharge"),
 		field.Int64("threshold_recharge").Default(0).Comment("累计充值阈值（分；countAsRecharge 口径防刷）"),
 		field.Int64("threshold_consume").Default(0).Comment("累计消费阈值（分）"),
+		field.String("acquire_mode").Default("auto"),
+		field.String("display_mode").Default("public"),
 		field.Int32("discount").Default(0).Comment("等级折扣（万分比）"),
 		field.JSON("points_rule", map[string]any{}).Optional().Comment("积分产生规则（消费 X 元产 Y 分）"),
 		field.Int32("sort").Default(0),

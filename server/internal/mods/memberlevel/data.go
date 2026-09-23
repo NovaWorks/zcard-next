@@ -10,6 +10,7 @@ package memberlevel
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -39,7 +40,17 @@ func (r *MemberLevelRepoImpl) ListLevels(ctx context.Context) ([]*ent.MemberLeve
 }
 
 // CreateLevel 创建等级（points_rule JSON 透传：{"spend_cents":X,"points":Y}）。
-func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thresholdType string, thresholdRecharge, thresholdConsume int64, discount int32, sort int32, enabled bool, pointsRule map[string]any) (*ent.MemberLevel, error) {
+func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thresholdType string, thresholdRecharge, thresholdConsume int64, discount int32, sort int32, enabled bool, pointsRule map[string]any, settings ...LevelSettings) (*ent.MemberLevel, error) {
+	v := LevelSettings{}
+	if len(settings) > 0 {
+		v = settings[0]
+	}
+	if err := v.validate(); err != nil {
+		return nil, err
+	}
+	if discount < 0 || discount > 10000 {
+		return nil, fmt.Errorf("折扣应为0至10000")
+	}
 	create := data.Client(ctx, r.data).MemberLevel.Create().
 		SetName(name).
 		SetThresholdType(memberlevel.ThresholdType(thresholdType)).
@@ -48,6 +59,12 @@ func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thre
 		SetDiscount(discount).
 		SetSort(sort).
 		SetEnabled(enabled)
+	if v.AcquireMode != "" {
+		create.SetAcquireMode(v.AcquireMode)
+	}
+	if v.DisplayMode != "" {
+		create.SetDisplayMode(v.DisplayMode)
+	}
 	if len(pointsRule) > 0 {
 		create.SetPointsRule(pointsRule)
 	}
@@ -55,25 +72,64 @@ func (r *MemberLevelRepoImpl) CreateLevel(ctx context.Context, name string, thre
 }
 
 // UpdateLevel 更新等级。
-func (r *MemberLevelRepoImpl) UpdateLevel(ctx context.Context, id uint64, name string, discount int32, sort int32, enabled bool, pointsRule map[string]any) (*ent.MemberLevel, error) {
-	q := data.Client(ctx, r.data).MemberLevel.UpdateOneID(id).
-		SetName(name).
-		SetDiscount(discount).
-		SetSort(sort).
-		SetEnabled(enabled)
-	if pointsRule != nil {
-		if len(pointsRule) == 0 {
-			q = q.ClearPointsRule()
-		} else {
-			q = q.SetPointsRule(pointsRule)
-		}
+func (r *MemberLevelRepoImpl) UpdateLevel(ctx context.Context, id uint64, name string, discount int32, sort int32, enabled bool, pointsRule map[string]any, settings ...LevelSettings) (*ent.MemberLevel, error) {
+	v := LevelSettings{}
+	if len(settings) > 0 {
+		v = settings[0]
 	}
-	return q.Save(ctx)
+	if err := v.validate(); err != nil {
+		return nil, err
+	}
+	if discount < 0 || discount > 10000 {
+		return nil, fmt.Errorf("折扣应为0至10000")
+	}
+	var result *ent.MemberLevel
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if err := r.lockLevel(ctx, id); err != nil {
+			return err
+		}
+
+		if !enabled || v.AcquireMode == "auto" {
+			if err := r.ensureUnassigned(ctx, id); err != nil {
+				return err
+			}
+		}
+		q := data.Client(ctx, r.data).MemberLevel.UpdateOneID(id).
+			SetName(name).
+			SetDiscount(discount).
+			SetSort(sort).
+			SetEnabled(enabled)
+		if v.AcquireMode != "" {
+			q.SetAcquireMode(v.AcquireMode)
+		}
+		if v.DisplayMode != "" {
+			q.SetDisplayMode(v.DisplayMode)
+		}
+		if pointsRule != nil {
+			if len(pointsRule) == 0 {
+				q = q.ClearPointsRule()
+			} else {
+				q = q.SetPointsRule(pointsRule)
+			}
+		}
+		var err error
+		result, err = q.Save(ctx)
+		return err
+	})
+	return result, err
 }
 
 // DeleteLevel 删除等级。
 func (r *MemberLevelRepoImpl) DeleteLevel(ctx context.Context, id uint64) error {
-	return data.Client(ctx, r.data).MemberLevel.DeleteOneID(id).Exec(ctx)
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if err := r.lockLevel(ctx, id); err != nil {
+			return err
+		}
+		if err := r.ensureUnassigned(ctx, id); err != nil {
+			return err
+		}
+		return data.Client(ctx, r.data).MemberLevel.DeleteOneID(id).Exec(ctx)
+	})
 }
 
 // effectiveLevel 阈值即时评估：命中的最高 sort 等级（全矩阵 recharge/consume/both_and/both_or）。
@@ -81,9 +137,12 @@ func (r *MemberLevelRepoImpl) effectiveLevel(ctx context.Context, userID uint64)
 	if userID == 0 {
 		return nil, nil
 	}
+	if lv, err := r.assigned(ctx, userID); err != nil || lv != nil {
+		return lv, err
+	}
 	client := data.Client(ctx, r.data)
 	levels, err := client.MemberLevel.Query().
-		Where(memberlevel.Enabled(true)).
+		Where(memberlevel.Enabled(true), memberlevel.AcquireMode("auto")).
 		Order(ent.Asc(memberlevel.FieldSort)).
 		All(ctx)
 	if err != nil || len(levels) == 0 {
@@ -121,6 +180,9 @@ func (r *MemberLevelRepoImpl) cumulative(ctx context.Context, client *ent.Client
 
 // matchLevel 阈值矩阵判定（AND|OR）。
 func matchLevel(lv *ent.MemberLevel, recharged, consumed int64) bool {
+	if lv.AcquireMode == "manual" {
+		return false
+	}
 	rc := lv.ThresholdRecharge <= 0 || recharged >= lv.ThresholdRecharge
 	cc := lv.ThresholdConsume <= 0 || consumed >= lv.ThresholdConsume
 	switch lv.ThresholdType {
@@ -165,7 +227,7 @@ func (r *MemberLevelRepoImpl) ResolveProgress(ctx context.Context, userID uint64
 	p := &Progress{RechargeGap: -1, ConsumeGap: -1}
 	client := data.Client(ctx, r.data)
 	levels, err := client.MemberLevel.Query().
-		Where(memberlevel.Enabled(true)).
+		Where(memberlevel.Enabled(true), memberlevel.AcquireMode("auto")).
 		Order(ent.Asc(memberlevel.FieldSort)).
 		All(ctx)
 	if err != nil {
@@ -176,6 +238,12 @@ func (r *MemberLevelRepoImpl) ResolveProgress(ctx context.Context, userID uint64
 		return nil, err
 	}
 	p.RechargedCents, p.ConsumedCents = recharged, consumed
+	if lv, e := r.assigned(ctx, userID); e != nil {
+		return nil, e
+	} else if lv != nil {
+		p.Current = lv
+		return p, nil
+	}
 
 	// 当前级 = 命中的最高 sort；下一级 = 其后首个未命中级
 	lastMatched := -1

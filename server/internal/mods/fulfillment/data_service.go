@@ -4,7 +4,7 @@ package fulfillment
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	storefrontv1 "github.com/NovaWorks/zcard-next/server/api/storefront/v1"
@@ -47,7 +47,7 @@ func (s *StoreDeliveryService) FetchDelivery(ctx context.Context, req *storefron
 	}
 	for _, item := range res.Items {
 		reply.Items = append(reply.Items, &storefrontv1.DeliveryItem{
-			Content: item.Content, Masked: item.Masked,
+			Content: item.Content, Masked: item.Masked, ItemId: item.ItemID, DeliveryId: item.DeliveryID, Kind: item.Kind, ProductName: item.ProductName, SkuName: item.SkuName, DeliveredAt: item.DeliveredAt,
 		})
 	}
 	return reply, nil
@@ -96,35 +96,40 @@ func (s *AdminFulfillmentService) ListPending(ctx context.Context, req *adminv1.
 	names, _ := s.repo.ProductNames(ctx, ids)
 	reply := &adminv1.ListPendingReply{}
 	for _, o := range rows {
-		po := &adminv1.PendingOrder{OrderNo: o.OrderNo, CreatedAt: o.CreatedAt.Unix()}
-		if items := o.Edges.Items; len(items) > 0 {
-			po.ProductId = items[0].ProductID
-			name := names[items[0].ProductID]
+		for _, it := range o.Edges.Items {
+			if it.FulfillmentStatus == "delivered" || it.FulfillmentStatus == "refunded" {
+				continue
+			}
+
+			name := it.ProductName
 			if name == "" {
-				name = fmt.Sprintf("#%d", items[0].ProductID)
+				name = names[it.ProductID]
 			}
-			if len(items) > 1 {
-				name = fmt.Sprintf("%s 等 %d 件商品", name, len(items))
-			}
-			po.ProductName = name
-			for _, it := range items {
-				po.Quantity += it.Quantity
-			}
+			raw, _ := json.Marshal(it.FormAnswers)
+			reply.Orders = append(reply.Orders, &adminv1.PendingOrder{OrderNo: o.OrderNo, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, CreatedAt: o.CreatedAt.Unix(), OrderItemId: it.ID, SkuName: it.SkuName, FormAnswersJson: string(raw), FulfillmentStatus: it.FulfillmentStatus, AssignedAdminId: it.AssignedAdminID})
 		}
-		reply.Orders = append(reply.Orders, po)
 	}
 	return reply, nil
 }
 
 // ManualDeliver 手动交付。
 func (s *AdminFulfillmentService) ManualDeliver(ctx context.Context, req *adminv1.ManualDeliverRequest) (*emptypb.Empty, error) {
-	if req.GetOrderNo() == "" || (req.GetContent() == "" && req.GetLogisticsNo() == "") {
+	if req.GetOrderNo() == "" || (req.GetContent() == "" && req.GetLogisticsNo() == "" && req.GetServiceContent() == "") {
 		return nil, errors.BadRequest("fulfillment.INVALID_INPUT", "订单号与交付内容必填")
 	}
 	claims := identity.ClaimsFromContext(ctx)
 	var adminID uint64
 	if claims != nil {
 		adminID = claims.Subject
+	}
+	if req.GetServiceContent() != "" {
+		if req.GetContent() != "" || req.GetLogisticsNo() != "" {
+			return nil, errors.BadRequest("fulfillment.INVALID_INPUT", "请选择一种交付内容")
+		}
+		if err := s.repo.CompleteService(ctx, req.OrderNo, req.OrderItemId, req.ServiceContent, req.Remark, adminID); err != nil {
+			return nil, errors.BadRequest("fulfillment.DELIVER_FAILED", err.Error())
+		}
+		return &emptypb.Empty{}, nil
 	}
 	if err := s.repo.ManualDeliver(ctx, req.GetOrderNo(), req.GetContent(), req.GetLogisticsNo(), req.GetRemark(), adminID, req.GetOrderItemId()); err != nil {
 		return nil, errors.InternalServer("fulfillment.DELIVER_FAILED", "交付失败: "+err.Error())
@@ -168,7 +173,7 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 			masked = "****" + content[len(content)-4:]
 		}
 		reply.Deliveries = append(reply.Deliveries, &adminv1.DeliveryRecord{
-			Id: d.ID, OrderNo: orderNo, CardId: d.CardID,
+			Id: d.ID, OrderNo: orderNo, CardId: d.CardID, OrderItemId: d.ItemID, Kind: deliveryKind(d),
 			Content: content, ContentMasked: masked,
 			DeliveredMode: string(d.DeliveredMode), DeliveredBy: d.DeliveredBy,
 			FetchCount: d.FetchCount, FetchedIp: d.FetchedIP,
@@ -184,6 +189,9 @@ func (s *AdminFulfillmentService) ListDeliveries(ctx context.Context, req *admin
 // 即删模式卡密已物理删除）。
 func (s *AdminFulfillmentService) decryptDelivery(ctx context.Context, d *ent.OrderDelivery) string {
 	client := data.Client(ctx, s.data)
+	if len(d.ServiceContent) > 0 {
+		return s.repo.serviceText(ctx, d)
+	}
 	if tracking, ok := d.Logistics["tracking_no"].(string); ok && tracking != "" {
 		return "物流单号：" + tracking
 	}

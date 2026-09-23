@@ -7,7 +7,7 @@
  *      新行逐条创建、已有行逐条更新、行内删除；不再用独立表单，杜绝溢出。
  */
 import { ref, computed, watch, h } from "vue";
-import { NButton, NTag, NSpace, NPopconfirm, NInput, NInputNumber, NEmpty } from "naive-ui";
+import { NButton, NTag, NSpace, NPopconfirm, NInput, NInputNumber, NEmpty, NSelect } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
@@ -16,6 +16,7 @@ import { centsToYuan, yuanToFen } from "@/utils/money";
 const props = defineProps<{ productId: number }>();
 
 interface SkuRow {
+ fulfillment_mode: string;
   id: number; // 0 = 新行
   name: string;
   spec_values: Record<string, string>;
@@ -54,7 +55,7 @@ async function load() {
         spec_values: s.spec_values || {},
         price_yuan: s.price_cents ? Number(centsToYuan(s.price_cents)) : 0,
         cost_yuan: s.cost_cents ? Number(centsToYuan(s.cost_cents)) : 0,
-        stock_offset: s.stock_offset || 0,
+        stock_offset: s.stock_offset || 0, fulfillment_mode:s.fulfillment_mode || "follow",
         dirty: false,
       }));
       // 规格定义从已有 SKU 反推（继续加值/加维度）
@@ -131,7 +132,7 @@ function generate(quiet = false) {
       spec_values: combo,
       price_yuan: 0,
       cost_yuan: 0,
-      stock_offset: 0,
+      stock_offset: 0, fulfillment_mode:"follow",
       dirty: true,
     });
     added++;
@@ -145,7 +146,7 @@ function generate(quiet = false) {
 async function persistRow(row: SkuRow): Promise<boolean> {
   if (!row.name.trim()) { window.$message?.warning("规格名不能为空"); return false; }
   const payload = { name: row.name.trim(), spec_values: row.spec_values,
-    price_cents: yuanToFen(row.price_yuan || 0), cost_cents: yuanToFen(row.cost_yuan || 0), stock_offset: row.stock_offset || 0 };
+    price_cents: yuanToFen(row.price_yuan || 0), cost_cents: yuanToFen(row.cost_yuan || 0), stock_offset: row.stock_offset || 0, fulfillment_mode:row.fulfillment_mode };
   const { data, error } = row.id ? await updateSku(row.id, payload) : await createSku(props.productId, payload);
   if (error) return false;
   if (!row.id) {
@@ -241,6 +242,10 @@ const columns: DataTableColumns<SkuRow> = [
           row.dirty = true;
         },
       }),
+  },
+  {
+    title: "交付方式", key:"fulfillment_mode", width:135,
+    render:(row)=>h(NSelect,{value:row.fulfillment_mode, options:[{label:'跟随商品',value:'follow'},{label:'自动',value:'auto'},{label:'人工',value:'manual'}],onUpdateValue:(v:string)=>{row.fulfillment_mode=v;row.dirty=true;}})
   },
   {
     title: "售价(元)",

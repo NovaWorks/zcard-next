@@ -90,6 +90,11 @@ func Cost(v int64) predicate.ProductSku {
 	return predicate.ProductSku(sql.FieldEQ(FieldCost, v))
 }
 
+// FulfillmentMode applies equality check predicate on the "fulfillment_mode" field. It's identical to FulfillmentModeEQ.
+func FulfillmentMode(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldEQ(FieldFulfillmentMode, v))
+}
+
 // StockOffset applies equality check predicate on the "stock_offset" field. It's identical to StockOffsetEQ.
 func StockOffset(v int32) predicate.ProductSku {
 	return predicate.ProductSku(sql.FieldEQ(FieldStockOffset, v))
@@ -403,6 +408,71 @@ func CostIsNil() predicate.ProductSku {
 // CostNotNil applies the NotNil predicate on the "cost" field.
 func CostNotNil() predicate.ProductSku {
 	return predicate.ProductSku(sql.FieldNotNull(FieldCost))
+}
+
+// FulfillmentModeEQ applies the EQ predicate on the "fulfillment_mode" field.
+func FulfillmentModeEQ(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldEQ(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeNEQ applies the NEQ predicate on the "fulfillment_mode" field.
+func FulfillmentModeNEQ(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldNEQ(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeIn applies the In predicate on the "fulfillment_mode" field.
+func FulfillmentModeIn(vs ...string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldIn(FieldFulfillmentMode, vs...))
+}
+
+// FulfillmentModeNotIn applies the NotIn predicate on the "fulfillment_mode" field.
+func FulfillmentModeNotIn(vs ...string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldNotIn(FieldFulfillmentMode, vs...))
+}
+
+// FulfillmentModeGT applies the GT predicate on the "fulfillment_mode" field.
+func FulfillmentModeGT(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldGT(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeGTE applies the GTE predicate on the "fulfillment_mode" field.
+func FulfillmentModeGTE(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldGTE(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeLT applies the LT predicate on the "fulfillment_mode" field.
+func FulfillmentModeLT(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldLT(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeLTE applies the LTE predicate on the "fulfillment_mode" field.
+func FulfillmentModeLTE(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldLTE(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeContains applies the Contains predicate on the "fulfillment_mode" field.
+func FulfillmentModeContains(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldContains(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeHasPrefix applies the HasPrefix predicate on the "fulfillment_mode" field.
+func FulfillmentModeHasPrefix(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldHasPrefix(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeHasSuffix applies the HasSuffix predicate on the "fulfillment_mode" field.
+func FulfillmentModeHasSuffix(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldHasSuffix(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeEqualFold applies the EqualFold predicate on the "fulfillment_mode" field.
+func FulfillmentModeEqualFold(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldEqualFold(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeContainsFold applies the ContainsFold predicate on the "fulfillment_mode" field.
+func FulfillmentModeContainsFold(v string) predicate.ProductSku {
+	return predicate.ProductSku(sql.FieldContainsFold(FieldFulfillmentMode, v))
 }
 
 // StockOffsetEQ applies the EQ predicate on the "stock_offset" field.

@@ -289,7 +289,7 @@ const formData = reactive({
   price_yuan: 0,
   factory_price_yuan: 0,
   points_required: 0,
-  stock_type: "card",
+  stock_type: "card", fulfillment_mode:"auto", manual_stock:-1,
   direct_content: "",
   delivery_mode: "status",
   stock_visible: true,
@@ -751,7 +751,7 @@ function resetForm() {
     price_yuan: 0,
     factory_price_yuan: 0,
     points_required: 0,
-    stock_type: "card",
+    stock_type: "card", fulfillment_mode:"auto", manual_stock:-1,
     direct_content: "",
     delivery_mode: "status",
     stock_visible: true,
@@ -778,7 +778,7 @@ async function handleEdit(row: any) {
     price_yuan: Number(centsToYuan(p.price_cents)),
     factory_price_yuan: p.factory_price_cents ? Number(centsToYuan(p.factory_price_cents)) : 0,
     points_required: p.points_required || 0,
-    stock_type: p.stock_type,
+    stock_type: p.stock_type, fulfillment_mode:p.fulfillment_mode || "auto", manual_stock:Number(p.manual_stock ?? -1),
     direct_content: "",
     directContentSet: undefined,
     delivery_mode: p.delivery_mode || "status",
@@ -804,7 +804,7 @@ function buildPayload() {
     price_cents: yuanToFen(formData.price_yuan),
     factory_price_cents: yuanToFen(formData.factory_price_yuan || 0),
     points_required: formData.points_required || 0,
-    stock_type: formData.stock_type,
+    stock_type: formData.stock_type, fulfillment_mode:formData.fulfillment_mode, manual_stock:formData.manual_stock,
     ...(formData.direct_content ? { direct_content: formData.direct_content } : {}),
     delivery_mode: formData.delivery_mode,
     stock_visible: formData.stock_visible,
@@ -1072,10 +1072,12 @@ onMounted(() => {
               </NButton>
             </div>
           </NFormItem>
-          <NFormItem label="库存类型">
+          <NFormItem label="交付方式"><NSelect v-model:value="formData.fulfillment_mode" :options="[{label:'自动交付',value:'auto'},{label:'人工服务',value:'manual'}]" /></NFormItem>
+          <NFormItem label="人工可售总量"><div class="w-full"><NInputNumber v-model:value="formData.manual_stock" :min="-1" :precision="0" /><p class="text-12px opacity-60">-1 不限；包含已售及待付款占用，所有人工规格共享。取消或全额退款释放额度。</p></div></NFormItem>
+          <NFormItem v-if="formData.fulfillment_mode !== 'manual'" label="库存类型">
             <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />
           </NFormItem>
-          <NFormItem v-if="formData.stock_type !== 'card'" label="直发内容">
+          <NFormItem v-if="formData.fulfillment_mode !== 'manual' && formData.stock_type !== 'card'" label="直发内容">
             <div class="w-full">
               <NInput
                 v-model:value="formData.direct_content"
@@ -1190,7 +1192,7 @@ onMounted(() => {
           <NCard size="small" title="SKU 多规格" class="mb-12px">
             <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" />
           </NCard>
-          <NCard size="small" title="下单收集控件">
+          <NCard size="small" title="下单填写信息">
             <ControlPanel :product-id="editingId" />
           </NCard>
         </template>

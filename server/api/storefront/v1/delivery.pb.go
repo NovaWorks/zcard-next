@@ -146,6 +146,11 @@ func (x *FetchDeliveryReply) GetFetchCount() int32 {
 // DeliveryItem 交付项（明文只在首次取货返回；之后掩码）。
 type DeliveryItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	DeliveryId    uint64                 `protobuf:"varint,4,opt,name=delivery_id,json=deliveryId,proto3" json:"delivery_id,omitempty"`
+	Kind          string                 `protobuf:"bytes,5,opt,name=kind,proto3" json:"kind,omitempty"`
+	ProductName   string                 `protobuf:"bytes,6,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	SkuName       string                 `protobuf:"bytes,7,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	DeliveredAt   int64                  `protobuf:"varint,8,opt,name=delivered_at,json=deliveredAt,proto3" json:"delivered_at,omitempty"`
 	ItemId        uint64                 `protobuf:"varint,1,opt,name=item_id,json=itemId,proto3" json:"item_id,omitempty"`
 	Content       string                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"` // 明文或 ****尾4位
 	Masked        bool                   `protobuf:"varint,3,opt,name=masked,proto3" json:"masked,omitempty"`
@@ -181,6 +186,41 @@ func (x *DeliveryItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use DeliveryItem.ProtoReflect.Descriptor instead.
 func (*DeliveryItem) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_delivery_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *DeliveryItem) GetDeliveryId() uint64 {
+	if x != nil {
+		return x.DeliveryId
+	}
+	return 0
+}
+
+func (x *DeliveryItem) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *DeliveryItem) GetProductName() string {
+	if x != nil {
+		return x.ProductName
+	}
+	return ""
+}
+
+func (x *DeliveryItem) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *DeliveryItem) GetDeliveredAt() int64 {
+	if x != nil {
+		return x.DeliveredAt
+	}
+	return 0
 }
 
 func (x *DeliveryItem) GetItemId() uint64 {
@@ -381,8 +421,14 @@ const file_storefront_v1_delivery_proto_rawDesc = "" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12;\n" +
 	"\x05items\x18\x03 \x03(\v2%.zcard.api.storefront.v1.DeliveryItemR\x05items\x12\x1f\n" +
 	"\vfetch_count\x18\x04 \x01(\x05R\n" +
-	"fetchCount\"Y\n" +
-	"\fDeliveryItem\x12\x17\n" +
+	"fetchCount\"\xef\x01\n" +
+	"\fDeliveryItem\x12\x1f\n" +
+	"\vdelivery_id\x18\x04 \x01(\x04R\n" +
+	"deliveryId\x12\x12\n" +
+	"\x04kind\x18\x05 \x01(\tR\x04kind\x12!\n" +
+	"\fproduct_name\x18\x06 \x01(\tR\vproductName\x12\x19\n" +
+	"\bsku_name\x18\a \x01(\tR\askuName\x12!\n" +
+	"\fdelivered_at\x18\b \x01(\x03R\vdeliveredAt\x12\x17\n" +
 	"\aitem_id\x18\x01 \x01(\x04R\x06itemId\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\tR\acontent\x12\x16\n" +
 	"\x06masked\x18\x03 \x01(\bR\x06masked\"J\n" +

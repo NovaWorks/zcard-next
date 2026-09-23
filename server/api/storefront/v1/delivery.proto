@@ -37,6 +37,11 @@ message FetchDeliveryReply {
 
 // DeliveryItem 交付项（明文只在首次取货返回；之后掩码）。
 message DeliveryItem {
+  uint64 delivery_id = 4;
+  string kind = 5;
+  string product_name = 6;
+  string sku_name = 7;
+  int64 delivered_at = 8;
   uint64 item_id = 1;
   string content = 2; // 明文或 ****尾4位
   bool masked = 3;

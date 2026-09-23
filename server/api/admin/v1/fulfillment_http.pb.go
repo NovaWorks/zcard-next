@@ -21,6 +21,7 @@ const _ = http.SupportPackageIsVersion3
 const OperationAdminFulfillmentServiceListDeliveries = "/zcard.api.admin.v1.AdminFulfillmentService/ListDeliveries"
 const OperationAdminFulfillmentServiceListPending = "/zcard.api.admin.v1.AdminFulfillmentService/ListPending"
 const OperationAdminFulfillmentServiceManualDeliver = "/zcard.api.admin.v1.AdminFulfillmentService/ManualDeliver"
+const OperationAdminFulfillmentServiceStartService = "/zcard.api.admin.v1.AdminFulfillmentService/StartService"
 
 type AdminFulfillmentServiceHTTPServer interface {
 	// ListDeliveries ListDeliveries 交付记录列表（掩码默认）。
@@ -29,13 +30,37 @@ type AdminFulfillmentServiceHTTPServer interface {
 	ListPending(context.Context, *ListPendingRequest) (*ListPendingReply, error)
 	// ManualDeliver ManualDeliver 手动交付（卡密内容或物流单号）。
 	ManualDeliver(context.Context, *ManualDeliverRequest) (*emptypb.Empty, error)
+	StartService(context.Context, *StartServiceRequest) (*emptypb.Empty, error)
 }
 
 func RegisterAdminFulfillmentServiceHTTPServer(s *http.Server, srv AdminFulfillmentServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("POST", "/api/v1/admin/fulfillment/{order_no}/start", _AdminFulfillmentService_StartService0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/fulfillment/pending", _AdminFulfillmentService_ListPending0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/fulfillment/{order_no}/deliver", _AdminFulfillmentService_ManualDeliver0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/fulfillment", _AdminFulfillmentService_ListDeliveries0_HTTP_Handler(srv))
+}
+
+func _AdminFulfillmentService_StartService0_HTTP_Handler(srv AdminFulfillmentServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in StartServiceRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminFulfillmentServiceStartService)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.StartService(ctx, req.(*StartServiceRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminFulfillmentService_ListPending0_HTTP_Handler(srv AdminFulfillmentServiceHTTPServer) func(ctx http.Context) error {
@@ -105,6 +130,7 @@ type AdminFulfillmentServiceHTTPClient interface {
 	ListPending(ctx context.Context, req *ListPendingRequest, opts ...http.CallOption) (rsp *ListPendingReply, err error)
 	// ManualDeliver ManualDeliver 手动交付（卡密内容或物流单号）。
 	ManualDeliver(ctx context.Context, req *ManualDeliverRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	StartService(ctx context.Context, req *StartServiceRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 }
 
 type AdminFulfillmentServiceHTTPClientImpl struct {
@@ -158,6 +184,23 @@ func (c *AdminFulfillmentServiceHTTPClientImpl) ManualDeliver(ctx context.Contex
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminFulfillmentServiceManualDeliver),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminFulfillmentServiceHTTPClientImpl) StartService(ctx context.Context, in *StartServiceRequest, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/fulfillment/{order_no}/start"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminFulfillmentServiceStartService),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

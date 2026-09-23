@@ -209,3 +209,29 @@ func TestReserveOnlySelectedSku(t *testing.T) {
 		t.Fatal("unselected SKU was consumed")
 	}
 }
+
+func TestBindReservedDoesNotStealAndCanRebindReleasedCards(t *testing.T) {
+	d := newTestData(t)
+	repo := NewCardRepoImpl(d, NewTestCipher(t))
+	ctx := context.Background()
+	pid := seedCards(t, d, 2)
+	cards := d.Client.Card.Query().Where(card.ProductID(pid)).Order(ent.Asc(card.FieldID)).AllX(ctx)
+	d.Client.Card.UpdateOneID(cards[0].ID).SetStatus("reserved").SetOrderID(0).ExecX(ctx)
+	d.Client.Card.UpdateOneID(cards[1].ID).SetStatus("reserved").ExecX(ctx)
+	if err := repo.BindReserved(ctx, 90, []uint64{cards[0].ID}); err != nil {
+		t.Fatal(err)
+	}
+	if d.Client.Card.GetX(ctx, cards[1].ID).OrderID != 0 {
+		t.Fatal("stole another reservation")
+	}
+	if err := repo.BindReserved(ctx, 91, []uint64{cards[0].ID}); err == nil {
+		t.Fatal("rebound sold reservation")
+	}
+	if err := repo.Release(ctx, 90); err != nil {
+		t.Fatal(err)
+	}
+	d.Client.Card.UpdateOneID(cards[0].ID).SetStatus("reserved").ExecX(ctx)
+	if err := repo.BindReserved(ctx, 92, []uint64{cards[0].ID}); err != nil {
+		t.Fatal("released card cannot be resold", err)
+	}
+}

@@ -2,8 +2,8 @@
   <div>
     <!-- Hero 搜索区（深蓝渐变） -->
     <section class="query-hero">
-      <h1 class="query-title">卡密取货查询</h1>
-      <p class="query-sub">输入订单号 或 下单时留的邮箱/手机号，凭查询密码领取卡密</p>
+      <h1 class="query-title">订单与交付查询</h1>
+      <p class="query-sub">输入订单号 或 下单时留的邮箱/手机号，凭查询密码查看交付结果</p>
 
       <form class="query-form" @submit.prevent="fetch">
         <div class="query-input-row">
@@ -54,8 +54,8 @@
         <div class="guide-step">
           <span class="guide-num">3</span>
           <div>
-            <b>领取卡密</b>
-            <span class="muted">复制卡密即可使用，支持一键复制全部</span>
+            <b>查看交付结果</b>
+            <span class="muted">查看卡密或人工服务结果，未完成服务可查看进度</span>
           </div>
         </div>
       </div>
@@ -100,28 +100,11 @@
 
         <div v-if="['paid', 'fulfilling', 'partially_delivered'].includes(result.status)" class="card-list">
           <p>已付款，{{ result.items.length ? '部分商品已发货，其余商品' : '商品' }}正在安排发货。无需再次支付，也无需注册；稍后用此订单号和查询密码刷新取货。</p>
-          <p>长时间未发货，请凭订单号联系客服补发。</p>
+          <p>人工服务请在订单详情查看处理进度，需帮助时凭订单号联系客服。</p>
           <button class="btn btn-primary" :disabled="loading" @click="pickOrder(result.order_no)">刷新发货结果</button>
         </div>
         <div v-else-if="!result.items.length" class="card-list">{{ result.status === 'refunded' ? '订单已退款，请核对退款记录。' : '暂无可领取内容，请查看订单状态或联系客服。' }}</div>
-        <div v-if="result.items.length" class="card-list">
-          <div class="card-list-title">
-            <span>卡密列表</span>
-            <button v-if="result.items.length > 1" class="copy-all" @click="copyAll">
-              {{ copiedAll ? '已复制全部' : '复制全部' }}
-            </button>
-          </div>
-          <div v-for="(it, i) in result.items" :key="it.item_id" class="card-row">
-            <span class="card-index">#{{ i + 1 }}</span>
-            <div class="card-content">
-              <template v-if="it.masked">
-                <span class="card-masked">{{ it.content }}</span>
-              </template>
-              <code v-else class="card-code">{{ it.content }}</code>
-            </div>
-            <button class="card-copy" @click="copyOne(it.content, i)">{{ copied === i ? '已复制' : '复制' }}</button>
-          </div>
-        </div>
+        <DeliveryResults v-if="result.items.length" :items="result.items" />
       </div>
 
       <div class="result-actions">
@@ -132,6 +115,7 @@
 </template>
 
 <script setup lang="ts">
+import DeliveryResults from '@/components/DeliveryResults.vue';
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getOrderPassword, rememberOrderPassword, fetchDelivery, listGuestOrders, type FetchDeliveryReply, type GuestOrderItem } from '@/api';

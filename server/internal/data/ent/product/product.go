@@ -53,6 +53,10 @@ const (
 	FieldDirectContent = "direct_content"
 	// FieldStockVisible holds the string denoting the stock_visible field in the database.
 	FieldStockVisible = "stock_visible"
+	// FieldFulfillmentMode holds the string denoting the fulfillment_mode field in the database.
+	FieldFulfillmentMode = "fulfillment_mode"
+	// FieldManualStock holds the string denoting the manual_stock field in the database.
+	FieldManualStock = "manual_stock"
 	// FieldDeliveryMode holds the string denoting the delivery_mode field in the database.
 	FieldDeliveryMode = "delivery_mode"
 	// FieldControlConfig holds the string denoting the control_config field in the database.
@@ -115,6 +119,8 @@ var Columns = []string{
 	FieldStockType,
 	FieldDirectContent,
 	FieldStockVisible,
+	FieldFulfillmentMode,
+	FieldManualStock,
 	FieldDeliveryMode,
 	FieldControlConfig,
 	FieldDedup,
@@ -165,6 +171,10 @@ var (
 	DefaultPointsRequired int64
 	// DefaultStockVisible holds the default value on creation for the "stock_visible" field.
 	DefaultStockVisible bool
+	// DefaultFulfillmentMode holds the default value on creation for the "fulfillment_mode" field.
+	DefaultFulfillmentMode string
+	// DefaultManualStock holds the default value on creation for the "manual_stock" field.
+	DefaultManualStock int64
 	// DefaultDedup holds the default value on creation for the "dedup" field.
 	DefaultDedup bool
 	// DefaultSort holds the default value on creation for the "sort" field.
@@ -316,6 +326,16 @@ func ByStockType(opts ...sql.OrderTermOption) OrderOption {
 // ByStockVisible orders the results by the stock_visible field.
 func ByStockVisible(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStockVisible, opts...).ToFunc()
+}
+
+// ByFulfillmentMode orders the results by the fulfillment_mode field.
+func ByFulfillmentMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFulfillmentMode, opts...).ToFunc()
+}
+
+// ByManualStock orders the results by the manual_stock field.
+func ByManualStock(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldManualStock, opts...).ToFunc()
 }
 
 // ByDeliveryMode orders the results by the delivery_mode field.

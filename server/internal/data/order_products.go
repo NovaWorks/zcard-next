@@ -44,7 +44,10 @@ func OrderProductSummaries(ctx context.Context, d *Data, orders []*ent.Order) (m
 		}
 	}
 	for _, it := range items {
-		name := names[it.ProductID]
+		name := it.ProductName
+		if name == "" {
+			name = names[it.ProductID]
+		}
 		if name == "" {
 			name = fmt.Sprintf("商品 #%d（已不可用）", it.ProductID)
 		}

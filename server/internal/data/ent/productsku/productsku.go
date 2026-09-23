@@ -30,6 +30,8 @@ const (
 	FieldPrice = "price"
 	// FieldCost holds the string denoting the cost field in the database.
 	FieldCost = "cost"
+	// FieldFulfillmentMode holds the string denoting the fulfillment_mode field in the database.
+	FieldFulfillmentMode = "fulfillment_mode"
 	// FieldStockOffset holds the string denoting the stock_offset field in the database.
 	FieldStockOffset = "stock_offset"
 	// FieldUpstreamSkuID holds the string denoting the upstream_sku_id field in the database.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldSpecValues,
 	FieldPrice,
 	FieldCost,
+	FieldFulfillmentMode,
 	FieldStockOffset,
 	FieldUpstreamSkuID,
 }
@@ -83,6 +86,8 @@ var (
 	DefaultSubsiteID uint64
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
+	// DefaultFulfillmentMode holds the default value on creation for the "fulfillment_mode" field.
+	DefaultFulfillmentMode string
 	// DefaultStockOffset holds the default value on creation for the "stock_offset" field.
 	DefaultStockOffset int32
 	// UpstreamSkuIDValidator is a validator for the "upstream_sku_id" field. It is called by the builders before save.
@@ -130,6 +135,11 @@ func ByPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByCost orders the results by the cost field.
 func ByCost(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCost, opts...).ToFunc()
+}
+
+// ByFulfillmentMode orders the results by the fulfillment_mode field.
+func ByFulfillmentMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldFulfillmentMode, opts...).ToFunc()
 }
 
 // ByStockOffset orders the results by the stock_offset field.

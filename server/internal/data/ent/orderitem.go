@@ -31,6 +31,12 @@ type OrderItem struct {
 	ProductID uint64 `json:"product_id,omitempty"`
 	// SkuID holds the value of the "sku_id" field.
 	SkuID uint64 `json:"sku_id,omitempty"`
+	// ProductName holds the value of the "product_name" field.
+	ProductName string `json:"product_name,omitempty"`
+	// FormAnswers holds the value of the "form_answers" field.
+	FormAnswers []map[string]string `json:"form_answers,omitempty"`
+	// AssignedAdminID holds the value of the "assigned_admin_id" field.
+	AssignedAdminID uint64 `json:"assigned_admin_id,omitempty"`
 	// SKU 名称快照
 	SkuName string `json:"sku_name,omitempty"`
 	// 单价快照（分）
@@ -80,11 +86,11 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
+		case orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
-		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost:
+		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost:
 			values[i] = new(sql.NullInt64)
-		case orderitem.FieldSkuName, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
+		case orderitem.FieldProductName, orderitem.FieldSkuName, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
 			values[i] = new(sql.NullString)
 		case orderitem.FieldCreatedAt, orderitem.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -144,6 +150,26 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field sku_id", values[i])
 			} else if value.Valid {
 				_m.SkuID = uint64(value.Int64)
+			}
+		case orderitem.FieldProductName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field product_name", values[i])
+			} else if value.Valid {
+				_m.ProductName = value.String
+			}
+		case orderitem.FieldFormAnswers:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field form_answers", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.FormAnswers); err != nil {
+					return fmt.Errorf("unmarshal field form_answers: %w", err)
+				}
+			}
+		case orderitem.FieldAssignedAdminID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field assigned_admin_id", values[i])
+			} else if value.Valid {
+				_m.AssignedAdminID = uint64(value.Int64)
 			}
 		case orderitem.FieldSkuName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -261,6 +287,15 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("sku_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.SkuID))
+	builder.WriteString(", ")
+	builder.WriteString("product_name=")
+	builder.WriteString(_m.ProductName)
+	builder.WriteString(", ")
+	builder.WriteString("form_answers=")
+	builder.WriteString(fmt.Sprintf("%v", _m.FormAnswers))
+	builder.WriteString(", ")
+	builder.WriteString("assigned_admin_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AssignedAdminID))
 	builder.WriteString(", ")
 	builder.WriteString("sku_name=")
 	builder.WriteString(_m.SkuName)

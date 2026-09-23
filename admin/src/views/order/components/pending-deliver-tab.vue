@@ -25,6 +25,8 @@ const columns: DataTableColumns<any> = [
     render: (row) => h("span", { class: "text-13px" }, row.order_no),
   },
   { title: "商品", key: "product_name", minWidth: 160 },
+ {title:"规格",key:"sku_name",width:110},
+ {title:"处理进度",key:"fulfillment_status",width:110,render:(row)=>row.fulfillment_status==='delivering'?'处理中':'待处理'},
   {
     title: "数量",
     key: "quantity",
@@ -84,6 +86,6 @@ onMounted(load);
       </div>
     </div>
 
-    <ManualDeliverDialog v-model:show="showDeliver" :order-no="target?.order_no || ''" @delivered="load" />
+    <ManualDeliverDialog v-model:show="showDeliver" :order-no="target?.order_no || ''" :default-item-id="Number(target?.order_item_id || 0)" @delivered="load" />
   </div>
 </template>

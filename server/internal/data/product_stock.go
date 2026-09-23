@@ -6,6 +6,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 )
 
@@ -54,6 +55,12 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 		for _, p := range products[start:end] {
 			byID[p.ID] = p
 			switch {
+			case p.FulfillmentMode == "manual" && p.UpstreamSourceID == 0:
+				n, err := ManualAvailable(ctx, client, p)
+				if err != nil {
+					return nil, err
+				}
+				out[p.ID] = ProductStockSnapshot{Quantity: n, Status: "current"}
 			case p.UpstreamSourceID > 0:
 				out[p.ID] = ProductStockSnapshot{Quantity: -2, Status: "unknown"}
 				upIDs = append(upIDs, p.ID)
@@ -80,6 +87,56 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 				}
 			}
 		}
+		// Mixed SKU products expose the sum of automatic stock and one shared manual quota.
+		ids := make([]uint64, 0, len(byID))
+		for id := range byID {
+			ids = append(ids, id)
+		}
+		skus, err := client.ProductSku.Query().Where(productsku.ProductIDIn(ids...)).All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		grouped := map[uint64][]*ent.ProductSku{}
+		for _, sku := range skus {
+			grouped[sku.ProductID] = append(grouped[sku.ProductID], sku)
+		}
+		for _, p := range byID {
+			if p.UpstreamSourceID > 0 {
+				continue
+			}
+			manual := p.FulfillmentMode == "manual" && len(grouped[p.ID]) == 0
+			autoIDs := []uint64{}
+			if !manual && len(grouped[p.ID]) == 0 {
+				autoIDs = append(autoIDs, 0)
+			}
+			for _, sku := range grouped[p.ID] {
+				if FulfillmentMode(p, sku) == "manual" {
+					manual = true
+				} else {
+					autoIDs = append(autoIDs, sku.ID)
+				}
+			}
+			if !manual {
+				continue
+			}
+			n, err := ManualAvailable(ctx, client, p)
+			if err != nil {
+				return nil, err
+			}
+			if n >= 0 && len(autoIDs) > 0 {
+				if p.StockType != "card" {
+					n = -1
+				} else {
+					count, err := client.Card.Query().Where(card.ProductID(p.ID), card.SubsiteID(p.SubsiteID), card.StatusEQ(card.StatusAvailable), card.SkuIDIn(autoIDs...)).Count(ctx)
+					if err != nil {
+						return nil, err
+					}
+					n += int64(count)
+				}
+			}
+			out[p.ID] = ProductStockSnapshot{Quantity: n, Status: "current"}
+		}
+
 		if len(upIDs) > 0 {
 			rows, err := client.SupplyMapping.Query().Where(supplymapping.LocalProductIDIn(upIDs...), supplymapping.UpstreamSkuEQ("")).All(ctx)
 			if err != nil {

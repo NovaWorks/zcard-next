@@ -9,15 +9,15 @@ onMounted(() => { expanded.value = matchMedia('(min-width: 768px)').matches; });
 </script>
 <template>
   <section v-if="level.levels?.length" class="card level-benefits" aria-label="会员等级与折扣">
-    <header><div><h3>会员等级与折扣</h3><p class="muted">当前：{{ level.current?.name || '普通会员' }} · {{ levelDiscount(level.current?.discount ?? 10000) }}</p></div>
+    <header><div><h3>会员等级与折扣</h3><p class="muted">当前：{{ level.current?.name || '普通会员' }} · {{ level.current?.display_mode === 'contact' ? '联系客服' : levelDiscount(level.current?.discount ?? 10000) }}</p></div>
       <span v-if="level.next" class="muted">下一等级：{{ level.next.name }}</span></header>
-    <p v-if="level.next" class="next-benefit"><b>{{ level.next.name }}享 {{ levelDiscount(level.next.discount) }}</b><span>{{ levelThreshold(level.next) }}</span></p>
+    <p v-if="level.next" class="next-benefit"><b>{{ level.next.name }}享 {{ level.next.display_mode === 'contact' ? '联系客服' : levelDiscount(level.next.discount) }}</b><span>{{ levelThreshold(level.next) }}</span></p>
     <details :open="expanded" @toggle="expanded = ($event.target as HTMLDetailsElement).open">
       <summary>{{ expanded ? '收起等级列表' : `查看全部 ${level.levels.length} 个等级与折扣` }}</summary>
       <div class="level-list">
-      <article v-for="item in level.levels" :key="item.id" class="level-item" :class="{ current: item.id === level.current?.id }">
-        <div class="level-name"><b>{{ item.name }}</b><span v-if="item.id === level.current?.id" class="level-current">当前等级</span></div>
-        <strong>{{ levelDiscount(item.discount) }}<small>会员折扣</small></strong>
+      <article v-for="item in level.levels" :key="item.id || item.name" class="level-item" :class="{ current: !!item.id && item.id === level.current?.id }">
+        <div class="level-name"><b>{{ item.name }}</b><span v-if="!!item.id && item.id === level.current?.id" class="level-current">当前等级</span></div>
+        <strong>{{ item.display_mode === 'contact' ? '联系客服' : levelDiscount(item.discount) }}<small v-if="item.display_mode !== 'contact'">会员折扣</small></strong>
         <p>{{ levelThreshold(item) }}</p>
       </article>
       </div>

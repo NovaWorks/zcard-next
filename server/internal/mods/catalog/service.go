@@ -210,6 +210,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 		out.Controls = append(out.Controls, &storefrontv1.ProductControl{
 			Id: c.ID, Name: c.Name, Type: string(c.Type),
 			Required: c.Required, Options: c.Options, Sort: c.Sort,
+			Placeholder: c.Placeholder, Validation: c.Validation, MaxLength: c.MaxLength,
 		})
 	}
 	reviews, err := s.uc.ListProductReviews(ctx, req.GetId())
@@ -246,7 +247,7 @@ func (s *StoreCatalogService) GetProduct(ctx context.Context, req *storefrontv1.
 			offer = offers[couponport.FlashKey{ProductID: p.ID}]
 		}
 		out.Skus = append(out.Skus, &storefrontv1.Sku{
-			Id: sku.ID, Name: sku.Name, PriceCents: int64(skuPrice), FlashSale: toFlashOffer(offer),
+			Stock: sku.Stock, FulfillmentMode: sku.FulfillmentMode, Id: sku.ID, Name: sku.Name, PriceCents: int64(skuPrice), FlashSale: toFlashOffer(offer),
 		})
 	}
 	return out, nil
@@ -261,13 +262,14 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 	}
 
 	return &storefrontv1.Product{
-		Id:             p.ID,
-		Name:           p.Name,
-		Slug:           p.Slug,
-		Cover:          p.Cover,
-		Description:    p.Description, // 商品详情（上游采集/后台编辑； 漏映射导致前台全部无描述）
-		PriceCents:     int64(p.Price),
-		StockType:      p.StockType,
+		Id:              p.ID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		Cover:           p.Cover,
+		Description:     p.Description, // 商品详情（上游采集/后台编辑； 漏映射导致前台全部无描述）
+		PriceCents:      int64(p.Price),
+		StockType:       p.StockType,
+		FulfillmentMode: p.FulfillmentMode, ManualStock: p.ManualStock,
 		Stock:          stock,
 		StockVisible:   p.StockVisible,
 		PointsRequired: p.PointsRequired, // 积分商城（；0=常规商品）

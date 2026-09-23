@@ -226,6 +226,24 @@ func (r *CardRepoImpl) MarkUsedAndDelete(ctx context.Context, cardIDs []uint64, 
 // Stock 可用库存数（-1=无限，链接类）。
 func (r *CardRepoImpl) Stock(ctx context.Context, productID, skuID uint64) (int64, error) {
 	client := data.Client(ctx, r.data)
+	p, e := client.Product.Get(ctx, productID)
+	if e != nil {
+		return 0, e
+	}
+	var sku *ent.ProductSku
+	if skuID > 0 {
+		sku, e = client.ProductSku.Get(ctx, skuID)
+		if e != nil || sku.ProductID != productID {
+			return 0, fmt.Errorf("inventory.SKU_INVALID")
+		}
+	}
+	if data.FulfillmentMode(p, sku) == "manual" {
+		return data.ManualAvailable(ctx, client, p)
+	}
+
+	if p.StockType != "card" {
+		return -1, nil
+	}
 	q := client.Card.Query().Where(
 		card.ProductID(productID),
 		card.StatusEQ(card.StatusAvailable),
@@ -267,4 +285,19 @@ func (r *CardRepoImpl) Contents(ctx context.Context, cardIDs []uint64, productID
 		out = append(out, plain)
 	}
 	return out, nil
+}
+
+// BindReserved binds only cards from this transaction's reservation, never another buyer's cards.
+func (r *CardRepoImpl) BindReserved(ctx context.Context, orderID uint64, ids []uint64) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	n, err := data.Client(ctx, r.data).Card.Update().Where(card.IDIn(ids...), card.StatusEQ(card.StatusReserved), card.Or(card.OrderIDIsNil(), card.OrderID(0))).SetOrderID(orderID).Save(ctx)
+	if err != nil {
+		return err
+	}
+	if n != len(ids) {
+		return fmt.Errorf("inventory.RESERVATION_CHANGED")
+	}
+	return nil
 }

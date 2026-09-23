@@ -10,6 +10,9 @@ import "google/protobuf/empty.proto";
 
 // AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 service AdminFulfillmentService {
+  rpc StartService(StartServiceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { post: "/api/v1/admin/fulfillment/{order_no}/start" body: "*" };
+  }
   // ListPending 待人工发货列表（manual_pending 状态订单）。
   rpc ListPending(ListPendingRequest) returns (ListPendingReply) {
     option (google.api.http) = { get: "/api/v1/admin/fulfillment/pending" };
@@ -37,6 +40,11 @@ message ListPendingReply {
 }
 
 message PendingOrder {
+  uint64 order_item_id = 6;
+  string sku_name = 7;
+  string form_answers_json = 8;
+  string fulfillment_status = 9;
+  uint64 assigned_admin_id = 10;
   string order_no = 1;
   uint64 product_id = 2;
   string product_name = 3;
@@ -45,6 +53,7 @@ message PendingOrder {
 }
 
 message ManualDeliverRequest {
+  string service_content = 6;
   string order_no = 1 [(google.api.field_behavior) = REQUIRED];
   string content = 2; // 卡密内容（多行，每行一条）
   string logistics_no = 3; // 物流单号（与 content 二选一）
@@ -67,6 +76,8 @@ message ListDeliveriesReply {
 // DeliveryRecord 交付记录（content=完整卡密，服务端现场解密；路由受
 // order:view_delivery 权限门控 + 查看审计留痕）。
 message DeliveryRecord {
+  uint64 order_item_id = 11;
+  string kind = 12;
   uint64 id = 1;
   string order_no = 2;
   uint64 card_id = 3;
@@ -78,3 +89,5 @@ message DeliveryRecord {
   string fetched_ip = 9;
   string content = 10; // 完整卡密（管理端明文）
 }
+
+message StartServiceRequest { string order_no = 1; uint64 order_item_id = 2; }

@@ -16,13 +16,13 @@
             <div class="muted lv-label">当前等级</div>
             <div class="lv-name-row">
               <span class="lv-name">{{ level.current?.name || '普通会员' }}</span>
-              <span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
+              <span v-if="level.current?.display_mode === 'contact'" class="tag">联系客服</span><span v-if="level.current?.discount" class="tag">{{ levelDiscount(level.current.discount) }}</span>
             </div>
           </div>
           <span v-if="level.next" class="lv-next">距 {{ level.next.name }} <span class="lv-arrow">›</span></span>
-          <span v-else class="lv-max">已满级 🏆</span>
+          <span v-else-if="level.current?.acquire_mode === 'manual'" class="muted">由后台授予</span><span v-else class="lv-max">已满级 🏆</span>
         </div>
-        <div class="lv-bar">
+        <div v-if="level.current?.acquire_mode !== 'manual'" class="lv-bar">
           <div class="progress"><div :style="{ width: `${levelPercent}%` }"></div></div>
           <span class="lv-percent">{{ levelPercent }}%</span>
         </div>
@@ -61,7 +61,7 @@
             <td>{{ o.order_no }}</td>
             <td><span :class="statusBadge(o.status)">{{ statusText(o.status) }}</span></td>
             <td class="price">{{ formatMoney(o.total_cents) }}</td>
-            <td>{{ o.item_count }}</td>
+            <td><div>{{ o.item_count }} 件</div><small>{{ o.product_summary }}</small><div v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} 项待人工完成</div></td>
             <td class="muted">{{ fmtTime(o.created_at) }}</td>
             <td class="actions">
               <router-link class="btn secondary" :to="`/payment/${o.order_no}`" v-if="o.status === 'pending_payment'">去支付</router-link>
@@ -69,7 +69,7 @@
                 class="btn secondary"
                 :to="`/fetch?order_no=${o.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
-              >取货</router-link>
+              >查看交付</router-link>
               <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
               <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">评价</router-link>
               <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>
@@ -89,6 +89,8 @@
             <span class="muted">{{ fmtTime(o.created_at) }} · {{ o.item_count }} 件</span>
             <span class="price">{{ formatMoney(o.total_cents) }}</span>
           </div>
+          <p style="overflow-wrap:anywhere">{{ o.product_summary }}</p>
+          <p v-if="o.manual_pending_count && ['paid', 'fulfilling', 'partially_delivered'].includes(o.status)" class="muted">{{ o.manual_pending_count }} 项待人工完成</p>
           <div class="mcard-row">
             <span></span>
             <span class="actions">
@@ -97,7 +99,7 @@
                 class="btn secondary"
                 :to="`/fetch?order_no=${o.order_no}`"
                 v-if="['paid', 'fulfilling', 'partially_delivered', 'delivered', 'completed'].includes(o.status)"
-              >取货</router-link>
+              >查看交付</router-link>
               <router-link class="btn secondary" :to="`/order/${o.order_no}`">详情</router-link>
               <router-link v-if="showReviews && ['delivered', 'completed'].includes(o.status)" class="btn secondary" :to="`/order/${o.order_no}#order-review`">评价</router-link>
               <button class="btn secondary" v-if="o.status === 'pending_payment'" @click="cancel(o.order_no)">取消</button>

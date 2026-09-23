@@ -237,7 +237,7 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 		if stocks, err := data.ProductStocks(ctx, s.data, []*ent.Product{p}); err == nil {
 			item.Stock = stocks[p.ID]
 		}
-	} else if p.StockType == "card" && s.inv != nil {
+	} else if s.inv != nil {
 		if stock, err := s.inv.Stock(ctx, row.ProductID, row.SkuID); err == nil {
 			item.Stock = stock
 		}

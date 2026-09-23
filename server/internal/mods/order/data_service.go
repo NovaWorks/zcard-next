@@ -4,6 +4,7 @@ package order
 
 import (
 	"context"
+	"encoding/json"
 	stderrors "errors"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	couponport "github.com/NovaWorks/zcard-next/server/internal/mods/coupon/port"
@@ -58,7 +59,7 @@ func (s *StoreOrderService) CreateOrder(ctx context.Context, req *storefrontv1.C
 			return nil, errors.BadRequest("order.INVALID_ITEM", "商品 ID 与数量必填")
 		}
 		items = append(items, OrderItemInput{
-			ProductID: it.GetProductId(), SkuID: it.GetSkuId(), Quantity: it.GetQuantity(),
+			ProductID: it.GetProductId(), SkuID: it.GetSkuId(), Quantity: it.GetQuantity(), ControlAnswers: it.ControlAnswers,
 		})
 	}
 	// 登录态绑定买家（userAuthMiddleware 注入的 claims；0=游客单）
@@ -140,11 +141,22 @@ func (s *StoreOrderService) GetOrder(ctx context.Context, req *storefrontv1.GetO
 		names[item.ProductID] = item.Name
 	}
 	for _, it := range items {
-		name := names[it.ProductID]
+		name := it.ProductName
+		if name == "" {
+			name = names[it.ProductID]
+		}
 		if it.SkuName != "" {
 			name += " / " + it.SkuName
 		}
-		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice})
+		reply.Items = append(reply.Items, &storefrontv1.OrderItemReply{Id: it.ID, ProductId: it.ProductID, ProductName: name, Quantity: it.Quantity, UnitPriceCents: it.UnitPrice, AmountCents: it.Amount, SkuName: it.SkuName, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus, FormAnswersJson: answersJSON(it.FormAnswers)})
+	}
+	refunds, e := data.Client(ctx, s.uc.Data).RefundOrder.Query().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusSucceeded)).All(ctx)
+	if e != nil {
+		return nil, e
+	}
+	for _, rf := range refunds {
+		reply.RefundedCents += rf.Amount
+		reply.RefundedFeeCents += rf.FeeAmount
 	}
 	return reply, nil
 }
@@ -159,11 +171,37 @@ func (s *StoreOrderService) ListMyOrders(ctx context.Context, req *storefrontv1.
 	if err != nil {
 		return nil, errors.InternalServer("order.LIST_FAILED", "查询失败")
 	}
+	summaries, err := data.OrderProductSummaries(ctx, s.uc.Data, rows)
+	if err != nil {
+		return nil, errors.InternalServer("order.LIST_FAILED", "读取订单商品失败")
+	}
 	reply := &storefrontv1.ListMyOrdersReply{Total: total}
 	for _, o := range rows {
 		item := &storefrontv1.MyOrderItem{
 			OrderNo: o.OrderNo, Status: string(o.Status), TotalCents: o.TotalAmount,
 		}
+		names := []string{}
+		for _, line := range o.Edges.Items {
+			item.ItemCount += line.Quantity
+			name := line.ProductName
+			if name == "" {
+				name = "商品"
+				for _, summary := range summaries[o.ID] {
+					if summary.ProductID == line.ProductID {
+						name = summary.Name
+						break
+					}
+				}
+			}
+			if line.SkuName != "" {
+				name += " · " + line.SkuName
+			}
+			names = append(names, name)
+			if line.FulfillmentType == "manual" && (line.FulfillmentStatus == "pending" || line.FulfillmentStatus == "delivering") {
+				item.ManualPendingCount++
+			}
+		}
+		item.ProductSummary = strings.Join(names, "、")
 		if !o.CreatedAt.IsZero() {
 			item.CreatedAt = o.CreatedAt.Unix()
 		}
@@ -414,6 +452,7 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 	}
 	for _, it := range items {
 		pb := &adminv1.AdminOrderItem{
+			FormAnswersJson: answersJSON(it.FormAnswers), AssignedAdminId: it.AssignedAdminID,
 			ProductId: it.ProductID, SkuId: it.SkuID, Quantity: it.Quantity,
 			UnitPriceCents: it.UnitPrice, AmountCents: it.Amount,
 			Id: it.ID, FulfillmentType: string(it.FulfillmentType), FulfillmentStatus: it.FulfillmentStatus,
@@ -432,6 +471,9 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 					pb.UpstreamUrl = conn.BaseURL
 				}
 			}
+		}
+		if it.ProductName != "" {
+			pb.Name = it.ProductName
 		}
 		out.Items = append(out.Items, pb)
 	}
@@ -454,6 +496,8 @@ func toAdminOrderPB(o *ent.Order, items []*ent.OrderItem, lines []*ent.OrderAmou
 func mapOrderErr(err error) error {
 	msg := err.Error()
 	switch {
+	case contains(msg, "FORM_INVALID"):
+		return errors.BadRequest("order.FORM_INVALID", strings.TrimPrefix(msg, "order.FORM_INVALID: "))
 	case stderrors.Is(err, couponport.ErrFlashReserved):
 		return errors.BadRequest("order.FLASH_RESERVED", "秒杀名额暂被待付款订单占用，请稍后重试")
 	case stderrors.Is(err, couponport.ErrFlashSoldOut):
@@ -507,3 +551,5 @@ func searchString(s, sub string) bool {
 	}
 	return false
 }
+
+func answersJSON(v []map[string]string) string { b, _ := json.Marshal(v); return string(b) }

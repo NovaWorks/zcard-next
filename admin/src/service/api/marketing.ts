@@ -9,7 +9,7 @@ export function fetchMemberLevels() {
 }
 
 export function createMemberLevel(data: {
-  name: string;
+  name: string; acquire_mode?:string; display_mode?:string;
   threshold_type: string;
   threshold_recharge?: number;
   threshold_consume?: number;
@@ -21,7 +21,7 @@ export function createMemberLevel(data: {
   return request({ url: "/api/v1/admin/member-levels", method: "post", data });
 }
 
-export function updateMemberLevel(id: number, data: { name?: string; discount?: number; sort?: number; enabled?: boolean; points_rule_json?: string }) {
+export function updateMemberLevel(id: number, data: { acquire_mode?:string; display_mode?:string; name?: string; discount?: number; sort?: number; enabled?: boolean; points_rule_json?: string }) {
   return request({ url: `/api/v1/admin/member-levels/${id}`, method: "put", data });
 }
 
@@ -142,3 +142,5 @@ export function updatePostCategory(id: number, data: { name?: string; sort?: num
 export function deletePostCategory(id: number) {
   return request({ url: `/api/v1/admin/content/categories/${id}`, method: "delete" });
 }
+
+export function assignUserLevel(userId:number,levelId:number,reason:string){return request({url:`/api/v1/admin/users/${userId}/member-level`,method:'put',data:{level_id:levelId,reason}})}

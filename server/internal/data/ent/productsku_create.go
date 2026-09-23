@@ -111,6 +111,20 @@ func (_c *ProductSkuCreate) SetNillableCost(v *int64) *ProductSkuCreate {
 	return _c
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (_c *ProductSkuCreate) SetFulfillmentMode(v string) *ProductSkuCreate {
+	_c.mutation.SetFulfillmentMode(v)
+	return _c
+}
+
+// SetNillableFulfillmentMode sets the "fulfillment_mode" field if the given value is not nil.
+func (_c *ProductSkuCreate) SetNillableFulfillmentMode(v *string) *ProductSkuCreate {
+	if v != nil {
+		_c.SetFulfillmentMode(*v)
+	}
+	return _c
+}
+
 // SetStockOffset sets the "stock_offset" field.
 func (_c *ProductSkuCreate) SetStockOffset(v int32) *ProductSkuCreate {
 	_c.mutation.SetStockOffset(v)
@@ -197,6 +211,10 @@ func (_c *ProductSkuCreate) defaults() {
 		v := productsku.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.FulfillmentMode(); !ok {
+		v := productsku.DefaultFulfillmentMode
+		_c.mutation.SetFulfillmentMode(v)
+	}
 	if _, ok := _c.mutation.StockOffset(); !ok {
 		v := productsku.DefaultStockOffset
 		_c.mutation.SetStockOffset(v)
@@ -227,6 +245,9 @@ func (_c *ProductSkuCreate) check() error {
 	}
 	if _, ok := _c.mutation.SpecValues(); !ok {
 		return &ValidationError{Name: "spec_values", err: errors.New(`ent: missing required field "ProductSku.spec_values"`)}
+	}
+	if _, ok := _c.mutation.FulfillmentMode(); !ok {
+		return &ValidationError{Name: "fulfillment_mode", err: errors.New(`ent: missing required field "ProductSku.fulfillment_mode"`)}
 	}
 	if _, ok := _c.mutation.StockOffset(); !ok {
 		return &ValidationError{Name: "stock_offset", err: errors.New(`ent: missing required field "ProductSku.stock_offset"`)}
@@ -299,6 +320,10 @@ func (_c *ProductSkuCreate) createSpec() (*ProductSku, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Cost(); ok {
 		_spec.SetField(productsku.FieldCost, field.TypeInt64, value)
 		_node.Cost = value
+	}
+	if value, ok := _c.mutation.FulfillmentMode(); ok {
+		_spec.SetField(productsku.FieldFulfillmentMode, field.TypeString, value)
+		_node.FulfillmentMode = value
 	}
 	if value, ok := _c.mutation.StockOffset(); ok {
 		_spec.SetField(productsku.FieldStockOffset, field.TypeInt32, value)
@@ -488,6 +513,18 @@ func (u *ProductSkuUpsert) AddCost(v int64) *ProductSkuUpsert {
 // ClearCost clears the value of the "cost" field.
 func (u *ProductSkuUpsert) ClearCost() *ProductSkuUpsert {
 	u.SetNull(productsku.FieldCost)
+	return u
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (u *ProductSkuUpsert) SetFulfillmentMode(v string) *ProductSkuUpsert {
+	u.Set(productsku.FieldFulfillmentMode, v)
+	return u
+}
+
+// UpdateFulfillmentMode sets the "fulfillment_mode" field to the value that was provided on create.
+func (u *ProductSkuUpsert) UpdateFulfillmentMode() *ProductSkuUpsert {
+	u.SetExcluded(productsku.FieldFulfillmentMode)
 	return u
 }
 
@@ -708,6 +745,20 @@ func (u *ProductSkuUpsertOne) UpdateCost() *ProductSkuUpsertOne {
 func (u *ProductSkuUpsertOne) ClearCost() *ProductSkuUpsertOne {
 	return u.Update(func(s *ProductSkuUpsert) {
 		s.ClearCost()
+	})
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (u *ProductSkuUpsertOne) SetFulfillmentMode(v string) *ProductSkuUpsertOne {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.SetFulfillmentMode(v)
+	})
+}
+
+// UpdateFulfillmentMode sets the "fulfillment_mode" field to the value that was provided on create.
+func (u *ProductSkuUpsertOne) UpdateFulfillmentMode() *ProductSkuUpsertOne {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.UpdateFulfillmentMode()
 	})
 }
 
@@ -1100,6 +1151,20 @@ func (u *ProductSkuUpsertBulk) UpdateCost() *ProductSkuUpsertBulk {
 func (u *ProductSkuUpsertBulk) ClearCost() *ProductSkuUpsertBulk {
 	return u.Update(func(s *ProductSkuUpsert) {
 		s.ClearCost()
+	})
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (u *ProductSkuUpsertBulk) SetFulfillmentMode(v string) *ProductSkuUpsertBulk {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.SetFulfillmentMode(v)
+	})
+}
+
+// UpdateFulfillmentMode sets the "fulfillment_mode" field to the value that was provided on create.
+func (u *ProductSkuUpsertBulk) UpdateFulfillmentMode() *ProductSkuUpsertBulk {
+	return u.Update(func(s *ProductSkuUpsert) {
+		s.UpdateFulfillmentMode()
 	})
 }
 

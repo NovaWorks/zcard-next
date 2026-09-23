@@ -35,6 +35,8 @@ type ProductSku struct {
 	Price int64 `json:"price,omitempty"`
 	// 独立成本（分）
 	Cost int64 `json:"cost,omitempty"`
+	// FulfillmentMode holds the value of the "fulfillment_mode" field.
+	FulfillmentMode string `json:"fulfillment_mode,omitempty"`
 	// 独立库存位
 	StockOffset int32 `json:"stock_offset,omitempty"`
 	// 上游 SKU 标识（M2）
@@ -74,7 +76,7 @@ func (*ProductSku) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case productsku.FieldID, productsku.FieldSubsiteID, productsku.FieldProductID, productsku.FieldPrice, productsku.FieldCost, productsku.FieldStockOffset:
 			values[i] = new(sql.NullInt64)
-		case productsku.FieldName, productsku.FieldUpstreamSkuID:
+		case productsku.FieldName, productsku.FieldFulfillmentMode, productsku.FieldUpstreamSkuID:
 			values[i] = new(sql.NullString)
 		case productsku.FieldCreatedAt, productsku.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -148,6 +150,12 @@ func (_m *ProductSku) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field cost", values[i])
 			} else if value.Valid {
 				_m.Cost = value.Int64
+			}
+		case productsku.FieldFulfillmentMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field fulfillment_mode", values[i])
+			} else if value.Valid {
+				_m.FulfillmentMode = value.String
 			}
 		case productsku.FieldStockOffset:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -225,6 +233,9 @@ func (_m *ProductSku) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("cost=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Cost))
+	builder.WriteString(", ")
+	builder.WriteString("fulfillment_mode=")
+	builder.WriteString(_m.FulfillmentMode)
 	builder.WriteString(", ")
 	builder.WriteString("stock_offset=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StockOffset))

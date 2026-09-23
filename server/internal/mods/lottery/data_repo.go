@@ -152,6 +152,9 @@ func (r *Repo) eligibleCard(ctx context.Context, pid, sku uint64) (*ent.Product,
 		}
 		return nil, e
 	}
+	if e := data.RejectServiceProduct(ctx, c, p); e != nil {
+		return nil, bad(e.Error())
+	}
 	if p.UpstreamSourceID != 0 || string(p.StockType) != "card" || string(p.DeliveryMode) != "status" {
 		return nil, bad("自动发卡仅支持普通自营卡密和保留卡密模式")
 	}

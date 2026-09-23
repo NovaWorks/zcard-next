@@ -105,6 +105,55 @@ func (_u *ProductControlUpdate) SetNillableType(v *productcontrol.Type) *Product
 	return _u
 }
 
+// SetPlaceholder sets the "placeholder" field.
+func (_u *ProductControlUpdate) SetPlaceholder(v string) *ProductControlUpdate {
+	_u.mutation.SetPlaceholder(v)
+	return _u
+}
+
+// SetNillablePlaceholder sets the "placeholder" field if the given value is not nil.
+func (_u *ProductControlUpdate) SetNillablePlaceholder(v *string) *ProductControlUpdate {
+	if v != nil {
+		_u.SetPlaceholder(*v)
+	}
+	return _u
+}
+
+// SetValidation sets the "validation" field.
+func (_u *ProductControlUpdate) SetValidation(v string) *ProductControlUpdate {
+	_u.mutation.SetValidation(v)
+	return _u
+}
+
+// SetNillableValidation sets the "validation" field if the given value is not nil.
+func (_u *ProductControlUpdate) SetNillableValidation(v *string) *ProductControlUpdate {
+	if v != nil {
+		_u.SetValidation(*v)
+	}
+	return _u
+}
+
+// SetMaxLength sets the "max_length" field.
+func (_u *ProductControlUpdate) SetMaxLength(v int32) *ProductControlUpdate {
+	_u.mutation.ResetMaxLength()
+	_u.mutation.SetMaxLength(v)
+	return _u
+}
+
+// SetNillableMaxLength sets the "max_length" field if the given value is not nil.
+func (_u *ProductControlUpdate) SetNillableMaxLength(v *int32) *ProductControlUpdate {
+	if v != nil {
+		_u.SetMaxLength(*v)
+	}
+	return _u
+}
+
+// AddMaxLength adds value to the "max_length" field.
+func (_u *ProductControlUpdate) AddMaxLength(v int32) *ProductControlUpdate {
+	_u.mutation.AddMaxLength(v)
+	return _u
+}
+
 // SetRequired sets the "required" field.
 func (_u *ProductControlUpdate) SetRequired(v bool) *ProductControlUpdate {
 	_u.mutation.SetRequired(v)
@@ -247,6 +296,18 @@ func (_u *ProductControlUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(productcontrol.FieldType, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.Placeholder(); ok {
+		_spec.SetField(productcontrol.FieldPlaceholder, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Validation(); ok {
+		_spec.SetField(productcontrol.FieldValidation, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.MaxLength(); ok {
+		_spec.SetField(productcontrol.FieldMaxLength, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedMaxLength(); ok {
+		_spec.AddField(productcontrol.FieldMaxLength, field.TypeInt32, value)
+	}
 	if value, ok := _u.mutation.Required(); ok {
 		_spec.SetField(productcontrol.FieldRequired, field.TypeBool, value)
 	}
@@ -360,6 +421,55 @@ func (_u *ProductControlUpdateOne) SetNillableType(v *productcontrol.Type) *Prod
 	if v != nil {
 		_u.SetType(*v)
 	}
+	return _u
+}
+
+// SetPlaceholder sets the "placeholder" field.
+func (_u *ProductControlUpdateOne) SetPlaceholder(v string) *ProductControlUpdateOne {
+	_u.mutation.SetPlaceholder(v)
+	return _u
+}
+
+// SetNillablePlaceholder sets the "placeholder" field if the given value is not nil.
+func (_u *ProductControlUpdateOne) SetNillablePlaceholder(v *string) *ProductControlUpdateOne {
+	if v != nil {
+		_u.SetPlaceholder(*v)
+	}
+	return _u
+}
+
+// SetValidation sets the "validation" field.
+func (_u *ProductControlUpdateOne) SetValidation(v string) *ProductControlUpdateOne {
+	_u.mutation.SetValidation(v)
+	return _u
+}
+
+// SetNillableValidation sets the "validation" field if the given value is not nil.
+func (_u *ProductControlUpdateOne) SetNillableValidation(v *string) *ProductControlUpdateOne {
+	if v != nil {
+		_u.SetValidation(*v)
+	}
+	return _u
+}
+
+// SetMaxLength sets the "max_length" field.
+func (_u *ProductControlUpdateOne) SetMaxLength(v int32) *ProductControlUpdateOne {
+	_u.mutation.ResetMaxLength()
+	_u.mutation.SetMaxLength(v)
+	return _u
+}
+
+// SetNillableMaxLength sets the "max_length" field if the given value is not nil.
+func (_u *ProductControlUpdateOne) SetNillableMaxLength(v *int32) *ProductControlUpdateOne {
+	if v != nil {
+		_u.SetMaxLength(*v)
+	}
+	return _u
+}
+
+// AddMaxLength adds value to the "max_length" field.
+func (_u *ProductControlUpdateOne) AddMaxLength(v int32) *ProductControlUpdateOne {
+	_u.mutation.AddMaxLength(v)
 	return _u
 }
 
@@ -534,6 +644,18 @@ func (_u *ProductControlUpdateOne) sqlSave(ctx context.Context) (_node *ProductC
 	}
 	if value, ok := _u.mutation.GetType(); ok {
 		_spec.SetField(productcontrol.FieldType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.Placeholder(); ok {
+		_spec.SetField(productcontrol.FieldPlaceholder, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Validation(); ok {
+		_spec.SetField(productcontrol.FieldValidation, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.MaxLength(); ok {
+		_spec.SetField(productcontrol.FieldMaxLength, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedMaxLength(); ok {
+		_spec.AddField(productcontrol.FieldMaxLength, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.Required(); ok {
 		_spec.SetField(productcontrol.FieldRequired, field.TypeBool, value)

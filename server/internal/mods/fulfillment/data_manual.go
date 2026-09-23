@@ -60,6 +60,11 @@ func (r *DeliveryRepoImpl) ManualDeliver(ctx context.Context, orderNo, content, 
 		if target == nil {
 			return fmt.Errorf("请选择本订单中需要补发的商品")
 		}
+
+		if target.FulfillmentType == orderitem.FulfillmentTypeManual && target.AssignedAdminID != 0 && target.AssignedAdminID != adminID {
+			return fmt.Errorf("该商品已由其他管理员领取")
+		}
+
 		counts, err := r.deliveredQuantities(ctx, o.ID, its)
 		if err != nil {
 			return err

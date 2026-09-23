@@ -30,6 +30,10 @@ const (
 	FieldThresholdRecharge = "threshold_recharge"
 	// FieldThresholdConsume holds the string denoting the threshold_consume field in the database.
 	FieldThresholdConsume = "threshold_consume"
+	// FieldAcquireMode holds the string denoting the acquire_mode field in the database.
+	FieldAcquireMode = "acquire_mode"
+	// FieldDisplayMode holds the string denoting the display_mode field in the database.
+	FieldDisplayMode = "display_mode"
 	// FieldDiscount holds the string denoting the discount field in the database.
 	FieldDiscount = "discount"
 	// FieldPointsRule holds the string denoting the points_rule field in the database.
@@ -53,6 +57,8 @@ var Columns = []string{
 	FieldThresholdType,
 	FieldThresholdRecharge,
 	FieldThresholdConsume,
+	FieldAcquireMode,
+	FieldDisplayMode,
 	FieldDiscount,
 	FieldPointsRule,
 	FieldSort,
@@ -86,6 +92,10 @@ var (
 	DefaultThresholdRecharge int64
 	// DefaultThresholdConsume holds the default value on creation for the "threshold_consume" field.
 	DefaultThresholdConsume int64
+	// DefaultAcquireMode holds the default value on creation for the "acquire_mode" field.
+	DefaultAcquireMode string
+	// DefaultDisplayMode holds the default value on creation for the "display_mode" field.
+	DefaultDisplayMode string
 	// DefaultDiscount holds the default value on creation for the "discount" field.
 	DefaultDiscount int32
 	// DefaultSort holds the default value on creation for the "sort" field.
@@ -168,6 +178,16 @@ func ByThresholdRecharge(opts ...sql.OrderTermOption) OrderOption {
 // ByThresholdConsume orders the results by the threshold_consume field.
 func ByThresholdConsume(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldThresholdConsume, opts...).ToFunc()
+}
+
+// ByAcquireMode orders the results by the acquire_mode field.
+func ByAcquireMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAcquireMode, opts...).ToFunc()
+}
+
+// ByDisplayMode orders the results by the display_mode field.
+func ByDisplayMode(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDisplayMode, opts...).ToFunc()
 }
 
 // ByDiscount orders the results by the discount field.

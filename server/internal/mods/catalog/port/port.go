@@ -18,18 +18,20 @@ type StockSnapshot struct {
 
 // Product 商品 DTO（跨模块快照：order 价格管线消费；管理字段不下发）。
 type Product struct {
-	ID           uint64
-	SubsiteID    uint64
-	Name         string
-	Slug         string
-	Cover        string
-	Description  string      // 商品详情（sanitize 后富文本；storefront 详情页下发）
-	Price        money.Cents // 售价（分）
-	FactoryPrice money.Cents // 成本价（分）
-	StockType    string      // card / url / code
-	DeliveryMode string      // status / delete
-	Status       int8        // 1=上架 0=下架 2=隐藏
-	StockVisible bool
+	FulfillmentMode string
+	ManualStock     int64
+	ID              uint64
+	SubsiteID       uint64
+	Name            string
+	Slug            string
+	Cover           string
+	Description     string      // 商品详情（sanitize 后富文本；storefront 详情页下发）
+	Price           money.Cents // 售价（分）
+	FactoryPrice    money.Cents // 成本价（分）
+	StockType       string      // card / url / code
+	DeliveryMode    string      // status / delete
+	Status          int8        // 1=上架 0=下架 2=隐藏
+	StockVisible    bool
 	// 积分兑换价（0=常规商品；>0=积分商城商品——order 兑换分支判定，）
 	PointsRequired int64
 	// 货源信息（ procurement 消费：判定上游项与提交采购）
@@ -41,12 +43,14 @@ type Product struct {
 
 // Control 自定义控件 DTO（下单表单渲染）。
 type Control struct {
-	ID       uint64
-	Name     string
-	Type     string // text | password | select | number | checkbox | radio
-	Required bool
-	Options  []string
-	Sort     int32
+	Placeholder, Validation string
+	MaxLength               int32
+	ID                      uint64
+	Name                    string
+	Type                    string // text | password | select | number | checkbox | radio
+	Required                bool
+	Options                 []string
+	Sort                    int32
 }
 
 // Category 前台可见分类（导航/筛选用；ParentID 0=根，多级分类树形）。
@@ -70,10 +74,12 @@ type ReviewItem struct {
 
 // Sku 前台多规格 DTO（只下发 id/名称/价格）。
 type Sku struct {
-	ID        uint64
-	Name      string
-	Price     money.Cents // 独立售价（分；0=继承商品价）
-	ProductID uint64
+	Stock           int64
+	FulfillmentMode string
+	ID              uint64
+	Name            string
+	Price           money.Cents // 独立售价（分；0=继承商品价）
+	ProductID       uint64
 }
 
 // VisibleFilter 可见商品过滤（storefront 列表 / order 下单校验共用）。
@@ -139,20 +145,22 @@ type AdminFilter struct {
 
 // ProductInput 商品创建/更新输入（description 已 sanitize）。
 type ProductInput struct {
-	Name           string
-	CategoryID     uint64
-	Description    string
-	DescriptionSet bool // distinguish clearing an admin description from omitted upstream fields
-	Cover          string
-	Images         []string
-	Price          int64 // 分
-	FactoryPrice   int64
-	StockType      string
-	DeliveryMode   string
-	StockVisible   bool
-	Dedup          bool
-	Sort           int32
-	Status         int8
+	FulfillmentMode string
+	ManualStock     *int64
+	Name            string
+	CategoryID      uint64
+	Description     string
+	DescriptionSet  bool // distinguish clearing an admin description from omitted upstream fields
+	Cover           string
+	Images          []string
+	Price           int64 // 分
+	FactoryPrice    int64
+	StockType       string
+	DeliveryMode    string
+	StockVisible    bool
+	Dedup           bool
+	Sort            int32
+	Status          int8
 	// 积分兑换价（分单位积分；0=不参与积分商城——PUT 全量语义，）
 	PointsRequired    int64
 	PointsRequiredSet bool // true = 写入该值（含 0=移出积分商城）

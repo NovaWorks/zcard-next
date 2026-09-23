@@ -50,6 +50,20 @@ func (_c *UserCreate) SetNillableUpdatedAt(v *time.Time) *UserCreate {
 	return _c
 }
 
+// SetManualLevelID sets the "manual_level_id" field.
+func (_c *UserCreate) SetManualLevelID(v uint64) *UserCreate {
+	_c.mutation.SetManualLevelID(v)
+	return _c
+}
+
+// SetNillableManualLevelID sets the "manual_level_id" field if the given value is not nil.
+func (_c *UserCreate) SetNillableManualLevelID(v *uint64) *UserCreate {
+	if v != nil {
+		_c.SetManualLevelID(*v)
+	}
+	return _c
+}
+
 // SetUsername sets the "username" field.
 func (_c *UserCreate) SetUsername(v string) *UserCreate {
 	_c.mutation.SetUsername(v)
@@ -231,6 +245,10 @@ func (_c *UserCreate) defaults() {
 		v := user.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.ManualLevelID(); !ok {
+		v := user.DefaultManualLevelID
+		_c.mutation.SetManualLevelID(v)
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		v := user.DefaultStatus
 		_c.mutation.SetStatus(v)
@@ -244,6 +262,9 @@ func (_c *UserCreate) check() error {
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "User.updated_at"`)}
+	}
+	if _, ok := _c.mutation.ManualLevelID(); !ok {
+		return &ValidationError{Name: "manual_level_id", err: errors.New(`ent: missing required field "User.manual_level_id"`)}
 	}
 	if _, ok := _c.mutation.Username(); !ok {
 		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "User.username"`)}
@@ -321,6 +342,10 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.ManualLevelID(); ok {
+		_spec.SetField(user.FieldManualLevelID, field.TypeUint64, value)
+		_node.ManualLevelID = value
 	}
 	if value, ok := _c.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
@@ -423,6 +448,24 @@ func (u *UserUpsert) SetUpdatedAt(v time.Time) *UserUpsert {
 // UpdateUpdatedAt sets the "updated_at" field to the value that was provided on create.
 func (u *UserUpsert) UpdateUpdatedAt() *UserUpsert {
 	u.SetExcluded(user.FieldUpdatedAt)
+	return u
+}
+
+// SetManualLevelID sets the "manual_level_id" field.
+func (u *UserUpsert) SetManualLevelID(v uint64) *UserUpsert {
+	u.Set(user.FieldManualLevelID, v)
+	return u
+}
+
+// UpdateManualLevelID sets the "manual_level_id" field to the value that was provided on create.
+func (u *UserUpsert) UpdateManualLevelID() *UserUpsert {
+	u.SetExcluded(user.FieldManualLevelID)
+	return u
+}
+
+// AddManualLevelID adds v to the "manual_level_id" field.
+func (u *UserUpsert) AddManualLevelID(v uint64) *UserUpsert {
+	u.Add(user.FieldManualLevelID, v)
 	return u
 }
 
@@ -674,6 +717,27 @@ func (u *UserUpsertOne) SetUpdatedAt(v time.Time) *UserUpsertOne {
 func (u *UserUpsertOne) UpdateUpdatedAt() *UserUpsertOne {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetManualLevelID sets the "manual_level_id" field.
+func (u *UserUpsertOne) SetManualLevelID(v uint64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.SetManualLevelID(v)
+	})
+}
+
+// AddManualLevelID adds v to the "manual_level_id" field.
+func (u *UserUpsertOne) AddManualLevelID(v uint64) *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.AddManualLevelID(v)
+	})
+}
+
+// UpdateManualLevelID sets the "manual_level_id" field to the value that was provided on create.
+func (u *UserUpsertOne) UpdateManualLevelID() *UserUpsertOne {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateManualLevelID()
 	})
 }
 
@@ -1122,6 +1186,27 @@ func (u *UserUpsertBulk) SetUpdatedAt(v time.Time) *UserUpsertBulk {
 func (u *UserUpsertBulk) UpdateUpdatedAt() *UserUpsertBulk {
 	return u.Update(func(s *UserUpsert) {
 		s.UpdateUpdatedAt()
+	})
+}
+
+// SetManualLevelID sets the "manual_level_id" field.
+func (u *UserUpsertBulk) SetManualLevelID(v uint64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.SetManualLevelID(v)
+	})
+}
+
+// AddManualLevelID adds v to the "manual_level_id" field.
+func (u *UserUpsertBulk) AddManualLevelID(v uint64) *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.AddManualLevelID(v)
+	})
+}
+
+// UpdateManualLevelID sets the "manual_level_id" field to the value that was provided on create.
+func (u *UserUpsertBulk) UpdateManualLevelID() *UserUpsertBulk {
+	return u.Update(func(s *UserUpsert) {
+		s.UpdateManualLevelID()
 	})
 }
 

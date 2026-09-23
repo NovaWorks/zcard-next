@@ -85,6 +85,16 @@ func DeliveryTokenHash(v string) predicate.OrderDelivery {
 	return predicate.OrderDelivery(sql.FieldEQ(FieldDeliveryTokenHash, v))
 }
 
+// ServiceContent applies equality check predicate on the "service_content" field. It's identical to ServiceContentEQ.
+func ServiceContent(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldEQ(FieldServiceContent, v))
+}
+
+// DeliveredQuantity applies equality check predicate on the "delivered_quantity" field. It's identical to DeliveredQuantityEQ.
+func DeliveredQuantity(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldEQ(FieldDeliveredQuantity, v))
+}
+
 // DeliveredBy applies equality check predicate on the "delivered_by" field. It's identical to DeliveredByEQ.
 func DeliveredBy(v uint64) predicate.OrderDelivery {
 	return predicate.OrderDelivery(sql.FieldEQ(FieldDeliveredBy, v))
@@ -348,6 +358,96 @@ func DeliveryTokenHashEqualFold(v string) predicate.OrderDelivery {
 // DeliveryTokenHashContainsFold applies the ContainsFold predicate on the "delivery_token_hash" field.
 func DeliveryTokenHashContainsFold(v string) predicate.OrderDelivery {
 	return predicate.OrderDelivery(sql.FieldContainsFold(FieldDeliveryTokenHash, v))
+}
+
+// ServiceContentEQ applies the EQ predicate on the "service_content" field.
+func ServiceContentEQ(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldEQ(FieldServiceContent, v))
+}
+
+// ServiceContentNEQ applies the NEQ predicate on the "service_content" field.
+func ServiceContentNEQ(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldNEQ(FieldServiceContent, v))
+}
+
+// ServiceContentIn applies the In predicate on the "service_content" field.
+func ServiceContentIn(vs ...[]byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldIn(FieldServiceContent, vs...))
+}
+
+// ServiceContentNotIn applies the NotIn predicate on the "service_content" field.
+func ServiceContentNotIn(vs ...[]byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldNotIn(FieldServiceContent, vs...))
+}
+
+// ServiceContentGT applies the GT predicate on the "service_content" field.
+func ServiceContentGT(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldGT(FieldServiceContent, v))
+}
+
+// ServiceContentGTE applies the GTE predicate on the "service_content" field.
+func ServiceContentGTE(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldGTE(FieldServiceContent, v))
+}
+
+// ServiceContentLT applies the LT predicate on the "service_content" field.
+func ServiceContentLT(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldLT(FieldServiceContent, v))
+}
+
+// ServiceContentLTE applies the LTE predicate on the "service_content" field.
+func ServiceContentLTE(v []byte) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldLTE(FieldServiceContent, v))
+}
+
+// ServiceContentIsNil applies the IsNil predicate on the "service_content" field.
+func ServiceContentIsNil() predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldIsNull(FieldServiceContent))
+}
+
+// ServiceContentNotNil applies the NotNil predicate on the "service_content" field.
+func ServiceContentNotNil() predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldNotNull(FieldServiceContent))
+}
+
+// DeliveredQuantityEQ applies the EQ predicate on the "delivered_quantity" field.
+func DeliveredQuantityEQ(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldEQ(FieldDeliveredQuantity, v))
+}
+
+// DeliveredQuantityNEQ applies the NEQ predicate on the "delivered_quantity" field.
+func DeliveredQuantityNEQ(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldNEQ(FieldDeliveredQuantity, v))
+}
+
+// DeliveredQuantityIn applies the In predicate on the "delivered_quantity" field.
+func DeliveredQuantityIn(vs ...int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldIn(FieldDeliveredQuantity, vs...))
+}
+
+// DeliveredQuantityNotIn applies the NotIn predicate on the "delivered_quantity" field.
+func DeliveredQuantityNotIn(vs ...int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldNotIn(FieldDeliveredQuantity, vs...))
+}
+
+// DeliveredQuantityGT applies the GT predicate on the "delivered_quantity" field.
+func DeliveredQuantityGT(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldGT(FieldDeliveredQuantity, v))
+}
+
+// DeliveredQuantityGTE applies the GTE predicate on the "delivered_quantity" field.
+func DeliveredQuantityGTE(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldGTE(FieldDeliveredQuantity, v))
+}
+
+// DeliveredQuantityLT applies the LT predicate on the "delivered_quantity" field.
+func DeliveredQuantityLT(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldLT(FieldDeliveredQuantity, v))
+}
+
+// DeliveredQuantityLTE applies the LTE predicate on the "delivered_quantity" field.
+func DeliveredQuantityLTE(v int32) predicate.OrderDelivery {
+	return predicate.OrderDelivery(sql.FieldLTE(FieldDeliveredQuantity, v))
 }
 
 // DeliveredModeEQ applies the EQ predicate on the "delivered_mode" field.

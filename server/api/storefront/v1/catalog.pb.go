@@ -416,12 +416,14 @@ func (x *FlashOffer) GetPerUserLimit() int32 {
 }
 
 type Product struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name        string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Slug        string                 `protobuf:"bytes,3,opt,name=slug,proto3" json:"slug,omitempty"`
-	Description string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"` // 已 sanitize 的 Markdown/HTML
-	Cover       string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	FulfillmentMode string                 `protobuf:"bytes,21,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
+	ManualStock     int64                  `protobuf:"varint,22,opt,name=manual_stock,json=manualStock,proto3" json:"manual_stock,omitempty"`
+	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Slug            string                 `protobuf:"bytes,3,opt,name=slug,proto3" json:"slug,omitempty"`
+	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"` // 已 sanitize 的 Markdown/HTML
+	Cover           string                 `protobuf:"bytes,5,opt,name=cover,proto3" json:"cover,omitempty"`
 	// 售价（分，基础货币）
 	PriceCents int64 `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
 	// 库存类型 card/url/code
@@ -479,6 +481,20 @@ func (x *Product) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Product.ProtoReflect.Descriptor instead.
 func (*Product) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Product) GetFulfillmentMode() string {
+	if x != nil {
+		return x.FulfillmentMode
+	}
+	return ""
+}
+
+func (x *Product) GetManualStock() int64 {
+	if x != nil {
+		return x.ManualStock
+	}
+	return 0
 }
 
 func (x *Product) GetId() uint64 {
@@ -624,6 +640,9 @@ func (x *Product) GetFlashSale() *FlashOffer {
 // ProductControl 自定义控件定义（下单表单渲染）。
 type ProductControl struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Placeholder   string                 `protobuf:"bytes,7,opt,name=placeholder,proto3" json:"placeholder,omitempty"`
+	Validation    string                 `protobuf:"bytes,8,opt,name=validation,proto3" json:"validation,omitempty"`
+	MaxLength     int32                  `protobuf:"varint,9,opt,name=max_length,json=maxLength,proto3" json:"max_length,omitempty"`
 	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Type          string                 `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"` // text | password | select | number | checkbox | radio
@@ -662,6 +681,27 @@ func (x *ProductControl) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ProductControl.ProtoReflect.Descriptor instead.
 func (*ProductControl) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ProductControl) GetPlaceholder() string {
+	if x != nil {
+		return x.Placeholder
+	}
+	return ""
+}
+
+func (x *ProductControl) GetValidation() string {
+	if x != nil {
+		return x.Validation
+	}
+	return ""
+}
+
+func (x *ProductControl) GetMaxLength() int32 {
+	if x != nil {
+		return x.MaxLength
+	}
+	return 0
 }
 
 func (x *ProductControl) GetId() uint64 {
@@ -793,13 +833,15 @@ func (x *ReviewItem) GetIsVirtual() bool {
 
 // Sku 顾客视角多规格（只下发 id/名称/价格）。
 type Sku struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	PriceCents    int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
-	FlashSale     *FlashOffer            `protobuf:"bytes,4,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Stock           int64                  `protobuf:"varint,6,opt,name=stock,proto3" json:"stock,omitempty"`
+	FulfillmentMode string                 `protobuf:"bytes,5,opt,name=fulfillment_mode,json=fulfillmentMode,proto3" json:"fulfillment_mode,omitempty"`
+	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	PriceCents      int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
+	FlashSale       *FlashOffer            `protobuf:"bytes,4,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Sku) Reset() {
@@ -830,6 +872,20 @@ func (x *Sku) ProtoReflect() protoreflect.Message {
 // Deprecated: Use Sku.ProtoReflect.Descriptor instead.
 func (*Sku) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_catalog_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *Sku) GetStock() int64 {
+	if x != nil {
+		return x.Stock
+	}
+	return 0
+}
+
+func (x *Sku) GetFulfillmentMode() string {
+	if x != nil {
+		return x.FulfillmentMode
+	}
+	return ""
 }
 
 func (x *Sku) GetId() uint64 {
@@ -897,8 +953,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xf2\x05\n" +
-	"\aProduct\x12\x0e\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xc0\x06\n" +
+	"\aProduct\x12)\n" +
+	"\x10fulfillment_mode\x18\x15 \x01(\tR\x0ffulfillmentMode\x12!\n" +
+	"\fmanual_stock\x18\x16 \x01(\x03R\vmanualStock\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04slug\x18\x03 \x01(\tR\x04slug\x12 \n" +
@@ -924,8 +982,14 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x0fstock_reference\x18\x12 \x01(\x03R\x0estockReference\x12(\n" +
 	"\x10stock_checked_at\x18\x13 \x01(\x03R\x0estockCheckedAt\x12B\n" +
 	"\n" +
-	"flash_sale\x18\x14 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\"\x92\x01\n" +
-	"\x0eProductControl\x12\x0e\n" +
+	"flash_sale\x18\x14 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\"\xf3\x01\n" +
+	"\x0eProductControl\x12 \n" +
+	"\vplaceholder\x18\a \x01(\tR\vplaceholder\x12\x1e\n" +
+	"\n" +
+	"validation\x18\b \x01(\tR\n" +
+	"validation\x12\x1d\n" +
+	"\n" +
+	"max_length\x18\t \x01(\x05R\tmaxLength\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x1a\n" +
@@ -941,8 +1005,10 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\x03R\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"is_virtual\x18\x06 \x01(\bR\tisVirtual\"\x8e\x01\n" +
-	"\x03Sku\x12\x0e\n" +
+	"is_virtual\x18\x06 \x01(\bR\tisVirtual\"\xcf\x01\n" +
+	"\x03Sku\x12\x14\n" +
+	"\x05stock\x18\x06 \x01(\x03R\x05stock\x12)\n" +
+	"\x10fulfillment_mode\x18\x05 \x01(\tR\x0ffulfillmentMode\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
 	"\vprice_cents\x18\x03 \x01(\x03R\n" +

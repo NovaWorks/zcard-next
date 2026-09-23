@@ -144,12 +144,13 @@ func (x *CreateOrderRequest) GetCaptchaCode() string {
 }
 
 type OrderItemInput struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	SkuId         uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ControlAnswers map[string]string      `protobuf:"bytes,4,rep,name=control_answers,json=controlAnswers,proto3" json:"control_answers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	ProductId      uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SkuId          uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
+	Quantity       int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *OrderItemInput) Reset() {
@@ -180,6 +181,13 @@ func (x *OrderItemInput) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OrderItemInput.ProtoReflect.Descriptor instead.
 func (*OrderItemInput) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OrderItemInput) GetControlAnswers() map[string]string {
+	if x != nil {
+		return x.ControlAnswers
+	}
+	return nil
 }
 
 func (x *OrderItemInput) GetProductId() uint64 {
@@ -316,17 +324,19 @@ func (x *GetOrderRequest) GetQueryPassword() string {
 }
 
 type GetOrderReply struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	OrderNo        string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Status         string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	TotalCents     int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	Items          []*OrderItemReply      `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
-	CreatedAt      int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ExpiresAt      int64                  `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // 订单过期时间（倒计时；0=无过期）
-	PaidTotalCents int64                  `protobuf:"varint,7,opt,name=paid_total_cents,json=paidTotalCents,proto3" json:"paid_total_cents,omitempty"`
-	PaidFeeCents   int64                  `protobuf:"varint,8,opt,name=paid_fee_cents,json=paidFeeCents,proto3" json:"paid_fee_cents,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	RefundedCents    int64                  `protobuf:"varint,9,opt,name=refunded_cents,json=refundedCents,proto3" json:"refunded_cents,omitempty"`
+	RefundedFeeCents int64                  `protobuf:"varint,10,opt,name=refunded_fee_cents,json=refundedFeeCents,proto3" json:"refunded_fee_cents,omitempty"`
+	OrderNo          string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status           string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents       int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	Items            []*OrderItemReply      `protobuf:"bytes,4,rep,name=items,proto3" json:"items,omitempty"`
+	CreatedAt        int64                  `protobuf:"varint,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ExpiresAt        int64                  `protobuf:"varint,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // 订单过期时间（倒计时；0=无过期）
+	PaidTotalCents   int64                  `protobuf:"varint,7,opt,name=paid_total_cents,json=paidTotalCents,proto3" json:"paid_total_cents,omitempty"`
+	PaidFeeCents     int64                  `protobuf:"varint,8,opt,name=paid_fee_cents,json=paidFeeCents,proto3" json:"paid_fee_cents,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *GetOrderReply) Reset() {
@@ -357,6 +367,20 @@ func (x *GetOrderReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetOrderReply.ProtoReflect.Descriptor instead.
 func (*GetOrderReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetOrderReply) GetRefundedCents() int64 {
+	if x != nil {
+		return x.RefundedCents
+	}
+	return 0
+}
+
+func (x *GetOrderReply) GetRefundedFeeCents() int64 {
+	if x != nil {
+		return x.RefundedFeeCents
+	}
+	return 0
 }
 
 func (x *GetOrderReply) GetOrderNo() string {
@@ -416,13 +440,19 @@ func (x *GetOrderReply) GetPaidFeeCents() int64 {
 }
 
 type OrderItemReply struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	ProductId      uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	ProductName    string                 `protobuf:"bytes,2,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
-	Quantity       int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	UnitPriceCents int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Id                uint64                 `protobuf:"varint,5,opt,name=id,proto3" json:"id,omitempty"`
+	SkuName           string                 `protobuf:"bytes,6,opt,name=sku_name,json=skuName,proto3" json:"sku_name,omitempty"`
+	FulfillmentType   string                 `protobuf:"bytes,7,opt,name=fulfillment_type,json=fulfillmentType,proto3" json:"fulfillment_type,omitempty"`
+	FulfillmentStatus string                 `protobuf:"bytes,8,opt,name=fulfillment_status,json=fulfillmentStatus,proto3" json:"fulfillment_status,omitempty"`
+	FormAnswersJson   string                 `protobuf:"bytes,9,opt,name=form_answers_json,json=formAnswersJson,proto3" json:"form_answers_json,omitempty"`
+	AmountCents       int64                  `protobuf:"varint,10,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
+	ProductId         uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	ProductName       string                 `protobuf:"bytes,2,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	Quantity          int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPriceCents    int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *OrderItemReply) Reset() {
@@ -453,6 +483,48 @@ func (x *OrderItemReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use OrderItemReply.ProtoReflect.Descriptor instead.
 func (*OrderItemReply) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_order_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *OrderItemReply) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *OrderItemReply) GetSkuName() string {
+	if x != nil {
+		return x.SkuName
+	}
+	return ""
+}
+
+func (x *OrderItemReply) GetFulfillmentType() string {
+	if x != nil {
+		return x.FulfillmentType
+	}
+	return ""
+}
+
+func (x *OrderItemReply) GetFulfillmentStatus() string {
+	if x != nil {
+		return x.FulfillmentStatus
+	}
+	return ""
+}
+
+func (x *OrderItemReply) GetFormAnswersJson() string {
+	if x != nil {
+		return x.FormAnswersJson
+	}
+	return ""
+}
+
+func (x *OrderItemReply) GetAmountCents() int64 {
+	if x != nil {
+		return x.AmountCents
+	}
+	return 0
 }
 
 func (x *OrderItemReply) GetProductId() uint64 {
@@ -762,15 +834,17 @@ func (x *ListMyOrdersReply) GetTotal() int64 {
 
 // MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
 type MyOrderItem struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	TotalCents    int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ExpiredAt     int64                  `protobuf:"varint,5,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
-	ItemCount     int32                  `protobuf:"varint,6,opt,name=item_count,json=itemCount,proto3" json:"item_count,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	OrderNo            string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
+	Status             string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	TotalCents         int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	CreatedAt          int64                  `protobuf:"varint,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ExpiredAt          int64                  `protobuf:"varint,5,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	ItemCount          int32                  `protobuf:"varint,6,opt,name=item_count,json=itemCount,proto3" json:"item_count,omitempty"`
+	ProductSummary     string                 `protobuf:"bytes,7,opt,name=product_summary,json=productSummary,proto3" json:"product_summary,omitempty"`
+	ManualPendingCount int32                  `protobuf:"varint,8,opt,name=manual_pending_count,json=manualPendingCount,proto3" json:"manual_pending_count,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *MyOrderItem) Reset() {
@@ -845,6 +919,20 @@ func (x *MyOrderItem) GetItemCount() int32 {
 	return 0
 }
 
+func (x *MyOrderItem) GetProductSummary() string {
+	if x != nil {
+		return x.ProductSummary
+	}
+	return ""
+}
+
+func (x *MyOrderItem) GetManualPendingCount() int32 {
+	if x != nil {
+		return x.ManualPendingCount
+	}
+	return 0
+}
+
 type CancelMyOrderRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderNo       string                 `protobuf:"bytes,1,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"`
@@ -911,12 +999,16 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	" \x01(\tR\vcaptchaCode\x1aA\n" +
 	"\x13ControlAnswersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"l\n" +
-	"\x0eOrderItemInput\x12\"\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x95\x02\n" +
+	"\x0eOrderItemInput\x12d\n" +
+	"\x0fcontrol_answers\x18\x04 \x03(\v2;.zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntryR\x0econtrolAnswers\x12\"\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\tproductId\x12\x15\n" +
 	"\x06sku_id\x18\x02 \x01(\x04R\x05skuId\x12\x1f\n" +
-	"\bquantity\x18\x03 \x01(\x05B\x03\xe0A\x02R\bquantity\"m\n" +
+	"\bquantity\x18\x03 \x01(\x05B\x03\xe0A\x02R\bquantity\x1aA\n" +
+	"\x13ControlAnswersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"m\n" +
 	"\x10CreateOrderReply\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x1f\n" +
 	"\vtotal_cents\x18\x02 \x01(\x03R\n" +
@@ -925,8 +1017,11 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"expires_at\x18\x03 \x01(\x03R\texpiresAt\"X\n" +
 	"\x0fGetOrderRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo\x12%\n" +
-	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\xb0\x02\n" +
-	"\rGetOrderReply\x12\x19\n" +
+	"\x0equery_password\x18\x02 \x01(\tR\rqueryPassword\"\x85\x03\n" +
+	"\rGetOrderReply\x12%\n" +
+	"\x0erefunded_cents\x18\t \x01(\x03R\rrefundedCents\x12,\n" +
+	"\x12refunded_fee_cents\x18\n" +
+	" \x01(\x03R\x10refundedFeeCents\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
 	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
@@ -937,8 +1032,15 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x06 \x01(\x03R\texpiresAt\x12(\n" +
 	"\x10paid_total_cents\x18\a \x01(\x03R\x0epaidTotalCents\x12$\n" +
-	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\"\x98\x01\n" +
-	"\x0eOrderItemReply\x12\x1d\n" +
+	"\x0epaid_fee_cents\x18\b \x01(\x03R\fpaidFeeCents\"\xec\x02\n" +
+	"\x0eOrderItemReply\x12\x0e\n" +
+	"\x02id\x18\x05 \x01(\x04R\x02id\x12\x19\n" +
+	"\bsku_name\x18\x06 \x01(\tR\askuName\x12)\n" +
+	"\x10fulfillment_type\x18\a \x01(\tR\x0ffulfillmentType\x12-\n" +
+	"\x12fulfillment_status\x18\b \x01(\tR\x11fulfillmentStatus\x12*\n" +
+	"\x11form_answers_json\x18\t \x01(\tR\x0fformAnswersJson\x12!\n" +
+	"\famount_cents\x18\n" +
+	" \x01(\x03R\vamountCents\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12!\n" +
 	"\fproduct_name\x18\x02 \x01(\tR\vproductName\x12\x1a\n" +
@@ -963,7 +1065,7 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\x06status\x18\x03 \x01(\tR\x06status\"g\n" +
 	"\x11ListMyOrdersReply\x12<\n" +
 	"\x06orders\x18\x01 \x03(\v2$.zcard.api.storefront.v1.MyOrderItemR\x06orders\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xbe\x01\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\x99\x02\n" +
 	"\vMyOrderItem\x12\x19\n" +
 	"\border_no\x18\x01 \x01(\tR\aorderNo\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1f\n" +
@@ -974,7 +1076,9 @@ const file_storefront_v1_order_proto_rawDesc = "" +
 	"\n" +
 	"expired_at\x18\x05 \x01(\x03R\texpiredAt\x12\x1d\n" +
 	"\n" +
-	"item_count\x18\x06 \x01(\x05R\titemCount\"6\n" +
+	"item_count\x18\x06 \x01(\x05R\titemCount\x12'\n" +
+	"\x0fproduct_summary\x18\a \x01(\tR\x0eproductSummary\x120\n" +
+	"\x14manual_pending_count\x18\b \x01(\x05R\x12manualPendingCount\"6\n" +
 	"\x14CancelMyOrderRequest\x12\x1e\n" +
 	"\border_no\x18\x01 \x01(\tB\x03\xe0A\x02R\aorderNo2\xed\x05\n" +
 	"\x11StoreOrderService\x12\x8b\x01\n" +
@@ -996,7 +1100,7 @@ func file_storefront_v1_order_proto_rawDescGZIP() []byte {
 	return file_storefront_v1_order_proto_rawDescData
 }
 
-var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_storefront_v1_order_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_storefront_v1_order_proto_goTypes = []any{
 	(*CreateOrderRequest)(nil),     // 0: zcard.api.storefront.v1.CreateOrderRequest
 	(*OrderItemInput)(nil),         // 1: zcard.api.storefront.v1.OrderItemInput
@@ -1012,29 +1116,31 @@ var file_storefront_v1_order_proto_goTypes = []any{
 	(*MyOrderItem)(nil),            // 11: zcard.api.storefront.v1.MyOrderItem
 	(*CancelMyOrderRequest)(nil),   // 12: zcard.api.storefront.v1.CancelMyOrderRequest
 	nil,                            // 13: zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	(*emptypb.Empty)(nil),          // 14: google.protobuf.Empty
+	nil,                            // 14: zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
+	(*emptypb.Empty)(nil),          // 15: google.protobuf.Empty
 }
 var file_storefront_v1_order_proto_depIdxs = []int32{
 	1,  // 0: zcard.api.storefront.v1.CreateOrderRequest.items:type_name -> zcard.api.storefront.v1.OrderItemInput
 	13, // 1: zcard.api.storefront.v1.CreateOrderRequest.control_answers:type_name -> zcard.api.storefront.v1.CreateOrderRequest.ControlAnswersEntry
-	5,  // 2: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
-	8,  // 3: zcard.api.storefront.v1.ListGuestOrdersReply.orders:type_name -> zcard.api.storefront.v1.GuestOrderItem
-	11, // 4: zcard.api.storefront.v1.ListMyOrdersReply.orders:type_name -> zcard.api.storefront.v1.MyOrderItem
-	0,  // 5: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
-	3,  // 6: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
-	9,  // 7: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
-	6,  // 8: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:input_type -> zcard.api.storefront.v1.ListGuestOrdersRequest
-	12, // 9: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
-	2,  // 10: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
-	4,  // 11: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
-	10, // 12: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
-	7,  // 13: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:output_type -> zcard.api.storefront.v1.ListGuestOrdersReply
-	14, // 14: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	14, // 2: zcard.api.storefront.v1.OrderItemInput.control_answers:type_name -> zcard.api.storefront.v1.OrderItemInput.ControlAnswersEntry
+	5,  // 3: zcard.api.storefront.v1.GetOrderReply.items:type_name -> zcard.api.storefront.v1.OrderItemReply
+	8,  // 4: zcard.api.storefront.v1.ListGuestOrdersReply.orders:type_name -> zcard.api.storefront.v1.GuestOrderItem
+	11, // 5: zcard.api.storefront.v1.ListMyOrdersReply.orders:type_name -> zcard.api.storefront.v1.MyOrderItem
+	0,  // 6: zcard.api.storefront.v1.StoreOrderService.CreateOrder:input_type -> zcard.api.storefront.v1.CreateOrderRequest
+	3,  // 7: zcard.api.storefront.v1.StoreOrderService.GetOrder:input_type -> zcard.api.storefront.v1.GetOrderRequest
+	9,  // 8: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:input_type -> zcard.api.storefront.v1.ListMyOrdersRequest
+	6,  // 9: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:input_type -> zcard.api.storefront.v1.ListGuestOrdersRequest
+	12, // 10: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:input_type -> zcard.api.storefront.v1.CancelMyOrderRequest
+	2,  // 11: zcard.api.storefront.v1.StoreOrderService.CreateOrder:output_type -> zcard.api.storefront.v1.CreateOrderReply
+	4,  // 12: zcard.api.storefront.v1.StoreOrderService.GetOrder:output_type -> zcard.api.storefront.v1.GetOrderReply
+	10, // 13: zcard.api.storefront.v1.StoreOrderService.ListMyOrders:output_type -> zcard.api.storefront.v1.ListMyOrdersReply
+	7,  // 14: zcard.api.storefront.v1.StoreOrderService.ListGuestOrders:output_type -> zcard.api.storefront.v1.ListGuestOrdersReply
+	15, // 15: zcard.api.storefront.v1.StoreOrderService.CancelMyOrder:output_type -> google.protobuf.Empty
+	11, // [11:16] is the sub-list for method output_type
+	6,  // [6:11] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_storefront_v1_order_proto_init() }
@@ -1048,7 +1154,7 @@ func file_storefront_v1_order_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storefront_v1_order_proto_rawDesc), len(file_storefront_v1_order_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

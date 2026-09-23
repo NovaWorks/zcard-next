@@ -23,7 +23,7 @@
       <div class="pd-buy">
         <h1 class="pd-name">{{ p.name }}</h1>
         <div class="pd-sub">
-          <span class="tag">{{ stockTypeLabel(p.stock_type) }}</span>
+          <span class="tag">{{ manualDelivery ? '人工服务' : stockTypeLabel(p.stock_type) }}</span>
           <span v-if="p.points_required && p.points_required > 0" class="tag pd-points-tag">{{ p.points_required }} 积分</span>
         </div>
 
@@ -45,7 +45,7 @@
 
         <!-- 服务保障 -->
         <div class="pd-assure">
-          <span>⚡ 自动发货</span>
+          <span>{{ manualDelivery ? '人工处理' : '⚡ 自动发货' }}</span>
           <span>🛡️ 正品保障</span>
           <span>💬 售后无忧</span>
         </div>
@@ -90,35 +90,8 @@
         </button>
 
         <!-- 自定义控件（下单收集） -->
-        <div v-for="c in p.controls" :key="c.id" class="pd-field">
-          <label class="pd-label">{{ c.name }} <span v-if="c.required" class="pd-req" aria-label="必填">*</span></label>
-          <input
-            v-if="c.type === 'text' || c.type === 'number'"
-            v-model="controlAnswers[String(c.id)]"
-            :type="c.type === 'number' ? 'number' : 'text'"
-            class="pd-input"
-          />
-          <input
-            v-else-if="c.type === 'password'"
-            v-model="controlAnswers[String(c.id)]"
-            type="password"
-            class="pd-input"
-          />
-          <select v-else-if="c.type === 'select'" v-model="controlAnswers[String(c.id)]" class="pd-input">
-            <option value="">请选择</option>
-            <option v-for="o in c.options" :key="o" :value="o">{{ o }}</option>
-          </select>
-          <div v-else-if="c.type === 'radio'" class="pd-options">
-            <label v-for="o in c.options" :key="o" class="pd-option">
-              <input type="radio" :name="`ctrl-${c.id}`" :value="o" v-model="controlAnswers[String(c.id)]" /> {{ o }}
-            </label>
-          </div>
-          <div v-else-if="c.type === 'checkbox'" class="pd-options">
-            <label v-for="o in c.options" :key="o" class="pd-option">
-              <input type="checkbox" :value="o" @change="toggleCheck(c.id, o)" /> {{ o }}
-            </label>
-          </div>
-        </div>
+        <OrderFields :controls="p.controls || []" v-model="controlAnswers" />
+        <p v-if="manualDelivery" class="muted">人工处理：付款后请在订单详情查看处理进度与交付结果。</p>
 
         <div class="pd-field">
           <label class="pd-label">查询密码（取货用，至少 4 位）<span v-if="trade.queryPasswordRequired" class="pd-req">*</span></label>
@@ -206,6 +179,7 @@
 </template>
 
 <script setup lang="ts">
+import OrderFields from '@/components/OrderFields.vue';
 import { useContentVideos } from "@/composables/useContentVideos";
 import { useFlashOffers } from '@/composables/flash-offers';
 import ThemeIcon from '@/components/ThemeIcon.vue';
@@ -231,6 +205,7 @@ const selectedSku = ref(0);
 const queryPassword = ref('');
 const contact = ref('');
 const couponCode = ref('');
+const manualDelivery = computed(() => { const sku=p.value?.skus?.find(s => s.id === selectedSku.value); return (sku?.fulfillment_mode && sku.fulfillment_mode !== "follow" ? sku.fulfillment_mode : p.value?.fulfillment_mode) === "manual"; });
 const controlAnswers = ref<Record<string, string>>({});
 const submitting = ref(false);
 const error = ref('');
@@ -292,13 +267,14 @@ const displayPrice = computed(() => flash.price(basePrice.value, selectedFlash.v
 
 const stockDisplay = computed(() => {
   if (!p.value) return '-';
-  const s = p.value.stock ?? 0;
+  const s = effectiveStock.value;
   if (s < -1) return p.value.stock_status === 'stale' && (p.value.stock_reference ?? -2) >= -1 ? `上次：${p.value.stock_reference === -1 ? '不限' : p.value.stock_reference}（待确认）` : '待确认';
   if (s === -1) return '不限';
   return String(s);
 });
 // 自营/对接均使用各自库存；proto3 省略零值时仍按缺货处理。
-const stockUnknown = computed(() => (p.value?.stock ?? 0) < -1);
+const effectiveStock = computed(()=>{if(manualDelivery.value)return p.value?.manual_stock ?? p.value?.stock ?? 0;const sku=p.value?.skus?.find(s=>Number(s.id)===Number(selectedSku.value));return sku && sku.stock !== -2 ? (sku.stock ?? 0) : (p.value?.stock ?? 0);});
+const stockUnknown = computed(() => effectiveStock.value < -1);
 const stockRefreshing = ref(false);
 const stockRefreshMessage = ref('');
 const stockRetrySeconds = ref(0);
@@ -337,7 +313,7 @@ async function refreshStock() {
 }
 const soldOut = computed(() => {
   if (!p.value) return false;
-  return (p.value.stock ?? 0) === 0;
+  return effectiveStock.value === 0;
 });
 
 // ── 评价（template.show_reviews 后台开关；入口锚点 + 折叠展开）──
@@ -359,7 +335,7 @@ function scrollToReviews() {
   document.getElementById('pd-reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 const stockPct = computed(() => {
-  const s = p.value?.stock;
+  const s = effectiveStock.value;
   if (s == null || s <= 0) return '4%';
   return `${Math.min(100, Math.round((s / 600) * 100))}%`;
 });
@@ -530,14 +506,13 @@ async function buy() {
   submitting.value = true;
   error.value = '';
   const { data, error: err } = await createOrder({
-    items: [{ product_id: p.value.id, sku_id: selectedSku.value || undefined, quantity: quantity.value }],
+    items: [{ product_id: p.value.id, sku_id: selectedSku.value || undefined, quantity: quantity.value, control_answers:controlAnswers.value }],
     query_password: queryPassword.value || undefined,
     contact: contact.value || undefined,
     coupon_code: couponCode.value || undefined,
     ref_code: getRefCode() || undefined,
     captcha_id: (isGuest.value && captchaCfg.value.order) ? captchaId.value : undefined,
     captcha_code: (isGuest.value && captchaCfg.value.order) ? captchaCode.value : undefined,
-    control_answers: Object.keys(controlAnswers.value).length ? controlAnswers.value : undefined
   });
   submitting.value = false;
   if (err) { error.value = err; return; }
@@ -561,7 +536,7 @@ async function exchangePoints() {
   submitting.value = true;
   error.value = '';
   const { data, error: err } = await createOrder({
-    items: [{ product_id: p.value.id, quantity: 1 }],
+    items: [{ product_id: p.value.id, sku_id:selectedSku.value || undefined, quantity: 1, control_answers:controlAnswers.value }],
     query_password: queryPassword.value,
     use_points: true
   });

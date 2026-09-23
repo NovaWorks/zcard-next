@@ -9,6 +9,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/card"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryactivity"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/lotteryprize"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
@@ -19,6 +20,7 @@ import (
 
 // SkuInput SKU 创建/更新输入（price_cents=0 表示继承商品价）。
 type SkuInput struct {
+	FulfillmentMode                   string
 	ProductID                         uint64
 	Name                              string
 	SpecValues                        map[string]string
@@ -41,6 +43,18 @@ func (r *ProductRepoImpl) ListProductSkus(ctx context.Context, productID uint64)
 
 // CreateSku 创建 SKU。
 func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (*ent.ProductSku, error) {
+	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
+		return nil, err
+	}
+	if in.FulfillmentMode == "manual" {
+		p, err := data.Client(ctx, r.data).Product.Get(ctx, in.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		if p.UpstreamSourceID > 0 {
+			return nil, fmt.Errorf("上游规格不能改为本地人工交付")
+		}
+	}
 	tc := tenancy.FromContext(ctx)
 	create := data.Client(ctx, r.data).ProductSku.Create().
 		SetSubsiteID(tc.SubsiteID).
@@ -48,6 +62,9 @@ func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (*ent.Prod
 		SetName(in.Name).
 		SetSpecValues(in.SpecValues).
 		SetStockOffset(in.StockOffset)
+	if in.FulfillmentMode != "" {
+		create.SetFulfillmentMode(in.FulfillmentMode)
+	}
 	if in.PriceCents > 0 {
 		create.SetPrice(in.PriceCents)
 	}
@@ -62,7 +79,26 @@ func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (*ent.Prod
 
 // UpdateSku applies explicitly supplied zero values (price 0 inherits product price).
 func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput) (*ent.ProductSku, error) {
+	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
+		return nil, err
+	}
+	if in.FulfillmentMode == "manual" {
+		sku, err := data.Client(ctx, r.data).ProductSku.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		p, err := data.Client(ctx, r.data).Product.Get(ctx, sku.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		if p.UpstreamSourceID > 0 {
+			return nil, fmt.Errorf("上游规格不能改为本地人工交付")
+		}
+	}
 	q := data.Client(ctx, r.data).ProductSku.UpdateOneID(id)
+	if in.FulfillmentMode != "" {
+		q.SetFulfillmentMode(in.FulfillmentMode)
+	}
 	if in.Name != "" {
 		q.SetName(in.Name)
 	}
@@ -123,10 +159,31 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 	if err != nil {
 		return nil, err
 	}
+	p, err := data.Client(ctx, r.data).Product.Get(ctx, productID)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]port.Sku, 0, len(rows))
 	for _, s := range rows {
-		out = append(out, port.Sku{
-			ID: s.ID, Name: s.Name, Price: money.Cents(s.Price), ProductID: s.ProductID,
+		mode := data.FulfillmentMode(p, s)
+		stock := int64(-2)
+		switch mode {
+		case "manual":
+			stock, err = data.ManualAvailable(ctx, data.Client(ctx, r.data), p)
+		case "auto":
+			if p.StockType != "card" {
+				stock = -1
+			} else {
+				n, e := data.Client(ctx, r.data).Card.Query().Where(card.ProductID(p.ID), card.SkuID(s.ID), card.StatusEQ(card.StatusAvailable)).Count(ctx)
+				stock = int64(n)
+				err = e
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, port.Sku{Stock: stock,
+			FulfillmentMode: s.FulfillmentMode, ID: s.ID, Name: s.Name, Price: money.Cents(s.Price), ProductID: s.ProductID,
 		})
 	}
 	return out, nil
@@ -160,3 +217,13 @@ func (r *ProductRepoImpl) ResolvePrice(ctx context.Context, productID, skuID uin
 }
 
 var _ port.PricingResolver = (*ProductRepoImpl)(nil)
+
+func validateServiceConfig(mode string, stock *int64, sku bool) error {
+	if mode != "" && mode != "auto" && mode != "manual" && !(sku && mode == "follow") {
+		return fmt.Errorf("交付方式无效")
+	}
+	if stock != nil && *stock < -1 {
+		return fmt.Errorf("人工可售总量须为-1或非负整数")
+	}
+	return nil
+}

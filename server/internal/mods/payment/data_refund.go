@@ -108,6 +108,15 @@ func (r *PaymentRepoImpl) RefundToWallet(ctx context.Context, orderID uint64, am
 			return refundInvalid("退款金额超过订单剩余可退金额")
 		}
 		full := amount > 0 && refunded+amount == o.TotalAmount
+		if !full {
+			pending, e := c.OrderItem.Query().Where(orderitem.OrderID(o.ID), orderitem.FulfillmentTypeEQ(orderitem.FulfillmentTypeManual), orderitem.FulfillmentStatusNotIn("delivered", "refunded")).Exist(ctx)
+			if e != nil {
+				return e
+			}
+			if pending {
+				return refundInvalid("人工服务未完成，暂不支持无法归属到商品项的部分退款")
+			}
+		}
 		// Existing commission reversal consumers are order-level, so such orders must
 		// be refunded in full until per-refund commission allocation is available.
 		if !full && amount > 0 {

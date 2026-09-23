@@ -40,21 +40,9 @@
 
       <div v-if="Number(order?.paid_fee_cents) > 0" class="muted">含支付手续费 {{ formatMoney(order?.paid_fee_cents || 0) }}</div>
       <!-- 自动取货：卡密直接展示（会话内记忆查询密码；失败降级提示去取货页） -->
-      <div v-if="delivery?.items.length" class="pay-cards">
-        <div class="pay-cards-head">
-          <span>您的卡密（{{ delivery.items.length }} 条）</span>
-          <button v-if="delivery.items.length > 1" class="pay-copy-all" @click="copyAll">
-            {{ copiedAll ? '已复制全部' : '复制全部' }}
-          </button>
-        </div>
-        <div v-for="(it, i) in delivery.items" :key="it.item_id" class="pay-card-row">
-          <span class="pay-card-index">#{{ i + 1 }}</span>
-          <code class="pay-card-code">{{ it.content }}</code>
-          <button class="pay-card-copy" @click="copyOne(it.content, i)">{{ copied === i ? '已复制' : '复制' }}</button>
-        </div>
-      </div>
+      <DeliveryResults v-if="delivery?.items.length" :items="delivery.items" />
       <div class="pay-fetch-hint">
-        <span>{{ ['delivered', 'completed'].includes(order?.status || '') ? '商品已发货，凭订单号 + 查询密码领取卡密' : '已付款，正在安排发货，请勿重复付款。长时间未发货请凭订单号联系客服补发。' }}</span>
+        <span>{{ ['delivered', 'completed'].includes(order?.status || '') ? '交付已完成，凭订单号与查询密码查看结果' : '已付款，正在安排交付。人工服务请在订单详情查看进度，请勿重复付款。' }}</span>
         <router-link class="btn btn-primary" :to="`/fetch?order_no=${orderNo}`">前往取货</router-link>
       </div>
 
@@ -95,7 +83,7 @@
         <PaymentBreakdown :quote="paidQuote" />
         <div class="pay-qr-hint">
           <span class="dot-loader"><span></span><span></span><span></span></span>
-          正在检测支付结果，完成后自动展示卡密
+          正在检测支付结果，付款成功后可查看交付进度与结果
         </div>
         <button class="pay-change" @click="backToSelect">← 更换支付方式</button>
       </div>
@@ -160,12 +148,13 @@
       <button class="pay-submit" :disabled="!selected.channel || submitting || !quote || quoteLoading" @click="pay">
         {{ submitting ? '创建支付中…' : quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' }}
       </button>
-      <div class="pay-assure">🔒 支付过程安全加密 · 支付成功后自动发放卡密</div>
+      <div class="pay-assure">🔒 支付过程安全加密 · 付款后按商品交付方式处理</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import DeliveryResults from '@/components/DeliveryResults.vue';
 import { submitPaymentForm as submitForm } from "@/utils/payment-form";
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';

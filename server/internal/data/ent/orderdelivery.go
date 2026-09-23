@@ -31,6 +31,10 @@ type OrderDelivery struct {
 	CardID uint64 `json:"card_id,omitempty"`
 	// 一次性取货令牌哈希
 	DeliveryTokenHash string `json:"delivery_token_hash,omitempty"`
+	// ServiceContent holds the value of the "service_content" field.
+	ServiceContent []byte `json:"service_content,omitempty"`
+	// DeliveredQuantity holds the value of the "delivered_quantity" field.
+	DeliveredQuantity int32 `json:"delivered_quantity,omitempty"`
 	// 标记/即删/直发（direct = 商品级直发内容，无卡密）
 	DeliveredMode orderdelivery.DeliveredMode `json:"delivered_mode,omitempty"`
 	// 人工发货管理员（auto 为 0）
@@ -74,9 +78,9 @@ func (*OrderDelivery) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case orderdelivery.FieldLogistics:
+		case orderdelivery.FieldServiceContent, orderdelivery.FieldLogistics:
 			values[i] = new([]byte)
-		case orderdelivery.FieldID, orderdelivery.FieldOrderID, orderdelivery.FieldItemID, orderdelivery.FieldCardID, orderdelivery.FieldDeliveredBy, orderdelivery.FieldFetchCount:
+		case orderdelivery.FieldID, orderdelivery.FieldOrderID, orderdelivery.FieldItemID, orderdelivery.FieldCardID, orderdelivery.FieldDeliveredQuantity, orderdelivery.FieldDeliveredBy, orderdelivery.FieldFetchCount:
 			values[i] = new(sql.NullInt64)
 		case orderdelivery.FieldDeliveryTokenHash, orderdelivery.FieldDeliveredMode, orderdelivery.FieldFetchedIP:
 			values[i] = new(sql.NullString)
@@ -138,6 +142,18 @@ func (_m *OrderDelivery) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field delivery_token_hash", values[i])
 			} else if value.Valid {
 				_m.DeliveryTokenHash = value.String
+			}
+		case orderdelivery.FieldServiceContent:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field service_content", values[i])
+			} else if value != nil {
+				_m.ServiceContent = *value
+			}
+		case orderdelivery.FieldDeliveredQuantity:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field delivered_quantity", values[i])
+			} else if value.Valid {
+				_m.DeliveredQuantity = int32(value.Int64)
 			}
 		case orderdelivery.FieldDeliveredMode:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -235,6 +251,12 @@ func (_m *OrderDelivery) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("delivery_token_hash=")
 	builder.WriteString(_m.DeliveryTokenHash)
+	builder.WriteString(", ")
+	builder.WriteString("service_content=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ServiceContent))
+	builder.WriteString(", ")
+	builder.WriteString("delivered_quantity=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DeliveredQuantity))
 	builder.WriteString(", ")
 	builder.WriteString("delivered_mode=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DeliveredMode))

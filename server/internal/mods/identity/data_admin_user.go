@@ -300,7 +300,7 @@ func (s *AdminUserManageService) enrich(ctx context.Context, rows []*ent.User) (
 
 	for _, r := range rows {
 		item := &adminv1.UserItem{
-			Id: r.ID, Username: r.Username, Email: r.Email,
+			Id: r.ID, Username: r.Username, Email: r.Email, ManualLevelId: r.ManualLevelID,
 			Status: string(r.Status), CreatedAt: r.CreatedAt.Unix(),
 			BalanceCents: balances[r.ID],
 			Points:       int32(points[r.ID]),

@@ -1713,6 +1713,27 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/fulfillment/{orderNo}/start:
+        post:
+            tags:
+                - AdminFulfillmentService
+            operationId: AdminFulfillmentService_StartService
+            parameters:
+                - name: orderNo
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.StartServiceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/install:
         post:
             tags:
@@ -5128,6 +5149,27 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.UserItem'
+    /api/v1/admin/users/{userId}/member-level:
+        put:
+            tags:
+                - AdminMemberLevelService
+            operationId: AdminMemberLevelService_AssignUserLevel
+            parameters:
+                - name: userId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.AssignUserLevelRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
     /api/v1/admin/virtual-reviews:
         post:
             tags:
@@ -6922,6 +6964,13 @@ components:
         zcard.api.admin.v1.AdminControl:
             type: object
             properties:
+                placeholder:
+                    type: string
+                validation:
+                    type: string
+                maxLength:
+                    type: integer
+                    format: int32
                 id:
                     type: string
                 productId:
@@ -6999,6 +7048,10 @@ components:
         zcard.api.admin.v1.AdminOrderItem:
             type: object
             properties:
+                formAnswersJson:
+                    type: string
+                assignedAdminId:
+                    type: string
                 id:
                     type: string
                 productId:
@@ -7037,6 +7090,10 @@ components:
         zcard.api.admin.v1.AdminProduct:
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
+                manualStock:
+                    type: string
                 id:
                     type: string
                 categoryId:
@@ -7209,6 +7266,15 @@ components:
             type: object
             properties:
                 id:
+                    type: string
+        zcard.api.admin.v1.AssignUserLevelRequest:
+            type: object
+            properties:
+                userId:
+                    type: string
+                levelId:
+                    type: string
+                reason:
                     type: string
         zcard.api.admin.v1.Balance:
             type: object
@@ -7835,6 +7901,13 @@ components:
                 - type
             type: object
             properties:
+                placeholder:
+                    type: string
+                validation:
+                    type: string
+                maxLength:
+                    type: integer
+                    format: int32
                 productId:
                     type: string
                 name:
@@ -7979,6 +8052,10 @@ components:
         zcard.api.admin.v1.CreateMemberLevelRequest:
             type: object
             properties:
+                acquireMode:
+                    type: string
+                displayMode:
+                    type: string
                 name:
                     type: string
                 thresholdType:
@@ -8044,6 +8121,10 @@ components:
                 - stockType
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
+                manualStock:
+                    type: string
                 name:
                     type: string
                 categoryId:
@@ -8168,6 +8249,8 @@ components:
                 - name
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
                 productId:
                     type: string
                 name:
@@ -8493,6 +8576,10 @@ components:
         zcard.api.admin.v1.DeliveryRecord:
             type: object
             properties:
+                orderItemId:
+                    type: string
+                kind:
+                    type: string
                 id:
                     type: string
                 orderNo:
@@ -9680,6 +9767,8 @@ components:
                 - orderNo
             type: object
             properties:
+                serviceContent:
+                    type: string
                 orderNo:
                     type: string
                 content:
@@ -9768,6 +9857,10 @@ components:
         zcard.api.admin.v1.MemberLevel:
             type: object
             properties:
+                acquireMode:
+                    type: string
+                displayMode:
+                    type: string
                 id:
                     type: string
                 name:
@@ -9975,6 +10068,16 @@ components:
         zcard.api.admin.v1.PendingOrder:
             type: object
             properties:
+                orderItemId:
+                    type: string
+                skuName:
+                    type: string
+                formAnswersJson:
+                    type: string
+                fulfillmentStatus:
+                    type: string
+                assignedAdminId:
+                    type: string
                 orderNo:
                     type: string
                 productId:
@@ -10841,6 +10944,8 @@ components:
         zcard.api.admin.v1.Sku:
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
                 id:
                     type: string
                 productId:
@@ -10868,6 +10973,13 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Sku'
+        zcard.api.admin.v1.StartServiceRequest:
+            type: object
+            properties:
+                orderNo:
+                    type: string
+                orderItemId:
+                    type: string
         zcard.api.admin.v1.StatusEvent:
             type: object
             properties:
@@ -11425,6 +11537,13 @@ components:
                 - id
             type: object
             properties:
+                placeholder:
+                    type: string
+                validation:
+                    type: string
+                maxLength:
+                    type: integer
+                    format: int32
                 id:
                     type: string
                 name:
@@ -11486,6 +11605,10 @@ components:
         zcard.api.admin.v1.UpdateMemberLevelRequest:
             type: object
             properties:
+                acquireMode:
+                    type: string
+                displayMode:
+                    type: string
                 id:
                     type: string
                 name:
@@ -11537,6 +11660,10 @@ components:
                 - id
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
+                manualStock:
+                    type: string
                 id:
                     type: string
                 name:
@@ -11636,6 +11763,8 @@ components:
                 - id
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
                 id:
                     type: string
                 name:
@@ -11851,6 +11980,8 @@ components:
         zcard.api.admin.v1.UserItem:
             type: object
             properties:
+                manualLevelId:
+                    type: string
                 id:
                     type: string
                 username:
@@ -12366,6 +12497,16 @@ components:
         zcard.api.storefront.v1.DeliveryItem:
             type: object
             properties:
+                deliveryId:
+                    type: string
+                kind:
+                    type: string
+                productName:
+                    type: string
+                skuName:
+                    type: string
+                deliveredAt:
+                    type: string
                 itemId:
                     type: string
                 content:
@@ -12428,6 +12569,10 @@ components:
         zcard.api.storefront.v1.GetOrderReply:
             type: object
             properties:
+                refundedCents:
+                    type: string
+                refundedFeeCents:
+                    type: string
                 orderNo:
                     type: string
                 status:
@@ -12484,6 +12629,12 @@ components:
         zcard.api.storefront.v1.LevelBrief:
             type: object
             properties:
+                displayMode:
+                    type: string
+                displayText:
+                    type: string
+                acquireMode:
+                    type: string
                 id:
                     type: string
                 name:
@@ -13008,6 +13159,11 @@ components:
                 itemCount:
                     type: integer
                     format: int32
+                productSummary:
+                    type: string
+                manualPendingCount:
+                    type: integer
+                    format: int32
             description: MyOrderItem 我的订单行（金额/状态/时间；卡密取回走 GetOrder）。
         zcard.api.storefront.v1.MyWithdrawalItem:
             type: object
@@ -13061,6 +13217,10 @@ components:
                 - quantity
             type: object
             properties:
+                controlAnswers:
+                    type: object
+                    additionalProperties:
+                        type: string
                 productId:
                     type: string
                 skuId:
@@ -13071,6 +13231,18 @@ components:
         zcard.api.storefront.v1.OrderItemReply:
             type: object
             properties:
+                id:
+                    type: string
+                skuName:
+                    type: string
+                fulfillmentType:
+                    type: string
+                fulfillmentStatus:
+                    type: string
+                formAnswersJson:
+                    type: string
+                amountCents:
+                    type: string
                 productId:
                     type: string
                 productName:
@@ -13168,6 +13340,10 @@ components:
         zcard.api.storefront.v1.Product:
             type: object
             properties:
+                fulfillmentMode:
+                    type: string
+                manualStock:
+                    type: string
                 id:
                     type: string
                 name:
@@ -13227,6 +13403,13 @@ components:
         zcard.api.storefront.v1.ProductControl:
             type: object
             properties:
+                placeholder:
+                    type: string
+                validation:
+                    type: string
+                maxLength:
+                    type: integer
+                    format: int32
                 id:
                     type: string
                 name:
@@ -13439,6 +13622,10 @@ components:
         zcard.api.storefront.v1.Sku:
             type: object
             properties:
+                stock:
+                    type: string
+                fulfillmentMode:
+                    type: string
                 id:
                     type: string
                 name:

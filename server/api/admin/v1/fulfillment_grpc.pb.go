@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminFulfillmentService_StartService_FullMethodName   = "/zcard.api.admin.v1.AdminFulfillmentService/StartService"
 	AdminFulfillmentService_ListPending_FullMethodName    = "/zcard.api.admin.v1.AdminFulfillmentService/ListPending"
 	AdminFulfillmentService_ManualDeliver_FullMethodName  = "/zcard.api.admin.v1.AdminFulfillmentService/ManualDeliver"
 	AdminFulfillmentService_ListDeliveries_FullMethodName = "/zcard.api.admin.v1.AdminFulfillmentService/ListDeliveries"
@@ -31,6 +32,7 @@ const (
 //
 // AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 type AdminFulfillmentServiceClient interface {
+	StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// ListPending 待人工发货列表（manual_pending 状态订单）。
 	ListPending(ctx context.Context, in *ListPendingRequest, opts ...grpc.CallOption) (*ListPendingReply, error)
 	// ManualDeliver 手动交付（卡密内容或物流单号）。
@@ -45,6 +47,16 @@ type adminFulfillmentServiceClient struct {
 
 func NewAdminFulfillmentServiceClient(cc grpc.ClientConnInterface) AdminFulfillmentServiceClient {
 	return &adminFulfillmentServiceClient{cc}
+}
+
+func (c *adminFulfillmentServiceClient) StartService(ctx context.Context, in *StartServiceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminFulfillmentService_StartService_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminFulfillmentServiceClient) ListPending(ctx context.Context, in *ListPendingRequest, opts ...grpc.CallOption) (*ListPendingReply, error) {
@@ -83,6 +95,7 @@ func (c *adminFulfillmentServiceClient) ListDeliveries(ctx context.Context, in *
 //
 // AdminFulfillmentService 履约管理：待发货列表 + 手动交付。
 type AdminFulfillmentServiceServer interface {
+	StartService(context.Context, *StartServiceRequest) (*emptypb.Empty, error)
 	// ListPending 待人工发货列表（manual_pending 状态订单）。
 	ListPending(context.Context, *ListPendingRequest) (*ListPendingReply, error)
 	// ManualDeliver 手动交付（卡密内容或物流单号）。
@@ -99,6 +112,9 @@ type AdminFulfillmentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminFulfillmentServiceServer struct{}
 
+func (UnimplementedAdminFulfillmentServiceServer) StartService(context.Context, *StartServiceRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method StartService not implemented")
+}
 func (UnimplementedAdminFulfillmentServiceServer) ListPending(context.Context, *ListPendingRequest) (*ListPendingReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPending not implemented")
 }
@@ -128,6 +144,24 @@ func RegisterAdminFulfillmentServiceServer(s grpc.ServiceRegistrar, srv AdminFul
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminFulfillmentService_ServiceDesc, srv)
+}
+
+func _AdminFulfillmentService_StartService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StartServiceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminFulfillmentServiceServer).StartService(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminFulfillmentService_StartService_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminFulfillmentServiceServer).StartService(ctx, req.(*StartServiceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminFulfillmentService_ListPending_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -191,6 +225,10 @@ var AdminFulfillmentService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminFulfillmentService",
 	HandlerType: (*AdminFulfillmentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "StartService",
+			Handler:    _AdminFulfillmentService_StartService_Handler,
+		},
 		{
 			MethodName: "ListPending",
 			Handler:    _AdminFulfillmentService_ListPending_Handler,

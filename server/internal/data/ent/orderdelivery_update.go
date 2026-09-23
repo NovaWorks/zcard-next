@@ -105,6 +105,39 @@ func (_u *OrderDeliveryUpdate) SetNillableDeliveryTokenHash(v *string) *OrderDel
 	return _u
 }
 
+// SetServiceContent sets the "service_content" field.
+func (_u *OrderDeliveryUpdate) SetServiceContent(v []byte) *OrderDeliveryUpdate {
+	_u.mutation.SetServiceContent(v)
+	return _u
+}
+
+// ClearServiceContent clears the value of the "service_content" field.
+func (_u *OrderDeliveryUpdate) ClearServiceContent() *OrderDeliveryUpdate {
+	_u.mutation.ClearServiceContent()
+	return _u
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (_u *OrderDeliveryUpdate) SetDeliveredQuantity(v int32) *OrderDeliveryUpdate {
+	_u.mutation.ResetDeliveredQuantity()
+	_u.mutation.SetDeliveredQuantity(v)
+	return _u
+}
+
+// SetNillableDeliveredQuantity sets the "delivered_quantity" field if the given value is not nil.
+func (_u *OrderDeliveryUpdate) SetNillableDeliveredQuantity(v *int32) *OrderDeliveryUpdate {
+	if v != nil {
+		_u.SetDeliveredQuantity(*v)
+	}
+	return _u
+}
+
+// AddDeliveredQuantity adds value to the "delivered_quantity" field.
+func (_u *OrderDeliveryUpdate) AddDeliveredQuantity(v int32) *OrderDeliveryUpdate {
+	_u.mutation.AddDeliveredQuantity(v)
+	return _u
+}
+
 // SetDeliveredMode sets the "delivered_mode" field.
 func (_u *OrderDeliveryUpdate) SetDeliveredMode(v orderdelivery.DeliveredMode) *OrderDeliveryUpdate {
 	_u.mutation.SetDeliveredMode(v)
@@ -318,6 +351,18 @@ func (_u *OrderDeliveryUpdate) sqlSave(ctx context.Context) (_node int, err erro
 	if value, ok := _u.mutation.DeliveryTokenHash(); ok {
 		_spec.SetField(orderdelivery.FieldDeliveryTokenHash, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.ServiceContent(); ok {
+		_spec.SetField(orderdelivery.FieldServiceContent, field.TypeBytes, value)
+	}
+	if _u.mutation.ServiceContentCleared() {
+		_spec.ClearField(orderdelivery.FieldServiceContent, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.DeliveredQuantity(); ok {
+		_spec.SetField(orderdelivery.FieldDeliveredQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedDeliveredQuantity(); ok {
+		_spec.AddField(orderdelivery.FieldDeliveredQuantity, field.TypeInt32, value)
+	}
 	if value, ok := _u.mutation.DeliveredMode(); ok {
 		_spec.SetField(orderdelivery.FieldDeliveredMode, field.TypeEnum, value)
 	}
@@ -473,6 +518,39 @@ func (_u *OrderDeliveryUpdateOne) SetNillableDeliveryTokenHash(v *string) *Order
 	if v != nil {
 		_u.SetDeliveryTokenHash(*v)
 	}
+	return _u
+}
+
+// SetServiceContent sets the "service_content" field.
+func (_u *OrderDeliveryUpdateOne) SetServiceContent(v []byte) *OrderDeliveryUpdateOne {
+	_u.mutation.SetServiceContent(v)
+	return _u
+}
+
+// ClearServiceContent clears the value of the "service_content" field.
+func (_u *OrderDeliveryUpdateOne) ClearServiceContent() *OrderDeliveryUpdateOne {
+	_u.mutation.ClearServiceContent()
+	return _u
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (_u *OrderDeliveryUpdateOne) SetDeliveredQuantity(v int32) *OrderDeliveryUpdateOne {
+	_u.mutation.ResetDeliveredQuantity()
+	_u.mutation.SetDeliveredQuantity(v)
+	return _u
+}
+
+// SetNillableDeliveredQuantity sets the "delivered_quantity" field if the given value is not nil.
+func (_u *OrderDeliveryUpdateOne) SetNillableDeliveredQuantity(v *int32) *OrderDeliveryUpdateOne {
+	if v != nil {
+		_u.SetDeliveredQuantity(*v)
+	}
+	return _u
+}
+
+// AddDeliveredQuantity adds value to the "delivered_quantity" field.
+func (_u *OrderDeliveryUpdateOne) AddDeliveredQuantity(v int32) *OrderDeliveryUpdateOne {
+	_u.mutation.AddDeliveredQuantity(v)
 	return _u
 }
 
@@ -718,6 +796,18 @@ func (_u *OrderDeliveryUpdateOne) sqlSave(ctx context.Context) (_node *OrderDeli
 	}
 	if value, ok := _u.mutation.DeliveryTokenHash(); ok {
 		_spec.SetField(orderdelivery.FieldDeliveryTokenHash, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.ServiceContent(); ok {
+		_spec.SetField(orderdelivery.FieldServiceContent, field.TypeBytes, value)
+	}
+	if _u.mutation.ServiceContentCleared() {
+		_spec.ClearField(orderdelivery.FieldServiceContent, field.TypeBytes)
+	}
+	if value, ok := _u.mutation.DeliveredQuantity(); ok {
+		_spec.SetField(orderdelivery.FieldDeliveredQuantity, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedDeliveredQuantity(); ok {
+		_spec.AddField(orderdelivery.FieldDeliveredQuantity, field.TypeInt32, value)
 	}
 	if value, ok := _u.mutation.DeliveredMode(); ok {
 		_spec.SetField(orderdelivery.FieldDeliveredMode, field.TypeEnum, value)

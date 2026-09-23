@@ -458,6 +458,8 @@ func (x *AdminOrder) GetExpiryReason() string {
 
 type AdminOrderItem struct {
 	state               protoimpl.MessageState `protogen:"open.v1"`
+	FormAnswersJson     string                 `protobuf:"bytes,18,opt,name=form_answers_json,json=formAnswersJson,proto3" json:"form_answers_json,omitempty"`
+	AssignedAdminId     uint64                 `protobuf:"varint,19,opt,name=assigned_admin_id,json=assignedAdminId,proto3" json:"assigned_admin_id,omitempty"`
 	Id                  uint64                 `protobuf:"varint,17,opt,name=id,proto3" json:"id,omitempty"` // 订单商品项 ID，人工补发使用
 	ProductId           uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	SkuId               uint64                 `protobuf:"varint,2,opt,name=sku_id,json=skuId,proto3" json:"sku_id,omitempty"`
@@ -507,6 +509,20 @@ func (x *AdminOrderItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use AdminOrderItem.ProtoReflect.Descriptor instead.
 func (*AdminOrderItem) Descriptor() ([]byte, []int) {
 	return file_admin_v1_order_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdminOrderItem) GetFormAnswersJson() string {
+	if x != nil {
+		return x.FormAnswersJson
+	}
+	return ""
+}
+
+func (x *AdminOrderItem) GetAssignedAdminId() uint64 {
+	if x != nil {
+		return x.AssignedAdminId
+	}
+	return 0
 }
 
 func (x *AdminOrderItem) GetId() uint64 {
@@ -940,8 +956,10 @@ const file_admin_v1_order_proto_rawDesc = "" +
 	"\x0fexpiry_retry_at\x18\x10 \x01(\x03R\rexpiryRetryAt\x12'\n" +
 	"\x0fexpiry_attempts\x18\x11 \x01(\x05R\x0eexpiryAttempts\x12#\n" +
 	"\rexpiry_review\x18\x12 \x01(\bR\fexpiryReview\x12#\n" +
-	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\"\xe0\x04\n" +
-	"\x0eAdminOrderItem\x12\x0e\n" +
+	"\rexpiry_reason\x18\x13 \x01(\tR\fexpiryReason\"\xb8\x05\n" +
+	"\x0eAdminOrderItem\x12*\n" +
+	"\x11form_answers_json\x18\x12 \x01(\tR\x0fformAnswersJson\x12*\n" +
+	"\x11assigned_admin_id\x18\x13 \x01(\x04R\x0fassignedAdminId\x12\x0e\n" +
 	"\x02id\x18\x11 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x15\n" +

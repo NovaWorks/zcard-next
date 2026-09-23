@@ -882,6 +882,8 @@ var (
 		{Name: "threshold_type", Type: field.TypeEnum, Enums: []string{"recharge", "consume", "both_and", "both_or"}, Default: "recharge"},
 		{Name: "threshold_recharge", Type: field.TypeInt64, Default: 0},
 		{Name: "threshold_consume", Type: field.TypeInt64, Default: 0},
+		{Name: "acquire_mode", Type: field.TypeString, Default: "auto"},
+		{Name: "display_mode", Type: field.TypeString, Default: "public"},
 		{Name: "discount", Type: field.TypeInt32, Default: 0},
 		{Name: "points_rule", Type: field.TypeJSON, Nullable: true},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
@@ -1159,6 +1161,8 @@ var (
 		{Name: "item_id", Type: field.TypeUint64},
 		{Name: "card_id", Type: field.TypeUint64},
 		{Name: "delivery_token_hash", Type: field.TypeString, Size: 64},
+		{Name: "service_content", Type: field.TypeBytes, Nullable: true},
+		{Name: "delivered_quantity", Type: field.TypeInt32, Default: 0},
 		{Name: "delivered_mode", Type: field.TypeEnum, Enums: []string{"status", "delete", "direct"}},
 		{Name: "delivered_by", Type: field.TypeUint64, Default: 0},
 		{Name: "logistics", Type: field.TypeJSON, Nullable: true},
@@ -1175,7 +1179,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_deliveries_orders_deliveries",
-				Columns:    []*schema.Column{OrderDeliveriesColumns[12]},
+				Columns:    []*schema.Column{OrderDeliveriesColumns[14]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1184,7 +1188,7 @@ var (
 			{
 				Name:    "orderdelivery_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderDeliveriesColumns[12]},
+				Columns: []*schema.Column{OrderDeliveriesColumns[14]},
 			},
 			{
 				Name:    "orderdelivery_card_id",
@@ -1201,6 +1205,9 @@ var (
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "sku_id", Type: field.TypeUint64, Nullable: true},
+		{Name: "product_name", Type: field.TypeString, Default: ""},
+		{Name: "form_answers", Type: field.TypeJSON, Nullable: true},
+		{Name: "assigned_admin_id", Type: field.TypeUint64, Default: 0},
 		{Name: "sku_name", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "unit_price", Type: field.TypeInt64},
 		{Name: "quantity", Type: field.TypeInt32},
@@ -1220,7 +1227,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_items_orders_items",
-				Columns:    []*schema.Column{OrderItemsColumns[15]},
+				Columns:    []*schema.Column{OrderItemsColumns[18]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1229,7 +1236,7 @@ var (
 			{
 				Name:    "orderitem_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[15]},
+				Columns: []*schema.Column{OrderItemsColumns[18]},
 			},
 			{
 				Name:    "orderitem_product_id",
@@ -1632,6 +1639,8 @@ var (
 		{Name: "stock_type", Type: field.TypeEnum, Enums: []string{"card", "url", "code"}, Default: "card"},
 		{Name: "direct_content", Type: field.TypeBytes, Nullable: true},
 		{Name: "stock_visible", Type: field.TypeBool, Default: true},
+		{Name: "fulfillment_mode", Type: field.TypeString, Default: "auto"},
+		{Name: "manual_stock", Type: field.TypeInt64, Default: -1},
 		{Name: "delivery_mode", Type: field.TypeEnum, Enums: []string{"status", "delete"}, Default: "status"},
 		{Name: "control_config", Type: field.TypeJSON, Nullable: true},
 		{Name: "dedup", Type: field.TypeBool, Default: true},
@@ -1661,17 +1670,17 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[25]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[27]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[26]},
+				Columns: []*schema.Column{ProductsColumns[28]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[26], ProductsColumns[27]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[28], ProductsColumns[29]},
 			},
 		},
 	}
@@ -1704,6 +1713,9 @@ var (
 		{Name: "product_id", Type: field.TypeUint64},
 		{Name: "name", Type: field.TypeString, Size: 60},
 		{Name: "type", Type: field.TypeEnum, Enums: []string{"text", "password", "select", "number", "checkbox", "radio"}},
+		{Name: "placeholder", Type: field.TypeString, Default: ""},
+		{Name: "validation", Type: field.TypeString, Default: "text"},
+		{Name: "max_length", Type: field.TypeInt32, Default: 500},
 		{Name: "required", Type: field.TypeBool, Default: false},
 		{Name: "options", Type: field.TypeJSON, Nullable: true},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
@@ -1731,6 +1743,7 @@ var (
 		{Name: "spec_values", Type: field.TypeJSON},
 		{Name: "price", Type: field.TypeInt64, Nullable: true},
 		{Name: "cost", Type: field.TypeInt64, Nullable: true},
+		{Name: "fulfillment_mode", Type: field.TypeString, Default: "follow"},
 		{Name: "stock_offset", Type: field.TypeInt32, Default: 0},
 		{Name: "upstream_sku_id", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "product_id", Type: field.TypeUint64},
@@ -1743,7 +1756,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "product_skus_products_skus",
-				Columns:    []*schema.Column{ProductSkusColumns[10]},
+				Columns:    []*schema.Column{ProductSkusColumns[11]},
 				RefColumns: []*schema.Column{ProductsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -1752,12 +1765,12 @@ var (
 			{
 				Name:    "productsku_product_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductSkusColumns[10]},
+				Columns: []*schema.Column{ProductSkusColumns[11]},
 			},
 			{
 				Name:    "productsku_product_id_name",
 				Unique:  true,
-				Columns: []*schema.Column{ProductSkusColumns[10], ProductSkusColumns[4]},
+				Columns: []*schema.Column{ProductSkusColumns[11], ProductSkusColumns[4]},
 			},
 		},
 	}
@@ -2565,6 +2578,7 @@ var (
 		{Name: "id", Type: field.TypeUint64, Increment: true},
 		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "manual_level_id", Type: field.TypeUint64, Default: 0},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 60},
 		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 255},
 		{Name: "phone", Type: field.TypeString, Unique: true, Nullable: true, Size: 20},
@@ -2585,7 +2599,7 @@ var (
 			{
 				Name:    "user_invite_l1",
 				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[9]},
+				Columns: []*schema.Column{UsersColumns[10]},
 			},
 		},
 	}

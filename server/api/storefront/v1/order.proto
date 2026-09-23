@@ -57,6 +57,7 @@ message CreateOrderRequest {
 }
 
 message OrderItemInput {
+  map<string, string> control_answers = 4;
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   uint64 sku_id = 2;
   int32 quantity = 3 [(google.api.field_behavior) = REQUIRED];
@@ -74,6 +75,8 @@ message GetOrderRequest {
 }
 
 message GetOrderReply {
+  int64 refunded_cents = 9;
+  int64 refunded_fee_cents = 10;
   string order_no = 1;
   string status = 2;
   int64 total_cents = 3;
@@ -85,6 +88,12 @@ message GetOrderReply {
 }
 
 message OrderItemReply {
+  uint64 id = 5;
+  string sku_name = 6;
+  string fulfillment_type = 7;
+  string fulfillment_status = 8;
+  string form_answers_json = 9;
+  int64 amount_cents = 10;
   uint64 product_id = 1;
   string product_name = 2;
   int32 quantity = 3;
@@ -131,6 +140,8 @@ message MyOrderItem {
   int64 created_at = 4;
   int64 expired_at = 5;
   int32 item_count = 6;
+  string product_summary = 7;
+  int32 manual_pending_count = 8;
 }
 
 message CancelMyOrderRequest {

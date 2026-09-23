@@ -18,7 +18,7 @@ const saving = ref(false);
 // discount_percent：UI 层百分比（100=无折扣，95=9.5 折）；提交转万分比（×100）。
 // 积分规则 UI 层为「每消费 X 元得 Y 积分」，提交序列化为 {"spend_cents","points"}。
 const form = ref({
-  name: "",
+  name: "", acquire_mode:"auto",display_mode:"public",
   threshold_type: "consume",
   threshold_recharge: 0,
   threshold_consume: 0,
@@ -94,7 +94,7 @@ const filteredLevels = computed(() =>
   enabledFilter.value === "" ? levels.value : levels.value.filter((l) => (enabledFilter.value === "on" ? l.enabled : !l.enabled)),
 );
 
-const canWrite = () => checkAuth("memberlevel:write");
+const canWrite = () => checkAuth("memberlevel:write") && checkAuth("memberlevel:view_discount");
 
 const columns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 50 },
@@ -105,6 +105,7 @@ const columns: DataTableColumns<any> = [
     width: 200,
     render: (row) => {
       const t: Record<string, string> = { recharge: "累计充值", consume: "累计消费", both_and: "充值且消费", both_or: "充值或消费" };
+      if(row.acquire_mode === "manual") return "后台指定";
       const parts: string[] = [t[row.threshold_type] || row.threshold_type];
       if (row.threshold_recharge) parts.push(formatMoney(row.threshold_recharge));
       if (row.threshold_consume) parts.push(formatMoney(row.threshold_consume));
@@ -116,12 +117,14 @@ const columns: DataTableColumns<any> = [
     key: "discount",
     width: 110,
     render: (row) => {
+      if(!checkAuth("memberlevel:view_discount")) return "无查看权限";
       if (row.discount >= 10000) return "无折扣";
       const pct = row.discount / 100;
       return `${pct}%（${(pct / 10).toFixed(1)}折）`;
     },
   },
   { title: "积分规则", key: "points_rule_json", width: 160, ellipsis: true, render: (row) => pointsRuleText(row.points_rule_json) },
+  {title:"对外展示",key:"display_mode",width:110,render:(row)=>({public:"公开",contact:"联系客服",hidden:"隐藏"}[String(row.display_mode)] || "公开")},
   { title: "排序", key: "sort", width: 60 },
   {
     title: "状态",
@@ -160,14 +163,14 @@ async function load() {
 
 function openCreate() {
   editing.value = null;
-  form.value = { name: "", threshold_type: "consume", threshold_recharge: 0, threshold_consume: 0, discount_percent: 100, sort: 0, enabled: true, points_enabled: false, points_spend_yuan: 10, points_earn: 10 };
+  form.value = { name: "",acquire_mode:"auto",display_mode:"public", threshold_type: "consume", threshold_recharge: 0, threshold_consume: 0, discount_percent: 100, sort: 0, enabled: true, points_enabled: false, points_spend_yuan: 10, points_earn: 10 };
   showForm.value = true;
 }
 
 function openEdit(row: any) {
   editing.value = row;
   form.value = {
-    name: row.name,
+    name: row.name,acquire_mode:row.acquire_mode || "auto",display_mode:row.display_mode || "public",
     threshold_type: row.threshold_type,
     threshold_recharge: row.threshold_recharge || 0,
     threshold_consume: row.threshold_consume || 0,
@@ -184,7 +187,7 @@ async function handleSave() {
   saving.value = true;
   try {
     const payload = {
-      name: form.value.name,
+      name: form.value.name,acquire_mode:form.value.acquire_mode,display_mode:form.value.display_mode,
       discount: discountToBp(form.value.discount_percent),
       sort: form.value.sort,
       enabled: form.value.enabled,
@@ -209,7 +212,7 @@ async function handleSave() {
 }
 
 async function toggleEnabled(row: any) {
-  const { error } = await updateMemberLevel(row.id, { enabled: !row.enabled });
+  const { error } = await updateMemberLevel(row.id, { name:row.name,discount:row.discount,sort:row.sort,enabled:!row.enabled,points_rule_json:row.points_rule_json,acquire_mode:row.acquire_mode,display_mode:row.display_mode });
   if (!error) {
     window.$message?.success(!row.enabled ? "已启用" : "已停用");
     load();
@@ -264,6 +267,8 @@ onMounted(load);
           <NInputNumber v-model:value="form.discount_percent" :min="0.1" :max="100" :precision="1" :step="1" class="w-full" />
           <span class="w-full text-12px text-gray-400">支付比例：100 = 无折扣，95 = 打 9.5 折，10 = 打 1 折</span>
         </NFormItem>
+        <NFormItem label="获得方式"><NSelect v-model:value="form.acquire_mode" :options="[{label:'自动达标',value:'auto'},{label:'后台指定',value:'manual'}]" /></NFormItem>
+        <NFormItem label="对外展示"><NSelect v-model:value="form.display_mode" :options="[{label:'公开折扣与门槛',value:'public'},{label:'只显示联系客服',value:'contact'},{label:'完全隐藏',value:'hidden'}]" /></NFormItem>
         <NFormItem label="积分规则">
           <div class="w-full">
             <div class="flex items-center gap-8px">

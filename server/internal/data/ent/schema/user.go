@@ -18,6 +18,7 @@ func (User) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}} }
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
+		field.Uint64("manual_level_id").Default(0),
 		field.String("username").MaxLen(60).Unique(),
 		field.String("email").MaxLen(255).Unique().Optional().Comment("第三方登录用户可无邮箱"),
 		// 手机号（登录标识之一；手机注册通道必填——security.register_method=phone）

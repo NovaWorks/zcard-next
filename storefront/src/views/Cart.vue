@@ -88,28 +88,10 @@
 
         <!-- 必填控件收集 -->
         <div v-if="controlsNeeded.length && showControls" class="cart-controls">
-          <h3 class="cart-controls-title">补充信息（必填）</h3>
-          <div v-for="g in controlsNeeded" :key="g.productId" class="cart-controls-group">
+          <h3 class="cart-controls-title">核对下单资料</h3>
+          <div v-for="g in controlsNeeded" :key="g.key" class="cart-controls-group">
             <div class="cart-controls-name">{{ g.name }}</div>
-            <div v-for="c in g.controls" :key="c.id" class="field">
-              <label>{{ c.name }} *</label>
-              <input v-if="c.type === 'text' || c.type === 'number' || c.type === 'password'" class="input"
-                     :type="c.type" v-model="controlAnswers[String(c.id)]" />
-              <select v-else-if="c.type === 'select'" class="input" v-model="controlAnswers[String(c.id)]">
-                <option value="">请选择</option>
-                <option v-for="o in c.options" :key="o" :value="o">{{ o }}</option>
-              </select>
-              <div v-else-if="c.type === 'radio'" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <label v-for="o in c.options" :key="o" style="display: flex; gap: 4px; align-items: center;">
-                  <input type="radio" :name="`ctrl-${c.id}`" :value="o" v-model="controlAnswers[String(c.id)]" /> {{ o }}
-                </label>
-              </div>
-              <div v-else-if="c.type === 'checkbox'" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                <label v-for="o in c.options" :key="o" style="display: flex; gap: 4px; align-items: center;">
-                  <input type="checkbox" :value="o" @change="toggleCheck(c.id, o)" /> {{ o }}
-                </label>
-              </div>
-            </div>
+            <OrderFields :controls="g.controls" v-model="controlAnswers[g.key]" :prefix="g.key" />
           </div>
           <button class="btn btn-primary" style="margin-top: 8px;" :disabled="!controlsComplete || checkingOut" @click="doCheckout">
             {{ checkingOut ? '提交中…' : '确认并下单' }}
@@ -121,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import OrderFields from '@/components/OrderFields.vue';
 import { useFlashOffers } from '@/composables/flash-offers';
 const flash=useFlashOffers();
 import ThemeIcon from '@/components/ThemeIcon.vue';
@@ -154,8 +137,8 @@ const captchaCode = ref('');
 const captchaRef = ref<InstanceType<typeof CaptchaInput> | null>(null);
 const checkingOut = ref(false);
 const showControls = ref(false);
-const controlAnswers = ref<Record<string, string>>({});
-const controlsNeeded = ref<{ productId: number; name: string; controls: ProductControl[] }[]>([]);
+const controlAnswers = ref<Record<string, Record<string,string>>>({});
+const controlsNeeded = ref<{ productId: number; key: string; name: string; controls: ProductControl[] }[]>([]);
 
 // 自营/对接都按服务端各自库存判断；游客快照仍由后端下单复核。
 const validItems = computed(() => items.value.filter((i) => i.valid && !(flash.active(i.flash_sale) && (i.flash_sale?.remaining || 0) <= 0) && (i.stock ?? 0) !== 0 && i.stock >= -1));
@@ -163,18 +146,8 @@ const allSelected = computed(() => validItems.value.length > 0 && selected.value
 const selectedItems = computed(() => validItems.value.filter((i) => selected.value.includes(i.id)));
 const rawTotal = computed(() => selectedItems.value.reduce((s, i) => s + flash.price(i.price_cents, i.flash_sale) * i.quantity, 0));
 const controlsComplete = computed(() =>
-  controlsNeeded.value.every((g) => g.controls.every((c) => (controlAnswers.value[String(c.id)] || '').trim() !== ''))
+  controlsNeeded.value.every((g) => g.controls.every((c) => !c.required || (controlAnswers.value[g.key]?.[String(c.id)] || '').trim() !== ''))
 );
-
-// checkbox 多选：逗号拼接存储（与详情页一致，后端按逗号解析）
-function toggleCheck(id: number, val: string) {
-  const key = String(id);
-  const cur = (controlAnswers.value[key] || '').split(',').filter(Boolean);
-  const idx = cur.indexOf(val);
-  if (idx >= 0) cur.splice(idx, 1);
-  else cur.push(val);
-  controlAnswers.value[key] = cur.join(',');
-}
 
 onMounted(async () => {
   await load();
@@ -240,8 +213,10 @@ async function checkout() {
   const needed: typeof controlsNeeded.value = [];
   for (const it of selectedItems.value) {
     const { data: p } = await getProduct(it.product_id);
-    const req = (p?.controls || []).filter((c) => c.required);
-    if (req.length) needed.push({ productId: it.product_id, name: p?.name || `商品 ${it.product_id}`, controls: req });
+    if (!p) { alert('读取商品填写信息失败，请重试'); return; }
+ const req = p.controls || [];
+ const key = `${it.product_id}:${it.sku_id || 0}`; controlAnswers.value[key] = {};
+    if (req.length) needed.push({ productId: it.product_id, key, name: `${p.name} ${p.skus?.find(s => Number(s.id) === Number(it.sku_id))?.name || ""}`, controls: req });
   }
   if (needed.length) {
     controlsNeeded.value = needed;
@@ -256,14 +231,13 @@ async function doCheckout() {
   checkingOut.value = true;
   if (!(await refreshCartSetting(true))) { checkingOut.value = false; return; }
   const { data, error } = await createOrder({
-    items: selectedItems.value.map((i) => ({ product_id: i.product_id, sku_id: i.sku_id || undefined, quantity: i.quantity })),
+    items: selectedItems.value.map((i) => ({ product_id: i.product_id, sku_id: i.sku_id || undefined, quantity: i.quantity, control_answers:controlAnswers.value[`${i.product_id}:${i.sku_id || 0}`] })),
     coupon_code: couponCode.value || undefined,
     query_password: queryPwd.value,
     ref_code: getRefCode() || undefined,
     captcha_id: (isGuestCart.value && captchaCfg.value.order) ? captchaId.value : undefined,
     captcha_code: (isGuestCart.value && captchaCfg.value.order) ? captchaCode.value : undefined,
     contact: contact.value.trim() || undefined,
-    control_answers: Object.keys(controlAnswers.value).length ? controlAnswers.value : undefined
   });
   checkingOut.value = false;
   if (error || !data) {

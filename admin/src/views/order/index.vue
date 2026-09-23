@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import OrderAnswers from '@/components/common/order-answers.vue';
 import { orderStatusText as statusText, orderStatusType as statusType } from "@/utils/order-status";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
@@ -74,6 +75,7 @@ const detail = ref<{
   guest_contact?: string;
   client_ip?: string;
   items?: {
+ id?:number;name?:string;sku_name?:string;form_answers_json?:string;assigned_admin_id?:number;
     is_self?: boolean;
     upstream_source_name?: string;
     upstream_driver?: string;
@@ -112,7 +114,7 @@ function fulfillmentTypeText(t: string) {
 
 function fulfillmentStatusText(s: string) {
   const map: Record<string, string> = {
-    pending: "待履约",
+    pending: "待处理",
     delivering: "履约中",
     manual: "待人工补发",
     delivered: "已履约",
@@ -187,7 +189,7 @@ function eventText(evt: string) {
     completed: "订单完成",
     fetch_pending: "取货查询（待发货）",
     manual_delivered: "人工补发",
-    fulfillment_manual: "转人工处理",
+    fulfillment_manual: "转人工处理", service_started:"开始处理服务",
     fulfilling: "等待发货",
     partially_delivered: "部分发货",
     canceled: "订单取消",
@@ -628,7 +630,8 @@ onMounted(loadOrders);
         <NDivider>商品明细</NDivider>
         <NDataTable :data="detail.items || []" :columns="itemColumns" size="small"  :max-height="540" />
         <!-- 卡密交付（完整明文；含取货次数/IP——客服核对场景） -->
-        <NDivider>卡密交付（{{ deliveries.length }} 条）</NDivider>
+        <div v-for="it in detail.items || []" :key="it.id" class="my-12px rounded-6px border border-gray-200 p-12px"><b>{{it.name}} {{it.sku_name}} · 下单资料</b><OrderAnswers :value="it.form_answers_json" /><p v-if="it.assigned_admin_id" class="text-12px opacity-60">处理人 ID：{{it.assigned_admin_id}}</p></div>
+        <NDivider>交付结果（{{ deliveries.length }} 条）</NDivider>
         <div v-if="deliveries.length" class="flex flex-col gap-8px">
           <div
             v-for="(d, i) in deliveries"
@@ -636,15 +639,15 @@ onMounted(loadOrders);
             class="flex items-center gap-10px rounded-6px border border-gray-200 px-12px py-8px dark:border-gray-700"
           >
             <span class="w-24px shrink-0 text-12px text-gray-400">#{{ i + 1 }}</span>
-            <code class="min-w-0 flex-1 break-all font-mono text-13px">{{ d.content }}</code>
-            <NTag size="small" :bordered="false" class="shrink-0">{{ deliverModeText(d.delivered_mode) }}</NTag>
+            <div class="min-w-0 flex-1"><span class="text-12px opacity-60">商品项 #{{d.order_item_id}}</span><pre class="whitespace-pre-wrap break-all text-13px">{{ d.content }}</pre></div>
+            <NTag size="small" :bordered="false" class="shrink-0">{{ d.kind === 'service' ? '服务完成' : deliverModeText(d.delivered_mode) }}</NTag>
             <span class="shrink-0 text-11px text-gray-400">取货 {{ d.fetch_count || 0 }} 次</span>
             <NButton size="tiny" tertiary type="primary" class="shrink-0" @click="copyCard(d.content, i)">
               {{ copiedCard === i ? "已复制" : "复制" }}
             </NButton>
           </div>
         </div>
-        <div v-else class="text-12px opacity-50" style="padding: 4px 0;">暂无卡密交付记录</div>
+        <div v-else class="text-12px opacity-50" style="padding: 4px 0;">暂无交付记录</div>
         <NDivider>金额明细（{{ (detail.amount_lines || []).length }} 行）</NDivider>
         <NDataTable :data="detail.amount_lines || []" :columns="amountColumns" size="small"  :max-height="540" />
         <NDivider>状态事件（{{ (detail.status_events || []).length }} 条）</NDivider>

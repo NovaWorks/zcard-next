@@ -82,6 +82,48 @@ func (_c *ProductControlCreate) SetType(v productcontrol.Type) *ProductControlCr
 	return _c
 }
 
+// SetPlaceholder sets the "placeholder" field.
+func (_c *ProductControlCreate) SetPlaceholder(v string) *ProductControlCreate {
+	_c.mutation.SetPlaceholder(v)
+	return _c
+}
+
+// SetNillablePlaceholder sets the "placeholder" field if the given value is not nil.
+func (_c *ProductControlCreate) SetNillablePlaceholder(v *string) *ProductControlCreate {
+	if v != nil {
+		_c.SetPlaceholder(*v)
+	}
+	return _c
+}
+
+// SetValidation sets the "validation" field.
+func (_c *ProductControlCreate) SetValidation(v string) *ProductControlCreate {
+	_c.mutation.SetValidation(v)
+	return _c
+}
+
+// SetNillableValidation sets the "validation" field if the given value is not nil.
+func (_c *ProductControlCreate) SetNillableValidation(v *string) *ProductControlCreate {
+	if v != nil {
+		_c.SetValidation(*v)
+	}
+	return _c
+}
+
+// SetMaxLength sets the "max_length" field.
+func (_c *ProductControlCreate) SetMaxLength(v int32) *ProductControlCreate {
+	_c.mutation.SetMaxLength(v)
+	return _c
+}
+
+// SetNillableMaxLength sets the "max_length" field if the given value is not nil.
+func (_c *ProductControlCreate) SetNillableMaxLength(v *int32) *ProductControlCreate {
+	if v != nil {
+		_c.SetMaxLength(*v)
+	}
+	return _c
+}
+
 // SetRequired sets the "required" field.
 func (_c *ProductControlCreate) SetRequired(v bool) *ProductControlCreate {
 	_c.mutation.SetRequired(v)
@@ -169,6 +211,18 @@ func (_c *ProductControlCreate) defaults() {
 		v := productcontrol.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.Placeholder(); !ok {
+		v := productcontrol.DefaultPlaceholder
+		_c.mutation.SetPlaceholder(v)
+	}
+	if _, ok := _c.mutation.Validation(); !ok {
+		v := productcontrol.DefaultValidation
+		_c.mutation.SetValidation(v)
+	}
+	if _, ok := _c.mutation.MaxLength(); !ok {
+		v := productcontrol.DefaultMaxLength
+		_c.mutation.SetMaxLength(v)
+	}
 	if _, ok := _c.mutation.Required(); !ok {
 		v := productcontrol.DefaultRequired
 		_c.mutation.SetRequired(v)
@@ -208,6 +262,15 @@ func (_c *ProductControlCreate) check() error {
 		if err := productcontrol.TypeValidator(v); err != nil {
 			return &ValidationError{Name: "type", err: fmt.Errorf(`ent: validator failed for field "ProductControl.type": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.Placeholder(); !ok {
+		return &ValidationError{Name: "placeholder", err: errors.New(`ent: missing required field "ProductControl.placeholder"`)}
+	}
+	if _, ok := _c.mutation.Validation(); !ok {
+		return &ValidationError{Name: "validation", err: errors.New(`ent: missing required field "ProductControl.validation"`)}
+	}
+	if _, ok := _c.mutation.MaxLength(); !ok {
+		return &ValidationError{Name: "max_length", err: errors.New(`ent: missing required field "ProductControl.max_length"`)}
 	}
 	if _, ok := _c.mutation.Required(); !ok {
 		return &ValidationError{Name: "required", err: errors.New(`ent: missing required field "ProductControl.required"`)}
@@ -271,6 +334,18 @@ func (_c *ProductControlCreate) createSpec() (*ProductControl, *sqlgraph.CreateS
 	if value, ok := _c.mutation.GetType(); ok {
 		_spec.SetField(productcontrol.FieldType, field.TypeEnum, value)
 		_node.Type = value
+	}
+	if value, ok := _c.mutation.Placeholder(); ok {
+		_spec.SetField(productcontrol.FieldPlaceholder, field.TypeString, value)
+		_node.Placeholder = value
+	}
+	if value, ok := _c.mutation.Validation(); ok {
+		_spec.SetField(productcontrol.FieldValidation, field.TypeString, value)
+		_node.Validation = value
+	}
+	if value, ok := _c.mutation.MaxLength(); ok {
+		_spec.SetField(productcontrol.FieldMaxLength, field.TypeInt32, value)
+		_node.MaxLength = value
 	}
 	if value, ok := _c.mutation.Required(); ok {
 		_spec.SetField(productcontrol.FieldRequired, field.TypeBool, value)
@@ -405,6 +480,48 @@ func (u *ProductControlUpsert) SetType(v productcontrol.Type) *ProductControlUps
 // UpdateType sets the "type" field to the value that was provided on create.
 func (u *ProductControlUpsert) UpdateType() *ProductControlUpsert {
 	u.SetExcluded(productcontrol.FieldType)
+	return u
+}
+
+// SetPlaceholder sets the "placeholder" field.
+func (u *ProductControlUpsert) SetPlaceholder(v string) *ProductControlUpsert {
+	u.Set(productcontrol.FieldPlaceholder, v)
+	return u
+}
+
+// UpdatePlaceholder sets the "placeholder" field to the value that was provided on create.
+func (u *ProductControlUpsert) UpdatePlaceholder() *ProductControlUpsert {
+	u.SetExcluded(productcontrol.FieldPlaceholder)
+	return u
+}
+
+// SetValidation sets the "validation" field.
+func (u *ProductControlUpsert) SetValidation(v string) *ProductControlUpsert {
+	u.Set(productcontrol.FieldValidation, v)
+	return u
+}
+
+// UpdateValidation sets the "validation" field to the value that was provided on create.
+func (u *ProductControlUpsert) UpdateValidation() *ProductControlUpsert {
+	u.SetExcluded(productcontrol.FieldValidation)
+	return u
+}
+
+// SetMaxLength sets the "max_length" field.
+func (u *ProductControlUpsert) SetMaxLength(v int32) *ProductControlUpsert {
+	u.Set(productcontrol.FieldMaxLength, v)
+	return u
+}
+
+// UpdateMaxLength sets the "max_length" field to the value that was provided on create.
+func (u *ProductControlUpsert) UpdateMaxLength() *ProductControlUpsert {
+	u.SetExcluded(productcontrol.FieldMaxLength)
+	return u
+}
+
+// AddMaxLength adds v to the "max_length" field.
+func (u *ProductControlUpsert) AddMaxLength(v int32) *ProductControlUpsert {
+	u.Add(productcontrol.FieldMaxLength, v)
 	return u
 }
 
@@ -588,6 +705,55 @@ func (u *ProductControlUpsertOne) SetType(v productcontrol.Type) *ProductControl
 func (u *ProductControlUpsertOne) UpdateType() *ProductControlUpsertOne {
 	return u.Update(func(s *ProductControlUpsert) {
 		s.UpdateType()
+	})
+}
+
+// SetPlaceholder sets the "placeholder" field.
+func (u *ProductControlUpsertOne) SetPlaceholder(v string) *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetPlaceholder(v)
+	})
+}
+
+// UpdatePlaceholder sets the "placeholder" field to the value that was provided on create.
+func (u *ProductControlUpsertOne) UpdatePlaceholder() *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdatePlaceholder()
+	})
+}
+
+// SetValidation sets the "validation" field.
+func (u *ProductControlUpsertOne) SetValidation(v string) *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetValidation(v)
+	})
+}
+
+// UpdateValidation sets the "validation" field to the value that was provided on create.
+func (u *ProductControlUpsertOne) UpdateValidation() *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdateValidation()
+	})
+}
+
+// SetMaxLength sets the "max_length" field.
+func (u *ProductControlUpsertOne) SetMaxLength(v int32) *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetMaxLength(v)
+	})
+}
+
+// AddMaxLength adds v to the "max_length" field.
+func (u *ProductControlUpsertOne) AddMaxLength(v int32) *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.AddMaxLength(v)
+	})
+}
+
+// UpdateMaxLength sets the "max_length" field to the value that was provided on create.
+func (u *ProductControlUpsertOne) UpdateMaxLength() *ProductControlUpsertOne {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdateMaxLength()
 	})
 }
 
@@ -945,6 +1111,55 @@ func (u *ProductControlUpsertBulk) SetType(v productcontrol.Type) *ProductContro
 func (u *ProductControlUpsertBulk) UpdateType() *ProductControlUpsertBulk {
 	return u.Update(func(s *ProductControlUpsert) {
 		s.UpdateType()
+	})
+}
+
+// SetPlaceholder sets the "placeholder" field.
+func (u *ProductControlUpsertBulk) SetPlaceholder(v string) *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetPlaceholder(v)
+	})
+}
+
+// UpdatePlaceholder sets the "placeholder" field to the value that was provided on create.
+func (u *ProductControlUpsertBulk) UpdatePlaceholder() *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdatePlaceholder()
+	})
+}
+
+// SetValidation sets the "validation" field.
+func (u *ProductControlUpsertBulk) SetValidation(v string) *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetValidation(v)
+	})
+}
+
+// UpdateValidation sets the "validation" field to the value that was provided on create.
+func (u *ProductControlUpsertBulk) UpdateValidation() *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdateValidation()
+	})
+}
+
+// SetMaxLength sets the "max_length" field.
+func (u *ProductControlUpsertBulk) SetMaxLength(v int32) *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.SetMaxLength(v)
+	})
+}
+
+// AddMaxLength adds v to the "max_length" field.
+func (u *ProductControlUpsertBulk) AddMaxLength(v int32) *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.AddMaxLength(v)
+	})
+}
+
+// UpdateMaxLength sets the "max_length" field to the value that was provided on create.
+func (u *ProductControlUpsertBulk) UpdateMaxLength() *ProductControlUpsertBulk {
+	return u.Update(func(s *ProductControlUpsert) {
+		s.UpdateMaxLength()
 	})
 }
 

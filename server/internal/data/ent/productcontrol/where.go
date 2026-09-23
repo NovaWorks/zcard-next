@@ -79,6 +79,21 @@ func Name(v string) predicate.ProductControl {
 	return predicate.ProductControl(sql.FieldEQ(FieldName, v))
 }
 
+// Placeholder applies equality check predicate on the "placeholder" field. It's identical to PlaceholderEQ.
+func Placeholder(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEQ(FieldPlaceholder, v))
+}
+
+// Validation applies equality check predicate on the "validation" field. It's identical to ValidationEQ.
+func Validation(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEQ(FieldValidation, v))
+}
+
+// MaxLength applies equality check predicate on the "max_length" field. It's identical to MaxLengthEQ.
+func MaxLength(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEQ(FieldMaxLength, v))
+}
+
 // Required applies equality check predicate on the "required" field. It's identical to RequiredEQ.
 func Required(v bool) predicate.ProductControl {
 	return predicate.ProductControl(sql.FieldEQ(FieldRequired, v))
@@ -332,6 +347,176 @@ func TypeIn(vs ...Type) predicate.ProductControl {
 // TypeNotIn applies the NotIn predicate on the "type" field.
 func TypeNotIn(vs ...Type) predicate.ProductControl {
 	return predicate.ProductControl(sql.FieldNotIn(FieldType, vs...))
+}
+
+// PlaceholderEQ applies the EQ predicate on the "placeholder" field.
+func PlaceholderEQ(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEQ(FieldPlaceholder, v))
+}
+
+// PlaceholderNEQ applies the NEQ predicate on the "placeholder" field.
+func PlaceholderNEQ(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNEQ(FieldPlaceholder, v))
+}
+
+// PlaceholderIn applies the In predicate on the "placeholder" field.
+func PlaceholderIn(vs ...string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldIn(FieldPlaceholder, vs...))
+}
+
+// PlaceholderNotIn applies the NotIn predicate on the "placeholder" field.
+func PlaceholderNotIn(vs ...string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNotIn(FieldPlaceholder, vs...))
+}
+
+// PlaceholderGT applies the GT predicate on the "placeholder" field.
+func PlaceholderGT(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldGT(FieldPlaceholder, v))
+}
+
+// PlaceholderGTE applies the GTE predicate on the "placeholder" field.
+func PlaceholderGTE(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldGTE(FieldPlaceholder, v))
+}
+
+// PlaceholderLT applies the LT predicate on the "placeholder" field.
+func PlaceholderLT(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldLT(FieldPlaceholder, v))
+}
+
+// PlaceholderLTE applies the LTE predicate on the "placeholder" field.
+func PlaceholderLTE(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldLTE(FieldPlaceholder, v))
+}
+
+// PlaceholderContains applies the Contains predicate on the "placeholder" field.
+func PlaceholderContains(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldContains(FieldPlaceholder, v))
+}
+
+// PlaceholderHasPrefix applies the HasPrefix predicate on the "placeholder" field.
+func PlaceholderHasPrefix(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldHasPrefix(FieldPlaceholder, v))
+}
+
+// PlaceholderHasSuffix applies the HasSuffix predicate on the "placeholder" field.
+func PlaceholderHasSuffix(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldHasSuffix(FieldPlaceholder, v))
+}
+
+// PlaceholderEqualFold applies the EqualFold predicate on the "placeholder" field.
+func PlaceholderEqualFold(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEqualFold(FieldPlaceholder, v))
+}
+
+// PlaceholderContainsFold applies the ContainsFold predicate on the "placeholder" field.
+func PlaceholderContainsFold(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldContainsFold(FieldPlaceholder, v))
+}
+
+// ValidationEQ applies the EQ predicate on the "validation" field.
+func ValidationEQ(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEQ(FieldValidation, v))
+}
+
+// ValidationNEQ applies the NEQ predicate on the "validation" field.
+func ValidationNEQ(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNEQ(FieldValidation, v))
+}
+
+// ValidationIn applies the In predicate on the "validation" field.
+func ValidationIn(vs ...string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldIn(FieldValidation, vs...))
+}
+
+// ValidationNotIn applies the NotIn predicate on the "validation" field.
+func ValidationNotIn(vs ...string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNotIn(FieldValidation, vs...))
+}
+
+// ValidationGT applies the GT predicate on the "validation" field.
+func ValidationGT(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldGT(FieldValidation, v))
+}
+
+// ValidationGTE applies the GTE predicate on the "validation" field.
+func ValidationGTE(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldGTE(FieldValidation, v))
+}
+
+// ValidationLT applies the LT predicate on the "validation" field.
+func ValidationLT(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldLT(FieldValidation, v))
+}
+
+// ValidationLTE applies the LTE predicate on the "validation" field.
+func ValidationLTE(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldLTE(FieldValidation, v))
+}
+
+// ValidationContains applies the Contains predicate on the "validation" field.
+func ValidationContains(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldContains(FieldValidation, v))
+}
+
+// ValidationHasPrefix applies the HasPrefix predicate on the "validation" field.
+func ValidationHasPrefix(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldHasPrefix(FieldValidation, v))
+}
+
+// ValidationHasSuffix applies the HasSuffix predicate on the "validation" field.
+func ValidationHasSuffix(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldHasSuffix(FieldValidation, v))
+}
+
+// ValidationEqualFold applies the EqualFold predicate on the "validation" field.
+func ValidationEqualFold(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEqualFold(FieldValidation, v))
+}
+
+// ValidationContainsFold applies the ContainsFold predicate on the "validation" field.
+func ValidationContainsFold(v string) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldContainsFold(FieldValidation, v))
+}
+
+// MaxLengthEQ applies the EQ predicate on the "max_length" field.
+func MaxLengthEQ(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldEQ(FieldMaxLength, v))
+}
+
+// MaxLengthNEQ applies the NEQ predicate on the "max_length" field.
+func MaxLengthNEQ(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNEQ(FieldMaxLength, v))
+}
+
+// MaxLengthIn applies the In predicate on the "max_length" field.
+func MaxLengthIn(vs ...int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldIn(FieldMaxLength, vs...))
+}
+
+// MaxLengthNotIn applies the NotIn predicate on the "max_length" field.
+func MaxLengthNotIn(vs ...int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldNotIn(FieldMaxLength, vs...))
+}
+
+// MaxLengthGT applies the GT predicate on the "max_length" field.
+func MaxLengthGT(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldGT(FieldMaxLength, v))
+}
+
+// MaxLengthGTE applies the GTE predicate on the "max_length" field.
+func MaxLengthGTE(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldGTE(FieldMaxLength, v))
+}
+
+// MaxLengthLT applies the LT predicate on the "max_length" field.
+func MaxLengthLT(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldLT(FieldMaxLength, v))
+}
+
+// MaxLengthLTE applies the LTE predicate on the "max_length" field.
+func MaxLengthLTE(v int32) predicate.ProductControl {
+	return predicate.ProductControl(sql.FieldLTE(FieldMaxLength, v))
 }
 
 // RequiredEQ applies the EQ predicate on the "required" field.

@@ -10,6 +10,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
@@ -115,6 +116,59 @@ func (_u *OrderItemUpdate) AddSkuID(v int64) *OrderItemUpdate {
 // ClearSkuID clears the value of the "sku_id" field.
 func (_u *OrderItemUpdate) ClearSkuID() *OrderItemUpdate {
 	_u.mutation.ClearSkuID()
+	return _u
+}
+
+// SetProductName sets the "product_name" field.
+func (_u *OrderItemUpdate) SetProductName(v string) *OrderItemUpdate {
+	_u.mutation.SetProductName(v)
+	return _u
+}
+
+// SetNillableProductName sets the "product_name" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableProductName(v *string) *OrderItemUpdate {
+	if v != nil {
+		_u.SetProductName(*v)
+	}
+	return _u
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (_u *OrderItemUpdate) SetFormAnswers(v []map[string]string) *OrderItemUpdate {
+	_u.mutation.SetFormAnswers(v)
+	return _u
+}
+
+// AppendFormAnswers appends value to the "form_answers" field.
+func (_u *OrderItemUpdate) AppendFormAnswers(v []map[string]string) *OrderItemUpdate {
+	_u.mutation.AppendFormAnswers(v)
+	return _u
+}
+
+// ClearFormAnswers clears the value of the "form_answers" field.
+func (_u *OrderItemUpdate) ClearFormAnswers() *OrderItemUpdate {
+	_u.mutation.ClearFormAnswers()
+	return _u
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (_u *OrderItemUpdate) SetAssignedAdminID(v uint64) *OrderItemUpdate {
+	_u.mutation.ResetAssignedAdminID()
+	_u.mutation.SetAssignedAdminID(v)
+	return _u
+}
+
+// SetNillableAssignedAdminID sets the "assigned_admin_id" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableAssignedAdminID(v *uint64) *OrderItemUpdate {
+	if v != nil {
+		_u.SetAssignedAdminID(*v)
+	}
+	return _u
+}
+
+// AddAssignedAdminID adds value to the "assigned_admin_id" field.
+func (_u *OrderItemUpdate) AddAssignedAdminID(v int64) *OrderItemUpdate {
+	_u.mutation.AddAssignedAdminID(v)
 	return _u
 }
 
@@ -385,6 +439,26 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.SkuIDCleared() {
 		_spec.ClearField(orderitem.FieldSkuID, field.TypeUint64)
 	}
+	if value, ok := _u.mutation.ProductName(); ok {
+		_spec.SetField(orderitem.FieldProductName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.FormAnswers(); ok {
+		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedFormAnswers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, orderitem.FieldFormAnswers, value)
+		})
+	}
+	if _u.mutation.FormAnswersCleared() {
+		_spec.ClearField(orderitem.FieldFormAnswers, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.AssignedAdminID(); ok {
+		_spec.SetField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedAssignedAdminID(); ok {
+		_spec.AddField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
+	}
 	if value, ok := _u.mutation.SkuName(); ok {
 		_spec.SetField(orderitem.FieldSkuName, field.TypeString, value)
 	}
@@ -568,6 +642,59 @@ func (_u *OrderItemUpdateOne) AddSkuID(v int64) *OrderItemUpdateOne {
 // ClearSkuID clears the value of the "sku_id" field.
 func (_u *OrderItemUpdateOne) ClearSkuID() *OrderItemUpdateOne {
 	_u.mutation.ClearSkuID()
+	return _u
+}
+
+// SetProductName sets the "product_name" field.
+func (_u *OrderItemUpdateOne) SetProductName(v string) *OrderItemUpdateOne {
+	_u.mutation.SetProductName(v)
+	return _u
+}
+
+// SetNillableProductName sets the "product_name" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableProductName(v *string) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetProductName(*v)
+	}
+	return _u
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (_u *OrderItemUpdateOne) SetFormAnswers(v []map[string]string) *OrderItemUpdateOne {
+	_u.mutation.SetFormAnswers(v)
+	return _u
+}
+
+// AppendFormAnswers appends value to the "form_answers" field.
+func (_u *OrderItemUpdateOne) AppendFormAnswers(v []map[string]string) *OrderItemUpdateOne {
+	_u.mutation.AppendFormAnswers(v)
+	return _u
+}
+
+// ClearFormAnswers clears the value of the "form_answers" field.
+func (_u *OrderItemUpdateOne) ClearFormAnswers() *OrderItemUpdateOne {
+	_u.mutation.ClearFormAnswers()
+	return _u
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (_u *OrderItemUpdateOne) SetAssignedAdminID(v uint64) *OrderItemUpdateOne {
+	_u.mutation.ResetAssignedAdminID()
+	_u.mutation.SetAssignedAdminID(v)
+	return _u
+}
+
+// SetNillableAssignedAdminID sets the "assigned_admin_id" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableAssignedAdminID(v *uint64) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetAssignedAdminID(*v)
+	}
+	return _u
+}
+
+// AddAssignedAdminID adds value to the "assigned_admin_id" field.
+func (_u *OrderItemUpdateOne) AddAssignedAdminID(v int64) *OrderItemUpdateOne {
+	_u.mutation.AddAssignedAdminID(v)
 	return _u
 }
 
@@ -867,6 +994,26 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if _u.mutation.SkuIDCleared() {
 		_spec.ClearField(orderitem.FieldSkuID, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.ProductName(); ok {
+		_spec.SetField(orderitem.FieldProductName, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.FormAnswers(); ok {
+		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedFormAnswers(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, orderitem.FieldFormAnswers, value)
+		})
+	}
+	if _u.mutation.FormAnswersCleared() {
+		_spec.ClearField(orderitem.FieldFormAnswers, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.AssignedAdminID(); ok {
+		_spec.SetField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedAssignedAdminID(); ok {
+		_spec.AddField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
 	}
 	if value, ok := _u.mutation.SkuName(); ok {
 		_spec.SetField(orderitem.FieldSkuName, field.TypeString, value)

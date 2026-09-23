@@ -4,6 +4,7 @@ package catalog
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -20,24 +21,50 @@ func (r *ProductRepoImpl) ListProductControls(ctx context.Context, productID uin
 }
 
 // CreateProductControl 创建控件。
-func (r *ProductRepoImpl) CreateProductControl(ctx context.Context, productID, subsiteID uint64, name, typ string, required bool, options []string, sort int32) (*ent.ProductControl, error) {
+func (r *ProductRepoImpl) CreateProductControl(ctx context.Context, productID, subsiteID uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
 	if subsiteID == 0 {
 		subsiteID = tenancy.FromContext(ctx).SubsiteID
 	}
-	return data.Client(ctx, r.data).ProductControl.Create().
+	v := ControlSettings{}
+	if len(settings) > 0 {
+		v = settings[0]
+	}
+	if err := v.validate(); err != nil {
+		return nil, err
+	}
+	create := data.Client(ctx, r.data).ProductControl.Create().
 		SetSubsiteID(subsiteID).
 		SetProductID(productID).
 		SetName(name).
 		SetType(productcontrol.Type(typ)).
 		SetRequired(required).
 		SetOptions(options).
-		SetSort(sort).
-		Save(ctx)
+		SetSort(sort)
+	create.SetPlaceholder(v.Placeholder)
+	if v.Validation != "" {
+		create.SetValidation(v.Validation)
+	}
+	if v.MaxLength != nil {
+		create.SetMaxLength(*v.MaxLength)
+	}
+	return create.Save(ctx)
 }
 
 // UpdateProductControl 更新控件。
-func (r *ProductRepoImpl) UpdateProductControl(ctx context.Context, id uint64, name, typ string, required bool, options []string, sort int32) (*ent.ProductControl, error) {
+func (r *ProductRepoImpl) UpdateProductControl(ctx context.Context, id uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
 	q := data.Client(ctx, r.data).ProductControl.UpdateOneID(id)
+	if len(settings) > 0 {
+		v := settings[0]
+		if err := v.validate(); err != nil {
+			return nil, err
+		}
+		if v.Validation != "" {
+			q.SetValidation(v.Validation).SetPlaceholder(v.Placeholder)
+		}
+		if v.MaxLength != nil {
+			q.SetMaxLength(*v.MaxLength)
+		}
+	}
 	if name != "" {
 		q.SetName(name)
 	}
@@ -55,4 +82,22 @@ func (r *ProductRepoImpl) UpdateProductControl(ctx context.Context, id uint64, n
 // DeleteProductControl 删除控件。
 func (r *ProductRepoImpl) DeleteProductControl(ctx context.Context, id uint64) error {
 	return data.Client(ctx, r.data).ProductControl.DeleteOneID(id).Exec(ctx)
+}
+
+// ControlSettings is optional for old admin clients and internal callers.
+type ControlSettings struct {
+	Placeholder, Validation string
+	MaxLength               *int32
+}
+
+func (v ControlSettings) validate() error {
+	switch v.Validation {
+	case "", "text", "url", "username", "tron":
+	default:
+		return fmt.Errorf("无效的校验类型")
+	}
+	if v.MaxLength != nil && (*v.MaxLength < 1 || *v.MaxLength > 4000) {
+		return fmt.Errorf("长度限制须为1至4000")
+	}
+	return nil
 }

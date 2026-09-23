@@ -135,6 +135,16 @@ func StockVisible(v bool) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldStockVisible, v))
 }
 
+// FulfillmentMode applies equality check predicate on the "fulfillment_mode" field. It's identical to FulfillmentModeEQ.
+func FulfillmentMode(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldFulfillmentMode, v))
+}
+
+// ManualStock applies equality check predicate on the "manual_stock" field. It's identical to ManualStockEQ.
+func ManualStock(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldManualStock, v))
+}
+
 // Dedup applies equality check predicate on the "dedup" field. It's identical to DedupEQ.
 func Dedup(v bool) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldDedup, v))
@@ -898,6 +908,111 @@ func StockVisibleEQ(v bool) predicate.Product {
 // StockVisibleNEQ applies the NEQ predicate on the "stock_visible" field.
 func StockVisibleNEQ(v bool) predicate.Product {
 	return predicate.Product(sql.FieldNEQ(FieldStockVisible, v))
+}
+
+// FulfillmentModeEQ applies the EQ predicate on the "fulfillment_mode" field.
+func FulfillmentModeEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeNEQ applies the NEQ predicate on the "fulfillment_mode" field.
+func FulfillmentModeNEQ(v string) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeIn applies the In predicate on the "fulfillment_mode" field.
+func FulfillmentModeIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldFulfillmentMode, vs...))
+}
+
+// FulfillmentModeNotIn applies the NotIn predicate on the "fulfillment_mode" field.
+func FulfillmentModeNotIn(vs ...string) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldFulfillmentMode, vs...))
+}
+
+// FulfillmentModeGT applies the GT predicate on the "fulfillment_mode" field.
+func FulfillmentModeGT(v string) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeGTE applies the GTE predicate on the "fulfillment_mode" field.
+func FulfillmentModeGTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeLT applies the LT predicate on the "fulfillment_mode" field.
+func FulfillmentModeLT(v string) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeLTE applies the LTE predicate on the "fulfillment_mode" field.
+func FulfillmentModeLTE(v string) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeContains applies the Contains predicate on the "fulfillment_mode" field.
+func FulfillmentModeContains(v string) predicate.Product {
+	return predicate.Product(sql.FieldContains(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeHasPrefix applies the HasPrefix predicate on the "fulfillment_mode" field.
+func FulfillmentModeHasPrefix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasPrefix(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeHasSuffix applies the HasSuffix predicate on the "fulfillment_mode" field.
+func FulfillmentModeHasSuffix(v string) predicate.Product {
+	return predicate.Product(sql.FieldHasSuffix(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeEqualFold applies the EqualFold predicate on the "fulfillment_mode" field.
+func FulfillmentModeEqualFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldEqualFold(FieldFulfillmentMode, v))
+}
+
+// FulfillmentModeContainsFold applies the ContainsFold predicate on the "fulfillment_mode" field.
+func FulfillmentModeContainsFold(v string) predicate.Product {
+	return predicate.Product(sql.FieldContainsFold(FieldFulfillmentMode, v))
+}
+
+// ManualStockEQ applies the EQ predicate on the "manual_stock" field.
+func ManualStockEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldManualStock, v))
+}
+
+// ManualStockNEQ applies the NEQ predicate on the "manual_stock" field.
+func ManualStockNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldManualStock, v))
+}
+
+// ManualStockIn applies the In predicate on the "manual_stock" field.
+func ManualStockIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldManualStock, vs...))
+}
+
+// ManualStockNotIn applies the NotIn predicate on the "manual_stock" field.
+func ManualStockNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldManualStock, vs...))
+}
+
+// ManualStockGT applies the GT predicate on the "manual_stock" field.
+func ManualStockGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldManualStock, v))
+}
+
+// ManualStockGTE applies the GTE predicate on the "manual_stock" field.
+func ManualStockGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldManualStock, v))
+}
+
+// ManualStockLT applies the LT predicate on the "manual_stock" field.
+func ManualStockLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldManualStock, v))
+}
+
+// ManualStockLTE applies the LTE predicate on the "manual_stock" field.
+func ManualStockLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldManualStock, v))
 }
 
 // DeliveryModeEQ applies the EQ predicate on the "delivery_mode" field.

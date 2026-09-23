@@ -89,6 +89,16 @@ func ThresholdConsume(v int64) predicate.MemberLevel {
 	return predicate.MemberLevel(sql.FieldEQ(FieldThresholdConsume, v))
 }
 
+// AcquireMode applies equality check predicate on the "acquire_mode" field. It's identical to AcquireModeEQ.
+func AcquireMode(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldEQ(FieldAcquireMode, v))
+}
+
+// DisplayMode applies equality check predicate on the "display_mode" field. It's identical to DisplayModeEQ.
+func DisplayMode(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldEQ(FieldDisplayMode, v))
+}
+
 // Discount applies equality check predicate on the "discount" field. It's identical to DiscountEQ.
 func Discount(v int32) predicate.MemberLevel {
 	return predicate.MemberLevel(sql.FieldEQ(FieldDiscount, v))
@@ -497,6 +507,136 @@ func ThresholdConsumeLT(v int64) predicate.MemberLevel {
 // ThresholdConsumeLTE applies the LTE predicate on the "threshold_consume" field.
 func ThresholdConsumeLTE(v int64) predicate.MemberLevel {
 	return predicate.MemberLevel(sql.FieldLTE(FieldThresholdConsume, v))
+}
+
+// AcquireModeEQ applies the EQ predicate on the "acquire_mode" field.
+func AcquireModeEQ(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldEQ(FieldAcquireMode, v))
+}
+
+// AcquireModeNEQ applies the NEQ predicate on the "acquire_mode" field.
+func AcquireModeNEQ(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldNEQ(FieldAcquireMode, v))
+}
+
+// AcquireModeIn applies the In predicate on the "acquire_mode" field.
+func AcquireModeIn(vs ...string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldIn(FieldAcquireMode, vs...))
+}
+
+// AcquireModeNotIn applies the NotIn predicate on the "acquire_mode" field.
+func AcquireModeNotIn(vs ...string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldNotIn(FieldAcquireMode, vs...))
+}
+
+// AcquireModeGT applies the GT predicate on the "acquire_mode" field.
+func AcquireModeGT(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldGT(FieldAcquireMode, v))
+}
+
+// AcquireModeGTE applies the GTE predicate on the "acquire_mode" field.
+func AcquireModeGTE(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldGTE(FieldAcquireMode, v))
+}
+
+// AcquireModeLT applies the LT predicate on the "acquire_mode" field.
+func AcquireModeLT(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldLT(FieldAcquireMode, v))
+}
+
+// AcquireModeLTE applies the LTE predicate on the "acquire_mode" field.
+func AcquireModeLTE(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldLTE(FieldAcquireMode, v))
+}
+
+// AcquireModeContains applies the Contains predicate on the "acquire_mode" field.
+func AcquireModeContains(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldContains(FieldAcquireMode, v))
+}
+
+// AcquireModeHasPrefix applies the HasPrefix predicate on the "acquire_mode" field.
+func AcquireModeHasPrefix(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldHasPrefix(FieldAcquireMode, v))
+}
+
+// AcquireModeHasSuffix applies the HasSuffix predicate on the "acquire_mode" field.
+func AcquireModeHasSuffix(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldHasSuffix(FieldAcquireMode, v))
+}
+
+// AcquireModeEqualFold applies the EqualFold predicate on the "acquire_mode" field.
+func AcquireModeEqualFold(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldEqualFold(FieldAcquireMode, v))
+}
+
+// AcquireModeContainsFold applies the ContainsFold predicate on the "acquire_mode" field.
+func AcquireModeContainsFold(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldContainsFold(FieldAcquireMode, v))
+}
+
+// DisplayModeEQ applies the EQ predicate on the "display_mode" field.
+func DisplayModeEQ(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldEQ(FieldDisplayMode, v))
+}
+
+// DisplayModeNEQ applies the NEQ predicate on the "display_mode" field.
+func DisplayModeNEQ(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldNEQ(FieldDisplayMode, v))
+}
+
+// DisplayModeIn applies the In predicate on the "display_mode" field.
+func DisplayModeIn(vs ...string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldIn(FieldDisplayMode, vs...))
+}
+
+// DisplayModeNotIn applies the NotIn predicate on the "display_mode" field.
+func DisplayModeNotIn(vs ...string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldNotIn(FieldDisplayMode, vs...))
+}
+
+// DisplayModeGT applies the GT predicate on the "display_mode" field.
+func DisplayModeGT(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldGT(FieldDisplayMode, v))
+}
+
+// DisplayModeGTE applies the GTE predicate on the "display_mode" field.
+func DisplayModeGTE(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldGTE(FieldDisplayMode, v))
+}
+
+// DisplayModeLT applies the LT predicate on the "display_mode" field.
+func DisplayModeLT(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldLT(FieldDisplayMode, v))
+}
+
+// DisplayModeLTE applies the LTE predicate on the "display_mode" field.
+func DisplayModeLTE(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldLTE(FieldDisplayMode, v))
+}
+
+// DisplayModeContains applies the Contains predicate on the "display_mode" field.
+func DisplayModeContains(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldContains(FieldDisplayMode, v))
+}
+
+// DisplayModeHasPrefix applies the HasPrefix predicate on the "display_mode" field.
+func DisplayModeHasPrefix(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldHasPrefix(FieldDisplayMode, v))
+}
+
+// DisplayModeHasSuffix applies the HasSuffix predicate on the "display_mode" field.
+func DisplayModeHasSuffix(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldHasSuffix(FieldDisplayMode, v))
+}
+
+// DisplayModeEqualFold applies the EqualFold predicate on the "display_mode" field.
+func DisplayModeEqualFold(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldEqualFold(FieldDisplayMode, v))
+}
+
+// DisplayModeContainsFold applies the ContainsFold predicate on the "display_mode" field.
+func DisplayModeContainsFold(v string) predicate.MemberLevel {
+	return predicate.MemberLevel(sql.FieldContainsFold(FieldDisplayMode, v))
 }
 
 // DiscountEQ applies the EQ predicate on the "discount" field.

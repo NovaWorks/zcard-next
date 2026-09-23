@@ -9,6 +9,9 @@ import "google/protobuf/empty.proto";
 
 // AdminMemberLevelService 会员等级管理。
 service AdminMemberLevelService {
+  rpc AssignUserLevel(AssignUserLevelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = { put: "/api/v1/admin/users/{user_id}/member-level" body: "*" };
+  }
   rpc ListMemberLevels(google.protobuf.Empty) returns (MemberLevelList) {
     option (google.api.http) = { get: "/api/v1/admin/member-levels" };
   }
@@ -24,6 +27,8 @@ service AdminMemberLevelService {
 }
 
 message MemberLevel {
+  string acquire_mode = 10;
+  string display_mode = 11;
   uint64 id = 1;
   string name = 2;
   string threshold_type = 3;
@@ -41,6 +46,8 @@ message MemberLevelList {
 }
 
 message CreateMemberLevelRequest {
+  string acquire_mode = 9;
+  string display_mode = 10;
   string name = 1;
   string threshold_type = 2;
   int64 threshold_recharge = 3;
@@ -52,6 +59,8 @@ message CreateMemberLevelRequest {
 }
 
 message UpdateMemberLevelRequest {
+  string acquire_mode = 7;
+  string display_mode = 8;
   uint64 id = 1;
   string name = 2;
   int32 discount = 3;
@@ -63,3 +72,5 @@ message UpdateMemberLevelRequest {
 message DeleteMemberLevelRequest {
   uint64 id = 1;
 }
+
+message AssignUserLevelRequest { uint64 user_id = 1; uint64 level_id = 2; string reason = 3; }

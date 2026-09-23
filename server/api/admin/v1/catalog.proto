@@ -169,6 +169,8 @@ message GetProductRequest {
 
 // AdminProduct 管理面商品（含成本价等敏感字段）。
 message AdminProduct {
+  string fulfillment_mode = 30;
+  optional int64 manual_stock = 31;
   uint64 id = 1;
   uint64 category_id = 2;
   string name = 3;
@@ -206,6 +208,8 @@ message AdminProduct {
 }
 
 message CreateProductRequest {
+  string fulfillment_mode = 17;
+  optional int64 manual_stock = 18;
   string name = 1 [(google.api.field_behavior) = REQUIRED];
   uint64 category_id = 2;
   string description = 3;
@@ -228,6 +232,8 @@ message CreateProductRequest {
 }
 
 message UpdateProductRequest {
+  string fulfillment_mode = 17;
+  optional int64 manual_stock = 18;
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;
   uint64 category_id = 3;
@@ -371,6 +377,9 @@ message ControlList {
 }
 
 message AdminControl {
+  string placeholder = 8;
+  string validation = 9;
+  optional int32 max_length = 10;
   uint64 id = 1;
   uint64 product_id = 2;
   string name = 3;
@@ -381,6 +390,9 @@ message AdminControl {
 }
 
 message CreateControlRequest {
+  string placeholder = 7;
+  string validation = 8;
+  optional int32 max_length = 9;
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2 [(google.api.field_behavior) = REQUIRED];
   string type = 3 [(google.api.field_behavior) = REQUIRED];
@@ -390,6 +402,9 @@ message CreateControlRequest {
 }
 
 message UpdateControlRequest {
+  string placeholder = 7;
+  string validation = 8;
+  optional int32 max_length = 9;
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;
   string type = 3;
@@ -466,6 +481,7 @@ message SkuList {
 
 // Sku 管理面多规格（含成本价）。
 message Sku {
+  string fulfillment_mode = 9;
   uint64 id = 1;
   uint64 product_id = 2;
   string name = 3;
@@ -477,6 +493,7 @@ message Sku {
 }
 
 message CreateSkuRequest {
+  string fulfillment_mode = 8;
   uint64 product_id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2 [(google.api.field_behavior) = REQUIRED];
   map<string, string> spec_values = 3;
@@ -487,6 +504,7 @@ message CreateSkuRequest {
 }
 
 message UpdateSkuRequest {
+  string fulfillment_mode = 8;
   uint64 id = 1 [(google.api.field_behavior) = REQUIRED];
   string name = 2;
   map<string, string> spec_values = 3;

@@ -3,6 +3,7 @@ import { api } from './client';
 // ── 类型（字段名 snake_case，与 proto 一致）──
 
 export interface ProductControl {
+ placeholder?: string; validation?: string; max_length?: number;
   id: number;
   name: string;
   type: string;
@@ -23,6 +24,8 @@ export interface ReviewItem {
 export interface FlashOffer { price_cents: number; end_at: number; remaining: number; per_user_limit: number; }
 
 export interface Sku {
+ stock?:number;
+ fulfillment_mode?: string; manual_stock?: number;
   flash_sale?: FlashOffer;
   id: number;
   name: string;
@@ -30,6 +33,7 @@ export interface Sku {
 }
 
 export interface Product {
+ fulfillment_mode?: string; manual_stock?: number;
   flash_sale?: FlashOffer;
   id: number;
   name: string;
@@ -79,6 +83,7 @@ export interface CreatePaymentReply {
 }
 
 export interface DeliveryItem {
+ delivery_id?: number; kind?: string; product_name?: string; sku_name?: string; delivered_at?: number;
   item_id: number;
   content: string;
   masked: boolean;
@@ -136,7 +141,7 @@ export function getProduct(id: number) {
 }
 
 export function createOrder(body: {
-  items: { product_id: number; sku_id?: number; quantity: number }[];
+  items: { product_id: number; sku_id?: number; quantity: number; control_answers?: Record<string,string> }[];
   guest_contact?: string;
   query_password?: string;
   contact?: string;
@@ -357,6 +362,8 @@ export interface MyOrderItem {
   created_at: number;
   expired_at: number;
   item_count: number;
+  product_summary: string;
+  manual_pending_count: number;
 }
 
 export function listMyOrders(page = 1, pageSize = 10) {
@@ -385,6 +392,7 @@ export function listGuestOrders(contact: string) {
 // ── 订单详情（GetOrder：登录态本人或查询密码）──
 
 export interface OrderItemReply {
+ id?: number; sku_name?: string; fulfillment_type?: string; fulfillment_status?: string; form_answers_json?: string; amount_cents?: number;
   product_id: number;
   product_name: string;
   quantity: number;
@@ -392,6 +400,7 @@ export interface OrderItemReply {
 }
 
 export interface OrderDetail {
+ refunded_cents?: number; refunded_fee_cents?: number;
   paid_total_cents?: number;
   paid_fee_cents?: number;
   order_no: string;
@@ -574,6 +583,7 @@ export async function fetchWithdrawConfig(): Promise<WithdrawConfig> {
 // ── 等级与积分（）──
 
 export interface LevelBrief {
+ display_mode?: string; display_text?: string; acquire_mode?: string;
   id: number;
   name: string;
   discount: number;

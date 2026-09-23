@@ -79,6 +79,8 @@ message FlashOffer {
 }
 
 message Product {
+  string fulfillment_mode = 21;
+  int64 manual_stock = 22;
   uint64 id = 1;
   string name = 2;
   string slug = 3;
@@ -114,6 +116,9 @@ message Product {
 
 // ProductControl 自定义控件定义（下单表单渲染）。
 message ProductControl {
+  string placeholder = 7;
+  string validation = 8;
+  int32 max_length = 9;
   uint64 id = 1;
   string name = 2;
   string type = 3; // text | password | select | number | checkbox | radio
@@ -134,6 +139,8 @@ message ReviewItem {
 
 // Sku 顾客视角多规格（只下发 id/名称/价格）。
 message Sku {
+ int64 stock = 6;
+  string fulfillment_mode = 5;
   uint64 id = 1;
   string name = 2;
   int64 price_cents = 3;

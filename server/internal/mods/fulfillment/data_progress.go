@@ -59,7 +59,9 @@ func (r *DeliveryRepoImpl) deliveredQuantities(ctx context.Context, orderID uint
 			if it.ID != id {
 				continue
 			}
-			if row.DeliveredMode == orderdelivery.DeliveredModeDirect || len(row.Logistics) > 0 {
+			if row.DeliveredQuantity > 0 {
+				counts[id] += int(row.DeliveredQuantity)
+			} else if row.DeliveredMode == orderdelivery.DeliveredModeDirect || len(row.Logistics) > 0 {
 				counts[id] = int(it.Quantity)
 			} else {
 				counts[id]++
@@ -95,6 +97,18 @@ func (r *DeliveryRepoImpl) updateDeliveryProgress(ctx context.Context, o *ent.Or
 	next := order.StatusFulfilling
 	if all {
 		next = order.StatusDelivered
+		onlyService := true
+		for _, it := range items {
+			if it.FulfillmentType != orderitem.FulfillmentTypeManual {
+				onlyService = false
+			}
+		}
+		if onlyService {
+			next = order.StatusCompleted
+		}
+		if err := r.completionEvent(ctx, o); err != nil {
+			return err
+		}
 	} else if any {
 		next = order.StatusPartiallyDelivered
 	}

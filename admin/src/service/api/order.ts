@@ -52,10 +52,12 @@ export function fetchPendingDeliveries(page = 1, pageSize = 20) {
   return request({ url: "/api/v1/admin/fulfillment/pending", params: { page, page_size: pageSize } });
 }
 
-export function manualDeliver(orderNo: string, data: { order_item_id?: number; content?: string; logistics_no?: string; remark?: string }) {
+export function manualDeliver(orderNo: string, data: { order_item_id?: number; service_content?:string; content?: string; logistics_no?: string; remark?: string }) {
   return request({ url: `/api/v1/admin/fulfillment/${orderNo}/deliver`, method: "post", data });
 }
 
 export function fetchDeliveries(orderNo: string, page = 1, pageSize = 20, orderItemId?: number) {
   return request({ url: "/api/v1/admin/fulfillment", params: { order_no: orderNo, page, page_size: pageSize, order_item_id: orderItemId } });
 }
+
+export function startService(orderNo:string,itemId:number){return request({url:`/api/v1/admin/fulfillment/${orderNo}/start`,method:'post',data:{order_item_id:itemId}})}

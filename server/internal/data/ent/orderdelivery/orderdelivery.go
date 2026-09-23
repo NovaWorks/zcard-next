@@ -27,6 +27,10 @@ const (
 	FieldCardID = "card_id"
 	// FieldDeliveryTokenHash holds the string denoting the delivery_token_hash field in the database.
 	FieldDeliveryTokenHash = "delivery_token_hash"
+	// FieldServiceContent holds the string denoting the service_content field in the database.
+	FieldServiceContent = "service_content"
+	// FieldDeliveredQuantity holds the string denoting the delivered_quantity field in the database.
+	FieldDeliveredQuantity = "delivered_quantity"
 	// FieldDeliveredMode holds the string denoting the delivered_mode field in the database.
 	FieldDeliveredMode = "delivered_mode"
 	// FieldDeliveredBy holds the string denoting the delivered_by field in the database.
@@ -61,6 +65,8 @@ var Columns = []string{
 	FieldItemID,
 	FieldCardID,
 	FieldDeliveryTokenHash,
+	FieldServiceContent,
+	FieldDeliveredQuantity,
 	FieldDeliveredMode,
 	FieldDeliveredBy,
 	FieldLogistics,
@@ -88,6 +94,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DeliveryTokenHashValidator is a validator for the "delivery_token_hash" field. It is called by the builders before save.
 	DeliveryTokenHashValidator func(string) error
+	// DefaultDeliveredQuantity holds the default value on creation for the "delivered_quantity" field.
+	DefaultDeliveredQuantity int32
 	// DefaultDeliveredBy holds the default value on creation for the "delivered_by" field.
 	DefaultDeliveredBy uint64
 	// DefaultFetchCount holds the default value on creation for the "fetch_count" field.
@@ -156,6 +164,11 @@ func ByCardID(opts ...sql.OrderTermOption) OrderOption {
 // ByDeliveryTokenHash orders the results by the delivery_token_hash field.
 func ByDeliveryTokenHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeliveryTokenHash, opts...).ToFunc()
+}
+
+// ByDeliveredQuantity orders the results by the delivered_quantity field.
+func ByDeliveredQuantity(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeliveredQuantity, opts...).ToFunc()
 }
 
 // ByDeliveredMode orders the results by the delivered_mode field.

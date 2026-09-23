@@ -34,7 +34,7 @@ export function createProduct(data: {
   images?: string[];
   price_cents: number;
   factory_price_cents?: number;
-  stock_type: string;
+  stock_type: string; fulfillment_mode?:string; manual_stock?:number;
   direct_content?: string;
   delivery_mode?: string;
   stock_visible?: boolean;

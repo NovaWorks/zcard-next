@@ -20,6 +20,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderdelivery"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
@@ -212,9 +213,12 @@ type FetchResult struct {
 
 // FetchItem 取货项。
 type FetchItem struct {
-	CardID  uint64
-	Content string // 明文（首次）或掩码
-	Masked  bool
+	ItemID, DeliveryID         uint64
+	Kind, ProductName, SkuName string
+	DeliveredAt                int64
+	CardID                     uint64
+	Content                    string // 明文（首次）或掩码
+	Masked                     bool
 }
 
 // FetchDelivery 取货（三重门：单号+密码+限流；凭正确密码始终返回明文——
@@ -274,6 +278,10 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 	}
 
 	for _, d := range deliveries {
+		if len(d.ServiceContent) > 0 {
+			result.Items = append(result.Items, FetchItem{Content: r.serviceText(ctx, d)})
+			continue
+		}
 
 		// 直发交付（url/code 商品）：内容在商品 direct_content（CardID=0 无卡）
 		if d.DeliveredMode == orderdelivery.DeliveredModeDirect {
@@ -331,6 +339,23 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 		})
 	}
 
+	// Preserve stable delivery identity and owning order item for every result kind.
+	for i, d := range deliveries {
+		if i >= len(result.Items) {
+			break
+		}
+		it := &result.Items[i]
+		it.ItemID = d.ItemID
+		it.DeliveryID = d.ID
+		it.Kind = deliveryKind(d)
+		if !d.DeliveredAt.IsZero() {
+			it.DeliveredAt = d.DeliveredAt.Unix()
+		}
+		if oi, e := client.OrderItem.Get(ctx, d.ItemID); e == nil {
+			it.ProductName = oi.ProductName
+			it.SkuName = oi.SkuName
+		}
+	}
 	// 取货计数 + IP：每次取货均记（审计）；首次取货推进订单 → completed
 	for _, d := range deliveries {
 		_, _ = client.OrderDelivery.UpdateOne(d).
@@ -383,12 +408,17 @@ func (r *DeliveryRepoImpl) ProductNames(ctx context.Context, ids []uint64) (map[
 
 // ListPending 待人工发货列表（含子项——面板展示商品名/数量）。
 func (r *DeliveryRepoImpl) ListPending(ctx context.Context, page, size int) ([]*ent.Order, error) {
-	return data.Client(ctx, r.data).Order.Query().
-		Where(order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered)).
-		WithItems().
-		Order(ent.Desc(order.FieldID)).
-		Offset((page - 1) * size).Limit(size).
-		All(ctx)
+	c := data.Client(ctx, r.data)
+	pos, err := c.ProcurementOrder.Query().Where(procurementorder.StatusIn(procurementorder.StatusManual, procurementorder.StatusRejected, procurementorder.StatusRefunding)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var ids []uint64
+	for _, po := range pos {
+		ids = append(ids, po.OrderItemID)
+	}
+	pending := orderitem.And(orderitem.FulfillmentStatusNotIn("delivered", "refunded"), orderitem.Or(orderitem.FulfillmentTypeEQ(orderitem.FulfillmentTypeManual), orderitem.FulfillmentStatusIn("manual", "failed"), orderitem.IDIn(ids...)))
+	return c.Order.Query().Where(order.StatusIn(order.StatusPaid, order.StatusFulfilling, order.StatusPartiallyDelivered), order.HasItemsWith(pending)).WithItems(func(q *ent.OrderItemQuery) { q.Where(pending) }).Order(ent.Desc(order.FieldID)).Offset((page - 1) * size).Limit(size).All(ctx)
 }
 
 // ListDeliveries 交付记录列表。

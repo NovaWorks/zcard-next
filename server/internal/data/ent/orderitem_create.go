@@ -91,6 +91,40 @@ func (_c *OrderItemCreate) SetNillableSkuID(v *uint64) *OrderItemCreate {
 	return _c
 }
 
+// SetProductName sets the "product_name" field.
+func (_c *OrderItemCreate) SetProductName(v string) *OrderItemCreate {
+	_c.mutation.SetProductName(v)
+	return _c
+}
+
+// SetNillableProductName sets the "product_name" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableProductName(v *string) *OrderItemCreate {
+	if v != nil {
+		_c.SetProductName(*v)
+	}
+	return _c
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (_c *OrderItemCreate) SetFormAnswers(v []map[string]string) *OrderItemCreate {
+	_c.mutation.SetFormAnswers(v)
+	return _c
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (_c *OrderItemCreate) SetAssignedAdminID(v uint64) *OrderItemCreate {
+	_c.mutation.SetAssignedAdminID(v)
+	return _c
+}
+
+// SetNillableAssignedAdminID sets the "assigned_admin_id" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableAssignedAdminID(v *uint64) *OrderItemCreate {
+	if v != nil {
+		_c.SetAssignedAdminID(*v)
+	}
+	return _c
+}
+
 // SetSkuName sets the "sku_name" field.
 func (_c *OrderItemCreate) SetSkuName(v string) *OrderItemCreate {
 	_c.mutation.SetSkuName(v)
@@ -227,6 +261,14 @@ func (_c *OrderItemCreate) defaults() {
 		v := orderitem.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.ProductName(); !ok {
+		v := orderitem.DefaultProductName
+		_c.mutation.SetProductName(v)
+	}
+	if _, ok := _c.mutation.AssignedAdminID(); !ok {
+		v := orderitem.DefaultAssignedAdminID
+		_c.mutation.SetAssignedAdminID(v)
+	}
 	if _, ok := _c.mutation.Cost(); !ok {
 		v := orderitem.DefaultCost
 		_c.mutation.SetCost(v)
@@ -253,6 +295,12 @@ func (_c *OrderItemCreate) check() error {
 	}
 	if _, ok := _c.mutation.ProductID(); !ok {
 		return &ValidationError{Name: "product_id", err: errors.New(`ent: missing required field "OrderItem.product_id"`)}
+	}
+	if _, ok := _c.mutation.ProductName(); !ok {
+		return &ValidationError{Name: "product_name", err: errors.New(`ent: missing required field "OrderItem.product_name"`)}
+	}
+	if _, ok := _c.mutation.AssignedAdminID(); !ok {
+		return &ValidationError{Name: "assigned_admin_id", err: errors.New(`ent: missing required field "OrderItem.assigned_admin_id"`)}
 	}
 	if v, ok := _c.mutation.SkuName(); ok {
 		if err := orderitem.SkuNameValidator(v); err != nil {
@@ -342,6 +390,18 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.SkuID(); ok {
 		_spec.SetField(orderitem.FieldSkuID, field.TypeUint64, value)
 		_node.SkuID = value
+	}
+	if value, ok := _c.mutation.ProductName(); ok {
+		_spec.SetField(orderitem.FieldProductName, field.TypeString, value)
+		_node.ProductName = value
+	}
+	if value, ok := _c.mutation.FormAnswers(); ok {
+		_spec.SetField(orderitem.FieldFormAnswers, field.TypeJSON, value)
+		_node.FormAnswers = value
+	}
+	if value, ok := _c.mutation.AssignedAdminID(); ok {
+		_spec.SetField(orderitem.FieldAssignedAdminID, field.TypeUint64, value)
+		_node.AssignedAdminID = value
 	}
 	if value, ok := _c.mutation.SkuName(); ok {
 		_spec.SetField(orderitem.FieldSkuName, field.TypeString, value)
@@ -529,6 +589,54 @@ func (u *OrderItemUpsert) AddSkuID(v uint64) *OrderItemUpsert {
 // ClearSkuID clears the value of the "sku_id" field.
 func (u *OrderItemUpsert) ClearSkuID() *OrderItemUpsert {
 	u.SetNull(orderitem.FieldSkuID)
+	return u
+}
+
+// SetProductName sets the "product_name" field.
+func (u *OrderItemUpsert) SetProductName(v string) *OrderItemUpsert {
+	u.Set(orderitem.FieldProductName, v)
+	return u
+}
+
+// UpdateProductName sets the "product_name" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateProductName() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldProductName)
+	return u
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (u *OrderItemUpsert) SetFormAnswers(v []map[string]string) *OrderItemUpsert {
+	u.Set(orderitem.FieldFormAnswers, v)
+	return u
+}
+
+// UpdateFormAnswers sets the "form_answers" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateFormAnswers() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldFormAnswers)
+	return u
+}
+
+// ClearFormAnswers clears the value of the "form_answers" field.
+func (u *OrderItemUpsert) ClearFormAnswers() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldFormAnswers)
+	return u
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (u *OrderItemUpsert) SetAssignedAdminID(v uint64) *OrderItemUpsert {
+	u.Set(orderitem.FieldAssignedAdminID, v)
+	return u
+}
+
+// UpdateAssignedAdminID sets the "assigned_admin_id" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateAssignedAdminID() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldAssignedAdminID)
+	return u
+}
+
+// AddAssignedAdminID adds v to the "assigned_admin_id" field.
+func (u *OrderItemUpsert) AddAssignedAdminID(v uint64) *OrderItemUpsert {
+	u.Add(orderitem.FieldAssignedAdminID, v)
 	return u
 }
 
@@ -828,6 +936,62 @@ func (u *OrderItemUpsertOne) UpdateSkuID() *OrderItemUpsertOne {
 func (u *OrderItemUpsertOne) ClearSkuID() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.ClearSkuID()
+	})
+}
+
+// SetProductName sets the "product_name" field.
+func (u *OrderItemUpsertOne) SetProductName(v string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetProductName(v)
+	})
+}
+
+// UpdateProductName sets the "product_name" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateProductName() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateProductName()
+	})
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (u *OrderItemUpsertOne) SetFormAnswers(v []map[string]string) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetFormAnswers(v)
+	})
+}
+
+// UpdateFormAnswers sets the "form_answers" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateFormAnswers() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateFormAnswers()
+	})
+}
+
+// ClearFormAnswers clears the value of the "form_answers" field.
+func (u *OrderItemUpsertOne) ClearFormAnswers() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearFormAnswers()
+	})
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (u *OrderItemUpsertOne) SetAssignedAdminID(v uint64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetAssignedAdminID(v)
+	})
+}
+
+// AddAssignedAdminID adds v to the "assigned_admin_id" field.
+func (u *OrderItemUpsertOne) AddAssignedAdminID(v uint64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddAssignedAdminID(v)
+	})
+}
+
+// UpdateAssignedAdminID sets the "assigned_admin_id" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateAssignedAdminID() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateAssignedAdminID()
 	})
 }
 
@@ -1318,6 +1482,62 @@ func (u *OrderItemUpsertBulk) UpdateSkuID() *OrderItemUpsertBulk {
 func (u *OrderItemUpsertBulk) ClearSkuID() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.ClearSkuID()
+	})
+}
+
+// SetProductName sets the "product_name" field.
+func (u *OrderItemUpsertBulk) SetProductName(v string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetProductName(v)
+	})
+}
+
+// UpdateProductName sets the "product_name" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateProductName() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateProductName()
+	})
+}
+
+// SetFormAnswers sets the "form_answers" field.
+func (u *OrderItemUpsertBulk) SetFormAnswers(v []map[string]string) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetFormAnswers(v)
+	})
+}
+
+// UpdateFormAnswers sets the "form_answers" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateFormAnswers() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateFormAnswers()
+	})
+}
+
+// ClearFormAnswers clears the value of the "form_answers" field.
+func (u *OrderItemUpsertBulk) ClearFormAnswers() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearFormAnswers()
+	})
+}
+
+// SetAssignedAdminID sets the "assigned_admin_id" field.
+func (u *OrderItemUpsertBulk) SetAssignedAdminID(v uint64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetAssignedAdminID(v)
+	})
+}
+
+// AddAssignedAdminID adds v to the "assigned_admin_id" field.
+func (u *OrderItemUpsertBulk) AddAssignedAdminID(v uint64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddAssignedAdminID(v)
+	})
+}
+
+// UpdateAssignedAdminID sets the "assigned_admin_id" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateAssignedAdminID() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateAssignedAdminID()
 	})
 }
 

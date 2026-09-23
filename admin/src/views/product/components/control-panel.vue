@@ -18,7 +18,7 @@ const showForm = ref(false);
 const editingId = ref(0);
 
 const formData = reactive({
-  name: "",
+  name: "", placeholder:"",validation:"text",max_length:500,
   type: "text",
   required: false,
   options_text: "",
@@ -138,14 +138,14 @@ watch(
 
 function resetForm() {
   editingId.value = 0;
-  Object.assign(formData, { name: "", type: "text", required: false, options_text: "", sort: 0 });
+  Object.assign(formData, { name: "", type: "text", required: false, options_text: "", sort: 0,placeholder:"",validation:"text",max_length:500 });
   showForm.value = false;
 }
 
 function handleEdit(row: any) {
   editingId.value = row.id;
   Object.assign(formData, {
-    name: row.name,
+    name: row.name, placeholder:row.placeholder || "",validation:row.validation || "text",max_length:row.max_length || 500,
     type: row.type,
     required: row.required,
     options_text: (row.options || []).join(","),
@@ -163,7 +163,7 @@ async function handleSave() {
   saving.value = true;
   try {
     const payload = {
-      name: formData.name,
+      name: formData.name, placeholder:formData.placeholder,validation:formData.validation,max_length:formData.max_length,
       type: formData.type,
       required: formData.required,
       options: needOptions.value
@@ -231,6 +231,9 @@ async function handleDelete(id: number) {
             <NInputNumber v-model:value="formData.sort" :precision="0" class="w-full" />
           </NFormItem>
         </div>
+        <NFormItem label="填写提示"><NInput v-model:value="formData.placeholder" placeholder="如：https://t.me/channel 或接收地址" /></NFormItem>
+        <NFormItem label="内容校验"><NSelect v-model:value="formData.validation" :options="[{label:'普通文本',value:'text'},{label:'完整链接',value:'url'},{label:'用户名',value:'username'},{label:'TRON 地址',value:'tron'}]" /></NFormItem>
+        <NFormItem label="最多字符"><NInputNumber v-model:value="formData.max_length" :min="1" :max="4000" :precision="0" /></NFormItem>
         <NFormItem v-if="needOptions" label="选项（逗号分隔）">
           <NInput v-model:value="formData.options_text" placeholder="如：微信,QQ,邮箱" />
         </NFormItem>

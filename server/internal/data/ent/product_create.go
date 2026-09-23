@@ -250,6 +250,34 @@ func (_c *ProductCreate) SetNillableStockVisible(v *bool) *ProductCreate {
 	return _c
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (_c *ProductCreate) SetFulfillmentMode(v string) *ProductCreate {
+	_c.mutation.SetFulfillmentMode(v)
+	return _c
+}
+
+// SetNillableFulfillmentMode sets the "fulfillment_mode" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableFulfillmentMode(v *string) *ProductCreate {
+	if v != nil {
+		_c.SetFulfillmentMode(*v)
+	}
+	return _c
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (_c *ProductCreate) SetManualStock(v int64) *ProductCreate {
+	_c.mutation.SetManualStock(v)
+	return _c
+}
+
+// SetNillableManualStock sets the "manual_stock" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableManualStock(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetManualStock(*v)
+	}
+	return _c
+}
+
 // SetDeliveryMode sets the "delivery_mode" field.
 func (_c *ProductCreate) SetDeliveryMode(v product.DeliveryMode) *ProductCreate {
 	_c.mutation.SetDeliveryMode(v)
@@ -483,6 +511,14 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultStockVisible
 		_c.mutation.SetStockVisible(v)
 	}
+	if _, ok := _c.mutation.FulfillmentMode(); !ok {
+		v := product.DefaultFulfillmentMode
+		_c.mutation.SetFulfillmentMode(v)
+	}
+	if _, ok := _c.mutation.ManualStock(); !ok {
+		v := product.DefaultManualStock
+		_c.mutation.SetManualStock(v)
+	}
 	if _, ok := _c.mutation.DeliveryMode(); !ok {
 		v := product.DefaultDeliveryMode
 		_c.mutation.SetDeliveryMode(v)
@@ -565,6 +601,12 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.StockVisible(); !ok {
 		return &ValidationError{Name: "stock_visible", err: errors.New(`ent: missing required field "Product.stock_visible"`)}
+	}
+	if _, ok := _c.mutation.FulfillmentMode(); !ok {
+		return &ValidationError{Name: "fulfillment_mode", err: errors.New(`ent: missing required field "Product.fulfillment_mode"`)}
+	}
+	if _, ok := _c.mutation.ManualStock(); !ok {
+		return &ValidationError{Name: "manual_stock", err: errors.New(`ent: missing required field "Product.manual_stock"`)}
 	}
 	if _, ok := _c.mutation.DeliveryMode(); !ok {
 		return &ValidationError{Name: "delivery_mode", err: errors.New(`ent: missing required field "Product.delivery_mode"`)}
@@ -699,6 +741,14 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.StockVisible(); ok {
 		_spec.SetField(product.FieldStockVisible, field.TypeBool, value)
 		_node.StockVisible = value
+	}
+	if value, ok := _c.mutation.FulfillmentMode(); ok {
+		_spec.SetField(product.FieldFulfillmentMode, field.TypeString, value)
+		_node.FulfillmentMode = value
+	}
+	if value, ok := _c.mutation.ManualStock(); ok {
+		_spec.SetField(product.FieldManualStock, field.TypeInt64, value)
+		_node.ManualStock = value
 	}
 	if value, ok := _c.mutation.DeliveryMode(); ok {
 		_spec.SetField(product.FieldDeliveryMode, field.TypeEnum, value)
@@ -1105,6 +1155,36 @@ func (u *ProductUpsert) SetStockVisible(v bool) *ProductUpsert {
 // UpdateStockVisible sets the "stock_visible" field to the value that was provided on create.
 func (u *ProductUpsert) UpdateStockVisible() *ProductUpsert {
 	u.SetExcluded(product.FieldStockVisible)
+	return u
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (u *ProductUpsert) SetFulfillmentMode(v string) *ProductUpsert {
+	u.Set(product.FieldFulfillmentMode, v)
+	return u
+}
+
+// UpdateFulfillmentMode sets the "fulfillment_mode" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateFulfillmentMode() *ProductUpsert {
+	u.SetExcluded(product.FieldFulfillmentMode)
+	return u
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (u *ProductUpsert) SetManualStock(v int64) *ProductUpsert {
+	u.Set(product.FieldManualStock, v)
+	return u
+}
+
+// UpdateManualStock sets the "manual_stock" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateManualStock() *ProductUpsert {
+	u.SetExcluded(product.FieldManualStock)
+	return u
+}
+
+// AddManualStock adds v to the "manual_stock" field.
+func (u *ProductUpsert) AddManualStock(v int64) *ProductUpsert {
+	u.Add(product.FieldManualStock, v)
 	return u
 }
 
@@ -1642,6 +1722,41 @@ func (u *ProductUpsertOne) SetStockVisible(v bool) *ProductUpsertOne {
 func (u *ProductUpsertOne) UpdateStockVisible() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateStockVisible()
+	})
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (u *ProductUpsertOne) SetFulfillmentMode(v string) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetFulfillmentMode(v)
+	})
+}
+
+// UpdateFulfillmentMode sets the "fulfillment_mode" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateFulfillmentMode() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateFulfillmentMode()
+	})
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (u *ProductUpsertOne) SetManualStock(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetManualStock(v)
+	})
+}
+
+// AddManualStock adds v to the "manual_stock" field.
+func (u *ProductUpsertOne) AddManualStock(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddManualStock(v)
+	})
+}
+
+// UpdateManualStock sets the "manual_stock" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateManualStock() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateManualStock()
 	})
 }
 
@@ -2370,6 +2485,41 @@ func (u *ProductUpsertBulk) SetStockVisible(v bool) *ProductUpsertBulk {
 func (u *ProductUpsertBulk) UpdateStockVisible() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.UpdateStockVisible()
+	})
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (u *ProductUpsertBulk) SetFulfillmentMode(v string) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetFulfillmentMode(v)
+	})
+}
+
+// UpdateFulfillmentMode sets the "fulfillment_mode" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateFulfillmentMode() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateFulfillmentMode()
+	})
+}
+
+// SetManualStock sets the "manual_stock" field.
+func (u *ProductUpsertBulk) SetManualStock(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetManualStock(v)
+	})
+}
+
+// AddManualStock adds v to the "manual_stock" field.
+func (u *ProductUpsertBulk) AddManualStock(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddManualStock(v)
+	})
+}
+
+// UpdateManualStock sets the "manual_stock" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateManualStock() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateManualStock()
 	})
 }
 

@@ -79,6 +79,7 @@ message ResetUserPasswordRequest {
 
 // UserItem 前台用户（敏感字段如密码哈希绝不外发）。
 message UserItem {
+  uint64 manual_level_id = 15;
   uint64 id = 1;
   string username = 2;
   string email = 3;

@@ -75,6 +75,26 @@ func (_c *OrderDeliveryCreate) SetDeliveryTokenHash(v string) *OrderDeliveryCrea
 	return _c
 }
 
+// SetServiceContent sets the "service_content" field.
+func (_c *OrderDeliveryCreate) SetServiceContent(v []byte) *OrderDeliveryCreate {
+	_c.mutation.SetServiceContent(v)
+	return _c
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (_c *OrderDeliveryCreate) SetDeliveredQuantity(v int32) *OrderDeliveryCreate {
+	_c.mutation.SetDeliveredQuantity(v)
+	return _c
+}
+
+// SetNillableDeliveredQuantity sets the "delivered_quantity" field if the given value is not nil.
+func (_c *OrderDeliveryCreate) SetNillableDeliveredQuantity(v *int32) *OrderDeliveryCreate {
+	if v != nil {
+		_c.SetDeliveredQuantity(*v)
+	}
+	return _c
+}
+
 // SetDeliveredMode sets the "delivered_mode" field.
 func (_c *OrderDeliveryCreate) SetDeliveredMode(v orderdelivery.DeliveredMode) *OrderDeliveryCreate {
 	_c.mutation.SetDeliveredMode(v)
@@ -197,6 +217,10 @@ func (_c *OrderDeliveryCreate) defaults() {
 		v := orderdelivery.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
+	if _, ok := _c.mutation.DeliveredQuantity(); !ok {
+		v := orderdelivery.DefaultDeliveredQuantity
+		_c.mutation.SetDeliveredQuantity(v)
+	}
 	if _, ok := _c.mutation.DeliveredBy(); !ok {
 		v := orderdelivery.DefaultDeliveredBy
 		_c.mutation.SetDeliveredBy(v)
@@ -231,6 +255,9 @@ func (_c *OrderDeliveryCreate) check() error {
 		if err := orderdelivery.DeliveryTokenHashValidator(v); err != nil {
 			return &ValidationError{Name: "delivery_token_hash", err: fmt.Errorf(`ent: validator failed for field "OrderDelivery.delivery_token_hash": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.DeliveredQuantity(); !ok {
+		return &ValidationError{Name: "delivered_quantity", err: errors.New(`ent: missing required field "OrderDelivery.delivered_quantity"`)}
 	}
 	if _, ok := _c.mutation.DeliveredMode(); !ok {
 		return &ValidationError{Name: "delivered_mode", err: errors.New(`ent: missing required field "OrderDelivery.delivered_mode"`)}
@@ -306,6 +333,14 @@ func (_c *OrderDeliveryCreate) createSpec() (*OrderDelivery, *sqlgraph.CreateSpe
 	if value, ok := _c.mutation.DeliveryTokenHash(); ok {
 		_spec.SetField(orderdelivery.FieldDeliveryTokenHash, field.TypeString, value)
 		_node.DeliveryTokenHash = value
+	}
+	if value, ok := _c.mutation.ServiceContent(); ok {
+		_spec.SetField(orderdelivery.FieldServiceContent, field.TypeBytes, value)
+		_node.ServiceContent = value
+	}
+	if value, ok := _c.mutation.DeliveredQuantity(); ok {
+		_spec.SetField(orderdelivery.FieldDeliveredQuantity, field.TypeInt32, value)
+		_node.DeliveredQuantity = value
 	}
 	if value, ok := _c.mutation.DeliveredMode(); ok {
 		_spec.SetField(orderdelivery.FieldDeliveredMode, field.TypeEnum, value)
@@ -469,6 +504,42 @@ func (u *OrderDeliveryUpsert) SetDeliveryTokenHash(v string) *OrderDeliveryUpser
 // UpdateDeliveryTokenHash sets the "delivery_token_hash" field to the value that was provided on create.
 func (u *OrderDeliveryUpsert) UpdateDeliveryTokenHash() *OrderDeliveryUpsert {
 	u.SetExcluded(orderdelivery.FieldDeliveryTokenHash)
+	return u
+}
+
+// SetServiceContent sets the "service_content" field.
+func (u *OrderDeliveryUpsert) SetServiceContent(v []byte) *OrderDeliveryUpsert {
+	u.Set(orderdelivery.FieldServiceContent, v)
+	return u
+}
+
+// UpdateServiceContent sets the "service_content" field to the value that was provided on create.
+func (u *OrderDeliveryUpsert) UpdateServiceContent() *OrderDeliveryUpsert {
+	u.SetExcluded(orderdelivery.FieldServiceContent)
+	return u
+}
+
+// ClearServiceContent clears the value of the "service_content" field.
+func (u *OrderDeliveryUpsert) ClearServiceContent() *OrderDeliveryUpsert {
+	u.SetNull(orderdelivery.FieldServiceContent)
+	return u
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (u *OrderDeliveryUpsert) SetDeliveredQuantity(v int32) *OrderDeliveryUpsert {
+	u.Set(orderdelivery.FieldDeliveredQuantity, v)
+	return u
+}
+
+// UpdateDeliveredQuantity sets the "delivered_quantity" field to the value that was provided on create.
+func (u *OrderDeliveryUpsert) UpdateDeliveredQuantity() *OrderDeliveryUpsert {
+	u.SetExcluded(orderdelivery.FieldDeliveredQuantity)
+	return u
+}
+
+// AddDeliveredQuantity adds v to the "delivered_quantity" field.
+func (u *OrderDeliveryUpsert) AddDeliveredQuantity(v int32) *OrderDeliveryUpsert {
+	u.Add(orderdelivery.FieldDeliveredQuantity, v)
 	return u
 }
 
@@ -706,6 +777,48 @@ func (u *OrderDeliveryUpsertOne) SetDeliveryTokenHash(v string) *OrderDeliveryUp
 func (u *OrderDeliveryUpsertOne) UpdateDeliveryTokenHash() *OrderDeliveryUpsertOne {
 	return u.Update(func(s *OrderDeliveryUpsert) {
 		s.UpdateDeliveryTokenHash()
+	})
+}
+
+// SetServiceContent sets the "service_content" field.
+func (u *OrderDeliveryUpsertOne) SetServiceContent(v []byte) *OrderDeliveryUpsertOne {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.SetServiceContent(v)
+	})
+}
+
+// UpdateServiceContent sets the "service_content" field to the value that was provided on create.
+func (u *OrderDeliveryUpsertOne) UpdateServiceContent() *OrderDeliveryUpsertOne {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.UpdateServiceContent()
+	})
+}
+
+// ClearServiceContent clears the value of the "service_content" field.
+func (u *OrderDeliveryUpsertOne) ClearServiceContent() *OrderDeliveryUpsertOne {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.ClearServiceContent()
+	})
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (u *OrderDeliveryUpsertOne) SetDeliveredQuantity(v int32) *OrderDeliveryUpsertOne {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.SetDeliveredQuantity(v)
+	})
+}
+
+// AddDeliveredQuantity adds v to the "delivered_quantity" field.
+func (u *OrderDeliveryUpsertOne) AddDeliveredQuantity(v int32) *OrderDeliveryUpsertOne {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.AddDeliveredQuantity(v)
+	})
+}
+
+// UpdateDeliveredQuantity sets the "delivered_quantity" field to the value that was provided on create.
+func (u *OrderDeliveryUpsertOne) UpdateDeliveredQuantity() *OrderDeliveryUpsertOne {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.UpdateDeliveredQuantity()
 	})
 }
 
@@ -1126,6 +1239,48 @@ func (u *OrderDeliveryUpsertBulk) SetDeliveryTokenHash(v string) *OrderDeliveryU
 func (u *OrderDeliveryUpsertBulk) UpdateDeliveryTokenHash() *OrderDeliveryUpsertBulk {
 	return u.Update(func(s *OrderDeliveryUpsert) {
 		s.UpdateDeliveryTokenHash()
+	})
+}
+
+// SetServiceContent sets the "service_content" field.
+func (u *OrderDeliveryUpsertBulk) SetServiceContent(v []byte) *OrderDeliveryUpsertBulk {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.SetServiceContent(v)
+	})
+}
+
+// UpdateServiceContent sets the "service_content" field to the value that was provided on create.
+func (u *OrderDeliveryUpsertBulk) UpdateServiceContent() *OrderDeliveryUpsertBulk {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.UpdateServiceContent()
+	})
+}
+
+// ClearServiceContent clears the value of the "service_content" field.
+func (u *OrderDeliveryUpsertBulk) ClearServiceContent() *OrderDeliveryUpsertBulk {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.ClearServiceContent()
+	})
+}
+
+// SetDeliveredQuantity sets the "delivered_quantity" field.
+func (u *OrderDeliveryUpsertBulk) SetDeliveredQuantity(v int32) *OrderDeliveryUpsertBulk {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.SetDeliveredQuantity(v)
+	})
+}
+
+// AddDeliveredQuantity adds v to the "delivered_quantity" field.
+func (u *OrderDeliveryUpsertBulk) AddDeliveredQuantity(v int32) *OrderDeliveryUpsertBulk {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.AddDeliveredQuantity(v)
+	})
+}
+
+// UpdateDeliveredQuantity sets the "delivered_quantity" field to the value that was provided on create.
+func (u *OrderDeliveryUpsertBulk) UpdateDeliveredQuantity() *OrderDeliveryUpsertBulk {
+	return u.Update(func(s *OrderDeliveryUpsert) {
+		s.UpdateDeliveredQuantity()
 	})
 }
 

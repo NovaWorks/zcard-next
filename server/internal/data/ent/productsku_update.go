@@ -144,6 +144,20 @@ func (_u *ProductSkuUpdate) ClearCost() *ProductSkuUpdate {
 	return _u
 }
 
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (_u *ProductSkuUpdate) SetFulfillmentMode(v string) *ProductSkuUpdate {
+	_u.mutation.SetFulfillmentMode(v)
+	return _u
+}
+
+// SetNillableFulfillmentMode sets the "fulfillment_mode" field if the given value is not nil.
+func (_u *ProductSkuUpdate) SetNillableFulfillmentMode(v *string) *ProductSkuUpdate {
+	if v != nil {
+		_u.SetFulfillmentMode(*v)
+	}
+	return _u
+}
+
 // SetStockOffset sets the "stock_offset" field.
 func (_u *ProductSkuUpdate) SetStockOffset(v int32) *ProductSkuUpdate {
 	_u.mutation.ResetStockOffset()
@@ -299,6 +313,9 @@ func (_u *ProductSkuUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.CostCleared() {
 		_spec.ClearField(productsku.FieldCost, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.FulfillmentMode(); ok {
+		_spec.SetField(productsku.FieldFulfillmentMode, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.StockOffset(); ok {
 		_spec.SetField(productsku.FieldStockOffset, field.TypeInt32, value)
@@ -473,6 +490,20 @@ func (_u *ProductSkuUpdateOne) AddCost(v int64) *ProductSkuUpdateOne {
 // ClearCost clears the value of the "cost" field.
 func (_u *ProductSkuUpdateOne) ClearCost() *ProductSkuUpdateOne {
 	_u.mutation.ClearCost()
+	return _u
+}
+
+// SetFulfillmentMode sets the "fulfillment_mode" field.
+func (_u *ProductSkuUpdateOne) SetFulfillmentMode(v string) *ProductSkuUpdateOne {
+	_u.mutation.SetFulfillmentMode(v)
+	return _u
+}
+
+// SetNillableFulfillmentMode sets the "fulfillment_mode" field if the given value is not nil.
+func (_u *ProductSkuUpdateOne) SetNillableFulfillmentMode(v *string) *ProductSkuUpdateOne {
+	if v != nil {
+		_u.SetFulfillmentMode(*v)
+	}
 	return _u
 }
 
@@ -661,6 +692,9 @@ func (_u *ProductSkuUpdateOne) sqlSave(ctx context.Context) (_node *ProductSku, 
 	}
 	if _u.mutation.CostCleared() {
 		_spec.ClearField(productsku.FieldCost, field.TypeInt64)
+	}
+	if value, ok := _u.mutation.FulfillmentMode(); ok {
+		_spec.SetField(productsku.FieldFulfillmentMode, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.StockOffset(); ok {
 		_spec.SetField(productsku.FieldStockOffset, field.TypeInt32, value)

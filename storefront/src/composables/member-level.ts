@@ -4,6 +4,8 @@ export function levelDiscount(discount: number) {
   return (!Number.isFinite(discount) || discount <= 0 || discount >= 10000) ? '原价' : `${Number((discount / 1000).toFixed(2))} 折`;
 }
 export function levelThreshold(level: LevelBrief) {
+ if(level.display_mode === "contact") return "联系客服开通";
+ if(level.acquire_mode === "manual") return "由管理员开通";
   const recharge = `累计充值 ${formatMoney(level.threshold_recharge)}`;
   const consume = `累计消费 ${formatMoney(level.threshold_consume)}`;
   switch (level.threshold_type) {

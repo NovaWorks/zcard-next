@@ -18,6 +18,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldManualLevelID holds the string denoting the manual_level_id field in the database.
+	FieldManualLevelID = "manual_level_id"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
 	// FieldEmail holds the string denoting the email field in the database.
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldManualLevelID,
 	FieldUsername,
 	FieldEmail,
 	FieldPhone,
@@ -76,6 +79,8 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultManualLevelID holds the default value on creation for the "manual_level_id" field.
+	DefaultManualLevelID uint64
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	UsernameValidator func(string) error
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
@@ -131,6 +136,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByManualLevelID orders the results by the manual_level_id field.
+func ByManualLevelID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldManualLevelID, opts...).ToFunc()
 }
 
 // ByUsername orders the results by the username field.

@@ -43,14 +43,22 @@ func (s *AdminMemberLevelService) ListMemberLevels(ctx context.Context, _ *empty
 		return nil, errors.InternalServer("memberlevel.LIST_FAILED", "读取等级失败")
 	}
 	reply := &adminv1.MemberLevelList{}
+	canView := s.canViewDiscount(ctx)
 	for _, lv := range rows {
-		reply.Levels = append(reply.Levels, levelPB(lv))
+		pb := levelPB(lv)
+		if !canView {
+			pb.Discount = 0
+		}
+		reply.Levels = append(reply.Levels, pb)
 	}
 	return reply, nil
 }
 
 // CreateMemberLevel 创建。
 func (s *AdminMemberLevelService) CreateMemberLevel(ctx context.Context, req *adminv1.CreateMemberLevelRequest) (*adminv1.MemberLevel, error) {
+	if !s.canViewDiscount(ctx) {
+		return nil, errors.Forbidden("memberlevel.FORBIDDEN", "修改等级需同时拥有折扣查看权限")
+	}
 	if req.GetName() == "" {
 		return nil, errors.BadRequest("memberlevel.INVALID_INPUT", "名称必填")
 	}
@@ -59,7 +67,7 @@ func (s *AdminMemberLevelService) CreateMemberLevel(ctx context.Context, req *ad
 		return nil, errors.BadRequest("memberlevel.POINTS_RULE_INVALID", "积分规则 JSON 非法（应为 {\"spend_cents\":X,\"points\":Y}）")
 	}
 	lv, err := s.repo.CreateLevel(ctx, req.GetName(), req.GetThresholdType(),
-		req.GetThresholdRecharge(), req.GetThresholdConsume(), req.GetDiscount(), req.GetSort(), req.GetEnabled(), rule)
+		req.GetThresholdRecharge(), req.GetThresholdConsume(), req.GetDiscount(), req.GetSort(), req.GetEnabled(), rule, LevelSettings{AcquireMode: req.GetAcquireMode(), DisplayMode: req.GetDisplayMode()})
 	if err != nil {
 		return nil, errors.InternalServer("memberlevel.CREATE_FAILED", "创建失败")
 	}
@@ -68,13 +76,16 @@ func (s *AdminMemberLevelService) CreateMemberLevel(ctx context.Context, req *ad
 
 // UpdateMemberLevel 更新。
 func (s *AdminMemberLevelService) UpdateMemberLevel(ctx context.Context, req *adminv1.UpdateMemberLevelRequest) (*adminv1.MemberLevel, error) {
+	if !s.canViewDiscount(ctx) {
+		return nil, errors.Forbidden("memberlevel.FORBIDDEN", "修改等级需同时拥有折扣查看权限")
+	}
 	rule, err := parsePointsRule(req.GetPointsRuleJson())
 	if err != nil {
 		return nil, errors.BadRequest("memberlevel.POINTS_RULE_INVALID", "积分规则 JSON 非法（应为 {\"spend_cents\":X,\"points\":Y}）")
 	}
-	lv, err := s.repo.UpdateLevel(ctx, req.GetId(), req.GetName(), req.GetDiscount(), req.GetSort(), req.GetEnabled(), rule)
+	lv, err := s.repo.UpdateLevel(ctx, req.GetId(), req.GetName(), req.GetDiscount(), req.GetSort(), req.GetEnabled(), rule, LevelSettings{AcquireMode: req.GetAcquireMode(), DisplayMode: req.GetDisplayMode()})
 	if err != nil {
-		return nil, errors.NotFound("memberlevel.NOT_FOUND", "等级不存在")
+		return nil, errors.BadRequest("memberlevel.INVALID_INPUT", err.Error())
 	}
 	return levelPB(lv), nil
 }
@@ -82,7 +93,7 @@ func (s *AdminMemberLevelService) UpdateMemberLevel(ctx context.Context, req *ad
 // DeleteMemberLevel 删除。
 func (s *AdminMemberLevelService) DeleteMemberLevel(ctx context.Context, req *adminv1.DeleteMemberLevelRequest) (*emptypb.Empty, error) {
 	if err := s.repo.DeleteLevel(ctx, req.GetId()); err != nil {
-		return nil, errors.NotFound("memberlevel.NOT_FOUND", "等级不存在")
+		return nil, errors.BadRequest("memberlevel.INVALID_INPUT", err.Error())
 	}
 	return &emptypb.Empty{}, nil
 }
@@ -92,7 +103,7 @@ func levelPB(lv *ent.MemberLevel) *adminv1.MemberLevel {
 	out := &adminv1.MemberLevel{
 		Id: lv.ID, Name: lv.Name, ThresholdType: string(lv.ThresholdType),
 		ThresholdRecharge: lv.ThresholdRecharge, ThresholdConsume: lv.ThresholdConsume,
-		Discount: lv.Discount, Sort: lv.Sort, Enabled: lv.Enabled,
+		Discount: lv.Discount, Sort: lv.Sort, Enabled: lv.Enabled, AcquireMode: lv.AcquireMode, DisplayMode: lv.DisplayMode,
 	}
 	if len(lv.PointsRule) > 0 {
 		if raw, err := json.Marshal(lv.PointsRule); err == nil {

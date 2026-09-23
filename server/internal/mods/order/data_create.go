@@ -114,7 +114,7 @@ type CreateOrderInput struct {
 	ClientIP       string
 	SubsiteID      uint64
 	CouponCode     string            // 优惠券码（可选）
-	ControlAnswers map[string]string // 自定义控件答案（key=控件 ID，落 order.extra）
+	ControlAnswers map[string]string // 兼容旧客户端的控件答案（新数据落订单项快照）
 	UsePoints      bool              // ：积分兑换下单（全部商品须为积分商品；同事务扣分直落 paid）
 	IdempotencyKey string            // ：下单幂等键（头 Idempotency-Key；同 key 返回首单）
 	RefCode        string            // 推广归因码（游客/无链用户：实时解析推广者 → 订单级快照）
@@ -122,9 +122,10 @@ type CreateOrderInput struct {
 
 // OrderItemInput 商品行。
 type OrderItemInput struct {
-	ProductID uint64
-	SkuID     uint64
-	Quantity  int32
+	ControlAnswers map[string]string
+	ProductID      uint64
+	SkuID          uint64
+	Quantity       int32
 }
 
 // CreateOrderResult 下单结果。
@@ -208,6 +209,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if err != nil {
 			return err
 		}
+		services, err := uc.prepareServices(txCtx, in)
+		if err != nil {
+			return err
+		}
 		upstreamItem := map[uint64]bool{} // product_id → 是否上游项
 		directItem := map[uint64]bool{}   // product_id → 是否直发项（url/code）
 		var reserveItems []port.ReserveItem
@@ -220,6 +225,9 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				Only(txCtx)
 			if err != nil {
 				continue // 商品校验在计价循环统一做（PRODUCT_NOT_FOUND）
+			}
+			if services[itemKey(item.ProductID, item.SkuID)].mode == "manual" {
+				continue
 			}
 			if p.UpstreamSourceID > 0 {
 				upstreamItem[item.ProductID] = true
@@ -235,9 +243,16 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				Quantity:  item.Quantity,
 			})
 		}
+		var reservedIDs []uint64
 		if len(reserveItems) > 0 {
-			if _, err := uc.Inv.Reserve(txCtx, in.SubsiteID, reserveItems); err != nil {
+			res, err := uc.Inv.Reserve(txCtx, in.SubsiteID, reserveItems)
+			if err != nil {
 				return fmt.Errorf("order.INSUFFICIENT_STOCK: %w", err)
+			}
+			if res != nil {
+				for _, v := range res.Cards {
+					reservedIDs = append(reservedIDs, v.CardID)
+				}
 			}
 		}
 
@@ -248,14 +263,15 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 		orderNo := id.FormatNo("S", snowflakeID)
 
-		// 3) 会员折扣（万分比，按用户累计消费匹配；解析失败降级为 0 不阻断下单）
+		// 3) 会员折扣（万分比，按用户累计消费匹配；解析失败则中止，避免指定等级失效时以错误价格成交）
 		var memberRate int32
 		var memberLevelID uint64
 		if uc.MemberRate != nil && in.UserID > 0 {
-			if r, lvl, err := uc.MemberRate.EffectiveRate(txCtx, in.UserID); err == nil {
-				memberRate = r
-				memberLevelID = lvl
+			r, lvl, err := uc.MemberRate.EffectiveRate(txCtx, in.UserID)
+			if err != nil {
+				return fmt.Errorf("order.MEMBER_LEVEL_INVALID: %w", err)
 			}
+			memberRate, memberLevelID = r, lvl
 		}
 
 		// 4) 算价管线（每商品行独立跑管线；会员折扣逐行，优惠券整单后置）
@@ -433,9 +449,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if len(flashReservations) > 0 {
 			extra["flash_reservations"] = flashReservations
 		}
-		if len(in.ControlAnswers) > 0 {
-			extra["control_answers"] = in.ControlAnswers
-		}
+
 		if in.UsePoints {
 			extra["points_total"] = pointsTotal // 积分口径快照（退款/审计读此处）
 		}
@@ -496,15 +510,26 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 
 		// 6) 绑定订单到卡（Reserve 后回填 order_id；上游/直发项无本地卡可绑）
-		for _, item := range in.Items {
-			if upstreamItem[item.ProductID] {
-				continue
-			}
-			if directItem[item.ProductID] {
-				continue
-			}
-			if err := uc.Inv.BindOrder(txCtx, in.SubsiteID, item.ProductID, o.ID, item.Quantity); err != nil {
+		if binder, ok := uc.Inv.(interface {
+			BindReserved(context.Context, uint64, []uint64) error
+		}); ok {
+			if err := binder.BindReserved(txCtx, o.ID, reservedIDs); err != nil {
 				return err
+			}
+		} else {
+			for _, item := range in.Items {
+				if services[itemKey(item.ProductID, item.SkuID)].mode == "manual" {
+					continue
+				}
+				if upstreamItem[item.ProductID] {
+					continue
+				}
+				if directItem[item.ProductID] {
+					continue
+				}
+				if err := uc.Inv.BindOrder(txCtx, in.SubsiteID, item.ProductID, o.ID, item.Quantity); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -520,7 +545,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetQuantity(r.input.Quantity).
 				SetAmount(int64(r.res.Total)).
 				SetCost(r.cost).
-				SetFulfillmentType(fulfillmentTypeOf(upstreamItem[r.input.ProductID])).
+				SetFulfillmentType(orderitem.FulfillmentType(services[itemKey(r.input.ProductID, r.input.SkuID)].mode)).
+				SetProductName(services[itemKey(r.input.ProductID, r.input.SkuID)].name).
+				SetSkuName(services[itemKey(r.input.ProductID, r.input.SkuID)].skuName).
+				SetFormAnswers(services[itemKey(r.input.ProductID, r.input.SkuID)].answers).
 				SetFulfillmentStatus("pending").
 				Save(txCtx)
 			if err != nil {
@@ -734,7 +762,7 @@ func (uc *OrderUsecase) ListUserOrders(ctx context.Context, userID uint64, statu
 	if err != nil {
 		return nil, 0, err
 	}
-	rows, err := q.Clone().Offset((page - 1) * size).Limit(size).All(ctx)
+	rows, err := q.Clone().WithItems().Offset((page - 1) * size).Limit(size).All(ctx)
 	return rows, int64(total), err
 }
 

@@ -56,6 +56,10 @@ type Product struct {
 	DirectContent []byte `json:"direct_content,omitempty"`
 	// 是否显示库存
 	StockVisible bool `json:"stock_visible,omitempty"`
+	// FulfillmentMode holds the value of the "fulfillment_mode" field.
+	FulfillmentMode string `json:"fulfillment_mode,omitempty"`
+	// 人工共享总额度（含已售及预占），-1不限
+	ManualStock int64 `json:"manual_stock,omitempty"`
 	// 发货模式：标记/即删
 	DeliveryMode product.DeliveryMode `json:"delivery_mode,omitempty"`
 	// 自定义控件配置（结构化控件走 product_controls 表，M1）
@@ -118,9 +122,9 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend:
 			values[i] = new(sql.NullBool)
-		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
+		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
 			values[i] = new(sql.NullInt64)
-		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldDeliveryMode, product.FieldUpstreamProductCode:
+		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode:
 			values[i] = new(sql.NullString)
 		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt:
 			values[i] = new(sql.NullTime)
@@ -262,6 +266,18 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field stock_visible", values[i])
 			} else if value.Valid {
 				_m.StockVisible = value.Bool
+			}
+		case product.FieldFulfillmentMode:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field fulfillment_mode", values[i])
+			} else if value.Valid {
+				_m.FulfillmentMode = value.String
+			}
+		case product.FieldManualStock:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field manual_stock", values[i])
+			} else if value.Valid {
+				_m.ManualStock = value.Int64
 			}
 		case product.FieldDeliveryMode:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -421,6 +437,12 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("stock_visible=")
 	builder.WriteString(fmt.Sprintf("%v", _m.StockVisible))
+	builder.WriteString(", ")
+	builder.WriteString("fulfillment_mode=")
+	builder.WriteString(_m.FulfillmentMode)
+	builder.WriteString(", ")
+	builder.WriteString("manual_stock=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ManualStock))
 	builder.WriteString(", ")
 	builder.WriteString("delivery_mode=")
 	builder.WriteString(fmt.Sprintf("%v", _m.DeliveryMode))

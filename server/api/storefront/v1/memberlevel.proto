@@ -34,6 +34,9 @@ message MyLevelReply {
 
 // LevelBrief 等级摘要。
 message LevelBrief {
+  string display_mode = 8;
+  string display_text = 9;
+  string acquire_mode = 10;
   uint64 id = 1;
   string name = 2;
   int32 discount = 3; // 万分比折扣

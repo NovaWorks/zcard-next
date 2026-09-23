@@ -159,6 +159,9 @@ func (r *ProductRepoImpl) GetAdmin(ctx context.Context, subsiteID, id uint64) (*
 
 // CreateProduct 创建商品（description 已 sanitize）。
 func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInput) (*ent.Product, error) {
+	if err := validateServiceConfig(in.FulfillmentMode, in.ManualStock, false); err != nil {
+		return nil, err
+	}
 	tc := tenancy.FromContext(ctx)
 	slug, err := r.genUniqueSlug(ctx, tc.SubsiteID, in.Name)
 	if err != nil {
@@ -171,6 +174,12 @@ func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInpu
 		SetPrice(in.Price).
 		SetFactoryPrice(in.FactoryPrice).
 		SetStockType(product.StockType(in.StockType))
+	if in.FulfillmentMode != "" {
+		create.SetFulfillmentMode(in.FulfillmentMode)
+	}
+	if in.ManualStock != nil {
+		create.SetManualStock(*in.ManualStock)
+	}
 	if in.DeliveryMode != "" {
 		create = create.SetDeliveryMode(product.DeliveryMode(in.DeliveryMode))
 	}
@@ -201,6 +210,15 @@ func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphe
 
 // UpdateProduct 更新（nil/零值字段不动）。
 func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
+	if in.FulfillmentMode == "manual" {
+		p, err := data.Client(ctx, r.data).Product.Get(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if p.UpstreamSourceID > 0 {
+			return nil, fmt.Errorf("上游商品不能改为本地人工交付，请新建本地服务商品")
+		}
+	}
 	q := data.Client(ctx, r.data).Product.UpdateOneID(id).Where(product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID))
 	if in.Name != "" {
 		q.SetName(in.Name)
@@ -226,6 +244,15 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	if in.StockType != "" {
 		q.SetStockType(product.StockType(in.StockType))
 		// 保留旧直发密文供历史订单取货；新订单按 stock_type 走卡池。
+	}
+	if err := validateServiceConfig(in.FulfillmentMode, in.ManualStock, false); err != nil {
+		return nil, err
+	}
+	if in.FulfillmentMode != "" {
+		q.SetFulfillmentMode(in.FulfillmentMode)
+	}
+	if in.ManualStock != nil {
+		q.SetManualStock(*in.ManualStock)
 	}
 	if in.DeliveryMode != "" {
 		q.SetDeliveryMode(product.DeliveryMode(in.DeliveryMode))
@@ -536,6 +563,7 @@ func (r *ProductRepoImpl) DeleteTag(ctx context.Context, id uint64) error {
 // ToAdminPB 转 admin 协议对象。
 func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 	out := &adminv1.AdminProduct{
+		FulfillmentMode: p.FulfillmentMode, ManualStock: &p.ManualStock,
 		Id: p.ID, CategoryId: p.CategoryID, Name: p.Name, Slug: p.Slug,
 		Description: p.Description, Cover: p.Cover, Images: p.Images,
 		CoverProtected: p.CoverProtected, DescriptionProtected: p.DescriptionProtected,
@@ -926,7 +954,23 @@ func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter)
 	if err != nil {
 		return nil, 0, err
 	}
-	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0), data.VisibleProductCategory(hidden))
+	c := data.Client(ctx, r.data)
+	controls, e := c.ProductControl.Query().All(ctx)
+	if e != nil {
+		return nil, 0, e
+	}
+	var blocked []uint64
+	for _, v := range controls {
+		blocked = append(blocked, v.ProductID)
+	}
+	skus, e := c.ProductSku.Query().Where(productsku.FulfillmentMode("manual")).All(ctx)
+	if e != nil {
+		return nil, 0, e
+	}
+	for _, v := range skus {
+		blocked = append(blocked, v.ProductID)
+	}
+	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNEQ("manual"), product.IDNotIn(blocked...))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}
@@ -958,6 +1002,9 @@ func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*
 	}
 	if data.CategoryHidden(hidden, row.CategoryID) {
 		return nil, ErrProductNotFound
+	}
+	if err := data.RejectServiceProduct(ctx, data.Client(ctx, r.data), row); err != nil {
+		return nil, err
 	}
 	p := toSupplierProduct(row)
 	return &p, nil

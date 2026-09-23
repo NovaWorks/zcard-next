@@ -144,6 +144,34 @@ func (_u *MemberLevelUpdate) AddThresholdConsume(v int64) *MemberLevelUpdate {
 	return _u
 }
 
+// SetAcquireMode sets the "acquire_mode" field.
+func (_u *MemberLevelUpdate) SetAcquireMode(v string) *MemberLevelUpdate {
+	_u.mutation.SetAcquireMode(v)
+	return _u
+}
+
+// SetNillableAcquireMode sets the "acquire_mode" field if the given value is not nil.
+func (_u *MemberLevelUpdate) SetNillableAcquireMode(v *string) *MemberLevelUpdate {
+	if v != nil {
+		_u.SetAcquireMode(*v)
+	}
+	return _u
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (_u *MemberLevelUpdate) SetDisplayMode(v string) *MemberLevelUpdate {
+	_u.mutation.SetDisplayMode(v)
+	return _u
+}
+
+// SetNillableDisplayMode sets the "display_mode" field if the given value is not nil.
+func (_u *MemberLevelUpdate) SetNillableDisplayMode(v *string) *MemberLevelUpdate {
+	if v != nil {
+		_u.SetDisplayMode(*v)
+	}
+	return _u
+}
+
 // SetDiscount sets the "discount" field.
 func (_u *MemberLevelUpdate) SetDiscount(v int32) *MemberLevelUpdate {
 	_u.mutation.ResetDiscount()
@@ -323,6 +351,12 @@ func (_u *MemberLevelUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.AddedThresholdConsume(); ok {
 		_spec.AddField(memberlevel.FieldThresholdConsume, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.AcquireMode(); ok {
+		_spec.SetField(memberlevel.FieldAcquireMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DisplayMode(); ok {
+		_spec.SetField(memberlevel.FieldDisplayMode, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.Discount(); ok {
 		_spec.SetField(memberlevel.FieldDiscount, field.TypeInt32, value)
 	}
@@ -477,6 +511,34 @@ func (_u *MemberLevelUpdateOne) SetNillableThresholdConsume(v *int64) *MemberLev
 // AddThresholdConsume adds value to the "threshold_consume" field.
 func (_u *MemberLevelUpdateOne) AddThresholdConsume(v int64) *MemberLevelUpdateOne {
 	_u.mutation.AddThresholdConsume(v)
+	return _u
+}
+
+// SetAcquireMode sets the "acquire_mode" field.
+func (_u *MemberLevelUpdateOne) SetAcquireMode(v string) *MemberLevelUpdateOne {
+	_u.mutation.SetAcquireMode(v)
+	return _u
+}
+
+// SetNillableAcquireMode sets the "acquire_mode" field if the given value is not nil.
+func (_u *MemberLevelUpdateOne) SetNillableAcquireMode(v *string) *MemberLevelUpdateOne {
+	if v != nil {
+		_u.SetAcquireMode(*v)
+	}
+	return _u
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (_u *MemberLevelUpdateOne) SetDisplayMode(v string) *MemberLevelUpdateOne {
+	_u.mutation.SetDisplayMode(v)
+	return _u
+}
+
+// SetNillableDisplayMode sets the "display_mode" field if the given value is not nil.
+func (_u *MemberLevelUpdateOne) SetNillableDisplayMode(v *string) *MemberLevelUpdateOne {
+	if v != nil {
+		_u.SetDisplayMode(*v)
+	}
 	return _u
 }
 
@@ -688,6 +750,12 @@ func (_u *MemberLevelUpdateOne) sqlSave(ctx context.Context) (_node *MemberLevel
 	}
 	if value, ok := _u.mutation.AddedThresholdConsume(); ok {
 		_spec.AddField(memberlevel.FieldThresholdConsume, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AcquireMode(); ok {
+		_spec.SetField(memberlevel.FieldAcquireMode, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.DisplayMode(); ok {
+		_spec.SetField(memberlevel.FieldDisplayMode, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Discount(); ok {
 		_spec.SetField(memberlevel.FieldDiscount, field.TypeInt32, value)

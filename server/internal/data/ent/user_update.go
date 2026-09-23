@@ -34,6 +34,27 @@ func (_u *UserUpdate) SetUpdatedAt(v time.Time) *UserUpdate {
 	return _u
 }
 
+// SetManualLevelID sets the "manual_level_id" field.
+func (_u *UserUpdate) SetManualLevelID(v uint64) *UserUpdate {
+	_u.mutation.ResetManualLevelID()
+	_u.mutation.SetManualLevelID(v)
+	return _u
+}
+
+// SetNillableManualLevelID sets the "manual_level_id" field if the given value is not nil.
+func (_u *UserUpdate) SetNillableManualLevelID(v *uint64) *UserUpdate {
+	if v != nil {
+		_u.SetManualLevelID(*v)
+	}
+	return _u
+}
+
+// AddManualLevelID adds value to the "manual_level_id" field.
+func (_u *UserUpdate) AddManualLevelID(v int64) *UserUpdate {
+	_u.mutation.AddManualLevelID(v)
+	return _u
+}
+
 // SetUsername sets the "username" field.
 func (_u *UserUpdate) SetUsername(v string) *UserUpdate {
 	_u.mutation.SetUsername(v)
@@ -334,6 +355,12 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.ManualLevelID(); ok {
+		_spec.SetField(user.FieldManualLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedManualLevelID(); ok {
+		_spec.AddField(user.FieldManualLevelID, field.TypeUint64, value)
+	}
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)
 	}
@@ -420,6 +447,27 @@ type UserUpdateOne struct {
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserUpdateOne) SetUpdatedAt(v time.Time) *UserUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
+// SetManualLevelID sets the "manual_level_id" field.
+func (_u *UserUpdateOne) SetManualLevelID(v uint64) *UserUpdateOne {
+	_u.mutation.ResetManualLevelID()
+	_u.mutation.SetManualLevelID(v)
+	return _u
+}
+
+// SetNillableManualLevelID sets the "manual_level_id" field if the given value is not nil.
+func (_u *UserUpdateOne) SetNillableManualLevelID(v *uint64) *UserUpdateOne {
+	if v != nil {
+		_u.SetManualLevelID(*v)
+	}
+	return _u
+}
+
+// AddManualLevelID adds value to the "manual_level_id" field.
+func (_u *UserUpdateOne) AddManualLevelID(v int64) *UserUpdateOne {
+	_u.mutation.AddManualLevelID(v)
 	return _u
 }
 
@@ -752,6 +800,12 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.ManualLevelID(); ok {
+		_spec.SetField(user.FieldManualLevelID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedManualLevelID(); ok {
+		_spec.AddField(user.FieldManualLevelID, field.TypeUint64, value)
 	}
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(user.FieldUsername, field.TypeString, value)

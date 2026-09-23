@@ -5,6 +5,9 @@ package authz
 
 func init() {
 	Declare(
+		Perm{Code: "memberlevel:view_discount", Desc: "查看真实等级折扣", Domain: "memberlevel", AdminOnly: true},
+		Perm{Code: "memberlevel:assign", Desc: "指定用户等级", Domain: "memberlevel", AdminOnly: true, Op: "zcard.api.admin.v1.AdminMemberLevelService/AssignUserLevel", Method: "PUT", Path: "/api/v1/admin/users/{user_id}/member-level"},
+		Perm{Code: "order:deliver", Desc: "开始处理人工服务", Domain: "fulfillment", AdminOnly: true, Op: "zcard.api.admin.v1.AdminFulfillmentService/StartService", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/start"},
 		// ── 在线安装（Public——仅未安装时可写；已安装 install 幂等 409）──
 		Perm{Code: "auth:install", Desc: "安装状态查询（免鉴权）", Domain: "auth", Public: true,
 			Op: "zcard.api.admin.v1.AdminInstallService/GetInstallStatus", Method: "GET", Path: "/api/v1/admin/install/status"},

@@ -369,13 +369,14 @@ func (x *ResetUserPasswordRequest) GetNewPassword() string {
 
 // UserItem 前台用户（敏感字段如密码哈希绝不外发）。
 type UserItem struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	Id          uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Username    string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Email       string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Status      string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // active | banned | deleted
-	LastLoginAt int64                  `protobuf:"varint,5,opt,name=last_login_at,json=lastLoginAt,proto3" json:"last_login_at,omitempty"`
-	CreatedAt   int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ManualLevelId uint64                 `protobuf:"varint,15,opt,name=manual_level_id,json=manualLevelId,proto3" json:"manual_level_id,omitempty"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"` // active | banned | deleted
+	LastLoginAt   int64                  `protobuf:"varint,5,opt,name=last_login_at,json=lastLoginAt,proto3" json:"last_login_at,omitempty"`
+	CreatedAt     int64                  `protobuf:"varint,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	// 聚合展示（列表/详情同源）
 	LevelId        uint64 `protobuf:"varint,7,opt,name=level_id,json=levelId,proto3" json:"level_id,omitempty"` // 会员等级（0=无等级）
 	LevelName      string `protobuf:"bytes,8,opt,name=level_name,json=levelName,proto3" json:"level_name,omitempty"`
@@ -417,6 +418,13 @@ func (x *UserItem) ProtoReflect() protoreflect.Message {
 // Deprecated: Use UserItem.ProtoReflect.Descriptor instead.
 func (*UserItem) Descriptor() ([]byte, []int) {
 	return file_admin_v1_user_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UserItem) GetManualLevelId() uint64 {
+	if x != nil {
+		return x.ManualLevelId
+	}
+	return 0
 }
 
 func (x *UserItem) GetId() uint64 {
@@ -767,8 +775,9 @@ const file_admin_v1_user_proto_rawDesc = "" +
 	"\x05email\x18\x03 \x01(\tR\x05email\"W\n" +
 	"\x18ResetUserPasswordRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12&\n" +
-	"\fnew_password\x18\x02 \x01(\tB\x03\xe0A\x02R\vnewPassword\"\xaa\x03\n" +
-	"\bUserItem\x12\x0e\n" +
+	"\fnew_password\x18\x02 \x01(\tB\x03\xe0A\x02R\vnewPassword\"\xd2\x03\n" +
+	"\bUserItem\x12&\n" +
+	"\x0fmanual_level_id\x18\x0f \x01(\x04R\rmanualLevelId\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x16\n" +

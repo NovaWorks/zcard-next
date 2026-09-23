@@ -6,7 +6,7 @@ import { NButton, NInput, NInputNumber, NTag, NPopconfirm, NDataTable, NCard, NS
 import type { DataTableColumns } from "naive-ui";
 import { fetchUsers, setUserStatus, fetchUserDetail, createUser, resetUserPassword } from "@/service/api";
 import { fetchWalletBalance, adjustWalletBalance } from "@/service/api/wallet";
-import { grantCoupon, fetchCoupons } from "@/service/api/marketing";
+import { grantCoupon, fetchCoupons,fetchMemberLevels,assignUserLevel } from "@/service/api/marketing";
 import { checkAuth } from "@/directives";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
@@ -31,6 +31,10 @@ const query = reactive({
 const showDetail = ref(false);
 const detailUser = ref<any>(null);
 const detailLoading = ref(false);
+const showLevel = ref(false),levelSaving=ref(false);
+const levelOptions=ref<{label:string;value:number}[]>([]),selectedLevel=ref(0),levelReason=ref('');
+async function openLevel(){const {data,error}=await fetchMemberLevels();if(error)return;levelOptions.value=[{label:'自动计算等级',value:0},...((data as any)?.levels || []).filter((l:any)=>l.enabled&&l.acquire_mode==='manual').map((l:any)=>({label:l.name,value:Number(l.id)}))];selectedLevel.value=Number(detailUser.value?.user.manual_level_id || 0);levelReason.value='';showLevel.value=true;}
+async function saveLevel(){if(!levelReason.value.trim()||levelSaving.value)return;levelSaving.value=true;try{const id=detailUser.value.user.id;const {error}=await assignUserLevel(id,selectedLevel.value,levelReason.value);if(!error){showLevel.value=false;await openDetail({id});await load();window.$message?.success('用户等级已调整，仅影响新订单')}}finally{levelSaving.value=false}}
 const canCreate = () => checkAuth("identity:user_create");
 const canResetPwd = () => checkAuth("identity:user_reset_pwd");
 
@@ -334,6 +338,9 @@ onMounted(load);
       </div>
     </NCard>
 
+    <NModal v-model:show="showLevel" preset="dialog" title="调整用户等级">
+      <NForm label-placement="top"><NFormItem label="等级来源"><NSelect v-model:value="selectedLevel" :options="levelOptions" /></NFormItem><NFormItem label="调整原因（必填）"><NInput v-model:value="levelReason" :maxlength="180" /></NFormItem><p>人工指定优先于自动升级；选择自动计算将取消人工指定。已有订单金额不变。</p></NForm><template #action><NButton :loading="levelSaving" :disabled="!levelReason.trim()" @click="saveLevel">保存</NButton></template>
+    </NModal>
     <NModal v-model:show="showDetail" preset="card" title="用户详情" style="width: 960px; max-width: 96vw">
       <div v-if="detailLoading" class="py-40px text-center">加载中…</div>
       <template v-else-if="detailUser">
@@ -347,6 +354,8 @@ onMounted(load);
             </NTag>
           </NDescriptionsItem>
           <NDescriptionsItem label="会员等级">
+            <NButton v-if="checkAuth('memberlevel:assign')" size="tiny" class="mr-8px" @click="openLevel">调整等级</NButton>
+            <span class="text-12px opacity-60">{{detailUser.user.manual_level_id ? '人工指定' : '自动计算'}}</span>
             <NTag v-if="detailUser.user.level_id" size="small" type="warning" :bordered="false">{{ detailUser.user.level_name || `#${detailUser.user.level_id}` }}</NTag>
             <template v-else>-</template>
           </NDescriptionsItem>

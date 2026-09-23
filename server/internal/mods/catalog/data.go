@@ -124,6 +124,10 @@ func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.
 		return nil, err
 	}
 	p := toPortProduct(row)
+	p.ManualStock, err = data.ManualAvailable(ctx, data.Client(ctx, r.data), row)
+	if err != nil {
+		return nil, err
+	}
 	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), subsiteID)
 	if err != nil {
 		return nil, err
@@ -136,15 +140,16 @@ func (r *ProductRepoImpl) Get(ctx context.Context, subsiteID, id uint64) (*port.
 
 func toPortProduct(row *ent.Product) port.Product {
 	return port.Product{
-		ID:           row.ID,
-		SubsiteID:    row.SubsiteID,
-		Name:         row.Name,
-		Slug:         row.Slug,
-		Cover:        row.Cover,
-		Description:  row.Description,
-		Price:        money.Cents(row.Price),
-		FactoryPrice: money.Cents(row.FactoryPrice),
-		StockType:    string(row.StockType),
+		ID:              row.ID,
+		SubsiteID:       row.SubsiteID,
+		Name:            row.Name,
+		Slug:            row.Slug,
+		Cover:           row.Cover,
+		Description:     row.Description,
+		Price:           money.Cents(row.Price),
+		FactoryPrice:    money.Cents(row.FactoryPrice),
+		StockType:       string(row.StockType),
+		FulfillmentMode: row.FulfillmentMode, ManualStock: row.ManualStock,
 		DeliveryMode: string(row.DeliveryMode),
 		Status:       row.Status,
 		StockVisible: row.StockVisible,
@@ -210,6 +215,7 @@ func (r *ProductRepoImpl) ListControls(ctx context.Context, productID uint64) ([
 		out = append(out, port.Control{
 			ID: c.ID, Name: c.Name, Type: string(c.Type),
 			Required: c.Required, Options: c.Options, Sort: c.Sort,
+			Placeholder: c.Placeholder, Validation: c.Validation, MaxLength: c.MaxLength,
 		})
 	}
 	return out, nil

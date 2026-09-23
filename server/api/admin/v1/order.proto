@@ -84,6 +84,8 @@ message AdminOrder {
 }
 
 message AdminOrderItem {
+  string form_answers_json = 18;
+  uint64 assigned_admin_id = 19;
   uint64 id = 17; // 订单商品项 ID，人工补发使用
   uint64 product_id = 1;
   uint64 sku_id = 2;

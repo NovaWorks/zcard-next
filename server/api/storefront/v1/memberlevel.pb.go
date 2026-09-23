@@ -125,6 +125,9 @@ func (x *MyLevelReply) GetLevels() []*LevelBrief {
 // LevelBrief 等级摘要。
 type LevelBrief struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
+	DisplayMode       string                 `protobuf:"bytes,8,opt,name=display_mode,json=displayMode,proto3" json:"display_mode,omitempty"`
+	DisplayText       string                 `protobuf:"bytes,9,opt,name=display_text,json=displayText,proto3" json:"display_text,omitempty"`
+	AcquireMode       string                 `protobuf:"bytes,10,opt,name=acquire_mode,json=acquireMode,proto3" json:"acquire_mode,omitempty"`
 	Id                uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Discount          int32                  `protobuf:"varint,3,opt,name=discount,proto3" json:"discount,omitempty"`                                            // 万分比折扣
@@ -164,6 +167,27 @@ func (x *LevelBrief) ProtoReflect() protoreflect.Message {
 // Deprecated: Use LevelBrief.ProtoReflect.Descriptor instead.
 func (*LevelBrief) Descriptor() ([]byte, []int) {
 	return file_storefront_v1_memberlevel_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *LevelBrief) GetDisplayMode() string {
+	if x != nil {
+		return x.DisplayMode
+	}
+	return ""
+}
+
+func (x *LevelBrief) GetDisplayText() string {
+	if x != nil {
+		return x.DisplayText
+	}
+	return ""
+}
+
+func (x *LevelBrief) GetAcquireMode() string {
+	if x != nil {
+		return x.AcquireMode
+	}
+	return ""
 }
 
 func (x *LevelBrief) GetId() uint64 {
@@ -291,9 +315,13 @@ const file_storefront_v1_memberlevel_proto_rawDesc = "" +
 	"\acurrent\x18\x04 \x01(\v2#.zcard.api.storefront.v1.LevelBriefR\acurrent\x127\n" +
 	"\x04next\x18\x05 \x01(\v2#.zcard.api.storefront.v1.LevelBriefR\x04next\x12B\n" +
 	"\bprogress\x18\x06 \x01(\v2&.zcard.api.storefront.v1.LevelProgressR\bprogress\x12;\n" +
-	"\x06levels\x18\a \x03(\v2#.zcard.api.storefront.v1.LevelBriefR\x06levels\"\xf9\x01\n" +
+	"\x06levels\x18\a \x03(\v2#.zcard.api.storefront.v1.LevelBriefR\x06levels\"\xe2\x02\n" +
 	"\n" +
-	"LevelBrief\x12\x0e\n" +
+	"LevelBrief\x12!\n" +
+	"\fdisplay_mode\x18\b \x01(\tR\vdisplayMode\x12!\n" +
+	"\fdisplay_text\x18\t \x01(\tR\vdisplayText\x12!\n" +
+	"\facquire_mode\x18\n" +
+	" \x01(\tR\vacquireMode\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
 	"\bdiscount\x18\x03 \x01(\x05R\bdiscount\x12%\n" +

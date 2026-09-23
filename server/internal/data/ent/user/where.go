@@ -64,6 +64,11 @@ func UpdatedAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// ManualLevelID applies equality check predicate on the "manual_level_id" field. It's identical to ManualLevelIDEQ.
+func ManualLevelID(v uint64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldManualLevelID, v))
+}
+
 // Username applies equality check predicate on the "username" field. It's identical to UsernameEQ.
 func Username(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldUsername, v))
@@ -187,6 +192,46 @@ func UpdatedAtLT(v time.Time) predicate.User {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// ManualLevelIDEQ applies the EQ predicate on the "manual_level_id" field.
+func ManualLevelIDEQ(v uint64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldManualLevelID, v))
+}
+
+// ManualLevelIDNEQ applies the NEQ predicate on the "manual_level_id" field.
+func ManualLevelIDNEQ(v uint64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldManualLevelID, v))
+}
+
+// ManualLevelIDIn applies the In predicate on the "manual_level_id" field.
+func ManualLevelIDIn(vs ...uint64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldManualLevelID, vs...))
+}
+
+// ManualLevelIDNotIn applies the NotIn predicate on the "manual_level_id" field.
+func ManualLevelIDNotIn(vs ...uint64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldManualLevelID, vs...))
+}
+
+// ManualLevelIDGT applies the GT predicate on the "manual_level_id" field.
+func ManualLevelIDGT(v uint64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldManualLevelID, v))
+}
+
+// ManualLevelIDGTE applies the GTE predicate on the "manual_level_id" field.
+func ManualLevelIDGTE(v uint64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldManualLevelID, v))
+}
+
+// ManualLevelIDLT applies the LT predicate on the "manual_level_id" field.
+func ManualLevelIDLT(v uint64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldManualLevelID, v))
+}
+
+// ManualLevelIDLTE applies the LTE predicate on the "manual_level_id" field.
+func ManualLevelIDLTE(v uint64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldManualLevelID, v))
 }
 
 // UsernameEQ applies the EQ predicate on the "username" field.

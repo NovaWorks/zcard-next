@@ -126,6 +126,34 @@ func (_c *MemberLevelCreate) SetNillableThresholdConsume(v *int64) *MemberLevelC
 	return _c
 }
 
+// SetAcquireMode sets the "acquire_mode" field.
+func (_c *MemberLevelCreate) SetAcquireMode(v string) *MemberLevelCreate {
+	_c.mutation.SetAcquireMode(v)
+	return _c
+}
+
+// SetNillableAcquireMode sets the "acquire_mode" field if the given value is not nil.
+func (_c *MemberLevelCreate) SetNillableAcquireMode(v *string) *MemberLevelCreate {
+	if v != nil {
+		_c.SetAcquireMode(*v)
+	}
+	return _c
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (_c *MemberLevelCreate) SetDisplayMode(v string) *MemberLevelCreate {
+	_c.mutation.SetDisplayMode(v)
+	return _c
+}
+
+// SetNillableDisplayMode sets the "display_mode" field if the given value is not nil.
+func (_c *MemberLevelCreate) SetNillableDisplayMode(v *string) *MemberLevelCreate {
+	if v != nil {
+		_c.SetDisplayMode(*v)
+	}
+	return _c
+}
+
 // SetDiscount sets the "discount" field.
 func (_c *MemberLevelCreate) SetDiscount(v int32) *MemberLevelCreate {
 	_c.mutation.SetDiscount(v)
@@ -235,6 +263,14 @@ func (_c *MemberLevelCreate) defaults() {
 		v := memberlevel.DefaultThresholdConsume
 		_c.mutation.SetThresholdConsume(v)
 	}
+	if _, ok := _c.mutation.AcquireMode(); !ok {
+		v := memberlevel.DefaultAcquireMode
+		_c.mutation.SetAcquireMode(v)
+	}
+	if _, ok := _c.mutation.DisplayMode(); !ok {
+		v := memberlevel.DefaultDisplayMode
+		_c.mutation.SetDisplayMode(v)
+	}
 	if _, ok := _c.mutation.Discount(); !ok {
 		v := memberlevel.DefaultDiscount
 		_c.mutation.SetDiscount(v)
@@ -288,6 +324,12 @@ func (_c *MemberLevelCreate) check() error {
 	}
 	if _, ok := _c.mutation.ThresholdConsume(); !ok {
 		return &ValidationError{Name: "threshold_consume", err: errors.New(`ent: missing required field "MemberLevel.threshold_consume"`)}
+	}
+	if _, ok := _c.mutation.AcquireMode(); !ok {
+		return &ValidationError{Name: "acquire_mode", err: errors.New(`ent: missing required field "MemberLevel.acquire_mode"`)}
+	}
+	if _, ok := _c.mutation.DisplayMode(); !ok {
+		return &ValidationError{Name: "display_mode", err: errors.New(`ent: missing required field "MemberLevel.display_mode"`)}
 	}
 	if _, ok := _c.mutation.Discount(); !ok {
 		return &ValidationError{Name: "discount", err: errors.New(`ent: missing required field "MemberLevel.discount"`)}
@@ -362,6 +404,14 @@ func (_c *MemberLevelCreate) createSpec() (*MemberLevel, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ThresholdConsume(); ok {
 		_spec.SetField(memberlevel.FieldThresholdConsume, field.TypeInt64, value)
 		_node.ThresholdConsume = value
+	}
+	if value, ok := _c.mutation.AcquireMode(); ok {
+		_spec.SetField(memberlevel.FieldAcquireMode, field.TypeString, value)
+		_node.AcquireMode = value
+	}
+	if value, ok := _c.mutation.DisplayMode(); ok {
+		_spec.SetField(memberlevel.FieldDisplayMode, field.TypeString, value)
+		_node.DisplayMode = value
 	}
 	if value, ok := _c.mutation.Discount(); ok {
 		_spec.SetField(memberlevel.FieldDiscount, field.TypeInt32, value)
@@ -536,6 +586,30 @@ func (u *MemberLevelUpsert) UpdateThresholdConsume() *MemberLevelUpsert {
 // AddThresholdConsume adds v to the "threshold_consume" field.
 func (u *MemberLevelUpsert) AddThresholdConsume(v int64) *MemberLevelUpsert {
 	u.Add(memberlevel.FieldThresholdConsume, v)
+	return u
+}
+
+// SetAcquireMode sets the "acquire_mode" field.
+func (u *MemberLevelUpsert) SetAcquireMode(v string) *MemberLevelUpsert {
+	u.Set(memberlevel.FieldAcquireMode, v)
+	return u
+}
+
+// UpdateAcquireMode sets the "acquire_mode" field to the value that was provided on create.
+func (u *MemberLevelUpsert) UpdateAcquireMode() *MemberLevelUpsert {
+	u.SetExcluded(memberlevel.FieldAcquireMode)
+	return u
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (u *MemberLevelUpsert) SetDisplayMode(v string) *MemberLevelUpsert {
+	u.Set(memberlevel.FieldDisplayMode, v)
+	return u
+}
+
+// UpdateDisplayMode sets the "display_mode" field to the value that was provided on create.
+func (u *MemberLevelUpsert) UpdateDisplayMode() *MemberLevelUpsert {
+	u.SetExcluded(memberlevel.FieldDisplayMode)
 	return u
 }
 
@@ -779,6 +853,34 @@ func (u *MemberLevelUpsertOne) AddThresholdConsume(v int64) *MemberLevelUpsertOn
 func (u *MemberLevelUpsertOne) UpdateThresholdConsume() *MemberLevelUpsertOne {
 	return u.Update(func(s *MemberLevelUpsert) {
 		s.UpdateThresholdConsume()
+	})
+}
+
+// SetAcquireMode sets the "acquire_mode" field.
+func (u *MemberLevelUpsertOne) SetAcquireMode(v string) *MemberLevelUpsertOne {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.SetAcquireMode(v)
+	})
+}
+
+// UpdateAcquireMode sets the "acquire_mode" field to the value that was provided on create.
+func (u *MemberLevelUpsertOne) UpdateAcquireMode() *MemberLevelUpsertOne {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.UpdateAcquireMode()
+	})
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (u *MemberLevelUpsertOne) SetDisplayMode(v string) *MemberLevelUpsertOne {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.SetDisplayMode(v)
+	})
+}
+
+// UpdateDisplayMode sets the "display_mode" field to the value that was provided on create.
+func (u *MemberLevelUpsertOne) UpdateDisplayMode() *MemberLevelUpsertOne {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.UpdateDisplayMode()
 	})
 }
 
@@ -1199,6 +1301,34 @@ func (u *MemberLevelUpsertBulk) AddThresholdConsume(v int64) *MemberLevelUpsertB
 func (u *MemberLevelUpsertBulk) UpdateThresholdConsume() *MemberLevelUpsertBulk {
 	return u.Update(func(s *MemberLevelUpsert) {
 		s.UpdateThresholdConsume()
+	})
+}
+
+// SetAcquireMode sets the "acquire_mode" field.
+func (u *MemberLevelUpsertBulk) SetAcquireMode(v string) *MemberLevelUpsertBulk {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.SetAcquireMode(v)
+	})
+}
+
+// UpdateAcquireMode sets the "acquire_mode" field to the value that was provided on create.
+func (u *MemberLevelUpsertBulk) UpdateAcquireMode() *MemberLevelUpsertBulk {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.UpdateAcquireMode()
+	})
+}
+
+// SetDisplayMode sets the "display_mode" field.
+func (u *MemberLevelUpsertBulk) SetDisplayMode(v string) *MemberLevelUpsertBulk {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.SetDisplayMode(v)
+	})
+}
+
+// UpdateDisplayMode sets the "display_mode" field to the value that was provided on create.
+func (u *MemberLevelUpsertBulk) UpdateDisplayMode() *MemberLevelUpsertBulk {
+	return u.Update(func(s *MemberLevelUpsert) {
+		s.UpdateDisplayMode()
 	})
 }
 

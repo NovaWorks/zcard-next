@@ -21,7 +21,7 @@
     <div v-else class="hero-banner">
       <div>
         <h1 :class="{ 'brand-name-placeholder': !brandReady }" :aria-busy="!brandReady">{{ siteName }}</h1>
-        <p>自动发货 · 正品保障 · 售后无忧</p>
+        <p>在线下单 · 正品保障 · 售后无忧</p>
         <div class="hero-points">
           <span>⚡ 即时发货</span>
           <span>🛡️ 正品保障</span>
