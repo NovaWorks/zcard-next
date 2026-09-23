@@ -868,22 +868,33 @@ func (r *ProductRepoImpl) ListSupplyCategories(ctx context.Context) ([]port.Supp
 }
 
 // UpdateUpstreamPrice 仅更新价格（port.UpstreamProductMaintainer；price scope 轻量路径）。
-func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID uint64, productCode string, priceCents int64) (bool, error) {
+func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID uint64, productCode string, priceCents int64, skus ...port.UpstreamSKUInput) (bool, error) {
 	tc := tenancy.FromContext(ctx)
-	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(
-			product.SubsiteID(tc.SubsiteID),
-			product.UpstreamSourceID(connectionID),
-			product.UpstreamProductCode(productCode),
-			product.StatusGTE(0),
-		).
-		SetPrice(priceCents).
-		SetUpstreamSyncedAt(time.Now().UTC()).
-		Save(ctx)
-	if err != nil {
-		return false, err
-	}
-	return n > 0, nil
+	found := false
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		client := data.Client(ctx, r.data)
+		p, err := client.Product.Query().Where(product.SubsiteID(tc.SubsiteID), product.UpstreamSourceID(connectionID), product.UpstreamProductCode(productCode), product.StatusGTE(0)).Only(ctx)
+		if ent.IsNotFound(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if err := client.Product.UpdateOneID(p.ID).SetPrice(priceCents).SetUpstreamSyncedAt(time.Now().UTC()).Exec(ctx); err != nil {
+			return err
+		}
+		for _, sk := range skus {
+			if sk.Code == "" {
+				continue
+			}
+			if err := client.ProductSku.Update().Where(productsku.ProductID(p.ID), productsku.SubsiteID(tc.SubsiteID), productsku.UpstreamSkuID(sk.Code)).SetPrice(sk.PriceCents).Exec(ctx); err != nil {
+				return err
+			}
+		}
+		found = true
+		return nil
+	})
+	return found, err
 }
 
 // UpdateUpstreamStatus 仅更新上下架状态（port.UpstreamProductMaintainer；status scope 轻量路径）。

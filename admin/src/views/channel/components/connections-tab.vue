@@ -197,6 +197,7 @@ function openEdit(row: any) {
 }
 
 async function submitForm() {
+  if (saving.value) return;
   if (!form.name || !form.base_url) {
     window.$message?.warning("名称与上游地址必填");
     return;
@@ -233,13 +234,15 @@ async function submitForm() {
     else delete baseSettings.failure_action;
     if (form.productUrlTemplate.trim()) baseSettings.product_url_template = form.productUrlTemplate.trim();
     else delete baseSettings.product_url_template;
-    if (Object.keys(baseSettings).length) payload.settings = JSON.stringify(baseSettings);
+    payload.settings = JSON.stringify(baseSettings);
     if (editingId.value) {
       const { error } = await updateSupplyConnection(editingId.value, payload);
-      if (!error) window.$message?.success("连接已更新");
+      if (error) return;
+      window.$message?.success("连接已更新，已有商品将在执行价格同步时按规则处理");
     } else {
       const { error } = await createSupplyConnection(payload as any);
-      if (!error) window.$message?.success("连接已创建");
+      if (error) return;
+      window.$message?.success("连接已创建");
     }
     showForm.value = false;
     load();
@@ -748,7 +751,7 @@ onMounted(load);
     </div>
 
     <!-- 新增/编辑 -->
-    <NModal v-model:show="showForm" preset="card" :title="editingId ? '编辑渠道' : '新增渠道'" style="width: 560px; max-width: 96vw">
+    <NModal v-model:show="showForm" :closable="!saving" :mask-closable="!saving" :close-on-esc="!saving" preset="card" :title="editingId ? '编辑渠道' : '新增渠道'" style="width: 560px; max-width: 96vw">
       <NForm label-placement="left" label-width="110">
         <NFormItem label="名称" required>
           <NInput v-model:value="form.name" placeholder="如：主站独角" />
@@ -775,7 +778,7 @@ onMounted(load);
         </NFormItem>
         <NFormItem label="加价规则">
           <div class="w-full">
-            <div class="flex items-center gap-8px">
+            <div class="flex flex-wrap items-center gap-8px">
               <span class="w-64px shrink-0 text-13px">比例上浮</span>
               <NInputNumber v-model:value="form.price_markup_percent" :min="0" size="small" class="w-110px" placeholder="0">
                 <template #suffix>%</template>
@@ -787,7 +790,7 @@ onMounted(load);
               </NInputNumber>
             </div>
             <div class="mt-4px text-11px text-gray-400">
-              本店售价 = 上游价 × 汇率 ×（1 + 比例上浮%）＋ 固定加价；两项可只填其一（0 = 不启用）
+              本店售价 = 上游价 × 汇率 ×（1 + 比例上浮%）＋ 固定加价；0 表示不加价。用于跟随渠道的导入及后续价格同步，保存设置不会立即重算已有商品。
             </div>
           </div>
         </NFormItem>
@@ -816,12 +819,12 @@ onMounted(load);
         <NFormItem label="同步自动改价">
           <NSpace align="center">
             <NSwitch v-model:value="form.auto_sync_price" />
-            <span class="text-12px text-gray-400">关闭后同步永不覆盖本地价（运营手工定价域）</span>
+            <span class="text-12px text-gray-400">关闭后保留本地价；开启后仍遵循固定覆盖价和手动改价保护</span>
           </NSpace>
         </NFormItem>
       </NForm>
       <template #footer>
-        <NButton size="small" class="mr-8px" @click="showForm = false">取消</NButton>
+        <NButton size="small" class="mr-8px" :disabled="saving" @click="showForm = false">取消</NButton>
         <NButton size="small" type="primary" :loading="saving" @click="submitForm">
           {{ editingId ? "保存" : "创建" }}
         </NButton>

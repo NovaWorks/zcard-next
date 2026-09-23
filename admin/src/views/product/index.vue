@@ -4,8 +4,8 @@
  * 全字段表单（分类/描述/封面+图集 media 上传/排序/上下架三态/发货模式/库存显示/积分价）
  * + SKU 规格管理子表格 + 下单控件配置（独立弹窗）。
  */
-import { ref, reactive, computed, onMounted, h, watch } from "vue";
-import { useRoute } from "vue-router";
+import { ref, reactive, computed, onMounted, onBeforeUnmount, h, watch } from "vue";
+import { onBeforeRouteLeave, useRoute } from "vue-router";
 import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import {
@@ -44,6 +44,45 @@ const saving = ref(false);
 const showCreate = ref(false);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
+const controlPanel = ref<InstanceType<typeof ControlPanel> | null>(null);
+const initialProduct = ref("");
+const independentlySaved = ref(false);
+const editorBusy = computed(() => saving.value || !!skuPanel.value?.saving || !!controlPanel.value?.saving);
+const hasUnsaved = computed(() => !!initialProduct.value && (JSON.stringify(buildPayload()) !== initialProduct.value || !!skuPanel.value?.hasPending || !!controlPanel.value?.hasPending));
+let discardPrompt: Promise<boolean> | undefined;
+function confirmDiscard(): Promise<boolean> {
+  if (!hasUnsaved.value) return Promise.resolve(true);
+  if (discardPrompt) return discardPrompt;
+  discardPrompt = new Promise<boolean>(resolve => {
+    const dialog = window.$dialog;
+    if (!dialog) { resolve(false); return; }
+    dialog.warning({
+      title: "放弃未保存修改？",
+      content: independentlySaved.value ? "关闭将放弃尚未保存的内容。已单独保存或删除的规格、控件仍然生效。" : "本次尚未保存的商品、规格及控件输入将被放弃。",
+      positiveText: "放弃修改", negativeText: "继续编辑", maskClosable: false,
+      onPositiveClick: () => resolve(true), onNegativeClick: () => resolve(false), onClose: () => resolve(false), onEsc: () => resolve(false),
+    });
+  }).finally(() => { discardPrompt = undefined; });
+  return discardPrompt;
+}
+async function requestClose() {
+  if (editorBusy.value) return;
+  if (await confirmDiscard()) showCreate.value = false;
+}
+function afterEditorLeave() { if (!showCreate.value) resetForm(); }
+onBeforeRouteLeave(async () => {
+  if (!showCreate.value) return true;
+  if (editorBusy.value) { window.$message?.warning("正在保存，请稍后离开"); return false; }
+  if (!await confirmDiscard()) return false;
+  showCreate.value = false;
+  resetForm();
+  return true;
+});
+function beforeUnload(event: BeforeUnloadEvent) {
+  if (showCreate.value && (hasUnsaved.value || editorBusy.value)) { event.preventDefault(); event.returnValue = ""; }
+}
+onMounted(() => window.addEventListener("beforeunload", beforeUnload));
+onBeforeUnmount(() => window.removeEventListener("beforeunload", beforeUnload));
 const keyword = ref("");
 const products = ref<any[]>([]);
 const categories = ref<any[]>([]);
@@ -739,6 +778,7 @@ async function handleBatchDelete() {
 }
 
 function resetForm() {
+  independentlySaved.value = false;
   contentProtection.value = { cover: false, description: false };
   editingId.value = 0;
   step.value = 1; // 新开弹窗回到第一步
@@ -761,6 +801,7 @@ function resetForm() {
     is_recommend: false,
   });
   directContentSet.value = false;
+  initialProduct.value = JSON.stringify(buildPayload());
 }
 
 async function handleEdit(row: any) {
@@ -774,7 +815,7 @@ async function handleEdit(row: any) {
     category_id: p.category_id || null,
     description: p.description || "",
     cover: p.cover ? [p.cover] : [],
-    images: p.images || [],
+    images: [...(p.images || [])],
     price_yuan: Number(centsToYuan(p.price_cents)),
     factory_price_yuan: p.factory_price_cents ? Number(centsToYuan(p.factory_price_cents)) : 0,
     points_required: p.points_required || 0,
@@ -790,6 +831,8 @@ async function handleEdit(row: any) {
   });
   directContentSet.value = !!p.has_direct_content;
   step.value = 1; // 编辑也从第一步进入
+  independentlySaved.value = false;
+  initialProduct.value = JSON.stringify(buildPayload());
   showCreate.value = true;
 }
 
@@ -816,6 +859,8 @@ function buildPayload() {
 }
 
 async function handleSave() {
+  if (editorBusy.value) return;
+  if (controlPanel.value?.hasPending) { window.$message?.warning("下单控件还有未保存输入，请先点击创建/更新控件或取消编辑"); return; }
   if (!formData.name || formData.price_yuan <= 0) return;
   saving.value = true;
   try {
@@ -838,6 +883,7 @@ async function handleSave() {
 // 创建态「保存并配置」（第 4 步 CTA）：先建商品（SKU/控件 API 依赖 product_id），
 // 弹窗原地转编辑态并停留在本步——规格/控件面板随即激活，一次流程走完
 async function saveAndContinue() {
+  if (editorBusy.value) return;
   if (!formData.name || formData.price_yuan <= 0) {
     window.$message?.warning("请先完成商品名称与售价");
     return;
@@ -849,6 +895,8 @@ async function saveAndContinue() {
       const created = (data as any) || {};
       if (created.id) {
         editingId.value = created.id;
+        initialProduct.value = JSON.stringify(buildPayload());
+        independentlySaved.value = true;
         window.$message?.success("商品已创建，可继续配置规格与控件");
         loadList();
       }
@@ -981,6 +1029,7 @@ onMounted(() => {
 
       <NDataTable
         flex-height
+        :scroll-x="1200"
         class="min-h-0 flex-1"
         :columns="columns"
         :data="products"
@@ -1024,13 +1073,16 @@ onMounted(() => {
 
     <!-- 新增/编辑弹窗（分步表单：基础 → 价格库存 → 商品描述 → 规格与控件 → 高级设置） -->
     <NModal
-      v-model:show="showCreate"
+       :show="showCreate" @update:show="!$event && requestClose()"
+      :closable="!editorBusy" :mask-closable="!editorBusy" :close-on-esc="!editorBusy" @after-leave="afterEditorLeave"
       preset="card"
       :title="editingId ? '编辑商品' : '新增商品'"
       class="w-780px"
-      :style="step === 3 || step === 4 ? 'width: 880px' : undefined"
+      :style="{ width: step === 3 || step === 4 ? '880px' : undefined, maxWidth: 'calc(100vw - 24px)' }"
       :class="step === 3 ? 'product-editor-step-modal' : undefined"
     >
+      <div :inert="editorBusy || undefined">
+      <NAlert v-if="independentlySaved" type="info" class="mb-12px">已有内容单独保存并生效；关闭只放弃尚未保存的输入。</NAlert>
       <NSteps
         :current="step"
         size="small"
@@ -1189,11 +1241,12 @@ onMounted(() => {
       <!-- 第 4 步：规格与控件（面板内嵌——编辑态直接生效；创建态先保存商品） -->
       <div v-if="showCreate" v-show="step === 4" class="px-12px">
         <template v-if="editingId">
+          <NAlert type="info" class="mb-12px">规格的「保存/全部保存/删除」及控件的「创建/更新/删除」会立即生效，关闭商品窗口不会撤销。其余未保存输入可通过取消放弃。</NAlert>
           <NCard size="small" title="SKU 多规格" class="mb-12px">
-            <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" />
+            <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" @persisted="independentlySaved = true" />
           </NCard>
           <NCard size="small" title="下单填写信息">
-            <ControlPanel :product-id="editingId" />
+            <ControlPanel ref="controlPanel" :product-id="editingId" @persisted="independentlySaved = true" />
           </NCard>
         </template>
         <NCard v-else size="small" class="py-40px">
@@ -1207,13 +1260,15 @@ onMounted(() => {
         </NCard>
       </div>
 
+      </div>
       <template #footer>
         <div class="flex items-center justify-between">
           <span class="text-12px text-gray-400">第 {{ step }} / {{ stepCount }} 步</span>
           <NSpace>
-            <NButton v-if="step > 1" @click="stepPrev">上一步</NButton>
-            <NButton v-if="step < stepCount" type="primary" @click="stepNext">下一步</NButton>
-            <NButton v-else type="primary" :loading="saving" @click="handleSave">
+            <NButton :disabled="editorBusy" @click="requestClose">取消</NButton>
+            <NButton v-if="step > 1" :disabled="editorBusy" @click="stepPrev">上一步</NButton>
+            <NButton v-if="step < stepCount" :disabled="editorBusy" type="primary" @click="stepNext">下一步</NButton>
+            <NButton v-else type="primary" :disabled="editorBusy" :loading="saving" @click="handleSave">
               {{ editingId ? "保存" : "创建" }}
             </NButton>
           </NSpace>
@@ -1251,6 +1306,13 @@ onMounted(() => {
   scrollbar-width: thin;
   scrollbar-gutter: stable;
   padding-bottom: 4px;
+}
+
+@media (max-width: 767px) {
+  .product-management { flex-direction: column; overflow: auto; }
+  .product-category-card { width: 100%; max-height: 200px; }
+  .product-list-card { flex: none; min-height: 600px; }
+  .product-list-card .n-data-table { min-height: 260px; }
 }
 
 /* 商品描述步（第 3 步）：编辑器整高展开后弹窗整体上移，保证底部按钮可见 */

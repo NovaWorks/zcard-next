@@ -45,7 +45,7 @@
 
         <!-- 服务保障 -->
         <div class="pd-assure">
-          <span>{{ manualDelivery ? '人工处理' : '⚡ 自动发货' }}</span>
+          <span>{{ manualDelivery ? '👤 人工处理' : '⚡ 自动发货' }}</span>
           <span>🛡️ 正品保障</span>
           <span>💬 售后无忧</span>
         </div>

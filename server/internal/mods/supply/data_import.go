@@ -6,9 +6,9 @@ package supply
 // 按上游分类聚合树并标注 already_imported；60s 进程内缓存
 // （1.x 同款——避免导入弹窗反复打上游）
 // ImportProducts 勾选 codes → 从预览缓存取商品 → 逐个 upsert（复用 syncOne
-// 的价格保护与映射机制）→ 定价策略四模式 + 类目映射 + 存默认
+// 的价格保护与映射机制）→ 定价策略 + 类目映射 + 存默认
 //
-// 定价模式：percent（连接加价%）| fixed（+固定金额）| equal（原价）|
+// 定价模式：channel（跟随渠道）| percent（本次加价%）| fixed（+固定金额）| equal（原价）|
 // pending（待定价：不算价、导入后不上架 status=0，运营补价后再上）。
 
 import (
@@ -154,6 +154,30 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 	if err != nil {
 		return nil, err
 	}
+	// 定价策略（缺省回退连接默认 settings.import_pricing）
+	mode := req.GetPricingMode()
+	markupPercent := req.GetMarkupPercent()
+	markupAmount := req.GetMarkupAmountCents()
+	if mode == "" {
+		mode = PriceModeChannel
+	}
+	if req.GetPricingMode() == "" {
+		if def, ok := conn.Settings["import_pricing"].(map[string]any); ok {
+			if savedMode, _ := def["mode"].(string); savedMode != "" {
+				mode = savedMode
+			}
+			markupPercent, _ = def["markup_percent"].(float64)
+			markupAmount = toInt64(def["markup_amount_cents"])
+		}
+	}
+	switch mode {
+	case PriceModeChannel, PriceModePercent, PriceModeFixed, PriceModeEqual, PriceModePending:
+	default:
+		return nil, fmt.Errorf("无效的导入定价策略")
+	}
+	if err := validatePricing(conn.ExchangeRate, markupPercent, markupAmount, string(conn.PriceRoundingMode)); err != nil {
+		return nil, err
+	}
 	entry, err := s.loadPreview(ctx, req.GetConnectionId())
 	if err != nil {
 		return nil, err
@@ -202,20 +226,6 @@ func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.Im
 	byCode = make(map[string]adapter.Product, len(selectedItems))
 	for _, p := range selectedItems {
 		byCode[p.ID] = p
-	}
-	// 定价策略（缺省回退连接默认 settings.import_pricing）
-	mode := req.GetPricingMode()
-	markupPercent := req.GetMarkupPercent()
-	markupAmount := req.GetMarkupAmountCents()
-	if mode == "" {
-		mode = PriceModePercent
-	}
-	if req.GetPricingMode() == "" && mode == PriceModePercent && markupPercent == 0 {
-		if def, ok := conn.Settings["import_pricing"].(map[string]any); ok {
-			mode, _ = def["mode"].(string)
-			markupPercent, _ = def["markup_percent"].(float64)
-			markupAmount = toInt64(def["markup_amount_cents"])
-		}
 	}
 	categoryMap, err := s.saveImportCategories(ctx, req, byCode, mode, markupPercent, markupAmount)
 	if err != nil {

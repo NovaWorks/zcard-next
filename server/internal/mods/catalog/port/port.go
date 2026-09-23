@@ -220,7 +220,7 @@ type UpstreamProductWriter interface {
 // 与删除对账消费，通道 A）。定位判据同上；found=false 表示商品未导入（调用方跳过）。
 type UpstreamProductMaintainer interface {
 	// UpdateUpstreamPrice 仅更新价格（price scope；不动名称/状态/库存）。
-	UpdateUpstreamPrice(ctx context.Context, connectionID uint64, productCode string, priceCents int64) (found bool, err error)
+	UpdateUpstreamPrice(ctx context.Context, connectionID uint64, productCode string, priceCents int64, skus ...UpstreamSKUInput) (found bool, err error)
 	// UpdateUpstreamStatus 仅更新上下架状态（status scope；1=上架 2=隐藏 0=下架）。
 	UpdateUpstreamStatus(ctx context.Context, connectionID uint64, productCode string, status int8) (found bool, err error)
 	// ShelveOffMissing 删除对账：将连接下 upstream_product_code ∉ seen 的

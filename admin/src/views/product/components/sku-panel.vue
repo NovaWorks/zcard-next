@@ -14,6 +14,7 @@ import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, yuanToFen } from "@/utils/money";
 
 const props = defineProps<{ productId: number }>();
+const emit = defineEmits<{ (e: "persisted"): void }>();
 
 interface SkuRow {
  fulfillment_mode: string;
@@ -154,6 +155,7 @@ async function persistRow(row: SkuRow): Promise<boolean> {
     row.id = Number((data as any).id);
   }
   row.dirty = false;
+  emit("persisted");
   return true;
 }
 async function saveRow(row: SkuRow) {
@@ -177,15 +179,21 @@ async function savePending(): Promise<boolean> {
   } finally { saving.value = false; }
 }
 async function saveAll() { if (await savePending()) window.$message?.success("规格已全部保存"); }
-defineExpose({ savePending });
+const hasPending = computed(() => definitionsDirty.value || pendingRows.value.length > 0);
+defineExpose({ savePending, hasPending, saving });
 
 async function handleDelete(row: SkuRow) {
-  if (row.id) {
-    const { error } = await deleteSku(row.id);
-    if (error) return;
-  }
-  rows.value = rows.value.filter((r) => r !== row);
-  window.$message?.success("已删除");
+  if (saving.value) return;
+  saving.value = true;
+  try {
+    if (row.id) {
+      const { error } = await deleteSku(row.id);
+      if (error) return;
+      emit("persisted");
+    }
+    rows.value = rows.value.filter((r) => r !== row);
+    window.$message?.success("已删除");
+  } finally { saving.value = false; }
 }
 
 // 行内数字单元格（Enter/失焦暂存并标脏；宽度自适应列宽）

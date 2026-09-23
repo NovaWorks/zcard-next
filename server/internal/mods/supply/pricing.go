@@ -35,7 +35,8 @@ func ApplyPricing(upstreamCents int64, rate, markupPercent float64, markupAmount
 
 // 导入定价模式（ D：交互式导入的策略选择；对齐 1.x computeInitialPrice）。
 const (
-	PriceModePercent = "percent" // 按连接加价 %（默认，同 ApplyPricing）
+	PriceModeChannel = "channel" // 导入和同步统一使用渠道组合加价
+	PriceModePercent = "percent" // 本次导入独立加价 %
 	PriceModeFixed   = "fixed"   // 上游价 + 固定金额（markup_amount 分）
 	PriceModeEqual   = "equal"   // 原价（不加价）
 	PriceModePending = "pending" // 待定价：不算价、导入后不上架（status=0）
@@ -58,7 +59,7 @@ func ApplyPricingImport(upstreamCents int64, rate, markupPercent float64, markup
 	case PriceModeEqual:
 		return roundByMode(base, rounding)
 	default: // percent
-		return roundByMode(base*(1+markupPercent/100), rounding)
+		return ApplyPricing(upstreamCents, rate, markupPercent, 0, rounding)
 	}
 }
 

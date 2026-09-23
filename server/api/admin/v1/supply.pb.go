@@ -441,14 +441,14 @@ type UpdateConnectionRequest struct {
 	CallbackUrl        string                 `protobuf:"bytes,5,opt,name=callback_url,json=callbackUrl,proto3" json:"callback_url,omitempty"`
 	RetryMax           int32                  `protobuf:"varint,6,opt,name=retry_max,json=retryMax,proto3" json:"retry_max,omitempty"`
 	RetryIntervals     string                 `protobuf:"bytes,7,opt,name=retry_intervals,json=retryIntervals,proto3" json:"retry_intervals,omitempty"`
-	ExchangeRate       float64                `protobuf:"fixed64,8,opt,name=exchange_rate,json=exchangeRate,proto3" json:"exchange_rate,omitempty"`
-	PriceMarkupPercent float64                `protobuf:"fixed64,9,opt,name=price_markup_percent,json=priceMarkupPercent,proto3" json:"price_markup_percent,omitempty"`
+	ExchangeRate       *float64               `protobuf:"fixed64,8,opt,name=exchange_rate,json=exchangeRate,proto3,oneof" json:"exchange_rate,omitempty"`
+	PriceMarkupPercent *float64               `protobuf:"fixed64,9,opt,name=price_markup_percent,json=priceMarkupPercent,proto3,oneof" json:"price_markup_percent,omitempty"`
 	PriceRoundingMode  string                 `protobuf:"bytes,10,opt,name=price_rounding_mode,json=priceRoundingMode,proto3" json:"price_rounding_mode,omitempty"`
-	AutoSyncPrice      bool                   `protobuf:"varint,11,opt,name=auto_sync_price,json=autoSyncPrice,proto3" json:"auto_sync_price,omitempty"`
+	AutoSyncPrice      *bool                  `protobuf:"varint,11,opt,name=auto_sync_price,json=autoSyncPrice,proto3,oneof" json:"auto_sync_price,omitempty"`
 	StockMode          string                 `protobuf:"bytes,12,opt,name=stock_mode,json=stockMode,proto3" json:"stock_mode,omitempty"`
 	Status             string                 `protobuf:"bytes,13,opt,name=status,proto3" json:"status,omitempty"`
-	Settings           string                 `protobuf:"bytes,14,opt,name=settings,proto3" json:"settings,omitempty"`                                               // JSON（定时计划/导入默认价；非空整体替换）
-	PriceMarkupAmount  int64                  `protobuf:"varint,15,opt,name=price_markup_amount,json=priceMarkupAmount,proto3" json:"price_markup_amount,omitempty"` // 固定加价（分）
+	Settings           string                 `protobuf:"bytes,14,opt,name=settings,proto3" json:"settings,omitempty"`                                                     // JSON（定时计划/导入默认价；非空整体替换）
+	PriceMarkupAmount  *int64                 `protobuf:"varint,15,opt,name=price_markup_amount,json=priceMarkupAmount,proto3,oneof" json:"price_markup_amount,omitempty"` // 固定加价（分）
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -533,15 +533,15 @@ func (x *UpdateConnectionRequest) GetRetryIntervals() string {
 }
 
 func (x *UpdateConnectionRequest) GetExchangeRate() float64 {
-	if x != nil {
-		return x.ExchangeRate
+	if x != nil && x.ExchangeRate != nil {
+		return *x.ExchangeRate
 	}
 	return 0
 }
 
 func (x *UpdateConnectionRequest) GetPriceMarkupPercent() float64 {
-	if x != nil {
-		return x.PriceMarkupPercent
+	if x != nil && x.PriceMarkupPercent != nil {
+		return *x.PriceMarkupPercent
 	}
 	return 0
 }
@@ -554,8 +554,8 @@ func (x *UpdateConnectionRequest) GetPriceRoundingMode() string {
 }
 
 func (x *UpdateConnectionRequest) GetAutoSyncPrice() bool {
-	if x != nil {
-		return x.AutoSyncPrice
+	if x != nil && x.AutoSyncPrice != nil {
+		return *x.AutoSyncPrice
 	}
 	return false
 }
@@ -582,8 +582,8 @@ func (x *UpdateConnectionRequest) GetSettings() string {
 }
 
 func (x *UpdateConnectionRequest) GetPriceMarkupAmount() int64 {
-	if x != nil {
-		return x.PriceMarkupAmount
+	if x != nil && x.PriceMarkupAmount != nil {
+		return *x.PriceMarkupAmount
 	}
 	return 0
 }
@@ -1824,8 +1824,8 @@ type ImportProductsRequest struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	ConnectionId      uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
 	Codes             []string               `protobuf:"bytes,2,rep,name=codes,proto3" json:"codes,omitempty"`
-	PricingMode       string                 `protobuf:"bytes,3,opt,name=pricing_mode,json=pricingMode,proto3" json:"pricing_mode,omitempty"`                                                                            // percent | fixed | equal | pending（默认 percent）
-	MarkupPercent     float64                `protobuf:"fixed64,4,opt,name=markup_percent,json=markupPercent,proto3" json:"markup_percent,omitempty"`                                                                    // percent 模式加价 %（0 = 用连接默认）
+	PricingMode       string                 `protobuf:"bytes,3,opt,name=pricing_mode,json=pricingMode,proto3" json:"pricing_mode,omitempty"`                                                                            // channel | percent | fixed | equal | pending（默认跟随渠道，兼容已保存导入策略）
+	MarkupPercent     float64                `protobuf:"fixed64,4,opt,name=markup_percent,json=markupPercent,proto3" json:"markup_percent,omitempty"`                                                                    // percent 模式加价 %（0 = 不加价）
 	MarkupAmountCents int64                  `protobuf:"varint,5,opt,name=markup_amount_cents,json=markupAmountCents,proto3" json:"markup_amount_cents,omitempty"`                                                       // fixed 模式加价金额（分）
 	SaveDefault       bool                   `protobuf:"varint,6,opt,name=save_default,json=saveDefault,proto3" json:"save_default,omitempty"`                                                                           // 把本次策略存为连接默认（settings.import_pricing）
 	CategoryMap       map[string]uint64      `protobuf:"bytes,7,rep,name=category_map,json=categoryMap,proto3" json:"category_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 缺省沿用；0 显式清除；正数指定本地分类
@@ -2542,7 +2542,7 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\n" +
 	"stock_mode\x18\f \x01(\tR\tstockMode\x12\x1a\n" +
 	"\bsettings\x18\r \x01(\tR\bsettings\x12.\n" +
-	"\x13price_markup_amount\x18\x0e \x01(\x03R\x11priceMarkupAmount\"\x9a\x04\n" +
+	"\x13price_markup_amount\x18\x0e \x01(\x03R\x11priceMarkupAmount\"\x85\x05\n" +
 	"\x17UpdateConnectionRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x19\n" +
@@ -2550,17 +2550,21 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\vcredentials\x18\x04 \x01(\tR\vcredentials\x12!\n" +
 	"\fcallback_url\x18\x05 \x01(\tR\vcallbackUrl\x12\x1b\n" +
 	"\tretry_max\x18\x06 \x01(\x05R\bretryMax\x12'\n" +
-	"\x0fretry_intervals\x18\a \x01(\tR\x0eretryIntervals\x12#\n" +
-	"\rexchange_rate\x18\b \x01(\x01R\fexchangeRate\x120\n" +
-	"\x14price_markup_percent\x18\t \x01(\x01R\x12priceMarkupPercent\x12.\n" +
+	"\x0fretry_intervals\x18\a \x01(\tR\x0eretryIntervals\x12(\n" +
+	"\rexchange_rate\x18\b \x01(\x01H\x00R\fexchangeRate\x88\x01\x01\x125\n" +
+	"\x14price_markup_percent\x18\t \x01(\x01H\x01R\x12priceMarkupPercent\x88\x01\x01\x12.\n" +
 	"\x13price_rounding_mode\x18\n" +
-	" \x01(\tR\x11priceRoundingMode\x12&\n" +
-	"\x0fauto_sync_price\x18\v \x01(\bR\rautoSyncPrice\x12\x1d\n" +
+	" \x01(\tR\x11priceRoundingMode\x12+\n" +
+	"\x0fauto_sync_price\x18\v \x01(\bH\x02R\rautoSyncPrice\x88\x01\x01\x12\x1d\n" +
 	"\n" +
 	"stock_mode\x18\f \x01(\tR\tstockMode\x12\x16\n" +
 	"\x06status\x18\r \x01(\tR\x06status\x12\x1a\n" +
-	"\bsettings\x18\x0e \x01(\tR\bsettings\x12.\n" +
-	"\x13price_markup_amount\x18\x0f \x01(\x03R\x11priceMarkupAmount\".\n" +
+	"\bsettings\x18\x0e \x01(\tR\bsettings\x123\n" +
+	"\x13price_markup_amount\x18\x0f \x01(\x03H\x03R\x11priceMarkupAmount\x88\x01\x01B\x10\n" +
+	"\x0e_exchange_rateB\x17\n" +
+	"\x15_price_markup_percentB\x12\n" +
+	"\x10_auto_sync_priceB\x16\n" +
+	"\x14_price_markup_amount\".\n" +
 	"\x17DeleteConnectionRequest\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"I\n" +
 	"\x16ListConnectionsRequest\x12\x12\n" +
@@ -2847,6 +2851,7 @@ func file_admin_v1_supply_proto_init() {
 	if File_admin_v1_supply_proto != nil {
 		return
 	}
+	file_admin_v1_supply_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

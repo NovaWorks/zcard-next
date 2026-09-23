@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
@@ -51,8 +52,15 @@ func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.
 		return nil, err
 	}
 	exchangeRate := req.GetExchangeRate()
-	if exchangeRate <= 0 {
+	if exchangeRate == 0 {
 		exchangeRate = 1
+	}
+	if err := validatePricing(exchangeRate, req.GetPriceMarkupPercent(), req.GetPriceMarkupAmount(), req.GetPriceRoundingMode()); err != nil {
+		return nil, err
+	}
+	settings, err := parseConnectionSettings(req.GetSettings())
+	if err != nil {
+		return nil, err
 	}
 	conn, err := s.repo.CreateConnection(ctx, &ent.SupplyConnection{
 		Name:               req.GetName(),
@@ -65,10 +73,11 @@ func (s *AdminSupplyService) CreateConnection(ctx context.Context, req *adminv1.
 		RetryIntervals:     req.GetRetryIntervals(),
 		ExchangeRate:       exchangeRate,
 		PriceMarkupPercent: req.GetPriceMarkupPercent(),
+		PriceMarkupAmount:  req.GetPriceMarkupAmount(),
 		PriceRoundingMode:  supplyconnection.PriceRoundingMode(orDefault(req.GetPriceRoundingMode(), "none")),
 		AutoSyncPrice:      req.GetAutoSyncPrice(),
 		StockMode:          supplyconnection.StockMode(orDefault(req.GetStockMode(), "real")),
-		Settings:           mustJSONMap(req.GetSettings()),
+		Settings:           settings,
 	})
 	if err != nil {
 		return nil, err
@@ -87,22 +96,32 @@ func (s *AdminSupplyService) UpdateConnection(ctx context.Context, req *adminv1.
 			return nil, fmt.Errorf("supply.SSRF_REJECTED: %w", err)
 		}
 	}
-	exchangeRate := req.GetExchangeRate()
-	if exchangeRate <= 0 {
-		exchangeRate = 1
+	rate, percent, amount := conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount
+	if req.ExchangeRate != nil {
+		rate = *req.ExchangeRate
 	}
-	upd := &ent.SupplyConnection{
-		Name:               req.GetName(),
-		BaseURL:            req.GetBaseUrl(),
-		CallbackURL:        req.GetCallbackUrl(),
-		RetryMax:           req.GetRetryMax(),
-		RetryIntervals:     req.GetRetryIntervals(),
-		ExchangeRate:       exchangeRate,
-		PriceMarkupPercent: req.GetPriceMarkupPercent(),
-		PriceRoundingMode:  supplyconnection.PriceRoundingMode(req.GetPriceRoundingMode()),
-		AutoSyncPrice:      req.GetAutoSyncPrice(),
-		StockMode:          supplyconnection.StockMode(req.GetStockMode()),
-		Status:             supplyconnection.Status(req.GetStatus()),
+	if req.PriceMarkupPercent != nil {
+		percent = *req.PriceMarkupPercent
+	}
+	if req.PriceMarkupAmount != nil {
+		amount = *req.PriceMarkupAmount
+	}
+	if err := validatePricing(rate, percent, amount, req.GetPriceRoundingMode()); err != nil {
+		return nil, err
+	}
+	settings, err := parseConnectionSettings(req.GetSettings())
+	if err != nil {
+		return nil, err
+	}
+	upd := &ConnectionUpdate{
+		SupplyConnection: &ent.SupplyConnection{
+			Name: req.GetName(), BaseURL: req.GetBaseUrl(), CallbackURL: req.GetCallbackUrl(),
+			RetryMax: req.GetRetryMax(), RetryIntervals: req.GetRetryIntervals(),
+			PriceRoundingMode: supplyconnection.PriceRoundingMode(req.GetPriceRoundingMode()),
+			StockMode:         supplyconnection.StockMode(req.GetStockMode()), Status: supplyconnection.Status(req.GetStatus()), Settings: settings,
+		},
+		ExchangeRate: req.ExchangeRate, PriceMarkupPercent: req.PriceMarkupPercent,
+		PriceMarkupAmount: req.PriceMarkupAmount, AutoSyncPrice: req.AutoSyncPrice,
 	}
 	updated, err := s.repo.UpdateConnection(ctx, req.GetId(), upd)
 	if err != nil {
@@ -302,6 +321,7 @@ func toProtoConnection(c *ent.SupplyConnection) *adminv1.SupplyConnection {
 		RetryIntervals:     c.RetryIntervals,
 		ExchangeRate:       c.ExchangeRate,
 		PriceMarkupPercent: c.PriceMarkupPercent,
+		PriceMarkupAmount:  c.PriceMarkupAmount,
 		PriceRoundingMode:  string(c.PriceRoundingMode),
 		AutoSyncPrice:      c.AutoSyncPrice,
 		StockMode:          string(c.StockMode),
@@ -417,4 +437,30 @@ func orDefault(v, def string) string {
 		return def
 	}
 	return v
+}
+
+func validatePricing(rate, percent float64, amount int64, rounding string) error {
+	if math.IsNaN(rate) || math.IsInf(rate, 0) || rate <= 0 {
+		return errors.New("汇率必须是大于 0 的有限数值")
+	}
+	if math.IsNaN(percent) || math.IsInf(percent, 0) || percent < 0 || amount < 0 {
+		return errors.New("加价比例和固定加价不能为负数或非有限数值")
+	}
+	switch rounding {
+	case "", RoundingNone, RoundingCeilInt, RoundingCeilTenth:
+	default:
+		return errors.New("无效的价格取整方式")
+	}
+	return nil
+}
+
+func parseConnectionSettings(raw string) (map[string]any, error) {
+	if raw == "" {
+		return nil, nil
+	}
+	var settings map[string]any
+	if err := json.Unmarshal([]byte(raw), &settings); err != nil || settings == nil {
+		return nil, errors.New("渠道设置必须是 JSON 对象")
+	}
+	return settings, nil
 }

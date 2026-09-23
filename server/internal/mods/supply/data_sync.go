@@ -541,7 +541,7 @@ func (s *SyncService) syncPriceOnly(ctx context.Context, conn *ent.SupplyConnect
 	newPrice := ApplyPricing(p.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
 	priceToWrite, writePrice, priceUpdated, override := s.resolvePrice(ctx, conn, mapping, p.Price, newPrice, force)
 	if writePrice && s.maintainer != nil {
-		if _, err := s.maintainer.UpdateUpstreamPrice(ctx, conn.ID, p.ID, priceToWrite); err != nil {
+		if _, err := s.maintainer.UpdateUpstreamPrice(ctx, conn.ID, p.ID, priceToWrite, priceSKUs(conn, p.SKUs)...); err != nil {
 			return err
 		}
 		if priceUpdated {
@@ -594,7 +594,7 @@ func (s *SyncService) syncStatusOnly(ctx context.Context, conn *ent.SupplyConnec
 // resolvePrice 价格保护三级判定（collect/price 共用口径）：
 // 1. auto_sync_price=false → 不写（运营手工定价域）
 // 2. pricing_override.price 固定覆盖价 → 恒用固定价
-// 3. 本地当前价 ≠ last_synced_price 基线 → 运营改过价 → 保护；基线更新为运营价
+// 3. 本地当前价 ≠ last_synced_price 基线 → 运营改过价 → 保护；保留上次同步基线
 // （force=true 时跳过本条——管理员强制重价）
 //
 // 返回 (写入价, 是否写价, 是否计 price_updated, 更新后的 override)。
@@ -617,7 +617,6 @@ func (s *SyncService) resolvePrice(ctx context.Context, conn *ent.SupplyConnecti
 		current, err := s.currentProductPrice(ctx, mapping.LocalProductID)
 		if err == nil && current != toInt64(lastSync) && current != newPrice {
 			writePrice = false
-			override["last_synced_price"] = current // 基线更新为运营价（后续同步保持）
 		}
 	}
 	if writePrice && !priceUpdated {
@@ -915,7 +914,13 @@ func autoOnshelf(settings map[string]any) bool {
 // 定价四模式（pricing.go ApplyPricingImport）：pending 不算价不上架（Price=-1
 // 不覆盖既有价，运营补价后手动上架）；导入价写入基线（后续同步走价格保护）。
 func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64) (bool, error) {
-	price := ApplyPricingImport(p.Price, conn.ExchangeRate, markupPercent, markupAmount, mode, string(conn.PriceRoundingMode))
+	importPrice := func(upstream int64) int64 {
+		if mode == PriceModeChannel {
+			return ApplyPricing(upstream, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))
+		}
+		return ApplyPricingImport(upstream, conn.ExchangeRate, markupPercent, markupAmount, mode, string(conn.PriceRoundingMode))
+	}
+	price := importPrice(p.Price)
 	status := int8(1)
 	writePrice := price
 	if mode == PriceModePending {
@@ -950,7 +955,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	}
 	// 手动导入也必须携带规格，上游下单使用 SKU ID。
 	for _, sk := range p.SKUs {
-		skuPrice := ApplyPricingImport(sk.Price, conn.ExchangeRate, markupPercent, markupAmount, mode, string(conn.PriceRoundingMode))
+		skuPrice := importPrice(sk.Price)
 		if mode == PriceModePending {
 			skuPrice = -1 // 待定价时保留已有规格价格，不写零元规格。
 		}
@@ -1077,4 +1082,13 @@ func (s *SyncService) deleteHarvestedCover(ctx context.Context, cover string) {
 		return
 	}
 	deleteLocalCover(cover)
+}
+
+// Price-only sync updates existing upstream SKU prices without collecting content or stock.
+func priceSKUs(conn *ent.SupplyConnection, skus []adapter.SKU) []catalogport.UpstreamSKUInput {
+	out := make([]catalogport.UpstreamSKUInput, 0, len(skus))
+	for _, sk := range skus {
+		out = append(out, catalogport.UpstreamSKUInput{Code: sk.Code, PriceCents: ApplyPricing(sk.Price, conn.ExchangeRate, conn.PriceMarkupPercent, conn.PriceMarkupAmount, string(conn.PriceRoundingMode))})
+	}
+	return out
 }

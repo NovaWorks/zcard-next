@@ -37,7 +37,7 @@ func newFakeMaintainer() *fakeMaintainer {
 	return &fakeMaintainer{priceCalls: map[string]int64{}, statusCalls: map[string]int8{}}
 }
 
-func (f *fakeMaintainer) UpdateUpstreamPrice(_ context.Context, _ uint64, code string, price int64) (bool, error) {
+func (f *fakeMaintainer) UpdateUpstreamPrice(_ context.Context, _ uint64, code string, price int64, skus ...catalogport.UpstreamSKUInput) (bool, error) {
 	f.priceCalls[code] = price
 	return true, nil
 }
@@ -160,13 +160,13 @@ func TestPriceProtection(t *testing.T) {
 		if stats.ManualSkipped != 1 {
 			t.Fatalf("manual_skipped 应 +1: %+v", stats)
 		}
-		// 基线更新为运营价（后续同步保持）
+		// 保留上次同步基线，连续同步仍须保护手工价。
 		m, err := repo.GetMapping(ctx, conn.ID, "P1", "")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if toInt64(m.PricingOverride["last_synced_price"]) != 9999 {
-			t.Fatalf("基线应更新为运营价 9999: %+v", m.PricingOverride)
+		if toInt64(m.PricingOverride["last_synced_price"]) != 1000 {
+			t.Fatalf("基线应保留上次同步价 1000: %+v", m.PricingOverride)
 		}
 	})
 

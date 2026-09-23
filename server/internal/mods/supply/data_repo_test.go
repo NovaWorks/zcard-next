@@ -118,7 +118,7 @@ func TestConnectionCRUD(t *testing.T) {
 
 	// 更新（改 base_url 后凭据需重配：AAD 绑定）
 	upd := &ent.SupplyConnection{Name: "上游A-改", BaseURL: "https://up2.example.com"}
-	updated, err := r.UpdateConnection(ctx, conn.ID, upd)
+	updated, err := r.UpdateConnection(ctx, conn.ID, &ConnectionUpdate{SupplyConnection: upd})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -10,6 +10,7 @@ import { fetchControls, createControl, updateControl, deleteControl } from "@/se
 import { checkAuth } from "@/directives";
 
 const props = defineProps<{ productId: number }>();
+const emit = defineEmits<{ (e: "persisted"): void }>();
 
 const loading = ref(false);
 const saving = ref(false);
@@ -24,6 +25,10 @@ const formData = reactive({
   options_text: "",
   sort: 0,
 });
+
+const initialForm = ref(JSON.stringify(formData));
+const hasPending = computed(() => JSON.stringify(formData) !== initialForm.value);
+defineExpose({ hasPending, saving });
 
 const typeOptions = [
   { label: "文本", value: "text" },
@@ -139,6 +144,7 @@ watch(
 function resetForm() {
   editingId.value = 0;
   Object.assign(formData, { name: "", type: "text", required: false, options_text: "", sort: 0,placeholder:"",validation:"text",max_length:500 });
+  initialForm.value = JSON.stringify(formData);
   showForm.value = false;
 }
 
@@ -151,10 +157,12 @@ function handleEdit(row: any) {
     options_text: (row.options || []).join(","),
     sort: row.sort || 0,
   });
+  initialForm.value = JSON.stringify(formData);
   showForm.value = true;
 }
 
 async function handleSave() {
+  if (saving.value) return;
   if (!formData.name) return;
   if (needOptions.value && !formData.options_text.trim()) {
     window.$message?.error("该类型必须提供选项（逗号分隔）");
@@ -179,6 +187,7 @@ async function handleSave() {
       : await createControl(props.productId, payload);
     if (!error) {
       window.$message?.success(editingId.value ? "控件已更新" : "控件已创建");
+      emit("persisted");
       resetForm();
       load();
     }
@@ -188,11 +197,16 @@ async function handleSave() {
 }
 
 async function handleDelete(id: number) {
-  const { error } = await deleteControl(id);
-  if (!error) {
-    window.$message?.success("已删除");
-    load();
-  }
+  if (saving.value) return;
+  saving.value = true;
+  try {
+    const { error } = await deleteControl(id);
+    if (!error) {
+      emit("persisted");
+      window.$message?.success("已删除");
+      load();
+    }
+  } finally { saving.value = false; }
 }
 </script>
 
@@ -241,7 +255,7 @@ async function handleDelete(id: number) {
       <div class="flex items-center justify-between">
         <span class="text-12px text-gray-400">控件在下单表单渲染，答案随订单落库</span>
         <NSpace>
-          <NButton v-if="editingId" size="small" @click="resetForm">取消编辑</NButton>
+          <NButton size="small" @click="resetForm">取消编辑</NButton>
           <NButton v-auth="'catalog:control_write'" type="primary" size="small" :loading="saving" @click="handleSave">
             {{ editingId ? "更新控件" : "创建控件" }}
           </NButton>

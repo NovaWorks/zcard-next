@@ -87,67 +87,57 @@ func (r *SupplyRepoImpl) CreateConnection(ctx context.Context, conn *ent.SupplyC
 		Save(ctx)
 }
 
-// UpdateConnection 更新连接（nil 字段不更新语义由 service 层拼装；凭据单独处理）。
-func (r *SupplyRepoImpl) UpdateConnection(ctx context.Context, id uint64, upd *ent.SupplyConnection) (*ent.SupplyConnection, error) {
-	// 先读原记录（凭据列保护：更新路径不触碰凭据除非显式传入）
-	existing, err := r.GetConnection(ctx, id)
-	if err != nil {
-		return nil, err
-	}
+// ConnectionUpdate preserves omitted pricing fields, including explicit zero and false.
+type ConnectionUpdate struct {
+	*ent.SupplyConnection
+	ExchangeRate       *float64
+	PriceMarkupPercent *float64
+	PriceMarkupAmount  *int64
+	AutoSyncPrice      *bool
+}
+
+func (r *SupplyRepoImpl) UpdateConnection(ctx context.Context, id uint64, upd *ConnectionUpdate) (*ent.SupplyConnection, error) {
+	q := data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id)
 	if upd.Name != "" {
-		existing.Name = upd.Name
+		q.SetName(upd.Name)
 	}
 	if upd.BaseURL != "" {
-		existing.BaseURL = upd.BaseURL
+		q.SetBaseURL(upd.BaseURL)
 	}
 	if upd.CallbackURL != "" {
-		existing.CallbackURL = upd.CallbackURL
+		q.SetCallbackURL(upd.CallbackURL)
 	}
 	if upd.RetryMax != 0 {
-		existing.RetryMax = upd.RetryMax
+		q.SetRetryMax(upd.RetryMax)
 	}
 	if upd.RetryIntervals != "" {
-		existing.RetryIntervals = upd.RetryIntervals
+		q.SetRetryIntervals(upd.RetryIntervals)
 	}
-	if upd.ExchangeRate != 0 {
-		existing.ExchangeRate = upd.ExchangeRate
+	if upd.ExchangeRate != nil {
+		q.SetExchangeRate(*upd.ExchangeRate)
 	}
-	if upd.PriceMarkupPercent != 0 {
-		existing.PriceMarkupPercent = upd.PriceMarkupPercent
+	if upd.PriceMarkupPercent != nil {
+		q.SetPriceMarkupPercent(*upd.PriceMarkupPercent)
 	}
-	if upd.PriceMarkupAmount != 0 {
-		existing.PriceMarkupAmount = upd.PriceMarkupAmount
+	if upd.PriceMarkupAmount != nil {
+		q.SetPriceMarkupAmount(*upd.PriceMarkupAmount)
+	}
+	if upd.AutoSyncPrice != nil {
+		q.SetAutoSyncPrice(*upd.AutoSyncPrice)
 	}
 	if upd.PriceRoundingMode != "" {
-		existing.PriceRoundingMode = upd.PriceRoundingMode
+		q.SetPriceRoundingMode(upd.PriceRoundingMode)
 	}
 	if upd.StockMode != "" {
-		existing.StockMode = upd.StockMode
+		q.SetStockMode(upd.StockMode)
 	}
 	if upd.Status != "" {
-		existing.Status = upd.Status
-	}
-	if upd.AutoSyncPrice {
-		existing.AutoSyncPrice = true
+		q.SetStatus(upd.Status)
 	}
 	if upd.Settings != nil {
-		existing.Settings = upd.Settings
+		q.SetSettings(upd.Settings)
 	}
-	return data.Client(ctx, r.data).SupplyConnection.UpdateOneID(id).
-		SetName(existing.Name).
-		SetBaseURL(existing.BaseURL).
-		SetCallbackURL(existing.CallbackURL).
-		SetRetryMax(existing.RetryMax).
-		SetRetryIntervals(existing.RetryIntervals).
-		SetExchangeRate(existing.ExchangeRate).
-		SetPriceMarkupPercent(existing.PriceMarkupPercent).
-		SetPriceMarkupAmount(existing.PriceMarkupAmount).
-		SetPriceRoundingMode(existing.PriceRoundingMode).
-		SetAutoSyncPrice(existing.AutoSyncPrice).
-		SetStockMode(existing.StockMode).
-		SetStatus(existing.Status).
-		SetSettings(existing.Settings).
-		Save(ctx)
+	return q.Save(ctx)
 }
 
 // UpdateCredentials 更新凭据（单独入口，避免全量更新误写密文）。

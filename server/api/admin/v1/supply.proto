@@ -159,14 +159,14 @@ message UpdateConnectionRequest {
   string callback_url = 5;
   int32 retry_max = 6;
   string retry_intervals = 7;
-  double exchange_rate = 8;
-  double price_markup_percent = 9;
+  optional double exchange_rate = 8;
+  optional double price_markup_percent = 9;
   string price_rounding_mode = 10;
-  bool auto_sync_price = 11;
+  optional bool auto_sync_price = 11;
   string stock_mode = 12;
   string status = 13;
   string settings = 14; // JSON（定时计划/导入默认价；非空整体替换）
-  int64 price_markup_amount = 15; // 固定加价（分）
+  optional int64 price_markup_amount = 15; // 固定加价（分）
 }
 
 message DeleteConnectionRequest {
@@ -306,8 +306,8 @@ message PreviewProductsReply {
 message ImportProductsRequest {
   uint64 connection_id = 1 [(google.api.field_behavior) = REQUIRED];
   repeated string codes = 2 [(google.api.field_behavior) = REQUIRED];
-  string pricing_mode = 3; // percent | fixed | equal | pending（默认 percent）
-  double markup_percent = 4; // percent 模式加价 %（0 = 用连接默认）
+  string pricing_mode = 3; // channel | percent | fixed | equal | pending（默认跟随渠道，兼容已保存导入策略）
+  double markup_percent = 4; // percent 模式加价 %（0 = 不加价）
   int64 markup_amount_cents = 5; // fixed 模式加价金额（分）
   bool save_default = 6; // 把本次策略存为连接默认（settings.import_pricing）
   map<string, uint64> category_map = 7; // 缺省沿用；0 显式清除；正数指定本地分类

@@ -38,7 +38,7 @@ const checked = ref<string[]>([]);
 const expandedCats = ref<Set<string>>(new Set());
 
 const pricing = reactive({
-  mode: "percent",
+  mode: "channel",
   markupPercent: 10,
   markupAmountYuan: 1,
   saveDefault: false,
@@ -122,7 +122,7 @@ async function loadPreview() {
   keyword.value = "";
   batchCategory.value = null;
   resultMessage.value = "";
-  Object.assign(pricing, { mode: "percent", markupPercent: 10, markupAmountYuan: 1, saveDefault: false });
+  Object.assign(pricing, { mode: "channel", markupPercent: 10, markupAmountYuan: 1, saveDefault: false });
   try {
     const { data, error } = await previewSupplyProducts(connection.id);
     if (requestId !== previewRequest) return;
@@ -139,7 +139,7 @@ async function loadPreview() {
       try {
         const def = JSON.parse(connection.settings || "{}").import_pricing;
         if (def) {
-          pricing.mode = def.mode || "percent";
+          pricing.mode = def.mode || "channel";
           pricing.markupPercent = Number(def.markup_percent ?? 10);
           pricing.markupAmountYuan = Number(def.markup_amount_cents ?? 0) / 100;
         }
@@ -218,7 +218,7 @@ async function submit() {
         upstream_code: cat.code, name: drafts[cat.code].name.trim(), parent_id: drafts[cat.code].parent_id || 0,
       })),
     };
-    if (pricing.mode === "percent" && pricing.markupPercent > 0) payload.markup_percent = pricing.markupPercent;
+    if (pricing.mode === "percent") payload.markup_percent = pricing.markupPercent;
     if (pricing.mode === "fixed") payload.markup_amount_cents = yuanToFen(pricing.markupAmountYuan);
     const { data, error } = await importSupplyProducts(props.connection.id, payload as any);
     if (!error && data) {
@@ -301,12 +301,19 @@ async function submit() {
           <NButton v-auth="'catalog:category_write'" size="small" type="primary" secondary :disabled="!selectedCategories.length" @click="generateDrafts">生成映射草稿</NButton>
         </div>
         <div class="text-12px text-gray-400">只处理所选商品涉及的分类；草稿保存前不会出现在商城。保存后的映射也用于后续全量同步及该上游分类的其他已导入商品。</div>
+          <NAlert :type="pricing.mode === 'channel' ? 'info' : 'warning'" class="mb-12px">
+            <template v-if="pricing.mode === 'channel'">
+              跟随渠道：上游价 × {{ connection.exchange_rate || 1 }} ×（1 + {{ connection.price_markup_percent || 0 }}%）+ {{ formatMoney(connection.price_markup_amount || 0) }}，再按渠道取整规则计算；商品和规格使用同一规则。
+            </template>
+            <template v-else>当前为独立导入策略，不叠加渠道加价。后续价格同步仍使用渠道规则，可能改变本次导入价；需长期保留手工价格时，请关闭渠道的「同步自动改价」。</template>
+          </NAlert>
           <NForm label-placement="left" size="small" class="pricing-grid">
             <NFormItem label="定价策略" :show-feedback="false">
               <NSelect
                 v-model:value="pricing.mode"
                 :options="[
-                  { label: '按加价比例（%）', value: 'percent' },
+                  { label: '跟随渠道定价', value: 'channel' },
+                  { label: '本次按加价比例（%）', value: 'percent' },
                   { label: '加固定金额（元）', value: 'fixed' },
                   { label: '原价导入（不加价）', value: 'equal' },
                   { label: '待定价（导入后不上架）', value: 'pending' },
@@ -320,9 +327,9 @@ async function submit() {
               <NInputNumber v-model:value="pricing.markupAmountYuan" :min="0.01" :precision="2" class="w-full" />
             </NFormItem>
             <div class="pricing-default">
-                <NCheckbox v-model:checked="pricing.saveDefault">存为该渠道默认</NCheckbox>
+                <NCheckbox v-model:checked="pricing.saveDefault">记住下次导入策略</NCheckbox>
                 <span class="text-12px text-gray-400">
-                  下次导入自动回填，仅用于勾选导入，不改变渠道加价设置。
+                  仅记住导入选项，不修改渠道加价；已有的独立导入策略会保留。
                 </span>
             </div>
           </NForm>
