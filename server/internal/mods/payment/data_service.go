@@ -490,7 +490,7 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, req *storefrontv
 		if ch.Driver != "wallet" && len(s.repo.ConfiguredFields(ch)) == 0 {
 			continue // 待配置渠道不下发
 		}
-		item := &storefrontv1.ChannelItem{Code: ch.Code, Name: ch.Name, Driver: ch.Driver, Icon: ch.Icon, Fee: ch.Fee, FeeType: string(ch.FeeType), FeeBearer: string(ch.FeeBearer), Recommended: ch.Recommended, RecommendLabel: ch.RecommendLabel, RecommendDescription: ch.RecommendDescription}
+		item := &storefrontv1.ChannelItem{Code: ch.Code, Name: paymentChannelName(ch), Driver: ch.Driver, Icon: ch.Icon, Fee: ch.Fee, FeeType: string(ch.FeeType), FeeBearer: string(ch.FeeBearer), Recommended: ch.Recommended, RecommendLabel: ch.RecommendLabel, RecommendDescription: ch.RecommendDescription}
 		for _, m := range parseMethods(ch) {
 			if !m.Enabled || !m.ChannelUsage.allows(scene) {
 				continue

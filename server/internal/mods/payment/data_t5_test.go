@@ -39,6 +39,9 @@ func TestListDrivers(t *testing.T) {
 			t.Fatalf("缺驱动 %s", code)
 		}
 	}
+	if byCode["epusdt"].Name != "GM Pay" || byCode["bepusdt"].Name != "BEpusdt" {
+		t.Fatal("payment brands must remain separate")
+	}
 	// 元数据字段
 	if byCode["paypal"].Name == "" || byCode["paypal"].Icon == "" || byCode["paypal"].Description == "" {
 		t.Fatalf("paypal 元数据不完整: %+v", byCode["paypal"])

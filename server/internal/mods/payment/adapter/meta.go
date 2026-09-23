@@ -55,7 +55,7 @@ func (a *EpayAdapter) ConfigFields() []port.ConfigField {
 
 // Meta epusdt（GMPay）。
 func (a *EpusdtAdapter) Meta() port.DriverMeta {
-	return port.DriverMeta{Name: "EPUSDT / GM Pay（多链多币种）", Icon: "epusdt", Description: "EPUSDT / GM Pay，使用 GMPay v2 HMAC-SHA256 接口"}
+	return port.DriverMeta{Name: "GM Pay", Icon: "epusdt", Description: "GM Pay 多链多币种收款，使用 GMPay v2 HMAC-SHA256 接口"}
 }
 
 // ConfigFields epusdt 配置字段。
@@ -69,10 +69,10 @@ func (a *EpusdtAdapter) ConfigFields() []port.ConfigField {
 		// 每个商户实例启用的链/代币不同；网关不可达时前端回落下方静态矩阵并提示）
 		// token/network 多选：恰好一币一链 → 下单锁定；多选/未选 → 占位订单收银台自选
 		{Key: "token", Label: "支付代币", Type: "select", Dynamic: true, Multiple: true, Default: "USDT",
-			Help:    "收款代币（需 epusdt 服务端已启用）。多选时顾客在收银台自选；仅选一个则锁定该币种",
+			Help:    "收款代币（需 GM Pay 服务端已启用）。多选时顾客在收银台自选；仅选一个则锁定该币种",
 			Options: epusdtStaticTokenOptions()},
 		{Key: "network", Label: "网络", Type: "select", Dynamic: true, Multiple: true, Default: "tron",
-			Help:    "收款链需在 EP 后台启用并配置钱包。Polygon 是链名；可用代币以网关返回为准。多选时顾客在 EP 收银台自选",
+			Help:    "收款链需在 GM Pay 后台启用并配置钱包。Polygon 是链名；可用代币以网关返回为准。多选时顾客在 GM Pay 收银台自选",
 			Options: epusdtStaticNetworkOptions()},
 	}
 }

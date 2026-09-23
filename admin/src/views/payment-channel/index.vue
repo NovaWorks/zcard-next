@@ -585,7 +585,7 @@ onMounted(() => {
             </div>
             <div class="flex-1 min-w-0">
               <div class="font-600 truncate">{{ ch.name }}</div>
-              <div class="text-12px font-mono opacity-50 truncate">{{ ch.code }}</div>
+              <div class="text-12px opacity-70 truncate">{{ ch.driver === "epusdt" ? "GM Pay" : ch.driver === "bepusdt" ? "BEpusdt" : driverOf(ch.driver)?.name || ch.driver }} · {{ ch.code }}</div>
             </div>
             <NSwitch size="small" :value="ch.enabled" @update:value="(v: boolean) => handleToggle(ch, v)" />
           </div>

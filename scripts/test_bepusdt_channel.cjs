@@ -20,7 +20,7 @@ const server = http.createServer((req, res) => {
     {key:'api_token',label:'API Token',type:'password',required:true,sensitive:true},
     {key:'trade_type',label:'收款网络',type:'select',required:true,default:'usdt.trc20',options:[{label:'USDT · TRC20',value:'usdt.trc20'},{label:'USDT · ERC20',value:'usdt.erc20'},{label:'USDT · BEP20',value:'usdt.bep20'}]},
     {key:'timeout',label:'支付期限（秒）',type:'number',default:'1200',help:'180–3600 秒；同时受商品订单剩余期限限制。重试不会延长期限'},
-   ]}];
+   ]},{code:"epusdt",name:"GM Pay",description:"GM Pay 多链多币种收款",fields:[]}];
    page.on('pageerror',e=>errors.push(e.message));
    await page.addInitScript(()=>{localStorage.setItem('token',JSON.stringify('local-test'));localStorage.setItem('refreshToken',JSON.stringify('local-refresh'));});
    await page.route('**/api/v1/**',async route=>{
@@ -40,7 +40,7 @@ const server = http.createServer((req, res) => {
    });
    await page.goto(`http://127.0.0.1:${server.address().port}/admin/payment-channel`);
    await page.getByRole('button',{name:'添加渠道',exact:true}).click();
-   const add=page.locator('.n-modal').filter({hasText:'添加支付渠道'});await add.getByRole('checkbox').click();await add.getByRole('button',{name:/添加所选/}).click();
+   const add=page.locator('.n-modal').filter({hasText:'添加支付渠道'});await add.getByText('GM Pay',{exact:true}).waitFor();await add.getByRole('checkbox').filter({hasText:'BEpusdt'}).click();await add.getByRole('button',{name:/添加所选/}).click();
    const config=page.locator('.n-modal').filter({hasText:'配置「BEpusdt」'});await config.waitFor();
    assert.equal(creates[0].driver,'bepusdt');assert(!creates[0].methods_json || creates[0].methods_json==='[]');
    const field=label=>config.locator('.n-form-item').filter({has:page.locator('.n-form-item-label',{hasText:label})});

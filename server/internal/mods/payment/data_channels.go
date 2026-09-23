@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -973,7 +974,7 @@ func (r *PaymentRepoImpl) ListRefunds(ctx context.Context, status string) ([]*en
 // ToChannelPB 转 admin 协议（凭据脱敏；icon/methods_json 原样下发）。
 func ToChannelPB(ch *ent.PaymentChannel) *adminv1.Channel {
 	pb := &adminv1.Channel{
-		Id: ch.ID, Name: ch.Name, Code: ch.Code, Driver: ch.Driver,
+		Id: ch.ID, Name: paymentChannelName(ch), Code: ch.Code, Driver: ch.Driver,
 		ConfigJson: `"****"`, // 凭据永不明文下发
 		Fee:        ch.Fee, FeeType: string(ch.FeeType), FeeBearer: string(ch.FeeBearer), Recommended: ch.Recommended, RecommendLabel: ch.RecommendLabel, RecommendDescription: ch.RecommendDescription,
 		Enabled: ch.Enabled, Sort: ch.Sort,
@@ -1025,4 +1026,21 @@ func ToRefundPB(rf *ent.RefundOrder, orderNo string) *adminv1.RefundOrder {
 // creating a receipt that can never settle (especially for guest and mixed orders).
 func (r *PaymentRepoImpl) RefundOrder(ctx context.Context, orderID uint64, amount money.Cents, reason string) error {
 	return fmt.Errorf("payment: 自动退款尚未执行，请在订单详情核实后退款或补发")
+}
+
+// Normalize only generated legacy names; preserve operator names and all identities.
+func paymentChannelName(ch *ent.PaymentChannel) string {
+	if ch.Driver != "epusdt" {
+		return ch.Name
+	}
+	const old = "EPUSDT / GM Pay（多链多币种）"
+	if ch.Name == old {
+		return "GM Pay"
+	}
+	if suffix, ok := strings.CutPrefix(ch.Name, old+" "); ok {
+		if n, err := strconv.Atoi(suffix); err == nil && n >= 2 && strconv.Itoa(n) == suffix {
+			return "GM Pay " + suffix
+		}
+	}
+	return ch.Name
 }
