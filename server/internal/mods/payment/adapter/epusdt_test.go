@@ -247,9 +247,9 @@ func TestEpusdtFieldOptions(t *testing.T) {
 		t.Fatalf("静态网络矩阵错位: %+v", res.Options)
 	}
 
-	// api_url 缺失 → 静态（非 fallback——表单未填地址属正常态）
+	// api_url 缺失 → 静态并标记尚未确认网关资产
 	res, err = a.FieldOptions(context.Background(), "network", json.RawMessage(`{}`))
-	if err != nil || res.Fallback || len(res.Options) != 6 {
+	if err != nil || !res.Fallback || len(res.Options) != 6 {
 		t.Fatalf("缺 api_url 应静态: %v %+v", err, res)
 	}
 	// 静态代币矩阵

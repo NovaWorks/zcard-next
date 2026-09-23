@@ -258,12 +258,12 @@ func TestFieldOptionsEndpoint(t *testing.T) {
 	svc := NewAdminPaymentService(repo, nil)
 	ctx := context.Background()
 
-	// epusdt 支持动态选项；api_url 缺失 → 静态矩阵（非 fallback）
+	// epusdt 支持动态选项；api_url 缺失 → 静态矩阵（未确认网关资产）
 	reply, err := svc.FieldOptions(ctx, &adminv1.FieldOptionsRequest{Code: "epusdt", Field: "network", ConfigJson: `{}`})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reply.Fallback || len(reply.Options) < 6 {
+	if !reply.Fallback || len(reply.Options) < 6 {
 		t.Fatalf("静态回落错位: %+v", reply)
 	}
 	// token 静态矩阵

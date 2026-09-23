@@ -55,7 +55,7 @@ func (a *EpayAdapter) ConfigFields() []port.ConfigField {
 
 // Meta epusdt（GMPay）。
 func (a *EpusdtAdapter) Meta() port.DriverMeta {
-	return port.DriverMeta{Name: "USDT（TRC20）", Icon: "epusdt", Description: "EPUSDT / GM Pay，使用 GMPay v2 HMAC-SHA256 接口"}
+	return port.DriverMeta{Name: "EPUSDT / GM Pay（多链多币种）", Icon: "epusdt", Description: "EPUSDT / GM Pay，使用 GMPay v2 HMAC-SHA256 接口"}
 }
 
 // ConfigFields epusdt 配置字段。
@@ -72,7 +72,7 @@ func (a *EpusdtAdapter) ConfigFields() []port.ConfigField {
 			Help:    "收款代币（需 epusdt 服务端已启用）。多选时顾客在收银台自选；仅选一个则锁定该币种",
 			Options: epusdtStaticTokenOptions()},
 		{Key: "network", Label: "网络", Type: "select", Dynamic: true, Multiple: true, Default: "tron",
-			Help:    "收款链（需 epusdt 服务端已启用，以服务端为准）；TRC20 手续费最低推荐。多选时顾客在收银台自选",
+			Help:    "收款链需在 EP 后台启用并配置钱包。Polygon 是链名；可用代币以网关返回为准。多选时顾客在 EP 收银台自选",
 			Options: epusdtStaticNetworkOptions()},
 	}
 }

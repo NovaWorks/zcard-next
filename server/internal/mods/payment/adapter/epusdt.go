@@ -204,9 +204,9 @@ func (a *EpusdtAdapter) CreatePayment(ctx context.Context, req port.CreatePaymen
 	// 收款方式锁定优先级：① 收银台顾客所选方式（method.params.network/token——按链选择）
 	// ② 渠道凭据恰好一币一链 → 锁定；③ 多选/未选 → 不传（GMPay 占位订单，官方收银台自选）
 	if nw := req.MethodParams["network"]; nw != "" {
-		params["network"] = strings.ToLower(nw)
+		params["network"] = strings.ToLower(strings.TrimSpace(nw))
 		if tk := req.MethodParams["token"]; tk != "" {
-			params["token"] = tk
+			params["token"] = strings.ToUpper(strings.TrimSpace(tk))
 		}
 	} else if tks, nws := epusdtTokens(c), epusdtNetworks(c); len(tks) == 1 && len(nws) == 1 {
 		params["token"] = tks[0]
@@ -341,7 +341,7 @@ func epusdtStaticTokenOptions() []port.ConfigOption {
 // epusdtConfigReply GET /payments/gmpay/v1/config 响应（data.supported_assets——
 // 服务端启用的链与代币，官方文档明示为动态来源）。
 type epusdtConfigReply struct {
-	Data struct {
+	Data *struct {
 		SupportedAssets []struct {
 			Network     string   `json:"network"`
 			DisplayName string   `json:"display_name"`
@@ -359,7 +359,7 @@ func (a *EpusdtAdapter) FieldOptions(ctx context.Context, field string, partial 
 	}
 	_ = json.Unmarshal(partial, &probe)
 	if strings.TrimSpace(probe.APIURL) == "" {
-		return port.FieldOptionsResult{Options: a.fieldOptionsStatic(field, partial)}, nil
+		return port.FieldOptionsResult{Options: a.fieldOptionsStatic(field, partial), Fallback: true}, nil
 	}
 	assets, err := epusdtFetchAssets(ctx, probe.APIURL)
 	if err != nil {
@@ -374,7 +374,14 @@ func (a *EpusdtAdapter) fieldOptionsStatic(field string, partial json.RawMessage
 	case "network":
 		return epusdtStaticNetworkOptions()
 	case "token":
-		return epusdtStaticTokenOptions()
+		return a.fieldOptionsFromAssets(field, []epusdtSupportedAsset{
+			{Network: "tron", Tokens: []string{"USDT", "TRX"}},
+			{Network: "erc20", Tokens: []string{"USDT", "USDC", "ETH"}},
+			{Network: "bep20", Tokens: []string{"USDT", "USDC", "BNB"}},
+			{Network: "solana", Tokens: []string{"USDT", "USDC"}},
+			{Network: "polygon", Tokens: []string{"USDT", "USDC"}},
+			{Network: "aptos", Tokens: []string{"USDT", "USDC"}},
+		}, partial)
 	}
 	return nil
 }
@@ -391,7 +398,7 @@ func (a *EpusdtAdapter) fieldOptionsFromAssets(field string, assets []epusdtSupp
 			if label == "" {
 				label = as.Network
 			}
-			out = append(out, port.ConfigOption{Label: label, Value: as.Network})
+			out = append(out, port.ConfigOption{Label: label, Value: strings.ToLower(strings.TrimSpace(as.Network))})
 		}
 		return out
 	case "token":
@@ -400,7 +407,7 @@ func (a *EpusdtAdapter) fieldOptionsFromAssets(field string, assets []epusdtSupp
 		seen := map[string]bool{}
 		out := make([]port.ConfigOption, 0)
 		for _, as := range assets {
-			if len(want) > 0 && !want[strings.ToLower(as.Network)] {
+			if len(want) > 0 && !want[strings.ToLower(strings.TrimSpace(as.Network))] {
 				continue
 			}
 			for _, tk := range as.Tokens {
@@ -494,6 +501,9 @@ func epusdtFetchAssets(ctx context.Context, apiURL string) ([]epusdtSupportedAss
 	var reply epusdtConfigReply
 	if err := json.Unmarshal(raw, &reply); err != nil {
 		return nil, err
+	}
+	if reply.Data == nil || reply.Data.SupportedAssets == nil {
+		return nil, fmt.Errorf("config 缺少 supported_assets")
 	}
 	out := make([]epusdtSupportedAsset, 0, len(reply.Data.SupportedAssets))
 	for _, as := range reply.Data.SupportedAssets {

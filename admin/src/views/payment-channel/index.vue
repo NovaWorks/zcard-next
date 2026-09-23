@@ -147,56 +147,116 @@ const EPAY_TYPES = [
   { label: "京东支付", value: "jdpay" },
   { label: "银行", value: "bank" },
 ];
-const USDT_NETWORKS = [
-  { label: "TRC20（推荐，手续费最低）", value: "tron" },
-  { label: "ERC20（以太坊）", value: "erc20" },
-  { label: "BEP20（BSC）", value: "bep20" },
-  { label: "Polygon", value: "polygon" },
-];
-
-function addMethod() {
-  form.methods.push({
-    code: current.value?.driver === "epusdt" ? `usdt-trc20` : "alipay",
-    name: "",
-    icon: "",
-    iconArr: [],
-    enabled: true,
-    params: current.value?.driver === "epusdt" ? { network: "tron", token: "USDT" } : { type: "alipay" },
-  });
+function selectedValues(value: unknown): string[] {
+  return (Array.isArray(value) ? value : typeof value === "string" ? [value] : []).map(String).map(v => v.trim()).filter(Boolean);
 }
-
-/** 按模板生成默认方式：epay → 支付宝+微信；epusdt → 按凭据已选 network 逐链生成 */
-function genDefaultMethods() {
+function uniqueMethodCode(base: string, rows = form.methods): string {
+  const used = new Set(rows.map(m => m.code));
+  let code = base, suffix = 2;
+  while (used.has(code)) code = `${base}-${suffix++}`;
+  return code;
+}
+function cryptoMethod(network: string, token: string, rows = form.methods): MethodRow {
+  const label = cryptoNetworks.value.find(o => o.value === network)?.label || network;
+  return { code: uniqueMethodCode(`${token.toLowerCase()}-${network}`, rows), name: `${token} · ${label}`, icon: "", iconArr: [], enabled: true, params: { network, token } };
+}
+async function addMethod() {
+  if (current.value?.driver !== "epusdt") {
+    form.methods.push({ code: uniqueMethodCode("alipay"), name: "", icon: "", iconArr: [], enabled: true, params: { type: "alipay" } });
+    return;
+  }
+  const epoch = optionsEpoch;
+  const network = selectedValues(form.values.network)[0] || cryptoNetworks.value[0]?.value;
+  if (!network) { message.warning("请先在 EP 后台启用收款链和钱包，再刷新可用资产"); return; }
+  const result = await loadMethodTokens(network);
+  if (epoch !== optionsEpoch || !configVisible.value) return;
+  const selected = selectedValues(form.values.token);
+  const token = result.options.find(o => selected.includes(o.value))?.value || result.options[0]?.value || "";
+  form.methods.push(cryptoMethod(network, token));
+}
+const generatingMethods = ref(false);
+async function genDefaultMethods() {
+  if (generatingMethods.value) return;
   if (current.value?.driver === "epay") {
     form.methods = [
       { code: "alipay", name: "支付宝", icon: "", iconArr: [], enabled: true, params: { type: "alipay" } },
       { code: "wxpay", name: "微信支付", icon: "", iconArr: [], enabled: true, params: { type: "wxpay" } },
     ];
-  } else if (current.value?.driver === "epusdt") {
-    const networks: string[] = Array.isArray(form.values.network) ? form.values.network : [];
-    const list = networks.length ? networks : ["tron"];
-    form.methods = list.map((nw: string) => {
-      const opt = USDT_NETWORKS.find((o) => o.value === nw);
-      const label = (opt?.label || nw).split("（")[0];
-      return {
-        code: `usdt-${nw}`,
-        name: `USDT · ${label}`,
-        icon: "",
-        iconArr: [],
-        enabled: true,
-        params: { network: nw, token: "USDT" },
-      };
-    });
+    return;
   }
+  if (current.value?.driver !== "epusdt") return;
+  const epoch = optionsEpoch;
+  generatingMethods.value = true;
+  try {
+    await refreshAssetFields();
+    const selectedNetworks = selectedValues(form.values.network);
+    const networks = selectedNetworks.length ? selectedNetworks : cryptoNetworks.value.map(o => o.value);
+    const tokens = selectedValues(form.values.token);
+    const rows: MethodRow[] = [];
+    for (const network of networks) {
+      const result = await loadMethodTokens(network);
+      if (epoch !== optionsEpoch || !configVisible.value) return;
+      if (dynamicOpts.network?.fallback || result.fallback) {
+        message.warning("未能确认 EP 可用资产，请检查网关后重试；现有支付方式已保留"); return;
+      }
+      for (const option of result.options) {
+        if (!tokens.length || tokens.includes(option.value)) rows.push(cryptoMethod(network, option.value, rows));
+      }
+    }
+    if (!rows.length) { message.warning("所选链与代币没有可用组合，请检查 EP 的链、代币和钱包配置"); return; }
+    form.methods = rows;
+  } finally { generatingMethods.value = false; }
 }
 
 // 动态选项（epusdt network/token——以网关 supported_assets 为准；失败回落静态 + 提示）
 const dynamicOpts = reactive<Record<string, { options: { label: string; value: string }[]; fallback: boolean }>>({});
 const dynamicLoading = reactive<Record<string, boolean>>({});
+type AssetOptions = { options: { label: string; value: string }[]; fallback: boolean };
+const methodTokens = reactive<Record<string, AssetOptions>>({});
+const tokenRequests = new Map<string, Promise<AssetOptions>>();
+let optionsEpoch = 0;
+const fieldRequests: Record<string, number> = {};
+const cryptoNetworks = computed(() => {
+  const field = currentFields.value.find(f => f.key === "network");
+  return field ? fieldOptionsOf(field) : [];
+});
+async function loadMethodTokens(network: string): Promise<AssetOptions> {
+  if (methodTokens[network]) return methodTokens[network];
+  const pending = tokenRequests.get(network);
+  if (pending) return pending;
+  const epoch = optionsEpoch;
+  const request = (async () => {
+    const { data, error } = await fetchFieldOptions("epusdt", "token", JSON.stringify({ api_url: form.values.api_url || "", network: [network] }));
+    const result: AssetOptions = error || !data ? { options: [], fallback: true } : { options: data.options || [], fallback: !!data.fallback };
+    if (epoch === optionsEpoch) methodTokens[network] = result;
+    return result;
+  })();
+  tokenRequests.set(network, request);
+  try { return await request; }
+  finally { if (epoch === optionsEpoch) tokenRequests.delete(network); }
+}
+async function refreshAssetFields() {
+  await Promise.all(currentFields.value.filter(f => f.dynamic).map(loadFieldOptions));
+}
+function resetAssetOptions() {
+  optionsEpoch++;
+  for (const target of [dynamicOpts, dynamicLoading, methodTokens]) for (const key of Object.keys(target)) delete target[key];
+  tokenRequests.clear();
+}
+async function refreshAssets() {
+  resetAssetOptions();
+  await refreshAssetFields();
+  if (current.value?.driver === "epusdt") await Promise.all(form.methods.map(m => m.params.network).filter(Boolean).map(loadMethodTokens));
+}
+watch(() => [configVisible.value, ...form.methods.map(m => m.params.network)], () => {
+  if (configVisible.value && current.value?.driver === "epusdt") for (const m of form.methods) if (m.params.network) void loadMethodTokens(m.params.network);
+});
 
 /** 加载动态字段选项；partial 取当前表单非敏感值（api_url 等），network 变化联动 token */
 async function loadFieldOptions(f: ConfigFieldSchema) {
   const key = f.key;
+  const epoch = optionsEpoch, requestId = (fieldRequests[key] || 0) + 1;
+  fieldRequests[key] = requestId;
   dynamicLoading[key] = true;
   const partial: Record<string, string | string[]> = {};
   for (const fld of currentFields.value) {
@@ -204,11 +264,12 @@ async function loadFieldOptions(f: ConfigFieldSchema) {
     const v = form.values[fld.key];
     if (Array.isArray(v)) {
       if (v.length > 0) partial[fld.key] = v;
-    } else if ((v || "").trim()) {
+    } else if (typeof v === "string" && v.trim()) {
       partial[fld.key] = v as string;
     }
   }
   const { data, error } = await fetchFieldOptions(current.value?.driver || "", key, JSON.stringify(partial));
+  if (epoch !== optionsEpoch || requestId !== fieldRequests[key]) return;
   if (!error && data) {
     dynamicOpts[key] = { options: data.options || [], fallback: !!data.fallback };
   } else {
@@ -320,6 +381,7 @@ async function handleAdd() {
 const feeLabel = computed(() => (form.fee_type === "percent" ? "比例（%）" : "固定金额（元）"));
 
 function openConfig(ch: ChannelRow) {
+  resetAssetOptions();
   current.value = ch;
   form.name = ch.name;
   form.enabled = ch.enabled;
@@ -371,7 +433,7 @@ function openConfig(ch: ChannelRow) {
 const configuredKeys = computed(() => new Set(current.value?.configured_fields || []));
 
 function handleConfigSave() {
-  if (!current.value) return;
+  if (!current.value || saving.value || generatingMethods.value) return;
   // 必填校验：未配置过的必填字段必须填写（数组=非空）
   for (const f of currentFields.value) {
     const v = form.values[f.key];
@@ -405,6 +467,16 @@ function handleConfigSave() {
       if (seen.has(m.code.trim())) {
         message.warning(`支付方式标识「${m.code}」重复`);
         return;
+      }
+      if (current.value.driver === "epusdt" && m.enabled) {
+        const network = (m.params.network || "").trim().toLowerCase();
+        const token = (m.params.token || "").trim().toUpperCase();
+        if (!network || !token) { message.warning("请选择每个启用支付方式的收款链和代币"); return; }
+        const assets = methodTokens[network];
+        if ((dynamicOpts.network && !dynamicOpts.network.fallback && !cryptoNetworks.value.some(o => o.value === network)) || (assets && !assets.fallback && !assets.options.some(o => o.value === token))) {
+          message.warning(`${m.name} 的链与代币当前在 EP 不可用，请启用对应资产和钱包后刷新`); return;
+        }
+        m.params.network = network; m.params.token = token;
       }
       seen.add(m.code.trim());
     }
@@ -632,13 +704,17 @@ onMounted(() => {
           </NDivider>
           <div class="flex items-center justify-between mb-8px">
             <span class="text-12px opacity-60">
-              {{ current?.driver === "epay" ? "同一易支付网关可分开接入支付宝/微信等，顾客按方式下单" : "每条链一个方式，顾客支付时自选收款链" }}
+              {{ current?.driver === "epay" ? "同一易支付网关可分开接入支付宝/微信等，顾客按方式下单" : "每个方式指定收款链和代币，顾客在商城收银台选择" }}
             </span>
             <div class="flex gap-8px">
-              <NButton size="tiny" secondary @click="genDefaultMethods">按模板生成</NButton>
+              <NButton v-if="current?.driver === 'epusdt'" size="tiny" secondary @click="refreshAssets">刷新可用资产</NButton>
+              <NButton size="tiny" secondary :loading="generatingMethods" @click="genDefaultMethods">按模板生成</NButton>
               <NButton size="tiny" type="primary" secondary @click="addMethod">添加方式</NButton>
             </div>
           </div>
+          <NAlert v-if="current?.driver === 'epusdt'" type="info" class="mb-12px">
+            先在 EP 后台启用链、代币并配置收款钱包。这里的支付方式优先于下方渠道默认值；修改默认值不会改写已有方式。TRX 请选择 Tron + TRX；Polygon 是链名，收款代币需按 EP 实际支持选择。
+          </NAlert>
           <div class="flex flex-col gap-8px mb-8px">
             <div
               v-for="(m, i) in form.methods"
@@ -661,11 +737,17 @@ onMounted(() => {
                 <NSelect
                   v-model:value="m.params.network"
                   size="small"
-                  :options="USDT_NETWORKS"
+                  :options="cryptoNetworks"
+                  :loading="!!dynamicLoading.network"
+                  filterable
+                  @update:value="() => { delete m.params.token; }"
                   placeholder="收款链"
                   style="width: 170px"
                 />
-                <NInput v-model:value="m.params.token" size="small" placeholder="代币" style="width: 90px" />
+                <NSelect v-model:value="m.params.token" size="small" placeholder="收款代币" style="width: 130px"
+                  :options="methodTokens[m.params.network]?.options || []" :loading="!!m.params.network && !methodTokens[m.params.network]"
+                  :disabled="!m.params.network" filterable :tag="!!methodTokens[m.params.network]?.fallback" />
+                <span v-if="methodTokens[m.params.network]?.fallback" class="text-12px text-orange-600">未确认 EP 可用资产，保存前请核对网关；已有配置保留。</span>
               </template>
               <div style="min-width: 110px">
                 <MediaField v-model:value="m.iconArr" />
@@ -766,6 +848,7 @@ onMounted(() => {
                   :type="f.sensitive ? 'password' : 'text'"
                   show-password-on="click"
                   :placeholder="fieldHint(f)"
+                  @blur="f.key === 'api_url' && f.dynamic !== true && current?.driver === 'epusdt' && refreshAssets()"
                 />
                 <div v-if="['epusdt', 'bepusdt'].includes(current?.driver || '') && f.key === 'api_url' && f.help" class="text-12px opacity-70 mt-4px">
                   {{ f.help }}
