@@ -62,19 +62,22 @@ func runBatchContent(h *Harness) {
 	if _, err = svc.BatchUpdateProductContent(ctx, &adminv1.BatchProductContentRequest{RequestId: restore.RequestId}); err != nil {
 		t.Fatal(err)
 	}
-	// Hold an upstream request just before its locking write, then install a new
-	// local value. The sync must re-read protection after it acquires the lock.
+	// Pause after the upstream request's initial snapshot, before it acquires
+	// the product guard. Pausing a mutation now would hold that guard while
+	// waiting for the competing batch, creating an artificial deadlock.
+	// The sync must re-read content protection after it acquires the row lock.
 	type syncKey struct{}
 	entered, release := make(chan struct{}), make(chan struct{})
 	var once sync.Once
-	c.Product.Use(func(next ent.Mutator) ent.Mutator {
-		return ent.MutateFunc(func(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-			if ctx.Value(syncKey{}) != nil && m.Op() == ent.OpUpdateOne {
+	c.Product.Intercept(ent.InterceptFunc(func(next ent.Querier) ent.Querier {
+		return ent.QuerierFunc(func(ctx context.Context, q ent.Query) (ent.Value, error) {
+			value, err := next.Query(ctx, q)
+			if ctx.Value(syncKey{}) != nil && err == nil {
 				once.Do(func() { close(entered); <-release })
 			}
-			return next.Mutate(ctx, m)
+			return value, err
 		})
-	})
+	}))
 	syncErr := make(chan error, 1)
 	go func() {
 		_, _, err := repo.UpsertUpstreamProduct(context.WithValue(ctx, syncKey{}, true), port.UpstreamProductInput{UpstreamSyncedAt: time.Now(), ConnectionID: 1, UpstreamProductCode: "a", Name: "upstream", Cover: "https://example.com/late.png", Description: "late", DescriptionSet: true, Price: 66, Status: 1})
