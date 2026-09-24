@@ -103,6 +103,11 @@
           <p>人工服务请在订单详情查看处理进度，需帮助时凭订单号联系客服。</p>
           <button class="btn btn-primary" :disabled="loading" @click="pickOrder(result.order_no)">刷新发货结果</button>
         </div>
+        <div v-else-if="result.status === 'pending_payment'" class="card-list">
+          <p>订单尚未付款，付款后即可查看交付进度。</p>
+          <router-link class="btn btn-primary" :to="`/payment/${result.order_no}`">继续支付</router-link>
+        </div>
+        <div v-else-if="['canceled', 'expired'].includes(result.status)" class="card-list">订单已关闭，无法继续付款，请重新选购。</div>
         <div v-else-if="!result.items.length" class="card-list">{{ result.status === 'refunded' ? '订单已退款，请核对退款记录。' : '暂无可领取内容，请查看订单状态或联系客服。' }}</div>
         <DeliveryResults v-if="result.items.length" :items="result.items" />
       </div>

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"net/url"
@@ -255,8 +256,14 @@ func (b *Bepusdt) CreatePayment(ctx context.Context, req port.CreatePaymentReque
 			Expiration int64           `json:"expiration_time"`
 		} `json:"data"`
 	}
-	if json.Unmarshal(raw, &result) != nil || result.StatusCode != 200 {
-		return nil, fmt.Errorf("BEpusdt 下单失败，请检查网关钱包、限额及回调地址配置")
+	if json.Unmarshal(raw, &result) != nil {
+		slog.WarnContext(ctx, "payment.bepusdt.invalid_response", "mode", c.CheckoutMode, "http_status", resp.StatusCode)
+		return nil, fmt.Errorf("BEpusdt 网关响应格式异常，请联系管理员检查网关版本与接口地址")
+	}
+	if result.StatusCode != 200 {
+		// Never log payloads, signatures or arbitrary upstream error bodies.
+		slog.WarnContext(ctx, "payment.bepusdt.order_rejected", "mode", c.CheckoutMode, "trade_type", c.TradeType, "gateway_status", result.StatusCode)
+		return nil, fmt.Errorf("BEpusdt 网关拒绝下单（错误码 %d），请联系管理员检查钱包、限额与回调配置", result.StatusCode)
 	}
 	d := result.Data
 	got, err := bepusdtAmount(d.Amount)

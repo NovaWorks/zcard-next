@@ -64,6 +64,7 @@ interface DriverMeta {
 }
 interface Recommendation { recommended?: boolean; recommend_label?: string; recommend_description?: string; }
 interface ChannelRow extends Usage, Recommendation {
+  sort?: number;
   fee_bearer?: string;
   id: number;
   name: string;
@@ -122,6 +123,7 @@ const currentFields = computed<ConfigFieldSchema[]>(() => {
   return d?.fields || [];
 });
 const form = reactive({
+  sort: 0,
   name: "",
   enabled: true,
   allow_purchase: true,
@@ -353,6 +355,7 @@ async function handleAdd() {
       const identity = nextChannelIdentity(d, [...channels.value, ...created]);
       const { data, error } = await createChannel({
         ...identity,
+        sort: Math.min(2147483647, Math.max(0, ...[...channels.value, ...created].map(ch => ch.sort || 0)) + 10),
         driver: d.code,
         config_json: "{}",
         enabled: d.code === "wallet",
@@ -391,6 +394,7 @@ function openConfig(ch: ChannelRow) {
   resetAssetOptions();
   current.value = ch;
   form.name = ch.name;
+  form.sort = ch.sort || 0;
   form.enabled = ch.enabled;
   form.allow_purchase = ch.allow_purchase !== false;
   form.allow_member_recharge = ch.allow_member_recharge !== false;
@@ -440,6 +444,13 @@ function openConfig(ch: ChannelRow) {
 }
 
 const configuredKeys = computed(() => new Set(current.value?.configured_fields || []));
+
+function moveMethod(index: number, offset: number) {
+  const target = index + offset;
+  if (target < 0 || target >= form.methods.length) return;
+  const [row] = form.methods.splice(index, 1);
+  form.methods.splice(target, 0, row);
+}
 
 function handleConfigSave() {
   if (!current.value || saving.value || generatingMethods.value) return;
@@ -492,6 +503,7 @@ function handleConfigSave() {
   }
   const payload: Record<string, any> = {
     name: form.name.trim(),
+    sort: form.sort ?? 0,
     enabled: form.enabled,
     allow_purchase: form.allow_purchase, allow_member_recharge: form.allow_member_recharge, allow_supply_recharge: form.allow_supply_recharge,
     fee_type: form.fee_type,
@@ -593,7 +605,7 @@ onMounted(() => {
               {{ badgeOf(ch.driver).char }}
             </div>
             <div class="flex-1 min-w-0">
-              <div class="font-600 truncate">{{ ch.name }}</div>
+              <div class="font-600 truncate">{{ ch.name }}</div><div class="text-12px opacity-60">排序：{{ ch.sort || 0 }}</div>
               <div class="text-12px opacity-70 truncate">{{ ch.driver === "epusdt" ? "GM Pay" : ch.driver === "bepusdt" ? "BEpusdt" : driverOf(ch.driver)?.name || ch.driver }} · {{ ch.code }}</div>
             </div>
             <NSwitch size="small" :value="ch.enabled" @update:value="(v: boolean) => handleToggle(ch, v)" />
@@ -690,6 +702,9 @@ onMounted(() => {
         <NFormItem label="渠道名称">
           <NInput v-model:value="form.name" placeholder="渠道显示名称" />
         </NFormItem>
+        <NFormItem label="前端排序">
+          <div class="w-full"><NInputNumber v-model:value="form.sort" :min="0" :max="2147483647" :precision="0" /><div class="text-12px mt-4px">数字越小越靠前，同值按渠道创建顺序排列</div></div>
+        </NFormItem>
         <NFormItem label="渠道图标">
           <div class="w-full">
             <MediaField v-model:value="form.icon" tip="收银台渠道/方式图标（建议 1:1 透明 PNG）；留空使用内置徽标" />
@@ -761,6 +776,8 @@ onMounted(() => {
               <div style="min-width: 110px">
                 <MediaField v-model:value="m.iconArr" />
               </div>
+              <NButton size="tiny" :disabled="i === 0" @click="moveMethod(i, -1)">上移</NButton>
+              <NButton size="tiny" :disabled="i === form.methods.length - 1" @click="moveMethod(i, 1)">下移</NButton>
               <NButton size="tiny" type="error" quaternary @click="form.methods.splice(i, 1)">删除</NButton>
               <div class="w-full flex items-center gap-8px flex-wrap">
                 <span class="text-12px">推荐此方式</span><NSwitch v-model:value="m.recommended" size="small" />

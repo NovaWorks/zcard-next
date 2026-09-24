@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/walletaccount"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/wallettransaction"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 )
 
 // Entry 账务入账请求。
@@ -131,7 +132,7 @@ func (r *WalletRepoImpl) DebitInTx(ctx context.Context, e Entry) error {
 
 	// 3) 非负校验
 	if acc.Available < e.Amount {
-		return fmt.Errorf("wallet.INSUFFICIENT_BALANCE: avail=%d need=%d", acc.Available, e.Amount)
+		return fmt.Errorf("%w: avail=%d need=%d", walletport.ErrInsufficientBalance, acc.Available, e.Amount)
 	}
 
 	// 4) 乐观锁更新

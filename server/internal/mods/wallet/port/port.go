@@ -3,9 +3,12 @@ package port
 
 import (
 	"context"
+	"errors"
 
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 )
+
+var ErrInsufficientBalance = errors.New("wallet.INSUFFICIENT_BALANCE")
 
 // Direction 流水方向（string(8)，与 ent schema 一致）。
 const (

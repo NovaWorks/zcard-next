@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	stderrors "errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -25,6 +26,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/identity"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/payment/port"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/money"
 
 	"github.com/go-kratos/kratos/v3/errors"
@@ -472,7 +474,7 @@ func (s *StorePaymentService) ListChannels(ctx context.Context, req *storefrontv
 	}
 	rows, err := data.Client(ctx, s.data).PaymentChannel.Query().
 		Where(paymentchannel.Enabled(true), paymentchannel.DeletedAtIsNil()).
-		Order(ent.Asc(paymentchannel.FieldSort)).
+		Order(ent.Asc(paymentchannel.FieldSort), ent.Asc(paymentchannel.FieldID)).
 		All(ctx)
 	if err != nil {
 		return nil, errors.InternalServer("payment.LIST_FAILED", "读取渠道失败")
@@ -556,7 +558,10 @@ func (s *StorePaymentService) CreatePayment(ctx context.Context, req *storefront
 			Success: true, ChannelOrderNo: fmt.Sprintf("wallet-%d", p.ID),
 		}
 		if err := s.repo.HandleCallback(ctx, p.ID, fact); err != nil {
-			return nil, errors.InternalServer("payment.WALLET_FAILED", "余额支付失败: "+err.Error())
+			if stderrors.Is(err, walletport.ErrInsufficientBalance) {
+				return nil, errors.BadRequest("payment.BALANCE_INSUFFICIENT", "可用余额不足，请充值或更换支付方式")
+			}
+			return nil, errors.InternalServer("payment.WALLET_FAILED", "余额支付暂时失败，请刷新订单状态后重试")
 		}
 		// 余额支付同步完成：payload 指向支付页（该页会呈现成功态/卡密）——
 		// 曾返回 /order/success?no=（前端无此路由，弹窗即 404）

@@ -183,7 +183,7 @@ func (r *PaymentRepoImpl) snapshotDriver(ctx context.Context, p *ent.Payment) st
 func (r *PaymentRepoImpl) ListChannels(ctx context.Context) ([]*ent.PaymentChannel, error) {
 	return data.Client(ctx, r.data).PaymentChannel.Query().
 		Where(paymentchannel.DeletedAtIsNil()).
-		Order(ent.Asc(paymentchannel.FieldSort)).
+		Order(ent.Asc(paymentchannel.FieldSort), ent.Asc(paymentchannel.FieldID)).
 		All(ctx)
 }
 
@@ -825,7 +825,7 @@ func (r *PaymentRepoImpl) settleOrder(ctx context.Context, p *ent.Payment, fact 
 			Reference: fmt.Sprintf("order_pay:%d", p.OrderID),
 			OrderID:   p.OrderID,
 		}); err != nil {
-			return fmt.Errorf("payment.BALANCE_INSUFFICIENT: %w", err)
+			return fmt.Errorf("payment.WALLET_DEBIT_FAILED: %w", err)
 		}
 	}
 	// 订单置 paid（状态机 CAS + 事件 + outbox order.paid；幂等：已 paid 直接成功）

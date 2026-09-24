@@ -186,8 +186,11 @@ export function createPayment(order_no: string, channel: string, method?: string
   return api.post<CreatePaymentReply>('/payments', { order_no, channel, method: method || '', quote_key, query_password });
 }
 
-export function fetchDelivery(order_no: string, query_password: string) {
-  return api.post<FetchDeliveryReply>('/delivery/fetch', { order_no, query_password });
+export async function fetchDelivery(order_no: string, query_password: string) {
+  const result = await api.post<FetchDeliveryReply>('/delivery/fetch', { order_no, query_password });
+  // proto JSON omits empty repeated fields; normalize once for every consumer.
+  if (result.data) result.data.items = Array.isArray(result.data.items) ? result.data.items : [];
+  return result;
 }
 
 export function getBalance() {

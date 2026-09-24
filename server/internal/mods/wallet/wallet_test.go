@@ -4,7 +4,9 @@ package wallet
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	walletport "github.com/NovaWorks/zcard-next/server/internal/mods/wallet/port"
 	"testing"
 
 	"entgo.io/ent/dialect"
@@ -78,8 +80,8 @@ func TestDebitInsufficient(t *testing.T) {
 		UserID: 1, Direction: "out", Type: "order_pay",
 		Amount: 200, Reference: "d1",
 	})
-	if err == nil {
-		t.Fatal("余额不足应拒绝")
+	if !errors.Is(err, walletport.ErrInsufficientBalance) {
+		t.Fatal("余额不足必须返回可识别的业务错误", err)
 	}
 
 	// 余额不变

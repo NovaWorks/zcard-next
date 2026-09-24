@@ -20,6 +20,7 @@ defineEmits<{ select: [channel: string, method: string] }>();
         v-for="o in options"
         :key="o.channel + ':' + o.method"
         type="button"
+        :disabled="o.disabled"
         :aria-pressed="channel === o.channel && method === o.method"
         class="pay-channel"
         :class="{ active: channel === o.channel && method === o.method }"
@@ -31,7 +32,7 @@ defineEmits<{ select: [channel: string, method: string] }>();
         </span>
         <span class="pay-channel-info">
           <span class="pay-channel-heading"><span class="pay-channel-name">{{ o.name }}</span><span v-if="o.recommended" class="pay-recommend">{{ o.recommendLabel }}</span></span>
-          <span class="pay-channel-sub">{{ o.feeText }}</span><span v-if="o.recommended && o.recommendDescription" class="pay-channel-description">{{ o.recommendDescription }}</span>
+          <span class="pay-channel-sub">{{ o.feeText }}</span><span v-if="o.availability" class="pay-channel-description" aria-live="polite">{{ o.availability }}</span><span v-if="o.recommended && o.recommendDescription" class="pay-channel-description">{{ o.recommendDescription }}</span>
         </span>
         <span class="pay-channel-check" aria-hidden="true">✓</span>
       </button>
@@ -55,7 +56,8 @@ defineEmits<{ select: [channel: string, method: string] }>();
   background: #fff; cursor: pointer; text-align: left; transition: all 0.15s;
   font-family: inherit;
 }
-.pay-channel:hover { border-color: color-mix(in srgb, var(--zc-primary) 40%, transparent); }
+.pay-channel:disabled { cursor: not-allowed; background: #f8fafc; border-color: #e5e7eb; }
+.pay-channel:hover:not(:disabled) { border-color: color-mix(in srgb, var(--zc-primary) 40%, transparent); }
 .pay-channel.active { border-color: var(--zc-primary); background: var(--zc-primary-soft); box-shadow: 0 2px 8px color-mix(in srgb, var(--zc-primary) 12%, transparent); }
 .pay-channel-icon {
   width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;

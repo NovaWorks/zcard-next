@@ -59,7 +59,11 @@ const server = http.createServer((req, res) => {
     await config.getByText('推荐此方式',{exact:true}).first().locator('..').getByRole('switch').click();
     await config.getByPlaceholder('推荐标签，默认推荐').fill('推荐使用');
     await config.getByPlaceholder('推荐说明（选填）').fill('支付宝快捷支付');
+    await config.locator('.n-form-item').filter({has:page.locator('.n-form-item-label',{hasText:'前端排序'})}).locator('input').fill('7');
+    await config.getByRole('button',{name:'下移',exact:true}).first().click();
     await config.getByRole('button',{name:'保存',exact:true}).click();
+    assert.equal(updates.at(-1).sort,7);
+    assert.equal(JSON.parse(updates.at(-1).methods_json)[0].code,'wxpay');
     await expect(config).toHaveCount(0);
     assert.equal(channels.at(-1).enabled,true);
     assert.equal(JSON.parse(channels.at(-1).config_json).pid,`200${sequence}`);

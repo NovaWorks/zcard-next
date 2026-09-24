@@ -3,6 +3,8 @@ import type { ChannelItem } from '@/api';
 import { formatMoney } from '@/api/client';
 
 export interface PayOption {
+  disabled?: boolean;
+  availability?: string;
   channel: string;
   method: string; // 多方式渠道的方式 code；单方式渠道为空串
   name: string;

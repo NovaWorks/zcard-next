@@ -138,14 +138,18 @@
           :options="payOptions"
           :channel="selected.channel"
           :method="selected.method"
-          @select="(ch, m) => (selected = { channel: ch, method: m })"
+          @select="selectPayment"
         />
+        <div v-if="hasWallet" class="pay-btn-row">
+          <button class="btn btn-outline" :disabled="balanceRefreshing" @click="refreshBalance">{{ balanceRefreshing ? '查询余额中…' : '刷新余额' }}</button>
+          <router-link class="btn btn-outline" to="/member?tab=recharge">去充值</router-link>
+        </div>
       </div>
 
       <div v-if="error" class="error" style="margin-bottom: 12px;">{{ error }}</div>
 
       <PaymentBreakdown :quote="quote" :loading="quoteLoading" :error="quoteError" @retry="refreshQuote" />
-      <button class="pay-submit" :disabled="!selected.channel || submitting || !quote || quoteLoading" @click="pay">
+      <button class="pay-submit" :disabled="!selectedAvailable || submitting || !quote || quoteLoading" @click="pay">
         {{ submitting ? '创建支付中…' : quote ? `立即支付 ${formatMoney(quote.total_cents)}` : '等待计算金额' }}
       </button>
       <div class="pay-assure">🔒 支付过程安全加密 · 付款后按商品交付方式处理</div>
@@ -156,11 +160,11 @@
 <script setup lang="ts">
 import DeliveryResults from '@/components/DeliveryResults.vue';
 import { submitPaymentForm as submitForm } from "@/utils/payment-form";
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import QRCode from 'qrcode';
-import { createPayment, fetchPaymentChannels, getOrder, fetchDelivery, getOrderPassword, rememberOrderPassword, type ChannelItem, type OrderDetail, type FetchDeliveryReply } from '@/api';
-import { formatMoney } from '@/api/client';
+import { getBalance, createPayment, fetchPaymentChannels, getOrder, fetchDelivery, getOrderPassword, rememberOrderPassword, type ChannelItem, type OrderDetail, type FetchDeliveryReply } from '@/api';
+import { getToken, formatMoney } from '@/api/client';
 import { flattenPayOptions, emojiOf } from '@/composables/pay-options';
 import PayChannelGrid from '@/components/PayChannelGrid.vue';
 import PaymentBreakdown from '@/components/PaymentBreakdown.vue';
@@ -179,6 +183,8 @@ const order = ref<OrderDetail | null>(null);
 const channels = ref<ChannelItem[]>([]);
 // 方式级选择：channel=渠道码 + method=方式 code（单方式渠道 method 为空串）
 const selected = ref<{ channel: string; method: string }>({ channel: '', method: '' });
+let selectionTouched = false;
+function selectPayment(channel: string, method: string) { selectionTouched = true; selected.value = { channel, method }; error.value = ''; }
 const payingChannel = ref<ChannelItem | null>(null);
 const submitting = ref(false);
 const error = ref('');
@@ -224,7 +230,50 @@ const countdownDanger = computed(() => countdown.value !== null && countdown.val
 const itemCount = computed(() => order.value?.items?.reduce((s, i) => s + i.quantity, 0) || 0);
 
 // 渠道 → 收银台方式级选项（共享逻辑见 composables/pay-options.ts）
-const payOptions = computed(() => flattenPayOptions(channels.value));
+const walletBalance = ref<number | null>(null);
+const walletState = ref<'loading' | 'ready' | 'error'>('loading');
+const balanceRefreshing = ref(false);
+const hasWallet = computed(() => channels.value.some(c => c.driver === 'wallet'));
+let balanceRequest = 0;
+let disposed = false;
+let balanceIdentity: string | null = null;
+const payOptions = computed(() => flattenPayOptions(channels.value).map(option => {
+  if (channels.value.find(c => c.code === option.channel)?.driver !== 'wallet') return option;
+  const available = walletBalance.value;
+  const need = Number(order.value?.total_cents || 0);
+  const ready = walletState.value === 'ready' && available !== null;
+  const shortage = ready ? Math.max(0, need - available) : 0;
+  return { ...option, disabled: !ready || shortage > 0,
+    availability: !ready ? (walletState.value === 'error' ? '余额查询失败，请重试' : '正在查询可用余额…')
+      : `可用余额 ${formatMoney(available)}${shortage > 0 ? `，还差 ${formatMoney(shortage)}` : ''}` };
+}));
+const selectedAvailable = computed(() => payOptions.value.some(o => !o.disabled && o.channel === selected.value.channel && o.method === selected.value.method));
+watch(payOptions, options => {
+  if (options.some(o => !o.disabled && o.channel === selected.value.channel && o.method === selected.value.method)) return;
+  // A selected wallet becoming unavailable requires a deliberate new choice.
+  if (selected.value.channel) { selectionTouched = true; error.value = '所选支付方式暂不可用，请刷新余额或选择其他支付方式'; selected.value = { channel: '', method: '' }; return; }
+  if (selectionTouched) return;
+  const first = options.find(o => !o.disabled);
+  if (first) selected.value = { channel: first.channel, method: first.method };
+});
+async function refreshBalance() {
+  if (!hasWallet.value || disposed) return;
+  const token = getToken();
+  const request = ++balanceRequest;
+  if (balanceIdentity !== token) { walletBalance.value = null; balanceIdentity = token; }
+  balanceRefreshing.value = true;
+  if (walletBalance.value === null) walletState.value = 'loading';
+  if (!token) { walletBalance.value = null; walletState.value = 'error'; balanceRefreshing.value = false; return; }
+  const { data } = await getBalance().catch(() => ({ data: null }));
+  if (disposed || request !== balanceRequest) return;
+  balanceRefreshing.value = false;
+  if (token !== getToken()) { walletBalance.value = null; walletState.value = 'error'; return; }
+  const value = Number(data?.available_cents ?? 0);
+  walletBalance.value = data && Number.isSafeInteger(value) && value >= 0 ? value : null;
+  walletState.value = walletBalance.value === null ? 'error' : 'ready';
+}
+function refreshOnFocus() { if (phase.value === 'select') void refreshBalance(); }
+
 
 onMounted(async () => {
   // 支付回跳/分享兜底：?pwd= 直填会话记忆（不落 URL 历史——replace 清参）
@@ -233,6 +282,8 @@ onMounted(async () => {
     rememberOrderPassword(orderNo, qpwd);
     router.replace({ path: `/payment/${orderNo}` });
   }
+  window.addEventListener('focus', refreshOnFocus);
+  window.addEventListener('storage', refreshOnFocus);
   await initializePayment();
 });
 
@@ -241,9 +292,12 @@ async function initializePayment() {
   if (phase.value === 'success') { await loadDelivery(); if (!['delivered', 'completed'].includes(order.value?.status || '')) startPolling(); return; }
   if (phase.value === 'closed') return;
   const { data } = await fetchPaymentChannels();
+  if (disposed) return;
   channels.value = data?.channels || [];
-  const first = payOptions.value[0];
-  selected.value = first ? { channel: first.channel, method: first.method } : { channel: '', method: '' };
+  await refreshBalance();
+  if (disposed) return;
+  const first = payOptions.value.find(o => !o.disabled);
+  if (!selectionTouched) selected.value = first ? { channel: first.channel, method: first.method } : { channel: '', method: '' };
   startPolling();
 }
 
@@ -253,13 +307,14 @@ async function retryOrder() {
   try { await initializePayment(); } finally { retrying.value = false; }
 }
 
-onUnmounted(() => { stopPolling(); stopCountdown(); });
+onUnmounted(() => { disposed = true; balanceRequest++; window.removeEventListener('focus', refreshOnFocus); window.removeEventListener('storage', refreshOnFocus); stopPolling(); stopCountdown(); });
 
 // ── 订单加载与状态分发 ──
 // 游客订单查询需带下单时密码（会话记忆）；登录本人订单免密——两参数都传由后端裁决
 async function refreshOrder() {
   const pwd = getOrderPassword(orderNo);
   const { data, error: loadError } = await getOrder(orderNo, pwd || undefined).catch(() => ({ data: null, error: '网络异常，请重试' }));
+  if (disposed) return false;
   if (!data) {
     error.value = loadError || '订单加载失败，请重试';
     if (!order.value) phase.value = 'error';
@@ -324,7 +379,7 @@ function stopCountdown() {
 
 // ── 支付创建 ──
 async function pay() {
-  if (!selected.value.channel || submitting.value || !quote.value || quoteLoading.value) return;
+  if (!selectedAvailable.value || submitting.value || !quote.value || quoteLoading.value) return;
   submitting.value = true;
   error.value = '';
   qrDataUrl.value = '';
@@ -333,7 +388,7 @@ async function pay() {
   payingChannel.value = channels.value.find((c) => c.code === selected.value.channel) || null;
   const { data, error: err } = await createPayment(orderNo, selected.value.channel, selected.value.method, quote.value.quote_key, getOrderPassword(orderNo));
   submitting.value = false;
-  if (err || !data) { error.value = err || '创建支付失败'; await refreshQuote(); return; }
+  if (err || !data) { error.value = err || '创建支付失败'; if (payingChannel.value?.driver === 'wallet') { walletBalance.value = null; await refreshBalance(); } await refreshQuote(); return; }
   paidQuote.value = data.quote || quote.value;
 
   const payload = data.payload || '';
@@ -394,6 +449,7 @@ async function copyLink() {
 function backToSelect() {
   stopPolling();
   phase.value = 'select';
+  void refreshBalance();
   qrDataUrl.value = '';
   redirectUrl.value = '';
   redirectParams.value = null;
