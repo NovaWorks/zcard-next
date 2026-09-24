@@ -142,6 +142,11 @@ type NotificationLog struct {
 func (NotificationLog) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
+		field.String("delivery_key").MaxLen(128).Optional().Nillable().Unique(),
+		field.Int("attempts").Default(0),
+		field.Time("next_attempt_at").SchemaType(mysqlTime).Optional().Nillable(),
+		field.Time("lease_until").SchemaType(mysqlTime).Optional().Nillable(),
+		field.String("message_id").MaxLen(64).Optional(),
 		field.String("event_type").MaxLen(64),
 		field.String("biz_type").MaxLen(40).Optional(),
 		field.Uint64("biz_id").Optional(),

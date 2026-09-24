@@ -26,6 +26,7 @@ const OperationAdminNotifyServiceListLogs = "/zcard.api.admin.v1.AdminNotifyServ
 const OperationAdminNotifyServiceListTemplates = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
 const OperationAdminNotifyServicePreviewTemplate = "/zcard.api.admin.v1.AdminNotifyService/PreviewTemplate"
 const OperationAdminNotifyServiceResendLog = "/zcard.api.admin.v1.AdminNotifyService/ResendLog"
+const OperationAdminNotifyServiceTestTelegram = "/zcard.api.admin.v1.AdminNotifyService/TestTelegram"
 const OperationAdminNotifyServiceUpsertTemplate = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
 
 type AdminNotifyServiceHTTPServer interface {
@@ -45,12 +46,14 @@ type AdminNotifyServiceHTTPServer interface {
 	PreviewTemplate(context.Context, *PreviewTemplateRequest) (*PreviewTemplateReply, error)
 	// ResendLog ResendLog 重发失败日志（原变量重投）。
 	ResendLog(context.Context, *ResendNotifyLogRequest) (*emptypb.Empty, error)
+	TestTelegram(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// UpsertTemplate UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error)
 }
 
 func RegisterAdminNotifyServiceHTTPServer(s *http.Server, srv AdminNotifyServiceHTTPServer) {
 	r := s.Route("/")
+	r.Handle("POST", "/api/v1/admin/notify/telegram/test", _AdminNotifyService_TestTelegram0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/templates", _AdminNotifyService_UpsertTemplate0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/notify/templates", _AdminNotifyService_ListTemplates0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/templates/preview", _AdminNotifyService_PreviewTemplate0_HTTP_Handler(srv))
@@ -60,6 +63,25 @@ func RegisterAdminNotifyServiceHTTPServer(s *http.Server, srv AdminNotifyService
 	r.Handle("POST", "/api/v1/admin/notify/broadcasts", _AdminNotifyService_CreateBroadcast0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/notify/broadcasts", _AdminNotifyService_ListBroadcasts0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/notify/broadcasts/{id}/cancel", _AdminNotifyService_CancelBroadcast0_HTTP_Handler(srv))
+}
+
+func _AdminNotifyService_TestTelegram0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in emptypb.Empty
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminNotifyServiceTestTelegram)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.TestTelegram(ctx, req.(*emptypb.Empty))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*emptypb.Empty)
+		return ctx.Result(200, reply)
+	}
 }
 
 func _AdminNotifyService_UpsertTemplate0_HTTP_Handler(srv AdminNotifyServiceHTTPServer) func(ctx http.Context) error {
@@ -256,6 +278,7 @@ type AdminNotifyServiceHTTPClient interface {
 	PreviewTemplate(ctx context.Context, req *PreviewTemplateRequest, opts ...http.CallOption) (rsp *PreviewTemplateReply, err error)
 	// ResendLog ResendLog 重发失败日志（原变量重投）。
 	ResendLog(ctx context.Context, req *ResendNotifyLogRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	TestTelegram(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	// UpsertTemplate UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(ctx context.Context, req *UpsertNotifyTemplateRequest, opts ...http.CallOption) (rsp *NotifyTemplate, err error)
 }
@@ -400,6 +423,23 @@ func (c *AdminNotifyServiceHTTPClientImpl) ResendLog(ctx context.Context, in *Re
 		http.Accept("application/protojson"),
 		http.ContentType("application/protojson"),
 		http.Operation(OperationAdminNotifyServiceResendLog),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminNotifyServiceHTTPClientImpl) TestTelegram(ctx context.Context, in *emptypb.Empty, opts ...http.CallOption) (*emptypb.Empty, error) {
+	var out emptypb.Empty
+	pattern := "/api/v1/admin/notify/telegram/test"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminNotifyServiceTestTelegram),
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)

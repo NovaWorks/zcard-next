@@ -264,12 +264,12 @@ func (_q *NotificationLogQuery) Clone() *NotificationLogQuery {
 // Example:
 //
 //	var v []struct {
-//		EventType string `json:"event_type,omitempty"`
+//		DeliveryKey string `json:"delivery_key,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.NotificationLog.Query().
-//		GroupBy(notificationlog.FieldEventType).
+//		GroupBy(notificationlog.FieldDeliveryKey).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *NotificationLogQuery) GroupBy(field string, fields ...string) *NotificationLogGroupBy {
@@ -287,11 +287,11 @@ func (_q *NotificationLogQuery) GroupBy(field string, fields ...string) *Notific
 // Example:
 //
 //	var v []struct {
-//		EventType string `json:"event_type,omitempty"`
+//		DeliveryKey string `json:"delivery_key,omitempty"`
 //	}
 //
 //	client.NotificationLog.Query().
-//		Select(notificationlog.FieldEventType).
+//		Select(notificationlog.FieldDeliveryKey).
 //		Scan(ctx, &v)
 func (_q *NotificationLogQuery) Select(fields ...string) *NotificationLogSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

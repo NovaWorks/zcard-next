@@ -4,6 +4,9 @@ package notify
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/notificationlog"
+	"github.com/go-kratos/kratos/v3/errors"
 	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -73,7 +76,7 @@ func (s *AdminNotifyService) PreviewTemplate(ctx context.Context, req *adminv1.P
 // ListLogs 日志查询。
 func (s *AdminNotifyService) ListLogs(ctx context.Context, req *adminv1.ListNotifyLogsRequest) (*adminv1.ListNotifyLogsReply, error) {
 	page, size := notifyPageParams(req.GetPage(), req.GetPageSize())
-	rows, total, err := s.repo.ListLogs(ctx, req.GetStatus(), req.GetEventType(), page, size)
+	rows, total, err := s.repo.ListLogs(ctx, req.GetStatus(), req.GetEventType(), page, size, req.GetChannel())
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +86,7 @@ func (s *AdminNotifyService) ListLogs(ctx context.Context, req *adminv1.ListNoti
 			Id: l.ID, EventType: l.EventType, BizType: l.BizType, BizId: l.BizID,
 			Channel: string(l.Channel), Recipient: l.Recipient, Locale: l.Locale,
 			Subject: l.Subject, Status: string(l.Status), ErrorMessage: l.ErrorMessage,
-			CreatedAt: l.CreatedAt.Unix(),
+			CreatedAt: l.CreatedAt.Unix(), Attempts: int32(l.Attempts), NextAttemptAt: timeOrZero(l.NextAttemptAt), MessageId: l.MessageID, Retryable: l.DeliveryKey != nil && l.Channel == notificationlog.ChannelTelegram && l.Status == notificationlog.StatusFailed,
 		})
 	}
 	return reply, nil
@@ -91,8 +94,14 @@ func (s *AdminNotifyService) ListLogs(ctx context.Context, req *adminv1.ListNoti
 
 // ResendLog 重发（原变量重投）。
 func (s *AdminNotifyService) ResendLog(ctx context.Context, req *adminv1.ResendNotifyLogRequest) (*emptypb.Empty, error) {
-	// 简化：按事件/通道/收件人重建消息重投（原日志变量留档在 variables JSON）
-	_ = s.repo
+	n, err := data.Client(ctx, s.repo.data).NotificationLog.Update().Where(notificationlog.ID(req.GetId()), notificationlog.ChannelEQ(notificationlog.ChannelTelegram), notificationlog.DeliveryKeyNotNil(), notificationlog.StatusEQ(notificationlog.StatusFailed)).
+		SetStatus(notificationlog.StatusPending).SetAttempts(0).ClearLeaseUntil().SetNextAttemptAt(time.Now().UTC()).Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if n == 0 {
+		return nil, errors.BadRequest("notify.RETRY_UNAVAILABLE", "仅可重试失败的 Telegram 投递任务")
+	}
 	return &emptypb.Empty{}, nil
 }
 
@@ -277,4 +286,31 @@ func toBroadcastPB(b *ent.NotifyBroadcast) *adminv1.Broadcast {
 		p.FinishedAt = b.FinishedAt.Unix()
 	}
 	return p
+}
+
+func timeOrZero(v *time.Time) int64 {
+	if v == nil {
+		return 0
+	}
+	return v.Unix()
+}
+func (s *AdminNotifyService) TestTelegram(ctx context.Context, _ *emptypb.Empty) (*emptypb.Empty, error) {
+	c := s.disp.telegram()
+	if c == nil {
+		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "Telegram 通道未配置")
+	}
+	cfg, err := c.tgConfig(ctx)
+	if err != nil {
+		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "Telegram 配置读取失败")
+	}
+	if !telegramEnabled(cfg, "telegram.test") || len(telegramTargets(cfg)) == 0 {
+		return nil, errors.BadRequest("notify.NOT_CONFIGURED", "请先保存并启用 Telegram 通道、订单通知、Token 和接收 Chat ID")
+	}
+	err = data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
+		return s.repo.enqueueTelegram(ctx, uint64(time.Now().UnixNano()), "telegram.test", 0, "Telegram 订单通知测试", "这是一条管理员主动发送的测试消息。正式通知包含订单号、商品摘要、金额与订单入口，不包含卡密或查询密码。", telegramTargets(cfg))
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &emptypb.Empty{}, nil
 }

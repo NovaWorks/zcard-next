@@ -22,9 +22,10 @@ import (
 
 // Dispatcher 事件分发器。
 type Dispatcher struct {
-	repo     *NotifyRepo
-	channels map[string]Channel       // name → channel
-	brand    notifyport.BrandResolver // 白标（nil = 未装配，跳过品牌注入）
+	adminPath func(context.Context) (string, error)
+	repo      *NotifyRepo
+	channels  map[string]Channel       // name → channel
+	brand     notifyport.BrandResolver // 白标（nil = 未装配，跳过品牌注入）
 }
 
 // NewDispatcher 构造（注册通道）。

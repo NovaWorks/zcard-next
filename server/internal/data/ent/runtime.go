@@ -1215,30 +1215,42 @@ func init() {
 	notification.DefaultCreatedAt = notificationDescCreatedAt.Default.(func() time.Time)
 	notificationlogFields := schema.NotificationLog{}.Fields()
 	_ = notificationlogFields
+	// notificationlogDescDeliveryKey is the schema descriptor for delivery_key field.
+	notificationlogDescDeliveryKey := notificationlogFields[1].Descriptor()
+	// notificationlog.DeliveryKeyValidator is a validator for the "delivery_key" field. It is called by the builders before save.
+	notificationlog.DeliveryKeyValidator = notificationlogDescDeliveryKey.Validators[0].(func(string) error)
+	// notificationlogDescAttempts is the schema descriptor for attempts field.
+	notificationlogDescAttempts := notificationlogFields[2].Descriptor()
+	// notificationlog.DefaultAttempts holds the default value on creation for the attempts field.
+	notificationlog.DefaultAttempts = notificationlogDescAttempts.Default.(int)
+	// notificationlogDescMessageID is the schema descriptor for message_id field.
+	notificationlogDescMessageID := notificationlogFields[5].Descriptor()
+	// notificationlog.MessageIDValidator is a validator for the "message_id" field. It is called by the builders before save.
+	notificationlog.MessageIDValidator = notificationlogDescMessageID.Validators[0].(func(string) error)
 	// notificationlogDescEventType is the schema descriptor for event_type field.
-	notificationlogDescEventType := notificationlogFields[1].Descriptor()
+	notificationlogDescEventType := notificationlogFields[6].Descriptor()
 	// notificationlog.EventTypeValidator is a validator for the "event_type" field. It is called by the builders before save.
 	notificationlog.EventTypeValidator = notificationlogDescEventType.Validators[0].(func(string) error)
 	// notificationlogDescBizType is the schema descriptor for biz_type field.
-	notificationlogDescBizType := notificationlogFields[2].Descriptor()
+	notificationlogDescBizType := notificationlogFields[7].Descriptor()
 	// notificationlog.BizTypeValidator is a validator for the "biz_type" field. It is called by the builders before save.
 	notificationlog.BizTypeValidator = notificationlogDescBizType.Validators[0].(func(string) error)
 	// notificationlogDescRecipient is the schema descriptor for recipient field.
-	notificationlogDescRecipient := notificationlogFields[5].Descriptor()
+	notificationlogDescRecipient := notificationlogFields[10].Descriptor()
 	// notificationlog.RecipientValidator is a validator for the "recipient" field. It is called by the builders before save.
 	notificationlog.RecipientValidator = notificationlogDescRecipient.Validators[0].(func(string) error)
 	// notificationlogDescLocale is the schema descriptor for locale field.
-	notificationlogDescLocale := notificationlogFields[6].Descriptor()
+	notificationlogDescLocale := notificationlogFields[11].Descriptor()
 	// notificationlog.DefaultLocale holds the default value on creation for the locale field.
 	notificationlog.DefaultLocale = notificationlogDescLocale.Default.(string)
 	// notificationlog.LocaleValidator is a validator for the "locale" field. It is called by the builders before save.
 	notificationlog.LocaleValidator = notificationlogDescLocale.Validators[0].(func(string) error)
 	// notificationlogDescSubject is the schema descriptor for subject field.
-	notificationlogDescSubject := notificationlogFields[7].Descriptor()
+	notificationlogDescSubject := notificationlogFields[12].Descriptor()
 	// notificationlog.SubjectValidator is a validator for the "subject" field. It is called by the builders before save.
 	notificationlog.SubjectValidator = notificationlogDescSubject.Validators[0].(func(string) error)
 	// notificationlogDescCreatedAt is the schema descriptor for created_at field.
-	notificationlogDescCreatedAt := notificationlogFields[12].Descriptor()
+	notificationlogDescCreatedAt := notificationlogFields[17].Descriptor()
 	// notificationlog.DefaultCreatedAt holds the default value on creation for the created_at field.
 	notificationlog.DefaultCreatedAt = notificationlogDescCreatedAt.Default.(func() time.Time)
 	notifybroadcastMixin := schema.NotifyBroadcast{}.Mixin()

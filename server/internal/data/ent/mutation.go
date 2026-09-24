@@ -32534,26 +32534,32 @@ func (m *NotificationMutation) ResetEdge(name string) error {
 // NotificationLogMutation represents an operation that mutates the NotificationLog nodes in the graph.
 type NotificationLogMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	event_type    *string
-	biz_type      *string
-	biz_id        *uint64
-	addbiz_id     *int64
-	channel       *notificationlog.Channel
-	recipient     *string
-	locale        *string
-	subject       *string
-	body          *string
-	status        *notificationlog.Status
-	error_message *string
-	variables     *map[string]interface{}
-	created_at    *time.Time
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*NotificationLog, error)
-	predicates    []predicate.NotificationLog
+	op              Op
+	typ             string
+	id              *uint64
+	delivery_key    *string
+	attempts        *int
+	addattempts     *int
+	next_attempt_at *time.Time
+	lease_until     *time.Time
+	message_id      *string
+	event_type      *string
+	biz_type        *string
+	biz_id          *uint64
+	addbiz_id       *int64
+	channel         *notificationlog.Channel
+	recipient       *string
+	locale          *string
+	subject         *string
+	body            *string
+	status          *notificationlog.Status
+	error_message   *string
+	variables       *map[string]interface{}
+	created_at      *time.Time
+	clearedFields   map[string]struct{}
+	done            bool
+	oldValue        func(context.Context) (*NotificationLog, error)
+	predicates      []predicate.NotificationLog
 }
 
 var _ ent.Mutation = (*NotificationLogMutation)(nil)
@@ -32658,6 +32664,258 @@ func (m *NotificationLogMutation) IDs(ctx context.Context) ([]uint64, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetDeliveryKey sets the "delivery_key" field.
+func (m *NotificationLogMutation) SetDeliveryKey(s string) {
+	m.delivery_key = &s
+}
+
+// DeliveryKey returns the value of the "delivery_key" field in the mutation.
+func (m *NotificationLogMutation) DeliveryKey() (r string, exists bool) {
+	v := m.delivery_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeliveryKey returns the old "delivery_key" field's value of the NotificationLog entity.
+// If the NotificationLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationLogMutation) OldDeliveryKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeliveryKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeliveryKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeliveryKey: %w", err)
+	}
+	return oldValue.DeliveryKey, nil
+}
+
+// ClearDeliveryKey clears the value of the "delivery_key" field.
+func (m *NotificationLogMutation) ClearDeliveryKey() {
+	m.delivery_key = nil
+	m.clearedFields[notificationlog.FieldDeliveryKey] = struct{}{}
+}
+
+// DeliveryKeyCleared returns if the "delivery_key" field was cleared in this mutation.
+func (m *NotificationLogMutation) DeliveryKeyCleared() bool {
+	_, ok := m.clearedFields[notificationlog.FieldDeliveryKey]
+	return ok
+}
+
+// ResetDeliveryKey resets all changes to the "delivery_key" field.
+func (m *NotificationLogMutation) ResetDeliveryKey() {
+	m.delivery_key = nil
+	delete(m.clearedFields, notificationlog.FieldDeliveryKey)
+}
+
+// SetAttempts sets the "attempts" field.
+func (m *NotificationLogMutation) SetAttempts(i int) {
+	m.attempts = &i
+	m.addattempts = nil
+}
+
+// Attempts returns the value of the "attempts" field in the mutation.
+func (m *NotificationLogMutation) Attempts() (r int, exists bool) {
+	v := m.attempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAttempts returns the old "attempts" field's value of the NotificationLog entity.
+// If the NotificationLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationLogMutation) OldAttempts(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAttempts is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAttempts requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAttempts: %w", err)
+	}
+	return oldValue.Attempts, nil
+}
+
+// AddAttempts adds i to the "attempts" field.
+func (m *NotificationLogMutation) AddAttempts(i int) {
+	if m.addattempts != nil {
+		*m.addattempts += i
+	} else {
+		m.addattempts = &i
+	}
+}
+
+// AddedAttempts returns the value that was added to the "attempts" field in this mutation.
+func (m *NotificationLogMutation) AddedAttempts() (r int, exists bool) {
+	v := m.addattempts
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAttempts resets all changes to the "attempts" field.
+func (m *NotificationLogMutation) ResetAttempts() {
+	m.attempts = nil
+	m.addattempts = nil
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (m *NotificationLogMutation) SetNextAttemptAt(t time.Time) {
+	m.next_attempt_at = &t
+}
+
+// NextAttemptAt returns the value of the "next_attempt_at" field in the mutation.
+func (m *NotificationLogMutation) NextAttemptAt() (r time.Time, exists bool) {
+	v := m.next_attempt_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextAttemptAt returns the old "next_attempt_at" field's value of the NotificationLog entity.
+// If the NotificationLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationLogMutation) OldNextAttemptAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextAttemptAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextAttemptAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextAttemptAt: %w", err)
+	}
+	return oldValue.NextAttemptAt, nil
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (m *NotificationLogMutation) ClearNextAttemptAt() {
+	m.next_attempt_at = nil
+	m.clearedFields[notificationlog.FieldNextAttemptAt] = struct{}{}
+}
+
+// NextAttemptAtCleared returns if the "next_attempt_at" field was cleared in this mutation.
+func (m *NotificationLogMutation) NextAttemptAtCleared() bool {
+	_, ok := m.clearedFields[notificationlog.FieldNextAttemptAt]
+	return ok
+}
+
+// ResetNextAttemptAt resets all changes to the "next_attempt_at" field.
+func (m *NotificationLogMutation) ResetNextAttemptAt() {
+	m.next_attempt_at = nil
+	delete(m.clearedFields, notificationlog.FieldNextAttemptAt)
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (m *NotificationLogMutation) SetLeaseUntil(t time.Time) {
+	m.lease_until = &t
+}
+
+// LeaseUntil returns the value of the "lease_until" field in the mutation.
+func (m *NotificationLogMutation) LeaseUntil() (r time.Time, exists bool) {
+	v := m.lease_until
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLeaseUntil returns the old "lease_until" field's value of the NotificationLog entity.
+// If the NotificationLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationLogMutation) OldLeaseUntil(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLeaseUntil is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLeaseUntil requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLeaseUntil: %w", err)
+	}
+	return oldValue.LeaseUntil, nil
+}
+
+// ClearLeaseUntil clears the value of the "lease_until" field.
+func (m *NotificationLogMutation) ClearLeaseUntil() {
+	m.lease_until = nil
+	m.clearedFields[notificationlog.FieldLeaseUntil] = struct{}{}
+}
+
+// LeaseUntilCleared returns if the "lease_until" field was cleared in this mutation.
+func (m *NotificationLogMutation) LeaseUntilCleared() bool {
+	_, ok := m.clearedFields[notificationlog.FieldLeaseUntil]
+	return ok
+}
+
+// ResetLeaseUntil resets all changes to the "lease_until" field.
+func (m *NotificationLogMutation) ResetLeaseUntil() {
+	m.lease_until = nil
+	delete(m.clearedFields, notificationlog.FieldLeaseUntil)
+}
+
+// SetMessageID sets the "message_id" field.
+func (m *NotificationLogMutation) SetMessageID(s string) {
+	m.message_id = &s
+}
+
+// MessageID returns the value of the "message_id" field in the mutation.
+func (m *NotificationLogMutation) MessageID() (r string, exists bool) {
+	v := m.message_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMessageID returns the old "message_id" field's value of the NotificationLog entity.
+// If the NotificationLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NotificationLogMutation) OldMessageID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMessageID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMessageID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMessageID: %w", err)
+	}
+	return oldValue.MessageID, nil
+}
+
+// ClearMessageID clears the value of the "message_id" field.
+func (m *NotificationLogMutation) ClearMessageID() {
+	m.message_id = nil
+	m.clearedFields[notificationlog.FieldMessageID] = struct{}{}
+}
+
+// MessageIDCleared returns if the "message_id" field was cleared in this mutation.
+func (m *NotificationLogMutation) MessageIDCleared() bool {
+	_, ok := m.clearedFields[notificationlog.FieldMessageID]
+	return ok
+}
+
+// ResetMessageID resets all changes to the "message_id" field.
+func (m *NotificationLogMutation) ResetMessageID() {
+	m.message_id = nil
+	delete(m.clearedFields, notificationlog.FieldMessageID)
 }
 
 // SetEventType sets the "event_type" field.
@@ -33225,7 +33483,22 @@ func (m *NotificationLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *NotificationLogMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 17)
+	if m.delivery_key != nil {
+		fields = append(fields, notificationlog.FieldDeliveryKey)
+	}
+	if m.attempts != nil {
+		fields = append(fields, notificationlog.FieldAttempts)
+	}
+	if m.next_attempt_at != nil {
+		fields = append(fields, notificationlog.FieldNextAttemptAt)
+	}
+	if m.lease_until != nil {
+		fields = append(fields, notificationlog.FieldLeaseUntil)
+	}
+	if m.message_id != nil {
+		fields = append(fields, notificationlog.FieldMessageID)
+	}
 	if m.event_type != nil {
 		fields = append(fields, notificationlog.FieldEventType)
 	}
@@ -33270,6 +33543,16 @@ func (m *NotificationLogMutation) Fields() []string {
 // schema.
 func (m *NotificationLogMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case notificationlog.FieldDeliveryKey:
+		return m.DeliveryKey()
+	case notificationlog.FieldAttempts:
+		return m.Attempts()
+	case notificationlog.FieldNextAttemptAt:
+		return m.NextAttemptAt()
+	case notificationlog.FieldLeaseUntil:
+		return m.LeaseUntil()
+	case notificationlog.FieldMessageID:
+		return m.MessageID()
 	case notificationlog.FieldEventType:
 		return m.EventType()
 	case notificationlog.FieldBizType:
@@ -33303,6 +33586,16 @@ func (m *NotificationLogMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *NotificationLogMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case notificationlog.FieldDeliveryKey:
+		return m.OldDeliveryKey(ctx)
+	case notificationlog.FieldAttempts:
+		return m.OldAttempts(ctx)
+	case notificationlog.FieldNextAttemptAt:
+		return m.OldNextAttemptAt(ctx)
+	case notificationlog.FieldLeaseUntil:
+		return m.OldLeaseUntil(ctx)
+	case notificationlog.FieldMessageID:
+		return m.OldMessageID(ctx)
 	case notificationlog.FieldEventType:
 		return m.OldEventType(ctx)
 	case notificationlog.FieldBizType:
@@ -33336,6 +33629,41 @@ func (m *NotificationLogMutation) OldField(ctx context.Context, name string) (en
 // type.
 func (m *NotificationLogMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case notificationlog.FieldDeliveryKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeliveryKey(v)
+		return nil
+	case notificationlog.FieldAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAttempts(v)
+		return nil
+	case notificationlog.FieldNextAttemptAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextAttemptAt(v)
+		return nil
+	case notificationlog.FieldLeaseUntil:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLeaseUntil(v)
+		return nil
+	case notificationlog.FieldMessageID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMessageID(v)
+		return nil
 	case notificationlog.FieldEventType:
 		v, ok := value.(string)
 		if !ok {
@@ -33428,6 +33756,9 @@ func (m *NotificationLogMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *NotificationLogMutation) AddedFields() []string {
 	var fields []string
+	if m.addattempts != nil {
+		fields = append(fields, notificationlog.FieldAttempts)
+	}
 	if m.addbiz_id != nil {
 		fields = append(fields, notificationlog.FieldBizID)
 	}
@@ -33439,6 +33770,8 @@ func (m *NotificationLogMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *NotificationLogMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
+	case notificationlog.FieldAttempts:
+		return m.AddedAttempts()
 	case notificationlog.FieldBizID:
 		return m.AddedBizID()
 	}
@@ -33450,6 +33783,13 @@ func (m *NotificationLogMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *NotificationLogMutation) AddField(name string, value ent.Value) error {
 	switch name {
+	case notificationlog.FieldAttempts:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAttempts(v)
+		return nil
 	case notificationlog.FieldBizID:
 		v, ok := value.(int64)
 		if !ok {
@@ -33465,6 +33805,18 @@ func (m *NotificationLogMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *NotificationLogMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(notificationlog.FieldDeliveryKey) {
+		fields = append(fields, notificationlog.FieldDeliveryKey)
+	}
+	if m.FieldCleared(notificationlog.FieldNextAttemptAt) {
+		fields = append(fields, notificationlog.FieldNextAttemptAt)
+	}
+	if m.FieldCleared(notificationlog.FieldLeaseUntil) {
+		fields = append(fields, notificationlog.FieldLeaseUntil)
+	}
+	if m.FieldCleared(notificationlog.FieldMessageID) {
+		fields = append(fields, notificationlog.FieldMessageID)
+	}
 	if m.FieldCleared(notificationlog.FieldBizType) {
 		fields = append(fields, notificationlog.FieldBizType)
 	}
@@ -33497,6 +33849,18 @@ func (m *NotificationLogMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *NotificationLogMutation) ClearField(name string) error {
 	switch name {
+	case notificationlog.FieldDeliveryKey:
+		m.ClearDeliveryKey()
+		return nil
+	case notificationlog.FieldNextAttemptAt:
+		m.ClearNextAttemptAt()
+		return nil
+	case notificationlog.FieldLeaseUntil:
+		m.ClearLeaseUntil()
+		return nil
+	case notificationlog.FieldMessageID:
+		m.ClearMessageID()
+		return nil
 	case notificationlog.FieldBizType:
 		m.ClearBizType()
 		return nil
@@ -33523,6 +33887,21 @@ func (m *NotificationLogMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *NotificationLogMutation) ResetField(name string) error {
 	switch name {
+	case notificationlog.FieldDeliveryKey:
+		m.ResetDeliveryKey()
+		return nil
+	case notificationlog.FieldAttempts:
+		m.ResetAttempts()
+		return nil
+	case notificationlog.FieldNextAttemptAt:
+		m.ResetNextAttemptAt()
+		return nil
+	case notificationlog.FieldLeaseUntil:
+		m.ResetLeaseUntil()
+		return nil
+	case notificationlog.FieldMessageID:
+		m.ResetMessageID()
+		return nil
 	case notificationlog.FieldEventType:
 		m.ResetEventType()
 		return nil

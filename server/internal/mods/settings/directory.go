@@ -318,9 +318,12 @@ var groups = map[string]*GroupDef{
 		},
 	},
 	"notify": {
-		Name: "notify", Desc: "邮件短信",
+		Name: "notify", Desc: "邮件短信与 Telegram",
 		Labels: map[string]string{
-			"smtp_host": "SMTP 服务器", "smtp_port": "SMTP 端口", "smtp_user": "SMTP 用户名",
+			"telegram_enabled": "Telegram 通知通道", "telegram_order_enabled": "Telegram 主站订单通知",
+			"telegram_bot_token": "Telegram Bot Token", "telegram_chat_ids": "Telegram 接收 Chat ID",
+			"telegram_events": "Telegram 订单通知事件",
+			"smtp_host":       "SMTP 服务器", "smtp_port": "SMTP 端口", "smtp_user": "SMTP 用户名",
 			"smtp_password": "SMTP 密码", "smtp_name": "发件人名称",
 			"sms_provider": "短信服务商", "sms_key": "短信 AccessKey",
 			"sms_secret":            "短信 SecretKey",
@@ -331,9 +334,12 @@ var groups = map[string]*GroupDef{
 			"sms_template_reset":    "找回密码短信模板（内容需与通道模板一致；变量 {code}{minutes}{site}）",
 		},
 		Options: map[string]map[string]string{
-			"sms_provider": {"aliyun": "阿里云短信", "tencent": "腾讯云短信", "qiniu": "七牛短信"},
+			"telegram_events": {"order.created": "新订单", "order.paid": "付款成功", "order.delivered": "发货完成", "order.refunded": "退款成功"},
+			"sms_provider":    {"aliyun": "阿里云短信", "tencent": "腾讯云短信", "qiniu": "七牛短信"},
 		},
 		Defaults: map[string]any{
+			"telegram_enabled": false, "telegram_order_enabled": false,
+			"telegram_bot_token": "", "telegram_chat_ids": "", "telegram_events": []string{"order.paid"},
 			"smtp_host":      "",
 			"smtp_port":      465,
 			"smtp_user":      "",
@@ -349,7 +355,7 @@ var groups = map[string]*GroupDef{
 			"sms_template_register": "【{site}】您的注册验证码：{code}，{minutes} 分钟内有效。",
 			"sms_template_reset":    "【{site}】您正在重置密码，验证码：{code}，{minutes} 分钟内有效。",
 		},
-		SecretKeys: map[string]bool{"smtp_password": true, "sms_key": true, "sms_secret": true},
+		SecretKeys: map[string]bool{"telegram": true, "telegram_bot_token": true, "smtp_password": true, "sms_key": true, "sms_secret": true},
 	},
 	"i18n": {
 		Name: "i18n", Desc: "语言货币",

@@ -21,7 +21,7 @@ type settingsReaderAdapter struct{ repo *settings.RepoImpl }
 func (a settingsReaderAdapter) GetJSON(ctx context.Context, group, key string) ([]byte, error) {
 	raw, err := a.repo.GetDefault(ctx, group, key, nil)
 	if err != nil {
-		return nil, nil // 读失败走降级（skipped），不阻断通知链路
+		return nil, err // 读取失败须由持久化通知重试，不能误认为已关闭
 	}
 	return raw, nil
 }
@@ -40,8 +40,10 @@ var ProviderSet = wire.NewSet(
 
 // ProvideDispatcher 构造分发器并装配白标解析（BrandResolver 由 reseller 提供，
 // 通道 A；nil = 未装配跳过品牌注入）。
-func ProvideDispatcher(repo *NotifyRepo, channels []Channel, brand notifyport.BrandResolver) *Dispatcher {
-	return NewDispatcher(repo, channels...).WithBrandResolver(brand)
+func ProvideDispatcher(repo *NotifyRepo, channels []Channel, brand notifyport.BrandResolver, settingsSvc *settings.AdminSettingsService) *Dispatcher {
+	d := NewDispatcher(repo, channels...).WithBrandResolver(brand)
+	d.adminPath = settingsSvc.AdminPath
+	return d
 }
 
 // ProvideSettingsReader settings 适配为通用端口（跨模块共享，通道 A）。

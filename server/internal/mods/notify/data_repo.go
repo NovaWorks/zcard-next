@@ -190,9 +190,12 @@ func (r *NotifyRepo) WriteLog(ctx context.Context, in LogInput) error {
 }
 
 // ListLogs 日志查询（按状态/事件筛选）。
-func (r *NotifyRepo) ListLogs(ctx context.Context, status, eventType string, page, size int) ([]*ent.NotificationLog, int, error) {
+func (r *NotifyRepo) ListLogs(ctx context.Context, status, eventType string, page, size int, channels ...string) ([]*ent.NotificationLog, int, error) {
 	q := data.Client(ctx, r.data).NotificationLog.Query().
 		Order(ent.Desc(notificationlog.FieldID))
+	if len(channels) > 0 && channels[0] != "" {
+		q = q.Where(notificationlog.ChannelEQ(notificationlog.Channel(channels[0])))
+	}
 	if status != "" {
 		q = q.Where(notificationlog.StatusEQ(notificationlog.Status(status)))
 	}

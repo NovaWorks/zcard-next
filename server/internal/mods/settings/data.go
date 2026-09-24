@@ -4,8 +4,10 @@ package settings
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -13,11 +15,13 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/setting"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/settings/port"
+	"github.com/NovaWorks/zcard-next/server/internal/platform/crypto"
 )
 
 // RepoImpl 设置仓储实现。
 type RepoImpl struct {
-	data *data.Data
+	data   *data.Data
+	cipher *crypto.Box
 }
 
 // NewRepoImpl 构造。
@@ -33,6 +37,25 @@ func (r *RepoImpl) Get(ctx context.Context, group, key string) (json.RawMessage,
 	}
 	if err != nil {
 		return nil, err
+	}
+	if group == "notify" && key == "telegram_bot_token" {
+		var envelope struct {
+			Ciphertext string `json:"ciphertext"`
+		}
+		if json.Unmarshal(row.Value, &envelope) == nil && envelope.Ciphertext != "" {
+			if r.cipher == nil {
+				return nil, fmt.Errorf("Telegram token encryption unavailable")
+			}
+			sealed, err := base64.StdEncoding.DecodeString(envelope.Ciphertext)
+			if err != nil {
+				return nil, err
+			}
+			plain, err := r.cipher.Open(sealed, []byte("settings:notify:telegram_bot_token"))
+			if err != nil {
+				return nil, fmt.Errorf("Telegram Token 无法解密，请重新配置")
+			}
+			return json.RawMessage(plain), nil
+		}
 	}
 	return json.RawMessage(row.Value), nil
 }
@@ -56,6 +79,16 @@ func (r *RepoImpl) List(ctx context.Context, group string) ([]port.Item, error) 
 
 // Put upsert 单项（Ent Upsert 跨方言适配，ADR-D18；冲突目标显式化——PG 必需）。
 func (r *RepoImpl) Put(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "notify" && key == "telegram_bot_token" {
+		if r.cipher == nil {
+			return fmt.Errorf("Telegram token encryption unavailable")
+		}
+		sealed, err := r.cipher.Seal(value, []byte("settings:notify:telegram_bot_token"))
+		if err != nil {
+			return err
+		}
+		value, _ = json.Marshal(map[string]string{"ciphertext": base64.StdEncoding.EncodeToString(sealed)})
+	}
 	client := data.Client(ctx, r.data)
 	return client.Setting.Create().
 		SetGroup(group).

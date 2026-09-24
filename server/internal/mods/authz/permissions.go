@@ -529,6 +529,8 @@ func init() {
 		Perm{Code: "ticket:write", Desc: "关闭工单", Domain: "ticket",
 			Op: "zcard.api.admin.v1.AdminTicketService/CloseTicket", Method: "POST", Path: "/api/v1/admin/tickets/{ticket_no}/close"},
 
+		Perm{Code: "notify:write", Desc: "Telegram 测试发送（超管）", Domain: "notify", AdminOnly: true,
+			Op: "zcard.api.admin.v1.AdminNotifyService/TestTelegram", Method: "POST", Path: "/api/v1/admin/notify/telegram/test"},
 		// ── 通知（notify，）────────────────────
 		Perm{Code: "notify:read", Desc: "通知模板列表", Domain: "notify",
 			Op: "zcard.api.admin.v1.AdminNotifyService/ListTemplates", Method: "GET", Path: "/api/v1/admin/notify/templates"},

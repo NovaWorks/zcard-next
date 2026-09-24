@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/adminpath"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -45,7 +46,9 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 	items = SanitizeGroup(items)
 	reply := &adminv1.ListSettingsReply{Items: make([]*adminv1.Setting, 0, len(items))}
 	for _, it := range items {
-        if it.Group == themeStateGroup { continue }
+		if it.Group == themeStateGroup {
+			continue
+		}
 		if it.Group == "template" && (it.Key == "mobile_template" || it.Key == activeThemeKey) {
 			continue
 		}
@@ -76,6 +79,53 @@ func (s *AdminSettingsService) ListSettings(ctx context.Context, req *adminv1.Li
 // validateSettingValue 设置值业务校验（单键/批量共用）：
 // base_currency 必须存在、模板键必须在清单内。
 func (s *AdminSettingsService) validateSettingValue(ctx context.Context, group, key string, value json.RawMessage) error {
+	if group == "notify" && strings.HasPrefix(key, "telegram_") {
+		invalid := func() error {
+			return errors.BadRequest("settings.INVALID_VALUE", "Telegram 配置格式错误，请检查 Token、Chat ID 或事件选项")
+		}
+		switch key {
+		case "telegram_enabled", "telegram_order_enabled":
+			var v *bool
+			if json.Unmarshal(value, &v) != nil || v == nil {
+				return invalid()
+			}
+		case "telegram_bot_token":
+			var v string
+			if json.Unmarshal(value, &v) != nil {
+				return invalid()
+			}
+			if len(v) > 512 {
+				return invalid()
+			}
+			if v != "" && v != "****" && !regexp.MustCompile(`^[0-9]+:[A-Za-z0-9_-]{20,}$`).MatchString(v) {
+				return invalid()
+			}
+		case "telegram_chat_ids":
+			var v string
+			if json.Unmarshal(value, &v) != nil || len(v) > 2000 {
+				return invalid()
+			}
+			ids := strings.Split(v, ",")
+			if len(ids) > 20 {
+				return invalid()
+			}
+			for _, id := range ids {
+				if id = strings.TrimSpace(id); id != "" && (len(id) > 64 || !regexp.MustCompile(`^(-?[0-9]+|@[A-Za-z0-9_]{5,})$`).MatchString(id)) {
+					return invalid()
+				}
+			}
+		case "telegram_events":
+			var v []string
+			if json.Unmarshal(value, &v) != nil {
+				return invalid()
+			}
+			for _, event := range v {
+				if event != "order.created" && event != "order.paid" && event != "order.delivered" && event != "order.refunded" {
+					return invalid()
+				}
+			}
+		}
+	}
 	if group == "ticket" && key == "urgent_fee" {
 		var fee *int64
 		if err := json.Unmarshal(value, &fee); err != nil || fee == nil || *fee < 0 {
@@ -156,6 +206,9 @@ func (s *AdminSettingsService) UpdateSetting(ctx context.Context, req *adminv1.U
 	if err := s.uc.PutMany(ctx, items); err != nil {
 		return nil, errors.BadRequest("settings.INVALID_VALUE", "设置值必须是合法 JSON")
 	}
+	if IsSecret(req.GetGroup(), req.GetKey()) {
+		value = json.RawMessage(`"****"`)
+	}
 	return &adminv1.Setting{Group: req.GetGroup(), Key: req.GetKey(), ValueJson: string(value)}, nil
 }
 
@@ -180,7 +233,9 @@ func (s *AdminSettingsService) UpdateSettings(ctx context.Context, req *adminv1.
 	}
 	reply := &adminv1.UpdateSettingsReply{Updated: int32(len(items))}
 	for _, it := range items {
-        if it.Group == themeStateGroup { continue }
+		if it.Group == themeStateGroup {
+			continue
+		}
 		if it.Group == "site" && it.Key == "admin_path" {
 			// The value was validated before writing; avoid a second DB read after committing.
 			var configured string

@@ -2,9 +2,10 @@
 import { orderStatusText } from "@/utils/order-status";
 // 采购单管理（procurement:read / procurement:write）：上游拿货单（客户购买 →
 // 上游采购 → 卡密回填链路的运行轨迹）。状态筛选 + 手动重试 / 转人工。
-import { h, computed, onMounted, ref } from "vue";
+import { h, computed, onMounted, ref, watch } from "vue";
+import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { NButton, NDataTable, NTag, NPopconfirm, NModal, NCard, NSpin, NAlert, NDescriptions, NDescriptionsItem, NPagination } from "naive-ui";
+import { NInput, NButton, NDataTable, NTag, NPopconfirm, NModal, NCard, NSpin, NAlert, NDescriptions, NDescriptionsItem, NPagination } from "naive-ui";
 import type { DataTableColumns } from "naive-ui";
 import { fetchProcurement, fetchDeliveries, fetchProcurements, retryProcurement, markProcurementManual } from "@/service/api";
 import { checkAuth } from "@/directives";
@@ -32,6 +33,10 @@ const total = ref(0);
 const page = ref(1);
 const pageSize = ref(20);
 const statusFilter = ref("");
+const route = useRoute();
+const orderNoFilter = ref(String(route.query.order_no || ""));
+let listRequest = 0;
+watch(() => route.query.order_no, value => { orderNoFilter.value = String(value || ""); statusFilter.value = ""; onSearch(); });
 
 const statusTabs = [
   { label: "全部", value: "", type: "default" as const },
@@ -61,19 +66,22 @@ function fmtTime(ts?: number) {
 }
 
 async function load() {
+  const seq = ++listRequest;
   loading.value = true;
   try {
     const { data, error } = await fetchProcurements({
       page: page.value,
       page_size: pageSize.value,
       status: statusFilter.value || undefined,
+      order_no: orderNoFilter.value.trim() || undefined,
     });
+    if (seq !== listRequest) return;
     if (!error && data) {
       rows.value = (data as any).orders || (data as any).procurements || [];
       total.value = (data as any).total || 0;
     }
   } finally {
-    loading.value = false;
+    if (seq === listRequest) loading.value = false;
   }
 }
 
@@ -85,8 +93,9 @@ function onSearch() {
 async function handleRetry(row: any) {
   const { error } = await retryProcurement(row.id);
   if (!error) {
-    window.$message?.success("已重新提交");
-    load();
+    window.$message?.success("处理完成，请核对最新采购和交付状态");
+    await load();
+    if (detail.value?.id === row.id) await openDetail(row.id);
   }
 }
 
@@ -118,6 +127,10 @@ const errorCol = () => ({
   render: (row: any) => row.last_error || "-",
 });
 
+const needsRecovery = (row: any) => row.status === "fulfilled" && row.delivery_incomplete;
+const retryable = (row: any) => ["pending", "submitted", "polling"].includes(row.status) || (needsRecovery(row) && Number(row.received_cards) > 0);
+const manualable = (row: any) => ["pending", "submitted", "polling"].includes(row.status) || needsRecovery(row);
+
 const actionsCol = () => ({
   title: "操作",
   key: "actions",
@@ -127,10 +140,10 @@ const actionsCol = () => ({
       h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => openDetail(row.id) }, { default: () => "查看" }),
       ["manual", "rejected", "refunding"].includes(row.status) && canDeliver()
         ? h(NButton, { size: "tiny", type: "primary", onClick: () => openDetail(row.id) }, { default: () => "处理" }) : null,
-      ["pending", "submitted", "polling", "failed"].includes(row.status) && canRetry()
-        ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRetry(row) }, { default: () => "重试" })
+      retryable(row) && canRetry()
+        ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRetry(row) }, { default: () => Number(row.received_cards) > 0 ? "重试交付" : "查询上游" })
         : null,
-      ["pending", "submitted", "polling"].includes(row.status) && canRetry()
+      manualable(row) && canRetry()
         ? h(NPopconfirm, { onPositiveClick: () => handleManual(row) }, { trigger: () => h(NButton, { size: "tiny", quaternary: true }, { default: () => "转人工" }), default: () => "停止自动采购并转人工？转人工后需核实上游结果，再通过人工补发完成发货。" })
         : null,
     ]),
@@ -145,13 +158,14 @@ const columns = computed<DataTableColumns<any>>(() => {
     cols.push({ title: "订单项", key: "order_item_id", width: 110, render: (row: any) => h("span", { class: "whitespace-nowrap", title: String(row.order_item_id ?? "") }, String(row.order_item_id ?? "-")) });
     cols.push({ title: "渠道", key: "connection_id", width: 72, render: (row: any) => `#${row.connection_id}` });
   }
-  cols.push(orderNoCol(tr));
+  cols.push({ title: "客户订单号", key: "order_no", minWidth: 120, maxWidth: 190, ellipsis: { tooltip: true }, render: (row: any) => row.order_no || "—" });
+  if (tr !== "compact") cols.push(orderNoCol(tr));
   cols.push({
     title: "状态",
     key: "status",
     width: 84,
     render: (row: any) =>
-      h(NTag, { size: "small", type: statusTag[row.status] || "default", bordered: false }, { default: () => statusText(row.status) }),
+      h(NTag, { size: "small", type: statusTag[row.status] || "default", bordered: false }, { default: () => needsRecovery(row) ? "交付异常" : statusText(row.status) }),
   });
   if (tr === "full") {
     // 数字列（卡密行数可达十万级）加宽 + 右对齐，杜绝逐字换行
@@ -216,6 +230,11 @@ onMounted(load);
         <NSpin :show="detailLoading">
           <NAlert v-if="detailError" type="error">{{ detailError }}</NAlert>
           <template v-if="detail">
+            <NAlert v-if="needsRecovery(detail)" type="warning" class="mb-12px">采购已返回结果，但此商品尚未完成交付。优先重试已有卡密的交付；需要换卡补发时，请先核实上游结果并转人工。</NAlert>
+            <div class="flex flex-wrap gap-8px mb-12px" v-if="canRetry()">
+              <NButton v-if="retryable(detail)" @click="handleRetry(detail)">{{ Number(detail.received_cards) > 0 ? "重试交付" : "查询上游" }}</NButton>
+              <NPopconfirm v-if="manualable(detail)" @positive-click="handleManual(detail)"><template #trigger><NButton>转人工</NButton></template>确认已核实上游扣款及出货结果，需要人工处理？</NPopconfirm>
+            </div>
             <NAlert v-if="detail.status === 'manual'" type="warning" class="mb-16px" title="等待人工处理">
               自动采购已停止，转人工不代表订单已发货。请先核实上游是否已扣款或出货，拿到卡密后点击下方“人工补发”；买家继续使用原订单取货。
             </NAlert>
@@ -258,7 +277,9 @@ onMounted(load);
       </NCard>
     </NModal>
     <ManualDeliverDialog v-model:show="showManualDeliver" :order-no="detail?.order_no || ''" :default-item-id="detail?.order_item_id" @delivered="afterManualDeliver" />
+    <form class="mb-12px flex gap-8px" @submit.prevent="onSearch"><NInput v-model:value="orderNoFilter" clearable placeholder="输入完整客户订单号" aria-label="客户订单号" /><NButton attr-type="submit" :loading="loading">查询</NButton></form>
     <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px" @change="onSearch" />
+    <NAlert v-if="!loading && orderNoFilter.trim() && !rows.length" type="info" class="mb-12px">未找到该客户订单的采购单。请核对订单号；若订单已付款，可在订单详情核实商品后人工补发，系统巡检也会为缺失的采购任务建立待人工处理记录。</NAlert>
     <NDataTable :columns="columns" :data="rows" :loading="loading" size="small" :row-key="(r: any) => r.id" :max-height="540" :scroll-x="300" />
     <div class="mt-12px flex justify-end">
       <TablePager v-model:page="page" v-model:page-size="pageSize" :total="total" @change="load" />

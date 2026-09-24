@@ -1,4 +1,4 @@
-h1:mDseEIYhL6B9Dk9rFU2wd73LkhPW5tEl5AbqWX7qZIs=
+h1:sWnr3wDXRGSoV/5zWvf/E83RhNdDtAal6ZHswVDDUKM=
 20260815190720_init.sql h1:YQ1dapmjcvZ7lL1ftfCgd8Z/h8hqxnS6tCJpOhboLe4=
 20260815193738_add_failed_tasks.sql h1:ahRwWY2iyo38+hQ88AV8P3KYJrCt6AfoDNpKmDmjEXk=
 20260815201530_v1_full_schema.sql h1:oHn5bzaeNTXmlcaeCVn/rme4XxKu3P43XYAvOsQBwOs=
@@ -38,3 +38,4 @@ h1:mDseEIYhL6B9Dk9rFU2wd73LkhPW5tEl5AbqWX7qZIs=
 20260922050311_payment_channel_delete.sql h1:X6ipeEWxz3vFDkYVNu91Q5e2N+iURJHwpmMQEOIrr+Y=
 20260922151910_payment_checkout_fees.sql h1:7SgZufbctOC0lPj4IMrNQ3OhLKi7s8C0TPpfxNp52ic=
 20260923110317_manual_services_private_levels.sql h1:qNGA+igKEeA9YA7kZO7ZSaMSMdowUtwGNb2WpEDGMtM=
+20260924090000_telegram_delivery.sql h1:s7LHKkc2QAgiVhGK1nYoGwWAIOKOSLB5tqMBIAqv7RU=

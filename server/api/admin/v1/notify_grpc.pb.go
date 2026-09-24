@@ -20,6 +20,7 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminNotifyService_TestTelegram_FullMethodName      = "/zcard.api.admin.v1.AdminNotifyService/TestTelegram"
 	AdminNotifyService_UpsertTemplate_FullMethodName    = "/zcard.api.admin.v1.AdminNotifyService/UpsertTemplate"
 	AdminNotifyService_ListTemplates_FullMethodName     = "/zcard.api.admin.v1.AdminNotifyService/ListTemplates"
 	AdminNotifyService_PreviewTemplate_FullMethodName   = "/zcard.api.admin.v1.AdminNotifyService/PreviewTemplate"
@@ -37,6 +38,7 @@ const (
 //
 // AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 type AdminNotifyServiceClient interface {
+	TestTelegram(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(ctx context.Context, in *UpsertNotifyTemplateRequest, opts ...grpc.CallOption) (*NotifyTemplate, error)
 	// ListTemplates 模板列表。
@@ -63,6 +65,16 @@ type adminNotifyServiceClient struct {
 
 func NewAdminNotifyServiceClient(cc grpc.ClientConnInterface) AdminNotifyServiceClient {
 	return &adminNotifyServiceClient{cc}
+}
+
+func (c *adminNotifyServiceClient) TestTelegram(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, AdminNotifyService_TestTelegram_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminNotifyServiceClient) UpsertTemplate(ctx context.Context, in *UpsertNotifyTemplateRequest, opts ...grpc.CallOption) (*NotifyTemplate, error) {
@@ -161,6 +173,7 @@ func (c *adminNotifyServiceClient) CancelBroadcast(ctx context.Context, in *Canc
 //
 // AdminNotifyService 通知管理：模板 CRUD/测试发送、发送日志查询/重发。
 type AdminNotifyServiceServer interface {
+	TestTelegram(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// UpsertTemplate 创建/更新模板（事件 × 通道 × 语言）。
 	UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error)
 	// ListTemplates 模板列表。
@@ -189,6 +202,9 @@ type AdminNotifyServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminNotifyServiceServer struct{}
 
+func (UnimplementedAdminNotifyServiceServer) TestTelegram(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method TestTelegram not implemented")
+}
 func (UnimplementedAdminNotifyServiceServer) UpsertTemplate(context.Context, *UpsertNotifyTemplateRequest) (*NotifyTemplate, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpsertTemplate not implemented")
 }
@@ -235,6 +251,24 @@ func RegisterAdminNotifyServiceServer(s grpc.ServiceRegistrar, srv AdminNotifySe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminNotifyService_ServiceDesc, srv)
+}
+
+func _AdminNotifyService_TestTelegram_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminNotifyServiceServer).TestTelegram(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminNotifyService_TestTelegram_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminNotifyServiceServer).TestTelegram(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminNotifyService_UpsertTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -406,6 +440,10 @@ var AdminNotifyService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminNotifyService",
 	HandlerType: (*AdminNotifyServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "TestTelegram",
+			Handler:    _AdminNotifyService_TestTelegram_Handler,
+		},
 		{
 			MethodName: "UpsertTemplate",
 			Handler:    _AdminNotifyService_UpsertTemplate_Handler,

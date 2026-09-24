@@ -11,9 +11,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	notifyport "github.com/NovaWorks/zcard-next/server/internal/mods/notify/port"
@@ -22,8 +25,10 @@ import (
 
 // TelegramConfig bot 配置（settings notify 组 telegram 键）。
 type TelegramConfig struct {
-	Enabled  bool   `json:"enabled"`
-	BotToken string `json:"bot_token"`
+	OrderEnabled bool     `json:"order_enabled"`
+	Events       []string `json:"events"`
+	Enabled      bool     `json:"enabled"`
+	BotToken     string   `json:"bot_token"`
 	// ChatIDs 管理员群/频道（逗号分隔；告警与群发多目标）
 	ChatIDs string `json:"chat_ids"`
 }
@@ -43,15 +48,35 @@ func (*TelegramChannel) Name() string { return "telegram" }
 
 // tgConfig 运行时读配置。
 func (c *TelegramChannel) tgConfig(ctx context.Context) (*TelegramConfig, error) {
-	raw, err := c.settings.GetJSON(ctx, "notify", "telegram")
-	if err != nil || len(raw) == 0 {
-		return nil, nil
+	cfg := &TelegramConfig{Events: []string{"order.paid"}}
+	// Legacy security-alert config remains supported until flat settings are saved.
+	raw, err := c.settings.GetJSON(ctx, "notify", "telegram_enabled")
+	if err != nil {
+		return nil, err
 	}
-	var cfg TelegramConfig
-	if err := json.Unmarshal(raw, &cfg); err != nil {
-		return nil, fmt.Errorf("notify: Telegram 配置不合法: %w", err)
+	if len(raw) == 0 {
+		raw, err = c.settings.GetJSON(ctx, "notify", "telegram")
+		if err != nil || len(raw) == 0 {
+			return nil, err
+		}
+		if err = json.Unmarshal(raw, cfg); err != nil {
+			return nil, fmt.Errorf("Telegram 配置格式错误")
+		}
+		return cfg, nil
 	}
-	return &cfg, nil
+	if err = json.Unmarshal(raw, &cfg.Enabled); err != nil {
+		return nil, fmt.Errorf("Telegram 配置格式错误")
+	}
+	for key, dest := range map[string]any{"telegram_bot_token": &cfg.BotToken, "telegram_chat_ids": &cfg.ChatIDs, "telegram_order_enabled": &cfg.OrderEnabled, "telegram_events": &cfg.Events} {
+		raw, err = c.settings.GetJSON(ctx, "notify", key)
+		if err != nil {
+			return nil, err
+		}
+		if len(raw) > 0 && json.Unmarshal(raw, dest) != nil {
+			return nil, fmt.Errorf("Telegram 配置格式错误")
+		}
+	}
+	return cfg, nil
 }
 
 // Deliver 发送消息（Recipient = chat_id；空则发配置的全部 chat_ids）。
@@ -90,30 +115,68 @@ func (c *TelegramChannel) Deliver(ctx context.Context, msg notifyport.Message) e
 
 // sendOne 单目标发送（HTML parse mode；Subject+Body 合并文本）。
 func (c *TelegramChannel) sendOne(ctx context.Context, token, chatID, text string) error {
+	_, err := c.sendResult(ctx, token, chatID, text)
+	return err
+}
+
+// TelegramError contains only sanitized diagnostics; never retain the request URL/token.
+type TelegramError struct {
+	Code       int
+	RetryAfter time.Duration
+	Permanent  bool
+	Detail     string
+}
+
+func (e *TelegramError) Error() string { return fmt.Sprintf("Telegram (%d): %s", e.Code, e.Detail) }
+func (c *TelegramChannel) sendResult(ctx context.Context, token, chatID, text string) (string, error) {
 	payload, err := json.Marshal(map[string]string{
 		"chat_id":    chatID,
 		"text":       text,
 		"parse_mode": "HTML",
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
+	endpoint := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(payload))
 	if err != nil {
-		return err
+		return "", &TelegramError{Permanent: true, Detail: "Bot Token 格式错误"}
 	}
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("notify: Telegram 请求失败: %w", err)
+		var ue *url.Error
+		if errors.As(err, &ue) {
+			err = ue.Err
+		}
+		return "", &TelegramError{Detail: "网络请求未确认，可能已送达；重试可能重复：" + strings.ReplaceAll(err.Error(), token, "[redacted]")}
 	}
 	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("notify: Telegram 发送失败 %d: %s", resp.StatusCode, truncateStr(string(body), 200))
+	raw, readErr := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
+	var result struct {
+		OK          bool   `json:"ok"`
+		Code        int    `json:"error_code"`
+		Description string `json:"description"`
+		Result      struct {
+			MessageID int64 `json:"message_id"`
+		} `json:"result"`
+		Parameters struct {
+			RetryAfter int `json:"retry_after"`
+		} `json:"parameters"`
 	}
-	return nil
+	if readErr != nil || json.Unmarshal(raw, &result) != nil {
+		return "", &TelegramError{Code: resp.StatusCode, Detail: "响应无法确认，可能已送达"}
+	}
+	if result.OK && resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return fmt.Sprint(result.Result.MessageID), nil
+	}
+	code := result.Code
+	if code == 0 {
+		code = resp.StatusCode
+	}
+	return "", &TelegramError{Code: code, Permanent: code >= 400 && code < 500 && code != 429,
+		RetryAfter: time.Duration(min(max(result.Parameters.RetryAfter, 0), 86400)) * time.Second,
+		Detail:     truncateStr(strings.ReplaceAll(result.Description, token, "[redacted]"), 200)}
 }
 
 func splitComma(s string) []string {

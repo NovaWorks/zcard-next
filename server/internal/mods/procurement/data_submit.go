@@ -7,7 +7,7 @@ package procurement
 // 2. fail-open 库存校验（stock_mode=real 且缓存不足时实时查；失败放行）
 // 3. Gateway.Submit（幂等键 = 采购单 dedupe_key，随请求发送）
 // - delivered → 卡密到手即加密（CardCipher.Seal）→ 落 procurement_items
-// → MarkFulfilled → 交付出口（fulfillment.AttachUpstreamDelivery）→ 发布 fulfilled
+// → 交付出口与 MarkFulfilled 同事务提交 → 发布 fulfilled
 // - pending → MarkSubmitted（记 upstream_order_id + 退避调度）
 // - 永久错误 → MarkRejected → 失败策略分流（auto_refund / manual）
 // - 可重试 → BumpRetry（退避后由轮询/巡检再试）
@@ -87,6 +87,9 @@ func (s *ProcureService) OnOrderPaid(ctx context.Context, env events.Envelope) e
 			// 单条失败不阻断其余（错误留痕，重试由轮询/人工兜底）
 			s.log.Error("procurement.process_item_failed",
 				"order_no", payload.OrderNo, "order_item_id", it.OrderItemID, "err", err)
+			if e := s.repo.recordMissing(ctx, it.OrderItemID); e != nil {
+				s.log.Error("procurement.record_missing_failed", "order_item_id", it.OrderItemID, "err", e)
+			}
 		}
 	}
 	return nil
@@ -108,7 +111,7 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 	}
 	if p.UpstreamSourceID == 0 || p.UpstreamProductCode == "" {
 		s.log.Warn("procurement.skip_non_upstream", "order_item_id", orderItemID, "product_id", productID)
-		return nil // 防御：非上游项（本地项误入）
+		return fmt.Errorf("procurement: 上游商品映射缺失，需要人工核实")
 	}
 
 	// 建单（pending；dedupe_key = order_item:N；失败策略取渠道级配置，默认自动退款）
@@ -167,34 +170,26 @@ func (s *ProcureService) processItem(ctx context.Context, payload orderPaidPaylo
 
 // finalizeDelivered 同步拿货成功：到手即加密 → 落库 → 交付出口 → 事件。
 func (s *ProcureService) finalizeDelivered(ctx context.Context, poID, orderID, orderItemID, productID, subsiteID uint64, cards []string, amount int64) error {
-	// 到手即加密：内存明文 → Seal（AAD 绑定本地商品/租户）→ 密文
+	// Persist the encrypted receipt before attempting local delivery. Never buy again to recover it.
 	sealed := make([][]byte, 0, len(cards))
-	deliveryItems := make([]fulfillmentport.UpstreamDeliveryItem, 0, len(cards))
 	for _, plain := range cards {
 		ct, err := s.cipher.Seal(plain, productID, subsiteID)
 		if err != nil {
 			return fmt.Errorf("procurement: 卡密加密失败: %w", err)
 		}
 		sealed = append(sealed, ct)
-		deliveryItems = append(deliveryItems, fulfillmentport.UpstreamDeliveryItem{
-			SealedContent: ct,
-			ContentHash:   s.cipher.ContentHash(plain),
-		})
 	}
-	if err := s.repo.AttachReceivedContent(ctx, poID, sealed); err != nil {
+	if err := s.repo.saveReceipt(ctx, poID, sealed); err != nil {
 		return err
 	}
-	if err := s.repo.MarkFulfilled(ctx, poID); err != nil {
-		return err
-	}
-	// 交付出口（写 cards + order_deliveries；幂等）
-	if err := s.attach.AttachUpstreamDelivery(ctx, orderID, orderItemID, productID, deliveryItems); err != nil {
+	err := s.deliverReceipt(ctx, poID, amount)
+	if err != nil {
 		s.log.Error("procurement.attach_delivery_failed", "po_id", poID, "err", err)
+		// A persisted polling receipt is also recovered by patrol if enqueueing fails.
+		_ = s.repo.recordDeliveryFailure(ctx, poID)
+		_ = s.schedulePoll(ctx, poID, time.Minute)
 	}
-	s.publish(ctx, events.ProcurementFulfilled, poID, map[string]any{
-		"procurement_id": poID, "order_item_id": orderItemID, "cards": len(cards), "amount": amount,
-	})
-	return nil
+	return err
 }
 
 // handleSubmitError 提交失败分流：永久错误 → rejected → 失败策略；其余 → 退避重试。

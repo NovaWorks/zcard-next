@@ -516,6 +516,9 @@ func newApp(logger *slog.Logger, hs *khttp.Server, gs *kgrpc.Server, ws *server.
 			Fn:       notifyDisp.HandleEvent,
 		})
 	}
+	for _, typ := range notify.TelegramEvents() {
+		dp.Register(data.HandlerReg{Consumer: "notify.telegram_orders", Type: typ, Fn: notifyDisp.EnqueueTelegram, Transactional: true})
+	}
 	var servers []transport.Server
 	// gRPC 可选（配置 addr 为空时不装配）
 	withGRPC := func(list []transport.Server) []transport.Server {

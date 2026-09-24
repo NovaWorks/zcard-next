@@ -18,6 +18,16 @@ type NotificationLog struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uint64 `json:"id,omitempty"`
+	// DeliveryKey holds the value of the "delivery_key" field.
+	DeliveryKey *string `json:"delivery_key,omitempty"`
+	// Attempts holds the value of the "attempts" field.
+	Attempts int `json:"attempts,omitempty"`
+	// NextAttemptAt holds the value of the "next_attempt_at" field.
+	NextAttemptAt *time.Time `json:"next_attempt_at,omitempty"`
+	// LeaseUntil holds the value of the "lease_until" field.
+	LeaseUntil *time.Time `json:"lease_until,omitempty"`
+	// MessageID holds the value of the "message_id" field.
+	MessageID string `json:"message_id,omitempty"`
 	// EventType holds the value of the "event_type" field.
 	EventType string `json:"event_type,omitempty"`
 	// BizType holds the value of the "biz_type" field.
@@ -52,11 +62,11 @@ func (*NotificationLog) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case notificationlog.FieldVariables:
 			values[i] = new([]byte)
-		case notificationlog.FieldID, notificationlog.FieldBizID:
+		case notificationlog.FieldID, notificationlog.FieldAttempts, notificationlog.FieldBizID:
 			values[i] = new(sql.NullInt64)
-		case notificationlog.FieldEventType, notificationlog.FieldBizType, notificationlog.FieldChannel, notificationlog.FieldRecipient, notificationlog.FieldLocale, notificationlog.FieldSubject, notificationlog.FieldBody, notificationlog.FieldStatus, notificationlog.FieldErrorMessage:
+		case notificationlog.FieldDeliveryKey, notificationlog.FieldMessageID, notificationlog.FieldEventType, notificationlog.FieldBizType, notificationlog.FieldChannel, notificationlog.FieldRecipient, notificationlog.FieldLocale, notificationlog.FieldSubject, notificationlog.FieldBody, notificationlog.FieldStatus, notificationlog.FieldErrorMessage:
 			values[i] = new(sql.NullString)
-		case notificationlog.FieldCreatedAt:
+		case notificationlog.FieldNextAttemptAt, notificationlog.FieldLeaseUntil, notificationlog.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -79,6 +89,39 @@ func (_m *NotificationLog) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			_m.ID = uint64(value.Int64)
+		case notificationlog.FieldDeliveryKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field delivery_key", values[i])
+			} else if value.Valid {
+				_m.DeliveryKey = new(string)
+				*_m.DeliveryKey = value.String
+			}
+		case notificationlog.FieldAttempts:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field attempts", values[i])
+			} else if value.Valid {
+				_m.Attempts = int(value.Int64)
+			}
+		case notificationlog.FieldNextAttemptAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field next_attempt_at", values[i])
+			} else if value.Valid {
+				_m.NextAttemptAt = new(time.Time)
+				*_m.NextAttemptAt = value.Time
+			}
+		case notificationlog.FieldLeaseUntil:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field lease_until", values[i])
+			} else if value.Valid {
+				_m.LeaseUntil = new(time.Time)
+				*_m.LeaseUntil = value.Time
+			}
+		case notificationlog.FieldMessageID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field message_id", values[i])
+			} else if value.Valid {
+				_m.MessageID = value.String
+			}
 		case notificationlog.FieldEventType:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field event_type", values[i])
@@ -189,6 +232,27 @@ func (_m *NotificationLog) String() string {
 	var builder strings.Builder
 	builder.WriteString("NotificationLog(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	if v := _m.DeliveryKey; v != nil {
+		builder.WriteString("delivery_key=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("attempts=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Attempts))
+	builder.WriteString(", ")
+	if v := _m.NextAttemptAt; v != nil {
+		builder.WriteString("next_attempt_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	if v := _m.LeaseUntil; v != nil {
+		builder.WriteString("lease_until=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
+	builder.WriteString("message_id=")
+	builder.WriteString(_m.MessageID)
+	builder.WriteString(", ")
 	builder.WriteString("event_type=")
 	builder.WriteString(_m.EventType)
 	builder.WriteString(", ")

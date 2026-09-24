@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 
@@ -28,7 +29,7 @@ func NewAdminProcurementService(repo *ProcureRepo, svc *ProcureService) *AdminPr
 // ListProcurements 列表。
 func (s *AdminProcurementService) ListProcurements(ctx context.Context, req *adminv1.ListProcurementsRequest) (*adminv1.ListProcurementsReply, error) {
 	page, pageSize := procurePageParams(req.GetPage(), req.GetPageSize())
-	rows, total, err := s.repo.List(ctx, req.GetStatus(), page, pageSize)
+	rows, total, err := s.repo.List(ctx, req.GetStatus(), page, pageSize, req.GetOrderNo())
 	if err != nil {
 		return nil, err
 	}
@@ -48,19 +49,17 @@ func (s *AdminProcurementService) GetProcurement(ctx context.Context, req *admin
 	return s.detail(ctx, po)
 }
 
-// RetryProcurement 手动重试：终态拒绝；否则按当前状态推进（提交/轮询）。
+// RetryProcurement 恢复本地交付或查询已有上游订单。
 func (s *AdminProcurementService) RetryProcurement(ctx context.Context, req *adminv1.RetryProcurementRequest) (*adminv1.ProcurementOrder, error) {
 	po, err := s.repo.Get(ctx, req.GetId())
 	if err != nil {
 		return nil, err
 	}
 	switch string(po.Status) {
-	case "fulfilled", "rejected", "refunded":
+	case "rejected", "refunding", "refunded", "manual":
 		return nil, errors.New("procurement.ALREADY_TERMINAL: 采购单已终态")
-	case "manual":
-		// 人工标记后可重试（重新提交）
 	}
-	// 重试统一走轮询入口（pending/submitted/polling 均安全）
+	// 有采购回执时只恢复本地交付；没有回执时仅查询上游，绝不重新购买。
 	if err := s.svc.PollOne(ctx, req.GetId()); err != nil {
 		return nil, err
 	}
@@ -109,6 +108,16 @@ func (s *AdminProcurementService) toProto(ctx context.Context, po *ent.Procureme
 	}
 	if !po.LastPollAt.IsZero() {
 		out.LastPollAt = po.LastPollAt.Unix()
+	}
+	if oi, err := s.repo.OrderItemInfo(ctx, po.OrderItemID); err == nil {
+		if o, e := data.Client(ctx, s.repo.data).Order.Get(ctx, oi.OrderID); e == nil {
+			out.OrderNo = o.OrderNo
+			out.OrderStatus = string(o.Status)
+			if count, e := s.repo.deliveredCount(ctx, po.OrderItemID, oi.Quantity); e == nil {
+				out.DeliveredQuantity = int32(count)
+				out.DeliveryIncomplete = count < int(oi.Quantity) && (out.OrderStatus == "paid" || out.OrderStatus == "fulfilling" || out.OrderStatus == "partially_delivered")
+			}
+		}
 	}
 	// 采购项（数量/成本/到手卡密行数）
 	if item, err := s.repo.ItemByProcurement(ctx, po.ID); err == nil {

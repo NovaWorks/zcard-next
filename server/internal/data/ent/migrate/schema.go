@@ -941,6 +941,11 @@ var (
 	// NotificationLogsColumns holds the columns for the "notification_logs" table.
 	NotificationLogsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "delivery_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 128},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+		{Name: "next_attempt_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "lease_until", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "message_id", Type: field.TypeString, Nullable: true, Size: 64},
 		{Name: "event_type", Type: field.TypeString, Size: 64},
 		{Name: "biz_type", Type: field.TypeString, Nullable: true, Size: 40},
 		{Name: "biz_id", Type: field.TypeUint64, Nullable: true},
@@ -963,12 +968,12 @@ var (
 			{
 				Name:    "notificationlog_status_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{NotificationLogsColumns[9], NotificationLogsColumns[12]},
+				Columns: []*schema.Column{NotificationLogsColumns[14], NotificationLogsColumns[17]},
 			},
 			{
 				Name:    "notificationlog_event_type_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{NotificationLogsColumns[1], NotificationLogsColumns[12]},
+				Columns: []*schema.Column{NotificationLogsColumns[6], NotificationLogsColumns[17]},
 			},
 		},
 	}

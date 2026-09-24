@@ -14,6 +14,16 @@ const (
 	Label = "notification_log"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldDeliveryKey holds the string denoting the delivery_key field in the database.
+	FieldDeliveryKey = "delivery_key"
+	// FieldAttempts holds the string denoting the attempts field in the database.
+	FieldAttempts = "attempts"
+	// FieldNextAttemptAt holds the string denoting the next_attempt_at field in the database.
+	FieldNextAttemptAt = "next_attempt_at"
+	// FieldLeaseUntil holds the string denoting the lease_until field in the database.
+	FieldLeaseUntil = "lease_until"
+	// FieldMessageID holds the string denoting the message_id field in the database.
+	FieldMessageID = "message_id"
 	// FieldEventType holds the string denoting the event_type field in the database.
 	FieldEventType = "event_type"
 	// FieldBizType holds the string denoting the biz_type field in the database.
@@ -45,6 +55,11 @@ const (
 // Columns holds all SQL columns for notificationlog fields.
 var Columns = []string{
 	FieldID,
+	FieldDeliveryKey,
+	FieldAttempts,
+	FieldNextAttemptAt,
+	FieldLeaseUntil,
+	FieldMessageID,
 	FieldEventType,
 	FieldBizType,
 	FieldBizID,
@@ -70,6 +85,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// DeliveryKeyValidator is a validator for the "delivery_key" field. It is called by the builders before save.
+	DeliveryKeyValidator func(string) error
+	// DefaultAttempts holds the default value on creation for the "attempts" field.
+	DefaultAttempts int
+	// MessageIDValidator is a validator for the "message_id" field. It is called by the builders before save.
+	MessageIDValidator func(string) error
 	// EventTypeValidator is a validator for the "event_type" field. It is called by the builders before save.
 	EventTypeValidator func(string) error
 	// BizTypeValidator is a validator for the "biz_type" field. It is called by the builders before save.
@@ -145,6 +166,31 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByDeliveryKey orders the results by the delivery_key field.
+func ByDeliveryKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeliveryKey, opts...).ToFunc()
+}
+
+// ByAttempts orders the results by the attempts field.
+func ByAttempts(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAttempts, opts...).ToFunc()
+}
+
+// ByNextAttemptAt orders the results by the next_attempt_at field.
+func ByNextAttemptAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldNextAttemptAt, opts...).ToFunc()
+}
+
+// ByLeaseUntil orders the results by the lease_until field.
+func ByLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLeaseUntil, opts...).ToFunc()
+}
+
+// ByMessageID orders the results by the message_id field.
+func ByMessageID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldMessageID, opts...).ToFunc()
 }
 
 // ByEventType orders the results by the event_type field.

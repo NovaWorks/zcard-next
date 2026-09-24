@@ -7,6 +7,7 @@ export function fetchChannels() {
 }
 
 export function createChannel(data: {
+  sort?: number;
   name: string;
   code: string;
   driver: string;

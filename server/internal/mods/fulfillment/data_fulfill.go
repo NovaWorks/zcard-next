@@ -22,6 +22,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	auditport "github.com/NovaWorks/zcard-next/server/internal/mods/audit/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
@@ -478,17 +479,6 @@ func (r *DeliveryRepoImpl) AttachUpstreamDelivery(ctx context.Context, orderID, 
 func (r *DeliveryRepoImpl) attachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []port.UpstreamDeliveryItem) error {
 	client := data.Client(ctx, r.data)
 
-	// 幂等：该 order_item 已有上游交付记录（card_id 关联）→ 直接返回
-	exists, err := client.OrderDelivery.Query().
-		Where(orderdelivery.ItemID(itemID)).
-		Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-
 	o, err := client.Order.Get(ctx, orderID)
 	if err != nil {
 		return err
@@ -497,22 +487,38 @@ func (r *DeliveryRepoImpl) attachUpstreamDelivery(ctx context.Context, orderID, 
 	if err != nil {
 		return err
 	}
-	if oi.OrderID != orderID || oi.ProductID != productID || len(items) == 0 {
+	if oi.OrderID != orderID || oi.ProductID != productID || len(items) != int(oi.Quantity) || len(items) == 0 {
 		return fmt.Errorf("fulfillment.INVALID_UPSTREAM_DELIVERY")
+	}
+	// Full delivery is idempotent. Partial historic delivery must be reconciled manually.
+	check := func() (bool, error) {
+		counts, err := r.deliveredQuantities(ctx, o.ID, []*ent.OrderItem{oi})
+		if err != nil {
+			return false, err
+		}
+		if counts[oi.ID] >= int(oi.Quantity) {
+			return true, nil
+		}
+		if counts[oi.ID] > 0 {
+			return false, fmt.Errorf("商品已部分交付，请转人工补发剩余数量")
+		}
+		return false, nil
+	}
+	if done, err := check(); done || err != nil {
+		return err
 	}
 	if err := r.lockDeliveryOrder(ctx, o); err != nil {
 		return err
 	}
-
-	// 幂等：该 order_item 已有上游交付记录（card_id 关联）→ 直接返回
-	exists, err = client.OrderDelivery.Query().
-		Where(orderdelivery.ItemID(itemID)).
-		Exist(ctx)
+	if done, err := check(); done || err != nil {
+		return err
+	}
+	processing, err := client.RefundOrder.Query().Where(refundorder.OrderID(o.ID), refundorder.StatusEQ(refundorder.StatusProcessing)).Exist(ctx)
 	if err != nil {
 		return err
 	}
-	if exists {
-		return nil
+	if processing {
+		return fmt.Errorf("退款处理中，请先核实退款结果")
 	}
 
 	deliveredAt := time.Now().UTC()

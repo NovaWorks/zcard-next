@@ -2730,6 +2730,10 @@ paths:
             description: ListLogs 发送日志（按状态/事件筛选）。
             operationId: AdminNotifyService_ListLogs
             parameters:
+                - name: channel
+                  in: query
+                  schema:
+                    type: string
                 - name: status
                   in: query
                   schema:
@@ -2772,6 +2776,19 @@ paths:
                     application/json:
                         schema:
                             $ref: '#/components/schemas/zcard.api.admin.v1.ResendNotifyLogRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content: {}
+    /api/v1/admin/notify/telegram/test:
+        post:
+            tags:
+                - AdminNotifyService
+            operationId: AdminNotifyService_TestTelegram
+            requestBody:
+                content:
+                    application/json: {}
                 required: true
             responses:
                 "200":
@@ -3148,6 +3165,10 @@ paths:
                   schema:
                     type: integer
                     format: int32
+                - name: orderNo
+                  in: query
+                  schema:
+                    type: string
             responses:
                 "200":
                     description: OK
@@ -9969,6 +9990,15 @@ components:
                     type: string
                 createdAt:
                     type: string
+                attempts:
+                    type: integer
+                    format: int32
+                nextAttemptAt:
+                    type: string
+                messageId:
+                    type: string
+                retryable:
+                    type: boolean
         zcard.api.admin.v1.NotifyTemplate:
             type: object
             properties:
@@ -10391,6 +10421,11 @@ components:
                     type: string
                 costBasis:
                     type: string
+                deliveredQuantity:
+                    type: integer
+                    format: int32
+                deliveryIncomplete:
+                    type: boolean
         zcard.api.admin.v1.ProductContentPatch:
             type: object
             properties:

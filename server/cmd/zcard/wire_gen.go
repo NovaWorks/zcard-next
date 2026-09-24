@@ -64,7 +64,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 		return nil, nil, err
 	}
 	identityUsecase := identity.NewIdentityUsecase(adminUserRepoImpl, signer, dataData, box)
-	repoImpl := settings.NewRepoImpl(dataData)
+	repoImpl := settings.ProvideRepo(dataData, box)
 	settingsReader := notify.ProvideSettingsReader(repoImpl)
 	service := captcha.New(settingsReader)
 	adminAuthService := identity.NewAdminAuthService(identityUsecase, rbacUsecase, service)
@@ -93,7 +93,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	outboxWriter := data.NewOutboxWriter(dataData)
 	notifyRepo := notify.NewNotifyRepo(dataData)
 	v := notify.ProvideChannels(notifyRepo, repoImpl)
-	dispatcher := notify.ProvideDispatcher(notifyRepo, v, resellerRepo)
+	dispatcher := notify.ProvideDispatcher(notifyRepo, v, resellerRepo, adminSettingsService)
 	alerter := audit.ProvideAuditAlerter(repoImpl, dispatcher)
 	auditRepo := audit.NewAuditRepoWithAlerter(dataData, logger, alerter)
 	pointsDebiter := wallet.ProvidePortPointsDebiter(walletRepoImpl)
@@ -193,7 +193,7 @@ func wireApp(serverConf *conf.Server, dataConf *conf.Data, securityConf *conf.Se
 	scheduler := supply.NewScheduler(supplyRepoImpl, syncService, logger)
 	visitCounter := audit.NewVisitCounter()
 	affiliateService := affiliate.NewAffiliateService(commissionRepo, portWallet, settingsReader, outboxWriter, logger)
-	cron := bootstrap.NewCron(syncService, scheduler, procureService, supplierRepoImpl, auditRepo, visitCounter, trackRepo, broadcastService, adminTicketService, affiliateService, orderUsecase)
+	cron := bootstrap.NewCron(dispatcher, syncService, scheduler, procureService, supplierRepoImpl, auditRepo, visitCounter, trackRepo, broadcastService, adminTicketService, affiliateService, orderUsecase)
 	runMode := provideRunMode()
 	backgroundServer := server.NewBackgroundServer(outboxRelay, cron, runMode)
 	settleService := reseller.NewSettleService(resellerRepo, logger)

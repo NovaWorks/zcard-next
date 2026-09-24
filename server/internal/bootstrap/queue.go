@@ -67,7 +67,7 @@ func NewOutboxRelay(d *data.Data, q queue.Enqueuer, logger *slog.Logger) *data.O
 }
 
 // NewCron 进程内周期任务（注册表）。
-func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService, orderUC *order.OrderUsecase) *queue.Cron {
+func NewCron(notifyDisp *notify.Dispatcher, supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, procure *procurement.ProcureService, supplierRepo *supplier.SupplierRepoImpl, auditRepo *audit.AuditRepo, visitCounter *audit.VisitCounter, trackRepo *audit.TrackRepo, broadcastSvc *notify.BroadcastService, ticketAdmin *ticket.AdminTicketService, affiliateSvc *affiliate.AffiliateService, orderUC *order.OrderUsecase) *queue.Cron {
 	c := queue.NewCron()
 	// 订单超时取消（每分钟扫 pending_payment 到期单；慢支付顺延在其内）
 	c.AddEvery("order.expire_pending", time.Minute, func(ctx context.Context) {
@@ -101,6 +101,7 @@ func NewCron(supplySync *supply.SyncService, supplyScheduler *supply.Scheduler, 
 	})
 	// ：定时群发扫描（到期 pending → 入队）
 	c.AddEvery("notify.broadcast_scan", time.Minute, broadcastSvc.ScanDue)
+	c.AddEvery("notify.telegram_delivery", 10*time.Second, notifyDisp.ScanTelegram)
 	// ：工单 resolved 超 7 天自动关闭
 	c.AddEvery("ticket.autoclose", time.Hour, ticketAdmin.AutoCloseResolved)
 	// ：佣金到期确认（冻结期过 → wallet 入账；负债行重试抵扣）

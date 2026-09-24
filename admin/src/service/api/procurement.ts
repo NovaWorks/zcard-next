@@ -2,7 +2,7 @@
 
 import { request } from "../request";
 
-export function fetchProcurements(params?: { page?: number; page_size?: number; status?: string; connection_id?: number }) {
+export function fetchProcurements(params?: { page?: number; page_size?: number; status?: string; connection_id?: number; order_no?: string }) {
   return request({ url: "/api/v1/admin/procurements", params });
 }
 

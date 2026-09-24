@@ -14,11 +14,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/procurementorder"
 )
@@ -81,31 +83,36 @@ func (r *ProcureRepo) transition(ctx context.Context, id uint64, from, to string
 
 // CreatePending 创建采购单（幂等：order_item_id 唯一 → 重复返回 ErrDuplicatePurchase）。
 func (r *ProcureRepo) CreatePending(ctx context.Context, orderItemID, connectionID uint64, productCode string, quantity int32, failStrategy string, traceID string) (*ent.ProcurementOrder, error) {
-	dedupe := fmt.Sprintf("order_item:%d", orderItemID)
-	p, err := data.Client(ctx, r.data).ProcurementOrder.Create().
-		SetOrderItemID(orderItemID).
-		SetConnectionID(connectionID).
-		SetStatus(procurementorder.StatusPending).
-		SetFailStrategy(procurementorder.FailStrategy(failStrategy)).
-		SetDedupeKey(dedupe).
-		SetTraceID(traceID).
-		Save(ctx)
-	if err != nil {
-		if ent.IsConstraintError(err) {
-			return nil, ErrDuplicatePurchase
+	var p *ent.ProcurementOrder
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		dedupe := fmt.Sprintf("order_item:%d", orderItemID)
+		var err error
+		p, err = data.Client(ctx, r.data).ProcurementOrder.Create().
+			SetOrderItemID(orderItemID).
+			SetConnectionID(connectionID).
+			SetStatus(procurementorder.StatusPending).
+			SetFailStrategy(procurementorder.FailStrategy(failStrategy)).
+			SetDedupeKey(dedupe).
+			SetTraceID(traceID).
+			Save(ctx)
+		if err != nil {
+			if ent.IsConstraintError(err) {
+				return ErrDuplicatePurchase
+			}
+			return err
 		}
-		return nil, err
-	}
-	// 采购项（sku 快照）
-	_, err = data.Client(ctx, r.data).ProcurementItem.Create().
-		SetProcurementID(p.ID).
-		SetUpstreamSku(productCode).
-		SetQuantity(quantity).
-		Save(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return p, nil
+		// 采购项（sku 快照）
+		_, err = data.Client(ctx, r.data).ProcurementItem.Create().
+			SetProcurementID(p.ID).
+			SetUpstreamSku(productCode).
+			SetQuantity(quantity).
+			Save(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return p, err
 }
 
 // Get 采购单详情。
@@ -149,8 +156,20 @@ func (r *ProcureRepo) GetByOrderItem(ctx context.Context, orderItemID uint64) (*
 }
 
 // List 采购单分页（按状态过滤）。
-func (r *ProcureRepo) List(ctx context.Context, status string, page, pageSize int) ([]*ent.ProcurementOrder, int, error) {
+func (r *ProcureRepo) List(ctx context.Context, status string, page, pageSize int, orderNo ...string) ([]*ent.ProcurementOrder, int, error) {
 	q := data.Client(ctx, r.data).ProcurementOrder.Query().Order(ent.Desc(procurementorder.FieldID))
+	if len(orderNo) > 0 && strings.TrimSpace(orderNo[0]) != "" {
+		c := data.Client(ctx, r.data)
+		orders, err := c.Order.Query().Where(order.OrderNoEQ(strings.TrimSpace(orderNo[0]))).IDs(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		ids, err := c.OrderItem.Query().Where(orderitem.OrderIDIn(orders...)).IDs(ctx)
+		if err != nil {
+			return nil, 0, err
+		}
+		q.Where(procurementorder.OrderItemIDIn(ids...))
+	}
 	if status != "" {
 		q = q.Where(procurementorder.StatusEQ(procurementorder.Status(status)))
 	}
@@ -165,7 +184,10 @@ func (r *ProcureRepo) List(ctx context.Context, status string, page, pageSize in
 // ListPollable polling/submitted 单（巡检拉取；INDEX(status, last_poll_at) 命中）。
 func (r *ProcureRepo) ListPollable(ctx context.Context, limit int) ([]*ent.ProcurementOrder, error) {
 	return data.Client(ctx, r.data).ProcurementOrder.Query().
-		Where(procurementorder.StatusIn(procurementorder.StatusSubmitted, procurementorder.StatusPolling)).
+		Where(procurementorder.Or(
+			procurementorder.StatusIn(procurementorder.StatusSubmitted, procurementorder.StatusPolling),
+			procurementorder.And(procurementorder.StatusEQ(procurementorder.StatusPending), procurementorder.CreatedAtLT(time.Now().UTC().Add(-5*time.Minute))),
+		)).
 		Order(ent.Asc(procurementorder.FieldLastPollAt)).
 		Limit(limit).
 		All(ctx)
@@ -231,12 +253,23 @@ func (r *ProcureRepo) MarkRefunded(ctx context.Context, id uint64, upstreamRefun
 // MarkManual → manual（人工终态：失败策略分流 / 24h 卡死）。
 func (r *ProcureRepo) MarkManual(ctx context.Context, id uint64, reason string) error {
 	return data.Tx(ctx, r.data, func(ctx context.Context) error {
-		if err := r.markManual(ctx, id, reason); err != nil {
-			return err
-		}
 		client := data.Client(ctx, r.data)
 		po, err := client.ProcurementOrder.Get(ctx, id)
 		if err != nil {
+			return err
+		}
+		if err := r.lockManualRecovery(ctx, po); err != nil {
+			return err
+		}
+		if po.Status == procurementorder.StatusFulfilled {
+			n, err := client.ProcurementOrder.Update().Where(procurementorder.ID(id), procurementorder.StatusEQ(po.Status)).SetStatus(procurementorder.StatusManual).SetLastError(reason).Save(ctx)
+			if err != nil {
+				return err
+			}
+			if n != 1 {
+				return ErrConcurrentUpdate
+			}
+		} else if err := r.markManual(ctx, id, reason); err != nil {
 			return err
 		}
 		it, err := client.OrderItem.Get(ctx, po.OrderItemID)

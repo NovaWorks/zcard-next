@@ -24,7 +24,7 @@ import (
 
 func newNotifyRepo(t *testing.T) *NotifyRepo {
 	t.Helper()
-	handle, err := db.SQLite.Open("file:notifytest?mode=memory&cache=shared&_pragma=foreign_keys(1)")
+	handle, err := db.SQLite.Open(fmt.Sprintf("file:notifytest%d?mode=memory&cache=shared&_pragma=foreign_keys(1)", time.Now().UnixNano()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -310,7 +310,7 @@ func TestTelegramSkipped(t *testing.T) {
 		t.Fatalf("未配置应 skipped: %v", err)
 	}
 	// 无 chat_ids 同样 skipped
-	ch2 := NewTelegramChannel(fakeSettings{raw: []byte(`{"enabled":true,"bot_token":"tok"}`)})
+	ch2 := NewTelegramChannel(fakeSettings{values: map[string]string{"notify.telegram": `{"enabled":true,"bot_token":"tok"}`}})
 	if err := ch2.Deliver(context.Background(), notifyport.Message{}); err != ErrSkipped {
 		t.Fatalf("无目标应 skipped: %v", err)
 	}

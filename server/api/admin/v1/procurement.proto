@@ -69,6 +69,8 @@ message ProcurementOrder {
   int64 cost_total_cents = 32;
   int64 profit_cents = 33; // 预计毛利，未计退款和手续费
   string cost_basis = 34; // order_snapshot | unrecorded
+  int32 delivered_quantity = 35;
+  bool delivery_incomplete = 36; // 可发货订单的该商品尚未足额交付
 
 }
 
@@ -76,6 +78,7 @@ message ListProcurementsRequest {
   string status = 1; // 空 = 全部
   int32 page = 2;
   int32 page_size = 3;
+  string order_no = 4; // 客户订单号精确匹配
 }
 
 message ListProcurementsReply {

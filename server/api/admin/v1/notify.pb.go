@@ -373,6 +373,7 @@ func (x *PreviewTemplateReply) GetError() string {
 
 type ListNotifyLogsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Channel       string                 `protobuf:"bytes,5,opt,name=channel,proto3" json:"channel,omitempty"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`                        // pending | sent | failed | skipped；空 = 全部
 	EventType     string                 `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"` // 空 = 全部
 	Page          int32                  `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
@@ -409,6 +410,13 @@ func (x *ListNotifyLogsRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ListNotifyLogsRequest.ProtoReflect.Descriptor instead.
 func (*ListNotifyLogsRequest) Descriptor() ([]byte, []int) {
 	return file_admin_v1_notify_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListNotifyLogsRequest) GetChannel() string {
+	if x != nil {
+		return x.Channel
+	}
+	return ""
 }
 
 func (x *ListNotifyLogsRequest) GetStatus() string {
@@ -452,6 +460,10 @@ type NotifyLog struct {
 	Status        string                 `protobuf:"bytes,9,opt,name=status,proto3" json:"status,omitempty"`
 	ErrorMessage  string                 `protobuf:"bytes,10,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
 	CreatedAt     int64                  `protobuf:"varint,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Attempts      int32                  `protobuf:"varint,12,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	NextAttemptAt int64                  `protobuf:"varint,13,opt,name=next_attempt_at,json=nextAttemptAt,proto3" json:"next_attempt_at,omitempty"`
+	MessageId     string                 `protobuf:"bytes,14,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	Retryable     bool                   `protobuf:"varint,15,opt,name=retryable,proto3" json:"retryable,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -561,6 +573,34 @@ func (x *NotifyLog) GetCreatedAt() int64 {
 		return x.CreatedAt
 	}
 	return 0
+}
+
+func (x *NotifyLog) GetAttempts() int32 {
+	if x != nil {
+		return x.Attempts
+	}
+	return 0
+}
+
+func (x *NotifyLog) GetNextAttemptAt() int64 {
+	if x != nil {
+		return x.NextAttemptAt
+	}
+	return 0
+}
+
+func (x *NotifyLog) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+func (x *NotifyLog) GetRetryable() bool {
+	if x != nil {
+		return x.Retryable
+	}
+	return false
 }
 
 type ListNotifyLogsReply struct {
@@ -1213,13 +1253,14 @@ const file_admin_v1_notify_proto_rawDesc = "" +
 	"\x14PreviewTemplateReply\x12\x18\n" +
 	"\asubject\x18\x01 \x01(\tR\asubject\x12\x12\n" +
 	"\x04body\x18\x02 \x01(\tR\x04body\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\"\x7f\n" +
-	"\x15ListNotifyLogsRequest\x12\x16\n" +
+	"\x05error\x18\x03 \x01(\tR\x05error\"\x99\x01\n" +
+	"\x15ListNotifyLogsRequest\x12\x18\n" +
+	"\achannel\x18\x05 \x01(\tR\achannel\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x1d\n" +
 	"\n" +
 	"event_type\x18\x02 \x01(\tR\teventType\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xb2\x02\n" +
+	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"\xb3\x03\n" +
 	"\tNotifyLog\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1234,7 +1275,12 @@ const file_admin_v1_notify_proto_rawDesc = "" +
 	"\rerror_message\x18\n" +
 	" \x01(\tR\ferrorMessage\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\v \x01(\x03R\tcreatedAt\"\x8f\x01\n" +
+	"created_at\x18\v \x01(\x03R\tcreatedAt\x12\x1a\n" +
+	"\battempts\x18\f \x01(\x05R\battempts\x12&\n" +
+	"\x0fnext_attempt_at\x18\r \x01(\x03R\rnextAttemptAt\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x0e \x01(\tR\tmessageId\x12\x1c\n" +
+	"\tretryable\x18\x0f \x01(\bR\tretryable\"\x8f\x01\n" +
 	"\x13ListNotifyLogsReply\x121\n" +
 	"\x04logs\x18\x01 \x03(\v2\x1d.zcard.api.admin.v1.NotifyLogR\x04logs\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
@@ -1293,9 +1339,9 @@ const file_admin_v1_notify_proto_rawDesc = "" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"-\n" +
 	"\x16CancelBroadcastRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\xa2\n" +
-	"\n" +
-	"\x12AdminNotifyService\x12\x90\x01\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id2\x91\v\n" +
+	"\x12AdminNotifyService\x12m\n" +
+	"\fTestTelegram\x12\x16.google.protobuf.Empty\x1a\x16.google.protobuf.Empty\"-\x82\xd3\xe4\x93\x02':\x01*\"\"/api/v1/admin/notify/telegram/test\x12\x90\x01\n" +
 	"\x0eUpsertTemplate\x12/.zcard.api.admin.v1.UpsertNotifyTemplateRequest\x1a\".zcard.api.admin.v1.NotifyTemplate\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/api/v1/admin/notify/templates\x12}\n" +
 	"\rListTemplates\x12\x16.google.protobuf.Empty\x1a,.zcard.api.admin.v1.ListNotifyTemplatesReply\"&\x82\xd3\xe4\x93\x02 \x12\x1e/api/v1/admin/notify/templates\x12\x9a\x01\n" +
 	"\x0fPreviewTemplate\x12*.zcard.api.admin.v1.PreviewTemplateRequest\x1a(.zcard.api.admin.v1.PreviewTemplateReply\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/api/v1/admin/notify/templates/preview\x12\x81\x01\n" +
@@ -1342,26 +1388,28 @@ var file_admin_v1_notify_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListNotifyTemplatesReply.templates:type_name -> zcard.api.admin.v1.NotifyTemplate
 	6,  // 1: zcard.api.admin.v1.ListNotifyLogsReply.logs:type_name -> zcard.api.admin.v1.NotifyLog
 	12, // 2: zcard.api.admin.v1.ListBroadcastsReply.broadcasts:type_name -> zcard.api.admin.v1.Broadcast
-	1,  // 3: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:input_type -> zcard.api.admin.v1.UpsertNotifyTemplateRequest
-	16, // 4: zcard.api.admin.v1.AdminNotifyService.ListTemplates:input_type -> google.protobuf.Empty
-	3,  // 5: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:input_type -> zcard.api.admin.v1.PreviewTemplateRequest
-	5,  // 6: zcard.api.admin.v1.AdminNotifyService.ListLogs:input_type -> zcard.api.admin.v1.ListNotifyLogsRequest
-	8,  // 7: zcard.api.admin.v1.AdminNotifyService.ResendLog:input_type -> zcard.api.admin.v1.ResendNotifyLogRequest
-	9,  // 8: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:input_type -> zcard.api.admin.v1.EstimateBroadcastRequest
-	11, // 9: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:input_type -> zcard.api.admin.v1.CreateBroadcastRequest
-	13, // 10: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:input_type -> zcard.api.admin.v1.ListBroadcastsRequest
-	15, // 11: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:input_type -> zcard.api.admin.v1.CancelBroadcastRequest
-	0,  // 12: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:output_type -> zcard.api.admin.v1.NotifyTemplate
-	2,  // 13: zcard.api.admin.v1.AdminNotifyService.ListTemplates:output_type -> zcard.api.admin.v1.ListNotifyTemplatesReply
-	4,  // 14: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:output_type -> zcard.api.admin.v1.PreviewTemplateReply
-	7,  // 15: zcard.api.admin.v1.AdminNotifyService.ListLogs:output_type -> zcard.api.admin.v1.ListNotifyLogsReply
-	16, // 16: zcard.api.admin.v1.AdminNotifyService.ResendLog:output_type -> google.protobuf.Empty
-	10, // 17: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:output_type -> zcard.api.admin.v1.EstimateBroadcastReply
-	12, // 18: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:output_type -> zcard.api.admin.v1.Broadcast
-	14, // 19: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:output_type -> zcard.api.admin.v1.ListBroadcastsReply
-	12, // 20: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:output_type -> zcard.api.admin.v1.Broadcast
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
+	16, // 3: zcard.api.admin.v1.AdminNotifyService.TestTelegram:input_type -> google.protobuf.Empty
+	1,  // 4: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:input_type -> zcard.api.admin.v1.UpsertNotifyTemplateRequest
+	16, // 5: zcard.api.admin.v1.AdminNotifyService.ListTemplates:input_type -> google.protobuf.Empty
+	3,  // 6: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:input_type -> zcard.api.admin.v1.PreviewTemplateRequest
+	5,  // 7: zcard.api.admin.v1.AdminNotifyService.ListLogs:input_type -> zcard.api.admin.v1.ListNotifyLogsRequest
+	8,  // 8: zcard.api.admin.v1.AdminNotifyService.ResendLog:input_type -> zcard.api.admin.v1.ResendNotifyLogRequest
+	9,  // 9: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:input_type -> zcard.api.admin.v1.EstimateBroadcastRequest
+	11, // 10: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:input_type -> zcard.api.admin.v1.CreateBroadcastRequest
+	13, // 11: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:input_type -> zcard.api.admin.v1.ListBroadcastsRequest
+	15, // 12: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:input_type -> zcard.api.admin.v1.CancelBroadcastRequest
+	16, // 13: zcard.api.admin.v1.AdminNotifyService.TestTelegram:output_type -> google.protobuf.Empty
+	0,  // 14: zcard.api.admin.v1.AdminNotifyService.UpsertTemplate:output_type -> zcard.api.admin.v1.NotifyTemplate
+	2,  // 15: zcard.api.admin.v1.AdminNotifyService.ListTemplates:output_type -> zcard.api.admin.v1.ListNotifyTemplatesReply
+	4,  // 16: zcard.api.admin.v1.AdminNotifyService.PreviewTemplate:output_type -> zcard.api.admin.v1.PreviewTemplateReply
+	7,  // 17: zcard.api.admin.v1.AdminNotifyService.ListLogs:output_type -> zcard.api.admin.v1.ListNotifyLogsReply
+	16, // 18: zcard.api.admin.v1.AdminNotifyService.ResendLog:output_type -> google.protobuf.Empty
+	10, // 19: zcard.api.admin.v1.AdminNotifyService.EstimateBroadcast:output_type -> zcard.api.admin.v1.EstimateBroadcastReply
+	12, // 20: zcard.api.admin.v1.AdminNotifyService.CreateBroadcast:output_type -> zcard.api.admin.v1.Broadcast
+	14, // 21: zcard.api.admin.v1.AdminNotifyService.ListBroadcasts:output_type -> zcard.api.admin.v1.ListBroadcastsReply
+	12, // 22: zcard.api.admin.v1.AdminNotifyService.CancelBroadcast:output_type -> zcard.api.admin.v1.Broadcast
+	13, // [13:23] is the sub-list for method output_type
+	3,  // [3:13] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name

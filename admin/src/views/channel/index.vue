@@ -2,7 +2,7 @@
 // 渠道管理：上游货源连接 / 供货账号（下游客户，含 dujiao/acg 兼容账号）/ 采购单。
 // 权限：supply:read（货源）、supplier:read（供货账号）、procurement:read（采购单）。
 // 支持 ?tab= 深链（首页待办「待审对接申请」直达审核视图）。
-import { ref, defineAsyncComponent } from "vue";
+import { ref, defineAsyncComponent, watch } from "vue";
 import { useRoute } from "vue-router";
 import { NCard, NTabs, NTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
@@ -22,6 +22,7 @@ const visibleTabs = [
 const activeTab = ref<string>(
   visibleTabs.some((t) => t.key === route.query.tab) ? String(route.query.tab) : (visibleTabs[0]?.key || "connections"),
 );
+watch(() => route.query.tab, tab => { if (visibleTabs.some(t => t.key === tab)) activeTab.value = String(tab); });
 </script>
 
 <template>

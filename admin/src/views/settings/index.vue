@@ -8,6 +8,7 @@ import type { TemplateItem } from "@/service/api";
 import { NCheckbox, NCheckboxGroup, NRadioButton, NRadioGroup, NSpace, NTabs as OuterTabs, NTabPane as OuterTabPane } from "naive-ui";
 import { checkAuth } from "@/directives";
 import { resolveMediaUrl } from "@/utils/media";
+import TelegramDelivery from "./components/telegram-delivery.vue";
 import CurrencyTab from "./components/currency-tab.vue";
 import TopButtonField from "./components/top-button-field.vue";
 import GiftTiersField from "./components/gift-tiers-field.vue";
@@ -52,7 +53,7 @@ const groups = [
   { key: "withdraw", label: "提现" },
   { key: "affiliate", label: "分销设置" },
   { key: "supply", label: "货源" },
-  { key: "notify", label: "邮件短信" },
+  { key: "notify", label: "邮件短信与 Telegram" },
   { key: "service", label: "客户代码" },
   { key: "i18n", label: "语言货币" },
 ];
@@ -79,11 +80,14 @@ function linkListOf(item: any) {
 // ── 多选类设置键：渲染 checkbox 勾选（数组值；其余 options 键为单选）──
 const MULTI_KEYS: Record<string, string[]> = {
   security: ["register_method"],
+  notify: ["telegram_events"],
 };
 
 // ── 输入框占位提示（大厂模式：标签保持简短，填写说明放进框内 placeholder）──
 const INPUT_PLACEHOLDERS: Record<string, Record<string, string>> = {
   notify: {
+    telegram_chat_ids: "商家个人或管理群 Chat ID，多个用英文逗号分隔；最多 20 个",
+    telegram_bot_token: "从 @BotFather 获取；留空保留原 Token",
     sms_sign: "阿里云/腾讯云填签名名称；七牛填签名 ID",
     sms_sdk_app_id: "腾讯云必填，其余通道忽略",
     sms_template_code: "阿里云/腾讯云/七牛均需填写",
@@ -498,6 +502,7 @@ onMounted(() => {
               </NFormItem>
             </NForm>
 
+            <TelegramDelivery v-if="activeGroup === 'notify'" :unsaved="hasDirty()" />
             <div class="mt-24px flex items-center justify-end gap-8px border-t pt-16px max-w-760px">
               <span v-if="hasDirty()" class="text-12px text-gray-400">{{ dirtyKeys.size }} 项修改未保存</span>
               <NButton

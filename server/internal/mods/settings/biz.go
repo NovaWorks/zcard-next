@@ -71,7 +71,7 @@ func (uc *SettingsUsecase) Put(ctx context.Context, group, key string, value jso
 	if !json.Valid(value) {
 		return errors.New("settings.INVALID_VALUE")
 	}
-	if IsSecret(group, key) && string(value) == `"****"` {
+	if IsSecret(group, key) && (string(value) == `"****"` || (group == "notify" && key == "telegram_bot_token" && string(value) == `""`)) {
 		return nil // 脱敏回写 = 未修改
 	}
 	return uc.repo.Put(ctx, group, key, value)
@@ -91,7 +91,7 @@ func (uc *SettingsUsecase) PutMany(ctx context.Context, items []port.Item) error
 		if !json.Valid(it.Value) {
 			return errors.New("settings.INVALID_VALUE")
 		}
-		if IsSecret(it.Group, it.Key) && string(it.Value) == `"****"` {
+		if IsSecret(it.Group, it.Key) && (string(it.Value) == `"****"` || (it.Group == "notify" && it.Key == "telegram_bot_token" && string(it.Value) == `""`)) {
 			continue
 		}
 		valid = append(valid, it)

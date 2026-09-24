@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"time"
 
-	fulfillmentport "github.com/NovaWorks/zcard-next/server/internal/mods/fulfillment/port"
 	supplyport "github.com/NovaWorks/zcard-next/server/internal/mods/supply/port"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/events"
 )
@@ -34,10 +33,21 @@ func (s *ProcureService) PollOne(ctx context.Context, poID uint64) error {
 		return err
 	}
 	switch string(po.Status) {
-	case "fulfilled", "rejected", "refunding", "refunded", "manual":
+	case "rejected", "refunding", "refunded", "manual":
 		return nil // 终态
 	case "pending":
 		// 提交尚未受理（上游排队中）——按退避继续
+	}
+
+	receipt, err := s.repo.ReceivedContent(ctx, poID)
+	if err != nil {
+		return err
+	}
+	if len(receipt) > 0 || string(po.Status) == "fulfilled" {
+		return s.deliverReceipt(ctx, poID, 0)
+	}
+	if po.UpstreamOrderID == "" {
+		return s.repo.MarkManual(ctx, poID, "上游单号缺失，请核实上游扣款和出货结果后人工补发")
 	}
 
 	// 三通道汇聚：查询上游 → 结果确认
@@ -57,41 +67,11 @@ func (s *ProcureService) confirmResult(ctx context.Context, poID uint64, status 
 		if err != nil {
 			return err
 		}
-		// 拿商品/订单信息用于加密与交付（采购项快照足够，交付需要 order_item → order）
-		item, err := s.repo.ItemByProcurement(ctx, poID)
+		oi, err := s.repo.OrderItemInfo(ctx, po.OrderItemID)
 		if err != nil {
 			return err
 		}
-		orderItemID := po.OrderItemID
-		// 交付出口需要 orderID/productID：order_item → order_id + product_id
-		oi, err := s.repo.OrderItemInfo(ctx, orderItemID)
-		if err != nil {
-			return err
-		}
-		sealed := make([][]byte, 0, len(cards))
-		delivery := make([]fulfillmentport.UpstreamDeliveryItem, 0, len(cards))
-		for _, plain := range cards {
-			ct, err := s.cipher.Seal(plain, oi.ProductID, oi.SubsiteID)
-			if err != nil {
-				return fmt.Errorf("procurement: 卡密加密失败: %w", err)
-			}
-			sealed = append(sealed, ct)
-			delivery = append(delivery, fulfillmentport.UpstreamDeliveryItem{SealedContent: ct, ContentHash: s.cipher.ContentHash(plain)})
-		}
-		if err := s.repo.AttachReceivedContent(ctx, poID, sealed); err != nil {
-			return err
-		}
-		if err := s.repo.MarkFulfilled(ctx, poID); err != nil {
-			return err
-		}
-		_ = item // 采购项快照（sku/成本）留档
-		if err := s.attach.AttachUpstreamDelivery(ctx, oi.OrderID, orderItemID, oi.ProductID, delivery); err != nil {
-			s.log.Error("procurement.attach_delivery_failed", "po_id", poID, "err", err)
-		}
-		s.publish(ctx, events.ProcurementFulfilled, poID, map[string]any{
-			"procurement_id": poID, "order_item_id": orderItemID, "cards": len(cards), "amount": amount,
-		})
-		return nil
+		return s.finalizeDelivered(ctx, po.ID, oi.OrderID, po.OrderItemID, oi.ProductID, oi.SubsiteID, cards, amount)
 	case "rejected", "failed":
 		return s.handleSubmitError(ctx, poID, errors.New("上游返回终态失败"))
 	default:
@@ -150,6 +130,9 @@ func (s *ProcureService) handlePollError(ctx context.Context, poID uint64, err e
 // Patrol 巡检：拉 polling/submitted 单逐个查上游；超 24h 卡死 → manual + 事件。
 // cron 每 30 分钟注册（bootstrap.NewCron）。
 func (s *ProcureService) Patrol(ctx context.Context) {
+	if err := s.repo.reconcileMissing(ctx); err != nil {
+		s.log.Warn("procurement.missing_reconcile_failed", "err", err)
+	}
 	rows, err := s.repo.ListPollable(ctx, 100)
 	if err != nil {
 		s.log.Warn("procurement.patrol_list_failed", "err", err)

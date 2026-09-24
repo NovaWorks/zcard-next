@@ -59,6 +59,8 @@ type ProcurementOrder struct {
 	CostTotalCents      int64                  `protobuf:"varint,32,opt,name=cost_total_cents,json=costTotalCents,proto3" json:"cost_total_cents,omitempty"`
 	ProfitCents         int64                  `protobuf:"varint,33,opt,name=profit_cents,json=profitCents,proto3" json:"profit_cents,omitempty"` // 预计毛利，未计退款和手续费
 	CostBasis           string                 `protobuf:"bytes,34,opt,name=cost_basis,json=costBasis,proto3" json:"cost_basis,omitempty"`        // order_snapshot | unrecorded
+	DeliveredQuantity   int32                  `protobuf:"varint,35,opt,name=delivered_quantity,json=deliveredQuantity,proto3" json:"delivered_quantity,omitempty"`
+	DeliveryIncomplete  bool                   `protobuf:"varint,36,opt,name=delivery_incomplete,json=deliveryIncomplete,proto3" json:"delivery_incomplete,omitempty"` // 可发货订单的该商品尚未足额交付
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -331,11 +333,26 @@ func (x *ProcurementOrder) GetCostBasis() string {
 	return ""
 }
 
+func (x *ProcurementOrder) GetDeliveredQuantity() int32 {
+	if x != nil {
+		return x.DeliveredQuantity
+	}
+	return 0
+}
+
+func (x *ProcurementOrder) GetDeliveryIncomplete() bool {
+	if x != nil {
+		return x.DeliveryIncomplete
+	}
+	return false
+}
+
 type ListProcurementsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // 空 = 全部
 	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
 	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	OrderNo       string                 `protobuf:"bytes,4,opt,name=order_no,json=orderNo,proto3" json:"order_no,omitempty"` // 客户订单号精确匹配
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -389,6 +406,13 @@ func (x *ListProcurementsRequest) GetPageSize() int32 {
 		return x.PageSize
 	}
 	return 0
+}
+
+func (x *ListProcurementsRequest) GetOrderNo() string {
+	if x != nil {
+		return x.OrderNo
+	}
+	return ""
 }
 
 type ListProcurementsReply struct {
@@ -603,7 +627,8 @@ var File_admin_v1_procurement_proto protoreflect.FileDescriptor
 
 const file_admin_v1_procurement_proto_rawDesc = "" +
 	"\n" +
-	"\x1aadmin/v1/procurement.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xd8\t\n" +
+	"\x1aadmin/v1/procurement.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xb8\n" +
+	"\n" +
 	"\x10ProcurementOrder\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\"\n" +
 	"\rorder_item_id\x18\x02 \x01(\x04R\vorderItemId\x12#\n" +
@@ -647,11 +672,14 @@ const file_admin_v1_procurement_proto_rawDesc = "" +
 	"\x10cost_total_cents\x18  \x01(\x03R\x0ecostTotalCents\x12!\n" +
 	"\fprofit_cents\x18! \x01(\x03R\vprofitCents\x12\x1d\n" +
 	"\n" +
-	"cost_basis\x18\" \x01(\tR\tcostBasis\"b\n" +
+	"cost_basis\x18\" \x01(\tR\tcostBasis\x12-\n" +
+	"\x12delivered_quantity\x18# \x01(\x05R\x11deliveredQuantity\x12/\n" +
+	"\x13delivery_incomplete\x18$ \x01(\bR\x12deliveryIncomplete\"}\n" +
 	"\x17ListProcurementsRequest\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"\xa8\x01\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x19\n" +
+	"\border_no\x18\x04 \x01(\tR\aorderNo\"\xa8\x01\n" +
 	"\x15ListProcurementsReply\x12H\n" +
 	"\fprocurements\x18\x01 \x03(\v2$.zcard.api.admin.v1.ProcurementOrderR\fprocurements\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +

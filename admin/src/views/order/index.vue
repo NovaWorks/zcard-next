@@ -532,7 +532,10 @@ watch(() => route.fullPath, () => {
   keyword.value = "";
   resetOrderList();
 });
-onMounted(loadOrders);
+onMounted(async () => {
+  await loadOrders();
+  if (typeof route.query.order_no === "string" && route.query.order_no) await handleDetail(route.query.order_no);
+});
 </script>
 
 <template>
@@ -687,6 +690,7 @@ onMounted(loadOrders);
       <template #footer>
         <div v-if="detail" class="flex justify-end gap-8px">
           <!-- NPopconfirm 的 trigger 槽必须恰好一个子节点：v-if 放在 Popconfirm 自身（空槽会抛 follower 错误） -->
+          <NButton v-if="checkAuth('procurement:read')" @click="router.push({ path: '/channel', query: { tab: 'procurement', order_no: detail.order_no } }); showDetail = false">关联采购单</NButton>
           <NButton v-if="['paid', 'fulfilling', 'partially_delivered'].includes(detail.status) && checkAuth('order:deliver')" type="primary" @click="showManualDeliver = true">人工补发</NButton>
           <NPopconfirm
             v-if="detail.status === 'pending_payment' && checkAuth('order:cancel')"

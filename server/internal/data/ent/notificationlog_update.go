@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -24,6 +25,107 @@ type NotificationLogUpdate struct {
 // Where appends a list predicates to the NotificationLogUpdate builder.
 func (_u *NotificationLogUpdate) Where(ps ...predicate.NotificationLog) *NotificationLogUpdate {
 	_u.mutation.Where(ps...)
+	return _u
+}
+
+// SetDeliveryKey sets the "delivery_key" field.
+func (_u *NotificationLogUpdate) SetDeliveryKey(v string) *NotificationLogUpdate {
+	_u.mutation.SetDeliveryKey(v)
+	return _u
+}
+
+// SetNillableDeliveryKey sets the "delivery_key" field if the given value is not nil.
+func (_u *NotificationLogUpdate) SetNillableDeliveryKey(v *string) *NotificationLogUpdate {
+	if v != nil {
+		_u.SetDeliveryKey(*v)
+	}
+	return _u
+}
+
+// ClearDeliveryKey clears the value of the "delivery_key" field.
+func (_u *NotificationLogUpdate) ClearDeliveryKey() *NotificationLogUpdate {
+	_u.mutation.ClearDeliveryKey()
+	return _u
+}
+
+// SetAttempts sets the "attempts" field.
+func (_u *NotificationLogUpdate) SetAttempts(v int) *NotificationLogUpdate {
+	_u.mutation.ResetAttempts()
+	_u.mutation.SetAttempts(v)
+	return _u
+}
+
+// SetNillableAttempts sets the "attempts" field if the given value is not nil.
+func (_u *NotificationLogUpdate) SetNillableAttempts(v *int) *NotificationLogUpdate {
+	if v != nil {
+		_u.SetAttempts(*v)
+	}
+	return _u
+}
+
+// AddAttempts adds value to the "attempts" field.
+func (_u *NotificationLogUpdate) AddAttempts(v int) *NotificationLogUpdate {
+	_u.mutation.AddAttempts(v)
+	return _u
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (_u *NotificationLogUpdate) SetNextAttemptAt(v time.Time) *NotificationLogUpdate {
+	_u.mutation.SetNextAttemptAt(v)
+	return _u
+}
+
+// SetNillableNextAttemptAt sets the "next_attempt_at" field if the given value is not nil.
+func (_u *NotificationLogUpdate) SetNillableNextAttemptAt(v *time.Time) *NotificationLogUpdate {
+	if v != nil {
+		_u.SetNextAttemptAt(*v)
+	}
+	return _u
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (_u *NotificationLogUpdate) ClearNextAttemptAt() *NotificationLogUpdate {
+	_u.mutation.ClearNextAttemptAt()
+	return _u
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (_u *NotificationLogUpdate) SetLeaseUntil(v time.Time) *NotificationLogUpdate {
+	_u.mutation.SetLeaseUntil(v)
+	return _u
+}
+
+// SetNillableLeaseUntil sets the "lease_until" field if the given value is not nil.
+func (_u *NotificationLogUpdate) SetNillableLeaseUntil(v *time.Time) *NotificationLogUpdate {
+	if v != nil {
+		_u.SetLeaseUntil(*v)
+	}
+	return _u
+}
+
+// ClearLeaseUntil clears the value of the "lease_until" field.
+func (_u *NotificationLogUpdate) ClearLeaseUntil() *NotificationLogUpdate {
+	_u.mutation.ClearLeaseUntil()
+	return _u
+}
+
+// SetMessageID sets the "message_id" field.
+func (_u *NotificationLogUpdate) SetMessageID(v string) *NotificationLogUpdate {
+	_u.mutation.SetMessageID(v)
+	return _u
+}
+
+// SetNillableMessageID sets the "message_id" field if the given value is not nil.
+func (_u *NotificationLogUpdate) SetNillableMessageID(v *string) *NotificationLogUpdate {
+	if v != nil {
+		_u.SetMessageID(*v)
+	}
+	return _u
+}
+
+// ClearMessageID clears the value of the "message_id" field.
+func (_u *NotificationLogUpdate) ClearMessageID() *NotificationLogUpdate {
+	_u.mutation.ClearMessageID()
 	return _u
 }
 
@@ -250,6 +352,16 @@ func (_u *NotificationLogUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *NotificationLogUpdate) check() error {
+	if v, ok := _u.mutation.DeliveryKey(); ok {
+		if err := notificationlog.DeliveryKeyValidator(v); err != nil {
+			return &ValidationError{Name: "delivery_key", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.delivery_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MessageID(); ok {
+		if err := notificationlog.MessageIDValidator(v); err != nil {
+			return &ValidationError{Name: "message_id", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.message_id": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EventType(); ok {
 		if err := notificationlog.EventTypeValidator(v); err != nil {
 			return &ValidationError{Name: "event_type", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.event_type": %w`, err)}
@@ -299,6 +411,36 @@ func (_u *NotificationLogUpdate) sqlSave(ctx context.Context) (_node int, err er
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.DeliveryKey(); ok {
+		_spec.SetField(notificationlog.FieldDeliveryKey, field.TypeString, value)
+	}
+	if _u.mutation.DeliveryKeyCleared() {
+		_spec.ClearField(notificationlog.FieldDeliveryKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.Attempts(); ok {
+		_spec.SetField(notificationlog.FieldAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAttempts(); ok {
+		_spec.AddField(notificationlog.FieldAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.NextAttemptAt(); ok {
+		_spec.SetField(notificationlog.FieldNextAttemptAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextAttemptAtCleared() {
+		_spec.ClearField(notificationlog.FieldNextAttemptAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LeaseUntil(); ok {
+		_spec.SetField(notificationlog.FieldLeaseUntil, field.TypeTime, value)
+	}
+	if _u.mutation.LeaseUntilCleared() {
+		_spec.ClearField(notificationlog.FieldLeaseUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.MessageID(); ok {
+		_spec.SetField(notificationlog.FieldMessageID, field.TypeString, value)
+	}
+	if _u.mutation.MessageIDCleared() {
+		_spec.ClearField(notificationlog.FieldMessageID, field.TypeString)
 	}
 	if value, ok := _u.mutation.EventType(); ok {
 		_spec.SetField(notificationlog.FieldEventType, field.TypeString, value)
@@ -372,6 +514,107 @@ type NotificationLogUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *NotificationLogMutation
+}
+
+// SetDeliveryKey sets the "delivery_key" field.
+func (_u *NotificationLogUpdateOne) SetDeliveryKey(v string) *NotificationLogUpdateOne {
+	_u.mutation.SetDeliveryKey(v)
+	return _u
+}
+
+// SetNillableDeliveryKey sets the "delivery_key" field if the given value is not nil.
+func (_u *NotificationLogUpdateOne) SetNillableDeliveryKey(v *string) *NotificationLogUpdateOne {
+	if v != nil {
+		_u.SetDeliveryKey(*v)
+	}
+	return _u
+}
+
+// ClearDeliveryKey clears the value of the "delivery_key" field.
+func (_u *NotificationLogUpdateOne) ClearDeliveryKey() *NotificationLogUpdateOne {
+	_u.mutation.ClearDeliveryKey()
+	return _u
+}
+
+// SetAttempts sets the "attempts" field.
+func (_u *NotificationLogUpdateOne) SetAttempts(v int) *NotificationLogUpdateOne {
+	_u.mutation.ResetAttempts()
+	_u.mutation.SetAttempts(v)
+	return _u
+}
+
+// SetNillableAttempts sets the "attempts" field if the given value is not nil.
+func (_u *NotificationLogUpdateOne) SetNillableAttempts(v *int) *NotificationLogUpdateOne {
+	if v != nil {
+		_u.SetAttempts(*v)
+	}
+	return _u
+}
+
+// AddAttempts adds value to the "attempts" field.
+func (_u *NotificationLogUpdateOne) AddAttempts(v int) *NotificationLogUpdateOne {
+	_u.mutation.AddAttempts(v)
+	return _u
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (_u *NotificationLogUpdateOne) SetNextAttemptAt(v time.Time) *NotificationLogUpdateOne {
+	_u.mutation.SetNextAttemptAt(v)
+	return _u
+}
+
+// SetNillableNextAttemptAt sets the "next_attempt_at" field if the given value is not nil.
+func (_u *NotificationLogUpdateOne) SetNillableNextAttemptAt(v *time.Time) *NotificationLogUpdateOne {
+	if v != nil {
+		_u.SetNextAttemptAt(*v)
+	}
+	return _u
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (_u *NotificationLogUpdateOne) ClearNextAttemptAt() *NotificationLogUpdateOne {
+	_u.mutation.ClearNextAttemptAt()
+	return _u
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (_u *NotificationLogUpdateOne) SetLeaseUntil(v time.Time) *NotificationLogUpdateOne {
+	_u.mutation.SetLeaseUntil(v)
+	return _u
+}
+
+// SetNillableLeaseUntil sets the "lease_until" field if the given value is not nil.
+func (_u *NotificationLogUpdateOne) SetNillableLeaseUntil(v *time.Time) *NotificationLogUpdateOne {
+	if v != nil {
+		_u.SetLeaseUntil(*v)
+	}
+	return _u
+}
+
+// ClearLeaseUntil clears the value of the "lease_until" field.
+func (_u *NotificationLogUpdateOne) ClearLeaseUntil() *NotificationLogUpdateOne {
+	_u.mutation.ClearLeaseUntil()
+	return _u
+}
+
+// SetMessageID sets the "message_id" field.
+func (_u *NotificationLogUpdateOne) SetMessageID(v string) *NotificationLogUpdateOne {
+	_u.mutation.SetMessageID(v)
+	return _u
+}
+
+// SetNillableMessageID sets the "message_id" field if the given value is not nil.
+func (_u *NotificationLogUpdateOne) SetNillableMessageID(v *string) *NotificationLogUpdateOne {
+	if v != nil {
+		_u.SetMessageID(*v)
+	}
+	return _u
+}
+
+// ClearMessageID clears the value of the "message_id" field.
+func (_u *NotificationLogUpdateOne) ClearMessageID() *NotificationLogUpdateOne {
+	_u.mutation.ClearMessageID()
+	return _u
 }
 
 // SetEventType sets the "event_type" field.
@@ -610,6 +853,16 @@ func (_u *NotificationLogUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *NotificationLogUpdateOne) check() error {
+	if v, ok := _u.mutation.DeliveryKey(); ok {
+		if err := notificationlog.DeliveryKeyValidator(v); err != nil {
+			return &ValidationError{Name: "delivery_key", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.delivery_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.MessageID(); ok {
+		if err := notificationlog.MessageIDValidator(v); err != nil {
+			return &ValidationError{Name: "message_id", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.message_id": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.EventType(); ok {
 		if err := notificationlog.EventTypeValidator(v); err != nil {
 			return &ValidationError{Name: "event_type", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.event_type": %w`, err)}
@@ -676,6 +929,36 @@ func (_u *NotificationLogUpdateOne) sqlSave(ctx context.Context) (_node *Notific
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.DeliveryKey(); ok {
+		_spec.SetField(notificationlog.FieldDeliveryKey, field.TypeString, value)
+	}
+	if _u.mutation.DeliveryKeyCleared() {
+		_spec.ClearField(notificationlog.FieldDeliveryKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.Attempts(); ok {
+		_spec.SetField(notificationlog.FieldAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.AddedAttempts(); ok {
+		_spec.AddField(notificationlog.FieldAttempts, field.TypeInt, value)
+	}
+	if value, ok := _u.mutation.NextAttemptAt(); ok {
+		_spec.SetField(notificationlog.FieldNextAttemptAt, field.TypeTime, value)
+	}
+	if _u.mutation.NextAttemptAtCleared() {
+		_spec.ClearField(notificationlog.FieldNextAttemptAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.LeaseUntil(); ok {
+		_spec.SetField(notificationlog.FieldLeaseUntil, field.TypeTime, value)
+	}
+	if _u.mutation.LeaseUntilCleared() {
+		_spec.ClearField(notificationlog.FieldLeaseUntil, field.TypeTime)
+	}
+	if value, ok := _u.mutation.MessageID(); ok {
+		_spec.SetField(notificationlog.FieldMessageID, field.TypeString, value)
+	}
+	if _u.mutation.MessageIDCleared() {
+		_spec.ClearField(notificationlog.FieldMessageID, field.TypeString)
 	}
 	if value, ok := _u.mutation.EventType(); ok {
 		_spec.SetField(notificationlog.FieldEventType, field.TypeString, value)

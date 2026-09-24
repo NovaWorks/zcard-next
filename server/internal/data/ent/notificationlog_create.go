@@ -22,6 +22,76 @@ type NotificationLogCreate struct {
 	conflict []sql.ConflictOption
 }
 
+// SetDeliveryKey sets the "delivery_key" field.
+func (_c *NotificationLogCreate) SetDeliveryKey(v string) *NotificationLogCreate {
+	_c.mutation.SetDeliveryKey(v)
+	return _c
+}
+
+// SetNillableDeliveryKey sets the "delivery_key" field if the given value is not nil.
+func (_c *NotificationLogCreate) SetNillableDeliveryKey(v *string) *NotificationLogCreate {
+	if v != nil {
+		_c.SetDeliveryKey(*v)
+	}
+	return _c
+}
+
+// SetAttempts sets the "attempts" field.
+func (_c *NotificationLogCreate) SetAttempts(v int) *NotificationLogCreate {
+	_c.mutation.SetAttempts(v)
+	return _c
+}
+
+// SetNillableAttempts sets the "attempts" field if the given value is not nil.
+func (_c *NotificationLogCreate) SetNillableAttempts(v *int) *NotificationLogCreate {
+	if v != nil {
+		_c.SetAttempts(*v)
+	}
+	return _c
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (_c *NotificationLogCreate) SetNextAttemptAt(v time.Time) *NotificationLogCreate {
+	_c.mutation.SetNextAttemptAt(v)
+	return _c
+}
+
+// SetNillableNextAttemptAt sets the "next_attempt_at" field if the given value is not nil.
+func (_c *NotificationLogCreate) SetNillableNextAttemptAt(v *time.Time) *NotificationLogCreate {
+	if v != nil {
+		_c.SetNextAttemptAt(*v)
+	}
+	return _c
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (_c *NotificationLogCreate) SetLeaseUntil(v time.Time) *NotificationLogCreate {
+	_c.mutation.SetLeaseUntil(v)
+	return _c
+}
+
+// SetNillableLeaseUntil sets the "lease_until" field if the given value is not nil.
+func (_c *NotificationLogCreate) SetNillableLeaseUntil(v *time.Time) *NotificationLogCreate {
+	if v != nil {
+		_c.SetLeaseUntil(*v)
+	}
+	return _c
+}
+
+// SetMessageID sets the "message_id" field.
+func (_c *NotificationLogCreate) SetMessageID(v string) *NotificationLogCreate {
+	_c.mutation.SetMessageID(v)
+	return _c
+}
+
+// SetNillableMessageID sets the "message_id" field if the given value is not nil.
+func (_c *NotificationLogCreate) SetNillableMessageID(v *string) *NotificationLogCreate {
+	if v != nil {
+		_c.SetMessageID(*v)
+	}
+	return _c
+}
+
 // SetEventType sets the "event_type" field.
 func (_c *NotificationLogCreate) SetEventType(v string) *NotificationLogCreate {
 	_c.mutation.SetEventType(v)
@@ -199,6 +269,10 @@ func (_c *NotificationLogCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *NotificationLogCreate) defaults() {
+	if _, ok := _c.mutation.Attempts(); !ok {
+		v := notificationlog.DefaultAttempts
+		_c.mutation.SetAttempts(v)
+	}
 	if _, ok := _c.mutation.Locale(); !ok {
 		v := notificationlog.DefaultLocale
 		_c.mutation.SetLocale(v)
@@ -215,6 +289,19 @@ func (_c *NotificationLogCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *NotificationLogCreate) check() error {
+	if v, ok := _c.mutation.DeliveryKey(); ok {
+		if err := notificationlog.DeliveryKeyValidator(v); err != nil {
+			return &ValidationError{Name: "delivery_key", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.delivery_key": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Attempts(); !ok {
+		return &ValidationError{Name: "attempts", err: errors.New(`ent: missing required field "NotificationLog.attempts"`)}
+	}
+	if v, ok := _c.mutation.MessageID(); ok {
+		if err := notificationlog.MessageIDValidator(v); err != nil {
+			return &ValidationError{Name: "message_id", err: fmt.Errorf(`ent: validator failed for field "NotificationLog.message_id": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.EventType(); !ok {
 		return &ValidationError{Name: "event_type", err: errors.New(`ent: missing required field "NotificationLog.event_type"`)}
 	}
@@ -301,6 +388,26 @@ func (_c *NotificationLogCreate) createSpec() (*NotificationLog, *sqlgraph.Creat
 		_node.ID = id
 		_spec.ID.Value = id
 	}
+	if value, ok := _c.mutation.DeliveryKey(); ok {
+		_spec.SetField(notificationlog.FieldDeliveryKey, field.TypeString, value)
+		_node.DeliveryKey = &value
+	}
+	if value, ok := _c.mutation.Attempts(); ok {
+		_spec.SetField(notificationlog.FieldAttempts, field.TypeInt, value)
+		_node.Attempts = value
+	}
+	if value, ok := _c.mutation.NextAttemptAt(); ok {
+		_spec.SetField(notificationlog.FieldNextAttemptAt, field.TypeTime, value)
+		_node.NextAttemptAt = &value
+	}
+	if value, ok := _c.mutation.LeaseUntil(); ok {
+		_spec.SetField(notificationlog.FieldLeaseUntil, field.TypeTime, value)
+		_node.LeaseUntil = &value
+	}
+	if value, ok := _c.mutation.MessageID(); ok {
+		_spec.SetField(notificationlog.FieldMessageID, field.TypeString, value)
+		_node.MessageID = value
+	}
 	if value, ok := _c.mutation.EventType(); ok {
 		_spec.SetField(notificationlog.FieldEventType, field.TypeString, value)
 		_node.EventType = value
@@ -356,7 +463,7 @@ func (_c *NotificationLogCreate) createSpec() (*NotificationLog, *sqlgraph.Creat
 // of the `INSERT` statement. For example:
 //
 //	client.NotificationLog.Create().
-//		SetEventType(v).
+//		SetDeliveryKey(v).
 //		OnConflict(
 //			// Update the row with the new values
 //			// the was proposed for insertion.
@@ -365,7 +472,7 @@ func (_c *NotificationLogCreate) createSpec() (*NotificationLog, *sqlgraph.Creat
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.NotificationLogUpsert) {
-//			SetEventType(v+v).
+//			SetDeliveryKey(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *NotificationLogCreate) OnConflict(opts ...sql.ConflictOption) *NotificationLogUpsertOne {
@@ -400,6 +507,96 @@ type (
 		*sql.UpdateSet
 	}
 )
+
+// SetDeliveryKey sets the "delivery_key" field.
+func (u *NotificationLogUpsert) SetDeliveryKey(v string) *NotificationLogUpsert {
+	u.Set(notificationlog.FieldDeliveryKey, v)
+	return u
+}
+
+// UpdateDeliveryKey sets the "delivery_key" field to the value that was provided on create.
+func (u *NotificationLogUpsert) UpdateDeliveryKey() *NotificationLogUpsert {
+	u.SetExcluded(notificationlog.FieldDeliveryKey)
+	return u
+}
+
+// ClearDeliveryKey clears the value of the "delivery_key" field.
+func (u *NotificationLogUpsert) ClearDeliveryKey() *NotificationLogUpsert {
+	u.SetNull(notificationlog.FieldDeliveryKey)
+	return u
+}
+
+// SetAttempts sets the "attempts" field.
+func (u *NotificationLogUpsert) SetAttempts(v int) *NotificationLogUpsert {
+	u.Set(notificationlog.FieldAttempts, v)
+	return u
+}
+
+// UpdateAttempts sets the "attempts" field to the value that was provided on create.
+func (u *NotificationLogUpsert) UpdateAttempts() *NotificationLogUpsert {
+	u.SetExcluded(notificationlog.FieldAttempts)
+	return u
+}
+
+// AddAttempts adds v to the "attempts" field.
+func (u *NotificationLogUpsert) AddAttempts(v int) *NotificationLogUpsert {
+	u.Add(notificationlog.FieldAttempts, v)
+	return u
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (u *NotificationLogUpsert) SetNextAttemptAt(v time.Time) *NotificationLogUpsert {
+	u.Set(notificationlog.FieldNextAttemptAt, v)
+	return u
+}
+
+// UpdateNextAttemptAt sets the "next_attempt_at" field to the value that was provided on create.
+func (u *NotificationLogUpsert) UpdateNextAttemptAt() *NotificationLogUpsert {
+	u.SetExcluded(notificationlog.FieldNextAttemptAt)
+	return u
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (u *NotificationLogUpsert) ClearNextAttemptAt() *NotificationLogUpsert {
+	u.SetNull(notificationlog.FieldNextAttemptAt)
+	return u
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (u *NotificationLogUpsert) SetLeaseUntil(v time.Time) *NotificationLogUpsert {
+	u.Set(notificationlog.FieldLeaseUntil, v)
+	return u
+}
+
+// UpdateLeaseUntil sets the "lease_until" field to the value that was provided on create.
+func (u *NotificationLogUpsert) UpdateLeaseUntil() *NotificationLogUpsert {
+	u.SetExcluded(notificationlog.FieldLeaseUntil)
+	return u
+}
+
+// ClearLeaseUntil clears the value of the "lease_until" field.
+func (u *NotificationLogUpsert) ClearLeaseUntil() *NotificationLogUpsert {
+	u.SetNull(notificationlog.FieldLeaseUntil)
+	return u
+}
+
+// SetMessageID sets the "message_id" field.
+func (u *NotificationLogUpsert) SetMessageID(v string) *NotificationLogUpsert {
+	u.Set(notificationlog.FieldMessageID, v)
+	return u
+}
+
+// UpdateMessageID sets the "message_id" field to the value that was provided on create.
+func (u *NotificationLogUpsert) UpdateMessageID() *NotificationLogUpsert {
+	u.SetExcluded(notificationlog.FieldMessageID)
+	return u
+}
+
+// ClearMessageID clears the value of the "message_id" field.
+func (u *NotificationLogUpsert) ClearMessageID() *NotificationLogUpsert {
+	u.SetNull(notificationlog.FieldMessageID)
+	return u
+}
 
 // SetEventType sets the "event_type" field.
 func (u *NotificationLogUpsert) SetEventType(v string) *NotificationLogUpsert {
@@ -624,6 +821,111 @@ func (u *NotificationLogUpsertOne) Update(set func(*NotificationLogUpsert)) *Not
 		set(&NotificationLogUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetDeliveryKey sets the "delivery_key" field.
+func (u *NotificationLogUpsertOne) SetDeliveryKey(v string) *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetDeliveryKey(v)
+	})
+}
+
+// UpdateDeliveryKey sets the "delivery_key" field to the value that was provided on create.
+func (u *NotificationLogUpsertOne) UpdateDeliveryKey() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateDeliveryKey()
+	})
+}
+
+// ClearDeliveryKey clears the value of the "delivery_key" field.
+func (u *NotificationLogUpsertOne) ClearDeliveryKey() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearDeliveryKey()
+	})
+}
+
+// SetAttempts sets the "attempts" field.
+func (u *NotificationLogUpsertOne) SetAttempts(v int) *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetAttempts(v)
+	})
+}
+
+// AddAttempts adds v to the "attempts" field.
+func (u *NotificationLogUpsertOne) AddAttempts(v int) *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.AddAttempts(v)
+	})
+}
+
+// UpdateAttempts sets the "attempts" field to the value that was provided on create.
+func (u *NotificationLogUpsertOne) UpdateAttempts() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateAttempts()
+	})
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (u *NotificationLogUpsertOne) SetNextAttemptAt(v time.Time) *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetNextAttemptAt(v)
+	})
+}
+
+// UpdateNextAttemptAt sets the "next_attempt_at" field to the value that was provided on create.
+func (u *NotificationLogUpsertOne) UpdateNextAttemptAt() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateNextAttemptAt()
+	})
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (u *NotificationLogUpsertOne) ClearNextAttemptAt() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearNextAttemptAt()
+	})
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (u *NotificationLogUpsertOne) SetLeaseUntil(v time.Time) *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetLeaseUntil(v)
+	})
+}
+
+// UpdateLeaseUntil sets the "lease_until" field to the value that was provided on create.
+func (u *NotificationLogUpsertOne) UpdateLeaseUntil() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateLeaseUntil()
+	})
+}
+
+// ClearLeaseUntil clears the value of the "lease_until" field.
+func (u *NotificationLogUpsertOne) ClearLeaseUntil() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearLeaseUntil()
+	})
+}
+
+// SetMessageID sets the "message_id" field.
+func (u *NotificationLogUpsertOne) SetMessageID(v string) *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetMessageID(v)
+	})
+}
+
+// UpdateMessageID sets the "message_id" field to the value that was provided on create.
+func (u *NotificationLogUpsertOne) UpdateMessageID() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateMessageID()
+	})
+}
+
+// ClearMessageID clears the value of the "message_id" field.
+func (u *NotificationLogUpsertOne) ClearMessageID() *NotificationLogUpsertOne {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearMessageID()
+	})
 }
 
 // SetEventType sets the "event_type" field.
@@ -964,7 +1266,7 @@ func (_c *NotificationLogCreateBulk) ExecX(ctx context.Context) {
 //		// Override some of the fields with custom
 //		// update values.
 //		Update(func(u *ent.NotificationLogUpsert) {
-//			SetEventType(v+v).
+//			SetDeliveryKey(v+v).
 //		}).
 //		Exec(ctx)
 func (_c *NotificationLogCreateBulk) OnConflict(opts ...sql.ConflictOption) *NotificationLogUpsertBulk {
@@ -1044,6 +1346,111 @@ func (u *NotificationLogUpsertBulk) Update(set func(*NotificationLogUpsert)) *No
 		set(&NotificationLogUpsert{UpdateSet: update})
 	}))
 	return u
+}
+
+// SetDeliveryKey sets the "delivery_key" field.
+func (u *NotificationLogUpsertBulk) SetDeliveryKey(v string) *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetDeliveryKey(v)
+	})
+}
+
+// UpdateDeliveryKey sets the "delivery_key" field to the value that was provided on create.
+func (u *NotificationLogUpsertBulk) UpdateDeliveryKey() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateDeliveryKey()
+	})
+}
+
+// ClearDeliveryKey clears the value of the "delivery_key" field.
+func (u *NotificationLogUpsertBulk) ClearDeliveryKey() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearDeliveryKey()
+	})
+}
+
+// SetAttempts sets the "attempts" field.
+func (u *NotificationLogUpsertBulk) SetAttempts(v int) *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetAttempts(v)
+	})
+}
+
+// AddAttempts adds v to the "attempts" field.
+func (u *NotificationLogUpsertBulk) AddAttempts(v int) *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.AddAttempts(v)
+	})
+}
+
+// UpdateAttempts sets the "attempts" field to the value that was provided on create.
+func (u *NotificationLogUpsertBulk) UpdateAttempts() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateAttempts()
+	})
+}
+
+// SetNextAttemptAt sets the "next_attempt_at" field.
+func (u *NotificationLogUpsertBulk) SetNextAttemptAt(v time.Time) *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetNextAttemptAt(v)
+	})
+}
+
+// UpdateNextAttemptAt sets the "next_attempt_at" field to the value that was provided on create.
+func (u *NotificationLogUpsertBulk) UpdateNextAttemptAt() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateNextAttemptAt()
+	})
+}
+
+// ClearNextAttemptAt clears the value of the "next_attempt_at" field.
+func (u *NotificationLogUpsertBulk) ClearNextAttemptAt() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearNextAttemptAt()
+	})
+}
+
+// SetLeaseUntil sets the "lease_until" field.
+func (u *NotificationLogUpsertBulk) SetLeaseUntil(v time.Time) *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetLeaseUntil(v)
+	})
+}
+
+// UpdateLeaseUntil sets the "lease_until" field to the value that was provided on create.
+func (u *NotificationLogUpsertBulk) UpdateLeaseUntil() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateLeaseUntil()
+	})
+}
+
+// ClearLeaseUntil clears the value of the "lease_until" field.
+func (u *NotificationLogUpsertBulk) ClearLeaseUntil() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearLeaseUntil()
+	})
+}
+
+// SetMessageID sets the "message_id" field.
+func (u *NotificationLogUpsertBulk) SetMessageID(v string) *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.SetMessageID(v)
+	})
+}
+
+// UpdateMessageID sets the "message_id" field to the value that was provided on create.
+func (u *NotificationLogUpsertBulk) UpdateMessageID() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.UpdateMessageID()
+	})
+}
+
+// ClearMessageID clears the value of the "message_id" field.
+func (u *NotificationLogUpsertBulk) ClearMessageID() *NotificationLogUpsertBulk {
+	return u.Update(func(s *NotificationLogUpsert) {
+		s.ClearMessageID()
+	})
 }
 
 // SetEventType sets the "event_type" field.
