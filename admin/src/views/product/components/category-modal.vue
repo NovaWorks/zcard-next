@@ -5,6 +5,7 @@
  */
 import { ref, reactive, computed, watch } from "vue";
 import MediaField from "@/components/common/media-picker/media-field.vue";
+import CategoryPlacements from "./category-placements.vue";
 import CategoryIcon from "@/components/common/category-icon.vue";
 import { checkAuth } from "@/directives";
 import { NCard, NButton, NTag, NInput, NInputNumber, NSelect, NModal, NDropdown, NTooltip, NCheckbox, NPopconfirm, NPopover } from "naive-ui";
@@ -28,6 +29,7 @@ const emit = defineEmits<{
   (e: "created", id: number): void;
 }>();
 
+const placementCategory=ref<any | null>(null);
 const loading = ref(false);
 const categories = ref<any[]>([]);
 
@@ -228,6 +230,7 @@ async function toggleVisibility(cat: any) {
 }
 
 const menuOptions = computed<DropdownOption[]>(() => [
+  {label:"置顶与推荐",key:"placements"},
   ...(canWrite.value ? [
     { label: "添加子分类", key: "child" },
     { label: "重命名", key: "rename" },
@@ -270,6 +273,7 @@ async function saveParent() {
 }
 
 function handleMenu(key: string | number, cat: any) {
+  if(key === "placements"){placementCategory.value=cat;return}
   if (key === "child") {
     resetCreate();
     newParent.value = cat.id;
@@ -720,6 +724,7 @@ async function onSortBlur(cat: any) {
       </div>
     </NScrollbar>
 
+    <CategoryPlacements :show="!!placementCategory" :category-id="placementCategory?.id || 0" :category-name="placementCategory?.path || ''" :categories="categories" @update:show="!$event && (placementCategory=null)" />
     <NModal :show="!!moving" preset="card" title="调整上级分类" style="width: 480px; max-width: 94vw"
       :closable="!moveSaving" :mask-closable="!moveSaving" :close-on-esc="!moveSaving" @update:show="!$event && !moveSaving && (moving = null)">
       <p class="mb-12px">为「{{ moving?.name }}」选择上级分类，子分类将随其一起移动。</p>

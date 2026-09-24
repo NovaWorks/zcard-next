@@ -47,6 +47,10 @@ func (Product) Fields() []ent.Field {
 		field.Uint64("upstream_source_id").Optional().Comment("货源连接（NULL=自营；M2）"),
 		field.String("upstream_product_code").MaxLen(128).Optional().Comment("上游商品标识（M2）"),
 		field.Time("upstream_synced_at").SchemaType(mysqlTime).Optional(),
+		field.Bool("is_locked").Default(false),
+		field.Int64("lock_version").Default(0),
+		field.Uint64("locked_by").Default(0),
+		field.Time("locked_at").SchemaType(mysqlTime).Optional().Nillable(),
 	}
 }
 

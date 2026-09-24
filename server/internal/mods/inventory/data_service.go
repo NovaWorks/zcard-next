@@ -61,6 +61,9 @@ func (s *AdminInventoryService) ImportConfirm(ctx context.Context, req *adminv1.
 		Dedup:     req.GetDedup(),
 	})
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("inventory.IMPORT_FAILED", "导入失败")
 	}
 	return toImportBatch(imp), nil
@@ -82,6 +85,9 @@ func (s *AdminInventoryService) ListImports(ctx context.Context, req *adminv1.Li
 // CancelImport 撤销批次。
 func (s *AdminInventoryService) CancelImport(ctx context.Context, req *adminv1.CancelImportRequest) (*emptypb.Empty, error) {
 	if err := s.repo.CancelImport(ctx, req.GetId()); err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("inventory.CANCEL_FAILED", "撤销失败")
 	}
 	return &emptypb.Empty{}, nil
@@ -160,7 +166,7 @@ func (s *AdminInventoryService) ExportCards(ctx context.Context, req *adminv1.Ex
 }
 
 // ToggleCard 禁用/启用。
-func (s *AdminInventoryService) ToggleCard(ctx context.Context, req *adminv1.ToggleCardRequest) (*emptypb.Empty, error) {
+func (s *AdminInventoryService) toggleCard(ctx context.Context, req *adminv1.ToggleCardRequest) (*emptypb.Empty, error) {
 	from, to := card.StatusAvailable, card.StatusDisabled
 	if req.GetEnable() {
 		from, to = card.StatusDisabled, card.StatusAvailable
@@ -269,3 +275,18 @@ func maskContent(plain string) string {
 }
 
 var _ = strings.TrimSpace
+
+func (s *AdminInventoryService) ToggleCard(ctx context.Context, req *adminv1.ToggleCardRequest) (out *emptypb.Empty, err error) {
+	err = data.Tx(ctx, s.data, func(ctx context.Context) error {
+		row, e := data.Client(ctx, s.data).Card.Get(ctx, req.Id)
+		if e != nil {
+			return e
+		}
+		if _, e = data.GuardProductWrite(ctx, s.data, row.ProductID); e != nil {
+			return e
+		}
+		out, e = s.toggleCard(ctx, req)
+		return e
+	})
+	return
+}

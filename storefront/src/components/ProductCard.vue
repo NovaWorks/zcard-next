@@ -12,7 +12,7 @@
     <div class="pc-body">
       <div class="pc-heading">
         <div class="pc-name" :title="p.name">{{ p.name }}</div>
-        <span v-if="p.is_recommend" class="pc-recommend-tag">推荐</span>
+        <span v-if="p.is_recommend || p.category_recommend" class="pc-recommend-tag">推荐</span>
       </div>
       <div class="pc-price">{{ formatMoney(flash.price(p.price_cents, p.flash_sale)) }}<span v-if="flash.active(p.flash_sale)" class="pc-flash-label">{{ (p.flash_sale?.remaining || 0) > 0 ? '秒杀' : '已抢完' }}</span></div>
       <div v-if="showSales || showStock" class="pc-meta">

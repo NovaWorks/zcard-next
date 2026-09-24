@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/inventory"
@@ -116,6 +117,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 		LocalOnly:         req.GetLocalOnly(),
 		StockType:         req.GetStockType(),
 		OptionsOnly:       req.GetOptionsOnly(),
+		IsLocked:          req.IsLocked,
 	})
 	if err != nil {
 		return nil, errors.InternalServer("catalog.LIST_FAILED", "读取商品失败")
@@ -123,7 +125,7 @@ func (s *AdminCatalogService) ListProducts(ctx context.Context, req *adminv1.Lis
 	reply := &adminv1.ListProductsReply{Products: make([]*adminv1.AdminProduct, 0, len(rows))}
 	for _, p := range rows {
 		if req.GetOptionsOnly() {
-			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, StockType: string(p.StockType)})
+			reply.Products = append(reply.Products, &adminv1.AdminProduct{Id: p.ID, Name: p.Name, CategoryId: p.CategoryID, PriceCents: p.Price, StockType: string(p.StockType), IsLocked: p.IsLocked, LockVersion: p.LockVersion, Status: int32(p.Status), Cover: p.Cover, UpstreamSourceId: p.UpstreamSourceID})
 		} else {
 			reply.Products = append(reply.Products, ToAdminPB(p))
 		}
@@ -214,6 +216,9 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 		return nil, errors.NotFound("catalog.PRODUCT_NOT_FOUND", "商品不存在")
 	}
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("catalog.GET_FAILED", "读取商品失败")
 	}
 	stockType := req.GetStockType()
@@ -240,6 +245,9 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 	}
 	p, err := s.repo.UpdateProduct(ctx, req.GetId(), in)
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("catalog.UPDATE_FAILED", "更新失败")
 	}
 	return ToAdminPB(p), nil
@@ -247,11 +255,14 @@ func (s *AdminCatalogService) UpdateProduct(ctx context.Context, req *adminv1.Up
 
 // BatchUpdateProductStatus 批量上下架（列表多选）。
 func (s *AdminCatalogService) BatchUpdateProductStatus(ctx context.Context, req *adminv1.BatchUpdateProductStatusRequest) (*adminv1.BatchUpdateProductStatusReply, error) {
-	n, err := s.repo.BatchUpdateStatus(ctx, req.GetIds(), int8(req.GetStatus()))
+	if req.Status < 0 || req.Status > 2 {
+		return nil, errors.BadRequest("catalog.STATUS_INVALID", "请选择有效的上下架状态")
+	}
+	n, skipped, err := s.repo.batchStatus(ctx, req.GetIds(), int8(req.GetStatus()))
 	if err != nil {
 		return nil, errors.BadRequest("catalog.BATCH_STATUS_INVALID", err.Error())
 	}
-	return &adminv1.BatchUpdateProductStatusReply{Updated: int32(n)}, nil
+	return &adminv1.BatchUpdateProductStatusReply{Updated: int32(n), SkippedLocked: skipped}, nil
 }
 
 // ── 分类 ──
@@ -288,6 +299,9 @@ func (s *AdminCatalogService) CreateCategory(ctx context.Context, req *adminv1.C
 func (s *AdminCatalogService) UpdateCategory(ctx context.Context, req *adminv1.UpdateCategoryRequest) (*adminv1.Category, error) {
 	c, err := s.repo.UpdateCategory(ctx, req.GetId(), req.GetName(), req.Icon, req.Hide, req.Sort, req.ParentId)
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		if strings.Contains(err.Error(), "CATEGORY_CYCLE") {
 			return nil, errors.BadRequest("catalog.CATEGORY_CYCLE", "不能把分类移到自身或它的子分类下")
 		}
@@ -302,6 +316,9 @@ func (s *AdminCatalogService) UpdateCategory(ctx context.Context, req *adminv1.U
 // ReorderCategories 分类排序（拖拽重排：某层级兄弟按 ids 顺序归一化 sort）。
 func (s *AdminCatalogService) ReorderCategories(ctx context.Context, req *adminv1.ReorderCategoriesRequest) (*emptypb.Empty, error) {
 	if err := s.repo.ReorderCategories(ctx, req.GetParentId(), req.GetIds()); err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		if strings.Contains(err.Error(), "CATEGORY_CYCLE") {
 			return nil, errors.BadRequest("catalog.CATEGORY_CYCLE", "不能把分类移到自身或它的子分类下")
 		}
@@ -375,6 +392,9 @@ func (s *AdminCatalogService) CreateControl(ctx context.Context, req *adminv1.Cr
 	}
 	c, err := s.repo.CreateProductControl(ctx, req.GetProductId(), 0, req.GetName(), req.GetType(), req.GetRequired(), req.GetOptions(), req.GetSort(), ControlSettings{Placeholder: req.GetPlaceholder(), Validation: req.GetValidation(), MaxLength: req.MaxLength})
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("catalog.CONTROL_CREATE_FAILED", "创建失败")
 	}
 	return toControlPB(c), nil
@@ -384,6 +404,9 @@ func (s *AdminCatalogService) CreateControl(ctx context.Context, req *adminv1.Cr
 func (s *AdminCatalogService) UpdateControl(ctx context.Context, req *adminv1.UpdateControlRequest) (*adminv1.AdminControl, error) {
 	c, err := s.repo.UpdateProductControl(ctx, req.GetId(), req.GetName(), req.GetType(), req.GetRequired(), req.GetOptions(), req.GetSort(), ControlSettings{Placeholder: req.GetPlaceholder(), Validation: req.GetValidation(), MaxLength: req.MaxLength})
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.NotFound("catalog.CONTROL_NOT_FOUND", "控件不存在")
 	}
 	return toControlPB(c), nil
@@ -392,6 +415,9 @@ func (s *AdminCatalogService) UpdateControl(ctx context.Context, req *adminv1.Up
 // DeleteControl 删除控件。
 func (s *AdminCatalogService) DeleteControl(ctx context.Context, req *adminv1.DeleteControlRequest) (*emptypb.Empty, error) {
 	if err := s.repo.DeleteProductControl(ctx, req.GetId()); err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.NotFound("catalog.CONTROL_NOT_FOUND", "控件不存在")
 	}
 	return &emptypb.Empty{}, nil
@@ -445,6 +471,9 @@ func (s *AdminCatalogService) CreateVirtualReview(ctx context.Context, req *admi
 		sanitize.Text(req.GetNickname()), sanitize.HTML(req.GetContent()),
 		int8(req.GetRating()), req.GetSort())
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("catalog.VIRTUAL_REVIEW_CREATE_FAILED", "创建失败")
 	}
 	return toVirtualReviewPB(v), nil
@@ -476,6 +505,9 @@ func (s *AdminCatalogService) CreateSku(ctx context.Context, req *adminv1.Create
 		StockOffset: req.GetStockOffset(), UpstreamSkuID: req.GetUpstreamSkuId(), FulfillmentMode: req.GetFulfillmentMode(),
 	})
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("catalog.SKU_CREATE_FAILED", "创建失败（规格名可能重复）")
 	}
 	return toSkuPB(sku), nil
@@ -493,6 +525,9 @@ func (s *AdminCatalogService) UpdateSku(ctx context.Context, req *adminv1.Update
 		return nil, errors.NotFound("catalog.SKU_NOT_FOUND", "SKU 不存在")
 	}
 	if err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.InternalServer("catalog.SKU_UPDATE_FAILED", "更新失败")
 	}
 	return toSkuPB(sku), nil
@@ -501,6 +536,9 @@ func (s *AdminCatalogService) UpdateSku(ctx context.Context, req *adminv1.Update
 // DeleteSku 删除 SKU。
 func (s *AdminCatalogService) DeleteSku(ctx context.Context, req *adminv1.DeleteSkuRequest) (*emptypb.Empty, error) {
 	if err := s.repo.DeleteSku(ctx, req.GetId()); err != nil {
+		if data.IsProductLocked(err) {
+			return nil, err
+		}
 		return nil, errors.NotFound("catalog.SKU_NOT_FOUND", "SKU 不存在")
 	}
 	return &emptypb.Empty{}, nil

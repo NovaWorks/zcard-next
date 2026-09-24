@@ -24,6 +24,7 @@ func (Category) Fields() []ent.Field {
 		field.Bool("hide").Default(false),
 		field.Int32("sort").Default(0),
 		field.JSON("visible_subsites", []uint64{}).Optional().Comment("分站可见性白名单（空=全部可见）"),
+		field.Int64("placement_version").Default(0),
 	}
 }
 

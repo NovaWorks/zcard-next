@@ -37,8 +37,10 @@ type ProductContentBatch struct {
 	// Matched holds the value of the "matched" field.
 	Matched int32 `json:"matched,omitempty"`
 	// Changed holds the value of the "changed" field.
-	Changed      int32 `json:"changed,omitempty"`
-	selectValues sql.SelectValues
+	Changed int32 `json:"changed,omitempty"`
+	// SkippedLocked holds the value of the "skipped_locked" field.
+	SkippedLocked int32 `json:"skipped_locked,omitempty"`
+	selectValues  sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -50,7 +52,7 @@ func (*ProductContentBatch) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case productcontentbatch.FieldCompleted:
 			values[i] = new(sql.NullBool)
-		case productcontentbatch.FieldID, productcontentbatch.FieldSubsiteID, productcontentbatch.FieldActorID, productcontentbatch.FieldMatched, productcontentbatch.FieldChanged:
+		case productcontentbatch.FieldID, productcontentbatch.FieldSubsiteID, productcontentbatch.FieldActorID, productcontentbatch.FieldMatched, productcontentbatch.FieldChanged, productcontentbatch.FieldSkippedLocked:
 			values[i] = new(sql.NullInt64)
 		case productcontentbatch.FieldToken:
 			values[i] = new(sql.NullString)
@@ -139,6 +141,12 @@ func (_m *ProductContentBatch) assignValues(columns []string, values []any) erro
 			} else if value.Valid {
 				_m.Changed = int32(value.Int64)
 			}
+		case productcontentbatch.FieldSkippedLocked:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field skipped_locked", values[i])
+			} else if value.Valid {
+				_m.SkippedLocked = int32(value.Int64)
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -204,6 +212,9 @@ func (_m *ProductContentBatch) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("changed=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Changed))
+	builder.WriteString(", ")
+	builder.WriteString("skipped_locked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SkippedLocked))
 	builder.WriteByte(')')
 	return builder.String()
 }

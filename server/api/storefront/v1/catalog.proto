@@ -111,6 +111,8 @@ message Product {
   int64 stock_reference = 18; // 仅供展示的上次库存，不作为购买校验依据
   int64 stock_checked_at = 19; // 上次库存查询时间
   FlashOffer flash_sale = 20;
+  bool category_recommend = 23;
+  bool category_pinned = 24;
 
 }
 

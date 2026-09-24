@@ -21,7 +21,7 @@ func (r *ProductRepoImpl) ListProductControls(ctx context.Context, productID uin
 }
 
 // CreateProductControl 创建控件。
-func (r *ProductRepoImpl) CreateProductControl(ctx context.Context, productID, subsiteID uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
+func (r *ProductRepoImpl) createProductControl(ctx context.Context, productID, subsiteID uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
 	if subsiteID == 0 {
 		subsiteID = tenancy.FromContext(ctx).SubsiteID
 	}
@@ -51,7 +51,7 @@ func (r *ProductRepoImpl) CreateProductControl(ctx context.Context, productID, s
 }
 
 // UpdateProductControl 更新控件。
-func (r *ProductRepoImpl) UpdateProductControl(ctx context.Context, id uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
+func (r *ProductRepoImpl) updateProductControl(ctx context.Context, id uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
 	q := data.Client(ctx, r.data).ProductControl.UpdateOneID(id)
 	if len(settings) > 0 {
 		v := settings[0]
@@ -80,7 +80,7 @@ func (r *ProductRepoImpl) UpdateProductControl(ctx context.Context, id uint64, n
 }
 
 // DeleteProductControl 删除控件。
-func (r *ProductRepoImpl) DeleteProductControl(ctx context.Context, id uint64) error {
+func (r *ProductRepoImpl) deleteProductControl(ctx context.Context, id uint64) error {
 	return data.Client(ctx, r.data).ProductControl.DeleteOneID(id).Exec(ctx)
 }
 
@@ -100,4 +100,49 @@ func (v ControlSettings) validate() error {
 		return fmt.Errorf("长度限制须为1至4000")
 	}
 	return nil
+}
+
+func (r *ProductRepoImpl) CreateProductControl(ctx context.Context, productID, subsiteID uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (out *ent.ProductControl, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+
+		if _, e := data.GuardProductWrite(ctx, r.data, productID); e != nil {
+			return e
+		}
+
+		var inner error
+		out, inner = r.createProductControl(ctx, productID, subsiteID, name, typ, required, options, sort, settings...)
+		return inner
+	})
+	return
+}
+
+func (r *ProductRepoImpl) UpdateProductControl(ctx context.Context, id uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (out *ent.ProductControl, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		row, e := data.Client(ctx, r.data).ProductControl.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		if _, e := data.GuardProductWrite(ctx, r.data, row.ProductID); e != nil {
+			return e
+		}
+
+		var inner error
+		out, inner = r.updateProductControl(ctx, id, name, typ, required, options, sort, settings...)
+		return inner
+	})
+	return
+}
+
+func (r *ProductRepoImpl) DeleteProductControl(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		row, e := data.Client(ctx, r.data).ProductControl.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		if _, e := data.GuardProductWrite(ctx, r.data, row.ProductID); e != nil {
+			return e
+		}
+
+		return r.deleteProductControl(ctx, id)
+	})
 }

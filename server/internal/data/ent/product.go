@@ -78,6 +78,14 @@ type Product struct {
 	UpstreamProductCode string `json:"upstream_product_code,omitempty"`
 	// UpstreamSyncedAt holds the value of the "upstream_synced_at" field.
 	UpstreamSyncedAt time.Time `json:"upstream_synced_at,omitempty"`
+	// IsLocked holds the value of the "is_locked" field.
+	IsLocked bool `json:"is_locked,omitempty"`
+	// LockVersion holds the value of the "lock_version" field.
+	LockVersion int64 `json:"lock_version,omitempty"`
+	// LockedBy holds the value of the "locked_by" field.
+	LockedBy uint64 `json:"locked_by,omitempty"`
+	// LockedAt holds the value of the "locked_at" field.
+	LockedAt *time.Time `json:"locked_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the ProductQuery when eager-loading is set.
 	Edges        ProductEdges `json:"edges"`
@@ -120,13 +128,13 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
-		case product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend:
+		case product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
-		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID:
+		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
 		case product.FieldName, product.FieldSlug, product.FieldDescription, product.FieldCover, product.FieldStockType, product.FieldFulfillmentMode, product.FieldDeliveryMode, product.FieldUpstreamProductCode:
 			values[i] = new(sql.NullString)
-		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt:
+		case product.FieldCreatedAt, product.FieldUpdatedAt, product.FieldUpstreamSyncedAt, product.FieldLockedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -335,6 +343,31 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UpstreamSyncedAt = value.Time
 			}
+		case product.FieldIsLocked:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field is_locked", values[i])
+			} else if value.Valid {
+				_m.IsLocked = value.Bool
+			}
+		case product.FieldLockVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field lock_version", values[i])
+			} else if value.Valid {
+				_m.LockVersion = value.Int64
+			}
+		case product.FieldLockedBy:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field locked_by", values[i])
+			} else if value.Valid {
+				_m.LockedBy = uint64(value.Int64)
+			}
+		case product.FieldLockedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field locked_at", values[i])
+			} else if value.Valid {
+				_m.LockedAt = new(time.Time)
+				*_m.LockedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -470,6 +503,20 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("upstream_synced_at=")
 	builder.WriteString(_m.UpstreamSyncedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("is_locked=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IsLocked))
+	builder.WriteString(", ")
+	builder.WriteString("lock_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LockVersion))
+	builder.WriteString(", ")
+	builder.WriteString("locked_by=")
+	builder.WriteString(fmt.Sprintf("%v", _m.LockedBy))
+	builder.WriteString(", ")
+	if v := _m.LockedAt; v != nil {
+		builder.WriteString("locked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

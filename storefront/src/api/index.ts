@@ -47,6 +47,8 @@ export interface Product {
   stock_reference?: number;
   stock_checked_at?: number;
   is_recommend?: boolean;
+  category_recommend?: boolean;
+  category_pinned?: boolean;
   stock_visible: boolean;
   category_id: number;
   sales_count: number;

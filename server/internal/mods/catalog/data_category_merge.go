@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	placement "github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"strconv"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
@@ -24,6 +25,9 @@ func (s *AdminCatalogService) MergeCategories(ctx context.Context, req *adminv1.
 func (r *ProductRepoImpl) mergeCategories(ctx context.Context, req *adminv1.MergeCategoriesRequest) (*adminv1.MergeCategoriesReply, error) {
 	reply := &adminv1.MergeCategoriesReply{}
 	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := lockCategoryStructure(ctx, r.data); e != nil {
+			return e
+		}
 		c := data.Client(ctx, r.data)
 		sources := map[uint64]bool{}
 		for _, id := range req.SourceIds {
@@ -104,6 +108,17 @@ func (r *ProductRepoImpl) mergeCategories(ctx context.Context, req *adminv1.Merg
 		reply.Categories = int32(len(ids))
 		reply.Products = int32(products)
 		reply.Children = int32(children)
+		if e := r.guardCategoryProducts(ctx, ids); e != nil {
+			return e
+		}
+		// Source placements require an explicit decision; never silently promote them to the target.
+		has, e := c.CategoryProductPlacement.Query().Where(placement.CategoryIDIn(ids...), placement.SubsiteID(tenant)).Exist(ctx)
+		if e != nil {
+			return e
+		}
+		if has {
+			return fmt.Errorf("来源分类设置了置顶或推荐，请先在置顶与推荐面板移除配置，再合并分类")
+		}
 		if req.Preview {
 			return nil
 		}

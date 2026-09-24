@@ -36,7 +36,9 @@ type Category struct {
 	Sort int32 `json:"sort,omitempty"`
 	// 分站可见性白名单（空=全部可见）
 	VisibleSubsites []uint64 `json:"visible_subsites,omitempty"`
-	selectValues    sql.SelectValues
+	// PlacementVersion holds the value of the "placement_version" field.
+	PlacementVersion int64 `json:"placement_version,omitempty"`
+	selectValues     sql.SelectValues
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -48,7 +50,7 @@ func (*Category) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case category.FieldHide:
 			values[i] = new(sql.NullBool)
-		case category.FieldID, category.FieldSubsiteID, category.FieldParentID, category.FieldSort:
+		case category.FieldID, category.FieldSubsiteID, category.FieldParentID, category.FieldSort, category.FieldPlacementVersion:
 			values[i] = new(sql.NullInt64)
 		case category.FieldName, category.FieldIcon:
 			values[i] = new(sql.NullString)
@@ -131,6 +133,12 @@ func (_m *Category) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field visible_subsites: %w", err)
 				}
 			}
+		case category.FieldPlacementVersion:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field placement_version", values[i])
+			} else if value.Valid {
+				_m.PlacementVersion = value.Int64
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -193,6 +201,9 @@ func (_m *Category) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("visible_subsites=")
 	builder.WriteString(fmt.Sprintf("%v", _m.VisibleSubsites))
+	builder.WriteString(", ")
+	builder.WriteString("placement_version=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PlacementVersion))
 	builder.WriteByte(')')
 	return builder.String()
 }

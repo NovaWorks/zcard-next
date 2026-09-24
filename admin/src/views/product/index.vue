@@ -10,6 +10,7 @@ import { NButton, NTag, NSpace, NPopconfirm, NInputNumber, NPopover } from "naiv
 import type { DataTableColumns } from "naive-ui";
 import {
   fetchProducts,
+  setProductLock,
   fetchProduct,
   createProduct,
   updateProduct,
@@ -32,6 +33,7 @@ import CategoryIcon from "@/components/common/category-icon.vue";
 import ReviewsDrawer from "./components/reviews-drawer.vue";
 import DeleteProductModal from "./components/delete-product-modal.vue";
 import BatchContentModal from "./components/batch-content-modal.vue";
+import CategoryPlacements from "./components/category-placements.vue";
 
 const deleteTarget = ref<{ id: number; name: string } | null>(null);
 
@@ -44,6 +46,29 @@ const saving = ref(false);
 const showCreate = ref(false);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
+const editingProduct = ref<any>(null);
+const editorLocked = computed(() => !!editingProduct.value?.is_locked);
+const lockFilter = ref<string | null>(null);
+const showPlacements = ref(false);
+const batchReport = ref('');
+const batchFailures = ref<string[]>([]);
+const lockBusy = ref<number | null>(null);
+const pageLockedCount = computed(() => products.value.filter(p=>p.is_locked).length);
+const selectedCategoryName = computed(() => categories.value.find(c=>c.id===categoryFilter.value)?.name || '当前分类');
+async function changeLock(row:any) {
+  if(lockBusy.value!==null)return;
+  const next=!row.is_locked;
+  window.$dialog?.warning({title:next?'锁定商品？':'解锁商品？',content:next?`「${row.name}」锁定后不能修改或删除，批量操作及上游资料、价格、上下架同步会自动跳过。正常订单履约不受影响。`:`「${row.name}」将恢复编辑，并按原有规则参与后续上游同步。`,positiveText:next?'锁定商品':'解锁商品',negativeText:'取消',onPositiveClick:async()=>{
+    lockBusy.value=row.id;
+    try {const {data,error}=await setProductLock(row.id,next,Number(row.lock_version || 0));
+      if(error||!data){await loadList();return false}
+      checkedKeys.value=checkedKeys.value.filter(id=>id!==row.id);
+      if(editingId.value===row.id){editingProduct.value={...editingProduct.value,...data};}
+      window.$message?.success(next?'商品已锁定，批量操作将自动跳过':'商品已解锁');await loadList();
+    }finally{lockBusy.value=null}
+  }});
+}
+
 const controlPanel = ref<InstanceType<typeof ControlPanel> | null>(null);
 const initialProduct = ref("");
 const independentlySaved = ref(false);
@@ -119,11 +144,11 @@ const batchContentIDs = ref<number[]>([]);
 const batchContentCategory = ref<number | null>(null);
 const offPageSelected = computed(() => checkedKeys.value.filter(id => !products.value.some(p => p.id === id)).length);
 const contentProtection = ref({ cover: false, description: false });
-watch([keyword, categoryFilter, supplyFilter, statusFilter], () => { checkedKeys.value = []; }, { flush: "sync" });
+watch([keyword, categoryFilter, supplyFilter, statusFilter, lockFilter], () => { checkedKeys.value = []; }, { flush: "sync" });
 function updateCheckedKeys(keys: Array<string | number>) {
   if (loading.value) return;
   const pageIDs = new Set(products.value.map(p => p.id));
-  checkedKeys.value = [...new Set([...checkedKeys.value.filter(id => !pageIDs.has(id)), ...keys.map(Number)])];
+  checkedKeys.value = [...new Set([...checkedKeys.value.filter(id => !pageIDs.has(id)), ...keys.map(Number).filter(id=>!products.value.find(p=>p.id===id)?.is_locked)])];
 }
 function openBatchContent() {
   batchContentIDs.value = [...checkedKeys.value];
@@ -143,6 +168,7 @@ function draftKey(row: any, field: "price" | "cost") {
 }
 
 async function commitCellEdit(row: any, field: "price" | "cost") {
+  if(row.is_locked)return;
   const key = draftKey(row, field);
   const draft = cellDraft[key];
   cellPopover[key] = false; // 无论成败先收气泡
@@ -175,6 +201,7 @@ async function commitCellEdit(row: any, field: "price" | "cost") {
 // 推荐开关（列表快速设置）：同改价套路——携带行内既有字段防全量语义清零
 // （status/sort/factory_price/points_required/stock_visible 在服务端恒写入，缺省即被置零）
 async function toggleRecommend(row: any) {
+  if(row.is_locked)return;
   const v = !row.is_recommend;
   const payload: Record<string, any> = {
     factory_price_cents: row.factory_price_cents || 0,
@@ -201,7 +228,7 @@ function priceLine(row: any, field: "price" | "cost") {
   return h("div", { class: "money-cell group inline-flex items-center gap-4px" }, [
     h("span", {}, cents ? formatMoney(cents) : "-"),
     // 改价铅笔仅 catalog:write 可见（渲染函数内求值，权限变更后随表格重渲染生效）
-    checkAuth("catalog:write")
+    checkAuth("catalog:write") && !row.is_locked
       ? h(
       NPopover,
       {
@@ -381,7 +408,7 @@ function stepNext() {
 }
 
 const columns: DataTableColumns<any> = [
-  { type: "selection" },
+  { type: "selection", disabled: (row:any) => !!row.is_locked },
   { title: "ID", key: "id", width: 56 },
   {
     title: "封面",
@@ -425,13 +452,11 @@ const columns: DataTableColumns<any> = [
     title: "商品名",
     key: "name",
     minWidth: 140,
-    render: (row) =>
-      row.is_recommend
-        ? h("span", { class: "inline-flex items-center gap-4px" }, [
-            h("span", null, row.name),
-            h(NTag, { size: "tiny", type: "warning", bordered: false }, { default: () => "推荐" }),
-          ])
-        : row.name,
+    render: (row) => h("div", {class:"flex flex-col gap-4px"}, [
+      h("span",null,row.name),
+      row.is_locked ? h(NTag,{size:"small",bordered:false},{default:()=>"已锁定 · 批量操作自动跳过"}) : null,
+      row.is_recommend ? h(NTag,{size:"small",type:"warning",bordered:false},{default:()=>"首页推荐"}) : null,
+    ]),
   },
   {
     title: "分类",
@@ -500,7 +525,7 @@ const columns: DataTableColumns<any> = [
     title: "状态",
     key: "status",
     width: 84,
-    render: (row) =>
+    render: (row) => row.is_locked || !checkAuth("catalog:write") ? h(NTag,{size:"small",bordered:false},{default:()=>row.status===1?"已上架":row.status===2?"已隐藏":"已下架"}) :
       // 标签即开关（大厂模式）：点击标签 Popconfirm 确认上下架
       h(
         NPopconfirm,
@@ -533,11 +558,11 @@ const columns: DataTableColumns<any> = [
   },
   {
     // 推荐列（标签即开关，与状态列同款）：点击切换首页推荐——列表直接可设，无需进编辑表单
-    title: "推荐",
+    title: "首页推荐",
     key: "is_recommend",
     width: 84,
     render: (row) => {
-      if (!checkAuth("catalog:write")) {
+      if (row.is_locked || !checkAuth("catalog:write")) {
         return h(
           NTag,
           { type: row.is_recommend ? "warning" : "default", size: "small", bordered: false },
@@ -569,7 +594,7 @@ const columns: DataTableColumns<any> = [
   {
     title: "操作",
     key: "actions",
-    width: 130,
+    width: 180,
     render: (row) =>
       h(
         NSpace,
@@ -580,9 +605,10 @@ const columns: DataTableColumns<any> = [
               ? h(
                   NButton,
                   { size: "small", onClick: () => handleEdit(row) },
-                  { default: () => "编辑" },
+                  { default: () => row.is_locked ? "查看" : "编辑" },
                 )
               : null,
+            checkAuth("catalog:lock") ? h(NButton,{size:"small",loading:lockBusy.value===row.id,disabled:lockBusy.value!==null,onClick:()=>changeLock(row)},{default:()=>row.is_locked?"解锁":"锁定"}) : null,
             checkAuth("catalog:review_read")
               ? h(
                   NButton,
@@ -593,7 +619,7 @@ const columns: DataTableColumns<any> = [
             checkAuth("catalog:delete")
               ? h(
                   NButton,
-                  { size: "small", type: "error", onClick: () => { deleteTarget.value = row; } },
+                  { size: "small", type: "error", disabled:!!row.is_locked, title:row.is_locked?"请先解锁后再删除":"删除商品", onClick: () => { deleteTarget.value = row; } },
                   { default: () => "删除" },
                 )
               : null,
@@ -610,6 +636,7 @@ async function loadList() {
   try {
     const { data, error } = await fetchProducts({
       keyword: keyword.value || undefined,
+      is_locked: lockFilter.value === null ? undefined : lockFilter.value === "locked",
       status: typeof statusFilter.value === "number" ? statusFilter.value || undefined : undefined,
       low_stock_only: statusFilter.value === "low_stock" || undefined,
       out_of_stock_only: statusFilter.value === "out_of_stock" || undefined,
@@ -622,6 +649,7 @@ async function loadList() {
     if (sequence !== listSequence) return;
     if (!error && data) {
       products.value = (data as any).products || [];
+      const locked=new Set(products.value.filter(p=>p.is_locked).map(p=>p.id));checkedKeys.value=checkedKeys.value.filter(id=>!locked.has(id));
       total.value = (data as any).total || 0;
     }
   } finally {
@@ -705,7 +733,8 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
   if (!ids.length) return;
   const { data, error } = await batchUpdateProductStatus(ids, status);
   if (!error) {
-    window.$message?.success(`已${label} ${(data as any)?.updated ?? ids.length} 件商品`);
+    batchReport.value=`已${label} ${data?.updated || 0} 件，跳过锁定商品 ${data?.skipped_locked || 0} 件`;batchFailures.value=[];
+    window.$message?.success(batchReport.value);
     checkedKeys.value = [];
     loadList();
   }
@@ -746,7 +775,8 @@ async function saveBatchCategory() {
   try {
     const { data, error } = await batchUpdateProductCategory(batchCategoryIds.value, batchCategoryId.value);
     if (!error && data) {
-      window.$message?.success(`已将 ${data.updated} 件商品移至「${batchCategoryTarget.value?.label}」`);
+      batchReport.value=`已将 ${data.updated || 0} 件商品移至「${batchCategoryTarget.value?.label}」，跳过锁定商品 ${data.skipped_locked || 0} 件`;batchFailures.value=[];
+      window.$message?.success(batchReport.value);
       showBatchCategory.value = false;
       checkedKeys.value = [];
       await loadList();
@@ -763,13 +793,10 @@ async function handleBatchDelete() {
   batchDeleting.value = true;
   try {
     const results = await Promise.all(checkedKeys.value.map((id) => deleteProduct(id)));
-    const ok = results.filter((r) => !r.error).length;
-    const fail = results.length - ok;
-    if (fail > 0) {
-      window.$message?.warning(`已删除 ${ok} 件，${fail} 件失败（请先下架并处理未完成订单或库存）`);
-    } else {
-      window.$message?.success(`已删除 ${ok} 件商品`);
-    }
+    const ok = results.filter(r=>!r.error).length;
+    const skipped=results.filter(r=>(r.error as any)?.response?.data?.reason==='catalog.PRODUCT_LOCKED').length;
+    batchFailures.value=results.flatMap((r,i)=>r.error && (r.error as any)?.response?.data?.reason!=='catalog.PRODUCT_LOCKED' ? [`${products.value.find(p=>p.id===checkedKeys.value[i])?.name || `商品 ${checkedKeys.value[i]}`}：${(r.error as any)?.response?.data?.message || '删除未成功，请刷新后重试'}`] : []);
+    batchReport.value=`已删除 ${ok} 件，跳过锁定商品 ${skipped} 件，失败 ${batchFailures.value.length} 件`;
     checkedKeys.value = [];
     loadList();
   } finally {
@@ -778,6 +805,7 @@ async function handleBatchDelete() {
 }
 
 function resetForm() {
+  editingProduct.value=null;
   independentlySaved.value = false;
   contentProtection.value = { cover: false, description: false };
   editingId.value = 0;
@@ -807,7 +835,9 @@ function resetForm() {
 async function handleEdit(row: any) {
   // 编辑取详情（列表行可能缺全字段）
   const { data, error } = await fetchProduct(row.id);
-  const p = !error && data ? data : row;
+  if(error || !data)return;
+  const p = data;
+  editingProduct.value=p;
   editingId.value = p.id;
   contentProtection.value = { cover: !!p.cover_protected, description: !!p.description_protected };
   Object.assign(formData, {
@@ -859,6 +889,7 @@ function buildPayload() {
 }
 
 async function handleSave() {
+  if(editorLocked.value)return;
   if (editorBusy.value) return;
   if (controlPanel.value?.hasPending) { window.$message?.warning("下单控件还有未保存输入，请先点击创建/更新控件或取消编辑"); return; }
   if (!formData.name || formData.price_yuan <= 0) return;
@@ -874,6 +905,10 @@ async function handleSave() {
       showCreate.value = false;
       resetForm();
       loadList();
+    } else if ((error as any)?.response?.data?.reason === 'catalog.PRODUCT_LOCKED' && editingId.value) {
+      const { data: latest } = await fetchProduct(editingId.value);
+      if (latest) editingProduct.value = latest as any;
+      window.$message?.warning('商品已被锁定，未提交的输入仍保留在当前页面。');
     }
   } finally {
     saving.value = false;
@@ -994,6 +1029,12 @@ onMounted(() => {
         <NButton @click="onSearch">搜索</NButton>
       </div>
 
+      <div class="mb-12px flex flex-wrap items-center gap-12px">
+        <NSelect v-model:value="lockFilter" :options="[{label:'已锁定',value:'locked'},{label:'未锁定',value:'unlocked'}]" placeholder="全部锁定状态" clearable style="width:170px" @update:value="onSearch" />
+        <template v-if="categoryFilter"><span>{{ selectedCategoryName }} · 包含子分类</span><NButton v-auth="'catalog:category_read'" @click="showPlacements=true">置顶与推荐</NButton></template>
+        <span v-if="pageLockedCount" class="text-13px">本页 {{ pageLockedCount }} 件已锁定，全选会自动跳过。</span>
+      </div>
+      <NAlert v-if="batchReport" :type="batchFailures.length?'warning':'success'" closable class="mb-12px" @close="batchReport=''">{{ batchReport }}<ul v-if="batchFailures.length"><li v-for="failure in batchFailures" :key="failure">{{ failure }}</li></ul></NAlert>
       <FilterTabs v-model:value="statusFilter" :options="statusTabs" class="mb-12px shrink-0" @change="onSearch" />
 
       <!-- 批量操作条（勾选后出现） -->
@@ -1002,7 +1043,7 @@ onMounted(() => {
         class="mb-12px flex shrink-0 flex-wrap items-center gap-8px rounded-6px bg-primary-50 px-12px py-8px dark:bg-gray-800"
       >
         <span class="text-13px"
-          >已选 <b>{{ checkedKeys.length }}</b> 件<span v-if="offPageSelected">（其他页 {{ offPageSelected }} 件）</span></span
+          >已选 <b>{{ checkedKeys.length }}</b> 件<span v-if="pageLockedCount">，本页跳过 {{ pageLockedCount }} 件锁定商品</span><span v-if="offPageSelected">（其他页 {{ offPageSelected }} 件）</span></span
         >
         <NPopconfirm @positive-click="handleBatchStatus([...checkedKeys], 1, '上架')">
           <template #trigger>
@@ -1049,6 +1090,7 @@ onMounted(() => {
       />
     </NCard>
 
+    <CategoryPlacements v-model:show="showPlacements" :category-id="categoryFilter || 0" :category-name="selectedCategoryName" :categories="categories" />
     <BatchContentModal v-model:show="showBatchContent" :ids="batchContentIDs" :category-id="batchContentCategory" :categories="batchCategoryOptions" @saved="contentSaved" />
 
     <NModal v-model:show="showBatchCategory" preset="card" title="批量修改分类"
@@ -1081,6 +1123,10 @@ onMounted(() => {
       :style="{ width: step === 3 || step === 4 ? '880px' : undefined, maxWidth: 'calc(100vw - 24px)' }"
       :class="step === 3 ? 'product-editor-step-modal' : undefined"
     >
+      <NAlert v-if="editorLocked" type="info" class="mb-12px">商品已锁定，暂不可修改或删除，批量操作会自动跳过。
+        <span v-if="editingProduct.locked_at">锁定时间：{{ new Date(editingProduct.locked_at*1000).toLocaleString() }}。</span>
+        <NButton v-if="checkAuth('catalog:lock')" text :loading="lockBusy===editingId" @click="changeLock(editingProduct)">解锁商品</NButton><span v-else>请联系有解锁权限的管理员。</span>
+      </NAlert>
       <div :inert="editorBusy || undefined">
       <NAlert v-if="independentlySaved" type="info" class="mb-12px">已有内容单独保存并生效；关闭只放弃尚未保存的输入。</NAlert>
       <NSteps
@@ -1099,7 +1145,7 @@ onMounted(() => {
       <!-- 商品描述步：完全展开（编辑器整高可见，不内滚）；其余步骤限高内滚 -->
       <NScrollbar v-if="step !== 3" class="max-h-460px px-12px">
         <!-- 第 1 步：基础信息 -->
-        <NForm v-if="step === 1" :model="formData" label-placement="left" label-width="100">
+        <NForm v-if="step === 1" :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
           <NFormItem label="商品名称" path="name" :rule="{ required: true }">
             <NInput v-model:value="formData.name" placeholder="请输入商品名称" />
           </NFormItem>
@@ -1115,6 +1161,7 @@ onMounted(() => {
               />
               <NButton
                 v-auth="'catalog:category_write'"
+                :disabled="editorLocked"
                 size="small"
                 quaternary
                 type="primary"
@@ -1154,7 +1201,7 @@ onMounted(() => {
         </NForm>
 
         <!-- 第 2 步：价格库存 -->
-        <NForm v-else-if="step === 2" :model="formData" label-placement="left" label-width="100">
+        <NForm v-else-if="step === 2" :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
           <NFormItem label="售价（元）" path="price_yuan" :rule="{ required: true }">
             <NInputNumber
               v-model:value="formData.price_yuan"
@@ -1197,7 +1244,7 @@ onMounted(() => {
         </NForm>
 
         <!-- 高级设置（第 5 步，内滚容器内） -->
-        <NForm v-else :model="formData" label-placement="left" label-width="100">
+        <NForm v-else :model="formData" :disabled="editorLocked" label-placement="left" label-width="100">
           <NFormItem label="发货模式">
             <NSelect v-model:value="formData.delivery_mode" :options="deliveryModeOptions" />
           </NFormItem>
@@ -1214,18 +1261,19 @@ onMounted(() => {
           本地内容保护：{{ [contentProtection.cover ? '封面' : '', contentProtection.description ? '产品介绍' : ''].filter(Boolean).join('、') }}。
           可在「批量修改内容」中选择该商品并恢复跟随上游。
         </NAlert>
-        <NForm :model="formData" label-placement="top">
+        <NForm :model="formData" :disabled="editorLocked" label-placement="top">
           <div class="flex gap-24px">
             <NFormItem label="封面图" class="w-240px">
-              <MediaField v-model:value="formData.cover" tip="建议 1:1，列表缩略图" />
+              <MediaField :disabled="editorLocked" v-model:value="formData.cover" tip="建议 1:1，列表缩略图" />
             </NFormItem>
             <NFormItem label="详情图集" class="flex-1">
-              <MediaField v-model:value="formData.images" multiple tip="详情页轮播，可多选" />
+              <MediaField :disabled="editorLocked" v-model:value="formData.images" multiple tip="详情页轮播，可多选" />
             </NFormItem>
           </div>
           <NFormItem label="商品描述">
             <div class="w-full">
-              <RichEditor
+              <div v-if="editorLocked" class="break-words" v-html="formData.description" />
+              <RichEditor v-else
                 v-model="formData.description"
                 height="420px"
                 placeholder="商品详情（所见即所得；插图走素材库）"
@@ -1243,10 +1291,10 @@ onMounted(() => {
         <template v-if="editingId">
           <NAlert type="info" class="mb-12px">规格的「保存/全部保存/删除」及控件的「创建/更新/删除」会立即生效，关闭商品窗口不会撤销。其余未保存输入可通过取消放弃。</NAlert>
           <NCard size="small" title="SKU 多规格" class="mb-12px">
-            <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" @persisted="independentlySaved = true" />
+            <SkuPanel ref="skuPanel" :key="editingId" :product-id="editingId" :readonly="editorLocked" @persisted="independentlySaved = true" />
           </NCard>
           <NCard size="small" title="下单填写信息">
-            <ControlPanel ref="controlPanel" :product-id="editingId" @persisted="independentlySaved = true" />
+            <ControlPanel ref="controlPanel" :product-id="editingId" :readonly="editorLocked" @persisted="independentlySaved = true" />
           </NCard>
         </template>
         <NCard v-else size="small" class="py-40px">
@@ -1268,7 +1316,7 @@ onMounted(() => {
             <NButton :disabled="editorBusy" @click="requestClose">取消</NButton>
             <NButton v-if="step > 1" :disabled="editorBusy" @click="stepPrev">上一步</NButton>
             <NButton v-if="step < stepCount" :disabled="editorBusy" type="primary" @click="stepNext">下一步</NButton>
-            <NButton v-else type="primary" :disabled="editorBusy" :loading="saving" @click="handleSave">
+            <NButton v-else-if="!editorLocked" type="primary" :disabled="editorBusy" :loading="saving" @click="handleSave">
               {{ editingId ? "保存" : "创建" }}
             </NButton>
           </NSpace>

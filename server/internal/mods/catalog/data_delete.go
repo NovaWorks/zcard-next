@@ -49,6 +49,11 @@ func (s *AdminCatalogService) PreviewDeleteProduct(ctx context.Context, req *adm
 
 func inspectProductDeletion(ctx context.Context, c *ent.Client, p *ent.Product) (*adminv1.DeleteProductPreview, []uint64, error) {
 	reply := &adminv1.DeleteProductPreview{Name: p.Name}
+	if p.IsLocked {
+		reply.DeleteBlockReason = "商品已锁定，请先解锁后再删除"
+		reply.DeleteOrdersBlockReason = reply.DeleteBlockReason
+		return reply, nil, nil
+	}
 	if p.Status != 0 {
 		reply.DeleteBlockReason = "请先将商品下架，再进行删除"
 	}
@@ -163,6 +168,9 @@ func (s *AdminCatalogService) DeleteProduct(ctx context.Context, req *adminv1.De
 	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
 		c := data.Client(ctx, s.repo.data)
 		tenant := tenancy.FromContext(ctx).SubsiteID
+		if _, err := data.GuardProductWrite(ctx, s.repo.data, req.Id); err != nil {
+			return err
+		}
 		// 条件写取得商品行锁；下架/同步/删除串行，事务失败不留下半删除状态。
 		n, err := c.Product.Update().Where(product.ID(req.Id), product.SubsiteID(tenant), product.Status(0)).AddSort(0).Save(ctx)
 		if err != nil {

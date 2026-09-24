@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -140,7 +141,7 @@ func (s *SyncService) lockProductPricing(ctx context.Context, m *ent.SupplyMappi
 		return nil
 	}
 	c := s.repo.entClient(ctx)
-	if err := c.Product.UpdateOneID(m.LocalProductID).AddSort(0).Exec(ctx); err != nil {
+	if _, err := data.GuardProductWrite(ctx, s.repo.data, m.LocalProductID); err != nil {
 		// Archived/missing mappings are handled by the catalog writer; do not recreate here.
 		if ent.IsNotFound(err) {
 			return nil

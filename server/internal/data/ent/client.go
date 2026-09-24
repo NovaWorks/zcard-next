@@ -24,6 +24,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cardimport"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cartitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/coupon"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/dailystat"
@@ -131,6 +132,8 @@ type Client struct {
 	CartItem *CartItemClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// CategoryProductPlacement is the client for interacting with the CategoryProductPlacement builders.
+	CategoryProductPlacement *CategoryProductPlacementClient
 	// Coupon is the client for interacting with the Coupon builders.
 	Coupon *CouponClient
 	// Currency is the client for interacting with the Currency builders.
@@ -315,6 +318,7 @@ func (c *Client) init() {
 	c.CardImport = NewCardImportClient(c.config)
 	c.CartItem = NewCartItemClient(c.config)
 	c.Category = NewCategoryClient(c.config)
+	c.CategoryProductPlacement = NewCategoryProductPlacementClient(c.config)
 	c.Coupon = NewCouponClient(c.config)
 	c.Currency = NewCurrencyClient(c.config)
 	c.DailyStat = NewDailyStatClient(c.config)
@@ -487,99 +491,100 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                    ctx,
-		config:                 cfg,
-		AdminRole:              NewAdminRoleClient(cfg),
-		AdminUser:              NewAdminUserClient(cfg),
-		AffiliateCommission:    NewAffiliateCommissionClient(cfg),
-		AuditLog:               NewAuditLogClient(cfg),
-		Banner:                 NewBannerClient(cfg),
-		Card:                   NewCardClient(cfg),
-		CardImport:             NewCardImportClient(cfg),
-		CartItem:               NewCartItemClient(cfg),
-		Category:               NewCategoryClient(cfg),
-		Coupon:                 NewCouponClient(cfg),
-		Currency:               NewCurrencyClient(cfg),
-		DailyStat:              NewDailyStatClient(cfg),
-		DownstreamCallback:     NewDownstreamCallbackClient(cfg),
-		EmailVerification:      NewEmailVerificationClient(cfg),
-		ExternalIdentity:       NewExternalIdentityClient(cfg),
-		FailedTask:             NewFailedTaskClient(cfg),
-		FlashSale:              NewFlashSaleClient(cfg),
-		Giftcard:               NewGiftcardClient(cfg),
-		GiftcardBatch:          NewGiftcardBatchClient(cfg),
-		LicenseOrder:           NewLicenseOrderClient(cfg),
-		LotteryAccount:         NewLotteryAccountClient(cfg),
-		LotteryActivity:        NewLotteryActivityClient(cfg),
-		LotteryChanceLog:       NewLotteryChanceLogClient(cfg),
-		LotteryDraw:            NewLotteryDrawClient(cfg),
-		LotteryPrize:           NewLotteryPrizeClient(cfg),
-		LotteryRevision:        NewLotteryRevisionClient(cfg),
-		Media:                  NewMediaClient(cfg),
-		MediaCategory:          NewMediaCategoryClient(cfg),
-		MemberLevel:            NewMemberLevelClient(cfg),
-		MemberProductGroup:     NewMemberProductGroupClient(cfg),
-		Notification:           NewNotificationClient(cfg),
-		NotificationLog:        NewNotificationLogClient(cfg),
-		NotifyBroadcast:        NewNotifyBroadcastClient(cfg),
-		NotifyTemplate:         NewNotifyTemplateClient(cfg),
-		Order:                  NewOrderClient(cfg),
-		OrderAmountLine:        NewOrderAmountLineClient(cfg),
-		OrderDelivery:          NewOrderDeliveryClient(cfg),
-		OrderItem:              NewOrderItemClient(cfg),
-		OrderStatusEvent:       NewOrderStatusEventClient(cfg),
-		OutboxEvent:            NewOutboxEventClient(cfg),
-		PageView:               NewPageViewClient(cfg),
-		Payment:                NewPaymentClient(cfg),
-		PaymentChannel:         NewPaymentChannelClient(cfg),
-		PointAccount:           NewPointAccountClient(cfg),
-		PointTransaction:       NewPointTransactionClient(cfg),
-		Post:                   NewPostClient(cfg),
-		PostCategory:           NewPostCategoryClient(cfg),
-		ProcessedEvent:         NewProcessedEventClient(cfg),
-		ProcurementItem:        NewProcurementItemClient(cfg),
-		ProcurementOrder:       NewProcurementOrderClient(cfg),
-		Product:                NewProductClient(cfg),
-		ProductContentBatch:    NewProductContentBatchClient(cfg),
-		ProductControl:         NewProductControlClient(cfg),
-		ProductSku:             NewProductSkuClient(cfg),
-		Promotion:              NewPromotionClient(cfg),
-		RechargeOrder:          NewRechargeOrderClient(cfg),
-		ReconciliationItem:     NewReconciliationItemClient(cfg),
-		ReconciliationJob:      NewReconciliationJobClient(cfg),
-		RefundOrder:            NewRefundOrderClient(cfg),
-		ResellerBalanceAccount: NewResellerBalanceAccountClient(cfg),
-		ResellerLedgerEntry:    NewResellerLedgerEntryClient(cfg),
-		ResellerPricing:        NewResellerPricingClient(cfg),
-		ResellerProfile:        NewResellerProfileClient(cfg),
-		ResellerRelatedAccount: NewResellerRelatedAccountClient(cfg),
-		ResellerSite:           NewResellerSiteClient(cfg),
-		Review:                 NewReviewClient(cfg),
-		RiskLockKey:            NewRiskLockKeyClient(cfg),
-		RolePermission:         NewRolePermissionClient(cfg),
-		SecurityAuditLog:       NewSecurityAuditLogClient(cfg),
-		Session:                NewSessionClient(cfg),
-		Setting:                NewSettingClient(cfg),
-		SupplierAccount:        NewSupplierAccountClient(cfg),
-		SupplierLedgerEntry:    NewSupplierLedgerEntryClient(cfg),
-		SupplierProductPrice:   NewSupplierProductPriceClient(cfg),
-		SupplyConnection:       NewSupplyConnectionClient(cfg),
-		SupplyMapping:          NewSupplyMappingClient(cfg),
-		SupplyNonce:            NewSupplyNonceClient(cfg),
-		SupplyOrder:            NewSupplyOrderClient(cfg),
-		SupplySyncTask:         NewSupplySyncTaskClient(cfg),
-		Tag:                    NewTagClient(cfg),
-		Ticket:                 NewTicketClient(cfg),
-		TicketMessage:          NewTicketMessageClient(cfg),
-		User:                   NewUserClient(cfg),
-		UserGroup:              NewUserGroupClient(cfg),
-		UserSession:            NewUserSessionClient(cfg),
-		V1IDMap:                NewV1IDMapClient(cfg),
-		VirtualReview:          NewVirtualReviewClient(cfg),
-		VisitLog:               NewVisitLogClient(cfg),
-		WalletAccount:          NewWalletAccountClient(cfg),
-		WalletTransaction:      NewWalletTransactionClient(cfg),
-		Withdrawal:             NewWithdrawalClient(cfg),
+		ctx:                      ctx,
+		config:                   cfg,
+		AdminRole:                NewAdminRoleClient(cfg),
+		AdminUser:                NewAdminUserClient(cfg),
+		AffiliateCommission:      NewAffiliateCommissionClient(cfg),
+		AuditLog:                 NewAuditLogClient(cfg),
+		Banner:                   NewBannerClient(cfg),
+		Card:                     NewCardClient(cfg),
+		CardImport:               NewCardImportClient(cfg),
+		CartItem:                 NewCartItemClient(cfg),
+		Category:                 NewCategoryClient(cfg),
+		CategoryProductPlacement: NewCategoryProductPlacementClient(cfg),
+		Coupon:                   NewCouponClient(cfg),
+		Currency:                 NewCurrencyClient(cfg),
+		DailyStat:                NewDailyStatClient(cfg),
+		DownstreamCallback:       NewDownstreamCallbackClient(cfg),
+		EmailVerification:        NewEmailVerificationClient(cfg),
+		ExternalIdentity:         NewExternalIdentityClient(cfg),
+		FailedTask:               NewFailedTaskClient(cfg),
+		FlashSale:                NewFlashSaleClient(cfg),
+		Giftcard:                 NewGiftcardClient(cfg),
+		GiftcardBatch:            NewGiftcardBatchClient(cfg),
+		LicenseOrder:             NewLicenseOrderClient(cfg),
+		LotteryAccount:           NewLotteryAccountClient(cfg),
+		LotteryActivity:          NewLotteryActivityClient(cfg),
+		LotteryChanceLog:         NewLotteryChanceLogClient(cfg),
+		LotteryDraw:              NewLotteryDrawClient(cfg),
+		LotteryPrize:             NewLotteryPrizeClient(cfg),
+		LotteryRevision:          NewLotteryRevisionClient(cfg),
+		Media:                    NewMediaClient(cfg),
+		MediaCategory:            NewMediaCategoryClient(cfg),
+		MemberLevel:              NewMemberLevelClient(cfg),
+		MemberProductGroup:       NewMemberProductGroupClient(cfg),
+		Notification:             NewNotificationClient(cfg),
+		NotificationLog:          NewNotificationLogClient(cfg),
+		NotifyBroadcast:          NewNotifyBroadcastClient(cfg),
+		NotifyTemplate:           NewNotifyTemplateClient(cfg),
+		Order:                    NewOrderClient(cfg),
+		OrderAmountLine:          NewOrderAmountLineClient(cfg),
+		OrderDelivery:            NewOrderDeliveryClient(cfg),
+		OrderItem:                NewOrderItemClient(cfg),
+		OrderStatusEvent:         NewOrderStatusEventClient(cfg),
+		OutboxEvent:              NewOutboxEventClient(cfg),
+		PageView:                 NewPageViewClient(cfg),
+		Payment:                  NewPaymentClient(cfg),
+		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PointAccount:             NewPointAccountClient(cfg),
+		PointTransaction:         NewPointTransactionClient(cfg),
+		Post:                     NewPostClient(cfg),
+		PostCategory:             NewPostCategoryClient(cfg),
+		ProcessedEvent:           NewProcessedEventClient(cfg),
+		ProcurementItem:          NewProcurementItemClient(cfg),
+		ProcurementOrder:         NewProcurementOrderClient(cfg),
+		Product:                  NewProductClient(cfg),
+		ProductContentBatch:      NewProductContentBatchClient(cfg),
+		ProductControl:           NewProductControlClient(cfg),
+		ProductSku:               NewProductSkuClient(cfg),
+		Promotion:                NewPromotionClient(cfg),
+		RechargeOrder:            NewRechargeOrderClient(cfg),
+		ReconciliationItem:       NewReconciliationItemClient(cfg),
+		ReconciliationJob:        NewReconciliationJobClient(cfg),
+		RefundOrder:              NewRefundOrderClient(cfg),
+		ResellerBalanceAccount:   NewResellerBalanceAccountClient(cfg),
+		ResellerLedgerEntry:      NewResellerLedgerEntryClient(cfg),
+		ResellerPricing:          NewResellerPricingClient(cfg),
+		ResellerProfile:          NewResellerProfileClient(cfg),
+		ResellerRelatedAccount:   NewResellerRelatedAccountClient(cfg),
+		ResellerSite:             NewResellerSiteClient(cfg),
+		Review:                   NewReviewClient(cfg),
+		RiskLockKey:              NewRiskLockKeyClient(cfg),
+		RolePermission:           NewRolePermissionClient(cfg),
+		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
+		Session:                  NewSessionClient(cfg),
+		Setting:                  NewSettingClient(cfg),
+		SupplierAccount:          NewSupplierAccountClient(cfg),
+		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
+		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
+		SupplyConnection:         NewSupplyConnectionClient(cfg),
+		SupplyMapping:            NewSupplyMappingClient(cfg),
+		SupplyNonce:              NewSupplyNonceClient(cfg),
+		SupplyOrder:              NewSupplyOrderClient(cfg),
+		SupplySyncTask:           NewSupplySyncTaskClient(cfg),
+		Tag:                      NewTagClient(cfg),
+		Ticket:                   NewTicketClient(cfg),
+		TicketMessage:            NewTicketMessageClient(cfg),
+		User:                     NewUserClient(cfg),
+		UserGroup:                NewUserGroupClient(cfg),
+		UserSession:              NewUserSessionClient(cfg),
+		V1IDMap:                  NewV1IDMapClient(cfg),
+		VirtualReview:            NewVirtualReviewClient(cfg),
+		VisitLog:                 NewVisitLogClient(cfg),
+		WalletAccount:            NewWalletAccountClient(cfg),
+		WalletTransaction:        NewWalletTransactionClient(cfg),
+		Withdrawal:               NewWithdrawalClient(cfg),
 	}, nil
 }
 
@@ -597,99 +602,100 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                    ctx,
-		config:                 cfg,
-		AdminRole:              NewAdminRoleClient(cfg),
-		AdminUser:              NewAdminUserClient(cfg),
-		AffiliateCommission:    NewAffiliateCommissionClient(cfg),
-		AuditLog:               NewAuditLogClient(cfg),
-		Banner:                 NewBannerClient(cfg),
-		Card:                   NewCardClient(cfg),
-		CardImport:             NewCardImportClient(cfg),
-		CartItem:               NewCartItemClient(cfg),
-		Category:               NewCategoryClient(cfg),
-		Coupon:                 NewCouponClient(cfg),
-		Currency:               NewCurrencyClient(cfg),
-		DailyStat:              NewDailyStatClient(cfg),
-		DownstreamCallback:     NewDownstreamCallbackClient(cfg),
-		EmailVerification:      NewEmailVerificationClient(cfg),
-		ExternalIdentity:       NewExternalIdentityClient(cfg),
-		FailedTask:             NewFailedTaskClient(cfg),
-		FlashSale:              NewFlashSaleClient(cfg),
-		Giftcard:               NewGiftcardClient(cfg),
-		GiftcardBatch:          NewGiftcardBatchClient(cfg),
-		LicenseOrder:           NewLicenseOrderClient(cfg),
-		LotteryAccount:         NewLotteryAccountClient(cfg),
-		LotteryActivity:        NewLotteryActivityClient(cfg),
-		LotteryChanceLog:       NewLotteryChanceLogClient(cfg),
-		LotteryDraw:            NewLotteryDrawClient(cfg),
-		LotteryPrize:           NewLotteryPrizeClient(cfg),
-		LotteryRevision:        NewLotteryRevisionClient(cfg),
-		Media:                  NewMediaClient(cfg),
-		MediaCategory:          NewMediaCategoryClient(cfg),
-		MemberLevel:            NewMemberLevelClient(cfg),
-		MemberProductGroup:     NewMemberProductGroupClient(cfg),
-		Notification:           NewNotificationClient(cfg),
-		NotificationLog:        NewNotificationLogClient(cfg),
-		NotifyBroadcast:        NewNotifyBroadcastClient(cfg),
-		NotifyTemplate:         NewNotifyTemplateClient(cfg),
-		Order:                  NewOrderClient(cfg),
-		OrderAmountLine:        NewOrderAmountLineClient(cfg),
-		OrderDelivery:          NewOrderDeliveryClient(cfg),
-		OrderItem:              NewOrderItemClient(cfg),
-		OrderStatusEvent:       NewOrderStatusEventClient(cfg),
-		OutboxEvent:            NewOutboxEventClient(cfg),
-		PageView:               NewPageViewClient(cfg),
-		Payment:                NewPaymentClient(cfg),
-		PaymentChannel:         NewPaymentChannelClient(cfg),
-		PointAccount:           NewPointAccountClient(cfg),
-		PointTransaction:       NewPointTransactionClient(cfg),
-		Post:                   NewPostClient(cfg),
-		PostCategory:           NewPostCategoryClient(cfg),
-		ProcessedEvent:         NewProcessedEventClient(cfg),
-		ProcurementItem:        NewProcurementItemClient(cfg),
-		ProcurementOrder:       NewProcurementOrderClient(cfg),
-		Product:                NewProductClient(cfg),
-		ProductContentBatch:    NewProductContentBatchClient(cfg),
-		ProductControl:         NewProductControlClient(cfg),
-		ProductSku:             NewProductSkuClient(cfg),
-		Promotion:              NewPromotionClient(cfg),
-		RechargeOrder:          NewRechargeOrderClient(cfg),
-		ReconciliationItem:     NewReconciliationItemClient(cfg),
-		ReconciliationJob:      NewReconciliationJobClient(cfg),
-		RefundOrder:            NewRefundOrderClient(cfg),
-		ResellerBalanceAccount: NewResellerBalanceAccountClient(cfg),
-		ResellerLedgerEntry:    NewResellerLedgerEntryClient(cfg),
-		ResellerPricing:        NewResellerPricingClient(cfg),
-		ResellerProfile:        NewResellerProfileClient(cfg),
-		ResellerRelatedAccount: NewResellerRelatedAccountClient(cfg),
-		ResellerSite:           NewResellerSiteClient(cfg),
-		Review:                 NewReviewClient(cfg),
-		RiskLockKey:            NewRiskLockKeyClient(cfg),
-		RolePermission:         NewRolePermissionClient(cfg),
-		SecurityAuditLog:       NewSecurityAuditLogClient(cfg),
-		Session:                NewSessionClient(cfg),
-		Setting:                NewSettingClient(cfg),
-		SupplierAccount:        NewSupplierAccountClient(cfg),
-		SupplierLedgerEntry:    NewSupplierLedgerEntryClient(cfg),
-		SupplierProductPrice:   NewSupplierProductPriceClient(cfg),
-		SupplyConnection:       NewSupplyConnectionClient(cfg),
-		SupplyMapping:          NewSupplyMappingClient(cfg),
-		SupplyNonce:            NewSupplyNonceClient(cfg),
-		SupplyOrder:            NewSupplyOrderClient(cfg),
-		SupplySyncTask:         NewSupplySyncTaskClient(cfg),
-		Tag:                    NewTagClient(cfg),
-		Ticket:                 NewTicketClient(cfg),
-		TicketMessage:          NewTicketMessageClient(cfg),
-		User:                   NewUserClient(cfg),
-		UserGroup:              NewUserGroupClient(cfg),
-		UserSession:            NewUserSessionClient(cfg),
-		V1IDMap:                NewV1IDMapClient(cfg),
-		VirtualReview:          NewVirtualReviewClient(cfg),
-		VisitLog:               NewVisitLogClient(cfg),
-		WalletAccount:          NewWalletAccountClient(cfg),
-		WalletTransaction:      NewWalletTransactionClient(cfg),
-		Withdrawal:             NewWithdrawalClient(cfg),
+		ctx:                      ctx,
+		config:                   cfg,
+		AdminRole:                NewAdminRoleClient(cfg),
+		AdminUser:                NewAdminUserClient(cfg),
+		AffiliateCommission:      NewAffiliateCommissionClient(cfg),
+		AuditLog:                 NewAuditLogClient(cfg),
+		Banner:                   NewBannerClient(cfg),
+		Card:                     NewCardClient(cfg),
+		CardImport:               NewCardImportClient(cfg),
+		CartItem:                 NewCartItemClient(cfg),
+		Category:                 NewCategoryClient(cfg),
+		CategoryProductPlacement: NewCategoryProductPlacementClient(cfg),
+		Coupon:                   NewCouponClient(cfg),
+		Currency:                 NewCurrencyClient(cfg),
+		DailyStat:                NewDailyStatClient(cfg),
+		DownstreamCallback:       NewDownstreamCallbackClient(cfg),
+		EmailVerification:        NewEmailVerificationClient(cfg),
+		ExternalIdentity:         NewExternalIdentityClient(cfg),
+		FailedTask:               NewFailedTaskClient(cfg),
+		FlashSale:                NewFlashSaleClient(cfg),
+		Giftcard:                 NewGiftcardClient(cfg),
+		GiftcardBatch:            NewGiftcardBatchClient(cfg),
+		LicenseOrder:             NewLicenseOrderClient(cfg),
+		LotteryAccount:           NewLotteryAccountClient(cfg),
+		LotteryActivity:          NewLotteryActivityClient(cfg),
+		LotteryChanceLog:         NewLotteryChanceLogClient(cfg),
+		LotteryDraw:              NewLotteryDrawClient(cfg),
+		LotteryPrize:             NewLotteryPrizeClient(cfg),
+		LotteryRevision:          NewLotteryRevisionClient(cfg),
+		Media:                    NewMediaClient(cfg),
+		MediaCategory:            NewMediaCategoryClient(cfg),
+		MemberLevel:              NewMemberLevelClient(cfg),
+		MemberProductGroup:       NewMemberProductGroupClient(cfg),
+		Notification:             NewNotificationClient(cfg),
+		NotificationLog:          NewNotificationLogClient(cfg),
+		NotifyBroadcast:          NewNotifyBroadcastClient(cfg),
+		NotifyTemplate:           NewNotifyTemplateClient(cfg),
+		Order:                    NewOrderClient(cfg),
+		OrderAmountLine:          NewOrderAmountLineClient(cfg),
+		OrderDelivery:            NewOrderDeliveryClient(cfg),
+		OrderItem:                NewOrderItemClient(cfg),
+		OrderStatusEvent:         NewOrderStatusEventClient(cfg),
+		OutboxEvent:              NewOutboxEventClient(cfg),
+		PageView:                 NewPageViewClient(cfg),
+		Payment:                  NewPaymentClient(cfg),
+		PaymentChannel:           NewPaymentChannelClient(cfg),
+		PointAccount:             NewPointAccountClient(cfg),
+		PointTransaction:         NewPointTransactionClient(cfg),
+		Post:                     NewPostClient(cfg),
+		PostCategory:             NewPostCategoryClient(cfg),
+		ProcessedEvent:           NewProcessedEventClient(cfg),
+		ProcurementItem:          NewProcurementItemClient(cfg),
+		ProcurementOrder:         NewProcurementOrderClient(cfg),
+		Product:                  NewProductClient(cfg),
+		ProductContentBatch:      NewProductContentBatchClient(cfg),
+		ProductControl:           NewProductControlClient(cfg),
+		ProductSku:               NewProductSkuClient(cfg),
+		Promotion:                NewPromotionClient(cfg),
+		RechargeOrder:            NewRechargeOrderClient(cfg),
+		ReconciliationItem:       NewReconciliationItemClient(cfg),
+		ReconciliationJob:        NewReconciliationJobClient(cfg),
+		RefundOrder:              NewRefundOrderClient(cfg),
+		ResellerBalanceAccount:   NewResellerBalanceAccountClient(cfg),
+		ResellerLedgerEntry:      NewResellerLedgerEntryClient(cfg),
+		ResellerPricing:          NewResellerPricingClient(cfg),
+		ResellerProfile:          NewResellerProfileClient(cfg),
+		ResellerRelatedAccount:   NewResellerRelatedAccountClient(cfg),
+		ResellerSite:             NewResellerSiteClient(cfg),
+		Review:                   NewReviewClient(cfg),
+		RiskLockKey:              NewRiskLockKeyClient(cfg),
+		RolePermission:           NewRolePermissionClient(cfg),
+		SecurityAuditLog:         NewSecurityAuditLogClient(cfg),
+		Session:                  NewSessionClient(cfg),
+		Setting:                  NewSettingClient(cfg),
+		SupplierAccount:          NewSupplierAccountClient(cfg),
+		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
+		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
+		SupplyConnection:         NewSupplyConnectionClient(cfg),
+		SupplyMapping:            NewSupplyMappingClient(cfg),
+		SupplyNonce:              NewSupplyNonceClient(cfg),
+		SupplyOrder:              NewSupplyOrderClient(cfg),
+		SupplySyncTask:           NewSupplySyncTaskClient(cfg),
+		Tag:                      NewTagClient(cfg),
+		Ticket:                   NewTicketClient(cfg),
+		TicketMessage:            NewTicketMessageClient(cfg),
+		User:                     NewUserClient(cfg),
+		UserGroup:                NewUserGroupClient(cfg),
+		UserSession:              NewUserSessionClient(cfg),
+		V1IDMap:                  NewV1IDMapClient(cfg),
+		VirtualReview:            NewVirtualReviewClient(cfg),
+		VisitLog:                 NewVisitLogClient(cfg),
+		WalletAccount:            NewWalletAccountClient(cfg),
+		WalletTransaction:        NewWalletTransactionClient(cfg),
+		Withdrawal:               NewWithdrawalClient(cfg),
 	}, nil
 }
 
@@ -720,18 +726,18 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.AdminRole, c.AdminUser, c.AffiliateCommission, c.AuditLog, c.Banner, c.Card,
-		c.CardImport, c.CartItem, c.Category, c.Coupon, c.Currency, c.DailyStat,
-		c.DownstreamCallback, c.EmailVerification, c.ExternalIdentity, c.FailedTask,
-		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.LicenseOrder, c.LotteryAccount,
-		c.LotteryActivity, c.LotteryChanceLog, c.LotteryDraw, c.LotteryPrize,
-		c.LotteryRevision, c.Media, c.MediaCategory, c.MemberLevel,
-		c.MemberProductGroup, c.Notification, c.NotificationLog, c.NotifyBroadcast,
-		c.NotifyTemplate, c.Order, c.OrderAmountLine, c.OrderDelivery, c.OrderItem,
-		c.OrderStatusEvent, c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel,
-		c.PointAccount, c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
-		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
-		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
-		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.CardImport, c.CartItem, c.Category, c.CategoryProductPlacement, c.Coupon,
+		c.Currency, c.DailyStat, c.DownstreamCallback, c.EmailVerification,
+		c.ExternalIdentity, c.FailedTask, c.FlashSale, c.Giftcard, c.GiftcardBatch,
+		c.LicenseOrder, c.LotteryAccount, c.LotteryActivity, c.LotteryChanceLog,
+		c.LotteryDraw, c.LotteryPrize, c.LotteryRevision, c.Media, c.MediaCategory,
+		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
+		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
+		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
+		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
+		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
+		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
@@ -750,18 +756,18 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.AdminRole, c.AdminUser, c.AffiliateCommission, c.AuditLog, c.Banner, c.Card,
-		c.CardImport, c.CartItem, c.Category, c.Coupon, c.Currency, c.DailyStat,
-		c.DownstreamCallback, c.EmailVerification, c.ExternalIdentity, c.FailedTask,
-		c.FlashSale, c.Giftcard, c.GiftcardBatch, c.LicenseOrder, c.LotteryAccount,
-		c.LotteryActivity, c.LotteryChanceLog, c.LotteryDraw, c.LotteryPrize,
-		c.LotteryRevision, c.Media, c.MediaCategory, c.MemberLevel,
-		c.MemberProductGroup, c.Notification, c.NotificationLog, c.NotifyBroadcast,
-		c.NotifyTemplate, c.Order, c.OrderAmountLine, c.OrderDelivery, c.OrderItem,
-		c.OrderStatusEvent, c.OutboxEvent, c.PageView, c.Payment, c.PaymentChannel,
-		c.PointAccount, c.PointTransaction, c.Post, c.PostCategory, c.ProcessedEvent,
-		c.ProcurementItem, c.ProcurementOrder, c.Product, c.ProductContentBatch,
-		c.ProductControl, c.ProductSku, c.Promotion, c.RechargeOrder,
-		c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
+		c.CardImport, c.CartItem, c.Category, c.CategoryProductPlacement, c.Coupon,
+		c.Currency, c.DailyStat, c.DownstreamCallback, c.EmailVerification,
+		c.ExternalIdentity, c.FailedTask, c.FlashSale, c.Giftcard, c.GiftcardBatch,
+		c.LicenseOrder, c.LotteryAccount, c.LotteryActivity, c.LotteryChanceLog,
+		c.LotteryDraw, c.LotteryPrize, c.LotteryRevision, c.Media, c.MediaCategory,
+		c.MemberLevel, c.MemberProductGroup, c.Notification, c.NotificationLog,
+		c.NotifyBroadcast, c.NotifyTemplate, c.Order, c.OrderAmountLine,
+		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
+		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
+		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
+		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductSku, c.Promotion,
+		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
 		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
@@ -796,6 +802,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.CartItem.mutate(ctx, m)
 	case *CategoryMutation:
 		return c.Category.mutate(ctx, m)
+	case *CategoryProductPlacementMutation:
+		return c.CategoryProductPlacement.mutate(ctx, m)
 	case *CouponMutation:
 		return c.Coupon.mutate(ctx, m)
 	case *CurrencyMutation:
@@ -2175,6 +2183,139 @@ func (c *CategoryClient) mutate(ctx context.Context, m *CategoryMutation) (Value
 		return (&CategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Category mutation op: %q", m.Op())
+	}
+}
+
+// CategoryProductPlacementClient is a client for the CategoryProductPlacement schema.
+type CategoryProductPlacementClient struct {
+	config
+}
+
+// NewCategoryProductPlacementClient returns a client for the CategoryProductPlacement from the given config.
+func NewCategoryProductPlacementClient(c config) *CategoryProductPlacementClient {
+	return &CategoryProductPlacementClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `categoryproductplacement.Hooks(f(g(h())))`.
+func (c *CategoryProductPlacementClient) Use(hooks ...Hook) {
+	c.hooks.CategoryProductPlacement = append(c.hooks.CategoryProductPlacement, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `categoryproductplacement.Intercept(f(g(h())))`.
+func (c *CategoryProductPlacementClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CategoryProductPlacement = append(c.inters.CategoryProductPlacement, interceptors...)
+}
+
+// Create returns a builder for creating a CategoryProductPlacement entity.
+func (c *CategoryProductPlacementClient) Create() *CategoryProductPlacementCreate {
+	mutation := newCategoryProductPlacementMutation(c.config, OpCreate)
+	return &CategoryProductPlacementCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CategoryProductPlacement entities.
+func (c *CategoryProductPlacementClient) CreateBulk(builders ...*CategoryProductPlacementCreate) *CategoryProductPlacementCreateBulk {
+	return &CategoryProductPlacementCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CategoryProductPlacementClient) MapCreateBulk(slice any, setFunc func(*CategoryProductPlacementCreate, int)) *CategoryProductPlacementCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CategoryProductPlacementCreateBulk{err: fmt.Errorf("calling to CategoryProductPlacementClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CategoryProductPlacementCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CategoryProductPlacementCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CategoryProductPlacement.
+func (c *CategoryProductPlacementClient) Update() *CategoryProductPlacementUpdate {
+	mutation := newCategoryProductPlacementMutation(c.config, OpUpdate)
+	return &CategoryProductPlacementUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CategoryProductPlacementClient) UpdateOne(_m *CategoryProductPlacement) *CategoryProductPlacementUpdateOne {
+	mutation := newCategoryProductPlacementMutation(c.config, OpUpdateOne, withCategoryProductPlacement(_m))
+	return &CategoryProductPlacementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CategoryProductPlacementClient) UpdateOneID(id uint64) *CategoryProductPlacementUpdateOne {
+	mutation := newCategoryProductPlacementMutation(c.config, OpUpdateOne, withCategoryProductPlacementID(id))
+	return &CategoryProductPlacementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CategoryProductPlacement.
+func (c *CategoryProductPlacementClient) Delete() *CategoryProductPlacementDelete {
+	mutation := newCategoryProductPlacementMutation(c.config, OpDelete)
+	return &CategoryProductPlacementDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CategoryProductPlacementClient) DeleteOne(_m *CategoryProductPlacement) *CategoryProductPlacementDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CategoryProductPlacementClient) DeleteOneID(id uint64) *CategoryProductPlacementDeleteOne {
+	builder := c.Delete().Where(categoryproductplacement.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CategoryProductPlacementDeleteOne{builder}
+}
+
+// Query returns a query builder for CategoryProductPlacement.
+func (c *CategoryProductPlacementClient) Query() *CategoryProductPlacementQuery {
+	return &CategoryProductPlacementQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCategoryProductPlacement},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CategoryProductPlacement entity by its id.
+func (c *CategoryProductPlacementClient) Get(ctx context.Context, id uint64) (*CategoryProductPlacement, error) {
+	return c.Query().Where(categoryproductplacement.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CategoryProductPlacementClient) GetX(ctx context.Context, id uint64) *CategoryProductPlacement {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CategoryProductPlacementClient) Hooks() []Hook {
+	return c.hooks.CategoryProductPlacement
+}
+
+// Interceptors returns the client interceptors.
+func (c *CategoryProductPlacementClient) Interceptors() []Interceptor {
+	return c.inters.CategoryProductPlacement
+}
+
+func (c *CategoryProductPlacementClient) mutate(ctx context.Context, m *CategoryProductPlacementMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CategoryProductPlacementCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CategoryProductPlacementUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CategoryProductPlacementUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CategoryProductPlacementDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CategoryProductPlacement mutation op: %q", m.Op())
 	}
 }
 
@@ -13328,42 +13469,42 @@ func (c *WithdrawalClient) mutate(ctx context.Context, m *WithdrawalMutation) (V
 type (
 	hooks struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
-		CartItem, Category, Coupon, Currency, DailyStat, DownstreamCallback,
-		EmailVerification, ExternalIdentity, FailedTask, FlashSale, Giftcard,
-		GiftcardBatch, LicenseOrder, LotteryAccount, LotteryActivity, LotteryChanceLog,
-		LotteryDraw, LotteryPrize, LotteryRevision, Media, MediaCategory, MemberLevel,
-		MemberProductGroup, Notification, NotificationLog, NotifyBroadcast,
-		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
-		OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel, PointAccount,
-		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
-		ProcurementOrder, Product, ProductContentBatch, ProductControl, ProductSku,
-		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
-		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
-		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
-		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyConnection, SupplyMapping, SupplyNonce,
-		SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup,
-		UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
-		WalletTransaction, Withdrawal []ent.Hook
+		CartItem, Category, CategoryProductPlacement, Coupon, Currency, DailyStat,
+		DownstreamCallback, EmailVerification, ExternalIdentity, FailedTask, FlashSale,
+		Giftcard, GiftcardBatch, LicenseOrder, LotteryAccount, LotteryActivity,
+		LotteryChanceLog, LotteryDraw, LotteryPrize, LotteryRevision, Media,
+		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
+		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
+		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
+		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
+		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
+		ProductControl, ProductSku, Promotion, RechargeOrder, ReconciliationItem,
+		ReconciliationJob, RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry,
+		ResellerPricing, ResellerProfile, ResellerRelatedAccount, ResellerSite, Review,
+		RiskLockKey, RolePermission, SecurityAuditLog, Session, Setting,
+		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice, SupplyConnection,
+		SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket,
+		TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog,
+		WalletAccount, WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
-		CartItem, Category, Coupon, Currency, DailyStat, DownstreamCallback,
-		EmailVerification, ExternalIdentity, FailedTask, FlashSale, Giftcard,
-		GiftcardBatch, LicenseOrder, LotteryAccount, LotteryActivity, LotteryChanceLog,
-		LotteryDraw, LotteryPrize, LotteryRevision, Media, MediaCategory, MemberLevel,
-		MemberProductGroup, Notification, NotificationLog, NotifyBroadcast,
-		NotifyTemplate, Order, OrderAmountLine, OrderDelivery, OrderItem,
-		OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel, PointAccount,
-		PointTransaction, Post, PostCategory, ProcessedEvent, ProcurementItem,
-		ProcurementOrder, Product, ProductContentBatch, ProductControl, ProductSku,
-		Promotion, RechargeOrder, ReconciliationItem, ReconciliationJob, RefundOrder,
-		ResellerBalanceAccount, ResellerLedgerEntry, ResellerPricing, ResellerProfile,
-		ResellerRelatedAccount, ResellerSite, Review, RiskLockKey, RolePermission,
-		SecurityAuditLog, Session, Setting, SupplierAccount, SupplierLedgerEntry,
-		SupplierProductPrice, SupplyConnection, SupplyMapping, SupplyNonce,
-		SupplyOrder, SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup,
-		UserSession, V1IDMap, VirtualReview, VisitLog, WalletAccount,
-		WalletTransaction, Withdrawal []ent.Interceptor
+		CartItem, Category, CategoryProductPlacement, Coupon, Currency, DailyStat,
+		DownstreamCallback, EmailVerification, ExternalIdentity, FailedTask, FlashSale,
+		Giftcard, GiftcardBatch, LicenseOrder, LotteryAccount, LotteryActivity,
+		LotteryChanceLog, LotteryDraw, LotteryPrize, LotteryRevision, Media,
+		MediaCategory, MemberLevel, MemberProductGroup, Notification, NotificationLog,
+		NotifyBroadcast, NotifyTemplate, Order, OrderAmountLine, OrderDelivery,
+		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
+		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
+		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
+		ProductControl, ProductSku, Promotion, RechargeOrder, ReconciliationItem,
+		ReconciliationJob, RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry,
+		ResellerPricing, ResellerProfile, ResellerRelatedAccount, ResellerSite, Review,
+		RiskLockKey, RolePermission, SecurityAuditLog, Session, Setting,
+		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice, SupplyConnection,
+		SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket,
+		TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog,
+		WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

@@ -135,12 +135,13 @@ const virtualSaving = ref(false);
 const virtualForm = ref({ nickname: "", content: "", rating: 5, sort: 0 });
 
 function openVirtual() {
+  if (props.product?.is_locked) return;
   virtualForm.value = { nickname: "", content: "", rating: 5, sort: 0 };
   showVirtual.value = true;
 }
 
 async function handleVirtual() {
-  if (!props.product || !virtualForm.value.content.trim()) return;
+  if (!props.product || props.product.is_locked || !virtualForm.value.content.trim()) return;
   virtualSaving.value = true;
   try {
     const { error } = await createVirtualReview({
@@ -189,6 +190,8 @@ watch(() => props.show, (show) => {
           size="small"
           type="primary"
           class="ml-auto"
+          :disabled="product.is_locked"
+          :title="product.is_locked ? '请先解锁商品后再添加虚拟评价' : ''"
           @click="openVirtual"
         >
           新增虚拟评价

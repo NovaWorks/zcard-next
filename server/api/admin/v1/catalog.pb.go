@@ -35,7 +35,8 @@ type ListProductsRequest struct {
 	OutOfStockOnly   bool                   `protobuf:"varint,9,opt,name=out_of_stock_only,json=outOfStockOnly,proto3" json:"out_of_stock_only,omitempty"`     // 仅库存为 0，按自营/上游货源分别计算
 	LocalOnly        bool                   `protobuf:"varint,8,opt,name=local_only,json=localOnly,proto3" json:"local_only,omitempty"`                        // 仅看自营（无上游渠道）
 	StockType        string                 `protobuf:"bytes,10,opt,name=stock_type,json=stockType,proto3" json:"stock_type,omitempty"`                        // card | url | code，空表示全部
-	OptionsOnly      bool                   `protobuf:"varint,11,opt,name=options_only,json=optionsOnly,proto3" json:"options_only,omitempty"`                 // 轻量下拉选项，不读取描述及库存/销量；默认保持完整列表
+	IsLocked         *bool                  `protobuf:"varint,12,opt,name=is_locked,json=isLocked,proto3,oneof" json:"is_locked,omitempty"`
+	OptionsOnly      bool                   `protobuf:"varint,11,opt,name=options_only,json=optionsOnly,proto3" json:"options_only,omitempty"` // 轻量下拉选项，不读取描述及库存/销量；默认保持完整列表
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -138,6 +139,13 @@ func (x *ListProductsRequest) GetStockType() string {
 		return x.StockType
 	}
 	return ""
+}
+
+func (x *ListProductsRequest) GetIsLocked() bool {
+	if x != nil && x.IsLocked != nil {
+		return *x.IsLocked
+	}
+	return false
 }
 
 func (x *ListProductsRequest) GetOptionsOnly() bool {
@@ -297,6 +305,10 @@ type AdminProduct struct {
 	StockCheckedAt       int64  `protobuf:"varint,27,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
 	CoverProtected       bool   `protobuf:"varint,28,opt,name=cover_protected,json=coverProtected,proto3" json:"cover_protected,omitempty"`
 	DescriptionProtected bool   `protobuf:"varint,29,opt,name=description_protected,json=descriptionProtected,proto3" json:"description_protected,omitempty"`
+	IsLocked             bool   `protobuf:"varint,32,opt,name=is_locked,json=isLocked,proto3" json:"is_locked,omitempty"`
+	LockVersion          int64  `protobuf:"varint,33,opt,name=lock_version,json=lockVersion,proto3" json:"lock_version,omitempty"`
+	LockedBy             uint64 `protobuf:"varint,34,opt,name=locked_by,json=lockedBy,proto3" json:"locked_by,omitempty"`
+	LockedAt             int64  `protobuf:"varint,35,opt,name=locked_at,json=lockedAt,proto3" json:"locked_at,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -546,6 +558,34 @@ func (x *AdminProduct) GetDescriptionProtected() bool {
 		return x.DescriptionProtected
 	}
 	return false
+}
+
+func (x *AdminProduct) GetIsLocked() bool {
+	if x != nil {
+		return x.IsLocked
+	}
+	return false
+}
+
+func (x *AdminProduct) GetLockVersion() int64 {
+	if x != nil {
+		return x.LockVersion
+	}
+	return 0
+}
+
+func (x *AdminProduct) GetLockedBy() uint64 {
+	if x != nil {
+		return x.LockedBy
+	}
+	return 0
+}
+
+func (x *AdminProduct) GetLockedAt() int64 {
+	if x != nil {
+		return x.LockedAt
+	}
+	return 0
 }
 
 type CreateProductRequest struct {
@@ -1108,6 +1148,7 @@ func (x *BatchUpdateProductStatusRequest) GetStatus() int32 {
 type BatchUpdateProductStatusReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Updated       int32                  `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	SkippedLocked int32                  `protobuf:"varint,2,opt,name=skipped_locked,json=skippedLocked,proto3" json:"skipped_locked,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1145,6 +1186,13 @@ func (*BatchUpdateProductStatusReply) Descriptor() ([]byte, []int) {
 func (x *BatchUpdateProductStatusReply) GetUpdated() int32 {
 	if x != nil {
 		return x.Updated
+	}
+	return 0
+}
+
+func (x *BatchUpdateProductStatusReply) GetSkippedLocked() int32 {
+	if x != nil {
+		return x.SkippedLocked
 	}
 	return 0
 }
@@ -1204,6 +1252,7 @@ func (x *BatchUpdateProductCategoryRequest) GetCategoryId() uint64 {
 type BatchUpdateProductCategoryReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Updated       int32                  `protobuf:"varint,1,opt,name=updated,proto3" json:"updated,omitempty"`
+	SkippedLocked int32                  `protobuf:"varint,2,opt,name=skipped_locked,json=skippedLocked,proto3" json:"skipped_locked,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1241,6 +1290,13 @@ func (*BatchUpdateProductCategoryReply) Descriptor() ([]byte, []int) {
 func (x *BatchUpdateProductCategoryReply) GetUpdated() int32 {
 	if x != nil {
 		return x.Updated
+	}
+	return 0
+}
+
+func (x *BatchUpdateProductCategoryReply) GetSkippedLocked() int32 {
+	if x != nil {
+		return x.SkippedLocked
 	}
 	return 0
 }
@@ -4026,6 +4082,7 @@ type BatchProductContentPreview struct {
 	Targets           []*BatchProductContentTarget `protobuf:"bytes,8,rep,name=targets,proto3" json:"targets,omitempty"`
 	ContentChanged    int32                        `protobuf:"varint,9,opt,name=content_changed,json=contentChanged,proto3" json:"content_changed,omitempty"`
 	ProtectionChanged int32                        `protobuf:"varint,10,opt,name=protection_changed,json=protectionChanged,proto3" json:"protection_changed,omitempty"`
+	SkippedLocked     int32                        `protobuf:"varint,11,opt,name=skipped_locked,json=skippedLocked,proto3" json:"skipped_locked,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -4130,6 +4187,13 @@ func (x *BatchProductContentPreview) GetProtectionChanged() int32 {
 	return 0
 }
 
+func (x *BatchProductContentPreview) GetSkippedLocked() int32 {
+	if x != nil {
+		return x.SkippedLocked
+	}
+	return 0
+}
+
 type BatchProductContentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	RequestId     string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
@@ -4176,6 +4240,7 @@ func (x *BatchProductContentRequest) GetRequestId() string {
 
 type BatchProductContentResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	SkippedLocked int32                  `protobuf:"varint,5,opt,name=skipped_locked,json=skippedLocked,proto3" json:"skipped_locked,omitempty"`
 	Completed     bool                   `protobuf:"varint,1,opt,name=completed,proto3" json:"completed,omitempty"`
 	Matched       int32                  `protobuf:"varint,2,opt,name=matched,proto3" json:"matched,omitempty"`
 	Changed       int32                  `protobuf:"varint,3,opt,name=changed,proto3" json:"changed,omitempty"`
@@ -4214,6 +4279,13 @@ func (*BatchProductContentResult) Descriptor() ([]byte, []int) {
 	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{53}
 }
 
+func (x *BatchProductContentResult) GetSkippedLocked() int32 {
+	if x != nil {
+		return x.SkippedLocked
+	}
+	return 0
+}
+
 func (x *BatchProductContentResult) GetCompleted() bool {
 	if x != nil {
 		return x.Completed
@@ -4242,11 +4314,363 @@ func (x *BatchProductContentResult) GetUnchanged() int32 {
 	return 0
 }
 
+type SetProductLockRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	IsLocked        bool                   `protobuf:"varint,2,opt,name=is_locked,json=isLocked,proto3" json:"is_locked,omitempty"`
+	ExpectedVersion int64                  `protobuf:"varint,3,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SetProductLockRequest) Reset() {
+	*x = SetProductLockRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetProductLockRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetProductLockRequest) ProtoMessage() {}
+
+func (x *SetProductLockRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetProductLockRequest.ProtoReflect.Descriptor instead.
+func (*SetProductLockRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *SetProductLockRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *SetProductLockRequest) GetIsLocked() bool {
+	if x != nil {
+		return x.IsLocked
+	}
+	return false
+}
+
+func (x *SetProductLockRequest) GetExpectedVersion() int64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+type GetCategoryPlacementsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CategoryId    uint64                 `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCategoryPlacementsRequest) Reset() {
+	*x = GetCategoryPlacementsRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCategoryPlacementsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCategoryPlacementsRequest) ProtoMessage() {}
+
+func (x *GetCategoryPlacementsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCategoryPlacementsRequest.ProtoReflect.Descriptor instead.
+func (*GetCategoryPlacementsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *GetCategoryPlacementsRequest) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+type CategoryPlacementInput struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     uint64                 `protobuf:"varint,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	IsPinned      bool                   `protobuf:"varint,2,opt,name=is_pinned,json=isPinned,proto3" json:"is_pinned,omitempty"`
+	IsRecommended bool                   `protobuf:"varint,3,opt,name=is_recommended,json=isRecommended,proto3" json:"is_recommended,omitempty"`
+	Position      int32                  `protobuf:"varint,4,opt,name=position,proto3" json:"position,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CategoryPlacementInput) Reset() {
+	*x = CategoryPlacementInput{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CategoryPlacementInput) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategoryPlacementInput) ProtoMessage() {}
+
+func (x *CategoryPlacementInput) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CategoryPlacementInput.ProtoReflect.Descriptor instead.
+func (*CategoryPlacementInput) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *CategoryPlacementInput) GetProductId() uint64 {
+	if x != nil {
+		return x.ProductId
+	}
+	return 0
+}
+
+func (x *CategoryPlacementInput) GetIsPinned() bool {
+	if x != nil {
+		return x.IsPinned
+	}
+	return false
+}
+
+func (x *CategoryPlacementInput) GetIsRecommended() bool {
+	if x != nil {
+		return x.IsRecommended
+	}
+	return false
+}
+
+func (x *CategoryPlacementInput) GetPosition() int32 {
+	if x != nil {
+		return x.Position
+	}
+	return 0
+}
+
+type CategoryPlacementItem struct {
+	state             protoimpl.MessageState  `protogen:"open.v1"`
+	Placement         *CategoryPlacementInput `protobuf:"bytes,1,opt,name=placement,proto3" json:"placement,omitempty"`
+	Product           *AdminProduct           `protobuf:"bytes,2,opt,name=product,proto3" json:"product,omitempty"`
+	UnavailableReason string                  `protobuf:"bytes,3,opt,name=unavailable_reason,json=unavailableReason,proto3" json:"unavailable_reason,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *CategoryPlacementItem) Reset() {
+	*x = CategoryPlacementItem{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CategoryPlacementItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategoryPlacementItem) ProtoMessage() {}
+
+func (x *CategoryPlacementItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CategoryPlacementItem.ProtoReflect.Descriptor instead.
+func (*CategoryPlacementItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *CategoryPlacementItem) GetPlacement() *CategoryPlacementInput {
+	if x != nil {
+		return x.Placement
+	}
+	return nil
+}
+
+func (x *CategoryPlacementItem) GetProduct() *AdminProduct {
+	if x != nil {
+		return x.Product
+	}
+	return nil
+}
+
+func (x *CategoryPlacementItem) GetUnavailableReason() string {
+	if x != nil {
+		return x.UnavailableReason
+	}
+	return ""
+}
+
+type CategoryPlacementsReply struct {
+	state         protoimpl.MessageState   `protogen:"open.v1"`
+	CategoryId    uint64                   `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	Version       int64                    `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	Items         []*CategoryPlacementItem `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CategoryPlacementsReply) Reset() {
+	*x = CategoryPlacementsReply{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CategoryPlacementsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CategoryPlacementsReply) ProtoMessage() {}
+
+func (x *CategoryPlacementsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CategoryPlacementsReply.ProtoReflect.Descriptor instead.
+func (*CategoryPlacementsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *CategoryPlacementsReply) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *CategoryPlacementsReply) GetVersion() int64 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *CategoryPlacementsReply) GetItems() []*CategoryPlacementItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type SetCategoryPlacementsRequest struct {
+	state           protoimpl.MessageState    `protogen:"open.v1"`
+	CategoryId      uint64                    `protobuf:"varint,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	ExpectedVersion int64                     `protobuf:"varint,2,opt,name=expected_version,json=expectedVersion,proto3" json:"expected_version,omitempty"`
+	Items           []*CategoryPlacementInput `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SetCategoryPlacementsRequest) Reset() {
+	*x = SetCategoryPlacementsRequest{}
+	mi := &file_admin_v1_catalog_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SetCategoryPlacementsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SetCategoryPlacementsRequest) ProtoMessage() {}
+
+func (x *SetCategoryPlacementsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_catalog_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SetCategoryPlacementsRequest.ProtoReflect.Descriptor instead.
+func (*SetCategoryPlacementsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_catalog_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *SetCategoryPlacementsRequest) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *SetCategoryPlacementsRequest) GetExpectedVersion() int64 {
+	if x != nil {
+		return x.ExpectedVersion
+	}
+	return 0
+}
+
+func (x *SetCategoryPlacementsRequest) GetItems() []*CategoryPlacementInput {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
 var File_admin_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\n" +
-	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf9\x02\n" +
+	"\x16admin/v1/catalog.proto\x12\x12zcard.api.admin.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xa9\x03\n" +
 	"\x13ListProductsRequest\x12\x1f\n" +
 	"\vcategory_id\x18\x01 \x01(\x04R\n" +
 	"categoryId\x12\x18\n" +
@@ -4261,15 +4685,18 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"local_only\x18\b \x01(\bR\tlocalOnly\x12\x1d\n" +
 	"\n" +
 	"stock_type\x18\n" +
-	" \x01(\tR\tstockType\x12!\n" +
-	"\foptions_only\x18\v \x01(\bR\voptionsOnly\"\x98\x01\n" +
+	" \x01(\tR\tstockType\x12 \n" +
+	"\tis_locked\x18\f \x01(\bH\x00R\bisLocked\x88\x01\x01\x12!\n" +
+	"\foptions_only\x18\v \x01(\bR\voptionsOnlyB\f\n" +
+	"\n" +
+	"_is_locked\"\x98\x01\n" +
 	"\x11ListProductsReply\x12<\n" +
 	"\bproducts\x18\x01 \x03(\v2 .zcard.api.admin.v1.AdminProductR\bproducts\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x03R\x05total\x12\x12\n" +
 	"\x04page\x18\x03 \x01(\x05R\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x04 \x01(\x05R\bpageSize\"(\n" +
 	"\x11GetProductRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xba\b\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xb4\t\n" +
 	"\fAdminProduct\x12)\n" +
 	"\x10fulfillment_mode\x18\x1e \x01(\tR\x0ffulfillmentMode\x12&\n" +
 	"\fmanual_stock\x18\x1f \x01(\x03H\x00R\vmanualStock\x88\x01\x01\x12\x0e\n" +
@@ -4308,7 +4735,11 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x0fstock_reference\x18\x1a \x01(\x03R\x0estockReference\x12(\n" +
 	"\x10stock_checked_at\x18\x1b \x01(\x03R\x0estockCheckedAt\x12'\n" +
 	"\x0fcover_protected\x18\x1c \x01(\bR\x0ecoverProtected\x123\n" +
-	"\x15description_protected\x18\x1d \x01(\bR\x14descriptionProtectedB\x0f\n" +
+	"\x15description_protected\x18\x1d \x01(\bR\x14descriptionProtected\x12\x1b\n" +
+	"\tis_locked\x18  \x01(\bR\bisLocked\x12!\n" +
+	"\flock_version\x18! \x01(\x03R\vlockVersion\x12\x1b\n" +
+	"\tlocked_by\x18\" \x01(\x04R\blockedBy\x12\x1b\n" +
+	"\tlocked_at\x18# \x01(\x03R\blockedAtB\x0f\n" +
 	"\r_manual_stock\"\xfd\x04\n" +
 	"\x14CreateProductRequest\x12)\n" +
 	"\x10fulfillment_mode\x18\x11 \x01(\tR\x0ffulfillmentMode\x12&\n" +
@@ -4371,15 +4802,17 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x1adelete_orders_block_reason\x18\x04 \x01(\tR\x17deleteOrdersBlockReason\"P\n" +
 	"\x1fBatchUpdateProductStatusRequest\x12\x15\n" +
 	"\x03ids\x18\x01 \x03(\x04B\x03\xe0A\x02R\x03ids\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\x05R\x06status\"9\n" +
+	"\x06status\x18\x02 \x01(\x05R\x06status\"`\n" +
 	"\x1dBatchUpdateProductStatusReply\x12\x18\n" +
-	"\aupdated\x18\x01 \x01(\x05R\aupdated\"`\n" +
+	"\aupdated\x18\x01 \x01(\x05R\aupdated\x12%\n" +
+	"\x0eskipped_locked\x18\x02 \x01(\x05R\rskippedLocked\"`\n" +
 	"!BatchUpdateProductCategoryRequest\x12\x15\n" +
 	"\x03ids\x18\x01 \x03(\x04B\x03\xe0A\x02R\x03ids\x12$\n" +
 	"\vcategory_id\x18\x02 \x01(\x04B\x03\xe0A\x02R\n" +
-	"categoryId\";\n" +
+	"categoryId\"b\n" +
 	"\x1fBatchUpdateProductCategoryReply\x12\x18\n" +
-	"\aupdated\x18\x01 \x01(\x05R\aupdated\"L\n" +
+	"\aupdated\x18\x01 \x01(\x05R\aupdated\x12%\n" +
+	"\x0eskipped_locked\x18\x02 \x01(\x05R\rskippedLocked\"L\n" +
 	"\fCategoryList\x12<\n" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2\x1c.zcard.api.admin.v1.CategoryR\n" +
@@ -4651,7 +5084,7 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\bupstream\x18\x06 \x01(\bR\bupstream\x12\x18\n" +
 	"\achanged\x18\a \x01(\bR\achanged\x12'\n" +
 	"\x0fcontent_changed\x18\b \x01(\bR\x0econtentChanged\x12-\n" +
-	"\x12protection_changed\x18\t \x01(\bR\x11protectionChanged\"\xb3\x03\n" +
+	"\x12protection_changed\x18\t \x01(\bR\x11protectionChanged\"\xda\x03\n" +
 	"\x1aBatchProductContentPreview\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12\x1d\n" +
@@ -4665,15 +5098,44 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\atargets\x18\b \x03(\v2-.zcard.api.admin.v1.BatchProductContentTargetR\atargets\x12'\n" +
 	"\x0fcontent_changed\x18\t \x01(\x05R\x0econtentChanged\x12-\n" +
 	"\x12protection_changed\x18\n" +
-	" \x01(\x05R\x11protectionChanged\";\n" +
+	" \x01(\x05R\x11protectionChanged\x12%\n" +
+	"\x0eskipped_locked\x18\v \x01(\x05R\rskippedLocked\";\n" +
 	"\x1aBatchProductContentRequest\x12\x1d\n" +
 	"\n" +
-	"request_id\x18\x01 \x01(\tR\trequestId\"\x8b\x01\n" +
-	"\x19BatchProductContentResult\x12\x1c\n" +
+	"request_id\x18\x01 \x01(\tR\trequestId\"\xb2\x01\n" +
+	"\x19BatchProductContentResult\x12%\n" +
+	"\x0eskipped_locked\x18\x05 \x01(\x05R\rskippedLocked\x12\x1c\n" +
 	"\tcompleted\x18\x01 \x01(\bR\tcompleted\x12\x18\n" +
 	"\amatched\x18\x02 \x01(\x05R\amatched\x12\x18\n" +
 	"\achanged\x18\x03 \x01(\x05R\achanged\x12\x1c\n" +
-	"\tunchanged\x18\x04 \x01(\x05R\tunchanged2\xdd&\n" +
+	"\tunchanged\x18\x04 \x01(\x05R\tunchanged\"o\n" +
+	"\x15SetProductLockRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1b\n" +
+	"\tis_locked\x18\x02 \x01(\bR\bisLocked\x12)\n" +
+	"\x10expected_version\x18\x03 \x01(\x03R\x0fexpectedVersion\"?\n" +
+	"\x1cGetCategoryPlacementsRequest\x12\x1f\n" +
+	"\vcategory_id\x18\x01 \x01(\x04R\n" +
+	"categoryId\"\x97\x01\n" +
+	"\x16CategoryPlacementInput\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\x04R\tproductId\x12\x1b\n" +
+	"\tis_pinned\x18\x02 \x01(\bR\bisPinned\x12%\n" +
+	"\x0eis_recommended\x18\x03 \x01(\bR\risRecommended\x12\x1a\n" +
+	"\bposition\x18\x04 \x01(\x05R\bposition\"\xcc\x01\n" +
+	"\x15CategoryPlacementItem\x12H\n" +
+	"\tplacement\x18\x01 \x01(\v2*.zcard.api.admin.v1.CategoryPlacementInputR\tplacement\x12:\n" +
+	"\aproduct\x18\x02 \x01(\v2 .zcard.api.admin.v1.AdminProductR\aproduct\x12-\n" +
+	"\x12unavailable_reason\x18\x03 \x01(\tR\x11unavailableReason\"\x95\x01\n" +
+	"\x17CategoryPlacementsReply\x12\x1f\n" +
+	"\vcategory_id\x18\x01 \x01(\x04R\n" +
+	"categoryId\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\x03R\aversion\x12?\n" +
+	"\x05items\x18\x03 \x03(\v2).zcard.api.admin.v1.CategoryPlacementItemR\x05items\"\xac\x01\n" +
+	"\x1cSetCategoryPlacementsRequest\x12\x1f\n" +
+	"\vcategory_id\x18\x01 \x01(\x04R\n" +
+	"categoryId\x12)\n" +
+	"\x10expected_version\x18\x02 \x01(\x03R\x0fexpectedVersion\x12@\n" +
+	"\x05items\x18\x03 \x03(\v2*.zcard.api.admin.v1.CategoryPlacementInputR\x05items2\xd5*\n" +
 	"\x13AdminCatalogService\x12~\n" +
 	"\fListProducts\x12'.zcard.api.admin.v1.ListProductsRequest\x1a%.zcard.api.admin.v1.ListProductsReply\"\x1e\x82\xd3\xe4\x93\x02\x18\x12\x16/api/v1/admin/products\x12z\n" +
 	"\n" +
@@ -4686,7 +5148,10 @@ const file_admin_v1_catalog_proto_rawDesc = "" +
 	"\x1aBatchUpdateProductCategory\x125.zcard.api.admin.v1.BatchUpdateProductCategoryRequest\x1a3.zcard.api.admin.v1.BatchUpdateProductCategoryReply\"0\x82\xd3\xe4\x93\x02*:\x01*\"%/api/v1/admin/products/batch-category\x12\xc2\x01\n" +
 	" PreviewBatchUpdateProductContent\x125.zcard.api.admin.v1.PreviewBatchProductContentRequest\x1a..zcard.api.admin.v1.BatchProductContentPreview\"7\x82\xd3\xe4\x93\x021:\x01*\",/api/v1/admin/products/batch-content/preview\x12\xab\x01\n" +
 	"\x19BatchUpdateProductContent\x12..zcard.api.admin.v1.BatchProductContentRequest\x1a-.zcard.api.admin.v1.BatchProductContentResult\"/\x82\xd3\xe4\x93\x02):\x01*\"$/api/v1/admin/products/batch-content\x12\xc0\x01\n" +
-	"\x1cGetBatchProductContentResult\x12..zcard.api.admin.v1.BatchProductContentRequest\x1a-.zcard.api.admin.v1.BatchProductContentResult\"A\x82\xd3\xe4\x93\x02;\x129/api/v1/admin/products/batch-content/results/{request_id}\x12l\n" +
+	"\x1cGetBatchProductContentResult\x12..zcard.api.admin.v1.BatchProductContentRequest\x1a-.zcard.api.admin.v1.BatchProductContentResult\"A\x82\xd3\xe4\x93\x02;\x129/api/v1/admin/products/batch-content/results/{request_id}\x12\x8a\x01\n" +
+	"\x0eSetProductLock\x12).zcard.api.admin.v1.SetProductLockRequest\x1a .zcard.api.admin.v1.AdminProduct\"+\x82\xd3\xe4\x93\x02%:\x01*\x1a /api/v1/admin/products/{id}/lock\x12\xb1\x01\n" +
+	"\x15GetCategoryPlacements\x120.zcard.api.admin.v1.GetCategoryPlacementsRequest\x1a+.zcard.api.admin.v1.CategoryPlacementsReply\"9\x82\xd3\xe4\x93\x023\x121/api/v1/admin/categories/{category_id}/placements\x12\xb4\x01\n" +
+	"\x15SetCategoryPlacements\x120.zcard.api.admin.v1.SetCategoryPlacementsRequest\x1a+.zcard.api.admin.v1.CategoryPlacementsReply\"<\x82\xd3\xe4\x93\x026:\x01*\x1a1/api/v1/admin/categories/{category_id}/placements\x12l\n" +
 	"\x0eListCategories\x12\x16.google.protobuf.Empty\x1a .zcard.api.admin.v1.CategoryList\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/api/v1/admin/categories\x12~\n" +
 	"\x0eCreateCategory\x12).zcard.api.admin.v1.CreateCategoryRequest\x1a\x1c.zcard.api.admin.v1.Category\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/api/v1/admin/categories\x12\x83\x01\n" +
 	"\x0eUpdateCategory\x12).zcard.api.admin.v1.UpdateCategoryRequest\x1a\x1c.zcard.api.admin.v1.Category\"(\x82\xd3\xe4\x93\x02\":\x01*\x1a\x1d/api/v1/admin/categories/{id}\x12z\n" +
@@ -4725,7 +5190,7 @@ func file_admin_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_admin_v1_catalog_proto_rawDescData
 }
 
-var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 57)
+var file_admin_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 63)
 var file_admin_v1_catalog_proto_goTypes = []any{
 	(*ListProductsRequest)(nil),               // 0: zcard.api.admin.v1.ListProductsRequest
 	(*ListProductsReply)(nil),                 // 1: zcard.api.admin.v1.ListProductsReply
@@ -4781,10 +5246,16 @@ var file_admin_v1_catalog_proto_goTypes = []any{
 	(*BatchProductContentPreview)(nil),        // 51: zcard.api.admin.v1.BatchProductContentPreview
 	(*BatchProductContentRequest)(nil),        // 52: zcard.api.admin.v1.BatchProductContentRequest
 	(*BatchProductContentResult)(nil),         // 53: zcard.api.admin.v1.BatchProductContentResult
-	nil,                                       // 54: zcard.api.admin.v1.Sku.SpecValuesEntry
-	nil,                                       // 55: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
-	nil,                                       // 56: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
-	(*emptypb.Empty)(nil),                     // 57: google.protobuf.Empty
+	(*SetProductLockRequest)(nil),             // 54: zcard.api.admin.v1.SetProductLockRequest
+	(*GetCategoryPlacementsRequest)(nil),      // 55: zcard.api.admin.v1.GetCategoryPlacementsRequest
+	(*CategoryPlacementInput)(nil),            // 56: zcard.api.admin.v1.CategoryPlacementInput
+	(*CategoryPlacementItem)(nil),             // 57: zcard.api.admin.v1.CategoryPlacementItem
+	(*CategoryPlacementsReply)(nil),           // 58: zcard.api.admin.v1.CategoryPlacementsReply
+	(*SetCategoryPlacementsRequest)(nil),      // 59: zcard.api.admin.v1.SetCategoryPlacementsRequest
+	nil,                                       // 60: zcard.api.admin.v1.Sku.SpecValuesEntry
+	nil,                                       // 61: zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	nil,                                       // 62: zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	(*emptypb.Empty)(nil),                     // 63: google.protobuf.Empty
 }
 var file_admin_v1_catalog_proto_depIdxs = []int32{
 	3,  // 0: zcard.api.admin.v1.ListProductsReply.products:type_name -> zcard.api.admin.v1.AdminProduct
@@ -4794,90 +5265,100 @@ var file_admin_v1_catalog_proto_depIdxs = []int32{
 	24, // 4: zcard.api.admin.v1.ControlList.controls:type_name -> zcard.api.admin.v1.AdminControl
 	30, // 5: zcard.api.admin.v1.ListReviewsReply.reviews:type_name -> zcard.api.admin.v1.ReviewItem
 	37, // 6: zcard.api.admin.v1.SkuList.skus:type_name -> zcard.api.admin.v1.Sku
-	54, // 7: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
-	55, // 8: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
-	56, // 9: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
+	60, // 7: zcard.api.admin.v1.Sku.spec_values:type_name -> zcard.api.admin.v1.Sku.SpecValuesEntry
+	61, // 8: zcard.api.admin.v1.CreateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.CreateSkuRequest.SpecValuesEntry
+	62, // 9: zcard.api.admin.v1.UpdateSkuRequest.spec_values:type_name -> zcard.api.admin.v1.UpdateSkuRequest.SpecValuesEntry
 	42, // 10: zcard.api.admin.v1.MemberGroupList.groups:type_name -> zcard.api.admin.v1.MemberGroup
 	48, // 11: zcard.api.admin.v1.PreviewBatchProductContentRequest.patch:type_name -> zcard.api.admin.v1.ProductContentPatch
 	48, // 12: zcard.api.admin.v1.BatchProductContentPreview.patch:type_name -> zcard.api.admin.v1.ProductContentPatch
 	50, // 13: zcard.api.admin.v1.BatchProductContentPreview.targets:type_name -> zcard.api.admin.v1.BatchProductContentTarget
-	0,  // 14: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
-	2,  // 15: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
-	4,  // 16: zcard.api.admin.v1.AdminCatalogService.CreateProduct:input_type -> zcard.api.admin.v1.CreateProductRequest
-	5,  // 17: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
-	6,  // 18: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
-	2,  // 19: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:input_type -> zcard.api.admin.v1.GetProductRequest
-	8,  // 20: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:input_type -> zcard.api.admin.v1.BatchUpdateProductStatusRequest
-	10, // 21: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:input_type -> zcard.api.admin.v1.BatchUpdateProductCategoryRequest
-	49, // 22: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:input_type -> zcard.api.admin.v1.PreviewBatchProductContentRequest
-	52, // 23: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:input_type -> zcard.api.admin.v1.BatchProductContentRequest
-	52, // 24: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:input_type -> zcard.api.admin.v1.BatchProductContentRequest
-	57, // 25: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
-	14, // 26: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
-	15, // 27: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
-	17, // 28: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
-	46, // 29: zcard.api.admin.v1.AdminCatalogService.MergeCategories:input_type -> zcard.api.admin.v1.MergeCategoriesRequest
-	16, // 30: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:input_type -> zcard.api.admin.v1.ReorderCategoriesRequest
-	57, // 31: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
-	20, // 32: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
-	21, // 33: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
-	22, // 34: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
-	25, // 35: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
-	26, // 36: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
-	27, // 37: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
-	28, // 38: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
-	31, // 39: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
-	32, // 40: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
-	34, // 41: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
-	35, // 42: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
-	38, // 43: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
-	39, // 44: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
-	40, // 45: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
-	57, // 46: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
-	43, // 47: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
-	44, // 48: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
-	45, // 49: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
-	1,  // 50: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
-	3,  // 51: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 52: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	3,  // 53: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
-	57, // 54: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
-	7,  // 55: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:output_type -> zcard.api.admin.v1.DeleteProductPreview
-	9,  // 56: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:output_type -> zcard.api.admin.v1.BatchUpdateProductStatusReply
-	11, // 57: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:output_type -> zcard.api.admin.v1.BatchUpdateProductCategoryReply
-	51, // 58: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentPreview
-	53, // 59: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentResult
-	53, // 60: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:output_type -> zcard.api.admin.v1.BatchProductContentResult
-	12, // 61: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
-	13, // 62: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
-	13, // 63: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
-	57, // 64: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
-	47, // 65: zcard.api.admin.v1.AdminCatalogService.MergeCategories:output_type -> zcard.api.admin.v1.MergeCategoriesReply
-	57, // 66: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:output_type -> google.protobuf.Empty
-	18, // 67: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
-	19, // 68: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
-	57, // 69: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
-	23, // 70: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
-	24, // 71: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
-	24, // 72: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
-	57, // 73: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
-	29, // 74: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
-	30, // 75: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
-	30, // 76: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
-	33, // 77: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
-	36, // 78: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
-	37, // 79: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
-	37, // 80: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
-	57, // 81: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
-	41, // 82: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
-	42, // 83: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
-	42, // 84: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
-	57, // 85: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
-	50, // [50:86] is the sub-list for method output_type
-	14, // [14:50] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	56, // 14: zcard.api.admin.v1.CategoryPlacementItem.placement:type_name -> zcard.api.admin.v1.CategoryPlacementInput
+	3,  // 15: zcard.api.admin.v1.CategoryPlacementItem.product:type_name -> zcard.api.admin.v1.AdminProduct
+	57, // 16: zcard.api.admin.v1.CategoryPlacementsReply.items:type_name -> zcard.api.admin.v1.CategoryPlacementItem
+	56, // 17: zcard.api.admin.v1.SetCategoryPlacementsRequest.items:type_name -> zcard.api.admin.v1.CategoryPlacementInput
+	0,  // 18: zcard.api.admin.v1.AdminCatalogService.ListProducts:input_type -> zcard.api.admin.v1.ListProductsRequest
+	2,  // 19: zcard.api.admin.v1.AdminCatalogService.GetProduct:input_type -> zcard.api.admin.v1.GetProductRequest
+	4,  // 20: zcard.api.admin.v1.AdminCatalogService.CreateProduct:input_type -> zcard.api.admin.v1.CreateProductRequest
+	5,  // 21: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:input_type -> zcard.api.admin.v1.UpdateProductRequest
+	6,  // 22: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:input_type -> zcard.api.admin.v1.DeleteProductRequest
+	2,  // 23: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:input_type -> zcard.api.admin.v1.GetProductRequest
+	8,  // 24: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:input_type -> zcard.api.admin.v1.BatchUpdateProductStatusRequest
+	10, // 25: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:input_type -> zcard.api.admin.v1.BatchUpdateProductCategoryRequest
+	49, // 26: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:input_type -> zcard.api.admin.v1.PreviewBatchProductContentRequest
+	52, // 27: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:input_type -> zcard.api.admin.v1.BatchProductContentRequest
+	52, // 28: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:input_type -> zcard.api.admin.v1.BatchProductContentRequest
+	54, // 29: zcard.api.admin.v1.AdminCatalogService.SetProductLock:input_type -> zcard.api.admin.v1.SetProductLockRequest
+	55, // 30: zcard.api.admin.v1.AdminCatalogService.GetCategoryPlacements:input_type -> zcard.api.admin.v1.GetCategoryPlacementsRequest
+	59, // 31: zcard.api.admin.v1.AdminCatalogService.SetCategoryPlacements:input_type -> zcard.api.admin.v1.SetCategoryPlacementsRequest
+	63, // 32: zcard.api.admin.v1.AdminCatalogService.ListCategories:input_type -> google.protobuf.Empty
+	14, // 33: zcard.api.admin.v1.AdminCatalogService.CreateCategory:input_type -> zcard.api.admin.v1.CreateCategoryRequest
+	15, // 34: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:input_type -> zcard.api.admin.v1.UpdateCategoryRequest
+	17, // 35: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:input_type -> zcard.api.admin.v1.DeleteCategoryRequest
+	46, // 36: zcard.api.admin.v1.AdminCatalogService.MergeCategories:input_type -> zcard.api.admin.v1.MergeCategoriesRequest
+	16, // 37: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:input_type -> zcard.api.admin.v1.ReorderCategoriesRequest
+	63, // 38: zcard.api.admin.v1.AdminCatalogService.ListTags:input_type -> google.protobuf.Empty
+	20, // 39: zcard.api.admin.v1.AdminCatalogService.CreateTag:input_type -> zcard.api.admin.v1.CreateTagRequest
+	21, // 40: zcard.api.admin.v1.AdminCatalogService.DeleteTag:input_type -> zcard.api.admin.v1.DeleteTagRequest
+	22, // 41: zcard.api.admin.v1.AdminCatalogService.ListControls:input_type -> zcard.api.admin.v1.ListControlsRequest
+	25, // 42: zcard.api.admin.v1.AdminCatalogService.CreateControl:input_type -> zcard.api.admin.v1.CreateControlRequest
+	26, // 43: zcard.api.admin.v1.AdminCatalogService.UpdateControl:input_type -> zcard.api.admin.v1.UpdateControlRequest
+	27, // 44: zcard.api.admin.v1.AdminCatalogService.DeleteControl:input_type -> zcard.api.admin.v1.DeleteControlRequest
+	28, // 45: zcard.api.admin.v1.AdminCatalogService.ListReviews:input_type -> zcard.api.admin.v1.ListReviewsRequest
+	31, // 46: zcard.api.admin.v1.AdminCatalogService.ApproveReview:input_type -> zcard.api.admin.v1.ApproveReviewRequest
+	32, // 47: zcard.api.admin.v1.AdminCatalogService.RejectReview:input_type -> zcard.api.admin.v1.RejectReviewRequest
+	34, // 48: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:input_type -> zcard.api.admin.v1.CreateVirtualReviewRequest
+	35, // 49: zcard.api.admin.v1.AdminCatalogService.ListSkus:input_type -> zcard.api.admin.v1.ListSkusRequest
+	38, // 50: zcard.api.admin.v1.AdminCatalogService.CreateSku:input_type -> zcard.api.admin.v1.CreateSkuRequest
+	39, // 51: zcard.api.admin.v1.AdminCatalogService.UpdateSku:input_type -> zcard.api.admin.v1.UpdateSkuRequest
+	40, // 52: zcard.api.admin.v1.AdminCatalogService.DeleteSku:input_type -> zcard.api.admin.v1.DeleteSkuRequest
+	63, // 53: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:input_type -> google.protobuf.Empty
+	43, // 54: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:input_type -> zcard.api.admin.v1.CreateMemberGroupRequest
+	44, // 55: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:input_type -> zcard.api.admin.v1.UpdateMemberGroupRequest
+	45, // 56: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:input_type -> zcard.api.admin.v1.DeleteMemberGroupRequest
+	1,  // 57: zcard.api.admin.v1.AdminCatalogService.ListProducts:output_type -> zcard.api.admin.v1.ListProductsReply
+	3,  // 58: zcard.api.admin.v1.AdminCatalogService.GetProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 59: zcard.api.admin.v1.AdminCatalogService.CreateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	3,  // 60: zcard.api.admin.v1.AdminCatalogService.UpdateProduct:output_type -> zcard.api.admin.v1.AdminProduct
+	63, // 61: zcard.api.admin.v1.AdminCatalogService.DeleteProduct:output_type -> google.protobuf.Empty
+	7,  // 62: zcard.api.admin.v1.AdminCatalogService.PreviewDeleteProduct:output_type -> zcard.api.admin.v1.DeleteProductPreview
+	9,  // 63: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductStatus:output_type -> zcard.api.admin.v1.BatchUpdateProductStatusReply
+	11, // 64: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductCategory:output_type -> zcard.api.admin.v1.BatchUpdateProductCategoryReply
+	51, // 65: zcard.api.admin.v1.AdminCatalogService.PreviewBatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentPreview
+	53, // 66: zcard.api.admin.v1.AdminCatalogService.BatchUpdateProductContent:output_type -> zcard.api.admin.v1.BatchProductContentResult
+	53, // 67: zcard.api.admin.v1.AdminCatalogService.GetBatchProductContentResult:output_type -> zcard.api.admin.v1.BatchProductContentResult
+	3,  // 68: zcard.api.admin.v1.AdminCatalogService.SetProductLock:output_type -> zcard.api.admin.v1.AdminProduct
+	58, // 69: zcard.api.admin.v1.AdminCatalogService.GetCategoryPlacements:output_type -> zcard.api.admin.v1.CategoryPlacementsReply
+	58, // 70: zcard.api.admin.v1.AdminCatalogService.SetCategoryPlacements:output_type -> zcard.api.admin.v1.CategoryPlacementsReply
+	12, // 71: zcard.api.admin.v1.AdminCatalogService.ListCategories:output_type -> zcard.api.admin.v1.CategoryList
+	13, // 72: zcard.api.admin.v1.AdminCatalogService.CreateCategory:output_type -> zcard.api.admin.v1.Category
+	13, // 73: zcard.api.admin.v1.AdminCatalogService.UpdateCategory:output_type -> zcard.api.admin.v1.Category
+	63, // 74: zcard.api.admin.v1.AdminCatalogService.DeleteCategory:output_type -> google.protobuf.Empty
+	47, // 75: zcard.api.admin.v1.AdminCatalogService.MergeCategories:output_type -> zcard.api.admin.v1.MergeCategoriesReply
+	63, // 76: zcard.api.admin.v1.AdminCatalogService.ReorderCategories:output_type -> google.protobuf.Empty
+	18, // 77: zcard.api.admin.v1.AdminCatalogService.ListTags:output_type -> zcard.api.admin.v1.TagList
+	19, // 78: zcard.api.admin.v1.AdminCatalogService.CreateTag:output_type -> zcard.api.admin.v1.Tag
+	63, // 79: zcard.api.admin.v1.AdminCatalogService.DeleteTag:output_type -> google.protobuf.Empty
+	23, // 80: zcard.api.admin.v1.AdminCatalogService.ListControls:output_type -> zcard.api.admin.v1.ControlList
+	24, // 81: zcard.api.admin.v1.AdminCatalogService.CreateControl:output_type -> zcard.api.admin.v1.AdminControl
+	24, // 82: zcard.api.admin.v1.AdminCatalogService.UpdateControl:output_type -> zcard.api.admin.v1.AdminControl
+	63, // 83: zcard.api.admin.v1.AdminCatalogService.DeleteControl:output_type -> google.protobuf.Empty
+	29, // 84: zcard.api.admin.v1.AdminCatalogService.ListReviews:output_type -> zcard.api.admin.v1.ListReviewsReply
+	30, // 85: zcard.api.admin.v1.AdminCatalogService.ApproveReview:output_type -> zcard.api.admin.v1.ReviewItem
+	30, // 86: zcard.api.admin.v1.AdminCatalogService.RejectReview:output_type -> zcard.api.admin.v1.ReviewItem
+	33, // 87: zcard.api.admin.v1.AdminCatalogService.CreateVirtualReview:output_type -> zcard.api.admin.v1.VirtualReviewItem
+	36, // 88: zcard.api.admin.v1.AdminCatalogService.ListSkus:output_type -> zcard.api.admin.v1.SkuList
+	37, // 89: zcard.api.admin.v1.AdminCatalogService.CreateSku:output_type -> zcard.api.admin.v1.Sku
+	37, // 90: zcard.api.admin.v1.AdminCatalogService.UpdateSku:output_type -> zcard.api.admin.v1.Sku
+	63, // 91: zcard.api.admin.v1.AdminCatalogService.DeleteSku:output_type -> google.protobuf.Empty
+	41, // 92: zcard.api.admin.v1.AdminCatalogService.ListMemberGroups:output_type -> zcard.api.admin.v1.MemberGroupList
+	42, // 93: zcard.api.admin.v1.AdminCatalogService.CreateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	42, // 94: zcard.api.admin.v1.AdminCatalogService.UpdateMemberGroup:output_type -> zcard.api.admin.v1.MemberGroup
+	63, // 95: zcard.api.admin.v1.AdminCatalogService.DeleteMemberGroup:output_type -> google.protobuf.Empty
+	57, // [57:96] is the sub-list for method output_type
+	18, // [18:57] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_catalog_proto_init() }
@@ -4885,6 +5366,7 @@ func file_admin_v1_catalog_proto_init() {
 	if File_admin_v1_catalog_proto != nil {
 		return
 	}
+	file_admin_v1_catalog_proto_msgTypes[0].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[3].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[4].OneofWrappers = []any{}
 	file_admin_v1_catalog_proto_msgTypes[5].OneofWrappers = []any{}
@@ -4900,7 +5382,7 @@ func file_admin_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_catalog_proto_rawDesc), len(file_admin_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   57,
+			NumMessages:   63,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

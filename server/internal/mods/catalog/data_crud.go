@@ -6,6 +6,7 @@ package catalog
 import (
 	"context"
 	"fmt"
+	placement "github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"strings"
 	"time"
 
@@ -31,6 +32,9 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 	q := data.Client(ctx, r.data).Product.Query().
 		Where(product.SubsiteID(tc.SubsiteID), product.StatusGTE(0)).
 		Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
+	if f.IsLocked != nil {
+		q = q.Where(product.IsLocked(*f.IsLocked))
+	}
 	if f.CategoryID > 0 {
 		// 选择父分类时递归包含全部子分类商品
 		desc, err := descendantCategoryIDs(ctx, data.Client(ctx, r.data), f.CategoryID)
@@ -96,7 +100,7 @@ func (r *ProductRepoImpl) ListAdmin(ctx context.Context, f port.AdminFilter) ([]
 		q = q.Offset((int(f.Page) - 1) * int(f.PageSize)).Limit(int(f.PageSize))
 	}
 	if f.OptionsOnly {
-		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldSort)
+		q.Select(product.FieldID, product.FieldName, product.FieldCategoryID, product.FieldPrice, product.FieldStockType, product.FieldSort, product.FieldIsLocked, product.FieldLockVersion, product.FieldStatus, product.FieldCover, product.FieldUpstreamSourceID)
 	}
 	rows, err := q.All(ctx)
 	return rows, int64(total), err
@@ -279,20 +283,15 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 
 // BatchUpdateStatus 批量上下架（ 列表多选；status 1/0/2）。
 func (r *ProductRepoImpl) BatchUpdateStatus(ctx context.Context, ids []uint64, status int8) (int, error) {
-	if len(ids) == 0 {
-		return 0, fmt.Errorf("catalog.EMPTY_IDS")
-	}
-	if status != 0 && status != 1 && status != 2 {
-		return 0, fmt.Errorf("catalog.STATUS_INVALID")
-	}
-	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(product.IDIn(ids...), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
-		SetStatus(status).
-		Save(ctx)
+	existing, err := data.Client(ctx, r.data).Product.Query().Where(product.IDIn(ids...), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.StatusGTE(0)).IDs(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return n, nil
+	if len(existing) == 0 {
+		return 0, nil
+	}
+	n, _, err := r.batchStatus(ctx, existing, status)
+	return n, err
 }
 
 // DeleteProduct 删除（软外键约束：有卡密时拒删）。
@@ -386,7 +385,7 @@ func (r *ProductRepoImpl) CreateCategory(ctx context.Context, name string, paren
 // 指针语义（缺省不变）：icon nil=不变（空串=清除）；hide nil=不变；
 // sort nil=不变；parentId nil=不变（0=置顶级；>0=指定父，防环：
 // 不能把分类设为自身或自身的后代，否则树成环）。
-func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (*ent.Category, error) {
+func (r *ProductRepoImpl) updateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (*ent.Category, error) {
 	client := data.Client(ctx, r.data)
 	if _, err := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Only(ctx); err != nil {
 		return nil, err
@@ -447,7 +446,7 @@ func descendantCategoryIDs(ctx context.Context, client *ent.Client, id uint64) (
 }
 
 // DeleteCategory 删除（有子分类或有商品时拒删）。
-func (r *ProductRepoImpl) DeleteCategory(ctx context.Context, id uint64) error {
+func (r *ProductRepoImpl) deleteCategory(ctx context.Context, id uint64) error {
 	client := data.Client(ctx, r.data)
 	hasChildren, err := client.Category.Query().Where(category.ParentID(id)).Exist(ctx)
 	if err != nil {
@@ -479,36 +478,42 @@ func (r *ProductRepoImpl) ReorderCategories(ctx context.Context, parentID uint64
 	if len(ids) == 0 {
 		return nil
 	}
-	client := data.Client(ctx, r.data)
-	// 防环：目标父级不能是任一被移动分类自身或其后代
-	if parentID > 0 {
-		for _, id := range ids {
-			desc, err := descendantCategoryIDs(ctx, client, id)
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if err := lockCategoryStructure(ctx, r.data); err != nil {
+			return err
+		}
+		client := data.Client(ctx, r.data)
+		tenant := tenancy.FromContext(ctx).SubsiteID
+		if parentID > 0 {
+			if _, err := client.Category.Query().Where(category.ID(parentID), category.SubsiteID(tenant)).Only(ctx); err != nil {
+				return err
+			}
+		}
+		for i, id := range ids {
+			row, err := client.Category.Query().Where(category.ID(id), category.SubsiteID(tenant)).Only(ctx)
 			if err != nil {
 				return err
 			}
-			if desc[parentID] {
-				return fmt.Errorf("catalog.CATEGORY_CYCLE")
+			if row.ParentID != parentID {
+				if err = r.checkCategoryTree(ctx, id, parentID); err != nil {
+					return err
+				}
+				if err = r.guardCategoryProducts(ctx, []uint64{id}); err != nil {
+					return err
+				}
+			}
+			upd := client.Category.UpdateOneID(id).SetSort(int32(i))
+			if parentID > 0 {
+				upd.SetParentID(parentID)
+			} else {
+				upd.ClearParentID()
+			}
+			if err = upd.Exec(ctx); err != nil {
+				return err
 			}
 		}
-	}
-	tx, err := client.Tx(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-	for i, id := range ids {
-		upd := tx.Category.UpdateOneID(id).SetSort(int32(i))
-		if parentID > 0 {
-			upd = upd.SetParentID(parentID)
-		} else {
-			upd = upd.ClearParentID() // 置顶级
-		}
-		if err := upd.Exec(ctx); err != nil {
-			return err
-		}
-	}
-	return tx.Commit()
+		return nil
+	})
 }
 
 func (r *ProductRepoImpl) checkCategoryTree(ctx context.Context, id, parentID uint64) error {
@@ -575,6 +580,7 @@ func ToAdminPB(p *ent.Product) *adminv1.AdminProduct {
 		PointsRequired:   p.PointsRequired,
 		HasDirectContent: len(p.DirectContent) > 0,
 		IsRecommend:      p.IsRecommend,
+		IsLocked:         p.IsLocked, LockVersion: p.LockVersion, LockedBy: p.LockedBy, LockedAt: productLockedAt(p),
 	}
 	if !p.CreatedAt.IsZero() {
 		out.CreatedAt = p.CreatedAt.Unix()
@@ -618,7 +624,9 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 
 	if err == nil {
-		if err = data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).AddSort(0).Exec(ctx); err != nil {
+		if !existing.IsLocked && existing.Status < 0 {
+			// Archived records retain their manual re-import path.
+		} else if _, err = data.GuardProductWrite(ctx, r.data, existing.ID); err != nil {
 			return 0, false, err
 		}
 		locked := data.Client(ctx, r.data).Product.Query().Where(product.ID(existing.ID))
@@ -885,6 +893,9 @@ func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID 
 		if err != nil {
 			return err
 		}
+		if _, err := data.GuardProductWrite(ctx, r.data, p.ID); err != nil {
+			return err
+		}
 		update := client.Product.UpdateOneID(p.ID).SetUpstreamSyncedAt(time.Now().UTC())
 		if priceCents >= 0 {
 			update.SetPrice(priceCents)
@@ -914,7 +925,7 @@ func (r *ProductRepoImpl) UpdateUpstreamStatus(ctx context.Context, connectionID
 			product.SubsiteID(tc.SubsiteID),
 			product.UpstreamSourceID(connectionID),
 			product.UpstreamProductCode(productCode),
-			product.StatusGTE(0),
+			product.StatusGTE(0), product.IsLocked(false),
 		).
 		SetStatus(status).
 		SetUpstreamSyncedAt(time.Now().UTC()).
@@ -934,7 +945,7 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 		Where(
 			product.SubsiteID(tc.SubsiteID),
 			product.UpstreamSourceID(connectionID),
-			product.StatusGT(0),
+			product.StatusGT(0), product.IsLocked(false),
 		)
 	if len(seen) > 0 {
 		q = q.Where(product.UpstreamProductCodeNotIn(seen...))
@@ -946,10 +957,9 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 	ids := make([]uint64, 0, len(rows))
 	for _, row := range rows {
 		ids = append(ids, row.ID)
-		deleteProductCover(row.Cover) // 上游已消失 → 本地封面同步清理
 	}
 	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(product.IDIn(ids...), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
+		Where(product.IDIn(ids...), product.IsLocked(false), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
 		SetStatus(0).
 		Save(ctx)
 	if err != nil {
@@ -1056,7 +1066,7 @@ func (r *ProductRepoImpl) CreateProduct(ctx context.Context, in port.ProductInpu
 }
 func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.ProductInput) (out *ent.Product, err error) {
 	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
-		if e := data.Client(ctx, r.data).Product.UpdateOneID(id).AddSort(0).Exec(ctx); e != nil {
+		if _, e := data.GuardProductWrite(ctx, r.data, id); e != nil {
 			return e
 		}
 		old, e := data.Client(ctx, r.data).Product.Get(ctx, id)
@@ -1073,7 +1083,7 @@ func (r *ProductRepoImpl) UpdateProduct(ctx context.Context, id uint64, in port.
 }
 func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
 	return data.Tx(ctx, r.data, func(ctx context.Context) error {
-		if e := data.Client(ctx, r.data).Product.UpdateOneID(id).AddSort(0).Exec(ctx); e != nil {
+		if _, e := data.GuardProductWrite(ctx, r.data, id); e != nil {
 			return e
 		}
 		old, e := data.Client(ctx, r.data).Product.Get(ctx, id)
@@ -1085,4 +1095,56 @@ func (r *ProductRepoImpl) DeleteProduct(ctx context.Context, id uint64) error {
 		}
 		return data.SyncProductMediaRefs(ctx, r.data, old, nil)
 	})
+}
+
+func (r *ProductRepoImpl) UpdateCategory(ctx context.Context, id uint64, name string, icon *string, hide *bool, sort *int32, parentID *int64) (out *ent.Category, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := lockCategoryStructure(ctx, r.data); e != nil {
+			return e
+		}
+		if parentID != nil {
+			if e := r.guardCategoryProducts(ctx, []uint64{id}); e != nil {
+				return e
+			}
+		}
+		var e error
+		out, e = r.updateCategory(ctx, id, name, icon, hide, sort, parentID)
+		return e
+	})
+	return
+}
+func (r *ProductRepoImpl) DeleteCategory(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if e := lockCategoryStructure(ctx, r.data); e != nil {
+			return e
+		}
+		if e := r.deleteCategory(ctx, id); e != nil {
+			return e
+		}
+		_, e := data.Client(ctx, r.data).CategoryProductPlacement.Delete().Where(placement.CategoryID(id), placement.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).Exec(ctx)
+		return e
+	})
+}
+func (r *ProductRepoImpl) guardCategoryProducts(ctx context.Context, ids []uint64) error {
+	c := data.Client(ctx, r.data)
+	all := []uint64{}
+	for _, id := range ids {
+		desc, e := descendantCategoryIDs(ctx, c, id)
+		if e != nil {
+			return e
+		}
+		for child := range desc {
+			all = append(all, child)
+		}
+	}
+	products, e := c.Product.Query().Where(product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.CategoryIDIn(all...), product.StatusGTE(0)).Order(ent.Asc(product.FieldID)).IDs(ctx)
+	if e != nil {
+		return e
+	}
+	for _, id := range products {
+		if _, e = data.GuardProductWrite(ctx, r.data, id); e != nil {
+			return e
+		}
+	}
+	return nil
 }

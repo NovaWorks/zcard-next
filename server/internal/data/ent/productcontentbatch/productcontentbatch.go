@@ -33,6 +33,8 @@ const (
 	FieldMatched = "matched"
 	// FieldChanged holds the string denoting the changed field in the database.
 	FieldChanged = "changed"
+	// FieldSkippedLocked holds the string denoting the skipped_locked field in the database.
+	FieldSkippedLocked = "skipped_locked"
 	// Table holds the table name of the productcontentbatch in the database.
 	Table = "product_content_batches"
 )
@@ -50,6 +52,7 @@ var Columns = []string{
 	FieldCompleted,
 	FieldMatched,
 	FieldChanged,
+	FieldSkippedLocked,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -79,6 +82,8 @@ var (
 	DefaultMatched int32
 	// DefaultChanged holds the default value on creation for the "changed" field.
 	DefaultChanged int32
+	// DefaultSkippedLocked holds the default value on creation for the "skipped_locked" field.
+	DefaultSkippedLocked int32
 )
 
 // OrderOption defines the ordering options for the ProductContentBatch queries.
@@ -132,4 +137,9 @@ func ByMatched(opts ...sql.OrderTermOption) OrderOption {
 // ByChanged orders the results by the changed field.
 func ByChanged(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldChanged, opts...).ToFunc()
+}
+
+// BySkippedLocked orders the results by the skipped_locked field.
+func BySkippedLocked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSkippedLocked, opts...).ToFunc()
 }

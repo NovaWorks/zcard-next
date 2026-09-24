@@ -865,6 +865,47 @@ paths:
                 "200":
                     description: OK
                     content: {}
+    /api/v1/admin/categories/{categoryId}/placements:
+        get:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_GetCategoryPlacements
+            parameters:
+                - name: categoryId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CategoryPlacementsReply'
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_SetCategoryPlacements
+            parameters:
+                - name: categoryId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetCategoryPlacementsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.CategoryPlacementsReply'
     /api/v1/admin/categories/{id}:
         put:
             tags:
@@ -3295,6 +3336,10 @@ paths:
                   in: query
                   schema:
                     type: string
+                - name: isLocked
+                  in: query
+                  schema:
+                    type: boolean
                 - name: optionsOnly
                   in: query
                   schema:
@@ -3499,6 +3544,30 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.DeleteProductPreview'
+    /api/v1/admin/products/{id}/lock:
+        put:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_SetProductLock
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetProductLockRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
     /api/v1/admin/products/{productId}/controls:
         get:
             tags:
@@ -7185,6 +7254,14 @@ components:
                     type: boolean
                 descriptionProtected:
                     type: boolean
+                isLocked:
+                    type: boolean
+                lockVersion:
+                    type: string
+                lockedBy:
+                    type: string
+                lockedAt:
+                    type: string
             description: AdminProduct 管理面商品（含成本价等敏感字段）。
         zcard.api.admin.v1.AdminProfile:
             type: object
@@ -7390,6 +7467,9 @@ components:
                 protectionChanged:
                     type: integer
                     format: int32
+                skippedLocked:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.BatchProductContentRequest:
             type: object
             properties:
@@ -7398,6 +7478,9 @@ components:
         zcard.api.admin.v1.BatchProductContentResult:
             type: object
             properties:
+                skippedLocked:
+                    type: integer
+                    format: int32
                 completed:
                     type: boolean
                 matched:
@@ -7438,6 +7521,9 @@ components:
                 updated:
                     type: integer
                     format: int32
+                skippedLocked:
+                    type: integer
+                    format: int32
         zcard.api.admin.v1.BatchUpdateProductCategoryRequest:
             required:
                 - ids
@@ -7454,6 +7540,9 @@ components:
             type: object
             properties:
                 updated:
+                    type: integer
+                    format: int32
+                skippedLocked:
                     type: integer
                     format: int32
         zcard.api.admin.v1.BatchUpdateProductStatusRequest:
@@ -7608,6 +7697,38 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Category'
+        zcard.api.admin.v1.CategoryPlacementInput:
+            type: object
+            properties:
+                productId:
+                    type: string
+                isPinned:
+                    type: boolean
+                isRecommended:
+                    type: boolean
+                position:
+                    type: integer
+                    format: int32
+        zcard.api.admin.v1.CategoryPlacementItem:
+            type: object
+            properties:
+                placement:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.CategoryPlacementInput'
+                product:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.AdminProduct'
+                unavailableReason:
+                    type: string
+        zcard.api.admin.v1.CategoryPlacementsReply:
+            type: object
+            properties:
+                categoryId:
+                    type: string
+                version:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.CategoryPlacementItem'
         zcard.api.admin.v1.ChangeAdminPasswordRequest:
             type: object
             properties:
@@ -10908,6 +11029,26 @@ components:
             properties:
                 entries:
                     type: string
+        zcard.api.admin.v1.SetCategoryPlacementsRequest:
+            type: object
+            properties:
+                categoryId:
+                    type: string
+                expectedVersion:
+                    type: string
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.CategoryPlacementInput'
+        zcard.api.admin.v1.SetProductLockRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                isLocked:
+                    type: boolean
+                expectedVersion:
+                    type: string
         zcard.api.admin.v1.SetSupplierIPWhitelistRequest:
             required:
                 - id
@@ -13445,6 +13586,10 @@ components:
                     type: string
                 flashSale:
                     $ref: '#/components/schemas/zcard.api.storefront.v1.FlashOffer'
+                categoryRecommend:
+                    type: boolean
+                categoryPinned:
+                    type: boolean
         zcard.api.storefront.v1.ProductControl:
             type: object
             properties:

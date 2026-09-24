@@ -30,6 +30,8 @@ type Tx struct {
 	CartItem *CartItemClient
 	// Category is the client for interacting with the Category builders.
 	Category *CategoryClient
+	// CategoryProductPlacement is the client for interacting with the CategoryProductPlacement builders.
+	CategoryProductPlacement *CategoryProductPlacementClient
 	// Coupon is the client for interacting with the Coupon builders.
 	Coupon *CouponClient
 	// Currency is the client for interacting with the Currency builders.
@@ -334,6 +336,7 @@ func (tx *Tx) init() {
 	tx.CardImport = NewCardImportClient(tx.config)
 	tx.CartItem = NewCartItemClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
+	tx.CategoryProductPlacement = NewCategoryProductPlacementClient(tx.config)
 	tx.Coupon = NewCouponClient(tx.config)
 	tx.Currency = NewCurrencyClient(tx.config)
 	tx.DailyStat = NewDailyStatClient(tx.config)

@@ -444,13 +444,15 @@ type Product struct {
 	// 积分兑换价（0=常规商品；>0=积分商城商品，下单走积分兑换分支；）
 	PointsRequired int64 `protobuf:"varint,15,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	// 运营推荐（首页推荐位标记）
-	IsRecommend    bool        `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
-	StockStatus    string      `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
-	StockReference int64       `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
-	StockCheckedAt int64       `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
-	FlashSale      *FlashOffer `protobuf:"bytes,20,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	IsRecommend       bool        `protobuf:"varint,16,opt,name=is_recommend,json=isRecommend,proto3" json:"is_recommend,omitempty"`
+	StockStatus       string      `protobuf:"bytes,17,opt,name=stock_status,json=stockStatus,proto3" json:"stock_status,omitempty"`             // current | stale | unknown
+	StockReference    int64       `protobuf:"varint,18,opt,name=stock_reference,json=stockReference,proto3" json:"stock_reference,omitempty"`   // 仅供展示的上次库存，不作为购买校验依据
+	StockCheckedAt    int64       `protobuf:"varint,19,opt,name=stock_checked_at,json=stockCheckedAt,proto3" json:"stock_checked_at,omitempty"` // 上次库存查询时间
+	FlashSale         *FlashOffer `protobuf:"bytes,20,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
+	CategoryRecommend bool        `protobuf:"varint,23,opt,name=category_recommend,json=categoryRecommend,proto3" json:"category_recommend,omitempty"`
+	CategoryPinned    bool        `protobuf:"varint,24,opt,name=category_pinned,json=categoryPinned,proto3" json:"category_pinned,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
@@ -635,6 +637,20 @@ func (x *Product) GetFlashSale() *FlashOffer {
 		return x.FlashSale
 	}
 	return nil
+}
+
+func (x *Product) GetCategoryRecommend() bool {
+	if x != nil {
+		return x.CategoryRecommend
+	}
+	return false
+}
+
+func (x *Product) GetCategoryPinned() bool {
+	if x != nil {
+		return x.CategoryPinned
+	}
+	return false
 }
 
 // ProductControl 自定义控件定义（下单表单渲染）。
@@ -953,7 +969,7 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"priceCents\x12\x15\n" +
 	"\x06end_at\x18\x02 \x01(\x03R\x05endAt\x12\x1c\n" +
 	"\tremaining\x18\x03 \x01(\x05R\tremaining\x12$\n" +
-	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\xc0\x06\n" +
+	"\x0eper_user_limit\x18\x04 \x01(\x05R\fperUserLimit\"\x98\a\n" +
 	"\aProduct\x12)\n" +
 	"\x10fulfillment_mode\x18\x15 \x01(\tR\x0ffulfillmentMode\x12!\n" +
 	"\fmanual_stock\x18\x16 \x01(\x03R\vmanualStock\x12\x0e\n" +
@@ -982,7 +998,9 @@ const file_storefront_v1_catalog_proto_rawDesc = "" +
 	"\x0fstock_reference\x18\x12 \x01(\x03R\x0estockReference\x12(\n" +
 	"\x10stock_checked_at\x18\x13 \x01(\x03R\x0estockCheckedAt\x12B\n" +
 	"\n" +
-	"flash_sale\x18\x14 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\"\xf3\x01\n" +
+	"flash_sale\x18\x14 \x01(\v2#.zcard.api.storefront.v1.FlashOfferR\tflashSale\x12-\n" +
+	"\x12category_recommend\x18\x17 \x01(\bR\x11categoryRecommend\x12'\n" +
+	"\x0fcategory_pinned\x18\x18 \x01(\bR\x0ecategoryPinned\"\xf3\x01\n" +
 	"\x0eProductControl\x12 \n" +
 	"\vplaceholder\x18\a \x01(\tR\vplaceholder\x12\x1e\n" +
 	"\n" +

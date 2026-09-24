@@ -117,6 +117,18 @@ func (f CategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CategoryMutation", m)
 }
 
+// The CategoryProductPlacementFunc type is an adapter to allow the use of ordinary
+// function as CategoryProductPlacement mutator.
+type CategoryProductPlacementFunc func(context.Context, *ent.CategoryProductPlacementMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CategoryProductPlacementFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CategoryProductPlacementMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CategoryProductPlacementMutation", m)
+}
+
 // The CouponFunc type is an adapter to allow the use of ordinary
 // function as Coupon mutator.
 type CouponFunc func(context.Context, *ent.CouponMutation) (ent.Value, error)

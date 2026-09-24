@@ -33,6 +33,9 @@ type CartItem func(*sql.Selector)
 // Category is the predicate function for category builders.
 type Category func(*sql.Selector)
 
+// CategoryProductPlacement is the predicate function for categoryproductplacement builders.
+type CategoryProductPlacement func(*sql.Selector)
+
 // Coupon is the predicate function for coupon builders.
 type Coupon func(*sql.Selector)
 

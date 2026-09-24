@@ -78,7 +78,7 @@ async function createPreview() {
   } finally { busy.value = false; }
 }
 function complete(data: BatchContentResult) {
-  window.$message?.success(`已处理 ${data.matched} 件商品，修改 ${data.changed} 件，未变化 ${data.unchanged} 件`);
+  window.$message?.success(`已处理 ${data.matched} 件商品，修改 ${data.changed} 件，未变化 ${data.unchanged} 件，跳过锁定商品 ${data.skipped_locked || 0} 件`);
   resultUnknown.value = false; emit("update:show", false); emit("saved");
 }
 async function submit() {
@@ -116,10 +116,12 @@ function repreview() {
 </script>
 
 <template>
+  <!-- Locked skips remain visible in the preview, not reported as errors. -->
   <NModal :show="show" preset="card" title="批量修改内容" class="batch-content-modal" style="width: min(960px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto"
     :mask-closable="!busy && !resultUnknown" :closable="!busy && !resultUnknown" :close-on-esc="!busy && !resultUnknown" @update:show="close">
     <NSteps :current="step" size="small" class="mb-16px"><NStep title="选择范围" /><NStep title="编辑内容" /><NStep title="预览确认" /></NSteps>
-    <NAlert v-if="errorText" type="error" class="mb-12px" role="alert">{{ errorText }}</NAlert>
+    <NAlert v-if="preview?.skipped_locked" type="info" class="mb-12px">本次自动跳过 {{ preview.skipped_locked }} 件锁定商品。</NAlert>
+      <NAlert v-if="errorText" type="error" class="mb-12px" role="alert">{{ errorText }}</NAlert>
     <div v-if="step === 1">
       <NRadioGroup v-model:value="scope"><NSpace vertical>
         <NRadio value="selected" :disabled="!selectedIDs.length">已勾选商品（{{ selectedIDs.length }} 件）</NRadio>

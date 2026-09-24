@@ -20,5 +20,6 @@ func (ProductContentBatch) Fields() []ent.Field {
 		field.Bool("completed").Default(false),
 		field.Int32("matched").Default(0),
 		field.Int32("changed").Default(0),
+		field.Int32("skipped_locked").Default(0),
 	}
 }

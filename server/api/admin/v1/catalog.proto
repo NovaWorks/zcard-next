@@ -51,6 +51,15 @@ service AdminCatalogService {
     option (google.api.http) = { get: "/api/v1/admin/products/batch-content/results/{request_id}" };
   }
 
+  rpc SetProductLock(SetProductLockRequest) returns (AdminProduct) {
+    option (google.api.http) = { put: "/api/v1/admin/products/{id}/lock" body: "*" };
+  }
+  rpc GetCategoryPlacements(GetCategoryPlacementsRequest) returns (CategoryPlacementsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/categories/{category_id}/placements" };
+  }
+  rpc SetCategoryPlacements(SetCategoryPlacementsRequest) returns (CategoryPlacementsReply) {
+    option (google.api.http) = { put: "/api/v1/admin/categories/{category_id}/placements" body: "*" };
+  }
   // ── 分类 ──
   rpc ListCategories(google.protobuf.Empty) returns (CategoryList) {
     option (google.api.http) = { get: "/api/v1/admin/categories" };
@@ -153,6 +162,7 @@ message ListProductsRequest {
   bool out_of_stock_only = 9; // 仅库存为 0，按自营/上游货源分别计算
   bool local_only = 8; // 仅看自营（无上游渠道）
   string stock_type = 10; // card | url | code，空表示全部
+  optional bool is_locked = 12;
   bool options_only = 11; // 轻量下拉选项，不读取描述及库存/销量；默认保持完整列表
 }
 
@@ -204,6 +214,10 @@ message AdminProduct {
   int64 stock_checked_at = 27; // 上次库存查询时间
   bool cover_protected = 28;
   bool description_protected = 29;
+  bool is_locked = 32;
+  int64 lock_version = 33;
+  uint64 locked_by = 34;
+  int64 locked_at = 35;
 
 }
 
@@ -279,6 +293,7 @@ message BatchUpdateProductStatusRequest {
 
 message BatchUpdateProductStatusReply {
   int32 updated = 1;
+  int32 skipped_locked = 2;
 }
 
 message BatchUpdateProductCategoryRequest {
@@ -287,6 +302,7 @@ message BatchUpdateProductCategoryRequest {
 }
 message BatchUpdateProductCategoryReply {
   int32 updated = 1;
+  int32 skipped_locked = 2;
 }
 
 // ── 分类消息 ──
@@ -607,11 +623,26 @@ message BatchProductContentPreview {
   repeated BatchProductContentTarget targets = 8;
   int32 content_changed = 9;
   int32 protection_changed = 10;
+  int32 skipped_locked = 11;
 }
 message BatchProductContentRequest { string request_id = 1; }
 message BatchProductContentResult {
+  int32 skipped_locked = 5;
   bool completed = 1;
   int32 matched = 2;
   int32 changed = 3;
   int32 unchanged = 4;
+}
+
+message SetProductLockRequest { uint64 id = 1; bool is_locked = 2; int64 expected_version = 3; }
+message GetCategoryPlacementsRequest { uint64 category_id = 1; }
+message CategoryPlacementInput { uint64 product_id = 1; bool is_pinned = 2; bool is_recommended = 3; int32 position = 4; }
+message CategoryPlacementItem {
+  CategoryPlacementInput placement = 1; AdminProduct product = 2; string unavailable_reason = 3;
+}
+message CategoryPlacementsReply {
+  uint64 category_id = 1; int64 version = 2; repeated CategoryPlacementItem items = 3;
+}
+message SetCategoryPlacementsRequest {
+  uint64 category_id = 1; int64 expected_version = 2; repeated CategoryPlacementInput items = 3;
 }

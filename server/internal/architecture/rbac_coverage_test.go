@@ -78,6 +78,7 @@ var adminOnlyAllowlist = map[string]bool{
 	"settings:currency_delete":  true,
 	// 商品目录写操作（超管专属， 起按角色开放）
 	"catalog:write":           true,
+	"catalog:lock":            true,
 	"catalog:delete":          true,
 	"catalog:category_write":  true,
 	"catalog:category_delete": true,

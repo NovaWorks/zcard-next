@@ -83,7 +83,7 @@ func (r *ProductRepoImpl) CreateReview(ctx context.Context, productID, userID, o
 // ── 虚拟评价 ────────────────────────────────────────────────
 
 // CreateVirtualReview 创建虚拟评价。
-func (r *ProductRepoImpl) CreateVirtualReview(ctx context.Context, productID uint64, nickname, content string, rating int8, sort int32) (*ent.VirtualReview, error) {
+func (r *ProductRepoImpl) createVirtualReview(ctx context.Context, productID uint64, nickname, content string, rating int8, sort int32) (*ent.VirtualReview, error) {
 	return data.Client(ctx, r.data).VirtualReview.Create().
 		SetProductID(productID).
 		SetNickname(nickname).
@@ -155,4 +155,16 @@ func (r *ProductRepoImpl) ListProductReviews(ctx context.Context, productID uint
 		return out[i].CreatedAt.After(out[j].CreatedAt)
 	})
 	return out, nil
+}
+
+func (r *ProductRepoImpl) CreateVirtualReview(ctx context.Context, productID uint64, nickname, content string, rating int8, sort int32) (out *ent.VirtualReview, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if _, e := data.GuardProductWrite(ctx, r.data, productID); e != nil {
+			return e
+		}
+		var e error
+		out, e = r.createVirtualReview(ctx, productID, nickname, content, rating, sort)
+		return e
+	})
+	return
 }

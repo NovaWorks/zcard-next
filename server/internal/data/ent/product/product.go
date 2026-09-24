@@ -75,6 +75,14 @@ const (
 	FieldUpstreamProductCode = "upstream_product_code"
 	// FieldUpstreamSyncedAt holds the string denoting the upstream_synced_at field in the database.
 	FieldUpstreamSyncedAt = "upstream_synced_at"
+	// FieldIsLocked holds the string denoting the is_locked field in the database.
+	FieldIsLocked = "is_locked"
+	// FieldLockVersion holds the string denoting the lock_version field in the database.
+	FieldLockVersion = "lock_version"
+	// FieldLockedBy holds the string denoting the locked_by field in the database.
+	FieldLockedBy = "locked_by"
+	// FieldLockedAt holds the string denoting the locked_at field in the database.
+	FieldLockedAt = "locked_at"
 	// EdgeSkus holds the string denoting the skus edge name in mutations.
 	EdgeSkus = "skus"
 	// EdgeCards holds the string denoting the cards edge name in mutations.
@@ -130,6 +138,10 @@ var Columns = []string{
 	FieldUpstreamSourceID,
 	FieldUpstreamProductCode,
 	FieldUpstreamSyncedAt,
+	FieldIsLocked,
+	FieldLockVersion,
+	FieldLockedBy,
+	FieldLockedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -185,6 +197,12 @@ var (
 	DefaultStatus int8
 	// UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	UpstreamProductCodeValidator func(string) error
+	// DefaultIsLocked holds the default value on creation for the "is_locked" field.
+	DefaultIsLocked bool
+	// DefaultLockVersion holds the default value on creation for the "lock_version" field.
+	DefaultLockVersion int64
+	// DefaultLockedBy holds the default value on creation for the "locked_by" field.
+	DefaultLockedBy uint64
 )
 
 // StockType defines the type for the "stock_type" enum field.
@@ -376,6 +394,26 @@ func ByUpstreamProductCode(opts ...sql.OrderTermOption) OrderOption {
 // ByUpstreamSyncedAt orders the results by the upstream_synced_at field.
 func ByUpstreamSyncedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpstreamSyncedAt, opts...).ToFunc()
+}
+
+// ByIsLocked orders the results by the is_locked field.
+func ByIsLocked(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIsLocked, opts...).ToFunc()
+}
+
+// ByLockVersion orders the results by the lock_version field.
+func ByLockVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLockVersion, opts...).ToFunc()
+}
+
+// ByLockedBy orders the results by the locked_by field.
+func ByLockedBy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLockedBy, opts...).ToFunc()
+}
+
+// ByLockedAt orders the results by the locked_at field.
+func ByLockedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLockedAt, opts...).ToFunc()
 }
 
 // BySkusCount orders the results by skus count.

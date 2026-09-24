@@ -31,6 +31,8 @@ const (
 	FieldSort = "sort"
 	// FieldVisibleSubsites holds the string denoting the visible_subsites field in the database.
 	FieldVisibleSubsites = "visible_subsites"
+	// FieldPlacementVersion holds the string denoting the placement_version field in the database.
+	FieldPlacementVersion = "placement_version"
 	// Table holds the table name of the category in the database.
 	Table = "categories"
 )
@@ -47,6 +49,7 @@ var Columns = []string{
 	FieldHide,
 	FieldSort,
 	FieldVisibleSubsites,
+	FieldPlacementVersion,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -76,6 +79,8 @@ var (
 	DefaultHide bool
 	// DefaultSort holds the default value on creation for the "sort" field.
 	DefaultSort int32
+	// DefaultPlacementVersion holds the default value on creation for the "placement_version" field.
+	DefaultPlacementVersion int64
 )
 
 // OrderOption defines the ordering options for the Category queries.
@@ -124,4 +129,9 @@ func ByHide(opts ...sql.OrderTermOption) OrderOption {
 // BySort orders the results by the sort field.
 func BySort(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldSort, opts...).ToFunc()
+}
+
+// ByPlacementVersion orders the results by the placement_version field.
+func ByPlacementVersion(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPlacementVersion, opts...).ToFunc()
 }

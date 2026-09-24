@@ -132,6 +132,20 @@ func (_c *CategoryCreate) SetVisibleSubsites(v []uint64) *CategoryCreate {
 	return _c
 }
 
+// SetPlacementVersion sets the "placement_version" field.
+func (_c *CategoryCreate) SetPlacementVersion(v int64) *CategoryCreate {
+	_c.mutation.SetPlacementVersion(v)
+	return _c
+}
+
+// SetNillablePlacementVersion sets the "placement_version" field if the given value is not nil.
+func (_c *CategoryCreate) SetNillablePlacementVersion(v *int64) *CategoryCreate {
+	if v != nil {
+		_c.SetPlacementVersion(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *CategoryCreate) SetID(v uint64) *CategoryCreate {
 	_c.mutation.SetID(v)
@@ -193,6 +207,10 @@ func (_c *CategoryCreate) defaults() {
 		v := category.DefaultSort
 		_c.mutation.SetSort(v)
 	}
+	if _, ok := _c.mutation.PlacementVersion(); !ok {
+		v := category.DefaultPlacementVersion
+		_c.mutation.SetPlacementVersion(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -224,6 +242,9 @@ func (_c *CategoryCreate) check() error {
 	}
 	if _, ok := _c.mutation.Sort(); !ok {
 		return &ValidationError{Name: "sort", err: errors.New(`ent: missing required field "Category.sort"`)}
+	}
+	if _, ok := _c.mutation.PlacementVersion(); !ok {
+		return &ValidationError{Name: "placement_version", err: errors.New(`ent: missing required field "Category.placement_version"`)}
 	}
 	return nil
 }
@@ -293,6 +314,10 @@ func (_c *CategoryCreate) createSpec() (*Category, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.VisibleSubsites(); ok {
 		_spec.SetField(category.FieldVisibleSubsites, field.TypeJSON, value)
 		_node.VisibleSubsites = value
+	}
+	if value, ok := _c.mutation.PlacementVersion(); ok {
+		_spec.SetField(category.FieldPlacementVersion, field.TypeInt64, value)
+		_node.PlacementVersion = value
 	}
 	return _node, _spec
 }
@@ -475,6 +500,24 @@ func (u *CategoryUpsert) UpdateVisibleSubsites() *CategoryUpsert {
 // ClearVisibleSubsites clears the value of the "visible_subsites" field.
 func (u *CategoryUpsert) ClearVisibleSubsites() *CategoryUpsert {
 	u.SetNull(category.FieldVisibleSubsites)
+	return u
+}
+
+// SetPlacementVersion sets the "placement_version" field.
+func (u *CategoryUpsert) SetPlacementVersion(v int64) *CategoryUpsert {
+	u.Set(category.FieldPlacementVersion, v)
+	return u
+}
+
+// UpdatePlacementVersion sets the "placement_version" field to the value that was provided on create.
+func (u *CategoryUpsert) UpdatePlacementVersion() *CategoryUpsert {
+	u.SetExcluded(category.FieldPlacementVersion)
+	return u
+}
+
+// AddPlacementVersion adds v to the "placement_version" field.
+func (u *CategoryUpsert) AddPlacementVersion(v int64) *CategoryUpsert {
+	u.Add(category.FieldPlacementVersion, v)
 	return u
 }
 
@@ -680,6 +723,27 @@ func (u *CategoryUpsertOne) UpdateVisibleSubsites() *CategoryUpsertOne {
 func (u *CategoryUpsertOne) ClearVisibleSubsites() *CategoryUpsertOne {
 	return u.Update(func(s *CategoryUpsert) {
 		s.ClearVisibleSubsites()
+	})
+}
+
+// SetPlacementVersion sets the "placement_version" field.
+func (u *CategoryUpsertOne) SetPlacementVersion(v int64) *CategoryUpsertOne {
+	return u.Update(func(s *CategoryUpsert) {
+		s.SetPlacementVersion(v)
+	})
+}
+
+// AddPlacementVersion adds v to the "placement_version" field.
+func (u *CategoryUpsertOne) AddPlacementVersion(v int64) *CategoryUpsertOne {
+	return u.Update(func(s *CategoryUpsert) {
+		s.AddPlacementVersion(v)
+	})
+}
+
+// UpdatePlacementVersion sets the "placement_version" field to the value that was provided on create.
+func (u *CategoryUpsertOne) UpdatePlacementVersion() *CategoryUpsertOne {
+	return u.Update(func(s *CategoryUpsert) {
+		s.UpdatePlacementVersion()
 	})
 }
 
@@ -1051,6 +1115,27 @@ func (u *CategoryUpsertBulk) UpdateVisibleSubsites() *CategoryUpsertBulk {
 func (u *CategoryUpsertBulk) ClearVisibleSubsites() *CategoryUpsertBulk {
 	return u.Update(func(s *CategoryUpsert) {
 		s.ClearVisibleSubsites()
+	})
+}
+
+// SetPlacementVersion sets the "placement_version" field.
+func (u *CategoryUpsertBulk) SetPlacementVersion(v int64) *CategoryUpsertBulk {
+	return u.Update(func(s *CategoryUpsert) {
+		s.SetPlacementVersion(v)
+	})
+}
+
+// AddPlacementVersion adds v to the "placement_version" field.
+func (u *CategoryUpsertBulk) AddPlacementVersion(v int64) *CategoryUpsertBulk {
+	return u.Update(func(s *CategoryUpsert) {
+		s.AddPlacementVersion(v)
+	})
+}
+
+// UpdatePlacementVersion sets the "placement_version" field to the value that was provided on create.
+func (u *CategoryUpsertBulk) UpdatePlacementVersion() *CategoryUpsertBulk {
+	return u.Update(func(s *CategoryUpsert) {
+		s.UpdatePlacementVersion()
 	})
 }
 

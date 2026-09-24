@@ -38,7 +38,8 @@ type Product struct {
 	UpstreamSourceID    uint64 // 0 = 自营
 	UpstreamProductCode string
 	// 运营推荐（storefront 首页推荐位）
-	IsRecommend bool
+	IsRecommend                       bool
+	CategoryRecommend, CategoryPinned bool
 }
 
 // Control 自定义控件 DTO（下单表单渲染）。
@@ -127,6 +128,7 @@ type PricingResolver interface {
 
 // AdminFilter 管理面商品过滤（含下架/隐藏；成本价下发）。
 type AdminFilter struct {
+	IsLocked    *bool
 	OptionsOnly bool // select lightweight product options without stats
 	StockType   string
 	SubsiteID   uint64

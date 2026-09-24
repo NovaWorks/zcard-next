@@ -9,6 +9,7 @@
 package main
 
 import (
+	atlasschema "ariga.io/atlas/sql/schema"
 	"context"
 	"database/sql"
 	"flag"
@@ -17,6 +18,8 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
+	"strings"
 
 	atlasmigrate "ariga.io/atlas/sql/migrate"
 	entdialect "entgo.io/ent/dialect"
@@ -55,9 +58,10 @@ func devURLFor(d string) string {
 
 func main() {
 	var (
-		dialectName = flag.String("dialect", "", "sqlite | mysql | postgres（必填）")
-		devURL      = flag.String("url", "", "dev-db URL（空则用方言默认）")
-		name        = flag.String("name", "changes", "迁移名（kebab/snake）")
+		dialectName    = flag.String("dialect", "", "sqlite | mysql | postgres（必填）")
+		devURL         = flag.String("url", "", "dev-db URL（空则用方言默认）")
+		additiveTables = flag.String("additive-tables", "", "只生成指定表的新增列/索引/表（逗号分隔；排除无关 schema 漂移）")
+		name           = flag.String("name", "changes", "迁移名（kebab/snake）")
 	)
 	flag.Parse()
 
@@ -89,14 +93,63 @@ func main() {
 	if err != nil {
 		log.Fatalf("打开迁移目录失败: %v", err)
 	}
+	options := []entschema.MigrateOption{
+		entschema.WithDir(dir), entschema.WithMigrationMode(entschema.ModeReplay), entschema.WithDialect(d), entschema.WithFormatter(atlasmigrate.DefaultFormatter),
+	}
+	if *additiveTables != "" {
+		tables := strings.Split(*additiveTables, ",")
+		options = append(options, entschema.WithDiffHook(func(next entschema.Differ) entschema.Differ {
+			return entschema.DiffFunc(func(current, desired *atlasschema.Schema) ([]atlasschema.Change, error) {
+				changes, err := next.Diff(current, desired)
+				if err != nil {
+					return nil, err
+				}
+				selected := []atlasschema.Change{}
+				for _, change := range changes {
+					switch c := change.(type) {
+					case *atlasschema.AddTable:
+						if slices.Contains(tables, c.T.Name) {
+							selected = append(selected, c)
+						}
+					case *atlasschema.ModifyTable:
+						if !slices.Contains(tables, c.T.Name) {
+							continue
+						}
+						for _, child := range c.Changes {
+							switch v := child.(type) {
+							case *atlasschema.AddColumn:
+								// Ent represents constant defaults as RawExpr. Atlas otherwise
+								// rebuilds SQLite tables; constants can safely use ADD COLUMN.
+								if d == entdialect.SQLite {
+									if raw, ok := v.C.Default.(*atlasschema.RawExpr); ok {
+										literal := strings.Trim(raw.X, "() ")
+										_, number := strconv.ParseFloat(literal, 64)
+										if literal == "true" || literal == "false" || number == nil {
+											v.C.Default = &atlasschema.Literal{V: literal}
+										}
+									}
+								}
+							case *atlasschema.AddIndex:
+							default:
+								return nil, fmt.Errorf("additive migration refuses %T on %s", child, c.T.Name)
+							}
+						}
+						selected = append(selected, c)
+					case *atlasschema.DropTable:
+						if slices.Contains(tables, c.T.Name) {
+							return nil, fmt.Errorf("additive migration refuses dropping %s", c.T.Name)
+						}
+					}
+				}
+				return selected, nil
+			})
+		}))
+	}
 	if err := migrate.NamedDiff(
 		context.Background(),
 		url,
 		*name,
-		entschema.WithDir(dir),
-		entschema.WithMigrationMode(entschema.ModeReplay),
-		entschema.WithDialect(d),
-		entschema.WithFormatter(atlasmigrate.DefaultFormatter),
+		options...,
 	); err != nil {
 		log.Fatalf("生成迁移失败: %v", err)
 	}

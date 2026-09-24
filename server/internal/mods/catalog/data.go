@@ -7,7 +7,9 @@ import (
 	mediaport "github.com/NovaWorks/zcard-next/server/internal/mods/media/port"
 
 	"context"
+	"entgo.io/ent/dialect/sql"
 	"errors"
+	placement "github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"sync"
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
@@ -58,6 +60,18 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 		q = q.Order(ent.Desc(product.FieldID))
 	default:
 		// 综合排序（default）：运营权重优先，同权重内新商品在前
+		if f.CategoryID > 0 {
+			q = q.Order(func(s *sql.Selector) {
+				t := sql.Table(placement.Table).As("category_placement")
+				s.LeftJoin(t).On(s.C(product.FieldID), t.C(placement.FieldProductID)).OnP(sql.And(sql.EQ(t.C(placement.FieldCategoryID), f.CategoryID), sql.EQ(t.C(placement.FieldSubsiteID), f.SubsiteID)))
+				s.OrderExpr(sql.ExprFunc(func(b *sql.Builder) {
+					b.WriteString("CASE WHEN ").Ident(t.C(placement.FieldIsPinned)).WriteString(" = ").Arg(true).WriteString(" THEN 0 ELSE 1 END")
+				}))
+				s.OrderExpr(sql.ExprFunc(func(b *sql.Builder) {
+					b.WriteString("CASE WHEN ").Ident(t.C(placement.FieldIsPinned)).WriteString(" = ").Arg(true).WriteString(" THEN ").Ident(t.C(placement.FieldPosition)).WriteString(" ELSE 0 END")
+				}))
+			})
+		}
 		q = q.Order(ent.Asc(product.FieldSort), ent.Desc(product.FieldID))
 	}
 	if f.CategoryID > 0 {
@@ -99,6 +113,26 @@ func (r *ProductRepoImpl) ListVisible(ctx context.Context, f port.VisibleFilter)
 	items := make([]port.Product, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, toPortProduct(row))
+	}
+	if f.CategoryID > 0 && len(items) > 0 {
+		ids := make([]uint64, 0, len(items))
+		for _, p := range items {
+			ids = append(ids, p.ID)
+		}
+		placements, e := client.CategoryProductPlacement.Query().Where(placement.SubsiteID(f.SubsiteID), placement.CategoryID(f.CategoryID), placement.ProductIDIn(ids...)).All(ctx)
+		if e != nil {
+			return nil, 0, e
+		}
+		byID := map[uint64]*ent.CategoryProductPlacement{}
+		for _, p := range placements {
+			byID[p.ProductID] = p
+		}
+		for i := range items {
+			if p := byID[items[i].ID]; p != nil {
+				items[i].CategoryRecommend = p.IsRecommended
+				items[i].CategoryPinned = p.IsPinned
+			}
+		}
 	}
 	return items, int64(total), nil
 }

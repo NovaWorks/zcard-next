@@ -33,7 +33,6 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
-	"github.com/NovaWorks/zcard-next/server/internal/data/ent/media"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
 )
@@ -485,6 +484,11 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		canceled, err = s.syncOneLocked(ctx, taskID, task, conn, p, categoryMap, &next, cover)
 		return err
 	})
+	if data.IsProductLocked(err) {
+		stats.ManualSkipped++
+		stats.Processed++
+		return false, nil
+	}
 	if err == nil {
 		*stats = next
 	}
@@ -498,6 +502,11 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 		return false, err
 	}
 
+	if !notFound && mapping.LocalProductID > 0 {
+		if _, e := data.GuardProductWrite(ctx, s.repo.data, mapping.LocalProductID); e != nil {
+			return false, e
+		}
+	}
 	// ── 轻量 scope：无映射（未导入）直接跳过，绝不创建 ──
 	if task.Scope == ScopePrice || task.Scope == ScopeStatus {
 		if notFound {
@@ -515,14 +524,11 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 
 	// 状态语义：上游不可售（手动发货/预选/停售）→ 本地下架(0)。
 	// （曾用隐藏(2)——但隐藏商品会员可见可买，此类品 API 无法履约，必须全员下架）
-	// 下架同时删除本地采集封面（cover 清空；上架后重新下载）
+	// 下架清空采集封面引用；不在事务提交前删除文件，避免影响其他商品的共享封面。
 	// 上游可售(1)不覆盖本地已下架品——手动下架的运营意图优先（同步只下架不上架）
 	status := int8(1)
 	if !p.IsActive {
 		status = 0
-		if old := s.currentProductCover(ctx, mapping.LocalProductID); old != "" {
-			s.deleteHarvestedCover(ctx, old)
-		}
 		p.Cover = ""
 	} else if !notFound && s.localProductShelvedOff(ctx, mapping.LocalProductID) {
 		status = 0 // 保持本地手动下架（不写 1 拉回）
@@ -831,18 +837,6 @@ func (s *SyncService) currentProductPrice(ctx context.Context, productID uint64)
 	return p.Price, nil
 }
 
-// currentProductCover 读本地商品当前封面（下架删图判据；无本地商品返回空）。
-func (s *SyncService) currentProductCover(ctx context.Context, productID uint64) string {
-	if productID == 0 {
-		return ""
-	}
-	p, err := s.repo.entClient(ctx).Product.Get(ctx, productID)
-	if err != nil {
-		return ""
-	}
-	return p.Cover
-}
-
 // ensureCoverDir 渠道封面目录名（连接级缓存 + settings.cover_dir 持久化）：
 // - settings.cover_dir 已有 → 沿用（重启稳定）
 // - 否则扫描 uploads/ 一级目录：渠道名净化后取首个空闲名（重名加 2/3……），
@@ -883,21 +877,17 @@ func (s *SyncService) ensureCoverDir(ctx context.Context, conn *ent.SupplyConnec
 // coverFor 解析封面并落本地：下载（fail-open）→ 与旧 cover 比对，本地旧文件
 // 换图/清空时删除（防泄漏）。mapping 可为 nil（新建）。
 func (s *SyncService) coverFor(ctx context.Context, mapping *ent.SupplyMapping, conn *ent.SupplyConnection, cover string) string {
-	old := ""
 	if mapping != nil {
 		row, err := data.Client(ctx, s.repo.data).Product.Get(ctx, mapping.LocalProductID)
 		if err == nil {
-			if row.CoverProtected {
+			if row.IsLocked || row.CoverProtected {
 				return row.Cover
 			}
-			old = row.Cover
 		}
 	}
 	dir := s.ensureCoverDir(ctx, conn)
 	newCover := s.downloadCover(ctx, conn.BaseURL, cover, dir)
-	if newCover != old && strings.HasPrefix(old, "/uploads/") {
-		s.deleteHarvestedCover(ctx, old)
-	}
+	// Reference-aware media cleanup owns deletion after the write commits.
 	return newCover
 }
 
@@ -989,7 +979,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	if !p.IsActive {
 		status = 0 // 上游不可售品导入即下架
 	}
-	// 既有映射（旧 cover 清理判据；新导入为 NotFound）
+	// 既有映射（保留锁定或受保护的封面；新导入为 NotFound）
 	mapping, merr := s.repo.GetMapping(ctx, conn.ID, p.ID, "")
 	if merr != nil && merr != ErrNotFound {
 		return false, merr
@@ -1001,7 +991,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		Name:                p.Name,
 		Description:         p.Description,
 		DescriptionSet:      p.DescriptionSet,
-		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；换图/下架清理旧文件）
+		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；保留旧文件，避免共享引用失效）
 		FactoryPrice:        accountCost(conn, p),
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,
@@ -1142,16 +1132,4 @@ func clearSyncRetry(taskID uint64) {
 	syncRetryTracker.Lock()
 	delete(syncRetryTracker.m, taskID)
 	syncRetryTracker.Unlock()
-}
-
-// Shared library assets are never disposable upstream download cache files.
-func (s *SyncService) deleteHarvestedCover(ctx context.Context, cover string) {
-	if !strings.HasPrefix(cover, "/uploads/") {
-		return
-	}
-	exists, err := data.Client(ctx, s.repo.data).Media.Query().Where(media.PathEQ(strings.TrimPrefix(cover, "/uploads/"))).Exist(ctx)
-	if err != nil || exists {
-		return
-	}
-	deleteLocalCover(cover)
 }

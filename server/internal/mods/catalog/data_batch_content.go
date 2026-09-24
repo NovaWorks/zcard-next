@@ -334,23 +334,36 @@ func (s *AdminCatalogService) PreviewBatchUpdateProductContent(ctx context.Conte
 		}
 		q.Where(product.IDIn(ids...))
 	}
-	rows, err := q.Limit(batchContentLimit + 1).All(ctx)
+	total, err := q.Clone().Count(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(rows) == 0 || len(rows) > batchContentLimit {
-		return nil, contentInvalid("目标为空或超过 1000 件，请缩小范围")
-	}
-	if req.CategoryId == 0 && len(rows) != len(ids) {
+	if req.CategoryId == 0 && total != len(ids) {
 		return nil, contentStale()
 	}
+	skipped, err := q.Clone().Where(product.IsLocked(true)).Count(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.Where(product.IsLocked(false)).Limit(batchContentLimit + 1).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if total == 0 || len(rows) > batchContentLimit {
+		return nil, contentInvalid("可修改商品为空或超过 1000 件，请缩小范围")
+	}
+
 	encodedPatch, _ := json.Marshal(patch)
 	if len(encodedPatch)*len(rows) > batchPreviewBytes {
 		return nil, contentInvalid("本批次写入的图文总量超过 8 MiB，请缩小范围")
 	}
-	out := &adminv1.BatchProductContentPreview{Patch: patch, Matched: int32(len(rows)), ExpiresAt: time.Now().Add(10 * time.Minute).Unix()}
+	out := &adminv1.BatchProductContentPreview{Patch: patch, Matched: int32(total), SkippedLocked: int32(skipped), ExpiresAt: time.Now().Add(10 * time.Minute).Unix()}
 	bytes := 0
 	for _, p := range rows {
+		if p.IsLocked {
+			out.SkippedLocked++
+			continue
+		}
 		if (patch.CoverAction == 3 || patch.DescriptionAction == 3) && p.UpstreamSourceID == 0 {
 			return nil, contentInvalid("恢复跟随上游仅适用于对接商品，请单独选择")
 		}
@@ -375,7 +388,7 @@ func (s *AdminCatalogService) PreviewBatchUpdateProductContent(ctx context.Conte
 			out.UpstreamCount++
 		}
 	}
-	out.Unchanged = out.Matched - out.Changed
+	out.Unchanged = out.Matched - out.Changed - out.SkippedLocked
 	random := make([]byte, 32)
 	if _, err = rand.Read(random); err != nil {
 		return nil, err
@@ -389,7 +402,7 @@ func (s *AdminCatalogService) PreviewBatchUpdateProductContent(ctx context.Conte
 	if _, err = c.ProductContentBatch.Delete().Where(batch.Completed(false), batch.ExpiresAtLT(time.Now())).Exec(ctx); err != nil {
 		return nil, err
 	}
-	_, err = c.ProductContentBatch.Create().SetToken(out.RequestId).SetActorID(actor).SetSubsiteID(tenancy.FromContext(ctx).SubsiteID).SetPayload(raw).SetExpiresAt(time.Unix(out.ExpiresAt, 0)).SetMatched(out.Matched).SetChanged(out.Changed).Save(ctx)
+	_, err = c.ProductContentBatch.Create().SetToken(out.RequestId).SetActorID(actor).SetSubsiteID(tenancy.FromContext(ctx).SubsiteID).SetPayload(raw).SetExpiresAt(time.Unix(out.ExpiresAt, 0)).SetMatched(out.Matched).SetChanged(out.Changed).SetSkippedLocked(out.SkippedLocked).Save(ctx)
 	return out, err
 }
 func (s *AdminCatalogService) contentBatch(ctx context.Context, token string) (*ent.ProductContentBatch, error) {
@@ -407,7 +420,7 @@ func (s *AdminCatalogService) contentBatch(ctx context.Context, token string) (*
 	return b, err
 }
 func contentResult(b *ent.ProductContentBatch) *adminv1.BatchProductContentResult {
-	return &adminv1.BatchProductContentResult{Completed: b.Completed, Matched: b.Matched, Changed: b.Changed, Unchanged: b.Matched - b.Changed}
+	return &adminv1.BatchProductContentResult{Completed: b.Completed, Matched: b.Matched, Changed: b.Changed, Unchanged: b.Matched - b.Changed - b.SkippedLocked, SkippedLocked: b.SkippedLocked}
 }
 func (s *AdminCatalogService) GetBatchProductContentResult(ctx context.Context, req *adminv1.BatchProductContentRequest) (*adminv1.BatchProductContentResult, error) {
 	b, err := s.contentBatch(ctx, req.GetRequestId())
@@ -467,22 +480,17 @@ func (s *AdminCatalogService) BatchUpdateProductContent(ctx context.Context, req
 			}
 		}
 		rows := make([]*ent.Product, 0, len(payload.Targets))
+		skipped := b.SkippedLocked
 		for _, target := range payload.Targets {
-			n, err := c.Product.Update().Where(product.ID(target.ID), product.SubsiteID(b.SubsiteID), product.StatusGTE(0)).AddSort(0).Save(ctx)
+			p, err := data.GuardProductWrite(ctx, s.repo.data, target.ID)
+			if data.IsProductLocked(err) {
+				skipped++
+				continue
+			}
 			if err != nil {
 				return err
 			}
-			if n != 1 {
-				return contentStale()
-			}
-			pq := c.Product.Query().Where(product.ID(target.ID))
-			if s.repo.data.Dialect != db.SQLite {
-				pq.ForUpdate()
-			}
-			p, err := pq.Only(ctx)
-			if err != nil {
-				return err
-			}
+
 			if contentHash(p, payload.Patch, payload.CategoryID > 0) != target.Hash {
 				return contentStale()
 			}
@@ -491,11 +499,13 @@ func (s *AdminCatalogService) BatchUpdateProductContent(ctx context.Context, req
 		if err := validateContentMedia(ctx, c, payload.Patch, true); err != nil {
 			return err
 		}
+		var changed int32
 		for _, p := range rows {
 			next, content, protection := contentNext(p, payload.Patch)
 			if !content && !protection {
 				continue
 			}
+			changed++
 			q := c.Product.UpdateOneID(p.ID)
 			if payload.Patch.CoverAction != 0 {
 				q.SetCover(next.Cover).SetCoverProtected(next.CoverProtected)
@@ -518,10 +528,10 @@ func (s *AdminCatalogService) BatchUpdateProductContent(ctx context.Context, req
 		for _, p := range rows {
 			ids = append(ids, p.ID)
 		}
-		if err := c.AuditLog.Create().SetOperatorType("admin").SetOperatorID(b.ActorID).SetPermissionPoint("catalog:write").SetAction("POST").SetRoute("/api/v1/admin/products/batch-content").SetAfter(map[string]any{"request_id": b.Token, "subsite_id": b.SubsiteID, "ids": ids, "matched": b.Matched, "changed": b.Changed, "category_id": payload.CategoryID, "cover_action": payload.Patch.CoverAction, "images_action": payload.Patch.ImagesAction, "description_action": payload.Patch.DescriptionAction}).Exec(ctx); err != nil {
+		if err := c.AuditLog.Create().SetOperatorType("admin").SetOperatorID(b.ActorID).SetPermissionPoint("catalog:write").SetAction("POST").SetRoute("/api/v1/admin/products/batch-content").SetAfter(map[string]any{"request_id": b.Token, "subsite_id": b.SubsiteID, "ids": ids, "matched": b.Matched, "changed": changed, "skipped_locked": skipped, "category_id": payload.CategoryID, "cover_action": payload.Patch.CoverAction, "images_action": payload.Patch.ImagesAction, "description_action": payload.Patch.DescriptionAction}).Exec(ctx); err != nil {
 			return err
 		}
-		b, err = c.ProductContentBatch.UpdateOneID(b.ID).SetCompleted(true).SetPayload(json.RawMessage(`{}`)).Save(ctx)
+		b, err = c.ProductContentBatch.UpdateOneID(b.ID).SetCompleted(true).SetChanged(changed).SetSkippedLocked(skipped).SetPayload(json.RawMessage(`{}`)).Save(ctx)
 		if err != nil {
 			return err
 		}

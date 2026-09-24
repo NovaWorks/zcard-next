@@ -99,6 +99,11 @@ func Changed(v int32) predicate.ProductContentBatch {
 	return predicate.ProductContentBatch(sql.FieldEQ(FieldChanged, v))
 }
 
+// SkippedLocked applies equality check predicate on the "skipped_locked" field. It's identical to SkippedLockedEQ.
+func SkippedLocked(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldEQ(FieldSkippedLocked, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.ProductContentBatch {
 	return predicate.ProductContentBatch(sql.FieldEQ(FieldCreatedAt, v))
@@ -452,6 +457,46 @@ func ChangedLT(v int32) predicate.ProductContentBatch {
 // ChangedLTE applies the LTE predicate on the "changed" field.
 func ChangedLTE(v int32) predicate.ProductContentBatch {
 	return predicate.ProductContentBatch(sql.FieldLTE(FieldChanged, v))
+}
+
+// SkippedLockedEQ applies the EQ predicate on the "skipped_locked" field.
+func SkippedLockedEQ(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldEQ(FieldSkippedLocked, v))
+}
+
+// SkippedLockedNEQ applies the NEQ predicate on the "skipped_locked" field.
+func SkippedLockedNEQ(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldNEQ(FieldSkippedLocked, v))
+}
+
+// SkippedLockedIn applies the In predicate on the "skipped_locked" field.
+func SkippedLockedIn(vs ...int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldIn(FieldSkippedLocked, vs...))
+}
+
+// SkippedLockedNotIn applies the NotIn predicate on the "skipped_locked" field.
+func SkippedLockedNotIn(vs ...int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldNotIn(FieldSkippedLocked, vs...))
+}
+
+// SkippedLockedGT applies the GT predicate on the "skipped_locked" field.
+func SkippedLockedGT(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldGT(FieldSkippedLocked, v))
+}
+
+// SkippedLockedGTE applies the GTE predicate on the "skipped_locked" field.
+func SkippedLockedGTE(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldGTE(FieldSkippedLocked, v))
+}
+
+// SkippedLockedLT applies the LT predicate on the "skipped_locked" field.
+func SkippedLockedLT(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldLT(FieldSkippedLocked, v))
+}
+
+// SkippedLockedLTE applies the LTE predicate on the "skipped_locked" field.
+func SkippedLockedLTE(v int32) predicate.ProductContentBatch {
+	return predicate.ProductContentBatch(sql.FieldLTE(FieldSkippedLocked, v))
 }
 
 // And groups predicates with the AND operator between them.

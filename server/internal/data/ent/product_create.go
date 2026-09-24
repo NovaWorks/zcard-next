@@ -396,6 +396,62 @@ func (_c *ProductCreate) SetNillableUpstreamSyncedAt(v *time.Time) *ProductCreat
 	return _c
 }
 
+// SetIsLocked sets the "is_locked" field.
+func (_c *ProductCreate) SetIsLocked(v bool) *ProductCreate {
+	_c.mutation.SetIsLocked(v)
+	return _c
+}
+
+// SetNillableIsLocked sets the "is_locked" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableIsLocked(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetIsLocked(*v)
+	}
+	return _c
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (_c *ProductCreate) SetLockVersion(v int64) *ProductCreate {
+	_c.mutation.SetLockVersion(v)
+	return _c
+}
+
+// SetNillableLockVersion sets the "lock_version" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableLockVersion(v *int64) *ProductCreate {
+	if v != nil {
+		_c.SetLockVersion(*v)
+	}
+	return _c
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (_c *ProductCreate) SetLockedBy(v uint64) *ProductCreate {
+	_c.mutation.SetLockedBy(v)
+	return _c
+}
+
+// SetNillableLockedBy sets the "locked_by" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableLockedBy(v *uint64) *ProductCreate {
+	if v != nil {
+		_c.SetLockedBy(*v)
+	}
+	return _c
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (_c *ProductCreate) SetLockedAt(v time.Time) *ProductCreate {
+	_c.mutation.SetLockedAt(v)
+	return _c
+}
+
+// SetNillableLockedAt sets the "locked_at" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableLockedAt(v *time.Time) *ProductCreate {
+	if v != nil {
+		_c.SetLockedAt(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ProductCreate) SetID(v uint64) *ProductCreate {
 	_c.mutation.SetID(v)
@@ -539,6 +595,18 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.IsLocked(); !ok {
+		v := product.DefaultIsLocked
+		_c.mutation.SetIsLocked(v)
+	}
+	if _, ok := _c.mutation.LockVersion(); !ok {
+		v := product.DefaultLockVersion
+		_c.mutation.SetLockVersion(v)
+	}
+	if _, ok := _c.mutation.LockedBy(); !ok {
+		v := product.DefaultLockedBy
+		_c.mutation.SetLockedBy(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -632,6 +700,15 @@ func (_c *ProductCreate) check() error {
 		if err := product.UpstreamProductCodeValidator(v); err != nil {
 			return &ValidationError{Name: "upstream_product_code", err: fmt.Errorf(`ent: validator failed for field "Product.upstream_product_code": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.IsLocked(); !ok {
+		return &ValidationError{Name: "is_locked", err: errors.New(`ent: missing required field "Product.is_locked"`)}
+	}
+	if _, ok := _c.mutation.LockVersion(); !ok {
+		return &ValidationError{Name: "lock_version", err: errors.New(`ent: missing required field "Product.lock_version"`)}
+	}
+	if _, ok := _c.mutation.LockedBy(); !ok {
+		return &ValidationError{Name: "locked_by", err: errors.New(`ent: missing required field "Product.locked_by"`)}
 	}
 	return nil
 }
@@ -785,6 +862,22 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpstreamSyncedAt(); ok {
 		_spec.SetField(product.FieldUpstreamSyncedAt, field.TypeTime, value)
 		_node.UpstreamSyncedAt = value
+	}
+	if value, ok := _c.mutation.IsLocked(); ok {
+		_spec.SetField(product.FieldIsLocked, field.TypeBool, value)
+		_node.IsLocked = value
+	}
+	if value, ok := _c.mutation.LockVersion(); ok {
+		_spec.SetField(product.FieldLockVersion, field.TypeInt64, value)
+		_node.LockVersion = value
+	}
+	if value, ok := _c.mutation.LockedBy(); ok {
+		_spec.SetField(product.FieldLockedBy, field.TypeUint64, value)
+		_node.LockedBy = value
+	}
+	if value, ok := _c.mutation.LockedAt(); ok {
+		_spec.SetField(product.FieldLockedAt, field.TypeTime, value)
+		_node.LockedAt = &value
 	}
 	if nodes := _c.mutation.SkusIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -1335,6 +1428,72 @@ func (u *ProductUpsert) UpdateUpstreamSyncedAt() *ProductUpsert {
 // ClearUpstreamSyncedAt clears the value of the "upstream_synced_at" field.
 func (u *ProductUpsert) ClearUpstreamSyncedAt() *ProductUpsert {
 	u.SetNull(product.FieldUpstreamSyncedAt)
+	return u
+}
+
+// SetIsLocked sets the "is_locked" field.
+func (u *ProductUpsert) SetIsLocked(v bool) *ProductUpsert {
+	u.Set(product.FieldIsLocked, v)
+	return u
+}
+
+// UpdateIsLocked sets the "is_locked" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateIsLocked() *ProductUpsert {
+	u.SetExcluded(product.FieldIsLocked)
+	return u
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (u *ProductUpsert) SetLockVersion(v int64) *ProductUpsert {
+	u.Set(product.FieldLockVersion, v)
+	return u
+}
+
+// UpdateLockVersion sets the "lock_version" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateLockVersion() *ProductUpsert {
+	u.SetExcluded(product.FieldLockVersion)
+	return u
+}
+
+// AddLockVersion adds v to the "lock_version" field.
+func (u *ProductUpsert) AddLockVersion(v int64) *ProductUpsert {
+	u.Add(product.FieldLockVersion, v)
+	return u
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (u *ProductUpsert) SetLockedBy(v uint64) *ProductUpsert {
+	u.Set(product.FieldLockedBy, v)
+	return u
+}
+
+// UpdateLockedBy sets the "locked_by" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateLockedBy() *ProductUpsert {
+	u.SetExcluded(product.FieldLockedBy)
+	return u
+}
+
+// AddLockedBy adds v to the "locked_by" field.
+func (u *ProductUpsert) AddLockedBy(v uint64) *ProductUpsert {
+	u.Add(product.FieldLockedBy, v)
+	return u
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (u *ProductUpsert) SetLockedAt(v time.Time) *ProductUpsert {
+	u.Set(product.FieldLockedAt, v)
+	return u
+}
+
+// UpdateLockedAt sets the "locked_at" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateLockedAt() *ProductUpsert {
+	u.SetExcluded(product.FieldLockedAt)
+	return u
+}
+
+// ClearLockedAt clears the value of the "locked_at" field.
+func (u *ProductUpsert) ClearLockedAt() *ProductUpsert {
+	u.SetNull(product.FieldLockedAt)
 	return u
 }
 
@@ -1932,6 +2091,83 @@ func (u *ProductUpsertOne) UpdateUpstreamSyncedAt() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearUpstreamSyncedAt() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearUpstreamSyncedAt()
+	})
+}
+
+// SetIsLocked sets the "is_locked" field.
+func (u *ProductUpsertOne) SetIsLocked(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetIsLocked(v)
+	})
+}
+
+// UpdateIsLocked sets the "is_locked" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateIsLocked() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateIsLocked()
+	})
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (u *ProductUpsertOne) SetLockVersion(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetLockVersion(v)
+	})
+}
+
+// AddLockVersion adds v to the "lock_version" field.
+func (u *ProductUpsertOne) AddLockVersion(v int64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddLockVersion(v)
+	})
+}
+
+// UpdateLockVersion sets the "lock_version" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateLockVersion() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateLockVersion()
+	})
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (u *ProductUpsertOne) SetLockedBy(v uint64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetLockedBy(v)
+	})
+}
+
+// AddLockedBy adds v to the "locked_by" field.
+func (u *ProductUpsertOne) AddLockedBy(v uint64) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddLockedBy(v)
+	})
+}
+
+// UpdateLockedBy sets the "locked_by" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateLockedBy() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateLockedBy()
+	})
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (u *ProductUpsertOne) SetLockedAt(v time.Time) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetLockedAt(v)
+	})
+}
+
+// UpdateLockedAt sets the "locked_at" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateLockedAt() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateLockedAt()
+	})
+}
+
+// ClearLockedAt clears the value of the "locked_at" field.
+func (u *ProductUpsertOne) ClearLockedAt() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearLockedAt()
 	})
 }
 
@@ -2695,6 +2931,83 @@ func (u *ProductUpsertBulk) UpdateUpstreamSyncedAt() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearUpstreamSyncedAt() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearUpstreamSyncedAt()
+	})
+}
+
+// SetIsLocked sets the "is_locked" field.
+func (u *ProductUpsertBulk) SetIsLocked(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetIsLocked(v)
+	})
+}
+
+// UpdateIsLocked sets the "is_locked" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateIsLocked() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateIsLocked()
+	})
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (u *ProductUpsertBulk) SetLockVersion(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetLockVersion(v)
+	})
+}
+
+// AddLockVersion adds v to the "lock_version" field.
+func (u *ProductUpsertBulk) AddLockVersion(v int64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddLockVersion(v)
+	})
+}
+
+// UpdateLockVersion sets the "lock_version" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateLockVersion() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateLockVersion()
+	})
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (u *ProductUpsertBulk) SetLockedBy(v uint64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetLockedBy(v)
+	})
+}
+
+// AddLockedBy adds v to the "locked_by" field.
+func (u *ProductUpsertBulk) AddLockedBy(v uint64) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.AddLockedBy(v)
+	})
+}
+
+// UpdateLockedBy sets the "locked_by" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateLockedBy() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateLockedBy()
+	})
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (u *ProductUpsertBulk) SetLockedAt(v time.Time) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetLockedAt(v)
+	})
+}
+
+// UpdateLockedAt sets the "locked_at" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateLockedAt() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateLockedAt()
+	})
+}
+
+// ClearLockedAt clears the value of the "locked_at" field.
+func (u *ProductUpsertBulk) ClearLockedAt() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.ClearLockedAt()
 	})
 }
 

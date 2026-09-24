@@ -180,6 +180,26 @@ func UpstreamSyncedAt(v time.Time) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldUpstreamSyncedAt, v))
 }
 
+// IsLocked applies equality check predicate on the "is_locked" field. It's identical to IsLockedEQ.
+func IsLocked(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldIsLocked, v))
+}
+
+// LockVersion applies equality check predicate on the "lock_version" field. It's identical to LockVersionEQ.
+func LockVersion(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldLockVersion, v))
+}
+
+// LockedBy applies equality check predicate on the "locked_by" field. It's identical to LockedByEQ.
+func LockedBy(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldLockedBy, v))
+}
+
+// LockedAt applies equality check predicate on the "locked_at" field. It's identical to LockedAtEQ.
+func LockedAt(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldLockedAt, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldCreatedAt, v))
@@ -1318,6 +1338,146 @@ func UpstreamSyncedAtIsNil() predicate.Product {
 // UpstreamSyncedAtNotNil applies the NotNil predicate on the "upstream_synced_at" field.
 func UpstreamSyncedAtNotNil() predicate.Product {
 	return predicate.Product(sql.FieldNotNull(FieldUpstreamSyncedAt))
+}
+
+// IsLockedEQ applies the EQ predicate on the "is_locked" field.
+func IsLockedEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldIsLocked, v))
+}
+
+// IsLockedNEQ applies the NEQ predicate on the "is_locked" field.
+func IsLockedNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldIsLocked, v))
+}
+
+// LockVersionEQ applies the EQ predicate on the "lock_version" field.
+func LockVersionEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldLockVersion, v))
+}
+
+// LockVersionNEQ applies the NEQ predicate on the "lock_version" field.
+func LockVersionNEQ(v int64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldLockVersion, v))
+}
+
+// LockVersionIn applies the In predicate on the "lock_version" field.
+func LockVersionIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldLockVersion, vs...))
+}
+
+// LockVersionNotIn applies the NotIn predicate on the "lock_version" field.
+func LockVersionNotIn(vs ...int64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldLockVersion, vs...))
+}
+
+// LockVersionGT applies the GT predicate on the "lock_version" field.
+func LockVersionGT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldLockVersion, v))
+}
+
+// LockVersionGTE applies the GTE predicate on the "lock_version" field.
+func LockVersionGTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldLockVersion, v))
+}
+
+// LockVersionLT applies the LT predicate on the "lock_version" field.
+func LockVersionLT(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldLockVersion, v))
+}
+
+// LockVersionLTE applies the LTE predicate on the "lock_version" field.
+func LockVersionLTE(v int64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldLockVersion, v))
+}
+
+// LockedByEQ applies the EQ predicate on the "locked_by" field.
+func LockedByEQ(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldLockedBy, v))
+}
+
+// LockedByNEQ applies the NEQ predicate on the "locked_by" field.
+func LockedByNEQ(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldLockedBy, v))
+}
+
+// LockedByIn applies the In predicate on the "locked_by" field.
+func LockedByIn(vs ...uint64) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldLockedBy, vs...))
+}
+
+// LockedByNotIn applies the NotIn predicate on the "locked_by" field.
+func LockedByNotIn(vs ...uint64) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldLockedBy, vs...))
+}
+
+// LockedByGT applies the GT predicate on the "locked_by" field.
+func LockedByGT(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldLockedBy, v))
+}
+
+// LockedByGTE applies the GTE predicate on the "locked_by" field.
+func LockedByGTE(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldLockedBy, v))
+}
+
+// LockedByLT applies the LT predicate on the "locked_by" field.
+func LockedByLT(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldLockedBy, v))
+}
+
+// LockedByLTE applies the LTE predicate on the "locked_by" field.
+func LockedByLTE(v uint64) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldLockedBy, v))
+}
+
+// LockedAtEQ applies the EQ predicate on the "locked_at" field.
+func LockedAtEQ(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldLockedAt, v))
+}
+
+// LockedAtNEQ applies the NEQ predicate on the "locked_at" field.
+func LockedAtNEQ(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldLockedAt, v))
+}
+
+// LockedAtIn applies the In predicate on the "locked_at" field.
+func LockedAtIn(vs ...time.Time) predicate.Product {
+	return predicate.Product(sql.FieldIn(FieldLockedAt, vs...))
+}
+
+// LockedAtNotIn applies the NotIn predicate on the "locked_at" field.
+func LockedAtNotIn(vs ...time.Time) predicate.Product {
+	return predicate.Product(sql.FieldNotIn(FieldLockedAt, vs...))
+}
+
+// LockedAtGT applies the GT predicate on the "locked_at" field.
+func LockedAtGT(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldGT(FieldLockedAt, v))
+}
+
+// LockedAtGTE applies the GTE predicate on the "locked_at" field.
+func LockedAtGTE(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldGTE(FieldLockedAt, v))
+}
+
+// LockedAtLT applies the LT predicate on the "locked_at" field.
+func LockedAtLT(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldLT(FieldLockedAt, v))
+}
+
+// LockedAtLTE applies the LTE predicate on the "locked_at" field.
+func LockedAtLTE(v time.Time) predicate.Product {
+	return predicate.Product(sql.FieldLTE(FieldLockedAt, v))
+}
+
+// LockedAtIsNil applies the IsNil predicate on the "locked_at" field.
+func LockedAtIsNil() predicate.Product {
+	return predicate.Product(sql.FieldIsNull(FieldLockedAt))
+}
+
+// LockedAtNotNil applies the NotNil predicate on the "locked_at" field.
+func LockedAtNotNil() predicate.Product {
+	return predicate.Product(sql.FieldNotNull(FieldLockedAt))
 }
 
 // HasSkus applies the HasEdge predicate on the "skus" edge.

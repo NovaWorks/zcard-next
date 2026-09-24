@@ -14,6 +14,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cardimport"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cartitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/coupon"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/dailystat"
@@ -433,6 +434,43 @@ func init() {
 	categoryDescSort := categoryFields[5].Descriptor()
 	// category.DefaultSort holds the default value on creation for the sort field.
 	category.DefaultSort = categoryDescSort.Default.(int32)
+	// categoryDescPlacementVersion is the schema descriptor for placement_version field.
+	categoryDescPlacementVersion := categoryFields[7].Descriptor()
+	// category.DefaultPlacementVersion holds the default value on creation for the placement_version field.
+	category.DefaultPlacementVersion = categoryDescPlacementVersion.Default.(int64)
+	categoryproductplacementMixin := schema.CategoryProductPlacement{}.Mixin()
+	categoryproductplacementMixinFields0 := categoryproductplacementMixin[0].Fields()
+	_ = categoryproductplacementMixinFields0
+	categoryproductplacementMixinFields1 := categoryproductplacementMixin[1].Fields()
+	_ = categoryproductplacementMixinFields1
+	categoryproductplacementFields := schema.CategoryProductPlacement{}.Fields()
+	_ = categoryproductplacementFields
+	// categoryproductplacementDescCreatedAt is the schema descriptor for created_at field.
+	categoryproductplacementDescCreatedAt := categoryproductplacementMixinFields0[0].Descriptor()
+	// categoryproductplacement.DefaultCreatedAt holds the default value on creation for the created_at field.
+	categoryproductplacement.DefaultCreatedAt = categoryproductplacementDescCreatedAt.Default.(func() time.Time)
+	// categoryproductplacementDescUpdatedAt is the schema descriptor for updated_at field.
+	categoryproductplacementDescUpdatedAt := categoryproductplacementMixinFields0[1].Descriptor()
+	// categoryproductplacement.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	categoryproductplacement.DefaultUpdatedAt = categoryproductplacementDescUpdatedAt.Default.(func() time.Time)
+	// categoryproductplacement.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	categoryproductplacement.UpdateDefaultUpdatedAt = categoryproductplacementDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// categoryproductplacementDescSubsiteID is the schema descriptor for subsite_id field.
+	categoryproductplacementDescSubsiteID := categoryproductplacementMixinFields1[0].Descriptor()
+	// categoryproductplacement.DefaultSubsiteID holds the default value on creation for the subsite_id field.
+	categoryproductplacement.DefaultSubsiteID = categoryproductplacementDescSubsiteID.Default.(uint64)
+	// categoryproductplacementDescIsPinned is the schema descriptor for is_pinned field.
+	categoryproductplacementDescIsPinned := categoryproductplacementFields[3].Descriptor()
+	// categoryproductplacement.DefaultIsPinned holds the default value on creation for the is_pinned field.
+	categoryproductplacement.DefaultIsPinned = categoryproductplacementDescIsPinned.Default.(bool)
+	// categoryproductplacementDescIsRecommended is the schema descriptor for is_recommended field.
+	categoryproductplacementDescIsRecommended := categoryproductplacementFields[4].Descriptor()
+	// categoryproductplacement.DefaultIsRecommended holds the default value on creation for the is_recommended field.
+	categoryproductplacement.DefaultIsRecommended = categoryproductplacementDescIsRecommended.Default.(bool)
+	// categoryproductplacementDescPosition is the schema descriptor for position field.
+	categoryproductplacementDescPosition := categoryproductplacementFields[5].Descriptor()
+	// categoryproductplacement.DefaultPosition holds the default value on creation for the position field.
+	categoryproductplacement.DefaultPosition = categoryproductplacementDescPosition.Default.(int32)
 	couponMixin := schema.Coupon{}.Mixin()
 	couponMixinFields0 := couponMixin[0].Fields()
 	_ = couponMixinFields0
@@ -2010,6 +2048,18 @@ func init() {
 	productDescUpstreamProductCode := productFields[26].Descriptor()
 	// product.UpstreamProductCodeValidator is a validator for the "upstream_product_code" field. It is called by the builders before save.
 	product.UpstreamProductCodeValidator = productDescUpstreamProductCode.Validators[0].(func(string) error)
+	// productDescIsLocked is the schema descriptor for is_locked field.
+	productDescIsLocked := productFields[28].Descriptor()
+	// product.DefaultIsLocked holds the default value on creation for the is_locked field.
+	product.DefaultIsLocked = productDescIsLocked.Default.(bool)
+	// productDescLockVersion is the schema descriptor for lock_version field.
+	productDescLockVersion := productFields[29].Descriptor()
+	// product.DefaultLockVersion holds the default value on creation for the lock_version field.
+	product.DefaultLockVersion = productDescLockVersion.Default.(int64)
+	// productDescLockedBy is the schema descriptor for locked_by field.
+	productDescLockedBy := productFields[30].Descriptor()
+	// product.DefaultLockedBy holds the default value on creation for the locked_by field.
+	product.DefaultLockedBy = productDescLockedBy.Default.(uint64)
 	productcontentbatchMixin := schema.ProductContentBatch{}.Mixin()
 	productcontentbatchMixinFields0 := productcontentbatchMixin[0].Fields()
 	_ = productcontentbatchMixinFields0
@@ -2047,6 +2097,10 @@ func init() {
 	productcontentbatchDescChanged := productcontentbatchFields[7].Descriptor()
 	// productcontentbatch.DefaultChanged holds the default value on creation for the changed field.
 	productcontentbatch.DefaultChanged = productcontentbatchDescChanged.Default.(int32)
+	// productcontentbatchDescSkippedLocked is the schema descriptor for skipped_locked field.
+	productcontentbatchDescSkippedLocked := productcontentbatchFields[8].Descriptor()
+	// productcontentbatch.DefaultSkippedLocked holds the default value on creation for the skipped_locked field.
+	productcontentbatch.DefaultSkippedLocked = productcontentbatchDescSkippedLocked.Default.(int32)
 	productcontrolMixin := schema.ProductControl{}.Mixin()
 	productcontrolMixinFields0 := productcontrolMixin[0].Fields()
 	_ = productcontrolMixinFields0

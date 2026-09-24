@@ -286,6 +286,7 @@ var (
 		{Name: "hide", Type: field.TypeBool, Default: false},
 		{Name: "sort", Type: field.TypeInt32, Default: 0},
 		{Name: "visible_subsites", Type: field.TypeJSON, Nullable: true},
+		{Name: "placement_version", Type: field.TypeInt64, Default: 0},
 	}
 	// CategoriesTable holds the schema information for the "categories" table.
 	CategoriesTable = &schema.Table{
@@ -297,6 +298,36 @@ var (
 				Name:    "category_subsite_id_parent_id",
 				Unique:  false,
 				Columns: []*schema.Column{CategoriesColumns[3], CategoriesColumns[4]},
+			},
+		},
+	}
+	// CategoryProductPlacementsColumns holds the columns for the "category_product_placements" table.
+	CategoryProductPlacementsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "category_id", Type: field.TypeUint64},
+		{Name: "product_id", Type: field.TypeUint64},
+		{Name: "is_pinned", Type: field.TypeBool, Default: false},
+		{Name: "is_recommended", Type: field.TypeBool, Default: false},
+		{Name: "position", Type: field.TypeInt32, Default: 0},
+	}
+	// CategoryProductPlacementsTable holds the schema information for the "category_product_placements" table.
+	CategoryProductPlacementsTable = &schema.Table{
+		Name:       "category_product_placements",
+		Columns:    CategoryProductPlacementsColumns,
+		PrimaryKey: []*schema.Column{CategoryProductPlacementsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "categoryproductplacement_subsite_id_category_id_product_id",
+				Unique:  true,
+				Columns: []*schema.Column{CategoryProductPlacementsColumns[3], CategoryProductPlacementsColumns[4], CategoryProductPlacementsColumns[5]},
+			},
+			{
+				Name:    "categoryproductplacement_subsite_id_product_id",
+				Unique:  false,
+				Columns: []*schema.Column{CategoryProductPlacementsColumns[3], CategoryProductPlacementsColumns[5]},
 			},
 		},
 	}
@@ -1655,6 +1686,10 @@ var (
 		{Name: "upstream_source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "upstream_product_code", Type: field.TypeString, Nullable: true, Size: 128},
 		{Name: "upstream_synced_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "is_locked", Type: field.TypeBool, Default: false},
+		{Name: "lock_version", Type: field.TypeInt64, Default: 0},
+		{Name: "locked_by", Type: field.TypeUint64, Default: 0},
+		{Name: "locked_at", Type: field.TypeTime, Nullable: true, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 	}
 	// ProductsTable holds the schema information for the "products" table.
 	ProductsTable = &schema.Table{
@@ -1702,6 +1737,7 @@ var (
 		{Name: "completed", Type: field.TypeBool, Default: false},
 		{Name: "matched", Type: field.TypeInt32, Default: 0},
 		{Name: "changed", Type: field.TypeInt32, Default: 0},
+		{Name: "skipped_locked", Type: field.TypeInt32, Default: 0},
 	}
 	// ProductContentBatchesTable holds the schema information for the "product_content_batches" table.
 	ProductContentBatchesTable = &schema.Table{
@@ -2815,6 +2851,7 @@ var (
 		CardImportsTable,
 		CartItemsTable,
 		CategoriesTable,
+		CategoryProductPlacementsTable,
 		CouponsTable,
 		CurrenciesTable,
 		DailyStatsTable,

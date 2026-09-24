@@ -13,7 +13,7 @@ import { checkAuth } from "@/directives";
 import { fetchSkus, createSku, updateSku, deleteSku } from "@/service/api";
 import { centsToYuan, yuanToFen } from "@/utils/money";
 
-const props = defineProps<{ productId: number }>();
+const props = defineProps<{ productId: number; readonly?: boolean }>();
 const emit = defineEmits<{ (e: "persisted"): void }>();
 
 interface SkuRow {
@@ -202,7 +202,7 @@ function numCell(
   field: "price_yuan" | "cost_yuan" | "stock_offset",
   placeholder: string,
 ) {
-  return h(NInputNumber, {
+  return h(NInputNumber, {disabled:props.readonly,
     value: row[field],
     size: "small",
     min: 0,
@@ -241,7 +241,7 @@ const columns: DataTableColumns<SkuRow> = [
     key: "name",
     minWidth: 110,
     render: (row) =>
-      h(NInput, {
+      h(NInput, {disabled:props.readonly,
         value: row.name,
         size: "small",
         placeholder: "如：月卡",
@@ -253,7 +253,7 @@ const columns: DataTableColumns<SkuRow> = [
   },
   {
     title: "交付方式", key:"fulfillment_mode", width:135,
-    render:(row)=>h(NSelect,{value:row.fulfillment_mode, options:[{label:'跟随商品',value:'follow'},{label:'自动',value:'auto'},{label:'人工',value:'manual'}],onUpdateValue:(v:string)=>{row.fulfillment_mode=v;row.dirty=true;}})
+    render:(row)=>h(NSelect,{disabled:props.readonly,value:row.fulfillment_mode, options:[{label:'跟随商品',value:'follow'},{label:'自动',value:'auto'},{label:'人工',value:'manual'}],onUpdateValue:(v:string)=>{row.fulfillment_mode=v;row.dirty=true;}})
   },
   {
     title: "售价(元)",
@@ -295,7 +295,7 @@ const columns: DataTableColumns<SkuRow> = [
         { size: "small" },
         {
           default: () => [
-            checkAuth("catalog:sku_write")
+            (!props.readonly && checkAuth("catalog:sku_write"))
               ? h(
                   NButton,
                   {
@@ -309,7 +309,7 @@ const columns: DataTableColumns<SkuRow> = [
                   { default: () => "保存" },
                 )
               : null,
-            checkAuth("catalog:sku_write")
+            (!props.readonly && checkAuth("catalog:sku_write"))
               ? h(
                   NPopconfirm,
                   { onPositiveClick: () => handleDelete(row) },
@@ -336,7 +336,7 @@ const columns: DataTableColumns<SkuRow> = [
     <!-- ① 规格定义区（顶部标签对齐控件面板风格） -->
     <NCard size="small" class="mb-12px" title="规格设置">
       <template #header-extra>
-        <NButton v-auth="'catalog:sku_write'" size="tiny" quaternary type="primary" @click="addSpec">+ 添加规格</NButton>
+        <NButton :disabled="props.readonly" v-auth="'catalog:sku_write'" size="tiny" quaternary type="primary" @click="addSpec">+ 添加规格</NButton>
       </template>
       <NEmpty
         v-if="!specs.length"
@@ -345,29 +345,29 @@ const columns: DataTableColumns<SkuRow> = [
       />
       <div v-for="(spec, i) in specs" :key="i" class="mb-8px flex flex-wrap items-center gap-8px">
         <span class="text-12px text-gray-400">规格{{ i + 1 }}</span>
-        <NInput
+        <NInput :disabled="props.readonly"
           v-model:value="spec.name"
           @update:value="definitionsDirty = true"
           size="small"
           placeholder="规格名（如 时长）"
           class="w-130px shrink-0"
         />
-        <NInput
+        <NInput :disabled="props.readonly"
           v-model:value="spec.values"
           @update:value="definitionsDirty = true"
           size="small"
           placeholder="规格值，逗号分隔（如 月卡,季卡,年卡）"
           class="min-w-220px flex-1"
         />
-        <NButton v-auth="'catalog:sku_write'" size="small" quaternary type="error" @click="removeSpec(i)">删除</NButton>
+        <NButton :disabled="props.readonly" v-auth="'catalog:sku_write'" size="small" quaternary type="error" @click="removeSpec(i)">删除</NButton>
       </div>
       <div class="mt-8px flex flex-wrap items-center gap-8px">
-        <NButton v-auth="'catalog:sku_write'" size="small" type="primary" ghost @click="generate(false)">生成规格组合</NButton>
+        <NButton :disabled="props.readonly" v-auth="'catalog:sku_write'" size="small" type="primary" ghost @click="generate(false)">生成规格组合</NButton>
         <NButton
           v-auth="'catalog:sku_write'"
           size="small"
           type="primary"
-          :disabled="!pendingRows.length && !definitionsDirty"
+          :disabled="props.readonly || (!pendingRows.length && !definitionsDirty)"
           :loading="saving"
           @click="saveAll"
         >

@@ -533,6 +533,82 @@ func (_u *ProductUpdate) ClearUpstreamSyncedAt() *ProductUpdate {
 	return _u
 }
 
+// SetIsLocked sets the "is_locked" field.
+func (_u *ProductUpdate) SetIsLocked(v bool) *ProductUpdate {
+	_u.mutation.SetIsLocked(v)
+	return _u
+}
+
+// SetNillableIsLocked sets the "is_locked" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableIsLocked(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetIsLocked(*v)
+	}
+	return _u
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (_u *ProductUpdate) SetLockVersion(v int64) *ProductUpdate {
+	_u.mutation.ResetLockVersion()
+	_u.mutation.SetLockVersion(v)
+	return _u
+}
+
+// SetNillableLockVersion sets the "lock_version" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableLockVersion(v *int64) *ProductUpdate {
+	if v != nil {
+		_u.SetLockVersion(*v)
+	}
+	return _u
+}
+
+// AddLockVersion adds value to the "lock_version" field.
+func (_u *ProductUpdate) AddLockVersion(v int64) *ProductUpdate {
+	_u.mutation.AddLockVersion(v)
+	return _u
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (_u *ProductUpdate) SetLockedBy(v uint64) *ProductUpdate {
+	_u.mutation.ResetLockedBy()
+	_u.mutation.SetLockedBy(v)
+	return _u
+}
+
+// SetNillableLockedBy sets the "locked_by" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableLockedBy(v *uint64) *ProductUpdate {
+	if v != nil {
+		_u.SetLockedBy(*v)
+	}
+	return _u
+}
+
+// AddLockedBy adds value to the "locked_by" field.
+func (_u *ProductUpdate) AddLockedBy(v int64) *ProductUpdate {
+	_u.mutation.AddLockedBy(v)
+	return _u
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (_u *ProductUpdate) SetLockedAt(v time.Time) *ProductUpdate {
+	_u.mutation.SetLockedAt(v)
+	return _u
+}
+
+// SetNillableLockedAt sets the "locked_at" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableLockedAt(v *time.Time) *ProductUpdate {
+	if v != nil {
+		_u.SetLockedAt(*v)
+	}
+	return _u
+}
+
+// ClearLockedAt clears the value of the "locked_at" field.
+func (_u *ProductUpdate) ClearLockedAt() *ProductUpdate {
+	_u.mutation.ClearLockedAt()
+	return _u
+}
+
 // AddSkuIDs adds the "skus" edge to the ProductSku entity by IDs.
 func (_u *ProductUpdate) AddSkuIDs(ids ...uint64) *ProductUpdate {
 	_u.mutation.AddSkuIDs(ids...)
@@ -844,6 +920,27 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.UpstreamSyncedAtCleared() {
 		_spec.ClearField(product.FieldUpstreamSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.IsLocked(); ok {
+		_spec.SetField(product.FieldIsLocked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LockVersion(); ok {
+		_spec.SetField(product.FieldLockVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedLockVersion(); ok {
+		_spec.AddField(product.FieldLockVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.LockedBy(); ok {
+		_spec.SetField(product.FieldLockedBy, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedLockedBy(); ok {
+		_spec.AddField(product.FieldLockedBy, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.LockedAt(); ok {
+		_spec.SetField(product.FieldLockedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LockedAtCleared() {
+		_spec.ClearField(product.FieldLockedAt, field.TypeTime)
 	}
 	if _u.mutation.SkusCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1457,6 +1554,82 @@ func (_u *ProductUpdateOne) ClearUpstreamSyncedAt() *ProductUpdateOne {
 	return _u
 }
 
+// SetIsLocked sets the "is_locked" field.
+func (_u *ProductUpdateOne) SetIsLocked(v bool) *ProductUpdateOne {
+	_u.mutation.SetIsLocked(v)
+	return _u
+}
+
+// SetNillableIsLocked sets the "is_locked" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableIsLocked(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetIsLocked(*v)
+	}
+	return _u
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (_u *ProductUpdateOne) SetLockVersion(v int64) *ProductUpdateOne {
+	_u.mutation.ResetLockVersion()
+	_u.mutation.SetLockVersion(v)
+	return _u
+}
+
+// SetNillableLockVersion sets the "lock_version" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableLockVersion(v *int64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetLockVersion(*v)
+	}
+	return _u
+}
+
+// AddLockVersion adds value to the "lock_version" field.
+func (_u *ProductUpdateOne) AddLockVersion(v int64) *ProductUpdateOne {
+	_u.mutation.AddLockVersion(v)
+	return _u
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (_u *ProductUpdateOne) SetLockedBy(v uint64) *ProductUpdateOne {
+	_u.mutation.ResetLockedBy()
+	_u.mutation.SetLockedBy(v)
+	return _u
+}
+
+// SetNillableLockedBy sets the "locked_by" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableLockedBy(v *uint64) *ProductUpdateOne {
+	if v != nil {
+		_u.SetLockedBy(*v)
+	}
+	return _u
+}
+
+// AddLockedBy adds value to the "locked_by" field.
+func (_u *ProductUpdateOne) AddLockedBy(v int64) *ProductUpdateOne {
+	_u.mutation.AddLockedBy(v)
+	return _u
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (_u *ProductUpdateOne) SetLockedAt(v time.Time) *ProductUpdateOne {
+	_u.mutation.SetLockedAt(v)
+	return _u
+}
+
+// SetNillableLockedAt sets the "locked_at" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableLockedAt(v *time.Time) *ProductUpdateOne {
+	if v != nil {
+		_u.SetLockedAt(*v)
+	}
+	return _u
+}
+
+// ClearLockedAt clears the value of the "locked_at" field.
+func (_u *ProductUpdateOne) ClearLockedAt() *ProductUpdateOne {
+	_u.mutation.ClearLockedAt()
+	return _u
+}
+
 // AddSkuIDs adds the "skus" edge to the ProductSku entity by IDs.
 func (_u *ProductUpdateOne) AddSkuIDs(ids ...uint64) *ProductUpdateOne {
 	_u.mutation.AddSkuIDs(ids...)
@@ -1798,6 +1971,27 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.UpstreamSyncedAtCleared() {
 		_spec.ClearField(product.FieldUpstreamSyncedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.IsLocked(); ok {
+		_spec.SetField(product.FieldIsLocked, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.LockVersion(); ok {
+		_spec.SetField(product.FieldLockVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedLockVersion(); ok {
+		_spec.AddField(product.FieldLockVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.LockedBy(); ok {
+		_spec.SetField(product.FieldLockedBy, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedLockedBy(); ok {
+		_spec.AddField(product.FieldLockedBy, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.LockedAt(); ok {
+		_spec.SetField(product.FieldLockedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LockedAtCleared() {
+		_spec.ClearField(product.FieldLockedAt, field.TypeTime)
 	}
 	if _u.mutation.SkusCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"os"
@@ -64,7 +65,7 @@ func TestManualServicesUpgradePreservesHistoricalOrders(t *testing.T) {
 				t.Fatal(err)
 			}
 			ctx := context.Background()
-			p, err := d.Client.Product.Get(ctx, 42)
+			p, err := d.Client.Product.Query().Where(product.ID(42)).Select(product.FieldID, product.FieldName, product.FieldPrice, product.FieldFulfillmentMode, product.FieldManualStock).Only(ctx)
 			if err != nil {
 				t.Fatal(err)
 			}

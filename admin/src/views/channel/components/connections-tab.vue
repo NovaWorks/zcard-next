@@ -354,7 +354,7 @@ const taskColumns: DataTableColumns<any> = [
         "div",
         {
           class: "text-12px",
-          title: `新增 ${r.created || 0} · 更新 ${r.updated || 0} · 价格变更 ${r.price_updated || 0} · 改价保护跳过 ${r.manual_skipped || 0} · 隐藏 ${r.hidden || 0} · 对账下架 ${r.deleted || 0}`,
+          title: `新增 ${r.created || 0} · 更新 ${r.updated || 0} · 价格变更 ${r.price_updated || 0} · 保护跳过（人工改价或商品锁定）${r.manual_skipped || 0} · 隐藏 ${r.hidden || 0} · 对账下架 ${r.deleted || 0}`,
         },
         [
           h("span", { class: "text-success" }, `新${r.created || 0}`),

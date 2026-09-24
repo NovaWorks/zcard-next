@@ -42,7 +42,7 @@ func (r *ProductRepoImpl) ListProductSkus(ctx context.Context, productID uint64)
 }
 
 // CreateSku 创建 SKU。
-func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (*ent.ProductSku, error) {
+func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.ProductSku, error) {
 	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (*ent.Prod
 }
 
 // UpdateSku applies explicitly supplied zero values (price 0 inherits product price).
-func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput) (*ent.ProductSku, error) {
+func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput) (*ent.ProductSku, error) {
 	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput)
 }
 
 // DeleteSku 删除 SKU。
-func (r *ProductRepoImpl) DeleteSku(ctx context.Context, id uint64) error {
+func (r *ProductRepoImpl) deleteSku(ctx context.Context, id uint64) error {
 	c := data.Client(ctx, r.data)
 	activities, err := c.LotteryActivity.Query().Where(lotteryactivity.Published(true), lotteryactivity.StatusNotIn("ended", "archived")).IDs(ctx)
 	if err != nil {
@@ -226,4 +226,49 @@ func validateServiceConfig(mode string, stock *int64, sku bool) error {
 		return fmt.Errorf("人工可售总量须为-1或非负整数")
 	}
 	return nil
+}
+
+func (r *ProductRepoImpl) CreateSku(ctx context.Context, in SkuInput) (out *ent.ProductSku, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+
+		if _, e := data.GuardProductWrite(ctx, r.data, in.ProductID); e != nil {
+			return e
+		}
+
+		var inner error
+		out, inner = r.createSku(ctx, in)
+		return inner
+	})
+	return
+}
+
+func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput) (out *ent.ProductSku, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		row, e := data.Client(ctx, r.data).ProductSku.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		if _, e := data.GuardProductWrite(ctx, r.data, row.ProductID); e != nil {
+			return e
+		}
+
+		var inner error
+		out, inner = r.updateSku(ctx, id, in)
+		return inner
+	})
+	return
+}
+
+func (r *ProductRepoImpl) DeleteSku(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		row, e := data.Client(ctx, r.data).ProductSku.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		if _, e := data.GuardProductWrite(ctx, r.data, row.ProductID); e != nil {
+			return e
+		}
+
+		return r.deleteSku(ctx, id)
+	})
 }

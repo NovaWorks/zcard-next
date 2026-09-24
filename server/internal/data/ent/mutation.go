@@ -21,6 +21,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cardimport"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/cartitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/categoryproductplacement"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/coupon"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/currency"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/dailystat"
@@ -115,97 +116,98 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdminRole              = "AdminRole"
-	TypeAdminUser              = "AdminUser"
-	TypeAffiliateCommission    = "AffiliateCommission"
-	TypeAuditLog               = "AuditLog"
-	TypeBanner                 = "Banner"
-	TypeCard                   = "Card"
-	TypeCardImport             = "CardImport"
-	TypeCartItem               = "CartItem"
-	TypeCategory               = "Category"
-	TypeCoupon                 = "Coupon"
-	TypeCurrency               = "Currency"
-	TypeDailyStat              = "DailyStat"
-	TypeDownstreamCallback     = "DownstreamCallback"
-	TypeEmailVerification      = "EmailVerification"
-	TypeExternalIdentity       = "ExternalIdentity"
-	TypeFailedTask             = "FailedTask"
-	TypeFlashSale              = "FlashSale"
-	TypeGiftcard               = "Giftcard"
-	TypeGiftcardBatch          = "GiftcardBatch"
-	TypeLicenseOrder           = "LicenseOrder"
-	TypeLotteryAccount         = "LotteryAccount"
-	TypeLotteryActivity        = "LotteryActivity"
-	TypeLotteryChanceLog       = "LotteryChanceLog"
-	TypeLotteryDraw            = "LotteryDraw"
-	TypeLotteryPrize           = "LotteryPrize"
-	TypeLotteryRevision        = "LotteryRevision"
-	TypeMedia                  = "Media"
-	TypeMediaCategory          = "MediaCategory"
-	TypeMemberLevel            = "MemberLevel"
-	TypeMemberProductGroup     = "MemberProductGroup"
-	TypeNotification           = "Notification"
-	TypeNotificationLog        = "NotificationLog"
-	TypeNotifyBroadcast        = "NotifyBroadcast"
-	TypeNotifyTemplate         = "NotifyTemplate"
-	TypeOrder                  = "Order"
-	TypeOrderAmountLine        = "OrderAmountLine"
-	TypeOrderDelivery          = "OrderDelivery"
-	TypeOrderItem              = "OrderItem"
-	TypeOrderStatusEvent       = "OrderStatusEvent"
-	TypeOutboxEvent            = "OutboxEvent"
-	TypePageView               = "PageView"
-	TypePayment                = "Payment"
-	TypePaymentChannel         = "PaymentChannel"
-	TypePointAccount           = "PointAccount"
-	TypePointTransaction       = "PointTransaction"
-	TypePost                   = "Post"
-	TypePostCategory           = "PostCategory"
-	TypeProcessedEvent         = "ProcessedEvent"
-	TypeProcurementItem        = "ProcurementItem"
-	TypeProcurementOrder       = "ProcurementOrder"
-	TypeProduct                = "Product"
-	TypeProductContentBatch    = "ProductContentBatch"
-	TypeProductControl         = "ProductControl"
-	TypeProductSku             = "ProductSku"
-	TypePromotion              = "Promotion"
-	TypeRechargeOrder          = "RechargeOrder"
-	TypeReconciliationItem     = "ReconciliationItem"
-	TypeReconciliationJob      = "ReconciliationJob"
-	TypeRefundOrder            = "RefundOrder"
-	TypeResellerBalanceAccount = "ResellerBalanceAccount"
-	TypeResellerLedgerEntry    = "ResellerLedgerEntry"
-	TypeResellerPricing        = "ResellerPricing"
-	TypeResellerProfile        = "ResellerProfile"
-	TypeResellerRelatedAccount = "ResellerRelatedAccount"
-	TypeResellerSite           = "ResellerSite"
-	TypeReview                 = "Review"
-	TypeRiskLockKey            = "RiskLockKey"
-	TypeRolePermission         = "RolePermission"
-	TypeSecurityAuditLog       = "SecurityAuditLog"
-	TypeSession                = "Session"
-	TypeSetting                = "Setting"
-	TypeSupplierAccount        = "SupplierAccount"
-	TypeSupplierLedgerEntry    = "SupplierLedgerEntry"
-	TypeSupplierProductPrice   = "SupplierProductPrice"
-	TypeSupplyConnection       = "SupplyConnection"
-	TypeSupplyMapping          = "SupplyMapping"
-	TypeSupplyNonce            = "SupplyNonce"
-	TypeSupplyOrder            = "SupplyOrder"
-	TypeSupplySyncTask         = "SupplySyncTask"
-	TypeTag                    = "Tag"
-	TypeTicket                 = "Ticket"
-	TypeTicketMessage          = "TicketMessage"
-	TypeUser                   = "User"
-	TypeUserGroup              = "UserGroup"
-	TypeUserSession            = "UserSession"
-	TypeV1IDMap                = "V1IDMap"
-	TypeVirtualReview          = "VirtualReview"
-	TypeVisitLog               = "VisitLog"
-	TypeWalletAccount          = "WalletAccount"
-	TypeWalletTransaction      = "WalletTransaction"
-	TypeWithdrawal             = "Withdrawal"
+	TypeAdminRole                = "AdminRole"
+	TypeAdminUser                = "AdminUser"
+	TypeAffiliateCommission      = "AffiliateCommission"
+	TypeAuditLog                 = "AuditLog"
+	TypeBanner                   = "Banner"
+	TypeCard                     = "Card"
+	TypeCardImport               = "CardImport"
+	TypeCartItem                 = "CartItem"
+	TypeCategory                 = "Category"
+	TypeCategoryProductPlacement = "CategoryProductPlacement"
+	TypeCoupon                   = "Coupon"
+	TypeCurrency                 = "Currency"
+	TypeDailyStat                = "DailyStat"
+	TypeDownstreamCallback       = "DownstreamCallback"
+	TypeEmailVerification        = "EmailVerification"
+	TypeExternalIdentity         = "ExternalIdentity"
+	TypeFailedTask               = "FailedTask"
+	TypeFlashSale                = "FlashSale"
+	TypeGiftcard                 = "Giftcard"
+	TypeGiftcardBatch            = "GiftcardBatch"
+	TypeLicenseOrder             = "LicenseOrder"
+	TypeLotteryAccount           = "LotteryAccount"
+	TypeLotteryActivity          = "LotteryActivity"
+	TypeLotteryChanceLog         = "LotteryChanceLog"
+	TypeLotteryDraw              = "LotteryDraw"
+	TypeLotteryPrize             = "LotteryPrize"
+	TypeLotteryRevision          = "LotteryRevision"
+	TypeMedia                    = "Media"
+	TypeMediaCategory            = "MediaCategory"
+	TypeMemberLevel              = "MemberLevel"
+	TypeMemberProductGroup       = "MemberProductGroup"
+	TypeNotification             = "Notification"
+	TypeNotificationLog          = "NotificationLog"
+	TypeNotifyBroadcast          = "NotifyBroadcast"
+	TypeNotifyTemplate           = "NotifyTemplate"
+	TypeOrder                    = "Order"
+	TypeOrderAmountLine          = "OrderAmountLine"
+	TypeOrderDelivery            = "OrderDelivery"
+	TypeOrderItem                = "OrderItem"
+	TypeOrderStatusEvent         = "OrderStatusEvent"
+	TypeOutboxEvent              = "OutboxEvent"
+	TypePageView                 = "PageView"
+	TypePayment                  = "Payment"
+	TypePaymentChannel           = "PaymentChannel"
+	TypePointAccount             = "PointAccount"
+	TypePointTransaction         = "PointTransaction"
+	TypePost                     = "Post"
+	TypePostCategory             = "PostCategory"
+	TypeProcessedEvent           = "ProcessedEvent"
+	TypeProcurementItem          = "ProcurementItem"
+	TypeProcurementOrder         = "ProcurementOrder"
+	TypeProduct                  = "Product"
+	TypeProductContentBatch      = "ProductContentBatch"
+	TypeProductControl           = "ProductControl"
+	TypeProductSku               = "ProductSku"
+	TypePromotion                = "Promotion"
+	TypeRechargeOrder            = "RechargeOrder"
+	TypeReconciliationItem       = "ReconciliationItem"
+	TypeReconciliationJob        = "ReconciliationJob"
+	TypeRefundOrder              = "RefundOrder"
+	TypeResellerBalanceAccount   = "ResellerBalanceAccount"
+	TypeResellerLedgerEntry      = "ResellerLedgerEntry"
+	TypeResellerPricing          = "ResellerPricing"
+	TypeResellerProfile          = "ResellerProfile"
+	TypeResellerRelatedAccount   = "ResellerRelatedAccount"
+	TypeResellerSite             = "ResellerSite"
+	TypeReview                   = "Review"
+	TypeRiskLockKey              = "RiskLockKey"
+	TypeRolePermission           = "RolePermission"
+	TypeSecurityAuditLog         = "SecurityAuditLog"
+	TypeSession                  = "Session"
+	TypeSetting                  = "Setting"
+	TypeSupplierAccount          = "SupplierAccount"
+	TypeSupplierLedgerEntry      = "SupplierLedgerEntry"
+	TypeSupplierProductPrice     = "SupplierProductPrice"
+	TypeSupplyConnection         = "SupplyConnection"
+	TypeSupplyMapping            = "SupplyMapping"
+	TypeSupplyNonce              = "SupplyNonce"
+	TypeSupplyOrder              = "SupplyOrder"
+	TypeSupplySyncTask           = "SupplySyncTask"
+	TypeTag                      = "Tag"
+	TypeTicket                   = "Ticket"
+	TypeTicketMessage            = "TicketMessage"
+	TypeUser                     = "User"
+	TypeUserGroup                = "UserGroup"
+	TypeUserSession              = "UserSession"
+	TypeV1IDMap                  = "V1IDMap"
+	TypeVirtualReview            = "VirtualReview"
+	TypeVisitLog                 = "VisitLog"
+	TypeWalletAccount            = "WalletAccount"
+	TypeWalletTransaction        = "WalletTransaction"
+	TypeWithdrawal               = "Withdrawal"
 )
 
 // AdminRoleMutation represents an operation that mutates the AdminRole nodes in the graph.
@@ -9269,6 +9271,8 @@ type CategoryMutation struct {
 	addsort                *int32
 	visible_subsites       *[]uint64
 	appendvisible_subsites []uint64
+	placement_version      *int64
+	addplacement_version   *int64
 	clearedFields          map[string]struct{}
 	done                   bool
 	oldValue               func(context.Context) (*Category, error)
@@ -9819,6 +9823,62 @@ func (m *CategoryMutation) ResetVisibleSubsites() {
 	delete(m.clearedFields, category.FieldVisibleSubsites)
 }
 
+// SetPlacementVersion sets the "placement_version" field.
+func (m *CategoryMutation) SetPlacementVersion(i int64) {
+	m.placement_version = &i
+	m.addplacement_version = nil
+}
+
+// PlacementVersion returns the value of the "placement_version" field in the mutation.
+func (m *CategoryMutation) PlacementVersion() (r int64, exists bool) {
+	v := m.placement_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPlacementVersion returns the old "placement_version" field's value of the Category entity.
+// If the Category object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryMutation) OldPlacementVersion(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPlacementVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPlacementVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPlacementVersion: %w", err)
+	}
+	return oldValue.PlacementVersion, nil
+}
+
+// AddPlacementVersion adds i to the "placement_version" field.
+func (m *CategoryMutation) AddPlacementVersion(i int64) {
+	if m.addplacement_version != nil {
+		*m.addplacement_version += i
+	} else {
+		m.addplacement_version = &i
+	}
+}
+
+// AddedPlacementVersion returns the value that was added to the "placement_version" field in this mutation.
+func (m *CategoryMutation) AddedPlacementVersion() (r int64, exists bool) {
+	v := m.addplacement_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPlacementVersion resets all changes to the "placement_version" field.
+func (m *CategoryMutation) ResetPlacementVersion() {
+	m.placement_version = nil
+	m.addplacement_version = nil
+}
+
 // Where appends a list predicates to the CategoryMutation builder.
 func (m *CategoryMutation) Where(ps ...predicate.Category) {
 	m.predicates = append(m.predicates, ps...)
@@ -9853,7 +9913,7 @@ func (m *CategoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *CategoryMutation) Fields() []string {
-	fields := make([]string, 0, 9)
+	fields := make([]string, 0, 10)
 	if m.created_at != nil {
 		fields = append(fields, category.FieldCreatedAt)
 	}
@@ -9881,6 +9941,9 @@ func (m *CategoryMutation) Fields() []string {
 	if m.visible_subsites != nil {
 		fields = append(fields, category.FieldVisibleSubsites)
 	}
+	if m.placement_version != nil {
+		fields = append(fields, category.FieldPlacementVersion)
+	}
 	return fields
 }
 
@@ -9907,6 +9970,8 @@ func (m *CategoryMutation) Field(name string) (ent.Value, bool) {
 		return m.Sort()
 	case category.FieldVisibleSubsites:
 		return m.VisibleSubsites()
+	case category.FieldPlacementVersion:
+		return m.PlacementVersion()
 	}
 	return nil, false
 }
@@ -9934,6 +9999,8 @@ func (m *CategoryMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldSort(ctx)
 	case category.FieldVisibleSubsites:
 		return m.OldVisibleSubsites(ctx)
+	case category.FieldPlacementVersion:
+		return m.OldPlacementVersion(ctx)
 	}
 	return nil, fmt.Errorf("unknown Category field %s", name)
 }
@@ -10006,6 +10073,13 @@ func (m *CategoryMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetVisibleSubsites(v)
 		return nil
+	case category.FieldPlacementVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPlacementVersion(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Category field %s", name)
 }
@@ -10023,6 +10097,9 @@ func (m *CategoryMutation) AddedFields() []string {
 	if m.addsort != nil {
 		fields = append(fields, category.FieldSort)
 	}
+	if m.addplacement_version != nil {
+		fields = append(fields, category.FieldPlacementVersion)
+	}
 	return fields
 }
 
@@ -10037,6 +10114,8 @@ func (m *CategoryMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedParentID()
 	case category.FieldSort:
 		return m.AddedSort()
+	case category.FieldPlacementVersion:
+		return m.AddedPlacementVersion()
 	}
 	return nil, false
 }
@@ -10066,6 +10145,13 @@ func (m *CategoryMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddSort(v)
+		return nil
+	case category.FieldPlacementVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPlacementVersion(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Category numeric field %s", name)
@@ -10142,6 +10228,9 @@ func (m *CategoryMutation) ResetField(name string) error {
 	case category.FieldVisibleSubsites:
 		m.ResetVisibleSubsites()
 		return nil
+	case category.FieldPlacementVersion:
+		m.ResetPlacementVersion()
+		return nil
 	}
 	return fmt.Errorf("unknown Category field %s", name)
 }
@@ -10192,6 +10281,851 @@ func (m *CategoryMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *CategoryMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Category edge %s", name)
+}
+
+// CategoryProductPlacementMutation represents an operation that mutates the CategoryProductPlacement nodes in the graph.
+type CategoryProductPlacementMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *uint64
+	created_at     *time.Time
+	updated_at     *time.Time
+	subsite_id     *uint64
+	addsubsite_id  *int64
+	category_id    *uint64
+	addcategory_id *int64
+	product_id     *uint64
+	addproduct_id  *int64
+	is_pinned      *bool
+	is_recommended *bool
+	position       *int32
+	addposition    *int32
+	clearedFields  map[string]struct{}
+	done           bool
+	oldValue       func(context.Context) (*CategoryProductPlacement, error)
+	predicates     []predicate.CategoryProductPlacement
+}
+
+var _ ent.Mutation = (*CategoryProductPlacementMutation)(nil)
+
+// categoryproductplacementOption allows management of the mutation configuration using functional options.
+type categoryproductplacementOption func(*CategoryProductPlacementMutation)
+
+// newCategoryProductPlacementMutation creates new mutation for the CategoryProductPlacement entity.
+func newCategoryProductPlacementMutation(c config, op Op, opts ...categoryproductplacementOption) *CategoryProductPlacementMutation {
+	m := &CategoryProductPlacementMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCategoryProductPlacement,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCategoryProductPlacementID sets the ID field of the mutation.
+func withCategoryProductPlacementID(id uint64) categoryproductplacementOption {
+	return func(m *CategoryProductPlacementMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CategoryProductPlacement
+		)
+		m.oldValue = func(ctx context.Context) (*CategoryProductPlacement, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CategoryProductPlacement.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCategoryProductPlacement sets the old CategoryProductPlacement of the mutation.
+func withCategoryProductPlacement(node *CategoryProductPlacement) categoryproductplacementOption {
+	return func(m *CategoryProductPlacementMutation) {
+		m.oldValue = func(context.Context) (*CategoryProductPlacement, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CategoryProductPlacementMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CategoryProductPlacementMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CategoryProductPlacement entities.
+func (m *CategoryProductPlacementMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CategoryProductPlacementMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CategoryProductPlacementMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CategoryProductPlacement.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CategoryProductPlacementMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CategoryProductPlacementMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CategoryProductPlacementMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *CategoryProductPlacementMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *CategoryProductPlacementMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *CategoryProductPlacementMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSubsiteID sets the "subsite_id" field.
+func (m *CategoryProductPlacementMutation) SetSubsiteID(u uint64) {
+	m.subsite_id = &u
+	m.addsubsite_id = nil
+}
+
+// SubsiteID returns the value of the "subsite_id" field in the mutation.
+func (m *CategoryProductPlacementMutation) SubsiteID() (r uint64, exists bool) {
+	v := m.subsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubsiteID returns the old "subsite_id" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldSubsiteID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubsiteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubsiteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubsiteID: %w", err)
+	}
+	return oldValue.SubsiteID, nil
+}
+
+// AddSubsiteID adds u to the "subsite_id" field.
+func (m *CategoryProductPlacementMutation) AddSubsiteID(u int64) {
+	if m.addsubsite_id != nil {
+		*m.addsubsite_id += u
+	} else {
+		m.addsubsite_id = &u
+	}
+}
+
+// AddedSubsiteID returns the value that was added to the "subsite_id" field in this mutation.
+func (m *CategoryProductPlacementMutation) AddedSubsiteID() (r int64, exists bool) {
+	v := m.addsubsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubsiteID resets all changes to the "subsite_id" field.
+func (m *CategoryProductPlacementMutation) ResetSubsiteID() {
+	m.subsite_id = nil
+	m.addsubsite_id = nil
+}
+
+// SetCategoryID sets the "category_id" field.
+func (m *CategoryProductPlacementMutation) SetCategoryID(u uint64) {
+	m.category_id = &u
+	m.addcategory_id = nil
+}
+
+// CategoryID returns the value of the "category_id" field in the mutation.
+func (m *CategoryProductPlacementMutation) CategoryID() (r uint64, exists bool) {
+	v := m.category_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategoryID returns the old "category_id" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldCategoryID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategoryID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategoryID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategoryID: %w", err)
+	}
+	return oldValue.CategoryID, nil
+}
+
+// AddCategoryID adds u to the "category_id" field.
+func (m *CategoryProductPlacementMutation) AddCategoryID(u int64) {
+	if m.addcategory_id != nil {
+		*m.addcategory_id += u
+	} else {
+		m.addcategory_id = &u
+	}
+}
+
+// AddedCategoryID returns the value that was added to the "category_id" field in this mutation.
+func (m *CategoryProductPlacementMutation) AddedCategoryID() (r int64, exists bool) {
+	v := m.addcategory_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCategoryID resets all changes to the "category_id" field.
+func (m *CategoryProductPlacementMutation) ResetCategoryID() {
+	m.category_id = nil
+	m.addcategory_id = nil
+}
+
+// SetProductID sets the "product_id" field.
+func (m *CategoryProductPlacementMutation) SetProductID(u uint64) {
+	m.product_id = &u
+	m.addproduct_id = nil
+}
+
+// ProductID returns the value of the "product_id" field in the mutation.
+func (m *CategoryProductPlacementMutation) ProductID() (r uint64, exists bool) {
+	v := m.product_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductID returns the old "product_id" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldProductID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductID: %w", err)
+	}
+	return oldValue.ProductID, nil
+}
+
+// AddProductID adds u to the "product_id" field.
+func (m *CategoryProductPlacementMutation) AddProductID(u int64) {
+	if m.addproduct_id != nil {
+		*m.addproduct_id += u
+	} else {
+		m.addproduct_id = &u
+	}
+}
+
+// AddedProductID returns the value that was added to the "product_id" field in this mutation.
+func (m *CategoryProductPlacementMutation) AddedProductID() (r int64, exists bool) {
+	v := m.addproduct_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProductID resets all changes to the "product_id" field.
+func (m *CategoryProductPlacementMutation) ResetProductID() {
+	m.product_id = nil
+	m.addproduct_id = nil
+}
+
+// SetIsPinned sets the "is_pinned" field.
+func (m *CategoryProductPlacementMutation) SetIsPinned(b bool) {
+	m.is_pinned = &b
+}
+
+// IsPinned returns the value of the "is_pinned" field in the mutation.
+func (m *CategoryProductPlacementMutation) IsPinned() (r bool, exists bool) {
+	v := m.is_pinned
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsPinned returns the old "is_pinned" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldIsPinned(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsPinned is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsPinned requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsPinned: %w", err)
+	}
+	return oldValue.IsPinned, nil
+}
+
+// ResetIsPinned resets all changes to the "is_pinned" field.
+func (m *CategoryProductPlacementMutation) ResetIsPinned() {
+	m.is_pinned = nil
+}
+
+// SetIsRecommended sets the "is_recommended" field.
+func (m *CategoryProductPlacementMutation) SetIsRecommended(b bool) {
+	m.is_recommended = &b
+}
+
+// IsRecommended returns the value of the "is_recommended" field in the mutation.
+func (m *CategoryProductPlacementMutation) IsRecommended() (r bool, exists bool) {
+	v := m.is_recommended
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsRecommended returns the old "is_recommended" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldIsRecommended(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsRecommended is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsRecommended requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsRecommended: %w", err)
+	}
+	return oldValue.IsRecommended, nil
+}
+
+// ResetIsRecommended resets all changes to the "is_recommended" field.
+func (m *CategoryProductPlacementMutation) ResetIsRecommended() {
+	m.is_recommended = nil
+}
+
+// SetPosition sets the "position" field.
+func (m *CategoryProductPlacementMutation) SetPosition(i int32) {
+	m.position = &i
+	m.addposition = nil
+}
+
+// Position returns the value of the "position" field in the mutation.
+func (m *CategoryProductPlacementMutation) Position() (r int32, exists bool) {
+	v := m.position
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPosition returns the old "position" field's value of the CategoryProductPlacement entity.
+// If the CategoryProductPlacement object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CategoryProductPlacementMutation) OldPosition(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPosition is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPosition requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPosition: %w", err)
+	}
+	return oldValue.Position, nil
+}
+
+// AddPosition adds i to the "position" field.
+func (m *CategoryProductPlacementMutation) AddPosition(i int32) {
+	if m.addposition != nil {
+		*m.addposition += i
+	} else {
+		m.addposition = &i
+	}
+}
+
+// AddedPosition returns the value that was added to the "position" field in this mutation.
+func (m *CategoryProductPlacementMutation) AddedPosition() (r int32, exists bool) {
+	v := m.addposition
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPosition resets all changes to the "position" field.
+func (m *CategoryProductPlacementMutation) ResetPosition() {
+	m.position = nil
+	m.addposition = nil
+}
+
+// Where appends a list predicates to the CategoryProductPlacementMutation builder.
+func (m *CategoryProductPlacementMutation) Where(ps ...predicate.CategoryProductPlacement) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CategoryProductPlacementMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CategoryProductPlacementMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CategoryProductPlacement, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CategoryProductPlacementMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CategoryProductPlacementMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CategoryProductPlacement).
+func (m *CategoryProductPlacementMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CategoryProductPlacementMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.created_at != nil {
+		fields = append(fields, categoryproductplacement.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, categoryproductplacement.FieldUpdatedAt)
+	}
+	if m.subsite_id != nil {
+		fields = append(fields, categoryproductplacement.FieldSubsiteID)
+	}
+	if m.category_id != nil {
+		fields = append(fields, categoryproductplacement.FieldCategoryID)
+	}
+	if m.product_id != nil {
+		fields = append(fields, categoryproductplacement.FieldProductID)
+	}
+	if m.is_pinned != nil {
+		fields = append(fields, categoryproductplacement.FieldIsPinned)
+	}
+	if m.is_recommended != nil {
+		fields = append(fields, categoryproductplacement.FieldIsRecommended)
+	}
+	if m.position != nil {
+		fields = append(fields, categoryproductplacement.FieldPosition)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CategoryProductPlacementMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case categoryproductplacement.FieldCreatedAt:
+		return m.CreatedAt()
+	case categoryproductplacement.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case categoryproductplacement.FieldSubsiteID:
+		return m.SubsiteID()
+	case categoryproductplacement.FieldCategoryID:
+		return m.CategoryID()
+	case categoryproductplacement.FieldProductID:
+		return m.ProductID()
+	case categoryproductplacement.FieldIsPinned:
+		return m.IsPinned()
+	case categoryproductplacement.FieldIsRecommended:
+		return m.IsRecommended()
+	case categoryproductplacement.FieldPosition:
+		return m.Position()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CategoryProductPlacementMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case categoryproductplacement.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case categoryproductplacement.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case categoryproductplacement.FieldSubsiteID:
+		return m.OldSubsiteID(ctx)
+	case categoryproductplacement.FieldCategoryID:
+		return m.OldCategoryID(ctx)
+	case categoryproductplacement.FieldProductID:
+		return m.OldProductID(ctx)
+	case categoryproductplacement.FieldIsPinned:
+		return m.OldIsPinned(ctx)
+	case categoryproductplacement.FieldIsRecommended:
+		return m.OldIsRecommended(ctx)
+	case categoryproductplacement.FieldPosition:
+		return m.OldPosition(ctx)
+	}
+	return nil, fmt.Errorf("unknown CategoryProductPlacement field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CategoryProductPlacementMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case categoryproductplacement.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case categoryproductplacement.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case categoryproductplacement.FieldSubsiteID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubsiteID(v)
+		return nil
+	case categoryproductplacement.FieldCategoryID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategoryID(v)
+		return nil
+	case categoryproductplacement.FieldProductID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductID(v)
+		return nil
+	case categoryproductplacement.FieldIsPinned:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsPinned(v)
+		return nil
+	case categoryproductplacement.FieldIsRecommended:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsRecommended(v)
+		return nil
+	case categoryproductplacement.FieldPosition:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPosition(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CategoryProductPlacement field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CategoryProductPlacementMutation) AddedFields() []string {
+	var fields []string
+	if m.addsubsite_id != nil {
+		fields = append(fields, categoryproductplacement.FieldSubsiteID)
+	}
+	if m.addcategory_id != nil {
+		fields = append(fields, categoryproductplacement.FieldCategoryID)
+	}
+	if m.addproduct_id != nil {
+		fields = append(fields, categoryproductplacement.FieldProductID)
+	}
+	if m.addposition != nil {
+		fields = append(fields, categoryproductplacement.FieldPosition)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CategoryProductPlacementMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case categoryproductplacement.FieldSubsiteID:
+		return m.AddedSubsiteID()
+	case categoryproductplacement.FieldCategoryID:
+		return m.AddedCategoryID()
+	case categoryproductplacement.FieldProductID:
+		return m.AddedProductID()
+	case categoryproductplacement.FieldPosition:
+		return m.AddedPosition()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CategoryProductPlacementMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case categoryproductplacement.FieldSubsiteID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubsiteID(v)
+		return nil
+	case categoryproductplacement.FieldCategoryID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCategoryID(v)
+		return nil
+	case categoryproductplacement.FieldProductID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProductID(v)
+		return nil
+	case categoryproductplacement.FieldPosition:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPosition(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CategoryProductPlacement numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CategoryProductPlacementMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CategoryProductPlacementMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CategoryProductPlacementMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CategoryProductPlacement nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CategoryProductPlacementMutation) ResetField(name string) error {
+	switch name {
+	case categoryproductplacement.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case categoryproductplacement.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case categoryproductplacement.FieldSubsiteID:
+		m.ResetSubsiteID()
+		return nil
+	case categoryproductplacement.FieldCategoryID:
+		m.ResetCategoryID()
+		return nil
+	case categoryproductplacement.FieldProductID:
+		m.ResetProductID()
+		return nil
+	case categoryproductplacement.FieldIsPinned:
+		m.ResetIsPinned()
+		return nil
+	case categoryproductplacement.FieldIsRecommended:
+		m.ResetIsRecommended()
+		return nil
+	case categoryproductplacement.FieldPosition:
+		m.ResetPosition()
+		return nil
+	}
+	return fmt.Errorf("unknown CategoryProductPlacement field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CategoryProductPlacementMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CategoryProductPlacementMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CategoryProductPlacementMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CategoryProductPlacementMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CategoryProductPlacementMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CategoryProductPlacementMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CategoryProductPlacementMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CategoryProductPlacement unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CategoryProductPlacementMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CategoryProductPlacement edge %s", name)
 }
 
 // CouponMutation represents an operation that mutates the Coupon nodes in the graph.
@@ -56072,6 +57006,12 @@ type ProductMutation struct {
 	addupstream_source_id *int64
 	upstream_product_code *string
 	upstream_synced_at    *time.Time
+	is_locked             *bool
+	lock_version          *int64
+	addlock_version       *int64
+	locked_by             *uint64
+	addlocked_by          *int64
+	locked_at             *time.Time
 	clearedFields         map[string]struct{}
 	skus                  map[uint64]struct{}
 	removedskus           map[uint64]struct{}
@@ -57616,6 +58556,203 @@ func (m *ProductMutation) ResetUpstreamSyncedAt() {
 	delete(m.clearedFields, product.FieldUpstreamSyncedAt)
 }
 
+// SetIsLocked sets the "is_locked" field.
+func (m *ProductMutation) SetIsLocked(b bool) {
+	m.is_locked = &b
+}
+
+// IsLocked returns the value of the "is_locked" field in the mutation.
+func (m *ProductMutation) IsLocked() (r bool, exists bool) {
+	v := m.is_locked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldIsLocked returns the old "is_locked" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldIsLocked(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldIsLocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldIsLocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldIsLocked: %w", err)
+	}
+	return oldValue.IsLocked, nil
+}
+
+// ResetIsLocked resets all changes to the "is_locked" field.
+func (m *ProductMutation) ResetIsLocked() {
+	m.is_locked = nil
+}
+
+// SetLockVersion sets the "lock_version" field.
+func (m *ProductMutation) SetLockVersion(i int64) {
+	m.lock_version = &i
+	m.addlock_version = nil
+}
+
+// LockVersion returns the value of the "lock_version" field in the mutation.
+func (m *ProductMutation) LockVersion() (r int64, exists bool) {
+	v := m.lock_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLockVersion returns the old "lock_version" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldLockVersion(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLockVersion is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLockVersion requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLockVersion: %w", err)
+	}
+	return oldValue.LockVersion, nil
+}
+
+// AddLockVersion adds i to the "lock_version" field.
+func (m *ProductMutation) AddLockVersion(i int64) {
+	if m.addlock_version != nil {
+		*m.addlock_version += i
+	} else {
+		m.addlock_version = &i
+	}
+}
+
+// AddedLockVersion returns the value that was added to the "lock_version" field in this mutation.
+func (m *ProductMutation) AddedLockVersion() (r int64, exists bool) {
+	v := m.addlock_version
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLockVersion resets all changes to the "lock_version" field.
+func (m *ProductMutation) ResetLockVersion() {
+	m.lock_version = nil
+	m.addlock_version = nil
+}
+
+// SetLockedBy sets the "locked_by" field.
+func (m *ProductMutation) SetLockedBy(u uint64) {
+	m.locked_by = &u
+	m.addlocked_by = nil
+}
+
+// LockedBy returns the value of the "locked_by" field in the mutation.
+func (m *ProductMutation) LockedBy() (r uint64, exists bool) {
+	v := m.locked_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLockedBy returns the old "locked_by" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldLockedBy(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLockedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLockedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLockedBy: %w", err)
+	}
+	return oldValue.LockedBy, nil
+}
+
+// AddLockedBy adds u to the "locked_by" field.
+func (m *ProductMutation) AddLockedBy(u int64) {
+	if m.addlocked_by != nil {
+		*m.addlocked_by += u
+	} else {
+		m.addlocked_by = &u
+	}
+}
+
+// AddedLockedBy returns the value that was added to the "locked_by" field in this mutation.
+func (m *ProductMutation) AddedLockedBy() (r int64, exists bool) {
+	v := m.addlocked_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLockedBy resets all changes to the "locked_by" field.
+func (m *ProductMutation) ResetLockedBy() {
+	m.locked_by = nil
+	m.addlocked_by = nil
+}
+
+// SetLockedAt sets the "locked_at" field.
+func (m *ProductMutation) SetLockedAt(t time.Time) {
+	m.locked_at = &t
+}
+
+// LockedAt returns the value of the "locked_at" field in the mutation.
+func (m *ProductMutation) LockedAt() (r time.Time, exists bool) {
+	v := m.locked_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLockedAt returns the old "locked_at" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldLockedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLockedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLockedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLockedAt: %w", err)
+	}
+	return oldValue.LockedAt, nil
+}
+
+// ClearLockedAt clears the value of the "locked_at" field.
+func (m *ProductMutation) ClearLockedAt() {
+	m.locked_at = nil
+	m.clearedFields[product.FieldLockedAt] = struct{}{}
+}
+
+// LockedAtCleared returns if the "locked_at" field was cleared in this mutation.
+func (m *ProductMutation) LockedAtCleared() bool {
+	_, ok := m.clearedFields[product.FieldLockedAt]
+	return ok
+}
+
+// ResetLockedAt resets all changes to the "locked_at" field.
+func (m *ProductMutation) ResetLockedAt() {
+	m.locked_at = nil
+	delete(m.clearedFields, product.FieldLockedAt)
+}
+
 // AddSkuIDs adds the "skus" edge to the ProductSku entity by ids.
 func (m *ProductMutation) AddSkuIDs(ids ...uint64) {
 	if m.skus == nil {
@@ -57758,7 +58895,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 30)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -57849,6 +58986,18 @@ func (m *ProductMutation) Fields() []string {
 	if m.upstream_synced_at != nil {
 		fields = append(fields, product.FieldUpstreamSyncedAt)
 	}
+	if m.is_locked != nil {
+		fields = append(fields, product.FieldIsLocked)
+	}
+	if m.lock_version != nil {
+		fields = append(fields, product.FieldLockVersion)
+	}
+	if m.locked_by != nil {
+		fields = append(fields, product.FieldLockedBy)
+	}
+	if m.locked_at != nil {
+		fields = append(fields, product.FieldLockedAt)
+	}
 	return fields
 }
 
@@ -57917,6 +59066,14 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.UpstreamProductCode()
 	case product.FieldUpstreamSyncedAt:
 		return m.UpstreamSyncedAt()
+	case product.FieldIsLocked:
+		return m.IsLocked()
+	case product.FieldLockVersion:
+		return m.LockVersion()
+	case product.FieldLockedBy:
+		return m.LockedBy()
+	case product.FieldLockedAt:
+		return m.LockedAt()
 	}
 	return nil, false
 }
@@ -57986,6 +59143,14 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUpstreamProductCode(ctx)
 	case product.FieldUpstreamSyncedAt:
 		return m.OldUpstreamSyncedAt(ctx)
+	case product.FieldIsLocked:
+		return m.OldIsLocked(ctx)
+	case product.FieldLockVersion:
+		return m.OldLockVersion(ctx)
+	case product.FieldLockedBy:
+		return m.OldLockedBy(ctx)
+	case product.FieldLockedAt:
+		return m.OldLockedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown Product field %s", name)
 }
@@ -58205,6 +59370,34 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUpstreamSyncedAt(v)
 		return nil
+	case product.FieldIsLocked:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetIsLocked(v)
+		return nil
+	case product.FieldLockVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLockVersion(v)
+		return nil
+	case product.FieldLockedBy:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLockedBy(v)
+		return nil
+	case product.FieldLockedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLockedAt(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Product field %s", name)
 }
@@ -58243,6 +59436,12 @@ func (m *ProductMutation) AddedFields() []string {
 	if m.addupstream_source_id != nil {
 		fields = append(fields, product.FieldUpstreamSourceID)
 	}
+	if m.addlock_version != nil {
+		fields = append(fields, product.FieldLockVersion)
+	}
+	if m.addlocked_by != nil {
+		fields = append(fields, product.FieldLockedBy)
+	}
 	return fields
 }
 
@@ -58271,6 +59470,10 @@ func (m *ProductMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedStatus()
 	case product.FieldUpstreamSourceID:
 		return m.AddedUpstreamSourceID()
+	case product.FieldLockVersion:
+		return m.AddedLockVersion()
+	case product.FieldLockedBy:
+		return m.AddedLockedBy()
 	}
 	return nil, false
 }
@@ -58350,6 +59553,20 @@ func (m *ProductMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddUpstreamSourceID(v)
 		return nil
+	case product.FieldLockVersion:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLockVersion(v)
+		return nil
+	case product.FieldLockedBy:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLockedBy(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Product numeric field %s", name)
 }
@@ -58387,6 +59604,9 @@ func (m *ProductMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(product.FieldUpstreamSyncedAt) {
 		fields = append(fields, product.FieldUpstreamSyncedAt)
+	}
+	if m.FieldCleared(product.FieldLockedAt) {
+		fields = append(fields, product.FieldLockedAt)
 	}
 	return fields
 }
@@ -58431,6 +59651,9 @@ func (m *ProductMutation) ClearField(name string) error {
 		return nil
 	case product.FieldUpstreamSyncedAt:
 		m.ClearUpstreamSyncedAt()
+		return nil
+	case product.FieldLockedAt:
+		m.ClearLockedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Product nullable field %s", name)
@@ -58529,6 +59752,18 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldUpstreamSyncedAt:
 		m.ResetUpstreamSyncedAt()
+		return nil
+	case product.FieldIsLocked:
+		m.ResetIsLocked()
+		return nil
+	case product.FieldLockVersion:
+		m.ResetLockVersion()
+		return nil
+	case product.FieldLockedBy:
+		m.ResetLockedBy()
+		return nil
+	case product.FieldLockedAt:
+		m.ResetLockedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown Product field %s", name)
@@ -58647,28 +59882,30 @@ func (m *ProductMutation) ResetEdge(name string) error {
 // ProductContentBatchMutation represents an operation that mutates the ProductContentBatch nodes in the graph.
 type ProductContentBatchMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	created_at    *time.Time
-	updated_at    *time.Time
-	subsite_id    *uint64
-	addsubsite_id *int64
-	token         *string
-	actor_id      *uint64
-	addactor_id   *int64
-	payload       *json.RawMessage
-	appendpayload json.RawMessage
-	expires_at    *time.Time
-	completed     *bool
-	matched       *int32
-	addmatched    *int32
-	changed       *int32
-	addchanged    *int32
-	clearedFields map[string]struct{}
-	done          bool
-	oldValue      func(context.Context) (*ProductContentBatch, error)
-	predicates    []predicate.ProductContentBatch
+	op                Op
+	typ               string
+	id                *uint64
+	created_at        *time.Time
+	updated_at        *time.Time
+	subsite_id        *uint64
+	addsubsite_id     *int64
+	token             *string
+	actor_id          *uint64
+	addactor_id       *int64
+	payload           *json.RawMessage
+	appendpayload     json.RawMessage
+	expires_at        *time.Time
+	completed         *bool
+	matched           *int32
+	addmatched        *int32
+	changed           *int32
+	addchanged        *int32
+	skipped_locked    *int32
+	addskipped_locked *int32
+	clearedFields     map[string]struct{}
+	done              bool
+	oldValue          func(context.Context) (*ProductContentBatch, error)
+	predicates        []predicate.ProductContentBatch
 }
 
 var _ ent.Mutation = (*ProductContentBatchMutation)(nil)
@@ -59230,6 +60467,62 @@ func (m *ProductContentBatchMutation) ResetChanged() {
 	m.addchanged = nil
 }
 
+// SetSkippedLocked sets the "skipped_locked" field.
+func (m *ProductContentBatchMutation) SetSkippedLocked(i int32) {
+	m.skipped_locked = &i
+	m.addskipped_locked = nil
+}
+
+// SkippedLocked returns the value of the "skipped_locked" field in the mutation.
+func (m *ProductContentBatchMutation) SkippedLocked() (r int32, exists bool) {
+	v := m.skipped_locked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkippedLocked returns the old "skipped_locked" field's value of the ProductContentBatch entity.
+// If the ProductContentBatch object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductContentBatchMutation) OldSkippedLocked(ctx context.Context) (v int32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkippedLocked is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkippedLocked requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkippedLocked: %w", err)
+	}
+	return oldValue.SkippedLocked, nil
+}
+
+// AddSkippedLocked adds i to the "skipped_locked" field.
+func (m *ProductContentBatchMutation) AddSkippedLocked(i int32) {
+	if m.addskipped_locked != nil {
+		*m.addskipped_locked += i
+	} else {
+		m.addskipped_locked = &i
+	}
+}
+
+// AddedSkippedLocked returns the value that was added to the "skipped_locked" field in this mutation.
+func (m *ProductContentBatchMutation) AddedSkippedLocked() (r int32, exists bool) {
+	v := m.addskipped_locked
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkippedLocked resets all changes to the "skipped_locked" field.
+func (m *ProductContentBatchMutation) ResetSkippedLocked() {
+	m.skipped_locked = nil
+	m.addskipped_locked = nil
+}
+
 // Where appends a list predicates to the ProductContentBatchMutation builder.
 func (m *ProductContentBatchMutation) Where(ps ...predicate.ProductContentBatch) {
 	m.predicates = append(m.predicates, ps...)
@@ -59264,7 +60557,7 @@ func (m *ProductContentBatchMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductContentBatchMutation) Fields() []string {
-	fields := make([]string, 0, 10)
+	fields := make([]string, 0, 11)
 	if m.created_at != nil {
 		fields = append(fields, productcontentbatch.FieldCreatedAt)
 	}
@@ -59295,6 +60588,9 @@ func (m *ProductContentBatchMutation) Fields() []string {
 	if m.changed != nil {
 		fields = append(fields, productcontentbatch.FieldChanged)
 	}
+	if m.skipped_locked != nil {
+		fields = append(fields, productcontentbatch.FieldSkippedLocked)
+	}
 	return fields
 }
 
@@ -59323,6 +60619,8 @@ func (m *ProductContentBatchMutation) Field(name string) (ent.Value, bool) {
 		return m.Matched()
 	case productcontentbatch.FieldChanged:
 		return m.Changed()
+	case productcontentbatch.FieldSkippedLocked:
+		return m.SkippedLocked()
 	}
 	return nil, false
 }
@@ -59352,6 +60650,8 @@ func (m *ProductContentBatchMutation) OldField(ctx context.Context, name string)
 		return m.OldMatched(ctx)
 	case productcontentbatch.FieldChanged:
 		return m.OldChanged(ctx)
+	case productcontentbatch.FieldSkippedLocked:
+		return m.OldSkippedLocked(ctx)
 	}
 	return nil, fmt.Errorf("unknown ProductContentBatch field %s", name)
 }
@@ -59431,6 +60731,13 @@ func (m *ProductContentBatchMutation) SetField(name string, value ent.Value) err
 		}
 		m.SetChanged(v)
 		return nil
+	case productcontentbatch.FieldSkippedLocked:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkippedLocked(v)
+		return nil
 	}
 	return fmt.Errorf("unknown ProductContentBatch field %s", name)
 }
@@ -59451,6 +60758,9 @@ func (m *ProductContentBatchMutation) AddedFields() []string {
 	if m.addchanged != nil {
 		fields = append(fields, productcontentbatch.FieldChanged)
 	}
+	if m.addskipped_locked != nil {
+		fields = append(fields, productcontentbatch.FieldSkippedLocked)
+	}
 	return fields
 }
 
@@ -59467,6 +60777,8 @@ func (m *ProductContentBatchMutation) AddedField(name string) (ent.Value, bool) 
 		return m.AddedMatched()
 	case productcontentbatch.FieldChanged:
 		return m.AddedChanged()
+	case productcontentbatch.FieldSkippedLocked:
+		return m.AddedSkippedLocked()
 	}
 	return nil, false
 }
@@ -59503,6 +60815,13 @@ func (m *ProductContentBatchMutation) AddField(name string, value ent.Value) err
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddChanged(v)
+		return nil
+	case productcontentbatch.FieldSkippedLocked:
+		v, ok := value.(int32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkippedLocked(v)
 		return nil
 	}
 	return fmt.Errorf("unknown ProductContentBatch numeric field %s", name)
@@ -59560,6 +60879,9 @@ func (m *ProductContentBatchMutation) ResetField(name string) error {
 		return nil
 	case productcontentbatch.FieldChanged:
 		m.ResetChanged()
+		return nil
+	case productcontentbatch.FieldSkippedLocked:
+		m.ResetSkippedLocked()
 		return nil
 	}
 	return fmt.Errorf("unknown ProductContentBatch field %s", name)

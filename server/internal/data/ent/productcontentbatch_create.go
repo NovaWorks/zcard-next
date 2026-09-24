@@ -131,6 +131,20 @@ func (_c *ProductContentBatchCreate) SetNillableChanged(v *int32) *ProductConten
 	return _c
 }
 
+// SetSkippedLocked sets the "skipped_locked" field.
+func (_c *ProductContentBatchCreate) SetSkippedLocked(v int32) *ProductContentBatchCreate {
+	_c.mutation.SetSkippedLocked(v)
+	return _c
+}
+
+// SetNillableSkippedLocked sets the "skipped_locked" field if the given value is not nil.
+func (_c *ProductContentBatchCreate) SetNillableSkippedLocked(v *int32) *ProductContentBatchCreate {
+	if v != nil {
+		_c.SetSkippedLocked(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *ProductContentBatchCreate) SetID(v uint64) *ProductContentBatchCreate {
 	_c.mutation.SetID(v)
@@ -196,6 +210,10 @@ func (_c *ProductContentBatchCreate) defaults() {
 		v := productcontentbatch.DefaultChanged
 		_c.mutation.SetChanged(v)
 	}
+	if _, ok := _c.mutation.SkippedLocked(); !ok {
+		v := productcontentbatch.DefaultSkippedLocked
+		_c.mutation.SetSkippedLocked(v)
+	}
 }
 
 // check runs all checks and user-defined validators on the builder.
@@ -234,6 +252,9 @@ func (_c *ProductContentBatchCreate) check() error {
 	}
 	if _, ok := _c.mutation.Changed(); !ok {
 		return &ValidationError{Name: "changed", err: errors.New(`ent: missing required field "ProductContentBatch.changed"`)}
+	}
+	if _, ok := _c.mutation.SkippedLocked(); !ok {
+		return &ValidationError{Name: "skipped_locked", err: errors.New(`ent: missing required field "ProductContentBatch.skipped_locked"`)}
 	}
 	return nil
 }
@@ -307,6 +328,10 @@ func (_c *ProductContentBatchCreate) createSpec() (*ProductContentBatch, *sqlgra
 	if value, ok := _c.mutation.Changed(); ok {
 		_spec.SetField(productcontentbatch.FieldChanged, field.TypeInt32, value)
 		_node.Changed = value
+	}
+	if value, ok := _c.mutation.SkippedLocked(); ok {
+		_spec.SetField(productcontentbatch.FieldSkippedLocked, field.TypeInt32, value)
+		_node.SkippedLocked = value
 	}
 	return _node, _spec
 }
@@ -489,6 +514,24 @@ func (u *ProductContentBatchUpsert) UpdateChanged() *ProductContentBatchUpsert {
 // AddChanged adds v to the "changed" field.
 func (u *ProductContentBatchUpsert) AddChanged(v int32) *ProductContentBatchUpsert {
 	u.Add(productcontentbatch.FieldChanged, v)
+	return u
+}
+
+// SetSkippedLocked sets the "skipped_locked" field.
+func (u *ProductContentBatchUpsert) SetSkippedLocked(v int32) *ProductContentBatchUpsert {
+	u.Set(productcontentbatch.FieldSkippedLocked, v)
+	return u
+}
+
+// UpdateSkippedLocked sets the "skipped_locked" field to the value that was provided on create.
+func (u *ProductContentBatchUpsert) UpdateSkippedLocked() *ProductContentBatchUpsert {
+	u.SetExcluded(productcontentbatch.FieldSkippedLocked)
+	return u
+}
+
+// AddSkippedLocked adds v to the "skipped_locked" field.
+func (u *ProductContentBatchUpsert) AddSkippedLocked(v int32) *ProductContentBatchUpsert {
+	u.Add(productcontentbatch.FieldSkippedLocked, v)
 	return u
 }
 
@@ -694,6 +737,27 @@ func (u *ProductContentBatchUpsertOne) AddChanged(v int32) *ProductContentBatchU
 func (u *ProductContentBatchUpsertOne) UpdateChanged() *ProductContentBatchUpsertOne {
 	return u.Update(func(s *ProductContentBatchUpsert) {
 		s.UpdateChanged()
+	})
+}
+
+// SetSkippedLocked sets the "skipped_locked" field.
+func (u *ProductContentBatchUpsertOne) SetSkippedLocked(v int32) *ProductContentBatchUpsertOne {
+	return u.Update(func(s *ProductContentBatchUpsert) {
+		s.SetSkippedLocked(v)
+	})
+}
+
+// AddSkippedLocked adds v to the "skipped_locked" field.
+func (u *ProductContentBatchUpsertOne) AddSkippedLocked(v int32) *ProductContentBatchUpsertOne {
+	return u.Update(func(s *ProductContentBatchUpsert) {
+		s.AddSkippedLocked(v)
+	})
+}
+
+// UpdateSkippedLocked sets the "skipped_locked" field to the value that was provided on create.
+func (u *ProductContentBatchUpsertOne) UpdateSkippedLocked() *ProductContentBatchUpsertOne {
+	return u.Update(func(s *ProductContentBatchUpsert) {
+		s.UpdateSkippedLocked()
 	})
 }
 
@@ -1065,6 +1129,27 @@ func (u *ProductContentBatchUpsertBulk) AddChanged(v int32) *ProductContentBatch
 func (u *ProductContentBatchUpsertBulk) UpdateChanged() *ProductContentBatchUpsertBulk {
 	return u.Update(func(s *ProductContentBatchUpsert) {
 		s.UpdateChanged()
+	})
+}
+
+// SetSkippedLocked sets the "skipped_locked" field.
+func (u *ProductContentBatchUpsertBulk) SetSkippedLocked(v int32) *ProductContentBatchUpsertBulk {
+	return u.Update(func(s *ProductContentBatchUpsert) {
+		s.SetSkippedLocked(v)
+	})
+}
+
+// AddSkippedLocked adds v to the "skipped_locked" field.
+func (u *ProductContentBatchUpsertBulk) AddSkippedLocked(v int32) *ProductContentBatchUpsertBulk {
+	return u.Update(func(s *ProductContentBatchUpsert) {
+		s.AddSkippedLocked(v)
+	})
+}
+
+// UpdateSkippedLocked sets the "skipped_locked" field to the value that was provided on create.
+func (u *ProductContentBatchUpsertBulk) UpdateSkippedLocked() *ProductContentBatchUpsertBulk {
+	return u.Update(func(s *ProductContentBatchUpsert) {
+		s.UpdateSkippedLocked()
 	})
 }
 

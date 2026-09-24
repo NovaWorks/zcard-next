@@ -9,6 +9,7 @@ export function fetchProducts(params?: {
   page?: number;
   page_size?: number;
   options_only?: boolean;
+  is_locked?: boolean;
   low_stock_only?: boolean;
   out_of_stock_only?: boolean;
   upstream_source_id?: number;
@@ -79,7 +80,7 @@ export function deleteProduct(id: number, params?: { delete_orders: boolean; con
 
 // 批量上下架（列表多选；status 1=上架 0=下架 2=隐藏）
 export function batchUpdateProductStatus(ids: number[], status: number) {
-  return request<{ updated: number }>({
+  return request<{ updated: number; skipped_locked?: number }>({
     url: "/api/v1/admin/products/batch-status",
     method: "post",
     data: { ids, status },
@@ -87,7 +88,7 @@ export function batchUpdateProductStatus(ids: number[], status: number) {
 }
 
 export function batchUpdateProductCategory(ids: number[], categoryId: number) {
-  return request<{ updated: number }>({
+  return request<{ updated: number; skipped_locked?: number }>({
     url: "/api/v1/admin/products/batch-category",
     method: "post",
     data: { ids, category_id: categoryId },
@@ -256,10 +257,10 @@ export interface BatchContentTarget {
 }
 export interface BatchContentPreview {
   request_id: string; expires_at: number; matched: number; changed: number; unchanged: number;
-  upstream_count: number; content_changed: number; protection_changed: number;
+  skipped_locked?: number; upstream_count: number; content_changed: number; protection_changed: number;
   patch: ProductContentPatch; targets: BatchContentTarget[];
 }
-export interface BatchContentResult { completed: boolean; matched: number; changed: number; unchanged: number }
+export interface BatchContentResult { skipped_locked?: number; completed: boolean; matched: number; changed: number; unchanged: number }
 export async function previewBatchProductContent(data: { ids?: number[]; category_id?: number; include_descendants?: boolean; patch: ProductContentPatch }) {
   const response = await request<BatchContentPreview>({ url: "/api/v1/admin/products/batch-content/preview", method: "post", data });
   if (response.data) {
@@ -279,4 +280,23 @@ export async function getBatchProductContentResult(requestId: string) {
   const response = await request<BatchContentResult>({ url: `/api/v1/admin/products/batch-content/results/${encodeURIComponent(requestId)}` });
   if (response.data) response.data = Object.assign({ completed: false, matched: 0, changed: 0, unchanged: 0 }, response.data);
   return response;
+}
+
+export interface PlacementProduct {
+  id: number; name: string; cover?: string; category_id?: number; price_cents?: number;
+  is_locked?: boolean; lock_version?: number; status?: number; upstream_source_id?: number;
+}
+export interface CategoryPlacement {
+  product_id: number; is_pinned: boolean; is_recommended: boolean; position: number;
+}
+export interface CategoryPlacementRow { placement: CategoryPlacement; product: PlacementProduct; unavailable_reason?: string }
+export interface CategoryPlacementsReply { category_id: number; version: number; items: CategoryPlacementRow[] }
+export function setProductLock(id: number, isLocked: boolean, expectedVersion: number) {
+  return request<PlacementProduct>({ url: `/api/v1/admin/products/${id}/lock`, method: 'put', data: { is_locked: isLocked, expected_version: expectedVersion } });
+}
+export function fetchCategoryPlacements(categoryId: number) {
+  return request<CategoryPlacementsReply>({ url: `/api/v1/admin/categories/${categoryId}/placements` });
+}
+export function saveCategoryPlacements(categoryId: number, version: number, items: CategoryPlacement[]) {
+  return request<CategoryPlacementsReply>({ url: `/api/v1/admin/categories/${categoryId}/placements`, method: 'put', data: { expected_version: version, items } });
 }

@@ -94,6 +94,11 @@ func Sort(v int32) predicate.Category {
 	return predicate.Category(sql.FieldEQ(FieldSort, v))
 }
 
+// PlacementVersion applies equality check predicate on the "placement_version" field. It's identical to PlacementVersionEQ.
+func PlacementVersion(v int64) predicate.Category {
+	return predicate.Category(sql.FieldEQ(FieldPlacementVersion, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Category {
 	return predicate.Category(sql.FieldEQ(FieldCreatedAt, v))
@@ -462,6 +467,46 @@ func VisibleSubsitesIsNil() predicate.Category {
 // VisibleSubsitesNotNil applies the NotNil predicate on the "visible_subsites" field.
 func VisibleSubsitesNotNil() predicate.Category {
 	return predicate.Category(sql.FieldNotNull(FieldVisibleSubsites))
+}
+
+// PlacementVersionEQ applies the EQ predicate on the "placement_version" field.
+func PlacementVersionEQ(v int64) predicate.Category {
+	return predicate.Category(sql.FieldEQ(FieldPlacementVersion, v))
+}
+
+// PlacementVersionNEQ applies the NEQ predicate on the "placement_version" field.
+func PlacementVersionNEQ(v int64) predicate.Category {
+	return predicate.Category(sql.FieldNEQ(FieldPlacementVersion, v))
+}
+
+// PlacementVersionIn applies the In predicate on the "placement_version" field.
+func PlacementVersionIn(vs ...int64) predicate.Category {
+	return predicate.Category(sql.FieldIn(FieldPlacementVersion, vs...))
+}
+
+// PlacementVersionNotIn applies the NotIn predicate on the "placement_version" field.
+func PlacementVersionNotIn(vs ...int64) predicate.Category {
+	return predicate.Category(sql.FieldNotIn(FieldPlacementVersion, vs...))
+}
+
+// PlacementVersionGT applies the GT predicate on the "placement_version" field.
+func PlacementVersionGT(v int64) predicate.Category {
+	return predicate.Category(sql.FieldGT(FieldPlacementVersion, v))
+}
+
+// PlacementVersionGTE applies the GTE predicate on the "placement_version" field.
+func PlacementVersionGTE(v int64) predicate.Category {
+	return predicate.Category(sql.FieldGTE(FieldPlacementVersion, v))
+}
+
+// PlacementVersionLT applies the LT predicate on the "placement_version" field.
+func PlacementVersionLT(v int64) predicate.Category {
+	return predicate.Category(sql.FieldLT(FieldPlacementVersion, v))
+}
+
+// PlacementVersionLTE applies the LTE predicate on the "placement_version" field.
+func PlacementVersionLTE(v int64) predicate.Category {
+	return predicate.Category(sql.FieldLTE(FieldPlacementVersion, v))
 }
 
 // And groups predicates with the AND operator between them.

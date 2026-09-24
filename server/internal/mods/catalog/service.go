@@ -270,11 +270,12 @@ func toStorefrontProduct(p *port.Product, stocks map[uint64]int64, soldCount int
 		PriceCents:      int64(p.Price),
 		StockType:       p.StockType,
 		FulfillmentMode: p.FulfillmentMode, ManualStock: p.ManualStock,
-		Stock:          stock,
-		StockVisible:   p.StockVisible,
-		PointsRequired: p.PointsRequired, // 积分商城（；0=常规商品）
-		SalesCount:     soldCount,
-		IsRecommend:    p.IsRecommend, // 运营推荐（首页推荐位）
+		Stock:             stock,
+		StockVisible:      p.StockVisible,
+		PointsRequired:    p.PointsRequired, // 积分商城（；0=常规商品）
+		SalesCount:        soldCount,
+		CategoryRecommend: p.CategoryRecommend, CategoryPinned: p.CategoryPinned,
+		IsRecommend: p.IsRecommend, // 运营推荐（首页推荐位）
 	}
 }
 

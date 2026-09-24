@@ -36,6 +36,7 @@ const OperationAdminCatalogServiceDeleteProduct = "/zcard.api.admin.v1.AdminCata
 const OperationAdminCatalogServiceDeleteSku = "/zcard.api.admin.v1.AdminCatalogService/DeleteSku"
 const OperationAdminCatalogServiceDeleteTag = "/zcard.api.admin.v1.AdminCatalogService/DeleteTag"
 const OperationAdminCatalogServiceGetBatchProductContentResult = "/zcard.api.admin.v1.AdminCatalogService/GetBatchProductContentResult"
+const OperationAdminCatalogServiceGetCategoryPlacements = "/zcard.api.admin.v1.AdminCatalogService/GetCategoryPlacements"
 const OperationAdminCatalogServiceGetProduct = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
 const OperationAdminCatalogServiceListCategories = "/zcard.api.admin.v1.AdminCatalogService/ListCategories"
 const OperationAdminCatalogServiceListControls = "/zcard.api.admin.v1.AdminCatalogService/ListControls"
@@ -49,6 +50,8 @@ const OperationAdminCatalogServicePreviewBatchUpdateProductContent = "/zcard.api
 const OperationAdminCatalogServicePreviewDeleteProduct = "/zcard.api.admin.v1.AdminCatalogService/PreviewDeleteProduct"
 const OperationAdminCatalogServiceRejectReview = "/zcard.api.admin.v1.AdminCatalogService/RejectReview"
 const OperationAdminCatalogServiceReorderCategories = "/zcard.api.admin.v1.AdminCatalogService/ReorderCategories"
+const OperationAdminCatalogServiceSetCategoryPlacements = "/zcard.api.admin.v1.AdminCatalogService/SetCategoryPlacements"
+const OperationAdminCatalogServiceSetProductLock = "/zcard.api.admin.v1.AdminCatalogService/SetProductLock"
 const OperationAdminCatalogServiceUpdateCategory = "/zcard.api.admin.v1.AdminCatalogService/UpdateCategory"
 const OperationAdminCatalogServiceUpdateControl = "/zcard.api.admin.v1.AdminCatalogService/UpdateControl"
 const OperationAdminCatalogServiceUpdateMemberGroup = "/zcard.api.admin.v1.AdminCatalogService/UpdateMemberGroup"
@@ -75,6 +78,7 @@ type AdminCatalogServiceHTTPServer interface {
 	DeleteSku(context.Context, *DeleteSkuRequest) (*emptypb.Empty, error)
 	DeleteTag(context.Context, *DeleteTagRequest) (*emptypb.Empty, error)
 	GetBatchProductContentResult(context.Context, *BatchProductContentRequest) (*BatchProductContentResult, error)
+	GetCategoryPlacements(context.Context, *GetCategoryPlacementsRequest) (*CategoryPlacementsReply, error)
 	GetProduct(context.Context, *GetProductRequest) (*AdminProduct, error)
 	// ListCategories ── 分类 ──
 	ListCategories(context.Context, *emptypb.Empty) (*CategoryList, error)
@@ -96,6 +100,8 @@ type AdminCatalogServiceHTTPServer interface {
 	RejectReview(context.Context, *RejectReviewRequest) (*ReviewItem, error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
 	ReorderCategories(context.Context, *ReorderCategoriesRequest) (*emptypb.Empty, error)
+	SetCategoryPlacements(context.Context, *SetCategoryPlacementsRequest) (*CategoryPlacementsReply, error)
+	SetProductLock(context.Context, *SetProductLockRequest) (*AdminProduct, error)
 	UpdateCategory(context.Context, *UpdateCategoryRequest) (*Category, error)
 	UpdateControl(context.Context, *UpdateControlRequest) (*AdminControl, error)
 	UpdateMemberGroup(context.Context, *UpdateMemberGroupRequest) (*MemberGroup, error)
@@ -116,6 +122,9 @@ func RegisterAdminCatalogServiceHTTPServer(s *http.Server, srv AdminCatalogServi
 	r.Handle("POST", "/api/v1/admin/products/batch-content/preview", _AdminCatalogService_PreviewBatchUpdateProductContent0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/products/batch-content", _AdminCatalogService_BatchUpdateProductContent0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/products/batch-content/results/{request_id}", _AdminCatalogService_GetBatchProductContentResult0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/products/{id}/lock", _AdminCatalogService_SetProductLock0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/categories/{category_id}/placements", _AdminCatalogService_GetCategoryPlacements0_HTTP_Handler(srv))
+	r.Handle("PUT", "/api/v1/admin/categories/{category_id}/placements", _AdminCatalogService_SetCategoryPlacements0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/categories", _AdminCatalogService_ListCategories0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/categories", _AdminCatalogService_CreateCategory0_HTTP_Handler(srv))
 	r.Handle("PUT", "/api/v1/admin/categories/{id}", _AdminCatalogService_UpdateCategory0_HTTP_Handler(srv))
@@ -363,6 +372,72 @@ func _AdminCatalogService_GetBatchProductContentResult0_HTTP_Handler(srv AdminCa
 			return err
 		}
 		reply := out.(*BatchProductContentResult)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_SetProductLock0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetProductLockRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceSetProductLock)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetProductLock(ctx, req.(*SetProductLockRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*AdminProduct)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_GetCategoryPlacements0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in GetCategoryPlacementsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceGetCategoryPlacements)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.GetCategoryPlacements(ctx, req.(*GetCategoryPlacementsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CategoryPlacementsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminCatalogService_SetCategoryPlacements0_HTTP_Handler(srv AdminCatalogServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in SetCategoryPlacementsRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminCatalogServiceSetCategoryPlacements)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.SetCategoryPlacements(ctx, req.(*SetCategoryPlacementsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*CategoryPlacementsReply)
 		return ctx.Result(200, reply)
 	}
 }
@@ -907,6 +982,7 @@ type AdminCatalogServiceHTTPClient interface {
 	DeleteSku(ctx context.Context, req *DeleteSkuRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	DeleteTag(ctx context.Context, req *DeleteTagRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
 	GetBatchProductContentResult(ctx context.Context, req *BatchProductContentRequest, opts ...http.CallOption) (rsp *BatchProductContentResult, err error)
+	GetCategoryPlacements(ctx context.Context, req *GetCategoryPlacementsRequest, opts ...http.CallOption) (rsp *CategoryPlacementsReply, err error)
 	GetProduct(ctx context.Context, req *GetProductRequest, opts ...http.CallOption) (rsp *AdminProduct, err error)
 	// ListCategories ── 分类 ──
 	ListCategories(ctx context.Context, req *emptypb.Empty, opts ...http.CallOption) (rsp *CategoryList, err error)
@@ -928,6 +1004,8 @@ type AdminCatalogServiceHTTPClient interface {
 	RejectReview(ctx context.Context, req *RejectReviewRequest, opts ...http.CallOption) (rsp *ReviewItem, err error)
 	// ReorderCategories ReorderCategories 分类排序（拖拽重排：把某层级全部兄弟按 ids 顺序重排并归一化 sort）。
 	ReorderCategories(ctx context.Context, req *ReorderCategoriesRequest, opts ...http.CallOption) (rsp *emptypb.Empty, err error)
+	SetCategoryPlacements(ctx context.Context, req *SetCategoryPlacementsRequest, opts ...http.CallOption) (rsp *CategoryPlacementsReply, err error)
+	SetProductLock(ctx context.Context, req *SetProductLockRequest, opts ...http.CallOption) (rsp *AdminProduct, err error)
 	UpdateCategory(ctx context.Context, req *UpdateCategoryRequest, opts ...http.CallOption) (rsp *Category, err error)
 	UpdateControl(ctx context.Context, req *UpdateControlRequest, opts ...http.CallOption) (rsp *AdminControl, err error)
 	UpdateMemberGroup(ctx context.Context, req *UpdateMemberGroupRequest, opts ...http.CallOption) (rsp *MemberGroup, err error)
@@ -1243,6 +1321,22 @@ func (c *AdminCatalogServiceHTTPClientImpl) GetBatchProductContentResult(ctx con
 	return &out, nil
 }
 
+func (c *AdminCatalogServiceHTTPClientImpl) GetCategoryPlacements(ctx context.Context, in *GetCategoryPlacementsRequest, opts ...http.CallOption) (*CategoryPlacementsReply, error) {
+	var out CategoryPlacementsReply
+	pattern := "/api/v1/admin/categories/{category_id}/placements"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceGetCategoryPlacements),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 func (c *AdminCatalogServiceHTTPClientImpl) GetProduct(ctx context.Context, in *GetProductRequest, opts ...http.CallOption) (*AdminProduct, error) {
 	var out AdminProduct
 	pattern := "/api/v1/admin/products/{id}"
@@ -1457,6 +1551,40 @@ func (c *AdminCatalogServiceHTTPClientImpl) ReorderCategories(ctx context.Contex
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) SetCategoryPlacements(ctx context.Context, in *SetCategoryPlacementsRequest, opts ...http.CallOption) (*CategoryPlacementsReply, error) {
+	var out CategoryPlacementsReply
+	pattern := "/api/v1/admin/categories/{category_id}/placements"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceSetCategoryPlacements),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminCatalogServiceHTTPClientImpl) SetProductLock(ctx context.Context, in *SetProductLockRequest, opts ...http.CallOption) (*AdminProduct, error) {
+	var out AdminProduct
+	pattern := "/api/v1/admin/products/{id}/lock"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminCatalogServiceSetProductLock),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "PUT", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

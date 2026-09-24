@@ -170,6 +170,27 @@ func (_u *CategoryUpdate) ClearVisibleSubsites() *CategoryUpdate {
 	return _u
 }
 
+// SetPlacementVersion sets the "placement_version" field.
+func (_u *CategoryUpdate) SetPlacementVersion(v int64) *CategoryUpdate {
+	_u.mutation.ResetPlacementVersion()
+	_u.mutation.SetPlacementVersion(v)
+	return _u
+}
+
+// SetNillablePlacementVersion sets the "placement_version" field if the given value is not nil.
+func (_u *CategoryUpdate) SetNillablePlacementVersion(v *int64) *CategoryUpdate {
+	if v != nil {
+		_u.SetPlacementVersion(*v)
+	}
+	return _u
+}
+
+// AddPlacementVersion adds value to the "placement_version" field.
+func (_u *CategoryUpdate) AddPlacementVersion(v int64) *CategoryUpdate {
+	_u.mutation.AddPlacementVersion(v)
+	return _u
+}
+
 // Mutation returns the CategoryMutation object of the builder.
 func (_u *CategoryUpdate) Mutation() *CategoryMutation {
 	return _u.mutation
@@ -284,6 +305,12 @@ func (_u *CategoryUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.VisibleSubsitesCleared() {
 		_spec.ClearField(category.FieldVisibleSubsites, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.PlacementVersion(); ok {
+		_spec.SetField(category.FieldPlacementVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPlacementVersion(); ok {
+		_spec.AddField(category.FieldPlacementVersion, field.TypeInt64, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -446,6 +473,27 @@ func (_u *CategoryUpdateOne) ClearVisibleSubsites() *CategoryUpdateOne {
 	return _u
 }
 
+// SetPlacementVersion sets the "placement_version" field.
+func (_u *CategoryUpdateOne) SetPlacementVersion(v int64) *CategoryUpdateOne {
+	_u.mutation.ResetPlacementVersion()
+	_u.mutation.SetPlacementVersion(v)
+	return _u
+}
+
+// SetNillablePlacementVersion sets the "placement_version" field if the given value is not nil.
+func (_u *CategoryUpdateOne) SetNillablePlacementVersion(v *int64) *CategoryUpdateOne {
+	if v != nil {
+		_u.SetPlacementVersion(*v)
+	}
+	return _u
+}
+
+// AddPlacementVersion adds value to the "placement_version" field.
+func (_u *CategoryUpdateOne) AddPlacementVersion(v int64) *CategoryUpdateOne {
+	_u.mutation.AddPlacementVersion(v)
+	return _u
+}
+
 // Mutation returns the CategoryMutation object of the builder.
 func (_u *CategoryUpdateOne) Mutation() *CategoryMutation {
 	return _u.mutation
@@ -590,6 +638,12 @@ func (_u *CategoryUpdateOne) sqlSave(ctx context.Context) (_node *Category, err 
 	}
 	if _u.mutation.VisibleSubsitesCleared() {
 		_spec.ClearField(category.FieldVisibleSubsites, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.PlacementVersion(); ok {
+		_spec.SetField(category.FieldPlacementVersion, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedPlacementVersion(); ok {
+		_spec.AddField(category.FieldPlacementVersion, field.TypeInt64, value)
 	}
 	_node = &Category{config: _u.config}
 	_spec.Assign = _node.assignValues

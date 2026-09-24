@@ -124,7 +124,7 @@ func (r *CardRepoImpl) ParseLines(ctx context.Context, in ImportInput) (*ImportP
 }
 
 // ImportConfirm 确认导入（创建批次 + 分片批量写入）。
-func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (*ent.CardImport, error) {
+func (r *CardRepoImpl) importConfirm(ctx context.Context, in ImportInput) (*ent.CardImport, error) {
 	client := data.Client(ctx, r.data)
 
 	// 创建批次
@@ -255,7 +255,7 @@ func (r *CardRepoImpl) ListImports(ctx context.Context, productID uint64) ([]*en
 }
 
 // CancelImport 撤销批次（删除本批 available 卡）。
-func (r *CardRepoImpl) CancelImport(ctx context.Context, importID uint64) error {
+func (r *CardRepoImpl) cancelImport(ctx context.Context, importID uint64) error {
 	client := data.Client(ctx, r.data)
 	n, err := client.Card.Delete().
 		Where(card.ImportID(importID), card.StatusEQ(card.StatusAvailable)).
@@ -299,4 +299,28 @@ func (r *CardRepoImpl) ExportCards(ctx context.Context, productID uint64) ([]str
 		out = append(out, CsvSafe(plain))
 	}
 	return out, nil
+}
+
+func (r *CardRepoImpl) ImportConfirm(ctx context.Context, in ImportInput) (out *ent.CardImport, err error) {
+	err = data.Tx(ctx, r.data, func(ctx context.Context) error {
+		if _, e := data.GuardProductWrite(ctx, r.data, in.ProductID); e != nil {
+			return e
+		}
+		var e error
+		out, e = r.importConfirm(ctx, in)
+		return e
+	})
+	return
+}
+func (r *CardRepoImpl) CancelImport(ctx context.Context, id uint64) error {
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		row, e := data.Client(ctx, r.data).CardImport.Get(ctx, id)
+		if e != nil {
+			return e
+		}
+		if _, e = data.GuardProductWrite(ctx, r.data, row.ProductID); e != nil {
+			return e
+		}
+		return r.cancelImport(ctx, id)
+	})
 }

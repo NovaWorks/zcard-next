@@ -174,6 +174,27 @@ func (_u *ProductContentBatchUpdate) AddChanged(v int32) *ProductContentBatchUpd
 	return _u
 }
 
+// SetSkippedLocked sets the "skipped_locked" field.
+func (_u *ProductContentBatchUpdate) SetSkippedLocked(v int32) *ProductContentBatchUpdate {
+	_u.mutation.ResetSkippedLocked()
+	_u.mutation.SetSkippedLocked(v)
+	return _u
+}
+
+// SetNillableSkippedLocked sets the "skipped_locked" field if the given value is not nil.
+func (_u *ProductContentBatchUpdate) SetNillableSkippedLocked(v *int32) *ProductContentBatchUpdate {
+	if v != nil {
+		_u.SetSkippedLocked(*v)
+	}
+	return _u
+}
+
+// AddSkippedLocked adds value to the "skipped_locked" field.
+func (_u *ProductContentBatchUpdate) AddSkippedLocked(v int32) *ProductContentBatchUpdate {
+	_u.mutation.AddSkippedLocked(v)
+	return _u
+}
+
 // Mutation returns the ProductContentBatchMutation object of the builder.
 func (_u *ProductContentBatchUpdate) Mutation() *ProductContentBatchMutation {
 	return _u.mutation
@@ -280,6 +301,12 @@ func (_u *ProductContentBatchUpdate) sqlSave(ctx context.Context) (_node int, er
 	}
 	if value, ok := _u.mutation.AddedChanged(); ok {
 		_spec.AddField(productcontentbatch.FieldChanged, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.SkippedLocked(); ok {
+		_spec.SetField(productcontentbatch.FieldSkippedLocked, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedLocked(); ok {
+		_spec.AddField(productcontentbatch.FieldSkippedLocked, field.TypeInt32, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -445,6 +472,27 @@ func (_u *ProductContentBatchUpdateOne) AddChanged(v int32) *ProductContentBatch
 	return _u
 }
 
+// SetSkippedLocked sets the "skipped_locked" field.
+func (_u *ProductContentBatchUpdateOne) SetSkippedLocked(v int32) *ProductContentBatchUpdateOne {
+	_u.mutation.ResetSkippedLocked()
+	_u.mutation.SetSkippedLocked(v)
+	return _u
+}
+
+// SetNillableSkippedLocked sets the "skipped_locked" field if the given value is not nil.
+func (_u *ProductContentBatchUpdateOne) SetNillableSkippedLocked(v *int32) *ProductContentBatchUpdateOne {
+	if v != nil {
+		_u.SetSkippedLocked(*v)
+	}
+	return _u
+}
+
+// AddSkippedLocked adds value to the "skipped_locked" field.
+func (_u *ProductContentBatchUpdateOne) AddSkippedLocked(v int32) *ProductContentBatchUpdateOne {
+	_u.mutation.AddSkippedLocked(v)
+	return _u
+}
+
 // Mutation returns the ProductContentBatchMutation object of the builder.
 func (_u *ProductContentBatchUpdateOne) Mutation() *ProductContentBatchMutation {
 	return _u.mutation
@@ -581,6 +629,12 @@ func (_u *ProductContentBatchUpdateOne) sqlSave(ctx context.Context) (_node *Pro
 	}
 	if value, ok := _u.mutation.AddedChanged(); ok {
 		_spec.AddField(productcontentbatch.FieldChanged, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.SkippedLocked(); ok {
+		_spec.SetField(productcontentbatch.FieldSkippedLocked, field.TypeInt32, value)
+	}
+	if value, ok := _u.mutation.AddedSkippedLocked(); ok {
+		_spec.AddField(productcontentbatch.FieldSkippedLocked, field.TypeInt32, value)
 	}
 	_node = &ProductContentBatch{config: _u.config}
 	_spec.Assign = _node.assignValues
