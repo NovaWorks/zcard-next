@@ -127,7 +127,11 @@ func (s *SyncService) StartTask(ctx context.Context, taskID uint64) error {
 	if err != nil {
 		return err
 	}
-	if s.enq != nil && s.enq.Enabled() {
+	task, err := s.repo.GetSyncTask(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task.Scope != ScopeImport && s.enq != nil && s.enq.Enabled() {
 		return s.enq.Enqueue(ctx, queue.Task{
 			Type:      SyncTaskType,
 			Payload:   payload,
@@ -158,7 +162,7 @@ func (s *SyncService) RunTask(ctx context.Context, payload []byte) error {
 }
 
 // RunSync 执行一次同步（worker 与降级路径共用；重复入队由任务状态幂等）。
-func (s *SyncService) RunSync(ctx context.Context, taskID uint64) error {
+func (s *SyncService) runSync(ctx context.Context, taskID uint64) error {
 	task, err := s.repo.GetSyncTask(ctx, taskID)
 	if err != nil {
 		return err
@@ -964,6 +968,17 @@ func autoOnshelf(settings map[string]any) bool {
 // 定价四模式（pricing.go ApplyPricingImport）：pending 不算价不上架（Price=-1
 // 不覆盖既有价，运营补价后手动上架）；导入价写入基线（后续同步走价格保护）。
 func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64) (bool, error) {
+	return s.importOne(ctx, conn, p, categoryMap, mode, markupPercent, markupAmount, nil)
+}
+
+type importCheckpoint struct {
+	before    func(context.Context) error
+	after     func(context.Context, uint64, bool) error
+	holdStock bool
+	cover     string
+}
+
+func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64, checkpoint *importCheckpoint) (bool, error) {
 	rule := productPricingRule{Mode: mode, Percent: markupPercent, Amount: markupAmount}
 	importPrice := func(upstream int64) int64 { return rule.price(conn, upstream) }
 	price := importPrice(p.Price)
@@ -991,7 +1006,7 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		Name:                p.Name,
 		Description:         p.Description,
 		DescriptionSet:      p.DescriptionSet,
-		Cover:               s.coverFor(ctx, mapping, conn, p.Cover), // 上游图采集落本地（fail-open；保留旧文件，避免共享引用失效）
+		Cover:               s.importCover(ctx, mapping, conn, p.Cover, checkpoint), // 上游图采集落本地（fail-open；保留旧文件，避免共享引用失效）
 		FactoryPrice:        accountCost(conn, p),
 		Status:              status,
 		AutoOnshelf:         mode != PriceModePending,
@@ -1001,6 +1016,14 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	if localCat, ok := categoryMap[p.CategoryID]; ok {
 		write.CategoryID = localCat
 		write.CategorySet = true
+	}
+	if checkpoint != nil && mapping != nil && s.localProductShelvedOff(ctx, mapping.LocalProductID) {
+		write.Status = 0
+		write.AutoOnshelf = false
+	}
+	if checkpoint != nil && checkpoint.holdStock {
+		write.Status = 0
+		write.AutoOnshelf = false
 	}
 	// 手动导入也必须携带规格，上游下单使用 SKU ID。
 	for _, sk := range p.SKUs {
@@ -1021,6 +1044,11 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 	err := data.Tx(ctx, s.repo.data, func(ctx context.Context) error {
 		if err := s.checkPricingConnection(ctx, conn); err != nil {
 			return err
+		}
+		if checkpoint != nil && checkpoint.before != nil {
+			if err := checkpoint.before(ctx); err != nil {
+				return err
+			}
 		}
 		productID, wasCreated, err := s.writeProductCategory(ctx, p.CategoryID, &write)
 		if err != nil {
@@ -1056,6 +1084,9 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 		mapping.PricingOverride = override
 		if err := s.saveProductMapping(ctx, mapping); err != nil {
 			return err
+		}
+		if checkpoint != nil && checkpoint.after != nil {
+			return checkpoint.after(ctx, productID, created)
 		}
 		return nil
 	})
@@ -1132,4 +1163,11 @@ func clearSyncRetry(taskID uint64) {
 	syncRetryTracker.Lock()
 	delete(syncRetryTracker.m, taskID)
 	syncRetryTracker.Unlock()
+}
+
+func (s *SyncService) importCover(ctx context.Context, m *ent.SupplyMapping, conn *ent.SupplyConnection, url string, cp *importCheckpoint) string {
+	if cp != nil {
+		return cp.cover
+	}
+	return s.coverFor(ctx, m, conn, url)
 }

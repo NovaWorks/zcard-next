@@ -94,10 +94,7 @@ func TestImportChannelPricingAndPriceOnlySKU(t *testing.T) {
 	t.Cleanup(func() { previewCache.Lock(); delete(previewCache.m, conn.ID); previewCache.Unlock() })
 	req := &adminv1.ImportProductsRequest{ConnectionId: conn.ID, Codes: []string{"P"}}
 	importProducts := func() (*adminv1.ImportProductsReply, error) {
-		previewCache.Lock()
-		previewCache.m[conn.ID] = previewEntry{identity: previewIdentity(conn), at: time.Now(), byCode: map[string]adapter.Product{"P": upstream}}
-		previewCache.Unlock()
-		return svc.ImportProducts(ctx, req)
+		return runSelectedImportForTest(t, svc, req, map[string]adapter.Product{"P": upstream})
 	}
 
 	if _, err := importProducts(); err != nil {

@@ -3,7 +3,7 @@
 // 连接 CRUD（三类驱动凭据动态表单）/ 测试连接 / 手动同步（采集全量|增量 / 仅价格 /
 // 仅状态）/ 定时计划对话框（三 scope 间隔+时间窗+请求节奏）/ 限流状态徽标与倒计时 /
 // 同步任务抽屉（进度统计与取消）。
-import { computed, defineAsyncComponent, h, onMounted, onUnmounted, reactive, ref } from "vue";
+import { computed, defineAsyncComponent, h, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import {
   NButton, NDataTable, NDropdown, NInput, NInputNumber, NModal, NForm, NFormItem,
   NSelect, NSpace, NSwitch, NTag, NDrawer, NAlert,
@@ -17,6 +17,7 @@ import { checkAuth } from "@/directives";
 import { formatMoney, yuanToFen } from "@/utils/money";
 import FilterTabs from "@/components/common/filter-tabs.vue";
 import TablePager from "@/components/common/table-pager.vue";
+const ImportTaskProgress = defineAsyncComponent(() => import("./import-task-progress.vue"));
 const ImportModal = defineAsyncComponent(() => import("./import-modal.vue"));
 import { useResponsiveTier, type TableTier } from "./use-responsive-tier";
 
@@ -285,18 +286,28 @@ function handleSync(row: any, scope: string, mode: string) {
 
 const showTasks = ref(false);
 const tasksConn = ref(0);
+const selectedImportTask = ref(0);
+let taskPoll: ReturnType<typeof setInterval> | undefined;
+watch(showTasks, show => {
+  clearInterval(taskPoll);
+  if (show) taskPoll = setInterval(() => { if (!document.hidden) loadTasks(true); }, 5000);
+});
+onUnmounted(() => clearInterval(taskPoll));
 const tasks = ref<any[]>([]);
 const tasksLoading = ref(false);
 function openTasks(connectionId: number) {
+  selectedImportTask.value = 0;
   tasksConn.value = connectionId;
   showTasks.value = true;
   loadTasks();
 }
-async function loadTasks() {
+async function loadTasks(quiet = false) {
+  if (tasksLoading.value) return;
+  const connectionId = tasksConn.value;
   tasksLoading.value = true;
   try {
-    const { data, error } = await fetchSupplySyncTasks({ connection_id: tasksConn.value || undefined, page: 1, page_size: 20 });
-    if (!error && data) tasks.value = (data as any).tasks || [];
+    const { data, error } = await fetchSupplySyncTasks({ connection_id: tasksConn.value || undefined, page: 1, page_size: 20 }, quiet);
+    if (!error && data && connectionId === tasksConn.value) tasks.value = (data as any).tasks || [];
   } finally {
     tasksLoading.value = false;
   }
@@ -307,6 +318,7 @@ function handleCancelTask(id: number) {
 
 // 手动重跑（failed/canceled/done 均可按原参数重建任务）
 async function handleRerunTask(row: any) {
+  if (row.scope === "import") { selectedImportTask.value = Number(row.id); return; }
   const { error } = await createSupplySyncTask({
     connection_id: row.connection_id,
     scope: row.error_code === "STOCK_QUERY_FAILED" ? "stock" : row.scope || "collect",
@@ -320,8 +332,8 @@ async function handleRerunTask(row: any) {
 
 const taskColumns: DataTableColumns<any> = [
   { title: "ID", key: "id", width: 48 },
-  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态", stock: "库存" } as any)[r.scope || "collect"] || r.scope },
-  { title: "模式", key: "mode", width: 64, ellipsis: { tooltip: true } },
+  { title: "范围", key: "scope", width: 56, render: (r) => ({ collect: "采集", price: "价格", status: "状态", stock: "库存", import: "导入" } as any)[r.scope || "collect"] || r.scope },
+  { title: "模式", key: "mode", width: 64, ellipsis: { tooltip: true }, render: r => r.mode === "selected" ? "所选商品" : r.mode },
   {
     title: "状态",
     key: "status",
@@ -330,7 +342,7 @@ const taskColumns: DataTableColumns<any> = [
       h(
         NTag,
         { size: "small", type: r.status === "done" ? "success" : r.status === "failed" ? "error" : r.status === "processing" ? "info" : r.status === "canceled" ? "default" : "warning", bordered: false },
-        { default: () => ({ done: "完成", failed: "失败", processing: "执行中", canceled: "已取消", pending: "排队中" } as any)[r.status] || r.status },
+        { default: () => r.scope === "import" && r.error_code ? (r.status === "done" ? "部分需处理" : "需处理") : ({ done: "完成", failed: "失败", processing: "执行中", canceled: "已取消", pending: "排队中" } as any)[r.status] || r.status },
       ),
   },
   {
@@ -349,7 +361,7 @@ const taskColumns: DataTableColumns<any> = [
     title: "统计",
     key: "stats",
     width: 200,
-    render: (r) =>
+    render: (r) => r.scope === "import" ? `已保存 ${Number(r.created || 0) + Number(r.updated || 0)} · 跳过 ${r.manual_skipped || 0} · 失败 ${r.failed_count || 0} · 库存待确认 ${r.stock_pending_count || 0}` :
       h(
         "div",
         {
@@ -378,7 +390,7 @@ const taskColumns: DataTableColumns<any> = [
     ellipsis: { tooltip: true },
     render: (r) =>
       r.error_code
-        ? h("span", { title: r.error_context || "", class: "text-error" }, r.error_code === "STOCK_QUERY_FAILED" ? r.error_context || "库存查询失败" : `${r.error_code}`)
+        ? h("span", { title: r.error_context || "", class: "text-error" }, r.scope === "import" ? r.error_context : r.error_code === "STOCK_QUERY_FAILED" ? r.error_context || "库存查询失败" : `${r.error_code}`)
         : h("span", { class: "text-gray-400" }, r.status === "done" ? "正常" : "-"),
   },
   {
@@ -387,10 +399,11 @@ const taskColumns: DataTableColumns<any> = [
     width: 96,
     render: (r) =>
       h("div", { class: "flex gap-4px" }, [
-        r.status === "processing" || r.status === "pending"
+        r.scope === "import" ? h(NButton, { size: "tiny", onClick: () => selectedImportTask.value = Number(r.id) }, { default: () => "查看进度" }) : null,
+        r.scope !== "import" && (r.status === "processing" || r.status === "pending") && canWrite()
           ? h(NButton, { size: "tiny", quaternary: true, onClick: () => handleCancelTask(r.id) }, { default: () => "取消" })
           : null,
-        ["failed", "canceled", "done"].includes(r.status) && canWrite()
+        r.scope !== "import" && ["failed", "canceled", "done"].includes(r.status) && canWrite()
           ? h(NButton, { size: "tiny", type: "primary", quaternary: true, onClick: () => handleRerunTask(r) }, { default: () => r.error_code === "STOCK_QUERY_FAILED" ? "重试库存" : "重跑" })
           : null,
       ]),
@@ -906,12 +919,16 @@ onMounted(load);
     </NModal>
 
     <!-- 交互式导入 -->
-    <ImportModal v-if="showImport" v-model:show="showImport" :connection="importConn" @imported="load" />
+    <ImportModal v-if="showImport" v-model:show="showImport" :connection="importConn" @imported="load" @task-created="id => { openTasks(importConn.id); selectedImportTask = id; }" />
 
     <!-- 同步任务抽屉：桌面端加宽到 960 让全列一屏可见；小屏回退 100%，窄屏内部横向滚动 -->
     <NDrawer v-model:show="showTasks" width="min(960px, 100%)">
-      <NDrawerContent title="同步任务" closable>
-        <NDataTable
+      <NDrawerContent :title="selectedImportTask ? '商品导入进度' : '同步任务'" closable>
+        <template v-if="selectedImportTask">
+          <NButton class="mb-16px" size="small" @click="selectedImportTask = 0">返回任务列表</NButton>
+          <ImportTaskProgress :task-id="selectedImportTask" @changed="loadTasks" @configure="() => { const conn = connections.find((r: any) => Number(r.id) === Number(tasksConn)); if (conn) { showTasks = false; openEdit(conn); } }" />
+        </template>
+        <NDataTable v-else
           :max-height="540"
           size="small"
           :data="tasks"

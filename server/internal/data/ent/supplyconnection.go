@@ -32,6 +32,12 @@ type SupplyConnection struct {
 	Credentials []byte `json:"credentials,omitempty"`
 	// Status holds the value of the "status" field.
 	Status supplyconnection.Status `json:"status,omitempty"`
+	// SyncTaskID holds the value of the "sync_task_id" field.
+	SyncTaskID uint64 `json:"sync_task_id,omitempty"`
+	// SyncLeaseToken holds the value of the "sync_lease_token" field.
+	SyncLeaseToken string `json:"sync_lease_token,omitempty"`
+	// SyncLeaseUntil holds the value of the "sync_lease_until" field.
+	SyncLeaseUntil int64 `json:"sync_lease_until,omitempty"`
 	// 本站作下游时的回调登记
 	CallbackURL string `json:"callback_url,omitempty"`
 	// RetryMax holds the value of the "retry_max" field.
@@ -86,9 +92,9 @@ func (*SupplyConnection) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case supplyconnection.FieldExchangeRate, supplyconnection.FieldPriceMarkupPercent:
 			values[i] = new(sql.NullFloat64)
-		case supplyconnection.FieldID, supplyconnection.FieldRetryMax, supplyconnection.FieldPriceMarkupAmount, supplyconnection.FieldBalanceCache:
+		case supplyconnection.FieldID, supplyconnection.FieldSyncTaskID, supplyconnection.FieldSyncLeaseUntil, supplyconnection.FieldRetryMax, supplyconnection.FieldPriceMarkupAmount, supplyconnection.FieldBalanceCache:
 			values[i] = new(sql.NullInt64)
-		case supplyconnection.FieldName, supplyconnection.FieldDriver, supplyconnection.FieldBaseURL, supplyconnection.FieldStatus, supplyconnection.FieldCallbackURL, supplyconnection.FieldRetryIntervals, supplyconnection.FieldPriceRoundingMode, supplyconnection.FieldStockMode, supplyconnection.FieldLastError:
+		case supplyconnection.FieldName, supplyconnection.FieldDriver, supplyconnection.FieldBaseURL, supplyconnection.FieldStatus, supplyconnection.FieldSyncLeaseToken, supplyconnection.FieldCallbackURL, supplyconnection.FieldRetryIntervals, supplyconnection.FieldPriceRoundingMode, supplyconnection.FieldStockMode, supplyconnection.FieldLastError:
 			values[i] = new(sql.NullString)
 		case supplyconnection.FieldCreatedAt, supplyconnection.FieldUpdatedAt, supplyconnection.FieldLastPingAt, supplyconnection.FieldLastSyncedAt, supplyconnection.FieldLastCollectAt, supplyconnection.FieldLastPriceSyncAt, supplyconnection.FieldLastStatusSyncAt, supplyconnection.FieldRateLimitUntil:
 			values[i] = new(sql.NullTime)
@@ -154,6 +160,24 @@ func (_m *SupplyConnection) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				_m.Status = supplyconnection.Status(value.String)
+			}
+		case supplyconnection.FieldSyncTaskID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sync_task_id", values[i])
+			} else if value.Valid {
+				_m.SyncTaskID = uint64(value.Int64)
+			}
+		case supplyconnection.FieldSyncLeaseToken:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field sync_lease_token", values[i])
+			} else if value.Valid {
+				_m.SyncLeaseToken = value.String
+			}
+		case supplyconnection.FieldSyncLeaseUntil:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field sync_lease_until", values[i])
+			} else if value.Valid {
+				_m.SyncLeaseUntil = value.Int64
 			}
 		case supplyconnection.FieldCallbackURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -335,6 +359,15 @@ func (_m *SupplyConnection) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
+	builder.WriteString("sync_task_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SyncTaskID))
+	builder.WriteString(", ")
+	builder.WriteString("sync_lease_token=")
+	builder.WriteString(_m.SyncLeaseToken)
+	builder.WriteString(", ")
+	builder.WriteString("sync_lease_until=")
+	builder.WriteString(fmt.Sprintf("%v", _m.SyncLeaseUntil))
 	builder.WriteString(", ")
 	builder.WriteString("callback_url=")
 	builder.WriteString(_m.CallbackURL)

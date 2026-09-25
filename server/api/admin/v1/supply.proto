@@ -83,6 +83,12 @@ service AdminSupplyService {
       body: "*"
     };
   }
+  rpc ListImportItems(ListImportItemsRequest) returns (ListImportItemsReply) {
+    option (google.api.http) = { get: "/api/v1/admin/supply/sync-tasks/{id}/items" };
+  }
+  rpc RetryImportTask(RetryImportTaskRequest) returns (SupplySyncTask) {
+    option (google.api.http) = { post: "/api/v1/admin/supply/sync-tasks/{id}/retry" body: "*" };
+  }
   // ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
   // PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
   rpc PreviewProducts(PreviewProductsRequest) returns (PreviewProductsReply) {
@@ -267,6 +273,12 @@ message SupplySyncTask {
   int32 page = 20;
   int64 cancel_requested_at = 21;
   int64 finished_at = 22;
+  int64 failed_count = 23;
+  int64 pending_count = 24;
+  int64 retrying_count = 25;
+  int64 stock_pending_count = 26; // 已保存商品的子集
+  int64 stock_failed_count = 27;
+  int64 next_retry_at = 28;
 }
 
 message CreateSyncTaskRequest {
@@ -315,6 +327,7 @@ message ImportProductsRequest {
   int64 markup_amount_cents = 5; // fixed 模式加价金额（分）
   bool save_default = 6; // 把本次策略存为连接默认（settings.import_pricing）
   map<string, uint64> category_map = 7; // 缺省沿用；0 显式清除；正数指定本地分类
+  string request_key = 9; // 同一次提交/网络重试使用同一键
   repeated ImportCategoryDraft category_drafts = 8; // 仅在提交时创建，限所选商品涉及分类
 }
 
@@ -325,6 +338,7 @@ message ImportCategoryDraft {
 }
 
 message ImportProductsReply {
+  SupplySyncTask task = 7; // 已受理后台任务，请查询任务接口获取结果
   int32 imported = 1; // 新建
   int32 updated = 2; // 更新（已导入重导）
   int32 failed = 3;
@@ -374,4 +388,32 @@ message HealthItem {
 
 message ListHealthReply {
   repeated HealthItem items = 1;
+}
+
+message ListImportItemsRequest {
+  uint64 id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  bool problems_only = 4;
+}
+message SupplyImportItem {
+  string code = 1;
+  string name = 2;
+  string state = 3;
+  string stage = 4;
+  bool saved = 5;
+  bool created = 6;
+  int32 attempts = 7;
+  int64 next_retry_at = 8;
+  string error_code = 9;
+  string error_summary = 10;
+}
+message ListImportItemsReply {
+  repeated SupplyImportItem items = 1;
+  int64 total = 2;
+}
+message RetryImportTaskRequest {
+  uint64 id = 1;
+  string scope = 2; // failed | stock | remaining
+  bool confirm_config = 3; // 已确认使用当前货源配置继续未完成部分
 }

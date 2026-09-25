@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"testing"
-	"time"
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
@@ -38,13 +37,10 @@ func TestImportProductsReimportsDeletedDujiaoProduct(t *testing.T) {
 	req := &adminv1.ImportProductsRequest{ConnectionId: conn.ID, Codes: []string{"13", "13"}, PricingMode: "fixed", MarkupAmountCents: 100}
 	// 使用已解析的独角目录预览，网络协议解析由 adapter 契约测试覆盖。
 	importProducts := func() (*adminv1.ImportProductsReply, error) {
-		previewCache.Lock()
-		previewCache.m[conn.ID] = previewEntry{identity: previewIdentity(conn), at: time.Now(), byCode: map[string]adapter.Product{
+		return runSelectedImportForTest(t, svc, req, map[string]adapter.Product{
 			"13": {ID: "13", Name: "Instagram", Description: "新详情", CategoryID: "6", Price: 1200, FactoryPrice: 1200, IsActive: true, Stock: 8,
 				SKUs: []adapter.SKU{{ID: "27", Code: "27", Name: "标准", Price: 1200, Stock: 8, IsActive: true, SpecValues: map[string]string{"类型": "标准"}}}},
-		}}
-		previewCache.Unlock()
-		return svc.ImportProducts(ctx, req)
+		})
 	}
 	reply, err := importProducts()
 	if err != nil {

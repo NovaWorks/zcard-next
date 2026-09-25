@@ -91,6 +91,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplynonce"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
@@ -266,6 +267,8 @@ type Client struct {
 	SupplierProductPrice *SupplierProductPriceClient
 	// SupplyConnection is the client for interacting with the SupplyConnection builders.
 	SupplyConnection *SupplyConnectionClient
+	// SupplyImportItem is the client for interacting with the SupplyImportItem builders.
+	SupplyImportItem *SupplyImportItemClient
 	// SupplyMapping is the client for interacting with the SupplyMapping builders.
 	SupplyMapping *SupplyMappingClient
 	// SupplyNonce is the client for interacting with the SupplyNonce builders.
@@ -385,6 +388,7 @@ func (c *Client) init() {
 	c.SupplierLedgerEntry = NewSupplierLedgerEntryClient(c.config)
 	c.SupplierProductPrice = NewSupplierProductPriceClient(c.config)
 	c.SupplyConnection = NewSupplyConnectionClient(c.config)
+	c.SupplyImportItem = NewSupplyImportItemClient(c.config)
 	c.SupplyMapping = NewSupplyMappingClient(c.config)
 	c.SupplyNonce = NewSupplyNonceClient(c.config)
 	c.SupplyOrder = NewSupplyOrderClient(c.config)
@@ -569,6 +573,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
 		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
 		SupplyConnection:         NewSupplyConnectionClient(cfg),
+		SupplyImportItem:         NewSupplyImportItemClient(cfg),
 		SupplyMapping:            NewSupplyMappingClient(cfg),
 		SupplyNonce:              NewSupplyNonceClient(cfg),
 		SupplyOrder:              NewSupplyOrderClient(cfg),
@@ -680,6 +685,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		SupplierLedgerEntry:      NewSupplierLedgerEntryClient(cfg),
 		SupplierProductPrice:     NewSupplierProductPriceClient(cfg),
 		SupplyConnection:         NewSupplyConnectionClient(cfg),
+		SupplyImportItem:         NewSupplyImportItemClient(cfg),
 		SupplyMapping:            NewSupplyMappingClient(cfg),
 		SupplyNonce:              NewSupplyNonceClient(cfg),
 		SupplyOrder:              NewSupplyOrderClient(cfg),
@@ -742,10 +748,10 @@ func (c *Client) Use(hooks ...Hook) {
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
 		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
-		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
-		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
-		c.WalletTransaction, c.Withdrawal,
+		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
+		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
+		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
+		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -772,10 +778,10 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
 		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
 		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyConnection, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
-		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
-		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
-		c.WalletTransaction, c.Withdrawal,
+		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
+		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
+		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
+		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -936,6 +942,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.SupplierProductPrice.mutate(ctx, m)
 	case *SupplyConnectionMutation:
 		return c.SupplyConnection.mutate(ctx, m)
+	case *SupplyImportItemMutation:
+		return c.SupplyImportItem.mutate(ctx, m)
 	case *SupplyMappingMutation:
 		return c.SupplyMapping.mutate(ctx, m)
 	case *SupplyNonceMutation:
@@ -11337,6 +11345,139 @@ func (c *SupplyConnectionClient) mutate(ctx context.Context, m *SupplyConnection
 	}
 }
 
+// SupplyImportItemClient is a client for the SupplyImportItem schema.
+type SupplyImportItemClient struct {
+	config
+}
+
+// NewSupplyImportItemClient returns a client for the SupplyImportItem from the given config.
+func NewSupplyImportItemClient(c config) *SupplyImportItemClient {
+	return &SupplyImportItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `supplyimportitem.Hooks(f(g(h())))`.
+func (c *SupplyImportItemClient) Use(hooks ...Hook) {
+	c.hooks.SupplyImportItem = append(c.hooks.SupplyImportItem, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `supplyimportitem.Intercept(f(g(h())))`.
+func (c *SupplyImportItemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.SupplyImportItem = append(c.inters.SupplyImportItem, interceptors...)
+}
+
+// Create returns a builder for creating a SupplyImportItem entity.
+func (c *SupplyImportItemClient) Create() *SupplyImportItemCreate {
+	mutation := newSupplyImportItemMutation(c.config, OpCreate)
+	return &SupplyImportItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of SupplyImportItem entities.
+func (c *SupplyImportItemClient) CreateBulk(builders ...*SupplyImportItemCreate) *SupplyImportItemCreateBulk {
+	return &SupplyImportItemCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SupplyImportItemClient) MapCreateBulk(slice any, setFunc func(*SupplyImportItemCreate, int)) *SupplyImportItemCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SupplyImportItemCreateBulk{err: fmt.Errorf("calling to SupplyImportItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SupplyImportItemCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SupplyImportItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for SupplyImportItem.
+func (c *SupplyImportItemClient) Update() *SupplyImportItemUpdate {
+	mutation := newSupplyImportItemMutation(c.config, OpUpdate)
+	return &SupplyImportItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SupplyImportItemClient) UpdateOne(_m *SupplyImportItem) *SupplyImportItemUpdateOne {
+	mutation := newSupplyImportItemMutation(c.config, OpUpdateOne, withSupplyImportItem(_m))
+	return &SupplyImportItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SupplyImportItemClient) UpdateOneID(id uint64) *SupplyImportItemUpdateOne {
+	mutation := newSupplyImportItemMutation(c.config, OpUpdateOne, withSupplyImportItemID(id))
+	return &SupplyImportItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for SupplyImportItem.
+func (c *SupplyImportItemClient) Delete() *SupplyImportItemDelete {
+	mutation := newSupplyImportItemMutation(c.config, OpDelete)
+	return &SupplyImportItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SupplyImportItemClient) DeleteOne(_m *SupplyImportItem) *SupplyImportItemDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SupplyImportItemClient) DeleteOneID(id uint64) *SupplyImportItemDeleteOne {
+	builder := c.Delete().Where(supplyimportitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SupplyImportItemDeleteOne{builder}
+}
+
+// Query returns a query builder for SupplyImportItem.
+func (c *SupplyImportItemClient) Query() *SupplyImportItemQuery {
+	return &SupplyImportItemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSupplyImportItem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a SupplyImportItem entity by its id.
+func (c *SupplyImportItemClient) Get(ctx context.Context, id uint64) (*SupplyImportItem, error) {
+	return c.Query().Where(supplyimportitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SupplyImportItemClient) GetX(ctx context.Context, id uint64) *SupplyImportItem {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *SupplyImportItemClient) Hooks() []Hook {
+	return c.hooks.SupplyImportItem
+}
+
+// Interceptors returns the client interceptors.
+func (c *SupplyImportItemClient) Interceptors() []Interceptor {
+	return c.inters.SupplyImportItem
+}
+
+func (c *SupplyImportItemClient) mutate(ctx context.Context, m *SupplyImportItemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SupplyImportItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SupplyImportItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SupplyImportItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SupplyImportItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown SupplyImportItem mutation op: %q", m.Op())
+	}
+}
+
 // SupplyMappingClient is a client for the SupplyMapping schema.
 type SupplyMappingClient struct {
 	config
@@ -13483,9 +13624,9 @@ type (
 		ResellerPricing, ResellerProfile, ResellerRelatedAccount, ResellerSite, Review,
 		RiskLockKey, RolePermission, SecurityAuditLog, Session, Setting,
 		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice, SupplyConnection,
-		SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket,
-		TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog,
-		WalletAccount, WalletTransaction, Withdrawal []ent.Hook
+		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
+		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
+		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -13503,8 +13644,8 @@ type (
 		ResellerPricing, ResellerProfile, ResellerRelatedAccount, ResellerSite, Review,
 		RiskLockKey, RolePermission, SecurityAuditLog, Session, Setting,
 		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice, SupplyConnection,
-		SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag, Ticket,
-		TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview, VisitLog,
-		WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
+		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
+		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
+		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
 	}
 )

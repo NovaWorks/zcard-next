@@ -28,6 +28,12 @@ const (
 	FieldCredentials = "credentials"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldSyncTaskID holds the string denoting the sync_task_id field in the database.
+	FieldSyncTaskID = "sync_task_id"
+	// FieldSyncLeaseToken holds the string denoting the sync_lease_token field in the database.
+	FieldSyncLeaseToken = "sync_lease_token"
+	// FieldSyncLeaseUntil holds the string denoting the sync_lease_until field in the database.
+	FieldSyncLeaseUntil = "sync_lease_until"
 	// FieldCallbackURL holds the string denoting the callback_url field in the database.
 	FieldCallbackURL = "callback_url"
 	// FieldRetryMax holds the string denoting the retry_max field in the database.
@@ -82,6 +88,9 @@ var Columns = []string{
 	FieldBaseURL,
 	FieldCredentials,
 	FieldStatus,
+	FieldSyncTaskID,
+	FieldSyncLeaseToken,
+	FieldSyncLeaseUntil,
 	FieldCallbackURL,
 	FieldRetryMax,
 	FieldRetryIntervals,
@@ -127,6 +136,12 @@ var (
 	DriverValidator func(string) error
 	// BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
 	BaseURLValidator func(string) error
+	// DefaultSyncTaskID holds the default value on creation for the "sync_task_id" field.
+	DefaultSyncTaskID uint64
+	// DefaultSyncLeaseToken holds the default value on creation for the "sync_lease_token" field.
+	DefaultSyncLeaseToken string
+	// DefaultSyncLeaseUntil holds the default value on creation for the "sync_lease_until" field.
+	DefaultSyncLeaseUntil int64
 	// CallbackURLValidator is a validator for the "callback_url" field. It is called by the builders before save.
 	CallbackURLValidator func(string) error
 	// DefaultRetryMax holds the default value on creation for the "retry_max" field.
@@ -264,6 +279,21 @@ func ByBaseURL(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// BySyncTaskID orders the results by the sync_task_id field.
+func BySyncTaskID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSyncTaskID, opts...).ToFunc()
+}
+
+// BySyncLeaseToken orders the results by the sync_lease_token field.
+func BySyncLeaseToken(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSyncLeaseToken, opts...).ToFunc()
+}
+
+// BySyncLeaseUntil orders the results by the sync_lease_until field.
+func BySyncLeaseUntil(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSyncLeaseUntil, opts...).ToFunc()
 }
 
 // ByCallbackURL orders the results by the callback_url field.

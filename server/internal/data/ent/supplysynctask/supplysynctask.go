@@ -26,6 +26,12 @@ const (
 	FieldScope = "scope"
 	// FieldForceReprice holds the string denoting the force_reprice field in the database.
 	FieldForceReprice = "force_reprice"
+	// FieldRequestKey holds the string denoting the request_key field in the database.
+	FieldRequestKey = "request_key"
+	// FieldRequestHash holds the string denoting the request_hash field in the database.
+	FieldRequestHash = "request_hash"
+	// FieldImportPayload holds the string denoting the import_payload field in the database.
+	FieldImportPayload = "import_payload"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldTotalCount holds the string denoting the total_count field in the database.
@@ -75,6 +81,9 @@ var Columns = []string{
 	FieldMode,
 	FieldScope,
 	FieldForceReprice,
+	FieldRequestKey,
+	FieldRequestHash,
+	FieldImportPayload,
 	FieldStatus,
 	FieldTotalCount,
 	FieldProcessedCount,
@@ -118,6 +127,10 @@ var (
 	ScopeValidator func(string) error
 	// DefaultForceReprice holds the default value on creation for the "force_reprice" field.
 	DefaultForceReprice bool
+	// RequestKeyValidator is a validator for the "request_key" field. It is called by the builders before save.
+	RequestKeyValidator func(string) error
+	// RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
+	RequestHashValidator func(string) error
 	// DefaultTotalCount holds the default value on creation for the "total_count" field.
 	DefaultTotalCount int32
 	// DefaultProcessedCount holds the default value on creation for the "processed_count" field.
@@ -209,6 +222,16 @@ func ByScope(opts ...sql.OrderTermOption) OrderOption {
 // ByForceReprice orders the results by the force_reprice field.
 func ByForceReprice(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldForceReprice, opts...).ToFunc()
+}
+
+// ByRequestKey orders the results by the request_key field.
+func ByRequestKey(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestKey, opts...).ToFunc()
+}
+
+// ByRequestHash orders the results by the request_hash field.
+func ByRequestHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldRequestHash, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

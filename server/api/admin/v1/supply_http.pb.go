@@ -27,10 +27,12 @@ const OperationAdminSupplyServiceGetSyncTask = "/zcard.api.admin.v1.AdminSupplyS
 const OperationAdminSupplyServiceImportProducts = "/zcard.api.admin.v1.AdminSupplyService/ImportProducts"
 const OperationAdminSupplyServiceListConnections = "/zcard.api.admin.v1.AdminSupplyService/ListConnections"
 const OperationAdminSupplyServiceListHealth = "/zcard.api.admin.v1.AdminSupplyService/ListHealth"
+const OperationAdminSupplyServiceListImportItems = "/zcard.api.admin.v1.AdminSupplyService/ListImportItems"
 const OperationAdminSupplyServiceListMappings = "/zcard.api.admin.v1.AdminSupplyService/ListMappings"
 const OperationAdminSupplyServiceListSyncTasks = "/zcard.api.admin.v1.AdminSupplyService/ListSyncTasks"
 const OperationAdminSupplyServicePingConnection = "/zcard.api.admin.v1.AdminSupplyService/PingConnection"
 const OperationAdminSupplyServicePreviewProducts = "/zcard.api.admin.v1.AdminSupplyService/PreviewProducts"
+const OperationAdminSupplyServiceRetryImportTask = "/zcard.api.admin.v1.AdminSupplyService/RetryImportTask"
 const OperationAdminSupplyServiceUpdateConnection = "/zcard.api.admin.v1.AdminSupplyService/UpdateConnection"
 const OperationAdminSupplyServiceUpsertMapping = "/zcard.api.admin.v1.AdminSupplyService/UpsertMapping"
 
@@ -52,6 +54,7 @@ type AdminSupplyServiceHTTPServer interface {
 	// ListConnections ListConnections 连接列表（凭据零回显）。
 	ListConnections(context.Context, *ListConnectionsRequest) (*ListConnectionsReply, error)
 	ListHealth(context.Context, *ListHealthRequest) (*ListHealthReply, error)
+	ListImportItems(context.Context, *ListImportItemsRequest) (*ListImportItemsReply, error)
 	// ListMappings ListMappings 商品映射列表（按连接过滤）。
 	ListMappings(context.Context, *ListMappingsRequest) (*ListMappingsReply, error)
 	// ListSyncTasks ListSyncTasks 同步任务列表。
@@ -61,6 +64,7 @@ type AdminSupplyServiceHTTPServer interface {
 	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
+	RetryImportTask(context.Context, *RetryImportTaskRequest) (*SupplySyncTask, error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(context.Context, *UpdateConnectionRequest) (*SupplyConnection, error)
 	// UpsertMapping UpsertMapping 创建/更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
@@ -81,6 +85,8 @@ func RegisterAdminSupplyServiceHTTPServer(s *http.Server, srv AdminSupplyService
 	r.Handle("GET", "/api/v1/admin/supply/sync-tasks", _AdminSupplyService_ListSyncTasks0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supply/sync-tasks/{id}", _AdminSupplyService_GetSyncTask0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supply/sync-tasks/{id}/cancel", _AdminSupplyService_CancelSyncTask0_HTTP_Handler(srv))
+	r.Handle("GET", "/api/v1/admin/supply/sync-tasks/{id}/items", _AdminSupplyService_ListImportItems0_HTTP_Handler(srv))
+	r.Handle("POST", "/api/v1/admin/supply/sync-tasks/{id}/retry", _AdminSupplyService_RetryImportTask0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supply/connections/{connection_id}/preview", _AdminSupplyService_PreviewProducts0_HTTP_Handler(srv))
 	r.Handle("POST", "/api/v1/admin/supply/connections/{connection_id}/import", _AdminSupplyService_ImportProducts0_HTTP_Handler(srv))
 	r.Handle("GET", "/api/v1/admin/supply/health", _AdminSupplyService_ListHealth0_HTTP_Handler(srv))
@@ -332,6 +338,50 @@ func _AdminSupplyService_CancelSyncTask0_HTTP_Handler(srv AdminSupplyServiceHTTP
 	}
 }
 
+func _AdminSupplyService_ListImportItems0_HTTP_Handler(srv AdminSupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in ListImportItemsRequest
+		if err := ctx.BindQuery(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplyServiceListImportItems)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.ListImportItems(ctx, req.(*ListImportItemsRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*ListImportItemsReply)
+		return ctx.Result(200, reply)
+	}
+}
+
+func _AdminSupplyService_RetryImportTask0_HTTP_Handler(srv AdminSupplyServiceHTTPServer) func(ctx http.Context) error {
+	return func(ctx http.Context) error {
+		var in RetryImportTaskRequest
+		if err := ctx.Bind(&in); err != nil {
+			return err
+		}
+		if err := ctx.BindVars(&in); err != nil {
+			return err
+		}
+		http.SetOperation(ctx, OperationAdminSupplyServiceRetryImportTask)
+		h := ctx.Middleware(func(ctx context.Context, req interface{}) (interface{}, error) {
+			return srv.RetryImportTask(ctx, req.(*RetryImportTaskRequest))
+		})
+		out, err := h(ctx, &in)
+		if err != nil {
+			return err
+		}
+		reply := out.(*SupplySyncTask)
+		return ctx.Result(200, reply)
+	}
+}
+
 func _AdminSupplyService_PreviewProducts0_HTTP_Handler(srv AdminSupplyServiceHTTPServer) func(ctx http.Context) error {
 	return func(ctx http.Context) error {
 		var in PreviewProductsRequest
@@ -413,6 +463,7 @@ type AdminSupplyServiceHTTPClient interface {
 	// ListConnections ListConnections 连接列表（凭据零回显）。
 	ListConnections(ctx context.Context, req *ListConnectionsRequest, opts ...http.CallOption) (rsp *ListConnectionsReply, err error)
 	ListHealth(ctx context.Context, req *ListHealthRequest, opts ...http.CallOption) (rsp *ListHealthReply, err error)
+	ListImportItems(ctx context.Context, req *ListImportItemsRequest, opts ...http.CallOption) (rsp *ListImportItemsReply, err error)
 	// ListMappings ListMappings 商品映射列表（按连接过滤）。
 	ListMappings(ctx context.Context, req *ListMappingsRequest, opts ...http.CallOption) (rsp *ListMappingsReply, err error)
 	// ListSyncTasks ListSyncTasks 同步任务列表。
@@ -422,6 +473,7 @@ type AdminSupplyServiceHTTPClient interface {
 	// PreviewProducts ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(ctx context.Context, req *PreviewProductsRequest, opts ...http.CallOption) (rsp *PreviewProductsReply, err error)
+	RetryImportTask(ctx context.Context, req *RetryImportTaskRequest, opts ...http.CallOption) (rsp *SupplySyncTask, err error)
 	// UpdateConnection UpdateConnection 更新连接（credentials 留空 = 不更新凭据）。
 	UpdateConnection(ctx context.Context, req *UpdateConnectionRequest, opts ...http.CallOption) (rsp *SupplyConnection, err error)
 	// UpsertMapping UpsertMapping 创建/更新映射（UNIQUE(connection_id, upstream_product, upstream_sku)）。
@@ -592,6 +644,22 @@ func (c *AdminSupplyServiceHTTPClientImpl) ListHealth(ctx context.Context, in *L
 	return &out, nil
 }
 
+func (c *AdminSupplyServiceHTTPClientImpl) ListImportItems(ctx context.Context, in *ListImportItemsRequest, opts ...http.CallOption) (*ListImportItemsReply, error) {
+	var out ListImportItemsReply
+	pattern := "/api/v1/admin/supply/sync-tasks/{id}/items"
+	path := http.BuildPath(pattern, in, http.WithQueryParams())
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.Operation(OperationAdminSupplyServiceListImportItems),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListMappings ListMappings 商品映射列表（按连接过滤）。
 func (c *AdminSupplyServiceHTTPClientImpl) ListMappings(ctx context.Context, in *ListMappingsRequest, opts ...http.CallOption) (*ListMappingsReply, error) {
 	var out ListMappingsReply
@@ -656,6 +724,23 @@ func (c *AdminSupplyServiceHTTPClientImpl) PreviewProducts(ctx context.Context, 
 		http.PathTemplate(pattern),
 	}, opts...)
 	err := c.cc.Invoke(ctx, "GET", path, nil, &out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+func (c *AdminSupplyServiceHTTPClientImpl) RetryImportTask(ctx context.Context, in *RetryImportTaskRequest, opts ...http.CallOption) (*SupplySyncTask, error) {
+	var out SupplySyncTask
+	pattern := "/api/v1/admin/supply/sync-tasks/{id}/retry"
+	path := http.BuildPath(pattern, in)
+	opts = append([]http.CallOption{
+		http.Accept("application/protojson"),
+		http.ContentType("application/protojson"),
+		http.Operation(OperationAdminSupplyServiceRetryImportTask),
+		http.PathTemplate(pattern),
+	}, opts...)
+	err := c.cc.Invoke(ctx, "POST", path, in, &out, opts...)
 	if err != nil {
 		return nil, err
 	}

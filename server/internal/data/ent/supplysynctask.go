@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -29,6 +30,12 @@ type SupplySyncTask struct {
 	Scope string `json:"scope,omitempty"`
 	// ForceReprice holds the value of the "force_reprice" field.
 	ForceReprice bool `json:"force_reprice,omitempty"`
+	// RequestKey holds the value of the "request_key" field.
+	RequestKey *string `json:"request_key,omitempty"`
+	// RequestHash holds the value of the "request_hash" field.
+	RequestHash string `json:"request_hash,omitempty"`
+	// ImportPayload holds the value of the "import_payload" field.
+	ImportPayload json.RawMessage `json:"import_payload,omitempty"`
 	// Status holds the value of the "status" field.
 	Status supplysynctask.Status `json:"status,omitempty"`
 	// TotalCount holds the value of the "total_count" field.
@@ -73,11 +80,13 @@ func (*SupplySyncTask) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case supplysynctask.FieldImportPayload:
+			values[i] = new([]byte)
 		case supplysynctask.FieldForceReprice:
 			values[i] = new(sql.NullBool)
 		case supplysynctask.FieldID, supplysynctask.FieldConnectionID, supplysynctask.FieldTotalCount, supplysynctask.FieldProcessedCount, supplysynctask.FieldCreatedCount, supplysynctask.FieldUpdatedCount, supplysynctask.FieldPriceUpdatedCount, supplysynctask.FieldManualSkippedCount, supplysynctask.FieldHiddenCount, supplysynctask.FieldDeletedCount, supplysynctask.FieldCurrentPage:
 			values[i] = new(sql.NullInt64)
-		case supplysynctask.FieldMode, supplysynctask.FieldScope, supplysynctask.FieldStatus, supplysynctask.FieldErrorCode, supplysynctask.FieldErrorContext, supplysynctask.FieldCurrentStage, supplysynctask.FieldWorkerVersion:
+		case supplysynctask.FieldMode, supplysynctask.FieldScope, supplysynctask.FieldRequestKey, supplysynctask.FieldRequestHash, supplysynctask.FieldStatus, supplysynctask.FieldErrorCode, supplysynctask.FieldErrorContext, supplysynctask.FieldCurrentStage, supplysynctask.FieldWorkerVersion:
 			values[i] = new(sql.NullString)
 		case supplysynctask.FieldCreatedAt, supplysynctask.FieldUpdatedAt, supplysynctask.FieldStartedAt, supplysynctask.FieldHeartbeatAt, supplysynctask.FieldCancelRequestedAt, supplysynctask.FieldFinishedAt:
 			values[i] = new(sql.NullTime)
@@ -137,6 +146,27 @@ func (_m *SupplySyncTask) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field force_reprice", values[i])
 			} else if value.Valid {
 				_m.ForceReprice = value.Bool
+			}
+		case supplysynctask.FieldRequestKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_key", values[i])
+			} else if value.Valid {
+				_m.RequestKey = new(string)
+				*_m.RequestKey = value.String
+			}
+		case supplysynctask.FieldRequestHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field request_hash", values[i])
+			} else if value.Valid {
+				_m.RequestHash = value.String
+			}
+		case supplysynctask.FieldImportPayload:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field import_payload", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.ImportPayload); err != nil {
+					return fmt.Errorf("unmarshal field import_payload: %w", err)
+				}
 			}
 		case supplysynctask.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -299,6 +329,17 @@ func (_m *SupplySyncTask) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("force_reprice=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ForceReprice))
+	builder.WriteString(", ")
+	if v := _m.RequestKey; v != nil {
+		builder.WriteString("request_key=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("request_hash=")
+	builder.WriteString(_m.RequestHash)
+	builder.WriteString(", ")
+	builder.WriteString("import_payload=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ImportPayload))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Status))

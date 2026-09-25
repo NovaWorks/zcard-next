@@ -234,6 +234,9 @@ type SupplierProductPrice func(*sql.Selector)
 // SupplyConnection is the predicate function for supplyconnection builders.
 type SupplyConnection func(*sql.Selector)
 
+// SupplyImportItem is the predicate function for supplyimportitem builders.
+type SupplyImportItem func(*sql.Selector)
+
 // SupplyMapping is the predicate function for supplymapping builders.
 type SupplyMapping func(*sql.Selector)
 

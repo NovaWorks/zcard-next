@@ -88,6 +88,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplynonce"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
@@ -240,6 +241,7 @@ func checkColumn(t, c string) error {
 			supplierledgerentry.Table:      supplierledgerentry.ValidColumn,
 			supplierproductprice.Table:     supplierproductprice.ValidColumn,
 			supplyconnection.Table:         supplyconnection.ValidColumn,
+			supplyimportitem.Table:         supplyimportitem.ValidColumn,
 			supplymapping.Table:            supplymapping.ValidColumn,
 			supplynonce.Table:              supplynonce.ValidColumn,
 			supplyorder.Table:              supplyorder.ValidColumn,

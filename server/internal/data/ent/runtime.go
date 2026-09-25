@@ -82,6 +82,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierledgerentry"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplierproductprice"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyconnection"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplymapping"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplynonce"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyorder"
@@ -2739,44 +2740,131 @@ func init() {
 	supplyconnectionDescBaseURL := supplyconnectionFields[3].Descriptor()
 	// supplyconnection.BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
 	supplyconnection.BaseURLValidator = supplyconnectionDescBaseURL.Validators[0].(func(string) error)
+	// supplyconnectionDescSyncTaskID is the schema descriptor for sync_task_id field.
+	supplyconnectionDescSyncTaskID := supplyconnectionFields[6].Descriptor()
+	// supplyconnection.DefaultSyncTaskID holds the default value on creation for the sync_task_id field.
+	supplyconnection.DefaultSyncTaskID = supplyconnectionDescSyncTaskID.Default.(uint64)
+	// supplyconnectionDescSyncLeaseToken is the schema descriptor for sync_lease_token field.
+	supplyconnectionDescSyncLeaseToken := supplyconnectionFields[7].Descriptor()
+	// supplyconnection.DefaultSyncLeaseToken holds the default value on creation for the sync_lease_token field.
+	supplyconnection.DefaultSyncLeaseToken = supplyconnectionDescSyncLeaseToken.Default.(string)
+	// supplyconnectionDescSyncLeaseUntil is the schema descriptor for sync_lease_until field.
+	supplyconnectionDescSyncLeaseUntil := supplyconnectionFields[8].Descriptor()
+	// supplyconnection.DefaultSyncLeaseUntil holds the default value on creation for the sync_lease_until field.
+	supplyconnection.DefaultSyncLeaseUntil = supplyconnectionDescSyncLeaseUntil.Default.(int64)
 	// supplyconnectionDescCallbackURL is the schema descriptor for callback_url field.
-	supplyconnectionDescCallbackURL := supplyconnectionFields[6].Descriptor()
+	supplyconnectionDescCallbackURL := supplyconnectionFields[9].Descriptor()
 	// supplyconnection.CallbackURLValidator is a validator for the "callback_url" field. It is called by the builders before save.
 	supplyconnection.CallbackURLValidator = supplyconnectionDescCallbackURL.Validators[0].(func(string) error)
 	// supplyconnectionDescRetryMax is the schema descriptor for retry_max field.
-	supplyconnectionDescRetryMax := supplyconnectionFields[7].Descriptor()
+	supplyconnectionDescRetryMax := supplyconnectionFields[10].Descriptor()
 	// supplyconnection.DefaultRetryMax holds the default value on creation for the retry_max field.
 	supplyconnection.DefaultRetryMax = supplyconnectionDescRetryMax.Default.(int32)
 	// supplyconnectionDescRetryIntervals is the schema descriptor for retry_intervals field.
-	supplyconnectionDescRetryIntervals := supplyconnectionFields[8].Descriptor()
+	supplyconnectionDescRetryIntervals := supplyconnectionFields[11].Descriptor()
 	// supplyconnection.DefaultRetryIntervals holds the default value on creation for the retry_intervals field.
 	supplyconnection.DefaultRetryIntervals = supplyconnectionDescRetryIntervals.Default.(string)
 	// supplyconnection.RetryIntervalsValidator is a validator for the "retry_intervals" field. It is called by the builders before save.
 	supplyconnection.RetryIntervalsValidator = supplyconnectionDescRetryIntervals.Validators[0].(func(string) error)
 	// supplyconnectionDescExchangeRate is the schema descriptor for exchange_rate field.
-	supplyconnectionDescExchangeRate := supplyconnectionFields[9].Descriptor()
+	supplyconnectionDescExchangeRate := supplyconnectionFields[12].Descriptor()
 	// supplyconnection.DefaultExchangeRate holds the default value on creation for the exchange_rate field.
 	supplyconnection.DefaultExchangeRate = supplyconnectionDescExchangeRate.Default.(float64)
 	// supplyconnectionDescPriceMarkupPercent is the schema descriptor for price_markup_percent field.
-	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[10].Descriptor()
+	supplyconnectionDescPriceMarkupPercent := supplyconnectionFields[13].Descriptor()
 	// supplyconnection.DefaultPriceMarkupPercent holds the default value on creation for the price_markup_percent field.
 	supplyconnection.DefaultPriceMarkupPercent = supplyconnectionDescPriceMarkupPercent.Default.(float64)
 	// supplyconnectionDescPriceMarkupAmount is the schema descriptor for price_markup_amount field.
-	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[11].Descriptor()
+	supplyconnectionDescPriceMarkupAmount := supplyconnectionFields[14].Descriptor()
 	// supplyconnection.DefaultPriceMarkupAmount holds the default value on creation for the price_markup_amount field.
 	supplyconnection.DefaultPriceMarkupAmount = supplyconnectionDescPriceMarkupAmount.Default.(int64)
 	// supplyconnectionDescAutoSyncPrice is the schema descriptor for auto_sync_price field.
-	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[13].Descriptor()
+	supplyconnectionDescAutoSyncPrice := supplyconnectionFields[16].Descriptor()
 	// supplyconnection.DefaultAutoSyncPrice holds the default value on creation for the auto_sync_price field.
 	supplyconnection.DefaultAutoSyncPrice = supplyconnectionDescAutoSyncPrice.Default.(bool)
 	// supplyconnectionDescLastPingOk is the schema descriptor for last_ping_ok field.
-	supplyconnectionDescLastPingOk := supplyconnectionFields[17].Descriptor()
+	supplyconnectionDescLastPingOk := supplyconnectionFields[20].Descriptor()
 	// supplyconnection.DefaultLastPingOk holds the default value on creation for the last_ping_ok field.
 	supplyconnection.DefaultLastPingOk = supplyconnectionDescLastPingOk.Default.(bool)
 	// supplyconnectionDescBalanceCache is the schema descriptor for balance_cache field.
-	supplyconnectionDescBalanceCache := supplyconnectionFields[20].Descriptor()
+	supplyconnectionDescBalanceCache := supplyconnectionFields[23].Descriptor()
 	// supplyconnection.DefaultBalanceCache holds the default value on creation for the balance_cache field.
 	supplyconnection.DefaultBalanceCache = supplyconnectionDescBalanceCache.Default.(int64)
+	supplyimportitemMixin := schema.SupplyImportItem{}.Mixin()
+	supplyimportitemMixinFields0 := supplyimportitemMixin[0].Fields()
+	_ = supplyimportitemMixinFields0
+	supplyimportitemFields := schema.SupplyImportItem{}.Fields()
+	_ = supplyimportitemFields
+	// supplyimportitemDescCreatedAt is the schema descriptor for created_at field.
+	supplyimportitemDescCreatedAt := supplyimportitemMixinFields0[0].Descriptor()
+	// supplyimportitem.DefaultCreatedAt holds the default value on creation for the created_at field.
+	supplyimportitem.DefaultCreatedAt = supplyimportitemDescCreatedAt.Default.(func() time.Time)
+	// supplyimportitemDescUpdatedAt is the schema descriptor for updated_at field.
+	supplyimportitemDescUpdatedAt := supplyimportitemMixinFields0[1].Descriptor()
+	// supplyimportitem.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	supplyimportitem.DefaultUpdatedAt = supplyimportitemDescUpdatedAt.Default.(func() time.Time)
+	// supplyimportitem.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	supplyimportitem.UpdateDefaultUpdatedAt = supplyimportitemDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// supplyimportitemDescCode is the schema descriptor for code field.
+	supplyimportitemDescCode := supplyimportitemFields[2].Descriptor()
+	// supplyimportitem.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	supplyimportitem.CodeValidator = supplyimportitemDescCode.Validators[0].(func(string) error)
+	// supplyimportitemDescName is the schema descriptor for name field.
+	supplyimportitemDescName := supplyimportitemFields[3].Descriptor()
+	// supplyimportitem.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	supplyimportitem.NameValidator = supplyimportitemDescName.Validators[0].(func(string) error)
+	// supplyimportitemDescState is the schema descriptor for state field.
+	supplyimportitemDescState := supplyimportitemFields[5].Descriptor()
+	// supplyimportitem.DefaultState holds the default value on creation for the state field.
+	supplyimportitem.DefaultState = supplyimportitemDescState.Default.(string)
+	// supplyimportitem.StateValidator is a validator for the "state" field. It is called by the builders before save.
+	supplyimportitem.StateValidator = supplyimportitemDescState.Validators[0].(func(string) error)
+	// supplyimportitemDescStage is the schema descriptor for stage field.
+	supplyimportitemDescStage := supplyimportitemFields[6].Descriptor()
+	// supplyimportitem.DefaultStage holds the default value on creation for the stage field.
+	supplyimportitem.DefaultStage = supplyimportitemDescStage.Default.(string)
+	// supplyimportitem.StageValidator is a validator for the "stage" field. It is called by the builders before save.
+	supplyimportitem.StageValidator = supplyimportitemDescStage.Validators[0].(func(string) error)
+	// supplyimportitemDescAttempts is the schema descriptor for attempts field.
+	supplyimportitemDescAttempts := supplyimportitemFields[7].Descriptor()
+	// supplyimportitem.DefaultAttempts holds the default value on creation for the attempts field.
+	supplyimportitem.DefaultAttempts = supplyimportitemDescAttempts.Default.(int)
+	// supplyimportitemDescNextAttemptAt is the schema descriptor for next_attempt_at field.
+	supplyimportitemDescNextAttemptAt := supplyimportitemFields[8].Descriptor()
+	// supplyimportitem.DefaultNextAttemptAt holds the default value on creation for the next_attempt_at field.
+	supplyimportitem.DefaultNextAttemptAt = supplyimportitemDescNextAttemptAt.Default.(int64)
+	// supplyimportitemDescSaved is the schema descriptor for saved field.
+	supplyimportitemDescSaved := supplyimportitemFields[9].Descriptor()
+	// supplyimportitem.DefaultSaved holds the default value on creation for the saved field.
+	supplyimportitem.DefaultSaved = supplyimportitemDescSaved.Default.(bool)
+	// supplyimportitemDescCreated is the schema descriptor for created field.
+	supplyimportitemDescCreated := supplyimportitemFields[10].Descriptor()
+	// supplyimportitem.DefaultCreated holds the default value on creation for the created field.
+	supplyimportitem.DefaultCreated = supplyimportitemDescCreated.Default.(bool)
+	// supplyimportitemDescActivateAfterStock is the schema descriptor for activate_after_stock field.
+	supplyimportitemDescActivateAfterStock := supplyimportitemFields[11].Descriptor()
+	// supplyimportitem.DefaultActivateAfterStock holds the default value on creation for the activate_after_stock field.
+	supplyimportitem.DefaultActivateAfterStock = supplyimportitemDescActivateAfterStock.Default.(bool)
+	// supplyimportitemDescLocalProductID is the schema descriptor for local_product_id field.
+	supplyimportitemDescLocalProductID := supplyimportitemFields[12].Descriptor()
+	// supplyimportitem.DefaultLocalProductID holds the default value on creation for the local_product_id field.
+	supplyimportitem.DefaultLocalProductID = supplyimportitemDescLocalProductID.Default.(uint64)
+	// supplyimportitemDescLocalRevision is the schema descriptor for local_revision field.
+	supplyimportitemDescLocalRevision := supplyimportitemFields[13].Descriptor()
+	// supplyimportitem.DefaultLocalRevision holds the default value on creation for the local_revision field.
+	supplyimportitem.DefaultLocalRevision = supplyimportitemDescLocalRevision.Default.(string)
+	// supplyimportitemDescErrorCode is the schema descriptor for error_code field.
+	supplyimportitemDescErrorCode := supplyimportitemFields[14].Descriptor()
+	// supplyimportitem.DefaultErrorCode holds the default value on creation for the error_code field.
+	supplyimportitem.DefaultErrorCode = supplyimportitemDescErrorCode.Default.(string)
+	// supplyimportitem.ErrorCodeValidator is a validator for the "error_code" field. It is called by the builders before save.
+	supplyimportitem.ErrorCodeValidator = supplyimportitemDescErrorCode.Validators[0].(func(string) error)
+	// supplyimportitemDescErrorSummary is the schema descriptor for error_summary field.
+	supplyimportitemDescErrorSummary := supplyimportitemFields[15].Descriptor()
+	// supplyimportitem.DefaultErrorSummary holds the default value on creation for the error_summary field.
+	supplyimportitem.DefaultErrorSummary = supplyimportitemDescErrorSummary.Default.(string)
+	// supplyimportitem.ErrorSummaryValidator is a validator for the "error_summary" field. It is called by the builders before save.
+	supplyimportitem.ErrorSummaryValidator = supplyimportitemDescErrorSummary.Validators[0].(func(string) error)
 	supplymappingMixin := schema.SupplyMapping{}.Mixin()
 	supplymappingMixinFields0 := supplymappingMixin[0].Fields()
 	_ = supplymappingMixinFields0
@@ -2874,52 +2962,60 @@ func init() {
 	supplysynctaskDescForceReprice := supplysynctaskFields[4].Descriptor()
 	// supplysynctask.DefaultForceReprice holds the default value on creation for the force_reprice field.
 	supplysynctask.DefaultForceReprice = supplysynctaskDescForceReprice.Default.(bool)
+	// supplysynctaskDescRequestKey is the schema descriptor for request_key field.
+	supplysynctaskDescRequestKey := supplysynctaskFields[5].Descriptor()
+	// supplysynctask.RequestKeyValidator is a validator for the "request_key" field. It is called by the builders before save.
+	supplysynctask.RequestKeyValidator = supplysynctaskDescRequestKey.Validators[0].(func(string) error)
+	// supplysynctaskDescRequestHash is the schema descriptor for request_hash field.
+	supplysynctaskDescRequestHash := supplysynctaskFields[6].Descriptor()
+	// supplysynctask.RequestHashValidator is a validator for the "request_hash" field. It is called by the builders before save.
+	supplysynctask.RequestHashValidator = supplysynctaskDescRequestHash.Validators[0].(func(string) error)
 	// supplysynctaskDescTotalCount is the schema descriptor for total_count field.
-	supplysynctaskDescTotalCount := supplysynctaskFields[6].Descriptor()
+	supplysynctaskDescTotalCount := supplysynctaskFields[9].Descriptor()
 	// supplysynctask.DefaultTotalCount holds the default value on creation for the total_count field.
 	supplysynctask.DefaultTotalCount = supplysynctaskDescTotalCount.Default.(int32)
 	// supplysynctaskDescProcessedCount is the schema descriptor for processed_count field.
-	supplysynctaskDescProcessedCount := supplysynctaskFields[7].Descriptor()
+	supplysynctaskDescProcessedCount := supplysynctaskFields[10].Descriptor()
 	// supplysynctask.DefaultProcessedCount holds the default value on creation for the processed_count field.
 	supplysynctask.DefaultProcessedCount = supplysynctaskDescProcessedCount.Default.(int32)
 	// supplysynctaskDescCreatedCount is the schema descriptor for created_count field.
-	supplysynctaskDescCreatedCount := supplysynctaskFields[8].Descriptor()
+	supplysynctaskDescCreatedCount := supplysynctaskFields[11].Descriptor()
 	// supplysynctask.DefaultCreatedCount holds the default value on creation for the created_count field.
 	supplysynctask.DefaultCreatedCount = supplysynctaskDescCreatedCount.Default.(int32)
 	// supplysynctaskDescUpdatedCount is the schema descriptor for updated_count field.
-	supplysynctaskDescUpdatedCount := supplysynctaskFields[9].Descriptor()
+	supplysynctaskDescUpdatedCount := supplysynctaskFields[12].Descriptor()
 	// supplysynctask.DefaultUpdatedCount holds the default value on creation for the updated_count field.
 	supplysynctask.DefaultUpdatedCount = supplysynctaskDescUpdatedCount.Default.(int32)
 	// supplysynctaskDescPriceUpdatedCount is the schema descriptor for price_updated_count field.
-	supplysynctaskDescPriceUpdatedCount := supplysynctaskFields[10].Descriptor()
+	supplysynctaskDescPriceUpdatedCount := supplysynctaskFields[13].Descriptor()
 	// supplysynctask.DefaultPriceUpdatedCount holds the default value on creation for the price_updated_count field.
 	supplysynctask.DefaultPriceUpdatedCount = supplysynctaskDescPriceUpdatedCount.Default.(int32)
 	// supplysynctaskDescManualSkippedCount is the schema descriptor for manual_skipped_count field.
-	supplysynctaskDescManualSkippedCount := supplysynctaskFields[11].Descriptor()
+	supplysynctaskDescManualSkippedCount := supplysynctaskFields[14].Descriptor()
 	// supplysynctask.DefaultManualSkippedCount holds the default value on creation for the manual_skipped_count field.
 	supplysynctask.DefaultManualSkippedCount = supplysynctaskDescManualSkippedCount.Default.(int32)
 	// supplysynctaskDescHiddenCount is the schema descriptor for hidden_count field.
-	supplysynctaskDescHiddenCount := supplysynctaskFields[12].Descriptor()
+	supplysynctaskDescHiddenCount := supplysynctaskFields[15].Descriptor()
 	// supplysynctask.DefaultHiddenCount holds the default value on creation for the hidden_count field.
 	supplysynctask.DefaultHiddenCount = supplysynctaskDescHiddenCount.Default.(int32)
 	// supplysynctaskDescDeletedCount is the schema descriptor for deleted_count field.
-	supplysynctaskDescDeletedCount := supplysynctaskFields[13].Descriptor()
+	supplysynctaskDescDeletedCount := supplysynctaskFields[16].Descriptor()
 	// supplysynctask.DefaultDeletedCount holds the default value on creation for the deleted_count field.
 	supplysynctask.DefaultDeletedCount = supplysynctaskDescDeletedCount.Default.(int32)
 	// supplysynctaskDescErrorCode is the schema descriptor for error_code field.
-	supplysynctaskDescErrorCode := supplysynctaskFields[14].Descriptor()
+	supplysynctaskDescErrorCode := supplysynctaskFields[17].Descriptor()
 	// supplysynctask.ErrorCodeValidator is a validator for the "error_code" field. It is called by the builders before save.
 	supplysynctask.ErrorCodeValidator = supplysynctaskDescErrorCode.Validators[0].(func(string) error)
 	// supplysynctaskDescCurrentStage is the schema descriptor for current_stage field.
-	supplysynctaskDescCurrentStage := supplysynctaskFields[18].Descriptor()
+	supplysynctaskDescCurrentStage := supplysynctaskFields[21].Descriptor()
 	// supplysynctask.CurrentStageValidator is a validator for the "current_stage" field. It is called by the builders before save.
 	supplysynctask.CurrentStageValidator = supplysynctaskDescCurrentStage.Validators[0].(func(string) error)
 	// supplysynctaskDescCurrentPage is the schema descriptor for current_page field.
-	supplysynctaskDescCurrentPage := supplysynctaskFields[19].Descriptor()
+	supplysynctaskDescCurrentPage := supplysynctaskFields[22].Descriptor()
 	// supplysynctask.DefaultCurrentPage holds the default value on creation for the current_page field.
 	supplysynctask.DefaultCurrentPage = supplysynctaskDescCurrentPage.Default.(int32)
 	// supplysynctaskDescWorkerVersion is the schema descriptor for worker_version field.
-	supplysynctaskDescWorkerVersion := supplysynctaskFields[21].Descriptor()
+	supplysynctaskDescWorkerVersion := supplysynctaskFields[24].Descriptor()
 	// supplysynctask.WorkerVersionValidator is a validator for the "worker_version" field. It is called by the builders before save.
 	supplysynctask.WorkerVersionValidator = supplysynctaskDescWorkerVersion.Validators[0].(func(string) error)
 	tagMixin := schema.Tag{}.Mixin()

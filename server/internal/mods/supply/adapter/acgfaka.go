@@ -84,7 +84,7 @@ func parseResp(raw []byte) (json.RawMessage, error) {
 		// 业务错误归一化：余额不足/无库存等明确语义
 		switch resp.Code {
 		case 401, 403:
-			return nil, fmt.Errorf("adapter.acgfaka: 商户鉴权失败(%d): %s", resp.Code, resp.Msg)
+			return nil, &httpError{Status: resp.Code, Message: resp.Msg}
 		default:
 			return nil, fmt.Errorf("adapter.acgfaka: 上游拒绝(%d): %s", resp.Code, resp.Msg)
 		}

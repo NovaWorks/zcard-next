@@ -65,8 +65,8 @@ export function createSupplySyncTask(data: {
   return request({ url: "/api/v1/admin/supply/sync-tasks", method: "post", data });
 }
 
-export function fetchSupplySyncTasks(params: { connection_id?: number; page?: number; page_size?: number }) {
-  return request({ url: "/api/v1/admin/supply/sync-tasks", params });
+export function fetchSupplySyncTasks(params: { connection_id?: number; page?: number; page_size?: number }, silentError = false) {
+  return request({ url: "/api/v1/admin/supply/sync-tasks", params, silentError });
 }
 
 export function cancelSupplySyncTask(id: number) {
@@ -90,6 +90,7 @@ export function importSupplyProducts(
   connectionId: number,
   data: {
     codes: string[];
+    request_key?: string;
     pricing_mode?: string; // percent | fixed | equal | pending
     markup_percent?: number;
     markup_amount_cents?: number;
@@ -99,4 +100,14 @@ export function importSupplyProducts(
   },
 ) {
   return request({ url: `/api/v1/admin/supply/connections/${connectionId}/import`, method: "post", data, timeout: 60000 });
+}
+
+export function fetchSupplySyncTask(id: number) {
+  return request({ url: `/api/v1/admin/supply/sync-tasks/${id}`, silentError: true });
+}
+export function fetchSupplyImportItems(id: number, params: { page: number; page_size: number; problems_only: boolean }) {
+  return request({ url: `/api/v1/admin/supply/sync-tasks/${id}/items`, params, silentError: true });
+}
+export function retrySupplyImportTask(id: number, scope: "failed" | "stock" | "remaining", confirmConfig = false) {
+  return request({ url: `/api/v1/admin/supply/sync-tasks/${id}/retry`, method: "post", data: { scope, confirm_config: confirmConfig } });
 }

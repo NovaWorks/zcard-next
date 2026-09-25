@@ -281,6 +281,9 @@ func (s *AdminSupplyService) CreateSyncTask(ctx context.Context, req *adminv1.Cr
 	if _, err := s.repo.GetConnection(ctx, req.GetConnectionId()); err != nil {
 		return nil, err
 	}
+	if req.Scope == ScopeImport {
+		return nil, fmt.Errorf("请从商品导入入口创建任务")
+	}
 	mode := req.GetMode()
 	if mode == "" {
 		mode = "full"
@@ -308,7 +311,11 @@ func (s *AdminSupplyService) ListSyncTasks(ctx context.Context, req *adminv1.Lis
 	}
 	reply := &adminv1.ListSyncTasksReply{Total: int64(total), Page: int32(page), PageSize: int32(pageSize)}
 	for _, t := range ts {
-		reply.Tasks = append(reply.Tasks, toProtoTask(t))
+		converted, err := s.importTaskProto(ctx, t)
+		if err != nil {
+			return nil, err
+		}
+		reply.Tasks = append(reply.Tasks, converted)
 	}
 	return reply, nil
 }
@@ -319,11 +326,20 @@ func (s *AdminSupplyService) GetSyncTask(ctx context.Context, req *adminv1.GetSy
 	if err != nil {
 		return nil, err
 	}
-	return toProtoTask(t), nil
+	return s.importTaskProto(ctx, t)
 }
 
 // CancelSyncTask 请求取消。
 func (s *AdminSupplyService) CancelSyncTask(ctx context.Context, req *adminv1.CancelSyncTaskRequest) (*adminv1.SupplySyncTask, error) {
+	existing, err := s.repo.GetSyncTask(ctx, req.GetId())
+	if err != nil {
+		return nil, err
+	}
+	if existing.Scope == ScopeImport {
+		if _, err := readImportPayload(ctx, existing, true); err != nil {
+			return nil, err
+		}
+	}
 	t, err := s.repo.RequestCancel(ctx, req.GetId())
 	if err != nil {
 		return nil, err

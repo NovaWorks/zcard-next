@@ -4,6 +4,7 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -87,6 +88,40 @@ func (_c *SupplySyncTaskCreate) SetNillableForceReprice(v *bool) *SupplySyncTask
 	if v != nil {
 		_c.SetForceReprice(*v)
 	}
+	return _c
+}
+
+// SetRequestKey sets the "request_key" field.
+func (_c *SupplySyncTaskCreate) SetRequestKey(v string) *SupplySyncTaskCreate {
+	_c.mutation.SetRequestKey(v)
+	return _c
+}
+
+// SetNillableRequestKey sets the "request_key" field if the given value is not nil.
+func (_c *SupplySyncTaskCreate) SetNillableRequestKey(v *string) *SupplySyncTaskCreate {
+	if v != nil {
+		_c.SetRequestKey(*v)
+	}
+	return _c
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_c *SupplySyncTaskCreate) SetRequestHash(v string) *SupplySyncTaskCreate {
+	_c.mutation.SetRequestHash(v)
+	return _c
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_c *SupplySyncTaskCreate) SetNillableRequestHash(v *string) *SupplySyncTaskCreate {
+	if v != nil {
+		_c.SetRequestHash(*v)
+	}
+	return _c
+}
+
+// SetImportPayload sets the "import_payload" field.
+func (_c *SupplySyncTaskCreate) SetImportPayload(v json.RawMessage) *SupplySyncTaskCreate {
+	_c.mutation.SetImportPayload(v)
 	return _c
 }
 
@@ -464,6 +499,16 @@ func (_c *SupplySyncTaskCreate) check() error {
 	if _, ok := _c.mutation.ForceReprice(); !ok {
 		return &ValidationError{Name: "force_reprice", err: errors.New(`ent: missing required field "SupplySyncTask.force_reprice"`)}
 	}
+	if v, ok := _c.mutation.RequestKey(); ok {
+		if err := supplysynctask.RequestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "request_key", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.request_key": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.RequestHash(); ok {
+		if err := supplysynctask.RequestHashValidator(v); err != nil {
+			return &ValidationError{Name: "request_hash", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.request_hash": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "SupplySyncTask.status"`)}
 	}
@@ -570,6 +615,18 @@ func (_c *SupplySyncTaskCreate) createSpec() (*SupplySyncTask, *sqlgraph.CreateS
 	if value, ok := _c.mutation.ForceReprice(); ok {
 		_spec.SetField(supplysynctask.FieldForceReprice, field.TypeBool, value)
 		_node.ForceReprice = value
+	}
+	if value, ok := _c.mutation.RequestKey(); ok {
+		_spec.SetField(supplysynctask.FieldRequestKey, field.TypeString, value)
+		_node.RequestKey = &value
+	}
+	if value, ok := _c.mutation.RequestHash(); ok {
+		_spec.SetField(supplysynctask.FieldRequestHash, field.TypeString, value)
+		_node.RequestHash = value
+	}
+	if value, ok := _c.mutation.ImportPayload(); ok {
+		_spec.SetField(supplysynctask.FieldImportPayload, field.TypeJSON, value)
+		_node.ImportPayload = value
 	}
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(supplysynctask.FieldStatus, field.TypeEnum, value)
@@ -764,6 +821,60 @@ func (u *SupplySyncTaskUpsert) SetForceReprice(v bool) *SupplySyncTaskUpsert {
 // UpdateForceReprice sets the "force_reprice" field to the value that was provided on create.
 func (u *SupplySyncTaskUpsert) UpdateForceReprice() *SupplySyncTaskUpsert {
 	u.SetExcluded(supplysynctask.FieldForceReprice)
+	return u
+}
+
+// SetRequestKey sets the "request_key" field.
+func (u *SupplySyncTaskUpsert) SetRequestKey(v string) *SupplySyncTaskUpsert {
+	u.Set(supplysynctask.FieldRequestKey, v)
+	return u
+}
+
+// UpdateRequestKey sets the "request_key" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsert) UpdateRequestKey() *SupplySyncTaskUpsert {
+	u.SetExcluded(supplysynctask.FieldRequestKey)
+	return u
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (u *SupplySyncTaskUpsert) ClearRequestKey() *SupplySyncTaskUpsert {
+	u.SetNull(supplysynctask.FieldRequestKey)
+	return u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (u *SupplySyncTaskUpsert) SetRequestHash(v string) *SupplySyncTaskUpsert {
+	u.Set(supplysynctask.FieldRequestHash, v)
+	return u
+}
+
+// UpdateRequestHash sets the "request_hash" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsert) UpdateRequestHash() *SupplySyncTaskUpsert {
+	u.SetExcluded(supplysynctask.FieldRequestHash)
+	return u
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (u *SupplySyncTaskUpsert) ClearRequestHash() *SupplySyncTaskUpsert {
+	u.SetNull(supplysynctask.FieldRequestHash)
+	return u
+}
+
+// SetImportPayload sets the "import_payload" field.
+func (u *SupplySyncTaskUpsert) SetImportPayload(v json.RawMessage) *SupplySyncTaskUpsert {
+	u.Set(supplysynctask.FieldImportPayload, v)
+	return u
+}
+
+// UpdateImportPayload sets the "import_payload" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsert) UpdateImportPayload() *SupplySyncTaskUpsert {
+	u.SetExcluded(supplysynctask.FieldImportPayload)
+	return u
+}
+
+// ClearImportPayload clears the value of the "import_payload" field.
+func (u *SupplySyncTaskUpsert) ClearImportPayload() *SupplySyncTaskUpsert {
+	u.SetNull(supplysynctask.FieldImportPayload)
 	return u
 }
 
@@ -1217,6 +1328,69 @@ func (u *SupplySyncTaskUpsertOne) SetForceReprice(v bool) *SupplySyncTaskUpsertO
 func (u *SupplySyncTaskUpsertOne) UpdateForceReprice() *SupplySyncTaskUpsertOne {
 	return u.Update(func(s *SupplySyncTaskUpsert) {
 		s.UpdateForceReprice()
+	})
+}
+
+// SetRequestKey sets the "request_key" field.
+func (u *SupplySyncTaskUpsertOne) SetRequestKey(v string) *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.SetRequestKey(v)
+	})
+}
+
+// UpdateRequestKey sets the "request_key" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsertOne) UpdateRequestKey() *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.UpdateRequestKey()
+	})
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (u *SupplySyncTaskUpsertOne) ClearRequestKey() *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.ClearRequestKey()
+	})
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (u *SupplySyncTaskUpsertOne) SetRequestHash(v string) *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.SetRequestHash(v)
+	})
+}
+
+// UpdateRequestHash sets the "request_hash" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsertOne) UpdateRequestHash() *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.UpdateRequestHash()
+	})
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (u *SupplySyncTaskUpsertOne) ClearRequestHash() *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.ClearRequestHash()
+	})
+}
+
+// SetImportPayload sets the "import_payload" field.
+func (u *SupplySyncTaskUpsertOne) SetImportPayload(v json.RawMessage) *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.SetImportPayload(v)
+	})
+}
+
+// UpdateImportPayload sets the "import_payload" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsertOne) UpdateImportPayload() *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.UpdateImportPayload()
+	})
+}
+
+// ClearImportPayload clears the value of the "import_payload" field.
+func (u *SupplySyncTaskUpsertOne) ClearImportPayload() *SupplySyncTaskUpsertOne {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.ClearImportPayload()
 	})
 }
 
@@ -1889,6 +2063,69 @@ func (u *SupplySyncTaskUpsertBulk) SetForceReprice(v bool) *SupplySyncTaskUpsert
 func (u *SupplySyncTaskUpsertBulk) UpdateForceReprice() *SupplySyncTaskUpsertBulk {
 	return u.Update(func(s *SupplySyncTaskUpsert) {
 		s.UpdateForceReprice()
+	})
+}
+
+// SetRequestKey sets the "request_key" field.
+func (u *SupplySyncTaskUpsertBulk) SetRequestKey(v string) *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.SetRequestKey(v)
+	})
+}
+
+// UpdateRequestKey sets the "request_key" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsertBulk) UpdateRequestKey() *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.UpdateRequestKey()
+	})
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (u *SupplySyncTaskUpsertBulk) ClearRequestKey() *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.ClearRequestKey()
+	})
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (u *SupplySyncTaskUpsertBulk) SetRequestHash(v string) *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.SetRequestHash(v)
+	})
+}
+
+// UpdateRequestHash sets the "request_hash" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsertBulk) UpdateRequestHash() *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.UpdateRequestHash()
+	})
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (u *SupplySyncTaskUpsertBulk) ClearRequestHash() *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.ClearRequestHash()
+	})
+}
+
+// SetImportPayload sets the "import_payload" field.
+func (u *SupplySyncTaskUpsertBulk) SetImportPayload(v json.RawMessage) *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.SetImportPayload(v)
+	})
+}
+
+// UpdateImportPayload sets the "import_payload" field to the value that was provided on create.
+func (u *SupplySyncTaskUpsertBulk) UpdateImportPayload() *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.UpdateImportPayload()
+	})
+}
+
+// ClearImportPayload clears the value of the "import_payload" field.
+func (u *SupplySyncTaskUpsertBulk) ClearImportPayload() *SupplySyncTaskUpsertBulk {
+	return u.Update(func(s *SupplySyncTaskUpsert) {
+		s.ClearImportPayload()
 	})
 }
 

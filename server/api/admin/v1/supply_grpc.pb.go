@@ -32,6 +32,8 @@ const (
 	AdminSupplyService_ListSyncTasks_FullMethodName    = "/zcard.api.admin.v1.AdminSupplyService/ListSyncTasks"
 	AdminSupplyService_GetSyncTask_FullMethodName      = "/zcard.api.admin.v1.AdminSupplyService/GetSyncTask"
 	AdminSupplyService_CancelSyncTask_FullMethodName   = "/zcard.api.admin.v1.AdminSupplyService/CancelSyncTask"
+	AdminSupplyService_ListImportItems_FullMethodName  = "/zcard.api.admin.v1.AdminSupplyService/ListImportItems"
+	AdminSupplyService_RetryImportTask_FullMethodName  = "/zcard.api.admin.v1.AdminSupplyService/RetryImportTask"
 	AdminSupplyService_PreviewProducts_FullMethodName  = "/zcard.api.admin.v1.AdminSupplyService/PreviewProducts"
 	AdminSupplyService_ImportProducts_FullMethodName   = "/zcard.api.admin.v1.AdminSupplyService/ImportProducts"
 	AdminSupplyService_ListHealth_FullMethodName       = "/zcard.api.admin.v1.AdminSupplyService/ListHealth"
@@ -70,6 +72,8 @@ type AdminSupplyServiceClient interface {
 	GetSyncTask(ctx context.Context, in *GetSyncTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error)
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(ctx context.Context, in *CancelSyncTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error)
+	ListImportItems(ctx context.Context, in *ListImportItemsRequest, opts ...grpc.CallOption) (*ListImportItemsReply, error)
+	RetryImportTask(ctx context.Context, in *RetryImportTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...grpc.CallOption) (*PreviewProductsReply, error)
@@ -206,6 +210,26 @@ func (c *adminSupplyServiceClient) CancelSyncTask(ctx context.Context, in *Cance
 	return out, nil
 }
 
+func (c *adminSupplyServiceClient) ListImportItems(ctx context.Context, in *ListImportItemsRequest, opts ...grpc.CallOption) (*ListImportItemsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListImportItemsReply)
+	err := c.cc.Invoke(ctx, AdminSupplyService_ListImportItems_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminSupplyServiceClient) RetryImportTask(ctx context.Context, in *RetryImportTaskRequest, opts ...grpc.CallOption) (*SupplySyncTask, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SupplySyncTask)
+	err := c.cc.Invoke(ctx, AdminSupplyService_RetryImportTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *adminSupplyServiceClient) PreviewProducts(ctx context.Context, in *PreviewProductsRequest, opts ...grpc.CallOption) (*PreviewProductsReply, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PreviewProductsReply)
@@ -269,6 +293,8 @@ type AdminSupplyServiceServer interface {
 	GetSyncTask(context.Context, *GetSyncTaskRequest) (*SupplySyncTask, error)
 	// CancelSyncTask 请求取消（分批间检查标志）。
 	CancelSyncTask(context.Context, *CancelSyncTaskRequest) (*SupplySyncTask, error)
+	ListImportItems(context.Context, *ListImportItemsRequest) (*ListImportItemsReply, error)
+	RetryImportTask(context.Context, *RetryImportTaskRequest) (*SupplySyncTask, error)
 	// ListHealth 连接健康列表（探活结果 + 最近错误 + 同步时间）。
 	// PreviewProducts 轻量目录预览；quote_code 按需查询一个商品的账号报价。
 	PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error)
@@ -320,6 +346,12 @@ func (UnimplementedAdminSupplyServiceServer) GetSyncTask(context.Context, *GetSy
 }
 func (UnimplementedAdminSupplyServiceServer) CancelSyncTask(context.Context, *CancelSyncTaskRequest) (*SupplySyncTask, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelSyncTask not implemented")
+}
+func (UnimplementedAdminSupplyServiceServer) ListImportItems(context.Context, *ListImportItemsRequest) (*ListImportItemsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListImportItems not implemented")
+}
+func (UnimplementedAdminSupplyServiceServer) RetryImportTask(context.Context, *RetryImportTaskRequest) (*SupplySyncTask, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetryImportTask not implemented")
 }
 func (UnimplementedAdminSupplyServiceServer) PreviewProducts(context.Context, *PreviewProductsRequest) (*PreviewProductsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method PreviewProducts not implemented")
@@ -567,6 +599,42 @@ func _AdminSupplyService_CancelSyncTask_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminSupplyService_ListImportItems_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListImportItemsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplyServiceServer).ListImportItems(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplyService_ListImportItems_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplyServiceServer).ListImportItems(ctx, req.(*ListImportItemsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminSupplyService_RetryImportTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryImportTaskRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminSupplyServiceServer).RetryImportTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminSupplyService_RetryImportTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminSupplyServiceServer).RetryImportTask(ctx, req.(*RetryImportTaskRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AdminSupplyService_PreviewProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PreviewProductsRequest)
 	if err := dec(in); err != nil {
@@ -675,6 +743,14 @@ var AdminSupplyService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelSyncTask",
 			Handler:    _AdminSupplyService_CancelSyncTask_Handler,
+		},
+		{
+			MethodName: "ListImportItems",
+			Handler:    _AdminSupplyService_ListImportItems_Handler,
+		},
+		{
+			MethodName: "RetryImportTask",
+			Handler:    _AdminSupplyService_RetryImportTask_Handler,
 		},
 		{
 			MethodName: "PreviewProducts",

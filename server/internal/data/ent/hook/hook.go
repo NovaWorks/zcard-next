@@ -921,6 +921,18 @@ func (f SupplyConnectionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplyConnectionMutation", m)
 }
 
+// The SupplyImportItemFunc type is an adapter to allow the use of ordinary
+// function as SupplyImportItem mutator.
+type SupplyImportItemFunc func(context.Context, *ent.SupplyImportItemMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SupplyImportItemFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SupplyImportItemMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SupplyImportItemMutation", m)
+}
+
 // The SupplyMappingFunc type is an adapter to allow the use of ordinary
 // function as SupplyMapping mutator.
 type SupplyMappingFunc func(context.Context, *ent.SupplyMappingMutation) (ent.Value, error)

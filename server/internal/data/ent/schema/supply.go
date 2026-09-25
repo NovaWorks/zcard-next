@@ -4,6 +4,7 @@ package schema
 // 字段对齐《数据库架构设计.md》§4.7/§5。
 
 import (
+	"encoding/json"
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/schema/field"
@@ -25,6 +26,9 @@ func (SupplyConnection) Fields() []ent.Field {
 		field.String("base_url").MaxLen(255).Comment("上游地址（httpx SSRF 校验）"),
 		field.Bytes("credentials").Comment("AES-256-GCM 加密凭据（结构随 driver）"),
 		field.Enum("status").Values("active", "disabled").Default("active"),
+		field.Uint64("sync_task_id").Default(0),
+		field.String("sync_lease_token").Default(""),
+		field.Int64("sync_lease_until").Default(0),
 		field.String("callback_url").MaxLen(500).Optional().Comment("本站作下游时的回调登记"),
 		field.Int32("retry_max").Default(5),
 		field.String("retry_intervals").MaxLen(200).Default("[30,60,300]").Comment("重试间隔数组（秒，JSON 字符串）"),
@@ -108,6 +112,9 @@ func (SupplySyncTask) Fields() []ent.Field {
 		field.String("mode").MaxLen(20).Comment("full | incremental"),
 		field.String("scope").MaxLen(60).Optional(),
 		field.Bool("force_reprice").Default(false),
+		field.String("request_key").MaxLen(64).Optional().Nillable(),
+		field.String("request_hash").MaxLen(64).Optional(),
+		field.JSON("import_payload", json.RawMessage{}).Optional(),
 		field.Enum("status").Values("pending", "processing", "done", "failed", "canceled").Default("pending"),
 		field.Int32("total_count").Default(0),
 		field.Int32("processed_count").Default(0),
@@ -132,8 +139,32 @@ func (SupplySyncTask) Fields() []ent.Field {
 func (SupplySyncTask) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("connection_id", "created_at"),
+		index.Fields("connection_id", "request_key").Unique(),
 		index.Fields("status"),
 	}
+}
+
+// SupplyImportItem checkpoints a selected product. Product and checkpoint writes
+// commit together; a stock retry never repeats a price write.
+type SupplyImportItem struct{ ent.Schema }
+
+func (SupplyImportItem) Mixin() []ent.Mixin { return []ent.Mixin{TimeMixin{}} }
+func (SupplyImportItem) Fields() []ent.Field {
+	return []ent.Field{
+		field.Uint64("id"), field.Uint64("task_id"),
+		field.String("code").MaxLen(128), field.String("name").MaxLen(1024),
+		field.JSON("snapshot", json.RawMessage{}),
+		field.String("state").MaxLen(20).Default("pending"),
+		field.String("stage").MaxLen(20).Default("import"),
+		field.Int("attempts").Default(0), field.Int64("next_attempt_at").Default(0),
+		field.Bool("saved").Default(false), field.Bool("created").Default(false),
+		field.Bool("activate_after_stock").Default(false),
+		field.Uint64("local_product_id").Default(0), field.String("local_revision").Default(""),
+		field.String("error_code").MaxLen(64).Default(""), field.String("error_summary").MaxLen(500).Default(""),
+	}
+}
+func (SupplyImportItem) Indexes() []ent.Index {
+	return []ent.Index{index.Fields("task_id", "code").Unique(), index.Fields("task_id", "state", "next_attempt_at")}
 }
 
 // ProcurementOrder 采购单（状态机 §5.7.2；三通道结果汇聚；dedupe 幂等）。

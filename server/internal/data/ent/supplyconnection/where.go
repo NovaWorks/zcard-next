@@ -84,6 +84,21 @@ func Credentials(v []byte) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldCredentials, v))
 }
 
+// SyncTaskID applies equality check predicate on the "sync_task_id" field. It's identical to SyncTaskIDEQ.
+func SyncTaskID(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncTaskID, v))
+}
+
+// SyncLeaseToken applies equality check predicate on the "sync_lease_token" field. It's identical to SyncLeaseTokenEQ.
+func SyncLeaseToken(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseUntil applies equality check predicate on the "sync_lease_until" field. It's identical to SyncLeaseUntilEQ.
+func SyncLeaseUntil(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncLeaseUntil, v))
+}
+
 // CallbackURL applies equality check predicate on the "callback_url" field. It's identical to CallbackURLEQ.
 func CallbackURL(v string) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldEQ(FieldCallbackURL, v))
@@ -497,6 +512,151 @@ func StatusIn(vs ...Status) predicate.SupplyConnection {
 // StatusNotIn applies the NotIn predicate on the "status" field.
 func StatusNotIn(vs ...Status) predicate.SupplyConnection {
 	return predicate.SupplyConnection(sql.FieldNotIn(FieldStatus, vs...))
+}
+
+// SyncTaskIDEQ applies the EQ predicate on the "sync_task_id" field.
+func SyncTaskIDEQ(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncTaskID, v))
+}
+
+// SyncTaskIDNEQ applies the NEQ predicate on the "sync_task_id" field.
+func SyncTaskIDNEQ(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldSyncTaskID, v))
+}
+
+// SyncTaskIDIn applies the In predicate on the "sync_task_id" field.
+func SyncTaskIDIn(vs ...uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldSyncTaskID, vs...))
+}
+
+// SyncTaskIDNotIn applies the NotIn predicate on the "sync_task_id" field.
+func SyncTaskIDNotIn(vs ...uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldSyncTaskID, vs...))
+}
+
+// SyncTaskIDGT applies the GT predicate on the "sync_task_id" field.
+func SyncTaskIDGT(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldSyncTaskID, v))
+}
+
+// SyncTaskIDGTE applies the GTE predicate on the "sync_task_id" field.
+func SyncTaskIDGTE(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldSyncTaskID, v))
+}
+
+// SyncTaskIDLT applies the LT predicate on the "sync_task_id" field.
+func SyncTaskIDLT(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldSyncTaskID, v))
+}
+
+// SyncTaskIDLTE applies the LTE predicate on the "sync_task_id" field.
+func SyncTaskIDLTE(v uint64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldSyncTaskID, v))
+}
+
+// SyncLeaseTokenEQ applies the EQ predicate on the "sync_lease_token" field.
+func SyncLeaseTokenEQ(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenNEQ applies the NEQ predicate on the "sync_lease_token" field.
+func SyncLeaseTokenNEQ(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenIn applies the In predicate on the "sync_lease_token" field.
+func SyncLeaseTokenIn(vs ...string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldSyncLeaseToken, vs...))
+}
+
+// SyncLeaseTokenNotIn applies the NotIn predicate on the "sync_lease_token" field.
+func SyncLeaseTokenNotIn(vs ...string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldSyncLeaseToken, vs...))
+}
+
+// SyncLeaseTokenGT applies the GT predicate on the "sync_lease_token" field.
+func SyncLeaseTokenGT(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenGTE applies the GTE predicate on the "sync_lease_token" field.
+func SyncLeaseTokenGTE(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenLT applies the LT predicate on the "sync_lease_token" field.
+func SyncLeaseTokenLT(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenLTE applies the LTE predicate on the "sync_lease_token" field.
+func SyncLeaseTokenLTE(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenContains applies the Contains predicate on the "sync_lease_token" field.
+func SyncLeaseTokenContains(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldContains(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenHasPrefix applies the HasPrefix predicate on the "sync_lease_token" field.
+func SyncLeaseTokenHasPrefix(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldHasPrefix(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenHasSuffix applies the HasSuffix predicate on the "sync_lease_token" field.
+func SyncLeaseTokenHasSuffix(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldHasSuffix(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenEqualFold applies the EqualFold predicate on the "sync_lease_token" field.
+func SyncLeaseTokenEqualFold(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEqualFold(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseTokenContainsFold applies the ContainsFold predicate on the "sync_lease_token" field.
+func SyncLeaseTokenContainsFold(v string) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldContainsFold(FieldSyncLeaseToken, v))
+}
+
+// SyncLeaseUntilEQ applies the EQ predicate on the "sync_lease_until" field.
+func SyncLeaseUntilEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldEQ(FieldSyncLeaseUntil, v))
+}
+
+// SyncLeaseUntilNEQ applies the NEQ predicate on the "sync_lease_until" field.
+func SyncLeaseUntilNEQ(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNEQ(FieldSyncLeaseUntil, v))
+}
+
+// SyncLeaseUntilIn applies the In predicate on the "sync_lease_until" field.
+func SyncLeaseUntilIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldIn(FieldSyncLeaseUntil, vs...))
+}
+
+// SyncLeaseUntilNotIn applies the NotIn predicate on the "sync_lease_until" field.
+func SyncLeaseUntilNotIn(vs ...int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldNotIn(FieldSyncLeaseUntil, vs...))
+}
+
+// SyncLeaseUntilGT applies the GT predicate on the "sync_lease_until" field.
+func SyncLeaseUntilGT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGT(FieldSyncLeaseUntil, v))
+}
+
+// SyncLeaseUntilGTE applies the GTE predicate on the "sync_lease_until" field.
+func SyncLeaseUntilGTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldGTE(FieldSyncLeaseUntil, v))
+}
+
+// SyncLeaseUntilLT applies the LT predicate on the "sync_lease_until" field.
+func SyncLeaseUntilLT(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLT(FieldSyncLeaseUntil, v))
+}
+
+// SyncLeaseUntilLTE applies the LTE predicate on the "sync_lease_until" field.
+func SyncLeaseUntilLTE(v int64) predicate.SupplyConnection {
+	return predicate.SupplyConnection(sql.FieldLTE(FieldSyncLeaseUntil, v))
 }
 
 // CallbackURLEQ applies the EQ predicate on the "callback_url" field.

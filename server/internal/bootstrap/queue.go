@@ -80,6 +80,7 @@ func NewCron(notifyDisp *notify.Dispatcher, supplySync *supply.SyncService, supp
 		supplySync.PingAllActive(ctx)
 	})
 	// S3：定时同步调度（每分钟扫描 settings.schedule 到期任务）+ 看门狗（僵死任务回收）
+	c.AddEvery("supply.resume_tasks", 5*time.Second, supplySync.ResumeTasks)
 	c.AddEvery("supply.schedule_scan", time.Minute, supplyScheduler.Scan)
 	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)
 	// ：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）

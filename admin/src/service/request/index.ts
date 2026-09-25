@@ -66,11 +66,13 @@ export const request = createFlatRequest<App.Service.Response<any>, any, Request
         return null;
       }
 
+      if (response.config?.silentError) return null;
       const errMsg = response.data?.message || `请求失败 (${response.status})`;
       showErrorMsg(request.state as RequestInstanceState, errMsg);
       return null;
     },
     onError(err: any) {
+      if (err.config?.silentError && err.response?.status !== 401) return;
       if (suppressUpdateRestartError(err)) return;
       // Closing an import preview intentionally aborts its in-flight quotes.
       if (err.code === "ERR_CANCELED" && err.config?.params?.quote_code

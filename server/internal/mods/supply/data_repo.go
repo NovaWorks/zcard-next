@@ -152,20 +152,28 @@ func (r *SupplyRepoImpl) UpdateCredentials(ctx context.Context, id uint64, drive
 
 // DeleteConnection 删除连接（存在映射时拒绝）。
 func (r *SupplyRepoImpl) DeleteConnection(ctx context.Context, id uint64) error {
-	n, err := data.Client(ctx, r.data).SupplyMapping.Query().
-		Where(supplymapping.ConnectionID(id)).
-		Count(ctx)
-	if err != nil {
-		return err
-	}
-	if n > 0 {
-		return ErrHasMappings
-	}
-	err = data.Client(ctx, r.data).SupplyConnection.DeleteOneID(id).Exec(ctx)
-	if err != nil && ent.IsNotFound(err) {
-		return ErrNotFound
-	}
-	return err
+	return data.Tx(ctx, r.data, func(ctx context.Context) error {
+		c := data.Client(ctx, r.data)
+		if err := c.SupplyConnection.UpdateOneID(id).AddRetryMax(0).Exec(ctx); err != nil {
+			if ent.IsNotFound(err) {
+				return ErrNotFound
+			}
+			return err
+		}
+		if running, err := r.HasRunningTask(ctx, id); err != nil {
+			return err
+		} else if running {
+			return fmt.Errorf("货源仍有未完成任务，请先停止任务后再删除")
+		}
+		n, err := c.SupplyMapping.Query().Where(supplymapping.ConnectionID(id)).Count(ctx)
+		if err != nil {
+			return err
+		}
+		if n > 0 {
+			return ErrHasMappings
+		}
+		return c.SupplyConnection.DeleteOneID(id).Exec(ctx)
+	})
 }
 
 // GetConnection 连接详情（含凭据密文列，调用方注意脱敏）。

@@ -21,9 +21,10 @@ import (
 
 // httpError 上游非 2xx 的结构化错误。
 type httpError struct {
-	Status  int
-	Code    string // 上游 error_code（如 product_unavailable）
-	Message string
+	RetryAfter time.Duration
+	Status     int
+	Code       string // 上游 error_code（如 product_unavailable）
+	Message    string
 }
 
 func (e *httpError) Error() string {
@@ -163,7 +164,7 @@ func (t *transport) tryOnce(ctx context.Context, method, full string, headers ma
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		code, msg := parseErrorPayload(respBody)
-		return nil, &httpError{Status: resp.StatusCode, Code: code, Message: msg}
+		return nil, &httpError{Status: resp.StatusCode, Code: code, Message: msg, RetryAfter: parseRetryAfter(resp.Header.Get("Retry-After"))}
 	}
 	// 2xx 但响应体非 JSON：疑似 WAF/Cloudflare/登录页拦截（三协议响应均为 JSON；
 	// 空体放行——zcard ping 等端点允许无体）。归一化为 429 口径参与重试与限流判定。

@@ -4889,6 +4889,62 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
+    /api/v1/admin/supply/sync-tasks/{id}/items:
+        get:
+            tags:
+                - AdminSupplyService
+            operationId: AdminSupplyService_ListImportItems
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: problemsOnly
+                  in: query
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ListImportItemsReply'
+    /api/v1/admin/supply/sync-tasks/{id}/retry:
+        post:
+            tags:
+                - AdminSupplyService
+            operationId: AdminSupplyService_RetryImportTask
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.RetryImportTaskRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
     /api/v1/admin/tags:
         get:
             tags:
@@ -9070,6 +9126,8 @@ components:
         zcard.api.admin.v1.ImportProductsReply:
             type: object
             properties:
+                task:
+                    $ref: '#/components/schemas/zcard.api.admin.v1.SupplySyncTask'
                 imported:
                     type: integer
                     format: int32
@@ -9114,6 +9172,8 @@ components:
                     type: object
                     additionalProperties:
                         type: string
+                requestKey:
+                    type: string
                 categoryDrafts:
                     type: array
                     items:
@@ -9319,6 +9379,15 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.HealthItem'
+        zcard.api.admin.v1.ListImportItemsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.SupplyImportItem'
+                total:
+                    type: string
         zcard.api.admin.v1.ListImportsReply:
             type: object
             properties:
@@ -10895,6 +10964,15 @@ components:
                     type: string
                 newPassword:
                     type: string
+        zcard.api.admin.v1.RetryImportTaskRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                scope:
+                    type: string
+                confirmConfig:
+                    type: boolean
         zcard.api.admin.v1.RetryProcurementRequest:
             required:
                 - id
@@ -11350,6 +11428,30 @@ components:
                     type: string
                 rateLimitUntil:
                     type: string
+        zcard.api.admin.v1.SupplyImportItem:
+            type: object
+            properties:
+                code:
+                    type: string
+                name:
+                    type: string
+                state:
+                    type: string
+                stage:
+                    type: string
+                saved:
+                    type: boolean
+                created:
+                    type: boolean
+                attempts:
+                    type: integer
+                    format: int32
+                nextRetryAt:
+                    type: string
+                errorCode:
+                    type: string
+                errorSummary:
+                    type: string
         zcard.api.admin.v1.SupplyMapping:
             type: object
             properties:
@@ -11425,6 +11527,18 @@ components:
                 cancelRequestedAt:
                     type: string
                 finishedAt:
+                    type: string
+                failedCount:
+                    type: string
+                pendingCount:
+                    type: string
+                retryingCount:
+                    type: string
+                stockPendingCount:
+                    type: string
+                stockFailedCount:
+                    type: string
+                nextRetryAt:
                     type: string
         zcard.api.admin.v1.Tag:
             type: object

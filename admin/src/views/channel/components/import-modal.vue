@@ -29,13 +29,14 @@ interface PreviewCategory {
 }
 
 const props = defineProps<{ show: boolean; connection: any }>();
-const emit = defineEmits<{ (e: "update:show", v: boolean): void; (e: "imported"): void }>();
+const emit = defineEmits<{ (e: "update:show", v: boolean): void; (e: "imported"): void; (e: "task-created", id: number): void }>();
 
 const loading = ref(false);
 const previewError = ref("");
 let previewRequest = 0;
 const quoteRequests = new Set<AbortController>();
 const importing = ref(false);
+let submission = { signature: "", key: "" };
 const categories = ref<PreviewCategory[]>([]);
 const localCategories = ref<any[]>([]);
 const checked = ref<string[]>([]);
@@ -278,20 +279,17 @@ async function submit() {
     };
     if (pricing.mode === "percent") payload.markup_percent = pricing.markupPercent;
     if (pricing.mode === "fixed") payload.markup_amount_cents = yuanToFen(pricing.markupAmountYuan);
+    const signature = JSON.stringify(payload);
+    if (signature !== submission.signature) submission = { signature, key: crypto.randomUUID() };
+    payload.request_key = submission.key;
     const { data, error } = await importSupplyProducts(props.connection.id, payload as any);
     if (!error && data) {
-      const d = data as any;
-      emit("imported");
-      if (Number(d.failed) > 0 || d.error_context) {
-        resultMessage.value = `分类映射已保存。新建商品 ${d.imported ?? 0}，更新 ${d.updated ?? 0}，失败 ${d.failed ?? 0}。${d.error_context || ""}${Number(d.failed) > 0 ? " 可重试导入失败的商品。" : " 请在货源操作中选择‘仅重试失败库存’。"}`;
-        for (const key of Object.keys(drafts)) delete drafts[key];
-        for (const [key, value] of Object.entries(d.category_map || {})) categoryMapDraft[key] = Number(value);
-        if (d.failed_codes?.length) checked.value = d.failed_codes;
-        await loadLocalCategories();
-        window.$message?.warning(Number(d.failed) > 0 ? "部分商品导入失败，请查看结果并重试" : "商品已导入，部分库存未确认，请查看结果");
-      } else {
-        window.$message?.success(`导入完成：新建 ${d.imported ?? 0}，更新 ${d.updated ?? 0}`);
+      const task = (data as any).task;
+      if (task?.id) {
+        emit("imported");
+        emit("task-created", Number(task.id));
         emit("update:show", false);
+        window.$message?.success("导入任务已创建，可以关闭页面，后台会继续处理");
       }
     }
   } finally {
@@ -317,7 +315,7 @@ async function submit() {
           <NButton size="small" @click="toggleAllExpand">{{ allExpanded ? '全部收起' : '全部展开' }}</NButton>
           <NButton size="small" :disabled="!expandedProducts.length || loading" @click="refreshCosts">刷新成本</NButton>
         </div>
-        <div class="text-12px text-gray-400">展开分类后查询账号成本，已按渠道汇率换算，不含加价；多规格显示最低成本。正式导入会重新核价。勾选整类包含全部商品，搜索不会取消已选商品。</div>
+        <div class="text-12px text-gray-400">展开分类后查询账号成本，已按渠道汇率换算，不含加价；多规格显示最低成本。正式导入会在后台逐件核价；锁定或被人工修改的商品会跳过。勾选整类包含全部商品，搜索不会取消已选商品。</div>
         <div class="category-list">
           <div v-for="cat in visibleCategories" :key="cat.code" class="category-item">
             <div class="category-row">
@@ -372,7 +370,7 @@ async function submit() {
             <template v-if="pricing.mode === 'channel'">
               跟随渠道：账号报价 × {{ connection.exchange_rate || 1 }} ×（1 + {{ connection.price_markup_percent || 0 }}%）+ {{ formatMoney(connection.price_markup_amount || 0) }}，再按渠道取整规则计算；商品和规格使用同一规则。
             </template>
-            <template v-else>当前为独立导入策略，不叠加渠道加价。规则会保存到所选商品，后续同步继续使用；待定价商品保持现价和下架状态。重新导入会替换所选商品的定价规则。</template>
+            <template v-else>当前为独立导入策略，不叠加渠道加价。规则会保存到所选商品，后续同步继续使用；待定价商品保持现价和下架状态。重新导入会更新未受人工改价保护的商品规则。</template>
           </NAlert>
           <NForm label-placement="left" size="small" class="pricing-grid">
             <NFormItem label="定价策略" :show-feedback="false">
@@ -407,7 +405,7 @@ async function submit() {
         <span class="text-12px">已选 {{ checked.length }} 件 · 涉及 {{ selectedCategories.length }} 类 · 已指定 {{ mappedCount }} 类 · 待新建 {{ draftCount }} 类</span>
         <NSpace>
           <NButton size="small" :disabled="importing" @click="emit('update:show', false)">取消</NButton>
-          <NButton size="small" type="primary" :loading="importing" :disabled="loading || !!previewError || !checked.length" @click="submit">{{ resultMessage ? '重试失败商品' : '保存并导入' }}</NButton>
+          <NButton size="small" type="primary" :loading="importing" :disabled="loading || !!previewError || !checked.length" @click="submit">开始导入</NButton>
         </NSpace>
       </NSpace>
     </template>

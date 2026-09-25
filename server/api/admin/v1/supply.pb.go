@@ -1300,6 +1300,12 @@ type SupplySyncTask struct {
 	Page              int32                  `protobuf:"varint,20,opt,name=page,proto3" json:"page,omitempty"`
 	CancelRequestedAt int64                  `protobuf:"varint,21,opt,name=cancel_requested_at,json=cancelRequestedAt,proto3" json:"cancel_requested_at,omitempty"`
 	FinishedAt        int64                  `protobuf:"varint,22,opt,name=finished_at,json=finishedAt,proto3" json:"finished_at,omitempty"`
+	FailedCount       int64                  `protobuf:"varint,23,opt,name=failed_count,json=failedCount,proto3" json:"failed_count,omitempty"`
+	PendingCount      int64                  `protobuf:"varint,24,opt,name=pending_count,json=pendingCount,proto3" json:"pending_count,omitempty"`
+	RetryingCount     int64                  `protobuf:"varint,25,opt,name=retrying_count,json=retryingCount,proto3" json:"retrying_count,omitempty"`
+	StockPendingCount int64                  `protobuf:"varint,26,opt,name=stock_pending_count,json=stockPendingCount,proto3" json:"stock_pending_count,omitempty"` // 已保存商品的子集
+	StockFailedCount  int64                  `protobuf:"varint,27,opt,name=stock_failed_count,json=stockFailedCount,proto3" json:"stock_failed_count,omitempty"`
+	NextRetryAt       int64                  `protobuf:"varint,28,opt,name=next_retry_at,json=nextRetryAt,proto3" json:"next_retry_at,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1484,6 +1490,48 @@ func (x *SupplySyncTask) GetCancelRequestedAt() int64 {
 func (x *SupplySyncTask) GetFinishedAt() int64 {
 	if x != nil {
 		return x.FinishedAt
+	}
+	return 0
+}
+
+func (x *SupplySyncTask) GetFailedCount() int64 {
+	if x != nil {
+		return x.FailedCount
+	}
+	return 0
+}
+
+func (x *SupplySyncTask) GetPendingCount() int64 {
+	if x != nil {
+		return x.PendingCount
+	}
+	return 0
+}
+
+func (x *SupplySyncTask) GetRetryingCount() int64 {
+	if x != nil {
+		return x.RetryingCount
+	}
+	return 0
+}
+
+func (x *SupplySyncTask) GetStockPendingCount() int64 {
+	if x != nil {
+		return x.StockPendingCount
+	}
+	return 0
+}
+
+func (x *SupplySyncTask) GetStockFailedCount() int64 {
+	if x != nil {
+		return x.StockFailedCount
+	}
+	return 0
+}
+
+func (x *SupplySyncTask) GetNextRetryAt() int64 {
+	if x != nil {
+		return x.NextRetryAt
 	}
 	return 0
 }
@@ -1861,6 +1909,7 @@ type ImportProductsRequest struct {
 	MarkupAmountCents int64                  `protobuf:"varint,5,opt,name=markup_amount_cents,json=markupAmountCents,proto3" json:"markup_amount_cents,omitempty"`                                                       // fixed 模式加价金额（分）
 	SaveDefault       bool                   `protobuf:"varint,6,opt,name=save_default,json=saveDefault,proto3" json:"save_default,omitempty"`                                                                           // 把本次策略存为连接默认（settings.import_pricing）
 	CategoryMap       map[string]uint64      `protobuf:"bytes,7,rep,name=category_map,json=categoryMap,proto3" json:"category_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 缺省沿用；0 显式清除；正数指定本地分类
+	RequestKey        string                 `protobuf:"bytes,9,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"`                                                                               // 同一次提交/网络重试使用同一键
 	CategoryDrafts    []*ImportCategoryDraft `protobuf:"bytes,8,rep,name=category_drafts,json=categoryDrafts,proto3" json:"category_drafts,omitempty"`                                                                   // 仅在提交时创建，限所选商品涉及分类
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
@@ -1945,6 +1994,13 @@ func (x *ImportProductsRequest) GetCategoryMap() map[string]uint64 {
 	return nil
 }
 
+func (x *ImportProductsRequest) GetRequestKey() string {
+	if x != nil {
+		return x.RequestKey
+	}
+	return ""
+}
+
 func (x *ImportProductsRequest) GetCategoryDrafts() []*ImportCategoryDraft {
 	if x != nil {
 		return x.CategoryDrafts
@@ -2014,6 +2070,7 @@ func (x *ImportCategoryDraft) GetParentId() uint64 {
 
 type ImportProductsReply struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Task          *SupplySyncTask        `protobuf:"bytes,7,opt,name=task,proto3" json:"task,omitempty"`          // 已受理后台任务，请查询任务接口获取结果
 	Imported      int32                  `protobuf:"varint,1,opt,name=imported,proto3" json:"imported,omitempty"` // 新建
 	Updated       int32                  `protobuf:"varint,2,opt,name=updated,proto3" json:"updated,omitempty"`   // 更新（已导入重导）
 	Failed        int32                  `protobuf:"varint,3,opt,name=failed,proto3" json:"failed,omitempty"`
@@ -2052,6 +2109,13 @@ func (x *ImportProductsReply) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ImportProductsReply.ProtoReflect.Descriptor instead.
 func (*ImportProductsReply) Descriptor() ([]byte, []int) {
 	return file_admin_v1_supply_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *ImportProductsReply) GetTask() *SupplySyncTask {
+	if x != nil {
+		return x.Task
+	}
+	return nil
 }
 
 func (x *ImportProductsReply) GetImported() int32 {
@@ -2516,6 +2580,302 @@ func (x *ListHealthReply) GetItems() []*HealthItem {
 	return nil
 }
 
+type ListImportItemsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	ProblemsOnly  bool                   `protobuf:"varint,4,opt,name=problems_only,json=problemsOnly,proto3" json:"problems_only,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListImportItemsRequest) Reset() {
+	*x = ListImportItemsRequest{}
+	mi := &file_admin_v1_supply_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImportItemsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImportItemsRequest) ProtoMessage() {}
+
+func (x *ListImportItemsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImportItemsRequest.ProtoReflect.Descriptor instead.
+func (*ListImportItemsRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ListImportItemsRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *ListImportItemsRequest) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListImportItemsRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListImportItemsRequest) GetProblemsOnly() bool {
+	if x != nil {
+		return x.ProblemsOnly
+	}
+	return false
+}
+
+type SupplyImportItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	State         string                 `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
+	Stage         string                 `protobuf:"bytes,4,opt,name=stage,proto3" json:"stage,omitempty"`
+	Saved         bool                   `protobuf:"varint,5,opt,name=saved,proto3" json:"saved,omitempty"`
+	Created       bool                   `protobuf:"varint,6,opt,name=created,proto3" json:"created,omitempty"`
+	Attempts      int32                  `protobuf:"varint,7,opt,name=attempts,proto3" json:"attempts,omitempty"`
+	NextRetryAt   int64                  `protobuf:"varint,8,opt,name=next_retry_at,json=nextRetryAt,proto3" json:"next_retry_at,omitempty"`
+	ErrorCode     string                 `protobuf:"bytes,9,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	ErrorSummary  string                 `protobuf:"bytes,10,opt,name=error_summary,json=errorSummary,proto3" json:"error_summary,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SupplyImportItem) Reset() {
+	*x = SupplyImportItem{}
+	mi := &file_admin_v1_supply_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SupplyImportItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SupplyImportItem) ProtoMessage() {}
+
+func (x *SupplyImportItem) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SupplyImportItem.ProtoReflect.Descriptor instead.
+func (*SupplyImportItem) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *SupplyImportItem) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *SupplyImportItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SupplyImportItem) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *SupplyImportItem) GetStage() string {
+	if x != nil {
+		return x.Stage
+	}
+	return ""
+}
+
+func (x *SupplyImportItem) GetSaved() bool {
+	if x != nil {
+		return x.Saved
+	}
+	return false
+}
+
+func (x *SupplyImportItem) GetCreated() bool {
+	if x != nil {
+		return x.Created
+	}
+	return false
+}
+
+func (x *SupplyImportItem) GetAttempts() int32 {
+	if x != nil {
+		return x.Attempts
+	}
+	return 0
+}
+
+func (x *SupplyImportItem) GetNextRetryAt() int64 {
+	if x != nil {
+		return x.NextRetryAt
+	}
+	return 0
+}
+
+func (x *SupplyImportItem) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+func (x *SupplyImportItem) GetErrorSummary() string {
+	if x != nil {
+		return x.ErrorSummary
+	}
+	return ""
+}
+
+type ListImportItemsReply struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*SupplyImportItem    `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListImportItemsReply) Reset() {
+	*x = ListImportItemsReply{}
+	mi := &file_admin_v1_supply_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImportItemsReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImportItemsReply) ProtoMessage() {}
+
+func (x *ListImportItemsReply) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImportItemsReply.ProtoReflect.Descriptor instead.
+func (*ListImportItemsReply) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ListImportItemsReply) GetItems() []*SupplyImportItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListImportItemsReply) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type RetryImportTaskRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Scope         string                 `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`                                       // failed | stock | remaining
+	ConfirmConfig bool                   `protobuf:"varint,3,opt,name=confirm_config,json=confirmConfig,proto3" json:"confirm_config,omitempty"` // 已确认使用当前货源配置继续未完成部分
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryImportTaskRequest) Reset() {
+	*x = RetryImportTaskRequest{}
+	mi := &file_admin_v1_supply_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryImportTaskRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryImportTaskRequest) ProtoMessage() {}
+
+func (x *RetryImportTaskRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryImportTaskRequest.ProtoReflect.Descriptor instead.
+func (*RetryImportTaskRequest) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *RetryImportTaskRequest) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *RetryImportTaskRequest) GetScope() string {
+	if x != nil {
+		return x.Scope
+	}
+	return ""
+}
+
+func (x *RetryImportTaskRequest) GetConfirmConfig() bool {
+	if x != nil {
+		return x.ConfirmConfig
+	}
+	return false
+}
+
 var File_admin_v1_supply_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supply_proto_rawDesc = "" +
@@ -2652,7 +3012,7 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"localSkuId\x12)\n" +
 	"\x10pricing_override\x18\b \x01(\tR\x0fpricingOverride\"+\n" +
 	"\x14DeleteMappingRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xa2\x05\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\x93\a\n" +
 	"\x0eSupplySyncTask\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12#\n" +
 	"\rconnection_id\x18\x02 \x01(\x04R\fconnectionId\x12\x12\n" +
@@ -2679,7 +3039,13 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x04page\x18\x14 \x01(\x05R\x04page\x12.\n" +
 	"\x13cancel_requested_at\x18\x15 \x01(\x03R\x11cancelRequestedAt\x12\x1f\n" +
 	"\vfinished_at\x18\x16 \x01(\x03R\n" +
-	"finishedAt\"\x90\x01\n" +
+	"finishedAt\x12!\n" +
+	"\ffailed_count\x18\x17 \x01(\x03R\vfailedCount\x12#\n" +
+	"\rpending_count\x18\x18 \x01(\x03R\fpendingCount\x12%\n" +
+	"\x0eretrying_count\x18\x19 \x01(\x03R\rretryingCount\x12.\n" +
+	"\x13stock_pending_count\x18\x1a \x01(\x03R\x11stockPendingCount\x12,\n" +
+	"\x12stock_failed_count\x18\x1b \x01(\x03R\x10stockFailedCount\x12\"\n" +
+	"\rnext_retry_at\x18\x1c \x01(\x03R\vnextRetryAt\"\x90\x01\n" +
 	"\x15CreateSyncTaskRequest\x12(\n" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x12\n" +
 	"\x04mode\x18\x02 \x01(\tR\x04mode\x12\x14\n" +
@@ -2712,7 +3078,7 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2#.zcard.api.admin.v1.PreviewCategoryR\n" +
 	"categories\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xea\x03\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\x8b\x04\n" +
 	"\x15ImportProductsRequest\x12(\n" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x19\n" +
 	"\x05codes\x18\x02 \x03(\tB\x03\xe0A\x02R\x05codes\x12!\n" +
@@ -2720,7 +3086,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0emarkup_percent\x18\x04 \x01(\x01R\rmarkupPercent\x12.\n" +
 	"\x13markup_amount_cents\x18\x05 \x01(\x03R\x11markupAmountCents\x12!\n" +
 	"\fsave_default\x18\x06 \x01(\bR\vsaveDefault\x12]\n" +
-	"\fcategory_map\x18\a \x03(\v2:.zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntryR\vcategoryMap\x12P\n" +
+	"\fcategory_map\x18\a \x03(\v2:.zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntryR\vcategoryMap\x12\x1f\n" +
+	"\vrequest_key\x18\t \x01(\tR\n" +
+	"requestKey\x12P\n" +
 	"\x0fcategory_drafts\x18\b \x03(\v2'.zcard.api.admin.v1.ImportCategoryDraftR\x0ecategoryDrafts\x1a>\n" +
 	"\x10CategoryMapEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -2728,8 +3096,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x13ImportCategoryDraft\x12#\n" +
 	"\rupstream_code\x18\x01 \x01(\tR\fupstreamCode\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
-	"\tparent_id\x18\x03 \x01(\x04R\bparentId\"\xc8\x02\n" +
-	"\x13ImportProductsReply\x12\x1a\n" +
+	"\tparent_id\x18\x03 \x01(\x04R\bparentId\"\x80\x03\n" +
+	"\x13ImportProductsReply\x126\n" +
+	"\x04task\x18\a \x01(\v2\".zcard.api.admin.v1.SupplySyncTaskR\x04task\x12\x1a\n" +
 	"\bimported\x18\x01 \x01(\x05R\bimported\x12\x18\n" +
 	"\aupdated\x18\x02 \x01(\x05R\aupdated\x12\x16\n" +
 	"\x06failed\x18\x03 \x01(\x05R\x06failed\x12#\n" +
@@ -2771,7 +3140,32 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	" \x01(\x03R\x0fpingSuccessRate\x12$\n" +
 	"\x0eavg_latency_ms\x18\v \x01(\x03R\favgLatencyMs\"G\n" +
 	"\x0fListHealthReply\x124\n" +
-	"\x05items\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.HealthItemR\x05items2\xa3\x11\n" +
+	"\x05items\x18\x01 \x03(\v2\x1e.zcard.api.admin.v1.HealthItemR\x05items\"~\n" +
+	"\x16ListImportItemsRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12#\n" +
+	"\rproblems_only\x18\x04 \x01(\bR\fproblemsOnly\"\x9a\x02\n" +
+	"\x10SupplyImportItem\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05state\x18\x03 \x01(\tR\x05state\x12\x14\n" +
+	"\x05stage\x18\x04 \x01(\tR\x05stage\x12\x14\n" +
+	"\x05saved\x18\x05 \x01(\bR\x05saved\x12\x18\n" +
+	"\acreated\x18\x06 \x01(\bR\acreated\x12\x1a\n" +
+	"\battempts\x18\a \x01(\x05R\battempts\x12\"\n" +
+	"\rnext_retry_at\x18\b \x01(\x03R\vnextRetryAt\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\t \x01(\tR\terrorCode\x12#\n" +
+	"\rerror_summary\x18\n" +
+	" \x01(\tR\ferrorSummary\"h\n" +
+	"\x14ListImportItemsReply\x12:\n" +
+	"\x05items\x18\x01 \x03(\v2$.zcard.api.admin.v1.SupplyImportItemR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"e\n" +
+	"\x16RetryImportTaskRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x14\n" +
+	"\x05scope\x18\x02 \x01(\tR\x05scope\x12%\n" +
+	"\x0econfirm_config\x18\x03 \x01(\bR\rconfirmConfig2\xdc\x13\n" +
 	"\x12AdminSupplyService\x12\x92\x01\n" +
 	"\x10CreateConnection\x12+.zcard.api.admin.v1.CreateConnectionRequest\x1a$.zcard.api.admin.v1.SupplyConnection\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/admin/supply/connections\x12\x97\x01\n" +
 	"\x10UpdateConnection\x12+.zcard.api.admin.v1.UpdateConnectionRequest\x1a$.zcard.api.admin.v1.SupplyConnection\"0\x82\xd3\xe4\x93\x02*:\x01*\x1a%/api/v1/admin/supply/connections/{id}\x12\x86\x01\n" +
@@ -2784,7 +3178,9 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0eCreateSyncTask\x12).zcard.api.admin.v1.CreateSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"*\x82\xd3\xe4\x93\x02$:\x01*\"\x1f/api/v1/admin/supply/sync-tasks\x12\x8a\x01\n" +
 	"\rListSyncTasks\x12(.zcard.api.admin.v1.ListSyncTasksRequest\x1a&.zcard.api.admin.v1.ListSyncTasksReply\"'\x82\xd3\xe4\x93\x02!\x12\x1f/api/v1/admin/supply/sync-tasks\x12\x87\x01\n" +
 	"\vGetSyncTask\x12&.zcard.api.admin.v1.GetSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\",\x82\xd3\xe4\x93\x02&\x12$/api/v1/admin/supply/sync-tasks/{id}\x12\x97\x01\n" +
-	"\x0eCancelSyncTask\x12).zcard.api.admin.v1.CancelSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/supply/sync-tasks/{id}/cancel\x12\xa9\x01\n" +
+	"\x0eCancelSyncTask\x12).zcard.api.admin.v1.CancelSyncTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"6\x82\xd3\xe4\x93\x020:\x01*\"+/api/v1/admin/supply/sync-tasks/{id}/cancel\x12\x9b\x01\n" +
+	"\x0fListImportItems\x12*.zcard.api.admin.v1.ListImportItemsRequest\x1a(.zcard.api.admin.v1.ListImportItemsReply\"2\x82\xd3\xe4\x93\x02,\x12*/api/v1/admin/supply/sync-tasks/{id}/items\x12\x98\x01\n" +
+	"\x0fRetryImportTask\x12*.zcard.api.admin.v1.RetryImportTaskRequest\x1a\".zcard.api.admin.v1.SupplySyncTask\"5\x82\xd3\xe4\x93\x02/:\x01*\"*/api/v1/admin/supply/sync-tasks/{id}/retry\x12\xa9\x01\n" +
 	"\x0fPreviewProducts\x12*.zcard.api.admin.v1.PreviewProductsRequest\x1a(.zcard.api.admin.v1.PreviewProductsReply\"@\x82\xd3\xe4\x93\x02:\x128/api/v1/admin/supply/connections/{connection_id}/preview\x12\xa8\x01\n" +
 	"\x0eImportProducts\x12).zcard.api.admin.v1.ImportProductsRequest\x1a'.zcard.api.admin.v1.ImportProductsReply\"B\x82\xd3\xe4\x93\x02<:\x01*\"7/api/v1/admin/supply/connections/{connection_id}/import\x12}\n" +
 	"\n" +
@@ -2802,7 +3198,7 @@ func file_admin_v1_supply_proto_rawDescGZIP() []byte {
 	return file_admin_v1_supply_proto_rawDescData
 }
 
-var file_admin_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_admin_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
 var file_admin_v1_supply_proto_goTypes = []any{
 	(*SupplyConnection)(nil),        // 0: zcard.api.admin.v1.SupplyConnection
 	(*CreateConnectionRequest)(nil), // 1: zcard.api.admin.v1.CreateConnectionRequest
@@ -2833,55 +3229,65 @@ var file_admin_v1_supply_proto_goTypes = []any{
 	(*ListHealthRequest)(nil),       // 26: zcard.api.admin.v1.ListHealthRequest
 	(*HealthItem)(nil),              // 27: zcard.api.admin.v1.HealthItem
 	(*ListHealthReply)(nil),         // 28: zcard.api.admin.v1.ListHealthReply
-	nil,                             // 29: zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
-	nil,                             // 30: zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
-	(*emptypb.Empty)(nil),           // 31: google.protobuf.Empty
+	(*ListImportItemsRequest)(nil),  // 29: zcard.api.admin.v1.ListImportItemsRequest
+	(*SupplyImportItem)(nil),        // 30: zcard.api.admin.v1.SupplyImportItem
+	(*ListImportItemsReply)(nil),    // 31: zcard.api.admin.v1.ListImportItemsReply
+	(*RetryImportTaskRequest)(nil),  // 32: zcard.api.admin.v1.RetryImportTaskRequest
+	nil,                             // 33: zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
+	nil,                             // 34: zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
+	(*emptypb.Empty)(nil),           // 35: google.protobuf.Empty
 }
 var file_admin_v1_supply_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListConnectionsReply.connections:type_name -> zcard.api.admin.v1.SupplyConnection
 	8,  // 1: zcard.api.admin.v1.ListMappingsReply.mappings:type_name -> zcard.api.admin.v1.SupplyMapping
 	16, // 2: zcard.api.admin.v1.PreviewCategory.products:type_name -> zcard.api.admin.v1.PreviewProduct
 	17, // 3: zcard.api.admin.v1.PreviewProductsReply.categories:type_name -> zcard.api.admin.v1.PreviewCategory
-	29, // 4: zcard.api.admin.v1.ImportProductsRequest.category_map:type_name -> zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
+	33, // 4: zcard.api.admin.v1.ImportProductsRequest.category_map:type_name -> zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
 	20, // 5: zcard.api.admin.v1.ImportProductsRequest.category_drafts:type_name -> zcard.api.admin.v1.ImportCategoryDraft
-	30, // 6: zcard.api.admin.v1.ImportProductsReply.category_map:type_name -> zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
-	13, // 7: zcard.api.admin.v1.ListSyncTasksReply.tasks:type_name -> zcard.api.admin.v1.SupplySyncTask
-	27, // 8: zcard.api.admin.v1.ListHealthReply.items:type_name -> zcard.api.admin.v1.HealthItem
-	1,  // 9: zcard.api.admin.v1.AdminSupplyService.CreateConnection:input_type -> zcard.api.admin.v1.CreateConnectionRequest
-	2,  // 10: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:input_type -> zcard.api.admin.v1.UpdateConnectionRequest
-	3,  // 11: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:input_type -> zcard.api.admin.v1.DeleteConnectionRequest
-	4,  // 12: zcard.api.admin.v1.AdminSupplyService.ListConnections:input_type -> zcard.api.admin.v1.ListConnectionsRequest
-	6,  // 13: zcard.api.admin.v1.AdminSupplyService.PingConnection:input_type -> zcard.api.admin.v1.PingConnectionRequest
-	9,  // 14: zcard.api.admin.v1.AdminSupplyService.ListMappings:input_type -> zcard.api.admin.v1.ListMappingsRequest
-	11, // 15: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:input_type -> zcard.api.admin.v1.UpsertMappingRequest
-	12, // 16: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:input_type -> zcard.api.admin.v1.DeleteMappingRequest
-	14, // 17: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:input_type -> zcard.api.admin.v1.CreateSyncTaskRequest
-	22, // 18: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:input_type -> zcard.api.admin.v1.ListSyncTasksRequest
-	24, // 19: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:input_type -> zcard.api.admin.v1.GetSyncTaskRequest
-	25, // 20: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:input_type -> zcard.api.admin.v1.CancelSyncTaskRequest
-	15, // 21: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:input_type -> zcard.api.admin.v1.PreviewProductsRequest
-	19, // 22: zcard.api.admin.v1.AdminSupplyService.ImportProducts:input_type -> zcard.api.admin.v1.ImportProductsRequest
-	26, // 23: zcard.api.admin.v1.AdminSupplyService.ListHealth:input_type -> zcard.api.admin.v1.ListHealthRequest
-	0,  // 24: zcard.api.admin.v1.AdminSupplyService.CreateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
-	0,  // 25: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
-	31, // 26: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:output_type -> google.protobuf.Empty
-	5,  // 27: zcard.api.admin.v1.AdminSupplyService.ListConnections:output_type -> zcard.api.admin.v1.ListConnectionsReply
-	7,  // 28: zcard.api.admin.v1.AdminSupplyService.PingConnection:output_type -> zcard.api.admin.v1.PingConnectionReply
-	10, // 29: zcard.api.admin.v1.AdminSupplyService.ListMappings:output_type -> zcard.api.admin.v1.ListMappingsReply
-	8,  // 30: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:output_type -> zcard.api.admin.v1.SupplyMapping
-	31, // 31: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:output_type -> google.protobuf.Empty
-	13, // 32: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	23, // 33: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:output_type -> zcard.api.admin.v1.ListSyncTasksReply
-	13, // 34: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	13, // 35: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	18, // 36: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:output_type -> zcard.api.admin.v1.PreviewProductsReply
-	21, // 37: zcard.api.admin.v1.AdminSupplyService.ImportProducts:output_type -> zcard.api.admin.v1.ImportProductsReply
-	28, // 38: zcard.api.admin.v1.AdminSupplyService.ListHealth:output_type -> zcard.api.admin.v1.ListHealthReply
-	24, // [24:39] is the sub-list for method output_type
-	9,  // [9:24] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	13, // 6: zcard.api.admin.v1.ImportProductsReply.task:type_name -> zcard.api.admin.v1.SupplySyncTask
+	34, // 7: zcard.api.admin.v1.ImportProductsReply.category_map:type_name -> zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
+	13, // 8: zcard.api.admin.v1.ListSyncTasksReply.tasks:type_name -> zcard.api.admin.v1.SupplySyncTask
+	27, // 9: zcard.api.admin.v1.ListHealthReply.items:type_name -> zcard.api.admin.v1.HealthItem
+	30, // 10: zcard.api.admin.v1.ListImportItemsReply.items:type_name -> zcard.api.admin.v1.SupplyImportItem
+	1,  // 11: zcard.api.admin.v1.AdminSupplyService.CreateConnection:input_type -> zcard.api.admin.v1.CreateConnectionRequest
+	2,  // 12: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:input_type -> zcard.api.admin.v1.UpdateConnectionRequest
+	3,  // 13: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:input_type -> zcard.api.admin.v1.DeleteConnectionRequest
+	4,  // 14: zcard.api.admin.v1.AdminSupplyService.ListConnections:input_type -> zcard.api.admin.v1.ListConnectionsRequest
+	6,  // 15: zcard.api.admin.v1.AdminSupplyService.PingConnection:input_type -> zcard.api.admin.v1.PingConnectionRequest
+	9,  // 16: zcard.api.admin.v1.AdminSupplyService.ListMappings:input_type -> zcard.api.admin.v1.ListMappingsRequest
+	11, // 17: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:input_type -> zcard.api.admin.v1.UpsertMappingRequest
+	12, // 18: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:input_type -> zcard.api.admin.v1.DeleteMappingRequest
+	14, // 19: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:input_type -> zcard.api.admin.v1.CreateSyncTaskRequest
+	22, // 20: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:input_type -> zcard.api.admin.v1.ListSyncTasksRequest
+	24, // 21: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:input_type -> zcard.api.admin.v1.GetSyncTaskRequest
+	25, // 22: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:input_type -> zcard.api.admin.v1.CancelSyncTaskRequest
+	29, // 23: zcard.api.admin.v1.AdminSupplyService.ListImportItems:input_type -> zcard.api.admin.v1.ListImportItemsRequest
+	32, // 24: zcard.api.admin.v1.AdminSupplyService.RetryImportTask:input_type -> zcard.api.admin.v1.RetryImportTaskRequest
+	15, // 25: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:input_type -> zcard.api.admin.v1.PreviewProductsRequest
+	19, // 26: zcard.api.admin.v1.AdminSupplyService.ImportProducts:input_type -> zcard.api.admin.v1.ImportProductsRequest
+	26, // 27: zcard.api.admin.v1.AdminSupplyService.ListHealth:input_type -> zcard.api.admin.v1.ListHealthRequest
+	0,  // 28: zcard.api.admin.v1.AdminSupplyService.CreateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
+	0,  // 29: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
+	35, // 30: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:output_type -> google.protobuf.Empty
+	5,  // 31: zcard.api.admin.v1.AdminSupplyService.ListConnections:output_type -> zcard.api.admin.v1.ListConnectionsReply
+	7,  // 32: zcard.api.admin.v1.AdminSupplyService.PingConnection:output_type -> zcard.api.admin.v1.PingConnectionReply
+	10, // 33: zcard.api.admin.v1.AdminSupplyService.ListMappings:output_type -> zcard.api.admin.v1.ListMappingsReply
+	8,  // 34: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:output_type -> zcard.api.admin.v1.SupplyMapping
+	35, // 35: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:output_type -> google.protobuf.Empty
+	13, // 36: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	23, // 37: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:output_type -> zcard.api.admin.v1.ListSyncTasksReply
+	13, // 38: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	13, // 39: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	31, // 40: zcard.api.admin.v1.AdminSupplyService.ListImportItems:output_type -> zcard.api.admin.v1.ListImportItemsReply
+	13, // 41: zcard.api.admin.v1.AdminSupplyService.RetryImportTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	18, // 42: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:output_type -> zcard.api.admin.v1.PreviewProductsReply
+	21, // 43: zcard.api.admin.v1.AdminSupplyService.ImportProducts:output_type -> zcard.api.admin.v1.ImportProductsReply
+	28, // 44: zcard.api.admin.v1.AdminSupplyService.ListHealth:output_type -> zcard.api.admin.v1.ListHealthReply
+	28, // [28:45] is the sub-list for method output_type
+	11, // [11:28] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_supply_proto_init() }
@@ -2896,7 +3302,7 @@ func file_admin_v1_supply_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_supply_proto_rawDesc), len(file_admin_v1_supply_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   35,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

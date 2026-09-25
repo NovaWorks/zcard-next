@@ -5,8 +5,8 @@ package supply
 // PreviewProducts 实时经适配器拉目录（分页协议最多 100 页），
 // 按上游分类聚合树并标注 already_imported；60s 进程内缓存
 // （1.x 同款——避免导入弹窗反复打上游）
-// ImportProducts 勾选 codes → 从预览缓存取商品 → 逐个 upsert（复用 syncOne
-// 的价格保护与映射机制）→ 定价策略 + 类目映射 + 存默认
+// ImportProducts 将勾选快照、定价和类目映射持久化为后台任务；实现见
+// data_import_task.go / data_import_worker.go，逐商品保存检查点并自动恢复。
 //
 // 定价模式：channel（跟随渠道）| percent（本次加价%）| fixed（+固定金额）| equal（原价）|
 // pending（待定价：不算价、导入后不上架 status=0，运营补价后再上）。
@@ -15,7 +15,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -217,157 +216,6 @@ func (s *AdminSupplyService) loadPreview(ctx context.Context, connectionID uint6
 	previewCache.Unlock()
 	_ = conn
 	return entry, nil
-}
-
-// ImportProducts 勾选导入。
-func (s *AdminSupplyService) ImportProducts(ctx context.Context, req *adminv1.ImportProductsRequest) (*adminv1.ImportProductsReply, error) {
-	if len(req.GetCodes()) == 0 {
-		return nil, fmt.Errorf("supply: 未勾选任何商品")
-	}
-	conn, err := s.repo.GetConnection(ctx, req.GetConnectionId())
-	if err != nil {
-		return nil, err
-	}
-	// 定价策略（缺省回退连接默认 settings.import_pricing）
-	mode := req.GetPricingMode()
-	markupPercent := req.GetMarkupPercent()
-	markupAmount := req.GetMarkupAmountCents()
-	if mode == "" {
-		mode = PriceModeChannel
-	}
-	if req.GetPricingMode() == "" {
-		if def, ok := conn.Settings["import_pricing"].(map[string]any); ok {
-			if savedMode, _ := def["mode"].(string); savedMode != "" {
-				mode = savedMode
-			}
-			markupPercent, _ = def["markup_percent"].(float64)
-			markupAmount = toInt64(def["markup_amount_cents"])
-		}
-	}
-	switch mode {
-	case PriceModeChannel, PriceModePercent, PriceModeFixed, PriceModeEqual, PriceModePending:
-	default:
-		return nil, fmt.Errorf("无效的导入定价策略")
-	}
-	if err := validatePricing(conn.ExchangeRate, markupPercent, markupAmount, string(conn.PriceRoundingMode)); err != nil {
-		return nil, err
-	}
-	entry, err := s.loadPreview(ctx, req.GetConnectionId())
-	if err != nil {
-		return nil, err
-	}
-	if entry.identity != previewIdentity(conn) {
-		return nil, fmt.Errorf("货源账号已变化，请刷新后重新导入")
-	}
-	// 轻量目录不可直接导入：只为勾选商品补齐规格与拿货价，不修改共享预览缓存。
-	_, a, err := s.adapterForConnection(ctx, conn.ID)
-	if err != nil {
-		return nil, err
-	}
-	byCode := entry.byCode
-	if previewer, ok := a.(adapter.ImportPreviewer); ok {
-		list, err := previewer.ResolveImportProducts(ctx, req.GetCodes())
-		if err != nil {
-			return nil, err
-		}
-		byCode = make(map[string]adapter.Product, len(list.Items))
-		for _, p := range list.Items {
-			byCode[p.ID] = p
-		}
-	}
-	selectedItems := make([]adapter.Product, 0, len(req.Codes))
-	selectedCodes := map[string]bool{}
-	for _, code := range req.Codes {
-		if p, ok := byCode[code]; ok && !selectedCodes[code] {
-			selectedCodes[code] = true
-			if conn.Driver == "acg_faka" {
-				p.Stock = -2
-			}
-			if p.StockCheckedAt.IsZero() {
-				p.StockCheckedAt = entry.at
-			}
-			selectedItems = append(selectedItems, p)
-		}
-	}
-	// Keep large/manual imports responsive; unconfirmed stock can be repaired
-	// by the stock-only background task without importing the catalog again.
-	stockCtx, cancelStock := context.WithTimeout(ctx, 8*time.Second)
-	stockErr := s.sync.backfillStocks(stockCtx, a, loadScheduleSettings(conn), selectedItems, 0)
-	cancelStock()
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
-	}
-	if stockErr != nil && !errors.Is(stockErr, context.DeadlineExceeded) {
-		return nil, stockErr
-	}
-	byCode = make(map[string]adapter.Product, len(selectedItems))
-	for _, p := range selectedItems {
-		byCode[p.ID] = p
-	}
-	categoryMap, err := s.saveImportCategories(ctx, req, byCode, mode, markupPercent, markupAmount)
-	if err != nil {
-		return nil, err
-	}
-
-	reply := &adminv1.ImportProductsReply{CategoryMap: categoryMap}
-	stockFailed := 0
-	// Leave time to commit and return the failed-code list before the HTTP deadline.
-	quoteDeadline := time.Now().Add(20 * time.Second)
-	if deadline, ok := ctx.Deadline(); ok && deadline.Add(-5*time.Second).Before(quoteDeadline) {
-		quoteDeadline = deadline.Add(-5 * time.Second)
-	}
-	quoteCtx, cancelQuotes := context.WithDeadline(ctx, quoteDeadline)
-	defer cancelQuotes()
-	seen := map[string]bool{}
-	for _, code := range req.GetCodes() {
-		if seen[code] {
-			continue
-		}
-		seen[code] = true
-		p, ok := byCode[code]
-		if !ok {
-			reply.Failed++
-			reply.FailedCodes = append(reply.FailedCodes, code)
-			continue
-		}
-		if quoter, ok := a.(adapter.AccountQuoter); ok && p.IsActive {
-			quoted, err := quoter.QuoteProduct(quoteCtx, &p)
-			if err != nil {
-				reply.Failed++
-				reply.FailedCodes = append(reply.FailedCodes, code)
-				if reply.ErrorContext == "" {
-					reply.ErrorContext = "商品 " + code + " 账号报价失败，未改价，请重试"
-				}
-				continue
-			}
-			p = *quoted
-		}
-		created, err := s.sync.ImportOne(ctx, conn, &p, categoryMap, mode, markupPercent, markupAmount)
-		if err != nil {
-			reply.Failed++
-			reply.FailedCodes = append(reply.FailedCodes, code)
-			if reply.ErrorContext == "" {
-				reply.ErrorContext = fmt.Sprintf("code=%s: %v", code, err)
-			}
-			continue
-		}
-		if p.Stock < -1 {
-			stockFailed++
-		}
-		if created {
-			reply.Imported++
-		} else {
-			reply.Updated++
-		}
-	}
-	if stockFailed > 0 {
-		reply.ErrorContext += fmt.Sprintf(" 商品已保存，但 %d 件库存查询失败；请到同步任务仅重试失败库存。", stockFailed)
-	}
-	// 预览缓存失效（导入后 already_imported 标注需刷新）
-	previewCache.Lock()
-	delete(previewCache.m, conn.ID)
-	previewCache.Unlock()
-	return reply, nil
 }
 
 // adapterForConnection 连接 → 适配器装配（预览/导入共用）。

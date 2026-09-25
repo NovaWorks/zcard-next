@@ -72,7 +72,7 @@ func (a *acgFakaAdapter) QuoteProduct(ctx context.Context, p *Product) (*Product
 		return nil, err
 	}
 	if inv.DeliveryWay != 0 || inv.DraftStatus != 0 {
-		return nil, fmt.Errorf("商品不支持自动采购报价")
+		return nil, fmt.Errorf("%w: 商品不支持自动采购报价", ErrNotSupported)
 	}
 	ini, err := parseAcgINI(inv.Config)
 	if err != nil {

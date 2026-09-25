@@ -4,12 +4,14 @@ package ent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/predicate"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplysynctask"
@@ -100,6 +102,64 @@ func (_u *SupplySyncTaskUpdate) SetNillableForceReprice(v *bool) *SupplySyncTask
 	if v != nil {
 		_u.SetForceReprice(*v)
 	}
+	return _u
+}
+
+// SetRequestKey sets the "request_key" field.
+func (_u *SupplySyncTaskUpdate) SetRequestKey(v string) *SupplySyncTaskUpdate {
+	_u.mutation.SetRequestKey(v)
+	return _u
+}
+
+// SetNillableRequestKey sets the "request_key" field if the given value is not nil.
+func (_u *SupplySyncTaskUpdate) SetNillableRequestKey(v *string) *SupplySyncTaskUpdate {
+	if v != nil {
+		_u.SetRequestKey(*v)
+	}
+	return _u
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (_u *SupplySyncTaskUpdate) ClearRequestKey() *SupplySyncTaskUpdate {
+	_u.mutation.ClearRequestKey()
+	return _u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_u *SupplySyncTaskUpdate) SetRequestHash(v string) *SupplySyncTaskUpdate {
+	_u.mutation.SetRequestHash(v)
+	return _u
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_u *SupplySyncTaskUpdate) SetNillableRequestHash(v *string) *SupplySyncTaskUpdate {
+	if v != nil {
+		_u.SetRequestHash(*v)
+	}
+	return _u
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (_u *SupplySyncTaskUpdate) ClearRequestHash() *SupplySyncTaskUpdate {
+	_u.mutation.ClearRequestHash()
+	return _u
+}
+
+// SetImportPayload sets the "import_payload" field.
+func (_u *SupplySyncTaskUpdate) SetImportPayload(v json.RawMessage) *SupplySyncTaskUpdate {
+	_u.mutation.SetImportPayload(v)
+	return _u
+}
+
+// AppendImportPayload appends value to the "import_payload" field.
+func (_u *SupplySyncTaskUpdate) AppendImportPayload(v json.RawMessage) *SupplySyncTaskUpdate {
+	_u.mutation.AppendImportPayload(v)
+	return _u
+}
+
+// ClearImportPayload clears the value of the "import_payload" field.
+func (_u *SupplySyncTaskUpdate) ClearImportPayload() *SupplySyncTaskUpdate {
+	_u.mutation.ClearImportPayload()
 	return _u
 }
 
@@ -519,6 +579,16 @@ func (_u *SupplySyncTaskUpdate) check() error {
 			return &ValidationError{Name: "scope", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.scope": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestKey(); ok {
+		if err := supplysynctask.RequestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "request_key", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.request_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestHash(); ok {
+		if err := supplysynctask.RequestHashValidator(v); err != nil {
+			return &ValidationError{Name: "request_hash", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.request_hash": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := supplysynctask.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.status": %w`, err)}
@@ -574,6 +644,29 @@ func (_u *SupplySyncTaskUpdate) sqlSave(ctx context.Context) (_node int, err err
 	}
 	if value, ok := _u.mutation.ForceReprice(); ok {
 		_spec.SetField(supplysynctask.FieldForceReprice, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequestKey(); ok {
+		_spec.SetField(supplysynctask.FieldRequestKey, field.TypeString, value)
+	}
+	if _u.mutation.RequestKeyCleared() {
+		_spec.ClearField(supplysynctask.FieldRequestKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHash(); ok {
+		_spec.SetField(supplysynctask.FieldRequestHash, field.TypeString, value)
+	}
+	if _u.mutation.RequestHashCleared() {
+		_spec.ClearField(supplysynctask.FieldRequestHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImportPayload(); ok {
+		_spec.SetField(supplysynctask.FieldImportPayload, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedImportPayload(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, supplysynctask.FieldImportPayload, value)
+		})
+	}
+	if _u.mutation.ImportPayloadCleared() {
+		_spec.ClearField(supplysynctask.FieldImportPayload, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(supplysynctask.FieldStatus, field.TypeEnum, value)
@@ -772,6 +865,64 @@ func (_u *SupplySyncTaskUpdateOne) SetNillableForceReprice(v *bool) *SupplySyncT
 	if v != nil {
 		_u.SetForceReprice(*v)
 	}
+	return _u
+}
+
+// SetRequestKey sets the "request_key" field.
+func (_u *SupplySyncTaskUpdateOne) SetRequestKey(v string) *SupplySyncTaskUpdateOne {
+	_u.mutation.SetRequestKey(v)
+	return _u
+}
+
+// SetNillableRequestKey sets the "request_key" field if the given value is not nil.
+func (_u *SupplySyncTaskUpdateOne) SetNillableRequestKey(v *string) *SupplySyncTaskUpdateOne {
+	if v != nil {
+		_u.SetRequestKey(*v)
+	}
+	return _u
+}
+
+// ClearRequestKey clears the value of the "request_key" field.
+func (_u *SupplySyncTaskUpdateOne) ClearRequestKey() *SupplySyncTaskUpdateOne {
+	_u.mutation.ClearRequestKey()
+	return _u
+}
+
+// SetRequestHash sets the "request_hash" field.
+func (_u *SupplySyncTaskUpdateOne) SetRequestHash(v string) *SupplySyncTaskUpdateOne {
+	_u.mutation.SetRequestHash(v)
+	return _u
+}
+
+// SetNillableRequestHash sets the "request_hash" field if the given value is not nil.
+func (_u *SupplySyncTaskUpdateOne) SetNillableRequestHash(v *string) *SupplySyncTaskUpdateOne {
+	if v != nil {
+		_u.SetRequestHash(*v)
+	}
+	return _u
+}
+
+// ClearRequestHash clears the value of the "request_hash" field.
+func (_u *SupplySyncTaskUpdateOne) ClearRequestHash() *SupplySyncTaskUpdateOne {
+	_u.mutation.ClearRequestHash()
+	return _u
+}
+
+// SetImportPayload sets the "import_payload" field.
+func (_u *SupplySyncTaskUpdateOne) SetImportPayload(v json.RawMessage) *SupplySyncTaskUpdateOne {
+	_u.mutation.SetImportPayload(v)
+	return _u
+}
+
+// AppendImportPayload appends value to the "import_payload" field.
+func (_u *SupplySyncTaskUpdateOne) AppendImportPayload(v json.RawMessage) *SupplySyncTaskUpdateOne {
+	_u.mutation.AppendImportPayload(v)
+	return _u
+}
+
+// ClearImportPayload clears the value of the "import_payload" field.
+func (_u *SupplySyncTaskUpdateOne) ClearImportPayload() *SupplySyncTaskUpdateOne {
+	_u.mutation.ClearImportPayload()
 	return _u
 }
 
@@ -1204,6 +1355,16 @@ func (_u *SupplySyncTaskUpdateOne) check() error {
 			return &ValidationError{Name: "scope", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.scope": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.RequestKey(); ok {
+		if err := supplysynctask.RequestKeyValidator(v); err != nil {
+			return &ValidationError{Name: "request_key", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.request_key": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.RequestHash(); ok {
+		if err := supplysynctask.RequestHashValidator(v); err != nil {
+			return &ValidationError{Name: "request_hash", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.request_hash": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Status(); ok {
 		if err := supplysynctask.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "SupplySyncTask.status": %w`, err)}
@@ -1276,6 +1437,29 @@ func (_u *SupplySyncTaskUpdateOne) sqlSave(ctx context.Context) (_node *SupplySy
 	}
 	if value, ok := _u.mutation.ForceReprice(); ok {
 		_spec.SetField(supplysynctask.FieldForceReprice, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.RequestKey(); ok {
+		_spec.SetField(supplysynctask.FieldRequestKey, field.TypeString, value)
+	}
+	if _u.mutation.RequestKeyCleared() {
+		_spec.ClearField(supplysynctask.FieldRequestKey, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHash(); ok {
+		_spec.SetField(supplysynctask.FieldRequestHash, field.TypeString, value)
+	}
+	if _u.mutation.RequestHashCleared() {
+		_spec.ClearField(supplysynctask.FieldRequestHash, field.TypeString)
+	}
+	if value, ok := _u.mutation.ImportPayload(); ok {
+		_spec.SetField(supplysynctask.FieldImportPayload, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.AppendedImportPayload(); ok {
+		_spec.AddModifier(func(u *sql.UpdateBuilder) {
+			sqljson.Append(u, supplysynctask.FieldImportPayload, value)
+		})
+	}
+	if _u.mutation.ImportPayloadCleared() {
+		_spec.ClearField(supplysynctask.FieldImportPayload, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(supplysynctask.FieldStatus, field.TypeEnum, value)

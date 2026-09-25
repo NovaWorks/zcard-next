@@ -142,6 +142,9 @@ func (s *Scheduler) ReapStaleTasks(ctx context.Context) {
 		return
 	}
 	for _, t := range rows {
+		if t.Scope == ScopeImport {
+			continue
+		} // durable item checkpoints resume through ResumeTasks
 		reason := "任务心跳超时（>" + schedStaleAfter.String() + "），看门狗回收——可手动重跑"
 		if err := s.repo.FinishTask(ctx, t.ID, supplysynctask.StatusFailed, "STALE_HEARTBEAT", reason); err != nil {
 			s.log.Warn("scheduler.reap_failed", "task_id", t.ID, "err", err)

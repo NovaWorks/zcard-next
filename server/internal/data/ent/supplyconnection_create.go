@@ -88,6 +88,48 @@ func (_c *SupplyConnectionCreate) SetNillableStatus(v *supplyconnection.Status) 
 	return _c
 }
 
+// SetSyncTaskID sets the "sync_task_id" field.
+func (_c *SupplyConnectionCreate) SetSyncTaskID(v uint64) *SupplyConnectionCreate {
+	_c.mutation.SetSyncTaskID(v)
+	return _c
+}
+
+// SetNillableSyncTaskID sets the "sync_task_id" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableSyncTaskID(v *uint64) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetSyncTaskID(*v)
+	}
+	return _c
+}
+
+// SetSyncLeaseToken sets the "sync_lease_token" field.
+func (_c *SupplyConnectionCreate) SetSyncLeaseToken(v string) *SupplyConnectionCreate {
+	_c.mutation.SetSyncLeaseToken(v)
+	return _c
+}
+
+// SetNillableSyncLeaseToken sets the "sync_lease_token" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableSyncLeaseToken(v *string) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetSyncLeaseToken(*v)
+	}
+	return _c
+}
+
+// SetSyncLeaseUntil sets the "sync_lease_until" field.
+func (_c *SupplyConnectionCreate) SetSyncLeaseUntil(v int64) *SupplyConnectionCreate {
+	_c.mutation.SetSyncLeaseUntil(v)
+	return _c
+}
+
+// SetNillableSyncLeaseUntil sets the "sync_lease_until" field if the given value is not nil.
+func (_c *SupplyConnectionCreate) SetNillableSyncLeaseUntil(v *int64) *SupplyConnectionCreate {
+	if v != nil {
+		_c.SetSyncLeaseUntil(*v)
+	}
+	return _c
+}
+
 // SetCallbackURL sets the "callback_url" field.
 func (_c *SupplyConnectionCreate) SetCallbackURL(v string) *SupplyConnectionCreate {
 	_c.mutation.SetCallbackURL(v)
@@ -405,6 +447,18 @@ func (_c *SupplyConnectionCreate) defaults() {
 		v := supplyconnection.DefaultStatus
 		_c.mutation.SetStatus(v)
 	}
+	if _, ok := _c.mutation.SyncTaskID(); !ok {
+		v := supplyconnection.DefaultSyncTaskID
+		_c.mutation.SetSyncTaskID(v)
+	}
+	if _, ok := _c.mutation.SyncLeaseToken(); !ok {
+		v := supplyconnection.DefaultSyncLeaseToken
+		_c.mutation.SetSyncLeaseToken(v)
+	}
+	if _, ok := _c.mutation.SyncLeaseUntil(); !ok {
+		v := supplyconnection.DefaultSyncLeaseUntil
+		_c.mutation.SetSyncLeaseUntil(v)
+	}
 	if _, ok := _c.mutation.RetryMax(); !ok {
 		v := supplyconnection.DefaultRetryMax
 		_c.mutation.SetRetryMax(v)
@@ -489,6 +543,15 @@ func (_c *SupplyConnectionCreate) check() error {
 		if err := supplyconnection.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "SupplyConnection.status": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.SyncTaskID(); !ok {
+		return &ValidationError{Name: "sync_task_id", err: errors.New(`ent: missing required field "SupplyConnection.sync_task_id"`)}
+	}
+	if _, ok := _c.mutation.SyncLeaseToken(); !ok {
+		return &ValidationError{Name: "sync_lease_token", err: errors.New(`ent: missing required field "SupplyConnection.sync_lease_token"`)}
+	}
+	if _, ok := _c.mutation.SyncLeaseUntil(); !ok {
+		return &ValidationError{Name: "sync_lease_until", err: errors.New(`ent: missing required field "SupplyConnection.sync_lease_until"`)}
 	}
 	if v, ok := _c.mutation.CallbackURL(); ok {
 		if err := supplyconnection.CallbackURLValidator(v); err != nil {
@@ -600,6 +663,18 @@ func (_c *SupplyConnectionCreate) createSpec() (*SupplyConnection, *sqlgraph.Cre
 	if value, ok := _c.mutation.Status(); ok {
 		_spec.SetField(supplyconnection.FieldStatus, field.TypeEnum, value)
 		_node.Status = value
+	}
+	if value, ok := _c.mutation.SyncTaskID(); ok {
+		_spec.SetField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
+		_node.SyncTaskID = value
+	}
+	if value, ok := _c.mutation.SyncLeaseToken(); ok {
+		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
+		_node.SyncLeaseToken = value
+	}
+	if value, ok := _c.mutation.SyncLeaseUntil(); ok {
+		_spec.SetField(supplyconnection.FieldSyncLeaseUntil, field.TypeInt64, value)
+		_node.SyncLeaseUntil = value
 	}
 	if value, ok := _c.mutation.CallbackURL(); ok {
 		_spec.SetField(supplyconnection.FieldCallbackURL, field.TypeString, value)
@@ -802,6 +877,54 @@ func (u *SupplyConnectionUpsert) SetStatus(v supplyconnection.Status) *SupplyCon
 // UpdateStatus sets the "status" field to the value that was provided on create.
 func (u *SupplyConnectionUpsert) UpdateStatus() *SupplyConnectionUpsert {
 	u.SetExcluded(supplyconnection.FieldStatus)
+	return u
+}
+
+// SetSyncTaskID sets the "sync_task_id" field.
+func (u *SupplyConnectionUpsert) SetSyncTaskID(v uint64) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldSyncTaskID, v)
+	return u
+}
+
+// UpdateSyncTaskID sets the "sync_task_id" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateSyncTaskID() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldSyncTaskID)
+	return u
+}
+
+// AddSyncTaskID adds v to the "sync_task_id" field.
+func (u *SupplyConnectionUpsert) AddSyncTaskID(v uint64) *SupplyConnectionUpsert {
+	u.Add(supplyconnection.FieldSyncTaskID, v)
+	return u
+}
+
+// SetSyncLeaseToken sets the "sync_lease_token" field.
+func (u *SupplyConnectionUpsert) SetSyncLeaseToken(v string) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldSyncLeaseToken, v)
+	return u
+}
+
+// UpdateSyncLeaseToken sets the "sync_lease_token" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateSyncLeaseToken() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldSyncLeaseToken)
+	return u
+}
+
+// SetSyncLeaseUntil sets the "sync_lease_until" field.
+func (u *SupplyConnectionUpsert) SetSyncLeaseUntil(v int64) *SupplyConnectionUpsert {
+	u.Set(supplyconnection.FieldSyncLeaseUntil, v)
+	return u
+}
+
+// UpdateSyncLeaseUntil sets the "sync_lease_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsert) UpdateSyncLeaseUntil() *SupplyConnectionUpsert {
+	u.SetExcluded(supplyconnection.FieldSyncLeaseUntil)
+	return u
+}
+
+// AddSyncLeaseUntil adds v to the "sync_lease_until" field.
+func (u *SupplyConnectionUpsert) AddSyncLeaseUntil(v int64) *SupplyConnectionUpsert {
+	u.Add(supplyconnection.FieldSyncLeaseUntil, v)
 	return u
 }
 
@@ -1267,6 +1390,62 @@ func (u *SupplyConnectionUpsertOne) SetStatus(v supplyconnection.Status) *Supply
 func (u *SupplyConnectionUpsertOne) UpdateStatus() *SupplyConnectionUpsertOne {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetSyncTaskID sets the "sync_task_id" field.
+func (u *SupplyConnectionUpsertOne) SetSyncTaskID(v uint64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSyncTaskID(v)
+	})
+}
+
+// AddSyncTaskID adds v to the "sync_task_id" field.
+func (u *SupplyConnectionUpsertOne) AddSyncTaskID(v uint64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddSyncTaskID(v)
+	})
+}
+
+// UpdateSyncTaskID sets the "sync_task_id" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateSyncTaskID() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSyncTaskID()
+	})
+}
+
+// SetSyncLeaseToken sets the "sync_lease_token" field.
+func (u *SupplyConnectionUpsertOne) SetSyncLeaseToken(v string) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSyncLeaseToken(v)
+	})
+}
+
+// UpdateSyncLeaseToken sets the "sync_lease_token" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateSyncLeaseToken() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSyncLeaseToken()
+	})
+}
+
+// SetSyncLeaseUntil sets the "sync_lease_until" field.
+func (u *SupplyConnectionUpsertOne) SetSyncLeaseUntil(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSyncLeaseUntil(v)
+	})
+}
+
+// AddSyncLeaseUntil adds v to the "sync_lease_until" field.
+func (u *SupplyConnectionUpsertOne) AddSyncLeaseUntil(v int64) *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddSyncLeaseUntil(v)
+	})
+}
+
+// UpdateSyncLeaseUntil sets the "sync_lease_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertOne) UpdateSyncLeaseUntil() *SupplyConnectionUpsertOne {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSyncLeaseUntil()
 	})
 }
 
@@ -1953,6 +2132,62 @@ func (u *SupplyConnectionUpsertBulk) SetStatus(v supplyconnection.Status) *Suppl
 func (u *SupplyConnectionUpsertBulk) UpdateStatus() *SupplyConnectionUpsertBulk {
 	return u.Update(func(s *SupplyConnectionUpsert) {
 		s.UpdateStatus()
+	})
+}
+
+// SetSyncTaskID sets the "sync_task_id" field.
+func (u *SupplyConnectionUpsertBulk) SetSyncTaskID(v uint64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSyncTaskID(v)
+	})
+}
+
+// AddSyncTaskID adds v to the "sync_task_id" field.
+func (u *SupplyConnectionUpsertBulk) AddSyncTaskID(v uint64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddSyncTaskID(v)
+	})
+}
+
+// UpdateSyncTaskID sets the "sync_task_id" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateSyncTaskID() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSyncTaskID()
+	})
+}
+
+// SetSyncLeaseToken sets the "sync_lease_token" field.
+func (u *SupplyConnectionUpsertBulk) SetSyncLeaseToken(v string) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSyncLeaseToken(v)
+	})
+}
+
+// UpdateSyncLeaseToken sets the "sync_lease_token" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateSyncLeaseToken() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSyncLeaseToken()
+	})
+}
+
+// SetSyncLeaseUntil sets the "sync_lease_until" field.
+func (u *SupplyConnectionUpsertBulk) SetSyncLeaseUntil(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.SetSyncLeaseUntil(v)
+	})
+}
+
+// AddSyncLeaseUntil adds v to the "sync_lease_until" field.
+func (u *SupplyConnectionUpsertBulk) AddSyncLeaseUntil(v int64) *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.AddSyncLeaseUntil(v)
+	})
+}
+
+// UpdateSyncLeaseUntil sets the "sync_lease_until" field to the value that was provided on create.
+func (u *SupplyConnectionUpsertBulk) UpdateSyncLeaseUntil() *SupplyConnectionUpsertBulk {
+	return u.Update(func(s *SupplyConnectionUpsert) {
+		s.UpdateSyncLeaseUntil()
 	})
 }
 

@@ -2358,6 +2358,9 @@ var (
 		{Name: "base_url", Type: field.TypeString, Size: 255},
 		{Name: "credentials", Type: field.TypeBytes},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled"}, Default: "active"},
+		{Name: "sync_task_id", Type: field.TypeUint64, Default: 0},
+		{Name: "sync_lease_token", Type: field.TypeString, Default: ""},
+		{Name: "sync_lease_until", Type: field.TypeInt64, Default: 0},
 		{Name: "callback_url", Type: field.TypeString, Nullable: true, Size: 500},
 		{Name: "retry_max", Type: field.TypeInt32, Default: 5},
 		{Name: "retry_intervals", Type: field.TypeString, Size: 200, Default: "[30,60,300]"},
@@ -2393,7 +2396,46 @@ var (
 			{
 				Name:    "supplyconnection_last_synced_at",
 				Unique:  false,
-				Columns: []*schema.Column{SupplyConnectionsColumns[20]},
+				Columns: []*schema.Column{SupplyConnectionsColumns[23]},
+			},
+		},
+	}
+	// SupplyImportItemsColumns holds the columns for the "supply_import_items" table.
+	SupplyImportItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "task_id", Type: field.TypeUint64},
+		{Name: "code", Type: field.TypeString, Size: 128},
+		{Name: "name", Type: field.TypeString, Size: 1024},
+		{Name: "snapshot", Type: field.TypeJSON},
+		{Name: "state", Type: field.TypeString, Size: 20, Default: "pending"},
+		{Name: "stage", Type: field.TypeString, Size: 20, Default: "import"},
+		{Name: "attempts", Type: field.TypeInt, Default: 0},
+		{Name: "next_attempt_at", Type: field.TypeInt64, Default: 0},
+		{Name: "saved", Type: field.TypeBool, Default: false},
+		{Name: "created", Type: field.TypeBool, Default: false},
+		{Name: "activate_after_stock", Type: field.TypeBool, Default: false},
+		{Name: "local_product_id", Type: field.TypeUint64, Default: 0},
+		{Name: "local_revision", Type: field.TypeString, Default: ""},
+		{Name: "error_code", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "error_summary", Type: field.TypeString, Size: 500, Default: ""},
+	}
+	// SupplyImportItemsTable holds the schema information for the "supply_import_items" table.
+	SupplyImportItemsTable = &schema.Table{
+		Name:       "supply_import_items",
+		Columns:    SupplyImportItemsColumns,
+		PrimaryKey: []*schema.Column{SupplyImportItemsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "supplyimportitem_task_id_code",
+				Unique:  true,
+				Columns: []*schema.Column{SupplyImportItemsColumns[3], SupplyImportItemsColumns[4]},
+			},
+			{
+				Name:    "supplyimportitem_task_id_state_next_attempt_at",
+				Unique:  false,
+				Columns: []*schema.Column{SupplyImportItemsColumns[3], SupplyImportItemsColumns[7], SupplyImportItemsColumns[10]},
 			},
 		},
 	}
@@ -2500,6 +2542,9 @@ var (
 		{Name: "mode", Type: field.TypeString, Size: 20},
 		{Name: "scope", Type: field.TypeString, Nullable: true, Size: 60},
 		{Name: "force_reprice", Type: field.TypeBool, Default: false},
+		{Name: "request_key", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "request_hash", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "import_payload", Type: field.TypeJSON, Nullable: true},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "processing", "done", "failed", "canceled"}, Default: "pending"},
 		{Name: "total_count", Type: field.TypeInt32, Default: 0},
 		{Name: "processed_count", Type: field.TypeInt32, Default: 0},
@@ -2531,9 +2576,14 @@ var (
 				Columns: []*schema.Column{SupplySyncTasksColumns[3], SupplySyncTasksColumns[1]},
 			},
 			{
+				Name:    "supplysynctask_connection_id_request_key",
+				Unique:  true,
+				Columns: []*schema.Column{SupplySyncTasksColumns[3], SupplySyncTasksColumns[7]},
+			},
+			{
 				Name:    "supplysynctask_status",
 				Unique:  false,
-				Columns: []*schema.Column{SupplySyncTasksColumns[7]},
+				Columns: []*schema.Column{SupplySyncTasksColumns[10]},
 			},
 		},
 	}
@@ -2918,6 +2968,7 @@ var (
 		SupplierLedgerEntriesTable,
 		SupplierProductPricesTable,
 		SupplyConnectionsTable,
+		SupplyImportItemsTable,
 		SupplyMappingsTable,
 		SupplyNoncesTable,
 		SupplyOrdersTable,

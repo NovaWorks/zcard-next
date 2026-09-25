@@ -164,6 +164,8 @@ type Tx struct {
 	SupplierProductPrice *SupplierProductPriceClient
 	// SupplyConnection is the client for interacting with the SupplyConnection builders.
 	SupplyConnection *SupplyConnectionClient
+	// SupplyImportItem is the client for interacting with the SupplyImportItem builders.
+	SupplyImportItem *SupplyImportItemClient
 	// SupplyMapping is the client for interacting with the SupplyMapping builders.
 	SupplyMapping *SupplyMappingClient
 	// SupplyNonce is the client for interacting with the SupplyNonce builders.
@@ -403,6 +405,7 @@ func (tx *Tx) init() {
 	tx.SupplierLedgerEntry = NewSupplierLedgerEntryClient(tx.config)
 	tx.SupplierProductPrice = NewSupplierProductPriceClient(tx.config)
 	tx.SupplyConnection = NewSupplyConnectionClient(tx.config)
+	tx.SupplyImportItem = NewSupplyImportItemClient(tx.config)
 	tx.SupplyMapping = NewSupplyMappingClient(tx.config)
 	tx.SupplyNonce = NewSupplyNonceClient(tx.config)
 	tx.SupplyOrder = NewSupplyOrderClient(tx.config)

@@ -96,6 +96,62 @@ func (_u *SupplyConnectionUpdate) SetNillableStatus(v *supplyconnection.Status) 
 	return _u
 }
 
+// SetSyncTaskID sets the "sync_task_id" field.
+func (_u *SupplyConnectionUpdate) SetSyncTaskID(v uint64) *SupplyConnectionUpdate {
+	_u.mutation.ResetSyncTaskID()
+	_u.mutation.SetSyncTaskID(v)
+	return _u
+}
+
+// SetNillableSyncTaskID sets the "sync_task_id" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableSyncTaskID(v *uint64) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetSyncTaskID(*v)
+	}
+	return _u
+}
+
+// AddSyncTaskID adds value to the "sync_task_id" field.
+func (_u *SupplyConnectionUpdate) AddSyncTaskID(v int64) *SupplyConnectionUpdate {
+	_u.mutation.AddSyncTaskID(v)
+	return _u
+}
+
+// SetSyncLeaseToken sets the "sync_lease_token" field.
+func (_u *SupplyConnectionUpdate) SetSyncLeaseToken(v string) *SupplyConnectionUpdate {
+	_u.mutation.SetSyncLeaseToken(v)
+	return _u
+}
+
+// SetNillableSyncLeaseToken sets the "sync_lease_token" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableSyncLeaseToken(v *string) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetSyncLeaseToken(*v)
+	}
+	return _u
+}
+
+// SetSyncLeaseUntil sets the "sync_lease_until" field.
+func (_u *SupplyConnectionUpdate) SetSyncLeaseUntil(v int64) *SupplyConnectionUpdate {
+	_u.mutation.ResetSyncLeaseUntil()
+	_u.mutation.SetSyncLeaseUntil(v)
+	return _u
+}
+
+// SetNillableSyncLeaseUntil sets the "sync_lease_until" field if the given value is not nil.
+func (_u *SupplyConnectionUpdate) SetNillableSyncLeaseUntil(v *int64) *SupplyConnectionUpdate {
+	if v != nil {
+		_u.SetSyncLeaseUntil(*v)
+	}
+	return _u
+}
+
+// AddSyncLeaseUntil adds value to the "sync_lease_until" field.
+func (_u *SupplyConnectionUpdate) AddSyncLeaseUntil(v int64) *SupplyConnectionUpdate {
+	_u.mutation.AddSyncLeaseUntil(v)
+	return _u
+}
+
 // SetCallbackURL sets the "callback_url" field.
 func (_u *SupplyConnectionUpdate) SetCallbackURL(v string) *SupplyConnectionUpdate {
 	_u.mutation.SetCallbackURL(v)
@@ -571,6 +627,21 @@ func (_u *SupplyConnectionUpdate) sqlSave(ctx context.Context) (_node int, err e
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(supplyconnection.FieldStatus, field.TypeEnum, value)
 	}
+	if value, ok := _u.mutation.SyncTaskID(); ok {
+		_spec.SetField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedSyncTaskID(); ok {
+		_spec.AddField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.SyncLeaseToken(); ok {
+		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SyncLeaseUntil(); ok {
+		_spec.SetField(supplyconnection.FieldSyncLeaseUntil, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSyncLeaseUntil(); ok {
+		_spec.AddField(supplyconnection.FieldSyncLeaseUntil, field.TypeInt64, value)
+	}
 	if value, ok := _u.mutation.CallbackURL(); ok {
 		_spec.SetField(supplyconnection.FieldCallbackURL, field.TypeString, value)
 	}
@@ -761,6 +832,62 @@ func (_u *SupplyConnectionUpdateOne) SetNillableStatus(v *supplyconnection.Statu
 	if v != nil {
 		_u.SetStatus(*v)
 	}
+	return _u
+}
+
+// SetSyncTaskID sets the "sync_task_id" field.
+func (_u *SupplyConnectionUpdateOne) SetSyncTaskID(v uint64) *SupplyConnectionUpdateOne {
+	_u.mutation.ResetSyncTaskID()
+	_u.mutation.SetSyncTaskID(v)
+	return _u
+}
+
+// SetNillableSyncTaskID sets the "sync_task_id" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableSyncTaskID(v *uint64) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetSyncTaskID(*v)
+	}
+	return _u
+}
+
+// AddSyncTaskID adds value to the "sync_task_id" field.
+func (_u *SupplyConnectionUpdateOne) AddSyncTaskID(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.AddSyncTaskID(v)
+	return _u
+}
+
+// SetSyncLeaseToken sets the "sync_lease_token" field.
+func (_u *SupplyConnectionUpdateOne) SetSyncLeaseToken(v string) *SupplyConnectionUpdateOne {
+	_u.mutation.SetSyncLeaseToken(v)
+	return _u
+}
+
+// SetNillableSyncLeaseToken sets the "sync_lease_token" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableSyncLeaseToken(v *string) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetSyncLeaseToken(*v)
+	}
+	return _u
+}
+
+// SetSyncLeaseUntil sets the "sync_lease_until" field.
+func (_u *SupplyConnectionUpdateOne) SetSyncLeaseUntil(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.ResetSyncLeaseUntil()
+	_u.mutation.SetSyncLeaseUntil(v)
+	return _u
+}
+
+// SetNillableSyncLeaseUntil sets the "sync_lease_until" field if the given value is not nil.
+func (_u *SupplyConnectionUpdateOne) SetNillableSyncLeaseUntil(v *int64) *SupplyConnectionUpdateOne {
+	if v != nil {
+		_u.SetSyncLeaseUntil(*v)
+	}
+	return _u
+}
+
+// AddSyncLeaseUntil adds value to the "sync_lease_until" field.
+func (_u *SupplyConnectionUpdateOne) AddSyncLeaseUntil(v int64) *SupplyConnectionUpdateOne {
+	_u.mutation.AddSyncLeaseUntil(v)
 	return _u
 }
 
@@ -1268,6 +1395,21 @@ func (_u *SupplyConnectionUpdateOne) sqlSave(ctx context.Context) (_node *Supply
 	}
 	if value, ok := _u.mutation.Status(); ok {
 		_spec.SetField(supplyconnection.FieldStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.SyncTaskID(); ok {
+		_spec.SetField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedSyncTaskID(); ok {
+		_spec.AddField(supplyconnection.FieldSyncTaskID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.SyncLeaseToken(); ok {
+		_spec.SetField(supplyconnection.FieldSyncLeaseToken, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.SyncLeaseUntil(); ok {
+		_spec.SetField(supplyconnection.FieldSyncLeaseUntil, field.TypeInt64, value)
+	}
+	if value, ok := _u.mutation.AddedSyncLeaseUntil(); ok {
+		_spec.AddField(supplyconnection.FieldSyncLeaseUntil, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.CallbackURL(); ok {
 		_spec.SetField(supplyconnection.FieldCallbackURL, field.TypeString, value)

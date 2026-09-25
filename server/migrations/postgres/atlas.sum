@@ -1,4 +1,4 @@
-h1:yXcuAAdigVnKtje7B8kg0n3D7cXNuWgG8YKz7GgCJ9A=
+h1:h8UtgwJMCMI5tV0ZOg58tUAOGR38ytIur4ywz0RoEUg=
 20260815190726_init.sql h1:GXVlyZMy8rSWuQjzK1/sNKrbne6jIvQO3XNHN/eXhU0=
 20260815195912_add_failed_tasks.sql h1:wu1QwVZdSy5uW3lMD8TAej8SwE2sGL2dQbpw8udAXk4=
 20260815201554_v1_full_schema.sql h1:bP/kFN9FpThTsu1cQPXp3l7zAvafT2DRWypR1MuLYDQ=
@@ -34,3 +34,4 @@ h1:yXcuAAdigVnKtje7B8kg0n3D7cXNuWgG8YKz7GgCJ9A=
 20260923110507_manual_services_private_levels.sql h1:I8PVxkmDVcA+H9+Nv4j+tfRzLM+0693PaH8t0KntpgI=
 20260924090000_telegram_delivery.sql h1:/rWHbK112SdlVWALHhmsiTa12XF8zzGWBZFYSI9PFXI=
 20260924153721_product_lock_placements.sql h1:RWrJ78EsTKeYAgv9PJEgPKGNo68hxmeue4fhPdD45Jg=
+20260925071926_durable_product_import.sql h1:mv4pHaabuiV6OuUQ9xklPqtx8CPnmZHuhQSmMeXAlyA=

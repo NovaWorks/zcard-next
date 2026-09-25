@@ -165,6 +165,9 @@ func accountCost(conn *ent.SupplyConnection, p *adapter.Product) int64 {
 // Serialize pricing writes with configuration changes; never commit a quote made
 // for a different account or with stale connection pricing.
 func (s *SyncService) checkPricingConnection(ctx context.Context, snapshot *ent.SupplyConnection) error {
+	if err := s.guardTaskLease(ctx); err != nil {
+		return err
+	}
 	c := s.repo.entClient(ctx)
 	if err := c.SupplyConnection.UpdateOneID(snapshot.ID).AddRetryMax(0).Exec(ctx); err != nil {
 		return err
@@ -174,7 +177,7 @@ func (s *SyncService) checkPricingConnection(ctx context.Context, snapshot *ent.
 		return err
 	}
 	if previewIdentity(current) != previewIdentity(snapshot) || current.ExchangeRate != snapshot.ExchangeRate || current.PriceMarkupPercent != snapshot.PriceMarkupPercent || current.PriceMarkupAmount != snapshot.PriceMarkupAmount || current.PriceRoundingMode != snapshot.PriceRoundingMode || current.AutoSyncPrice != snapshot.AutoSyncPrice {
-		return fmt.Errorf("货源账号或定价配置已变化，本次未改价，请重试")
+		return errImportConfiguration
 	}
 	return nil
 }

@@ -96,6 +96,8 @@ export type CustomAxiosRequestConfig<R extends ResponseType = "json"> = Omit<
   "responseType"
 > & {
   responseType?: R;
+  /** The caller renders a persistent inline error (for background polling). */
+  silentError?: boolean;
 };
 
 export interface RequestInstanceCommon<State extends Record<string, unknown>> {
