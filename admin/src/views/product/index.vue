@@ -26,6 +26,8 @@ import MediaField from "@/components/common/media-picker/media-field.vue";
 import RichEditor from "@/components/common/rich-editor/index.vue";
 import TablePager from "@/components/common/table-pager.vue";
 import FilterTabs from "@/components/common/filter-tabs.vue";
+import ClassifyProducts from "./components/classify-products.vue";
+import DeliverySources from "./components/delivery-sources.vue";
 import SkuPanel from "./components/sku-panel.vue";
 import ControlPanel from "./components/control-panel.vue";
 import CategoryModal from "./components/category-modal.vue";
@@ -46,6 +48,10 @@ const saving = ref(false);
 const showCreate = ref(false);
 const skuPanel = ref<InstanceType<typeof SkuPanel> | null>(null);
 const editingId = ref(0);
+const deliveryProduct = ref<any>(null);
+const showDeliverySources = ref(false);
+function openDeliverySources(row:any){deliveryProduct.value=row;showDeliverySources.value=true;}
+async function deliverySaved(){loadList();independentlySaved.value=true;if(editingId.value===deliveryProduct.value?.id){const {data}=await fetchProduct(editingId.value);if(data){formData.fulfillment_mode=(data as any).fulfillment_mode||'auto';editingProduct.value=data;await skuPanel.value?.refreshDeliveryModes();}}}
 const editingProduct = ref<any>(null);
 const editorLocked = computed(() => !!editingProduct.value?.is_locked);
 const lockFilter = ref<string | null>(null);
@@ -608,6 +614,7 @@ const columns: DataTableColumns<any> = [
                   { default: () => row.is_locked ? "查看" : "编辑" },
                 )
               : null,
+            checkAuth("catalog:write") && row.upstream_source_id ? h(NButton,{size:"small",onClick:()=>openDeliverySources(row)},{default:()=>"发货设置"}) : null,
             checkAuth("catalog:lock") ? h(NButton,{size:"small",loading:lockBusy.value===row.id,disabled:lockBusy.value!==null,onClick:()=>changeLock(row)},{default:()=>row.is_locked?"解锁":"锁定"}) : null,
             checkAuth("catalog:review_read")
               ? h(
@@ -741,6 +748,7 @@ async function handleBatchStatus(ids: number[], status: number, label: string) {
 }
 
 // 弹窗固定本次所选商品；取消或请求失败均保留原选择。
+const showClassifyProducts=ref(false);
 const showBatchCategory = ref(false);
 const batchCategorySaving = ref(false);
 const batchCategoryIds = ref<number[]>([]);
@@ -1027,6 +1035,7 @@ onMounted(() => {
           {{ supplyFilter === 0 ? "✓ 仅自营" : "仅自营" }}
         </NButton>
         <NButton @click="onSearch">搜索</NButton>
+        <NButton v-auth="'catalog:write'" @click="loadCategories().then(()=>showClassifyProducts=true)">按关键词分类</NButton>
       </div>
 
       <div class="mb-12px flex flex-wrap items-center gap-12px">
@@ -1091,6 +1100,7 @@ onMounted(() => {
     </NCard>
 
     <CategoryPlacements v-model:show="showPlacements" :category-id="categoryFilter || 0" :category-name="selectedCategoryName" :categories="categories" />
+    <ClassifyProducts v-model:show="showClassifyProducts" :categories="batchCategoryOptions" @saved="loadList" />
     <BatchContentModal v-model:show="showBatchContent" :ids="batchContentIDs" :category-id="batchContentCategory" :categories="batchCategoryOptions" @saved="contentSaved" />
 
     <NModal v-model:show="showBatchCategory" preset="card" title="批量修改分类"
@@ -1113,6 +1123,7 @@ onMounted(() => {
       </template>
     </NModal>
 
+    <DeliverySources v-if="deliveryProduct" v-model:show="showDeliverySources" :product-id="deliveryProduct.id" :readonly="deliveryProduct.is_locked" @saved="deliverySaved" />
     <!-- 新增/编辑弹窗（分步表单：基础 → 价格库存 → 商品描述 → 规格与控件 → 高级设置） -->
     <NModal
        :show="showCreate" @update:show="!$event && requestClose()"
@@ -1171,7 +1182,8 @@ onMounted(() => {
               </NButton>
             </div>
           </NFormItem>
-          <NFormItem label="交付方式"><NSelect v-model:value="formData.fulfillment_mode" :options="[{label:'自动交付',value:'auto'},{label:'人工服务',value:'manual'}]" /></NFormItem>
+          <NButton v-if="editingId && checkAuth('catalog:write')" class="mb-12px" @click="openDeliverySources(editingProduct)">发货设置：上游采购 / 我的卡密 / 重复发货</NButton>
+          <NFormItem label="交付方式"><NSelect v-model:value="formData.fulfillment_mode" :disabled="['local','reuse'].includes(formData.fulfillment_mode)" :options="[{label:'自动交付',value:'auto'},{label:'人工服务',value:'manual'},{label:'我的卡密（请在发货设置修改）',value:'local',disabled:true},{label:'重复发货（请在发货设置修改）',value:'reuse',disabled:true}]" /></NFormItem>
           <NFormItem label="人工可售总量"><div class="w-full"><NInputNumber v-model:value="formData.manual_stock" :min="-1" :precision="0" /><p class="text-12px opacity-60">-1 不限；包含已售及待付款占用，所有人工规格共享。取消或全额退款释放额度。</p></div></NFormItem>
           <NFormItem v-if="formData.fulfillment_mode !== 'manual'" label="库存类型">
             <NSelect v-model:value="formData.stock_type" :options="stockTypeOptions" />

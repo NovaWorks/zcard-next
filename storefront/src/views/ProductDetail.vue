@@ -72,8 +72,8 @@
           <label class="pd-label">购买数量</label>
           <div class="pd-qty">
             <button class="pd-qty-btn" @click="quantity = Math.max(1, quantity - 1)">−</button>
-            <input v-model.number="quantity" type="number" min="1" max="99" class="pd-qty-input" />
-            <button class="pd-qty-btn" @click="quantity = Math.min(99, quantity + 1)">＋</button>
+            <input v-model.number="quantity" type="number" min="1" :max="reusableDelivery?1:99" :disabled="reusableDelivery" class="pd-qty-input" />
+            <button class="pd-qty-btn" :disabled="reusableDelivery" @click="quantity = Math.min(99, quantity + 1)">＋</button>
           </div>
         </div>
 
@@ -91,6 +91,7 @@
 
         <!-- 自定义控件（下单收集） -->
         <OrderFields :controls="p.controls || []" v-model="controlAnswers" />
+        <p v-if="reusableDelivery" class="muted">此规格每次购买一份即可。</p>
         <p v-if="manualDelivery" class="muted">人工处理：付款后请在订单详情查看处理进度与交付结果。</p>
 
         <div class="pd-field">
@@ -205,6 +206,8 @@ const selectedSku = ref(0);
 const queryPassword = ref('');
 const contact = ref('');
 const couponCode = ref('');
+const reusableDelivery = computed(() => { const sku=p.value?.skus?.find(s => Number(s.id)===Number(selectedSku.value)); return (sku?.fulfillment_mode && sku.fulfillment_mode!=="follow"?sku.fulfillment_mode:p.value?.fulfillment_mode)==="reuse"; });
+watch(reusableDelivery,v=>{if(v)quantity.value=1});
 const manualDelivery = computed(() => { const sku=p.value?.skus?.find(s => s.id === selectedSku.value); return (sku?.fulfillment_mode && sku.fulfillment_mode !== "follow" ? sku.fulfillment_mode : p.value?.fulfillment_mode) === "manual"; });
 const controlAnswers = ref<Record<string, string>>({});
 const submitting = ref(false);
@@ -346,7 +349,7 @@ async function addToCart() {
   if (!p.value || soldOut.value || stockUnknown.value) return;
   addingCart.value = true;
   error.value = '';
-  const { error: err } = await addToCartStore({ ...p.value, price_cents: basePrice.value, flash_sale: selectedFlash.value }, quantity.value, selectedSku.value || 0);
+  const { error: err } = await addToCartStore({ ...p.value, max_quantity:reusableDelivery.value?1:99, stock:effectiveStock.value, price_cents: basePrice.value, flash_sale: selectedFlash.value }, quantity.value, selectedSku.value || 0);
   addingCart.value = false;
   if (err) {
     error.value = err;

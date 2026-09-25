@@ -9,6 +9,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/tenancy"
 )
 
@@ -22,6 +23,19 @@ func (r *ProductRepoImpl) ListProductControls(ctx context.Context, productID uin
 
 // CreateProductControl 创建控件。
 func (r *ProductRepoImpl) createProductControl(ctx context.Context, productID, subsiteID uint64, name, typ string, required bool, options []string, sort int32, settings ...ControlSettings) (*ent.ProductControl, error) {
+	c := data.Client(ctx, r.data)
+	p, e := c.Product.Get(ctx, productID)
+	if e != nil {
+		return nil, e
+	}
+	reuse, e := c.ProductSku.Query().Where(productsku.ProductID(productID), productsku.FulfillmentMode("reuse")).Exist(ctx)
+	if e != nil {
+		return nil, e
+	}
+	if p.FulfillmentMode == "reuse" || reuse {
+		return nil, fmt.Errorf("商品正在重复发货，不能添加客户专属填写字段；请先更改发货来源")
+	}
+
 	if subsiteID == 0 {
 		subsiteID = tenancy.FromContext(ctx).SubsiteID
 	}

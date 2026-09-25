@@ -195,6 +195,7 @@ type UpstreamProductInput struct {
 	Cover               string
 	CategoryID          uint64 // 0 且 CategorySet=true 时清除分类
 	CategorySet         bool
+	CategoryProtected   bool
 	Price               int64              // 分；-1 = 保持现有价
 	FactoryPrice        int64              // 本币分：账号成本快照；-1=保留已有成本
 	Status              int8               // 1=上架 2=隐藏 0=下架

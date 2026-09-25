@@ -22,13 +22,14 @@ import (
 )
 
 type importPayload struct {
-	ActiveCodes []string          `json:"active_codes,omitempty"`
-	Tenant      uint64            `json:"tenant"`
-	Fingerprint string            `json:"fingerprint"`
-	Mode        string            `json:"mode"`
-	Percent     float64           `json:"percent"`
-	Amount      int64             `json:"amount"`
-	Categories  map[string]uint64 `json:"categories"`
+	ActiveCodes       []string          `json:"active_codes,omitempty"`
+	Tenant            uint64            `json:"tenant"`
+	Fingerprint       string            `json:"fingerprint"`
+	Mode              string            `json:"mode"`
+	Percent           float64           `json:"percent"`
+	Amount            int64             `json:"amount"`
+	Categories        map[string]uint64 `json:"categories"`
+	ProductCategories map[string]uint64 `json:"product_categories,omitempty"`
 }
 
 func importFingerprint(c *ent.SupplyConnection) string {
@@ -38,7 +39,7 @@ func importFingerprint(c *ent.SupplyConnection) string {
 	return hex.EncodeToString(h[:])
 }
 func productRevision(p *ent.Product) string {
-	b, _ := json.Marshal([]any{p.ID, p.Name, p.Price, p.FactoryPrice, p.CategoryID, p.Status, p.Cover, p.Description, p.Images, p.MemberPrice, p.CoverProtected, p.DescriptionProtected, p.IsLocked, p.LockVersion})
+	b, _ := json.Marshal([]any{p.ID, p.Name, p.Price, p.FactoryPrice, p.CategoryID, p.Status, p.Cover, p.Description, p.Images, p.MemberPrice, p.CoverProtected, p.DescriptionProtected, p.IsLocked, p.LockVersion, p.CategoryProtected, p.FulfillmentMode})
 	h := sha256.Sum256(b)
 	return hex.EncodeToString(h[:])
 }
@@ -216,7 +217,11 @@ func (s *AdminSupplyService) createImportTask(ctx context.Context, conn *ent.Sup
 		if err != nil {
 			return err
 		}
-		payload := importPayload{Tenant: tenancy.FromContext(ctx).SubsiteID, Fingerprint: importFingerprint(current), Mode: mode, Percent: percent, Amount: amount, Categories: cats}
+		productCats, err := s.resolveImportCategories(ctx, req, products, cats)
+		if err != nil {
+			return err
+		}
+		payload := importPayload{ProductCategories: productCats, Tenant: tenancy.FromContext(ctx).SubsiteID, Fingerprint: importFingerprint(current), Mode: mode, Percent: percent, Amount: amount, Categories: cats}
 		raw, err := json.Marshal(payload)
 		if err != nil {
 			return err
@@ -251,6 +256,9 @@ func (s *AdminSupplyService) createImportTask(ctx context.Context, conn *ent.Sup
 				b := c.SupplyImportItem.Create().SetTaskID(task.ID).SetCode(code).SetName(p.Name).SetSnapshot(raw)
 				if local := byCode[code]; local != nil {
 					b.SetLocalProductID(local.ID).SetLocalRevision(productRevision(local))
+					if local.IsLocked {
+						b.SetState("skipped").SetErrorCode("PRODUCT_LOCKED").SetErrorSummary("商品已锁定，已跳过")
+					}
 				}
 				builders = append(builders, b)
 			}

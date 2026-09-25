@@ -20,6 +20,7 @@ func (Product) Fields() []ent.Field {
 	return []ent.Field{
 		field.Uint64("id"),
 		field.Uint64("category_id").Optional().Comment("分类（软外键，仅索引）"),
+		field.Bool("category_protected").Default(false),
 		field.String("name").MaxLen(1024),
 		field.String("slug").MaxLen(150).Comment("唯一标识"),
 		field.Text("description").Optional().Comment("详情（服务端 sanitize 后存储）"),

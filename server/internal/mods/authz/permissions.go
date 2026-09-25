@@ -5,6 +5,7 @@ package authz
 
 func init() {
 	Declare(
+		Perm{Code: "catalog:write", Desc: "按关键词分类", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/ClassifyProducts", Method: "POST", Path: "/api/v1/admin/products/classify"},
 		Perm{Code: "memberlevel:view_discount", Desc: "查看真实等级折扣", Domain: "memberlevel", AdminOnly: true},
 		Perm{Code: "memberlevel:assign", Desc: "指定用户等级", Domain: "memberlevel", AdminOnly: true, Op: "zcard.api.admin.v1.AdminMemberLevelService/AssignUserLevel", Method: "PUT", Path: "/api/v1/admin/users/{user_id}/member-level"},
 		Perm{Code: "order:deliver", Desc: "开始处理人工服务", Domain: "fulfillment", AdminOnly: true, Op: "zcard.api.admin.v1.AdminFulfillmentService/StartService", Method: "POST", Path: "/api/v1/admin/fulfillment/{order_no}/start"},
@@ -110,6 +111,8 @@ func init() {
 		Perm{Code: "catalog:category_read", Desc: "查看分类置顶与推荐", Domain: "catalog", Op: "zcard.api.admin.v1.AdminCatalogService/GetCategoryPlacements", Method: "GET", Path: "/api/v1/admin/categories/{category_id}/placements"},
 		Perm{Code: "catalog:category_write", Desc: "设置分类置顶与推荐", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/SetCategoryPlacements", Method: "PUT", Path: "/api/v1/admin/categories/{category_id}/placements"},
 		// ── 商品目录（catalog，）──────────────────
+		Perm{Code: "catalog:write", Desc: "查看商品发货来源", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/GetDeliverySources", Method: "GET", Path: "/api/v1/admin/products/{product_id}/delivery-sources"},
+		Perm{Code: "catalog:write", Desc: "设置商品发货来源", Domain: "catalog", AdminOnly: true, Op: "zcard.api.admin.v1.AdminCatalogService/SetDeliverySource", Method: "POST", Path: "/api/v1/admin/products/{product_id}/delivery-sources"},
 		Perm{Code: "catalog:read", Desc: "查看商品", Domain: "catalog",
 			Op: "zcard.api.admin.v1.AdminCatalogService/ListProducts", Method: "GET", Path: "/api/v1/admin/products"},
 		Perm{Code: "catalog:read_detail", Desc: "查看商品详情", Domain: "catalog",

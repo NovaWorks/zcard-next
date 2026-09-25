@@ -12,18 +12,13 @@ import (
 
 // FulfillmentMode resolves a snapshot; a SKU never changes the supplier identity.
 func FulfillmentMode(p *ent.Product, sku *ent.ProductSku) string {
-	if p.UpstreamSourceID > 0 {
+	switch StockSource(p, sku) {
+	case "upstream":
 		return "upstream"
-	}
-	mode := p.FulfillmentMode
-	if sku != nil && sku.FulfillmentMode != "" && sku.FulfillmentMode != "follow" {
-		mode = sku.FulfillmentMode
-	}
-	if mode == "manual" {
+	case "reuse":
+		return "reuse"
+	case "manual":
 		return "manual"
-	}
-	if p.UpstreamSourceID > 0 {
-		return "upstream"
 	}
 	return "auto"
 }

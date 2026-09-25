@@ -326,6 +326,7 @@ export function updateProfile(body: { email: string }) {
 // ── 购物车（：CRUD；结算复用 createOrder 多商品一单）──
 
 export interface CartItem {
+  max_quantity?: number;
   flash_sale?: FlashOffer;
   id: number;
   product_id: number;

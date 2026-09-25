@@ -129,6 +129,13 @@ func main() {
 										}
 									}
 								}
+							case *atlasschema.ModifyColumn:
+								// Extending an enum is additive: existing values retain their order.
+								before, bok := v.From.Type.Type.(*atlasschema.EnumType)
+								after, aok := v.To.Type.Type.(*atlasschema.EnumType)
+								if !bok || !aok || len(after.Values) < len(before.Values) || !slices.Equal(before.Values, after.Values[:len(before.Values)]) || v.Change != atlasschema.ChangeType {
+									return nil, fmt.Errorf("additive migration refuses modifying %s.%s", c.T.Name, v.To.Name)
+								}
 							case *atlasschema.AddIndex:
 							default:
 								return nil, fmt.Errorf("additive migration refuses %T on %s", child, c.T.Name)

@@ -84,6 +84,7 @@ export function inCart(productId: number, skuId = 0) {
 }
 
 interface GuestCartItem {
+  max_quantity?: number;
   flash_sale?: FlashOffer;
   id: number;
   product_id: number;
@@ -136,7 +137,7 @@ export async function loadCart() {
 }
 
 /** 加购（登录 → 后端；游客/令牌失效 → 本地，同商品同 SKU 合并数量）；成功后同步角标 */
-export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; flash_sale?: FlashOffer }, quantity: number, skuId = 0) {
+export async function addToCart(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; flash_sale?: FlashOffer }, quantity: number, skuId = 0) {
   if (!(await refreshCartSetting(true))) return { data: null, error: unavailableMessage() };
   if ((product.stock ?? 0) === 0) return { data: null, error: '暂时缺货' };
   if ((product.stock ?? 0) < -1) return { data: null, error: '库存待确认，请稍后重试' };
@@ -157,11 +158,12 @@ export async function addToCart(product: { id: number; name: string; price_cents
 }
 
 /** 游客本地加购（同商品同 SKU 合并数量） */
-function addGuestLocal(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; flash_sale?: FlashOffer }, quantity: number, skuId: number) {
+function addGuestLocal(product: { id: number; name: string; price_cents: number; points_required?: number; stock?: number; max_quantity?:number; flash_sale?: FlashOffer }, quantity: number, skuId: number) {
   const items = guestItems();
   const existing = items.find((i) => i.product_id === product.id && (i.sku_id || 0) === skuId);
   if (existing) {
-    existing.quantity = Math.min(99, existing.quantity + quantity);
+    existing.quantity = Math.min(product.max_quantity||99, existing.quantity + quantity);
+    existing.max_quantity=product.max_quantity;
     existing.price_cents=product.price_cents;
     existing.flash_sale=product.flash_sale;
   } else {
@@ -169,7 +171,8 @@ function addGuestLocal(product: { id: number; name: string; price_cents: number;
       id: Date.now(),
       product_id: product.id,
       sku_id: skuId,
-      quantity,
+      quantity:Math.min(quantity,product.max_quantity||99),
+      max_quantity:product.max_quantity,
       product_name: product.name,
       price_cents: product.price_cents,
       flash_sale: product.flash_sale,
@@ -189,7 +192,7 @@ export function updateGuestQty(id: number, quantity: number) {
   if (!cartEnabled.value) return;
   const items = guestItems();
   const it = items.find((i) => i.id === id);
-  if (it) it.quantity = Math.max(1, Math.min(99, quantity || 1));
+  if (it) it.quantity = Math.max(1, Math.min(it.max_quantity||99, quantity || 1));
   saveGuest(items);
   syncCartState(items);
 }

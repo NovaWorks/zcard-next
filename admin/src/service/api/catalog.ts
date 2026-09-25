@@ -300,3 +300,12 @@ export function fetchCategoryPlacements(categoryId: number) {
 export function saveCategoryPlacements(categoryId: number, version: number, items: CategoryPlacement[]) {
   return request<CategoryPlacementsReply>({ url: `/api/v1/admin/categories/${categoryId}/placements`, method: 'put', data: { expected_version: version, items } });
 }
+
+export function fetchDeliverySources(productId: number) {
+  return request<any>({url:`/api/v1/admin/products/${productId}/delivery-sources`,method:'get'});
+}
+export function setDeliverySource(productId: number, data: Record<string, unknown>) {
+  return request<any>({url:`/api/v1/admin/products/${productId}/delivery-sources`,method:'post',data});
+}
+
+export function classifyProducts(data: Record<string, unknown>) { return request<any>({url:'/api/v1/admin/products/classify',method:'post',data}); }

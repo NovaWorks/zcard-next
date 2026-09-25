@@ -161,5 +161,64 @@ func ProductStockSnapshots(ctx context.Context, d *Data, products []*ent.Product
 			}
 		}
 	}
+	// Override aggregate availability for products with operator-owned local SKUs.
+	for _, p := range products {
+		local, e := HasLocalDelivery(ctx, client, p)
+		if e != nil {
+			return nil, e
+		}
+		if !local {
+			continue
+		}
+		skus, e := client.ProductSku.Query().Where(productsku.ProductID(p.ID)).All(ctx)
+		if e != nil {
+			return nil, e
+		}
+		slots := skus
+		if len(slots) == 0 {
+			slots = []*ent.ProductSku{nil}
+		}
+		var total int64
+		unknown := false
+		for _, sk := range slots {
+			n := int64(-2)
+			if StockSource(p, sk) == "upstream" {
+				if sk == nil {
+					if snap, ok := out[p.ID]; ok {
+						n = snap.Available()
+					}
+				} else {
+					m, err := client.SupplyMapping.Query().Where(supplymapping.ConnectionID(p.UpstreamSourceID), supplymapping.UpstreamProduct(p.UpstreamProductCode), supplymapping.UpstreamSku(sk.UpstreamSkuID), supplymapping.LocalProductID(p.ID)).Only(ctx)
+					if err != nil && !ent.IsNotFound(err) {
+						return nil, err
+					}
+					if m != nil && sk.UpstreamSkuID != "" && m.UpStock >= -1 && !m.StockCheckedAt.IsZero() && time.Since(m.StockCheckedAt) <= 5*time.Minute {
+						n = int64(m.UpStock)
+					}
+				}
+			} else {
+				n, e = LocalSKUStock(ctx, d, p, sk)
+				if e != nil {
+					return nil, e
+				}
+			}
+			if n == -1 {
+				total = -1
+				break
+			}
+			if n < 0 {
+				unknown = true
+			} else {
+				total += n
+			}
+		}
+		status := "current"
+		if total == 0 && unknown {
+			total = -2
+			status = "unknown"
+		}
+		out[p.ID] = ProductStockSnapshot{Quantity: total, Status: status}
+	}
+
 	return out, nil
 }

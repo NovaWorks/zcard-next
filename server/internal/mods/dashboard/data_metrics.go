@@ -8,6 +8,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/order"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productdeliverysource"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/refundorder"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/user"
 	"github.com/NovaWorks/zcard-next/server/internal/platform/businessday"
@@ -29,10 +30,12 @@ func within(at, start, end time.Time) bool {
 }
 
 type metricLedger struct {
-	orders  []*ent.Order
-	refunds []*ent.RefundOrder
-	items   map[uint64][]*ent.OrderItem
-	users   []*ent.User
+	unknownShared map[uint64]bool
+	sources       []*ent.ProductDeliverySource
+	orders        []*ent.Order
+	refunds       []*ent.RefundOrder
+	items         map[uint64][]*ent.OrderItem
+	users         []*ent.User
 }
 
 // Select only report columns. No payment raw bodies, credentials or order contacts.
@@ -62,13 +65,35 @@ func (r *DashboardRepoImpl) loadLedger(ctx context.Context, subsite uint64, star
 	}
 	// Bound IN lists for SQLite and avoid loading items for unpaid/canceled orders.
 	for i := 0; i < len(ids); i += 500 {
-		rows, err := c.OrderItem.Query().Where(orderitem.OrderIDIn(ids[i:min(i+500, len(ids))]...)).Select(orderitem.FieldID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost).Order(ent.Asc(orderitem.FieldID)).All(ctx)
+		rows, err := c.OrderItem.Query().Where(orderitem.OrderIDIn(ids[i:min(i+500, len(ids))]...)).Select(orderitem.FieldID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldFulfillmentType, orderitem.FieldDeliverySourceID).Order(ent.Asc(orderitem.FieldID)).All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, it := range rows {
 			l.items[it.OrderID] = append(l.items[it.OrderID], it)
 		}
+	}
+	l.unknownShared = map[uint64]bool{0: true}
+	sharedIDs := []uint64{}
+	for _, items := range l.items {
+		for _, it := range items {
+			if it.FulfillmentType == "reuse" {
+				sharedIDs = append(sharedIDs, it.DeliverySourceID)
+			}
+		}
+	}
+	for i := 0; i < len(sharedIDs); i += 500 {
+		ids, e := c.ProductDeliverySource.Query().Where(productdeliverysource.IDIn(sharedIDs[i:min(i+500, len(sharedIDs))]...), productdeliverysource.ConnectionID(0), productdeliverysource.OriginProcurementID(0)).IDs(ctx)
+		if e != nil {
+			return nil, e
+		}
+		for _, id := range ids {
+			l.unknownShared[id] = true
+		}
+	}
+	l.sources, err = c.ProductDeliverySource.Query().Where(productdeliverysource.SubsiteID(subsite), productdeliverysource.ConnectionIDGT(0), productdeliverysource.SubmittedAtGTE(start.Unix()), productdeliverysource.SubmittedAtLT(end.Unix())).Select(productdeliverysource.FieldID, productdeliverysource.FieldSubmittedAt, productdeliverysource.FieldCostCents).All(ctx)
+	if err != nil {
+		return nil, err
 	}
 	l.users, err = c.User.Query().Where(user.CreatedAtGTE(start), user.CreatedAtLT(end)).Select(user.FieldCreatedAt).All(ctx)
 	if err != nil {
@@ -97,6 +122,13 @@ func (l *metricLedger) between(start, end time.Time) Metric {
 			}
 		} else {
 			for _, it := range items {
+				// Shared content incurs one source purchase, not a new purchase for each buyer.
+				if it.FulfillmentType == "reuse" {
+					if l.unknownShared[it.DeliverySourceID] {
+						unknown = true
+					}
+					continue
+				}
 				if it.Cost <= 0 || it.Quantity <= 0 {
 					unknown = true
 				} else {
@@ -106,6 +138,15 @@ func (l *metricLedger) between(start, end time.Time) Metric {
 		}
 		if unknown {
 			m.UnknownCostOrders++
+		}
+	}
+	for _, src := range l.sources {
+		if within(time.Unix(src.SubmittedAt, 0), start, end) {
+			if src.CostCents > 0 {
+				m.Cost += src.CostCents
+			} else {
+				m.UnknownCostOrders++
+			}
 		}
 	}
 	for _, rf := range l.refunds {

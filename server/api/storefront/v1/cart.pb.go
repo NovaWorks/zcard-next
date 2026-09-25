@@ -187,9 +187,10 @@ type CartItem struct {
 	Quantity  int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	// 商品快照（联查现值——结算前端展示用）
 	ProductName    string      `protobuf:"bytes,5,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
-	PriceCents     int64       `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"` // 现价（SKU 解析后）
-	Stock          int64       `protobuf:"varint,7,opt,name=stock,proto3" json:"stock,omitempty"`                             // 可用库存（-1 不限）
-	PointsOnly     bool        `protobuf:"varint,8,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"` // 积分兑换商品（不可混合结算）
+	PriceCents     int64       `protobuf:"varint,6,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`     // 现价（SKU 解析后）
+	MaxQuantity    int32       `protobuf:"varint,14,opt,name=max_quantity,json=maxQuantity,proto3" json:"max_quantity,omitempty"` // 单次购买上限，0 使用默认上限
+	Stock          int64       `protobuf:"varint,7,opt,name=stock,proto3" json:"stock,omitempty"`                                 // 可用库存（-1 不限）
+	PointsOnly     bool        `protobuf:"varint,8,opt,name=points_only,json=pointsOnly,proto3" json:"points_only,omitempty"`     // 积分兑换商品（不可混合结算）
 	PointsRequired int64       `protobuf:"varint,9,opt,name=points_required,json=pointsRequired,proto3" json:"points_required,omitempty"`
 	Valid          bool        `protobuf:"varint,10,opt,name=valid,proto3" json:"valid,omitempty"` // false=已下架/隐藏（列表打标不可选）
 	FlashSale      *FlashOffer `protobuf:"bytes,13,opt,name=flash_sale,json=flashSale,proto3" json:"flash_sale,omitempty"`
@@ -267,6 +268,13 @@ func (x *CartItem) GetProductName() string {
 func (x *CartItem) GetPriceCents() int64 {
 	if x != nil {
 		return x.PriceCents
+	}
+	return 0
+}
+
+func (x *CartItem) GetMaxQuantity() int32 {
+	if x != nil {
+		return x.MaxQuantity
 	}
 	return 0
 }
@@ -386,7 +394,7 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\x12\x1f\n" +
 	"\bquantity\x18\x02 \x01(\x05B\x03\xe0A\x02R\bquantity\",\n" +
 	"\x15RemoveCartItemRequest\x12\x13\n" +
-	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xaa\x03\n" +
+	"\x02id\x18\x01 \x01(\x04B\x03\xe0A\x02R\x02id\"\xcd\x03\n" +
 	"\bCartItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -395,7 +403,8 @@ const file_storefront_v1_cart_proto_rawDesc = "" +
 	"\bquantity\x18\x04 \x01(\x05R\bquantity\x12!\n" +
 	"\fproduct_name\x18\x05 \x01(\tR\vproductName\x12\x1f\n" +
 	"\vprice_cents\x18\x06 \x01(\x03R\n" +
-	"priceCents\x12\x14\n" +
+	"priceCents\x12!\n" +
+	"\fmax_quantity\x18\x0e \x01(\x05R\vmaxQuantity\x12\x14\n" +
 	"\x05stock\x18\a \x01(\x03R\x05stock\x12\x1f\n" +
 	"\vpoints_only\x18\b \x01(\bR\n" +
 	"pointsOnly\x12'\n" +

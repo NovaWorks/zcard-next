@@ -123,7 +123,8 @@ func (OrderItem) Fields() []ent.Field {
 		field.Int32("quantity"),
 		field.Int64("amount").Comment("小计（分）"),
 		field.Int64("cost").Default(0).Comment("成本快照（分）"),
-		field.Enum("fulfillment_type").Values("auto", "manual", "upstream").Comment("履约类型"),
+		field.Enum("fulfillment_type").Values("auto", "manual", "upstream", "reuse").Comment("履约类型"),
+		field.Uint64("delivery_source_id").Optional(),
 		field.String("fulfillment_status").MaxLen(20).Default("pending").Comment("履约状态"),
 		field.JSON("commission_snapshot", map[string]any{}).Optional().Comment("佣金快照（三级 + 费率）"),
 		field.JSON("profit_snapshot", map[string]any{}).Optional().Comment("分站利润快照"),
@@ -132,6 +133,7 @@ func (OrderItem) Fields() []ent.Field {
 
 func (OrderItem) Indexes() []ent.Index {
 	return []ent.Index{
+        index.Fields("delivery_source_id"),
 		index.Fields("order_id"),
 		index.Fields("product_id"),
 	}

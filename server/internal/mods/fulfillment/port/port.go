@@ -25,3 +25,8 @@ type UpstreamDeliveryItem struct {
 type AttachUpstreamDelivery interface {
 	AttachUpstreamDelivery(ctx context.Context, orderID, itemID, productID uint64, items []UpstreamDeliveryItem) error
 }
+
+// ReusableDelivery writes a separate delivery record referencing an immutable source.
+type ReusableDelivery interface {
+	DeliverReusable(context.Context, uint64, uint64, uint64) error
+}

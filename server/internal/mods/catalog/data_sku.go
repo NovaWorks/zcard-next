@@ -43,6 +43,16 @@ func (r *ProductRepoImpl) ListProductSkus(ctx context.Context, productID uint64)
 
 // CreateSku 创建 SKU。
 func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.ProductSku, error) {
+	parent, e := data.Client(ctx, r.data).Product.Get(ctx, in.ProductID)
+	if e != nil {
+		return nil, e
+	}
+	if parent.FulfillmentMode == "reuse" || parent.FulfillmentMode == "local" {
+		return nil, fmt.Errorf("默认规格已配置本地发货，请先切换发货来源，再新增规格")
+	}
+	if in.FulfillmentMode == "local" || in.FulfillmentMode == "reuse" {
+		return nil, fmt.Errorf("请先保存规格，再在发货设置中配置内容来源")
+	}
 	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
 		return nil, err
 	}
@@ -79,6 +89,16 @@ func (r *ProductRepoImpl) createSku(ctx context.Context, in SkuInput) (*ent.Prod
 
 // UpdateSku applies explicitly supplied zero values (price 0 inherits product price).
 func (r *ProductRepoImpl) updateSku(ctx context.Context, id uint64, in SkuInput) (*ent.ProductSku, error) {
+	current, e := data.Client(ctx, r.data).ProductSku.Get(ctx, id)
+	if e != nil {
+		return nil, e
+	}
+	if in.FulfillmentMode != "" && in.FulfillmentMode != current.FulfillmentMode && (in.FulfillmentMode == "local" || in.FulfillmentMode == "reuse" || current.FulfillmentMode == "local" || current.FulfillmentMode == "reuse") {
+		return nil, fmt.Errorf("请在发货设置中更改规格的内容来源")
+	}
+	if in.UpstreamSkuID != "" && in.UpstreamSkuID != current.UpstreamSkuID && (current.FulfillmentMode == "local" || current.FulfillmentMode == "reuse") {
+		return nil, fmt.Errorf("本地发货规格不能更换上游绑定")
+	}
 	if err := validateServiceConfig(in.FulfillmentMode, nil, true); err != nil {
 		return nil, err
 	}
@@ -168,6 +188,8 @@ func (r *ProductRepoImpl) ListSkus(ctx context.Context, productID uint64) ([]por
 		mode := data.FulfillmentMode(p, s)
 		stock := int64(-2)
 		switch mode {
+		case "reuse":
+			stock, err = data.LocalSKUStock(ctx, r.data, p, s)
 		case "manual":
 			stock, err = data.ManualAvailable(ctx, data.Client(ctx, r.data), p)
 		case "auto":
@@ -219,7 +241,7 @@ func (r *ProductRepoImpl) ResolvePrice(ctx context.Context, productID, skuID uin
 var _ port.PricingResolver = (*ProductRepoImpl)(nil)
 
 func validateServiceConfig(mode string, stock *int64, sku bool) error {
-	if mode != "" && mode != "auto" && mode != "manual" && !(sku && mode == "follow") {
+	if mode != "" && mode != "auto" && mode != "manual" && mode != "local" && mode != "reuse" && !(sku && mode == "follow") {
 		return fmt.Errorf("交付方式无效")
 	}
 	if stock != nil && *stock < -1 {
@@ -254,7 +276,10 @@ func (r *ProductRepoImpl) UpdateSku(ctx context.Context, id uint64, in SkuInput)
 
 		var inner error
 		out, inner = r.updateSku(ctx, id, in)
-		return inner
+		if inner != nil {
+			return inner
+		}
+		return data.Client(ctx, r.data).Product.UpdateOneID(row.ProductID).AddLockVersion(1).Exec(ctx)
 	})
 	return
 }

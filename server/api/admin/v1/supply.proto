@@ -305,6 +305,9 @@ message PreviewProduct {
   bool already_imported = 9; // 已存在映射（勾选导入 = 更新）
   string quote_status = 10; // pending | ready | failed；未确认时不能使用目录原价作为成本
   int64 cost_price_cents = 11; // 本地币种成本，账号单件报价乘汇率，不含加价；未知=-1
+  bool is_locked = 13;
+  bool category_protected = 14;
+  uint64 local_category_id = 15;
   bool cost_is_minimum = 12; // 多规格商品显示最低规格成本
 }
 
@@ -327,6 +330,10 @@ message ImportProductsRequest {
   int64 markup_amount_cents = 5; // fixed 模式加价金额（分）
   bool save_default = 6; // 把本次策略存为连接默认（settings.import_pricing）
   map<string, uint64> category_map = 7; // 缺省沿用；0 显式清除；正数指定本地分类
+  map<string, uint64> product_categories = 10; // 单品明确选择，仅限本次选中商品
+  repeated ProductCategoryRule category_rules = 11;
+  bool save_category_rules = 12;
+  bool selected_categories_only = 13; // 不修改整个上游分类的默认映射
   string request_key = 9; // 同一次提交/网络重试使用同一键
   repeated ImportCategoryDraft category_drafts = 8; // 仅在提交时创建，限所选商品涉及分类
 }
@@ -416,4 +423,11 @@ message RetryImportTaskRequest {
   uint64 id = 1;
   string scope = 2; // failed | stock | remaining
   bool confirm_config = 3; // 已确认使用当前货源配置继续未完成部分
+}
+
+message ProductCategoryRule {
+  repeated string keywords = 1;
+  repeated string excludes = 2;
+  uint64 category_id = 3;
+  bool match_all = 4;
 }

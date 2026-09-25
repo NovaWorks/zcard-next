@@ -45,6 +45,8 @@ const (
 	FieldCost = "cost"
 	// FieldFulfillmentType holds the string denoting the fulfillment_type field in the database.
 	FieldFulfillmentType = "fulfillment_type"
+	// FieldDeliverySourceID holds the string denoting the delivery_source_id field in the database.
+	FieldDeliverySourceID = "delivery_source_id"
 	// FieldFulfillmentStatus holds the string denoting the fulfillment_status field in the database.
 	FieldFulfillmentStatus = "fulfillment_status"
 	// FieldCommissionSnapshot holds the string denoting the commission_snapshot field in the database.
@@ -82,6 +84,7 @@ var Columns = []string{
 	FieldAmount,
 	FieldCost,
 	FieldFulfillmentType,
+	FieldDeliverySourceID,
 	FieldFulfillmentStatus,
 	FieldCommissionSnapshot,
 	FieldProfitSnapshot,
@@ -128,6 +131,7 @@ const (
 	FulfillmentTypeAuto     FulfillmentType = "auto"
 	FulfillmentTypeManual   FulfillmentType = "manual"
 	FulfillmentTypeUpstream FulfillmentType = "upstream"
+	FulfillmentTypeReuse    FulfillmentType = "reuse"
 )
 
 func (ft FulfillmentType) String() string {
@@ -137,7 +141,7 @@ func (ft FulfillmentType) String() string {
 // FulfillmentTypeValidator is a validator for the "fulfillment_type" field enum values. It is called by the builders before save.
 func FulfillmentTypeValidator(ft FulfillmentType) error {
 	switch ft {
-	case FulfillmentTypeAuto, FulfillmentTypeManual, FulfillmentTypeUpstream:
+	case FulfillmentTypeAuto, FulfillmentTypeManual, FulfillmentTypeUpstream, FulfillmentTypeReuse:
 		return nil
 	default:
 		return fmt.Errorf("orderitem: invalid enum value for fulfillment_type field: %q", ft)
@@ -220,6 +224,11 @@ func ByCost(opts ...sql.OrderTermOption) OrderOption {
 // ByFulfillmentType orders the results by the fulfillment_type field.
 func ByFulfillmentType(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldFulfillmentType, opts...).ToFunc()
+}
+
+// ByDeliverySourceID orders the results by the delivery_source_id field.
+func ByDeliverySourceID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeliverySourceID, opts...).ToFunc()
 }
 
 // ByFulfillmentStatus orders the results by the fulfillment_status field.

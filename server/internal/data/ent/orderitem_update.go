@@ -290,6 +290,33 @@ func (_u *OrderItemUpdate) SetNillableFulfillmentType(v *orderitem.FulfillmentTy
 	return _u
 }
 
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (_u *OrderItemUpdate) SetDeliverySourceID(v uint64) *OrderItemUpdate {
+	_u.mutation.ResetDeliverySourceID()
+	_u.mutation.SetDeliverySourceID(v)
+	return _u
+}
+
+// SetNillableDeliverySourceID sets the "delivery_source_id" field if the given value is not nil.
+func (_u *OrderItemUpdate) SetNillableDeliverySourceID(v *uint64) *OrderItemUpdate {
+	if v != nil {
+		_u.SetDeliverySourceID(*v)
+	}
+	return _u
+}
+
+// AddDeliverySourceID adds value to the "delivery_source_id" field.
+func (_u *OrderItemUpdate) AddDeliverySourceID(v int64) *OrderItemUpdate {
+	_u.mutation.AddDeliverySourceID(v)
+	return _u
+}
+
+// ClearDeliverySourceID clears the value of the "delivery_source_id" field.
+func (_u *OrderItemUpdate) ClearDeliverySourceID() *OrderItemUpdate {
+	_u.mutation.ClearDeliverySourceID()
+	return _u
+}
+
 // SetFulfillmentStatus sets the "fulfillment_status" field.
 func (_u *OrderItemUpdate) SetFulfillmentStatus(v string) *OrderItemUpdate {
 	_u.mutation.SetFulfillmentStatus(v)
@@ -491,6 +518,15 @@ func (_u *OrderItemUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.FulfillmentType(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.DeliverySourceID(); ok {
+		_spec.SetField(orderitem.FieldDeliverySourceID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedDeliverySourceID(); ok {
+		_spec.AddField(orderitem.FieldDeliverySourceID, field.TypeUint64, value)
+	}
+	if _u.mutation.DeliverySourceIDCleared() {
+		_spec.ClearField(orderitem.FieldDeliverySourceID, field.TypeUint64)
 	}
 	if value, ok := _u.mutation.FulfillmentStatus(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentStatus, field.TypeString, value)
@@ -816,6 +852,33 @@ func (_u *OrderItemUpdateOne) SetNillableFulfillmentType(v *orderitem.Fulfillmen
 	return _u
 }
 
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (_u *OrderItemUpdateOne) SetDeliverySourceID(v uint64) *OrderItemUpdateOne {
+	_u.mutation.ResetDeliverySourceID()
+	_u.mutation.SetDeliverySourceID(v)
+	return _u
+}
+
+// SetNillableDeliverySourceID sets the "delivery_source_id" field if the given value is not nil.
+func (_u *OrderItemUpdateOne) SetNillableDeliverySourceID(v *uint64) *OrderItemUpdateOne {
+	if v != nil {
+		_u.SetDeliverySourceID(*v)
+	}
+	return _u
+}
+
+// AddDeliverySourceID adds value to the "delivery_source_id" field.
+func (_u *OrderItemUpdateOne) AddDeliverySourceID(v int64) *OrderItemUpdateOne {
+	_u.mutation.AddDeliverySourceID(v)
+	return _u
+}
+
+// ClearDeliverySourceID clears the value of the "delivery_source_id" field.
+func (_u *OrderItemUpdateOne) ClearDeliverySourceID() *OrderItemUpdateOne {
+	_u.mutation.ClearDeliverySourceID()
+	return _u
+}
+
 // SetFulfillmentStatus sets the "fulfillment_status" field.
 func (_u *OrderItemUpdateOne) SetFulfillmentStatus(v string) *OrderItemUpdateOne {
 	_u.mutation.SetFulfillmentStatus(v)
@@ -1047,6 +1110,15 @@ func (_u *OrderItemUpdateOne) sqlSave(ctx context.Context) (_node *OrderItem, er
 	}
 	if value, ok := _u.mutation.FulfillmentType(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.DeliverySourceID(); ok {
+		_spec.SetField(orderitem.FieldDeliverySourceID, field.TypeUint64, value)
+	}
+	if value, ok := _u.mutation.AddedDeliverySourceID(); ok {
+		_spec.AddField(orderitem.FieldDeliverySourceID, field.TypeUint64, value)
+	}
+	if _u.mutation.DeliverySourceIDCleared() {
+		_spec.ClearField(orderitem.FieldDeliverySourceID, field.TypeUint64)
 	}
 	if value, ok := _u.mutation.FulfillmentStatus(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentStatus, field.TypeString, value)

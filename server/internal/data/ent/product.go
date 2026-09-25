@@ -26,6 +26,8 @@ type Product struct {
 	SubsiteID uint64 `json:"subsite_id,omitempty"`
 	// 分类（软外键，仅索引）
 	CategoryID uint64 `json:"category_id,omitempty"`
+	// CategoryProtected holds the value of the "category_protected" field.
+	CategoryProtected bool `json:"category_protected,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// 唯一标识
@@ -128,7 +130,7 @@ func (*Product) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case product.FieldImages, product.FieldMemberPrice, product.FieldDirectContent, product.FieldControlConfig:
 			values[i] = new([]byte)
-		case product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldIsLocked:
+		case product.FieldCategoryProtected, product.FieldCoverProtected, product.FieldDescriptionProtected, product.FieldStockVisible, product.FieldDedup, product.FieldIsRecommend, product.FieldIsLocked:
 			values[i] = new(sql.NullBool)
 		case product.FieldID, product.FieldSubsiteID, product.FieldCategoryID, product.FieldPrice, product.FieldFactoryPrice, product.FieldDraftPremium, product.FieldPointsRequired, product.FieldManualStock, product.FieldSort, product.FieldStatus, product.FieldUpstreamSourceID, product.FieldLockVersion, product.FieldLockedBy:
 			values[i] = new(sql.NullInt64)
@@ -180,6 +182,12 @@ func (_m *Product) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field category_id", values[i])
 			} else if value.Valid {
 				_m.CategoryID = uint64(value.Int64)
+			}
+		case product.FieldCategoryProtected:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field category_protected", values[i])
+			} else if value.Valid {
+				_m.CategoryProtected = value.Bool
 			}
 		case product.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -425,6 +433,9 @@ func (_m *Product) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("category_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CategoryID))
+	builder.WriteString(", ")
+	builder.WriteString("category_protected=")
+	builder.WriteString(fmt.Sprintf("%v", _m.CategoryProtected))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(_m.Name)

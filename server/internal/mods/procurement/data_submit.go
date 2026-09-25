@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"log/slog"
 	"time"
 
@@ -80,6 +81,13 @@ func (s *ProcureService) OnOrderPaid(ctx context.Context, env events.Envelope) e
 		return fmt.Errorf("procurement: 解析 order.paid 载荷失败: %w", err)
 	}
 	for _, it := range payload.Items {
+		if it.FulfillmentType == "reuse" {
+			// Shared sources are also recovered by the durable cron worker.
+			if row, e := data.Client(ctx, s.repo.data).OrderItem.Get(ctx, it.OrderItemID); e == nil {
+				_ = s.processReusable(ctx, row.DeliverySourceID)
+			}
+			continue
+		}
 		if it.FulfillmentType != "upstream" {
 			continue // 本地卡密项由 fulfillment 模块履约
 		}

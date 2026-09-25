@@ -10,6 +10,15 @@ import "google/protobuf/empty.proto";
 
 // AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 service AdminCatalogService {
+  rpc ClassifyProducts(ClassifyProductsRequest) returns (ClassifyProductsReply) {
+    option (google.api.http) = { post: "/api/v1/admin/products/classify" body: "*" };
+  }
+  rpc GetDeliverySources(DeliverySourcesRequest) returns (DeliverySourcesReply) {
+    option (google.api.http) = { get: "/api/v1/admin/products/{product_id}/delivery-sources" };
+  }
+  rpc SetDeliverySource(SetDeliverySourceRequest) returns (DeliverySourcesReply) {
+    option (google.api.http) = { post: "/api/v1/admin/products/{product_id}/delivery-sources" body: "*" };
+  }
   // ── 商品 ──
   rpc ListProducts(ListProductsRequest) returns (ListProductsReply) {
     option (google.api.http) = { get: "/api/v1/admin/products" };
@@ -645,4 +654,52 @@ message CategoryPlacementsReply {
 }
 message SetCategoryPlacementsRequest {
   uint64 category_id = 1; int64 expected_version = 2; repeated CategoryPlacementInput items = 3;
+}
+
+message DeliverySourcesRequest { uint64 product_id = 1; uint64 sku_id = 2; }
+message DeliverySourceInfo {
+  uint64 id = 1; uint64 sku_id = 2; string sku_name = 3; string mode = 4;
+  string status = 5; bool has_content = 6; int64 expires_at = 7; int64 max_deliveries = 8;
+  int64 deliveries = 9; string error = 10; uint64 origin_procurement_id = 11;
+  int64 cost_cents = 12; string upstream_order_id = 13;
+}
+message DeliveryReceiptOption {
+  uint64 procurement_id = 1; int32 content_index = 2; uint64 sku_id = 3;
+  int64 purchased_at = 4; string label = 5;
+}
+message DeliverySourcesReply {
+  repeated DeliverySourceInfo sources = 1;
+  repeated DeliveryReceiptOption receipts = 2;
+  int64 revision = 3;
+}
+message SetDeliverySourceRequest {
+  uint64 product_id = 1; uint64 sku_id = 2; string mode = 3; // upstream | local | reuse
+  string content = 4; uint64 procurement_id = 5; int32 content_index = 6;
+  bool first_purchase = 7; int64 expires_at = 8; int64 max_deliveries = 9;
+  int64 expected_revision = 10; string action = 11; // configure | pause | resume | reconcile
+  string upstream_order_id = 12; // uncertain purchase: bind existing receipt, never resubmit
+}
+
+message ClassifyProductsRequest {
+  repeated string keywords = 1;
+  repeated string excludes = 2;
+  bool match_all = 3;
+  uint64 category_id = 4;
+  bool apply = 5;
+  map<uint64,string> revisions = 6;
+}
+message ClassificationProduct {
+  uint64 id = 1;
+  string name = 2;
+  uint64 category_id = 3;
+  string revision = 4;
+  string status = 5;
+}
+message ClassifyProductsReply {
+  repeated ClassificationProduct items = 1;
+  int32 skipped_locked = 2;
+  int32 skipped_protected = 3;
+  int32 unchanged = 4;
+  int32 updated = 5;
+  bool truncated = 6;
 }

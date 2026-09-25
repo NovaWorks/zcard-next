@@ -52,9 +52,9 @@
           </div>
           <div class="cart-item-qty">
             <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @click="changeQty(it, it.quantity - 1)">−</button>
-            <input class="cart-qty-input" type="number" min="1" max="99" v-model.number="it.quantity"
+            <input class="cart-qty-input" type="number" min="1" :max="it.max_quantity||99" v-model.number="it.quantity"
                    :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @change="changeQty(it, it.quantity)" />
-            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1" @click="changeQty(it, it.quantity + 1)">＋</button>
+            <button class="cart-qty-btn" :disabled="(it.stock ?? 0) === 0 || it.stock < -1 || it.quantity >= (it.max_quantity||99)" @click="changeQty(it, it.quantity + 1)">＋</button>
           </div>
           <div class="cart-item-subtotal">
             <div class="cart-subtotal">{{ formatMoney(flash.price(it.price_cents, it.flash_sale) * it.quantity) }}</div>
@@ -170,7 +170,7 @@ function toggleAll() {
 
 async function changeQty(it: CartItem, qty: number) {
   if (!(await refreshCartSetting(true))) return;
-  const q = Math.max(1, Math.min(99, qty || 1));
+  const q = Math.max(1, Math.min(it.max_quantity||99, qty || 1));
   if (isGuestCart.value) {
     // 游客本地购物车
     updateGuestQty(it.id, q);

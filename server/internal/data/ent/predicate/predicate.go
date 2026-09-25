@@ -168,6 +168,9 @@ type ProductContentBatch func(*sql.Selector)
 // ProductControl is the predicate function for productcontrol builders.
 type ProductControl func(*sql.Selector)
 
+// ProductDeliverySource is the predicate function for productdeliverysource builders.
+type ProductDeliverySource func(*sql.Selector)
+
 // ProductSku is the predicate function for productsku builders.
 type ProductSku func(*sql.Selector)
 

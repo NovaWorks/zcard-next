@@ -23,6 +23,8 @@ const (
 	FieldSubsiteID = "subsite_id"
 	// FieldCategoryID holds the string denoting the category_id field in the database.
 	FieldCategoryID = "category_id"
+	// FieldCategoryProtected holds the string denoting the category_protected field in the database.
+	FieldCategoryProtected = "category_protected"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldSlug holds the string denoting the slug field in the database.
@@ -112,6 +114,7 @@ var Columns = []string{
 	FieldUpdatedAt,
 	FieldSubsiteID,
 	FieldCategoryID,
+	FieldCategoryProtected,
 	FieldName,
 	FieldSlug,
 	FieldDescription,
@@ -163,6 +166,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultSubsiteID holds the default value on creation for the "subsite_id" field.
 	DefaultSubsiteID uint64
+	// DefaultCategoryProtected holds the default value on creation for the "category_protected" field.
+	DefaultCategoryProtected bool
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
@@ -284,6 +289,11 @@ func BySubsiteID(opts ...sql.OrderTermOption) OrderOption {
 // ByCategoryID orders the results by the category_id field.
 func ByCategoryID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCategoryID, opts...).ToFunc()
+}
+
+// ByCategoryProtected orders the results by the category_protected field.
+func ByCategoryProtected(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCategoryProtected, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.

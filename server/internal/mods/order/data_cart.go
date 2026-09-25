@@ -73,6 +73,14 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 	if data.CategoryHidden(hidden, p.CategoryID) {
 		return nil, errors.New("cart.PRODUCT_NOT_AVAILABLE: 商品已下架")
 	}
+	sku, err := data.DeliverySKU(ctx, client, p, req.GetSkuId())
+	if err != nil {
+		return nil, errors.New("cart.SKU_INVALID")
+	}
+	reuse := data.StockSource(p, sku) == "reuse"
+	if reuse && req.GetQuantity() != 1 {
+		return nil, errors.New("该规格每次只需购买一份")
+	}
 	// 合并：唯一索引 (user_id, product_id, sku_id) 冲突时数量累加（AddQuantity）
 	if err := client.CartItem.Create().
 		SetUserID(userID).
@@ -82,7 +90,11 @@ func (s *StoreCartService) AddCartItem(ctx context.Context, req *storefrontv1.Ad
 		OnConflict(
 			sql.ConflictColumns(cartitem.FieldUserID, cartitem.FieldProductID, cartitem.FieldSkuID),
 		).Update(func(u *ent.CartItemUpsert) {
-		u.AddQuantity(req.GetQuantity())
+		if reuse {
+			u.SetQuantity(1)
+		} else {
+			u.AddQuantity(req.GetQuantity())
+		}
 	}).Exec(ctx); err != nil {
 		return nil, err
 	}
@@ -146,6 +158,17 @@ func (s *StoreCartService) UpdateCartItem(ctx context.Context, req *storefrontv1
 			return nil, err
 		}
 		return &storefrontv1.CartItem{Id: row.ID}, nil
+	}
+	p, err := client.Product.Get(ctx, row.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	sku, err := data.DeliverySKU(ctx, client, p, row.SkuID)
+	if err != nil {
+		return nil, err
+	}
+	if data.StockSource(p, sku) == "reuse" && req.GetQuantity() != 1 {
+		return nil, errors.New("该规格每次只需购买一份")
 	}
 	if err := client.CartItem.UpdateOne(row).SetQuantity(req.GetQuantity()).Exec(ctx); err != nil {
 		return nil, err
@@ -232,7 +255,22 @@ func (s *StoreCartService) toItemPB(ctx context.Context, row *ent.CartItem) (*st
 		}
 	}
 	// 库存（inventory port 单查；失败降级 0——宁显无货不显假库存）
-	if p.UpstreamSourceID > 0 {
+	sku, skuErr := data.DeliverySKU(ctx, client, p, row.SkuID)
+	if skuErr != nil {
+		item.Valid = false
+		item.Stock = 0
+		return item, nil
+	}
+	if data.StockSource(p, sku) == "reuse" {
+		item.MaxQuantity = 1
+	}
+	if data.StockSource(p, sku) != "upstream" {
+		stock, e := data.LocalSKUStock(ctx, s.data, p, sku)
+		if e != nil {
+			return nil, e
+		}
+		item.Stock = stock
+	} else if p.UpstreamSourceID > 0 {
 		item.Stock = -2
 		if stocks, err := data.ProductStocks(ctx, s.data, []*ent.Product{p}); err == nil {
 			item.Stock = stocks[p.ID]

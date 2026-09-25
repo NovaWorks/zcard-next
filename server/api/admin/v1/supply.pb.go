@@ -1669,7 +1669,10 @@ type PreviewProduct struct {
 	AlreadyImported   bool                   `protobuf:"varint,9,opt,name=already_imported,json=alreadyImported,proto3" json:"already_imported,omitempty"` // 已存在映射（勾选导入 = 更新）
 	QuoteStatus       string                 `protobuf:"bytes,10,opt,name=quote_status,json=quoteStatus,proto3" json:"quote_status,omitempty"`             // pending | ready | failed；未确认时不能使用目录原价作为成本
 	CostPriceCents    int64                  `protobuf:"varint,11,opt,name=cost_price_cents,json=costPriceCents,proto3" json:"cost_price_cents,omitempty"` // 本地币种成本，账号单件报价乘汇率，不含加价；未知=-1
-	CostIsMinimum     bool                   `protobuf:"varint,12,opt,name=cost_is_minimum,json=costIsMinimum,proto3" json:"cost_is_minimum,omitempty"`    // 多规格商品显示最低规格成本
+	IsLocked          bool                   `protobuf:"varint,13,opt,name=is_locked,json=isLocked,proto3" json:"is_locked,omitempty"`
+	CategoryProtected bool                   `protobuf:"varint,14,opt,name=category_protected,json=categoryProtected,proto3" json:"category_protected,omitempty"`
+	LocalCategoryId   uint64                 `protobuf:"varint,15,opt,name=local_category_id,json=localCategoryId,proto3" json:"local_category_id,omitempty"`
+	CostIsMinimum     bool                   `protobuf:"varint,12,opt,name=cost_is_minimum,json=costIsMinimum,proto3" json:"cost_is_minimum,omitempty"` // 多规格商品显示最低规格成本
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1777,6 +1780,27 @@ func (x *PreviewProduct) GetQuoteStatus() string {
 func (x *PreviewProduct) GetCostPriceCents() int64 {
 	if x != nil {
 		return x.CostPriceCents
+	}
+	return 0
+}
+
+func (x *PreviewProduct) GetIsLocked() bool {
+	if x != nil {
+		return x.IsLocked
+	}
+	return false
+}
+
+func (x *PreviewProduct) GetCategoryProtected() bool {
+	if x != nil {
+		return x.CategoryProtected
+	}
+	return false
+}
+
+func (x *PreviewProduct) GetLocalCategoryId() uint64 {
+	if x != nil {
+		return x.LocalCategoryId
 	}
 	return 0
 }
@@ -1901,18 +1925,22 @@ func (x *PreviewProductsReply) GetTotal() int32 {
 }
 
 type ImportProductsRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	ConnectionId      uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
-	Codes             []string               `protobuf:"bytes,2,rep,name=codes,proto3" json:"codes,omitempty"`
-	PricingMode       string                 `protobuf:"bytes,3,opt,name=pricing_mode,json=pricingMode,proto3" json:"pricing_mode,omitempty"`                                                                            // channel | percent | fixed | equal | pending（默认跟随渠道，兼容已保存导入策略）
-	MarkupPercent     float64                `protobuf:"fixed64,4,opt,name=markup_percent,json=markupPercent,proto3" json:"markup_percent,omitempty"`                                                                    // percent 模式加价 %（0 = 不加价）
-	MarkupAmountCents int64                  `protobuf:"varint,5,opt,name=markup_amount_cents,json=markupAmountCents,proto3" json:"markup_amount_cents,omitempty"`                                                       // fixed 模式加价金额（分）
-	SaveDefault       bool                   `protobuf:"varint,6,opt,name=save_default,json=saveDefault,proto3" json:"save_default,omitempty"`                                                                           // 把本次策略存为连接默认（settings.import_pricing）
-	CategoryMap       map[string]uint64      `protobuf:"bytes,7,rep,name=category_map,json=categoryMap,proto3" json:"category_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 缺省沿用；0 显式清除；正数指定本地分类
-	RequestKey        string                 `protobuf:"bytes,9,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"`                                                                               // 同一次提交/网络重试使用同一键
-	CategoryDrafts    []*ImportCategoryDraft `protobuf:"bytes,8,rep,name=category_drafts,json=categoryDrafts,proto3" json:"category_drafts,omitempty"`                                                                   // 仅在提交时创建，限所选商品涉及分类
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"open.v1"`
+	ConnectionId           uint64                 `protobuf:"varint,1,opt,name=connection_id,json=connectionId,proto3" json:"connection_id,omitempty"`
+	Codes                  []string               `protobuf:"bytes,2,rep,name=codes,proto3" json:"codes,omitempty"`
+	PricingMode            string                 `protobuf:"bytes,3,opt,name=pricing_mode,json=pricingMode,proto3" json:"pricing_mode,omitempty"`                                                                                               // channel | percent | fixed | equal | pending（默认跟随渠道，兼容已保存导入策略）
+	MarkupPercent          float64                `protobuf:"fixed64,4,opt,name=markup_percent,json=markupPercent,proto3" json:"markup_percent,omitempty"`                                                                                       // percent 模式加价 %（0 = 不加价）
+	MarkupAmountCents      int64                  `protobuf:"varint,5,opt,name=markup_amount_cents,json=markupAmountCents,proto3" json:"markup_amount_cents,omitempty"`                                                                          // fixed 模式加价金额（分）
+	SaveDefault            bool                   `protobuf:"varint,6,opt,name=save_default,json=saveDefault,proto3" json:"save_default,omitempty"`                                                                                              // 把本次策略存为连接默认（settings.import_pricing）
+	CategoryMap            map[string]uint64      `protobuf:"bytes,7,rep,name=category_map,json=categoryMap,proto3" json:"category_map,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`                    // 缺省沿用；0 显式清除；正数指定本地分类
+	ProductCategories      map[string]uint64      `protobuf:"bytes,10,rep,name=product_categories,json=productCategories,proto3" json:"product_categories,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 单品明确选择，仅限本次选中商品
+	CategoryRules          []*ProductCategoryRule `protobuf:"bytes,11,rep,name=category_rules,json=categoryRules,proto3" json:"category_rules,omitempty"`
+	SaveCategoryRules      bool                   `protobuf:"varint,12,opt,name=save_category_rules,json=saveCategoryRules,proto3" json:"save_category_rules,omitempty"`
+	SelectedCategoriesOnly bool                   `protobuf:"varint,13,opt,name=selected_categories_only,json=selectedCategoriesOnly,proto3" json:"selected_categories_only,omitempty"` // 不修改整个上游分类的默认映射
+	RequestKey             string                 `protobuf:"bytes,9,opt,name=request_key,json=requestKey,proto3" json:"request_key,omitempty"`                                         // 同一次提交/网络重试使用同一键
+	CategoryDrafts         []*ImportCategoryDraft `protobuf:"bytes,8,rep,name=category_drafts,json=categoryDrafts,proto3" json:"category_drafts,omitempty"`                             // 仅在提交时创建，限所选商品涉及分类
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *ImportProductsRequest) Reset() {
@@ -1992,6 +2020,34 @@ func (x *ImportProductsRequest) GetCategoryMap() map[string]uint64 {
 		return x.CategoryMap
 	}
 	return nil
+}
+
+func (x *ImportProductsRequest) GetProductCategories() map[string]uint64 {
+	if x != nil {
+		return x.ProductCategories
+	}
+	return nil
+}
+
+func (x *ImportProductsRequest) GetCategoryRules() []*ProductCategoryRule {
+	if x != nil {
+		return x.CategoryRules
+	}
+	return nil
+}
+
+func (x *ImportProductsRequest) GetSaveCategoryRules() bool {
+	if x != nil {
+		return x.SaveCategoryRules
+	}
+	return false
+}
+
+func (x *ImportProductsRequest) GetSelectedCategoriesOnly() bool {
+	if x != nil {
+		return x.SelectedCategoriesOnly
+	}
+	return false
 }
 
 func (x *ImportProductsRequest) GetRequestKey() string {
@@ -2876,6 +2932,74 @@ func (x *RetryImportTaskRequest) GetConfirmConfig() bool {
 	return false
 }
 
+type ProductCategoryRule struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Keywords      []string               `protobuf:"bytes,1,rep,name=keywords,proto3" json:"keywords,omitempty"`
+	Excludes      []string               `protobuf:"bytes,2,rep,name=excludes,proto3" json:"excludes,omitempty"`
+	CategoryId    uint64                 `protobuf:"varint,3,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
+	MatchAll      bool                   `protobuf:"varint,4,opt,name=match_all,json=matchAll,proto3" json:"match_all,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductCategoryRule) Reset() {
+	*x = ProductCategoryRule{}
+	mi := &file_admin_v1_supply_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductCategoryRule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductCategoryRule) ProtoMessage() {}
+
+func (x *ProductCategoryRule) ProtoReflect() protoreflect.Message {
+	mi := &file_admin_v1_supply_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductCategoryRule.ProtoReflect.Descriptor instead.
+func (*ProductCategoryRule) Descriptor() ([]byte, []int) {
+	return file_admin_v1_supply_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *ProductCategoryRule) GetKeywords() []string {
+	if x != nil {
+		return x.Keywords
+	}
+	return nil
+}
+
+func (x *ProductCategoryRule) GetExcludes() []string {
+	if x != nil {
+		return x.Excludes
+	}
+	return nil
+}
+
+func (x *ProductCategoryRule) GetCategoryId() uint64 {
+	if x != nil {
+		return x.CategoryId
+	}
+	return 0
+}
+
+func (x *ProductCategoryRule) GetMatchAll() bool {
+	if x != nil {
+		return x.MatchAll
+	}
+	return false
+}
+
 var File_admin_v1_supply_proto protoreflect.FileDescriptor
 
 const file_admin_v1_supply_proto_rawDesc = "" +
@@ -3054,7 +3178,7 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x16PreviewProductsRequest\x12(\n" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x1d\n" +
 	"\n" +
-	"quote_code\x18\x02 \x01(\tR\tquoteCode\"\xa6\x03\n" +
+	"quote_code\x18\x02 \x01(\tR\tquoteCode\"\x9e\x04\n" +
 	"\x0ePreviewProduct\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -3068,7 +3192,10 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x10already_imported\x18\t \x01(\bR\x0falreadyImported\x12!\n" +
 	"\fquote_status\x18\n" +
 	" \x01(\tR\vquoteStatus\x12(\n" +
-	"\x10cost_price_cents\x18\v \x01(\x03R\x0ecostPriceCents\x12&\n" +
+	"\x10cost_price_cents\x18\v \x01(\x03R\x0ecostPriceCents\x12\x1b\n" +
+	"\tis_locked\x18\r \x01(\bR\bisLocked\x12-\n" +
+	"\x12category_protected\x18\x0e \x01(\bR\x11categoryProtected\x12*\n" +
+	"\x11local_category_id\x18\x0f \x01(\x04R\x0flocalCategoryId\x12&\n" +
 	"\x0fcost_is_minimum\x18\f \x01(\bR\rcostIsMinimum\"y\n" +
 	"\x0fPreviewCategory\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x12\n" +
@@ -3078,7 +3205,7 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\n" +
 	"categories\x18\x01 \x03(\v2#.zcard.api.admin.v1.PreviewCategoryR\n" +
 	"categories\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\x8b\x04\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xfc\x06\n" +
 	"\x15ImportProductsRequest\x12(\n" +
 	"\rconnection_id\x18\x01 \x01(\x04B\x03\xe0A\x02R\fconnectionId\x12\x19\n" +
 	"\x05codes\x18\x02 \x03(\tB\x03\xe0A\x02R\x05codes\x12!\n" +
@@ -3086,11 +3213,19 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x0emarkup_percent\x18\x04 \x01(\x01R\rmarkupPercent\x12.\n" +
 	"\x13markup_amount_cents\x18\x05 \x01(\x03R\x11markupAmountCents\x12!\n" +
 	"\fsave_default\x18\x06 \x01(\bR\vsaveDefault\x12]\n" +
-	"\fcategory_map\x18\a \x03(\v2:.zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntryR\vcategoryMap\x12\x1f\n" +
+	"\fcategory_map\x18\a \x03(\v2:.zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntryR\vcategoryMap\x12o\n" +
+	"\x12product_categories\x18\n" +
+	" \x03(\v2@.zcard.api.admin.v1.ImportProductsRequest.ProductCategoriesEntryR\x11productCategories\x12N\n" +
+	"\x0ecategory_rules\x18\v \x03(\v2'.zcard.api.admin.v1.ProductCategoryRuleR\rcategoryRules\x12.\n" +
+	"\x13save_category_rules\x18\f \x01(\bR\x11saveCategoryRules\x128\n" +
+	"\x18selected_categories_only\x18\r \x01(\bR\x16selectedCategoriesOnly\x12\x1f\n" +
 	"\vrequest_key\x18\t \x01(\tR\n" +
 	"requestKey\x12P\n" +
 	"\x0fcategory_drafts\x18\b \x03(\v2'.zcard.api.admin.v1.ImportCategoryDraftR\x0ecategoryDrafts\x1a>\n" +
 	"\x10CategoryMapEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\x1aD\n" +
+	"\x16ProductCategoriesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x04R\x05value:\x028\x01\"k\n" +
 	"\x13ImportCategoryDraft\x12#\n" +
@@ -3165,7 +3300,13 @@ const file_admin_v1_supply_proto_rawDesc = "" +
 	"\x16RetryImportTaskRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x14\n" +
 	"\x05scope\x18\x02 \x01(\tR\x05scope\x12%\n" +
-	"\x0econfirm_config\x18\x03 \x01(\bR\rconfirmConfig2\xdc\x13\n" +
+	"\x0econfirm_config\x18\x03 \x01(\bR\rconfirmConfig\"\x8b\x01\n" +
+	"\x13ProductCategoryRule\x12\x1a\n" +
+	"\bkeywords\x18\x01 \x03(\tR\bkeywords\x12\x1a\n" +
+	"\bexcludes\x18\x02 \x03(\tR\bexcludes\x12\x1f\n" +
+	"\vcategory_id\x18\x03 \x01(\x04R\n" +
+	"categoryId\x12\x1b\n" +
+	"\tmatch_all\x18\x04 \x01(\bR\bmatchAll2\xdc\x13\n" +
 	"\x12AdminSupplyService\x12\x92\x01\n" +
 	"\x10CreateConnection\x12+.zcard.api.admin.v1.CreateConnectionRequest\x1a$.zcard.api.admin.v1.SupplyConnection\"+\x82\xd3\xe4\x93\x02%:\x01*\" /api/v1/admin/supply/connections\x12\x97\x01\n" +
 	"\x10UpdateConnection\x12+.zcard.api.admin.v1.UpdateConnectionRequest\x1a$.zcard.api.admin.v1.SupplyConnection\"0\x82\xd3\xe4\x93\x02*:\x01*\x1a%/api/v1/admin/supply/connections/{id}\x12\x86\x01\n" +
@@ -3198,7 +3339,7 @@ func file_admin_v1_supply_proto_rawDescGZIP() []byte {
 	return file_admin_v1_supply_proto_rawDescData
 }
 
-var file_admin_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
+var file_admin_v1_supply_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_admin_v1_supply_proto_goTypes = []any{
 	(*SupplyConnection)(nil),        // 0: zcard.api.admin.v1.SupplyConnection
 	(*CreateConnectionRequest)(nil), // 1: zcard.api.admin.v1.CreateConnectionRequest
@@ -3233,61 +3374,65 @@ var file_admin_v1_supply_proto_goTypes = []any{
 	(*SupplyImportItem)(nil),        // 30: zcard.api.admin.v1.SupplyImportItem
 	(*ListImportItemsReply)(nil),    // 31: zcard.api.admin.v1.ListImportItemsReply
 	(*RetryImportTaskRequest)(nil),  // 32: zcard.api.admin.v1.RetryImportTaskRequest
-	nil,                             // 33: zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
-	nil,                             // 34: zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
-	(*emptypb.Empty)(nil),           // 35: google.protobuf.Empty
+	(*ProductCategoryRule)(nil),     // 33: zcard.api.admin.v1.ProductCategoryRule
+	nil,                             // 34: zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
+	nil,                             // 35: zcard.api.admin.v1.ImportProductsRequest.ProductCategoriesEntry
+	nil,                             // 36: zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
+	(*emptypb.Empty)(nil),           // 37: google.protobuf.Empty
 }
 var file_admin_v1_supply_proto_depIdxs = []int32{
 	0,  // 0: zcard.api.admin.v1.ListConnectionsReply.connections:type_name -> zcard.api.admin.v1.SupplyConnection
 	8,  // 1: zcard.api.admin.v1.ListMappingsReply.mappings:type_name -> zcard.api.admin.v1.SupplyMapping
 	16, // 2: zcard.api.admin.v1.PreviewCategory.products:type_name -> zcard.api.admin.v1.PreviewProduct
 	17, // 3: zcard.api.admin.v1.PreviewProductsReply.categories:type_name -> zcard.api.admin.v1.PreviewCategory
-	33, // 4: zcard.api.admin.v1.ImportProductsRequest.category_map:type_name -> zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
-	20, // 5: zcard.api.admin.v1.ImportProductsRequest.category_drafts:type_name -> zcard.api.admin.v1.ImportCategoryDraft
-	13, // 6: zcard.api.admin.v1.ImportProductsReply.task:type_name -> zcard.api.admin.v1.SupplySyncTask
-	34, // 7: zcard.api.admin.v1.ImportProductsReply.category_map:type_name -> zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
-	13, // 8: zcard.api.admin.v1.ListSyncTasksReply.tasks:type_name -> zcard.api.admin.v1.SupplySyncTask
-	27, // 9: zcard.api.admin.v1.ListHealthReply.items:type_name -> zcard.api.admin.v1.HealthItem
-	30, // 10: zcard.api.admin.v1.ListImportItemsReply.items:type_name -> zcard.api.admin.v1.SupplyImportItem
-	1,  // 11: zcard.api.admin.v1.AdminSupplyService.CreateConnection:input_type -> zcard.api.admin.v1.CreateConnectionRequest
-	2,  // 12: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:input_type -> zcard.api.admin.v1.UpdateConnectionRequest
-	3,  // 13: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:input_type -> zcard.api.admin.v1.DeleteConnectionRequest
-	4,  // 14: zcard.api.admin.v1.AdminSupplyService.ListConnections:input_type -> zcard.api.admin.v1.ListConnectionsRequest
-	6,  // 15: zcard.api.admin.v1.AdminSupplyService.PingConnection:input_type -> zcard.api.admin.v1.PingConnectionRequest
-	9,  // 16: zcard.api.admin.v1.AdminSupplyService.ListMappings:input_type -> zcard.api.admin.v1.ListMappingsRequest
-	11, // 17: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:input_type -> zcard.api.admin.v1.UpsertMappingRequest
-	12, // 18: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:input_type -> zcard.api.admin.v1.DeleteMappingRequest
-	14, // 19: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:input_type -> zcard.api.admin.v1.CreateSyncTaskRequest
-	22, // 20: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:input_type -> zcard.api.admin.v1.ListSyncTasksRequest
-	24, // 21: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:input_type -> zcard.api.admin.v1.GetSyncTaskRequest
-	25, // 22: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:input_type -> zcard.api.admin.v1.CancelSyncTaskRequest
-	29, // 23: zcard.api.admin.v1.AdminSupplyService.ListImportItems:input_type -> zcard.api.admin.v1.ListImportItemsRequest
-	32, // 24: zcard.api.admin.v1.AdminSupplyService.RetryImportTask:input_type -> zcard.api.admin.v1.RetryImportTaskRequest
-	15, // 25: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:input_type -> zcard.api.admin.v1.PreviewProductsRequest
-	19, // 26: zcard.api.admin.v1.AdminSupplyService.ImportProducts:input_type -> zcard.api.admin.v1.ImportProductsRequest
-	26, // 27: zcard.api.admin.v1.AdminSupplyService.ListHealth:input_type -> zcard.api.admin.v1.ListHealthRequest
-	0,  // 28: zcard.api.admin.v1.AdminSupplyService.CreateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
-	0,  // 29: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
-	35, // 30: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:output_type -> google.protobuf.Empty
-	5,  // 31: zcard.api.admin.v1.AdminSupplyService.ListConnections:output_type -> zcard.api.admin.v1.ListConnectionsReply
-	7,  // 32: zcard.api.admin.v1.AdminSupplyService.PingConnection:output_type -> zcard.api.admin.v1.PingConnectionReply
-	10, // 33: zcard.api.admin.v1.AdminSupplyService.ListMappings:output_type -> zcard.api.admin.v1.ListMappingsReply
-	8,  // 34: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:output_type -> zcard.api.admin.v1.SupplyMapping
-	35, // 35: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:output_type -> google.protobuf.Empty
-	13, // 36: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	23, // 37: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:output_type -> zcard.api.admin.v1.ListSyncTasksReply
-	13, // 38: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	13, // 39: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	31, // 40: zcard.api.admin.v1.AdminSupplyService.ListImportItems:output_type -> zcard.api.admin.v1.ListImportItemsReply
-	13, // 41: zcard.api.admin.v1.AdminSupplyService.RetryImportTask:output_type -> zcard.api.admin.v1.SupplySyncTask
-	18, // 42: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:output_type -> zcard.api.admin.v1.PreviewProductsReply
-	21, // 43: zcard.api.admin.v1.AdminSupplyService.ImportProducts:output_type -> zcard.api.admin.v1.ImportProductsReply
-	28, // 44: zcard.api.admin.v1.AdminSupplyService.ListHealth:output_type -> zcard.api.admin.v1.ListHealthReply
-	28, // [28:45] is the sub-list for method output_type
-	11, // [11:28] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	34, // 4: zcard.api.admin.v1.ImportProductsRequest.category_map:type_name -> zcard.api.admin.v1.ImportProductsRequest.CategoryMapEntry
+	35, // 5: zcard.api.admin.v1.ImportProductsRequest.product_categories:type_name -> zcard.api.admin.v1.ImportProductsRequest.ProductCategoriesEntry
+	33, // 6: zcard.api.admin.v1.ImportProductsRequest.category_rules:type_name -> zcard.api.admin.v1.ProductCategoryRule
+	20, // 7: zcard.api.admin.v1.ImportProductsRequest.category_drafts:type_name -> zcard.api.admin.v1.ImportCategoryDraft
+	13, // 8: zcard.api.admin.v1.ImportProductsReply.task:type_name -> zcard.api.admin.v1.SupplySyncTask
+	36, // 9: zcard.api.admin.v1.ImportProductsReply.category_map:type_name -> zcard.api.admin.v1.ImportProductsReply.CategoryMapEntry
+	13, // 10: zcard.api.admin.v1.ListSyncTasksReply.tasks:type_name -> zcard.api.admin.v1.SupplySyncTask
+	27, // 11: zcard.api.admin.v1.ListHealthReply.items:type_name -> zcard.api.admin.v1.HealthItem
+	30, // 12: zcard.api.admin.v1.ListImportItemsReply.items:type_name -> zcard.api.admin.v1.SupplyImportItem
+	1,  // 13: zcard.api.admin.v1.AdminSupplyService.CreateConnection:input_type -> zcard.api.admin.v1.CreateConnectionRequest
+	2,  // 14: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:input_type -> zcard.api.admin.v1.UpdateConnectionRequest
+	3,  // 15: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:input_type -> zcard.api.admin.v1.DeleteConnectionRequest
+	4,  // 16: zcard.api.admin.v1.AdminSupplyService.ListConnections:input_type -> zcard.api.admin.v1.ListConnectionsRequest
+	6,  // 17: zcard.api.admin.v1.AdminSupplyService.PingConnection:input_type -> zcard.api.admin.v1.PingConnectionRequest
+	9,  // 18: zcard.api.admin.v1.AdminSupplyService.ListMappings:input_type -> zcard.api.admin.v1.ListMappingsRequest
+	11, // 19: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:input_type -> zcard.api.admin.v1.UpsertMappingRequest
+	12, // 20: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:input_type -> zcard.api.admin.v1.DeleteMappingRequest
+	14, // 21: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:input_type -> zcard.api.admin.v1.CreateSyncTaskRequest
+	22, // 22: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:input_type -> zcard.api.admin.v1.ListSyncTasksRequest
+	24, // 23: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:input_type -> zcard.api.admin.v1.GetSyncTaskRequest
+	25, // 24: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:input_type -> zcard.api.admin.v1.CancelSyncTaskRequest
+	29, // 25: zcard.api.admin.v1.AdminSupplyService.ListImportItems:input_type -> zcard.api.admin.v1.ListImportItemsRequest
+	32, // 26: zcard.api.admin.v1.AdminSupplyService.RetryImportTask:input_type -> zcard.api.admin.v1.RetryImportTaskRequest
+	15, // 27: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:input_type -> zcard.api.admin.v1.PreviewProductsRequest
+	19, // 28: zcard.api.admin.v1.AdminSupplyService.ImportProducts:input_type -> zcard.api.admin.v1.ImportProductsRequest
+	26, // 29: zcard.api.admin.v1.AdminSupplyService.ListHealth:input_type -> zcard.api.admin.v1.ListHealthRequest
+	0,  // 30: zcard.api.admin.v1.AdminSupplyService.CreateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
+	0,  // 31: zcard.api.admin.v1.AdminSupplyService.UpdateConnection:output_type -> zcard.api.admin.v1.SupplyConnection
+	37, // 32: zcard.api.admin.v1.AdminSupplyService.DeleteConnection:output_type -> google.protobuf.Empty
+	5,  // 33: zcard.api.admin.v1.AdminSupplyService.ListConnections:output_type -> zcard.api.admin.v1.ListConnectionsReply
+	7,  // 34: zcard.api.admin.v1.AdminSupplyService.PingConnection:output_type -> zcard.api.admin.v1.PingConnectionReply
+	10, // 35: zcard.api.admin.v1.AdminSupplyService.ListMappings:output_type -> zcard.api.admin.v1.ListMappingsReply
+	8,  // 36: zcard.api.admin.v1.AdminSupplyService.UpsertMapping:output_type -> zcard.api.admin.v1.SupplyMapping
+	37, // 37: zcard.api.admin.v1.AdminSupplyService.DeleteMapping:output_type -> google.protobuf.Empty
+	13, // 38: zcard.api.admin.v1.AdminSupplyService.CreateSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	23, // 39: zcard.api.admin.v1.AdminSupplyService.ListSyncTasks:output_type -> zcard.api.admin.v1.ListSyncTasksReply
+	13, // 40: zcard.api.admin.v1.AdminSupplyService.GetSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	13, // 41: zcard.api.admin.v1.AdminSupplyService.CancelSyncTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	31, // 42: zcard.api.admin.v1.AdminSupplyService.ListImportItems:output_type -> zcard.api.admin.v1.ListImportItemsReply
+	13, // 43: zcard.api.admin.v1.AdminSupplyService.RetryImportTask:output_type -> zcard.api.admin.v1.SupplySyncTask
+	18, // 44: zcard.api.admin.v1.AdminSupplyService.PreviewProducts:output_type -> zcard.api.admin.v1.PreviewProductsReply
+	21, // 45: zcard.api.admin.v1.AdminSupplyService.ImportProducts:output_type -> zcard.api.admin.v1.ImportProductsReply
+	28, // 46: zcard.api.admin.v1.AdminSupplyService.ListHealth:output_type -> zcard.api.admin.v1.ListHealthReply
+	30, // [30:47] is the sub-list for method output_type
+	13, // [13:30] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_admin_v1_supply_proto_init() }
@@ -3302,7 +3447,7 @@ func file_admin_v1_supply_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_admin_v1_supply_proto_rawDesc), len(file_admin_v1_supply_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   35,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

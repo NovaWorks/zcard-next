@@ -68,7 +68,9 @@ func (r *CardRepoImpl) Reserve(ctx context.Context, subsiteID uint64, items []po
 		}
 
 		// A selected SKU may only reserve its own cards.
-		if item.SkuID > 0 {
+		if item.SkuID == 0 {
+			query = query.Where(card.Or(card.SkuIDIsNil(), card.SkuID(0)))
+		} else {
 			query = query.Where(card.SkuID(item.SkuID))
 		}
 

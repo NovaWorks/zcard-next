@@ -42,6 +42,11 @@ func (s *SyncService) runStockOnly(ctx context.Context, task *ent.SupplySyncTask
 			if !exists {
 				continue
 			}
+			if skip, e := s.maintenanceProtected(ctx, conn.ID, m.UpstreamProduct); e != nil {
+				return e
+			} else if skip {
+				continue
+			}
 			items = append(items, adapter.Product{ID: m.UpstreamProduct, Stock: -2})
 		}
 		if err := s.backfillStocks(ctx, a, cfg, items, task.ID); err != nil {

@@ -3459,6 +3459,24 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.BatchUpdateProductStatusReply'
+    /api/v1/admin/products/classify:
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_ClassifyProducts
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.ClassifyProductsRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.ClassifyProductsReply'
     /api/v1/admin/products/{id}:
         get:
             tags:
@@ -3610,6 +3628,51 @@ paths:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/zcard.api.admin.v1.AdminControl'
+    /api/v1/admin/products/{productId}/delivery-sources:
+        get:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_GetDeliverySources
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+                - name: skuId
+                  in: query
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DeliverySourcesReply'
+        post:
+            tags:
+                - AdminCatalogService
+            operationId: AdminCatalogService_SetDeliverySource
+            parameters:
+                - name: productId
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/zcard.api.admin.v1.SetDeliverySourceRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/zcard.api.admin.v1.DeliverySourcesReply'
     /api/v1/admin/products/{productId}/skus:
         get:
             tags:
@@ -7848,6 +7911,61 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.Channel'
+        zcard.api.admin.v1.ClassificationProduct:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                categoryId:
+                    type: string
+                revision:
+                    type: string
+                status:
+                    type: string
+        zcard.api.admin.v1.ClassifyProductsReply:
+            type: object
+            properties:
+                items:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ClassificationProduct'
+                skippedLocked:
+                    type: integer
+                    format: int32
+                skippedProtected:
+                    type: integer
+                    format: int32
+                unchanged:
+                    type: integer
+                    format: int32
+                updated:
+                    type: integer
+                    format: int32
+                truncated:
+                    type: boolean
+        zcard.api.admin.v1.ClassifyProductsRequest:
+            type: object
+            properties:
+                keywords:
+                    type: array
+                    items:
+                        type: string
+                excludes:
+                    type: array
+                    items:
+                        type: string
+                matchAll:
+                    type: boolean
+                categoryId:
+                    type: string
+                apply:
+                    type: boolean
+                revisions:
+                    type: object
+                    additionalProperties:
+                        type: string
         zcard.api.admin.v1.ConfigField:
             type: object
             properties:
@@ -8775,6 +8893,20 @@ components:
                     type: string
                 deleteOrdersBlockReason:
                     type: string
+        zcard.api.admin.v1.DeliveryReceiptOption:
+            type: object
+            properties:
+                procurementId:
+                    type: string
+                contentIndex:
+                    type: integer
+                    format: int32
+                skuId:
+                    type: string
+                purchasedAt:
+                    type: string
+                label:
+                    type: string
         zcard.api.admin.v1.DeliveryRecord:
             type: object
             properties:
@@ -8806,6 +8938,48 @@ components:
             description: |-
                 DeliveryRecord 交付记录（content=完整卡密，服务端现场解密；路由受
                  order:view_delivery 权限门控 + 查看审计留痕）。
+        zcard.api.admin.v1.DeliverySourceInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                skuId:
+                    type: string
+                skuName:
+                    type: string
+                mode:
+                    type: string
+                status:
+                    type: string
+                hasContent:
+                    type: boolean
+                expiresAt:
+                    type: string
+                maxDeliveries:
+                    type: string
+                deliveries:
+                    type: string
+                error:
+                    type: string
+                originProcurementId:
+                    type: string
+                costCents:
+                    type: string
+                upstreamOrderId:
+                    type: string
+        zcard.api.admin.v1.DeliverySourcesReply:
+            type: object
+            properties:
+                sources:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DeliverySourceInfo'
+                receipts:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.DeliveryReceiptOption'
+                revision:
+                    type: string
         zcard.api.admin.v1.DisableCouponRequest:
             type: object
             properties:
@@ -9172,6 +9346,18 @@ components:
                     type: object
                     additionalProperties:
                         type: string
+                productCategories:
+                    type: object
+                    additionalProperties:
+                        type: string
+                categoryRules:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/zcard.api.admin.v1.ProductCategoryRule'
+                saveCategoryRules:
+                    type: boolean
+                selectedCategoriesOnly:
+                    type: boolean
                 requestKey:
                     type: string
                 categoryDrafts:
@@ -10504,6 +10690,12 @@ components:
                     type: string
                 costPriceCents:
                     type: string
+                isLocked:
+                    type: boolean
+                categoryProtected:
+                    type: boolean
+                localCategoryId:
+                    type: string
                 costIsMinimum:
                     type: boolean
         zcard.api.admin.v1.PreviewProductsReply:
@@ -10615,6 +10807,21 @@ components:
                     type: integer
                     format: int32
                 deliveryIncomplete:
+                    type: boolean
+        zcard.api.admin.v1.ProductCategoryRule:
+            type: object
+            properties:
+                keywords:
+                    type: array
+                    items:
+                        type: string
+                excludes:
+                    type: array
+                    items:
+                        type: string
+                categoryId:
+                    type: string
+                matchAll:
                     type: boolean
         zcard.api.admin.v1.ProductContentPatch:
             type: object
@@ -11118,6 +11325,34 @@ components:
                     type: array
                     items:
                         $ref: '#/components/schemas/zcard.api.admin.v1.CategoryPlacementInput'
+        zcard.api.admin.v1.SetDeliverySourceRequest:
+            type: object
+            properties:
+                productId:
+                    type: string
+                skuId:
+                    type: string
+                mode:
+                    type: string
+                content:
+                    type: string
+                procurementId:
+                    type: string
+                contentIndex:
+                    type: integer
+                    format: int32
+                firstPurchase:
+                    type: boolean
+                expiresAt:
+                    type: string
+                maxDeliveries:
+                    type: string
+                expectedRevision:
+                    type: string
+                action:
+                    type: string
+                upstreamOrderId:
+                    type: string
         zcard.api.admin.v1.SetProductLockRequest:
             type: object
             properties:
@@ -12499,6 +12734,9 @@ components:
                     description: 商品快照（联查现值——结算前端展示用）
                 priceCents:
                     type: string
+                maxQuantity:
+                    type: integer
+                    format: int32
                 stock:
                     type: string
                 pointsOnly:

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // 上游商品导入弹窗（ D）：预览分类树 → 勾选商品 → 定价策略（四模式）→
 // 类目映射（上游分类 → 本地分类）→ 存为连接默认。已导入商品标注（重导 = 更新）。
+import { filterGroups, selectProducts, matchedRule, type CategoryRule } from "./import-selection";
 import { computed, onBeforeUnmount, reactive, ref, watch } from "vue";
 import {
   NAlert, NButton, NCheckbox, NCheckboxGroup, NForm, NFormItem, NInputNumber,
@@ -25,6 +26,9 @@ interface PreviewCategory {
     is_active: boolean;
     stock: number;
     already_imported: boolean;
+    is_locked?: boolean;
+    category_protected?: boolean;
+    local_category_id?: number;
   }[];
 }
 
@@ -57,10 +61,29 @@ const resultMessage = ref("");
 const selectedCodes = computed(() => new Set(checked.value));
 const counts = computed(() => new Map(categories.value.map(cat => [cat.code, cat.products.filter(p => selectedCodes.value.has(p.code)).length])));
 const selectedCategories = computed(() => categories.value.filter(cat => (counts.value.get(cat.code) || 0) > 0));
-const visibleCategories = computed(() => {
-  const key = keyword.value.trim().toLowerCase();
-  return categories.value.filter(cat => !key || cat.name.toLowerCase().includes(key) || cat.products.some(p => p.name.toLowerCase().includes(key)));
-});
+const visibleCategories = computed(() => filterGroups(categories.value, keyword.value));
+const allProducts = computed(() => categories.value.flatMap(c => c.products));
+const visibleProducts = computed(() => visibleCategories.value.flatMap(c => c.products));
+const hiddenSelected = computed(() => checked.value.filter(code => !visibleProducts.value.some(p => p.code === code)).length);
+const lockedCount = computed(() => allProducts.value.filter(p => p.is_locked).length);
+const categoryRules = ref<CategoryRule[]>([]);
+const rulesOpen = ref(false);
+const saveCategoryRules = ref(false);
+const saveCategoryMapping = ref(false);
+const productCategories = reactive<Record<string, number>>({});
+const rulePage=ref(1);
+const ruleResults = computed(() => allProducts.value.filter(p => selectedCodes.value.has(p.code)).map(p => {
+  const index = p.category_protected ? -1 : matchedRule(p.name, categoryRules.value);
+  return { ...p, rule: index, category: productCategories[p.code] ?? (p.category_protected ? Number(p.local_category_id || 0) : index >= 0 ? categoryRules.value[index].category_id : null) };
+}));
+const visibleRuleResults=computed(()=>ruleResults.value.slice((rulePage.value-1)*50,rulePage.value*50));
+watch(()=>ruleResults.value.length,()=>{rulePage.value=Math.min(rulePage.value,Math.max(1,Math.ceil(ruleResults.value.length/50)));});
+function selectAll(filtered = false, onlyNew = false) {
+  const items = filtered ? visibleProducts.value : allProducts.value;
+  checked.value = selectProducts(onlyNew ? [] : checked.value, items.filter(p => !onlyNew || !p.already_imported));
+}
+function addRule() { categoryRules.value.push({ keywords: [], excludes: [], category_id: 0, match_all: false }); }
+function words(value: string) { return [...new Set(value.split(/[,，;；\n]+/).map(s => s.trim()).filter(Boolean))]; }
 const draftCount = computed(() => new Set(selectedCategories.value.filter(cat => drafts[cat.code]).map(cat => JSON.stringify([drafts[cat.code].parent_id || 0, drafts[cat.code].name.trim()]))).size);
 const mappedCount = computed(() => selectedCategories.value.filter(cat => !drafts[cat.code] && Number(categoryMapDraft[cat.code]) > 0).length);
 function setMapping(code: string, value: number | null) {
@@ -69,7 +92,7 @@ function setMapping(code: string, value: number | null) {
 }
 function applyBatchCategory() {
   if (batchCategory.value === null) return;
-  for (const cat of selectedCategories.value) setMapping(cat.code, batchCategory.value);
+  for (const code of checked.value) productCategories[code] = batchCategory.value;
 }
 function generateDrafts() {
   let ambiguous = 0;
@@ -129,6 +152,11 @@ async function loadPreview() {
   keyword.value = "";
   batchCategory.value = null;
   resultMessage.value = "";
+  for (const key of Object.keys(productCategories)) delete productCategories[key];
+  categoryRules.value = [];
+  saveCategoryMapping.value = false;
+  saveCategoryRules.value = false;
+  rulesOpen.value = false;
   Object.assign(pricing, { mode: "channel", markupPercent: 10, markupAmountYuan: 1, saveDefault: false });
   try {
     const { data, error } = await previewSupplyProducts(connection.id);
@@ -157,7 +185,9 @@ async function loadPreview() {
       }
       // 已持久化的类目映射回填（保存后全量同步沿用同一映射）
       try {
-        const saved = JSON.parse(connection.settings || "{}").category_map;
+        const settings = JSON.parse(connection.settings || "{}");
+        categoryRules.value = (settings.category_rules || []).map((r: any) => ({ ...r, category_id: Number(r.category_id), excludes: r.excludes || [], match_all: !!r.match_all }));
+        const saved = settings.category_map;
         if (saved) {
           for (const [k, v] of Object.entries(saved)) {
             if (Number(v) >= 0) categoryMapDraft[k] = Number(v);
@@ -232,10 +262,7 @@ async function loadLocalCategories() {
 }
 
 function toggleCat(cat: PreviewCategory, on: boolean) {
-  const codes = cat.products.map((p) => p.code);
-  const set = new Set(checked.value);
-  codes.forEach((c) => (on ? set.add(c) : set.delete(c)));
-  checked.value = [...set];
+  checked.value = selectProducts(checked.value, cat.products, on);
 }
 
 // ── 分类折叠（默认全收起，点行展开/收起；勾选不受折叠影响）──
@@ -264,10 +291,17 @@ async function submit() {
     window.$message?.warning("请填写待新建分类名称");
     return;
   }
+  if (categoryRules.value.some(r => !r.category_id || !r.keywords.length)) {
+    window.$message?.warning("请为每条分类规则填写关键词和目标分类"); return;
+  }
   importing.value = true;
   try {
     const payload: Record<string, unknown> = {
       codes: checked.value,
+      product_categories: Object.fromEntries(checked.value.filter(c => productCategories[c] !== undefined).map(c => [c, productCategories[c]])),
+      category_rules: categoryRules.value,
+      save_category_rules: saveCategoryRules.value,
+      selected_categories_only: !saveCategoryMapping.value,
       pricing_mode: pricing.mode,
       save_default: pricing.saveDefault,
       category_map: Object.fromEntries(selectedCategories.value
@@ -310,19 +344,45 @@ async function submit() {
         </NAlert>
         <NAlert v-else-if="!categories.length" type="warning" :bordered="false">上游商品目录为空，请确认对接账号有可用商品。</NAlert>
         <NAlert v-if="resultMessage" type="warning" :bordered="false">{{ resultMessage }}</NAlert>
+        <NSpace class="selection-toolbar">
+          <NButton size="small" :disabled="loading || !!previewError" @click="selectAll()">全选全部商品（{{ allProducts.length }} 件）</NButton>
+          <NButton v-if="keyword.trim()" size="small" @click="selectAll(true)">全选搜索结果（{{ visibleProducts.length }} 件）</NButton>
+          <NButton size="small" @click="selectAll(false, true)">仅选未导入商品</NButton>
+          <NButton size="small" :disabled="!checked.length" @click="checked = []">清空选择</NButton>
+          <NButton size="small" @click="rulesOpen = !rulesOpen">自动分类（{{ categoryRules.length }} 条规则）</NButton>
+        </NSpace>
+        <div v-if="rulesOpen" class="classification-panel">
+          <NAlert type="info" :bordered="false">按商品名称匹配，排在前面的规则优先。下方结果可逐件修改，手工选择优先；只影响本次选中商品。</NAlert>
+          <div v-for="(rule, i) in categoryRules" :key="i" class="rule-row">
+            <NInput :value="rule.keywords.join('，')" placeholder="关键词，多个用逗号分隔" :aria-label="`规则${i+1}关键词`" @update:value="v => rule.keywords = words(v)" />
+            <NInput :value="rule.excludes.join('，')" placeholder="排除词（可选）" :aria-label="`规则${i+1}排除词`" @update:value="v => rule.excludes = words(v)" />
+            <NTreeSelect :value="rule.category_id || null" :options="localCategoryOptions" filterable show-path placeholder="目标分类" @update:value="v => rule.category_id = Number(v)" />
+            <NCheckbox v-model:checked="rule.match_all">全部关键词</NCheckbox>
+            <NButton size="small" :disabled="i === 0" @click="[categoryRules[i-1], categoryRules[i]] = [categoryRules[i], categoryRules[i-1]]">上移</NButton>
+            <NButton size="small" @click="categoryRules.splice(i, 1)">删除</NButton>
+          </div>
+          <NSpace><NButton size="small" @click="addRule">添加规则</NButton><NCheckbox v-model:checked="saveCategoryRules">记住此货源的分类规则</NCheckbox></NSpace>
+          <NSpace justify="space-between"><span>分类预览：共 {{ruleResults.length}} 件</span><NSpace><NButton size="small" :disabled="rulePage<=1" @click="rulePage--">上一页</NButton><span>{{rulePage}} / {{Math.max(1,Math.ceil(ruleResults.length/50))}}</span><NButton size="small" :disabled="rulePage*50>=ruleResults.length" @click="rulePage++">下一页</NButton></NSpace></NSpace>
+          <div class="rule-preview">
+            <div v-for="p in visibleRuleResults" :key="p.code" class="rule-preview-row">
+              <span>{{ p.name }}<small>{{ productCategories[p.code] !== undefined ? ' · 手工指定' : p.category_protected ? ' · 保留手动分类' : p.rule >= 0 ? ` · 规则 ${p.rule + 1}` : ' · 未命中，沿用分类映射或原分类' }}</small></span>
+              <NTreeSelect :value="p.category" :options="[{key:0,label:'未分类'}, ...localCategoryOptions]" clearable filterable show-path placeholder="沿用分类" @update:value="v => v === null ? delete productCategories[p.code] : productCategories[p.code] = Number(v)" />
+            </div>
+          </div>
+        </div>
         <div class="import-toolbar">
           <NInput v-model:value="keyword" clearable placeholder="搜索上游分类或商品名称" aria-label="搜索上游分类或商品名称" />
           <NButton size="small" @click="toggleAllExpand">{{ allExpanded ? '全部收起' : '全部展开' }}</NButton>
           <NButton size="small" :disabled="!expandedProducts.length || loading" @click="refreshCosts">刷新成本</NButton>
         </div>
-        <div class="text-12px text-gray-400">展开分类后查询账号成本，已按渠道汇率换算，不含加价；多规格显示最低成本。正式导入会在后台逐件核价；锁定或被人工修改的商品会跳过。勾选整类包含全部商品，搜索不会取消已选商品。</div>
+        <div class="text-12px text-gray-400">展开分类后查询账号成本，已按渠道汇率换算，不含加价；多规格显示最低成本。正式导入会在后台逐件核价；锁定或被人工修改的商品会跳过。分类名命中显示整类，商品名命中只显示匹配商品；搜索不会取消已选商品。锁定商品不可勾选。</div>
         <div class="category-list">
           <div v-for="cat in visibleCategories" :key="cat.code" class="category-item">
             <div class="category-row">
               <div class="category-heading">
                 <NButton text :aria-label="`${expandedCats.has(cat.code) ? '收起' : '展开'}${cat.name}`" :aria-expanded="expandedCats.has(cat.code)" @click="toggleExpand(cat.code)">{{ expandedCats.has(cat.code) ? '▼' : '▶' }}</NButton>
-                <NCheckbox :checked="counts.get(cat.code) === cat.products.length && cat.products.length > 0"
-                  :indeterminate="(counts.get(cat.code) || 0) > 0 && (counts.get(cat.code) || 0) < cat.products.length"
+                <NCheckbox :checked="cat.products.some(p => !p.is_locked) && cat.products.filter(p => !p.is_locked).every(p => selectedCodes.has(p.code))"
+                  :indeterminate="cat.products.some(p=>!p.is_locked&&selectedCodes.has(p.code)) && !cat.products.filter(p=>!p.is_locked).every(p=>selectedCodes.has(p.code))"
                   :aria-label="`选择${cat.name}全部商品`" @update:checked="(v: boolean) => toggleCat(cat, v)" />
                 <button type="button" class="category-name" :title="cat.name" @click="toggleExpand(cat.code)">{{ cat.name }}</button>
                 <NTag size="tiny" :bordered="false">{{ cat.products.length }} 件</NTag>
@@ -342,7 +402,7 @@ async function submit() {
             <NCheckboxGroup v-if="expandedCats.has(cat.code)" v-model:value="checked">
               <div class="product-list">
                 <div v-for="p in cat.products" :key="p.code" class="product-item">
-                <NCheckbox :value="p.code">
+                <NCheckbox :value="p.code" :disabled="p.is_locked" :aria-disabled="p.is_locked">
                   <span class="break-all" :class="{ 'text-gray-400': !p.is_active }">{{ p.name }}</span>
                   <span class="ml-4px text-12px" aria-live="polite">
                     <template v-if="p.quote_status === 'ready'">成本 {{ formatMoney(p.cost_price_cents ?? 0) }}{{ p.cost_is_minimum ? ' 起' : '' }}</template>
@@ -350,6 +410,7 @@ async function submit() {
                     <template v-else>成本查询中…</template>
                     <template v-if="p.stock >= 0"> · 库存 {{ p.stock }}</template>
                   </span>
+                  <NTag v-if="p.is_locked" size="tiny" type="warning">已锁定，跳过</NTag>
                   <NTag v-if="p.already_imported" size="tiny" type="info" :bordered="false" class="ml-4px">已导入</NTag>
                   <NTag v-if="!p.is_active" size="tiny" type="warning" :bordered="false" class="ml-4px">已下架</NTag>
                 </NCheckbox>
@@ -362,7 +423,8 @@ async function submit() {
         </div>
         <div class="mapping-actions">
           <NTreeSelect v-model:value="batchCategory" :options="[{ key: 0, label: '不归入分类' }, ...localCategoryOptions]" clearable filterable show-path size="small" placeholder="批量指定本地分类" aria-label="批量指定本地分类" />
-          <NButton size="small" :disabled="!selectedCategories.length || batchCategory === null" @click="applyBatchCategory">应用到已选分类</NButton>
+          <NButton size="small" :disabled="!selectedCategories.length || batchCategory === null" @click="applyBatchCategory">应用到已选商品</NButton>
+          <NCheckbox v-model:checked="saveCategoryMapping">将分类行设置保存为整个上游分类的默认映射</NCheckbox>
           <NButton v-auth="'catalog:category_write'" size="small" type="primary" secondary :disabled="!selectedCategories.length" @click="generateDrafts">生成映射草稿</NButton>
         </div>
         <div class="text-12px text-gray-400">只处理所选商品涉及的分类；草稿保存前不会出现在商城。保存后的映射也用于后续全量同步及该上游分类的其他已导入商品。</div>
@@ -402,7 +464,7 @@ async function submit() {
     </NSpin>
     <template #footer>
       <NSpace justify="space-between" align="center">
-        <span class="text-12px">已选 {{ checked.length }} 件 · 涉及 {{ selectedCategories.length }} 类 · 已指定 {{ mappedCount }} 类 · 待新建 {{ draftCount }} 类</span>
+        <span class="text-12px">已选 {{ checked.length }} 件（搜索范围外 {{ hiddenSelected }} 件；锁定跳过 {{ lockedCount }} 件） · 涉及 {{ selectedCategories.length }} 类 · 已指定 {{ mappedCount }} 类 · 待新建 {{ draftCount }} 类</span>
         <NSpace>
           <NButton size="small" :disabled="importing" @click="emit('update:show', false)">取消</NButton>
           <NButton size="small" type="primary" :loading="importing" :disabled="loading || !!previewError || !checked.length" @click="submit">开始导入</NButton>
@@ -444,4 +506,14 @@ async function submit() {
   .import-body { height: auto; max-height: calc(100dvh - 180px); overflow: auto; }
   .category-list { flex: 0 0 auto; height: 48dvh; min-height: 180px; }
 }
+</style>
+
+<style scoped>
+.selection-toolbar { position: sticky; top: 0; z-index: 1; }
+.classification-panel { display: grid; gap: 8px; max-height: 48vh; overflow: auto; }
+.rule-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rule-row > .n-input, .rule-row > .n-tree-select { width: 180px; flex: 1 1 150px; }
+.rule-preview { max-height: 200px; overflow: auto; }
+.rule-preview-row { display: grid; grid-template-columns: minmax(0,1fr) 240px; gap: 8px; padding: 5px 0; }
+@media(max-width: 600px) { .rule-preview-row { grid-template-columns: 1fr; } }
 </style>

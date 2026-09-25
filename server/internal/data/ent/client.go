@@ -69,6 +69,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontentbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productdeliverysource"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
@@ -223,6 +224,8 @@ type Client struct {
 	ProductContentBatch *ProductContentBatchClient
 	// ProductControl is the client for interacting with the ProductControl builders.
 	ProductControl *ProductControlClient
+	// ProductDeliverySource is the client for interacting with the ProductDeliverySource builders.
+	ProductDeliverySource *ProductDeliverySourceClient
 	// ProductSku is the client for interacting with the ProductSku builders.
 	ProductSku *ProductSkuClient
 	// Promotion is the client for interacting with the Promotion builders.
@@ -366,6 +369,7 @@ func (c *Client) init() {
 	c.Product = NewProductClient(c.config)
 	c.ProductContentBatch = NewProductContentBatchClient(c.config)
 	c.ProductControl = NewProductControlClient(c.config)
+	c.ProductDeliverySource = NewProductDeliverySourceClient(c.config)
 	c.ProductSku = NewProductSkuClient(c.config)
 	c.Promotion = NewPromotionClient(c.config)
 	c.RechargeOrder = NewRechargeOrderClient(c.config)
@@ -551,6 +555,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Product:                  NewProductClient(cfg),
 		ProductContentBatch:      NewProductContentBatchClient(cfg),
 		ProductControl:           NewProductControlClient(cfg),
+		ProductDeliverySource:    NewProductDeliverySourceClient(cfg),
 		ProductSku:               NewProductSkuClient(cfg),
 		Promotion:                NewPromotionClient(cfg),
 		RechargeOrder:            NewRechargeOrderClient(cfg),
@@ -663,6 +668,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Product:                  NewProductClient(cfg),
 		ProductContentBatch:      NewProductContentBatchClient(cfg),
 		ProductControl:           NewProductControlClient(cfg),
+		ProductDeliverySource:    NewProductDeliverySourceClient(cfg),
 		ProductSku:               NewProductSkuClient(cfg),
 		Promotion:                NewPromotionClient(cfg),
 		RechargeOrder:            NewRechargeOrderClient(cfg),
@@ -742,16 +748,17 @@ func (c *Client) Use(hooks ...Hook) {
 		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
 		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
 		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
-		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductSku, c.Promotion,
-		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
-		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
-		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
-		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
-		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
-		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
-		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
+		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductDeliverySource,
+		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
+		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
+		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
+		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
+		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
+		c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
+		c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Use(hooks...)
 	}
@@ -772,16 +779,17 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 		c.OrderDelivery, c.OrderItem, c.OrderStatusEvent, c.OutboxEvent, c.PageView,
 		c.Payment, c.PaymentChannel, c.PointAccount, c.PointTransaction, c.Post,
 		c.PostCategory, c.ProcessedEvent, c.ProcurementItem, c.ProcurementOrder,
-		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductSku, c.Promotion,
-		c.RechargeOrder, c.ReconciliationItem, c.ReconciliationJob, c.RefundOrder,
-		c.ResellerBalanceAccount, c.ResellerLedgerEntry, c.ResellerPricing,
-		c.ResellerProfile, c.ResellerRelatedAccount, c.ResellerSite, c.Review,
-		c.RiskLockKey, c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting,
-		c.SupplierAccount, c.SupplierLedgerEntry, c.SupplierProductPrice,
-		c.SupplyConnection, c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce,
-		c.SupplyOrder, c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User,
-		c.UserGroup, c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog,
-		c.WalletAccount, c.WalletTransaction, c.Withdrawal,
+		c.Product, c.ProductContentBatch, c.ProductControl, c.ProductDeliverySource,
+		c.ProductSku, c.Promotion, c.RechargeOrder, c.ReconciliationItem,
+		c.ReconciliationJob, c.RefundOrder, c.ResellerBalanceAccount,
+		c.ResellerLedgerEntry, c.ResellerPricing, c.ResellerProfile,
+		c.ResellerRelatedAccount, c.ResellerSite, c.Review, c.RiskLockKey,
+		c.RolePermission, c.SecurityAuditLog, c.Session, c.Setting, c.SupplierAccount,
+		c.SupplierLedgerEntry, c.SupplierProductPrice, c.SupplyConnection,
+		c.SupplyImportItem, c.SupplyMapping, c.SupplyNonce, c.SupplyOrder,
+		c.SupplySyncTask, c.Tag, c.Ticket, c.TicketMessage, c.User, c.UserGroup,
+		c.UserSession, c.V1IDMap, c.VirtualReview, c.VisitLog, c.WalletAccount,
+		c.WalletTransaction, c.Withdrawal,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -898,6 +906,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.ProductContentBatch.mutate(ctx, m)
 	case *ProductControlMutation:
 		return c.ProductControl.mutate(ctx, m)
+	case *ProductDeliverySourceMutation:
+		return c.ProductDeliverySource.mutate(ctx, m)
 	case *ProductSkuMutation:
 		return c.ProductSku.mutate(ctx, m)
 	case *PromotionMutation:
@@ -8387,6 +8397,139 @@ func (c *ProductControlClient) mutate(ctx context.Context, m *ProductControlMuta
 	}
 }
 
+// ProductDeliverySourceClient is a client for the ProductDeliverySource schema.
+type ProductDeliverySourceClient struct {
+	config
+}
+
+// NewProductDeliverySourceClient returns a client for the ProductDeliverySource from the given config.
+func NewProductDeliverySourceClient(c config) *ProductDeliverySourceClient {
+	return &ProductDeliverySourceClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `productdeliverysource.Hooks(f(g(h())))`.
+func (c *ProductDeliverySourceClient) Use(hooks ...Hook) {
+	c.hooks.ProductDeliverySource = append(c.hooks.ProductDeliverySource, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `productdeliverysource.Intercept(f(g(h())))`.
+func (c *ProductDeliverySourceClient) Intercept(interceptors ...Interceptor) {
+	c.inters.ProductDeliverySource = append(c.inters.ProductDeliverySource, interceptors...)
+}
+
+// Create returns a builder for creating a ProductDeliverySource entity.
+func (c *ProductDeliverySourceClient) Create() *ProductDeliverySourceCreate {
+	mutation := newProductDeliverySourceMutation(c.config, OpCreate)
+	return &ProductDeliverySourceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of ProductDeliverySource entities.
+func (c *ProductDeliverySourceClient) CreateBulk(builders ...*ProductDeliverySourceCreate) *ProductDeliverySourceCreateBulk {
+	return &ProductDeliverySourceCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ProductDeliverySourceClient) MapCreateBulk(slice any, setFunc func(*ProductDeliverySourceCreate, int)) *ProductDeliverySourceCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ProductDeliverySourceCreateBulk{err: fmt.Errorf("calling to ProductDeliverySourceClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ProductDeliverySourceCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ProductDeliverySourceCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for ProductDeliverySource.
+func (c *ProductDeliverySourceClient) Update() *ProductDeliverySourceUpdate {
+	mutation := newProductDeliverySourceMutation(c.config, OpUpdate)
+	return &ProductDeliverySourceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ProductDeliverySourceClient) UpdateOne(_m *ProductDeliverySource) *ProductDeliverySourceUpdateOne {
+	mutation := newProductDeliverySourceMutation(c.config, OpUpdateOne, withProductDeliverySource(_m))
+	return &ProductDeliverySourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ProductDeliverySourceClient) UpdateOneID(id uint64) *ProductDeliverySourceUpdateOne {
+	mutation := newProductDeliverySourceMutation(c.config, OpUpdateOne, withProductDeliverySourceID(id))
+	return &ProductDeliverySourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for ProductDeliverySource.
+func (c *ProductDeliverySourceClient) Delete() *ProductDeliverySourceDelete {
+	mutation := newProductDeliverySourceMutation(c.config, OpDelete)
+	return &ProductDeliverySourceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ProductDeliverySourceClient) DeleteOne(_m *ProductDeliverySource) *ProductDeliverySourceDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ProductDeliverySourceClient) DeleteOneID(id uint64) *ProductDeliverySourceDeleteOne {
+	builder := c.Delete().Where(productdeliverysource.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ProductDeliverySourceDeleteOne{builder}
+}
+
+// Query returns a query builder for ProductDeliverySource.
+func (c *ProductDeliverySourceClient) Query() *ProductDeliverySourceQuery {
+	return &ProductDeliverySourceQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeProductDeliverySource},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a ProductDeliverySource entity by its id.
+func (c *ProductDeliverySourceClient) Get(ctx context.Context, id uint64) (*ProductDeliverySource, error) {
+	return c.Query().Where(productdeliverysource.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ProductDeliverySourceClient) GetX(ctx context.Context, id uint64) *ProductDeliverySource {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *ProductDeliverySourceClient) Hooks() []Hook {
+	return c.hooks.ProductDeliverySource
+}
+
+// Interceptors returns the client interceptors.
+func (c *ProductDeliverySourceClient) Interceptors() []Interceptor {
+	return c.inters.ProductDeliverySource
+}
+
+func (c *ProductDeliverySourceClient) mutate(ctx context.Context, m *ProductDeliverySourceMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ProductDeliverySourceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ProductDeliverySourceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ProductDeliverySourceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ProductDeliverySourceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown ProductDeliverySource mutation op: %q", m.Op())
+	}
+}
+
 // ProductSkuClient is a client for the ProductSku schema.
 type ProductSkuClient struct {
 	config
@@ -13619,14 +13762,15 @@ type (
 		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
 		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
 		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
-		ProductControl, ProductSku, Promotion, RechargeOrder, ReconciliationItem,
-		ReconciliationJob, RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry,
-		ResellerPricing, ResellerProfile, ResellerRelatedAccount, ResellerSite, Review,
-		RiskLockKey, RolePermission, SecurityAuditLog, Session, Setting,
-		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Hook
+		ProductControl, ProductDeliverySource, ProductSku, Promotion, RechargeOrder,
+		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
+		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
+		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
+		Setting, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
+		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
+		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		Withdrawal []ent.Hook
 	}
 	inters struct {
 		AdminRole, AdminUser, AffiliateCommission, AuditLog, Banner, Card, CardImport,
@@ -13639,13 +13783,14 @@ type (
 		OrderItem, OrderStatusEvent, OutboxEvent, PageView, Payment, PaymentChannel,
 		PointAccount, PointTransaction, Post, PostCategory, ProcessedEvent,
 		ProcurementItem, ProcurementOrder, Product, ProductContentBatch,
-		ProductControl, ProductSku, Promotion, RechargeOrder, ReconciliationItem,
-		ReconciliationJob, RefundOrder, ResellerBalanceAccount, ResellerLedgerEntry,
-		ResellerPricing, ResellerProfile, ResellerRelatedAccount, ResellerSite, Review,
-		RiskLockKey, RolePermission, SecurityAuditLog, Session, Setting,
-		SupplierAccount, SupplierLedgerEntry, SupplierProductPrice, SupplyConnection,
-		SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder, SupplySyncTask, Tag,
-		Ticket, TicketMessage, User, UserGroup, UserSession, V1IDMap, VirtualReview,
-		VisitLog, WalletAccount, WalletTransaction, Withdrawal []ent.Interceptor
+		ProductControl, ProductDeliverySource, ProductSku, Promotion, RechargeOrder,
+		ReconciliationItem, ReconciliationJob, RefundOrder, ResellerBalanceAccount,
+		ResellerLedgerEntry, ResellerPricing, ResellerProfile, ResellerRelatedAccount,
+		ResellerSite, Review, RiskLockKey, RolePermission, SecurityAuditLog, Session,
+		Setting, SupplierAccount, SupplierLedgerEntry, SupplierProductPrice,
+		SupplyConnection, SupplyImportItem, SupplyMapping, SupplyNonce, SupplyOrder,
+		SupplySyncTask, Tag, Ticket, TicketMessage, User, UserGroup, UserSession,
+		V1IDMap, VirtualReview, VisitLog, WalletAccount, WalletTransaction,
+		Withdrawal []ent.Interceptor
 	}
 )

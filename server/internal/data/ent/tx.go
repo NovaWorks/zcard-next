@@ -120,6 +120,8 @@ type Tx struct {
 	ProductContentBatch *ProductContentBatchClient
 	// ProductControl is the client for interacting with the ProductControl builders.
 	ProductControl *ProductControlClient
+	// ProductDeliverySource is the client for interacting with the ProductDeliverySource builders.
+	ProductDeliverySource *ProductDeliverySourceClient
 	// ProductSku is the client for interacting with the ProductSku builders.
 	ProductSku *ProductSkuClient
 	// Promotion is the client for interacting with the Promotion builders.
@@ -383,6 +385,7 @@ func (tx *Tx) init() {
 	tx.Product = NewProductClient(tx.config)
 	tx.ProductContentBatch = NewProductContentBatchClient(tx.config)
 	tx.ProductControl = NewProductControlClient(tx.config)
+	tx.ProductDeliverySource = NewProductDeliverySourceClient(tx.config)
 	tx.ProductSku = NewProductSkuClient(tx.config)
 	tx.Promotion = NewPromotionClient(tx.config)
 	tx.RechargeOrder = NewRechargeOrderClient(tx.config)

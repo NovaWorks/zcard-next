@@ -67,6 +67,7 @@ import (
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontentbatch"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productcontrol"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productdeliverysource"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/promotion"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/rechargeorder"
@@ -171,6 +172,7 @@ const (
 	TypeProduct                  = "Product"
 	TypeProductContentBatch      = "ProductContentBatch"
 	TypeProductControl           = "ProductControl"
+	TypeProductDeliverySource    = "ProductDeliverySource"
 	TypeProductSku               = "ProductSku"
 	TypePromotion                = "Promotion"
 	TypeRechargeOrder            = "RechargeOrder"
@@ -43132,41 +43134,43 @@ func (m *OrderDeliveryMutation) ResetEdge(name string) error {
 // OrderItemMutation represents an operation that mutates the OrderItem nodes in the graph.
 type OrderItemMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uint64
-	created_at           *time.Time
-	updated_at           *time.Time
-	subsite_id           *uint64
-	addsubsite_id        *int64
-	product_id           *uint64
-	addproduct_id        *int64
-	sku_id               *uint64
-	addsku_id            *int64
-	product_name         *string
-	form_answers         *[]map[string]string
-	appendform_answers   []map[string]string
-	assigned_admin_id    *uint64
-	addassigned_admin_id *int64
-	sku_name             *string
-	unit_price           *int64
-	addunit_price        *int64
-	quantity             *int32
-	addquantity          *int32
-	amount               *int64
-	addamount            *int64
-	cost                 *int64
-	addcost              *int64
-	fulfillment_type     *orderitem.FulfillmentType
-	fulfillment_status   *string
-	commission_snapshot  *map[string]interface{}
-	profit_snapshot      *map[string]interface{}
-	clearedFields        map[string]struct{}
-	_order               *uint64
-	cleared_order        bool
-	done                 bool
-	oldValue             func(context.Context) (*OrderItem, error)
-	predicates           []predicate.OrderItem
+	op                    Op
+	typ                   string
+	id                    *uint64
+	created_at            *time.Time
+	updated_at            *time.Time
+	subsite_id            *uint64
+	addsubsite_id         *int64
+	product_id            *uint64
+	addproduct_id         *int64
+	sku_id                *uint64
+	addsku_id             *int64
+	product_name          *string
+	form_answers          *[]map[string]string
+	appendform_answers    []map[string]string
+	assigned_admin_id     *uint64
+	addassigned_admin_id  *int64
+	sku_name              *string
+	unit_price            *int64
+	addunit_price         *int64
+	quantity              *int32
+	addquantity           *int32
+	amount                *int64
+	addamount             *int64
+	cost                  *int64
+	addcost               *int64
+	fulfillment_type      *orderitem.FulfillmentType
+	delivery_source_id    *uint64
+	adddelivery_source_id *int64
+	fulfillment_status    *string
+	commission_snapshot   *map[string]interface{}
+	profit_snapshot       *map[string]interface{}
+	clearedFields         map[string]struct{}
+	_order                *uint64
+	cleared_order         bool
+	done                  bool
+	oldValue              func(context.Context) (*OrderItem, error)
+	predicates            []predicate.OrderItem
 }
 
 var _ ent.Mutation = (*OrderItemMutation)(nil)
@@ -44029,6 +44033,76 @@ func (m *OrderItemMutation) ResetFulfillmentType() {
 	m.fulfillment_type = nil
 }
 
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (m *OrderItemMutation) SetDeliverySourceID(u uint64) {
+	m.delivery_source_id = &u
+	m.adddelivery_source_id = nil
+}
+
+// DeliverySourceID returns the value of the "delivery_source_id" field in the mutation.
+func (m *OrderItemMutation) DeliverySourceID() (r uint64, exists bool) {
+	v := m.delivery_source_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeliverySourceID returns the old "delivery_source_id" field's value of the OrderItem entity.
+// If the OrderItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OrderItemMutation) OldDeliverySourceID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeliverySourceID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeliverySourceID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeliverySourceID: %w", err)
+	}
+	return oldValue.DeliverySourceID, nil
+}
+
+// AddDeliverySourceID adds u to the "delivery_source_id" field.
+func (m *OrderItemMutation) AddDeliverySourceID(u int64) {
+	if m.adddelivery_source_id != nil {
+		*m.adddelivery_source_id += u
+	} else {
+		m.adddelivery_source_id = &u
+	}
+}
+
+// AddedDeliverySourceID returns the value that was added to the "delivery_source_id" field in this mutation.
+func (m *OrderItemMutation) AddedDeliverySourceID() (r int64, exists bool) {
+	v := m.adddelivery_source_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearDeliverySourceID clears the value of the "delivery_source_id" field.
+func (m *OrderItemMutation) ClearDeliverySourceID() {
+	m.delivery_source_id = nil
+	m.adddelivery_source_id = nil
+	m.clearedFields[orderitem.FieldDeliverySourceID] = struct{}{}
+}
+
+// DeliverySourceIDCleared returns if the "delivery_source_id" field was cleared in this mutation.
+func (m *OrderItemMutation) DeliverySourceIDCleared() bool {
+	_, ok := m.clearedFields[orderitem.FieldDeliverySourceID]
+	return ok
+}
+
+// ResetDeliverySourceID resets all changes to the "delivery_source_id" field.
+func (m *OrderItemMutation) ResetDeliverySourceID() {
+	m.delivery_source_id = nil
+	m.adddelivery_source_id = nil
+	delete(m.clearedFields, orderitem.FieldDeliverySourceID)
+}
+
 // SetFulfillmentStatus sets the "fulfillment_status" field.
 func (m *OrderItemMutation) SetFulfillmentStatus(s string) {
 	m.fulfillment_status = &s
@@ -44224,7 +44298,7 @@ func (m *OrderItemMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OrderItemMutation) Fields() []string {
-	fields := make([]string, 0, 18)
+	fields := make([]string, 0, 19)
 	if m.created_at != nil {
 		fields = append(fields, orderitem.FieldCreatedAt)
 	}
@@ -44269,6 +44343,9 @@ func (m *OrderItemMutation) Fields() []string {
 	}
 	if m.fulfillment_type != nil {
 		fields = append(fields, orderitem.FieldFulfillmentType)
+	}
+	if m.delivery_source_id != nil {
+		fields = append(fields, orderitem.FieldDeliverySourceID)
 	}
 	if m.fulfillment_status != nil {
 		fields = append(fields, orderitem.FieldFulfillmentStatus)
@@ -44317,6 +44394,8 @@ func (m *OrderItemMutation) Field(name string) (ent.Value, bool) {
 		return m.Cost()
 	case orderitem.FieldFulfillmentType:
 		return m.FulfillmentType()
+	case orderitem.FieldDeliverySourceID:
+		return m.DeliverySourceID()
 	case orderitem.FieldFulfillmentStatus:
 		return m.FulfillmentStatus()
 	case orderitem.FieldCommissionSnapshot:
@@ -44362,6 +44441,8 @@ func (m *OrderItemMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldCost(ctx)
 	case orderitem.FieldFulfillmentType:
 		return m.OldFulfillmentType(ctx)
+	case orderitem.FieldDeliverySourceID:
+		return m.OldDeliverySourceID(ctx)
 	case orderitem.FieldFulfillmentStatus:
 		return m.OldFulfillmentStatus(ctx)
 	case orderitem.FieldCommissionSnapshot:
@@ -44482,6 +44563,13 @@ func (m *OrderItemMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetFulfillmentType(v)
 		return nil
+	case orderitem.FieldDeliverySourceID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeliverySourceID(v)
+		return nil
 	case orderitem.FieldFulfillmentStatus:
 		v, ok := value.(string)
 		if !ok {
@@ -44535,6 +44623,9 @@ func (m *OrderItemMutation) AddedFields() []string {
 	if m.addcost != nil {
 		fields = append(fields, orderitem.FieldCost)
 	}
+	if m.adddelivery_source_id != nil {
+		fields = append(fields, orderitem.FieldDeliverySourceID)
+	}
 	return fields
 }
 
@@ -44559,6 +44650,8 @@ func (m *OrderItemMutation) AddedField(name string) (ent.Value, bool) {
 		return m.AddedAmount()
 	case orderitem.FieldCost:
 		return m.AddedCost()
+	case orderitem.FieldDeliverySourceID:
+		return m.AddedDeliverySourceID()
 	}
 	return nil, false
 }
@@ -44624,6 +44717,13 @@ func (m *OrderItemMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddCost(v)
 		return nil
+	case orderitem.FieldDeliverySourceID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeliverySourceID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown OrderItem numeric field %s", name)
 }
@@ -44640,6 +44740,9 @@ func (m *OrderItemMutation) ClearedFields() []string {
 	}
 	if m.FieldCleared(orderitem.FieldSkuName) {
 		fields = append(fields, orderitem.FieldSkuName)
+	}
+	if m.FieldCleared(orderitem.FieldDeliverySourceID) {
+		fields = append(fields, orderitem.FieldDeliverySourceID)
 	}
 	if m.FieldCleared(orderitem.FieldCommissionSnapshot) {
 		fields = append(fields, orderitem.FieldCommissionSnapshot)
@@ -44669,6 +44772,9 @@ func (m *OrderItemMutation) ClearField(name string) error {
 		return nil
 	case orderitem.FieldSkuName:
 		m.ClearSkuName()
+		return nil
+	case orderitem.FieldDeliverySourceID:
+		m.ClearDeliverySourceID()
 		return nil
 	case orderitem.FieldCommissionSnapshot:
 		m.ClearCommissionSnapshot()
@@ -44728,6 +44834,9 @@ func (m *OrderItemMutation) ResetField(name string) error {
 		return nil
 	case orderitem.FieldFulfillmentType:
 		m.ResetFulfillmentType()
+		return nil
+	case orderitem.FieldDeliverySourceID:
+		m.ResetDeliverySourceID()
 		return nil
 	case orderitem.FieldFulfillmentStatus:
 		m.ResetFulfillmentStatus()
@@ -56973,6 +57082,7 @@ type ProductMutation struct {
 	addsubsite_id         *int64
 	category_id           *uint64
 	addcategory_id        *int64
+	category_protected    *bool
 	name                  *string
 	slug                  *string
 	description           *string
@@ -57326,6 +57436,42 @@ func (m *ProductMutation) ResetCategoryID() {
 	m.category_id = nil
 	m.addcategory_id = nil
 	delete(m.clearedFields, product.FieldCategoryID)
+}
+
+// SetCategoryProtected sets the "category_protected" field.
+func (m *ProductMutation) SetCategoryProtected(b bool) {
+	m.category_protected = &b
+}
+
+// CategoryProtected returns the value of the "category_protected" field in the mutation.
+func (m *ProductMutation) CategoryProtected() (r bool, exists bool) {
+	v := m.category_protected
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCategoryProtected returns the old "category_protected" field's value of the Product entity.
+// If the Product object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductMutation) OldCategoryProtected(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCategoryProtected is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCategoryProtected requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCategoryProtected: %w", err)
+	}
+	return oldValue.CategoryProtected, nil
+}
+
+// ResetCategoryProtected resets all changes to the "category_protected" field.
+func (m *ProductMutation) ResetCategoryProtected() {
+	m.category_protected = nil
 }
 
 // SetName sets the "name" field.
@@ -58897,7 +59043,7 @@ func (m *ProductMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *ProductMutation) Fields() []string {
-	fields := make([]string, 0, 34)
+	fields := make([]string, 0, 35)
 	if m.created_at != nil {
 		fields = append(fields, product.FieldCreatedAt)
 	}
@@ -58909,6 +59055,9 @@ func (m *ProductMutation) Fields() []string {
 	}
 	if m.category_id != nil {
 		fields = append(fields, product.FieldCategoryID)
+	}
+	if m.category_protected != nil {
+		fields = append(fields, product.FieldCategoryProtected)
 	}
 	if m.name != nil {
 		fields = append(fields, product.FieldName)
@@ -59016,6 +59165,8 @@ func (m *ProductMutation) Field(name string) (ent.Value, bool) {
 		return m.SubsiteID()
 	case product.FieldCategoryID:
 		return m.CategoryID()
+	case product.FieldCategoryProtected:
+		return m.CategoryProtected()
 	case product.FieldName:
 		return m.Name()
 	case product.FieldSlug:
@@ -59093,6 +59244,8 @@ func (m *ProductMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldSubsiteID(ctx)
 	case product.FieldCategoryID:
 		return m.OldCategoryID(ctx)
+	case product.FieldCategoryProtected:
+		return m.OldCategoryProtected(ctx)
 	case product.FieldName:
 		return m.OldName(ctx)
 	case product.FieldSlug:
@@ -59189,6 +59342,13 @@ func (m *ProductMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCategoryID(v)
+		return nil
+	case product.FieldCategoryProtected:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCategoryProtected(v)
 		return nil
 	case product.FieldName:
 		v, ok := value.(string)
@@ -59676,6 +59836,9 @@ func (m *ProductMutation) ResetField(name string) error {
 		return nil
 	case product.FieldCategoryID:
 		m.ResetCategoryID()
+		return nil
+	case product.FieldCategoryProtected:
+		m.ResetCategoryProtected()
 		return nil
 	case product.FieldName:
 		m.ResetName()
@@ -62035,6 +62198,1985 @@ func (m *ProductControlMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *ProductControlMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown ProductControl edge %s", name)
+}
+
+// ProductDeliverySourceMutation represents an operation that mutates the ProductDeliverySource nodes in the graph.
+type ProductDeliverySourceMutation struct {
+	config
+	op                       Op
+	typ                      string
+	id                       *uint64
+	created_at               *time.Time
+	updated_at               *time.Time
+	subsite_id               *uint64
+	addsubsite_id            *int64
+	product_id               *uint64
+	addproduct_id            *int64
+	sku_id                   *uint64
+	addsku_id                *int64
+	purchase_key             *string
+	current_key              *string
+	status                   *string
+	content                  *[]byte
+	connection_id            *uint64
+	addconnection_id         *int64
+	upstream_product         *string
+	upstream_sku             *string
+	upstream_order_id        *string
+	connection_revision      *string
+	origin_procurement_id    *uint64
+	addorigin_procurement_id *int64
+	expires_at               *int64
+	addexpires_at            *int64
+	delivered_count          *int64
+	adddelivered_count       *int64
+	max_deliveries           *int64
+	addmax_deliveries        *int64
+	submitted_at             *int64
+	addsubmitted_at          *int64
+	next_check_at            *int64
+	addnext_check_at         *int64
+	exchange_rate            *float64
+	addexchange_rate         *float64
+	cost_cents               *int64
+	addcost_cents            *int64
+	last_error               *string
+	clearedFields            map[string]struct{}
+	done                     bool
+	oldValue                 func(context.Context) (*ProductDeliverySource, error)
+	predicates               []predicate.ProductDeliverySource
+}
+
+var _ ent.Mutation = (*ProductDeliverySourceMutation)(nil)
+
+// productdeliverysourceOption allows management of the mutation configuration using functional options.
+type productdeliverysourceOption func(*ProductDeliverySourceMutation)
+
+// newProductDeliverySourceMutation creates new mutation for the ProductDeliverySource entity.
+func newProductDeliverySourceMutation(c config, op Op, opts ...productdeliverysourceOption) *ProductDeliverySourceMutation {
+	m := &ProductDeliverySourceMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeProductDeliverySource,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withProductDeliverySourceID sets the ID field of the mutation.
+func withProductDeliverySourceID(id uint64) productdeliverysourceOption {
+	return func(m *ProductDeliverySourceMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *ProductDeliverySource
+		)
+		m.oldValue = func(ctx context.Context) (*ProductDeliverySource, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().ProductDeliverySource.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withProductDeliverySource sets the old ProductDeliverySource of the mutation.
+func withProductDeliverySource(node *ProductDeliverySource) productdeliverysourceOption {
+	return func(m *ProductDeliverySourceMutation) {
+		m.oldValue = func(context.Context) (*ProductDeliverySource, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ProductDeliverySourceMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ProductDeliverySourceMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of ProductDeliverySource entities.
+func (m *ProductDeliverySourceMutation) SetID(id uint64) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ProductDeliverySourceMutation) ID() (id uint64, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ProductDeliverySourceMutation) IDs(ctx context.Context) ([]uint64, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uint64{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().ProductDeliverySource.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *ProductDeliverySourceMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *ProductDeliverySourceMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *ProductDeliverySourceMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *ProductDeliverySourceMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *ProductDeliverySourceMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *ProductDeliverySourceMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetSubsiteID sets the "subsite_id" field.
+func (m *ProductDeliverySourceMutation) SetSubsiteID(u uint64) {
+	m.subsite_id = &u
+	m.addsubsite_id = nil
+}
+
+// SubsiteID returns the value of the "subsite_id" field in the mutation.
+func (m *ProductDeliverySourceMutation) SubsiteID() (r uint64, exists bool) {
+	v := m.subsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubsiteID returns the old "subsite_id" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldSubsiteID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubsiteID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubsiteID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubsiteID: %w", err)
+	}
+	return oldValue.SubsiteID, nil
+}
+
+// AddSubsiteID adds u to the "subsite_id" field.
+func (m *ProductDeliverySourceMutation) AddSubsiteID(u int64) {
+	if m.addsubsite_id != nil {
+		*m.addsubsite_id += u
+	} else {
+		m.addsubsite_id = &u
+	}
+}
+
+// AddedSubsiteID returns the value that was added to the "subsite_id" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedSubsiteID() (r int64, exists bool) {
+	v := m.addsubsite_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubsiteID resets all changes to the "subsite_id" field.
+func (m *ProductDeliverySourceMutation) ResetSubsiteID() {
+	m.subsite_id = nil
+	m.addsubsite_id = nil
+}
+
+// SetProductID sets the "product_id" field.
+func (m *ProductDeliverySourceMutation) SetProductID(u uint64) {
+	m.product_id = &u
+	m.addproduct_id = nil
+}
+
+// ProductID returns the value of the "product_id" field in the mutation.
+func (m *ProductDeliverySourceMutation) ProductID() (r uint64, exists bool) {
+	v := m.product_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductID returns the old "product_id" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldProductID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductID: %w", err)
+	}
+	return oldValue.ProductID, nil
+}
+
+// AddProductID adds u to the "product_id" field.
+func (m *ProductDeliverySourceMutation) AddProductID(u int64) {
+	if m.addproduct_id != nil {
+		*m.addproduct_id += u
+	} else {
+		m.addproduct_id = &u
+	}
+}
+
+// AddedProductID returns the value that was added to the "product_id" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedProductID() (r int64, exists bool) {
+	v := m.addproduct_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetProductID resets all changes to the "product_id" field.
+func (m *ProductDeliverySourceMutation) ResetProductID() {
+	m.product_id = nil
+	m.addproduct_id = nil
+}
+
+// SetSkuID sets the "sku_id" field.
+func (m *ProductDeliverySourceMutation) SetSkuID(u uint64) {
+	m.sku_id = &u
+	m.addsku_id = nil
+}
+
+// SkuID returns the value of the "sku_id" field in the mutation.
+func (m *ProductDeliverySourceMutation) SkuID() (r uint64, exists bool) {
+	v := m.sku_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSkuID returns the old "sku_id" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldSkuID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSkuID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSkuID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSkuID: %w", err)
+	}
+	return oldValue.SkuID, nil
+}
+
+// AddSkuID adds u to the "sku_id" field.
+func (m *ProductDeliverySourceMutation) AddSkuID(u int64) {
+	if m.addsku_id != nil {
+		*m.addsku_id += u
+	} else {
+		m.addsku_id = &u
+	}
+}
+
+// AddedSkuID returns the value that was added to the "sku_id" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedSkuID() (r int64, exists bool) {
+	v := m.addsku_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSkuID resets all changes to the "sku_id" field.
+func (m *ProductDeliverySourceMutation) ResetSkuID() {
+	m.sku_id = nil
+	m.addsku_id = nil
+}
+
+// SetPurchaseKey sets the "purchase_key" field.
+func (m *ProductDeliverySourceMutation) SetPurchaseKey(s string) {
+	m.purchase_key = &s
+}
+
+// PurchaseKey returns the value of the "purchase_key" field in the mutation.
+func (m *ProductDeliverySourceMutation) PurchaseKey() (r string, exists bool) {
+	v := m.purchase_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPurchaseKey returns the old "purchase_key" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldPurchaseKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPurchaseKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPurchaseKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPurchaseKey: %w", err)
+	}
+	return oldValue.PurchaseKey, nil
+}
+
+// ClearPurchaseKey clears the value of the "purchase_key" field.
+func (m *ProductDeliverySourceMutation) ClearPurchaseKey() {
+	m.purchase_key = nil
+	m.clearedFields[productdeliverysource.FieldPurchaseKey] = struct{}{}
+}
+
+// PurchaseKeyCleared returns if the "purchase_key" field was cleared in this mutation.
+func (m *ProductDeliverySourceMutation) PurchaseKeyCleared() bool {
+	_, ok := m.clearedFields[productdeliverysource.FieldPurchaseKey]
+	return ok
+}
+
+// ResetPurchaseKey resets all changes to the "purchase_key" field.
+func (m *ProductDeliverySourceMutation) ResetPurchaseKey() {
+	m.purchase_key = nil
+	delete(m.clearedFields, productdeliverysource.FieldPurchaseKey)
+}
+
+// SetCurrentKey sets the "current_key" field.
+func (m *ProductDeliverySourceMutation) SetCurrentKey(s string) {
+	m.current_key = &s
+}
+
+// CurrentKey returns the value of the "current_key" field in the mutation.
+func (m *ProductDeliverySourceMutation) CurrentKey() (r string, exists bool) {
+	v := m.current_key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCurrentKey returns the old "current_key" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldCurrentKey(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCurrentKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCurrentKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCurrentKey: %w", err)
+	}
+	return oldValue.CurrentKey, nil
+}
+
+// ClearCurrentKey clears the value of the "current_key" field.
+func (m *ProductDeliverySourceMutation) ClearCurrentKey() {
+	m.current_key = nil
+	m.clearedFields[productdeliverysource.FieldCurrentKey] = struct{}{}
+}
+
+// CurrentKeyCleared returns if the "current_key" field was cleared in this mutation.
+func (m *ProductDeliverySourceMutation) CurrentKeyCleared() bool {
+	_, ok := m.clearedFields[productdeliverysource.FieldCurrentKey]
+	return ok
+}
+
+// ResetCurrentKey resets all changes to the "current_key" field.
+func (m *ProductDeliverySourceMutation) ResetCurrentKey() {
+	m.current_key = nil
+	delete(m.clearedFields, productdeliverysource.FieldCurrentKey)
+}
+
+// SetStatus sets the "status" field.
+func (m *ProductDeliverySourceMutation) SetStatus(s string) {
+	m.status = &s
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *ProductDeliverySourceMutation) Status() (r string, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldStatus(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *ProductDeliverySourceMutation) ResetStatus() {
+	m.status = nil
+}
+
+// SetContent sets the "content" field.
+func (m *ProductDeliverySourceMutation) SetContent(b []byte) {
+	m.content = &b
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *ProductDeliverySourceMutation) Content() (r []byte, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *ProductDeliverySourceMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[productdeliverysource.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *ProductDeliverySourceMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[productdeliverysource.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *ProductDeliverySourceMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, productdeliverysource.FieldContent)
+}
+
+// SetConnectionID sets the "connection_id" field.
+func (m *ProductDeliverySourceMutation) SetConnectionID(u uint64) {
+	m.connection_id = &u
+	m.addconnection_id = nil
+}
+
+// ConnectionID returns the value of the "connection_id" field in the mutation.
+func (m *ProductDeliverySourceMutation) ConnectionID() (r uint64, exists bool) {
+	v := m.connection_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConnectionID returns the old "connection_id" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldConnectionID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConnectionID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConnectionID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConnectionID: %w", err)
+	}
+	return oldValue.ConnectionID, nil
+}
+
+// AddConnectionID adds u to the "connection_id" field.
+func (m *ProductDeliverySourceMutation) AddConnectionID(u int64) {
+	if m.addconnection_id != nil {
+		*m.addconnection_id += u
+	} else {
+		m.addconnection_id = &u
+	}
+}
+
+// AddedConnectionID returns the value that was added to the "connection_id" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedConnectionID() (r int64, exists bool) {
+	v := m.addconnection_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetConnectionID resets all changes to the "connection_id" field.
+func (m *ProductDeliverySourceMutation) ResetConnectionID() {
+	m.connection_id = nil
+	m.addconnection_id = nil
+}
+
+// SetUpstreamProduct sets the "upstream_product" field.
+func (m *ProductDeliverySourceMutation) SetUpstreamProduct(s string) {
+	m.upstream_product = &s
+}
+
+// UpstreamProduct returns the value of the "upstream_product" field in the mutation.
+func (m *ProductDeliverySourceMutation) UpstreamProduct() (r string, exists bool) {
+	v := m.upstream_product
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamProduct returns the old "upstream_product" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldUpstreamProduct(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamProduct is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamProduct requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamProduct: %w", err)
+	}
+	return oldValue.UpstreamProduct, nil
+}
+
+// ResetUpstreamProduct resets all changes to the "upstream_product" field.
+func (m *ProductDeliverySourceMutation) ResetUpstreamProduct() {
+	m.upstream_product = nil
+}
+
+// SetUpstreamSku sets the "upstream_sku" field.
+func (m *ProductDeliverySourceMutation) SetUpstreamSku(s string) {
+	m.upstream_sku = &s
+}
+
+// UpstreamSku returns the value of the "upstream_sku" field in the mutation.
+func (m *ProductDeliverySourceMutation) UpstreamSku() (r string, exists bool) {
+	v := m.upstream_sku
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamSku returns the old "upstream_sku" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldUpstreamSku(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamSku is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamSku requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamSku: %w", err)
+	}
+	return oldValue.UpstreamSku, nil
+}
+
+// ResetUpstreamSku resets all changes to the "upstream_sku" field.
+func (m *ProductDeliverySourceMutation) ResetUpstreamSku() {
+	m.upstream_sku = nil
+}
+
+// SetUpstreamOrderID sets the "upstream_order_id" field.
+func (m *ProductDeliverySourceMutation) SetUpstreamOrderID(s string) {
+	m.upstream_order_id = &s
+}
+
+// UpstreamOrderID returns the value of the "upstream_order_id" field in the mutation.
+func (m *ProductDeliverySourceMutation) UpstreamOrderID() (r string, exists bool) {
+	v := m.upstream_order_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpstreamOrderID returns the old "upstream_order_id" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldUpstreamOrderID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpstreamOrderID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpstreamOrderID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpstreamOrderID: %w", err)
+	}
+	return oldValue.UpstreamOrderID, nil
+}
+
+// ResetUpstreamOrderID resets all changes to the "upstream_order_id" field.
+func (m *ProductDeliverySourceMutation) ResetUpstreamOrderID() {
+	m.upstream_order_id = nil
+}
+
+// SetConnectionRevision sets the "connection_revision" field.
+func (m *ProductDeliverySourceMutation) SetConnectionRevision(s string) {
+	m.connection_revision = &s
+}
+
+// ConnectionRevision returns the value of the "connection_revision" field in the mutation.
+func (m *ProductDeliverySourceMutation) ConnectionRevision() (r string, exists bool) {
+	v := m.connection_revision
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldConnectionRevision returns the old "connection_revision" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldConnectionRevision(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldConnectionRevision is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldConnectionRevision requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldConnectionRevision: %w", err)
+	}
+	return oldValue.ConnectionRevision, nil
+}
+
+// ResetConnectionRevision resets all changes to the "connection_revision" field.
+func (m *ProductDeliverySourceMutation) ResetConnectionRevision() {
+	m.connection_revision = nil
+}
+
+// SetOriginProcurementID sets the "origin_procurement_id" field.
+func (m *ProductDeliverySourceMutation) SetOriginProcurementID(u uint64) {
+	m.origin_procurement_id = &u
+	m.addorigin_procurement_id = nil
+}
+
+// OriginProcurementID returns the value of the "origin_procurement_id" field in the mutation.
+func (m *ProductDeliverySourceMutation) OriginProcurementID() (r uint64, exists bool) {
+	v := m.origin_procurement_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOriginProcurementID returns the old "origin_procurement_id" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldOriginProcurementID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOriginProcurementID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOriginProcurementID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOriginProcurementID: %w", err)
+	}
+	return oldValue.OriginProcurementID, nil
+}
+
+// AddOriginProcurementID adds u to the "origin_procurement_id" field.
+func (m *ProductDeliverySourceMutation) AddOriginProcurementID(u int64) {
+	if m.addorigin_procurement_id != nil {
+		*m.addorigin_procurement_id += u
+	} else {
+		m.addorigin_procurement_id = &u
+	}
+}
+
+// AddedOriginProcurementID returns the value that was added to the "origin_procurement_id" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedOriginProcurementID() (r int64, exists bool) {
+	v := m.addorigin_procurement_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetOriginProcurementID resets all changes to the "origin_procurement_id" field.
+func (m *ProductDeliverySourceMutation) ResetOriginProcurementID() {
+	m.origin_procurement_id = nil
+	m.addorigin_procurement_id = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *ProductDeliverySourceMutation) SetExpiresAt(i int64) {
+	m.expires_at = &i
+	m.addexpires_at = nil
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *ProductDeliverySourceMutation) ExpiresAt() (r int64, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldExpiresAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// AddExpiresAt adds i to the "expires_at" field.
+func (m *ProductDeliverySourceMutation) AddExpiresAt(i int64) {
+	if m.addexpires_at != nil {
+		*m.addexpires_at += i
+	} else {
+		m.addexpires_at = &i
+	}
+}
+
+// AddedExpiresAt returns the value that was added to the "expires_at" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedExpiresAt() (r int64, exists bool) {
+	v := m.addexpires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *ProductDeliverySourceMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	m.addexpires_at = nil
+}
+
+// SetDeliveredCount sets the "delivered_count" field.
+func (m *ProductDeliverySourceMutation) SetDeliveredCount(i int64) {
+	m.delivered_count = &i
+	m.adddelivered_count = nil
+}
+
+// DeliveredCount returns the value of the "delivered_count" field in the mutation.
+func (m *ProductDeliverySourceMutation) DeliveredCount() (r int64, exists bool) {
+	v := m.delivered_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeliveredCount returns the old "delivered_count" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldDeliveredCount(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDeliveredCount is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDeliveredCount requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeliveredCount: %w", err)
+	}
+	return oldValue.DeliveredCount, nil
+}
+
+// AddDeliveredCount adds i to the "delivered_count" field.
+func (m *ProductDeliverySourceMutation) AddDeliveredCount(i int64) {
+	if m.adddelivered_count != nil {
+		*m.adddelivered_count += i
+	} else {
+		m.adddelivered_count = &i
+	}
+}
+
+// AddedDeliveredCount returns the value that was added to the "delivered_count" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedDeliveredCount() (r int64, exists bool) {
+	v := m.adddelivered_count
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetDeliveredCount resets all changes to the "delivered_count" field.
+func (m *ProductDeliverySourceMutation) ResetDeliveredCount() {
+	m.delivered_count = nil
+	m.adddelivered_count = nil
+}
+
+// SetMaxDeliveries sets the "max_deliveries" field.
+func (m *ProductDeliverySourceMutation) SetMaxDeliveries(i int64) {
+	m.max_deliveries = &i
+	m.addmax_deliveries = nil
+}
+
+// MaxDeliveries returns the value of the "max_deliveries" field in the mutation.
+func (m *ProductDeliverySourceMutation) MaxDeliveries() (r int64, exists bool) {
+	v := m.max_deliveries
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMaxDeliveries returns the old "max_deliveries" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldMaxDeliveries(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldMaxDeliveries is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldMaxDeliveries requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMaxDeliveries: %w", err)
+	}
+	return oldValue.MaxDeliveries, nil
+}
+
+// AddMaxDeliveries adds i to the "max_deliveries" field.
+func (m *ProductDeliverySourceMutation) AddMaxDeliveries(i int64) {
+	if m.addmax_deliveries != nil {
+		*m.addmax_deliveries += i
+	} else {
+		m.addmax_deliveries = &i
+	}
+}
+
+// AddedMaxDeliveries returns the value that was added to the "max_deliveries" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedMaxDeliveries() (r int64, exists bool) {
+	v := m.addmax_deliveries
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetMaxDeliveries resets all changes to the "max_deliveries" field.
+func (m *ProductDeliverySourceMutation) ResetMaxDeliveries() {
+	m.max_deliveries = nil
+	m.addmax_deliveries = nil
+}
+
+// SetSubmittedAt sets the "submitted_at" field.
+func (m *ProductDeliverySourceMutation) SetSubmittedAt(i int64) {
+	m.submitted_at = &i
+	m.addsubmitted_at = nil
+}
+
+// SubmittedAt returns the value of the "submitted_at" field in the mutation.
+func (m *ProductDeliverySourceMutation) SubmittedAt() (r int64, exists bool) {
+	v := m.submitted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSubmittedAt returns the old "submitted_at" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldSubmittedAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSubmittedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSubmittedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSubmittedAt: %w", err)
+	}
+	return oldValue.SubmittedAt, nil
+}
+
+// AddSubmittedAt adds i to the "submitted_at" field.
+func (m *ProductDeliverySourceMutation) AddSubmittedAt(i int64) {
+	if m.addsubmitted_at != nil {
+		*m.addsubmitted_at += i
+	} else {
+		m.addsubmitted_at = &i
+	}
+}
+
+// AddedSubmittedAt returns the value that was added to the "submitted_at" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedSubmittedAt() (r int64, exists bool) {
+	v := m.addsubmitted_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSubmittedAt resets all changes to the "submitted_at" field.
+func (m *ProductDeliverySourceMutation) ResetSubmittedAt() {
+	m.submitted_at = nil
+	m.addsubmitted_at = nil
+}
+
+// SetNextCheckAt sets the "next_check_at" field.
+func (m *ProductDeliverySourceMutation) SetNextCheckAt(i int64) {
+	m.next_check_at = &i
+	m.addnext_check_at = nil
+}
+
+// NextCheckAt returns the value of the "next_check_at" field in the mutation.
+func (m *ProductDeliverySourceMutation) NextCheckAt() (r int64, exists bool) {
+	v := m.next_check_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNextCheckAt returns the old "next_check_at" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldNextCheckAt(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNextCheckAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNextCheckAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNextCheckAt: %w", err)
+	}
+	return oldValue.NextCheckAt, nil
+}
+
+// AddNextCheckAt adds i to the "next_check_at" field.
+func (m *ProductDeliverySourceMutation) AddNextCheckAt(i int64) {
+	if m.addnext_check_at != nil {
+		*m.addnext_check_at += i
+	} else {
+		m.addnext_check_at = &i
+	}
+}
+
+// AddedNextCheckAt returns the value that was added to the "next_check_at" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedNextCheckAt() (r int64, exists bool) {
+	v := m.addnext_check_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetNextCheckAt resets all changes to the "next_check_at" field.
+func (m *ProductDeliverySourceMutation) ResetNextCheckAt() {
+	m.next_check_at = nil
+	m.addnext_check_at = nil
+}
+
+// SetExchangeRate sets the "exchange_rate" field.
+func (m *ProductDeliverySourceMutation) SetExchangeRate(f float64) {
+	m.exchange_rate = &f
+	m.addexchange_rate = nil
+}
+
+// ExchangeRate returns the value of the "exchange_rate" field in the mutation.
+func (m *ProductDeliverySourceMutation) ExchangeRate() (r float64, exists bool) {
+	v := m.exchange_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExchangeRate returns the old "exchange_rate" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldExchangeRate(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExchangeRate is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExchangeRate requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExchangeRate: %w", err)
+	}
+	return oldValue.ExchangeRate, nil
+}
+
+// AddExchangeRate adds f to the "exchange_rate" field.
+func (m *ProductDeliverySourceMutation) AddExchangeRate(f float64) {
+	if m.addexchange_rate != nil {
+		*m.addexchange_rate += f
+	} else {
+		m.addexchange_rate = &f
+	}
+}
+
+// AddedExchangeRate returns the value that was added to the "exchange_rate" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedExchangeRate() (r float64, exists bool) {
+	v := m.addexchange_rate
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetExchangeRate resets all changes to the "exchange_rate" field.
+func (m *ProductDeliverySourceMutation) ResetExchangeRate() {
+	m.exchange_rate = nil
+	m.addexchange_rate = nil
+}
+
+// SetCostCents sets the "cost_cents" field.
+func (m *ProductDeliverySourceMutation) SetCostCents(i int64) {
+	m.cost_cents = &i
+	m.addcost_cents = nil
+}
+
+// CostCents returns the value of the "cost_cents" field in the mutation.
+func (m *ProductDeliverySourceMutation) CostCents() (r int64, exists bool) {
+	v := m.cost_cents
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCostCents returns the old "cost_cents" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldCostCents(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCostCents is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCostCents requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCostCents: %w", err)
+	}
+	return oldValue.CostCents, nil
+}
+
+// AddCostCents adds i to the "cost_cents" field.
+func (m *ProductDeliverySourceMutation) AddCostCents(i int64) {
+	if m.addcost_cents != nil {
+		*m.addcost_cents += i
+	} else {
+		m.addcost_cents = &i
+	}
+}
+
+// AddedCostCents returns the value that was added to the "cost_cents" field in this mutation.
+func (m *ProductDeliverySourceMutation) AddedCostCents() (r int64, exists bool) {
+	v := m.addcost_cents
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetCostCents resets all changes to the "cost_cents" field.
+func (m *ProductDeliverySourceMutation) ResetCostCents() {
+	m.cost_cents = nil
+	m.addcost_cents = nil
+}
+
+// SetLastError sets the "last_error" field.
+func (m *ProductDeliverySourceMutation) SetLastError(s string) {
+	m.last_error = &s
+}
+
+// LastError returns the value of the "last_error" field in the mutation.
+func (m *ProductDeliverySourceMutation) LastError() (r string, exists bool) {
+	v := m.last_error
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastError returns the old "last_error" field's value of the ProductDeliverySource entity.
+// If the ProductDeliverySource object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ProductDeliverySourceMutation) OldLastError(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastError is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastError requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastError: %w", err)
+	}
+	return oldValue.LastError, nil
+}
+
+// ResetLastError resets all changes to the "last_error" field.
+func (m *ProductDeliverySourceMutation) ResetLastError() {
+	m.last_error = nil
+}
+
+// Where appends a list predicates to the ProductDeliverySourceMutation builder.
+func (m *ProductDeliverySourceMutation) Where(ps ...predicate.ProductDeliverySource) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ProductDeliverySourceMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ProductDeliverySourceMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.ProductDeliverySource, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ProductDeliverySourceMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ProductDeliverySourceMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (ProductDeliverySource).
+func (m *ProductDeliverySourceMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ProductDeliverySourceMutation) Fields() []string {
+	fields := make([]string, 0, 23)
+	if m.created_at != nil {
+		fields = append(fields, productdeliverysource.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, productdeliverysource.FieldUpdatedAt)
+	}
+	if m.subsite_id != nil {
+		fields = append(fields, productdeliverysource.FieldSubsiteID)
+	}
+	if m.product_id != nil {
+		fields = append(fields, productdeliverysource.FieldProductID)
+	}
+	if m.sku_id != nil {
+		fields = append(fields, productdeliverysource.FieldSkuID)
+	}
+	if m.purchase_key != nil {
+		fields = append(fields, productdeliverysource.FieldPurchaseKey)
+	}
+	if m.current_key != nil {
+		fields = append(fields, productdeliverysource.FieldCurrentKey)
+	}
+	if m.status != nil {
+		fields = append(fields, productdeliverysource.FieldStatus)
+	}
+	if m.content != nil {
+		fields = append(fields, productdeliverysource.FieldContent)
+	}
+	if m.connection_id != nil {
+		fields = append(fields, productdeliverysource.FieldConnectionID)
+	}
+	if m.upstream_product != nil {
+		fields = append(fields, productdeliverysource.FieldUpstreamProduct)
+	}
+	if m.upstream_sku != nil {
+		fields = append(fields, productdeliverysource.FieldUpstreamSku)
+	}
+	if m.upstream_order_id != nil {
+		fields = append(fields, productdeliverysource.FieldUpstreamOrderID)
+	}
+	if m.connection_revision != nil {
+		fields = append(fields, productdeliverysource.FieldConnectionRevision)
+	}
+	if m.origin_procurement_id != nil {
+		fields = append(fields, productdeliverysource.FieldOriginProcurementID)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, productdeliverysource.FieldExpiresAt)
+	}
+	if m.delivered_count != nil {
+		fields = append(fields, productdeliverysource.FieldDeliveredCount)
+	}
+	if m.max_deliveries != nil {
+		fields = append(fields, productdeliverysource.FieldMaxDeliveries)
+	}
+	if m.submitted_at != nil {
+		fields = append(fields, productdeliverysource.FieldSubmittedAt)
+	}
+	if m.next_check_at != nil {
+		fields = append(fields, productdeliverysource.FieldNextCheckAt)
+	}
+	if m.exchange_rate != nil {
+		fields = append(fields, productdeliverysource.FieldExchangeRate)
+	}
+	if m.cost_cents != nil {
+		fields = append(fields, productdeliverysource.FieldCostCents)
+	}
+	if m.last_error != nil {
+		fields = append(fields, productdeliverysource.FieldLastError)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ProductDeliverySourceMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case productdeliverysource.FieldCreatedAt:
+		return m.CreatedAt()
+	case productdeliverysource.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case productdeliverysource.FieldSubsiteID:
+		return m.SubsiteID()
+	case productdeliverysource.FieldProductID:
+		return m.ProductID()
+	case productdeliverysource.FieldSkuID:
+		return m.SkuID()
+	case productdeliverysource.FieldPurchaseKey:
+		return m.PurchaseKey()
+	case productdeliverysource.FieldCurrentKey:
+		return m.CurrentKey()
+	case productdeliverysource.FieldStatus:
+		return m.Status()
+	case productdeliverysource.FieldContent:
+		return m.Content()
+	case productdeliverysource.FieldConnectionID:
+		return m.ConnectionID()
+	case productdeliverysource.FieldUpstreamProduct:
+		return m.UpstreamProduct()
+	case productdeliverysource.FieldUpstreamSku:
+		return m.UpstreamSku()
+	case productdeliverysource.FieldUpstreamOrderID:
+		return m.UpstreamOrderID()
+	case productdeliverysource.FieldConnectionRevision:
+		return m.ConnectionRevision()
+	case productdeliverysource.FieldOriginProcurementID:
+		return m.OriginProcurementID()
+	case productdeliverysource.FieldExpiresAt:
+		return m.ExpiresAt()
+	case productdeliverysource.FieldDeliveredCount:
+		return m.DeliveredCount()
+	case productdeliverysource.FieldMaxDeliveries:
+		return m.MaxDeliveries()
+	case productdeliverysource.FieldSubmittedAt:
+		return m.SubmittedAt()
+	case productdeliverysource.FieldNextCheckAt:
+		return m.NextCheckAt()
+	case productdeliverysource.FieldExchangeRate:
+		return m.ExchangeRate()
+	case productdeliverysource.FieldCostCents:
+		return m.CostCents()
+	case productdeliverysource.FieldLastError:
+		return m.LastError()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ProductDeliverySourceMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case productdeliverysource.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case productdeliverysource.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case productdeliverysource.FieldSubsiteID:
+		return m.OldSubsiteID(ctx)
+	case productdeliverysource.FieldProductID:
+		return m.OldProductID(ctx)
+	case productdeliverysource.FieldSkuID:
+		return m.OldSkuID(ctx)
+	case productdeliverysource.FieldPurchaseKey:
+		return m.OldPurchaseKey(ctx)
+	case productdeliverysource.FieldCurrentKey:
+		return m.OldCurrentKey(ctx)
+	case productdeliverysource.FieldStatus:
+		return m.OldStatus(ctx)
+	case productdeliverysource.FieldContent:
+		return m.OldContent(ctx)
+	case productdeliverysource.FieldConnectionID:
+		return m.OldConnectionID(ctx)
+	case productdeliverysource.FieldUpstreamProduct:
+		return m.OldUpstreamProduct(ctx)
+	case productdeliverysource.FieldUpstreamSku:
+		return m.OldUpstreamSku(ctx)
+	case productdeliverysource.FieldUpstreamOrderID:
+		return m.OldUpstreamOrderID(ctx)
+	case productdeliverysource.FieldConnectionRevision:
+		return m.OldConnectionRevision(ctx)
+	case productdeliverysource.FieldOriginProcurementID:
+		return m.OldOriginProcurementID(ctx)
+	case productdeliverysource.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case productdeliverysource.FieldDeliveredCount:
+		return m.OldDeliveredCount(ctx)
+	case productdeliverysource.FieldMaxDeliveries:
+		return m.OldMaxDeliveries(ctx)
+	case productdeliverysource.FieldSubmittedAt:
+		return m.OldSubmittedAt(ctx)
+	case productdeliverysource.FieldNextCheckAt:
+		return m.OldNextCheckAt(ctx)
+	case productdeliverysource.FieldExchangeRate:
+		return m.OldExchangeRate(ctx)
+	case productdeliverysource.FieldCostCents:
+		return m.OldCostCents(ctx)
+	case productdeliverysource.FieldLastError:
+		return m.OldLastError(ctx)
+	}
+	return nil, fmt.Errorf("unknown ProductDeliverySource field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductDeliverySourceMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case productdeliverysource.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case productdeliverysource.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case productdeliverysource.FieldSubsiteID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubsiteID(v)
+		return nil
+	case productdeliverysource.FieldProductID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductID(v)
+		return nil
+	case productdeliverysource.FieldSkuID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSkuID(v)
+		return nil
+	case productdeliverysource.FieldPurchaseKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPurchaseKey(v)
+		return nil
+	case productdeliverysource.FieldCurrentKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCurrentKey(v)
+		return nil
+	case productdeliverysource.FieldStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
+	case productdeliverysource.FieldContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	case productdeliverysource.FieldConnectionID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConnectionID(v)
+		return nil
+	case productdeliverysource.FieldUpstreamProduct:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamProduct(v)
+		return nil
+	case productdeliverysource.FieldUpstreamSku:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamSku(v)
+		return nil
+	case productdeliverysource.FieldUpstreamOrderID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpstreamOrderID(v)
+		return nil
+	case productdeliverysource.FieldConnectionRevision:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetConnectionRevision(v)
+		return nil
+	case productdeliverysource.FieldOriginProcurementID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOriginProcurementID(v)
+		return nil
+	case productdeliverysource.FieldExpiresAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case productdeliverysource.FieldDeliveredCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeliveredCount(v)
+		return nil
+	case productdeliverysource.FieldMaxDeliveries:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMaxDeliveries(v)
+		return nil
+	case productdeliverysource.FieldSubmittedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSubmittedAt(v)
+		return nil
+	case productdeliverysource.FieldNextCheckAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNextCheckAt(v)
+		return nil
+	case productdeliverysource.FieldExchangeRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExchangeRate(v)
+		return nil
+	case productdeliverysource.FieldCostCents:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCostCents(v)
+		return nil
+	case productdeliverysource.FieldLastError:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastError(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProductDeliverySource field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ProductDeliverySourceMutation) AddedFields() []string {
+	var fields []string
+	if m.addsubsite_id != nil {
+		fields = append(fields, productdeliverysource.FieldSubsiteID)
+	}
+	if m.addproduct_id != nil {
+		fields = append(fields, productdeliverysource.FieldProductID)
+	}
+	if m.addsku_id != nil {
+		fields = append(fields, productdeliverysource.FieldSkuID)
+	}
+	if m.addconnection_id != nil {
+		fields = append(fields, productdeliverysource.FieldConnectionID)
+	}
+	if m.addorigin_procurement_id != nil {
+		fields = append(fields, productdeliverysource.FieldOriginProcurementID)
+	}
+	if m.addexpires_at != nil {
+		fields = append(fields, productdeliverysource.FieldExpiresAt)
+	}
+	if m.adddelivered_count != nil {
+		fields = append(fields, productdeliverysource.FieldDeliveredCount)
+	}
+	if m.addmax_deliveries != nil {
+		fields = append(fields, productdeliverysource.FieldMaxDeliveries)
+	}
+	if m.addsubmitted_at != nil {
+		fields = append(fields, productdeliverysource.FieldSubmittedAt)
+	}
+	if m.addnext_check_at != nil {
+		fields = append(fields, productdeliverysource.FieldNextCheckAt)
+	}
+	if m.addexchange_rate != nil {
+		fields = append(fields, productdeliverysource.FieldExchangeRate)
+	}
+	if m.addcost_cents != nil {
+		fields = append(fields, productdeliverysource.FieldCostCents)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ProductDeliverySourceMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case productdeliverysource.FieldSubsiteID:
+		return m.AddedSubsiteID()
+	case productdeliverysource.FieldProductID:
+		return m.AddedProductID()
+	case productdeliverysource.FieldSkuID:
+		return m.AddedSkuID()
+	case productdeliverysource.FieldConnectionID:
+		return m.AddedConnectionID()
+	case productdeliverysource.FieldOriginProcurementID:
+		return m.AddedOriginProcurementID()
+	case productdeliverysource.FieldExpiresAt:
+		return m.AddedExpiresAt()
+	case productdeliverysource.FieldDeliveredCount:
+		return m.AddedDeliveredCount()
+	case productdeliverysource.FieldMaxDeliveries:
+		return m.AddedMaxDeliveries()
+	case productdeliverysource.FieldSubmittedAt:
+		return m.AddedSubmittedAt()
+	case productdeliverysource.FieldNextCheckAt:
+		return m.AddedNextCheckAt()
+	case productdeliverysource.FieldExchangeRate:
+		return m.AddedExchangeRate()
+	case productdeliverysource.FieldCostCents:
+		return m.AddedCostCents()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ProductDeliverySourceMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case productdeliverysource.FieldSubsiteID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubsiteID(v)
+		return nil
+	case productdeliverysource.FieldProductID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddProductID(v)
+		return nil
+	case productdeliverysource.FieldSkuID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSkuID(v)
+		return nil
+	case productdeliverysource.FieldConnectionID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddConnectionID(v)
+		return nil
+	case productdeliverysource.FieldOriginProcurementID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddOriginProcurementID(v)
+		return nil
+	case productdeliverysource.FieldExpiresAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExpiresAt(v)
+		return nil
+	case productdeliverysource.FieldDeliveredCount:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddDeliveredCount(v)
+		return nil
+	case productdeliverysource.FieldMaxDeliveries:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddMaxDeliveries(v)
+		return nil
+	case productdeliverysource.FieldSubmittedAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSubmittedAt(v)
+		return nil
+	case productdeliverysource.FieldNextCheckAt:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddNextCheckAt(v)
+		return nil
+	case productdeliverysource.FieldExchangeRate:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddExchangeRate(v)
+		return nil
+	case productdeliverysource.FieldCostCents:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddCostCents(v)
+		return nil
+	}
+	return fmt.Errorf("unknown ProductDeliverySource numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ProductDeliverySourceMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(productdeliverysource.FieldPurchaseKey) {
+		fields = append(fields, productdeliverysource.FieldPurchaseKey)
+	}
+	if m.FieldCleared(productdeliverysource.FieldCurrentKey) {
+		fields = append(fields, productdeliverysource.FieldCurrentKey)
+	}
+	if m.FieldCleared(productdeliverysource.FieldContent) {
+		fields = append(fields, productdeliverysource.FieldContent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ProductDeliverySourceMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ProductDeliverySourceMutation) ClearField(name string) error {
+	switch name {
+	case productdeliverysource.FieldPurchaseKey:
+		m.ClearPurchaseKey()
+		return nil
+	case productdeliverysource.FieldCurrentKey:
+		m.ClearCurrentKey()
+		return nil
+	case productdeliverysource.FieldContent:
+		m.ClearContent()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductDeliverySource nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ProductDeliverySourceMutation) ResetField(name string) error {
+	switch name {
+	case productdeliverysource.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case productdeliverysource.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case productdeliverysource.FieldSubsiteID:
+		m.ResetSubsiteID()
+		return nil
+	case productdeliverysource.FieldProductID:
+		m.ResetProductID()
+		return nil
+	case productdeliverysource.FieldSkuID:
+		m.ResetSkuID()
+		return nil
+	case productdeliverysource.FieldPurchaseKey:
+		m.ResetPurchaseKey()
+		return nil
+	case productdeliverysource.FieldCurrentKey:
+		m.ResetCurrentKey()
+		return nil
+	case productdeliverysource.FieldStatus:
+		m.ResetStatus()
+		return nil
+	case productdeliverysource.FieldContent:
+		m.ResetContent()
+		return nil
+	case productdeliverysource.FieldConnectionID:
+		m.ResetConnectionID()
+		return nil
+	case productdeliverysource.FieldUpstreamProduct:
+		m.ResetUpstreamProduct()
+		return nil
+	case productdeliverysource.FieldUpstreamSku:
+		m.ResetUpstreamSku()
+		return nil
+	case productdeliverysource.FieldUpstreamOrderID:
+		m.ResetUpstreamOrderID()
+		return nil
+	case productdeliverysource.FieldConnectionRevision:
+		m.ResetConnectionRevision()
+		return nil
+	case productdeliverysource.FieldOriginProcurementID:
+		m.ResetOriginProcurementID()
+		return nil
+	case productdeliverysource.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case productdeliverysource.FieldDeliveredCount:
+		m.ResetDeliveredCount()
+		return nil
+	case productdeliverysource.FieldMaxDeliveries:
+		m.ResetMaxDeliveries()
+		return nil
+	case productdeliverysource.FieldSubmittedAt:
+		m.ResetSubmittedAt()
+		return nil
+	case productdeliverysource.FieldNextCheckAt:
+		m.ResetNextCheckAt()
+		return nil
+	case productdeliverysource.FieldExchangeRate:
+		m.ResetExchangeRate()
+		return nil
+	case productdeliverysource.FieldCostCents:
+		m.ResetCostCents()
+		return nil
+	case productdeliverysource.FieldLastError:
+		m.ResetLastError()
+		return nil
+	}
+	return fmt.Errorf("unknown ProductDeliverySource field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ProductDeliverySourceMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ProductDeliverySourceMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ProductDeliverySourceMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ProductDeliverySourceMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ProductDeliverySourceMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ProductDeliverySourceMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ProductDeliverySourceMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown ProductDeliverySource unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ProductDeliverySourceMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown ProductDeliverySource edge %s", name)
 }
 
 // ProductSkuMutation represents an operation that mutates the ProductSku nodes in the graph.

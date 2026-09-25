@@ -80,6 +80,20 @@ func (_c *ProductCreate) SetNillableCategoryID(v *uint64) *ProductCreate {
 	return _c
 }
 
+// SetCategoryProtected sets the "category_protected" field.
+func (_c *ProductCreate) SetCategoryProtected(v bool) *ProductCreate {
+	_c.mutation.SetCategoryProtected(v)
+	return _c
+}
+
+// SetNillableCategoryProtected sets the "category_protected" field if the given value is not nil.
+func (_c *ProductCreate) SetNillableCategoryProtected(v *bool) *ProductCreate {
+	if v != nil {
+		_c.SetCategoryProtected(*v)
+	}
+	return _c
+}
+
 // SetName sets the "name" field.
 func (_c *ProductCreate) SetName(v string) *ProductCreate {
 	_c.mutation.SetName(v)
@@ -535,6 +549,10 @@ func (_c *ProductCreate) defaults() {
 		v := product.DefaultSubsiteID
 		_c.mutation.SetSubsiteID(v)
 	}
+	if _, ok := _c.mutation.CategoryProtected(); !ok {
+		v := product.DefaultCategoryProtected
+		_c.mutation.SetCategoryProtected(v)
+	}
 	if _, ok := _c.mutation.CoverProtected(); !ok {
 		v := product.DefaultCoverProtected
 		_c.mutation.SetCoverProtected(v)
@@ -619,6 +637,9 @@ func (_c *ProductCreate) check() error {
 	}
 	if _, ok := _c.mutation.SubsiteID(); !ok {
 		return &ValidationError{Name: "subsite_id", err: errors.New(`ent: missing required field "Product.subsite_id"`)}
+	}
+	if _, ok := _c.mutation.CategoryProtected(); !ok {
+		return &ValidationError{Name: "category_protected", err: errors.New(`ent: missing required field "Product.category_protected"`)}
 	}
 	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Product.name"`)}
@@ -758,6 +779,10 @@ func (_c *ProductCreate) createSpec() (*Product, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.CategoryID(); ok {
 		_spec.SetField(product.FieldCategoryID, field.TypeUint64, value)
 		_node.CategoryID = value
+	}
+	if value, ok := _c.mutation.CategoryProtected(); ok {
+		_spec.SetField(product.FieldCategoryProtected, field.TypeBool, value)
+		_node.CategoryProtected = value
 	}
 	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)
@@ -1014,6 +1039,18 @@ func (u *ProductUpsert) AddCategoryID(v uint64) *ProductUpsert {
 // ClearCategoryID clears the value of the "category_id" field.
 func (u *ProductUpsert) ClearCategoryID() *ProductUpsert {
 	u.SetNull(product.FieldCategoryID)
+	return u
+}
+
+// SetCategoryProtected sets the "category_protected" field.
+func (u *ProductUpsert) SetCategoryProtected(v bool) *ProductUpsert {
+	u.Set(product.FieldCategoryProtected, v)
+	return u
+}
+
+// UpdateCategoryProtected sets the "category_protected" field to the value that was provided on create.
+func (u *ProductUpsert) UpdateCategoryProtected() *ProductUpsert {
+	u.SetExcluded(product.FieldCategoryProtected)
 	return u
 }
 
@@ -1608,6 +1645,20 @@ func (u *ProductUpsertOne) UpdateCategoryID() *ProductUpsertOne {
 func (u *ProductUpsertOne) ClearCategoryID() *ProductUpsertOne {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearCategoryID()
+	})
+}
+
+// SetCategoryProtected sets the "category_protected" field.
+func (u *ProductUpsertOne) SetCategoryProtected(v bool) *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetCategoryProtected(v)
+	})
+}
+
+// UpdateCategoryProtected sets the "category_protected" field to the value that was provided on create.
+func (u *ProductUpsertOne) UpdateCategoryProtected() *ProductUpsertOne {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateCategoryProtected()
 	})
 }
 
@@ -2448,6 +2499,20 @@ func (u *ProductUpsertBulk) UpdateCategoryID() *ProductUpsertBulk {
 func (u *ProductUpsertBulk) ClearCategoryID() *ProductUpsertBulk {
 	return u.Update(func(s *ProductUpsert) {
 		s.ClearCategoryID()
+	})
+}
+
+// SetCategoryProtected sets the "category_protected" field.
+func (u *ProductUpsertBulk) SetCategoryProtected(v bool) *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.SetCategoryProtected(v)
+	})
+}
+
+// UpdateCategoryProtected sets the "category_protected" field to the value that was provided on create.
+func (u *ProductUpsertBulk) UpdateCategoryProtected() *ProductUpsertBulk {
+	return u.Update(func(s *ProductUpsert) {
+		s.UpdateCategoryProtected()
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
 	"os"
@@ -61,7 +62,7 @@ func TestProductLockUpgradePreservesProductsAndChildren(t *testing.T) {
 				t.Fatal(e)
 			}
 			ctx := context.Background()
-			p := d.Client.Product.GetX(ctx, 42)
+			p := d.Client.Product.Query().Where(product.ID(42)).Select(product.FieldID, product.FieldIsLocked, product.FieldLockVersion, product.FieldLockedAt, product.FieldPrice, product.FieldCategoryID).OnlyX(ctx)
 			if p.IsLocked || p.LockVersion != 0 || p.LockedAt != nil || p.Price != 999 || p.CategoryID != 40 {
 				t.Fatalf("old product changed: %+v", p)
 			}

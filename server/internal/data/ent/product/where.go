@@ -75,6 +75,11 @@ func CategoryID(v uint64) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldCategoryID, v))
 }
 
+// CategoryProtected applies equality check predicate on the "category_protected" field. It's identical to CategoryProtectedEQ.
+func CategoryProtected(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldCategoryProtected, v))
+}
+
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
 func Name(v string) predicate.Product {
 	return predicate.Product(sql.FieldEQ(FieldName, v))
@@ -368,6 +373,16 @@ func CategoryIDIsNil() predicate.Product {
 // CategoryIDNotNil applies the NotNil predicate on the "category_id" field.
 func CategoryIDNotNil() predicate.Product {
 	return predicate.Product(sql.FieldNotNull(FieldCategoryID))
+}
+
+// CategoryProtectedEQ applies the EQ predicate on the "category_protected" field.
+func CategoryProtectedEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldEQ(FieldCategoryProtected, v))
+}
+
+// CategoryProtectedNEQ applies the NEQ predicate on the "category_protected" field.
+func CategoryProtectedNEQ(v bool) predicate.Product {
+	return predicate.Product(sql.FieldNEQ(FieldCategoryProtected, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.

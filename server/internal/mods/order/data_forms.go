@@ -21,12 +21,13 @@ import (
 
 type serviceItem struct {
 	mode, name, skuName string
+	sourceID            uint64
 	answers             []map[string]string
 }
 
 func itemKey(p, s uint64) [2]uint64 { return [2]uint64{p, s} }
 
-func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput) (map[[2]uint64]serviceItem, error) {
+func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput, revisions map[uint64]int64) (map[[2]uint64]serviceItem, error) {
 	c := data.Client(ctx, uc.Data)
 	out := map[[2]uint64]serviceItem{}
 	demand := map[uint64]int64{}
@@ -43,6 +44,20 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 		if err != nil {
 			return nil, err
 		}
+		if err := c.Product.UpdateOneID(p.ID).AddLockVersion(0).Exec(ctx); err != nil {
+			return nil, err
+		}
+		pq := c.Product.Query().Where(product.ID(p.ID))
+		if uc.Data.Dialect.Capabilities().SupportsSkipLocked {
+			pq = pq.ForUpdate()
+		}
+		p, err = pq.Only(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if p.LockVersion != revisions[p.ID] {
+			return nil, fmt.Errorf("商品发货设置已变化，请刷新后重新下单")
+		}
 		var sku *ent.ProductSku
 		if it.SkuID > 0 {
 			sku, err = c.ProductSku.Query().Where(productsku.ID(it.SkuID), productsku.ProductID(p.ID)).Only(ctx)
@@ -51,6 +66,15 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 			}
 		}
 		v := serviceItem{mode: data.FulfillmentMode(p, sku), name: p.Name}
+		if v.mode == "reuse" {
+			if it.Quantity != 1 {
+				return nil, fmt.Errorf("重复发货规格每单限购一份")
+			}
+			v.sourceID, err = data.AdmitDeliverySource(ctx, uc.Data, p, it.SkuID)
+			if err != nil {
+				return nil, err
+			}
+		}
 		if sku != nil {
 			v.skuName = sku.Name
 		}
@@ -58,7 +82,7 @@ func (uc *OrderUsecase) prepareServices(ctx context.Context, in CreateOrderInput
 		if err != nil {
 			return nil, err
 		}
-		if v.mode == "upstream" && len(controls) > 0 {
+		if (v.mode == "upstream" || v.mode == "reuse") && len(controls) > 0 {
 			return nil, fmt.Errorf("order.FORM_INVALID: 上游暂不支持传递填写资料，请联系客服")
 		}
 		answers := it.ControlAnswers

@@ -163,6 +163,9 @@ func (r *ProductRepoImpl) GetAdmin(ctx context.Context, subsiteID, id uint64) (*
 
 // CreateProduct 创建商品（description 已 sanitize）。
 func (r *ProductRepoImpl) createProduct(ctx context.Context, in port.ProductInput) (*ent.Product, error) {
+	if in.FulfillmentMode == "local" || in.FulfillmentMode == "reuse" {
+		return nil, fmt.Errorf("请先创建商品，再配置发货来源")
+	}
 	if err := validateServiceConfig(in.FulfillmentMode, in.ManualStock, false); err != nil {
 		return nil, err
 	}
@@ -214,6 +217,27 @@ func (r *ProductRepoImpl) SetDirectContent(ctx context.Context, id uint64, ciphe
 
 // UpdateProduct 更新（nil/零值字段不动）。
 func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.ProductInput) (*ent.Product, error) {
+	current, err := data.Client(ctx, r.data).Product.Get(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if in.StockType != "" && in.StockType != string(current.StockType) {
+		owned, e := data.HasLocalDelivery(ctx, data.Client(ctx, r.data), current)
+		if e != nil {
+			return nil, e
+		}
+		if owned {
+			return nil, fmt.Errorf("商品已有本地发货设置，不能直接更改库存类型")
+		}
+	}
+	if current.FulfillmentMode == "reuse" || current.FulfillmentMode == "local" {
+		if in.FulfillmentMode != current.FulfillmentMode && in.FulfillmentMode != "" {
+			return nil, fmt.Errorf("请在发货设置中更改本地发货来源")
+		}
+	} else if in.FulfillmentMode == "reuse" || in.FulfillmentMode == "local" {
+		return nil, fmt.Errorf("请在发货设置中配置内容来源")
+	}
+
 	if in.FulfillmentMode == "manual" {
 		p, err := data.Client(ctx, r.data).Product.Get(ctx, id)
 		if err != nil {
@@ -229,6 +253,9 @@ func (r *ProductRepoImpl) updateProduct(ctx context.Context, id uint64, in port.
 	}
 	if in.CategoryID > 0 {
 		q.SetCategoryID(in.CategoryID)
+		if current.CategoryID != in.CategoryID {
+			q.SetCategoryProtected(true)
+		}
 	}
 	if in.DescriptionSet || in.Description != "" {
 		q.SetDescription(in.Description)
@@ -706,7 +733,7 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 			SetStatus(status).
 			SetUpstreamSourceID(in.ConnectionID).
 			SetUpstreamProductCode(in.UpstreamProductCode).
-			SetUpstreamSyncedAt(in.UpstreamSyncedAt)
+			SetUpstreamSyncedAt(in.UpstreamSyncedAt).SetCategoryProtected(in.CategoryProtected)
 		if in.CategoryID > 0 {
 			create.SetCategoryID(in.CategoryID)
 		}
@@ -752,6 +779,9 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 
 	// 更新：名称/描述/封面/分类/状态/成本价；价格按保护语义（-1 不动）
+	if err := data.GuardUpstreamDelivery(ctx, data.Client(ctx, r.data), existing); err != nil {
+		return 0, false, err
+	}
 	upd := data.Client(ctx, r.data).Product.UpdateOneID(existing.ID).Where(product.StatusGTE(0)).
 		SetName(in.Name).
 		SetUpstreamSyncedAt(in.UpstreamSyncedAt)
@@ -763,10 +793,15 @@ func (r *ProductRepoImpl) upsertUpstreamProduct(ctx context.Context, in port.Ups
 	}
 	// 两个调用方（collect 同步/交互导入）恒发送显式状态：镜像上游可售性
 	upd.SetStatus(in.Status)
-	if in.CategoryID > 0 {
-		upd.SetCategoryID(in.CategoryID)
-	} else if in.CategorySet {
-		upd.ClearCategoryID()
+	if !existing.CategoryProtected || in.CategoryProtected {
+		if in.CategoryID > 0 {
+			upd.SetCategoryID(in.CategoryID)
+		} else if in.CategorySet {
+			upd.ClearCategoryID()
+		}
+		if in.CategoryProtected {
+			upd.SetCategoryProtected(true)
+		}
 	}
 	if !existing.DescriptionProtected && (in.DescriptionSet || in.Description != "") {
 		upd.SetDescription(in.Description)
@@ -893,7 +928,11 @@ func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID 
 		if err != nil {
 			return err
 		}
-		if _, err := data.GuardProductWrite(ctx, r.data, p.ID); err != nil {
+		p, err = data.GuardProductWrite(ctx, r.data, p.ID)
+		if err != nil {
+			return err
+		}
+		if err := data.GuardUpstreamDelivery(ctx, client, p); err != nil {
 			return err
 		}
 		update := client.Product.UpdateOneID(p.ID).SetUpstreamSyncedAt(time.Now().UTC())
@@ -919,21 +958,35 @@ func (r *ProductRepoImpl) UpdateUpstreamPrice(ctx context.Context, connectionID 
 
 // UpdateUpstreamStatus 仅更新上下架状态（port.UpstreamProductMaintainer；status scope 轻量路径）。
 func (r *ProductRepoImpl) UpdateUpstreamStatus(ctx context.Context, connectionID uint64, productCode string, status int8) (bool, error) {
-	tc := tenancy.FromContext(ctx)
-	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(
-			product.SubsiteID(tc.SubsiteID),
-			product.UpstreamSourceID(connectionID),
-			product.UpstreamProductCode(productCode),
-			product.StatusGTE(0), product.IsLocked(false),
-		).
-		SetStatus(status).
-		SetUpstreamSyncedAt(time.Now().UTC()).
-		Save(ctx)
-	if err != nil {
-		return false, err
-	}
-	return n > 0, nil
+	changed := false
+	err := data.Tx(ctx, r.data, func(ctx context.Context) error {
+		c := data.Client(ctx, r.data)
+		p, e := c.Product.Query().Where(product.SubsiteID(tenancy.FromContext(ctx).SubsiteID), product.UpstreamSourceID(connectionID), product.UpstreamProductCode(productCode), product.StatusGTE(0)).Only(ctx)
+		if ent.IsNotFound(e) {
+			return nil
+		}
+		if e != nil {
+			return e
+		}
+		p, e = data.GuardProductWrite(ctx, r.data, p.ID)
+		if data.IsProductLocked(e) {
+			return nil
+		}
+		if e != nil {
+			return e
+		}
+		if local, e := data.HasLocalDelivery(ctx, c, p); e != nil {
+			return e
+		} else if local {
+			return nil
+		}
+		if e := c.Product.UpdateOneID(p.ID).SetStatus(status).SetUpstreamSyncedAt(time.Now().UTC()).Exec(ctx); e != nil {
+			return e
+		}
+		changed = true
+		return nil
+	})
+	return changed, err
 }
 
 // ShelveOffMissing 删除对账：连接下未见商品批量下架（port.UpstreamProductMaintainer）。
@@ -950,22 +1003,21 @@ func (r *ProductRepoImpl) ShelveOffMissing(ctx context.Context, connectionID uin
 	if len(seen) > 0 {
 		q = q.Where(product.UpstreamProductCodeNotIn(seen...))
 	}
-	rows, err := q.Select(product.FieldID, product.FieldCover).All(ctx)
-	if err != nil || len(rows) == 0 {
-		return 0, err
-	}
-	ids := make([]uint64, 0, len(rows))
-	for _, row := range rows {
-		ids = append(ids, row.ID)
-	}
-	n, err := data.Client(ctx, r.data).Product.Update().
-		Where(product.IDIn(ids...), product.IsLocked(false), product.StatusGTE(0), product.SubsiteID(tenancy.FromContext(ctx).SubsiteID)).
-		SetStatus(0).
-		Save(ctx)
+	rows, err := q.All(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int64(n), nil
+	var count int64
+	for _, p := range rows {
+		changed, e := r.UpdateUpstreamStatus(ctx, connectionID, p.UpstreamProductCode, 0)
+		if e != nil {
+			return count, e
+		}
+		if changed {
+			count++
+		}
+	}
+	return count, nil
 }
 
 // deleteProductCover 删除本地采集封面文件（/uploads/ 路径；其余忽略）。
@@ -993,14 +1045,14 @@ func (r *ProductRepoImpl) ListForSupply(ctx context.Context, f port.AdminFilter)
 	for _, v := range controls {
 		blocked = append(blocked, v.ProductID)
 	}
-	skus, e := c.ProductSku.Query().Where(productsku.FulfillmentMode("manual")).All(ctx)
+	skus, e := c.ProductSku.Query().Where(productsku.FulfillmentModeIn("manual", "local", "reuse")).All(ctx)
 	if e != nil {
 		return nil, 0, e
 	}
 	for _, v := range skus {
 		blocked = append(blocked, v.ProductID)
 	}
-	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNEQ("manual"), product.IDNotIn(blocked...))
+	q := data.Client(ctx, r.data).Product.Query().Where(product.StatusGTE(0), data.VisibleProductCategory(hidden)).Where(product.FulfillmentModeNotIn("manual", "local", "reuse"), product.IDNotIn(blocked...))
 	if f.Status >= 0 {
 		q = q.Where(product.Status(int8(f.Status)))
 	}
@@ -1025,6 +1077,11 @@ func (r *ProductRepoImpl) GetForSupply(ctx context.Context, productID uint64) (*
 	row, err := data.Client(ctx, r.data).Product.Get(ctx, productID)
 	if err != nil {
 		return nil, err
+	}
+	if yes, e := data.HasLocalDelivery(ctx, data.Client(ctx, r.data), row); e != nil {
+		return nil, e
+	} else if yes {
+		return nil, fmt.Errorf("该商品发货方式不支持旧版供货接口")
 	}
 	hidden, err := data.HiddenCategoryIDs(ctx, data.Client(ctx, r.data), row.SubsiteID)
 	if err != nil {

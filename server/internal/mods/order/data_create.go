@@ -154,6 +154,15 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		}
 	}
 
+	// Snapshot routing before network checks; a concurrent configuration change must retry.
+	revisions := map[uint64]int64{}
+	for _, item := range in.Items {
+		p, err := data.ProductForDelivery(ctx, data.Client(ctx, uc.Data), in.SubsiteID, item.ProductID)
+		if err != nil {
+			return nil, err
+		}
+		revisions[p.ID] = p.LockVersion
+	}
 	// ：上游代发项实时库存预检（事务前快速失败——
 	// 上游明确无货直接拒单，不再让顾客"下单付款后等采购失败退款"。
 	// 本地卡密项的强校验在下方事务内锁卡 Reserve；闸门查询失败/库存未知拒单，仅明确不限库存放行）
@@ -209,12 +218,12 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 		if err != nil {
 			return err
 		}
-		services, err := uc.prepareServices(txCtx, in)
+		services, err := uc.prepareServices(txCtx, in, revisions)
 		if err != nil {
 			return err
 		}
-		upstreamItem := map[uint64]bool{} // product_id → 是否上游项
-		directItem := map[uint64]bool{}   // product_id → 是否直发项（url/code）
+		upstreamItem := map[[2]uint64]bool{} // product + SKU fulfillment route
+		directItem := map[[2]uint64]bool{}   // product + SKU direct route（url/code）
 		var reserveItems []port.ReserveItem
 		for _, item := range in.Items {
 			if item.Quantity <= 0 {
@@ -229,12 +238,16 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 			if services[itemKey(item.ProductID, item.SkuID)].mode == "manual" {
 				continue
 			}
-			if p.UpstreamSourceID > 0 {
-				upstreamItem[item.ProductID] = true
+			if services[itemKey(item.ProductID, item.SkuID)].mode == "reuse" {
+				directItem[itemKey(item.ProductID, item.SkuID)] = true
+				continue
+			}
+			if services[itemKey(item.ProductID, item.SkuID)].mode == "upstream" {
+				upstreamItem[itemKey(item.ProductID, item.SkuID)] = true
 				continue
 			}
 			if p.StockType != product.StockTypeCard {
-				directItem[item.ProductID] = true
+				directItem[itemKey(item.ProductID, item.SkuID)] = true
 				continue // 链接/兑换码直发：不占卡池
 			}
 			reserveItems = append(reserveItems, port.ReserveItem{
@@ -521,10 +534,10 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				if services[itemKey(item.ProductID, item.SkuID)].mode == "manual" {
 					continue
 				}
-				if upstreamItem[item.ProductID] {
+				if upstreamItem[itemKey(item.ProductID, item.SkuID)] {
 					continue
 				}
-				if directItem[item.ProductID] {
+				if directItem[itemKey(item.ProductID, item.SkuID)] {
 					continue
 				}
 				if err := uc.Inv.BindOrder(txCtx, in.SubsiteID, item.ProductID, o.ID, item.Quantity); err != nil {
@@ -544,8 +557,14 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, in CreateOrderInput) (*
 				SetUnitPrice(int64(r.res.Lines[0].Amount)).
 				SetQuantity(r.input.Quantity).
 				SetAmount(int64(r.res.Total)).
-				SetCost(r.cost).
+				SetCost(func() int64 {
+					if services[itemKey(r.input.ProductID, r.input.SkuID)].mode == "reuse" {
+						return 0
+					}
+					return r.cost
+				}()).
 				SetFulfillmentType(orderitem.FulfillmentType(services[itemKey(r.input.ProductID, r.input.SkuID)].mode)).
+				SetDeliverySourceID(services[itemKey(r.input.ProductID, r.input.SkuID)].sourceID).
 				SetProductName(services[itemKey(r.input.ProductID, r.input.SkuID)].name).
 				SetSkuName(services[itemKey(r.input.ProductID, r.input.SkuID)].skuName).
 				SetFormAnswers(services[itemKey(r.input.ProductID, r.input.SkuID)].answers).

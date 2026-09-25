@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/NovaWorks/zcard-next/server/internal/conf"
 	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/orderitem"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/migrations"
 	"io/fs"
@@ -83,7 +84,7 @@ func TestManualServicesUpgradePreservesHistoricalOrders(t *testing.T) {
 			if level.AcquireMode != "auto" || level.DisplayMode != "public" || level.Discount != 9800 {
 				t.Fatal("old level changed")
 			}
-			line := d.Client.OrderItem.GetX(ctx, 47)
+			line := d.Client.OrderItem.Query().Where(orderitem.ID(47)).Select(orderitem.FieldID, orderitem.FieldAmount, orderitem.FieldSkuName, orderitem.FieldFulfillmentStatus, orderitem.FieldFormAnswers).OnlyX(ctx)
 			if line.Amount != 999 || line.SkuName != "legacy sku" || line.FulfillmentStatus != "delivered" || len(line.FormAnswers) != 0 {
 				t.Fatal("historical item changed")
 			}

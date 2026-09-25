@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"time"
 
 	catalogport "github.com/NovaWorks/zcard-next/server/internal/mods/catalog/port"
@@ -204,9 +205,33 @@ func (g *Gateway) CheckStock(ctx context.Context, connectionID uint64, productCo
 // order 创建订单消费）：把上游缺货或查询失败的单挡在付款前。
 // 本地商品由本地锁卡校验；对接商品查库存失败拒单，明确不限(-1)可下单。
 func (g *Gateway) CheckItems(ctx context.Context, subsiteID uint64, items []orderport.UpstreamStockItem) error {
+	filtered := make([]orderport.UpstreamStockItem, 0, len(items))
+	for _, it := range items {
+		p, e := data.ProductForDelivery(ctx, data.Client(ctx, g.repo.data), subsiteID, it.ProductID)
+		if e != nil {
+			return e
+		}
+		sku, e := data.DeliverySKU(ctx, data.Client(ctx, g.repo.data), p, it.SkuID)
+		if e != nil {
+			return e
+		}
+		switch data.StockSource(p, sku) {
+		case "local", "manual":
+			continue
+		case "reuse":
+			src, e := data.CurrentDeliverySource(ctx, data.Client(ctx, g.repo.data), p, it.SkuID)
+			if e != nil || !data.SourceAdmissible(src) {
+				return fmt.Errorf("该规格复用内容暂不可售")
+			}
+			if src.Status == "ready" || src.Status == "submitting" || src.Status == "polling" {
+				continue
+			}
+		}
+		filtered = append(filtered, it)
+	}
 	return checkOrderItems(ctx, g.reader, func(connectionID uint64, productCode, skuCode string) (int32, error) {
 		return g.CheckStock(ctx, connectionID, productCode, skuCode)
-	}, subsiteID, items)
+	}, subsiteID, filtered)
 }
 
 // checkOrderItems 预检纯逻辑（reader/stock 可注入——单测覆盖决策矩阵）。

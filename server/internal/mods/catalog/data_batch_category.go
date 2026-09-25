@@ -43,7 +43,7 @@ func (s *AdminCatalogService) BatchUpdateProductCategory(ctx context.Context, re
 		}
 		skipped = count
 		for _, p := range rows {
-			if err = c.Product.UpdateOneID(p.ID).SetCategoryID(req.CategoryId).Exec(ctx); err != nil {
+			if err = c.Product.UpdateOneID(p.ID).SetCategoryID(req.CategoryId).SetCategoryProtected(true).Exec(ctx); err != nil {
 				return err
 			}
 			updated++

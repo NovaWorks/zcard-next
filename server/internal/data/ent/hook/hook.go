@@ -657,6 +657,18 @@ func (f ProductControlFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductControlMutation", m)
 }
 
+// The ProductDeliverySourceFunc type is an adapter to allow the use of ordinary
+// function as ProductDeliverySource mutator.
+type ProductDeliverySourceFunc func(context.Context, *ent.ProductDeliverySourceMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ProductDeliverySourceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ProductDeliverySourceMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ProductDeliverySourceMutation", m)
+}
+
 // The ProductSkuFunc type is an adapter to allow the use of ordinary
 // function as ProductSku mutator.
 type ProductSkuFunc func(context.Context, *ent.ProductSkuMutation) (ent.Value, error)

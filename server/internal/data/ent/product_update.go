@@ -85,6 +85,20 @@ func (_u *ProductUpdate) ClearCategoryID() *ProductUpdate {
 	return _u
 }
 
+// SetCategoryProtected sets the "category_protected" field.
+func (_u *ProductUpdate) SetCategoryProtected(v bool) *ProductUpdate {
+	_u.mutation.SetCategoryProtected(v)
+	return _u
+}
+
+// SetNillableCategoryProtected sets the "category_protected" field if the given value is not nil.
+func (_u *ProductUpdate) SetNillableCategoryProtected(v *bool) *ProductUpdate {
+	if v != nil {
+		_u.SetCategoryProtected(*v)
+	}
+	return _u
+}
+
 // SetName sets the "name" field.
 func (_u *ProductUpdate) SetName(v string) *ProductUpdate {
 	_u.mutation.SetName(v)
@@ -787,6 +801,9 @@ func (_u *ProductUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if _u.mutation.CategoryIDCleared() {
 		_spec.ClearField(product.FieldCategoryID, field.TypeUint64)
 	}
+	if value, ok := _u.mutation.CategoryProtected(); ok {
+		_spec.SetField(product.FieldCategoryProtected, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)
 	}
@@ -1103,6 +1120,20 @@ func (_u *ProductUpdateOne) AddCategoryID(v int64) *ProductUpdateOne {
 // ClearCategoryID clears the value of the "category_id" field.
 func (_u *ProductUpdateOne) ClearCategoryID() *ProductUpdateOne {
 	_u.mutation.ClearCategoryID()
+	return _u
+}
+
+// SetCategoryProtected sets the "category_protected" field.
+func (_u *ProductUpdateOne) SetCategoryProtected(v bool) *ProductUpdateOne {
+	_u.mutation.SetCategoryProtected(v)
+	return _u
+}
+
+// SetNillableCategoryProtected sets the "category_protected" field if the given value is not nil.
+func (_u *ProductUpdateOne) SetNillableCategoryProtected(v *bool) *ProductUpdateOne {
+	if v != nil {
+		_u.SetCategoryProtected(*v)
+	}
 	return _u
 }
 
@@ -1837,6 +1868,9 @@ func (_u *ProductUpdateOne) sqlSave(ctx context.Context) (_node *Product, err er
 	}
 	if _u.mutation.CategoryIDCleared() {
 		_spec.ClearField(product.FieldCategoryID, field.TypeUint64)
+	}
+	if value, ok := _u.mutation.CategoryProtected(); ok {
+		_spec.SetField(product.FieldCategoryProtected, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(product.FieldName, field.TypeString, value)

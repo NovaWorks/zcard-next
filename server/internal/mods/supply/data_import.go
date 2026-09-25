@@ -21,6 +21,7 @@ import (
 
 	adminv1 "github.com/NovaWorks/zcard-next/server/api/admin/v1"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/mods/supply/adapter"
 	"google.golang.org/protobuf/proto"
 )
@@ -69,6 +70,18 @@ func (s *AdminSupplyService) pricePreview(ctx context.Context, conn *ent.SupplyC
 	}
 	quoter, needsQuote := a.(adapter.AccountQuoter)
 	reply := &adminv1.PreviewProductsReply{}
+	locals, err := s.repo.entClient(ctx).Product.Query().Where(product.UpstreamSourceID(conn.ID), product.StatusGTE(0)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	locked := map[string]bool{}
+	protected := map[string]bool{}
+	localCats := map[string]uint64{}
+	for _, p := range locals {
+		locked[p.UpstreamProductCode] = p.IsLocked
+		protected[p.UpstreamProductCode] = p.CategoryProtected
+		localCats[p.UpstreamProductCode] = p.CategoryID
+	}
 	for _, cat := range entry.categories {
 		out := &adminv1.PreviewCategory{Code: cat.Code, Name: cat.Name}
 		for _, cached := range cat.Products {
@@ -76,6 +89,9 @@ func (s *AdminSupplyService) pricePreview(ctx context.Context, conn *ent.SupplyC
 				continue
 			}
 			p := proto.Clone(cached).(*adminv1.PreviewProduct)
+			p.IsLocked = locked[p.Code]
+			p.CategoryProtected = protected[p.Code]
+			p.LocalCategoryId = localCats[p.Code]
 			source := entry.byCode[p.Code]
 			p.QuoteStatus, p.CostPriceCents = "pending", -1
 			if needsQuote {

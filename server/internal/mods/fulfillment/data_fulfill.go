@@ -172,6 +172,12 @@ func (r *DeliveryRepoImpl) fulfillOrder(ctx context.Context, orderNo string) err
 	// 直发商品（url/code）：同一链接/兑换码反复发货——写直发交付记录
 	// （CardID=0，取货时从商品 direct_content 现场解密）。每订单项一条。
 	for _, it := range items {
+		if it.FulfillmentType == orderitem.FulfillmentTypeReuse {
+			if err := r.fulfillReusable(ctx, o, it); err != nil {
+				return err
+			}
+			continue
+		}
 		p, err := client.Product.Get(ctx, it.ProductID)
 		if err != nil || p.StockType == product.StockTypeCard || p.UpstreamSourceID > 0 || it.FulfillmentType == orderitem.FulfillmentTypeManual {
 			continue // 卡密类走上方逐卡；上游项由 procurement 回填
@@ -286,6 +292,19 @@ func (r *DeliveryRepoImpl) FetchDelivery(ctx context.Context, orderNo, queryPass
 
 		// 直发交付（url/code 商品）：内容在商品 direct_content（CardID=0 无卡）
 		if d.DeliveredMode == orderdelivery.DeliveredModeDirect {
+			oi, e := client.OrderItem.Get(ctx, d.ItemID)
+			if e == nil && oi.FulfillmentType == orderitem.FulfillmentTypeReuse {
+				src, e := client.ProductDeliverySource.Get(ctx, oi.DeliverySourceID)
+				if e != nil || src.ProductID != oi.ProductID || src.SkuID != oi.SkuID || src.SubsiteID != o.SubsiteID {
+					return nil, fmt.Errorf("历史交付来源不可读取")
+				}
+				plain, e := r.cipher.Open(src.Content, oi.ProductID, o.SubsiteID)
+				if e != nil {
+					return nil, fmt.Errorf("历史交付内容不可解密")
+				}
+				result.Items = append(result.Items, FetchItem{Content: string(plain), Masked: false})
+				continue
+			}
 			var productID uint64
 			if d.ItemID > 0 {
 				if it, e := client.OrderItem.Get(ctx, d.ItemID); e == nil {

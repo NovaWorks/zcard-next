@@ -200,6 +200,17 @@ func (s *AdminFulfillmentService) decryptDelivery(ctx context.Context, d *ent.Or
 		if d.ItemID > 0 {
 			if it, e := client.OrderItem.Get(ctx, d.ItemID); e == nil {
 				productID = it.ProductID
+				if it.FulfillmentType == "reuse" {
+					src, err := client.ProductDeliverySource.Get(ctx, it.DeliverySourceID)
+					if err != nil || src.ProductID != it.ProductID || src.SkuID != it.SkuID || src.SubsiteID != it.SubsiteID {
+						return "（共享交付来源不可用）"
+					}
+					plain, err := s.repo.cipher.Open(src.Content, src.ProductID, src.SubsiteID)
+					if err != nil {
+						return "（解密失败）"
+					}
+					return string(plain)
+				}
 			}
 		}
 		p, err := client.Product.Get(ctx, productID)

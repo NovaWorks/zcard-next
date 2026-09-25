@@ -49,6 +49,8 @@ type OrderItem struct {
 	Cost int64 `json:"cost,omitempty"`
 	// 履约类型
 	FulfillmentType orderitem.FulfillmentType `json:"fulfillment_type,omitempty"`
+	// DeliverySourceID holds the value of the "delivery_source_id" field.
+	DeliverySourceID uint64 `json:"delivery_source_id,omitempty"`
 	// 履约状态
 	FulfillmentStatus string `json:"fulfillment_status,omitempty"`
 	// 佣金快照（三级 + 费率）
@@ -88,7 +90,7 @@ func (*OrderItem) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case orderitem.FieldFormAnswers, orderitem.FieldCommissionSnapshot, orderitem.FieldProfitSnapshot:
 			values[i] = new([]byte)
-		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost:
+		case orderitem.FieldID, orderitem.FieldSubsiteID, orderitem.FieldOrderID, orderitem.FieldProductID, orderitem.FieldSkuID, orderitem.FieldAssignedAdminID, orderitem.FieldUnitPrice, orderitem.FieldQuantity, orderitem.FieldAmount, orderitem.FieldCost, orderitem.FieldDeliverySourceID:
 			values[i] = new(sql.NullInt64)
 		case orderitem.FieldProductName, orderitem.FieldSkuName, orderitem.FieldFulfillmentType, orderitem.FieldFulfillmentStatus:
 			values[i] = new(sql.NullString)
@@ -207,6 +209,12 @@ func (_m *OrderItem) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.FulfillmentType = orderitem.FulfillmentType(value.String)
 			}
+		case orderitem.FieldDeliverySourceID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field delivery_source_id", values[i])
+			} else if value.Valid {
+				_m.DeliverySourceID = uint64(value.Int64)
+			}
 		case orderitem.FieldFulfillmentStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field fulfillment_status", values[i])
@@ -314,6 +322,9 @@ func (_m *OrderItem) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("fulfillment_type=")
 	builder.WriteString(fmt.Sprintf("%v", _m.FulfillmentType))
+	builder.WriteString(", ")
+	builder.WriteString("delivery_source_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.DeliverySourceID))
 	builder.WriteString(", ")
 	builder.WriteString("fulfillment_status=")
 	builder.WriteString(_m.FulfillmentStatus)

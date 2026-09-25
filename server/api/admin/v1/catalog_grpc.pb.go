@@ -20,6 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	AdminCatalogService_ClassifyProducts_FullMethodName                 = "/zcard.api.admin.v1.AdminCatalogService/ClassifyProducts"
+	AdminCatalogService_GetDeliverySources_FullMethodName               = "/zcard.api.admin.v1.AdminCatalogService/GetDeliverySources"
+	AdminCatalogService_SetDeliverySource_FullMethodName                = "/zcard.api.admin.v1.AdminCatalogService/SetDeliverySource"
 	AdminCatalogService_ListProducts_FullMethodName                     = "/zcard.api.admin.v1.AdminCatalogService/ListProducts"
 	AdminCatalogService_GetProduct_FullMethodName                       = "/zcard.api.admin.v1.AdminCatalogService/GetProduct"
 	AdminCatalogService_CreateProduct_FullMethodName                    = "/zcard.api.admin.v1.AdminCatalogService/CreateProduct"
@@ -67,6 +70,9 @@ const (
 //
 // AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 type AdminCatalogServiceClient interface {
+	ClassifyProducts(ctx context.Context, in *ClassifyProductsRequest, opts ...grpc.CallOption) (*ClassifyProductsReply, error)
+	GetDeliverySources(ctx context.Context, in *DeliverySourcesRequest, opts ...grpc.CallOption) (*DeliverySourcesReply, error)
+	SetDeliverySource(ctx context.Context, in *SetDeliverySourceRequest, opts ...grpc.CallOption) (*DeliverySourcesReply, error)
 	// ── 商品 ──
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error)
 	GetProduct(ctx context.Context, in *GetProductRequest, opts ...grpc.CallOption) (*AdminProduct, error)
@@ -123,6 +129,36 @@ type adminCatalogServiceClient struct {
 
 func NewAdminCatalogServiceClient(cc grpc.ClientConnInterface) AdminCatalogServiceClient {
 	return &adminCatalogServiceClient{cc}
+}
+
+func (c *adminCatalogServiceClient) ClassifyProducts(ctx context.Context, in *ClassifyProductsRequest, opts ...grpc.CallOption) (*ClassifyProductsReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClassifyProductsReply)
+	err := c.cc.Invoke(ctx, AdminCatalogService_ClassifyProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) GetDeliverySources(ctx context.Context, in *DeliverySourcesRequest, opts ...grpc.CallOption) (*DeliverySourcesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeliverySourcesReply)
+	err := c.cc.Invoke(ctx, AdminCatalogService_GetDeliverySources_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminCatalogServiceClient) SetDeliverySource(ctx context.Context, in *SetDeliverySourceRequest, opts ...grpc.CallOption) (*DeliverySourcesReply, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeliverySourcesReply)
+	err := c.cc.Invoke(ctx, AdminCatalogService_SetDeliverySource_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *adminCatalogServiceClient) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsReply, error) {
@@ -521,6 +557,9 @@ func (c *adminCatalogServiceClient) DeleteMemberGroup(ctx context.Context, in *D
 //
 // AdminCatalogService 商品目录管理：商品/分类/标签/控件/商品组/评价。
 type AdminCatalogServiceServer interface {
+	ClassifyProducts(context.Context, *ClassifyProductsRequest) (*ClassifyProductsReply, error)
+	GetDeliverySources(context.Context, *DeliverySourcesRequest) (*DeliverySourcesReply, error)
+	SetDeliverySource(context.Context, *SetDeliverySourceRequest) (*DeliverySourcesReply, error)
 	// ── 商品 ──
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error)
 	GetProduct(context.Context, *GetProductRequest) (*AdminProduct, error)
@@ -579,6 +618,15 @@ type AdminCatalogServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdminCatalogServiceServer struct{}
 
+func (UnimplementedAdminCatalogServiceServer) ClassifyProducts(context.Context, *ClassifyProductsRequest) (*ClassifyProductsReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method ClassifyProducts not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) GetDeliverySources(context.Context, *DeliverySourcesRequest) (*DeliverySourcesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDeliverySources not implemented")
+}
+func (UnimplementedAdminCatalogServiceServer) SetDeliverySource(context.Context, *SetDeliverySourceRequest) (*DeliverySourcesReply, error) {
+	return nil, status.Error(codes.Unimplemented, "method SetDeliverySource not implemented")
+}
 func (UnimplementedAdminCatalogServiceServer) ListProducts(context.Context, *ListProductsRequest) (*ListProductsReply, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProducts not implemented")
 }
@@ -715,6 +763,60 @@ func RegisterAdminCatalogServiceServer(s grpc.ServiceRegistrar, srv AdminCatalog
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AdminCatalogService_ServiceDesc, srv)
+}
+
+func _AdminCatalogService_ClassifyProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ClassifyProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).ClassifyProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_ClassifyProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).ClassifyProducts(ctx, req.(*ClassifyProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_GetDeliverySources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeliverySourcesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).GetDeliverySources(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_GetDeliverySources_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).GetDeliverySources(ctx, req.(*DeliverySourcesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminCatalogService_SetDeliverySource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetDeliverySourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminCatalogServiceServer).SetDeliverySource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminCatalogService_SetDeliverySource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminCatalogServiceServer).SetDeliverySource(ctx, req.(*SetDeliverySourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AdminCatalogService_ListProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1426,6 +1528,18 @@ var AdminCatalogService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "zcard.api.admin.v1.AdminCatalogService",
 	HandlerType: (*AdminCatalogServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ClassifyProducts",
+			Handler:    _AdminCatalogService_ClassifyProducts_Handler,
+		},
+		{
+			MethodName: "GetDeliverySources",
+			Handler:    _AdminCatalogService_GetDeliverySources_Handler,
+		},
+		{
+			MethodName: "SetDeliverySource",
+			Handler:    _AdminCatalogService_SetDeliverySource_Handler,
+		},
 		{
 			MethodName: "ListProducts",
 			Handler:    _AdminCatalogService_ListProducts_Handler,

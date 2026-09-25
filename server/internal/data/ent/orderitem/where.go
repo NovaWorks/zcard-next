@@ -120,6 +120,11 @@ func Cost(v int64) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldCost, v))
 }
 
+// DeliverySourceID applies equality check predicate on the "delivery_source_id" field. It's identical to DeliverySourceIDEQ.
+func DeliverySourceID(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldDeliverySourceID, v))
+}
+
 // FulfillmentStatus applies equality check predicate on the "fulfillment_status" field. It's identical to FulfillmentStatusEQ.
 func FulfillmentStatus(v string) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldEQ(FieldFulfillmentStatus, v))
@@ -723,6 +728,56 @@ func FulfillmentTypeIn(vs ...FulfillmentType) predicate.OrderItem {
 // FulfillmentTypeNotIn applies the NotIn predicate on the "fulfillment_type" field.
 func FulfillmentTypeNotIn(vs ...FulfillmentType) predicate.OrderItem {
 	return predicate.OrderItem(sql.FieldNotIn(FieldFulfillmentType, vs...))
+}
+
+// DeliverySourceIDEQ applies the EQ predicate on the "delivery_source_id" field.
+func DeliverySourceIDEQ(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldEQ(FieldDeliverySourceID, v))
+}
+
+// DeliverySourceIDNEQ applies the NEQ predicate on the "delivery_source_id" field.
+func DeliverySourceIDNEQ(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNEQ(FieldDeliverySourceID, v))
+}
+
+// DeliverySourceIDIn applies the In predicate on the "delivery_source_id" field.
+func DeliverySourceIDIn(vs ...uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIn(FieldDeliverySourceID, vs...))
+}
+
+// DeliverySourceIDNotIn applies the NotIn predicate on the "delivery_source_id" field.
+func DeliverySourceIDNotIn(vs ...uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotIn(FieldDeliverySourceID, vs...))
+}
+
+// DeliverySourceIDGT applies the GT predicate on the "delivery_source_id" field.
+func DeliverySourceIDGT(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGT(FieldDeliverySourceID, v))
+}
+
+// DeliverySourceIDGTE applies the GTE predicate on the "delivery_source_id" field.
+func DeliverySourceIDGTE(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldGTE(FieldDeliverySourceID, v))
+}
+
+// DeliverySourceIDLT applies the LT predicate on the "delivery_source_id" field.
+func DeliverySourceIDLT(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLT(FieldDeliverySourceID, v))
+}
+
+// DeliverySourceIDLTE applies the LTE predicate on the "delivery_source_id" field.
+func DeliverySourceIDLTE(v uint64) predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldLTE(FieldDeliverySourceID, v))
+}
+
+// DeliverySourceIDIsNil applies the IsNil predicate on the "delivery_source_id" field.
+func DeliverySourceIDIsNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldIsNull(FieldDeliverySourceID))
+}
+
+// DeliverySourceIDNotNil applies the NotNil predicate on the "delivery_source_id" field.
+func DeliverySourceIDNotNil() predicate.OrderItem {
+	return predicate.OrderItem(sql.FieldNotNull(FieldDeliverySourceID))
 }
 
 // FulfillmentStatusEQ applies the EQ predicate on the "fulfillment_status" field.

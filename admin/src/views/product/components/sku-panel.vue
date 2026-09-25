@@ -180,7 +180,9 @@ async function savePending(): Promise<boolean> {
 }
 async function saveAll() { if (await savePending()) window.$message?.success("规格已全部保存"); }
 const hasPending = computed(() => definitionsDirty.value || pendingRows.value.length > 0);
-defineExpose({ savePending, hasPending, saving });
+// A separately saved delivery policy updates only that field, preserving price/name drafts.
+async function refreshDeliveryModes(){const {data,error}=await fetchSkus(props.productId);if(!error&&data){const fresh=new Map(((data as any).skus||[]).map((s:any)=>[Number(s.id),s.fulfillment_mode||'follow']));for(const row of rows.value){if(fresh.has(Number(row.id)))row.fulfillment_mode=String(fresh.get(Number(row.id)));}}}
+defineExpose({ savePending, hasPending, saving,refreshDeliveryModes });
 
 async function handleDelete(row: SkuRow) {
   if (saving.value) return;
@@ -253,7 +255,7 @@ const columns: DataTableColumns<SkuRow> = [
   },
   {
     title: "交付方式", key:"fulfillment_mode", width:135,
-    render:(row)=>h(NSelect,{disabled:props.readonly,value:row.fulfillment_mode, options:[{label:'跟随商品',value:'follow'},{label:'自动',value:'auto'},{label:'人工',value:'manual'}],onUpdateValue:(v:string)=>{row.fulfillment_mode=v;row.dirty=true;}})
+    render:(row)=>h(NSelect,{disabled:props.readonly||['reuse','local'].includes(row.fulfillment_mode),value:row.fulfillment_mode, options:[{label:'我的卡密（发货设置）',value:'local',disabled:true},{label:'重复发货（发货设置）',value:'reuse',disabled:true},{label:'跟随商品',value:'follow'},{label:'自动',value:'auto'},{label:'人工',value:'manual'}],onUpdateValue:(v:string)=>{row.fulfillment_mode=v;row.dirty=true;}})
   },
   {
     title: "售价(元)",

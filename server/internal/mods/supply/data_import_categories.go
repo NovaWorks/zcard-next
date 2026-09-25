@@ -137,7 +137,12 @@ func (s *AdminSupplyService) saveImportCategories(ctx context.Context, req *admi
 		for code, id := range result {
 			merged[code] = id
 		}
-		settings["category_map"] = merged
+		if !req.SelectedCategoriesOnly {
+			settings["category_map"] = merged
+		}
+		if req.SaveCategoryRules {
+			settings["category_rules"] = req.CategoryRules
+		}
 		if req.SaveDefault {
 			settings["import_pricing"] = map[string]any{"mode": mode, "markup_percent": percent, "markup_amount_cents": amount}
 		}

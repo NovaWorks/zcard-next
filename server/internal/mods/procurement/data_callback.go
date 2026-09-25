@@ -11,9 +11,12 @@ package procurement
 
 import (
 	"context"
+	"github.com/NovaWorks/zcard-next/server/internal/data"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productdeliverysource"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	khttp "github.com/go-kratos/kratos/v3/transport/http"
 
@@ -38,11 +41,11 @@ func RegisterUpstreamCallback(srv *khttp.Server, svc *ProcureService, gw supplyp
 		}
 		body, _ := io.ReadAll(r.Body)
 		headers := map[string]string{
-			"X-Supply-Key":         r.Header.Get("X-Supply-Key"),
-			"X-Supply-Timestamp":   r.Header.Get("X-Supply-Timestamp"),
-			"X-Supply-Nonce":       r.Header.Get("X-Supply-Nonce"),
-			"X-Supply-Signature":   r.Header.Get("X-Supply-Signature"),
-			"Dujiao-Next-Api-Key":  r.Header.Get("Dujiao-Next-Api-Key"),
+			"X-Supply-Key":          r.Header.Get("X-Supply-Key"),
+			"X-Supply-Timestamp":    r.Header.Get("X-Supply-Timestamp"),
+			"X-Supply-Nonce":        r.Header.Get("X-Supply-Nonce"),
+			"X-Supply-Signature":    r.Header.Get("X-Supply-Signature"),
+			"Dujiao-Next-Api-Key":   r.Header.Get("Dujiao-Next-Api-Key"),
 			"Dujiao-Next-Timestamp": r.Header.Get("Dujiao-Next-Timestamp"),
 			"Dujiao-Next-Signature": r.Header.Get("Dujiao-Next-Signature"),
 		}
@@ -51,6 +54,24 @@ func RegisterUpstreamCallback(srv *khttp.Server, svc *ProcureService, gw supplyp
 		})
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized) // 防枚举：不区分验签失败原因
+			return
+		}
+		if strings.HasPrefix(result.DownstreamOrderNo, "reuse:") {
+			src, e := data.Client(r.Context(), svc.repo.data).ProductDeliverySource.Query().Where(productdeliverysource.PurchaseKey(result.DownstreamOrderNo)).Only(r.Context())
+			if e != nil || src.ConnectionID != connID {
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+			if result.Status == "delivered" && len(result.Cards) > 0 {
+				e = svc.confirmReusable(r.Context(), src.ID, result.Cards, result.Amount, src.UpstreamOrderID)
+			} else {
+				e = svc.processReusable(r.Context(), src.ID)
+			}
+			if e != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 		po, err := svc.repo.GetByDownstreamOrderNo(r.Context(), result.DownstreamOrderNo)

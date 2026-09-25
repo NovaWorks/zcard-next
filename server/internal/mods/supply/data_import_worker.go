@@ -10,6 +10,7 @@ import (
 
 	"github.com/NovaWorks/zcard-next/server/internal/data"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent"
+	"github.com/NovaWorks/zcard-next/server/internal/data/ent/category"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/product"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/productsku"
 	"github.com/NovaWorks/zcard-next/server/internal/data/ent/supplyimportitem"
@@ -132,6 +133,9 @@ func (s *SyncService) executeImportItems(ctx context.Context, task *ent.SupplySy
 			failure := adapter.ClassifyImportError(err)
 			if data.IsProductLocked(err) {
 				failure = adapter.ImportFailure{Code: "PRODUCT_LOCKED", Summary: "商品已锁定，已跳过"}
+			}
+			if errors.Is(err, data.ErrLocalDeliveryProtected) {
+				failure = adapter.ImportFailure{Code: "PRODUCT_CHANGED", Summary: "商品已配置本地发货，已跳过"}
 			}
 			if errors.Is(err, errImportChanged) {
 				failure = adapter.ImportFailure{Code: "PRODUCT_CHANGED", Summary: errImportChanged.Error()}
@@ -257,6 +261,9 @@ func (s *SyncService) validateImportItem(ctx context.Context, conn *ent.SupplyCo
 	if p.UpstreamSourceID != conn.ID || p.UpstreamProductCode != item.Code || productRevision(p) != item.LocalRevision {
 		return errImportChanged
 	}
+	if e := data.GuardUpstreamDelivery(ctx, c, p); e != nil {
+		return e
+	}
 	if item.Saved {
 		return nil
 	} // Stock recovery preserves prices and SKU shape.
@@ -327,7 +334,19 @@ func (s *SyncService) attemptImportItem(ctx context.Context, task *ent.SupplySyn
 	cover := s.coverFor(mediaCtx, mapping, conn, p.Cover)
 	cancel()
 	cp := &importCheckpoint{holdStock: item.LocalProductID == 0, cover: cover}
+	if id, ok := payload.ProductCategories[item.Code]; ok {
+		cp.categoryID = &id
+	}
 	cp.before = func(ctx context.Context) error {
+		if cp.categoryID != nil && *cp.categoryID > 0 {
+			ok, e := s.repo.entClient(ctx).Category.Query().Where(category.ID(*cp.categoryID), category.SubsiteID(payload.Tenant)).Exist(ctx)
+			if e != nil {
+				return e
+			}
+			if !ok {
+				return fmt.Errorf("%w：目标分类已删除，请重新选择商品分类", errImportConfiguration)
+			}
+		}
 		current, err := s.repo.GetConnection(ctx, conn.ID)
 		if err != nil {
 			return err

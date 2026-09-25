@@ -21,10 +21,10 @@ func (s *SyncService) writeProductCategory(ctx context.Context, upstreamCategory
 		if err != nil {
 			return err
 		}
-		if categoryID, ok := categoryMapFromSettings(conn.Settings)[upstreamCategory]; ok {
+		if categoryID, ok := categoryMapFromSettings(conn.Settings)[upstreamCategory]; ok && !write.CategoryProtected {
 			write.CategoryID = categoryID
 			write.CategorySet = true
-		} else {
+		} else if !write.CategoryProtected {
 			latest, err := s.repo.GetMapping(ctx, write.ConnectionID, write.UpstreamProductCode, "")
 			if err != nil && err != ErrNotFound {
 				return err
@@ -76,7 +76,13 @@ func (s *SyncService) saveProductMapping(ctx context.Context, mapping *ent.Suppl
 		if err != nil {
 			return err
 		}
-		if categoryID, ok := categoryMapFromSettings(conn.Settings)[mapping.UpstreamCategory]; ok {
+		p, err := c.Product.Get(ctx, mapping.LocalProductID)
+		if err != nil && !ent.IsNotFound(err) {
+			return err
+		}
+		if p != nil && p.CategoryProtected {
+			mapping.LocalCategoryID = p.CategoryID
+		} else if categoryID, ok := categoryMapFromSettings(conn.Settings)[mapping.UpstreamCategory]; ok {
 			mapping.LocalCategoryID = categoryID
 		} else if mapping.LocalCategoryID > 0 {
 			exists, err := c.Category.Query().Where(category.ID(mapping.LocalCategoryID)).Exist(ctx)

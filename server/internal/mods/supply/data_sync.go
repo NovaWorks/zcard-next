@@ -319,9 +319,25 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 		}
 		stats.Page = page
 
-		for i := range list0.Items {
-			list0.Items[i].StockCheckedAt = listedAt
+		maintainable := make([]adapter.Product, 0, len(list0.Items))
+		for _, p := range list0.Items {
+			skip, e := s.maintenanceProtected(ctx, conn.ID, p.ID)
+			if e != nil {
+				return e
+			}
+			if skip {
+				stats.ManualSkipped++
+				stats.Processed++
+				processed++
+				if authoritative {
+					seen[p.ID] = true
+				}
+				continue
+			}
+			p.StockCheckedAt = listedAt
+			maintainable = append(maintainable, p)
 		}
+		list0.Items = maintainable
 		// 采集和状态同步统一补查；失败项保持未知并汇总。
 		if scope == ScopeCollect || scope == ScopeStatus {
 			if conn.Driver == "acg_faka" {
@@ -467,6 +483,13 @@ func (s *SyncService) runLoop(ctx context.Context, taskID uint64, task *ent.Supp
 //
 // 返回 (cancelRequested, error)。
 func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.SupplySyncTask, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, stats *TaskProgress) (bool, error) {
+	if skip, e := s.maintenanceProtected(ctx, conn.ID, p.ID); e != nil {
+		return false, e
+	} else if skip {
+		stats.ManualSkipped++
+		stats.Processed++
+		return false, nil
+	}
 	// Fetch media before opening the pricing transaction.
 	cover := ""
 	if task.Scope == "" || task.Scope == ScopeCollect {
@@ -488,7 +511,7 @@ func (s *SyncService) syncOne(ctx context.Context, taskID uint64, task *ent.Supp
 		canceled, err = s.syncOneLocked(ctx, taskID, task, conn, p, categoryMap, &next, cover)
 		return err
 	})
-	if data.IsProductLocked(err) {
+	if data.IsProductLocked(err) || errors.Is(err, data.ErrLocalDeliveryProtected) {
 		stats.ManualSkipped++
 		stats.Processed++
 		return false, nil
@@ -507,7 +530,11 @@ func (s *SyncService) syncOneLocked(ctx context.Context, taskID uint64, task *en
 	}
 
 	if !notFound && mapping.LocalProductID > 0 {
-		if _, e := data.GuardProductWrite(ctx, s.repo.data, mapping.LocalProductID); e != nil {
+		local, e := data.GuardProductWrite(ctx, s.repo.data, mapping.LocalProductID)
+		if e != nil {
+			return false, e
+		}
+		if e = data.GuardUpstreamDelivery(ctx, s.repo.entClient(ctx), local); e != nil {
 			return false, e
 		}
 	}
@@ -972,10 +999,11 @@ func (s *SyncService) ImportOne(ctx context.Context, conn *ent.SupplyConnection,
 }
 
 type importCheckpoint struct {
-	before    func(context.Context) error
-	after     func(context.Context, uint64, bool) error
-	holdStock bool
-	cover     string
+	categoryID *uint64
+	before     func(context.Context) error
+	after      func(context.Context, uint64, bool) error
+	holdStock  bool
+	cover      string
 }
 
 func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection, p *adapter.Product, categoryMap map[string]uint64, mode string, markupPercent float64, markupAmount int64, checkpoint *importCheckpoint) (bool, error) {
@@ -1016,6 +1044,11 @@ func (s *SyncService) importOne(ctx context.Context, conn *ent.SupplyConnection,
 	if localCat, ok := categoryMap[p.CategoryID]; ok {
 		write.CategoryID = localCat
 		write.CategorySet = true
+	}
+	if checkpoint != nil && checkpoint.categoryID != nil {
+		write.CategoryID = *checkpoint.categoryID
+		write.CategorySet = true
+		write.CategoryProtected = true
 	}
 	if checkpoint != nil && mapping != nil && s.localProductShelvedOff(ctx, mapping.LocalProductID) {
 		write.Status = 0

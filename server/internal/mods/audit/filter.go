@@ -157,6 +157,12 @@ func ReadBodyJSON(r *http.Request) map[string]any {
 			}
 		}
 	}
+	// Shared delivery content contains credentials; only configuration metadata is auditable.
+	if strings.HasSuffix(r.URL.Path, "/delivery-sources") && strings.HasPrefix(r.URL.Path, "/api/v1/admin/products/") {
+		if _, ok := m["content"]; ok {
+			m["content"] = "****"
+		}
+	}
 	// Settings wrap secrets inside value_json, so field-name redaction alone is insufficient.
 	if r.URL.Path == "/api/v1/admin/settings/notify/telegram_bot_token" || r.URL.Path == "/api/v1/admin/settings/notify/telegram" {
 		for _, key := range []string{"value_json", "valueJson"} {

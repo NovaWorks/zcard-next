@@ -177,6 +177,20 @@ func (_c *OrderItemCreate) SetFulfillmentType(v orderitem.FulfillmentType) *Orde
 	return _c
 }
 
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (_c *OrderItemCreate) SetDeliverySourceID(v uint64) *OrderItemCreate {
+	_c.mutation.SetDeliverySourceID(v)
+	return _c
+}
+
+// SetNillableDeliverySourceID sets the "delivery_source_id" field if the given value is not nil.
+func (_c *OrderItemCreate) SetNillableDeliverySourceID(v *uint64) *OrderItemCreate {
+	if v != nil {
+		_c.SetDeliverySourceID(*v)
+	}
+	return _c
+}
+
 // SetFulfillmentStatus sets the "fulfillment_status" field.
 func (_c *OrderItemCreate) SetFulfillmentStatus(v string) *OrderItemCreate {
 	_c.mutation.SetFulfillmentStatus(v)
@@ -426,6 +440,10 @@ func (_c *OrderItemCreate) createSpec() (*OrderItem, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.FulfillmentType(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentType, field.TypeEnum, value)
 		_node.FulfillmentType = value
+	}
+	if value, ok := _c.mutation.DeliverySourceID(); ok {
+		_spec.SetField(orderitem.FieldDeliverySourceID, field.TypeUint64, value)
+		_node.DeliverySourceID = value
 	}
 	if value, ok := _c.mutation.FulfillmentStatus(); ok {
 		_spec.SetField(orderitem.FieldFulfillmentStatus, field.TypeString, value)
@@ -739,6 +757,30 @@ func (u *OrderItemUpsert) SetFulfillmentType(v orderitem.FulfillmentType) *Order
 // UpdateFulfillmentType sets the "fulfillment_type" field to the value that was provided on create.
 func (u *OrderItemUpsert) UpdateFulfillmentType() *OrderItemUpsert {
 	u.SetExcluded(orderitem.FieldFulfillmentType)
+	return u
+}
+
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (u *OrderItemUpsert) SetDeliverySourceID(v uint64) *OrderItemUpsert {
+	u.Set(orderitem.FieldDeliverySourceID, v)
+	return u
+}
+
+// UpdateDeliverySourceID sets the "delivery_source_id" field to the value that was provided on create.
+func (u *OrderItemUpsert) UpdateDeliverySourceID() *OrderItemUpsert {
+	u.SetExcluded(orderitem.FieldDeliverySourceID)
+	return u
+}
+
+// AddDeliverySourceID adds v to the "delivery_source_id" field.
+func (u *OrderItemUpsert) AddDeliverySourceID(v uint64) *OrderItemUpsert {
+	u.Add(orderitem.FieldDeliverySourceID, v)
+	return u
+}
+
+// ClearDeliverySourceID clears the value of the "delivery_source_id" field.
+func (u *OrderItemUpsert) ClearDeliverySourceID() *OrderItemUpsert {
+	u.SetNull(orderitem.FieldDeliverySourceID)
 	return u
 }
 
@@ -1111,6 +1153,34 @@ func (u *OrderItemUpsertOne) SetFulfillmentType(v orderitem.FulfillmentType) *Or
 func (u *OrderItemUpsertOne) UpdateFulfillmentType() *OrderItemUpsertOne {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateFulfillmentType()
+	})
+}
+
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (u *OrderItemUpsertOne) SetDeliverySourceID(v uint64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetDeliverySourceID(v)
+	})
+}
+
+// AddDeliverySourceID adds v to the "delivery_source_id" field.
+func (u *OrderItemUpsertOne) AddDeliverySourceID(v uint64) *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddDeliverySourceID(v)
+	})
+}
+
+// UpdateDeliverySourceID sets the "delivery_source_id" field to the value that was provided on create.
+func (u *OrderItemUpsertOne) UpdateDeliverySourceID() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateDeliverySourceID()
+	})
+}
+
+// ClearDeliverySourceID clears the value of the "delivery_source_id" field.
+func (u *OrderItemUpsertOne) ClearDeliverySourceID() *OrderItemUpsertOne {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearDeliverySourceID()
 	})
 }
 
@@ -1657,6 +1727,34 @@ func (u *OrderItemUpsertBulk) SetFulfillmentType(v orderitem.FulfillmentType) *O
 func (u *OrderItemUpsertBulk) UpdateFulfillmentType() *OrderItemUpsertBulk {
 	return u.Update(func(s *OrderItemUpsert) {
 		s.UpdateFulfillmentType()
+	})
+}
+
+// SetDeliverySourceID sets the "delivery_source_id" field.
+func (u *OrderItemUpsertBulk) SetDeliverySourceID(v uint64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.SetDeliverySourceID(v)
+	})
+}
+
+// AddDeliverySourceID adds v to the "delivery_source_id" field.
+func (u *OrderItemUpsertBulk) AddDeliverySourceID(v uint64) *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.AddDeliverySourceID(v)
+	})
+}
+
+// UpdateDeliverySourceID sets the "delivery_source_id" field to the value that was provided on create.
+func (u *OrderItemUpsertBulk) UpdateDeliverySourceID() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.UpdateDeliverySourceID()
+	})
+}
+
+// ClearDeliverySourceID clears the value of the "delivery_source_id" field.
+func (u *OrderItemUpsertBulk) ClearDeliverySourceID() *OrderItemUpsertBulk {
+	return u.Update(func(s *OrderItemUpsert) {
+		s.ClearDeliverySourceID()
 	})
 }
 

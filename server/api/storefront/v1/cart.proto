@@ -61,6 +61,7 @@ message CartItem {
   // 商品快照（联查现值——结算前端展示用）
   string product_name = 5;
   int64 price_cents = 6; // 现价（SKU 解析后）
+  int32 max_quantity = 14; // 单次购买上限，0 使用默认上限
   int64 stock = 7; // 可用库存（-1 不限）
   bool points_only = 8; // 积分兑换商品（不可混合结算）
   int64 points_required = 9;

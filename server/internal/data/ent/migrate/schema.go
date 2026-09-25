@@ -1249,7 +1249,8 @@ var (
 		{Name: "quantity", Type: field.TypeInt32},
 		{Name: "amount", Type: field.TypeInt64},
 		{Name: "cost", Type: field.TypeInt64, Default: 0},
-		{Name: "fulfillment_type", Type: field.TypeEnum, Enums: []string{"auto", "manual", "upstream"}},
+		{Name: "fulfillment_type", Type: field.TypeEnum, Enums: []string{"auto", "manual", "upstream", "reuse"}},
+		{Name: "delivery_source_id", Type: field.TypeUint64, Nullable: true},
 		{Name: "fulfillment_status", Type: field.TypeString, Size: 20, Default: "pending"},
 		{Name: "commission_snapshot", Type: field.TypeJSON, Nullable: true},
 		{Name: "profit_snapshot", Type: field.TypeJSON, Nullable: true},
@@ -1263,16 +1264,21 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "order_items_orders_items",
-				Columns:    []*schema.Column{OrderItemsColumns[18]},
+				Columns:    []*schema.Column{OrderItemsColumns[19]},
 				RefColumns: []*schema.Column{OrdersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
+				Name:    "orderitem_delivery_source_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrderItemsColumns[15]},
+			},
+			{
 				Name:    "orderitem_order_id",
 				Unique:  false,
-				Columns: []*schema.Column{OrderItemsColumns[18]},
+				Columns: []*schema.Column{OrderItemsColumns[19]},
 			},
 			{
 				Name:    "orderitem_product_id",
@@ -1660,6 +1666,7 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
 		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
 		{Name: "category_id", Type: field.TypeUint64, Nullable: true},
+		{Name: "category_protected", Type: field.TypeBool, Default: false},
 		{Name: "name", Type: field.TypeString, Size: 1024},
 		{Name: "slug", Type: field.TypeString, Size: 150},
 		{Name: "description", Type: field.TypeString, Nullable: true, Size: 2147483647},
@@ -1700,7 +1707,7 @@ var (
 			{
 				Name:    "product_subsite_id_slug",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[6]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[7]},
 			},
 			{
 				Name:    "product_subsite_id_category_id",
@@ -1710,17 +1717,17 @@ var (
 			{
 				Name:    "product_subsite_id_status",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[27]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[28]},
 			},
 			{
 				Name:    "product_upstream_source_id",
 				Unique:  false,
-				Columns: []*schema.Column{ProductsColumns[28]},
+				Columns: []*schema.Column{ProductsColumns[29]},
 			},
 			{
 				Name:    "product_subsite_id_upstream_source_id_upstream_product_code",
 				Unique:  true,
-				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[28], ProductsColumns[29]},
+				Columns: []*schema.Column{ProductsColumns[3], ProductsColumns[29], ProductsColumns[30]},
 			},
 		},
 	}
@@ -1771,6 +1778,56 @@ var (
 				Name:    "productcontrol_product_id",
 				Unique:  false,
 				Columns: []*schema.Column{ProductControlsColumns[4]},
+			},
+		},
+	}
+	// ProductDeliverySourcesColumns holds the columns for the "product_delivery_sources" table.
+	ProductDeliverySourcesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true},
+		{Name: "created_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "updated_at", Type: field.TypeTime, SchemaType: map[string]string{"mysql": "datetime(3)"}},
+		{Name: "subsite_id", Type: field.TypeUint64, Default: 0},
+		{Name: "product_id", Type: field.TypeUint64},
+		{Name: "sku_id", Type: field.TypeUint64, Default: 0},
+		{Name: "purchase_key", Type: field.TypeString, Unique: true, Nullable: true, Size: 64},
+		{Name: "current_key", Type: field.TypeString, Nullable: true, Size: 100},
+		{Name: "status", Type: field.TypeString, Size: 20, Default: "empty"},
+		{Name: "content", Type: field.TypeBytes, Nullable: true},
+		{Name: "connection_id", Type: field.TypeUint64, Default: 0},
+		{Name: "upstream_product", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "upstream_sku", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "upstream_order_id", Type: field.TypeString, Size: 128, Default: ""},
+		{Name: "connection_revision", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "origin_procurement_id", Type: field.TypeUint64, Default: 0},
+		{Name: "expires_at", Type: field.TypeInt64, Default: 0},
+		{Name: "delivered_count", Type: field.TypeInt64, Default: 0},
+		{Name: "max_deliveries", Type: field.TypeInt64, Default: 0},
+		{Name: "submitted_at", Type: field.TypeInt64, Default: 0},
+		{Name: "next_check_at", Type: field.TypeInt64, Default: 0},
+		{Name: "exchange_rate", Type: field.TypeFloat64, Default: 1},
+		{Name: "cost_cents", Type: field.TypeInt64, Default: 0},
+		{Name: "last_error", Type: field.TypeString, Size: 255, Default: ""},
+	}
+	// ProductDeliverySourcesTable holds the schema information for the "product_delivery_sources" table.
+	ProductDeliverySourcesTable = &schema.Table{
+		Name:       "product_delivery_sources",
+		Columns:    ProductDeliverySourcesColumns,
+		PrimaryKey: []*schema.Column{ProductDeliverySourcesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "productdeliverysource_current_key",
+				Unique:  true,
+				Columns: []*schema.Column{ProductDeliverySourcesColumns[7]},
+			},
+			{
+				Name:    "productdeliverysource_subsite_id_product_id_sku_id",
+				Unique:  false,
+				Columns: []*schema.Column{ProductDeliverySourcesColumns[3], ProductDeliverySourcesColumns[4], ProductDeliverySourcesColumns[5]},
+			},
+			{
+				Name:    "productdeliverysource_status_next_check_at",
+				Unique:  false,
+				Columns: []*schema.Column{ProductDeliverySourcesColumns[8], ProductDeliverySourcesColumns[20]},
 			},
 		},
 	}
@@ -2946,6 +3003,7 @@ var (
 		ProductsTable,
 		ProductContentBatchesTable,
 		ProductControlsTable,
+		ProductDeliverySourcesTable,
 		ProductSkusTable,
 		PromotionsTable,
 		RechargeOrdersTable,

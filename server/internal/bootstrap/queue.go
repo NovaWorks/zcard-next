@@ -84,6 +84,11 @@ func NewCron(notifyDisp *notify.Dispatcher, supplySync *supply.SyncService, supp
 	c.AddEvery("supply.schedule_scan", time.Minute, supplyScheduler.Scan)
 	c.AddEvery("supply.sync_reap_stale", 10*time.Minute, supplyScheduler.ReapStaleTasks)
 	// ：采购巡检兜底（每 30 分钟拉 polling/submitted 单查上游；24h 卡死转人工）
+	c.AddEvery("procurement.reusable", 5*time.Second, func(ctx context.Context) {
+		if err := procure.ResumeReusable(ctx); err != nil {
+			slog.ErrorContext(ctx, "procurement.reusable.failed", "error", err)
+		}
+	})
 	c.AddEvery("procurement.patrol", 30*time.Minute, procure.Patrol)
 	// ：供货 nonce 过期清理（每小时）
 	c.AddEvery("supplier.nonce_cleanup", time.Hour, func(ctx context.Context) {
