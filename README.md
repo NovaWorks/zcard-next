@@ -359,6 +359,14 @@ zcard-next/
 
 </details>
 
+## 许可证与商业使用
+
+本项目采用 **[MIT License](LICENSE)**，允许商用、收费服务、二次开发和销售软件副本，无需另行取得本项目的商业授权；MIT 不要求公开修改后的源码。
+
+复制或分发软件副本或实质性部分（包括修改版）时，必须保留完整的版权声明和许可声明。**本项目版权声明包含 ZCard 名称及[原仓库地址](https://github.com/NovaWorks/zcard-next)，请完整保留原始出处。** 可以增加自己的修改说明和版权声明，但不能替换原声明。
+
+第三方组件继续适用其各自的许可证，包括后台框架的 [Soybean 版权声明](admin/LICENSE)。项目出处见 [NOTICE](NOTICE)，详细中文说明见 [商业使用与出处保留说明](LICENSE.zh-CN.txt)；正式条款以英文 MIT 许可证为准。
+
 ## 更新与交流
 
 - **版本发布**：[GitHub Releases](https://github.com/NovaWorks/zcard-next/releases) 提供可部署版本与更新说明。

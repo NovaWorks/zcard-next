@@ -112,6 +112,7 @@ release:
 	echo "$$tag" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$$' || { echo "ERROR: tag 须为纯 vX.Y.Z（sign 拒绝预发布后缀），得到 $$tag"; exit 1; }; \
 	echo "==> release $$tag"; \
 	rm -rf dist && mkdir -p dist && \
+	cp ../LICENSE ../NOTICE ../LICENSE.zh-CN.txt dist/ && cp ../admin/LICENSE dist/LICENSE.admin && \
 	make web-dist && \
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags fullstack -trimpath -ldflags "-X main.Version=$$tag" -o dist/zcard-linux-amd64 ./cmd/zcard && \
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -tags fullstack -trimpath -ldflags "-X main.Version=$$tag" -o dist/zcard-linux-arm64 ./cmd/zcard && \

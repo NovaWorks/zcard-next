@@ -1,0 +1,15 @@
+ZCard / zcard-next
+Original project: https://github.com/NovaWorks/zcard-next
+Copyright (c) 2026 ZCard Team and contributors (ZCard / zcard-next, https://github.com/NovaWorks/zcard-next)
+License: MIT (see LICENSE)
+
+Third-party attribution:
+The administration frontend is based on soybean-admin.
+Original project: https://github.com/soybeanjs/soybean-admin
+Copyright (c) 2021 Soybean
+License: MIT (see admin/LICENSE)
+
+Components with their own license or copyright notices retain those notices
+and their respective terms. This file identifies the project origin and known
+upstream attribution; it is not an exhaustive dependency license inventory
+and does not add conditions to the MIT License.

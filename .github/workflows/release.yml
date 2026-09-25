@@ -42,6 +42,8 @@ jobs:
           cd server
           VERSION="${GITHUB_REF_NAME}"
           mkdir -p ../dist
+          cp ../LICENSE ../NOTICE ../LICENSE.zh-CN.txt ../dist/
+          cp ../admin/LICENSE ../dist/LICENSE.admin
           for arch in amd64 arm64; do
             CGO_ENABLED=0 GOOS=linux GOARCH=$arch go build -tags fullstack \
               -ldflags "-s -w -X main.Version=${VERSION} \
@@ -71,4 +73,8 @@ jobs:
             dist/zcard-linux-arm64
             dist/update.json
             dist/SHA256SUMS
+            dist/LICENSE
+            dist/NOTICE
+            dist/LICENSE.zh-CN.txt
+            dist/LICENSE.admin
           generate_release_notes: true
